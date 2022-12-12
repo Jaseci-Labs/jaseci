@@ -46,4 +46,4 @@ jobs:
         if: always()
         run: |
           cd jaseci_core/
-          python3 -m unittest discover jaseci/ --failfast -p "test_*.py"
+          pytest -x

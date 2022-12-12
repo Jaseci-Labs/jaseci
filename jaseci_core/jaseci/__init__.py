@@ -23,6 +23,7 @@ def load_standard():
     import jaseci.actions.standard.mail  # noqa
     import jaseci.actions.standard.task  # noqa
     import jaseci.actions.standard.internal  # noqa
+    import jaseci.actions.standard.zlib  # noqa
 
 
 load_standard()

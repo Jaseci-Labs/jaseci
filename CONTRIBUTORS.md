@@ -5,6 +5,7 @@ Here is a list of the contributors who have helped create and improve Jaseci. Bi
 * [Jason Mars (marsninja)](https://github.com/marsninja)
 * [Yiping Kang (ypkang)](https://github.com/ypkang)
 * [Ashish Mahendra (AshishMahendra)](https://github.com/AshishMahendra)
+* [Chandra Irugalbandara (chandralegend)](https://github.com/chandralegend)
 * [Timothy Shiwprasad (king-mango)](https://github.com/king-mango)
 * [Gimel Dick (Gim3l)](https://github.com/Gim3l)
 * [Chavez Harris (codedbychavez)](https://github.com/codedbychavez)

@@ -33,6 +33,10 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 | ---------- | -------------- | -------------------------------- | ---------------- | ----------- | ------------------------------------- | ------------------------------------------------------------------- |
 | `text_seg` | Text Segmenter | [Link](#text-segmenter-text_seg) | No Training req. | Experimetal | Topical Change Detection in Documents | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec) |
 
+## Text Clustering
+| Module    | Model Name   | Example                       | Type             | Status      | Description                                               | Resources                                                                                                                         |
+| --------- | ------------ | ----------------------------- | ---------------- | ----------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `cluster` | Text Cluster | [Link](#text-cluster-cluster) | No Training req. | Experimetal | Indentifying Posible Similar Clusters in Set of Documents | [UMAP](https://umap-learn.readthedocs.io/en/latest/) , [HBDSCAN](https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html) |
 
 ## Non-AI Tools
 | Module    | Model Name    | Example                        | Status | Description                                | Resources                                        |
@@ -329,7 +333,7 @@ walker bi_enc_example{
 `sbert_sim` is a implementation of SentenceBert for scoring similarity between sentence pairs, it uses bi-encoder in a saimese setup to encode the sentences followed by the cosine similarity to score the similarity.
 
 * `get_dot_score` : Caculate the dot product of two given vectors
-    * Input: 
+    * Input:
         * `vec_a` (list of float): first embeded text
         * `vec_b` (list of float): second embeded text
     * Return: dot product score
@@ -338,12 +342,12 @@ walker bi_enc_example{
         * `vec_a` (list of float): first embeded text
         * `vec_b` (list of float): second embeded text
     * Return: cosine similarity score
-* `get_text_sim`: gets the similarity score between `query` with all the sentences in `corpus` and return the top_k similar sentences with `sim_score` 
+* `get_text_sim`: gets the similarity score between `query` with all the sentences in `corpus` and return the top_k similar sentences with `sim_score`
     * Input:
         * `query` (string or list of strings): context which needs to be classified
-        * `corpus` (string or list of strings): list of candidates for the context 
+        * `corpus` (string or list of strings): list of candidates for the context
         * `top_k` (string): can be text or embedding type
-    * Return: list of top_k similar sentences with `sim_score` 
+    * Return: list of top_k similar sentences with `sim_score`
 * `train`: used to train the Bi-Encoder for custom input
     * Input:
         * `dataset` (List): List of List, each list contains a pair of sentence and similarity score.
@@ -353,7 +357,7 @@ walker bi_enc_example{
     * Input:
         * `texts` (string or list of strings): take text and returns a encoded embeddings
     * Returns a list of embeddings
-* `get_train_config`:  
+* `get_train_config`:
     * Input: None
     * Returns: json of all the current training configuration
      ```
@@ -365,11 +369,11 @@ walker bi_enc_example{
         "max_seq_length": 256
     }
     ```
-* `load_model`:  
-    * Input 
+* `load_model`:
+    * Input
         * `model_type` (string): can be `default` or `tfm_model`
           * `default` : loads model from the [sbert](https://www.sbert.net/docs/pretrained_models.html) model zoo
-          * `tfm_model` : load tranformer model from the [huggingface hub](https://huggingface.co/models)  
+          * `tfm_model` : load tranformer model from the [huggingface hub](https://huggingface.co/models)
         * `model_name` (string): this is name of the model to be loaded
       *  ```
           {
@@ -396,8 +400,8 @@ walker sbert_sim_example{
     can sbert_sim.train,sbert_sim.get_text_sim;
 
     train_data = file.load_json(train_file);
-    
-    # Train the model 
+
+    # Train the model
     sbert_sim.train(
         dataset=train_data['train_data'],
         training_parameters={
@@ -405,7 +409,7 @@ walker sbert_sim_example{
         }
     );
 
-    # returns the top_k of simlar test in the corpus 
+    # returns the top_k of simlar test in the corpus
     resp_data = sbert_sim.get_text_sim(query=query,corpus=corpus,top_k=top_k);
     std.out(resp_data);
 }
@@ -668,6 +672,7 @@ walker ent_ext_example {
     * Input
         * `model_parameters`(Dict): dictionary of model parameters. See the json example above for available configuration parameters.
     * Returns: "Config setup is complete." if model configuration is completed successfully
+
 #### Example Jac Usage:
 ```jac
 # Train and inference with a transformer-based NER model
@@ -803,8 +808,9 @@ walker summarization {
             * `wiki`: trained on wikipedia data
             * `legal`: trained on legal documents
     * Returns: "[Model Loaded] : <model_name>"
+
 * **Input data file `text_seg.json`**
-    ```
+    ```json
     {
         "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail. But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there."
     }
@@ -827,6 +833,69 @@ walker text_seg_example {
         threshold=threshold
         );
     std.out(resp_data);
+}
+```
+
+### Text Cluster (`cluster`)
+
+Module `cluster` implemented for clustering text document into similar clusters. This is a example program to cluster documents with jaseci `cluster` module. We will use input as list of raw text documents and will produce cluster labels for each text documents.
+
+* `get_umap`: Redusing the dimention of data while preseving the relationship beween data points to identify clusters easier.
+    * Input
+        * `text_embeddings` (list): list of text embeddings should pass here.
+        * `n_neighbors` (int): number of neighbors to consider.
+        * `min_dist` (float): minimum distance between clusters.
+        * `n_components` (int): the dimensionality of the reduced data.
+        * `random_state`(int): preproducability of the algorithm.
+
+    * Returns: multidimentional array of reduced features.
+
+* `get_cluster_labels`: To get list of possible cluster labels
+    * Input
+        * `embeddings`(list): This accept list of embedded text features.
+        * `algorithm` (String): Algorithm for clustering.
+        * `min_samples` (int): The minimum number of data points in a cluster is represented here. Increasing this will reduces number of clusters
+        * `min_cluster_size` (int): This represents how conservative you want your clustering should be. Larger values more data points will be considered as noise
+
+    * Returns: list of labels.
+* **Input data file `text_cluster.json`**
+  ```json
+  [
+    "still waiting card",
+    "countries supporting",
+    "card still arrived weeks",
+    "countries accounts suppor",
+    "provide support countries",
+    "waiting week card still coming",
+    "track card process delivery",
+    "countries getting support",
+    "know get card lost",
+    "send new card",
+    "still received new card",
+    "info card delivery",
+    "new card still come",
+    "way track delivery card",
+    "countries currently support"]
+    ```
+
+* #### Example Jac Usage:
+
+```
+walker text_cluster_example{
+    can file.load_json;
+    can use.encode;
+    can cluster.get_umap;
+    can cluster.get_cluster_labels;
+
+    has text, encode, final_features, labels;
+
+    text = file.load_json("text_cluster.json");
+    encode = use.encode(text);
+    final_features = cluster.get_umap(encode,2);
+
+    labels = cluster.get_cluster_labels(final_features,"hbdscan",2,2);
+    std.out(labels);
+
 }
 ```
 
