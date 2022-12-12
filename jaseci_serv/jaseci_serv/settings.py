@@ -112,7 +112,7 @@ elif "POSTGRES_HOST" in os.environ:
         }
     }
 
-elif "test" in sys.argv or "test_coverage" in sys.argv:
+elif "test" in sys.argv or any(["pytest" in arg for arg in sys.argv]):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
