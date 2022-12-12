@@ -122,13 +122,13 @@ def setup(size: str = "tiny"):
 setup()
 
 
-def get_array(audio_file: str = None) -> np.ndarray:  # type: ignore
+def get_array(audio_file: str = None) -> np.ndarray:
     """Get numpy array from audio file"""
     audio, _ = librosa.load(audio_file, sr=16000)
     return audio
 
 
-def download(url: str = None) -> str:  # type: ignore
+def download(url: str = None) -> str:
     """Download audio file from url"""
     r = requests.get(url, allow_redirects=True)
     filename = str(uuid.uuid4()) + ".wav"
@@ -137,7 +137,12 @@ def download(url: str = None) -> str:  # type: ignore
 
 
 @jaseci_action(act_group=["whisper"], allow_remote=True)
-def transcribe(language: str = "en", array: list[float] = None, audio_file: str = None, url: str = None) -> str:  # type: ignore
+def transcribe(
+    language: str = "en",
+    array: list[float] = None,
+    audio_file: str = None,
+    url: str = None,
+) -> str:
     try:
         global model, processor
 
@@ -154,11 +159,13 @@ def transcribe(language: str = "en", array: list[float] = None, audio_file: str 
         else:
             raise ValueError("Must provide array, audio_file, or url")
 
-        model.config.forced_decoder_ids = processor.get_decoder_prompt_ids(language=language, task="transcribe")  # type: ignore
+        model.config.forced_decoder_ids = processor.get_decoder_prompt_ids(
+            language=language, task="transcribe"
+        )
         input_features = processor(
             audio_array, sampling_rate=16000, return_tensors="pt"
         ).input_features
-        generated_ids = model.generate(input_features)  # type: ignore
+        generated_ids = model.generate(input_features)
         transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[
             0
         ]
@@ -169,7 +176,12 @@ def transcribe(language: str = "en", array: list[float] = None, audio_file: str 
 
 
 @jaseci_action(act_group=["whisper"], allow_remote=True)
-def translate(language: str = "fr", array: list[float] = None, audio_file: str = None, url: str = None) -> str:  # type: ignore
+def translate(
+    language: str = "fr",
+    array: list[float] = None,
+    audio_file: str = None,
+    url: str = None,
+) -> str:
     try:
         global model, processor
 
@@ -193,7 +205,9 @@ def translate(language: str = "fr", array: list[float] = None, audio_file: str =
         input_features = processor(
             audio_array, sampling_rate=16000, return_tensors="pt"
         ).input_features
-        generated_ids = model.generate(input_features, forced_decoder_ids=forced_decoder_ids)  # type: ignore
+        generated_ids = model.generate(
+            input_features, forced_decoder_ids=forced_decoder_ids
+        )
         transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[
             0
         ]
@@ -204,7 +218,9 @@ def translate(language: str = "fr", array: list[float] = None, audio_file: str =
 
 
 @jaseci_action(act_group=["whisper"], allow_remote=True)
-def audio_to_array(audio_file: str = None, url: str = None, base64_str: str = None) -> list[float]:  # type: ignore
+def audio_to_array(
+    audio_file: str = None, url: str = None, base64_str: str = None
+) -> list[float]:
     try:
         if audio_file is not None:
             audio_array = get_array(audio_file)
