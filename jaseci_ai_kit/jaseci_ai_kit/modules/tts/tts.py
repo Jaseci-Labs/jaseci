@@ -1,7 +1,9 @@
 import os
 import sys
 import time
+import json
 import torch
+import base64
 import urllib.request
 
 import numpy as np
@@ -226,27 +228,27 @@ def save_file(input_numpy, path="", rate=rate):
 
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
-def synthesize(text: str, path: str = "", rate: int = rate):
+def synthesize(text: str, path: str = "", rate: int = rate, base64: bool = False):
 
-    if path != "":
-        try:
-            synthesize_audio = prediction(input_text=text)
-            status = save_file(synthesize_audio, path, rate)
-            ret = {"audio_wave": synthesize_audio.tolist(), "saving_status": status}
-            return ret
+    try:
+        synthesize_audio = prediction(input_text=text)
+        if base64:
+            json_encoded_list = json.dumps(synthesize_audio.tolist())
+            output_list = base64.b64encode(json_encoded_list)
+        else:
+            output_list = synthesize_audio.tolist()
 
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-
-    else:
-        try:
-            synthesize_audio = prediction(input_text=text)
+        if path != "":
+            status = save_file(output_list, path, rate)
+            ret = {"audio_wave": output_list, "saving_status": status}
+        else:
+            output_list = synthesize_audio.tolist()
             ret = {
-                "audio_wave": synthesize_audio.tolist(),
+                "audio_wave": output_list,
             }
-            return ret
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        return ret
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
