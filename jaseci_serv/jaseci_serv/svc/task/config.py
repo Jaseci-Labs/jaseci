@@ -12,7 +12,7 @@ TASK_CONFIG = {
     "worker_redirect_stdouts": False,
 }
 
-if "test" in sys.argv or "test_coverage" in sys.argv:
+if "test" in sys.argv or any(["pytest" in arg for arg in sys.argv]):
     TASK_CONFIG["task_always_eager"] = True
     TASK_CONFIG["task_store_eager_result"] = True
     TASK_CONFIG["beat_scheduler"] = "celery.beat:PersistentScheduler"
