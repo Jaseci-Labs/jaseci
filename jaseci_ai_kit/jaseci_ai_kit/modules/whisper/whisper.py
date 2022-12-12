@@ -225,3 +225,9 @@ def audio_to_array(audio_file: str = None, url: str = None, base64_str: str = No
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    from jaseci.actions.remote_actions import launch_server
+
+    launch_server(port=8000)
