@@ -1,4 +1,4 @@
-name: jaseci_core Unit Tests
+name: jaseci_serv Tests
 
 on:
   push:
@@ -30,7 +30,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install black flake8==3.7.9 isort
+          pip install --upgrade pytz==2022.1
+          sudo apt-get install -y redis-tools
 
       - name: Install jaseci_core
         run: |
@@ -38,12 +39,18 @@ jobs:
       - name: Verify installation
         run: |
           jsctl
-      - name: Linting
-        continue-on-error: true
-        run: |
-          flake8 --exclude=settings.py,*migrations*,jac_parse,ci_app --max-line-length=88 --extend-ignore = E203,
-      - name: jaseci_core unit tests
+
+      - name: Install jaseci_serv and run tests
         if: always()
         run: |
-          cd jaseci_core/
-          python3 -m unittest discover jaseci/ --failfast -p "test_*.py"
+          redis-cli FLUSHALL
+          cd jaseci_serv/
+          source install_live.sh
+          jsserv test
+
+      - name: test jaseci_serv without redis
+        run: |
+          cd jaseci_serv/
+          jsserv test
+        env:
+          REDIS_ENABLED: "False"
