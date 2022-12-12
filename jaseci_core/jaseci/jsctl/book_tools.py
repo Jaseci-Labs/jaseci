@@ -327,7 +327,7 @@ class modifiedBook:
     def func_to_sexy_box(self, fname, func, ignore_args=[]):
         doc = getdoc(func)
         line = (
-            "\<div class='actionName'> "
+            "\ <div class='actionName'> "
             + fname
             + " </div> \n <div class ='actionsArgs'> "
             + f"{self.format_params(signature(func), ignore_args=ignore_args)}"
