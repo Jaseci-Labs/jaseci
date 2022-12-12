@@ -21,6 +21,7 @@ export class Select {
   @Prop() fullwidth: string;
   @Prop() placeholder: string;
   @Prop() operations: string;
+  @Prop() size: 'xs' | 'sm' | 'md' | 'lg';
   @Prop() options: string | { label: string }[];
   @Prop() palette: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
   @Element() host: HTMLElement;
@@ -78,6 +79,12 @@ export class Select {
               'select-warning': this.palette === 'warning',
               'select-error': this.palette === 'error',
             },
+            this.size && {
+              'select-xs': this.size === 'xs',
+              'select-md': this.size === 'md',
+              'select-sm': this.size === 'sm',
+              'select-lg': this.size === 'lg',
+            },
           )}
           // placeholder={this.placeholder}
         >
@@ -89,7 +96,7 @@ export class Select {
         </select>
         {/* register some classes so they aren't purged by daisy-ui */}
         {false && (
-          <select class="select-xl select-primary select-secondary select-accent select-info select-success select-warning select-error select-lg select-sm select-xs"></select>
+          <select class="select-xl select-primary select-secondary select-accent select-info select-success select-warning select-error select-lg select-sm select-xs select-md"></select>
         )}
       </div>
     );

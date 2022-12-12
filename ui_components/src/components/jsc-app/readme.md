@@ -60,10 +60,13 @@ graph TD;
   jsc-graph --> jsc-button
   jsc-graph --> jsc-divider
   jsc-graph --> jsc-chip
+  jsc-graph --> graph-walker-runner
   jsc-graph --> jsc-select
   jsc-auth-form --> jsc-inputbox
   jsc-auth-form --> jsc-anchor
   jsc-auth-form --> jsc-button
+  graph-walker-runner --> jsc-inputbox
+  graph-walker-runner --> jsc-select
   style jsc-app fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

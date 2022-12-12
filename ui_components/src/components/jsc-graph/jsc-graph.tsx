@@ -20,6 +20,15 @@ type Graph = {
   context: Record<any, any>;
 };
 
+export type Walker = {
+  name: string;
+  kind: string;
+  jid: string;
+  j_timestamp: string;
+  j_type: string;
+  code_sig: string;
+};
+
 @Component({
   tag: 'jsc-graph',
   styleUrl: 'jsc-graph.css',
@@ -39,8 +48,10 @@ export class JscGraph {
   @State() prevNd = '';
   @State() network: vis.Network;
   @State() graphs: Graph[] = [];
+  @State() walkers: Walker[] = [];
   @State() serverUrl: string = localStorage.getItem('serverUrl') || 'http://localhost:8000';
   @State() hiddenGroups: Set<string> = new Set();
+  @State() activeSentinel: string;
 
   nodesArray: vis.Node[] = [];
   edgesArray: vis.Edge[] = [];
@@ -76,6 +87,28 @@ export class JscGraph {
         'Authorization': `token ${localStorage.getItem('token')}`,
       },
     }).then(res => res.json());
+  }
+
+  async getAllWalkers(): Promise<Walker[]> {
+    return await fetch(`${this.serverUrl}/js/walker_list`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    }).then(res => res.json());
+  }
+
+  async getActiveSentinel(): Promise<string> {
+    return await fetch(`${this.serverUrl}/js/alias_list`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    })
+      .then(res => res.json())
+      .then(res => res['active:sentinel']);
   }
 
   @Watch('nd')
@@ -302,6 +335,8 @@ export class JscGraph {
 
       // get all graphs for the graph switcher
       this.graphs = await this.getAllGraphs();
+      this.walkers = await this.getAllWalkers();
+      this.activeSentinel = await this.getActiveSentinel();
 
       await this.getGraphState();
     } catch (err) {
@@ -426,8 +461,20 @@ export class JscGraph {
                   </div>
                 </div>
               </div>
-              <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
+
+              <div style={{ position: 'absolute', display: 'flex', top: '20px', left: '20px', zIndex: '9999' }}>
                 {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
+                {this.clickedNode && (
+                  <graph-walker-runner
+                    onWalkerCompleted={async () => {
+                      await this.getGraphState();
+                    }}
+                    walkers={this.walkers}
+                    serverUrl={this.serverUrl}
+                    sentinel={this.activeSentinel}
+                    nodeId={this.clickedNode.id as string}
+                  ></graph-walker-runner>
+                )}
               </div>
 
               {/*Graph Switcher*/}
