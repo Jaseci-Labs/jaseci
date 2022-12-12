@@ -35,6 +35,8 @@ sudo apt install libwebkit2gtk-4.0-dev \
 
 - To build for windows you'll need to install rust for windows and node.js for windows
   - Once you have node install you might have to run `corepack enable` to activate yarn
+- You can specify the target platform when building the application by running `yarn tauri build --target universal-apple-darwin`
+  - Use `rustup target list` to get a list of targets
 
 # Testing
 
