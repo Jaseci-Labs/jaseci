@@ -341,7 +341,7 @@ class modifiedBook:
         doc = doc.replace("_", " ")
         if len(parsed_doc.params):
             # doc += "\\vspace{3mm}\\par\n\\textbf{Parameters}\n\\par"
-            doc += "<div class='params'> Params"
+            doc += "<div class='heading'>Params</div> \n <div class='params'> Params"
             # args_doc = "\\argspec{Parameters}{"
             args_doc = " "
             for i in parsed_doc.params:
@@ -351,14 +351,14 @@ class modifiedBook:
             doc += args_doc
         if parsed_doc.returns:
             # doc += "\\vspace{3mm}\\par\n\\textbf{Parameters}\n\\par"
-            doc += "<div class='return'>"
+            doc += "<div class='heading'>Returns</div> \n<div class='return'>"
             args_doc = "Returns - " + parsed_doc.returns.description
             args_doc = args_doc.replace("_", "\\_")
             doc += args_doc
         line += (
             " <div class ='mainbody'> <div class ='actionsDescription'>"
             + doc
-            + "</div> </div> \n"
+            + "</div> </div> \n \n"
         )
         return line
 
