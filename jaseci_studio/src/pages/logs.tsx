@@ -97,6 +97,7 @@ function LogsPage() {
                   />
 
                   <Tooltip
+                    data-testId="pause-logs"
                     label={paused ? "Resume Logs" : "Pause Logs"}
                     withArrow
                   >
@@ -104,6 +105,7 @@ function LogsPage() {
                       onClick={() => setPaused((prevValue) => !prevValue)}
                       variant="light"
                       color="orange"
+                      aria-label="Pause Logs"
                     >
                       {paused ? (
                         <IconPlayerPlay size={16}> </IconPlayerPlay>
@@ -113,25 +115,35 @@ function LogsPage() {
                     </ActionIcon>
                   </Tooltip>
 
-                  <Tooltip label="Scroll to Top" withArrow>
+                  <Tooltip
+                    data-testid="scroll-to-top"
+                    label="Scroll to Top"
+                    withArrow
+                  >
                     <ActionIcon
                       variant="light"
                       color="orange"
                       onClick={() => {
                         setScrollDirection("top");
                       }}
+                      aria-label="Scroll to Top"
                     >
                       <IconArrowUp size={16} />
                     </ActionIcon>
                   </Tooltip>
 
-                  <Tooltip label="Scroll to Bottom" withArrow>
+                  <Tooltip
+                    data-testid="scroll-to-bottom"
+                    label="Scroll to Bottom"
+                    withArrow
+                  >
                     <ActionIcon
                       variant="light"
                       color="orange"
                       onClick={() => {
                         setScrollDirection("bottom");
                       }}
+                      aria-label="Scroll to Bottom"
                     >
                       <IconArrowDown size={16} />
                     </ActionIcon>
