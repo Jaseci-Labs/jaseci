@@ -36,6 +36,7 @@ setup(
         "inflect",
         "librosa==0.9.2",
         "unidecode==1.3.6",
+        "soundfile",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
