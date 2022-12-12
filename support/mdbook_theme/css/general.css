@@ -231,3 +231,15 @@ blockquote {
 
 }
 
+.heading {
+    width: 15%;
+    margin-left: auto;
+    margin-right: auto;
+    border: black solid 1px;
+    text-align: center;
+    background-color: aliceblue;
+    border-radius: 10px;
+    font-weight: bold;
+
+}
+
