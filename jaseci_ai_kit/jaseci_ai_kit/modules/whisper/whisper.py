@@ -7,8 +7,8 @@ import traceback
 import requests
 import uuid
 import os
-import io
 import base64
+from typing import List
 
 SUPPORTED_LANGUAGES = [
     "en",
@@ -139,7 +139,7 @@ def download(url: str = None) -> str:
 @jaseci_action(act_group=["whisper"], allow_remote=True)
 def transcribe(
     language: str = "en",
-    array: list[float] = None,
+    array: List[float] = None,
     audio_file: str = None,
     url: str = None,
 ) -> str:
@@ -178,7 +178,7 @@ def transcribe(
 @jaseci_action(act_group=["whisper"], allow_remote=True)
 def translate(
     language: str = "fr",
-    array: list[float] = None,
+    array: List[float] = None,
     audio_file: str = None,
     url: str = None,
 ) -> str:
@@ -220,7 +220,7 @@ def translate(
 @jaseci_action(act_group=["whisper"], allow_remote=True)
 def audio_to_array(
     audio_file: str = None, url: str = None, base64_str: str = None
-) -> list[float]:
+) -> List[float]:
     try:
         if audio_file is not None:
             audio_array = get_array(audio_file)
