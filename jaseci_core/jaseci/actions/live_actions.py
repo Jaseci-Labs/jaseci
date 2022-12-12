@@ -89,36 +89,52 @@ def load_local_actions(file: str):
 
 def load_module_actions(mod, loaded_module=None):
     """Load all jaseci actions from python module"""
-    if loaded_module is None:
-        loaded_module = importlib.import_module(mod)
-    else:
-        loaded_module = importlib.reload(loaded_module)
-        # recover live_actions
-        core_mod_name = mod.split(".")[-1]
-        if core_mod_name == "bi_enc":
-            loaded_mod_name = "jaseci_ai_kit.modules.encoders.bi_enc"
-        else:
-            loaded_mod_name = f"jaseci_ai_kit.modules.{core_mod_name}.{core_mod_name}"
-
-        for i in live_action_modules[loaded_mod_name]:
-            live_actions[i] = live_actions[f"_inactive_{i}"]
-            del live_actions[f"_inactive_{i}"]
-    if loaded_module:
-        return loaded_module
+    if mod in sys.modules:
+        del sys.modules[mod]
+    if loaded_module and loaded_module in sys.modules:
+        del sys.modules[loaded_module]
+    if mod in live_action_modules:
+        for i in live_action_modules[mod]:
+            del live_actions[i]
+    if loaded_module in live_action_modules:
+        for i in live_action_modules[loaded_module]:
+            del live_actions[i]
+    mod = importlib.import_module(mod)
+    if mod:
+        return True
     return False
+
+
+# def load_module_actions(mod, loaded_module=None):
+#     """Load all jaseci actions from python module"""
+#     if loaded_module is None:
+#         loaded_module = importlib.import_module(mod)
+#     else:
+#         loaded_module = importlib.reload(loaded_module)
+#         # recover live_actions
+#         core_mod_name = mod.split(".")[-1]
+#         if core_mod_name == "bi_enc":
+#             loaded_mod_name = "jaseci_ai_kit.modules.encoders.bi_enc"
+#         else:
+#             loaded_mod_name = f"jaseci_ai_kit.modules.{core_mod_name}.{core_mod_name}"
+#
+#         for i in live_action_modules[loaded_mod_name]:
+#             live_actions[i] = live_actions[f"_inactive_{i}"]
+#             del live_actions[f"_inactive_{i}"]
+#     if loaded_module:
+#         return loaded_module
+#     return False
 
 
 def unload_module(mod):
     """Unload actions module and all relevant function"""
-
-    unloaded = False
     if mod in sys.modules.keys() and mod in live_action_modules.keys():
-
         for i in live_action_modules[mod]:
-            live_actions[f"_inactive_{i}"] = live_actions[i]
             del live_actions[i]
-        unloaded = True
-    return unloaded
+        del sys.modules[mod]
+        del live_action_modules[mod]
+        return True
+    return False
 
 
 def unload_action(name):
@@ -184,6 +200,7 @@ def get_global_actions():
             or i.startswith("date.")
             or i.startswith("jaseci.")
             or i.startswith("internal.")
+            or i.startswith("zlib.")
         ):
             global_action_list.append(
                 Action(
