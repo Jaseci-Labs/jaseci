@@ -5,7 +5,6 @@ Module that manage and optimizes the actions configuration of Jaseci
 from jaseci.svc.actions_optimizer.configs import ACTION_CONFIGS
 from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.utils.utils import logger
-from jaseci.svc import Kube
 from jaseci.svc.actions_optimizer.actions_state import ActionsState
 from jaseci.actions.live_actions import (
     load_module_actions,
@@ -15,8 +14,6 @@ from jaseci.actions.live_actions import (
     live_actions,
 )
 import requests
-import time
-import copy
 from kubernetes.client.rest import ApiException
 
 
