@@ -55,7 +55,7 @@ TFM_NER_ACTION_CONFIG = {
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    # "limits": {"memory": "3Gi"},
+                                    "limits": {"memory": "3Gi"},
                                     "requests": {"memory": "3Gi"},
                                 },
                                 "volumeMounts": [

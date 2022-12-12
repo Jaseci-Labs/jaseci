@@ -145,7 +145,8 @@ class JsOrcApi:
     def jsorc_actions_load(self, name: str, mode: str):
         """
         Load an action as remote or local mode through JSORC.
-        JSORC will load the corresponding module or start a microservice if needed
+        JSORC will load the corresponding module or start a microservice if needed.
+        Return the current status of the action.
         """
         hook = self._h
         if hook.meta.run_svcs:

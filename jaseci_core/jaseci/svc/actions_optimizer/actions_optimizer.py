@@ -1,3 +1,7 @@
+"""
+Module that manage and optimizes the actions configuration of Jaseci
+"""
+
 from jaseci.svc.actions_optimizer.configs import ACTION_CONFIGS
 from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.utils.utils import logger
@@ -62,7 +66,6 @@ class ActionsOptimizer:
     def retire_remote(self, name):
         """
         Retire a microservice through the kube service
-        TODO
         """
         config = ACTION_CONFIGS[name]["remote"]
         self.kube_delete(config)
@@ -71,7 +74,6 @@ class ActionsOptimizer:
     def spawn_remote(self, name):
         """
         Spawn a microservice through the kube service
-        TODO
         """
         config = ACTION_CONFIGS[name]["remote"]
         self.kube_create(config)
@@ -89,9 +91,7 @@ class ActionsOptimizer:
         """
         Any action preparation that needs to be called right after action is loaded
         """
-        if name == "tfm_ner":
-            # tfm_ner requires an initial model loading
-            self.call_action("tfm_ner.load_model", "/trained_models/roberta_ner", True)
+        pass
 
     def load_action_remote(self, name, unload_existing=False):
         """
@@ -184,26 +184,29 @@ class ActionsOptimizer:
 
         module_name = cur_state["module"]["name"]
         loaded_module = cur_state["module"]["loaded_module"]
+
+        unload_module(module_name)
+        unload_module(loaded_module)
         # logger.info("deleting loaded module")
         # logger.info(loaded_module)
         # del loaded_module
 
         # Alright we are in prime hack terrotoriy now lol
-        core_mod_name = module_name.split(".")[-1]
-        if core_mod_name == "bi_enc":
-            possible_module_name = [
-                module_name,
-                "jaseci_ai_kit.modules.encoders",
-                "jaseci_ai_kit.modules.encoders.bi_enc",
-            ]
-        else:
-            possible_module_name = [
-                module_name,
-                f"jaseci_ai_kit.modules.{core_mod_name}",
-                f"jaseci_ai_kit.modules.{core_mod_name}.{core_mod_name}",
-            ]
-        for mod in possible_module_name:
-            unload_module(mod)
+        # core_mod_name = module_name.split(".")[-1]
+        # if core_mod_name == "bi_enc":
+        #     possible_module_name = [
+        #         module_name,
+        #         "jaseci_ai_kit.modules.encoders",
+        #         "jaseci_ai_kit.modules.encoders.bi_enc",
+        #     ]
+        # else:
+        #     possible_module_name = [
+        #         module_name,
+        #         f"jaseci_ai_kit.modules.{core_mod_name}",
+        #         f"jaseci_ai_kit.modules.{core_mod_name}.{core_mod_name}",
+        #     ]
+        # for mod in possible_module_name:
+        #     unload_module(mod)
 
         self.actions_state.module_action_unloaded(name)
 
