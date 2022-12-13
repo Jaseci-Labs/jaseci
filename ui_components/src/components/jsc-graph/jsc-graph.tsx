@@ -344,6 +344,12 @@ export class JscGraph {
     }
 
     this.network.on('click', params => {
+      // reset ui if we click on the background
+      if (!params.nodes?.length && !params.edges?.length) {
+        this.network.unselectAll();
+        this.clickedNode = undefined;
+        this.clickedEdge = undefined;
+      }
       this.handleNetworkClick(this.network, params);
     });
 
@@ -396,21 +402,24 @@ export class JscGraph {
           </div>
         ) : (
           this.serverUrl && (
-            <div style={{ height: this.height, width: 'auto', position: 'relative' }}>
+            <div style={{ height: this.height, maxHeight: this.height, width: 'auto', position: 'relative' }}>
               <div
                 style={{
                   position: 'absolute',
                   top: '0px',
                   bottom: '0px',
-                  right: '20px',
-                  width: '360px',
+                  right: '0px',
+                  minWidth: '300px',
+                  maxWidth: '360px',
                   height: '100%',
                   display: 'flex',
+                  gap: '14px',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   paddingTop: '20px',
                   paddingBottom: '20px',
                   zIndex: '9999',
+                  overflowY: 'scroll',
                 }}
               >
                 {' '}
@@ -444,7 +453,7 @@ export class JscGraph {
                       background: '#fff',
                       boxShadow: 'rgb(0 0 0 / 10%) 0px 1px 2px 0px, rgb(0 0 0 / 1%) 0px 0px 2px 1px',
                       overflowY: 'auto',
-                      overflowX: 'hidden',
+                      overflowX: 'auto',
                     }}
                   >
                     <jsc-divider label="Run Walker" orientation="horizontal"></jsc-divider>
@@ -475,6 +484,8 @@ export class JscGraph {
                 >
                   <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
                   <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
+                  {!this.hiddenGroups?.size && <div>No hidden nodes</div>}
+
                   {Array.from(this.hiddenGroups).map(group => (
                     <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
                       <jsc-chip label={group}>

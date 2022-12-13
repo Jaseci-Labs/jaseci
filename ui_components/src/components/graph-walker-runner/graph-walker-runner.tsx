@@ -138,7 +138,6 @@ export class GraphWalkerRunner {
           <table class="table w-full table-compact">
             <thead>
               <tr class={'active'}>
-                <th></th>
                 <th>Name</th>
                 <th></th>
               </tr>
@@ -146,7 +145,6 @@ export class GraphWalkerRunner {
             <tbody>
               {this.walkers.map((walker, index) => (
                 <tr class={index % 2 === 0 ? undefined : 'active'}>
-                  <td>{index + 1}</td>
                   <td>{walker.name}</td>
                   <td>
                     <label class="btn btn-info btn-xs ml-2" onClick={() => (this.selectedWalker = walker.name)}>

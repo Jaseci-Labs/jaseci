@@ -27,24 +27,24 @@
 
 - [jsc-card](../jsc-card)
 - [jsc-auth-form](../jsc-auth-form)
-- [jsc-checkbox](../jsc-checkbox)
-- [jsc-button](../jsc-button)
 - [jsc-divider](../jsc-divider)
-- [jsc-chip](../jsc-chip)
 - [graph-walker-runner](../graph-walker-runner)
+- [jsc-button](../jsc-button)
+- [jsc-chip](../jsc-chip)
 - [jsc-select](../jsc-select)
+- [jsc-checkbox](../jsc-checkbox)
 
 ### Graph
 ```mermaid
 graph TD;
   jsc-graph --> jsc-card
   jsc-graph --> jsc-auth-form
-  jsc-graph --> jsc-checkbox
-  jsc-graph --> jsc-button
   jsc-graph --> jsc-divider
-  jsc-graph --> jsc-chip
   jsc-graph --> graph-walker-runner
+  jsc-graph --> jsc-button
+  jsc-graph --> jsc-chip
   jsc-graph --> jsc-select
+  jsc-graph --> jsc-checkbox
   jsc-auth-form --> jsc-inputbox
   jsc-auth-form --> jsc-anchor
   jsc-auth-form --> jsc-button
