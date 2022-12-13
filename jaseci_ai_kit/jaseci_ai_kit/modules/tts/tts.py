@@ -230,7 +230,6 @@ def prediction(input_text, seq2seqmodel=tacotron2, vocorder="hifi_gan", utils=ut
             audio_numpy = audio[0].data.cpu().numpy()[0]
         else:
             print("no valid vocorder")
-    print(audio_numpy)
     return audio_numpy
 
 
