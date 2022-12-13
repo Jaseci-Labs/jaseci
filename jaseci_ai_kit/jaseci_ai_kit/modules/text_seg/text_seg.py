@@ -3,7 +3,6 @@ from fastapi import HTTPException
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 from jaseci.actions.live_actions import jaseci_action
-from .action_config import TEXT_SEG_ACTION_CONFIG
 
 # loading segmentation model from hugging face
 tokenizer = AutoTokenizer.from_pretrained("dennlinger/roberta-cls-consec")

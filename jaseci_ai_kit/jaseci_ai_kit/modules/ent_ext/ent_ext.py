@@ -9,7 +9,6 @@ from flair.data import Sentence
 from flair.trainers import ModelTrainer
 import pandas as pd
 from .entity_utils import create_data, create_data_new
-from .action_config import ENT_EXT_ACTION_CONFIG
 import configparser
 from jaseci.actions.live_actions import jaseci_action
 import torch

@@ -24,12 +24,6 @@ def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
     if allow_remote and "serv_actions" not in caller_globals:
         caller_globals["serv_actions"] = serv_actions
 
-    for key, value in caller_globals.items():
-        if key.endswith("_MODULE_CONFIG"):
-            module_name = key.replace("_MODULE_CONFIG", "").lower()
-            if module_name not in action_configs:
-                action_configs[module_name] = value
-
     def decorator_func(func):
         if allow_remote:
             mark_as_remote([func, act_group, aliases, caller_globals])
@@ -110,6 +104,19 @@ def load_module_actions(mod, loaded_module=None):
     if mod:
         return True
     return False
+
+
+def load_action_config(config, module_name):
+    """
+    Load the action config of a jaseci action module
+    """
+
+    loaded_configs = importlib.import_module(config).ACTION_CONFIGS
+    if module_name and module_name in loaded_configs:
+        action_configs[module_name] = loaded_configs[module_name]
+        return True
+    else:
+        return False
 
 
 def unload_module(mod):

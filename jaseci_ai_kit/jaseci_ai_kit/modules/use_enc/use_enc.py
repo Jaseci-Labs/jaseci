@@ -4,7 +4,6 @@ import tensorflow as tf
 import tensorflow_text  # noqa
 from jaseci.actions.live_actions import jaseci_action
 from typing import Union
-from .action_config import USE_ENC_ACTION_CONFIG
 
 
 module = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")

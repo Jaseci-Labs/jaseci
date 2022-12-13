@@ -6,6 +6,7 @@ from kubernetes.client import ApiClient, CoreV1Api, AppsV1Api, RbacAuthorization
 from kubernetes.client.rest import ApiException
 
 from jaseci.utils.utils import logger
+from jaseci.actions.live_actions import load_action_config
 from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
 from .state import ServiceState as Ss
 from .config import META_CONFIG, KUBERNETES_CONFIG
@@ -467,6 +468,12 @@ class JsOrc:
     ###################################################
     #                 ACTION MANAGER                  #
     ###################################################
+    def load_action_config(self, name, config_mod):
+        """
+        Load the config for an action
+        """
+        return load_action_config(config_mod, name)
+
     def load_actions(self, name, mode):
         """
         Load an action as local, module or remote.

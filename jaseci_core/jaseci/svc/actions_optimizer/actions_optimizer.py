@@ -140,6 +140,9 @@ class ActionsOptimizer:
             # Check if there is already a local action loaded
             return
 
+        if name not in action_configs:
+            return
+
         module = action_configs[name]["module"]
         loaded_module = action_configs[name]["loaded_module"]
         if unload_existing:

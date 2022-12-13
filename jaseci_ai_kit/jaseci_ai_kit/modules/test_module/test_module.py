@@ -1,5 +1,4 @@
 from jaseci.actions.live_actions import jaseci_action
-from .action_config import TEST_MODULE_ACTION_CONFIG
 
 
 @jaseci_action(act_group=["test_module"], allow_remote=True)

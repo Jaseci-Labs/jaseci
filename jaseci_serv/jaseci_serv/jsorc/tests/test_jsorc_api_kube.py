@@ -75,6 +75,14 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         """
         Loading an action as module via jsorc
         """
+        payload = {
+            "op": "jsorc_actions_config",
+            "name": "test_module",
+            "config": "jaseci_ai_kit.config",
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
         payload = {"op": "jsorc_actions_load", "name": "test_module", "mode": "module"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -95,6 +103,14 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         """
         Unloading auto unload an action
         """
+        payload = {
+            "op": "jsorc_actions_config",
+            "name": "test_module",
+            "config": "jaseci_ai_kit.config",
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
         payload = {"op": "jsorc_actions_load", "name": "test_module", "mode": "module"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -116,6 +132,14 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         """
         Loading a remote action via JSORC, jsorc will spawn a remote pod
         """
+        payload = {
+            "op": "jsorc_actions_config",
+            "name": "test_module",
+            "config": "jaseci_ai_kit.config",
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
         payload = {"op": "jsorc_actions_load", "name": "test_module", "mode": "remote"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -140,6 +164,14 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         """
         Test JSORC unload a remote action and retire the corresponding microservices
         """
+        payload = {
+            "op": "jsorc_actions_config",
+            "name": "test_module",
+            "config": "jaseci_ai_kit.config",
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
         # Load the remote action first
         while True:
             payload = {

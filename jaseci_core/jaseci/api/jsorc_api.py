@@ -182,3 +182,15 @@ class JsOrcApi:
             return {"success": res[0], "message": res[1]}
         else:
             return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api(cli_args=["config", "name"])
+    def jsorc_actions_config(self, config: str, name: str):
+        """
+        Loading the config of an action module
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            res = hook.meta.app.load_action_config(name, config)
+            return {"success": res}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
