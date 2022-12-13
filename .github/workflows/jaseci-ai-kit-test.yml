@@ -27,7 +27,8 @@ jobs:
       with:
         python-version: "3.8"
     - name: Install dependencies
-      run: |
+      run:
+        apt-get install -y libsndfile1|
         python -m pip install --upgrade pip
 
     - name: Install jaseci_core
