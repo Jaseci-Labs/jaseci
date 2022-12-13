@@ -15,6 +15,8 @@ from jaseci.actions.remote_actions import launch_server
 
 from .tacotron2.model import Tacotron2
 from .waveglow.model import WaveGlow
+from speechbrain.pretrained import Tacotron2 as SpeechBrain
+from speechbrain.pretrained import HIFIGAN as HIFIGAN
 
 
 taco_checkpoint = "https://api.ngc.nvidia.com/v2/models/nvidia/tacotron2_pyt_ckpt_amp/versions/19.09.0/files/nvidia_tacotron2pyt_fp16_20190427"
@@ -162,10 +164,39 @@ def make_utils():
     return tacotron2, waveglow, utils
 
 
+def _pretrained_models_file_path(model_name):
+    """
+    Creating a space in cache to save the downloaded model checkpoint.
+    Parameters:
+    -----------
+    model_name: String, name of the pretrained model.
+
+    Return:
+    -----------
+    model_ckpt_file: Str, name of the checkpoint directory.
+    """
+    model_dir = os.path.join(torch.hub._get_torch_home(), "pretrained_models")
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    model_ckpt_file = os.path.join(model_dir, os.path.basename(model_name))
+    return model_ckpt_file
+
+
+# loading tacotron from nvidia and waveglow model from nvidia, preprocessing utils from nvidia
 tacotron2, waveglow, utils = make_utils()
+# loading tacotron from speechbrain
+speech_brain = SpeechBrain.from_hparams(
+    source="speechbrain/tts-tacotron2-ljspeech",
+    savedir=_pretrained_models_file_path("speechbrain_taco"),
+)
+# loading hifigan vocorder
+hifi_gan = HIFIGAN.from_hparams(
+    source="speechbrain/tts-hifigan-libritts-22050Hz",
+    savedir=_pretrained_models_file_path("hifi_gan"),
+)
 
 
-def prediction(input_text, seq2seqmodel=tacotron2, vocorder=waveglow, utils=utils):
+def prediction(input_text, seq2seqmodel=tacotron2, vocorder="hifi_gan", utils=utils):
     """
     Inferencing
 
@@ -180,12 +211,26 @@ def prediction(input_text, seq2seqmodel=tacotron2, vocorder=waveglow, utils=util
     -----------
     audio_numpy: Numpy array, 1d numpy with floats contains audio data.
     """
+    if seq2seqmodel == "tacotron2":
+        seq2seqmodel = tacotron2
+    elif seq2seqmodel == "speechbrain":
+        seq2seqmodel = speech_brain
+    else:
+        print("Print no valid vocorder")
+
     sequences, lengths = utils.prepare_input_sequence([input_text], cpu_run=True)
+
     with torch.no_grad():
         mel, _, _ = seq2seqmodel.infer(sequences, lengths)
-        audio = vocorder.infer(mel)
-    audio_numpy = audio[0].data.cpu().numpy()
-
+        if vocorder == "waveglow":
+            audio = waveglow.infer(mel)
+            audio_numpy = audio[0].data.cpu().numpy()
+        elif vocorder == "hifi_gan":
+            audio = hifi_gan.decode_batch(mel)
+            audio_numpy = audio[0].data.cpu().numpy()[0]
+        else:
+            print("no valid vocorder")
+    print(audio_numpy)
     return audio_numpy
 
 
@@ -204,12 +249,16 @@ def save_file(input_numpy, path="", rate=rate):
     success: Boolean, True if successfuly saved.
     file_path: String, path to the saved file.
     """
-    success = True
+    success = False
+    ret_dict = {
+        "save_status": success,
+    }
     if os.path.exists(path):
         try:
             file_name = "audio_file_" + str(time.time()) + ".wav"
             file_path = os.path.join(path, file_name)
             write(file_path, rate, input_numpy)
+            success = True
             ret_dict = {
                 "save_status": success,
                 "file_path": file_path,
@@ -220,19 +269,22 @@ def save_file(input_numpy, path="", rate=rate):
             file_path = None
     else:
         print("Set up directory path properly to save the audio file.")
-        success = False
-        ret_dict = {
-            "save_status": success,
-        }
+
     return ret_dict
 
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
-def synthesize(text: str, path: str = "", rate: int = rate, base64: bool = False):
-
+def synthesize(
+    text: str,
+    seq2seq_model: str = "tacotron2",
+    vocorder: str = "waveglow",
+    base64_val: bool = False,
+    path: str = "",
+    rate: int = rate,
+):
     try:
-        synthesize_audio = prediction(input_text=text)
-        if base64:
+        synthesize_audio = prediction(text, seq2seq_model, vocorder)
+        if base64_val:
             json_encoded_list = json.dumps(synthesize_audio.tolist())
             output_list = base64.b64encode(json_encoded_list)
         else:
@@ -263,4 +315,13 @@ def save_audio(audio_data: list, path: str = "", rate: int = rate):
 
 if __name__ == "__main__":
     print("Text to Speech Synthesizer up and running")
-    launch_server(port=8000)
+    save_file(
+        prediction(
+            "This is a test run",
+            seq2seqmodel=speech_brain,
+            vocorder="hifi_gan",
+            utils=utils,
+        ),
+        "./",
+    )
+    # launch_server(port=8000)
