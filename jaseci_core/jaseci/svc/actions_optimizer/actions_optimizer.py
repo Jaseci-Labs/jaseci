@@ -58,7 +58,7 @@ class ActionsOptimizer:
         if name == "":
             return self.actions_state.get_all_state()
         else:
-            return {"mode": self.actions_state.get_state(name)["mode"]}
+            return self.actions_state.get_state(name)
 
     def retire_remote(self, name):
         """
@@ -146,13 +146,14 @@ class ActionsOptimizer:
             return
 
         module = ACTION_CONFIGS[name]["module"]
+        loaded_module = ACTION_CONFIGS[name]["loaded_module"]
         if unload_existing:
             logger.info("==Actions Optimizer== unloading existing remote action {name}")
             self.unload_action_remote(name)
 
-        loaded_mod = load_module_actions(module, cur_state["module"]["loaded_module"])
+        load_module_actions(module, loaded_module)
         self.action_prep(name)
-        self.actions_state.module_action_loaded(name, module, loaded_mod)
+        self.actions_state.module_action_loaded(name, module, loaded_module)
         logger.info(f"==Actions Optimizer== LOADED module action for {name}")
 
     def unload_action_auto(self, name):

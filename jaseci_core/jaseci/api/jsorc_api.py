@@ -150,8 +150,8 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            hook.jsorc.app.load_actions(name, mode)
-            status = hook.jsorc.app.get_actions_status(name)
+            hook.meta.app.load_actions(name, mode)
+            status = hook.meta.app.get_actions_status(name)
             return {"success": True, "action_status": status}
         else:
             return {"success": False, "message": "No running JSORC service."}
@@ -163,7 +163,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            status = hook.jsorc.app.get_actions_status(name)
+            status = hook.meta.app.get_actions_status(name)
             return {"success": True, "action_status": status}
         else:
             return {"success": False, "message": "No running JSORC service."}
@@ -178,7 +178,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            res = hook.jsorc.app.unload_actions(name, mode, retire_svc)
+            res = hook.meta.app.unload_actions(name, mode, retire_svc)
             return {"success": res[0], "message": res[1]}
         else:
             return {"success": False, "message": "No running JSORC service."}

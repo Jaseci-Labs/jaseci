@@ -130,7 +130,8 @@ def unload_module(mod):
     """Unload actions module and all relevant function"""
     if mod in sys.modules.keys() and mod in live_action_modules.keys():
         for i in live_action_modules[mod]:
-            del live_actions[i]
+            if i in live_actions:
+                del live_actions[i]
         del sys.modules[mod]
         del live_action_modules[mod]
         return True
