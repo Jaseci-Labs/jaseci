@@ -1,31 +1,21 @@
 import { Button } from "@mantine/core";
-import { useState } from "react";
+import { SetStateAction } from "jotai";
+import { Dispatch, useState } from "react";
 
-function LevelFilter() {
-  const [filters, setFilters] = useState<Set<"ERROR" | "INFO" | "WARNING">>(
-    new Set(Array.from(["ERROR", "WARNING", "INFO"]))
-  );
-
-  function addFilter(value: "ERROR" | "INFO" | "WARNING") {
-    setFilters((prevState) => new Set(prevState.add(value)));
-  }
-
-  function removeFilter(value: "ERROR" | "INFO" | "WARNING") {
-    setFilters(
-      (prevState) =>
-        new Set(Array.from(prevState).filter((level) => level !== value))
-    );
-  }
-
+function LevelFilter({
+  level,
+  setLevel,
+}: {
+  level: "ERROR" | "INFO" | "WARNING" | null;
+  setLevel: Dispatch<SetStateAction<"ERROR" | "INFO" | "WARNING" | null>>;
+}) {
   return (
     <Button.Group>
       <Button
         variant="outline"
         size="xs"
-        color={filters.has("ERROR") ? "orange" : "gray"}
-        onClick={() =>
-          filters.has("ERROR") ? removeFilter("ERROR") : addFilter("ERROR")
-        }
+        color={level === "ERROR" ? "orange" : "gray"}
+        onClick={() => (level === "ERROR" ? setLevel(null) : setLevel("ERROR"))}
       >
         Error
       </Button>
@@ -33,11 +23,9 @@ function LevelFilter() {
       <Button
         variant="outline"
         size="xs"
-        color={filters.has("WARNING") ? "orange" : "gray"}
+        color={level === "WARNING" ? "orange" : "gray"}
         onClick={() =>
-          filters.has("WARNING")
-            ? removeFilter("WARNING")
-            : addFilter("WARNING")
+          level === "WARNING" ? setLevel(null) : setLevel("WARNING")
         }
       >
         Warning
@@ -45,10 +33,8 @@ function LevelFilter() {
       <Button
         variant="outline"
         size="xs"
-        color={filters.has("INFO") ? "orange" : "gray"}
-        onClick={() =>
-          filters.has("INFO") ? removeFilter("INFO") : addFilter("INFO")
-        }
+        color={level === "INFO" ? "orange" : "gray"}
+        onClick={() => (level === "INFO" ? setLevel(null) : setLevel("INFO"))}
       >
         Info
       </Button>

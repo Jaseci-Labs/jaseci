@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { client } from "../ReactQuery";
 import { parse, bgYellow } from "ansicolor";
 import { NextFont } from "@next/font/dist/types";
+import { MutableRefObject } from "react";
 
 type ServerLog = {
   log: string;
@@ -11,26 +12,40 @@ type ServerLog = {
 };
 
 function LogsViewer({
+  scrollRefs,
+  paused,
   font,
   searchTerm = "",
+  level,
+  scrollDirection,
 }: {
+  scrollRefs: MutableRefObject<HTMLTableRowElement>[];
+  paused: boolean;
   font: NextFont;
   searchTerm: string;
+  level: "ERROR" | "WARNING" | "INFO" | null;
+  scrollDirection: "top" | "bottom";
 }) {
+  const [scrollTargetRef, scrollableRef] = scrollRefs;
   const theme = useMantineTheme();
   const { data } = useQuery({
-    queryKey: [searchTerm ? `logs-${searchTerm}` : "logs"],
+    queryKey: [searchTerm ? `logs-${searchTerm}` : "logs", level],
     queryFn: async () => {
       return client
-        .post<ServerLog[]>("/js_admin/logger_get", { search: searchTerm })
+        .post<ServerLog[]>("/js_admin/logger_get", {
+          search: searchTerm,
+          level,
+        })
         .then((res) => res.data);
     },
     refetchInterval: 15000,
+    enabled: !paused,
     initialData: [],
   });
 
   return (
     <Card
+      ref={scrollableRef}
       sx={{
         background: "#FAFAFA",
         height: "500px",
@@ -38,20 +53,22 @@ function LogsViewer({
         textRendering: "optimizeLegibility",
       }}
     >
-      {Array.isArray(data) &&
-        data?.map((serverLog, index) => (
-          <Table
-            key={
-              serverLog.date + index || "" + new Date().toISOString() + index
-            }
-            fontSize="xs"
-            striped
-            highlightOnHover
-            sx={{ wordBreak: "break-word", fontFamily: "monospace" }}
-            withBorder
-          >
-            <tbody>
+      <Table
+        fontSize="xs"
+        striped
+        highlightOnHover
+        sx={{ wordBreak: "break-word", fontFamily: "monospace" }}
+        withBorder
+      >
+        <tbody>
+          {scrollDirection === "top" && <tr ref={scrollTargetRef}></tr>}
+          {Array.isArray(data) &&
+            data?.map((serverLog, index) => (
               <tr
+                key={
+                  serverLog.date + index ||
+                  "" + new Date().toISOString() + index
+                }
                 className={font.className}
                 style={{
                   background:
@@ -98,9 +115,10 @@ function LogsViewer({
                   ))}
                 </td>
               </tr>
-            </tbody>
-          </Table>
-        ))}
+            ))}
+          {scrollDirection === "bottom" && <tr ref={scrollTargetRef}></tr>}
+        </tbody>
+      </Table>
     </Card>
   );
 }
