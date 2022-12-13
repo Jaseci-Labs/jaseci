@@ -290,7 +290,8 @@ def synthesize(
             output_list = synthesize_audio.tolist()
 
         if path != "":
-            status = save_file(output_list, path, rate)
+            audio_data = np.array(output_list, dtype="float32")
+            status = save_file(audio_data, path, rate)
             ret = {"audio_wave": output_list, "saving_status": status}
         else:
             output_list = synthesize_audio.tolist()
