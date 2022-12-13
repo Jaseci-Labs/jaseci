@@ -2,7 +2,6 @@
 Module that manage and optimizes the actions configuration of Jaseci
 """
 
-from jaseci.svc.actions_optimizer.configs import ACTION_CONFIGS
 from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.utils.utils import logger
 from jaseci.svc.actions_optimizer.actions_state import ActionsState
@@ -12,6 +11,7 @@ from jaseci.actions.live_actions import (
     unload_remote_actions,
     load_remote_actions,
     live_actions,
+    action_configs,
 )
 import requests
 from kubernetes.client.rest import ApiException
@@ -64,7 +64,7 @@ class ActionsOptimizer:
         """
         Retire a microservice through the kube service
         """
-        config = ACTION_CONFIGS[name]["remote"]
+        config = action_configs[name]["remote"]
         self.kube_delete(config)
         self.actions_state.remove_remote(name)
 
@@ -72,7 +72,7 @@ class ActionsOptimizer:
         """
         Spawn a microservice through the kube service
         """
-        config = ACTION_CONFIGS[name]["remote"]
+        config = action_configs[name]["remote"]
         self.kube_create(config)
         url = f"http://{config['Service']['metadata']['name']}/"
         return url
@@ -140,8 +140,8 @@ class ActionsOptimizer:
             # Check if there is already a local action loaded
             return
 
-        module = ACTION_CONFIGS[name]["module"]
-        loaded_module = ACTION_CONFIGS[name]["loaded_module"]
+        module = action_configs[name]["module"]
+        loaded_module = action_configs[name]["loaded_module"]
         if unload_existing:
             self.unload_action_remote(name)
 

@@ -13,6 +13,7 @@ import importlib
 
 live_actions = {}
 live_action_modules = {}
+action_configs = {}
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
@@ -22,6 +23,12 @@ def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
     ]
     if allow_remote and "serv_actions" not in caller_globals:
         caller_globals["serv_actions"] = serv_actions
+
+    for key, value in caller_globals.items():
+        if key.endswith("_MODULE_CONFIG"):
+            module_name = key.replace("_MODULE_CONFIG", "").lower()
+            if module_name not in action_configs:
+                action_configs[module_name] = value
 
     def decorator_func(func):
         if allow_remote:

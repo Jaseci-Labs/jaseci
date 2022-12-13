@@ -12,6 +12,7 @@ from .train import (
     NERDataMaker,
     train_model,
 )
+from .action_config import TFM_NER_ACTION_CONFIG
 import shutil
 
 warnings.filterwarnings("ignore")

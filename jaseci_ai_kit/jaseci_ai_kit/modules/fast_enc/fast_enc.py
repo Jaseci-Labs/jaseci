@@ -14,6 +14,7 @@ from .config import (
     clf_json_file_path,
     base_json_file_path,
 )
+from .action_config import FAST_ENC_ACTION_CONFIG
 
 model = None
 """

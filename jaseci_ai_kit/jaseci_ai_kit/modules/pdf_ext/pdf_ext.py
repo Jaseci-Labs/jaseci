@@ -7,6 +7,8 @@ from jaseci.actions.live_actions import jaseci_action
 from PyPDF2 import PdfFileReader
 from fastapi import HTTPException
 
+from .action_config import PDF_EXT_ACTION_CONFIG
+
 
 def download_pdf(url: str, filename: str):
     r"""method for downloading PDF from URL
