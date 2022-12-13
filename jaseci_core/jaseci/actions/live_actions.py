@@ -105,27 +105,6 @@ def load_module_actions(mod, loaded_module=None):
     return False
 
 
-# def load_module_actions(mod, loaded_module=None):
-#     """Load all jaseci actions from python module"""
-#     if loaded_module is None:
-#         loaded_module = importlib.import_module(mod)
-#     else:
-#         loaded_module = importlib.reload(loaded_module)
-#         # recover live_actions
-#         core_mod_name = mod.split(".")[-1]
-#         if core_mod_name == "bi_enc":
-#             loaded_mod_name = "jaseci_ai_kit.modules.encoders.bi_enc"
-#         else:
-#             loaded_mod_name = f"jaseci_ai_kit.modules.{core_mod_name}.{core_mod_name}"
-#
-#         for i in live_action_modules[loaded_mod_name]:
-#             live_actions[i] = live_actions[f"_inactive_{i}"]
-#             del live_actions[f"_inactive_{i}"]
-#     if loaded_module:
-#         return loaded_module
-#     return False
-
-
 def unload_module(mod):
     """Unload actions module and all relevant function"""
     if mod in sys.modules.keys() and mod in live_action_modules.keys():

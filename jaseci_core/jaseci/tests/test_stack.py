@@ -50,7 +50,6 @@ class StackTests(CoreTest):
             ["actions_unload_module", {"name": "jaseci.actions.standard.file"}],
         )
         ret = self.call(self.smast, ["actions_module_list", {}])
-        print(ret)
         self.assertEqual(len(ret), before - 2)
         ret = self.call(
             self.smast,
@@ -61,7 +60,6 @@ class StackTests(CoreTest):
             ["actions_load_module", {"mod": "jaseci.actions.standard.file"}],
         )
         ret = self.call(self.smast, ["actions_module_list", {}])
-        print(ret)
         self.assertEqual(len(ret), before)
 
     def test_action_module_unload_reload_aliased(self):

@@ -201,7 +201,7 @@ class Kube:
                 .status.phase
                 == "Running"
             )
-        except Exception as e:
+        except Exception:
             return False
 
     def defaults(self):

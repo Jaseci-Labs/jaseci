@@ -97,7 +97,6 @@ class ActionsOptimizer:
         Return True if the remote action is loaded successfully,
         False otherwise
         """
-        logger.info(f"==Actions Optimizer== LOAD remote action for {name}")
         cur_state = self.actions_state.get_state(name)
         if cur_state is None:
             cur_state = self.actions_state.init_state(name)
@@ -125,7 +124,6 @@ class ActionsOptimizer:
             load_remote_actions(url)
             self.action_prep(name)
             self.actions_state.remote_action_loaded(name)
-            logger.info(f"==Actions Optimizer== LOADED remote action for {name}")
             return True
 
         return False
@@ -134,27 +132,22 @@ class ActionsOptimizer:
         """
         Load an action module
         """
-        logger.info(f"==Actions Optimizer== LOAD module action for {name}")
         cur_state = self.actions_state.get_state(name)
         if cur_state is None:
-            logger.info("==Actions Optimizer== initialize actions_state")
             cur_state = self.actions_state.init_state(name)
 
         if cur_state["mode"] == "module":
-            logger.info(f"==Actions Optimizer== {name} already loaded as module")
             # Check if there is already a local action loaded
             return
 
         module = ACTION_CONFIGS[name]["module"]
         loaded_module = ACTION_CONFIGS[name]["loaded_module"]
         if unload_existing:
-            logger.info("==Actions Optimizer== unloading existing remote action {name}")
             self.unload_action_remote(name)
 
         load_module_actions(module, loaded_module)
         self.action_prep(name)
         self.actions_state.module_action_loaded(name, module, loaded_module)
-        logger.info(f"==Actions Optimizer== LOADED module action for {name}")
 
     def unload_action_auto(self, name):
         """
@@ -185,27 +178,6 @@ class ActionsOptimizer:
 
         unload_module(module_name)
         unload_module(loaded_module)
-        # logger.info("deleting loaded module")
-        # logger.info(loaded_module)
-        # del loaded_module
-
-        # Alright we are in prime hack terrotoriy now lol
-        # core_mod_name = module_name.split(".")[-1]
-        # if core_mod_name == "bi_enc":
-        #     possible_module_name = [
-        #         module_name,
-        #         "jaseci_ai_kit.modules.encoders",
-        #         "jaseci_ai_kit.modules.encoders.bi_enc",
-        #     ]
-        # else:
-        #     possible_module_name = [
-        #         module_name,
-        #         f"jaseci_ai_kit.modules.{core_mod_name}",
-        #         f"jaseci_ai_kit.modules.{core_mod_name}.{core_mod_name}",
-        #     ]
-        # for mod in possible_module_name:
-        #     unload_module(mod)
-
         self.actions_state.module_action_unloaded(name)
 
         return (True, f"Action module {name} unloaded.")
