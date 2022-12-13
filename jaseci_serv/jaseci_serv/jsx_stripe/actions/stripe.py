@@ -329,7 +329,11 @@ def get_customer_subscription(
 
 @jaseci_action()
 def create_payment_method(
-    card_type: str, card: dict, mock_api: bool = False, meta: dict = {}
+    card_type: str,
+    card: dict,
+    billing_details: dict = {},
+    mock_api: bool = False,
+    meta: dict = {},
 ):
     """create payment method"""
     set_api_key(meta)
@@ -338,7 +342,9 @@ def create_payment_method(
         return {"success": True}
 
     try:
-        return stripe.PaymentMethod.create(type=card_type, card=card)
+        return stripe.PaymentMethod.create(
+            type=card_type, card=card, billing_details=billing_details
+        )
 
     except Exception as e:
         return {"message": str(e)}
@@ -347,9 +353,10 @@ def create_payment_method(
 @jaseci_action()
 def create_trial_subscription(
     payment_method_id: str,
-    price_id: str,
     customer_id: str,
+    items: list = [],
     trial_period_days: int = 14,
+    expand: list = [],
     mock_api: bool = False,
     meta: dict = {},
 ):
@@ -360,18 +367,18 @@ def create_trial_subscription(
         return {"success": True}
 
     try:
-        # attach payment method to customer
-        attach_payment_method(payment_method_id, customer_id, meta)
+        if payment_method_id:
+            # attach payment method to customer
+            attach_payment_method(payment_method_id, customer_id, meta)
 
-        # set card to default payment method
-        update_default_payment_method(customer_id, payment_method_id, meta)
+            # set card to default payment method
+            update_default_payment_method(customer_id, payment_method_id, meta)
 
         return stripe.Subscription.create(
             customer=customer_id,
-            items=[
-                {"price": price_id},
-            ],
+            items=items,
             trial_period_days=trial_period_days,
+            expand=expand,
         )
     except Exception as e:
         return {"message": str(e)}
