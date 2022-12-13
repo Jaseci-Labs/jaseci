@@ -26,9 +26,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: "3.8"
+
     - name: Install dependencies
-      run:
-        apt-get install -y libsndfile1/
+      run: |
+        apt-get install -y libsndfile1
         python -m pip install --upgrade pip
 
     - name: Install jaseci_core
