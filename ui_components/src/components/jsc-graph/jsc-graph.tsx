@@ -344,6 +344,12 @@ export class JscGraph {
     }
 
     this.network.on('click', params => {
+      // reset ui if we click on the background
+      if (!params.nodes?.length && !params.edges?.length) {
+        this.network.unselectAll();
+        this.clickedNode = undefined;
+        this.clickedEdge = undefined;
+      }
       this.handleNetworkClick(this.network, params);
     });
 
@@ -396,89 +402,116 @@ export class JscGraph {
           </div>
         ) : (
           this.serverUrl && (
-            <div style={{ height: this.height, width: 'auto', position: 'relative' }}>
+            <div style={{ height: this.height, maxHeight: this.height, width: 'auto', position: 'relative' }}>
               <div
                 style={{
-                  height: '260px',
-                  width: '340px',
-                  borderRadius: '4px',
-                  padding: '16px',
-                  top: '20px',
-                  right: '20px',
                   position: 'absolute',
+                  top: '0px',
+                  bottom: '0px',
+                  right: '0px',
+                  minWidth: '300px',
+                  maxWidth: '360px',
+                  height: '100%',
+                  display: 'flex',
+                  gap: '14px',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  paddingTop: '20px',
+                  paddingBottom: '20px',
                   zIndex: '9999',
-                  border: '2px solid #f4f4f4',
-                  background: '#fff',
-                  boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 2px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
-                  overflowY: 'auto',
-                  overflowX: 'hidden',
+                  overflowY: 'scroll',
                 }}
               >
-                <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
-                  <input type="checkbox" defaultChecked={true} />
-                  <div class="collapse-title text-md font-medium">Context</div>
-                  <div class="collapse-content">{this.renderContext()}</div>
+                {' '}
+                <div
+                  style={{
+                    minHeight: '300px',
+                    maxHeight: '500px',
+                    width: '100%',
+                    borderRadius: '4px',
+                    padding: '16px',
+                    border: '2px solid #f4f4f4',
+                    background: '#fff',
+                    boxShadow: 'rgb(0 0 0 / 10%) 0px 1px 2px 0px, rgb(0 0 0 / 1%) 0px 0px 2px 1px',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                  }}
+                >
+                  <jsc-divider label="Context" orientation="horizontal"></jsc-divider>
+                  <div>{this.renderContext()}</div>
                 </div>
-
-                <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
-                  <input type={'checkbox'} defaultChecked={true} />
-                  <div class={'collapse-title text-md font-medium'}>Behaviour</div>
-                  <div class="collapse-content">
-                    <jsc-checkbox
-                      label={'Expand nodes on click'}
-                      size={'sm'}
-                      value={String(this.onFocus === 'expand')}
-                      onValueChanged={event => {
-                        event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
+                {this.clickedNode && (
+                  <div
+                    style={{
+                      minHeight: '400px',
+                      maxHeight: '500px',
+                      width: '100%',
+                      borderRadius: '4px',
+                      padding: '16px',
+                      margin: 'auto 0',
+                      border: '2px solid #f4f4f4',
+                      background: '#fff',
+                      boxShadow: 'rgb(0 0 0 / 10%) 0px 1px 2px 0px, rgb(0 0 0 / 1%) 0px 0px 2px 1px',
+                      overflowY: 'auto',
+                      overflowX: 'auto',
+                    }}
+                  >
+                    <jsc-divider label="Run Walker" orientation="horizontal"></jsc-divider>
+                    <graph-walker-runner
+                      onWalkerCompleted={async () => {
+                        await this.getGraphState();
                       }}
-                    ></jsc-checkbox>
+                      walkers={this.walkers}
+                      serverUrl={this.serverUrl}
+                      sentinel={this.activeSentinel}
+                      nodeId={this.clickedNode.id as string}
+                    ></graph-walker-runner>
                   </div>
-                </div>
+                )}
+                <div
+                  style={{
+                    minHeight: '100px',
+                    maxHeight: '200px',
+                    width: '100%',
+                    borderRadius: '4px',
+                    padding: '16px',
+                    border: '2px solid #f4f4f4',
+                    background: '#fff',
+                    boxShadow: 'rgb(0 0 0 / 10%) 0px 1px 2px 0px, rgb(0 0 0 / 1%) 0px 0px 2px 1px',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                  }}
+                >
+                  <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
+                  <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
+                  {!this.hiddenGroups?.size && <div>No hidden nodes</div>}
 
-                <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
-                  <input type={'checkbox'} defaultChecked={true} />
-                  <div class={'collapse-title text-md font-medium'}>Display</div>
-                  <div class="collapse-content">
-                    <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
-                    <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
-                    {Array.from(this.hiddenGroups).map(group => (
-                      <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
-                        <jsc-chip label={group}>
-                          <svg
-                            slot="right"
-                            onClick={() => this.showNodeGroup(group)}
-                            style={{ cursor: 'pointer' }}
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            class="inline-block w-4 h-4 stroke-current"
-                          >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                          </svg>
-                        </jsc-chip>
-                      </div>
-                    ))}
-                  </div>
+                  {Array.from(this.hiddenGroups).map(group => (
+                    <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
+                      <jsc-chip label={group}>
+                        <svg
+                          slot="right"
+                          onClick={() => this.showNodeGroup(group)}
+                          style={{ cursor: 'pointer' }}
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          class="inline-block w-4 h-4 stroke-current"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </jsc-chip>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div style={{ position: 'absolute', display: 'flex', top: '20px', left: '20px', zIndex: '9999' }}>
                 {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
-                {this.clickedNode && (
-                  <graph-walker-runner
-                    onWalkerCompleted={async () => {
-                      await this.getGraphState();
-                    }}
-                    walkers={this.walkers}
-                    serverUrl={this.serverUrl}
-                    sentinel={this.activeSentinel}
-                    nodeId={this.clickedNode.id as string}
-                  ></graph-walker-runner>
-                )}
               </div>
 
               {/*Graph Switcher*/}
-              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999' }}>
+              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999', display: 'flex', gap: '2px' }}>
                 <jsc-select
                   placeholder={'Select Graph'}
                   onValueChanged={e => {
@@ -487,6 +520,15 @@ export class JscGraph {
                   }}
                   options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
                 ></jsc-select>
+
+                <jsc-checkbox
+                  label={'Expand nodes on click'}
+                  size={'sm'}
+                  value={String(this.onFocus === 'expand')}
+                  onValueChanged={event => {
+                    event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
+                  }}
+                ></jsc-checkbox>
               </div>
               <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: this.height }}></div>
             </div>
