@@ -70,11 +70,12 @@ We will obtain cluster labels for each text document in this section. The output
 
 - embeddings: list - This accept list of embedded text features, this is a mandotory field.
 
-- algorithm: str - By default the value of this is "hbdscan". So far jaseci only support `hbdscan` algorithm for clutering.
+- algorithm: str - By default the value of this is "hbdscan". So far jaseci only support `hbdscan` and `kmeans` algorithms for clutering.
 
-- min_samples: int - This is a mandotory field. The minimum number of data points in a cluster is represented here. Increasing this will reduces number of clusters.
+- min_samples: int - This is a mandotory field if only you are using `hbdscan` algorithm. The minimum number of data points in a cluster is represented here. Increasing this will reduces number of clusters.
 
-- min_cluster_size: int - This is also a mandotory field. This represents how conservative you want your clustering should be. Larger values more data points will be considered as noise
+- min_cluster_size: int - This is a mandotory field if only you are using `hbdscan` algorithm. This represents how conservative you want your clustering should be. Larger values more data points will be considered as noise
+- n_clusters: int - This is also a mandotory field if only you are using `kmeans` algorithm. This defines how many number of clusters you need.
 
 ```jac
 can cluster.get_cluster_labels;
@@ -83,12 +84,19 @@ has labels;
 has final_features;
 
 can set_lables{
-    labels = cluster.get_cluster_labels(final_features,"hbdscan",2,2);
+    labels = cluster.get_cluster_labels(embeddings=final_features,algorithm="hbdscan",min_samples=2,min_cluster_size=2);
     report labels;
     }
 ```
 
+If you are going to use `kmeans` algorithm, the `set_lables` ability should be as follows;
 
+```
+can set_lables{
+    labels = cluster.get_cluster_labels(embeddings=final_features,algorithm="kmeans",min_samples=0,min_cluster_size=0,n_clusters=2);
+    report labels;
+    }
+```
 
 ## **4. Wrapping up all together**
 
@@ -133,8 +141,8 @@ walker init{
     has final_features;
 
     can set_lables{
-        labels = cluster.get_cluster_labels(final_features,"hbdscan",2,2);
-        report labels;
+    labels = cluster.get_cluster_labels(embeddings=final_features,algorithm="hbdscan",min_samples=2,min_cluster_size=2);
+    report labels;
     }
 
     root {

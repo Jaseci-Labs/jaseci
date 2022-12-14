@@ -29,5 +29,5 @@ walker test_get_cluster {
                 [ 4.79636,5.1774173],[ 8.819081,11.591265],[24.452982,2.4640806],
                 [ 2.793474,8.419835 ],[2.1980357,7.805085 ],[ 5.394445,4.5522223],
                 [ 2.5296957,8.163622 ],[ 5.1212783,4.836675 ],[ 9.165633,11.404499 ]];
-    report cluster.get_cluster_labels(embedds,"hbdscan",2,2);
+    report cluster.get_cluster_labels(embedds,"kmeans",2,2,2);
 }
