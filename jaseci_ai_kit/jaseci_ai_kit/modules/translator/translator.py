@@ -55,41 +55,7 @@ def translate(text: Union[str, List[str]], src_lang: str, tgt_lang: str) -> List
 
 
 @jaseci_action(act_group=["translator"], allow_remote=True)
-def fill_mask(text: str, src_lang: str, topk=10) -> List[str]:
-    """
-    Fill in the blank <mask> in a sentence.
-
-    Args:
-        text (str): Text to fill in the blank.
-        src_lang (str): Source language.
-        topk (int, optional): Number of predictions to return. Defaults to 10.
-
-    Returns:
-        List[str]: Predictions.
-    """
-    try:
-        if src_lang not in supported_languages:
-            raise ValueError(f"Unsupported source language: {src_lang}")
-
-        text = f"</s> {text} </s> {src_lang}"
-        input_ids = tokenizer([text], add_special_tokens=False, return_tensors="pt")[
-            "input_ids"
-        ]
-        with torch.no_grad():
-            logits = model(input_ids).logits
-
-        masked_index = (input_ids[0] == tokenizer.mask_token_id).nonzero().item()
-        probs = logits[0, masked_index].softmax(dim=0)
-        _, predictions = probs.topk(topk)
-        preds = tokenizer.decode(predictions).split()
-        return preds
-    except Exception as e:
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@jaseci_action(act_group=["translator"], allow_remote=True)
-def supported_languages() -> List[str]:
+def get_supported_languages() -> List[str]:
     """
     Get a list of supported languages.
 
