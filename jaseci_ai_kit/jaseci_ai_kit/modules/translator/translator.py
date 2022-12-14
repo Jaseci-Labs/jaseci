@@ -63,4 +63,3 @@ def get_supported_languages() -> List[str]:
         List[str]: List of supported languages.
     """
     return supported_languages
-
