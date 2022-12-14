@@ -1,5 +1,5 @@
 """
-Queue api functions as a mixin
+JSORC APIs
 """
 
 import yaml
@@ -140,3 +140,57 @@ class JsOrcApi:
             return res
         except Exception:
             return {"error": f"Not JSON Serializable! class {res.__class__.__name__}"}
+
+    @Interface.admin_api(cli_args=["name"])
+    def jsorc_actions_load(self, name: str, mode: str):
+        """
+        Load an action as remote or local mode through JSORC.
+        JSORC will load the corresponding module or start a microservice if needed.
+        Return the current status of the action.
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            hook.meta.app.load_actions(name, mode)
+            status = hook.meta.app.get_actions_status(name)
+            return {"success": True, "action_status": status}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api(cli_args=["name"])
+    def jsorc_actions_status(self, name: str):
+        """
+        Get the current status of an action
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            status = hook.meta.app.get_actions_status(name)
+            return {"success": True, "action_status": status}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api(cli_args=["name"])
+    def jsorc_actions_unload(
+        self, name: str, mode: str = "auto", retire_svc: bool = True
+    ):
+        """
+        Unload an action through JSORC.
+        If retire_svc is set to True (true by default), it will also retire the corresponding microservice.
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            res = hook.meta.app.unload_actions(name, mode, retire_svc)
+            return {"success": res[0], "message": res[1]}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api(cli_args=["config", "name"])
+    def jsorc_actions_config(self, config: str, name: str):
+        """
+        Loading the config of an action module
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            res = hook.meta.app.load_action_config(name, config)
+            return {"success": res}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
