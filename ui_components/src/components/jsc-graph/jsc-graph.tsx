@@ -416,8 +416,8 @@ export class JscGraph {
                   gap: '14px',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  paddingTop: '20px',
-                  paddingBottom: '20px',
+                  paddingTop: '5px',
+                  paddingBottom: '5px',
                   zIndex: '9999',
                   overflowY: 'scroll',
                 }}
@@ -425,8 +425,7 @@ export class JscGraph {
                 {' '}
                 <div
                   style={{
-                    minHeight: '300px',
-                    maxHeight: '500px',
+                    height: '280px',
                     width: '100%',
                     borderRadius: '4px',
                     padding: '16px',
@@ -443,8 +442,7 @@ export class JscGraph {
                 {this.clickedNode && (
                   <div
                     style={{
-                      minHeight: '400px',
-                      maxHeight: '500px',
+                      height: '280px',
                       width: '100%',
                       borderRadius: '4px',
                       padding: '16px',
