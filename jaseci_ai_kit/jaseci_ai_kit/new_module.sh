@@ -12,6 +12,9 @@ if [ -d "modules/$MODULE_NAME" ]; then
     exit 1
 fi
 
+touch $MODULE_NAME.py
+echo "from jaseci_ai_kit.modules.$MODULE_NAME.$MODULE_NAME import * # noqa" >> $MODULE_NAME.py
+
 mkdir modules/$MODULE_NAME
 touch modules/$MODULE_NAME/__init__.py
 touch modules/$MODULE_NAME/$MODULE_NAME.py
