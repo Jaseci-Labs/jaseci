@@ -194,3 +194,131 @@ class JsOrcApi:
             return {"success": res}
         else:
             return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_actionstracking_start(self):
+        """ "
+        Instruct JSORC to start tracking any changes in actions state
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            hook.jsorc.app.actions_tracking_start()
+            return {"success": True}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_actionstracking_stop(self):
+        """ "
+        Instruct JSORC to start tracking any changes in actions state
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.actions_tracking_stop()
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_benchmark_start(self):
+        """
+        Tell JSORC to start collecting request performance metrics
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            hook.jsorc.app.benchmark_start()
+            return {"success": True}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_benchmark_report(self):
+        """
+        Report the collected request performance metrics of the currently ongoing benchmark
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.benchmark_report()
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_benchmark_stop(self, report: bool = True):
+        """
+        End the benchmark period and report performance metrics
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.benchmark_stop(report)
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_systemtracking_start(self):
+        """
+        Ask JSORC to start tracking the state of the system as observed by JSORC on every interval.
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            hook.jsorc.app.state_tracking_start()
+            return {"success": True}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_systemtracking_report(self):
+        """
+        Report the tracked system states so far
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.state_tracking_report()
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_systemtracking_stop(self):
+        """
+        Stop state tracking for JSORC
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            return hook.jsorc.app.state_tracking_stop()
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_actionpolicy_set(self, policy_name: str, policy_params: dict = {}):
+        """
+        Set an action optimization policy for JSORC
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            res = hook.jsorc.app.set_action_policy(policy_name, policy_params)
+            if res is True:
+                return {
+                    "success": True,
+                    "message": f"Action optimization policy configured as {policy_name} with params {policy_params}",
+                }
+            else:
+                return {"success": False, "message": res}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_actionpolicy_get(self):
+        """
+        Get the current active action optimization policy
+        """
+        hook = self._h
+        if hook.meta.run_svcs:
+            policy = hook.jsorc.app.get_action_policy()
+            return {"success": True, "policy": policy}
+        else:
+            return {"success": False, "message": "No running JSORC service."}
+
+    @Interface.admin_api()
+    def jsorc_loadtest(self, test: str, experiment: str = "", mem: int = 0):
+        """
+        load test API. overwritten in jaseci_serv
+        """
+        pass

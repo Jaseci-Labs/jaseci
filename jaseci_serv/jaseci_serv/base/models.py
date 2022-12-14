@@ -14,6 +14,7 @@ from jaseci.element.master import Master as CoreMaster
 from jaseci.element.super_master import SuperMaster as CoreSuper
 from jaseci_serv.settings import JASECI_CONFIGS
 from jaseci_serv.svc import MetaService
+from jaseci_serv.base.jsorc import JsOrcApi
 
 
 class Master(CoreMaster):
@@ -76,7 +77,7 @@ class Master(CoreMaster):
             return False
 
 
-class SuperMaster(Master, CoreSuper):
+class SuperMaster(Master, JsOrcApi, CoreSuper):
     @Interface.admin_api()
     def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
         """
