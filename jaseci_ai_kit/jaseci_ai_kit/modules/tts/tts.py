@@ -185,7 +185,7 @@ def _pretrained_models_file_path(model_name):
 # loading tacotron from nvidia and waveglow model from nvidia, preprocessing utils from nvidia
 tacotron2, waveglow, utils = make_utils()
 # loading tacotron from speechbrain
-speech_brain = SpeechBrain.from_hparams(
+speechbrain = SpeechBrain.from_hparams(
     source="speechbrain/tts-tacotron2-ljspeech",
     savedir=_pretrained_models_file_path("speechbrain_taco"),
 )
@@ -214,7 +214,7 @@ def prediction(input_text, seq2seqmodel=tacotron2, vocorder="hifi_gan", utils=ut
     if seq2seqmodel == "tacotron2":
         seq2seqmodel = tacotron2
     elif seq2seqmodel == "speechbrain":
-        seq2seqmodel = speech_brain
+        seq2seqmodel = speechbrain
     else:
         print("Print no valid vocorder")
 
@@ -315,13 +315,4 @@ def save_audio(audio_data: list, path: str = "", rate: int = rate):
 
 if __name__ == "__main__":
     print("Text to Speech Synthesizer up and running")
-    save_file(
-        prediction(
-            "This is a test run",
-            seq2seqmodel=speech_brain,
-            vocorder="hifi_gan",
-            utils=utils,
-        ),
-        "./",
-    )
-    # launch_server(port=8000)
+    launch_server(port=8000)

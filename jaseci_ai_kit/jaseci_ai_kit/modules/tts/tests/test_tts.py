@@ -18,15 +18,13 @@ class TestTTSModule(CoreTest):
     def test_synthesize(self, ret):
         print(len(ret["report"][0]["audio_wave"]))
         self.assertEqual(ret["success"], True)
-        # self.assertEqual(type(ret["report"][0]["audio_wave"]), "list")
+        self.assertIsInstance(ret["report"][0]["audio_wave"], list)
 
-    """
     @pytest.mark.order(2)
     @jac_testcase("tts.jac", "test_save_audio")
     def test_save_audio(self, ret):
         self.assertEqual(ret["success"], True)
         self.assertEqual(ret["report"][0]["save_status"], True)
-    """
 
     @classmethod
     def tearDownClass(cls):
