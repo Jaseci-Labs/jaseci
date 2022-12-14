@@ -1,6 +1,6 @@
-walker test_translate_hindi_eng {
+walker test_translate_sinhala_eng {
     can translator.translate;
-    report translator.translate("नमस्ते, आप कैसे हैं?", "hi_IN", "en_XX");
+    report translator.translate("හෙලෝ, කොහොමද ඔයාට?", "si_LK", "en_XX");
 }
 
 walker test_translate_eng_german {
