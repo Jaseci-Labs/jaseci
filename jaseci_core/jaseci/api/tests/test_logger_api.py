@@ -36,10 +36,10 @@ class LoggerApiTest(CoreTest):
         self.assertTrue(ret[0]["log"].endswith("Hello world!"))
 
     def test_limited_sliding_buffer(self):
-        buffer = LimitedSlidingBuffer(max_size=5)
-
+        buffer = LimitedSlidingBuffer(max_size=25)
         buffer.write("Hello world!")
-        buffer.write("Hello there!")
-
-        self.assertEqual(buffer.getvalue(), "Hello")
-        self.assertEqual(buffer.current_size, 5)
+        buffer.write("Hi there!")
+        buffer.write("Hello world!")
+        buffer.write("Hi there!")
+        self.assertEqual(buffer.getvalue(), "ere!Hello world!Hi there!")
+        self.assertEqual(buffer.current_size, 25)

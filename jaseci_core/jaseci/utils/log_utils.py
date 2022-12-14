@@ -42,13 +42,16 @@ class LimitedSlidingBuffer(StringIO):
 
     def write(self, str: str):
         self.current_size += len(str)
+        ret = StringIO.write(self, str)
 
         if self.current_size > self.max_size:
-            size_diff = self.current_size - self.max_size
-            new_str = str[0 : len(str) - size_diff]
+            new_size = min(int(self.current_size / 2), self.max_size)
+            keep_str = self.getvalue()
+            if len(keep_str) > 1:
+                keep_str = keep_str[len(keep_str) - new_size :]
+                self.truncate(0)
+                self.seek(0)
+                StringIO.write(self, keep_str)
+            self.current_size = new_size
 
-            self.current_size = self.max_size
-
-            return StringIO.write(self, new_str)
-
-        return StringIO.write(self, str)
+        return ret
