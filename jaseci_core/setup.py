@@ -32,6 +32,7 @@ setup(
         "pytest-xdist",
         "pytest-cov",
         "gprof2dot",
+        "metadata_parser",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
