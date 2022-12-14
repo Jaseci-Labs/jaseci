@@ -1,4 +1,5 @@
-from jaseci.utils.log_utils import parse_logs
+import logging
+from jaseci.utils.log_utils import LimitedSlidingBuffer, parse_logs
 from jaseci.utils.test_core import CoreTest
 
 
@@ -33,3 +34,12 @@ class LoggerApiTest(CoreTest):
 
         self.assertEqual(len(ret), 1)
         self.assertTrue(ret[0]["log"].endswith("Hello world!"))
+
+    def test_limited_sliding_buffer(self):
+        buffer = LimitedSlidingBuffer(max_size=5)
+
+        buffer.write("Hello world!")
+        buffer.write("Hello there!")
+
+        self.assertEqual(buffer.getvalue(), "Hello")
+        self.assertEqual(buffer.current_size, 5)
