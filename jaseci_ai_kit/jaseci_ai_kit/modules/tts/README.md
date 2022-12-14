@@ -35,9 +35,10 @@ walker synthesize{
 **Parameters in `synthesize` action**
 
 1. text (str) : Input text string. The accepted language is English
-2. path (str) : If you want to save the generated audio in your file system, provide the output path here.
-3. rate (int) : The audio bitrate.
-4. base64 (boolean) : If you want to convert the output into base64, set this value to `True`
+2. seqseq_model: Str
+3. path (str) : If you want to save the generated audio in your file system, provide the output path here.
+4. rate (int) : The audio bitrate.
+5. base64 (boolean) : If you want to convert the output into base64, set this value to `True`
 
 ## **3. Save generated audio into the local file system.**
 
