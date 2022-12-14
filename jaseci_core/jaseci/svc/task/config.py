@@ -6,8 +6,11 @@ DEFAULT_URL = (
     f':{os.getenv("REDIS_PORT", "6379")}/{os.getenv("REDIS_DB", "1")}'
 )
 
+# default true
+TASK_ENABLED = os.getenv("TASK_ENABLED", "true") == "true"
+
 TASK_CONFIG = {
-    "enabled": True,
+    "enabled": TASK_ENABLED,
     "quiet": True,
     "broker_url": DEFAULT_URL,
     "result_backend": DEFAULT_URL,

@@ -5,8 +5,8 @@ from rest_framework import serializers as slzrs
 from rest_framework.serializers import HyperlinkedIdentityField
 from django.contrib.auth.models import AnonymousUser
 
+from jaseci.utils.json_handler import json_str_to_jsci_dict
 from jaseci_serv.base import models
-from jaseci_serv.hook.orm import json_str_to_jsci_dict
 
 
 class JaseciObjectSerializer(slzrs.HyperlinkedModelSerializer):

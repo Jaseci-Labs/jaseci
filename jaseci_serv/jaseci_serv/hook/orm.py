@@ -4,18 +4,18 @@ core engine.
 
 FIX: Serious permissions work needed
 """
+import json
 import uuid
 
+from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
 
 import jaseci as core_mod
 from jaseci.hook import RedisHook
 from jaseci.utils import utils
-from jaseci.utils.json_handler import json_str_to_jsci_dict
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
-from datetime import datetime
-import json
+from jaseci_serv.base.models import GlobalVars, JaseciObject
 
 
 class OrmHook(RedisHook):
@@ -23,11 +23,11 @@ class OrmHook(RedisHook):
     Hooks Django ORM database for Jaseci objects to Jaseci's core engine.
     """
 
-    def __init__(self, objects, globs):
-        self.objects = objects
-        self.globs = globs
+    def __init__(self, meta):
+        self.objects = JaseciObject.objects
+        self.globs = GlobalVars.objects
         self.db_touch_count = 0
-        super().__init__()
+        super().__init__(meta)
 
     ####################################################
     #                DATASOURCE METHOD                 #

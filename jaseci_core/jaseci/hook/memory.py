@@ -1,9 +1,11 @@
-from json import dumps, loads
 import sys
+from json import dumps, loads
+
 from jaseci.utils.utils import find_class_and_import
+from .hook import Hook
 
 
-class MemoryHook:
+class MemoryHook(Hook):
     """
     Set of virtual functions to be used as hooks to allow access to
     the complete set of items across jaseci object types. This class contains
@@ -11,13 +13,12 @@ class MemoryHook:
     to the objects. They return jaseci core types.
     """
 
-    def __init__(self):
-        from jaseci.actions.live_actions import get_global_actions
-
+    def __init__(self, meta):
         self.mem = {"global": {}}
         self._machine = None
         self.save_obj_list = set()
         self.save_glob_dict = {}
+        super().__init__(meta)
 
     ####################################################
     #               COMMON GETTER/SETTER               #
@@ -228,4 +229,4 @@ class MemoryHook:
         return cls
 
     def clear_cache(self):
-        MemoryHook.__init__(self)
+        MemoryHook.__init__(self, self.meta)

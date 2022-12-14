@@ -1,6 +1,7 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
-from jaseci.svc import MailService
+from jaseci.svc import MetaService
+from jaseci.svc.mail import Mailer
 from jaseci.svc.mail import MAIL_CONFIG
 from jaseci.utils.test_core import CoreTest
 
@@ -11,22 +12,26 @@ class MailLibTest(CoreTest):
     fixture_src = __file__
 
     def __init__(self, *args, **kwargs):
-        MAIL_CONFIG["enabled"] = True
-        MailService.connect = MagicMock(return_value=Mock())
         super(MailLibTest, self).__init__(*args, **kwargs)
 
     def setUp(self):
         super().setUp(True)
 
-    def test_send_mail(self):
+    @patch("jaseci.svc.mail.Mailer")
+    def test_send_mail(self, mailer: MagicMock):
+        mail = MetaService().get_service("mail")
+        mail.enabled = True
+        mail.connect = MagicMock(return_value=mailer)
+        mail.start()
+
         self.call(
             self.mast,
             ["sentinel_register", {"code": self.load_jac("mail_test.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "send_mail"}])
         self.assertTrue(ret["success"])
-        self.assertTrue(self.mast._h.mail.connect.called)
+        self.assertTrue(mailer.send_custom_email.called)
         self.assertEqual(
-            self.mast._h.mail.app.method_calls[0].args,
+            mailer.send_custom_email.call_args.args,
             (None, ["jaseci.dev@gmail.com"], "Test Subject", ("Test", "<h1>Test</h1>")),
         )

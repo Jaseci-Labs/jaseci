@@ -18,6 +18,7 @@ from jaseci.hook import MemoryHook
 from jaseci.utils.id_list import IdList
 from jaseci.utils.json_handler import JaseciJsonEncoder, json_str_to_jsci_dict
 from jaseci.utils.utils import log_var_out, logger, camel_to_snake
+from jaseci.svc import MetaService
 
 __version__ = "1.0.0"
 element_fields = None
@@ -135,7 +136,9 @@ class Element(Hookable):
         """
         global element_fields
         if element_fields is None:
-            element_fields = dir(Element(m_id=0, h=MemoryHook()))
+            element_fields = dir(
+                Element(m_id=0, h=MetaService(run_svcs=False).build_hook())
+            )
         obj_fields = []
         for i in vars(self).keys():
             if not i.startswith("_") and i not in element_fields:

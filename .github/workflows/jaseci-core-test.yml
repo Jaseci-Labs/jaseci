@@ -38,6 +38,8 @@ jobs:
       - name: Verify installation
         run: |
           jsctl
+        env:
+          TASK_ENABLED: "false"
       - name: Linting
         continue-on-error: true
         run: |
@@ -47,3 +49,5 @@ jobs:
         run: |
           cd jaseci_core/
           pytest -x
+        env:
+          TASK_ENABLED: "true"

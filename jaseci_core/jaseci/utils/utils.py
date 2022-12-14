@@ -235,6 +235,10 @@ class TestCaseHelper:
     def setUp(self):
         self.logger_off()
         self.stime = time()
+        from jaseci.svc import MetaService
+
+        MetaService().get_service("redis").clear()
+
         return super().setUp()
 
     def tearDown(self):

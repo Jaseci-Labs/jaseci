@@ -81,7 +81,55 @@ class JsOrcApi:
         return new_config
 
     @Interface.admin_api(cli_args=["name"])
+    def service_info(self, name: str):
+        """
+        refreshing service's config. If JsOrc is not automated, service will restart else JsOrc will handle the rest
+        """
+
+        hook = self._h
+
+        to_start = not hook.meta.is_automated()
+
+        service = getattr(hook, name, None)
+
+        response = {"success": False}
+
+        if isinstance(service, CommonService):
+            service.reset(hook, to_start)
+            response["success"] = True
+        else:
+            response[
+                "message"
+            ] = f"{name} is not a valid service. Can not refresh config."
+
+        return response
+
+    @Interface.admin_api(cli_args=["name"])
     def service_refresh(self, name: str):
+        """
+        refreshing service's config. If JsOrc is not automated, service will restart else JsOrc will handle the rest
+        """
+
+        hook = self._h
+
+        to_start = not hook.meta.is_automated()
+
+        service = getattr(hook, name, None)
+
+        response = {"success": False}
+
+        if isinstance(service, CommonService):
+            service.reset(hook, to_start)
+            response["success"] = True
+        else:
+            response[
+                "message"
+            ] = f"{name} is not a valid service. Can not refresh config."
+
+        return response
+
+    @Interface.admin_api(cli_args=["name"])
+    def service_toggle(self, name: str):
         """
         refreshing service's config. If JsOrc is not automated, service will restart else JsOrc will handle the rest
         """

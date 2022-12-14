@@ -19,7 +19,7 @@ setup(
         "fastapi[all]>=0.75.0,<1.0.0",
         "requests",
         "redis",
-        "celery>=5,<6",
+        "celery>=5.3.0b1,<6",
         "flake8",
         "pep8-naming",
         "stripe",

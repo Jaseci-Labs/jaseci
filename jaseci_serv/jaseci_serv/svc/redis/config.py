@@ -1,7 +1,10 @@
 import os
 
+# default true
+REDIS_ENABLED = os.getenv("REDIS_ENABLED", "true") == "true"
+
 REDIS_CONFIG = {
-    "enabled": True,
+    "enabled": REDIS_ENABLED,
     "quiet": False,
     "host": os.getenv("REDIS_HOST", "localhost"),
     "port": os.getenv("REDIS_PORT", "6379"),

@@ -25,7 +25,7 @@ def reset_state():
     global session
     session = {
         "filename": "js.session",
-        "user": [MetaService(run_svcs=False).build_super_master(name="admin")],
+        "user": [MetaService().build_super_master(name="admin")],
         "mem-only": session["mem-only"] if session is not None else False,
         "connection": {"url": None, "token": None, "headers": None},
     }
@@ -342,8 +342,14 @@ def script(filename, profile, output):
     if output:
         with open(output, "w") as f:
             f.write("Multi Command Script Output:\n")
+
+    global session
+
     for i in cmds:
-        res = CliRunner(mix_stderr=False).invoke(jsctl, i.split())
+        addons = []
+        if session["mem-only"]:
+            addons = ["-m"]
+        res = CliRunner(mix_stderr=False).invoke(jsctl, addons + i.split())
         click.echo(res.stdout)
         if output:
             with open(output, "a") as f:
