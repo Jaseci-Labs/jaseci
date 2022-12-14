@@ -2,6 +2,7 @@ import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
 import * as visData from 'vis-data';
 import { formatEdges, formatNodes } from './utils';
+import clsx from 'clsx';
 
 type EndpointBody = {
   gph?: string | null;
@@ -58,8 +59,9 @@ export class JscGraph {
   edges: visData.DataSet<any, string>;
   nodes: vis.data.DataSet<any, string>;
 
-  @State() clickedNode: vis.Node & { context: {} };
-  @State() clickedEdge: vis.Edge & { context: {} };
+  @State() clickedNode: vis.Node & { context: {}; info: {}; details: {} };
+  @State() clickedEdge: vis.Edge & { context: {}; info: {}; details: {} };
+  @State() selectedInfoTab: 'details' | 'context' | 'info' = 'context';
 
   // convert response to match required format for vis
   formatNodes = formatNodes;
@@ -113,7 +115,7 @@ export class JscGraph {
 
   @Watch('nd')
   async getGraphState() {
-    let body: EndpointBody = { detailed: true, gph: this.graphId, mode: 'default' };
+    let body: EndpointBody = { detailed: true, gph: this.graphId, mode: 'default', show_edges: true };
     let endpoint = `${this.serverUrl}/js/graph_node_view`;
 
     if (this.nd) {
@@ -158,7 +160,7 @@ export class JscGraph {
         }
 
         this.formatEdges(data).forEach(edge => {
-          const edges = this.edges.get({ filter: item => item.context.jid === (edge as any).context.jid });
+          const edges = this.edges.get({ filter: item => item.info.jid === (edge as any).info.jid });
 
           if (!edges.length) {
             this.edges.add(edge);
@@ -302,6 +304,10 @@ export class JscGraph {
   }
 
   renderContext() {
+    if (!this.clickedNode && !this.clickedEdge) {
+      return <p>Select a node or edge to see its context</p>;
+    }
+
     let context: undefined | Record<any, any> = {};
     if (this.clickedEdge?.context) {
       context = this.clickedEdge.context;
@@ -309,7 +315,7 @@ export class JscGraph {
       context = this.clickedNode?.context;
     }
 
-    return context ? (
+    return Object.keys(context)?.length ? (
       Object.keys(context).map(contextKey => (
         <div key={contextKey}>
           <p style={{ fontWeight: 'bold' }}>{contextKey}</p>
@@ -323,7 +329,63 @@ export class JscGraph {
         </div>
       ))
     ) : (
-      <p>Select a node or edge with contextual data</p>
+      <p>No context information found for this object</p>
+    );
+  }
+
+  renderInfo() {
+    if (!this.clickedNode && !this.clickedEdge) {
+      return <p>Select a node or edge to see its info</p>;
+    }
+
+    let info: undefined | Record<any, any> = {};
+    if (this.clickedEdge?.context) {
+      info = this.clickedEdge.info;
+    } else {
+      info = this.clickedNode?.info;
+    }
+
+    return info ? (
+      Object.keys(info).map(infoKey => (
+        <div key={infoKey}>
+          <p style={{ fontWeight: 'bold' }}>{infoKey}</p>
+          <p>
+            {Array.isArray(info[infoKey]) ? info[infoKey].map(item => item.toString()).join(', ') : typeof info[infoKey] === 'boolean' ? info[infoKey]?.toString() : info[infoKey]}
+          </p>
+        </div>
+      ))
+    ) : (
+      <p>No info found for this node or edge</p>
+    );
+  }
+
+  renderDetails() {
+    if (!this.clickedNode && !this.clickedEdge) {
+      return <p>Select a node or edge to see its details</p>;
+    }
+
+    let details: undefined | Record<any, any> = {};
+    if (this.clickedEdge?.context) {
+      details = this.clickedEdge?.details;
+    } else {
+      details = this.clickedNode?.details;
+    }
+
+    return details ? (
+      Object.keys(details).map(detailsKey => (
+        <div key={detailsKey}>
+          <p style={{ fontWeight: 'bold' }}>{detailsKey}</p>
+          <p>
+            {Array.isArray(details[detailsKey])
+              ? details[detailsKey].map(item => item.toString()).join(', ')
+              : typeof details[detailsKey] === 'boolean'
+              ? details[detailsKey]?.toString()
+              : details[detailsKey]}
+          </p>
+        </div>
+      ))
+    ) : (
+      <p>No info found for this node or edge</p>
     );
   }
 
@@ -409,7 +471,7 @@ export class JscGraph {
                   top: '0px',
                   bottom: '0px',
                   right: '0px',
-                  minWidth: '300px',
+                  minWidth: '360px',
                   maxWidth: '360px',
                   height: '100%',
                   display: 'flex',
@@ -419,7 +481,7 @@ export class JscGraph {
                   paddingTop: '5px',
                   paddingBottom: '5px',
                   zIndex: '9999',
-                  overflowY: 'scroll',
+                  overflowY: 'auto',
                 }}
               >
                 {' '}
@@ -436,8 +498,23 @@ export class JscGraph {
                     overflowX: 'hidden',
                   }}
                 >
-                  <jsc-divider label="Context" orientation="horizontal"></jsc-divider>
-                  <div>{this.renderContext()}</div>
+                  <jsc-divider label="Node Info" orientation="horizontal"></jsc-divider>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <div class="tabs">
+                      <a class={clsx(['tab tab-bordered', this.selectedInfoTab === 'context' && 'tab-active'])} onClick={() => (this.selectedInfoTab = 'context')}>
+                        Context
+                      </a>
+                      <a class={clsx(['tab tab-bordered', this.selectedInfoTab === 'details' && 'tab-active'])} onClick={() => (this.selectedInfoTab = 'details')}>
+                        Details
+                      </a>
+                      <a class={clsx(['tab tab-bordered', this.selectedInfoTab === 'info' && 'tab-active'])} onClick={() => (this.selectedInfoTab = 'info')}>
+                        Info
+                      </a>
+                    </div>
+                  </div>
+                  {this.selectedInfoTab === 'context' && <div>{this.renderContext()}</div>}
+                  {this.selectedInfoTab === 'info' && <div>{this.renderInfo()}</div>}
+                  {this.selectedInfoTab === 'details' && <div>{this.renderDetails()}</div>}
                 </div>
                 {this.clickedNode && (
                   <div
@@ -511,6 +588,7 @@ export class JscGraph {
               {/*Graph Switcher*/}
               <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999', display: 'flex', gap: '2px' }}>
                 <jsc-select
+                  size="sm"
                   placeholder={'Select Graph'}
                   onValueChanged={e => {
                     this.graphId = e.detail.split(':').slice(1).join(':');
@@ -528,7 +606,11 @@ export class JscGraph {
                   }}
                 ></jsc-checkbox>
               </div>
-              <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: this.height }}></div>
+              <div
+                ref={el => (this.networkEl = el)}
+                id={'network'}
+                style={{ height: this.height, backgroundImage: 'radial-gradient(hsla(var(--bc)/.2) .5px,hsla(var(--b2)/1) .5px)', backgroundSize: '5px 5px' }}
+              ></div>
             </div>
           )
         )}

@@ -7,7 +7,9 @@ export function formatNodes(data: [][] = []): vis.Node[] {
       id: node.jid,
       label: node.name,
       group: node.name,
-      context: { ...node.context, jid: node.jid },
+      context: { ...node.context },
+      details: { j_parent: node.j_parent, j_master: node.j_master, j_access: node.j_access, dimension: node.dimension },
+      info: { name: node.name, kind: node.kind, jid: node.jid, j_timestamp: node.j_timestamp, j_type: node.j_type },
       shape: 'dot',
     }));
 }
@@ -21,10 +23,13 @@ export function formatEdges(data: {}[]): vis.Edge[] {
       from: edge.from_node_id,
       to: edge.to_node_id,
       label: edge.name,
-      context: { ...edge.context, jid: edge.jid },
+      context: { ...edge.context },
+      info: { name: edge.name, kind: edge.kind, jid: edge.jid, j_timestamp: edge.j_timestamp, j_type: edge.j_type },
+      details: { j_parent: edge.j_parent, j_master: edge.j_master, j_access: edge.j_access, bidirected: edge.bidirected },
       group: edge.name,
       length: 150,
     }));
 
+  console.log({ newEdges });
   return newEdges;
 }
