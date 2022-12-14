@@ -1,48 +1,96 @@
-# Build a Custom Jaseci Module
+# The Basics of Creating a Custom Jaseci Module
 
 In this tutorial, you are going to learn how to build a custom jaseci module with python. In this application I will teach you how to create a basic calculator module for jaseci.
 
 Excited? Hell yeah! Let's jump in.
 
 ## Preparation
-Let's start by creating a folder called `calculator` in your root directory of your application. After creating the folder let's create a file name `calculator.py` inside of the `calculator` folder.
+Let's start by creating a folder called `calculator` in your root directory of your application. Inside of the `calculator` folder let's create a file name `calc.py`.
 
 > **Note**
 >
-> we are using python to create the custom jaseci module so you will need .py files and not jac.
+> We are using python to create the custom jaseci module that will be callable from within a Jac program, so you will only need to create and edit python .py files in this guide.
 
 After creating the file, open the file in a code editor and let's start coding our module.
 
 ```py
 from jaseci.actions.live_actions import jaseci_action
 ```
-First, we will have to import jaseci_actions to the `calculator.py` file. We will be using jaseci actions to load the module into jaseci.
+First, we will have to import the `jaseci_actions` decorator to the `calc.py` file. We will be using this decorator to allow Jaseci to load specific functions into Jaseci actions.
 
+Now lets add our first jaseci action for our custom calculator module.
 ```py
-@jaseci_action(act_group=["timestamp"], allow_remote=True)
-```
-In this block:
-- `act_group` is the name of the jaseci action group called when loading a the module.
-- `allow_remote` indicates whether you want this action to be run remotely or not.
-
-
-We will be adding onto the file.
-```py
-@jaseci_action(act_group=["timestamp"], allow_remote=True)
+@jaseci_action()
 def add(first_number: int, second_number: int):
     return first_number + second_number
 ```
 
-What this functions does, it adds the two numbers from the parameter and returns the sum of each number.
+This syntax specifics a simple add operation for our calculator. The `jaseci_action` decorator is attached to a standard python that adds two numbers from the parameter list and returns the sum of each number.
+
+> **Critical**
+>
+> Always add data type hints to the parameters of your specified Jaseci actions (e.g. `first_number: int`). Jaseci uses this information for validation internally.
+
+# Loading the custom module (JAC)
+In this section, lets run through how to load the custom module to be used by a Jac application. After running `jsctl` type:
+
+```bash
+> actions load local calculator/calc.py
+```
+
+Since we are creating our module as a simple python `.py` file we use `action load local` instead of `action load module` or `action load remote`. The parameter to `action load local` is the path to where the python file is located.
+
+```
+{
+  "success": true
+}
+```
+You should see this after running the command. This response indicates you have successfully built a custom module using jac with Jaseci and it has been loaded to jaseci and can be used by any of the Jac programs run by this instance.
+
+# How to use the custom module (JAC)
+In this section we will show you how to use the custom module in the jac application.
+
+Create a file name main.jac and add the following code.
+
+```jac
+walker init {
+    can calc.add;
+    report calc.add(1,1);
+}
+```
+
+First we specify that the walker will be using our custom action with `can (action_group).(function);`
+``` jac
+can calc.add;
+```
 
 > **Note**
 >
-> Practice adding data type to the parameters for e.g. `first_number: int` because jaseci_actions use this as validation, remotely and also through the jaseci application.  
+> Note that Jaseci will assume the action group name will be the name of the python file without the `.py` and the action itself will be the name of the function that is decorated with `@jaseci_action()`. We will see shortly how you can override this default behavior.
+
+We will report the result from the calculation.
+``` jac
+report calc.add(1,1);
+```
+
+The following will be the result after running the init walker.
+```bash
+{
+  "success": true,
+  "report": [
+    2
+  ],
+  "final_node": "urn:uuid:04e97f70-26b3-467e-a291-bd03b18e7a6d",
+  "yielded": false
+}
+```
+
+Once you see that status it means that everything is working perfectly. Simple right! Hope you learn't something new today.
 
 ## Loading the custom module (API)
 In this section, I will run you through how to load the custom module through the API.
 ```bash
-> uvicorn calculator:serv_actions 
+> uvicorn calculator:serv_actions
 ```
 
 We use uvicorn to run modules remotely.
@@ -64,57 +112,15 @@ You will see something like this and if it shows this you are ready to test out 
 
 Go to http://localhost:8000/docs and you can test out your module to see if it works remotely.
 
-# Loading the custom module (JAC)
-In this section, I will run you through how to load the custom module through the Jac application.
 
-```bash
-> actions load local calculator/calculator.py
+# Specifying Action Group and Aliases with `jaseci_action`
+
+```py
+@jaseci_action(act_group=["timestamp"], allow_remote=True)
 ```
-
-Since we are creating our own module we have to use the term `local` instead of module or remote. After local is the path to where the module is located.
-
-```
-{
-  "success": true
-}
-```
-You should see this after running the command. If you see this you have successfully build a custom module using jac with Jaseci.
-
-# How to use the custom module (JAC)
-In this section we will show you how to use the custom module in the jac application.
-
-Create a file name main.jac and add the following code.
-
-```js
-walker init {
-    can calculator.add;
-    report calculator.add(1,1);
-}
-```
-
-This allows you to load the module `can (act_group created)(function created for the act_group);`
-``` js
-can calculator.add;
-```
-
-We will report the result from the calculation.
-``` js
-report calculator.add(1,1);
-```
-
-The following will be the result after running the init walker.
-```bash
-{
-  "success": true,
-  "report": [
-    2
-  ],
-  "final_node": "urn:uuid:04e97f70-26b3-467e-a291-bd03b18e7a6d",
-  "yielded": false
-}
-```
-
-Once you see that status it means that everything is working perfectly. Simple right! Hope you learn't something new today.
+In this block:
+- `act_group` is the name of the jaseci action group called when loading a the module.
+- `allow_remote` indicates whether you want this action to be run remotely or not.
 
 # Creating A Custom AI Jaseci Module
 In this section, we will be creating a t5 based summarization module for jaseci. So let's get started.
@@ -187,7 +193,7 @@ def classify_text(text: str, min_length: int = 30, max_length: int = 100):
     return output
 ```
 In this block:
-- Since we created a function which generates the summary. we need a jaseci action function that will bind the summarization module to jac and to the API. 
+- Since we created a function which generates the summary. we need a jaseci action function that will bind the summarization module to jac and to the API.
 - here we called the action group `t5_sum`.
 
 ### Full Code
