@@ -9,42 +9,42 @@ TRANSLATION = (
 )
 
 
-class WhisperModule(CoreTest):
+class Speech2TextModule(CoreTest):
     fixture_src = __file__
 
     @classmethod
     def setUpClass(cls):
-        super(WhisperModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.whisper")
+        super(Speech2TextModule, cls).setUpClass()
+        ret = load_module_actions("jaseci_ai_kit.stt")
         assert ret == True
 
     @pytest.mark.order(1)
-    @jac_testcase("whisper.jac", "test_audio_to_array")
+    @jac_testcase("stt.jac", "test_audio_to_array")
     def test_audio_to_array(self, ret):
         self.assertGreater(len(ret["report"][0]), 0)
 
     @pytest.mark.order(2)
-    @jac_testcase("whisper.jac", "test_transribe_array")
+    @jac_testcase("stt.jac", "test_transribe_array")
     def test_transribe_array(self, ret):
         self.assertEqual(ret["report"][0], TRANSCRIPTION)
 
     @pytest.mark.order(3)
-    @jac_testcase("whisper.jac", "test_transribe_file")
+    @jac_testcase("stt.jac", "test_transribe_file")
     def test_transribe_file(self, ret):
         self.assertEqual(ret["report"][0], TRANSCRIPTION)
 
     @pytest.mark.order(4)
-    @jac_testcase("whisper.jac", "test_transribe_url")
+    @jac_testcase("stt.jac", "test_transribe_url")
     def test_transribe_url(self, ret):
         self.assertEqual(ret["report"][0], TRANSCRIPTION_FRENCH)
 
     @pytest.mark.order(5)
-    @jac_testcase("whisper.jac", "test_translate")
+    @jac_testcase("stt.jac", "test_translate")
     def test_translate(self, ret):
         self.assertIn(TRANSLATION, ret["report"][0])
 
     @classmethod
     def tearDownClass(cls):
-        super(WhisperModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.whisper.whisper")
+        super(Speech2TextModule, cls).tearDownClass()
+        ret = unload_module("jaseci_ai_kit.modules.stt.stt")
         assert ret == True
