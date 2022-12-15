@@ -488,7 +488,11 @@ def get_invoice(invoice_id: str, mock_api: bool = False, meta: dict = {}):
 
 @jaseci_action()
 def create_usage_report(
-    subscription_item_id: str, quantity: int, mock_api: bool = False, meta: dict = {}
+    subscription_item_id: str,
+    quantity: int,
+    action: str = "increment",
+    mock_api: bool = False,
+    meta: dict = {},
 ):
     """Create usage record"""
     set_api_key(meta)
@@ -498,7 +502,10 @@ def create_usage_report(
 
     try:
         return stripe.SubscriptionItem.create_usage_record(
-            subscription_item_id, quantity=quantity, timestamp=datetime.now()
+            subscription_item_id,
+            quantity=quantity,
+            timestamp=datetime.now(),
+            action=action,
         )
     except Exception as e:
         return {"message": str(e)}

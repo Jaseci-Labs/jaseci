@@ -12,7 +12,7 @@ from jaseci_serv.base.models import JaseciObject
 class StripeView(APIView):
 
     http_method_names = ["post"]
-    permission_classes = (IsAuthenticated, IsAdminUser)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         master = request.user.get_master()
@@ -28,21 +28,9 @@ class StripeView(APIView):
             )
 
         try:
-            STRIPE_JAC = os.path.join(JSX_STRIPE_DIR, "stripe.jac")
-            FILE = open(STRIPE_JAC, "r")
-            code = FILE.read()
 
-            # register stripe.jac
-            stripe_sentinel = master.sentinel_register(
-                name="stripe_sentinel", code=code
-            )
-
-            master.save()
-            master._h.commit()
-
-            stripe_sentinel = master._h.get_obj(
-                master._m_id, str(uuid.UUID(stripe_sentinel[0]["jid"]))
-            )
+            stripe_sentinel = master.sentinel_active_get()
+            stripe_sentinel = master._h.get_obj(master._m_id, stripe_sentinel["jid"])
 
             stripe_webhook_arch = stripe_sentinel.arch_ids.get_obj_by_name(
                 "stripe_webhook"
@@ -86,8 +74,35 @@ class StripeView(APIView):
             root_node = master.graph_active_get()["jid"].split(":")[2]
 
             stripe_webhook_url = f"/js_public/walker_callback/{root_node}/{str(stripe_webhook_wlk.id)}?key={keys}"
-            FILE.close()
 
             return Response({"data": stripe_webhook_url, "success": True})
         except Exception as e:
             return Response({"message": str(e), "success": False})
+
+
+class StripeWebhook:
+
+    # @Interface.admin_api()
+    # @Interface.private_api()
+    def stripe_webhook(self, request):
+
+        # this should handle the logic for the stripe webhooks
+        # from STRIPE, it will have the stripe event object, and metada from user ( sentinel_id, walker_id, token, master_id )
+
+        # TODO: use `event.metadata.sentinel_id` to select the sentinel ?????
+        # TODO: use `event.metadata.walker_id` to run the walker
+
+        # metadata = request.data.metadata
+        # sentinel_id = metadata.sentinel_id
+        # walker_id = metadata.walker_id
+
+        # walker call_this_when_customer_is_created {
+        #     can mail.send;
+        #
+        #     mail.send();
+        # }
+
+        # find and run the WALKER by `walker_id`
+
+        # should the walker be PUBLIC WALKER?
+        print("test")
