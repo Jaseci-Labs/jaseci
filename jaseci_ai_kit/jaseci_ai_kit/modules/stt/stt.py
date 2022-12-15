@@ -136,7 +136,7 @@ def download(url: str = None) -> str:
     return filename
 
 
-@jaseci_action(act_group=["whisper"], allow_remote=True)
+@jaseci_action(act_group=["stt"], allow_remote=True)
 def transcribe(
     language: str = "en",
     array: List[float] = None,
@@ -175,7 +175,7 @@ def transcribe(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["whisper"], allow_remote=True)
+@jaseci_action(act_group=["stt"], allow_remote=True)
 def translate(
     language: str = "fr",
     array: List[float] = None,
@@ -217,7 +217,7 @@ def translate(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["whisper"], allow_remote=True)
+@jaseci_action(act_group=["stt"], allow_remote=True)
 def audio_to_array(
     audio_file: str = None, url: str = None, base64_str: str = None
 ) -> List[float]:
