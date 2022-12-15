@@ -30,12 +30,15 @@ class MetaService(CommonService, MetaProperties):
 
     def post_run(self, hook=None):
         if self.run_svcs:
-            self.app.build()
-            if self.is_automated():
-                logger.info("JsOrc is automated. Pushing interval check alarm...")
-                self.push_interval(1)
-            else:
-                logger.info("JsOrc is not automated.")
+            self.build()
+
+    def build(self):
+        self.app.build()
+        if self.is_automated():
+            logger.info("JsOrc is automated. Pushing interval check alarm...")
+            self.push_interval(1)
+        else:
+            logger.info("JsOrc is not automated.")
 
     def push_interval(self, interval):
         if self.running_interval == 0:
@@ -80,6 +83,9 @@ class MetaService(CommonService, MetaProperties):
     def in_cluster(self):
         return self.app.in_cluster()
 
+    def info(self):
+        return {"state": self.state.name, "automated": self.app.automated}
+
     ###################################################
     #                     BUILDER                     #
     ###################################################
@@ -110,10 +116,7 @@ class MetaService(CommonService, MetaProperties):
     ###################################################
 
     def reset(self, hook=None, start=True):
-        self.terminate_daemon("jsorc")
-        self.app = None
-        self.state = Ss.NOT_STARTED
-        self.__init__()
+        self.build()
 
     def populate_context(self):
         from jaseci.hook import RedisHook

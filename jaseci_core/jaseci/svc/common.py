@@ -111,6 +111,15 @@ class CommonService:
     def build_manifest(self, hook) -> dict:
         pass
 
+    def info(self):
+        return {
+            "state": self.state.name,
+            "enabled": self.enabled,
+            "quiet": self.quiet,
+            "config": self.config,
+            "manifest": self.manifest,
+        }
+
     # ------------------- DAEMON -------------------- #
 
     def spawn_daemon(self, **targets):
@@ -576,3 +585,15 @@ class MetaProperties:
     @running_interval.setter
     def running_interval(self, val: int):
         self.cls._running_interval = val
+
+    @property
+    def config(self) -> bool:
+        return self.cls._quiet
+
+    @property
+    def manifest(self) -> bool:
+        return self.cls._quiet
+
+    @property
+    def manifest_meta(self) -> bool:
+        return self.cls._quiet

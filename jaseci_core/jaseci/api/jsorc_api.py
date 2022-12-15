@@ -7,7 +7,7 @@ import json
 from json import dumps, loads
 from time import time
 from base64 import b64decode
-from jaseci.svc import CommonService
+from jaseci.svc import CommonService, MetaService
 from jaseci.svc.common import Kube, UNSAFE_PARAPHRASE
 from jaseci.api.interface import Interface
 
@@ -83,24 +83,18 @@ class JsOrcApi:
     @Interface.admin_api(cli_args=["name"])
     def service_info(self, name: str):
         """
-        refreshing service's config. If JsOrc is not automated, service will restart else JsOrc will handle the rest
+        Getting service info
         """
 
-        hook = self._h
-
-        to_start = not hook.meta.is_automated()
-
-        service = getattr(hook, name, None)
+        service = getattr(self._h, name, None)
 
         response = {"success": False}
 
         if isinstance(service, CommonService):
-            service.reset(hook, to_start)
             response["success"] = True
+            response["service"] = service.info()
         else:
-            response[
-                "message"
-            ] = f"{name} is not a valid service. Can not refresh config."
+            response["message"] = f"{name} is not a valid service."
 
         return response
 
@@ -121,6 +115,7 @@ class JsOrcApi:
         if isinstance(service, CommonService):
             service.reset(hook, to_start)
             response["success"] = True
+            response["service"] = service.info()
         else:
             response[
                 "message"
@@ -142,13 +137,18 @@ class JsOrcApi:
 
         response = {"success": False}
 
-        if isinstance(service, CommonService):
+        if isinstance(service, CommonService) and not isinstance(service, MetaService):
+            config_name = f"{name.upper()}_CONFIG"
+
+            config = loads(self._h.get_glob(config_name))
+            config["enabled"] = not config["enabled"]
+            self._h.save_glob(config_name, dumps(config))
+
             service.reset(hook, to_start)
             response["success"] = True
+            response["service"] = service.info()
         else:
-            response[
-                "message"
-            ] = f"{name} is not a valid service. Can not refresh config."
+            response["message"] = f"{name} is not a valid service to toggle!"
 
         return response
 
