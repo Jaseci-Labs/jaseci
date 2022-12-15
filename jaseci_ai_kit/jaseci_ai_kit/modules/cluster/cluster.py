@@ -4,7 +4,10 @@ import hdbscan
 
 import numpy as np
 
+import sklearn.cluster as cluster
+
 from jaseci.actions.live_actions import jaseci_action
+from jaseci.actions.remote_actions import launch_server
 from fastapi import HTTPException
 
 
@@ -39,7 +42,7 @@ def get_umap_embedds(
 
 def hbdscan_clustering(embeddings, min_samples, min_cluster_size):
     """
-    Dimentionality reduction using umap
+    Clustering using hbdscan
     Parameters:
     -----------
     embeddings: ndarray, list of embeddings.
@@ -54,6 +57,24 @@ def hbdscan_clustering(embeddings, min_samples, min_cluster_size):
         min_samples=min_samples, min_cluster_size=min_cluster_size
     ).fit_predict(embeddings)
 
+    return labels
+
+
+def kmeans_clustering(embeddings, n_clusters):
+    """
+    Clustering using kmeans algorithm.
+
+    Parameters:
+    -----------
+    embeddings: ndarray, list of embeddings.
+    n_clusters: number of clusters.
+
+    Return:
+    -----------
+    labels: array of integer, containing correspondant class of each input embeddings
+    """
+    labels = cluster.KMeans(n_clusters=n_clusters).fit_predict(embeddings)
+    print(labels)
     return labels
 
 
@@ -79,21 +100,56 @@ def get_umap(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+VALID_ALGOS = {"hbdscan", "kmeans"}
+KMEANS_PARAMS = {"n_clusters"}
+HBDSCAN_PARAMS = {"min_samples", "min_cluster_size"}
+
+
 @jaseci_action(act_group=["cluster"], allow_remote=True)
 def get_cluster_labels(
     embeddings: list,
     algorithm: str = "hbdscan",
     min_samples: int = None,
     min_cluster_size: int = None,
+    n_clusters: int = None,
 ):
-
-    if algorithm == "hbdscan":
-        try:
-            cluster_labels = hbdscan_clustering(
-                embeddings=embeddings,
-                min_samples=min_samples,
-                min_cluster_size=min_cluster_size,
+    if algorithm not in VALID_ALGOS:
+        raise ValueError("the algorithm must be one of %r." % VALID_ALGOS)
+    elif algorithm == "hbdscan":
+        if min_samples is None:
+            raise ValueError(
+                "If you are using hbdscan algorith min_samples should be defined"
             )
-            return cluster_labels.tolist()
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        elif min_cluster_size is None:
+            raise ValueError(
+                "If you are using hbdscan algorith min_cluster_size should be defined"
+            )
+        else:
+            try:
+                cluster_labels = hbdscan_clustering(
+                    embeddings=embeddings,
+                    min_samples=min_samples,
+                    min_cluster_size=min_cluster_size,
+                )
+                return cluster_labels.tolist()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+    elif algorithm == "kmeans":
+        if n_clusters is None:
+            raise ValueError(
+                "If you are using kmeans algorithm n_clusters should be defined"
+            )
+        else:
+            try:
+                cluster_labels = kmeans_clustering(
+                    embeddings=embeddings,
+                    n_clusters=n_clusters,
+                )
+                return cluster_labels.tolist()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    print("The text cluster module is up and running.")
+    launch_server(port=8000)

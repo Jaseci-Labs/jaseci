@@ -22,7 +22,13 @@ class TextClusterModule(CoreTest):
         self.assertEqual(len(ret["report"][0][0]), 2)
 
     @pytest.mark.order(2)
-    @jac_testcase("cluster.jac", "test_get_cluster")
+    @jac_testcase("cluster.jac", "test_get_cluster_hbdscan")
+    def test_get_clusters(self, ret):
+        self.assertEqual(ret["success"], True)
+        self.assertEqual(len(ret["report"][0]), 15)
+
+    @pytest.mark.order(3)
+    @jac_testcase("cluster.jac", "test_get_cluster_kmeans")
     def test_get_clusters(self, ret):
         self.assertEqual(ret["success"], True)
         self.assertEqual(len(ret["report"][0]), 15)
