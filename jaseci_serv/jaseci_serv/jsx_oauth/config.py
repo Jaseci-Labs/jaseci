@@ -1,7 +1,6 @@
 import os
-from .base import *
 
-ADDITIONAL_APPS = [
+OAUTH_APPS = [
     "rest_framework.authtoken",
     "dj_rest_auth",
     "django.contrib.sites",
@@ -15,10 +14,7 @@ ADDITIONAL_APPS = [
     "allauth.socialaccount.providers.microsoft",
     "allauth.socialaccount.providers.okta",
     # "allauth.socialaccount.providers.openid",
-    "jaseci_serv.jsx_oauth",
 ]
-
-INSTALLED_APPS += ADDITIONAL_APPS
 
 
 AUTH_PROVIDERS = {"facebook": "facebook", "google": "google", "email": "email"}
@@ -34,8 +30,6 @@ SOCIAL_AUTH_CREDS = {
     },
 }
 
-JSX_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-TEMPLATES[0]["DIRS"] += [os.path.join(JSX_DIR, "templates")]
 KNOX_TOKEN_EXPIRY = 24
 
 REST_AUTH_TOKEN_MODEL = None
@@ -47,4 +41,3 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 SITE_ID = 1
 DEFAULT_CALLBACK_URL_FOR_SSO = "/auth/examples/google/"
-DEBUG = True
