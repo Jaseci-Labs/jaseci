@@ -34,6 +34,11 @@ def main():
     # init mdbook
     init_mdbook()
 
+    # booktool
+    generate_booktool_cheatsheet()
+    generate_booktool_stdlib()
+    generate_booktool_class()
+
     # copy theme
     import_theme()
 
@@ -86,6 +91,12 @@ def build_summary_file():
                 with open(doc_file_link, "a+") as docfile:
                     for rf_line in repo_file_lines:
                         docfile.write(rf_line)
+
+    with open(output_path + "/src/SUMMARY.md", "a") as summaryfile:
+        summaryfile.write("- [Standrad Library](stdlib.md) \n")
+        summaryfile.write("- [CheatSheet](cheatsheet.md) \n")
+        summaryfile.write("- [classes](classes.md) \n")
+
     # list of all image folders . Add relative path here to include images in mdbook
     imageFiles = [
         "examples/CanoniCAI/images",
@@ -179,6 +190,30 @@ def init_mdbook():
 
 def build_mdbook():
     subprocess.call(["mdbook", "build", output_path])
+
+
+def generate_booktool_cheatsheet():
+    subprocess.call(
+        [
+            "jsctl",
+            "booktool",
+            "mdcheatsheet",
+            "--output",
+            output_path + "/src/cheatsheet.md",
+        ]
+    )
+
+
+def generate_booktool_stdlib():
+    subprocess.call(
+        ["jsctl", "booktool", "mdstdlib", "--output", output_path + "/src/stdlib.md"]
+    )
+
+
+def generate_booktool_class():
+    subprocess.call(
+        ["jsctl", "booktool", "mdclasses", "--output", output_path + "/src/classes.md"]
+    )
 
 
 def clean_mdbook():
