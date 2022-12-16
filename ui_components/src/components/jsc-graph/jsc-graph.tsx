@@ -303,92 +303,6 @@ export class JscGraph {
     this.refreshNodes();
   }
 
-  renderContext() {
-    if (!this.clickedNode && !this.clickedEdge) {
-      return <p>Select a node or edge to see its context</p>;
-    }
-
-    let context: undefined | Record<any, any> = {};
-    if (this.clickedEdge?.context) {
-      context = this.clickedEdge.context;
-    } else {
-      context = this.clickedNode?.context;
-    }
-
-    return Object.keys(context)?.length ? (
-      Object.keys(context).map(contextKey => (
-        <div key={contextKey}>
-          <p style={{ fontWeight: 'bold' }}>{contextKey}</p>
-          <p>
-            {Array.isArray(context[contextKey])
-              ? context[contextKey].map(item => item.toString()).join(', ')
-              : typeof context[contextKey] === 'boolean'
-              ? context[contextKey]?.toString()
-              : context[contextKey]}
-          </p>
-        </div>
-      ))
-    ) : (
-      <p>No context information found for this object</p>
-    );
-  }
-
-  renderInfo() {
-    if (!this.clickedNode && !this.clickedEdge) {
-      return <p>Select a node or edge to see its info</p>;
-    }
-
-    let info: undefined | Record<any, any> = {};
-    if (this.clickedEdge?.context) {
-      info = this.clickedEdge.info;
-    } else {
-      info = this.clickedNode?.info;
-    }
-
-    return info ? (
-      Object.keys(info).map(infoKey => (
-        <div key={infoKey}>
-          <p style={{ fontWeight: 'bold' }}>{infoKey}</p>
-          <p>
-            {Array.isArray(info[infoKey]) ? info[infoKey].map(item => item.toString()).join(', ') : typeof info[infoKey] === 'boolean' ? info[infoKey]?.toString() : info[infoKey]}
-          </p>
-        </div>
-      ))
-    ) : (
-      <p>No info found for this node or edge</p>
-    );
-  }
-
-  renderDetails() {
-    if (!this.clickedNode && !this.clickedEdge) {
-      return <p>Select a node or edge to see its details</p>;
-    }
-
-    let details: undefined | Record<any, any> = {};
-    if (this.clickedEdge?.context) {
-      details = this.clickedEdge?.details;
-    } else {
-      details = this.clickedNode?.details;
-    }
-
-    return details ? (
-      Object.keys(details).map(detailsKey => (
-        <div key={detailsKey}>
-          <p style={{ fontWeight: 'bold' }}>{detailsKey}</p>
-          <p>
-            {Array.isArray(details[detailsKey])
-              ? details[detailsKey].map(item => item.toString()).join(', ')
-              : typeof details[detailsKey] === 'boolean'
-              ? details[detailsKey]?.toString()
-              : details[detailsKey]}
-          </p>
-        </div>
-      ))
-    ) : (
-      <p>No info found for this node or edge</p>
-    );
-  }
-
   async componentDidLoad() {
     try {
       // set the initial graph
@@ -499,22 +413,11 @@ export class JscGraph {
                   }}
                 >
                   <jsc-divider label="Node Info" orientation="horizontal"></jsc-divider>
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <div class="tabs">
-                      <a class={clsx(['tab tab-bordered', this.selectedInfoTab === 'context' && 'tab-active'])} onClick={() => (this.selectedInfoTab = 'context')}>
-                        Context
-                      </a>
-                      <a class={clsx(['tab tab-bordered', this.selectedInfoTab === 'details' && 'tab-active'])} onClick={() => (this.selectedInfoTab = 'details')}>
-                        Details
-                      </a>
-                      <a class={clsx(['tab tab-bordered', this.selectedInfoTab === 'info' && 'tab-active'])} onClick={() => (this.selectedInfoTab = 'info')}>
-                        Info
-                      </a>
-                    </div>
-                  </div>
-                  {this.selectedInfoTab === 'context' && <div>{this.renderContext()}</div>}
-                  {this.selectedInfoTab === 'info' && <div>{this.renderInfo()}</div>}
-                  {this.selectedInfoTab === 'details' && <div>{this.renderDetails()}</div>}
+                  <graph-node-info
+                    context={this.clickedEdge?.context ?? this.clickedNode?.context}
+                    details={this.clickedEdge?.details ?? this.clickedNode?.details}
+                    info={this.clickedEdge?.info ?? this.clickedNode?.info}
+                  ></graph-node-info>
                 </div>
                 {this.clickedNode && (
                   <div
