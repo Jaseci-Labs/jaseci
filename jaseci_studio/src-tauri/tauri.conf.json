@@ -56,12 +56,12 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
         "resizable": true,
         "title": "Jaseci Studio",
-        "width": 1000,
-        "minWidth": 800,
-        "minHeight": 600
+        "width": 1200,
+        "minWidth": 1200,
+        "height": 850,
+        "minHeight": 850
       }
     ]
   }
