@@ -413,11 +413,16 @@ export class JscGraph {
                   }}
                 >
                   <jsc-divider label="Node Info" orientation="horizontal"></jsc-divider>
-                  <graph-node-info
-                    context={this.clickedEdge?.context ?? this.clickedNode?.context}
-                    details={this.clickedEdge?.details ?? this.clickedNode?.details}
-                    info={this.clickedEdge?.info ?? this.clickedNode?.info}
-                  ></graph-node-info>
+
+                  {this.clickedNode || this.clickedEdge ? (
+                    <graph-node-info
+                      context={this.clickedNode?.context ?? this.clickedEdge?.context}
+                      details={this.clickedNode?.details ?? this.clickedEdge?.details}
+                      info={this.clickedNode?.info ?? this.clickedEdge?.info}
+                    ></graph-node-info>
+                  ) : (
+                    <p>Click a node or edge to see its info</p>
+                  )}
                 </div>
                 {this.clickedNode && (
                   <div
