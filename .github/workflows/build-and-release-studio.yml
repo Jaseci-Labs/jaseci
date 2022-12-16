@@ -13,8 +13,6 @@ jobs:
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
 
-    
-    
     steps:
       - uses: actions/checkout@v3
       - name: setup node
@@ -35,8 +33,8 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: `app-v${process.env.PACKAGE_VERSION}`,
-              name: `Jaseci Studio v${process.env.PACKAGE_VERSION}`,
-              body: 'Take a look at the assets to download and install this app.',
+              name: `Jaseci v${process.env.PACKAGE_VERSION}`,
+              body: 'Source code and Jaseci Studio executables.',
               draft: true,
               prerelease: false
             })
@@ -51,7 +49,7 @@ jobs:
         platform: [macos-latest, ubuntu-20.04, windows-latest]
 
     runs-on: ${{ matrix.platform }}
-    
+
     steps:
       - uses: actions/checkout@v3
       - name: setup node
@@ -72,7 +70,7 @@ jobs:
       - name: install app dependencies and build it
         run: yarn && yarn build
         working-directory: "./jaseci_studio"
-      - uses: tauri-apps/tauri-action@v0          
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
