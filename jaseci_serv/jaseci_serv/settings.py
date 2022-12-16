@@ -51,7 +51,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_celery_results",
     "django_celery_beat",
-    "jaseci_serv.jsx_stripe",
     "jaseci_serv.jsx_oauth",
 ]
 
@@ -209,8 +208,6 @@ JASECI_CONFIGS = [
 
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-
-JSX_STRIPE_DIR = os.path.join(BASE_DIR, "jaseci_serv/jsx_stripe")
 
 
 #################################################
