@@ -152,7 +152,6 @@ Once it shows a list of options and commands, your installation is complete.
 
 > **Note**
 >
-> Be sure to have the following packages installed to allow `sentence_piece` to be built for AI  Kit.
-> `sudo apt -y install --no-install-recommends git g++ build-essential pkg-config cmake`
+> Be sure to have the following packages installed to allow `sentence_piece` to be built for AI  Kit: `sudo apt -y install --no-install-recommends git g++ build-essential pkg-config cmake`
 
 Note: You'll have to add `--max-line-length=88 --extend-ignore=E203` args to flake8 for linting. If you use VSCode, you should update it there too.
