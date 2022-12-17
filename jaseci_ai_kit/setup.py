@@ -23,7 +23,7 @@ setup(
         "numpy>=1.23.0,<1.24.0",
         "fasttext>=0.9.2,<0.10.0",
         "spacy==3.3.0",
-        "sumy>=0.9.0,<0.10.0",
+        "sumy==0.11.0",
         "PyPDF2>=1.27.12,<1.28",
         "evaluate>=0.2.2,<0.3",
         "seqeval>=1.2.2,<1.3",
@@ -33,6 +33,7 @@ setup(
         "beautifulsoup4 >= 4.10.0, < 4.11.0",
         "umap-learn==0.5.3",
         "hdbscan==0.8.29",
+        "librosa==0.9.2",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],

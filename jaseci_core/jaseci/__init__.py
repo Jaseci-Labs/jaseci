@@ -24,6 +24,7 @@ def load_standard():
     import jaseci.actions.standard.task  # noqa
     import jaseci.actions.standard.internal  # noqa
     import jaseci.actions.standard.zlib  # noqa
+    import jaseci.actions.standard.webtool  # noqa
 
 
 load_standard()
