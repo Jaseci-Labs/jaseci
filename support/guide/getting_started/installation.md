@@ -2,7 +2,7 @@
 
 Jaseci can be installed on a single machine or on a Kubernetes cluster.
 
-The setup section is split into two parts: 
+The setup section is split into two parts:
 - a standalone local setup
 - a cloud and kubernetes setup *(Coming Soon)*
 
@@ -150,4 +150,9 @@ Once it shows a list of options and commands, your installation is complete.
 4. Install Jaseci Server from main branch: `cd jaseci_serv; source install.sh; cd -`
 5. (for AI) Install Jaseci Kit from main branch: `cd jaseci_ai_kit; source install.sh; cd -`
 
-Note: You'll have to add `--max-line-length=88 --extend-ignore=E203` args to flake8 for linting. If you use VSCode, you should update it there too. 
+> **Note**
+>
+> Be sure to have the following packages installed to allow `sentence_piece` to be built for AI  Kit.
+> `sudo apt -y install --no-install-recommends git g++ build-essential pkg-config cmake`
+
+Note: You'll have to add `--max-line-length=88 --extend-ignore=E203` args to flake8 for linting. If you use VSCode, you should update it there too.
