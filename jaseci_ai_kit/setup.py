@@ -34,6 +34,10 @@ setup(
         "umap-learn==0.5.3",
         "hdbscan==0.8.29",
         "librosa==0.9.2",
+        "inflect",
+        "unidecode==1.3.6",
+        "soundfile",
+        "speechbrain",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
