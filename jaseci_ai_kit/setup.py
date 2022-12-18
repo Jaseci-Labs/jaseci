@@ -39,9 +39,7 @@ setup(
         "soundfile",
         "speechbrain",
     ],
-    package_data={
-        "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
-    },
+    package_data={"": ["*.json", "*.cfg", "VERSION", "*.yaml"],},
     author="Jason Mars",
     author_email="jason@jaseci.org",
     url="https://github.com/Jaseci-Labs/jaseci",

@@ -123,7 +123,7 @@ class WN(torch.nn.Module):
         self.end = end
 
         for i in range(n_layers):
-            dilation = 2**i
+            dilation = 2 ** i
             padding = int((kernel_size * dilation - dilation) / 2)
             in_layer = torch.nn.Conv1d(
                 n_channels,

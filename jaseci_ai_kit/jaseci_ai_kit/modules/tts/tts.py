@@ -15,7 +15,11 @@ from jaseci.actions.remote_actions import launch_server
 
 from .waveglow.denoiser import Denoiser
 
-from .action_utils import prepare_input_sequence, load_seq2seq_model, load_vocorder_model
+from .action_utils import (
+    prepare_input_sequence,
+    load_seq2seq_model,
+    load_vocorder_model,
+)
 
 from speechbrain.pretrained import Tacotron2 as SpeechBrain
 from speechbrain.pretrained import HIFIGAN

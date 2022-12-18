@@ -215,8 +215,7 @@ def prepare_input_sequence(texts, cpu_run=True):
 
     d = []
     for i, text in enumerate(texts):
-        d.append(torch.IntTensor(text_to_sequence(
-            text, ["english_cleaners"])[:]))
+        d.append(torch.IntTensor(text_to_sequence(text, ["english_cleaners"])[:]))
 
     text_padded, input_lengths = _pad_sequences(d)
     if not cpu_run:
