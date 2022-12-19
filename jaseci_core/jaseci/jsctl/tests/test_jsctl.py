@@ -20,7 +20,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         return res.stdout
 
     def jac_call(self, cmd: str):
-        res = CliRunner(mix_stderr=False).invoke(jsctl.jac, [])
+        res = CliRunner(mix_stderr=False).invoke(jsctl.jac, cmd.split())
         return res.stdout
 
     def call_cast(self, cmd):
