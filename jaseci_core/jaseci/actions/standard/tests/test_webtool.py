@@ -14,6 +14,14 @@ class WebtoolTest(CoreTest):
         self.assertTrue("dc" in ret["report"][0])
         self.assertTrue("page" in ret["report"][0])
 
+    @jac_testcase("webtool.jac", "get_meta_403_response")
+    def test_get_meta_403_response(self, ret):
+        self.assertTrue(ret["success"])
+        self.assertTrue("og" in ret["report"][0])
+        self.assertTrue("meta" in ret["report"][0])
+        self.assertTrue("dc" in ret["report"][0])
+        self.assertTrue("page" in ret["report"][0])
+
     @jac_testcase("webtool.jac", "get_meta_invalid")
     def test_get_meta_invalid(self, ret):
         self.assertFalse(ret["success"])

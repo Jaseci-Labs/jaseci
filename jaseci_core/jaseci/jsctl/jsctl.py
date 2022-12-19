@@ -69,6 +69,15 @@ def jsctl(filename, mem_only):
     session["filename"] = filename if not mem_only else None
 
 
+@click.group()
+def jac():
+    """
+    Jac tool for building, running, and disassembling Jac programs
+    """
+    global session
+    session["mem-only"] = True
+
+
 def remote_api_call(payload, api_name):
     """
     Constructs and issues call to remote server
@@ -399,6 +408,7 @@ jsctl.add_command(reset)
 jsctl.add_command(script)
 jsctl.add_command(booktool)
 cmd_tree_builder(extract_api_tree())
+cmd_tree_builder(extract_api_tree()["jac"], group_func=jac)
 
 
 def main():
