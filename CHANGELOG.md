@@ -3,6 +3,7 @@
 ## Version 1.3.5
 
 ### Updates
+- New Feature: Introduction of individual `jac` cli tool
 - New Feature: Can now log in anonymously to any jaseci server with `publogin` command in jsctl
 - Improvement: can now create users more easily through `user create` apis
 - New Major Feature: `jsctl` can now run scripts of commands from file
