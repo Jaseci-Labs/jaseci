@@ -29,9 +29,10 @@ config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
 
 force_reload = False
 rate = int(config["HPARAMS"]["RATE"])
+denoicer_strength = float(config["HPARAMS"]["DENOICER_STRENGTH"])
 
 seq2seqmodel = load_seq2seq_model("tacotron2_v1", force_reload)
-vocorder = load_vocorder_model("hifigan", force_reload)
+vocorder = load_vocorder_model("waveglow", force_reload)
 
 
 def prediction(input_text):
@@ -65,9 +66,7 @@ def prediction(input_text):
         ):
             audio = vocorder.infer(mel)
             denoiser = Denoiser(vocorder)
-            audio = denoiser(
-                audio, strength=config["HPARAMS"]["DENOICER_STRENGTH"]
-            ).squeeze(1)
+            audio = denoiser(audio, strength=denoicer_strength).squeeze(1)
             audio_numpy = audio[0].data.cpu().numpy()
 
         elif vocorder.__class__.__name__ == "HIFIGAN":
