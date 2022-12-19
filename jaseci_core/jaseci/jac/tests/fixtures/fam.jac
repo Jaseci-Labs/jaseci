@@ -23,6 +23,7 @@ walker create_fam {
 
 walker free_ref {
     spawn here w::create_fam;
-
+    report --> node::man <-->;
+    report --> node::woman <-[mom]-;
 }
 
