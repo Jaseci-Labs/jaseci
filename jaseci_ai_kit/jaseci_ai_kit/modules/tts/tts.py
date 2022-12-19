@@ -178,7 +178,4 @@ def save_audio(audio_data: list, path: str = "", rate: int = rate):
 
 if __name__ == "__main__":
     print("Text to Speech Synthesizer up and running")
-    """ audio = prediction(
-        input_text="Text to Speech Synthesizer up and running. Mr. Jason $123", utils="utils")
-    save_file(audio, "./") """
     launch_server(port=8000)
