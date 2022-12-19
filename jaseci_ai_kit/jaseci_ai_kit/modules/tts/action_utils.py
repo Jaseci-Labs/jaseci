@@ -8,6 +8,7 @@ import urllib.request
 from .tacotron2.model import Tacotron2
 from .waveglow.model import WaveGlow
 from .text import text_to_sequence
+from .waveglow.denoiser import Denoiser
 
 from speechbrain.pretrained import Tacotron2 as SpeechBrain
 from speechbrain.pretrained import HIFIGAN
