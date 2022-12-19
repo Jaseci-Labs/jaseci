@@ -53,7 +53,7 @@ export class GraphWalkerRunner {
   render() {
     return (
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px' }}>
           <h3 class="text-lg font-bold">{this.selectedWalker ? 'Walker Context' : 'Select Walker'}</h3>
           {this.selectedWalker && (
             <button data-testId="addProperty" class="btn btn-info btn-xs ml-2" onClick={() => (this.selectedWalker = '')}>
