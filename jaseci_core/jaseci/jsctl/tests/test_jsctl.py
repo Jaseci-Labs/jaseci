@@ -339,6 +339,10 @@ class JsctlTest(TestCaseHelper, TestCase):
         r = self.call_cast("jac run jaseci/jsctl/tests/teststest.jir")
         self.assertEqual(r["report"], [{}, 4])
 
+    def test_jsctl_jac_dot_jir(self):
+        r = self.call("jac dot jaseci/jsctl/tests/teststest.jir")
+        self.assertEqual(r, 'strict digraph root {\n    "n0" [ label="n0:root"  ]\n}\n')
+
     def test_jsctl_jac_run_jir_walk(self):
         r = self.call_cast("jac run jaseci/jsctl/tests/teststest.jir -walk alt_init")
         self.assertEqual(r["report"], [7])
