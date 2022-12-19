@@ -22,22 +22,23 @@ Jaseci Kit is a collection of state-of-the-art machine learning models that are 
 | `lstm_ner`            | LSTM NER        |                                                       | Traininig req. | Experimental | Entity extraction/Slot filling via Long-short Term Memory Network |                                                                                                         |
 
 ## Summarization
-| Module      | Model Name | Example                         | Type             | Status | Description                                  | Resources                                                                                                    |
-| ----------- | ---------- | ------------------------------- | ---------------- | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `cl_summer` | Summarizer | [Link](#summarizer-clsummer)    | No Training req. | Ready  | Extractive Summarization using Sumy          | [Doc.](https://miso-belica.github.io/sumy/)                                                                  |
-| `t5_sum`    | Summarizer | [Link](#t5-summarization-t5sum) | No Training req. | Ready  | Abstractive Summarization using the T5 Model | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf) |
-| `bart_sum`    | Summarizer | [Link](#bart-summarization-bart_sum) | No Training req. | Ready  | Abstractive Summarization using the Bart Large Model | [Huggingface](https://huggingface.co/transformers/model_doc/bart.html), [Paper](https://arxiv.org/abs/1910.13461) |
+| Module      | Model Name | Example                              | Type             | Status | Description                                          | Resources                                                                                                         |
+| ----------- | ---------- | ------------------------------------ | ---------------- | ------ | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `cl_summer` | Summarizer | [Link](#summarizer-clsummer)         | No Training req. | Ready  | Extractive Summarization using Sumy                  | [Doc.](https://miso-belica.github.io/sumy/)                                                                       |
+| `t5_sum`    | Summarizer | [Link](#t5-summarization-t5sum)      | No Training req. | Ready  | Abstractive Summarization using the T5 Model         | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf)      |
+| `bart_sum`  | Summarizer | [Link](#bart-summarization-bart_sum) | No Training req. | Ready  | Abstractive Summarization using the Bart Large Model | [Huggingface](https://huggingface.co/transformers/model_doc/bart.html), [Paper](https://arxiv.org/abs/1910.13461) |
 
 ## Speech
-| Module      | Model Name | Example                         | Type             | Status | Description                                  | Resources                                                                                                    |
-| ----------- | ---------- | ------------------------------- | ---------------- | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `stt` | Speech2Text | [Link](#speech2text-stt)    | No Training req. | Ready  | transcription or translation of a give audio sequence. | [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf), [OpenAI Whisper](https://openai.com/blog/whisper/) |
+| Module | Model Name  | Example                  | Type             | Status | Description                                            | Resources                                                                                                                                                                                                                                                                 |
+| ------ | ----------- | ------------------------ | ---------------- | ------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stt`  | Speech2Text | [Link](#speech2text-stt) | No Training req. | Ready  | transcription or translation of a give audio sequence. | [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf), [OpenAI Whisper](https://openai.com/blog/whisper/)                                                                                                               |
+| `tts`  | Text2Speech | [Link](#)                | No Training req. | Ready  | List of Amplitudes of the synthesized audio wav.       | [Tacotron2](https://arxiv.org/abs/1712.05884), [Waveglow](https://arxiv.org/abs/1811.00002), [Hifigan](https://arxiv.org/abs/2010.05646), [Nvidia Tacotron2 implementation](https://github.com/NVIDIA/tacotron2), [SpeechBrain](https://speechbrain.github.io/index.html) |
 
 ## Text Processing
-| Module     | Model Name     | Example                          | Type             | Status      | Description                           | Resources                                                           |
-| ---------- | -------------- | -------------------------------- | ---------------- | ----------- | ------------------------------------- | ------------------------------------------------------------------- |
-| `text_seg` | Text Segmenter | [Link](#text-segmenter-text_seg) | No Training req. | Experimetal | Topical Change Detection in Documents | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec) |
-| `translator` | Text Translation | [Link](#text-translation-translator) | No Training req. | Ready | Text Translation for 50 languages to 50 languages | [Multilingual Denoising Pre-training for Neural Machine Translation](https://arxiv.org/abs/2001.08210), [Huggingface MBart Docs](https://huggingface.co/transformers/model_doc/mbart.html) |
+| Module       | Model Name       | Example                              | Type             | Status      | Description                                       | Resources                                                                                                                                                                                  |
+| ------------ | ---------------- | ------------------------------------ | ---------------- | ----------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `text_seg`   | Text Segmenter   | [Link](#text-segmenter-text_seg)     | No Training req. | Experimetal | Topical Change Detection in Documents             | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec)                                                                                                                        |
+| `translator` | Text Translation | [Link](#text-translation-translator) | No Training req. | Ready       | Text Translation for 50 languages to 50 languages | [Multilingual Denoising Pre-training for Neural Machine Translation](https://arxiv.org/abs/2001.08210), [Huggingface MBart Docs](https://huggingface.co/transformers/model_doc/mbart.html) |
 
 ## Text Clustering
 | Module    | Model Name   | Example                       | Type             | Status      | Description                                               | Resources                                                                                                                         |
@@ -828,9 +829,9 @@ You can also pass a list of texts to get the summary of all the texts.
 walker test_summarize_batch {
     can bart_sum.summarize;
     report bart_sum.summarize(
-        ["There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.", 
+        ["There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
         "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
-        "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude."], 
+        "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude."],
         10
     );
 }
@@ -890,6 +891,36 @@ walker translate {
     report stt.translate("fr", null, null, "https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3");
 }
 ```
+### Text2Speech (`tts`)
+Implementation of the `tts` module produces audio wavs from the input text sequence.
+
+* `synthesize`: Synthesize audio wavs for the input text sequence and will return the list of amlitude values of the audio wav. provide an option to save the audio wav in a prefered file location if the correct file path is passed as a parameter.
+  * Input
+    * `text` : (String) Input text sequence. This input text sequence will undergo with text preprocessing steps, such as expanding abrivations, converting numbers into ordinal format and removing unnessary white spaces.
+    * `base64_val`: (Boolean). Set this to true if you need the return value in base64.
+    * `path` : (String) Set the path correctly if you need to save the audio in a prefered location. ignore if you don't wanna save.
+    * `rate` : The bitrate of the audio. This is not mandotory field.
+  * Return
+    * Dictionary
+* `save_audio` : This action will save the audio amplitude as a wav file in a prefered location.
+  * Input
+    * `audio_data`: (List) a list of amplitude(float) values
+    * `path` : (String) The location path to save the audio.
+    * `rate`: (Int) The audio bitrate.
+  * Return
+    * Dictionary
+* `load_seq2seqmodel` : This action will load the sequence to sequence model given in the input.
+  * Input
+    * `model_name` : String, model name. possible names {`tacotron2_v1`, `tacotron2_v2`}
+    * `force_reload` : Boolean.
+  * Return
+    * String, status and of name of the loaded model.
+* `load_vocorder` : This action will load the vocorder model given in the input.
+  * Input
+    * `model_name` : String, model name. possible names {`waveglow`, `hifigan`}
+    * `force_reload` : Boolean.
+  * Return
+    * String, status and of name of the loaded model.
 
 ## Text Processing
 ### Text Segmenter (`text_seg`)
