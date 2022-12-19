@@ -1,18 +1,13 @@
-import os
-import time
 import json
 import torch
 import base64
 import warnings
-import configparser
 
 import numpy as np
 
 from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
-
-from .waveglow.denoiser import Denoiser
 
 from .action_utils import (
     rate,
@@ -33,6 +28,9 @@ vocorder = load_vocorder_model("waveglow", force_reload)
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
 def load_seq2seqmodel(model_name: str = "tacotron2", force_reload: bool = False):
+    """
+    Load the sequence to sequence model. This can be use to switch beween available models.
+    """
     global seq2seq_model
     try:
         seq2seq_model = load_seq2seq_model(model_name, force_reload)
@@ -44,6 +42,9 @@ def load_seq2seqmodel(model_name: str = "tacotron2", force_reload: bool = False)
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
 def load_vocorder(model_name: str = "waveglow", force_reload: bool = False):
+    """
+    Load the vocorder model. This can be use to switch between available vocordel models.
+    """
     global vocorder
     try:
         vocorder = load_vocorder_model(model_name, force_reload)
@@ -55,7 +56,9 @@ def load_vocorder(model_name: str = "waveglow", force_reload: bool = False):
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
 def synthesize(text: str, base64_val: bool = False, path: str = "", rate: int = rate):
-
+    """
+    Inferencing using sequence to sequence model and vocorder model.
+    """
     try:
         synthesize_audio = prediction(text, seq2seqmodel, vocorder)
         if base64_val:
@@ -80,6 +83,9 @@ def synthesize(text: str, base64_val: bool = False, path: str = "", rate: int = 
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
 def save_audio(audio_data: list, path: str = "", rate: int = rate):
+    """
+    Saving the audio in the given file path.
+    """
     try:
         audio_data = np.array(audio_data, dtype="float32")
         status = save_file(audio_data, path, rate)

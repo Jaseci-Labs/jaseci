@@ -922,6 +922,24 @@ Implementation of the `tts` module produces audio wavs from the input text seque
   * Return
     * String, status and of name of the loaded model.
 
+#### Example Jac Usage:
+
+```
+walker init{
+    has text_input = "Hello world!, This is a test run";
+    can tts.synthesize;
+    can tts.save_audio;
+    can tts.load_seq2seqmodel;
+    can tts.load_vocorder;
+
+    has seq2seq = tts.load_seq2seqmodel("tacotron2_v1");
+    has vocorder = tts.load_vocorder("hifigan");
+
+    has result = tts.synthesize(text = text_input);
+    report tts.save_audio(result.audio_wave , "./");
+}
+```
+
 ## Text Processing
 ### Text Segmenter (`text_seg`)
 `text_seg` Text segmentation is a method of splitting a document into smaller parts, which is usually called segments. It is widely used in text processing. Each segment has its relevant meaning. Those segments categorized as word, sentence, topic, phrase etc. module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
