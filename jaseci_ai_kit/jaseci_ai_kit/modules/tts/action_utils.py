@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import torch
 import configparser
 import urllib.request
@@ -10,9 +11,14 @@ from .text import text_to_sequence
 
 from speechbrain.pretrained import Tacotron2 as SpeechBrain
 from speechbrain.pretrained import HIFIGAN
+from scipy.io.wavfile import write
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
+
+force_reload = bool(int(config["HPARAMS"]["FORCE_RELOAD"]))
+rate = int(config["HPARAMS"]["RATE"])
+denoicer_strength = float(config["HPARAMS"]["DENOICER_STRENGTH"])
 
 
 def _download_checkpoint(checkpoint, force_reload):
@@ -86,7 +92,7 @@ def _unwrap_distributed(state_dict):
     return new_state_dict
 
 
-def load_tacotron(checkpoint, force_reload):
+def _load_tacotron(checkpoint, force_reload):
     """
     Downloads tacotron2 checkpoints and loading state dictionery
 
@@ -110,7 +116,7 @@ def load_tacotron(checkpoint, force_reload):
     return tacotron2
 
 
-def load_waveglow(checkpoint, force_reload):
+def _load_waveglow(checkpoint, force_reload):
     """
     Downloads waveglow checkpoints and loading state dictionery
 
@@ -158,7 +164,7 @@ def load_seq2seq_model(model_name, force_reload):
     Loading the seq2seq model.
     """
     if model_name == "tacotron2_v1":
-        return load_tacotron(config["SEQ2SEQ_MODEL"]["TACOTRON2_V1"], force_reload)
+        return _load_tacotron(config["SEQ2SEQ_MODEL"]["TACOTRON2_V1"], force_reload)
     elif model_name == "tacotron2_v2":
         return SpeechBrain.from_hparams(
             source=config["SEQ2SEQ_MODEL"]["TACOTRON2_v2"],
@@ -171,7 +177,7 @@ def load_seq2seq_model(model_name, force_reload):
 def load_vocorder_model(model_name, force_reload):
 
     if model_name == "waveglow":
-        waveglow = load_waveglow(config["VOCORDER"]["WAVEGLOW"], force_reload)
+        waveglow = _load_waveglow(config["VOCORDER"]["WAVEGLOW"], force_reload)
         return waveglow.remove_weightnorm(waveglow)
     elif model_name == "hifigan":
         return HIFIGAN.from_hparams(
@@ -217,3 +223,86 @@ def prepare_input_sequence(texts, cpu_run=True):
         input_lengths = input_lengths.long()
 
     return text_padded, input_lengths
+
+
+def save_file(input_numpy, path="", rate=rate):
+    """
+    Saving the audio file the given path
+
+    Parameters:
+    -----------
+    input_numpy: Numpy array, 1d numpy with floats contains audio data.
+    path: String, path to the directory to save the file.
+    rate: int, The rate of the audio.
+
+    Return:
+    -----------
+    success: Boolean, True if successfuly saved.
+    file_path: String, path to the saved file.
+    """
+    success = False
+    ret_dict = {
+        "save_status": success,
+    }
+
+    if os.path.exists(path):
+        try:
+            file_name = "audio_file_" + str(time.time()) + ".wav"
+            file_path = os.path.join(path, file_name)
+            write(file_path, rate, input_numpy)
+            success = True
+            ret_dict = {
+                "save_status": success,
+                "file_path": file_path,
+            }
+        except Exception as ex:
+            print(ex)
+            success = False
+            file_path = None
+    else:
+        print("Set up directory path properly to save the audio file.")
+
+    return ret_dict
+
+
+def prediction(input_text, seq2seqmodel, vocorder):
+    """
+    Inferencing
+
+    Parameters:
+    -----------
+    input_text: String, input text for preprocessing.
+
+    Return:
+    -----------
+    audio_numpy: Numpy array, 1d numpy with floats contains audio data.
+    """
+    print(
+        "Synthesizing speeches with "
+        + seq2seqmodel.__class__.__name__
+        + " and "
+        + vocorder.__class__.__name__
+        + "."
+    )
+
+    sequences, lengths = prepare_input_sequence([input_text], cpu_run=True)
+
+    with torch.no_grad():
+        mel, _, _ = seq2seqmodel.infer(sequences, lengths)
+
+        if (
+            vocorder.__class__.__name__ == "WaveGlow"
+            or vocorder.__class__.__name__ == "WAVEGLOW"
+        ):
+            audio = vocorder.infer(mel)
+            denoiser = Denoiser(vocorder)
+            audio = denoiser(audio, strength=denoicer_strength).squeeze(1)
+            audio_numpy = audio[0].data.cpu().numpy()
+
+        elif vocorder.__class__.__name__ == "HIFIGAN":
+            audio = vocorder.decode_batch(mel)
+            audio_numpy = audio[0].data.cpu().numpy()[0]
+
+        else:
+            print("No valid vocorder")
+    return audio_numpy

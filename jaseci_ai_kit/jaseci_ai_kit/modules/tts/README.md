@@ -24,7 +24,7 @@ In this section we will take an input raw text and will output the list of ampli
 
 To synthesize audios we can use the `synthesize` action in the `tts` module.
 
-**Example 1:**
+**Example:**
 ```
 walker synthesize{
     has text_input = "Hello world, I miss you so much";
@@ -65,6 +65,7 @@ walker synthesize{
 
 You can save generated audio into local file system using the `save_audio` action from the jaseci `tts` module.
 
+**Example:**
 ```
 walker save_audio{
     has text_input = "Hello world!.";
@@ -76,7 +77,7 @@ walker save_audio{
 }
 ```
 
-**Output:2**
+**Output:**
 ```
 {
   "success": true,
@@ -102,7 +103,7 @@ You will see the saved audio in the given file path after completion of excuting
 
 The jaseci tts module currently have two version of Tacotron2 models as sequence to sequence models and waveglow and hifigan as vocorder models. You can switch between these models using `load_seq2seqmodel` and `load_vocorder` actions acordingly. try the following example.
 
-**Example 3:**
+**Example:**
 ```
 walker init{
     has text_input = "Hello world!.";
@@ -119,7 +120,7 @@ walker init{
 }
 ```
 
-**Output 3:**
+**Output:**
 ```
 Synthesizing speeches with Tacotron2 and HIFIGAN.
 {
