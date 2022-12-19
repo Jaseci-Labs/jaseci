@@ -21,22 +21,17 @@ from .action_utils import (
     load_vocorder_model,
 )
 
-from speechbrain.pretrained import Tacotron2 as SpeechBrain
-from speechbrain.pretrained import HIFIGAN
-
 warnings.filterwarnings("ignore")
 warnings.warn("ignore")
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
 
-force_reload = True
-rate = 22050
+force_reload = False
+rate = int(config["HPARAMS"]["RATE"])
 
-device = ("cuda" if torch.cuda.is_available() else "cpu",)
-
-seq2seqmodel = load_seq2seq_model("tacotron2_v1")
-vocorder = load_vocorder_model("hifigan")
+seq2seqmodel = load_seq2seq_model("tacotron2_v1", force_reload)
+vocorder = load_vocorder_model("hifigan", force_reload)
 
 
 def prediction(input_text):
@@ -51,16 +46,28 @@ def prediction(input_text):
     -----------
     audio_numpy: Numpy array, 1d numpy with floats contains audio data.
     """
+    print(
+        "Synthesizing speeches with "
+        + seq2seqmodel.__class__.__name__
+        + " and "
+        + vocorder.__class__.__name__
+        + "."
+    )
 
     sequences, lengths = prepare_input_sequence([input_text], cpu_run=True)
 
     with torch.no_grad():
         mel, _, _ = seq2seqmodel.infer(sequences, lengths)
 
-        if vocorder.__class__.__name__ == "WAVEGLOW":
+        if (
+            vocorder.__class__.__name__ == "WaveGlow"
+            or vocorder.__class__.__name__ == "WAVEGLOW"
+        ):
             audio = vocorder.infer(mel)
             denoiser = Denoiser(vocorder)
-            audio = denoiser(audio, strength=0.05).squeeze(1)
+            audio = denoiser(
+                audio, strength=config["HPARAMS"]["DENOICER_STRENGTH"]
+            ).squeeze(1)
             audio_numpy = audio[0].data.cpu().numpy()
 
         elif vocorder.__class__.__name__ == "HIFIGAN":
@@ -68,7 +75,7 @@ def prediction(input_text):
             audio_numpy = audio[0].data.cpu().numpy()[0]
 
         else:
-            print("no valid vocorder")
+            print("No valid vocorder")
     return audio_numpy
 
 
@@ -116,7 +123,7 @@ def save_file(input_numpy, path="", rate=rate):
 def load_seq2seqmodel(model_name: str = "tacotron2", force_reload: bool = False):
     global seq2seq_model
     try:
-        seq2seq_model = load_seq2seq_model(model_name)
+        seq2seq_model = load_seq2seq_model(model_name, force_reload)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -127,7 +134,7 @@ def load_seq2seqmodel(model_name: str = "tacotron2", force_reload: bool = False)
 def load_vocorder(model_name: str = "waveglow", force_reload: bool = False):
     global vocorder
     try:
-        vocorder = load_vocorder_model(model_name)
+        vocorder = load_vocorder_model(model_name, force_reload)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -135,12 +142,8 @@ def load_vocorder(model_name: str = "waveglow", force_reload: bool = False):
 
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
-def synthesize(
-    text: str,
-    base64_val: bool = False,
-    path: str = "",
-    rate: int = rate,
-):
+def synthesize(text: str, base64_val: bool = False, path: str = "", rate: int = rate):
+
     try:
         synthesize_audio = prediction(text)
         if base64_val:
@@ -165,6 +168,7 @@ def synthesize(
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
 def save_audio(audio_data: list, path: str = "", rate: int = rate):
+    print(type(rate))
     try:
         audio_data = np.array(audio_data, dtype="float32")
         status = save_file(audio_data, path, rate)

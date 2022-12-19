@@ -153,50 +153,39 @@ def _pretrained_models_file_path(model_name):
     return model_ckpt_file
 
 
-def load_seq2seq_model(model_name):
-    print(model_name)
-
-    def tacotron2_v1():
-        return load_tacotron(config["SEQ2SEQ_MODEL"]["TACOTRON2_V1"], False)
-
-    def tacotron2_v2():
+def load_seq2seq_model(model_name, force_reload):
+    """
+    Loading the seq2seq model.
+    """
+    if model_name == "tacotron2_v1":
+        return load_tacotron(config["SEQ2SEQ_MODEL"]["TACOTRON2_V1"], force_reload)
+    elif model_name == "tacotron2_v2":
         return SpeechBrain.from_hparams(
             source=config["SEQ2SEQ_MODEL"]["TACOTRON2_v2"],
             savedir=_pretrained_models_file_path("tacotron2_v1"),
         )
-
-    def default():
+    else:
         return "Incorrect model name"
 
-    if model_name == "tacotron2_v1":
-        return tacotron2_v1()
-    elif model_name == "tacotron2_v2":
-        return tacotron2_v2()
-    else:
-        return default()
 
+def load_vocorder_model(model_name, force_reload):
 
-def load_vocorder_model(model_name):
-    def waveglow():
-        waveglow = load_waveglow(config["VOCORDER"]["WAVEGLOW"], False)
+    if model_name == "waveglow":
+        waveglow = load_waveglow(config["VOCORDER"]["WAVEGLOW"], force_reload)
         return waveglow.remove_weightnorm(waveglow)
-
-    def hifigan():
+    elif model_name == "hifigan":
         return HIFIGAN.from_hparams(
             source="speechbrain/tts-hifigan-libritts-22050Hz",
             savedir=_pretrained_models_file_path("hifigan"),
         )
-
-    if model_name == "waveglow":
-        return waveglow()
-    elif model_name == "hifigan":
-        return hifigan()
     else:
         return "The vocorder model is incorrect"
 
 
 def _pad_sequences(batch):
-    # Right zero-pad all one-hot text sequences to max input length
+    """
+    Right zero-pad all one-hot text sequences to max input length.
+    """
     input_lengths, ids_sorted_decreasing = torch.sort(
         torch.LongTensor([len(x) for x in batch]), dim=0, descending=True
     )
@@ -212,7 +201,9 @@ def _pad_sequences(batch):
 
 
 def prepare_input_sequence(texts, cpu_run=True):
-
+    """
+    Preprocess input text sequence with text cleaners.
+    """
     d = []
     for i, text in enumerate(texts):
         d.append(torch.IntTensor(text_to_sequence(text, ["english_cleaners"])[:]))
