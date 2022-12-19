@@ -246,7 +246,6 @@ class ActionsOptimizer:
             self.policy = policy_name
             self.policy_state[policy_name] = {}
             self.policy_params = policy_params
-            logger.info(self.policy_params)
             return True
         else:
             return f"Policy {policy_name} not found."
