@@ -11,6 +11,9 @@ from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
 from .state import ServiceState as Ss
 from .config import META_CONFIG, KUBERNETES_CONFIG
 
+import time
+import numpy as np
+
 ###################################################
 #                  UNSAFE PARAMS                  #
 ###################################################
@@ -266,7 +269,6 @@ class JsOrc:
         self.services = {}
         self.background = {}
         self.context = {}
-        self.actions_optimizer = ActionsOptimizer()
         self.benchmark = {
             "jsorc": {"active": False, "requests": {}},
             "actions_optimizer": {"active": False, "requests": {}},
@@ -274,6 +276,11 @@ class JsOrc:
         self.actions_history = {"active": False, "history": []}
         self.actions_calls = {}
         self.system_states = {"active": False, "states": []}
+        self.actions_optimizer = ActionsOptimizer(
+            benchmark=self.benchmark["actions_optimizer"],
+            actions_history=self.actions_history,
+            actions_calls=self.actions_calls,
+        )
 
     ###################################################
     #                     BUILDER                     #
@@ -581,11 +588,11 @@ class JsOrc:
         """
         if self.system_states["active"]:
             ts = int(time.time())
-            prom_profile = self.prom.info(
+            prom_profile = self.prometheus.info(
                 namespace=self.namespace,
                 exclude_prom=True,
                 timestamp=ts,
-                duration=self.interval,
+                duration=self.backoff_interval,
             )
             self.system_states["states"].append(
                 {

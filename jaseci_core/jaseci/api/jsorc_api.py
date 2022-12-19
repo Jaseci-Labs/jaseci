@@ -202,7 +202,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            hook.jsorc.app.actions_tracking_start()
+            hook.meta.app.actions_tracking_start()
             return {"success": True}
         else:
             return {"success": False, "message": "No running JSORC service."}
@@ -214,7 +214,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            return hook.jsorc.app.actions_tracking_stop()
+            return hook.meta.app.actions_tracking_stop()
         else:
             return {"success": False, "message": "No running JSORC service."}
 
@@ -225,7 +225,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            hook.jsorc.app.benchmark_start()
+            hook.meta.app.benchmark_start()
             return {"success": True}
         else:
             return {"success": False, "message": "No running JSORC service."}
@@ -237,7 +237,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            return hook.jsorc.app.benchmark_report()
+            return hook.meta.app.benchmark_report()
         else:
             return {"success": False, "message": "No running JSORC service."}
 
@@ -248,7 +248,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            return hook.jsorc.app.benchmark_stop(report)
+            return hook.meta.app.benchmark_stop(report)
         else:
             return {"success": False, "message": "No running JSORC service."}
 
@@ -259,7 +259,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            hook.jsorc.app.state_tracking_start()
+            hook.meta.app.state_tracking_start()
             return {"success": True}
         else:
             return {"success": False, "message": "No running JSORC service."}
@@ -271,7 +271,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            return hook.jsorc.app.state_tracking_report()
+            return hook.meta.app.state_tracking_report()
         else:
             return {"success": False, "message": "No running JSORC service."}
 
@@ -282,7 +282,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            return hook.jsorc.app.state_tracking_stop()
+            return hook.meta.app.state_tracking_stop()
         else:
             return {"success": False, "message": "No running JSORC service."}
 
@@ -293,7 +293,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            res = hook.jsorc.app.set_action_policy(policy_name, policy_params)
+            res = hook.meta.app.set_action_policy(policy_name, policy_params)
             if res is True:
                 return {
                     "success": True,
@@ -311,7 +311,7 @@ class JsOrcApi:
         """
         hook = self._h
         if hook.meta.run_svcs:
-            policy = hook.jsorc.app.get_action_policy()
+            policy = hook.meta.app.get_action_policy()
             return {"success": True, "policy": policy}
         else:
             return {"success": False, "message": "No running JSORC service."}

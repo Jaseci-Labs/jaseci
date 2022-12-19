@@ -69,5 +69,5 @@ class Action(Item):
         t = time.time() - ts
         hook.meta.app.post_action_call_hook(
             self.value, t
-        ) if hook.meta.run_vcs else None
+        ) if hook.meta.run_svcs else None
         return result
