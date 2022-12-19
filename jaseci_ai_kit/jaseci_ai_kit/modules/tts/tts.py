@@ -46,9 +46,6 @@ def prediction(input_text):
     Parameters:
     -----------
     input_text: String, input text for preprocessing.
-    seq2seqmodel: Model, the sequence to sequence model.
-    vocorder: Model, the vocorder model.
-    utils: Processing,
 
     Return:
     -----------
@@ -116,10 +113,30 @@ def save_file(input_numpy, path="", rate=rate):
 
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
+def load_seq2seqmodel(model_name: str = "tacotron2", force_reload: bool = False):
+    global seq2seq_model
+    try:
+        seq2seq_model = load_seq2seq_model(model_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return f"[Model Loaded] : {model_name}"
+
+
+@jaseci_action(act_group=["tts"], allow_remote=True)
+def load_vocorder(model_name: str = "waveglow", force_reload: bool = False):
+    global vocorder
+    try:
+        vocorder = load_vocorder_model(model_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return f"[Model Loaded] : {model_name}"
+
+
+@jaseci_action(act_group=["tts"], allow_remote=True)
 def synthesize(
     text: str,
-    seq2seq_model: str = "tacotron2",
-    vocorder: str = "waveglow",
     base64_val: bool = False,
     path: str = "",
     rate: int = rate,
