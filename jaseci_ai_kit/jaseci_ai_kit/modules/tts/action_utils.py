@@ -176,7 +176,9 @@ def load_seq2seq_model(model_name, force_reload):
 
 
 def load_vocorder_model(model_name, force_reload):
-
+    """
+    Loading the vocorder model.
+    """
     if model_name == "waveglow":
         waveglow = _load_waveglow(config["VOCORDER"]["WAVEGLOW"], force_reload)
         return waveglow.remove_weightnorm(waveglow)
