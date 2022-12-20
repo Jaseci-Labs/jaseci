@@ -14,6 +14,7 @@ class Interface:
     General master interface engine
     """
 
+    _account_api = []
     _public_api = []
     _private_api = []
     _admin_api = []
@@ -47,6 +48,19 @@ class Interface:
             }
         )
         return func
+
+    def account_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
+        def decorator_func(func):
+            return Interface.assimilate_api(
+                Interface._account_api,
+                func,
+                cmd_group,
+                cli_args,
+                url_args,
+                allowed_methods,
+            )
+
+        return decorator_func
 
     def public_api(cmd_group=None, cli_args=None, url_args=None, allowed_methods=None):
         def decorator_func(func):
@@ -96,12 +110,18 @@ class Interface:
         return decorator_func
 
     def all_apis(self, with_cli_only=False):
-        ret = Interface._public_api + Interface._private_api + Interface._admin_api
+        ret = (
+            Interface._account_api
+            + Interface._public_api
+            + Interface._private_api
+            + Interface._admin_api
+        )
         if with_cli_only:
             return ret + Interface._cli_api
         return ret
 
     assimilate_api = staticmethod(assimilate_api)
+    account_api = staticmethod(account_api)
     public_api = staticmethod(public_api)
     private_api = staticmethod(private_api)
     admin_api = staticmethod(admin_api)

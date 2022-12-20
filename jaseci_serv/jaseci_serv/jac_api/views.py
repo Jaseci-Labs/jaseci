@@ -249,3 +249,60 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
             return JResponse(self.caller._pub_committer, api_result, status=status)
         else:
             return Response(api_result, status=status)
+
+
+class AbstractAccountJacAPIView(AbstractJacAPIView):
+    """
+    The abstract base for Jaseci Admin APIs
+    """
+
+    http_method_names = ["post"]
+    permission_classes = (AllowAny,)
+
+    def get(self, request, **kwargs):
+        """
+        Public GET function that parses api signature to load parms
+        SuperSmart GET - can read signatures of master and process
+        bodies accordingly
+        """
+        self.proc_request(request, **kwargs)
+
+        api_result = self.caller.public_interface_to_api(self.cmd, type(self).__name__)
+        self.log_request_stats()
+        return self.issue_response(api_result)
+
+    def post(self, request, **kwargs):
+        """
+        Public post function that parses api signature to load parms
+        SuperSmart Post - can read signatures of master and process
+        bodies accordingly
+        """
+        self.proc_request(request, **kwargs)
+
+        api_result = self.caller.public_interface_to_api(self.cmd, type(self).__name__)
+        self.log_request_stats()
+        return self.issue_response(api_result)
+
+    def set_caller(self, request):
+        """Assigns the calling api interface obj"""
+        self.caller = ServMaster(
+            h=MetaService().build_hook(),
+            persist=False,
+        )
+
+    def issue_response(self, api_result):
+        """Issue response from call"""
+        # If committer set, results should be saved back
+        status = self.pluck_status_code(api_result)
+
+        if (
+            isinstance(api_result, dict)
+            and "report_custom" in api_result.keys()
+            and api_result["report_custom"] is not None
+        ):
+            api_result = api_result["report_custom"]
+
+        if self.caller._pub_committer:
+            return JResponse(self.caller._pub_committer, api_result, status=status)
+        else:
+            return Response(api_result, status=status)

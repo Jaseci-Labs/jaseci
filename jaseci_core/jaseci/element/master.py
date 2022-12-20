@@ -16,6 +16,7 @@ from jaseci.api.master_api import MasterApi
 from jaseci.api.jac_api import JacApi
 from jaseci.api.user_api import UserApi
 from jaseci.api.queue_api import QueueApi
+from jaseci.api.account_api import AccountApi
 
 
 class Master(
@@ -31,6 +32,7 @@ class Master(
     JacApi,
     UserApi,
     QueueApi,
+    AccountApi,
 ):
     """Main class for master functions for user"""
 
