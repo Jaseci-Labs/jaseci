@@ -33,6 +33,10 @@ setup(
         "pytest-cov",
         "gprof2dot",
         "metadata_parser",
+        "google-api-python-client",
+        "google-auth",
+        "google-auth-oauthlib",
+        "google-auth-httplib2",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
