@@ -1,14 +1,6 @@
-# This workflow will upload a Python Package using Twine when a new tag is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+# This workflow will also build the jaseci studio binaries
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# This workflow will also build and upload two docker images to dockerhub
-
-name: Build and Release to Pypi and DockerHub
+name: Build and Release Jaseci Studio
 
 on:
   push:
@@ -16,100 +8,20 @@ on:
       - "*"
 
 jobs:
-  push_jaseci_core_to_pypi:
-    runs-on: ubuntu-latest
+  create-release:
+    runs-on: ubuntu-20.04
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
 
+    
+    
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: setup node
+        uses: actions/setup-node@v3
         with:
-          python-version: "3.x"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine
-          pip install build
-
-      - name: Push to pypi
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.JASECI_PYPI_API_TOKEN }}
-        run: |
-          cd jaseci_core
-          python3 -m build
-          python3 -m twine upload --skip-existing dist/*
-
-  push_jaseci_serv_to_pypi:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine
-          pip install build
-
-      - name: Push to pypi
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.JASECI_SERV_PYPI_API_TOKEN }}
-        run: |
-          cd jaseci_serv
-          python3 -m build
-          python3 -m twine upload --skip-existing dist/*
-
-  push_jaseci_ai_kit_to_pypi:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine
-          pip install build
-
-      - name: Push to pypi
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.JASECI_JSKIT_PYPI_API_TOKEN }}
-        run: |
-          cd jaseci_ai_kit
-          python3 -m build
-          python3 -m twine upload --skip-existing dist/*
-
-  build-and-release-jaseci-docker-image:
-    name: Build Jaseci Docker image and push to dockerhub
-    runs-on: ubuntu-latest
-    needs: [push_jaseci_core_to_pypi, push_jaseci_serv_to_pypi]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # setup Docker buld action
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-
-      # login to dockerhub
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # a little string manipulation to get the tag number without the leading letter v
+          node-version: 16
+          projectPath: "./jaseci_studio"
       - name: Set versions
         uses: actions/github-script@v6
         id: set_version
@@ -118,64 +30,93 @@ jobs:
             const tag = context.ref.substring(10)
             const no_v_tag = tag.replace('v', '')
             core.setOutput('no-v-tag', no_v_tag)
-
-      # build the image and push to docker hub
-      # 1. jaseci 
-      - name: Build and push image -- Jaseci
-        uses: docker/build-push-action@v3
+      - name: create release
+        id: create-release
+        uses: actions/github-script@v6
         with:
-          push: true
-          context: ./support/docker/
-          tags: |
-            jaseci/jaseci:${{steps.set_version.outputs.no-v-tag}}
-          build-args: |
-            JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
-            JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
-          file: ./support/docker/jaseci.Dockerfile
+          projectPath: "./jaseci_studio"
+          script: |
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${{steps.set_version.outputs.no-v-tag}}`,
+              name: `Jaseci v${{steps.set_version.outputs.no-v-tag}}`,
+              body: 'Source code and Jaseci Studio executables.',
+              draft: true,
+              prerelease: false
+            })
+            return data.id
+  build-tauri:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-20.04, windows-latest]
 
-  build-and-release-jaseci-ai-docker-image:
-    name: Build Jaseci AI Docker image and push to dockerhub
-    runs-on: ubuntu-latest
-    needs: [push_jaseci_core_to_pypi, push_jaseci_serv_to_pypi, push_jaseci_ai_kit_to_pypi]
-
+    runs-on: ${{ matrix.platform }}
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # setup Docker buld action
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-
-      # login to dockerhub
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # a little string manipulation to get the tag number without the leading letter v
+      - uses: actions/checkout@v3
       - name: Set versions
         uses: actions/github-script@v6
         id: set_version
         with:
           script: |
             const tag = context.ref.substring(10)
-            const no_v_tag = tag.replace('v', '')
+            let no_v_tag = tag.replace('v', '')
+            if(no_v_tag.split(".")[3]) {
+                no_v_tag = no_v_tag.split(".").slice(0, 3).join(".") + "-" + no_v_tag.split(".")[3]
+            }
             core.setOutput('no-v-tag', no_v_tag)
-
-      # build the image and push to docker hub
-      # 2. jaseci with jaseci_ai_kit
-      - name: Build and push image -- Jaseci with jaseci-ai-kit
-        uses: docker/build-push-action@v3
+      - name: setup node
+        uses: actions/setup-node@v3
         with:
-          push: true
-          context: ./support/docker/
-          tags: |
-            jaseci/jaseci-ai:${{steps.set_version.outputs.no-v-tag}}
-          build-args: |
-            JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
-            JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
-            JASECI_AI_KIT_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
-            BUILD_WITH_AI=1
-          file: ./support/docker/jaseci.Dockerfile
+          node-version: 16
+          projectPath: "./jaseci_studio"
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: prepare stencil ui components
+        run: yarn setup:ui
+        working-directory: "./jaseci_studio"
+      - name: install app dependencies and build it
+        run: yarn && yarn build
+        working-directory: "./jaseci_studio"
+      - name: bump version
+        id: bump-version
+        uses: jossef/action-set-json-field@v2.1
+        with:
+          file: ./jaseci_studio/src-tauri/tauri.conf.json
+          field: package.version
+          value: ${{ steps.set_version.outputs.no-v-tag }}
+      - uses: tauri-apps/tauri-action@v0          
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          projectPath: "./jaseci_studio"
+
+  publish-release:
+    runs-on: ubuntu-20.04
+    needs: [create-release, build-tauri]
+
+    steps:
+      - name: publish release
+        id: publish-release
+        uses: actions/github-script@v6
+        env:
+          release_id: ${{ needs.create-release.outputs.release_id }}
+        with:
+          projectPath: "./jaseci_studio"
+          script: |
+            github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: process.env.release_id,
+              draft: false,
+              prerelease: false
+            })
