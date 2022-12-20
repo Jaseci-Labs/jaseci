@@ -3,8 +3,6 @@ import stripe
 from datetime import datetime
 from jaseci.actions.live_actions import jaseci_action
 
-DEFAULT_API_KEY = "sk_test_51JWUIeCZO78n7fsZnPvualWhmJg1DcCI332kKnWF3q2sKGwnPADjEmNblfFWi4pWAWPuJwHxpeSoJGc0J5ButHN900Q2xBz1se"
-
 
 def set_api_key(meta):
     api_key = meta["h"].get_glob("STRIPE_API_KEY")
@@ -22,15 +20,19 @@ def set_api_key(meta):
 
 @jaseci_action()
 def create_product(
-    name: str, description: str, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
+    name: str, description: str, api_key: str, mock_api: bool = False, meta: dict = {}
 ):
     """create product"""
+    # set_api_key(meta)
+    api_key = api_key or meta["h"].get_glob("STRIPE_API_KEY")
 
     if mock_api:
         return {"success": True}
 
     try:
-        return stripe.Product.create(name=name, description=description)
+        return stripe.Product.create(
+            api_key=api_key, name=name, description=description
+        )
     except Exception as e:
         return {"message": str(e)}
 
@@ -41,10 +43,13 @@ def create_product_price(
     amount: int,
     currency: str,
     interval: str,
-    api_key: str = DEFAULT_API_KEY,
+    api_key: str,
     mock_api: bool = False,
+    meta: dict = {},
 ):
     """modify product price"""
+    # set_api_key(meta)
+    api_key = api_key or meta["h"].get_glob("STRIPE_API_KEY")
 
     if mock_api:
         return {"success": True}
@@ -61,10 +66,9 @@ def create_product_price(
 
 
 @jaseci_action()
-def product_list(
-    detailed: bool, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
-):
+def product_list(detailed: bool, mock_api: bool = False, meta: dict = {}):
     """retrieve all producs"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -88,10 +92,13 @@ def create_customer(
     metadata: dict or None,
     address: dict or None,
     payment_method_id: str or None,
-    api_key: str = DEFAULT_API_KEY,
+    api_key: str,
     mock_api: bool = False,
+    meta: dict = {},
 ):
     """create customer"""
+    # set_api_key(meta)
+    api_key = api_key or meta["h"].get_glob("STRIPE_API_KEY")
 
     if mock_api:
         return {"success": True}
@@ -111,10 +118,9 @@ def create_customer(
 
 
 @jaseci_action()
-def get_customer(
-    customer_id: str, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
-):
+def get_customer(customer_id: str, mock_api: bool = False, meta: dict = {}):
     """retrieve customer information"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -127,25 +133,23 @@ def get_customer(
 
 @jaseci_action()
 def attach_payment_method(
-    payment_method_id: str,
-    customer_id: str,
-    api_key: str = DEFAULT_API_KEY,
-    mock_api: bool = False,
+    payment_method_id: str, customer_id: str, mock_api: bool = False, meta: dict = {}
 ):
     """attach payment method to customer"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
 
     try:
-        paymentMethods = get_payment_methods(customer_id)
+        paymentMethods = get_payment_methods(customer_id, meta)
 
         paymentMethod = stripe.PaymentMethod.attach(
             payment_method_id, customer=customer_id
         )
 
         if len(paymentMethods.data) == 0:
-            update_default_payment_method(customer_id, payment_method_id)
+            update_default_payment_method(customer_id, payment_method_id, meta)
 
         paymentMethod.is_default = len(paymentMethods.data) == 0
 
@@ -157,9 +161,10 @@ def attach_payment_method(
 
 @jaseci_action()
 def delete_payment_method(
-    payment_method_id: str, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
+    payment_method_id: str, mock_api: bool = False, meta: dict = {}
 ):
     """detach payment method from customer"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -171,10 +176,9 @@ def delete_payment_method(
 
 
 @jaseci_action()
-def get_payment_methods(
-    customer_id: str, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
-):
+def get_payment_methods(customer_id: str, mock_api: bool = False, meta: dict = {}):
     """get customer list of payment methods"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -190,12 +194,10 @@ def get_payment_methods(
 
 @jaseci_action()
 def update_default_payment_method(
-    customer_id: str,
-    payment_method_id: str,
-    api_key: str = DEFAULT_API_KEY,
-    mock_api: bool = False,
+    customer_id: str, payment_method_id: str, mock_api: bool = False, meta: dict = {}
 ):
     """update default payment method of customer"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -210,16 +212,15 @@ def update_default_payment_method(
 
 
 @jaseci_action()
-def create_invoice(
-    customer_id: str, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
-):
+def create_invoice(customer_id: str, mock_api: bool = False, meta: dict = {}):
     """create customer invoice"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
 
     try:
-        return stripe.Invoice.create(api_key=api_key, customer=customer_id)
+        return stripe.Invoice.create(customer=customer_id)
     except Exception as e:
         return {"message": str(e)}
 
@@ -228,12 +229,13 @@ def create_invoice(
 def get_invoice_list(
     customer_id: str,
     subscription_id: str,
-    api_key: str = DEFAULT_API_KEY,
     starting_after: str = "",
     limit: int = 10,
     mock_api: bool = False,
+    meta: dict = {},
 ):
     """retrieve customer list of invoices"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -258,12 +260,13 @@ def get_invoice_list(
 @jaseci_action()
 def get_payment_intents(
     customer_id: str,
-    api_key: str = DEFAULT_API_KEY,
     starting_after: str = "",
     limit: int = 10,
     mock_api: bool = False,
+    meta: dict = {},
 ):
     """get customer payment intents"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -289,11 +292,12 @@ def create_payment_intents(
     customer_id: str,
     amount: int,
     currency: str,
-    api_key: str = DEFAULT_API_KEY,
     payment_method_types: str = "card",
     mock_api: bool = False,
+    meta: dict = {},
 ):
     """Create customer payment"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -311,9 +315,10 @@ def create_payment_intents(
 
 @jaseci_action()
 def get_customer_subscription(
-    customer_id: str, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
+    customer_id: str, mock_api: bool = False, meta: dict = {}
 ):
     """retrieve customer subcription list"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -331,21 +336,16 @@ def get_customer_subscription(
 
 @jaseci_action()
 def create_payment_method(
-    card_type: str,
-    card: dict,
-    api_key: str = DEFAULT_API_KEY,
-    billing_details: dict = {},
-    mock_api: bool = False,
+    card_type: str, card: dict, mock_api: bool = False, meta: dict = {}
 ):
     """create payment method"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
 
     try:
-        return stripe.PaymentMethod.create(
-            type=card_type, card=card, billing_details=billing_details
-        )
+        return stripe.PaymentMethod.create(type=card_type, card=card)
 
     except Exception as e:
         return {"message": str(e)}
@@ -355,24 +355,24 @@ def create_payment_method(
 def create_trial_subscription(
     payment_method_id: str,
     customer_id: str,
-    api_key: str = DEFAULT_API_KEY,
-    items: list = [],
+    items: list,
     trial_period_days: int = 14,
     expand: list = [],
     mock_api: bool = False,
+    meta: dict = {},
 ):
     """create customer trial subscription"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
 
     try:
-        if payment_method_id:
-            # attach payment method to customer
-            attach_payment_method(payment_method_id, customer_id)
+        # attach payment method to customer
+        attach_payment_method(payment_method_id, customer_id, False, meta)
 
-            # set card to default payment method
-            update_default_payment_method(customer_id, payment_method_id)
+        # set card to default payment method
+        update_default_payment_method(customer_id, payment_method_id, False, meta)
 
         return stripe.Subscription.create(
             customer=customer_id,
@@ -387,28 +387,27 @@ def create_trial_subscription(
 @jaseci_action()
 def create_subscription(
     payment_method_id: str,
-    price_id: str,
+    items: list,
     customer_id: str,
-    api_key: str = DEFAULT_API_KEY,
     mock_api: bool = False,
+    meta: dict = {},
 ):
     """create customer subscription"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
 
     try:
         # attach payment method to customer
-        attach_payment_method(payment_method_id, customer_id)
+        attach_payment_method(payment_method_id, customer_id, False, meta)
 
         # set card to default payment method
-        update_default_payment_method(customer_id, payment_method_id)
+        update_default_payment_method(customer_id, payment_method_id, False, meta)
 
         return stripe.Subscription.create(
             customer=customer_id,
-            items=[
-                {"price": price_id},
-            ],
+            items=items,
         )
     except Exception as e:
         return {"message": str(e)}
@@ -416,9 +415,10 @@ def create_subscription(
 
 @jaseci_action()
 def cancel_subscription(
-    subscription_id: str, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
+    subscription_id: str, metadata: dict = {}, mock_api: bool = False, meta: dict = {}
 ):
     """cancel customer subscription"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -430,10 +430,9 @@ def cancel_subscription(
 
 
 @jaseci_action()
-def get_subscription(
-    subscription_id: str, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
-):
+def get_subscription(subscription_id: str, mock_api: bool = False, meta: dict = {}):
     """retrieve customer subcription details"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -449,10 +448,11 @@ def update_subscription(
     subscription_id: str,
     subscription_item_id: str,
     price_id: str,
-    api_key: str = DEFAULT_API_KEY,
     mock_api: bool = False,
+    meta: dict = {},
 ):
     """update subcription details"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -473,10 +473,9 @@ def update_subscription(
 
 
 @jaseci_action()
-def get_invoice(
-    invoice_id: str, api_key: str = DEFAULT_API_KEY, mock_api: bool = False
-):
+def get_invoice(invoice_id: str, mock_api: bool = False, meta: dict = {}):
     """get invoice information"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
@@ -489,23 +488,17 @@ def get_invoice(
 
 @jaseci_action()
 def create_usage_report(
-    subscription_item_id: str,
-    quantity: int,
-    api_key: str = DEFAULT_API_KEY,
-    action: str = "increment",
-    mock_api: bool = False,
+    subscription_item_id: str, quantity: int, mock_api: bool = False, meta: dict = {}
 ):
     """Create usage record"""
+    set_api_key(meta)
 
     if mock_api:
         return {"success": True}
 
     try:
         return stripe.SubscriptionItem.create_usage_record(
-            subscription_item_id,
-            quantity=quantity,
-            timestamp=datetime.now(),
-            action=action,
+            subscription_item_id, quantity=quantity, timestamp=datetime.now()
         )
     except Exception as e:
         return {"message": str(e)}
