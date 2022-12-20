@@ -155,7 +155,7 @@ class JacApi:
             ctx=ctx,
             profiling=False,
         )
-        return faux.graph_get(gph=faux.active_gph(), mode="dot", detailed=detailed)
+        return faux.graph_get(nd=faux.active_gph(), mode="dot", detailed=detailed)
 
     def faux_master(self):
         faux = MetaService(run_svcs=False).build_super_master()

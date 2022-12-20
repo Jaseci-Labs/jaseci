@@ -19,6 +19,10 @@ class JsctlTest(TestCaseHelper, TestCase):
         # self.log(res.exception)
         return res.stdout
 
+    def jac_call(self, cmd: str):
+        res = CliRunner(mix_stderr=False).invoke(jsctl.jac, cmd.split())
+        return res.stdout
+
     def call_cast(self, cmd):
         ret = self.call(cmd)
         # self.log(ret)
@@ -27,6 +31,10 @@ class JsctlTest(TestCaseHelper, TestCase):
     def call_split(self, cmd):
         ret = self.call(cmd)
         # self.log(ret)
+        return ret.split("\n")
+
+    def jac_call_split(self, cmd):
+        ret = self.jac_call(cmd)
         return ret.split("\n")
 
     def tearDown(self):
@@ -310,6 +318,14 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
+    def test_jac_cli_test(self):
+        self.logger_on()
+        r = self.jac_call_split("test jaseci/jsctl/tests/teststest.jir")
+        self.log(r)
+        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[4].startswith('  "tests": 3'))
+        self.assertTrue(r[7].startswith('  "success": true'))
+
     def test_jsctl_jac_disas_jir(self):
         r = self.call("jac disas jaseci/jsctl/tests/teststest.jir")
         self.assertIn("LOAD_CONST", r)
@@ -322,6 +338,10 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_jac_run_jir(self):
         r = self.call_cast("jac run jaseci/jsctl/tests/teststest.jir")
         self.assertEqual(r["report"], [{}, 4])
+
+    def test_jsctl_jac_dot_jir(self):
+        r = self.call("jac dot jaseci/jsctl/tests/teststest.jir")
+        self.assertEqual(r, 'strict digraph root {\n    "n0" [ label="n0:root"  ]\n}\n')
 
     def test_jsctl_jac_run_jir_walk(self):
         r = self.call_cast("jac run jaseci/jsctl/tests/teststest.jir -walk alt_init")
