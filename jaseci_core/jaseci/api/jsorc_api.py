@@ -196,7 +196,7 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
-    def jsorc_actionstracking_start(self):
+    def jsorc_trackact_start(self):
         """ "
         Instruct JSORC to start tracking any changes in actions state
         """
@@ -208,7 +208,7 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
-    def jsorc_actionstracking_stop(self):
+    def jsorc_trackact_stop(self):
         """ "
         Instruct JSORC to start tracking any changes in actions state
         """
@@ -253,7 +253,7 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
-    def jsorc_systemtracking_start(self):
+    def jsorc_tracksys_start(self):
         """
         Ask JSORC to start tracking the state of the system as observed by JSORC on every interval.
         """
@@ -265,7 +265,7 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
-    def jsorc_systemtracking_report(self):
+    def jsorc_tracksys_report(self):
         """
         Report the tracked system states so far
         """
@@ -276,7 +276,7 @@ class JsOrcApi:
             return {"success": False, "message": "No running JSORC service."}
 
     @Interface.admin_api()
-    def jsorc_systemtracking_stop(self):
+    def jsorc_tracksys_stop(self):
         """
         Stop state tracking for JSORC
         """

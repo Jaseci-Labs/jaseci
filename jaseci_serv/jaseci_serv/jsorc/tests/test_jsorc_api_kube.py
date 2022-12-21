@@ -77,7 +77,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         Test actions tracking API of JSORC
         """
         # Start tracking actions
-        payload = {"op": "jsorc_actionstracking_start"}
+        payload = {"op": "jsorc_trackact_start"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
@@ -106,7 +106,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         # stop action tracking and assert on the result
-        payload = {"op": "jsorc_actionstracking_stop"}
+        payload = {"op": "jsorc_trackact_stop"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
@@ -149,13 +149,13 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         Test system state tracking of JSORC
         """
         # Start tracking
-        payload = {"op": "jsorc_systemtracking_start"}
+        payload = {"op": "jsorc_tracksys_start"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         time.sleep(20)
         # stop action tracking and assert on the result
-        payload = {"op": "jsorc_systemtracking_stop"}
+        payload = {"op": "jsorc_tracksys_stop"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
