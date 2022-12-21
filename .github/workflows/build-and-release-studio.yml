@@ -13,8 +13,8 @@ jobs:
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
 
-    
-    
+
+
     steps:
       - uses: actions/checkout@v3
       - name: setup node
@@ -54,7 +54,7 @@ jobs:
         platform: [macos-latest, ubuntu-20.04, windows-latest]
 
     runs-on: ${{ matrix.platform }}
-    
+
     steps:
       - uses: actions/checkout@v3
       - name: Set versions
@@ -65,7 +65,7 @@ jobs:
             const tag = context.ref.substring(10)
             let no_v_tag = tag.replace('v', '')
             if(no_v_tag.split(".")[3]) {
-                no_v_tag = no_v_tag.split(".").slice(0, 3).join(".") + "b" + no_v_tag.split(".")[3]
+                no_v_tag = no_v_tag.split(".").slice(0, 3).join(".")
             }
             core.setOutput('no-v-tag', no_v_tag)
       - name: setup node
@@ -93,7 +93,7 @@ jobs:
           file: ./jaseci_studio/src-tauri/tauri.conf.json
           field: package.version
           value: ${{ steps.set_version.outputs.no-v-tag }}
-      - uses: tauri-apps/tauri-action@v0          
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
