@@ -63,7 +63,10 @@ jobs:
         with:
           script: |
             const tag = context.ref.substring(10)
-            const no_v_tag = tag.replace('v', '')
+            let no_v_tag = tag.replace('v', '')
+            if(no_v_tag.split(".")[3]) {
+                no_v_tag = no_v_tag.split(".").slice(0, 3).join(".") + "b" + no_v_tag.split(".")[3]
+            }
             core.setOutput('no-v-tag', no_v_tag)
       - name: setup node
         uses: actions/setup-node@v3
