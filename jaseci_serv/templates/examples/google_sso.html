@@ -99,7 +99,7 @@
 
                             const client = google.accounts.oauth2.initCodeClient({
                                 client_id: clientID,
-                                scope: 'https://www.googleapis.com/auth/calendar.readonly',
+                                scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid",
                                 ux_mode: 'redirect',
                                 redirect_uri: redirectURI,
                                 state: "offline"

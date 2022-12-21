@@ -87,7 +87,7 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
             login = self.get_social_login(adapter, app, social_token, token)
             complete_social_login(request, login)
         except HTTPError:
-            raise serializers.ValidationError(_("Incorrect value"))
+            raise serializers.ValidationError("Incorrect value")
 
         if not login.is_existing:
             if allauth_settings.UNIQUE_EMAIL:
