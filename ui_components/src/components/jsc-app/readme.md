@@ -57,6 +57,7 @@ graph TD;
   jsc-graph --> jsc-card
   jsc-graph --> jsc-auth-form
   jsc-graph --> jsc-divider
+  jsc-graph --> graph-node-info
   jsc-graph --> graph-walker-runner
   jsc-graph --> jsc-button
   jsc-graph --> jsc-chip
