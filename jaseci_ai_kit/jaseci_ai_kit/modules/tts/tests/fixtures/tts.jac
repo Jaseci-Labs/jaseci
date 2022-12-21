@@ -30,5 +30,10 @@ walker test_load_vocorder_v1{
     report tts.load_vocorder("waveglow");
 }
 
+walker test_wave2mp3{
+    can tts.wave2mp3;
+    report tts.wave2mp3("audio_file_1671611719.8306742.wav");
+}
+
 
 

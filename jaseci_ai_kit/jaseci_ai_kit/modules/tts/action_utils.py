@@ -13,6 +13,7 @@ from .waveglow.denoiser import Denoiser
 from speechbrain.pretrained import Tacotron2 as SpeechBrain
 from speechbrain.pretrained import HIFIGAN
 from scipy.io.wavfile import write
+from pydub import AudioSegment
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
@@ -309,3 +310,16 @@ def prediction(input_text, seq2seqmodel, vocorder):
         else:
             print("No valid vocorder")
     return audio_numpy
+
+
+def wav2mp3(wave_file):
+    """
+    Saving the given wav file in mp3 format.
+    """
+    mp3_file_name = wave_file[:-3] + ".mp3"
+    if os.path.isfile(wave_file):
+        AudioSegment.from_wav("audio_file_1671611719.8306742.wav").export(
+            mp3_file_name, format="mp3"
+        )
+
+    return mp3_file_name + " saved"

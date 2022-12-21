@@ -16,6 +16,7 @@ from .action_utils import (
     prediction,
     load_seq2seq_model,
     load_vocorder_model,
+    wav2mp3,
 )
 
 warnings.filterwarnings("ignore")
@@ -90,6 +91,18 @@ def save_audio(audio_data: list, path: str = "", rate: int = rate):
         audio_data = np.array(audio_data, dtype="float32")
         status = save_file(audio_data, path, rate)
         return status
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["tts"], allow_remote=True)
+def wav2mp3(wave_file: str):
+    """
+    Saving the given wav file in mp3 format.
+    """
+    try:
+        wav2mp3(wave_file=wave_file)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
