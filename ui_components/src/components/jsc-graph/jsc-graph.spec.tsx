@@ -1,9 +1,12 @@
-import { Network } from 'vis-network';
+import * as vis from 'vis-network';
 import { JscGraph } from './jsc-graph';
-import { mockFetch, newSpecPage } from '@stencil/core/testing';
+import { mockFetch } from '@stencil/core/testing';
 import graph_active_get from './mockData/graph_active_get.json';
 import graph_node_view from './mockData/initial_graph_node_view.json';
 import graph_list from './mockData/graph_list.json';
+import graph_collapse from './mockData/graph_collapse.json';
+import { formatEdges, formatNodes } from './utils';
+import * as visData from 'vis-data';
 
 describe('jsc-graph', () => {
   afterEach(() => {
@@ -18,7 +21,7 @@ describe('jsc-graph', () => {
     const graph = new JscGraph();
     const networkContainer = document.createElement('div');
     graph.serverUrl = 'https://api.backend.dev';
-    graph.network = new Network(networkContainer, { edges: [], nodes: [] });
+    graph.network = new vis.Network(networkContainer, { edges: [], nodes: [] });
     graph.token = 'faketoken';
 
     // load component
@@ -39,7 +42,7 @@ describe('jsc-graph', () => {
     const graph = new JscGraph();
     const networkContainer = document.createElement('div');
     graph.serverUrl = 'https://api.backend.dev';
-    graph.network = new Network(networkContainer, { edges: [], nodes: [] });
+    graph.network = new vis.Network(networkContainer, { edges: [], nodes: [] });
     graph.token = 'faketoken';
 
     // load component
@@ -49,5 +52,29 @@ describe('jsc-graph', () => {
     graph.network.destroy();
 
     graph.clickedNode = rootNode;
+  });
+
+  test('handle collapse nodes', async () => {
+    const graph = new JscGraph();
+    graph.expandedNodes = ['urn:uuid:fbdb9b55-e607-4d4c-8d3e-0e6b7a248aa1', 'urn:uuid:a13be887-df9f-49bd-a7c6-f5a93839aa3b'];
+    const networkContainer = document.createElement('div');
+    networkContainer.style.height = '300px';
+    networkContainer.style.width = '300px';
+
+    graph.nodes = new visData.DataSet(formatNodes(graph_collapse) as any);
+    graph.edges = new visData.DataSet(formatEdges(graph_collapse) as any);
+
+    graph.network = new vis.Network(networkContainer, { edges: [], nodes: [] });
+
+    graph.network.setOptions({ physics: { solver: 'barnesHut' } } as any);
+    graph.network.setData({ nodes: graph.nodes as any, edges: graph.edges as any });
+
+    // graph.network.setData({ nodes, edges });
+    // collapse app node
+    graph.handleCollapse('urn:uuid:fbdb9b55-e607-4d4c-8d3e-0e6b7a248aa1');
+    expect(graph.queuedNodes.size).toBe(5);
+    expect(graph.queuedEdges.size).toBe(5);
+
+    graph.network.destroy();
   });
 });

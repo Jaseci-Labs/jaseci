@@ -52,7 +52,7 @@ export class JscGraph {
   @State() serverUrl: string = localStorage.getItem('serverUrl') || 'http://localhost:8000';
   @State() hiddenGroups: Set<string> = new Set();
   @State() activeSentinel: string;
-  @State() collapsedNodes: string[] = [];
+  @State() expandedNodes: string[] = [];
 
   queuedNodes: Set<string> = new Set();
   queuedEdges: Set<string> = new Set();
@@ -322,6 +322,9 @@ export class JscGraph {
       let activeGraph: Graph = await this.getActiveGraph();
       this.graphId = activeGraph?.jid;
 
+      // make root node collapsible by default
+      this.expandedNodes.push(this.graphId);
+
       // get all graphs for the graph switcher
       this.graphs = await this.getAllGraphs();
       this.walkers = await this.getAllWalkers();
@@ -350,19 +353,24 @@ export class JscGraph {
         y: params?.pointer.DOM.y,
       });
 
+      if (!node) return;
+
       this.nd = node.toString();
 
-      if (this.collapsedNodes.includes(this.nd)) {
-        this.collapsedNodes = this.collapsedNodes.filter(nd => nd !== this.nd);
+      console.log({ cnode: this.expandedNodes });
 
+      if (this.expandedNodes.includes(this.nd)) {
         this.handleCollapse(node.toString());
         this.refreshNodes();
+        console.log({ qnodes: this.queuedNodes });
+        this.expandedNodes = this.expandedNodes.filter(nd => nd !== this.nd).filter(nd => !this.queuedNodes.has(nd));
+        console.log({ cnodes: this.expandedNodes });
 
         // clear the queued nodes and edges to be removed
         this.queuedEdges.clear();
         this.queuedNodes.clear();
       } else {
-        this.collapsedNodes.push(this.nd);
+        this.expandedNodes.push(this.nd);
         this.getGraphState();
       }
     });
