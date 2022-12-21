@@ -12,5 +12,5 @@ Excited? Hell yeah! Let's jump in.
 4. [Unify the Dialogue and FAQ Systems](codelabs/4_unify_system.md)
 5. [Bring Your Application to Production](codelabs/5_production.md)
 6. [Use speech to text and speech to text modules](codelabs/6_speech2text_and_text2speech.md)
-7. [Collect Training Data via Crowdsource](codelabs/6_crowdsource.md)
+7. [Collect Training Data via Crowdsource](codelabs/7_crowdsource.md)
 8. [Contritbute to Jaseci Open Source](codelabs/7.contributing_to_jaseci.md)
