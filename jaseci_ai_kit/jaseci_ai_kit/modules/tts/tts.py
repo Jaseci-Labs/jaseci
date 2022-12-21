@@ -96,12 +96,12 @@ def save_audio(audio_data: list, path: str = "", rate: int = rate):
 
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
-def wav2mp3(wave_file: str):
+def wav2mp3(wav_file: str):
     """
     Saving the given wav file in mp3 format.
     """
     try:
-        wav2mp3(wave_file=wave_file)
+        wav2mp3(wav_file=wav_file)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
