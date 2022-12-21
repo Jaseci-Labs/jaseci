@@ -13,8 +13,6 @@ describe('graph-node-info', () => {
 
     const shadowRoot = body.querySelector('graph-node-info').shadowRoot;
     const tabs = shadowRoot.querySelectorAll('.tab');
-    const contextTab = tabs[0] as HTMLAnchorElement;
-    const infoTab = tabs[1] as HTMLAnchorElement;
     const detailsTab = tabs[2] as HTMLAnchorElement;
 
     const details = shadowRoot.querySelector('#context');
