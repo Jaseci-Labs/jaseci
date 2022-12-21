@@ -4,7 +4,7 @@
 
 ### **Introduction**
 
-The process of converting spoken words into written text is called speech to text. The jaseci `stt` module can instantly transcribe the audio into a text script so that ot can be shown and used as needed. Jaseci's `stt` module currently supports 99 languages.
+The process of converting spoken words into written text is called speech to text. The jaseci `stt` module can instantly transcribe the audio into a text script so that it can be shown and used as needed. Jaseci's `stt` module currently supports 99 languages.
 
 ### **Functionality of Jaseci Speech to Text Module (`stt`)**
 
@@ -12,13 +12,13 @@ Before work with the Jaseci `stt` module make sure to install fmmeg via `sudo ap
 
 **Transcribe**
 
-The specified audio's written transcript will be returned by `stt.transcribe` action. The audio can be provided as a mp3 file, a list of amplitude values (array), the url to the audio(mp3) file.
+The specified audio's written transcript will be returned by `stt.transcribe` action. The audio can be provided as a mp3 file, a list of amplitude values (array), the URL to the audio(mp3) file.
 
 Example
 
 > **Note**
 >
->Here in all the below example's we are trying with the `url` option. if you wanna try with an mp3 file or with list of amplitudes try giving the input parameters accordingly.
+>Here in all the below example's we are trying with the `URL` option. if you wanna try with an mp3 file or with list of amplitudes try giving the input parameters accordingly.
 
 
 ```jac
@@ -27,7 +27,7 @@ walker try_transribe {
      report stt.transcribe("en", null,null, "https://ia800205.us.archive.org/27/items/fifty_famous_stories_lc_librivox/fiftyfamous_00_baldwin.mp3");
 }
 ```
-Try exucuting the code and the compare the real audio script and the transcript return by the jaseci `stt` module. If the audio is clear and pronounciations are correct this will return 100% correct trancript.
+Try executing the code and the compare the real audio script and the transcript return by the jaseci `stt` module. If the audio is clear and pronunciations are correct this will return 100% correct transcript.
 
 Output:
 ```json
@@ -70,11 +70,11 @@ Output
 
 ### **Introduction**
 
-The text to speech or speech synthesizing is converting written text into audio forms. The Jaseci's `tts` module consists of two models, `encorder` and `decorder`. The encorder aka seq2seq model is similar to the Tacotron2 which converts text sequences in to mel spectrograms. The decorder converts the audio into wav format.
+The text to speech or speech synthesizing is converting written text into audio forms. The Jaseci's `tts` module consists of two models, `encoder` and `decoder`. The encoder aka seq2seq model is similar to the Tacotron2 which converts text sequences in to mel-spectrograms. The decoder converts the audio into wav format.
 
 ### **Functionality of Jaseci Text to Speech Module (`stt`)**
 
-Right jump in to codelab of the Jaseci `tts` module make sure to install dependencies of sound files via `sudo apt-get install -y libsndfile1`. And load the jaseci `tts` module via `actions load module jaseci_ai_kit.tts`.
+Right before jump in to code lab of the Jaseci `tts` module make sure to install dependencies of sound files via `sudo apt-get install -y libsndfile1` and load the jaseci `tts` module via `actions load module jaseci_ai_kit.tts`.
 
 **Synthesize**
 
@@ -92,8 +92,7 @@ walker init{
 ```
 > **Note**
 >
-> `tss` module allows users to switch between available models to find out what works best for their scenario. Currently Jasecis `tts` module has two version of Tacotron2(seq2seq) aka `tacotron2_v1` and `tacotron2_v2` model and two of vorcorders named `waveglow` and `hifigan`.
-
+> `tss` module allows users to switch between available models to find out what works best for their scenario. Currently Jasecis `tts` module has two version of Tacotron2(seq2seq) aka `tacotron2_v1` and `tacotron2_v2` model and two of vocoders named `waveglow` and `hifigan`.
 
 
 To switch between sequence to sequence models add following lines on begining of the above code snippet,
@@ -104,7 +103,7 @@ has seq2seq_model = tts.load_seq2seqmodel("tacotron2_v2"); # tts.load_seq2seqmod
 
 ```
 
-To switch between vocorder models add following lines on begining of the above code snippet,
+To switch between vocoder models add following lines on begining of the above code snippet,
 
 ```jac
 can tts.load_vocorder;
@@ -112,12 +111,12 @@ has vocorder = tts.load_vocorder("hifigan"); #tts.load_vocorder("waveglow") for 
 ```
 > **Note**
 >
-> If you don't wanna save the generated file into the current file system simply ignore giving the path variable. Also you can audio `tts.save_audio` action to save the generated file into a preffered location.
+> If you don't wanna save the generated file into the current file system simply ignore giving the path variable. Also you can use `tts.save_audio` action to save the generated file into a preffered location.
 >
 
 Output
 ```json
-Synthesizing speeches with Tacotron2 and WaveGlow.
+"Synthesizing speeches with Tacotron2 and WaveGlow."
     {
     "success":true,
     "report" : [{"audio_wave":[
