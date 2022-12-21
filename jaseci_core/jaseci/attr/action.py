@@ -7,6 +7,7 @@ from .item import Item
 from jaseci.actions.live_actions import live_actions
 from jaseci.jac.jac_set import JacSet
 import inspect
+import time
 
 # ACTION_PACKAGE = 'jaseci.actions.'
 
@@ -50,6 +51,9 @@ class Action(Item):
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, func, param_list)
         args = args[0] + args[4]
+        hook = scope.parent._h
+        hook.meta.app.pre_action_call_hook() if hook.meta.run_svcs else None
+        ts = time.time()
         if "meta" in args:
             result = func(
                 *param_list,
@@ -62,4 +66,8 @@ class Action(Item):
             )
         else:
             result = func(*param_list)
+        t = time.time() - ts
+        hook.meta.app.post_action_call_hook(
+            self.value, t
+        ) if hook.meta.run_svcs else None
         return result
