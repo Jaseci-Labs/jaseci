@@ -38,6 +38,7 @@ setup(
         "unidecode==1.3.6",
         "soundfile<=0.11.0",
         "speechbrain==0.5.13",
+        "pydub==0.25.1",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
