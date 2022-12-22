@@ -25,6 +25,9 @@ class AccountApi:
         import os
 
         os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+        os.environ[
+            "OAUTHLIB_RELAX_TOKEN_SCOPE"
+        ] = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid"
 
         client_id = (
             "384752611190-e04jb43i8cnfp953r1m1f5mq5abd919i.apps.googleusercontent.com"
@@ -67,6 +70,9 @@ class AccountApi:
         import os
 
         os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+        os.environ[
+            "OAUTHLIB_RELAX_TOKEN_SCOPE"
+        ] = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid"
 
         client_id = (
             "384752611190-e04jb43i8cnfp953r1m1f5mq5abd919i.apps.googleusercontent.com"
@@ -117,6 +123,9 @@ class AccountApi:
         import os
 
         os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+        os.environ[
+            "OAUTHLIB_RELAX_TOKEN_SCOPE"
+        ] = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid"
 
         client_id = (
             "384752611190-e04jb43i8cnfp953r1m1f5mq5abd919i.apps.googleusercontent.com"
