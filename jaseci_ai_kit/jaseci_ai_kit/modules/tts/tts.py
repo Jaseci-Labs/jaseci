@@ -101,8 +101,8 @@ def wav2mp3(wav_file: str):
     Saving the given wav file in mp3 format.
     """
     try:
-        wav2mp3(wav_file=wav_file)
-
+        ret = wav2mp3(wav_file=wav_file)
+        return ret
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
