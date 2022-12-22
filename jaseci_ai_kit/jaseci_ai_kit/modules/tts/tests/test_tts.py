@@ -45,7 +45,7 @@ class TestTTSModule(CoreTest):
     def test_load_seq2seq_model_v2(self, ret):
         self.assertEqual(ret["success"], True)
 
-    @pytest.mark.order(6)
+    @pytest.mark.order(7)
     @jac_testcase("tts.jac", "test_wave2mp3")
     def test_wave2mp3(self, ret):
         self.assertEqual(ret["success"], True)

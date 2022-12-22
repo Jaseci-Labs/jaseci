@@ -312,17 +312,18 @@ def prediction(input_text, seq2seqmodel, vocorder):
     return audio_numpy
 
 
-def wav2mp3(wav_file):
+def wave2mp3(wav_file):
     """
     Saving the given wav file in mp3 format.
     """
-    mp3_file_name = wav_file[:-3] + ".mp3"
-
-    save_satus = False
+    save_status = False
+    status = {"save_status": save_status}
+    mp3_file_name = wav_file[:-3] + "mp3"
     try:
         AudioSegment.from_wav(wav_file).export(mp3_file_name, format="mp3")
-        save_satus = True
+        save_status = True
+        status["file_name"] = mp3_file_name
     except Exception as e:
         print(e)
 
-    return {"save_status": save_satus}
+    return status

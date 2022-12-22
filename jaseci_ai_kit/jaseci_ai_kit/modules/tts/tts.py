@@ -16,7 +16,7 @@ from .action_utils import (
     prediction,
     load_seq2seq_model,
     load_vocorder_model,
-    wav2mp3,
+    wave2mp3,
 )
 
 warnings.filterwarnings("ignore")
@@ -101,8 +101,8 @@ def wav2mp3(wav_file: str):
     Saving the given wav file in mp3 format.
     """
     try:
-        ret = wav2mp3(wav_file=wav_file)
-        return ret
+        status = wave2mp3(wav_file=wav_file)
+        return status
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

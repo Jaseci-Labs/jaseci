@@ -32,7 +32,7 @@ walker test_load_vocorder_v1{
 
 walker test_wave2mp3{
     can tts.wav2mp3;
-    report tts.wav2mp3("jaseci_ai_kit/modules/tts/tests/audio_file_1671611719.8306742.wav");
+    report tts.wav2mp3("jaseci_ai_kit/modules/tts/tests/test.wav");
 }
 
 
