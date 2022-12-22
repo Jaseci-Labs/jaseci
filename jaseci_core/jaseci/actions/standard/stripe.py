@@ -1,5 +1,6 @@
 """Built in actions for Jaseci"""
 import stripe
+from fastapi import HTTPException
 from datetime import datetime
 from jaseci.actions.live_actions import jaseci_action
 
@@ -34,7 +35,7 @@ def create_product(
             api_key=api_key, name=name, description=description
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -62,7 +63,7 @@ def create_product_price(
             recurring={"interval": interval},
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -77,12 +78,12 @@ def product_list(detailed: bool, mock_api: bool = False, meta: dict = {}):
         try:
             return stripe.Product.list(active=True)
         except Exception as e:
-            return {"message": str(e)}
+            raise Exception(str(e))
     else:  # retrieve product price
         try:
             return stripe.Product.list()
         except Exception as e:
-            return {"message": str(e)}
+            raise Exception(str(e))
 
 
 @jaseci_action()
@@ -114,7 +115,7 @@ def create_customer(
             invoice_settings={"default_payment_method": payment_method_id},
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -128,7 +129,7 @@ def get_customer(customer_id: str, mock_api: bool = False, meta: dict = {}):
     try:
         return stripe.Customer.retrieve(customer_id)
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -156,7 +157,7 @@ def attach_payment_method(
         return paymentMethod
 
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -172,7 +173,7 @@ def delete_payment_method(
     try:
         return stripe.PaymentMethod.detach(payment_method_id)
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -189,7 +190,7 @@ def get_payment_methods(customer_id: str, mock_api: bool = False, meta: dict = {
             type="card",
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -208,7 +209,7 @@ def update_default_payment_method(
             invoice_settings={"default_payment_method": payment_method_id},
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -222,7 +223,7 @@ def create_invoice(customer_id: str, mock_api: bool = False, meta: dict = {}):
     try:
         return stripe.Invoice.create(customer=customer_id)
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -254,7 +255,7 @@ def get_invoice_list(
             )
         return invoices
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -284,7 +285,7 @@ def get_payment_intents(
             )
         return payment_intents
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -310,7 +311,7 @@ def create_payment_intents(
             payment_method_types=[payment_method_types],
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -331,7 +332,7 @@ def get_customer_subscription(
 
         return subscription
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -348,7 +349,7 @@ def create_payment_method(
         return stripe.PaymentMethod.create(type=card_type, card=card)
 
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -358,6 +359,7 @@ def create_trial_subscription(
     items: list,
     trial_period_days: int = 14,
     expand: list = [],
+    metadata: dict = {},
     mock_api: bool = False,
     meta: dict = {},
 ):
@@ -379,9 +381,10 @@ def create_trial_subscription(
             items=items,
             trial_period_days=trial_period_days,
             expand=expand,
+            metadata=metadata,
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -410,7 +413,7 @@ def create_subscription(
             items=items,
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -426,7 +429,7 @@ def cancel_subscription(
     try:
         return stripe.Subscription.delete(subscription_id)
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -440,7 +443,7 @@ def get_subscription(subscription_id: str, mock_api: bool = False, meta: dict = 
     try:
         return stripe.Subscription.retrieve(subscription_id)
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -469,7 +472,7 @@ def update_subscription(
             ],
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -483,7 +486,7 @@ def get_invoice(invoice_id: str, mock_api: bool = False, meta: dict = {}):
     try:
         return stripe.Invoice.retrieve(invoice_id)
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
 
 
 @jaseci_action()
@@ -501,4 +504,4 @@ def create_usage_report(
             subscription_item_id, quantity=quantity, timestamp=datetime.now()
         )
     except Exception as e:
-        return {"message": str(e)}
+        raise Exception(str(e))
