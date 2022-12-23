@@ -11,9 +11,9 @@ import sys
 import inspect
 import importlib
 
-live_actions = {}
-live_action_modules = {}
-action_configs = {}
+live_actions = {}  # {"act.func": func_obj, ...}
+live_action_modules = {}  # {__module__: ["act.func1", "act.func2", ...], ...}
+action_configs = {}  # {"module_name": {}, ...}
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):

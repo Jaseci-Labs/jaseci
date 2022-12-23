@@ -94,13 +94,14 @@
 - [Guide to use Jaseci AI Kit](jaseci_ai_kit/jaseci_ai_kit/guid-to-use-ai-kit.md)
 - [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/jaseci_ai_kit/README.md)
 
-## Jaseci UI Widget Library
+## Jaseci Studio and UI Widget Library
 
+- [Jaseci Studio Features](jaseci_studio/features.md)
 - [Jaseci UI Kit](ui_components/readme.md)
-- [Introduction](ui_components/docs/what-is-jaseci-ui-kit.md)
-- [Basic Concepts](ui_components/docs/basic-concepts.md)
-- [Built-in Actions](ui_components/docs/built-in-actions.md)
-- [Connecting an API](ui_components/docs/connecting-an-api.md)
+  - [Introduction](ui_components/docs/what-is-jaseci-ui-kit.md)
+  - [Basic Concepts](ui_components/docs/basic-concepts.md)
+  - [Built-in Actions](ui_components/docs/built-in-actions.md)
+  - [Connecting an API](ui_components/docs/connecting-an-api.md)
 
 ## DevOps Guides
 - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
@@ -111,6 +112,7 @@
 
 ## Jaseci X Features
 - [Stripe Integration](jaseci_serv/jaseci_serv/jsx_stripe/README.md)
+- [Single Sign-on Socail](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
 
 ## Jaseci Core Internals
 
