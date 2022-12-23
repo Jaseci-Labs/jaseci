@@ -1,11 +1,14 @@
+import requests
+from requests.models import Response
 from rest_framework.test import APIClient
-
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 from django.contrib.sites.models import Site
 from allauth.socialaccount.models import SocialApp
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from jaseci_serv.base.models import User
+
+old_get = requests.get
 
 
 def mocked_get_access_token(*ignored):
@@ -19,6 +22,16 @@ def mocked_get_access_token(*ignored):
     }
 
 
+def mocked_get(*ignored_args, **ignored_kwargs):
+    if ignored_args[0] == "https://www.googleapis.com/oauth2/v1/userinfo":
+        mocked_response = Response()
+        mocked_response.status_code = 200
+        mocked_response._content = b'{"id":"116620328938662290427","email":"jaseci.dev@gmail.com","verified_email":true,"name":"jaseci dev","given_name":"jaseci","family_name":"dev","picture":"https://lh3.googleusercontent.com/a/AEdFTp5FRawOuoF9Tl5jYkExTn1kGbDXqNoJP9ejF6No=s96-c","locale":"en-US"}'
+        return mocked_response
+    else:
+        return old_get(*ignored_args, **ignored_kwargs)
+
+
 class SocialAuthTest(TestCaseHelper, TestCase):
     """Test the Social Authentication"""
 
@@ -26,7 +39,7 @@ class SocialAuthTest(TestCaseHelper, TestCase):
         super().setUp()
         self.client = APIClient()
         OAuth2Client.get_access_token = mocked_get_access_token
-
+        requests.get = mocked_get
         self.google_app = SocialApp.objects.create(
             provider="google",
             name="Google OAuth",

@@ -15,16 +15,9 @@ urlpatterns = [
                 path("okta/", OktaLogin.as_view(), name="okta_login"),
                 # path("openid/", OpenIdLogin.as_view(), name="openid_login"), #
                 path(
-                    "examples/",
-                    include(
-                        [
-                            path(
-                                "google/",
-                                GoogleExampleLiveView.as_view(),
-                                name="google_example",
-                            ),
-                        ]
-                    ),
+                    "examples/<str:provider>/",
+                    ExampleLiveView.as_view(),
+                    name="oauth_example",
                 ),
             ]
         ),

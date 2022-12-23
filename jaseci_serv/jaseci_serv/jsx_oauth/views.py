@@ -1,3 +1,5 @@
+import random
+import string
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
@@ -81,21 +83,26 @@ class OpenIdLogin(JSXSocialLoginView):
     client_class = OAuth2Client
 
 
-class GoogleExampleLiveView(View):
-    template_name = "examples/google_sso.html"
+class ExampleLiveView(View):
+    template_name = "examples/social_auth.html"
 
-    def get(self, request):
+    def get(self, request, provider):
         code = request.GET.get("code")
-        social_app = SocialApp.objects.filter(
-            provider=SocialLoginProvider.GOOGLE.lower()
-        ).first()
-        redirect_uri = f"{request.build_absolute_uri('/')[:-1]}{settings.DEFAULT_CALLBACK_URL_FOR_SSO}"
+        social_app = SocialApp.objects.filter(provider=provider).first()
         return render(
             request,
             self.template_name,
             {
+                "provider": provider,
                 "code": code,
                 "client_id": social_app.client_id,
-                "callback_url": redirect_uri,
+                "state": self.generate_state(),
             },
+        )
+
+    def generate_state(self):
+        return "".join(
+            random.choices(
+                string.ascii_uppercase + string.ascii_lowercase + string.digits, k=64
+            )
         )

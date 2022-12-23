@@ -121,13 +121,9 @@ class JSXSocialLoginView(SocialLoginView):
 
     def get_callback_url(self):
         if self.provider:
-            REDIRECT_URI = resolve(PROVIDERS_MAPPING[self.provider]["URL_KEY"])
-            if REDIRECT_URI:
-                return REDIRECT_URI
-            if self.request:
-                return f"{self.request.build_absolute_uri('/')[:-1]}{settings.DEFAULT_CALLBACK_URL_FOR_SSO}"
-            return None
-
+            return resolve(
+                PROVIDERS_MAPPING[self.provider]["URL_KEY"], request=self.request
+            )
         raise RuntimeError(
             "Provider name cannot be empty or None. "
             'Please provide a valid provider name e.g. "GOOGLE"'
@@ -168,10 +164,11 @@ class JSXSocialLoginView(SocialLoginView):
         )
 
 
-def resolve(name):
+def resolve(name, request):
     try:
-        return lookup_global_config(
-            name=name, default=social_auth_config_defaults[name]
-        )
+        value = lookup_global_config(name=name)
+        if not value and request:
+            value = f"{request.build_absolute_uri('/')[:-1]}{settings.DEFAULT_CALLBACK_URL_FOR_SSO}"
+        return value
     except Exception as e:
         return None
