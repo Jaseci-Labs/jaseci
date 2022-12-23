@@ -26,7 +26,7 @@
 
 ---
 
-![alt text](./images//login.png)
+![login view](./images//login.png)
 
 ---
 
@@ -34,7 +34,7 @@
 
 ---
 
-![alt text](./images//summary_view.png)
+![summary view](./images//summary_view.png)
 
 ---
 
@@ -42,7 +42,7 @@
 
 ---
 
-![alt text](./images//graph_viewer.png)
+![graph viewer](./images//graph_viewer.png)
 
 ---
 
@@ -50,12 +50,4 @@
 
 ---
 
-![alt text](./images//logs_viewer.png)
-
----
-
-### Login
-
----
-
-![alt text](./images//login.png)
+![logs viewer](./images//logs_viewer.png)
