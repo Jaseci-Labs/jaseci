@@ -1,10 +1,10 @@
 from jaseci_serv.jsx_oauth.models import PROVIDERS_MAPPING
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from allauth.account.adapter import get_adapter
 from dj_rest_auth.registration.views import SocialLoginView
 from dj_rest_auth.registration.serializers import SocialLoginSerializer
 from jaseci_serv.base.models import lookup_global_config
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 from knox.settings import knox_settings
 from knox.models import AuthToken
 from django.contrib.auth import authenticate, get_user_model
@@ -87,8 +87,7 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
             login = self.get_social_login(adapter, app, social_token, token)
             complete_social_login(request, login)
         except HTTPError:
-            raise serializers.ValidationError("Incorrect value")
-
+            raise serializers.ValidationError(_("Incorrect value"))
         if not login.is_existing:
             if allauth_settings.UNIQUE_EMAIL:
                 # Do we have an account already with this email address?
@@ -119,19 +118,25 @@ class JSXSocialLoginView(SocialLoginView):
     serializer_class = JSXSocialLoginSerializer
     # permission_classes = [IsValidateLicense, AllowAny]
 
-    def get_callback_url(self):
+    def get_callback_url(self, request):
+        callback_url = request.POST.get("callback_url")
+        if callback_url:
+            return callback_url
+
         if self.provider:
-            return resolve(
-                PROVIDERS_MAPPING[self.provider]["URL_KEY"], request=self.request
+            prov = PROVIDERS_MAPPING[self.provider]
+            return lookup_global_config(
+                name=prov["URL_KEY"],
+                default=f'{request.build_absolute_uri("/")[:-1]}{prov["DEFAULT_REDIRECT_URI"]}',
             )
         raise RuntimeError(
             "Provider name cannot be empty or None. "
             'Please provide a valid provider name e.g. "GOOGLE"'
         )
 
-    def dispatch(self, *args, **kwargs):
-        self.callback_url = self.get_callback_url()
-        return super().dispatch(*args, **kwargs)
+    def dispatch(self, request, *args, **kwargs):
+        self.callback_url = self.get_callback_url(request)
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.request = request
@@ -162,13 +167,3 @@ class JSXSocialLoginView(SocialLoginView):
                 "exp": instance.expiry,
             }
         )
-
-
-def resolve(name, request):
-    try:
-        value = lookup_global_config(name=name)
-        if not value and request:
-            value = f"{request.build_absolute_uri('/')[:-1]}{settings.DEFAULT_CALLBACK_URL_FOR_SSO}"
-        return value
-    except Exception as e:
-        return None

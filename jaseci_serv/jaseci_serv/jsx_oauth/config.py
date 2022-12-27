@@ -19,16 +19,6 @@ OAUTH_APPS = [
 
 AUTH_PROVIDERS = {"facebook": "facebook", "google": "google", "email": "email"}
 
-SOCIAL_AUTH_CREDS = {
-    "google": {
-        "GOOGLE_CLIENT_ID": os.environ.get("GOOGLE_CLIENT_ID"),
-        "GOOGLE_CLIENT_SECRET": os.environ.get("GOOGLE_CLIENT_SECRET"),
-    },
-    "facebook": {
-        "FACEBOOK_CLIENT_ID": os.environ.get("FACEBOOK_CLIENT_ID"),
-        "FACEBOOK_CLIENT_SECRET": os.environ.get("FACEBOOK_CLIENT_SECRET"),
-    },
-}
 
 KNOX_TOKEN_EXPIRY = 24
 
