@@ -31,7 +31,7 @@ setup(
         "pytest-order>=1.0.1,<1.1",
         "sentence-transformers>=2.2.0,<2.3",
         "beautifulsoup4 >= 4.10.0, < 4.11.0",
-        "TTS",
+        "TTS==0.10.0",
         "umap-learn==0.5.1",
         "hdbscan==0.8.29",
         "librosa<=0.9.2",
