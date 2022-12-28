@@ -40,6 +40,7 @@ setup(
         "soundfile<=0.11.0",
         "speechbrain==0.5.13",
         "pydub==0.25.1",
+        "TTS==0.10.0",
     ],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
