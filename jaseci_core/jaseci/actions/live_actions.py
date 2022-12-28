@@ -11,9 +11,9 @@ import sys
 import inspect
 import importlib
 
-live_actions = {}
-live_action_modules = {}
-action_configs = {}
+live_actions = {}  # {"act.func": func_obj, ...}
+live_action_modules = {}  # {__module__: ["act.func1", "act.func2", ...], ...}
+action_configs = {}  # {"module_name": {}, ...}
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
@@ -96,10 +96,12 @@ def load_module_actions(mod, loaded_module=None):
         del sys.modules[loaded_module]
     if mod in live_action_modules:
         for i in live_action_modules[mod]:
-            del live_actions[i]
+            if i in live_actions:
+                del live_actions[i]
     if loaded_module in live_action_modules:
         for i in live_action_modules[loaded_module]:
-            del live_actions[i]
+            if i in live_actions:
+                del live_actions[i]
     mod = importlib.import_module(mod)
     if mod:
         return True

@@ -1,6 +1,6 @@
 import * as vis from 'vis-network';
 
-export function formatNodes(data: [][] = []): vis.Node[] {
+export function formatNodes(data: any[] = []): vis.Node[] {
   return data
     ?.filter((item: any) => item.j_type === 'node' || item.j_type === 'graph')
     .map((node: any) => ({
@@ -30,6 +30,5 @@ export function formatEdges(data: {}[]): vis.Edge[] {
       length: 150,
     }));
 
-  console.log({ newEdges });
   return newEdges;
 }

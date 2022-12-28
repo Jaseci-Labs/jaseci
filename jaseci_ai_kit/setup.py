@@ -34,6 +34,7 @@ setup(
         "umap-learn==0.5.3",
         "hdbscan==0.8.29",
         "librosa==0.9.2",
+        "protobuf>=3.20.1,<3.21",
         "inflect<=6.0.2",
         "unidecode==1.3.6",
         "soundfile<=0.11.0",

@@ -2,7 +2,6 @@ import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
 import * as visData from 'vis-data';
 import { formatEdges, formatNodes } from './utils';
-import clsx from 'clsx';
 
 type EndpointBody = {
   gph?: string | null;
@@ -53,6 +52,10 @@ export class JscGraph {
   @State() serverUrl: string = localStorage.getItem('serverUrl') || 'http://localhost:8000';
   @State() hiddenGroups: Set<string> = new Set();
   @State() activeSentinel: string;
+  @State() expandedNodes: string[] = [];
+
+  queuedNodes: Set<string> = new Set();
+  queuedEdges: Set<string> = new Set();
 
   nodesArray: vis.Node[] = [];
   edgesArray: vis.Edge[] = [];
@@ -113,7 +116,6 @@ export class JscGraph {
       .then(res => res['active:sentinel']);
   }
 
-  @Watch('nd')
   async getGraphState() {
     let body: EndpointBody = { detailed: true, gph: this.graphId, mode: 'default', show_edges: true };
     let endpoint = `${this.serverUrl}/js/graph_node_view`;
@@ -272,13 +274,24 @@ export class JscGraph {
   refreshNodes() {
     const displayedNodes = new visData.DataSet(
       this.nodes.get({
-        filter: (item: vis.Node) => {
-          return !this.hiddenGroups.has(item.group);
+        filter: (node: vis.Node) => {
+          return !this.hiddenGroups.has(node.group) && !this.queuedNodes.has(node.id.toString());
         },
       }),
     );
 
-    this.network.setData({ edges: this.edges as any, nodes: displayedNodes as any });
+    const displayedEdges = new visData.DataSet(
+      this.edges.get({
+        filter: (node: vis.Node) => {
+          return !this.queuedEdges.has(node.id.toString());
+        },
+      }),
+    );
+
+    this.edges = displayedEdges;
+    this.nodes = displayedNodes;
+
+    this.network.setData({ edges: displayedEdges as any, nodes: displayedNodes as any });
   }
 
   hideNodeGroup() {
@@ -309,6 +322,9 @@ export class JscGraph {
       let activeGraph: Graph = await this.getActiveGraph();
       this.graphId = activeGraph?.jid;
 
+      // make root node collapsible by default
+      this.expandedNodes.push(this.graphId);
+
       // get all graphs for the graph switcher
       this.graphs = await this.getAllGraphs();
       this.walkers = await this.getAllWalkers();
@@ -337,7 +353,26 @@ export class JscGraph {
         y: params?.pointer.DOM.y,
       });
 
+      if (!node) return;
+
       this.nd = node.toString();
+
+      console.log({ cnode: this.expandedNodes });
+
+      if (this.expandedNodes.includes(this.nd)) {
+        this.handleCollapse(node.toString());
+        this.refreshNodes();
+        console.log({ qnodes: this.queuedNodes });
+        this.expandedNodes = this.expandedNodes.filter(nd => nd !== this.nd).filter(nd => !this.queuedNodes.has(nd));
+        console.log({ cnodes: this.expandedNodes });
+
+        // clear the queued nodes and edges to be removed
+        this.queuedEdges.clear();
+        this.queuedNodes.clear();
+      } else {
+        this.expandedNodes.push(this.nd);
+        this.getGraphState();
+      }
     });
 
     this.network.on('oncontext', params => {
@@ -357,6 +392,21 @@ export class JscGraph {
         });
       }
     });
+  }
+
+  handleCollapse(nodeId: string) {
+    const connectedEdges = this.network.getConnectedEdges(nodeId);
+    this.edges
+      .get()
+      .filter((edge: vis.Edge) => connectedEdges.includes(edge.id) && edge.to !== nodeId)
+      .forEach((edgeData: vis.Edge) => {
+        // queue the nodes and edges to be removed
+        this.queuedEdges.add(edgeData.id.toString());
+        this.queuedNodes.add(edgeData.to.toString());
+
+        // run the collapse on the away nodes
+        this.handleCollapse(edgeData.to.toString());
+      });
   }
 
   render() {

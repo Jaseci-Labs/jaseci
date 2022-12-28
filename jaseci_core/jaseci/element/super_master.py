@@ -13,7 +13,13 @@ from jaseci.api.actions_api import ActionsApi
 
 
 class SuperMaster(
-    Master, LoggerApi, ActionsApi, ConfigApi, GlobalApi, SuperApi, JsOrcApi
+    Master,
+    LoggerApi,
+    ActionsApi,
+    ConfigApi,
+    GlobalApi,
+    SuperApi,
+    JsOrcApi,
 ):
     """Master with admin APIs"""
 

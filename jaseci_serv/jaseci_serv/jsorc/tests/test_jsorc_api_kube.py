@@ -9,6 +9,7 @@ from jaseci_serv.utils.test_utils import skip_without_kube
 from django.test import TestCase
 from jaseci_serv.svc import MetaService
 
+import os
 import json
 import time
 
@@ -49,7 +50,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
 
         meta_config = json.loads(res.data)
         meta_config["automation"] = True
-        meta_config["keep_alive"] = []
+        meta_config["keep_alive"] = ["promon"]
 
         # Set automation to be true
         payload = {
@@ -69,6 +70,113 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
 
     def tearDown(self):
         super().tearDown()
+
+    @skip_without_kube
+    def test_actions_tracking(self):
+        """
+        Test actions tracking API of JSORC
+        """
+        # Start tracking actions
+        payload = {"op": "jsorc_trackact_start"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # load action
+        payload = {
+            "op": "jsorc_actions_config",
+            "name": "test_module",
+            "config": "jaseci_ai_kit.config",
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        payload = {"op": "jsorc_actions_load", "name": "test_module", "mode": "module"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # register jac file
+        zsb_file = open(os.path.dirname(__file__) + "/test_jsorc.jac").read()
+        payload = {"op": "sentinel_register", "name": "test_snt", "code": zsb_file}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # call the walker
+        payload = {"op": "walker_run", "name": "test_actions_tracking"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # stop action tracking and assert on the result
+        payload = {"op": "jsorc_trackact_stop"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertTrue("actions_calls" in res.data[0])
+        self.assertTrue("test_module.call" in res.data[0]["actions_calls"])
+
+    @skip_without_kube
+    def test_benchmark(self):
+        """
+        Test performance benchmark API of JSORC
+        """
+        # Start benchmark mode
+        payload = {"op": "jsorc_benchmark_start"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # register jac file
+        zsb_file = open(os.path.dirname(__file__) + "/test_jsorc.jac").read()
+        payload = {"op": "sentinel_register", "name": "test_snt", "code": zsb_file}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # call the walker
+        payload = {"op": "walker_run", "name": "test_benchmark"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # stop action tracking and assert on the result
+        payload = {"op": "jsorc_benchmark_stop", "report": True}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertTrue("sentinel_register" in res.data)
+        self.assertTrue("walker_run" in res.data)
+        self.assertTrue("test_benchmark" in res.data["walker_run"])
+
+    @skip_without_kube
+    def test_system_tracking(self):
+        """
+        Test system state tracking of JSORC
+        """
+        # Start tracking
+        payload = {"op": "jsorc_tracksys_start"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        time.sleep(20)
+        # stop action tracking and assert on the result
+        payload = {"op": "jsorc_tracksys_stop"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertTrue(all("prometheus" in state for state in res.data["states"]))
+        self.assertTrue(all("actions" in state for state in res.data["states"]))
+
+    @skip_without_kube
+    def test_set_action_policy(self):
+        """
+        Test setting custom action policy in JSORC
+        """
+        payload = {"op": "jsorc_actionpolicy_set", "policy_name": "Evaluation"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        # stop action tracking and assert on the result
+        payload = {"op": "jsorc_actionpolicy_get"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(res.data["policy"], "Evaluation")
 
     @skip_without_kube
     def test_jsorc_actions_load_module(self):

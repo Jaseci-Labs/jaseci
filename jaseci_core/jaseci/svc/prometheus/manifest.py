@@ -14,7 +14,6 @@ PROMON_MANIFEST = {
                     "app.kubernetes.io/version": "2.5.0",
                 },
                 "name": "jaseci-prometheus-kube-state-metrics",
-                "namespace": "default",
             },
             "imagePullSecrets": [],
         },
@@ -30,7 +29,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
                 "annotations": {},
             },
         },
@@ -46,7 +44,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-node-exporter",
-                "namespace": "default",
                 "annotations": {},
             },
         },
@@ -62,7 +59,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-pushgateway",
-                "namespace": "default",
                 "annotations": {},
             },
         },
@@ -78,7 +74,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
                 "annotations": {},
             },
         },
@@ -96,7 +91,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
             },
             "data": {
                 "allow-snippet-annotations": "false",
@@ -115,7 +109,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
             },
             "data": {
                 "allow-snippet-annotations": "false",
@@ -140,7 +133,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
             },
             "spec": {
                 "accessModes": ["ReadWriteOnce"],
@@ -159,7 +151,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
             },
             "spec": {
                 "accessModes": ["ReadWriteOnce"],
@@ -405,7 +396,6 @@ PROMON_MANIFEST = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-kube-state-metrics",
-                    "namespace": "default",
                 }
             ],
         },
@@ -426,7 +416,6 @@ PROMON_MANIFEST = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-alertmanager",
-                    "namespace": "default",
                 }
             ],
             "roleRef": {
@@ -452,7 +441,6 @@ PROMON_MANIFEST = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-pushgateway",
-                    "namespace": "default",
                 }
             ],
             "roleRef": {
@@ -478,7 +466,6 @@ PROMON_MANIFEST = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-server",
-                    "namespace": "default",
                 }
             ],
             "roleRef": {
@@ -494,7 +481,6 @@ PROMON_MANIFEST = {
             "kind": "Service",
             "metadata": {
                 "name": "jaseci-prometheus-kube-state-metrics",
-                "namespace": "default",
                 "labels": {
                     "helm.sh/chart": "kube-state-metrics-4.13.0",
                     "app.kubernetes.io/managed-by": "Helm",
@@ -534,7 +520,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
             },
             "spec": {
                 "ports": [
@@ -562,7 +547,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-node-exporter",
-                "namespace": "default",
             },
             "spec": {
                 "ports": [
@@ -594,7 +578,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-pushgateway",
-                "namespace": "default",
             },
             "spec": {
                 "ports": [
@@ -625,7 +608,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
             },
             "spec": {
                 "ports": [
@@ -659,7 +641,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-node-exporter",
-                "namespace": "default",
             },
             "spec": {
                 "selector": {
@@ -720,6 +701,11 @@ PROMON_MANIFEST = {
                                         "readOnly": True,
                                     },
                                 ],
+                                "hostRootFsMount": {
+                                    "enabled": False,
+                                    "mountPropagation": "HostToContainer",
+                                },
+                                "hostRootFs": False,
                             }
                         ],
                         "hostNetwork": True,
@@ -746,7 +732,6 @@ PROMON_MANIFEST = {
             "kind": "Deployment",
             "metadata": {
                 "name": "jaseci-prometheus-kube-state-metrics",
-                "namespace": "default",
                 "labels": {
                     "helm.sh/chart": "kube-state-metrics-4.13.0",
                     "app.kubernetes.io/managed-by": "Helm",
@@ -824,7 +809,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-alertmanager",
-                "namespace": "default",
             },
             "spec": {
                 "selector": {
@@ -942,7 +926,6 @@ PROMON_MANIFEST = {
                     "heritage": "Helm",
                 },
                 "name": "jaseci-prometheus-pushgateway",
-                "namespace": "default",
             },
             "spec": {
                 "selector": {
@@ -1004,7 +987,6 @@ PROMON_MANIFEST = {
                     "pod": "jaseci-prometheus-server",
                 },
                 "name": "jaseci-prometheus-server",
-                "namespace": "default",
             },
             "spec": {
                 "selector": {

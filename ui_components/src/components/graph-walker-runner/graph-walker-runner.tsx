@@ -125,7 +125,7 @@ export class GraphWalkerRunner {
               </tbody>
             </table>
 
-            <button data-testId="addProperty" class="btn btn-info btn-xs ml-2" onClick={() => this.addProperty()}>
+            <button id="addProperty" class="btn btn-info btn-xs ml-2" onClick={() => this.addProperty()}>
               Add Property
             </button>
             <div class="flex justify-end">

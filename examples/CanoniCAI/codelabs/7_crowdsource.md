@@ -25,12 +25,12 @@ You will be redirected to the project page where you will specify the following.
 
 > **_NOTE:_**  Make sure you follow instructions in this section properly because what you enter here will affect the quality of data you get from the crowd.
 
-* **Project Name**: The name of the project 
+* **Project Name**: The name of the project
 * **Title**: A short to the point title of the task, be very specific as possible
 * **Description**: Give more information about the task here
 * **Keywords**: Keywords that will enable the general public or workers to find your task
 
- Try to be brief and concise with the description because most workers will skim through the task given. 
+ Try to be brief and concise with the description because most workers will skim through the task given.
 
 Here is how the form will look like.
 
@@ -43,7 +43,7 @@ Here is how the form will look like.
 
 * **Number of assignments per task**: How much utterances you would like at the end to get out of this task. We usually set the default to 100 utterances because we would like to assess whether or not the utterances that came out is great to see if we can make changes in the future.
 
-* **Time allotted per assignment**: Maximum time a Worker has to work on a single task. Be generous so that Workers are not rushed. The defaul 1 hour generally works well here. 
+* **Time allotted per assignment**: Maximum time a Worker has to work on a single task. Be generous so that Workers are not rushed. The defaul 1 hour generally works well here.
 
 * **Task expires in**: Maximum time your task will be available to Workers on Mechanical Turk. The default 7 days usually works well here.
 
@@ -93,7 +93,7 @@ You can build off this to tweak it for other NLP tasks.
 
     <p>What would you say?: <b>Please be natural. </b></p>
 
-    <!-- Your contexts and intents will be substituted for the "context" and "intent" variables when you 
+    <!-- Your contexts and intents will be substituted for the "context" and "intent" variables when you
            publish a batch with an input file containing multiple contexts and intents -->
     <p><strong>Context: </strong>${context}</p>
     <p><strong>Intent: </strong>${intent}</p>
@@ -130,7 +130,7 @@ So let's explain in details the important bits of this template.
     <crowd-input name="utterance" placeholder="Type what you would say here..." required></crowd-input>
 ```
 
-#### Step 8: Preview and Finish 
+#### Step 8: Preview and Finish
 ![Alt text](../images/mturk/finish_preview.png?raw=true)
 
 Click `finish` you will be redirected to the projects page.
@@ -143,7 +143,7 @@ Click on `Publish Batch`, A model will pop up.
 ![Alt text](../images/mturk/modal.png?raw=true)
 
 You will need to create a CSV file that have `context` and `intent` in it.
-These two fields will be used to replace the placeholder in the template html above and generate the actual view for the workers. 
+These two fields will be used to replace the placeholder in the template html above and generate the actual view for the workers.
 
 ```
 context,intent
@@ -164,7 +164,7 @@ Here is where you will preview and confirm that everything looks fine.
 
 Once everything looks fine, click `Next`
 
-#### Step 11: Confirm and Publish Batch 
+#### Step 11: Confirm and Publish Batch
 Here you will confirm all billing information. Then click `Publish`
 
 ![Alt text](../images/mturk/confirm_and_publish.png?raw=true)
