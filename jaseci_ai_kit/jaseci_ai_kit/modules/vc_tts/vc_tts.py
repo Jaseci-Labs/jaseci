@@ -47,13 +47,25 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
 @jaseci_action(act_group=["vc_tts"], allow_remote=True)
 def clone_voice(input_text: str, reference_audio: str, save_path: str = "./"):
 
+    ret_dict = {}
     try:
-        audio_wav = synthesizer.tts(
-            text=input_text,
-            language_name="en",
-            speaker_wav=reference_audio,
-        )
-        synthesizer.save_wav(wav=audio_wav, path="./test.wav")
+        if save_path != "":
+            if os.path.exists(save_path):
+                file_name = "cloned_audio_file_" + str(time.time()) + ".wav"
+                file_path = os.path.join(save_path, file_name)
+                synthesizer.save_wav(wav=audio_wav, path=file_path)
+                ret_dict = {"save_status": True, "file_path": file_path}
+            else:
+                ret_dict = {"save_status": False}
+                raise ValueError("The provided path does not exists")
+        else:
+            audio_wav = synthesizer.tts(
+                text=input_text,
+                language_name="en",
+                speaker_wav=reference_audio,
+            )
+            ret_dict = ret_dict = {"audio_data": audio_wav}
+        return ret_dict
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

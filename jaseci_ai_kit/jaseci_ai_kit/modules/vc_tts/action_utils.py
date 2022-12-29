@@ -76,6 +76,7 @@ def load_model_by_name(model_name: str, gpu: bool = False):
     return synthesizer
 
 
+# defining the synthesizer for voice cloning model.
 synthesizer = load_model_by_name(voice_cloning_model)
 
 
