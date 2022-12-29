@@ -78,19 +78,3 @@ def load_model_by_name(model_name: str, gpu: bool = False):
 
 # defining the synthesizer for voice cloning model.
 synthesizer = load_model_by_name(voice_cloning_model)
-
-
-def cloner(input_text: str, refference_audio_path: str):
-
-    wav = synthesizer.tts(
-        text=input_text,
-        speaker_name=None,
-        language_name="en",
-        speaker_wav=refference_audio_path,
-        reference_wav=None,
-        style_wav=None,
-        style_text=None,
-        reference_speaker_name=None,
-    )
-
-    return wav
