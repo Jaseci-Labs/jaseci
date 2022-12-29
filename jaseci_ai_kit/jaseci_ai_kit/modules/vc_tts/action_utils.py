@@ -1,0 +1,75 @@
+import os
+import time
+import subprocess
+from pathlib import Path
+
+from TTS.api import TTS
+from TTS.utils.synthesizer import Synthesizer
+from TTS.utils.manage import ModelManager
+
+
+def get_models_file_path():
+    return Path(__file__).parent / "models.json"
+
+
+voice_cloning_model = "tts_models/multilingual/multi-dataset/your_tts"
+
+manager = ModelManager(
+    models_file=get_models_file_path(), progress_bar=True, verbose=False
+)
+
+
+def download_model_by_name(model_name: str):
+    """
+    Download the model from the checkpoint path.
+    """
+    model_path, config_path, model_item = manager.download_model(model_name)
+    if model_item["default_vocoder"] is None:
+        return model_path, config_path, None, None
+    vocoder_path, vocoder_config_path, _ = manager.download_model(
+        model_item["default_vocoder"]
+    )
+    return model_path, config_path, vocoder_path, vocoder_config_path
+
+
+def load_model_by_name(model_name: str, gpu: bool = False):
+    """
+    Load the downloaded model.
+    """
+    model_path, config_path, vocoder_path, vocoder_config_path = download_model_by_name(
+        model_name
+    )
+    # init synthesizer
+    # None values are fetch from the model
+    synthesizer = Synthesizer(
+        tts_checkpoint=model_path,
+        tts_config_path=config_path,
+        tts_speakers_file=None,
+        tts_languages_file=None,
+        vocoder_checkpoint=vocoder_path,
+        vocoder_config=vocoder_config_path,
+        encoder_checkpoint=None,
+        encoder_config=None,
+        use_cuda=gpu,
+    )
+
+    return synthesizer
+
+
+synthesizer = load_model_by_name(voice_cloning_model)
+
+
+def cloner(input_text: str, refference_audio_path: str):
+
+    wav = synthesizer.tts(
+        text=input_text,
+        speaker_name=None,
+        language_name="en",
+        speaker_wav=refference_audio_path,
+        reference_wav=None,
+        style_wav=None,
+        style_text=None,
+        reference_speaker_name=None,
+    )
+
+    return wav

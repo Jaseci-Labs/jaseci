@@ -7,6 +7,8 @@ from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
 
+from .action_utils import synthesizer, cloner
+
 model_name = "tts_models/en/vctk/vits"
 
 speech_model = TTS(model_name)
@@ -42,6 +44,23 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@jaseci_action(act_group=["vc_tts"], allow_remote=True)
+def clone_voice(input_text: str, reference_audio: str, save_path: str = "./"):
+
+    try:
+        audio_wav = synthesizer.tts(
+            text=input_text,
+            language_name="en",
+            speaker_wav=reference_audio,
+        )
+        synthesizer.save_wav(wav=audio_wav, path="./test.wav")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     print("Text to Speech Synthesizer up and running")
+    # clone_voice(input_text="Hello World, This is a test",
+    #            reference_audio="tests/fixtures/test_ref_audio.wav")
     launch_server(port=8000)
