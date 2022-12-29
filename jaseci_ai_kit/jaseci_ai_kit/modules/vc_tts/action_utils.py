@@ -22,6 +22,17 @@ manager = ModelManager(
 def download_model_by_name(model_name: str):
     """
     Download the model from the checkpoint path.
+
+    Parameters:
+    -----------
+    model_name: String, name of the model.
+
+    Return:
+    -----------
+    model_path: String, Path to downloaded checkpoint file
+    config_path: String, model configuration file path
+    vocoder_path: String, vocoder model path
+    vocoder_config_path: String vocoder configuration path
     """
     model_path, config_path, model_item = manager.download_model(model_name)
     if model_item["default_vocoder"] is None:
@@ -35,6 +46,15 @@ def download_model_by_name(model_name: str):
 def load_model_by_name(model_name: str, gpu: bool = False):
     """
     Load the downloaded model.
+
+    Parameters:
+    -----------
+    model_name: String, name of the model.
+    gpu: Boolean, if gpu is available.
+
+    Return:
+    -----------
+    synthesizer: A class object of synthesizer.
     """
     model_path, config_path, vocoder_path, vocoder_config_path = download_model_by_name(
         model_name
