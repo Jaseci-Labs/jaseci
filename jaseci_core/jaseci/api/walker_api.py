@@ -240,7 +240,7 @@ class WalkerApi:
         return res
 
     @Interface.public_api(url_args=["nd", "wlk"], allowed_methods=["post", "get"])
-    def walker_callback(
+    def walker_webhook(
         self,
         nd: Node,
         wlk: Walker,

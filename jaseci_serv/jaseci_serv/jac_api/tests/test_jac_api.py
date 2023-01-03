@@ -155,7 +155,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         )
         walk = res.data["spawned:walker:callback"].split(":")[2]
         nd = res.data["active:graph"].split(":")[2]
-        payload = {"op": "walker_callback", "key": key, "wlk": walk, "nd": nd}
+        payload = {"op": "walker_webhook", "key": key, "wlk": walk, "nd": nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}', args=[payload["nd"], payload["wlk"]])
             + "?keys="
@@ -171,7 +171,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         self.assertEqual(len(res.data), 1)
-        payload = {"op": "walker_callback", "key": key, "wlk": walk, "nd": nd}
+        payload = {"op": "walker_webhook", "key": key, "wlk": walk, "nd": nd}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}', args=[payload["nd"], payload["wlk"]])
             + "?keys="
@@ -221,7 +221,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         nd = res.data["active:graph"].split(":")[2]
         payload = {
             "is_async": True,
-            "op": "walker_callback",
+            "op": "walker_webhook",
             "key": key,
             "wlk": walk,
             "nd": nd,
