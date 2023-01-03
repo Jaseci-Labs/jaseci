@@ -2,11 +2,6 @@
 Webhook API
 """
 from jaseci.api.interface import Interface
-from jaseci.svc.meta import MetaService
-from jaseci.actor.walker import Walker
-from jaseci.graph.node import Node
-from jaseci.actor.sentinel import Sentinel
-from jaseci.utils.id_list import IdList
 from fastapi import HTTPException
 from json import loads
 
