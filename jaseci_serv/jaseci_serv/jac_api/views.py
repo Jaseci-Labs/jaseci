@@ -153,11 +153,11 @@ class AbstractJacAPIView(APIView):
             request.data.dict() if type(request.data) is not dict else request.data
         )
 
-        req_data.update(kwargs)
-
         self.proc_prime_ctx(request, req_data)
         self.proc_file_ctx(request, req_data)
         self.proc_request_ctx(request, req_data)
+
+        req_data.update(kwargs)
 
         self.cmd = req_data
         self.set_caller(request)
