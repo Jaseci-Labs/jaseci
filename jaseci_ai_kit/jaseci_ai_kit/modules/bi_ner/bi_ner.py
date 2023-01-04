@@ -1,280 +1,138 @@
-import os
-import torch
-from typing import Dict, List
-from fastapi import HTTPException
-from transformers import AutoModel, AutoConfig, AutoTokenizer
-import traceback
-import numpy as np
-from jaseci.actions.live_actions import jaseci_action
-import random
+from functools import partial
+from transformers import Trainer, TrainingArguments
 import json
-import shutil
-
-from utils.bi_enc_model import BiEncoder
-from utils.entitydataset import get_ner_dataset
-from utils.train import train_model
-from utils.evaluate import eval_model
-
-# device = torch.device("cpu")
-# uncomment this if you wish to use GPU to train
-# this is commented out because this causes issues with
-# unittest on machines with GPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from typing import Dict, List  # , Set, Iterable, Tuple
+import os
+import numpy as np
+import traceback
+from .model.base_encoder import BI_Enc_NER
+from .model.inference import InferenceBinder
+from .datamodel.utils import invert, get_category_id_mapping
+from .model.tokenize_data import get_datasets
+from jaseci.actions.live_actions import jaseci_action
 
 
-# funtion to set seed for the module
-def set_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-
-
-def config_setup():
-    """
-    Loading configurations from utils/config.cfg and
-    initialize tokenizer and model
-    """
-    global model, tokenizer, model_config, train_config, t_config_fname, m_config_fname
+def config_setup(category_name: List[str] = None):
+    global model, example_encoder, category_id_mapping, model_args, device
     dirname = os.path.dirname(__file__)
-    m_config_fname = os.path.join(dirname, "utils/model_config.json")
-    t_config_fname = os.path.join(dirname, "utils/train_config.json")
+    m_config_fname = os.path.join(dirname, "model\\m_config.json")
     with open(m_config_fname, "r") as jsonfile:
-        model_config = json.load(jsonfile)
-    with open(t_config_fname, "r") as jsonfile:
-        train_config = json.load(jsonfile)
-
-    train_config.update({"device": device.type})
-    t_config = AutoConfig.from_pretrained(model_config["t_model_name"])
-    e_config = AutoConfig.from_pretrained(model_config["e_model_name"])
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_config["t_model_name"], do_lower_case=True, clean_text=False
+        model_args = json.load(jsonfile)
+    if category_name is None:
+        category_name = ["PER", "ORG", "LOC", "MISC"]
+    category_id_mapping = get_category_id_mapping(model_args, category_name)
+    model_args["descriptions"] = category_name
+    model = BI_Enc_NER(model_args)
+    example_encoder = partial(
+        model.prepare_inputs,
+        category_mapping=invert(category_id_mapping),
+        no_entity_category=model_args["unk_category"],
     )
-    t_model = AutoModel.from_config(t_config)
-    e_model = AutoModel.from_config(e_config)
-    print("non shared model created")
-    model = BiEncoder(
-        t_config=t_config,
-        e_config=e_config,
-        t_model=t_model,
-        e_model=e_model,
-    )
-
-    model.to(train_config["device"])
-    set_seed(train_config["seed"])
+    device = model.device
 
 
-config_setup()
+# API for getting the cosine similarity
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def cosine_sim(vec_a: List[float], vec_b: List[float]):
+    """
+    Caculate the cosine similarity score of two given vectors
+    Param 1 - First vector
+    Param 2 - Second vector
+    Return - float between 0 and 1
+    """
+
+    result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
+    return result.astype(float)
 
 
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def predict(texts: List[str], entities: List[str]):
+def dot_prod(vec_a: List[float], vec_b: List[float]):
     """
-    Take list of texts, entities and rets the entities
+    Caculate the dot product of two given vectors
+    Param 1 - First vector
+    Param 2 - Second vector
+    Return - dot product
     """
-    model.eval()
+    dot_product = np.matmul(vec_a, vec_b)
+    return dot_product.astype(float)
+
+
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def infer(contexts: List[str]):
+    """
+    Take list of context, candidate and return nearest candidate to the context
+    """
     predicted_candidates = []
-    t_dataset = {"test": {"text": texts, "entity": entities}}
     try:
-        test_ds = get_ner_dataset(dataset=t_dataset, tokenizer=tokenizer, split="test")
-        predicted_candidates = eval_model(
-            model=model,
-            tokenizer=tokenizer,
-            test_dataset=test_ds,
-            train_config=train_config,
-        )
+        model_predictions = inference_model(contexts)
+        for pred in range(len(contexts)):
+            entity_data = {contexts[pred]: []}
+            if len(model_predictions[pred]) > 0:
+                for entities in model_predictions[pred]:
+                    srt = list(list(entities.as_tuple()))[0]
+                    end = list(list(entities.as_tuple()))[1]
+                    entity_data[contexts[pred]].append(
+                        {
+                            "start": srt,
+                            "end": end,
+                            "type": list(list(entities.as_tuple()))[2],
+                            "value": contexts[pred][srt:end],
+                        }
+                    )
+            predicted_candidates.append(entity_data)
         return predicted_candidates
     except Exception as e:
+        print("Exeptions : ", e)
         traceback.print_exc()
-        raise HTTPException(
-            status_code=404,
-            detail=str(f"Exception : {e}"),
-        )
-
-
-"""
-train_data={"train":[
-    "my name is [Shawn](name)",
-    "[Jemmott](name) is my name",
-    "I'm [Juan](name)",
-    "Everyone call me by the name [Katryn](name)",
-    "You can call me [Spence](name)",
-    "My mother give me the name [marks](name)",
-    "I live at [482 Mandela Avenue](address)"
-],
-"test":{"text":["i am john smith","my place is in michigan"],
-"entity":["name","address"]
-}
-}
-
-"""
 
 
 # API for training
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def train(
-    dataset: Dict = {"train": []},
-    training_parameters: Dict = None,
-):
+def train(dataset: Dict = None, from_scratch=True, training_parameters: Dict = None):
     """
     Take list of context, candidate, labels and trains the model
     """
-    global model
-    model.train()
-    try:
-        if training_parameters is not None:
-            with open(t_config_fname, "w+") as jsonfile:
-                train_config.update(training_parameters)
-                json.dump(train_config, jsonfile, indent=4)
-        if len(dataset["train"]) > 0:
-            train_ds = get_ner_dataset(dataset=dataset, tokenizer=tokenizer)
-        else:
-            raise HTTPException(
-                status_code=500, detail=str("Train Data can not be null")
-            )
-        model = train_model(
-            model=model,
-            train_dataset=train_ds,
-            train_config=train_config,
+    global model, inference_model
+    if from_scratch:
+        category_name = list(
+            set(ele["entity_type"] for val in dataset["annotations"] for ele in val)
         )
-        return "Model Training is complete."
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        config_setup(category_name=category_name)
+    train_dataset = get_datasets(dataset, example_encoder)
 
+    training_args = TrainingArguments(
+        output_dir="./result",
+        evaluation_strategy="epoch",
+        learning_rate=3e-5,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
+        num_train_epochs=30,
+        weight_decay=0.01,
+    )
 
-# API for setting the training and model parameters
-@jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def get_train_config():
-    try:
-        with open(t_config_fname, "r") as jsonfile:
-            data = json.load(jsonfile)
-        return data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def set_train_config(training_parameters: Dict = None):
-    global train_config
-    try:
-        with open(t_config_fname, "w+") as jsonfile:
-            train_config.update(training_parameters)
-            json.dump(train_config, jsonfile, indent=4)
-        return "Config setup is complete."
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def get_model_config():
-    try:
-        with open(m_config_fname, "r") as jsonfile:
-            data = json.load(jsonfile)
-        return data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def set_model_config(model_parameters: Dict = None):
-    global model_config
-    try:
-        save_model(model_config["model_save_path"])
-        with open(m_config_fname, "w+") as jsonfile:
-            model_config.update(model_parameters)
-            json.dump(model_config, jsonfile, indent=4)
-
-        config_setup()
-        return "Config setup is complete."
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def save_model(model_path: str):
-    """
-    saves the model to the provided model_path
-    """
-    try:
-        if not model_path.replace("_", "").isalnum():
-            raise HTTPException(
-                status_code=400,
-                detail="""
-                Invalid model name. Model Name can only have Alphanumeric
-                 and '_' characters.""",
-            )
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
-
-        t_model_path = os.path.join(model_path + "/t_model")
-        e_model_path = os.path.join(model_path + "/e_model")
-        if not os.path.exists(t_model_path):
-            os.makedirs(t_model_path)
-        if not os.path.exists(e_model_path):
-            os.makedirs(e_model_path)
-        tokenizer.save_vocabulary(t_model_path)
-        tokenizer.save_vocabulary(e_model_path)
-        model.entity_embedder.save_pretrained(e_model_path)
-        model.text_embedder.save_pretrained(t_model_path)
-        print(f"Saving non-shared model to : {model_path}")
-        shutil.copyfile(
-            os.path.join(os.path.dirname(__file__), "utils/train_config.json"),
-            os.path.join(model_path, "train_config.json"),
-        )
-        shutil.copyfile(
-            os.path.join(os.path.dirname(__file__), "utils/model_config.json"),
-            os.path.join(model_path, "model_config.json"),
-        )
-        return f"[Saved model at] : {model_path}"
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def load_model(model_path):
-    """
-    loads the model from the provided model_path
-    """
-    global model, tokenizer
-    if not os.path.exists(model_path):
-        raise HTTPException(status_code=404, detail="Model path is not available")
-    try:
-        with open(m_config_fname, "r") as jsonfile:
-            model_config_data = json.load(jsonfile)
-        if model_config_data["shared"] is True:
-            trf_config = AutoConfig.from_pretrained(model_path, local_files_only=True)
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path, do_lower_case=True, clean_text=False
-            )
-            e_model = AutoModel.from_pretrained(model_path, local_files_only=True)
-            t_model = e_model
-            print(f"Loading shared model from : {model_path}")
-        else:
-            t_model_path = os.path.join(model_path, "t_model")
-            e_model_path = os.path.join(model_path, "e_model")
-            print(f"Loading non-shared model from : {model_path}")
-            e_model = AutoModel.from_pretrained(e_model_path, local_files_only=True)
-            t_model = AutoModel.from_pretrained(t_model_path, local_files_only=True)
-            trf_config = AutoConfig.from_pretrained(e_model_path, local_files_only=True)
-            tokenizer = AutoTokenizer.from_pretrained(
-                t_model_path, do_lower_case=True, clean_text=False
-            )
-        model = BiEncoder(
-            config=trf_config,
-            e_model=e_model,
-            t_model=t_model,
-        )
-        model.to(train_config["device"])
-        return f"[loaded model from] : {model_path}"
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        data_collator=model.collate_examples,
+        train_dataset=train_dataset,
+        eval_dataset=train_dataset,
+    )
+    train_resp = trainer.train()
+    model.eval()
+    inference_model = InferenceBinder(
+        model,
+        category_mapping=invert(category_id_mapping),
+        no_entity_category=model_args["unk_category"],
+        max_sequence_length=model_args["max_sequence_length"],
+        max_entity_length=model_args["max_entity_length"],
+        model_args=model_args,
+    )
+    inference_model.to(device)
+    return train_resp
 
 
 if __name__ == "__main__":
+    config_setup()
     from jaseci.actions.remote_actions import launch_server
 
     launch_server(port=8000)

@@ -1,0 +1,12 @@
+{
+    "bert_model": "prajjwal1/bert-tiny",
+    "hidden_size": 128,
+    "max_sequence_length": 128,
+    "max_entity_length": 30,
+    "loss_beta": 0.6,
+    "start_coef": 0.3,
+    "end_coef": 0.1,
+    "span_coef": 0.6,
+    "unk_entity_type_id": -1,
+    "unk_category": "<UNK>"
+}
