@@ -119,6 +119,7 @@
 - [Services/JsOrc](jaseci_core/jaseci/svc/README.md)
   - [Task](jaseci_core/jaseci/svc/task/README.md)
   - [Mail](jaseci_core/jaseci/svc/mail/README.md)
+- [JSORC Action Management Engine](jaseci_core/jaseci/svc/JSORC.md)
 
 ## Contributing to Jaseci
 
