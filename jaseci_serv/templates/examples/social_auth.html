@@ -53,6 +53,12 @@
                                     <i class="fa fa-github"></i> Sign in with Github
                                 </a>
                             </div>
+                            {% elif provider == "facebook" %}
+                            <div class="col-md-3">
+                                <a href="https://www.facebook.com/dialog/oauth/?client_id=3201469443497528&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Fauth%2Fexamples%2Ffacebook%2F&scope=email&state={{state}}" class="btn btn-block btn-social btn-facebook" style="text-align:center">
+                                    <i class="fa fa-facebook"></i> Continue with Facebook
+                                </a>
+                            </div>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -100,7 +106,7 @@ var request = $.ajax({
         id_token: "",
         code: "{{code}}",
         access_token: "",
-        redirect_uri
+        callback_url: redirect_uri
     },
     success: (res) => {
         console.log("response:", res);
@@ -113,12 +119,15 @@ var request = $.ajax({
     }
 });
 {% else %}
-const client = google.accounts.oauth2.initCodeClient({
-    client_id: "{{client_id}}",
-    scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid",
-    ux_mode: 'redirect',
-    redirect_uri: "http://localhost:8001/auth/examples/" + provider + "/",
-    state: "offline"
-});
+    {% if provider == "google" %}
+
+    const client = google.accounts.oauth2.initCodeClient({
+        client_id: "{{client_id}}",
+        scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid",
+        ux_mode: 'redirect',
+        redirect_uri: "http://localhost:8001/auth/examples/" + provider + "/",
+        state: "offline"
+    });
+    {% endif %}
 {% endif %}
 </script>
