@@ -1244,11 +1244,11 @@ class Interp(VirtualMachine):
     def run_node_edge_ref(self, jac_ast, viable_nodes=None):
         """
         node_edge_ref:
-            node_ref filter_ctx? (edge_ref node_edge_ref?)?
+            node_ref filter_ctx? node_edge_ref?
             | edge_ref node_edge_ref?;
         """
         kid = self.set_cur_ast(jac_ast)
-        result = None
+        result = JacSet()
         if kid[0].name == "node_ref":
             result = self.run_node_ref(kid[0], viable_nodes=viable_nodes)
             kid = kid[1:]
@@ -1264,15 +1264,13 @@ class Interp(VirtualMachine):
             self._relevant_edges = JacSet()
             for i in viable_nodes:
                 relevant_edges = self.run_edge_ref(kid[0], location=i)
-                result = self.visibility_prune(
-                    self.edge_to_node_jac_set(relevant_edges)
+                result += self.visibility_prune(
+                    self.edge_to_node_jac_set(relevant_edges, location=i)
                 )
                 kid = kid[1:]
                 if len(kid):
-                    result = (
-                        result
-                        * self.run_node_edge_ref(kid[0], viable_nodes=result).value
-                    )
+                    result = self.run_node_edge_ref(kid[0], viable_nodes=result).value
+
                     relevant_edges = self.edges_filter_on_nodes(relevant_edges, result)
                 self._relevant_edges += relevant_edges
         return JacValue(self, value=result)

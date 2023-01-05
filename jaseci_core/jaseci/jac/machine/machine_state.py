@@ -158,13 +158,15 @@ class MachineState:
             ret.add_obj(i)
         return ret
 
-    def edge_to_node_jac_set(self, edge_set):
+    def edge_to_node_jac_set(self, edge_set, location=None):
         """
         Returns nodes jac_set from edge jac_set from current node
         """
         ret = JacSet()
+        if not location:
+            location = self.current_node
         for i in edge_set.obj_list():
-            ret.add_obj(i.opposing_node(self.current_node))
+            ret.add_obj(i.opposing_node(location))
         return ret
 
     def edges_filter_on_nodes(self, edge_set, node_set):
