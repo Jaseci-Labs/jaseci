@@ -2,6 +2,7 @@ from prometheus_api_client import PrometheusConnect
 from jaseci.svc import CommonService
 from .config import PROMON_CONFIG
 from .manifest import PROMON_MANIFEST
+import time
 
 
 class PrometheusService(CommonService):
@@ -35,29 +36,56 @@ class PrometheusService(CommonService):
     def all_metrics(self) -> list:
         return self.app.all_metrics()
 
-    def pods(self) -> dict:
-        util = self.app.get_current_metric_value("kube_pod_info")
+    def pods(self, namespace: str = "", exclude_prom: bool = False) -> dict:
+        if namespace == "":
+            util = self.app.get_current_metric_value("kube_pod_info")
+        else:
+            util = self.app.get_current_metric_value(
+                f"kube_pod_info{{namespace='{namespace}'}}"
+            )
         res = {}
         for pod in util:
             info = pod["metric"]
             node = info["node"]
             pod = info["pod"]
+            if exclude_prom and "prometheus" in pod:
+                continue
             if res.get(node) is None:
-                res[node] = set()
-            res[node].add(pod)
+                res[node] = []
+            res[node].append(pod)
         return res
 
-    def info(self) -> dict:
-        util = self.app.get_current_metric_value("kube_pod_info")
+    def info(
+        self,
+        namespace: str = "",
+        exclude_prom: bool = False,
+        timestamp: int = 0,
+        duration: int = 0,
+    ) -> dict:
+        if namespace == "":
+            util = self.app.get_current_metric_value("kube_pod_info")
+        else:
+            util = self.app.get_current_metric_value(
+                f"kube_pod_info{{namespace='{namespace}'}}"
+            )
         res = {}
         for pod in util:
             pod_name = pod["metric"]["pod"]
-            res[pod_name] = pod["metric"]
+            if exclude_prom and "prometheus" in pod_name:
+                continue
+            # res[pod_name] = pod["metric"]
+            res[pod_name] = {}
 
-        cpu = self.cpu.utilization_per_pod_cores()
+        if timestamp != 0 and duration != 0:
+            cpu = self.cpu.utilization_per_pod_cores(ts=timestamp, duration=duration)
+        else:
+            cpu = self.cpu.utilization_per_pod_cores()
         for pod in util:
             pod_name = pod["metric"]["pod"]
+            if exclude_prom and "prometheus" in pod_name:
+                continue
             pod_cpu = cpu.get(pod_name, 0)
+
             res[pod_name]["cpu_utilization_cores"] = pod_cpu
 
         mem = self.memory.utilization_per_pod_bytes()
@@ -66,15 +94,25 @@ class PrometheusService(CommonService):
             pod_mem = mem.get(pod_name, 0)
             res[pod_name]["mem_utilization_bytes"] = pod_mem
 
-        recv = self.network.receive_per_pod_bytes()
+        if timestamp != 0 and duration != 0:
+            recv = self.network.receive_per_pod_bytes(ts=timestamp, duration=duration)
+        else:
+            recv = self.network.receive_per_pod_bytes()
         for pod in util:
             pod_name = pod["metric"]["pod"]
+            if exclude_prom and "prometheus" in pod_name:
+                continue
             pod_recv = recv.get(pod_name, 0)
             res[pod_name]["network_recv_bytes"] = pod_recv
 
-        tran = self.network.transmit_per_pod_bytes()
+        if timestamp != 0 and duration != 0:
+            tran = self.network.transmit_per_pod_bytes(ts=timestamp, duration=duration)
+        else:
+            tran = self.network.transmit_per_pod_bytes()
         for pod in util:
             pod_name = pod["metric"]["pod"]
+            if exclude_prom and "prometheus" in pod_name:
+                continue
             pod_tran = tran.get(pod_name, 0)
             res[pod_name]["network_tran_bytes"] = pod_tran
 
@@ -121,10 +159,9 @@ class Cpu(Info):
             res[node_name] = node_util
         return res
 
-    def utilization_per_pod_cores(self) -> dict:
-        util = self.app.get_current_metric_value(
-            'sum(irate(container_cpu_usage_seconds_total{pod!=""}[10m])) by (pod)'
-        )
+    def utilization_per_pod_cores(self, ts=int(time.time()), duration=10) -> dict:
+        query_str = f'sum(rate(container_cpu_usage_seconds_total{{pod!=""}}[{duration}s] @ {ts})) by (pod)'
+        util = self.app.get_current_metric_value(query_str)
         res = {}
         for pod in util:
             pod_name = pod["metric"]["pod"]
@@ -192,9 +229,9 @@ class Network(Info):
             res[node_name] = node_util
         return res
 
-    def receive_per_pod_bytes(self):
+    def receive_per_pod_bytes(self, ts: int = int(time.time()), duration: int = 10):
         util = self.app.get_current_metric_value(
-            'sum (rate (container_network_receive_bytes_total{pod!=""}[10m])) by (pod)'
+            f'sum (rate (container_network_receive_bytes_total{{pod!=""}}[{duration}s] @ {ts})) by (pod)'
         )
         res = {}
         for pod in util:
@@ -214,9 +251,9 @@ class Network(Info):
             res[node_name] = node_util
         return res
 
-    def transmit_per_pod_bytes(self):
+    def transmit_per_pod_bytes(self, ts: int = int(time.time()), duration: int = 10):
         util = self.app.get_current_metric_value(
-            'sum (rate (container_network_transmit_bytes_total{pod!=""}[10m])) by (pod)'
+            f'sum (rate (container_network_transmit_bytes_total{{pod!=""}}[{duration}s] @ {ts})) by (pod)'
         )
         res = {}
         for pod in util:

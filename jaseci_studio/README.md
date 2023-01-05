@@ -3,7 +3,19 @@
 ## Setup
 
 - Install [rust](https://www.rust-lang.org/learn/get-started)
+```bash
+curl https://sh.rustup.rs -sSf | sh
+```
+- Install nodejs
+```
+curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash
+sudo apt-get install -y nodejs
+node -v
+```
 - Install [yarn](https://classic.yarnpkg.com/lang/en/docs/install/)
+```
+sudo npm install --global yarn
+```
 - Run `yarn install`
 - Run `yarn setup:ui`
 

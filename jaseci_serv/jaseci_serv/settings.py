@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 import os
 import sys
 
+from .jsx_oauth.config import *
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -50,6 +52,7 @@ INSTALLED_APPS = [
     "django_celery_results",
     "django_celery_beat",
     "jaseci_serv.jsx_stripe",
+    "jaseci_serv.jsx_oauth",
 ]
 
 MIDDLEWARE = [
@@ -208,3 +211,14 @@ DJANGO_CELERY_BEAT_TZ_AWARE = False
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 JSX_STRIPE_DIR = os.path.join(BASE_DIR, "jaseci_serv/jsx_stripe")
+
+
+#################################################
+#                    ADDONS                     #
+#################################################
+
+# ------------------- OAUTH ------------------- #
+
+INSTALLED_APPS += OAUTH_APPS
+JSX_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATES[0]["DIRS"] += [os.path.join(JSX_DIR, "templates")]
