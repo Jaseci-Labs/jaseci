@@ -396,6 +396,7 @@ PROMON_MANIFEST = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-kube-state-metrics",
+                    "namespace": "default",
                 }
             ],
         },
@@ -416,6 +417,7 @@ PROMON_MANIFEST = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-alertmanager",
+                    "namespace": "default",
                 }
             ],
             "roleRef": {
@@ -441,6 +443,7 @@ PROMON_MANIFEST = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-pushgateway",
+                    "namespace": "default",
                 }
             ],
             "roleRef": {
@@ -466,6 +469,7 @@ PROMON_MANIFEST = {
                 {
                     "kind": "ServiceAccount",
                     "name": "jaseci-prometheus-server",
+                    "namespace": "default",
                 }
             ],
             "roleRef": {
