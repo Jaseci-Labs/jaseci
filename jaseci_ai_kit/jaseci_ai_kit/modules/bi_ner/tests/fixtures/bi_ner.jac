@@ -58,5 +58,37 @@ walker test_bi_ner_train{
                 ]
             ]
     };
-    report bi_ner.train(dataset,true,{});
+    report bi_ner.train(dataset,true,{"num_train_epochs":2});
+}
+
+walker test_bi_ner_load_model{
+    can bi_ner.load_model;
+    report bi_ner.load_model("mypath");
+}
+
+walker test_bi_ner_save_model{
+    can bi_ner.save_model;
+    report bi_ner.save_model("mypath");
+}
+
+
+walker test_bi_ner_get_train_config{
+    can bi_ner.get_train_config;
+    report bi_ner.get_train_config();
+}
+
+walker test_bi_ner_get_model_config{
+    can bi_ner.get_model_config;
+    report bi_ner.get_model_config();
+}
+
+
+walker test_bi_ner_set_train_config{
+    can bi_ner.set_train_config;
+    report bi_ner.set_train_config({"num_train_epochs": 2});
+}
+
+walker test_bi_ner_set_model_config{
+    can bi_ner.set_model_config;
+    report bi_ner.set_model_config({"max_entity_length": 30});
 }

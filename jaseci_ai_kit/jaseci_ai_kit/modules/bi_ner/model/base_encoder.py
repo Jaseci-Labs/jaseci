@@ -1,6 +1,13 @@
+import os
 import torch
-from torch import Tensor, LongTensor, BoolTensor
+import shutil
+from pathlib import Path
+from functools import partial
+from torch.nn import Module, Parameter
 from torch.nn import Linear, Embedding
+from torch import Tensor, LongTensor, BoolTensor
+from transformers.tokenization_utils_base import EncodingFast
+from typing import List, Tuple, Union, Optional, TypeVar, Iterable, Set, Dict
 from torch.nn.functional import pad
 from transformers import (
     PreTrainedModel,
@@ -9,18 +16,9 @@ from transformers import (
     PreTrainedTokenizer,
     BatchEncoding,
 )
-from functools import partial
-from typing import List, Tuple, Union, Optional, TypeVar, Iterable, Set, Dict
-from collections import defaultdict
-from copy import deepcopy
-from tqdm import tqdm
-from transformers.tokenization_utils_base import EncodingFast
-from torch.nn import Module, Parameter
-from ..datamodel.example import batch_examples, BatchedExamples
-from .loss import ContrastiveThresholdLoss
 from .metric import CosSimilarity
+from .loss import ContrastiveThresholdLoss
 from ..datamodel.example import Example, strided_split, TypedSpan, collate_examples
-from ..datamodel.utils import invert
 
 
 _Model = TypeVar("_Model", bound="BI_Enc_NER")
@@ -30,10 +28,10 @@ class Base_BI_enc(Module):
     def __init__(self, param) -> None:
         super(Base_BI_enc, self).__init__()
         self._context_encoder: PreTrainedModel = AutoModel.from_pretrained(
-            param.get("bert_model")
+            param.get("context_bert_model")
         )
         self._candidate_encoder: PreTrainedModel = AutoModel.from_pretrained(
-            param.get("bert_model")
+            param.get("candidate_bert_model")
         )
         self._dummy_param = Parameter(torch.empty(0))
 
@@ -54,6 +52,12 @@ class Base_BI_enc(Module):
             return cont_emb, cand_emb
         return cont_emb
 
+    def save(self, save_path):
+        pass
+
+    def load(self, load_path):
+        pass
+
 
 class BI_Enc_NER(Base_BI_enc):
     def __init__(self, param) -> None:
@@ -69,11 +73,11 @@ class BI_Enc_NER(Base_BI_enc):
         )
         self._token_encoder = self._context_encoder
         self._token_tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
-            param.get("bert_model")
+            param.get("context_bert_model")
         )
         self._descriptions_encoder = self._candidate_encoder
         self._descriptions_tokenizer: PreTrainedTokenizer = (
-            AutoTokenizer.from_pretrained(param.get("bert_model"))
+            AutoTokenizer.from_pretrained(param.get("candidate_bert_model"))
         )
         self._loss_fn: Optional[ContrastiveThresholdLoss] = None
         self._start_coef = param.get("start_coef")
@@ -337,166 +341,50 @@ class BI_Enc_NER(Base_BI_enc):
             predictions,
         )
 
-
-class InferenceBinder(Base_BI_enc):
-    def __init__(
-        self,
-        span_classifier: BI_Enc_NER,
-        category_mapping: Dict[str, int],
-        no_entity_category: str,
-        max_sequence_length: int,
-        max_entity_length: int,
-        model_args: Dict,
-    ):
-        super().__init__(model_args)
-        self._classifier = span_classifier
-        self._classifier.eval()
-        self._classifier.drop_descriptions_encoder()
-        self._classifier.train = None
-
-        self._category_mapping = deepcopy(category_mapping)
-        self._category_id_mapping = invert(self._category_mapping)
-        self._no_entity_category = no_entity_category
-
-        self._max_sequence_length = max_sequence_length
-        self._max_entity_length = max_entity_length
-
-    def train(self: _Model, mode: bool = True) -> _Model:
-        raise NotImplementedError
-
-    @torch.no_grad()
-    def add_entity_types(self, descriptions: Dict[str, str]) -> None:
-        names, texts = map(list, zip(*descriptions.items()))
-        entity_representations = self._description_encoder(texts)
-        self._encoded_descriptions.update(zip(names, entity_representations))
-
-    @torch.no_grad()
-    def forward(self, texts: List[str]) -> List[Set[TypedSpan]]:
-        stride = 0.9
-        stride_length = int(self._max_sequence_length * stride)
-
-        text_lengths: List[Optional[int]] = [None] * len(texts)
-        examples = list(
-            self._classifier.prepare_inputs(
-                texts,
-                [None] * len(texts),
-                category_mapping=self._category_mapping,
-                no_entity_category=self._no_entity_category,
-                stride=stride,
-                text_lengths=text_lengths,
-            )
-        )
-
-        no_entity_category_id = self._category_mapping[self._no_entity_category]
-
-        predictions_collector = [defaultdict(int) for _ in texts]
-        for batch in tqdm(
-            batch_examples(
-                examples,
-                batch_size=1,
-                collate_fn=partial(
-                    self._classifier.collate_examples, return_batch_examples=True
-                ),
+    def save(self, save_path):
+        super().save(save_path)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        cand_bert_path = os.path.join(save_path + "/cand_bert")
+        cont_bert_path = os.path.join(save_path + "/cont_bert")
+        if not os.path.exists(cand_bert_path):
+            os.makedirs(cand_bert_path)
+        if not os.path.exists(cont_bert_path):
+            os.makedirs(cont_bert_path)
+        self._context_encoder.save_pretrained(cont_bert_path)
+        self._context_encoder.save_pretrained(cand_bert_path)
+        self._descriptions_tokenizer.save_vocabulary(cand_bert_path)
+        self._token_tokenizer.save_vocabulary(cont_bert_path)
+        print(f"Saving non-shared model to : {save_path}")
+        shutil.copyfile(
+            os.path.join(
+                Path(os.path.dirname(__file__)).parent, "config/t_config.json"
             ),
-            total=len(examples),
-        ):
-            predictions: LongTensor = self._classifier(**batch)
+            os.path.join(save_path, "t_config.json"),
+        )
+        shutil.copyfile(
+            os.path.join(
+                Path(os.path.dirname(__file__)).parent, "config/m_config.json"
+            ),
+            os.path.join(save_path, "m_config.json"),
+        )
+        return f"[Saved model at] : {save_path}"
 
-            batched_examples: BatchedExamples = batch["examples"]
-
-            batch_size, length = batched_examples.start_offset.shape
-            span_start = (
-                pad(
-                    batched_examples.start_offset,
-                    [0, self._max_sequence_length - length],
-                    value=-100,
-                )
-                .view(batch_size, self._max_sequence_length, 1)
-                .repeat(1, 1, self._max_entity_length)
-                .to(self.device)
-            )
-
-            end_offset = pad(
-                batched_examples.end_offset,
-                [0, self._max_sequence_length - length],
-                value=-100,
-            ).to(self.device)
-
-            padding_masks = []
-            span_end = []
-            for shift in range(
-                self._max_entity_length
-            ):  # self._max_entity_length ~ 20-30, so it is fine to not vectorize this
-                span_end.append(torch.roll(end_offset, -shift, 1).unsqueeze(-1))
-                padding_mask = torch.roll(end_offset != -100, -shift, 1)
-                padding_mask[:, -shift:] = False
-                padding_masks.append(padding_mask.unsqueeze(-1))
-
-            span_end = torch.concat(span_end, dim=-1)
-            padding_mask = torch.concat(padding_masks, dim=-1)
-
-            entities_mask = (
-                (predictions != no_entity_category_id)
-                & padding_mask
-                & (span_end != -100)
-                & (span_start != -100)
-            )
-            entity_token_start = (
-                torch.arange(self._max_sequence_length)
-                .reshape(1, self._max_sequence_length, 1)
-                .repeat(batch_size, 1, self._max_entity_length)
-                .to(self.device)
-            )
-
-            entity_text_ids = (
-                torch.tensor(batched_examples.text_ids)
-                .view(batch_size, 1, 1)
-                .repeat(1, self._max_sequence_length, self._max_entity_length)
-                .to(self.device)
-            )
-
-            chosen_text_ids = entity_text_ids[entities_mask]
-            chosen_category_ids = predictions[entities_mask]
-            chosen_span_starts = span_start[entities_mask]
-            chosen_span_ends = span_end[entities_mask]
-            chosen_token_starts = entity_token_start[entities_mask]
-            for text_id, category_id, start, end, token_start in zip(
-                chosen_text_ids,
-                chosen_category_ids,
-                chosen_span_starts,
-                chosen_span_ends,
-                chosen_token_starts,
-            ):
-                predictions_collector[text_id][
-                    (
-                        TypedSpan(
-                            start.item(),
-                            end.item(),
-                            self._category_id_mapping[category_id.item()],
-                        ),
-                        token_start.item(),
-                    )
-                ] += 1
-
-        all_entities = [set() for _ in texts]
-        for text_id, preds in enumerate(predictions_collector):
-            text_length = text_lengths[text_id]
-            strided_text_length = (
-                (text_length // stride_length) + (text_length % stride_length > 0)
-            ) * stride_length
-            for (entity, entity_token_start), count_preds in preds.items():
-                # [1, 2, 3, ..., MAX, MAX, ..., MAX, MAX - 1, ..., 3, 2, 1]
-                #  bin sizes are stride_length except for the last bin
-                total_predictions = min(
-                    (entity_token_start // stride_length) + 1,
-                    (
-                        max(strided_text_length - self._max_sequence_length, 0)
-                        // stride_length
-                    )
-                    + 1,
-                    ((strided_text_length - entity_token_start) // stride_length) + 1,
-                )
-                if count_preds >= total_predictions // 2:
-                    all_entities[text_id].add(entity)
-
-        return all_entities
+    def load(self, load_path) -> _Model:
+        super().load(load_path)
+        cand_bert_path = os.path.join(load_path, "cand_bert")
+        cont_bert_path = os.path.join(load_path, "cont_bert")
+        print(f"Loading non-shared model from : {load_path}")
+        self._token_encoder: PreTrainedModel = AutoModel.from_pretrained(
+            cont_bert_path, local_files_only=True
+        )
+        self._descriptions_encoder: PreTrainedModel = AutoModel.from_pretrained(
+            cand_bert_path, local_files_only=True
+        )
+        self._token_tokenizer = AutoTokenizer.from_pretrained(
+            cont_bert_path, local_files_only=True
+        )
+        self._descriptions_tokenizer = AutoTokenizer.from_pretrained(
+            cand_bert_path, local_files_only=True
+        )
+        return self

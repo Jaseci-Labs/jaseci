@@ -3,8 +3,8 @@ from transformers import Trainer, TrainingArguments
 import json
 from typing import Dict, List  # , Set, Iterable, Tuple
 import os
-import numpy as np
 import traceback
+from fastapi import HTTPException
 from .model.base_encoder import BI_Enc_NER
 from .model.inference import InferenceBinder
 from .datamodel.utils import invert, get_category_id_mapping
@@ -13,11 +13,16 @@ from jaseci.actions.live_actions import jaseci_action
 
 
 def config_setup(category_name: List[str] = None):
-    global model, example_encoder, category_id_mapping, model_args, device
+    global model, example_encoder, category_id_mapping, device
+    global model_args, m_config_fname, train_args, t_config_fname
+
     dirname = os.path.dirname(__file__)
-    m_config_fname = os.path.join(dirname, "model\\m_config.json")
+    m_config_fname = os.path.join(dirname, "config/m_config.json")
     with open(m_config_fname, "r") as jsonfile:
         model_args = json.load(jsonfile)
+    t_config_fname = os.path.join(dirname, "config/t_config.json")
+    with open(t_config_fname, "r") as jsonfile:
+        train_args = json.load(jsonfile)
     if category_name is None:
         category_name = ["PER", "ORG", "LOC", "MISC"]
     category_id_mapping = get_category_id_mapping(model_args, category_name)
@@ -29,32 +34,6 @@ def config_setup(category_name: List[str] = None):
         no_entity_category=model_args["unk_category"],
     )
     device = model.device
-
-
-# API for getting the cosine similarity
-@jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def cosine_sim(vec_a: List[float], vec_b: List[float]):
-    """
-    Caculate the cosine similarity score of two given vectors
-    Param 1 - First vector
-    Param 2 - Second vector
-    Return - float between 0 and 1
-    """
-
-    result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
-    return result.astype(float)
-
-
-@jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def dot_prod(vec_a: List[float], vec_b: List[float]):
-    """
-    Caculate the dot product of two given vectors
-    Param 1 - First vector
-    Param 2 - Second vector
-    Return - dot product
-    """
-    dot_product = np.matmul(vec_a, vec_b)
-    return dot_product.astype(float)
 
 
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
@@ -93,6 +72,10 @@ def train(dataset: Dict = None, from_scratch=True, training_parameters: Dict = N
     Take list of context, candidate, labels and trains the model
     """
     global model, inference_model
+    if training_parameters is not None:
+        with open(t_config_fname, "w+") as jsonfile:
+            train_args.update(training_parameters)
+            json.dump(train_args, jsonfile, indent=4)
     if from_scratch:
         category_name = list(
             set(ele["entity_type"] for val in dataset["annotations"] for ele in val)
@@ -101,15 +84,15 @@ def train(dataset: Dict = None, from_scratch=True, training_parameters: Dict = N
     train_dataset = get_datasets(dataset, example_encoder)
 
     training_args = TrainingArguments(
-        output_dir="./result",
-        evaluation_strategy="epoch",
-        learning_rate=3e-5,
-        per_device_train_batch_size=1,
-        per_device_eval_batch_size=1,
-        num_train_epochs=30,
-        weight_decay=0.01,
+        output_dir=train_args["logpath"],
+        evaluation_strategy=train_args["evaluation_strategy"],
+        learning_rate=train_args["learning_rate"],
+        per_device_train_batch_size=train_args["train_batch_size"],
+        per_device_eval_batch_size=train_args["eval_batch_size"],
+        num_train_epochs=train_args["num_train_epochs"],
+        weight_decay=train_args["weight_decay"],
     )
-
+    model.train()
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -129,6 +112,91 @@ def train(dataset: Dict = None, from_scratch=True, training_parameters: Dict = N
     )
     inference_model.to(device)
     return train_resp
+
+
+# API for setting the training and model parameters
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def get_train_config():
+    try:
+        with open(t_config_fname, "r") as jsonfile:
+            data = json.load(jsonfile)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def set_train_config(training_parameters: Dict = None):
+    global train_args
+    try:
+        with open(t_config_fname, "w+") as jsonfile:
+            train_args.update(training_parameters)
+            json.dump(train_args, jsonfile, indent=4)
+        return "Config setup is complete."
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def get_model_config():
+    try:
+        with open(m_config_fname, "r") as jsonfile:
+            model_args = json.load(jsonfile)
+        return model_args
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def set_model_config(model_parameters: Dict = None):
+    global model_args
+    try:
+        model.save(train_args["logpath"])
+        with open(m_config_fname, "w+") as jsonfile:
+            model_args.update(model_parameters)
+            json.dump(model_args, jsonfile, indent=4)
+
+        config_setup()
+        return "Config setup is complete."
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+def save_model(model_path: str):
+    """
+    saves the model to the provided model_path
+    """
+    try:
+        return model.save(model_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+def load_model(model_path):
+    """
+    loads the model from the provided model_path
+    """
+    global model, inference_model
+    if not os.path.exists(model_path):
+        raise HTTPException(status_code=404, detail="Model path is not available")
+    try:
+        model.load(model_path)
+        model.to(device)
+        inference_model = InferenceBinder(
+            model,
+            category_mapping=invert(category_id_mapping),
+            no_entity_category=model_args["unk_category"],
+            max_sequence_length=model_args["max_sequence_length"],
+            max_entity_length=model_args["max_entity_length"],
+            model_args=model_args,
+        )
+        inference_model.to(device)
+        return f"[loaded model from] : {model_path}"
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

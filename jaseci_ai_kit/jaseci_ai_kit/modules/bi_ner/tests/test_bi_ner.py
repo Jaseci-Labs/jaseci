@@ -23,6 +23,36 @@ class BiNERTest(CoreTest):
     def test_biner_infer(self, ret):
         self.assertEqual(ret["success"], True)
 
+    @pytest.mark.order(3)
+    @jac_testcase("bi_ner.jac", "test_bi_ner_save_model")
+    def test_biencoder_save_model(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @pytest.mark.order(4)
+    @jac_testcase("bi_ner.jac", "test_bi_ner_load_model")
+    def test_biencoder_load_model(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @pytest.mark.order(5)
+    @jac_testcase("bi_ner.jac", "test_bi_ner_set_model_config")
+    def test_biencoder_set_model_config(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @pytest.mark.order(6)
+    @jac_testcase("bi_ner.jac", "test_bi_ner_set_train_config")
+    def test_biencoder_set_train_config(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @pytest.mark.order(7)
+    @jac_testcase("bi_ner.jac", "test_bi_ner_get_train_config")
+    def test_biencoder_get_train_config(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @pytest.mark.order(8)
+    @jac_testcase("bi_ner.jac", "test_bi_ner_get_model_config")
+    def test_biencoder_get_model_config(self, ret):
+        self.assertEqual(ret["success"], True)
+
     @classmethod
     def tearDownClass(cls):
         super(BiNERTest, cls).tearDownClass()

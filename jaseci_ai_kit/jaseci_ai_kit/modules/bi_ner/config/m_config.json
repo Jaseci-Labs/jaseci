@@ -1,5 +1,6 @@
 {
-    "bert_model": "prajjwal1/bert-tiny",
+    "context_bert_model": "prajjwal1/bert-tiny",
+    "candidate_bert_model": "prajjwal1/bert-tiny",
     "hidden_size": 128,
     "max_sequence_length": 128,
     "max_entity_length": 30,
