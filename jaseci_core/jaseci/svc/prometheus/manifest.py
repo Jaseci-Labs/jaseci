@@ -671,7 +671,6 @@ PROMON_MANIFEST = {
                                 "args": [
                                     "--path.procfs=/host/proc",
                                     "--path.sysfs=/host/sys",
-                                    "--path.rootfs=/host/root",
                                     "--web.listen-address=:9100",
                                 ],
                                 "ports": [
@@ -694,18 +693,7 @@ PROMON_MANIFEST = {
                                         "mountPath": "/host/sys",
                                         "readOnly": True,
                                     },
-                                    {
-                                        "name": "root",
-                                        "mountPath": "/host/root",
-                                        "mountPropagation": "HostToContainer",
-                                        "readOnly": True,
-                                    },
                                 ],
-                                "hostRootFsMount": {
-                                    "enabled": False,
-                                    "mountPropagation": "HostToContainer",
-                                },
-                                "hostRootFs": False,
                             }
                         ],
                         "hostNetwork": True,
@@ -719,7 +707,6 @@ PROMON_MANIFEST = {
                         "volumes": [
                             {"name": "proc", "hostPath": {"path": "/proc"}},
                             {"name": "sys", "hostPath": {"path": "/sys"}},
-                            {"name": "root", "hostPath": {"path": "/"}},
                         ],
                     },
                 },
