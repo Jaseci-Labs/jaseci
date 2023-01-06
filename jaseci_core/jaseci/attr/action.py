@@ -36,7 +36,7 @@ class Action(Item):
         for i in args.annotations.keys():
             if args.annotations[i] == JacSet:
                 idx = args.args.index(i)
-                if idx < len():
+                if idx < len(params["args"]):
                     params["args"][idx] = JacSet(in_list=params["args"][idx])
                 if i in params["kwargs"]:
                     params["kwargs"][i] = JacSet(in_list=params["kwargs"][i])
