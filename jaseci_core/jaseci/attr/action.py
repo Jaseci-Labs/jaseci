@@ -28,7 +28,7 @@ class Action(Item):
         self.access_list = access_list
         Item.__init__(self, **kwargs)
 
-    def do_auto_conversions(self, args, func, params):
+    def do_auto_conversions(self, args, params):
         """
         Automatically make conversions for jac to internal, e.g., list to jac_set
         """
@@ -36,7 +36,10 @@ class Action(Item):
         for i in args.annotations.keys():
             if args.annotations[i] == JacSet:
                 idx = args.args.index(i)
-                params[idx] = JacSet(in_list=params[idx])
+                if idx < len():
+                    params["args"][idx] = JacSet(in_list=params["args"][idx])
+                if i in params["kwargs"]:
+                    params["kwargs"][i] = JacSet(in_list=params["kwargs"][i])
 
     def trigger(self, param_list, scope, interp):
         """
@@ -49,14 +52,15 @@ class Action(Item):
             return None
         func = live_actions[self.value]
         args = inspect.getfullargspec(func)
-        self.do_auto_conversions(args, func, param_list)
+        self.do_auto_conversions(args, param_list)
         args = args[0] + args[4]
         hook = scope.parent._h
         hook.meta.app.pre_action_call_hook() if hook.meta.run_svcs else None
         ts = time.time()
         if "meta" in args:
             result = func(
-                *param_list,
+                *param_list["args"],
+                **param_list["kwargs"],
                 meta={
                     "m_id": scope.parent._m_id,
                     "h": scope.parent._h,
@@ -65,7 +69,7 @@ class Action(Item):
                 },
             )
         else:
-            result = func(*param_list)
+            result = func(*param_list["args"], **param_list["kwargs"])
         t = time.time() - ts
         hook.meta.app.post_action_call_hook(
             self.value, t
