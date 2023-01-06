@@ -341,7 +341,6 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertTrue(r[7].startswith('  "success": true'))
 
     def test_jac_cli_test(self):
-        self.logger_on()
         r = self.jac_call_split("test jaseci/jsctl/tests/teststest.jir")
         self.log(r)
         self.assertTrue(r[0].startswith('Testing "assert should be'))
