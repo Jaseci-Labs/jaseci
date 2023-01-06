@@ -837,7 +837,7 @@ class Interp(VirtualMachine):
                     return atom_res
                 return self.run_index_slice(kid[0], atom_res)
             elif kid[0].name == "LPAREN":
-                param_list = []
+                param_list = {"args": [], "kwargs": {}}
                 if kid[1].name == "param_list":
                     param_list = self.run_param_list(kid[1]).value
                 if isinstance(atom_res.value, Action):
@@ -868,7 +868,7 @@ class Interp(VirtualMachine):
         kid = self.set_cur_ast(jac_ast)
         ret = {"args": [], "kwargs": {}}
         if kid[0].name == "expr_list":
-            ret["args"] = self.run_expr_list(kid[0])
+            ret["args"] = self.run_expr_list(kid[0]).value
         elif kid[0].name == "kw_expr_list":
             ret["kwargs"] = self.run_kw_expr_list(kid[0]).value
         if len(kid) > 1:

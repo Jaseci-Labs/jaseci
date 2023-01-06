@@ -94,7 +94,7 @@ event_clause:
 	KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
-	DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
+	DBL_COLON param_list? (DBL_COLON | COLON_OUT expression);
 
 dotted_name: NAME DOT NAME;
 
