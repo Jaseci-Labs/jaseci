@@ -94,13 +94,20 @@ event_clause:
 	KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
-	DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
+	DBL_COLON param_list? (DBL_COLON | COLON_OUT expression);
 
 dotted_name: NAME DOT NAME;
 
 name_list: NAME (COMMA NAME)*;
 
-expr_list: expression (COMMA expression)*;
+param_list:
+	expr_list
+	| kw_expr_list
+	| expr_list COMMA kw_expr_list;
+
+expr_list: connect (COMMA connect)*;
+
+kw_expr_list: NAME EQ connect (COMMA NAME EQ connect)*;
 
 code_block: LBRACE statement* RBRACE | COLON statement;
 
@@ -221,7 +228,7 @@ atom_trailer:
 	DOT built_in
 	| DOT NAME
 	| index_slice
-	| LPAREN expr_list? RPAREN
+	| LPAREN param_list? RPAREN
 	| ability_op NAME spawn_ctx?;
 
 ability_op: DBL_COLON | DBL_COLON NAME COLON;

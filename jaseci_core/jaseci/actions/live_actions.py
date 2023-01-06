@@ -10,6 +10,7 @@ import os
 import sys
 import inspect
 import importlib
+import gc
 
 live_actions = {}  # {"act.func": func_obj, ...}
 live_action_modules = {}  # {__module__: ["act.func1", "act.func2", ...], ...}
@@ -102,6 +103,7 @@ def load_module_actions(mod, loaded_module=None):
         for i in live_action_modules[loaded_module]:
             if i in live_actions:
                 del live_actions[i]
+
     mod = importlib.import_module(mod)
     if mod:
         return True
@@ -127,8 +129,17 @@ def unload_module(mod):
         for i in live_action_modules[mod]:
             if i in live_actions:
                 del live_actions[i]
+
+        # Iterate through the objects in the module __dict__ to manually delete them
+        loaded_mod = sys.modules[mod]
+        mod_content_len = len(loaded_mod.__dict__)
+        for _ in range(mod_content_len):
+            mod_obj = loaded_mod.__dict__.pop(list(loaded_mod.__dict__.keys())[0])
+            del mod_obj
+        del loaded_mod
         del sys.modules[mod]
         del live_action_modules[mod]
+        gc.collect()
         return True
     return False
 

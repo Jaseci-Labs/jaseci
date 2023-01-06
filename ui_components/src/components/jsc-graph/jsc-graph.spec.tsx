@@ -7,6 +7,7 @@ import graph_list from './mockData/graph_list.json';
 import graph_collapse from './mockData/graph_collapse.json';
 import { formatEdges, formatNodes } from './utils';
 import * as visData from 'vis-data';
+import { DataSet } from 'vis-data';
 
 describe('jsc-graph', () => {
   afterEach(() => {
@@ -76,5 +77,21 @@ describe('jsc-graph', () => {
     expect(graph.queuedEdges.size).toBe(5);
 
     graph.network.destroy();
+  });
+
+  test('expand node recursively', async () => {
+    mockFetch.json(graph_node_view, 'https://api.backend.dev/js/graph_node_view');
+    const graph = new JscGraph();
+    const networkContainer = document.createElement('div');
+    graph.serverUrl = 'https://api.backend.dev';
+    graph.network = new vis.Network(networkContainer, { edges: [], nodes: [] });
+    graph.token = 'faketoken';
+    graph.graphId = 'urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549';
+    graph.nodes = new DataSet(formatNodes(graph_node_view) as any);
+    graph.edges = new DataSet(formatNodes(graph_node_view) as any);
+
+    await graph.expandNodesRecursively('urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549');
+
+    expect(graph.nodes.length).toBe(2);
   });
 });

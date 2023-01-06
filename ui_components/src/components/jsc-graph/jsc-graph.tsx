@@ -65,6 +65,7 @@ export class JscGraph {
   @State() clickedNode: vis.Node & { context: {}; info: {}; details: {} };
   @State() clickedEdge: vis.Edge & { context: {}; info: {}; details: {} };
   @State() selectedInfoTab: 'details' | 'context' | 'info' = 'context';
+  @State() selectedNodes: vis.IdType[] = [];
 
   // convert response to match required format for vis
   formatNodes = formatNodes;
@@ -138,6 +139,7 @@ export class JscGraph {
         'Authorization': `token ${localStorage.getItem('token')}`,
       },
     }).then(async res => {
+      const newNodes: string[] = [];
       const data = (await res.json()) || [];
       if (this.nd && this.onFocus === 'expand' && this.prevNd !== '') {
         // create datasets
@@ -151,6 +153,7 @@ export class JscGraph {
           try {
             if (!this.nodes.get(node.id)) {
               this.nodes.add(node);
+              newNodes.push(node?.id.toString());
             }
           } catch (err) {
             console.log(err);
@@ -225,7 +228,9 @@ export class JscGraph {
               },
               borderWidth: 1,
             },
-            interaction: {},
+            interaction: {
+              multiselect: true,
+            },
 
             physics: {
               forceAtlas2Based: {
@@ -241,7 +246,23 @@ export class JscGraph {
         this.network.storePositions();
         // this.network.selectNodes([this.nd], true);
       }
+
+      return newNodes;
     });
+  }
+
+  async expandNodesRecursively(nd: string) {
+    this.nd = nd;
+    this.prevNd = this.nd;
+    this.expandedNodes.push(nd);
+
+    const newNodes = await this.getGraphState();
+
+    const newNodesPromises = newNodes.map(async node => {
+      await this.expandNodesRecursively(node);
+    });
+
+    await Promise.all(newNodesPromises);
   }
 
   @Watch('graphId')
@@ -316,6 +337,54 @@ export class JscGraph {
     this.refreshNodes();
   }
 
+  viewRoot() {
+    this.nd = '';
+    this.getGraphState();
+    this.expandedNodes = [this.graphId];
+  }
+
+  async collapseSelectedNodes() {
+    const collapseNodesPromises = this.network.getSelectedNodes().map(async node => {
+      this.prevNd = this.nd;
+      this.nd = node.toString();
+      this.expandedNodes = this.expandedNodes.filter(nd => nd !== this.nd).filter(nd => !this.queuedNodes.has(nd));
+
+      this.handleCollapse(node.toString());
+    });
+
+    await Promise.all(collapseNodesPromises);
+
+    this.refreshNodes();
+    this.queuedEdges.clear();
+    this.queuedNodes.clear();
+  }
+
+  async expandSelectedNodes() {
+    const expandNodesPromises = this.network.getSelectedNodes().map(async node => {
+      this.prevNd = this.nd;
+      this.expandedNodes.push(node.toString());
+      this.nd = node.toString();
+      await this.getGraphState();
+    });
+
+    await Promise.all(expandNodesPromises);
+  }
+
+  handleCollapse(nodeId: string) {
+    const connectedEdges = this.network.getConnectedEdges(nodeId);
+    this.edges
+      .get()
+      .filter((edge: vis.Edge) => connectedEdges.includes(edge.id) && edge.to !== nodeId)
+      .forEach((edgeData: vis.Edge) => {
+        // queue the nodes and edges to be removed
+        this.queuedEdges.add(edgeData.id.toString());
+        this.queuedNodes.add(edgeData.to.toString());
+
+        // run the collapse on the away nodes
+        this.handleCollapse(edgeData.to.toString());
+      });
+  }
+
   async componentDidLoad() {
     try {
       // set the initial graph
@@ -335,14 +404,24 @@ export class JscGraph {
       console.log(err);
     }
 
+    this.network.on('selectNode', () => {
+      this.selectedNodes = this.network.getSelectedNodes();
+    });
+
     this.network.on('click', params => {
       // reset ui if we click on the background
       if (!params.nodes?.length && !params.edges?.length) {
         this.network.unselectAll();
         this.clickedNode = undefined;
         this.clickedEdge = undefined;
+        this.selectedNodes = [];
       }
+
       this.handleNetworkClick(this.network, params);
+    });
+
+    this.network.on('zoom', data => {
+      console.log(data);
     });
 
     this.network.on('doubleClick', async params => {
@@ -392,21 +471,6 @@ export class JscGraph {
         });
       }
     });
-  }
-
-  handleCollapse(nodeId: string) {
-    const connectedEdges = this.network.getConnectedEdges(nodeId);
-    this.edges
-      .get()
-      .filter((edge: vis.Edge) => connectedEdges.includes(edge.id) && edge.to !== nodeId)
-      .forEach((edgeData: vis.Edge) => {
-        // queue the nodes and edges to be removed
-        this.queuedEdges.add(edgeData.id.toString());
-        this.queuedNodes.add(edgeData.to.toString());
-
-        // run the collapse on the away nodes
-        this.handleCollapse(edgeData.to.toString());
-      });
   }
 
   render() {
@@ -539,8 +603,13 @@ export class JscGraph {
                 </div>
               </div>
 
-              <div style={{ position: 'absolute', display: 'flex', top: '20px', left: '20px', zIndex: '9999' }}>
-                {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
+              <div style={{ position: 'absolute', display: 'flex', top: '20px', left: '20px', gap: '20px', zIndex: '9999' }}>
+                {this.nd && <jsc-button size="sm" label={'View Root'} onClick={() => this.viewRoot()}></jsc-button>}
+                {this.selectedNodes?.length > 1 && <jsc-button size="sm" label={'Expand Nodes'} onClick={() => this.expandSelectedNodes()}></jsc-button>}
+                {this.selectedNodes?.length > 1 && <jsc-button size="sm" label={'Collapse Nodes'} onClick={() => this.collapseSelectedNodes()}></jsc-button>}
+                {this.selectedNodes?.length === 1 && (
+                  <jsc-button size="sm" label={'Expand Recursively'} onClick={() => this.expandNodesRecursively(this.selectedNodes[0]?.toString())}></jsc-button>
+                )}
               </div>
 
               {/*Graph Switcher*/}

@@ -33,7 +33,7 @@ data:
     git stash
     git pull
     python gen_mdbook.py
-    sleep 150
+    sleep 1500
     done
 ---
 apiVersion: apps/v1
