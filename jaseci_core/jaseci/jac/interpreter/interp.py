@@ -160,16 +160,45 @@ class Interp(VirtualMachine):
                 ret.append(i.token_text())
         return ret
 
+    def run_param_list(self, jac_ast):
+        """
+        param_list:
+            expr_list
+            | kw_expr_list
+            | expr_list COMMA kw_expr_list;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        ret = {"args": [], "kwargs": {}}
+        if kid[0].name == "expr_list":
+            ret["args"] = self.run_expr_list(kid[0]).value
+        elif kid[0].name == "kw_expr_list":
+            ret["kwargs"] = self.run_kw_expr_list(kid[0]).value
+        if len(kid) > 1:
+            ret["kwargs"] = self.run_kw_expr_list(kid[2]).value
+        return JacValue(self, value=ret)
+
     def run_expr_list(self, jac_ast):
         """
-        expr_list: expression (COMMA expression)*;
+        expr_list: connect (COMMA connect)*;
         """
         kid = self.set_cur_ast(jac_ast)
         ret = []
         for i in kid:
-            if i.name == "expression":
-                self.run_expression(i)
-                ret.append(self.pop().value)
+            if i.name != "COMMA":
+                ret.append(self.run_rule(i).value)
+        return JacValue(self, value=ret)
+
+    def run_kw_expr_list(self, jac_ast):
+        """
+        kw_expr_list: NAME EQ connect (COMMA NAME EQ connect)*;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        ret = {}
+        while len(kid):
+            ret[kid[0].token_text()] = self.run_rule(kid[2]).value
+            kid = kid[3:]
+            if len(kid):
+                kid = kid[1:]
         return JacValue(self, value=ret)
 
     def run_code_block(self, jac_ast):
@@ -785,7 +814,7 @@ class Interp(VirtualMachine):
             DOT built_in
             | DOT NAME
             | index_slice
-            | LPAREN expr_list? RPAREN
+            | LPAREN param_list? RPAREN
             | ability_op NAME spawn_ctx?;
         """
         try:
@@ -824,9 +853,9 @@ class Interp(VirtualMachine):
                     return atom_res
                 return self.run_index_slice(kid[0], atom_res)
             elif kid[0].name == "LPAREN":
-                param_list = []
-                if kid[1].name == "expr_list":
-                    param_list = self.run_expr_list(kid[1]).value
+                param_list = {"args": [], "kwargs": {}}
+                if kid[1].name == "param_list":
+                    param_list = self.run_param_list(kid[1]).value
                 if isinstance(atom_res.value, Action):
                     ret = atom_res.value.trigger(param_list, self._jac_scope, self)
                     return JacValue(self, value=ret)
