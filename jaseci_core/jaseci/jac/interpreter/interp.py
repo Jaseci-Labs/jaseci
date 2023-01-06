@@ -160,26 +160,42 @@ class Interp(VirtualMachine):
                 ret.append(i.token_text())
         return ret
 
+    def run_param_list(self, jac_ast):
+        """
+        param_list:
+            expr_list
+            | kw_expr_list
+            | expr_list COMMA kw_expr_list;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        ret = {"args": [], "kwargs": {}}
+        if kid[0].name == "expr_list":
+            ret["args"] = self.run_expr_list(kid[0]).value
+        elif kid[0].name == "kw_expr_list":
+            ret["kwargs"] = self.run_kw_expr_list(kid[0]).value
+        if len(kid) > 1:
+            ret["kwargs"] = self.run_kw_expr_list(kid[2]).value
+        return JacValue(self, value=ret)
+
     def run_expr_list(self, jac_ast):
         """
-        expr_list: expression (COMMA expression)*;
+        expr_list: connect (COMMA connect)*;
         """
         kid = self.set_cur_ast(jac_ast)
         ret = []
         for i in kid:
-            if i.name == "expression":
-                self.run_expression(i)
-                ret.append(self.pop().value)
+            if i.name != "COMMA":
+                ret.append(self.run_rule(i).value)
         return JacValue(self, value=ret)
 
     def run_kw_expr_list(self, jac_ast):
         """
-        kw_expr_list: NAME EQ expression (COMMA NAME EQ expression)*;
+        kw_expr_list: NAME EQ connect (COMMA NAME EQ connect)*;
         """
         kid = self.set_cur_ast(jac_ast)
         ret = {}
         while len(kid):
-            ret[kid[0].token_text()] = self.run_expression(kid[2])
+            ret[kid[0].token_text()] = self.run_rule(kid[2]).value
             kid = kid[3:]
             if len(kid):
                 kid = kid[1:]
@@ -857,23 +873,6 @@ class Interp(VirtualMachine):
                 return atom_res
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
-
-    def run_param_list(self, jac_ast):
-        """
-        param_list:
-            expr_list
-            | kw_expr_list
-            | expr_list COMMA kw_expr_list;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        ret = {"args": [], "kwargs": {}}
-        if kid[0].name == "expr_list":
-            ret["args"] = self.run_expr_list(kid[0]).value
-        elif kid[0].name == "kw_expr_list":
-            ret["kwargs"] = self.run_kw_expr_list(kid[0]).value
-        if len(kid) > 1:
-            ret["kwargs"] = self.run_kw_expr_list(kid[2]).value
-        return JacValue(self, value=ret)
 
     def run_ability_op(self, jac_ast, atom_res):
         """

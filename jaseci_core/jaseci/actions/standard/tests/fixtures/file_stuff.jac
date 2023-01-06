@@ -12,3 +12,11 @@ walker bin_load_save {
     report s;
     file.delete("file.gif");
 }
+
+
+walker kwargs_bin_load_save {
+    file.dump_from_b64(b64=global.gif, fn="file.gif");
+    s=file.load_to_b64(fn="file.gif");
+    report s;
+    file.delete(fn="file.gif");
+}

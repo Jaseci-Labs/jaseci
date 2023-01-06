@@ -233,6 +233,14 @@ class jacListener(ParseTreeListener):
     def exitName_list(self, ctx: jacParser.Name_listContext):
         pass
 
+    # Enter a parse tree produced by jacParser#param_list.
+    def enterParam_list(self, ctx: jacParser.Param_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#param_list.
+    def exitParam_list(self, ctx: jacParser.Param_listContext):
+        pass
+
     # Enter a parse tree produced by jacParser#expr_list.
     def enterExpr_list(self, ctx: jacParser.Expr_listContext):
         pass
@@ -527,14 +535,6 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#atom_trailer.
     def exitAtom_trailer(self, ctx: jacParser.Atom_trailerContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#param_list.
-    def enterParam_list(self, ctx: jacParser.Param_listContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#param_list.
-    def exitParam_list(self, ctx: jacParser.Param_listContext):
         pass
 
     # Enter a parse tree produced by jacParser#ability_op.
