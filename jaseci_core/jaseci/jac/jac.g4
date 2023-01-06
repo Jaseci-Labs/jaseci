@@ -102,6 +102,8 @@ name_list: NAME (COMMA NAME)*;
 
 expr_list: expression (COMMA expression)*;
 
+kw_expr_list: NAME EQ expression (COMMA NAME EQ expression)*;
+
 code_block: LBRACE statement* RBRACE | COLON statement;
 
 node_ctx_block: name_list code_block;
@@ -221,8 +223,13 @@ atom_trailer:
 	DOT built_in
 	| DOT NAME
 	| index_slice
-	| LPAREN expr_list? RPAREN
+	| LPAREN param_list? RPAREN
 	| ability_op NAME spawn_ctx?;
+
+param_list:
+	expr_list
+	| kw_expr_list
+	| expr_list COMMA kw_expr_list;
 
 ability_op: DBL_COLON | DBL_COLON NAME COLON;
 
