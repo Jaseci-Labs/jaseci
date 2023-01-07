@@ -4,7 +4,7 @@ node a {
 
 walker manual_init {
     root {
-        a = spawn here --> node::a(value="user");
+        a = spawn here ++> node::a(value="user");
         report a;
     }
 }
