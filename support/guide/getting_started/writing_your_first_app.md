@@ -61,7 +61,7 @@ graph main_graph {
 
 ```
 
-The `graph` is a collection of initialized nodes. 
+The `graph` is a collection of initialized nodes.
 The `has anchor` key word is used to identify the root node. The Root node is the node where the walker's traversal begins.
 The <strong>has anchor</strong> key word is used to state the root node. The Root node is the node where the walker's traversal begins.
 
@@ -258,7 +258,7 @@ walker init {
 
     root {
         #creates an instant of the graph
-        spawn here --> graph::main_graph;
+        spawn here ++> graph::main_graph;
 
         #creates an instance of the walker, talker
         spawn  --> walker::talker;

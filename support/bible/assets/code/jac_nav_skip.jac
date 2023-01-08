@@ -6,7 +6,7 @@ walker init {
     with entry {
         t = here;
         for i=0 to i<10 by i+=1 {
-            t = spawn t --> node::simple(id=global.node_count);
+            t = spawn t ++> node::simple(id=global.node_count);
             global.node_count+=1;
         }
     }

@@ -60,7 +60,7 @@ walker smart_yield {
     with entry {
         t=here;
         for i=0 to i<10 by i+=1 {
-            t = spawn t --> node::simple(id=global.node_count);
+            t = spawn t ++> node::simple(id=global.node_count);
             global.node_count+=1;
         }
     }
@@ -73,7 +73,7 @@ walker smart_yield_no_future {
     with entry {
         t=here;
         for i=0 to i<10 by i+=1 {
-            t = spawn t --> node::simple(id=global.node_count);
+            t = spawn t ++> node::simple(id=global.node_count);
             global.node_count+=1;
         }
     }
@@ -100,7 +100,7 @@ walker simple_yield {
         t=here;
         report "entry";
         for i=0 to i<10 by i+=1 {
-            t = spawn t --> node::simple(id=global.node_count);
+            t = spawn t ++> node::simple(id=global.node_count);
             global.node_count+=1;
         }
     }
@@ -132,7 +132,7 @@ walker simple_yield_skip_test {
         t=here;
         report "entry";
         for i=0 to i<10 by i+=1 {
-            t = spawn t --> node::skip_simple(id=global.node_count);
+            t = spawn t ++> node::skip_simple(id=global.node_count);
             global.node_count+=1;
         }
     }
@@ -154,7 +154,7 @@ walker error_walker_action {
         t=here;
         report "entry";
         for i=0 to i<10 by i+=1 {
-            t = spawn t --> node::error_simple(id=global.node_count);
+            t = spawn t ++> node::error_simple(id=global.node_count);
             global.node_count+=1;
         }
     }

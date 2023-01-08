@@ -28,7 +28,7 @@ walker walk_with_depth {
 }
 
 walker init {
-    start = spawn here --> graph::example;
+    start = spawn here ++> graph::example;
     b_order = spawn start walker::walk_with_breadth;
     d_order = spawn start walker::walk_with_depth;
     std.out("Walk with Breadth:",b_order,"\nWalk with Depth:",d_order);

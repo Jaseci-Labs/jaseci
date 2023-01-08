@@ -18,7 +18,7 @@ walker add_bot {
     has name;
     root { take --> node::botset; }
     botset {
-        bot=spawn here --> node::bot(name=name);
+        bot=spawn here ++> node::bot(name=name);
         report bot;
     }
 }
@@ -43,7 +43,7 @@ walker create_answer {
     can use.enc_answer;
 
     bot {
-        ans = spawn here --> node::answer(text=text, show_text=show_text);
+        ans = spawn here ++> node::answer(text=text, show_text=show_text);
         ans.encoding = use.enc_answer(text);
         report ans;
         disengage;
@@ -122,7 +122,7 @@ walker ask_question {
             }
         }
         take --> node::log_chunk else {
-            spawn here --> node::log_chunk;
+            spawn here ++> node::log_chunk;
             take --> node::log_chunk;
         }
     }
@@ -182,7 +182,7 @@ walker get_question_matches {
 walker init {
     root {
         take (--> node::botset) else {
-            spawn here --> node::botset;
+            spawn here ++> node::botset;
             std.log(-->);
             disengage;
         }
@@ -214,7 +214,7 @@ walker asim_bug_check4 {
 walker pubinit:anyone {
     root {
         take (--> node::botset) else {
-            spawn here --> node::botset;
+            spawn here ++> node::botset;
             std.log(-->);
             disengage;
         }

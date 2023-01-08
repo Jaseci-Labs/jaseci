@@ -237,7 +237,7 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         ```
         walker init {
             root {
-            spawn here --> graph::use_qa_graph;
+            spawn here ++> graph::use_qa_graph;
             }
         }
         ```
@@ -299,7 +299,7 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         # initialize init walker
         walker init {
             root {
-            spawn here --> graph::use_encoder_graph;
+            spawn here ++> graph::use_encoder_graph;
             }
         }
 

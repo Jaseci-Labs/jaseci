@@ -6,7 +6,7 @@ walker get_names {
 }
 
 walker build_example {
-    node1 = spawn here --> node::person(name="Joe");
+    node1 = spawn here ++> node::person(name="Joe");
     node2 = spawn node1 --> node::person(name="Susan");
     spawn node2 --> node::person(name="Matt");
 }

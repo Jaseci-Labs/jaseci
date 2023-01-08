@@ -237,14 +237,6 @@ class WalkerInterp(Interp):
             if not i.preset_in_out:  # All preset in and outs get executed
                 already_executed.append(i.name)
 
-    def viable_nodes(self):
-        """Returns all nodes that shouldnt be ignored"""
-        ret = JacSet()
-        for i in self.current_node.attached_nodes():
-            if i not in self.ignore_node_ids.obj_list():
-                ret.add_obj(i)
-        return ret
-
     def scope_and_run(self, jac_ast, run_func):
         """
         Helper to run ast elements with execution scope added

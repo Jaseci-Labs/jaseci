@@ -111,23 +111,23 @@ walker get_gen_day {
         }
     }
     life: take --> node::year == date.quantize_to_year(cur_date) else {
-            new = spawn here --> node::year;
+            new = spawn here ++> node::year;
             new.year = date.quantize_to_year(cur_date);
             take --> node::year == date.quantize_to_year(cur_date);
         }
     year: take --> node::month == date.quantize_to_month(cur_date) else {
-            new = spawn here --> node::month;
+            new = spawn here ++> node::month;
             new.month = date.quantize_to_month(cur_date);
             take --> node::month == date.quantize_to_month(cur_date);
         }
     month: take --> node::week == date.quantize_to_week(cur_date) else {
-            new = spawn here --> node::week;
+            new = spawn here ++> node::week;
             new.week = date.quantize_to_week(cur_date);
             take --> node::week == date.quantize_to_week(cur_date);
         }
     week: take --> node::day == date.quantize_to_day(cur_date) else {
             latest_day = spawn here walker::get_latest_day(before_date=cur_date);
-            new = spawn here --> node::day;
+            new = spawn here ++> node::day;
             new.day = date.quantize_to_day(cur_date);
             if(latest_day) {
                 new.order = latest_day.order;
@@ -585,7 +585,7 @@ walker init {
     has owner;
     has anchor life_node;
     take (--> node::life == owner) else {
-        life_node = spawn here --> node::life;
+        life_node = spawn here ++> node::life;
         life_node.owner = owner;
         disengage;
     }

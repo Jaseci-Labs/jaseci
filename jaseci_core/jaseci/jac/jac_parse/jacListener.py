@@ -681,6 +681,38 @@ class jacListener(ParseTreeListener):
     def exitEdge_any(self, ctx: jacParser.Edge_anyContext):
         pass
 
+    # Enter a parse tree produced by jacParser#connect_op.
+    def enterConnect_op(self, ctx: jacParser.Connect_opContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#connect_op.
+    def exitConnect_op(self, ctx: jacParser.Connect_opContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#connect_to.
+    def enterConnect_to(self, ctx: jacParser.Connect_toContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#connect_to.
+    def exitConnect_to(self, ctx: jacParser.Connect_toContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#connect_from.
+    def enterConnect_from(self, ctx: jacParser.Connect_fromContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#connect_from.
+    def exitConnect_from(self, ctx: jacParser.Connect_fromContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#connect_any.
+    def enterConnect_any(self, ctx: jacParser.Connect_anyContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#connect_any.
+    def exitConnect_any(self, ctx: jacParser.Connect_anyContext):
+        pass
+
     # Enter a parse tree produced by jacParser#list_val.
     def enterList_val(self, ctx: jacParser.List_valContext):
         pass

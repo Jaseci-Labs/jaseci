@@ -94,7 +94,7 @@ Let's create an `init` walker to for this new jac program.
 ```jac
 walker init {
     root {
-        spawn here --> graph::dialogue_system;
+        spawn here ++> graph::dialogue_system;
     }
 }
 ```
@@ -139,7 +139,7 @@ Let's update the init walker to include this walker.
 ```jac
 walker init {
     root {
-        spawn here --> graph::dialogue_system;
+        spawn here ++> graph::dialogue_system;
         spawn here walker::talk;
     }
 }

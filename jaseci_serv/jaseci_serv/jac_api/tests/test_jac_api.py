@@ -444,7 +444,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         """Test API for loading an application"""
         enc_str = base64.b64encode(
             b"node sample { has apple;} "
-            + b"walker testwalker{ new = spawn here --> node::sample; "
+            + b"walker testwalker{ new = spawn here ++> node::sample; "
             + b"report new; }"
         ).decode()
         payload = {
@@ -577,7 +577,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "op": "sentinel_set",
             "snt": sent.jid,
             "code": "node sample { has apple;} "
-            + "walker testwalker{ new = spawn here --> node::sample; "
+            + "walker testwalker{ new = spawn here ++> node::sample; "
             + "report new; }",
             "encoded": False,
         }
@@ -664,7 +664,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "op": "sentinel_set",
             "snt": sent.jid,
             "code": "node a { has b; } walker testwalker"
-            + "{ r = spawn here --> node::a; r.b = 6; }",
+            + "{ r = spawn here ++> node::a; r.b = 6; }",
             "encoded": False,
         }
         res = self.client.post(

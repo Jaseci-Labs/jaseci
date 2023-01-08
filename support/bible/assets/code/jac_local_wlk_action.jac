@@ -17,7 +17,7 @@ node person {
 walker init {
     has year=std.time_now();
     can setup {
-        person1 = spawn here --> node::person;
+        person1 = spawn here ++> node::person;
         std.out(person1);
         person1::reset;
     }

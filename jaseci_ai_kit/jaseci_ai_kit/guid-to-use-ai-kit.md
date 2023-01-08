@@ -126,7 +126,7 @@ walker train {
 	has train_file;
 	has  num_train_epochs = 50, from_scratch = true;
 	root {
-		spawn here --> node::bi_enc;
+		spawn here ++> node::bi_enc;
 		take --> node::bi_enc;
 		}
 	bi_enc: here::train;
@@ -136,7 +136,7 @@ walker infer {
 	has query, interactive = true;
 	has labels, prediction;
 	root {
-		spawn here --> node::bi_enc;
+		spawn here ++> node::bi_enc;
 		take --> node::bi_enc;
 		}
 	bi_enc {

@@ -1,6 +1,6 @@
 # Understanding the actions by example
 
-## Basic action example 
+## Basic action example
 
 Jaseci has set of inbuilt actions. Also you can load and unload actions in `jsctl` shell. to see the available actions in jaseci session try running `actions list`. Here are two basic example of jaseci `date` actions.
 
@@ -17,7 +17,7 @@ walker init {
     can date.quantize_to_month;
     can date.quantize_to_week;
 
-    person1 = spawn here --> node::person(name="Josh", birthday="1995-05-20");
+    person1 = spawn here ++> node::person(name="Josh", birthday="1995-05-20");
 
     birthyear = date.quantize_to_year(person1.birthday);
     birthmonth = date.quantize_to_month(person1.birthday);
@@ -49,12 +49,12 @@ walker init {
     can date.quantize_to_year;
 
     root {
-        person1 = spawn here --> node::person(name="Josh", birthday="1995-05-20");
-        person2 = spawn here --> node::person(name="Joe", birthday="1998-04-23");
-        person3 = spawn here --> node::person(name="Jack", birthday="1997-03-12");
+        person1 = spawn here ++> node::person(name="Josh", birthday="1995-05-20");
+        person2 = spawn here ++> node::person(name="Joe", birthday="1998-04-23");
+        person3 = spawn here ++> node::person(name="Jack", birthday="1997-03-12");
         take -->;
     }
-    
+
     person {
         birthyear = date.quantize_to_year(here.birthday);
         std.out(here.name," Birthdate Quantized to year ",birthyear);
@@ -74,7 +74,7 @@ Jack  Birthdate Quantized to year  1997-01-01T00:00:00
 
 > **Note**
 > `here` refers to the current node scope pertinent to the program's execution point and `visitor` refers to the pertinent walker scope pertinent to that particular point of execution. All variables, built-in characteristics, and operations of the linked object instance are fully accessible through these references.
-> 
+>
 
 **Example 3:**
 ```
@@ -95,7 +95,7 @@ walker init {
     #collect the current time
     has year=std.time_now();
     root {
-        person1 = spawn here --> node::person(name="Josh", byear="1992-01-01");
+        person1 = spawn here ++> node::person(name="Josh", byear="1992-01-01");
         take --> ;
     }
 

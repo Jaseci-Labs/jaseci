@@ -2,7 +2,7 @@ walker simple_yield {
     with entry {
         t=here;
         for i=0 to i<4 by i+=1:
-            t = spawn t --> node::generic;
+            t = spawn t ++> node::generic;
     }
     if(-->.length): yield take -->;
 }

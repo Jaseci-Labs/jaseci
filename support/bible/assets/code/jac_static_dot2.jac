@@ -28,7 +28,7 @@ graph test_graph {
 }
 walker init {
     root {
-        spawn here --> graph::test_graph;
+        spawn here ++> graph::test_graph;
     }
     take -->;
     report here.details['name'];

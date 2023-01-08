@@ -504,7 +504,7 @@ We know already that the NLU is responsible for understanding the context of the
 ```
 walker init {
     root {
-        spawn here --> graph::tesla_sales_rep;
+        spawn here ++> graph::tesla_sales_rep;
     }
 }
 ```

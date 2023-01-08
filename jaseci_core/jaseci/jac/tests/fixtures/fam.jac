@@ -20,3 +20,11 @@ walker create_fam {
         #std.out("I didn't do any of the hard work.");
     }
 }
+
+walker free_ref {
+    spawn here w::create_fam;
+    report --> node::man <-[married]->;
+    report --> node::woman <-[mom]-;
+    report --> node::woman -->;
+    report --> node::woman <--;
+}

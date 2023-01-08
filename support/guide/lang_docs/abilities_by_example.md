@@ -16,10 +16,10 @@ node city{
         name = "c1";
         std.out("Setting city name:", here.context);
     }
-} 
+}
 
 walker build_example{
-    node1 = spawn here --> node::city;
+    node1 = spawn here ++> node::city;
 }
 
 walker init{
@@ -34,7 +34,7 @@ walker init{
 }
 ```
 
-`set_name` is the ability defined inside the `city` node. This ability will set a name to the city node. `here::set_name` is the syntax of triggering the node ability from the `walker init`. 
+`set_name` is the ability defined inside the `city` node. This ability will set a name to the city node. `here::set_name` is the syntax of triggering the node ability from the `walker init`.
 
 **Output 1:**
 ```
@@ -47,9 +47,9 @@ To see node abilities in advance let's define the following graph, which represe
 <div style="text-align:center"><img style="align:center" src="images/abilities_graph_example_1.png" /> <b>Example Graph</b></div>
 
 > **Note**
-> 
+>
 > To generate random interger values we can use `rand.integer` action from the rand action library;  `rand.integer(15,100)` will output a integer value between 15 and 100;
-> 
+>
 
 The following example will set city names in each node;
 
@@ -62,12 +62,12 @@ node city{
 
     can set_tourists{ #also can use "with activity"
         tourists = rand.integer(15,100);
-        std.out("Setting number of tourists in", here.context.name,"city", "to",tourists); 
+        std.out("Setting number of tourists in", here.context.name,"city", "to",tourists);
     }
-} 
+}
 
 walker build_example{
-    node1 = spawn here --> node::city(name="c1");
+    node1 = spawn here ++> node::city(name="c1");
     node2 = spawn node1 --> node::city(name="c2");
     node3 = spawn node2 --> node::city(name="c3");
     here --> node2;
@@ -88,7 +88,7 @@ walker init{
 }
 ```
 
-`set_tourists` is the node ability in city node. `here::set_tourists` triggers the node ability inside the `init` walker.  To get the variable value from the current context `here.context.{variable_name}` has been used. Look at the `std.out` statement inside the `set_tourist` node ability. The node ability can also defined as `can set_tourists with activity {}`. The both definitions works similarly. 
+`set_tourists` is the node ability in city node. `here::set_tourists` triggers the node ability inside the `init` walker.  To get the variable value from the current context `here.context.{variable_name}` has been used. Look at the `std.out` statement inside the `set_tourist` node ability. The node ability can also defined as `can set_tourists with activity {}`. The both definitions works similarly.
 
 Run the example code to obtain following output.
 
@@ -138,10 +138,10 @@ node city{
         std.out("Total tourists in", here.context.name, "when traveller arrives:",here.tourists);
     }
 
-} 
+}
 
 walker build_example{
-    node1 = spawn here --> node::city(name="c1");
+    node1 = spawn here ++> node::city(name="c1");
     node2 = spawn node1 --> node::city(name="c2");
     node3 = spawn node2 --> node::city(name="c3");
     here --> node2;
@@ -197,7 +197,7 @@ walker traveller{
 }
 ```
 
-You might observe that while using a node's ability, the walkers' state remains unchanged. 
+You might observe that while using a node's ability, the walkers' state remains unchanged.
 
 Let's call a walker ability from a node in the following example;
 
@@ -220,10 +220,10 @@ node city{
         visitor::print;
     }
 
-} 
+}
 
 walker build_example{
-    node1 = spawn here --> node::city(name="c1");
+    node1 = spawn here ++> node::city(name="c1");
     node2 = spawn node1 --> node::city(name="c2");
     node3 = spawn node2 --> node::city(name="c3");
     here --> node2;
