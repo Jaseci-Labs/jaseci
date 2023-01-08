@@ -9,7 +9,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def init_model(reload=False):
-    """create a classifier for ZS classification"""
+    """load the tars classifier for ZS classification"""
 
     global classifier
     model_name = "tars-base"
@@ -17,11 +17,11 @@ def init_model(reload=False):
     print(f"loaded mode : [{model_name}]")
 
 
-# defining the api for entity detection
+# defining the api for ZS classification
 @jaseci_action(act_group=["zs_classifier"], allow_remote=True)
 def classify(text: Union[str, List[str]], classes: List[str]):
     """
-    API for detectiing provided entity in text
+    API for classifying text among classes provided
     """
     response_data_format = []
     try:
