@@ -161,23 +161,23 @@ walker get_gen_day {
         }
     }
     life: take --> node::year == infer.year_from_date(date) else {
-            new = spawn here --> node::year;
+            new = spawn here ++> node::year;
             new.year = infer.year_from_date(date);
             take --> node::year == infer.year_from_date(date);
         }
     year: take --> node::month == infer.month_from_date(date) else {
-            new = spawn here --> node::month;
+            new = spawn here ++> node::month;
             new.month = infer.month_from_date(date);
             take --> node::month == infer.month_from_date(date);
         }
     month: take --> node::week == infer.week_from_date(date) else {
-            new = spawn here --> node::week;
+            new = spawn here ++> node::week;
             new.week = infer.week_from_date(date);
             take --> node::week == infer.week_from_date(date);
         }
     week: take --> node::day == infer.day_from_date(date) else {
             latest_day = spawn here walker::get_latest_day(before_date=date);
-            new = spawn here --> node::day;
+            new = spawn here ++> node::day;
             new.day = infer.day_from_date(date);
             if(latest_day) {
                 new.order = [];
@@ -287,7 +287,7 @@ walker move_workette {
     if(!dest_node): disengage;
     workette {
         here !<-[parent]- <-[parent]-;
-        here <-[parent]- dest_node;
+        here <+[parent]+ dest_node;
 
         if(src_node_order && src_node): src_node_order = src_node_order;
         if(dest_node_order): dest_node.order = dest_node_order;
@@ -301,7 +301,7 @@ walker link_with_goal {
     if(!goal_node): disengage;
     workette {
         here !<-[associated]-> <-[associated]->;
-        here <-[associated]-> goal_node;
+        here <+[associated]+> goal_node;
         report here;
     }
 }
@@ -330,7 +330,7 @@ walker create_workette {
     has title, wtype, note, is_MIT, snooze_till, date, is_ritual, color;
 
     day, week, month, year, life, workette {
-        new = spawn here -[parent]->
+        new = spawn here +[parent]+>
             node::workette(name=title, wtype=wtype, note=note, is_MIT=is_MIT, snooze_till=snooze_till, date=date, is_ritual=is_ritual, color=color);
         report new;
     }
@@ -341,7 +341,7 @@ walker carry_forward {
     # here = current/previous day/workette
     has parent;
     day {
-        here <-[past]- parent;
+        here <+[past]+ parent;
         take -[parent]-> node::workette;
     }
     workette {
@@ -349,8 +349,8 @@ walker carry_forward {
            (here.status == 'done' or
             here.status == 'canceled')): skip;
 
-        new_workette = spawn here <-[past]- node::workette;
-        new_workette <-[parent]- parent;
+        new_workette = spawn here <+[past]+ node::workette;
+        new_workette <+[parent]+ parent;
         new_workette := here;
         if(new_workette.is_ritual): new_workette.status="open";
         spawn -[parent]-> node::workette
@@ -389,7 +389,7 @@ walker gen_rand_life {
         if(num_workettes == 0): disengage;
         gen_num = rand.integer(3, 5);
         for i=0 to i<gen_num by i+=1 {
-            spawn here -[parent]-> node::workette(name=rand.sentence());
+            spawn here +[parent]+> node::workette(name=rand.sentence());
         }
         take --> ;
         num_workettes -= 1;
@@ -692,7 +692,7 @@ walker init {
     has owner;
     has anchor life_node;
     take (--> node::life == owner) else {
-        life_node = spawn here --> node::life;
+        life_node = spawn here ++> node::life;
         life_node.owner = owner;
         disengage;
     }
@@ -734,7 +734,7 @@ walker set_highlight {
     }
 
     day {
-        here -[highlight]-> this_workette;
+        here +[highlight]+> this_workette;
         report this_workette;
         disengage;
     }
@@ -782,7 +782,7 @@ walker set_day_highlight {
 
     workette {
         here.highlight_type = types[cnt];
-        here <-[highlight]- dayNode;
+        here <+[highlight]+ dayNode;
 
         cnt += 1;
     }
@@ -868,7 +868,7 @@ walker get_workettes_deep {
 
 node deep: has d={"a": {"b": {"c": [5]}}};
 
-walker check_deep_write_start { a=spawn here --> n::deep;}
+walker check_deep_write_start { a=spawn here ++> n::deep;}
 
 walker check_deep_write_update {
     take --> n::deep;

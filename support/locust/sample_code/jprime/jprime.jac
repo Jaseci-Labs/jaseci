@@ -90,7 +90,7 @@ walker segmenter {
     std.out(segs);
     // Please call the AI model API here instead.
     for i in segs{
-      segNode = spawn here --> node::Chunk(text = i);
+      segNode = spawn here ++> node::Chunk(text = i);
       spawn segNode walker::entityExtractor(entities = entities);
       spawn segNode walker::intentExtractor(intents = intents);
     }

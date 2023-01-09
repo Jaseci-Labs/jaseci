@@ -20,6 +20,7 @@ export class Input {
   @Prop() placeholder: string;
   @Prop() operations: string;
   @Prop() palette: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
+  @Prop() size: 'xs' | 'lg' | 'md' | 'sm';
   @Element() host: HTMLElement;
 
   @Event() valueChanged: EventEmitter<string>;
@@ -75,11 +76,19 @@ export class Input {
               'input-warning': this.palette === 'warning',
               'input-error': this.palette === 'error',
             },
+            this.size && {
+              'input-xs': this.size === 'xs',
+              'input-sm': this.size === 'sm',
+              'input-md': this.size === 'md',
+              'input-lg': this.size === 'lg',
+            },
           )}
           placeholder={this.placeholder}
         ></input>
         {/* register some classes so they aren't purged by daisy-ui */}
-        {false && <input class="input-xl input-primary input-secondary input-accent input-info input-success input-warning input-error input-lg input-sm input-xs"></input>}
+        {false && (
+          <input class="input-xl input-primary input-secondary input-accent input-info input-success input-warning input-error input-lg input-sm input-xs input-md input-lg"></input>
+        )}
       </div>
     );
   }

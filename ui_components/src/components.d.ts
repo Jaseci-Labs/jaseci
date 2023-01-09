@@ -5,8 +5,21 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
+import { Walker } from "./components/jsc-graph/jsc-graph";
 import { ItemsPropValue, JustifyPropValue } from "./types/propTypes";
 export namespace Components {
+    interface GraphNodeInfo {
+        "context": { [key: string]: any };
+        "details": { [key: string]: any };
+        "info": { [key: string]: any };
+        "selectedInfoTab": 'details' | 'context' | 'info';
+    }
+    interface GraphWalkerRunner {
+        "nodeId": string;
+        "sentinel": string;
+        "serverUrl": string;
+        "walkers": Walker[];
+    }
     interface JscAlert {
         "css": string;
         "events": string;
@@ -284,6 +297,7 @@ export namespace Components {
         "operations": string;
         "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder": string;
+        "size": 'xs' | 'lg' | 'md' | 'sm';
         "type": string;
         "value": string;
     }
@@ -422,6 +436,7 @@ export namespace Components {
         "palette": 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder": string;
         "selected": string;
+        "size": 'xs' | 'sm' | 'md' | 'lg';
         "type": string;
         "value": string;
     }
@@ -526,6 +541,10 @@ export namespace Components {
         "middle": string;
     }
 }
+export interface GraphWalkerRunnerCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLGraphWalkerRunnerElement;
+}
 export interface JscAppCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLJscAppElement;
@@ -567,6 +586,18 @@ export interface JscToggleCustomEvent<T> extends CustomEvent<T> {
     target: HTMLJscToggleElement;
 }
 declare global {
+    interface HTMLGraphNodeInfoElement extends Components.GraphNodeInfo, HTMLStencilElement {
+    }
+    var HTMLGraphNodeInfoElement: {
+        prototype: HTMLGraphNodeInfoElement;
+        new (): HTMLGraphNodeInfoElement;
+    };
+    interface HTMLGraphWalkerRunnerElement extends Components.GraphWalkerRunner, HTMLStencilElement {
+    }
+    var HTMLGraphWalkerRunnerElement: {
+        prototype: HTMLGraphWalkerRunnerElement;
+        new (): HTMLGraphWalkerRunnerElement;
+    };
     interface HTMLJscAlertElement extends Components.JscAlert, HTMLStencilElement {
     }
     var HTMLJscAlertElement: {
@@ -862,6 +893,8 @@ declare global {
         new (): HTMLMyComponentElement;
     };
     interface HTMLElementTagNameMap {
+        "graph-node-info": HTMLGraphNodeInfoElement;
+        "graph-walker-runner": HTMLGraphWalkerRunnerElement;
         "jsc-alert": HTMLJscAlertElement;
         "jsc-anchor": HTMLJscAnchorElement;
         "jsc-app": HTMLJscAppElement;
@@ -914,6 +947,19 @@ declare global {
     }
 }
 declare namespace LocalJSX {
+    interface GraphNodeInfo {
+        "context"?: { [key: string]: any };
+        "details"?: { [key: string]: any };
+        "info"?: { [key: string]: any };
+        "selectedInfoTab"?: 'details' | 'context' | 'info';
+    }
+    interface GraphWalkerRunner {
+        "nodeId"?: string;
+        "onWalkerCompleted"?: (event: GraphWalkerRunnerCustomEvent<string>) => void;
+        "sentinel"?: string;
+        "serverUrl"?: string;
+        "walkers"?: Walker[];
+    }
     interface JscAlert {
         "css"?: string;
         "events"?: string;
@@ -1188,6 +1234,7 @@ declare namespace LocalJSX {
         "operations"?: string;
         "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder"?: string;
+        "size"?: 'xs' | 'lg' | 'md' | 'sm';
         "type"?: string;
         "value"?: string;
     }
@@ -1324,6 +1371,7 @@ declare namespace LocalJSX {
         "palette"?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'info' | 'success' | 'warning' | 'error';
         "placeholder"?: string;
         "selected"?: string;
+        "size"?: 'xs' | 'sm' | 'md' | 'lg';
         "type"?: string;
         "value"?: string;
     }
@@ -1430,6 +1478,8 @@ declare namespace LocalJSX {
         "middle"?: string;
     }
     interface IntrinsicElements {
+        "graph-node-info": GraphNodeInfo;
+        "graph-walker-runner": GraphWalkerRunner;
         "jsc-alert": JscAlert;
         "jsc-anchor": JscAnchor;
         "jsc-app": JscApp;
@@ -1485,6 +1535,8 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "graph-node-info": LocalJSX.GraphNodeInfo & JSXBase.HTMLAttributes<HTMLGraphNodeInfoElement>;
+            "graph-walker-runner": LocalJSX.GraphWalkerRunner & JSXBase.HTMLAttributes<HTMLGraphWalkerRunnerElement>;
             "jsc-alert": LocalJSX.JscAlert & JSXBase.HTMLAttributes<HTMLJscAlertElement>;
             "jsc-anchor": LocalJSX.JscAnchor & JSXBase.HTMLAttributes<HTMLJscAnchorElement>;
             "jsc-app": LocalJSX.JscApp & JSXBase.HTMLAttributes<HTMLJscAppElement>;

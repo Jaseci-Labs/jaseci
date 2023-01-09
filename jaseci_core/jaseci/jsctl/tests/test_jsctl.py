@@ -9,6 +9,10 @@ import os
 class JsctlTest(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
+    infer_loc = (
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))) + "/tests/infer.py"
+    )
+
     def setUp(self):
         super().setUp()
 
@@ -19,6 +23,10 @@ class JsctlTest(TestCaseHelper, TestCase):
         # self.log(res.exception)
         return res.stdout
 
+    def jac_call(self, cmd: str):
+        res = CliRunner(mix_stderr=False).invoke(jsctl.jac, cmd.split())
+        return res.stdout
+
     def call_cast(self, cmd):
         ret = self.call(cmd)
         # self.log(ret)
@@ -27,6 +35,10 @@ class JsctlTest(TestCaseHelper, TestCase):
     def call_split(self, cmd):
         ret = self.call(cmd)
         # self.log(ret)
+        return ret.split("\n")
+
+    def jac_call_split(self, cmd):
+        ret = self.jac_call(cmd)
         return ret.split("\n")
 
     def tearDown(self):
@@ -50,8 +62,8 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertIn("Group of `sentinel active` commands", r)
 
     def test_jsctl_create_graph_mem_only(self):
-        self.call(
-            "sentinel register jaseci/jsctl/tests/ll.jac -name ll -set_active true"
+        ret = self.call(
+            f"sentinel register {os.path.dirname(__file__)}/ll.jac -name ll -set_active true"
         )
         self.assertEqual(len(self.call_cast("graph list")), 1)
         self.call("graph create")
@@ -60,19 +72,20 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertEqual(len(self.call_cast("graph list")), 4)
 
     def test_jsctl_carry_forward(self):
-        self.call("actions load local jaseci/tests/infer.py")
-        self.call(
-            "sentinel register jaseci/jsctl/tests/ll.jac -name ll -set_active true"
+
+        ret = self.call(f"actions load local {self.infer_loc}")
+        ret = self.call(
+            f"sentinel register {os.path.dirname(__file__)}/ll.jac -name ll -set_active true"
         )
-        self.call("graph create -set_active true")
-        self.call("walker run init")
-        self.call("walker run gen_rand_life")
+        r = self.call("graph create -set_active true")
+        r = self.call("walker run init")
+        r = self.call("walker run gen_rand_life")
         r = self.call_cast("walker run get_gen_day")
         self.assertGreater(len(r["report"]), 3)
 
     def test_jsctl_dot(self):
         self.call(
-            "sentinel register jaseci/jsctl/tests/ll.jac -name ll -set_active true"
+            f"sentinel register {os.path.dirname(__file__)}/ll.jac -name ll -set_active true"
         )
         self.call("walker run init")
         self.call("walker run gen_rand_life")
@@ -87,7 +100,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_aliases(self):
         """Tests that alias mapping api works"""
         self.call(
-            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
+            f"sentinel register {os.path.dirname(__file__)}/zsb.jac -name zsb -set_active true"
         )
         gph_id = self.call_cast("graph create")["jid"]
         snt_id = self.call_cast("sentinel list")[0]["jid"]
@@ -102,7 +115,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_auto_aliases(self):
         """Tests that auto alias mapping api works"""
         self.call(
-            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
+            f"sentinel register {os.path.dirname(__file__)}/zsb.jac -name zsb -set_active true"
         )
         aliases = self.call_cast("alias list")
         self.assertGreater(len(aliases), 20)
@@ -114,7 +127,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_auto_aliases_delete(self):
         """Tests that auto removing alias mapping api works"""
         self.call(
-            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
+            f"sentinel register {os.path.dirname(__file__)}/zsb.jac -name zsb -set_active true"
         )
 
         num = len(self.call_cast("alias list"))
@@ -127,7 +140,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_config_cmds(self):
         """Tests that config commands works"""
         self.call(
-            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
+            f"sentinel register {os.path.dirname(__file__)}/zsb.jac -name zsb -set_active true"
         )
         self.call('config set CONFIG_EXAMPLE -value "TEST" -do_check False')
         self.call("config set APPLE -value Grape2 -do_check False")
@@ -142,7 +155,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_default_snt_setting(self):
         """Tests that alias mapping api works"""
         self.call(
-            "sentinel register jaseci/jsctl/tests/teststest.jac -name zsb "
+            f"sentinel register {os.path.dirname(__file__)}/teststest.jac -name zsb "
             "-set_active true"
         )
         snt_id = self.call_cast("sentinel list")[0]["jid"]
@@ -158,7 +171,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_master_defaults(self):
         """Tests that alias mapping api works"""
         self.call(
-            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
+            f"sentinel register {os.path.dirname(__file__)}/zsb.jac -name zsb -set_active true"
         )
         gph_id = self.call_cast("graph create")["jid"]
         snt_id = self.call_cast("sentinel list")[0]["jid"]
@@ -175,7 +188,7 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def test_public_apis_walker_summon_auth(self):
         self.call(
-            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
+            f"sentinel register {os.path.dirname(__file__)}/zsb.jac -name zsb -set_active true"
         )
         wjid = self.call_cast("walker spawn create pubinit")["jid"]
         r = self.call_cast(f"walker get {wjid} -mode keys")
@@ -189,42 +202,51 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertFalse(r["success"])
 
     def test_jsctl_import(self):
-        r = self.call(
-            "sentinel register "
-            "jaseci/jsctl/tests/ll_base.jac -code_dir "
-            "jaseci/jsctl/tests -set_active true"
+        self.call(f"actions load local {self.infer_loc}")
+        r = self.call_cast(
+            f"sentinel register "
+            f"{os.path.dirname(__file__)}/ll_base.jac -code_dir "
+            f"{os.path.dirname(__file__)} -set_active true"
         )
-        self.call("walker run init")
-        self.call("walker run gen_rand_life")
+        r = self.call_cast("walker run init")
+        r = self.call_cast("walker run gen_rand_life")
         r = self.call_cast("walker run get_gen_day")
         self.assertGreater(len(r["report"]), 3)
 
     def test_jsctl_import_filters(self):
-        self.call("sentinel register jaseci/jsctl/tests/base.jac -set_active true")
+        self.call_cast(
+            f"sentinel register {os.path.dirname(__file__)}/base.jac -set_active true"
+        )
         r = self.call_cast("walker run init")
         self.assertEqual(len(r["report"]), 8)
 
     def test_jsctl_import_filters1(self):
-        self.call("sentinel register jaseci/jsctl/tests/base1.jac -set_active true")
+        self.call(
+            f"sentinel register {os.path.dirname(__file__)}/base1.jac -set_active true"
+        )
         r = self.call_cast("walker run init")
         self.assertEqual(len(r["report"]), 8)
 
     def test_jsctl_import_filters2(self):
-        self.call("sentinel register jaseci/jsctl/tests/base2.jac -set_active true")
+        self.call(
+            f"sentinel register {os.path.dirname(__file__)}/base2.jac -set_active true"
+        )
         r = self.call_cast("walker run init")
         self.assertEqual(len(r["report"]), 8)
 
     def test_jsctl_import_fails_when_incomplete(self):
-        self.call("sentinel register jaseci/jsctl/tests/base3.jac -set_active true")
+        self.call(
+            f"sentinel register {os.path.dirname(__file__)}/base3.jac -set_active true"
+        )
         r = self.call_cast("walker run init")
         self.assertTrue("success" in r.keys())
         self.assertFalse(r["success"])
 
     def test_jsctl_import_globals(self):
         self.call(
-            "sentinel register "
-            "jaseci/jsctl/tests/base4.jac -code_dir jaseci/jsctl/tests/ "
-            "-set_active true"
+            f"sentinel register "
+            f"{os.path.dirname(__file__)}/base4.jac -code_dir {os.path.dirname(__file__)}/ "
+            f"-set_active true"
         )
         r = self.call_cast("walker run init")
         self.assertEqual(len(r["report"]), 8)
@@ -232,7 +254,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_import_recursive(self):
         self.call(
             "sentinel register "
-            "jaseci/jsctl/tests/base5.jac -code_dir jaseci/jsctl/tests/ "
+            f"{os.path.dirname(__file__)}/base5.jac -code_dir {os.path.dirname(__file__)}/ "
             "-set_active true"
         )
         r = self.call_cast("walker run init")
@@ -241,95 +263,118 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_import_path(self):
         self.call(
             "sentinel register "
-            "jaseci/jsctl/tests/base6.jac -code_dir jaseci/jsctl/tests/ "
+            f"{os.path.dirname(__file__)}/base6.jac -code_dir {os.path.dirname(__file__)}/ "
             "-set_active true"
         )
         r = self.call_cast("walker run init")
         self.assertEqual(r["report"][0], "plain")
 
     def test_jsctl_run_tests(self):
-        self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
+        self.call(f"sentinel register {os.path.dirname(__file__)}/teststest.jac")
         r = self.call_split("sentinel test")
         self.assertTrue(r[0].startswith('Testing "assert should be'))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
     def test_jsctl_run_tests_detailed(self):
-        self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
+        self.call(f"sentinel register {os.path.dirname(__file__)}/teststest.jac")
         r = self.call_split("sentinel test -detailed true")
         self.assertEqual(len(r), 33)
 
     def test_jsctl_multiple_registers_with_globals(self):
         r = self.call_cast(
-            "sentinel register jaseci/jsctl/tests/teststest.jir -mode ir"
+            f"sentinel register {os.path.dirname(__file__)}/teststest.jir -mode ir"
         )
         r = self.call_cast(
-            "sentinel register jaseci/jsctl/tests/teststest.jir -mode ir"
+            f"sentinel register {os.path.dirname(__file__)}/teststest.jir -mode ir"
         )
         self.assertEqual(len(r), 1)
 
     def test_jsctl_run_tests_with_stdout(self):
-        self.call("sentinel register jaseci/jsctl/tests/teststest_stdout.jac")
+        self.call(f"sentinel register {os.path.dirname(__file__)}/teststest_stdout.jac")
         r = self.call("sentinel test -detailed true")
         self.assertIn('"stdout": "Some Output\\nSome Output\\n"', r)
         r = r.replace('"stdout": "Some Output\\nSome Output\\n"', "")
         self.assertNotIn("Some Output", r)
 
     def test_jsctl_jac_build(self):
-        if os.path.exists("jaseci/jsctl/tests/teststest.jir"):
-            os.remove("jaseci/jsctl/tests/teststest.jir")
-            self.assertFalse(os.path.exists("jaseci/jsctl/tests/teststest.jir"))
-        self.call("jac build jaseci/jsctl/tests/teststest.jac")
-        self.assertGreater(os.path.getsize("jaseci/jsctl/tests/teststest.jir"), 20000)
+        if os.path.exists(f"{os.path.dirname(__file__)}/teststest.jir"):
+            os.remove(f"{os.path.dirname(__file__)}/teststest.jir")
+            self.assertFalse(
+                os.path.exists(f"{os.path.dirname(__file__)}/teststest.jir")
+            )
+        self.call(f"jac build {os.path.dirname(__file__)}/teststest.jac")
+        self.assertGreater(
+            os.path.getsize(f"{os.path.dirname(__file__)}/teststest.jir"), 20000
+        )
 
     def test_jsctl_jac_build_with_action(self):
-        if os.path.exists("jaseci/jsctl/tests/withaction.jir"):
-            os.remove("jaseci/jsctl/tests/withaction.jir")
-            self.assertFalse(os.path.exists("jaseci/jsctl/tests/withaction.jir"))
-        self.call("jac build jaseci/jsctl/tests/withaction.jac")
-        self.assertGreater(os.path.getsize("jaseci/jsctl/tests/withaction.jir"), 1000)
-        os.remove("jaseci/jsctl/tests/withaction.jir")
+        if os.path.exists(f"{os.path.dirname(__file__)}/withaction.jir"):
+            os.remove(f"{os.path.dirname(__file__)}/withaction.jir")
+            self.assertFalse(
+                os.path.exists(f"{os.path.dirname(__file__)}/withaction.jir")
+            )
+        self.call(f"jac build {os.path.dirname(__file__)}/withaction.jac")
+        self.assertGreater(
+            os.path.getsize(f"{os.path.dirname(__file__)}/withaction.jir"), 1000
+        )
+        os.remove(f"{os.path.dirname(__file__)}/withaction.jir")
 
     def test_jsctl_jac_test(self):
-        r = self.call_split("jac test jaseci/jsctl/tests/teststest.jac")
+        r = self.call_split(f"jac test {os.path.dirname(__file__)}/teststest.jac")
         self.assertTrue(r[0].startswith('Testing "assert should be'))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
     def test_jsctl_jac_test_single(self):
         r = self.call_split(
-            "jac test jaseci/jsctl/tests/teststest.jac -single the_second"
+            f"jac test {os.path.dirname(__file__)}/teststest.jac -single the_second"
         )
         self.assertTrue(r[0].startswith('Testing "a second test"'))
         self.assertTrue(r[2].startswith('  "tests": 1'))
         self.assertTrue(r[5].startswith('  "success": true'))
 
     def test_jsctl_jac_test_jir(self):
-        r = self.call_split("jac test jaseci/jsctl/tests/teststest.jir")
+        r = self.call_split(f"jac test {os.path.dirname(__file__)}/teststest.jir")
+        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[4].startswith('  "tests": 3'))
+        self.assertTrue(r[7].startswith('  "success": true'))
+
+    def test_jac_cli_test(self):
+        r = self.jac_call_split("test jaseci/jsctl/tests/teststest.jir")
+        self.log(r)
         self.assertTrue(r[0].startswith('Testing "assert should be'))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
     def test_jsctl_jac_disas_jir(self):
-        r = self.call("jac disas jaseci/jsctl/tests/teststest.jir")
+        r = self.call(f"jac disas {os.path.dirname(__file__)}/teststest.jir")
         self.assertIn("LOAD_CONST", r)
         self.assertIn("LOAD_VAR", r)
 
     def test_jsctl_jac_run(self):
-        r = self.call_cast("jac run jaseci/jsctl/tests/teststest.jac")
+        r = self.call_cast(f"jac run {os.path.dirname(__file__)}/teststest.jac")
         self.assertEqual(r["report"], [{}, 4])
 
     def test_jsctl_jac_run_jir(self):
-        r = self.call_cast("jac run jaseci/jsctl/tests/teststest.jir")
+        r = self.call_cast(f"jac run {os.path.dirname(__file__)}/teststest.jir")
         self.assertEqual(r["report"], [{}, 4])
 
+    def test_jsctl_jac_dot_jir(self):
+        r = self.call("jac dot jaseci/jsctl/tests/teststest.jir")
+        self.assertEqual(r, 'strict digraph root {\n    "n0" [ label="n0:root"  ]\n}\n')
+
     def test_jsctl_jac_run_jir_walk(self):
-        r = self.call_cast("jac run jaseci/jsctl/tests/teststest.jir -walk alt_init")
+        r = self.call_cast(
+            f"jac run {os.path.dirname(__file__)}/teststest.jir -walk alt_init"
+        )
         self.assertEqual(r["report"], [7])
 
     def test_jsctl_sentinel_set(self):
-        self.call("sentinel register jaseci/jsctl/tests/teststest.jac -set_active true")
-        self.call("sentinel set jaseci/jsctl/tests/base.jac")
+        self.call(
+            f"sentinel register {os.path.dirname(__file__)}/teststest.jac -set_active true"
+        )
+        self.call(f"sentinel set {os.path.dirname(__file__)}/base.jac")
         r = self.call_cast("walker run init")
         r = self.call_cast("walker run init")
         self.assertEqual(len(r["report"]), 8)
@@ -348,33 +393,39 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertEqual(a, b)
 
     def test_jsctl_graph_can(self):
-        self.call("actions load local jaseci/tests/infer.py")
-        self.call(
-            "sentinel register "
-            "jaseci/jsctl/tests/graph_can.jac -name gc -set_active true"
+        self.call(f"actions load local {self.infer_loc}")
+        r = self.call(
+            f"sentinel register "
+            f"{os.path.dirname(__file__)}/graph_can.jac -name gc -set_active true"
         )
         r = self.call("walker run go")
         self.assertEqual(r.split()[0], "2020-01-01T00:00:00")
 
     def test_jsctl_custom_report(self):
-        self.call("sentinel register jaseci/jsctl/tests/glob_imp.jac -set_active true")
+        self.call(
+            f"sentinel register {os.path.dirname(__file__)}/glob_imp.jac -set_active true"
+        )
         r = self.call_cast("walker run cust_report")
         self.assertEqual(r, {"a": "b"})
 
     def test_jsctl_custom_report_off(self):
-        self.call("sentinel register jaseci/jsctl/tests/glob_imp.jac -set_active true")
+        self.call(
+            f"sentinel register {os.path.dirname(__file__)}/glob_imp.jac -set_active true"
+        )
         r = self.call_cast("walker run cust_report_neutralize")
         self.assertIn("success", r.keys())
 
     def test_jsctl_disengage_report(self):
-        self.call("sentinel register jaseci/jsctl/tests/glob_imp.jac -set_active true")
+        self.call(
+            f"sentinel register {os.path.dirname(__file__)}/glob_imp.jac -set_active true"
+        )
         r = self.call_cast("walker run disengage_report")
         self.assertEqual(r, {"a": "b"})
 
     def test_jsctl_set_global_default_perms(self):
         self.call("object perms default public")
         self.call(
-            "sentinel register jaseci/jsctl/tests/zsb.jac -name zsb -set_active true"
+            f"sentinel register {os.path.dirname(__file__)}/zsb.jac -name zsb -set_active true"
         )
         gphs = self.call_cast("graph get -detailed true")
         for i in gphs:
@@ -394,7 +445,7 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def test_jsctl_print_detailed_sentinel(self):
         r = self.call_cast(
-            "sentinel register jaseci/jsctl/tests/teststest.jir -name test -mode ir"
+            f"sentinel register {os.path.dirname(__file__)}/teststest.jir -name test -mode ir"
         )
         r = self.call_cast("object get sentinel:test")
         before = len(r.keys())
@@ -404,11 +455,11 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertGreater(after, before)
 
     def test_jsctl_script(self):
-        r = self.call("script jaseci/jsctl/tests/jsctl_script")
+        r = self.call(f"script {os.path.dirname(__file__)}/jsctl_script")
         self.assertEqual(r, "[]\n\n[]\n\n{}\n\n")
 
     def test_jsctl_script_output(self):
-        self.call("script jaseci/jsctl/tests/jsctl_script -o scr_out")
+        self.call(f"script {os.path.dirname(__file__)}/jsctl_script -o scr_out")
         with open("scr_out", "r") as f:
             s = [line.rstrip() for line in f]
         if os.path.exists("scr_out"):
@@ -434,7 +485,7 @@ class JsctlTestWithSession(TestCaseHelper, TestCase):
         super().setUp()
 
     def call(self, cmd):
-        ses = " -f jaseci/jsctl/tests/js.session "
+        ses = " -f {os.path.dirname(__file__)}/js.session "
         res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl, (ses + cmd).split())
         return res.stdout
 
@@ -447,13 +498,13 @@ class JsctlTestWithSession(TestCaseHelper, TestCase):
         return ret.split("\n")
 
     def tearDown(self):
-        if os.path.exists("jaseci/jsctl/tests/js.session"):
-            os.remove("jaseci/jsctl/tests/js.session")
+        if os.path.exists(f"{os.path.dirname(__file__)}/js.session"):
+            os.remove(f"{os.path.dirname(__file__)}/js.session")
         jsctl.reset_state()
         super().tearDown()
 
     def test_jsctl_register_with_session(self):
-        self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
-        self.call("sentinel register jaseci/jsctl/tests/teststest.jac")
+        self.call(f"sentinel register {os.path.dirname(__file__)}/teststest.jac")
+        self.call(f"sentinel register {os.path.dirname(__file__)}/teststest.jac")
         r = self.call_cast("object get active:sentinel -detailed true")
         self.assertGreater(len(r["arch_ids"]), 3)

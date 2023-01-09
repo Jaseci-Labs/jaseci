@@ -18,7 +18,7 @@ walker init {
         nodes = [];
     }
     root {
-        spawn here --> graph::test_graph;
+        spawn here ++> graph::test_graph;
         take --> node::test_node;
     }
     test_node {

@@ -1,8 +1,20 @@
 # Jaseci Change / Release Notes
 
-## Version 1.3.5
+## Version 1.4.0.0
 
 ### Updates
+- Major Design Update: Changed connector operator to `++>` style formating
+- Major Feature: Free reference of paths
+
+### Notes
+- To update 1.3 code to 1.4 all connection operators needs to go from `-->` style to `++>` style. These include `++>`,`<++`,`<++>`, `+[]+>`,`<+[]+`,`<+[]+>`, etc
+
+
+## Version 1.3.5-6
+
+### Updates
+- Improvement: Action calls now support keyword arguments
+- New Feature: Introduction of individual `jac` cli tool
 - New Feature: Can now log in anonymously to any jaseci server with `publogin` command in jsctl
 - Improvement: can now create users more easily through `user create` apis
 - New Major Feature: `jsctl` can now run scripts of commands from file

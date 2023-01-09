@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "Jaseci Studio",
-    "version": "0.0.1"
+    "version": "1.3.6-alpha2"
   },
   "tauri": {
     "allowlist": {
@@ -56,12 +56,12 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
         "resizable": true,
         "title": "Jaseci Studio",
-        "width": 1000,
-        "minWidth": 800,
-        "minHeight": 600
+        "width": 1200,
+        "minWidth": 1200,
+        "height": 850,
+        "minHeight": 850
       }
     ]
   }

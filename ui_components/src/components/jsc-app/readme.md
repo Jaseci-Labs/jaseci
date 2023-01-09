@@ -56,14 +56,18 @@ graph TD;
   jsc-app --> jsc-toast
   jsc-graph --> jsc-card
   jsc-graph --> jsc-auth-form
-  jsc-graph --> jsc-checkbox
-  jsc-graph --> jsc-button
   jsc-graph --> jsc-divider
+  jsc-graph --> graph-node-info
+  jsc-graph --> graph-walker-runner
+  jsc-graph --> jsc-button
   jsc-graph --> jsc-chip
   jsc-graph --> jsc-select
+  jsc-graph --> jsc-checkbox
   jsc-auth-form --> jsc-inputbox
   jsc-auth-form --> jsc-anchor
   jsc-auth-form --> jsc-button
+  graph-walker-runner --> jsc-inputbox
+  graph-walker-runner --> jsc-select
   style jsc-app fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

@@ -15,7 +15,7 @@ from jaseci import __version__
 from jaseci.element.super_master import SuperMaster
 from jaseci.svc import MetaService
 from jaseci.utils.utils import copy_func
-from .book_tools import Book
+from .book_tools import Book, modifiedBook
 from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
 
 session = None
@@ -67,6 +67,15 @@ def jsctl(filename, mem_only):
             session = pickle.load(f)
     session["mem-only"] = mem_only
     session["filename"] = filename if not mem_only else None
+
+
+@click.group()
+def jac():
+    """
+    Jac tool for building, running, and disassembling Jac programs
+    """
+    global session
+    session["mem-only"] = True
 
 
 def remote_api_call(payload, api_name):
@@ -374,8 +383,14 @@ def booktool(op, output):
         out = f"{Book().bookgen_api_cheatsheet(extract_api_tree())}"
     elif op == "stdlib":
         out = Book().bookgen_std_library()
+    elif op == "mdcheatsheet":
+        out = f"{modifiedBook().bookgen_api_cheatsheet(extract_api_tree())}"
+    elif op == "mdstdlib":
+        out = modifiedBook().bookgen_std_library()
     elif op == "classes":
         out = Book().bookgen_api_spec()
+    elif op == "mdclasses":
+        out = modifiedBook().bookgen_api_spec()
     click.echo(out)
     if output:
         with open(output, "w") as f:
@@ -393,6 +408,7 @@ jsctl.add_command(reset)
 jsctl.add_command(script)
 jsctl.add_command(booktool)
 cmd_tree_builder(extract_api_tree())
+cmd_tree_builder(extract_api_tree()["jac"], group_func=jac)
 
 
 def main():

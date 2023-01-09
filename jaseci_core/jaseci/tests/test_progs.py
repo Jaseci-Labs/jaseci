@@ -21,6 +21,7 @@ class JacTests(TestCaseHelper, TestCase):
         super().tearDown()
 
     def test_bug_check1(self):
+        self.logger_on()
         sent = Sentinel(m_id=0, h=self.meta.build_hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtp.bug_check1)
@@ -515,7 +516,15 @@ class JacTests(TestCaseHelper, TestCase):
         mast._h.task.state = ServiceState.NOT_STARTED
         mast.sentinel_register(name="test", code=jtp.block_scope_check, auto_run="")
         res = mast.general_interface_to_api(
-            api_name="walker_run",
-            params={"name": "init"},
+            api_name="walker_run", params={"name": "init"}
         )
         self.assertEqual(res["report"][-1], 10)
+
+    def test_ignore_check(self):
+        mast = self.meta.build_master()
+        mast._h.task.state = ServiceState.NOT_STARTED
+        res = mast.sentinel_register(name="test", code=jtp.ignore_check, auto_run="")
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+        self.assertEqual(len(res["report"]), 9)

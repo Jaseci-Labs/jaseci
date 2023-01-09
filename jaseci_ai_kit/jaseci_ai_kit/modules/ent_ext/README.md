@@ -6,7 +6,7 @@ For this tutorial we are going to leaverage the flair ner `Zero-shot classificat
 
 
 ### Load the Model by `set_config` actions for Zeroshot
-Different models can be loaded as per the requirement on the basis of size and 
+Different models can be loaded as per the requirement on the basis of size and
 1. Large model : Transformer based model good for ZeroShot Prediction, can be for with custom entities extraction
    1. Roberta
       1. Size - 1.43GB
@@ -138,7 +138,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         ```
         walker init {
             root {
-            spawn here --> graph::ner_val_graph;
+            spawn here ++> graph::ner_val_graph;
             }
         }
         ```
@@ -209,7 +209,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
 
         walker init {
             root {
-            spawn here --> graph::ner_eval_graph;
+            spawn here ++> graph::ner_eval_graph;
             }
         }
 
@@ -463,7 +463,7 @@ For this tutorial we are going to train the model on train dataset and validate 
         ```
         walker init {
             root {
-            spawn here --> graph::ner_val_graph;
+            spawn here ++> graph::ner_val_graph;
             }
         }
         ```
@@ -575,7 +575,7 @@ For this tutorial we are going to train the model on train dataset and validate 
 
         walker init {
             root {
-            spawn here --> graph::ner_eval_graph;
+            spawn here ++> graph::ner_eval_graph;
             }
         }
 

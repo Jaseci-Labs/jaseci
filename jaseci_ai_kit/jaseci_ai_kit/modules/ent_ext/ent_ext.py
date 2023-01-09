@@ -1,7 +1,6 @@
 from random import random
 from typing import List, Optional, Dict
 from fastapi import HTTPException
-from fastapi.encoders import jsonable_encoder
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 from flair.models import TARSTagger, SequenceTagger
@@ -21,10 +20,9 @@ import warnings
 warnings.filterwarnings("ignore")
 
 config = configparser.ConfigParser()
-# flair.device = torch.device("cpu")
 
 
-# 1. initialize each embedding we use
+# 1. initialize each embedding for LSTM
 embedding_types = [
     # GloVe embeddings
     WordEmbeddings("glove"),
@@ -37,12 +35,7 @@ embedding_types = [
 # embedding stack consists of Flair and GloVe embeddings
 embeddings = StackedEmbeddings(embeddings=embedding_types)
 
-# device = torch.device("cpu")
-# uncomment this if you wish to use GPU to train
-# this is commented out because this causes issues with
-# unittest on machines with GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# tagger = None
 
 
 def init_model(reload=False):
@@ -82,9 +75,9 @@ def train_entity(train_params: dict):
     tag_dictionary = corpus.make_tag_dictionary(label_type=NER_LABEL_TYPE)
 
     # make the model aware of the desired set of labels from the new corpus
-    # initialize sequence tagger
     try:
         if MODEL_TYPE.lower() in ["trfmodel", "tars"]:
+            # initialize Tars tagger with a new task
             val = random()
             tagger.add_and_switch_to_new_task(
                 "ner_train" + str(val),
@@ -92,6 +85,7 @@ def train_entity(train_params: dict):
                 label_type=NER_LABEL_TYPE,
             )
         elif tagger is None and MODEL_TYPE.lower() in ["lstm", "gru"]:
+            # initialize sequence tagger
             tagger = SequenceTagger(
                 hidden_size=256,
                 embeddings=embeddings,
@@ -234,8 +228,6 @@ def train_and_val_entity(train_params: dict):
         # make tag dictionary from the corpus
         tag_dictionary = corpus.make_tag_dictionary(label_type=NER_LABEL_TYPE)
 
-        # make the model aware of the desired set of labels from the new corpus
-        # initialize sequence tagger
         try:
             tagger.add_and_switch_to_new_task(
                 "ner_train_nerd",
@@ -283,16 +275,18 @@ def entity_detection(text: str, ner_labels: Optional[List] = ["PREDEFINED"]):
                 # predicting entities in the text
                 tagger.predict(sentence)
                 tagged_sentence = sentence.to_dict(NER_LABEL_TYPE)
-                json_compatible_data = jsonable_encoder(tagged_sentence)
                 response_data_format = {"entities": []}
-
-                for json_data in json_compatible_data["entities"]:
+                response_data_format["text"] = tagged_sentence["text"]
+                for entity, entity_details in zip(
+                    sentence.get_spans(NER_LABEL_TYPE),
+                    tagged_sentence[NER_LABEL_TYPE],
+                ):
                     temp_dict = {}
-                    temp_dict["entity_text"] = json_data["text"]
-                    temp_dict["entity_value"] = json_data["labels"][0]["_value"]
-                    temp_dict["conf_score"] = json_data["labels"][0]["_score"]
-                    temp_dict["start_pos"] = json_data["start_pos"]
-                    temp_dict["end_pos"] = json_data["end_pos"]
+                    temp_dict["entity_text"] = entity.text
+                    temp_dict["entity_value"] = entity_details["value"]
+                    temp_dict["conf_score"] = entity_details["confidence"]
+                    temp_dict["start_pos"] = entity.start_position
+                    temp_dict["end_pos"] = entity.end_position
                     response_data_format["entities"].append(temp_dict)
                 return response_data_format
             else:
@@ -361,7 +355,7 @@ def save_model(model_path: str):
             if type(model_path) is str:
                 model_path = Path(model_path)
             model_path.mkdir(exist_ok=True, parents=True)
-            tagger.save(model_path / "final-model.pt")
+            tagger.save(model_path / "final-model.pt", checkpoint=False)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     else:

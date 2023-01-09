@@ -18,6 +18,7 @@
 | `operations`  | `operations`  |             | `string`                                                                                                   | `undefined`          |
 | `palette`     | `palette`     |             | `"accent" \| "error" \| "ghost" \| "info" \| "link" \| "primary" \| "secondary" \| "success" \| "warning"` | `undefined`          |
 | `placeholder` | `placeholder` |             | `string`                                                                                                   | `undefined`          |
+| `size`        | `size`        |             | `"lg" \| "md" \| "sm" \| "xs"`                                                                             | `undefined`          |
 | `type`        | `type`        |             | `string`                                                                                                   | `'text'`             |
 | `value`       | `value`       |             | `string`                                                                                                   | `undefined`          |
 
@@ -33,12 +34,14 @@
 
 ### Used by
 
+ - [graph-walker-runner](../graph-walker-runner)
  - [jsc-auth-form](../jsc-auth-form)
  - [jsc-date-picker](../jsc-date-picker)
 
 ### Graph
 ```mermaid
 graph TD;
+  graph-walker-runner --> jsc-inputbox
   jsc-auth-form --> jsc-inputbox
   jsc-date-picker --> jsc-inputbox
   style jsc-inputbox fill:#f9f,stroke:#333,stroke-width:4px

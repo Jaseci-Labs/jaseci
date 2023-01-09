@@ -3,7 +3,19 @@
 ## Setup
 
 - Install [rust](https://www.rust-lang.org/learn/get-started)
+```bash
+curl https://sh.rustup.rs -sSf | sh
+```
+- Install nodejs
+```
+curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash
+sudo apt-get install -y nodejs
+node -v
+```
 - Install [yarn](https://classic.yarnpkg.com/lang/en/docs/install/)
+```
+sudo npm install --global yarn
+```
 - Run `yarn install`
 - Run `yarn setup:ui`
 
@@ -35,6 +47,8 @@ sudo apt install libwebkit2gtk-4.0-dev \
 
 - To build for windows you'll need to install rust for windows and node.js for windows
   - Once you have node install you might have to run `corepack enable` to activate yarn
+- You can specify the target platform when building the application by running `yarn tauri build --target universal-apple-darwin`
+  - Use `rustup target list` to get a list of targets
 
 # Testing
 

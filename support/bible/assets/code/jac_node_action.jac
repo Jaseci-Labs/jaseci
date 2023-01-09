@@ -6,7 +6,7 @@ node person {
 
 walker init {
     root {
-        person1 = spawn here -->
+        person1 = spawn here ++>
             node::person(name="Josh", birthday="1995-05-20");
         take -->;
     }

@@ -29,7 +29,7 @@ walker add_bot {
     has name,desc;
     root { take --> node::botset; }
     botset {
-        bot=spawn here --> node::bot(name=name,description=desc);
+        bot=spawn here ++> node::bot(name=name,description=desc);
         report bot;
         disengage;
     }
@@ -69,7 +69,7 @@ walker create_answer {
     can use.enc_answer;
 
     bot, category {
-        ans = spawn here --> node::answer(text=text,show_text=text);
+        ans = spawn here ++> node::answer(text=text,show_text=text);
         ans.encoding = use.enc_answer(text);
         report ans;
         disengage;
@@ -139,7 +139,7 @@ walker log_question {
     has text, selected, metadata;
     bot {
         take --> node::log_chunk else {
-                spawn here --> node::log_chunk;
+                spawn here ++> node::log_chunk;
                 take --> node::log_chunk;
             }
     }
@@ -205,7 +205,7 @@ walker get_question_matches {
 walker init {
     root {
         take (--> node::botset) else {
-            spawn here --> node::botset;
+            spawn here ++> node::botset;
             disengage;
         }
     }
@@ -214,7 +214,7 @@ walker init {
 walker pubinit:anyone,yiping,jason {
     root {
         take (--> node::botset) else {
-            spawn here --> node::botset;
+            spawn here ++> node::botset;
             std.log(-->);
             disengage;
         }
@@ -223,7 +223,7 @@ walker pubinit:anyone,yiping,jason {
 
 
 node data_nugget { has anchor name, data; }
-walker create_nugget { has name, data; spawn here --> node::data_nugget(name=name, data=data); }
+walker create_nugget { has name, data; spawn here ++> node::data_nugget(name=name, data=data); }
 walker get_nugget {has name; report --> node::data_nugget == name;}
 walker delete_nugget {has name; destroy --> node::data_nugget == name;}
 walker update_nugget {has name, data; n= --> node::data_nugget == name; if(n): n.data=data;}
@@ -241,5 +241,5 @@ graph sample {
 
 walker test_walk {
     root { take -->; }
-    botset { spawn here --> graph::sample; }
+    botset { spawn here ++> graph::sample; }
 }

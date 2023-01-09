@@ -10,9 +10,11 @@ import os
 import sys
 import inspect
 import importlib
+import gc
 
-live_actions = {}
-live_action_modules = {}
+live_actions = {}  # {"act.func": func_obj, ...}
+live_action_modules = {}  # {__module__: ["act.func1", "act.func2", ...], ...}
+action_configs = {}  # {"module_name": {}, ...}
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
@@ -87,23 +89,57 @@ def load_local_actions(file: str):
         return True
 
 
-def load_module_actions(mod):
+def load_module_actions(mod, loaded_module=None):
     """Load all jaseci actions from python module"""
     if mod in sys.modules:
         del sys.modules[mod]
+    if loaded_module and loaded_module in sys.modules:
+        del sys.modules[loaded_module]
+    if mod in live_action_modules:
+        for i in live_action_modules[mod]:
+            if i in live_actions:
+                del live_actions[i]
+    if loaded_module in live_action_modules:
+        for i in live_action_modules[loaded_module]:
+            if i in live_actions:
+                del live_actions[i]
+
     mod = importlib.import_module(mod)
     if mod:
         return True
     return False
 
 
+def load_action_config(config, module_name):
+    """
+    Load the action config of a jaseci action module
+    """
+
+    loaded_configs = importlib.import_module(config).ACTION_CONFIGS
+    if module_name and module_name in loaded_configs:
+        action_configs[module_name] = loaded_configs[module_name]
+        return True
+    else:
+        return False
+
+
 def unload_module(mod):
     """Unload actions module and all relevant function"""
     if mod in sys.modules.keys() and mod in live_action_modules.keys():
         for i in live_action_modules[mod]:
-            del live_actions[i]
+            if i in live_actions:
+                del live_actions[i]
+
+        # Iterate through the objects in the module __dict__ to manually delete them
+        loaded_mod = sys.modules[mod]
+        mod_content_len = len(loaded_mod.__dict__)
+        for _ in range(mod_content_len):
+            mod_obj = loaded_mod.__dict__.pop(list(loaded_mod.__dict__.keys())[0])
+            del mod_obj
+        del loaded_mod
         del sys.modules[mod]
         del live_action_modules[mod]
+        gc.collect()
         return True
     return False
 
@@ -172,6 +208,7 @@ def get_global_actions():
             or i.startswith("jaseci.")
             or i.startswith("internal.")
             or i.startswith("zlib.")
+            or i.startswith("webtool.")
         ):
             global_action_list.append(
                 Action(
@@ -184,6 +221,21 @@ def get_global_actions():
                 )
             )
     return global_action_list
+
+
+def unload_remote_actions(url):
+    """
+    Get the list of actions from the given URL and then unload them.
+    """
+    headers = {"content-type": "application/json"}
+    try:
+        spec = requests.get(url.rstrip("/") + ACTIONS_SPEC_LOC, headers=headers)
+        spec = spec.json()
+        for i in spec.keys():
+            unload_action(i)
+        return True
+    except Exception as e:
+        logger.error(f"Cannot unload remote action from {url}: {e}")
 
 
 def load_remote_actions(url):

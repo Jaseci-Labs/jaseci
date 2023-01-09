@@ -21,7 +21,7 @@ graph basic_gph {
 }
 
 walker init {
-    spawn here --> graph::basic_gph;
-    spawn here --> graph::basic_gph;
-    spawn here --> graph::basic_gph;
+    spawn here ++> graph::basic_gph;
+    spawn here ++> graph::basic_gph;
+    spawn here ++> graph::basic_gph;
 }

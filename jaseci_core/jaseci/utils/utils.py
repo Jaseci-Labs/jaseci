@@ -18,6 +18,8 @@ from time import time
 
 from pprint import pformat
 
+from jaseci.utils.log_utils import LimitedSlidingBuffer
+
 
 class ColCodes:
     TY = "\033[33m"
@@ -43,7 +45,7 @@ def connect_logger_handler(target_logger, handler, level=logging.WARN):
 
 logger = logging.getLogger("core")
 logger.propagate = False
-logs = io.StringIO()
+logs = LimitedSlidingBuffer()
 if len(logger.handlers) < 1:
     connect_logger_handler(logger, logging.StreamHandler(), logging.INFO)
     connect_logger_handler(logger, logging.StreamHandler(stream=logs), logging.INFO)

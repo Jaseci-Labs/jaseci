@@ -20,6 +20,15 @@ type Graph = {
   context: Record<any, any>;
 };
 
+export type Walker = {
+  name: string;
+  kind: string;
+  jid: string;
+  j_timestamp: string;
+  j_type: string;
+  code_sig: string;
+};
+
 @Component({
   tag: 'jsc-graph',
   styleUrl: 'jsc-graph.css',
@@ -39,16 +48,24 @@ export class JscGraph {
   @State() prevNd = '';
   @State() network: vis.Network;
   @State() graphs: Graph[] = [];
+  @State() walkers: Walker[] = [];
   @State() serverUrl: string = localStorage.getItem('serverUrl') || 'http://localhost:8000';
   @State() hiddenGroups: Set<string> = new Set();
+  @State() activeSentinel: string;
+  @State() expandedNodes: string[] = [];
+
+  queuedNodes: Set<string> = new Set();
+  queuedEdges: Set<string> = new Set();
 
   nodesArray: vis.Node[] = [];
   edgesArray: vis.Edge[] = [];
   edges: visData.DataSet<any, string>;
   nodes: vis.data.DataSet<any, string>;
 
-  @State() clickedNode: vis.Node & { context: {} };
-  @State() clickedEdge: vis.Edge & { context: {} };
+  @State() clickedNode: vis.Node & { context: {}; info: {}; details: {} };
+  @State() clickedEdge: vis.Edge & { context: {}; info: {}; details: {} };
+  @State() selectedInfoTab: 'details' | 'context' | 'info' = 'context';
+  @State() selectedNodes: vis.IdType[] = [];
 
   // convert response to match required format for vis
   formatNodes = formatNodes;
@@ -78,9 +95,30 @@ export class JscGraph {
     }).then(res => res.json());
   }
 
-  @Watch('nd')
+  async getAllWalkers(): Promise<Walker[]> {
+    return await fetch(`${this.serverUrl}/js/walker_list`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    }).then(res => res.json());
+  }
+
+  async getActiveSentinel(): Promise<string> {
+    return await fetch(`${this.serverUrl}/js/alias_list`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${localStorage.getItem('token')}`,
+      },
+    })
+      .then(res => res.json())
+      .then(res => res['active:sentinel']);
+  }
+
   async getGraphState() {
-    let body: EndpointBody = { detailed: true, gph: this.graphId, mode: 'default' };
+    let body: EndpointBody = { detailed: true, gph: this.graphId, mode: 'default', show_edges: true };
     let endpoint = `${this.serverUrl}/js/graph_node_view`;
 
     if (this.nd) {
@@ -101,6 +139,7 @@ export class JscGraph {
         'Authorization': `token ${localStorage.getItem('token')}`,
       },
     }).then(async res => {
+      const newNodes: string[] = [];
       const data = (await res.json()) || [];
       if (this.nd && this.onFocus === 'expand' && this.prevNd !== '') {
         // create datasets
@@ -114,6 +153,7 @@ export class JscGraph {
           try {
             if (!this.nodes.get(node.id)) {
               this.nodes.add(node);
+              newNodes.push(node?.id.toString());
             }
           } catch (err) {
             console.log(err);
@@ -125,7 +165,7 @@ export class JscGraph {
         }
 
         this.formatEdges(data).forEach(edge => {
-          const edges = this.edges.get({ filter: item => item.context.jid === (edge as any).context.jid });
+          const edges = this.edges.get({ filter: item => item.info.jid === (edge as any).info.jid });
 
           if (!edges.length) {
             this.edges.add(edge);
@@ -188,7 +228,9 @@ export class JscGraph {
               },
               borderWidth: 1,
             },
-            interaction: {},
+            interaction: {
+              multiselect: true,
+            },
 
             physics: {
               forceAtlas2Based: {
@@ -204,7 +246,23 @@ export class JscGraph {
         this.network.storePositions();
         // this.network.selectNodes([this.nd], true);
       }
+
+      return newNodes;
     });
+  }
+
+  async expandNodesRecursively(nd: string) {
+    this.nd = nd;
+    this.prevNd = this.nd;
+    this.expandedNodes.push(nd);
+
+    const newNodes = await this.getGraphState();
+
+    const newNodesPromises = newNodes.map(async node => {
+      await this.expandNodesRecursively(node);
+    });
+
+    await Promise.all(newNodesPromises);
   }
 
   @Watch('graphId')
@@ -237,13 +295,24 @@ export class JscGraph {
   refreshNodes() {
     const displayedNodes = new visData.DataSet(
       this.nodes.get({
-        filter: (item: vis.Node) => {
-          return !this.hiddenGroups.has(item.group);
+        filter: (node: vis.Node) => {
+          return !this.hiddenGroups.has(node.group) && !this.queuedNodes.has(node.id.toString());
         },
       }),
     );
 
-    this.network.setData({ edges: this.edges as any, nodes: displayedNodes as any });
+    const displayedEdges = new visData.DataSet(
+      this.edges.get({
+        filter: (node: vis.Node) => {
+          return !this.queuedEdges.has(node.id.toString());
+        },
+      }),
+    );
+
+    this.edges = displayedEdges;
+    this.nodes = displayedNodes;
+
+    this.network.setData({ edges: displayedEdges as any, nodes: displayedNodes as any });
   }
 
   hideNodeGroup() {
@@ -268,30 +337,52 @@ export class JscGraph {
     this.refreshNodes();
   }
 
-  renderContext() {
-    let context: undefined | Record<any, any> = {};
-    if (this.clickedEdge?.context) {
-      context = this.clickedEdge.context;
-    } else {
-      context = this.clickedNode?.context;
-    }
+  viewRoot() {
+    this.nd = '';
+    this.getGraphState();
+    this.expandedNodes = [this.graphId];
+  }
 
-    return context ? (
-      Object.keys(context).map(contextKey => (
-        <div key={contextKey}>
-          <p style={{ fontWeight: 'bold' }}>{contextKey}</p>
-          <p>
-            {Array.isArray(context[contextKey])
-              ? context[contextKey].map(item => item.toString()).join(', ')
-              : typeof context[contextKey] === 'boolean'
-              ? context[contextKey]?.toString()
-              : context[contextKey]}
-          </p>
-        </div>
-      ))
-    ) : (
-      <p>Select a node or edge with contextual data</p>
-    );
+  async collapseSelectedNodes() {
+    const collapseNodesPromises = this.network.getSelectedNodes().map(async node => {
+      this.prevNd = this.nd;
+      this.nd = node.toString();
+      this.expandedNodes = this.expandedNodes.filter(nd => nd !== this.nd).filter(nd => !this.queuedNodes.has(nd));
+
+      this.handleCollapse(node.toString());
+    });
+
+    await Promise.all(collapseNodesPromises);
+
+    this.refreshNodes();
+    this.queuedEdges.clear();
+    this.queuedNodes.clear();
+  }
+
+  async expandSelectedNodes() {
+    const expandNodesPromises = this.network.getSelectedNodes().map(async node => {
+      this.prevNd = this.nd;
+      this.expandedNodes.push(node.toString());
+      this.nd = node.toString();
+      await this.getGraphState();
+    });
+
+    await Promise.all(expandNodesPromises);
+  }
+
+  handleCollapse(nodeId: string) {
+    const connectedEdges = this.network.getConnectedEdges(nodeId);
+    this.edges
+      .get()
+      .filter((edge: vis.Edge) => connectedEdges.includes(edge.id) && edge.to !== nodeId)
+      .forEach((edgeData: vis.Edge) => {
+        // queue the nodes and edges to be removed
+        this.queuedEdges.add(edgeData.id.toString());
+        this.queuedNodes.add(edgeData.to.toString());
+
+        // run the collapse on the away nodes
+        this.handleCollapse(edgeData.to.toString());
+      });
   }
 
   async componentDidLoad() {
@@ -300,16 +391,37 @@ export class JscGraph {
       let activeGraph: Graph = await this.getActiveGraph();
       this.graphId = activeGraph?.jid;
 
+      // make root node collapsible by default
+      this.expandedNodes.push(this.graphId);
+
       // get all graphs for the graph switcher
       this.graphs = await this.getAllGraphs();
+      this.walkers = await this.getAllWalkers();
+      this.activeSentinel = await this.getActiveSentinel();
 
       await this.getGraphState();
     } catch (err) {
       console.log(err);
     }
 
+    this.network.on('selectNode', () => {
+      this.selectedNodes = this.network.getSelectedNodes();
+    });
+
     this.network.on('click', params => {
+      // reset ui if we click on the background
+      if (!params.nodes?.length && !params.edges?.length) {
+        this.network.unselectAll();
+        this.clickedNode = undefined;
+        this.clickedEdge = undefined;
+        this.selectedNodes = [];
+      }
+
       this.handleNetworkClick(this.network, params);
+    });
+
+    this.network.on('zoom', data => {
+      console.log(data);
     });
 
     this.network.on('doubleClick', async params => {
@@ -320,7 +432,26 @@ export class JscGraph {
         y: params?.pointer.DOM.y,
       });
 
+      if (!node) return;
+
       this.nd = node.toString();
+
+      console.log({ cnode: this.expandedNodes });
+
+      if (this.expandedNodes.includes(this.nd)) {
+        this.handleCollapse(node.toString());
+        this.refreshNodes();
+        console.log({ qnodes: this.queuedNodes });
+        this.expandedNodes = this.expandedNodes.filter(nd => nd !== this.nd).filter(nd => !this.queuedNodes.has(nd));
+        console.log({ cnodes: this.expandedNodes });
+
+        // clear the queued nodes and edges to be removed
+        this.queuedEdges.clear();
+        this.queuedNodes.clear();
+      } else {
+        this.expandedNodes.push(this.nd);
+        this.getGraphState();
+      }
     });
 
     this.network.on('oncontext', params => {
@@ -361,78 +492,130 @@ export class JscGraph {
           </div>
         ) : (
           this.serverUrl && (
-            <div style={{ height: this.height, width: 'auto', position: 'relative' }}>
+            <div style={{ height: this.height, maxHeight: this.height, width: 'auto', position: 'relative' }}>
               <div
                 style={{
-                  height: '260px',
-                  width: '340px',
-                  borderRadius: '4px',
-                  padding: '16px',
-                  top: '20px',
-                  right: '20px',
                   position: 'absolute',
+                  top: '0px',
+                  bottom: '0px',
+                  right: '0px',
+                  minWidth: '360px',
+                  maxWidth: '360px',
+                  height: '100%',
+                  display: 'flex',
+                  gap: '14px',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  paddingTop: '5px',
+                  paddingBottom: '5px',
                   zIndex: '9999',
-                  border: '2px solid #f4f4f4',
-                  background: '#fff',
-                  boxShadow: 'rgb(0 0 0 / 15%) 0px 1px 2px 0px, rgb(0 0 0 / 2%) 0px 0px 2px 1px',
                   overflowY: 'auto',
-                  overflowX: 'hidden',
                 }}
               >
-                <div tabindex="0" class="collapse collapse-plus border border-base-300 bg-base-100 rounded-box">
-                  <input type="checkbox" defaultChecked={true} />
-                  <div class="collapse-title text-md font-medium">Context</div>
-                  <div class="collapse-content">{this.renderContext()}</div>
-                </div>
+                {' '}
+                <div
+                  style={{
+                    height: '280px',
+                    width: '100%',
+                    borderRadius: '4px',
+                    padding: '16px',
+                    border: '2px solid #f4f4f4',
+                    background: '#fff',
+                    boxShadow: 'rgb(0 0 0 / 10%) 0px 1px 2px 0px, rgb(0 0 0 / 1%) 0px 0px 2px 1px',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                  }}
+                >
+                  <jsc-divider label="Node Info" orientation="horizontal"></jsc-divider>
 
-                <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
-                  <input type={'checkbox'} defaultChecked={true} />
-                  <div class={'collapse-title text-md font-medium'}>Behaviour</div>
-                  <div class="collapse-content">
-                    <jsc-checkbox
-                      label={'Expand nodes on click'}
-                      size={'sm'}
-                      value={String(this.onFocus === 'expand')}
-                      onValueChanged={event => {
-                        event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
+                  {this.clickedNode || this.clickedEdge ? (
+                    <graph-node-info
+                      context={this.clickedNode?.context ?? this.clickedEdge?.context}
+                      details={this.clickedNode?.details ?? this.clickedEdge?.details}
+                      info={this.clickedNode?.info ?? this.clickedEdge?.info}
+                    ></graph-node-info>
+                  ) : (
+                    <p>Click a node or edge to see its info</p>
+                  )}
+                </div>
+                {this.clickedNode && (
+                  <div
+                    style={{
+                      height: '280px',
+                      width: '100%',
+                      borderRadius: '4px',
+                      padding: '16px',
+                      margin: 'auto 0',
+                      border: '2px solid #f4f4f4',
+                      background: '#fff',
+                      boxShadow: 'rgb(0 0 0 / 10%) 0px 1px 2px 0px, rgb(0 0 0 / 1%) 0px 0px 2px 1px',
+                      overflowY: 'auto',
+                      overflowX: 'auto',
+                    }}
+                  >
+                    <jsc-divider label="Run Walker" orientation="horizontal"></jsc-divider>
+                    <graph-walker-runner
+                      onWalkerCompleted={async () => {
+                        await this.getGraphState();
                       }}
-                    ></jsc-checkbox>
+                      walkers={this.walkers}
+                      serverUrl={this.serverUrl}
+                      sentinel={this.activeSentinel}
+                      nodeId={this.clickedNode.id as string}
+                    ></graph-walker-runner>
                   </div>
-                </div>
+                )}
+                <div
+                  style={{
+                    minHeight: '100px',
+                    maxHeight: '200px',
+                    width: '100%',
+                    borderRadius: '4px',
+                    padding: '16px',
+                    border: '2px solid #f4f4f4',
+                    background: '#fff',
+                    boxShadow: 'rgb(0 0 0 / 10%) 0px 1px 2px 0px, rgb(0 0 0 / 1%) 0px 0px 2px 1px',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                  }}
+                >
+                  <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
+                  <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
+                  {!this.hiddenGroups?.size && <div>No hidden nodes</div>}
 
-                <div tabindex={0} class={'collapse collapse-plus border border-base-300 bg-base-100 rounded-box mt-2'}>
-                  <input type={'checkbox'} defaultChecked={true} />
-                  <div class={'collapse-title text-md font-medium'}>Display</div>
-                  <div class="collapse-content">
-                    <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
-                    <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
-                    {Array.from(this.hiddenGroups).map(group => (
-                      <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
-                        <jsc-chip label={group}>
-                          <svg
-                            slot="right"
-                            onClick={() => this.showNodeGroup(group)}
-                            style={{ cursor: 'pointer' }}
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            class="inline-block w-4 h-4 stroke-current"
-                          >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                          </svg>
-                        </jsc-chip>
-                      </div>
-                    ))}
-                  </div>
+                  {Array.from(this.hiddenGroups).map(group => (
+                    <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
+                      <jsc-chip label={group}>
+                        <svg
+                          slot="right"
+                          onClick={() => this.showNodeGroup(group)}
+                          style={{ cursor: 'pointer' }}
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          class="inline-block w-4 h-4 stroke-current"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </jsc-chip>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: '9999' }}>
-                {this.nd && <jsc-button size="sm" label={'View Full Graph'} onClick={() => (this.nd = '')}></jsc-button>}
+
+              <div style={{ position: 'absolute', display: 'flex', top: '20px', left: '20px', gap: '20px', zIndex: '9999' }}>
+                {this.nd && <jsc-button size="sm" label={'View Root'} onClick={() => this.viewRoot()}></jsc-button>}
+                {this.selectedNodes?.length > 1 && <jsc-button size="sm" label={'Expand Nodes'} onClick={() => this.expandSelectedNodes()}></jsc-button>}
+                {this.selectedNodes?.length > 1 && <jsc-button size="sm" label={'Collapse Nodes'} onClick={() => this.collapseSelectedNodes()}></jsc-button>}
+                {this.selectedNodes?.length === 1 && (
+                  <jsc-button size="sm" label={'Expand Recursively'} onClick={() => this.expandNodesRecursively(this.selectedNodes[0]?.toString())}></jsc-button>
+                )}
               </div>
 
               {/*Graph Switcher*/}
-              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999' }}>
+              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999', display: 'flex', gap: '2px' }}>
                 <jsc-select
+                  size="sm"
                   placeholder={'Select Graph'}
                   onValueChanged={e => {
                     this.graphId = e.detail.split(':').slice(1).join(':');
@@ -440,8 +623,21 @@ export class JscGraph {
                   }}
                   options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
                 ></jsc-select>
+
+                <jsc-checkbox
+                  label={'Expand nodes on click'}
+                  size={'sm'}
+                  value={String(this.onFocus === 'expand')}
+                  onValueChanged={event => {
+                    event.detail === 'true' ? (this.onFocus = 'expand') : (this.onFocus = 'isolate');
+                  }}
+                ></jsc-checkbox>
               </div>
-              <div ref={el => (this.networkEl = el)} id={'network'} style={{ height: this.height }}></div>
+              <div
+                ref={el => (this.networkEl = el)}
+                id={'network'}
+                style={{ height: this.height, backgroundImage: 'radial-gradient(hsla(var(--bc)/.2) .5px,hsla(var(--b2)/1) .5px)', backgroundSize: '5px 5px' }}
+              ></div>
             </div>
           )
         )}

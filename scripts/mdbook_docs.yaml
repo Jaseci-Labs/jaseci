@@ -21,7 +21,9 @@ data:
     apt upgrade -y
     apt install git vim curl -y
     git clone https://github.com/Jaseci-Labs/jaseci.git
-    cd jaseci/scripts
+    cd jaseci/jaseci_core
+    source install_live.sh
+    cd ../scripts
     curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.21/mdbook-v0.4.21-x86_64-unknown-linux-gnu.tar.gz | tar -xz  --directory=/usr/bin
     python gen_mdbook.py
     cd ../mdbook
@@ -31,7 +33,7 @@ data:
     git stash
     git pull
     python gen_mdbook.py
-    sleep 150
+    sleep 1500
     done
 ---
 apiVersion: apps/v1

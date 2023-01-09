@@ -178,7 +178,7 @@ Update the graph name in the `init` walker as well.
 ```jac
 walker init {
     root {
-        spawn here --> graph::tesla_ai;
+        spawn here ++> graph::tesla_ai;
         spawn here walker::talk;
     }
 }

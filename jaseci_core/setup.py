@@ -32,11 +32,17 @@ setup(
         "pytest-xdist",
         "pytest-cov",
         "gprof2dot",
+        "metadata_parser",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
     },
-    entry_points={"console_scripts": ["jsctl = jaseci.jsctl.jsctl:main"]},
+    entry_points={
+        "console_scripts": [
+            "jsctl = jaseci.jsctl.jsctl:jsctl",
+            "jac = jaseci.jsctl.jsctl:jac",
+        ]
+    },
     author="Jason Mars",
     author_email="jason@jaseci.org",
     url="https://github.com/Jaseci-Labs/jaseci",
