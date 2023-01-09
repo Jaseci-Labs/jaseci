@@ -23,8 +23,8 @@ class CustomLoss(torch.nn.Module):
         super().__init__()
         # import the python file
         spec = importlib.util.spec_from_file_location("module.name", python_file)
-        foo = importlib.util.module_from_spec(spec) # type: ignore
-        spec.loader.exec_module(foo) # type: ignore
+        foo = importlib.util.module_from_spec(spec)  # type: ignore
+        spec.loader.exec_module(foo)  # type: ignore
         self.loss = foo.CustomLoss(**kwargs)
 
     def forward(self, output, target):
