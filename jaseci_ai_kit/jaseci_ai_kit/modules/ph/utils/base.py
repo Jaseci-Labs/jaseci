@@ -196,7 +196,7 @@ class BaseTrainer:
         # load architecture params from checkpoint.
         state_dict = checkpoint.get("state_dict", checkpoint)
         model_keys = list(self.model.state_dict().keys())
-        if model_keys[0].startswith("model."): # when using CustomModel
+        if model_keys[0].startswith("model."):  # when using CustomModel
             new_state_dict = OrderedDict()
             for k, v in state_dict.items():
                 name = "model." + k
