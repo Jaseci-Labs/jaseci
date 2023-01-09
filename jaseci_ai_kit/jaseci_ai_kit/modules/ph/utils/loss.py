@@ -1,6 +1,6 @@
 import torch.nn.functional as F
 import torch
-import importlib
+import importlib.util
 
 
 def nll_loss(output, target):
@@ -18,10 +18,15 @@ def mse_loss(output, target):
     return loss
 
 
-def contrastive_loss(output, target, margin=2.0):
-    euclidean_distance = F.pairwise_distance(output[0], output[1], keepdim=True)
-    loss_contrastive = torch.mean(
-        (1 - target) * torch.pow(euclidean_distance, 2)
-        + (target) * torch.pow(torch.clamp(margin - euclidean_distance, min=0.0), 2)
-    )
-    return loss_contrastive
+class CustomLoss(torch.nn.Module):
+    def __init__(self, python_file: str = "heads/custom.py", **kwargs):
+        super().__init__()
+        # import the python file
+        spec = importlib.util.spec_from_file_location("module.name", python_file)
+        foo = importlib.util.module_from_spec(spec) # type: ignore
+        spec.loader.exec_module(foo) # type: ignore
+        self.loss = foo.CustomLoss(**kwargs)
+
+    def forward(self, output, target):
+        loss = self.loss(output, target)
+        return loss

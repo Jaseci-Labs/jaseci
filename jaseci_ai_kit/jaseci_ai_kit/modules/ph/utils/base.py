@@ -8,6 +8,7 @@ from datetime import datetime
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from torch.utils.data.sampler import SubsetRandomSampler
+from collections import OrderedDict
 
 from .logger import TensorboardWriter, get_logger
 
@@ -188,24 +189,33 @@ class BaseTrainer:
         resume_path = str(resume_path)
         self.logger.info("Loading checkpoint: {} ...".format(resume_path))
         checkpoint = torch.load(resume_path)
-        self.start_epoch = checkpoint["epoch"] + 1
-        self.epochs += checkpoint["epoch"]
-        self.mnt_best = checkpoint["monitor_best"]
+        self.start_epoch = checkpoint.get("epoch", 0) + 1
+        self.epochs += checkpoint.get("epoch", 0)
+        self.mnt_best = checkpoint.get("monitor_best", 0)
 
         # load architecture params from checkpoint.
-        self.model.load_state_dict(checkpoint["state_dict"])
+        state_dict = checkpoint.get("state_dict", checkpoint)
+        model_keys = list(self.model.state_dict().keys())
+        if model_keys[0].startswith("model."): # when using CustomModel
+            new_state_dict = OrderedDict()
+            for k, v in state_dict.items():
+                name = "model." + k
+                new_state_dict[name] = v
+            state_dict = new_state_dict
+        self.model.load_state_dict(state_dict)
 
         # load optimizer state from checkpoint only when optimizer type is not changed.
-        if (
-            checkpoint["config"]["optimizer"]["type"]
-            != self.config["optimizer"]["type"]
-        ):
-            self.logger.warning(
-                "Warning: Optimizer type given in config file is different from that of checkpoint. "
-                "Optimizer parameters not being resumed."
-            )
-        else:
-            self.optimizer.load_state_dict(checkpoint["optimizer"])
+        if checkpoint.get("config", None) is not None:
+            if (
+                checkpoint["config"]["optimizer"]["type"]
+                != self.config["optimizer"]["type"]
+            ):
+                self.logger.warning(
+                    "Warning: Optimizer type given in config file is different from that of checkpoint. "
+                    "Optimizer parameters not being resumed."
+                )
+            else:
+                self.optimizer.load_state_dict(checkpoint["optimizer"])
 
         self.logger.info(
             "Checkpoint loaded. Resume training from epoch {}".format(self.start_epoch)
