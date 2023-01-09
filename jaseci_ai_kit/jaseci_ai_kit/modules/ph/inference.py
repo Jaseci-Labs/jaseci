@@ -4,6 +4,7 @@ import torch
 import uuid as uuid_gen
 import os
 import shutil
+from collections import OrderedDict
 
 from .utils import model as model_module
 from .utils import process as process_module
@@ -45,16 +46,25 @@ class InferenceEngine:
 
         # Loading the weights
         if self.infer_config["weights"]:
-            shutil.copyfile(
-                self.infer_config["weights"], f"heads/{self.id}/current.pth"
-            )
-            self.logger.info(
-                "Loading default checkpoint: {} ...".format(
-                    self.infer_config["weights"]
+            if not os.path.exists(f"heads/{self.id}/current.pth"):
+                shutil.copyfile(
+                    self.infer_config["weights"], f"heads/{self.id}/current.pth"
                 )
-            )
+                self.logger.info(
+                    "Loading default checkpoint: {} ...".format(
+                        self.infer_config["weights"]
+                    )
+                )
+
             checkpoint = torch.load(f"heads/{self.id}/current.pth")
-            state_dict = checkpoint["state_dict"]
+            state_dict = checkpoint.get("state_dict", checkpoint)
+            model_keys = list(self.model.state_dict().keys())
+            if model_keys[0].startswith("model."):
+                new_state_dict = OrderedDict()
+                for k, v in state_dict.items():
+                    name = "model." + k
+                    new_state_dict[name] = v
+                state_dict = new_state_dict
             self.model.load_state_dict(state_dict)
 
         # Setting the device
@@ -104,12 +114,11 @@ class InferenceEngine:
     def load_weights(self, weights: str) -> None:
         self.logger.info("Loading new weights: {} ...".format(weights))
         checkpoint = torch.load(weights)
-        state_dict = checkpoint["state_dict"]
+        state_dict = checkpoint.get("state_dict", checkpoint)
         self.model.load_state_dict(state_dict)
 
     def __del__(self):
         del self.model
-        del self.device
         torch.cuda.empty_cache()
 
 
