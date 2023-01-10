@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path, re_path, include
 from jaseci_serv.jsx_oauth.views import *
 
 
@@ -21,5 +21,6 @@ urlpatterns = [
                 ),
             ]
         ),
-    )
+    ),
+    re_path(r"^accounts/", include("allauth.urls"), name="socialaccount_signup"),
 ]
