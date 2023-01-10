@@ -72,7 +72,7 @@ def train_entity(train_params: dict):
     # initializing the corpus
     corpus: Corpus = ColumnCorpus(data_folder, columns, train_file="train.txt")
     # make tag dictionary from the corpus
-    tag_dictionary = corpus.make_tag_dictionary(label_type=NER_LABEL_TYPE)
+    tag_dictionary = corpus.make_tag_dictionary(tag_type=NER_LABEL_TYPE)
 
     # make the model aware of the desired set of labels from the new corpus
     try:
@@ -90,7 +90,7 @@ def train_entity(train_params: dict):
                 hidden_size=256,
                 embeddings=embeddings,
                 tag_dictionary=tag_dictionary,
-                label_type=NER_LABEL_TYPE,
+                tag_type=NER_LABEL_TYPE,
                 rnn_type=MODEL_TYPE,
             )
     except Exception as e:
@@ -199,9 +199,7 @@ def train_and_val_entity(train_params: dict):
         print("in exists : ", cp_path)
         tagger = TARSTagger.load(cp_path)
         # make tag dictionary from the corpus
-        tag_dictionary = corpus.make_tag_dictionary(label_type=NER_LABEL_TYPE)
-
-        # make the model aware of the desired set of labels from the new corpus
+        tag_dictionary = corpus.make_label_dictionary(label_type=NER_LABEL_TYPE)
         # initialize sequence tagger
         try:
             tagger.add_and_switch_to_new_task(
@@ -226,8 +224,7 @@ def train_and_val_entity(train_params: dict):
         )
     else:
         # make tag dictionary from the corpus
-        tag_dictionary = corpus.make_tag_dictionary(label_type=NER_LABEL_TYPE)
-
+        tag_dictionary = corpus.make_label_dictionary(label_type=NER_LABEL_TYPE)
         try:
             tagger.add_and_switch_to_new_task(
                 "ner_train_nerd",
