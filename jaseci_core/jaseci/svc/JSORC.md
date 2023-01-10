@@ -35,3 +35,10 @@ There are also a set of APIs for performance tracking and becnhmarking:
 - jsorc_becnhmark_start/stop/report
 - jsorc_tracksys_start/stop/report
 - jsorc_loadtest
+
+### JSORC Architecture
+
+### Relevant Source Code
+
+### Todos
+* Include jaseci-db in JSORC's purview
