@@ -30,20 +30,20 @@ class TestTTSModule(CoreTest):
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(4)
-    @jac_testcase("tts.jac", "test_save_audio")
-    def test_save_audio(self, ret):
-        self.assertEqual(ret["success"], True)
-        self.assertEqual(ret["report"][0]["save_status"], True)
-
-    @pytest.mark.order(5)
     @jac_testcase("tts.jac", "test_load_vocorder_v2")
     def test_load_vocorder_v2(self, ret):
         self.assertEqual(ret["success"], True)
 
-    @pytest.mark.order(6)
+    @pytest.mark.order(5)
     @jac_testcase("tts.jac", "test_load_seq2seq_model_v2")
     def test_load_seq2seq_model_v2(self, ret):
         self.assertEqual(ret["success"], True)
+
+    @pytest.mark.order(6)
+    @jac_testcase("tts.jac", "test_save_audio")
+    def test_save_audio(self, ret):
+        self.assertEqual(ret["success"], True)
+        self.assertEqual(ret["report"][0]["save_status"], True)
 
     @classmethod
     def tearDownClass(cls):

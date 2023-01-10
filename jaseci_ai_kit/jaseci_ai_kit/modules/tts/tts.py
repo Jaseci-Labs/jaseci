@@ -55,14 +55,15 @@ def load_vocorder(model_name: str = "waveglow", force_reload: bool = False):
 
 
 @jaseci_action(act_group=["tts"], allow_remote=True)
-def synthesize(text: str, base64_val: bool = False, path: str = "", rate: int = rate):
+def synthesize(text: str, base64_val: str = "False", path: str = "", rate: int = rate):
     """
     Inferencing using sequence to sequence model and vocorder model.
     """
+    base64_val = eval(base64_val)
     try:
         synthesize_audio = prediction(text, seq2seqmodel, vocorder)
         if base64_val:
-            json_encoded_list = json.dumps(synthesize_audio.tolist())
+            json_encoded_list = json.dumps(synthesize_audio.tolist()).encode()
             output_list = base64.b64encode(json_encoded_list)
         else:
             output_list = synthesize_audio.tolist()
