@@ -1,3 +1,4 @@
+from jaseci_serv.svc import MetaService
 from jaseci_serv.jsx_oauth.models import PROVIDERS_MAPPING
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
@@ -146,6 +147,10 @@ class JSXSocialLoginView(SocialLoginView):
         # self.login()
         self.user.is_activated = True
         self.user.name = self.serializer.validated_data.get("name")
+        self.user.master = (
+            MetaService().build_master(h=self.user._h, name=self.user.email).id
+        )
+        self.user._h.commit()
         self.user.save()
         auth_token = AuthToken.objects.filter(user_id=self.user.id)
         if auth_token:
