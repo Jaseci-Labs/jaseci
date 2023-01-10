@@ -11,10 +11,17 @@ from knox.models import AuthToken
 from django.contrib.auth import authenticate, get_user_model
 from datetime import timedelta
 from rest_framework.response import Response
+from rest_framework.exceptions import APIException
 from rest_framework import serializers
 from allauth.socialaccount.helpers import complete_social_login
 from allauth.account import app_settings as allauth_settings
 from requests.exceptions import HTTPError
+
+
+class RegistrationConflict(APIException):
+    status_code = 409
+    default_detail = "User is already registered with this e-mail address!"
+    default_code = "Registration failed!"
 
 
 class JSXSocialLoginSerializer(SocialLoginSerializer):
@@ -100,9 +107,7 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
                     .exists()
                 )
                 if account_exists:
-                    raise serializers.ValidationError(
-                        _("User is already registered with this e-mail address."),
-                    )
+                    raise RegistrationConflict()
 
             login.lookup()
             login.save(request, connect=True)
