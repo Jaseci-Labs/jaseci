@@ -1,20 +1,25 @@
 from typing import List, Union
 from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
-import torch
+
+# import torch
 from flair.models import TARSClassifier
 from flair.data import Sentence
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def init_model(reload=False):
+def init_model():
     """load the tars classifier for ZS classification"""
 
     global classifier
     model_name = "tars-base"
     classifier = TARSClassifier.load(model_name)
     print(f"loaded mode : [{model_name}]")
+
+
+# initialize the classifier
+init_model()
 
 
 # defining the api for ZS classification
@@ -49,6 +54,4 @@ def classify(text: Union[str, List[str]], classes: List[str]):
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
 
-    # initialize the classifier
-    init_model()
     launch_server(port=8000)
