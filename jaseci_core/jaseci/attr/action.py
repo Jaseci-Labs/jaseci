@@ -77,13 +77,13 @@ class Action(Item):
                     f"Invalid arguments {param_list} to action call {self.name}! Valid paramters are {params}.",
                     interp._cur_jac_ast,
                 )
-                result = None
+                raise
             except Exception as e:
                 interp.rt_error(
                     f"Execption within action call {self.name}! {e}",
                     interp._cur_jac_ast,
                 )
-                result = None
+                raise
         t = time.time() - ts
         hook.meta.app.post_action_call_hook(
             self.value, t
