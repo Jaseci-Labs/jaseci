@@ -1,4 +1,9 @@
 # Preparation
+Jaseci requires python3.10 or higher as well as a set of common dependencies. If you are on a fresh linux environment, make sure to install the following first:
+
+```
+apt-get install python3.10-dev python3-pip git g++ build-essential pkg-config cmake
+```
 
 To install jaseci, run this in your development environment:
 
