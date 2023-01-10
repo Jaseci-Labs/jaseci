@@ -1,9 +1,8 @@
 """
 General master interface engine for client interfaces as mixin
 """
-import uuid
 from inspect import signature, getdoc
-from jaseci.utils.utils import logger, is_jsonable, is_true
+from jaseci.utils.utils import logger, is_jsonable, is_true, exc_stack_as_str_list
 from jaseci.element.element import Element
 from jaseci.actor.walker import Walker
 import json
@@ -192,10 +191,8 @@ class Interface:
         try:
             ret = getattr(_caller, api_name)(**param_map)
         except Exception as e:
-            import traceback as tb
-
             return self.interface_error(
-                f"Internal Exception: {e}", stack=tb.format_exc()
+                f"Internal Exception: {e}", stack=exc_stack_as_str_list()
             )
         if not is_jsonable(ret):
             return self.interface_error(f"Non-JSON API ret {type(ret)}: {ret}")
@@ -245,10 +242,8 @@ class Interface:
         try:
             ret = getattr(self, api_name)(**param_map)
         except Exception as e:
-            import traceback as tb
-
             return self.interface_error(
-                f"Internal Exception: {e}", stack=tb.format_exc()
+                f"Internal Exception: {e}", stack=exc_stack_as_str_list()
             )
         if not is_jsonable(ret):
             return self.interface_error(

@@ -19,3 +19,11 @@ class Lang14Test(CoreTest):
         self.assertEqual(len(ret["report"][1]), 1)
         self.assertEqual(len(ret["report"][3]), 3)
         self.assertIn(ret["report"][1][0], ret["report"][3])
+
+    def test_kwargs(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("general.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "test_kwargs"}])
+        self.assertEqual(ret["report"], "woman")
