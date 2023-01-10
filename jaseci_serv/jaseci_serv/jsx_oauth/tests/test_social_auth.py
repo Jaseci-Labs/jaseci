@@ -94,6 +94,7 @@ class SocialAuthTest(TestCaseHelper, TestCase):
         self.assertEqual(created_user.email, res["email"])
         self.assertEqual(created_user.name, res["name"])
         self.assertEqual(created_user.is_activated, res["is_activated"])
+        self.assertIsNotNone(created_user.get_master())
 
         # getting token again should create another user
         res = self.client.post(
