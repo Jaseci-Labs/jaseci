@@ -1612,12 +1612,15 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
+        self.assertIn("in jac_try_exception", " ".join(res["stack_trace"]))
         self.assertIn(
-            "in jac_try_exception\n    raise TryException(self.jac_exception(e, "
-            "jac_ast))\njaseci.jac.machine.machine_state.TryException: ",
-            res["stack_trace"],
+            "raise TryException(self.jac_exception(e, jac_ast))",
+            " ".join(res["stack_trace"]),
         )
-
+        self.assertIn(
+            "jaseci.jac.machine.machine_state.TryException: ",
+            " ".join(res["stack_trace"]),
+        )
         self.assertIn(
             "zsb:walker_exception_no_try_else - line 6, col 20",
             res["errors"][0],

@@ -6,7 +6,13 @@ TODO: Perhaps  I should have walker state (context ids) in mem only with
 default hooks to save db read/writes
 """
 
-from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, perf_test_to_b64
+from jaseci.utils.utils import (
+    logger,
+    perf_test_start,
+    perf_test_stop,
+    perf_test_to_b64,
+    exc_stack_as_str_list,
+)
 from jaseci.element.element import Element
 from jaseci.element.obj_mixins import Anchored
 from jaseci.utils.id_list import IdList
@@ -163,10 +169,8 @@ class Walker(Element, WalkerInterp, Anchored):
             while self.step() and not self.yielded:
                 pass
         except Exception as e:
-            import traceback as tb
-
             self.rt_error(f"Internal Exception: {e}", self._cur_jac_ast)
-            report_ret["stack_trace"] = tb.format_exc()
+            report_ret["stack_trace"] = exc_stack_as_str_list()
 
         self.save()
 
