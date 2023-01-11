@@ -242,7 +242,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
-          context: ./
+          context: .
           tags: |
             jaseci/jaseci-text-cpu:${{steps.set_version.outputs.no-v-tag}}
           build-args: |
