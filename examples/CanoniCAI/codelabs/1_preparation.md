@@ -26,30 +26,30 @@ If the command above displays the help menu for `jsctl`, then you have successfu
 
 ## Key Concepts
 
-Please refer to [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md) for the key new concepts in a nutshell. These will make more sense as you go through this guide.
+Please refer to [Key Abstractions and Concepts](lang_docs/key_concepts.md) for the key new concepts in a nutshell. These will make more sense as you go through this guide.
 
 ### Graph, nodes, edges
 
-Refer to [Graphs](support/guide/lang_docs/graphs.md) for more.
+Refer to [Graphs](lang_docs/graphs.md) for more.
 
 ### Walkers
 
 Refer to relevant sections. These will make more sense as you go through this guide.
 
-- [Walkers](support/guide/lang_docs/walkers.md)
-- [Walkers By Example](support/guide/lang_docs/walkers_by_example.md)
+- [Walkers](lang_docs/walkers.md)
+- [Walkers By Example](lang_docs/walkers_by_example.md)
 
 ### Abilities
 
 Refer to relevant sections. These will make more sense as you go through this guide.
 
-- [Abilities](support/guide/lang_docs/abilities.md)
-    - [`here` and `visitor`](support/guide/lang_docs/here_visitor.md)
-- [Abilities By Example](support/guide/lang_docs/abilities_by_example.md)
+- [Abilities](lang_docs/abilities.md)
+    - [`here` and `visitor`](lang_docs/here_visitor.md)
+- [Abilities By Example](lang_docs/abilities_by_example.md)
 
 ### Actions
 
 Refer to relevant sections. These will make more sense as you go through this guide.
 
-- [Actions](support/guide/lang_docs/actions.md)
-- [Actions By Example](support/guide/lang_docs/actions_by_example.md)
+- [Actions](lang_docs/actions.md)
+- [Actions By Example](lang_docs/actions_by_example.md)

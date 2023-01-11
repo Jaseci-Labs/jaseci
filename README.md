@@ -33,15 +33,15 @@
 - [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
 ## The JAC Language Guide
 
-- [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md)
-  - [Graphs](support/guide/lang_docs/graphs.md)
-  - [Walkers](support/guide/lang_docs/walkers.md)
-    - [Walkers By Example](support/guide/lang_docs/walkers_by_example.md)
-  - [Abilities](support/guide/lang_docs/abilities.md)
-    - [`here` and `visitor`](support/guide/lang_docs/here_visitor.md)
-    - [Abilities By Example](support/guide/lang_docs/abilities_by_example.md)
-  - [Actions](support/guide/lang_docs/actions.md)
-    - [Actions By Example](support/guide/lang_docs/actions_by_example.md)
+- [Key Abstractions and Concepts](examples/CanoniCAI/codelabs/lang_docs/key_concepts.md)
+  - [Graphs](examples/CanoniCAI/codelabs/lang_docs/graphs.md)
+  - [Walkers](examples/CanoniCAI/codelabs/lang_docs/walkers.md)
+    - [Walkers By Example](examples/CanoniCAI/codelabs/lang_docs/walkers_by_example.md)
+  - [Abilities](examples/CanoniCAI/codelabs/lang_docs/abilities.md)
+    - [`here` and `visitor`](examples/CanoniCAI/codelabs/lang_docs/here_visitor.md)
+    - [Abilities By Example](examples/CanoniCAI/codelabs/lang_docs/abilities_by_example.md)
+  - [Actions](examples/CanoniCAI/codelabs/lang_docs/actions.md)
+    - [Actions By Example](examples/CanoniCAI/codelabs/lang_docs/actions_by_example.md)
 
 ## Jac Language Features
 

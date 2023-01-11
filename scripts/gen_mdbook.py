@@ -102,7 +102,7 @@ def build_summary_file():
         "examples/CanoniCAI/images",
         "support/guide/assets",
         "support/codelabs/canonicai/images",
-        "support/guide/lang_docs/images",
+        "examples/CanoniCAI/codelabs/lang_docs/images",
         "jaseci_ai_kit/jaseci_ai_kit/modules/ph/assets",
     ]
     for images in imageFiles:
