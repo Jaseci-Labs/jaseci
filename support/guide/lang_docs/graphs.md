@@ -10,3 +10,5 @@ contexts.
 3. Multigraphs (i.e., parallel edges) are allowed, including self-loop edges.
 4. Graphs are not required to be acyclic.
 5. No hypergraphs, as I wouldn’t want Jaseci programmers heads to explode.
+
+Refer to [Wikipedias description of graphs](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)) to learn more about graphs.
