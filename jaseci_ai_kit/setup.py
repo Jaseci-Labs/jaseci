@@ -13,7 +13,7 @@ setup(
     packages=find_packages(include=["jaseci_ai_kit", "jaseci_ai_kit.*"]),
     install_requires=[
         "jaseci",
-        "sentencepiece==0.1.97",
+        "sentencepiece==0.1.95",
         "tensorflow>=2.8.0,<3.0.0",
         "tensorflow-hub>=0.12.0,<1.0.0",
         "tensorflow-text>=2.7.3,<3.0.0",
