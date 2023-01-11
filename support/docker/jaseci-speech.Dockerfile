@@ -9,6 +9,6 @@ RUN apt update; apt -y upgrade; apt -y install --no-install-recommends git g++ b
 RUN pip3 install jaseci==$JASECI_PYPI_VERSION
 RUN pip3 install jaseci-serv==$JASECI_SERV_PYPI_VERSION
 COPY jaseci_ai_kit /jaseci_ai_kit
-COPY support/docker/setup-text-cpu.py /jaseci_ai_kit/setup.py
-RUN cd /jaseci_ai_kit/; pip3 install . --extra-index-url https://download.pytorch.org/whl/cpu;
+COPY support/docker/setup-speech.py /jaseci_ai_kit/setup.py
+RUN cd /jaseci_ai_kit/; cp setup-text-cpu.py setup.py; pip3 install . --extra-index-url https://download.pytorch.org/whl/cpu;
 CMD ["echo", "Ready"]
