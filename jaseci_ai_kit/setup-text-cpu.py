@@ -13,9 +13,9 @@ setup(
     packages=find_packages(include=["jaseci_ai_kit", "jaseci_ai_kit.*"]),
     install_requires=[
         "jaseci",
-        "tensorflow-cpu==2.11.0",
-        "tensorflow-text==2.11.0",  # tf-cpu and tf-text are pinned to the exact same version to prevent tf-text to re-install the full tensorflow package
+        "tensorflow>=2.8.0,<3.0.0",
         "tensorflow-hub>=0.12.0,<1.0.0",
+        "tensorflow-text>=2.7.3,<3.0.0",
         "torch>=1.10.2,<2.0.0",
         "transformers==4.25.1",
         "pandas>=1.4.1,<2.0.0",
