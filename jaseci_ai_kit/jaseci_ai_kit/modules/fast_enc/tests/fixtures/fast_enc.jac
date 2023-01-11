@@ -29,7 +29,7 @@ walker test_train{
             "no way"
         ]
     };
-    report fast_enc.train(train_data=train_data,train_with_existing=false);
+    report fast_enc.train(traindata=train_data,train_with_existing=false);
 }
 
 walker test_predict{
@@ -39,10 +39,10 @@ walker test_predict{
 
 walker test_fast_enc_load_model{
     can fast_enc.load_model;
-    report fast_enc.load_model("modeloutput");
+    report fast_enc.load_model(model_path="modeloutput");
 }
 
 walker test_fast_enc_save_model{
     can fast_enc.save_model;
-    report fast_enc.save_model("modeloutput");
+    report fast_enc.save_model(model_path="modeloutput");
 }

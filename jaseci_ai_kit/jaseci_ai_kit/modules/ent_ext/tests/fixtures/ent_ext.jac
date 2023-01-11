@@ -31,7 +31,7 @@ walker test_train_ner{
         "batch_size": 1,
         "LR": 0.02
         };
-    report ent_ext.train(train_data=train_data,[],[],train_params=train_params);
+    report ent_ext.train(train_data=train_data,train_params=train_params);
 }
 
 walker test_extract_entity{
@@ -46,10 +46,10 @@ walker test_ent_ext_set_config{
 
 walker test_ent_ext_load_model{
     can ent_ext.load_model;
-    report ent_ext.load_model("modeloutput");
+    report ent_ext.load_model(model_path="modeloutput");
 }
 
 walker test_ent_ext_save_model{
     can ent_ext.save_model;
-    report ent_ext.save_model("modeloutput");
+    report ent_ext.save_model(model_path="modeloutput");
 }

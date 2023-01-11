@@ -69,7 +69,21 @@ class Action(Item):
                 },
             )
         else:
-            result = func(*param_list["args"], **param_list["kwargs"])
+            try:
+                result = func(*param_list["args"], **param_list["kwargs"])
+            except TypeError as e:
+                params = str(inspect.signature(func))
+                interp.rt_error(
+                    f"Invalid arguments {param_list} to action call {self.name}! Valid paramters are {params}.",
+                    interp._cur_jac_ast,
+                )
+                raise
+            except Exception as e:
+                interp.rt_error(
+                    f"Execption within action call {self.name}! {e}",
+                    interp._cur_jac_ast,
+                )
+                raise
         t = time.time() - ts
         hook.meta.app.post_action_call_hook(
             self.value, t
