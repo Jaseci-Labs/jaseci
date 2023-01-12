@@ -16,7 +16,7 @@ jobs:
         run: yarn setup:ui
         working-directory: "./jaseci_studio"
       - name: install dependencies
-        run: yarn install && npx playwright install
+        run: yarn install && npx playwright install --with-deps
         working-directory: "./jaseci_studio"
       - name: run unit test
         run: yarn test:unit
