@@ -1,0 +1,26 @@
+name: Jaseci Studio Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: prepare stencil ui components
+        run: yarn setup:ui
+        working-directory: "./jaseci_studio"
+      - name: install dependencies
+        run: yarn install
+        working-directory: "./jaseci_studio"
+      - name: run unit test
+        run: yarn test
+        working-directory: "./jaseci_studio"
+      - name: run end-to-end tests
+        run: yarn test:e2e
+        working-directory: "./jaseci_studio"
