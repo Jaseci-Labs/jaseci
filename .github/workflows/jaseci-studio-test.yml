@@ -19,7 +19,7 @@ jobs:
         run: yarn install
         working-directory: "./jaseci_studio"
       - name: run unit test
-        run: yarn test
+        run: yarn test:unit
         working-directory: "./jaseci_studio"
       - name: run end-to-end tests
         run: yarn test:e2e
