@@ -11,7 +11,7 @@ setup(
     name="jaseci_ai_kit",
     version=get_ver(),
     packages=find_packages(include=["jaseci_ai_kit", "jaseci_ai_kit.*"]),
-    setup_requires=[
+    install_requires=[
         "jaseci",
         "tensorflow>=2.8.0,<3.0.0",
         "tensorflow-hub>=0.12.0,<1.0.0",
@@ -40,7 +40,6 @@ setup(
         "soundfile<=0.11.0",
         "speechbrain==0.5.13",
     ],
-    install_requires=["TTS==0.10.2"],
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
     },
