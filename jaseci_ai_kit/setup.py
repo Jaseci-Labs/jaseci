@@ -11,7 +11,7 @@ setup(
     name="jaseci_ai_kit",
     version=get_ver(),
     packages=find_packages(include=["jaseci_ai_kit", "jaseci_ai_kit.*"]),
-    setup_requires=["TTS==0.10.2"],
+    setup_requires=["TTS"],
     install_requires=[
         "jaseci",
         "tensorflow>=2.8.0,<3.0.0",
