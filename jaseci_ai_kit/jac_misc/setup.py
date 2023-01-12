@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from os.path import join
 
-MODULES = ["pdf_ext"]
+MODULES = ["pdf_ext", "translator"]
 
 
 def get_ver():

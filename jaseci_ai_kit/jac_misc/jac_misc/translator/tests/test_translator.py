@@ -8,7 +8,7 @@ class TranslatorModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(TranslatorModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.translator")
+        ret = load_module_actions("jac_misc.translator")
         assert ret == True
 
     @jac_testcase("translator.jac", "test_translate_sinhala_eng")
@@ -22,5 +22,5 @@ class TranslatorModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(TranslatorModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.translator.translator")
+        ret = unload_module("jac_misc.translator.translator")
         assert ret == True
