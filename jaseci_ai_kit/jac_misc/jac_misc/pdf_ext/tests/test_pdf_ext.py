@@ -8,7 +8,7 @@ class PDFExtModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(PDFExtModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.pdf_ext")
+        ret = load_module_actions("jac_misc.pdf_ext")
         assert ret == True
 
     @jac_testcase("pdf_ext.jac", "test_valid_pdf_url")
@@ -26,5 +26,5 @@ class PDFExtModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(PDFExtModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.pdf_ext.pdf_ext")
+        ret = unload_module("jac_misc.pdf_ext.pdf_ext")
         assert ret == True
