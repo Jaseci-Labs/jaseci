@@ -72,18 +72,18 @@ graph dialogue_system {
             response = "You can order a Tesla through our design studio."
         );
 
-        dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;
-        dialogue_root -[intent_transition(intent="order a tesla")]-> how_to_order_state;
+        dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;
+        dialogue_root +[intent_transition(intent="order a tesla")]+> how_to_order_state;
     }
 }
 ```
 We have already covered the syntax for graph definition, such as the `anchor` node and the `spawn` block in the previous section.
 Refer to the FAQ graph definition step if you need a refresher.
 
-We have a new language syntax here `dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;`.
+We have a new language syntax here `dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;`.
 Let's break this down!
-* If you recall, we have used a similar but simpler syntax to connect two nodes with an edge `faq_root --> faq_state;`. This connect `faq_root` to `faq_state` with a **generic** edge pointing to `faq_state`;
-* In `dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;`, we are connecting the two states with a **custom** edge of the type `intent_transition`.
+* If you recall, we have used a similar but simpler syntax to connect two nodes with an edge `faq_root ++> faq_state;`. This connect `faq_root` to `faq_state` with a **generic** edge pointing to `faq_state`;
+* In `dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;`, we are connecting the two states with a **custom** edge of the type `intent_transition`.
 * In addition, we are initializing the variable `intent` of the edge to be `test drive`.
 
 To summarize, with this graph, a user will start at the dialogue root state when they first start the conversation.
@@ -584,15 +584,15 @@ graph dialogue_system {
 
         how_to_order_state = spawn node::how_to_order_state;
 
-        dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;
-        test_drive_state -[intent_transition(intent="cancel")]-> td_canceled;
-        test_drive_state -[entity_transition(entities=["name", "address"])]-> td_confirmation;
-        test_drive_state -[intent_transition(intent="provide name or address")]-> test_drive_state;
-        td_confirmation - [intent_transition(intent="yes")]-> td_confirmed;
-        td_confirmation - [intent_transition(intent="no")]-> test_drive_state;
-        td_confirmation - [intent_transition(intent="cancel")]-> td_canceled;
+        dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;
+        test_drive_state +[intent_transition(intent="cancel")]+> td_canceled;
+        test_drive_state +[entity_transition(entities=["name", "address"])]+> td_confirmation;
+        test_drive_state +[intent_transition(intent="provide name or address")]+> test_drive_state;
+        td_confirmation +[intent_transition(intent="yes")]+> td_confirmed;
+        td_confirmation +[intent_transition(intent="no")]+> test_drive_state;
+        td_confirmation +[intent_transition(intent="cancel")]+> td_canceled;
 
-        dialogue_root -[intent_transition(intent="order a tesla")]-> how_to_order_state;
+        dialogue_root +[intent_transition(intent="order a tesla")]+> how_to_order_state;
     }
 }
 ```
