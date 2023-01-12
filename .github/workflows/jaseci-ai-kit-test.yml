@@ -42,6 +42,7 @@ jobs:
     - name: Install jaseci_ai_kit
       run: |
         pip3 install jaseci_ai_kit/
+        pip3 install TTS
 
     - name: Verify jaseci_ai_kit installation
       run: |
