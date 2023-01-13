@@ -1,7 +1,5 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install
-from setuptools.command.develop import develop
-from setuptools.command.egg_info import egg_info
 from os.path import join
 from os import system
 from sys import executable as PYTHON_PATH
@@ -23,22 +21,8 @@ class OrderedInstall(install):
         install.run(self)
 
 
-class OrderedDevelop(develop):
-    def run(self):
-        requires(ORDERD_REQ)
-        develop.run(self)
-
-
-class OrderedEggInfo(egg_info):
-    def run(self):
-        requires(ORDERD_REQ)
-        egg_info.run(self)
-
-
 CMD_CLASSES = {
     "install": OrderedInstall,
-    "develop": OrderedDevelop,
-    "egg_info": OrderedEggInfo,
 }
 
 
