@@ -29,9 +29,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt -y install --no-install-recommends git g++ build-essential pkg-config cmake
         sudo apt-get install -y libsndfile1 ffmpeg
-        sudo apt-get install espeak-ng
         python -m pip install --upgrade pip
 
     - name: Install jaseci_core
