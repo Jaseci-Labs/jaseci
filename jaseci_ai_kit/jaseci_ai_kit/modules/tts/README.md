@@ -146,10 +146,3 @@ Synthesizing speeches with Tacotron2 and HIFIGAN.
 1. model_name (str) : Model name, possible values : waveglow, hifigan.
 2. force_reload (bool) : If true model and model is available in the cache will reuse it.
 
-
-
-
-
-https://user-images.githubusercontent.com/29056700/212302196-bc67e60b-a98b-426d-b5d8-f8f47a14fa75.mp4
-
-
