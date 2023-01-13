@@ -10,15 +10,30 @@ from jaseci.actions.remote_actions import launch_server
 from .action_utils import synthesizer
 
 model_name = "tts_models/en/vctk/vits"
+female_voice_model = "tts_models/en/sam/tacotron-DDC"
+male_voice_model = "tts_models/en/linda/tacotron2-DDC"
 
 speech_model = TTS(model_name)
+male_voice_model = TTS(male_voice_model)
+female_voice_model = TTS(female_voice_model)
+
+speakers = ["male", "female", "random"]
 
 
 @jaseci_action(act_group=["vc_tts"], allow_remote=True)
 def synthesize(input_text: str, speaker: str, save_path: str = ""):
 
     speaker = speaker.lower()
-    speaker_id = {"male": speech_model.speakers[3], "female": speech_model.speakers[2]}
+    if speaker not in speakers:
+        raise ValueError("The value for the speaker can be male,female or random")
+
+    if speaker == "male":
+        model = male_voice_model
+    elif speaker == "female":
+        model = female_voice_model
+    else:
+        model = speech_model
+
     ret_dict = {}
 
     try:
@@ -26,16 +41,18 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
             if os.path.exists(save_path):
                 file_name = "audio_file_" + str(time.time()) + ".wav"
                 file_path = os.path.join(save_path, file_name)
-                speech_model.tts_to_file(
-                    text=input_text, speaker=speaker_id[speaker], file_path=file_path
-                )
-                ret_dict = {"save_status": True, "file_path": file_path}
+                model.tts_to_file(text=input_text, file_path=file_path)
+                ret_dict = {
+                    "save_status": True,
+                    "voice": speaker,
+                    "file_path": file_path,
+                }
             else:
-                ret_dict = {"save_status": False}
+                ret_dict = {"save_status": False, "voice": speaker}
                 raise ValueError("The provided path does not exists")
 
         else:
-            audio_wav = speech_model.tts(input_text, speaker=speaker_id[speaker])
+            audio_wav = model.tts(input_text)
             ret_dict = {"audio_data": audio_wav}
 
         return ret_dict
