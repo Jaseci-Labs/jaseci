@@ -7,7 +7,7 @@ from os import system
 from sys import executable as PYTHON_PATH
 from pkg_resources import require
 
-PREREQS = ["TTS==0.10.2"]
+ORDERD_REQ = ["TTS==0.10.2"]
 
 
 def requires(packages):
@@ -19,24 +19,26 @@ def requires(packages):
 
 class OrderedInstall(install):
     def run(self):
-        requires(PREREQS)
+        requires(ORDERD_REQ)
         install.run(self)
 
 
 class OrderedDevelop(develop):
     def run(self):
-        requires(PREREQS)
+        requires(ORDERD_REQ)
         develop.run(self)
 
 
 class OrderedEggInfo(egg_info):
     def run(self):
-        requires(PREREQS)
+        requires(ORDERD_REQ)
         egg_info.run(self)
 
 
 CMD_CLASSES = {
     "install": OrderedInstall,
+    "develop": OrderedDevelop,
+    "egg_info": OrderedEggInfo,
 }
 
 
