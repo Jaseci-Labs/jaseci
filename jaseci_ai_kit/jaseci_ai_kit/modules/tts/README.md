@@ -147,3 +147,10 @@ Synthesizing speeches with Tacotron2 and HIFIGAN.
 2. force_reload (bool) : If true model and model is available in the cache will reuse it.
 
 
+
+https://user-images.githubusercontent.com/29056700/212302196-bc67e60b-a98b-426d-b5d8-f8f47a14fa75.mp4
+
+https://user-images.githubusercontent.com/29056700/212302231-0fe221e8-26b0-4285-b7f7-bfc3d95217a4.mp4
+
+
+
