@@ -3,9 +3,6 @@ from jaseci.actions.live_actions import load_module_actions, unload_module
 import pytest
 
 
-UNTRAINED_OUTPUT = None
-
-
 class PHModule(CoreTest):
     fixture_src = __file__
 
@@ -28,8 +25,6 @@ class PHModule(CoreTest):
     @pytest.mark.order(3)
     @jac_testcase("ph.jac", "test_predict")
     def test_predict(self, ret):
-        global UNTRAINED_OUTPUT
-        UNTRAINED_OUTPUT = ret["report"][0]
         self.assertIsInstance(ret["report"][0], int)
 
     @pytest.mark.order(4)
