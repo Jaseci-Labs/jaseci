@@ -1,5 +1,45 @@
 from setuptools import setup, find_packages
+from setuptools.command.install import install
+from setuptools.command.develop import develop
+from setuptools.command.egg_info import egg_info
 from os.path import join
+from os import system
+from sys import executable as PYTHON_PATH
+from pkg_resources import require
+
+PREREQS = ["TTS==0.10.2"]
+
+
+def requires(packages):
+    require("pip")
+    CMD_TMPLT = '"' + PYTHON_PATH + '" -m pip install %s'
+    for pkg in packages:
+        system(CMD_TMPLT % (pkg,))
+
+
+class OrderedInstall(install):
+    def run(self):
+        requires(PREREQS)
+        install.run(self)
+
+
+class OrderedDevelop(develop):
+    def run(self):
+        requires(PREREQS)
+        develop.run(self)
+
+
+class OrderedEggInfo(egg_info):
+    def run(self):
+        requires(PREREQS)
+        egg_info.run(self)
+
+
+CMD_CLASSES = {
+    "install": OrderedInstall,
+    "develop": OrderedDevelop,
+    "egg_info": OrderedEggInfo,
+}
 
 
 def get_ver():
@@ -40,6 +80,7 @@ setup(
         "soundfile<=0.11.0",
         "speechbrain==0.5.13",
     ],
+    cmdclass=CMD_CLASSES,
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml"],
     },
