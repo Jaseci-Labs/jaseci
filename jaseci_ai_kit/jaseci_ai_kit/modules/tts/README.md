@@ -150,10 +150,6 @@ Synthesizing speeches with Tacotron2 and HIFIGAN.
 
 
 
-(video:
-  file: 
-  size: contain)
-
-![contain](https://user-images.githubusercontent.com/29056700/212302196-bc67e60b-a98b-426d-b5d8-f8f47a14fa75.mp4)
+https://user-images.githubusercontent.com/29056700/212302196-bc67e60b-a98b-426d-b5d8-f8f47a14fa75.mp4
 
 
