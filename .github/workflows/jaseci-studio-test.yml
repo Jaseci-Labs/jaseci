@@ -3,8 +3,12 @@ name: Jaseci Studio Tests
 on:
   push:
     branches: [main]
+    paths:
+      - jaseci_studio/**
   pull_request:
     branches: [main]
+    paths:
+      - jaseci_studio/**
 
 jobs:
   tests:
