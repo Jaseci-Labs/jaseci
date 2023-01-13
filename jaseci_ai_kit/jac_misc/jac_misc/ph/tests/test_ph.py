@@ -12,7 +12,7 @@ class PHModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(PHModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.ph")
+        ret = load_module_actions("jac_misc.ph")
         assert ret == True
 
     @pytest.mark.order(1)
@@ -45,5 +45,5 @@ class PHModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(PHModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.ph.ph")
+        ret = unload_module("jac_misc.ph.ph")
         assert ret == True

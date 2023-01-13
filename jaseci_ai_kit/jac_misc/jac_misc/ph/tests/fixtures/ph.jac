@@ -46,7 +46,7 @@ walker test_train {
             },
             "dataloader":{
                 "args": {
-                    "train_json": "jaseci_ai_kit/modules/ph/tests/fixtures/train.json"
+                    "train_json": "jac_misc/jac_misc/ph/tests/fixtures/train.json"
                 },
                 "type": "SnipsDataLoader"
             },
