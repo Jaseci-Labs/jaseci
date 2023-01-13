@@ -37,8 +37,6 @@ class OrderedEggInfo(egg_info):
 
 CMD_CLASSES = {
     "install": OrderedInstall,
-    "develop": OrderedDevelop,
-    "egg_info": OrderedEggInfo,
 }
 
 
