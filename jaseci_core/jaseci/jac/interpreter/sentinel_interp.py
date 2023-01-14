@@ -152,7 +152,7 @@ class SentinelInterp(Interp):
         )
         testcase = {
             "name": kid[1].token_text() if kid[1].name == "NAME" else "",
-            "title": self.pop(),
+            "title": self.pop().value,
             "graph_ref": None,
             "graph_block": None,
             "walker_ref": None,
