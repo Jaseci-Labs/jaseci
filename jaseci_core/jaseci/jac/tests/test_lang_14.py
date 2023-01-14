@@ -29,3 +29,11 @@ class Lang14Test(CoreTest):
         self.assertEqual(ret["report"][0].count("."), 4)
         self.assertEqual(ret["report"][1], ret["report"][2])
         self.assertNotEqual(ret["report"][3], ret["report"][2])
+
+    def test_multistring(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("general.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "multistring"}])
+        self.assertEqual(ret["report"][0], "This is a multistring")
