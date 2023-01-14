@@ -59,7 +59,7 @@ def load_model_by_name(model_name: str, gpu: bool = False):
     model_path, config_path, vocoder_path, vocoder_config_path = download_model_by_name(
         model_name
     )
-    # init synthesizer
+
     # None values are fetch from the model
     synthesizer = Synthesizer(
         tts_checkpoint=model_path,

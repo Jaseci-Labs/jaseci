@@ -10,12 +10,8 @@ from jaseci.actions.remote_actions import launch_server
 from .action_utils import synthesizer
 
 model_name = "tts_models/en/vctk/vits"
-female_voice_model = "tts_models/en/sam/tacotron-DDC"
-male_voice_model = "tts_models/en/ljspeech/tacotron2-DDC"
 
-speech_model = TTS(model_name)
-male_voice_model = TTS(male_voice_model)
-female_voice_model = TTS(female_voice_model)
+model = TTS(model_name)
 
 speakers = ["male", "female", "random"]
 
@@ -27,13 +23,7 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
     if speaker not in speakers:
         raise ValueError("The value for the speaker can be male,female or random")
 
-    if speaker == "male":
-        model = male_voice_model
-    elif speaker == "female":
-        model = female_voice_model
-    else:
-        model = speech_model
-
+    speaker_id = {"male": model.speakers[3], "female": model.speakers[2]}
     ret_dict = {}
 
     try:
@@ -41,7 +31,9 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
             if os.path.exists(save_path):
                 file_name = "audio_file_" + str(time.time()) + ".wav"
                 file_path = os.path.join(save_path, file_name)
-                model.tts_to_file(text=input_text, file_path=file_path)
+                model.tts_to_file(
+                    text=input_text, speaker=speaker_id[speaker], file_path=file_path
+                )
                 ret_dict = {
                     "save_status": True,
                     "voice": speaker,
@@ -52,7 +44,7 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
                 raise ValueError("The provided path does not exists")
 
         else:
-            audio_wav = model.tts(input_text)
+            audio_wav = model.tts(input_text, speaker=speaker_id[speaker])
             ret_dict = {"audio_data": audio_wav}
 
         return ret_dict
@@ -95,5 +87,4 @@ def clone_voice(input_text: str, reference_audio: str, save_path: str = "./"):
 
 if __name__ == "__main__":
     print("Text to Speech Synthesizer up and running")
-    # clone_voice("Hello World! how are you. This is a test run. I love artificial Intelligence.", "jaseci_ai_kit/modules/vc_tts/tests/test_ref_audio.wav", "./")
     launch_server(port=8000)
