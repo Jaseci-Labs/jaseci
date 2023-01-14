@@ -2,7 +2,7 @@
     "tts_models": {
         "multilingual": {
             "multi-dataset": {
-                "voice_cloning": {
+                "your_tts": {
                     "description": "Your TTS model accompanying the paper https://arxiv.org/abs/2112.02418",
                     "github_rls_url": "https://coqui.gateway.scarf.sh/v0.10.1_models/tts_models--multilingual--multi-dataset--your_tts.zip",
                     "default_vocoder": null
@@ -10,7 +10,7 @@
             }
         },
         "en": {
-            "linda": {
+            "ljspeech": {
                 "tacotron2-DDC": {
                     "description": "Tacotron2 with Double Decoder Consistency.",
                     "github_rls_url": "https://coqui.gateway.scarf.sh/v0.6.1_models/tts_models--en--ljspeech--tacotron2-DDC.zip",

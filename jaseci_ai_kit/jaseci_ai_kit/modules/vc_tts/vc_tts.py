@@ -11,7 +11,7 @@ from .action_utils import synthesizer
 
 model_name = "tts_models/en/vctk/vits"
 female_voice_model = "tts_models/en/sam/tacotron-DDC"
-male_voice_model = "tts_models/en/linda/tacotron2-DDC"
+male_voice_model = "tts_models/en/ljspeech/tacotron2-DDC"
 
 speech_model = TTS(model_name)
 male_voice_model = TTS(male_voice_model)
@@ -48,7 +48,7 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
                     "file_path": file_path,
                 }
             else:
-                ret_dict = {"save_status": False, "voice": speaker}
+                ret_dict = {"save_status": False}
                 raise ValueError("The provided path does not exists")
 
         else:

@@ -12,7 +12,7 @@ def get_models_file_path():
     return Path(__file__).parent / "models.json"
 
 
-voice_cloning_model = "tts_models/multilingual/multi-dataset/voice_cloning"
+voice_cloning_model = "tts_models/multilingual/multi-dataset/your_tts"
 
 manager = ModelManager(
     models_file=get_models_file_path(), progress_bar=True, verbose=False
