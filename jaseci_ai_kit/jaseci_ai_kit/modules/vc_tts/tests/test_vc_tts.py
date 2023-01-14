@@ -23,8 +23,7 @@ class TestTTSModule(CoreTest):
     def test_synthesize_male(self, ret):
         self.assertEqual(ret["success"], True)
 
-    pytest.mark.order(3)
-
+    @pytest.mark.order(3)
     @jac_testcase("vc_tts.jac", "test_clone_voice")
     def test_clone_voice(self, ret):
         self.assertEqual(ret["success"], True)
