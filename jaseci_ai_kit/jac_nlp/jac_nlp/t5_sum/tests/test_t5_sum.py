@@ -12,7 +12,7 @@ class T5SumTest(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(T5SumTest, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.t5_sum")
+        ret = load_module_actions("jac_nlp.t5_sum")
         assert ret is True
 
     @pytest.mark.order(1)
@@ -23,5 +23,5 @@ class T5SumTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(T5SumTest, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.t5_sum.t5_sum")
+        ret = unload_module("jac_nlp.t5_sum.t5_sum")
         assert ret is True
