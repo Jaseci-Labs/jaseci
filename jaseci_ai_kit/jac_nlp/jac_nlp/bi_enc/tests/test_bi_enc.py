@@ -9,7 +9,7 @@ class BiEncTest(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(BiEncTest, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.bi_enc")
+        ret = load_module_actions("jac_nlp.bi_enc")
         assert ret is True
 
     @pytest.mark.order(1)
@@ -73,5 +73,5 @@ class BiEncTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(BiEncTest, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.encoders.bi_enc")
+        ret = unload_module("jac_nlp.bi_enc.bi_enc")
         assert ret is True
