@@ -8,7 +8,7 @@ class UseEncModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(UseEncModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.use_enc")
+        ret = load_module_actions("jac_nlp.use_enc")
         assert ret == True
 
     @jac_testcase("use_enc.jac", "test_enc_cos_sim_score")
@@ -30,5 +30,5 @@ class UseEncModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(UseEncModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.use_enc.use_enc")
+        ret = unload_module("jac_nlp.use_enc.use_enc")
         assert ret == True
