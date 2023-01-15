@@ -1,7 +1,8 @@
 transformers
-pytorch
+torch
 fastapi
 uvicorn
 datasets
-evaluate
+evaluate>=0.2.2,<0.3
 huggingface-hub
+seqeval>=1.2.2,<1.3

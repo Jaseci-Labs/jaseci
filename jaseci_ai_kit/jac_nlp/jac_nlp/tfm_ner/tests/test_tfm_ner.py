@@ -13,7 +13,7 @@ class TfmNerTest(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(TfmNerTest, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.tfm_ner")
+        ret = load_module_actions("jac_nlp.tfm_ner")
         os.environ["WANDB_DISABLED"] = "true"
         assert ret is True
 
@@ -61,5 +61,5 @@ class TfmNerTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(TfmNerTest, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.tfm_ner.tfm_ner")
+        ret = unload_module("jac_nlp.tfm_ner.tfm_ner")
         assert ret is True
