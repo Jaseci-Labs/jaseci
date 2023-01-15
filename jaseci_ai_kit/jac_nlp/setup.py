@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from os.path import join
 
-MODULES = ["bart_sum", "cl_summer"]
+MODULES = ["bart_sum", "cl_summer", "ent_ext"]
 
 
 def get_ver():

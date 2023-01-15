@@ -12,7 +12,7 @@ class EntExtTest(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(EntExtTest, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.ent_ext")
+        ret = load_module_actions("jac_nlp.ent_ext")
         assert ret is True
 
     @pytest.mark.order(1)
@@ -43,5 +43,5 @@ class EntExtTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(EntExtTest, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.ent_ext.ent_ext")
+        ret = unload_module("jac_nlp.ent_ext.ent_ext")
         assert ret is True
