@@ -8,7 +8,7 @@ class ClSummerModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(ClSummerModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.cl_summer")
+        ret = load_module_actions("jac_nlp.cl_summer")
         assert ret == True
 
     @jac_testcase("cl_summer.jac", "test_summarizer_text")
@@ -22,5 +22,5 @@ class ClSummerModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(ClSummerModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.cl_summer.cl_summer")
+        ret = unload_module("jac_nlp.cl_summer.cl_summer")
         assert ret == True
