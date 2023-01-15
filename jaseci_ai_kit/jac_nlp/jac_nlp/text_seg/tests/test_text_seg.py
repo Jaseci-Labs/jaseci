@@ -9,7 +9,7 @@ class TextSegModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(TextSegModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.text_seg")
+        ret = load_module_actions("jac_nlp.text_seg")
         assert ret == True
 
     @pytest.mark.order(1)
@@ -25,5 +25,5 @@ class TextSegModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(TextSegModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.text_seg.text_seg")
+        ret = unload_module("jac_nlp.text_seg.text_seg")
         assert ret == True
