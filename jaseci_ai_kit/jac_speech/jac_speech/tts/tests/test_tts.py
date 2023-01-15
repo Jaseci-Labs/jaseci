@@ -10,7 +10,7 @@ class TestTTSModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(TestTTSModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.tts")
+        ret = load_module_actions("jac_speech.tts")
         assert ret == True
 
     @pytest.mark.order(1)
@@ -48,5 +48,5 @@ class TestTTSModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(TestTTSModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.tts.tts")
+        ret = unload_module("jac_speech.tts.tts")
         assert ret == True
