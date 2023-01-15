@@ -12,7 +12,7 @@ class FastEncTest(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(FastEncTest, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.fast_enc")
+        ret = load_module_actions("jac_nlp.fast_enc")
         assert ret is True
 
     @pytest.mark.order(1)
@@ -38,5 +38,5 @@ class FastEncTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(FastEncTest, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.fast_enc.fast_enc")
+        ret = unload_module("jac_nlp.fast_enc.fast_enc")
         assert ret is True

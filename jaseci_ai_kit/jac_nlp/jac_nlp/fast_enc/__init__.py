@@ -1,1 +1,1 @@
-from fasttext import *  # noqa
+from .fast_enc import *  # noqa
