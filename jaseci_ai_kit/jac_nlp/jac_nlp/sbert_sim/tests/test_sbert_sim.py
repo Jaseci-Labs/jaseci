@@ -9,7 +9,7 @@ class SbertSimTest(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(SbertSimTest, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.sbert_sim")
+        ret = load_module_actions("jac_nlp.sbert_sim")
         assert ret is True
 
     @pytest.mark.order(1)
@@ -56,5 +56,5 @@ class SbertSimTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(SbertSimTest, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.sbert_sim.sbert_sim")
+        ret = unload_module("jac_nlp.sbert_sim.sbert_sim")
         assert ret is True
