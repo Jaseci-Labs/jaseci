@@ -8,7 +8,7 @@ class UseQAModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(UseQAModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.use_qa")
+        ret = load_module_actions("jac_nlp.use_qa")
         assert ret == True
 
     @jac_testcase("use_qa.jac", "test_enc_question_similarity")
@@ -46,5 +46,5 @@ class UseQAModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(UseQAModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.use_qa.use_qa")
+        ret = unload_module("jac_nlp.use_qa.use_qa")
         assert ret == True
