@@ -15,7 +15,7 @@ class Speech2TextModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(Speech2TextModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.stt")
+        ret = load_module_actions("jac_speech.stt")
         assert ret == True
 
     @pytest.mark.order(1)
@@ -46,5 +46,5 @@ class Speech2TextModule(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(Speech2TextModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.stt.stt")
+        ret = unload_module("jac_speech.stt.stt")
         assert ret == True
