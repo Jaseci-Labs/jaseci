@@ -12,7 +12,7 @@ class ZS_Classifier_Test(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(ZS_Classifier_Test, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.zs_classifier")
+        ret = load_module_actions("jac_nlp.zs_classifier")
         assert ret is True
 
     @pytest.mark.order(1)
@@ -23,5 +23,5 @@ class ZS_Classifier_Test(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(ZS_Classifier_Test, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.zs_classifier.zs_classifier")
+        ret = unload_module("jac_nlp.zs_classifier.zs_classifier")
         assert ret is True

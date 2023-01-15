@@ -11,7 +11,8 @@ MODULES = [
     "text_seg",
     "tfm_ner",
     "use_enc",
-    "use_qa"
+    "use_qa",
+    "zs_classifier",
 ]
 
 
