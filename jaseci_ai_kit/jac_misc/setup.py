@@ -10,7 +10,7 @@ def get_ver():
 
 
 def get_extras_requires():
-    extras_requires = {}
+    extras_requires = {"all": MODULES}
     for module in MODULES:
         with open(join("jac_misc", module, "requirements.txt")) as req_file:
             extras_requires[module] = req_file.read().splitlines()
@@ -28,5 +28,5 @@ setup(
     },
     author="Jason Mars",
     author_email="jason@jaseci.org",
-    url="https://github.com/Jaseci-Labs/jaseci",
+    url="https://github.com/Jaseci-Labs/jaseci/jaseci_ai_kit/jac_misc",
 )

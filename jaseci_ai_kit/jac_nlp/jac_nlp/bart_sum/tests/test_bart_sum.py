@@ -8,7 +8,7 @@ class BartSumTests(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(BartSumTests, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.bart_sum")
+        ret = load_module_actions("jac_nlp.bart_sum")
         assert ret == True
 
     @jac_testcase("bart_sum.jac", "test_summarize_single")
@@ -26,5 +26,5 @@ class BartSumTests(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(BartSumTests, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.bart_sum.bart_sum")
+        ret = unload_module("jac_nlp.bart_sum.bart_sum")
         assert ret == True
