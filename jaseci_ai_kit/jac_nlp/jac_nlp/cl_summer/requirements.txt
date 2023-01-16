@@ -1,7 +1,1 @@
-transformers
-sentence-transformers>=2.2.0,<2.3
-torch>=1.10.2,<2.0.0
-fastapi
-uvicorn
-nltk
 sumy==0.11.0

@@ -1,8 +1,5 @@
-transformers
-torch
-fastapi
-uvicorn
-datasets
+transformers==4.25.1
+torch==1.13.1
+datasets==2.8.0
 evaluate>=0.2.2,<0.3
-huggingface-hub
 seqeval>=1.2.2,<1.3
