@@ -79,7 +79,7 @@ def get_embeddings(texts : Union[str, List[str]]):
             embedder.embed(label_sentences)
             embedding_list.append(
                 label_sentences.get_embedding().cpu().detach().numpy().tolist()
-                )
+            )
         return embedding_list
 
 
