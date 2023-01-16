@@ -1,9 +1,10 @@
 from typing import List, Union
+
 import numpy as np
 from fastapi import HTTPException
 from flair.data import Sentence
-from jaseci.actions.live_actions import jaseci_action
 from flair.models import TARSClassifier
+from jaseci.actions.live_actions import jaseci_action
 
 
 def init_model():
@@ -62,7 +63,7 @@ def classify(text: Union[str, List[str]], classes: List[str]):
 
 
 @jaseci_action(act_group=["zs_classifier"], allow_remote=True)
-def get_embeddings(texts : Union[str, List[str]]):
+def get_embeddings(texts: Union[str, List[str]]):
     """
     API to get embbeddings for text
     """
@@ -70,7 +71,6 @@ def get_embeddings(texts : Union[str, List[str]]):
     if isinstance(texts, str):
         label_sentences = Sentence([texts])
         embedder.embed(label_sentences)
-        print(len(label_sentences.get_embedding().cpu().detach().numpy().tolist()))
         return label_sentences.get_embedding().cpu().detach().numpy().tolist()
     else:
         embedding_list = []
