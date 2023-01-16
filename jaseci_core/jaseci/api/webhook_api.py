@@ -13,7 +13,7 @@ class WebhookApi:
 
     @Interface.public_api(url_args=["type"], allowed_methods=["post"])
     def webhook(self, type: str, _req_ctx: dict = {}):
-        """Handle all different webhook logic"""
+        """Handle webhook logic"""
         req_body = _req_ctx["body"]
 
         if type == "stripe":

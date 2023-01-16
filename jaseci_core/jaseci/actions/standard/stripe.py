@@ -45,20 +45,21 @@ def create_customer(
     api_key: str,
     email: str,
     name: str,
-    address: dict,
-    payment_method_id: str,
+    address: dict = {},
     metadata: dict = {},
 ):
     """create customer"""
 
-    return stripe.Customer.create(
-        api_key=api_key,
-        email=email,
-        name=name,
-        address=address,
-        payment_method=payment_method_id,
-        invoice_settings={"default_payment_method": payment_method_id},
-        metadata=metadata,
+    return (
+        MetaService()
+        .get_service("stripe")
+        .poke(STRIPE_ERR_MSG)
+        .Customer.create(
+            email=email,
+            name=name,
+            address=address,
+            metadata=metadata,
+        )
     )
 
 
@@ -115,10 +116,14 @@ def update_default_payment_method(
 ):
     """update default payment method of customer"""
 
-    return stripe.Customer.modify(
-        api_key=api_key,
-        customer=customer_id,
-        invoice_settings={"default_payment_method": payment_method_id},
+    return (
+        MetaService()
+        .get_service("stripe")
+        .poke(STRIPE_ERR_MSG)
+        .Customer.modify(
+            sid=customer_id,
+            invoice_settings={"default_payment_method": payment_method_id},
+        )
     )
 
 
@@ -258,7 +263,7 @@ def create_subscription(
 
 
 @jaseci_action()
-def cancel_subscription(api_key: str, subscription_id: str, metadata: dict = {}):
+def cancel_subscription(subscription_id: str):
     """cancel customer subscription"""
 
     return stripe.Subscription.delete(api_key=api_key, sid=subscription_id)
