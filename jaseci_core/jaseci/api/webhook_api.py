@@ -4,6 +4,8 @@ Webhook API
 from jaseci.api.interface import Interface
 from fastapi import HTTPException
 from json import loads
+from jaseci.svc import MetaService
+from jaseci.svc.stripe import STRIPE_ERR_MSG
 
 
 class WebhookApi:
@@ -17,48 +19,39 @@ class WebhookApi:
         req_body = _req_ctx["body"]
 
         if type == "stripe":
+            stripe = MetaService().get_service("stripe")
 
-            metadata = req_body["data"]["object"]["metadata"]
+            payload_obj = req_body.get("data").get("object")
+            customer_id = payload_obj.get("customer")
 
-            if not metadata:
-                return req_body
+            if customer_id:
+                customer = stripe.poke(STRIPE_ERR_MSG).Customer.retrieve(id=customer_id)
+                metadata = customer.get("metadata")
+            else:
+                metadata = payload_obj.get("metadata")
 
-            walker_name = metadata.get("walker_name")
+            master_id = metadata.get("master_id")
+            master = self._h.get_obj(master_id, master_id)
 
-            if walker_name:
-                master_id = metadata["master_id"]
-                sentinel_id = metadata["sentinel_id"]
+            node_id = metadata.get("node")
+            if not node_id:
+                node_id = master.active_gph_id
 
-                if not master_id:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=str("Cannot call walker without master id supplied"),
-                    )
+            node = self._h.get_obj(master_id, node_id)
 
-                if not sentinel_id:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=str("Cannot call walker without sentinel id supplied"),
-                    )
+            # walker name that will be called
+            # set in global vars
+            wlk = stripe.walker
 
-                snt = self._h.get_obj(master_id, sentinel_id)
-                master = self._h.get_obj(master_id, master_id)
+            global_snt_id = self._h.get_glob("GLOB_SENTINEL")
+            global_snt = self._h.get_obj(master_id, global_snt_id)
 
-                gph = self._h.get_obj(master_id, master.active_gph_id)
+            payload = {"event_type": req_body["type"], "stripe_payload": req_body}
+            self.seek_committer(master)
 
-                if metadata.get("walker_nd"):
-                    gph = self._h.get_obj(master_id, metadata.get("walker_nd"))
-
-                ctx = {"stripe_data": req_body}
-                ctx.update(loads(metadata.get("walker_ctx")))
-
-                return master.walker_run(
-                    name=walker_name,
-                    nd=gph,
-                    snt=snt,
-                    ctx=ctx,
-                )
-
+            return master.walker_run(
+                name=wlk, nd=node, ctx=payload, _req_ctx=_req_ctx, snt=global_snt
+            )
         else:
             raise HTTPException(
                 status_code=400, detail=str(type + " webhook is not yet supported")
