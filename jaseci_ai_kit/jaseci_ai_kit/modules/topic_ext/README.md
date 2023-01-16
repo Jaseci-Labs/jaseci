@@ -13,6 +13,11 @@ Module `topic_ext` implemented for extracting topics from set of documents. This
     ```
     actions load module jaseci_ai_kit.topic_ext
     ```
+3.  Load suplimentery modules in jac shell session
+    ```
+    actions load module jaseci_ai_kit.use_enc
+    actions load module jaseci_ai_kit.cluster
+    ```
 
 ## **2. Prepare text for clusters**
 
@@ -112,3 +117,128 @@ walker init{
 - `texts` - (list of strings) list of input text documents.
 - `labels` - (list of int) list of labels associated with each text documents.
 - `n_topics` - (int) number of topics to extract from each cluster.
+
+
+Save the above full code in a file with name `topic_extraction.jac` and save the following text data inside the same directory with name `text_data.json`.
+
+```json
+[
+    "still waiting card",
+    "countries supporting",
+    "card still arrived weeks",
+    "countries accounts suppor",
+    "provide support countries",
+    "waiting week card still coming",
+    "track card process delivery",
+    "countries getting support",
+    "know get card lost",
+    "send new card",
+    "still received new card",
+    "info card delivery",
+    "new card still come",
+    "way track delivery card",
+    "countries currently support"
+]
+```
+
+Run the jac code in the terminal with `jac run topic_extraction.jac` command. You will see the output as follows;
+
+```json
+{
+  "success": true,
+  "report": [
+    {
+      "0": [
+        [
+          "countries",
+          0.392361531667182
+        ],
+        [
+          "support",
+          0.34487955266445003
+        ],
+        [
+          "accounts",
+          0.1934321572215864
+        ],
+        [
+          "supporting",
+          0.1934321572215864
+        ],
+        [
+          "suppor",
+          0.1934321572215864
+        ]
+      ],
+      "1": [
+        [
+          "delivery",
+          0.43893761248202734
+        ],
+        [
+          "track",
+          0.36634600373495724
+        ],
+        [
+          "way",
+          0.24618638191838274
+        ],
+        [
+          "process",
+          0.24618638191838274
+        ],
+        [
+          "info",
+          0.24618638191838274
+        ]
+      ],
+      "2": [
+        [
+          "waiting",
+          0.3358171700903774
+        ],
+        [
+          "weeks",
+          0.22567085009185084
+        ],
+        [
+          "know",
+          0.22567085009185084
+        ],
+        [
+          "arrived",
+          0.22567085009185084
+        ],
+        [
+          "coming",
+          0.22567085009185084
+        ]
+      ],
+      "3": [
+        [
+          "new",
+          0.5364793041447
+        ],
+        [
+          "come",
+          0.30089446678913445
+        ],
+        [
+          "send",
+          0.30089446678913445
+        ],
+        [
+          "received",
+          0.30089446678913445
+        ],
+        [
+          "card",
+          0.13515503603605478
+        ]
+      ]
+    }
+  ],
+  "final_node": "urn:uuid:65d3bfac-c6d5-475c-8a18-3a221b507a4f",
+  "yielded": false
+}
+```
