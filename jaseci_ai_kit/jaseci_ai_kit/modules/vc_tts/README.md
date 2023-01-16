@@ -43,7 +43,7 @@ In this section we will take an input raw text and an reference audio file will 
 
 
 1. input_text (str) : Input text string. The accepted language is only English in this version.
-2. reference_audio (str) : The file path to the reference audio to clone voice. This refference audio is currenlty accepted only wav format.
+2. reference_audio (str) : The file path to the reference audio to clone voice. This refference audio is currenlty accepted only in wav format.
 3. save_path (str) :  If you want to save the generated audio in your file system, provide the output path here.
 
 Example Jac code
