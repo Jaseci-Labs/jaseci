@@ -39,6 +39,9 @@ Example Output
 
 ## **3. Voice conversion using jaseci `vc_tts` module.**
 
+In this section we will take an input raw text and an reference audio file will output the list of amplitude values of the synthesized audio, and the output audio will mimic the voice from the reference audio. Btw the output audio will have an american accent. This can use to save or play the audio files using a necessary library in a preffered language.
+
+
 1. input_text (str) : Input text string. The accepted language is only English in this version.
 2. reference_audio (str) : The file path to the reference audio to clone voice. This refference audio is currenlty accepted only wav format.
 3. save_path (str) :  If you want to save the generated audio in your file system, provide the output path here.
