@@ -1,1 +1,1 @@
-from .translator import * #noqa
+from .translator import *  # noqa

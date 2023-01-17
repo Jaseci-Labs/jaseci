@@ -1,1 +1,1 @@
-from .stt import * #noqa
+from .stt import *  # noqa

@@ -1,1 +1,1 @@
-from .tfm_ner import * #noqa
+from .tfm_ner import *  # noqa

@@ -1,1 +1,1 @@
-from .bart_sum import * #noqa
+from .bart_sum import *  # noqa

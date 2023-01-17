@@ -1,1 +1,1 @@
-from .topic_ext import * #noqa
+from .topic_ext import *  # noqa

@@ -1,1 +1,1 @@
-from .sbert_sim import * #noqa
+from .sbert_sim import *  # noqa

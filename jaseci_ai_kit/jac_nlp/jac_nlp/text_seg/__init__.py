@@ -1,1 +1,1 @@
-from .text_seg import * #noqa
+from .text_seg import *  # noqa
