@@ -1822,8 +1822,8 @@ class PublicWalkerApiTests(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
-    def walker_callback_trigger(self, payload):
-        payload["op"] = "walker_callback"
+    def walker_webhook_trigger(self, payload):
+        payload["op"] = "walker_webhook"
         return self.no_user_client.post(
             reverse(f'jac_api:{payload["op"]}', args=[payload["nd"], payload["wlk"]])
             + "?keys="
@@ -1835,7 +1835,7 @@ class PublicWalkerApiTests(TestCaseHelper, TestCase):
     def test_user_public_walker_to_user_node(self):
         """Test public API for walker callback"""
 
-        res = self.walker_callback_trigger(
+        res = self.walker_webhook_trigger(
             {"key": self.user_key, "wlk": self.user_walker, "nd": self.user_node}
         )
 
@@ -1845,7 +1845,7 @@ class PublicWalkerApiTests(TestCaseHelper, TestCase):
     def test_user_public_walker_to_admin_node(self):
         """Test public API for walker callback"""
 
-        res = self.walker_callback_trigger(
+        res = self.walker_webhook_trigger(
             {"key": self.user_key, "wlk": self.user_walker, "nd": self.admin_node}
         )
 
@@ -1854,13 +1854,13 @@ class PublicWalkerApiTests(TestCaseHelper, TestCase):
     def test_user_public_walker_to_other_user_node(self):
         """Test public API for walker callback"""
 
-        res = self.walker_callback_trigger(
+        res = self.walker_webhook_trigger(
             {"key": self.user_key, "wlk": self.user_walker, "nd": self.user2_node}
         )
 
         self.assertFalse(res["success"])
 
-        res = self.walker_callback_trigger(
+        res = self.walker_webhook_trigger(
             {"key": self.user2_key, "wlk": self.user2_walker, "nd": self.user_node}
         )
 
@@ -1869,14 +1869,14 @@ class PublicWalkerApiTests(TestCaseHelper, TestCase):
     def test_admin_public_walker_to_user_node(self):
         """Test public API for walker callback"""
 
-        res = self.walker_callback_trigger(
+        res = self.walker_webhook_trigger(
             {"key": self.admin_key, "wlk": self.admin_walker, "nd": self.user_node}
         )
 
         self.assertEqual(res["report"][0]["context"]["value"], "user")
         self.assertEqual(res["report"][1]["context"]["value"], "changed")
 
-        res = self.walker_callback_trigger(
+        res = self.walker_webhook_trigger(
             {"key": self.admin_key, "wlk": self.admin_walker, "nd": self.user2_node}
         )
 

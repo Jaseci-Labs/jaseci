@@ -8,7 +8,7 @@ You may also use this as a public endpoint just to run a specific walker to a sp
 
 ## **Structure**
 
-**POST** /js_public/walker_callback/`{node uuid}`/`{spawned walker uuid}`?key=`{public key}`
+**POST** /js_public/walker_webhook/`{node uuid}`/`{spawned walker uuid}`?key=`{public key}`
 
 ## **Step to Generate**
 
@@ -90,4 +90,4 @@ curl --request POST \
 *Assuming there's a node with uuid of `aa1bb26e-238b-40a0-8e39-333ec363ace7`*
 *this endpoint can now be accessible by anyone*
 
->**POST** /js_public/walker_callback/`aa1bb26e-238b-40a0-8e39-333ec363ace7`/`2cf6d0dc-e7eb-4fc8-8564-1bbdb48baad3`?key=`97ca941e6bf1f43c3a4e531e40b2ad5a`
+>**POST** /js_public/walker_webhook/`aa1bb26e-238b-40a0-8e39-333ec363ace7`/`2cf6d0dc-e7eb-4fc8-8564-1bbdb48baad3`?key=`97ca941e6bf1f43c3a4e531e40b2ad5a`
