@@ -1,0 +1,8 @@
+dialogue_intent_model/
+tfm_ner_model/
+mydatabase
+train/
+logoutput/
+results/
+*.jir
+*.session
