@@ -1010,13 +1010,21 @@ class Interp(VirtualMachine):
 
         if kid[0].name == "KW_CONTEXT":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):
-                return JacValue(self, value=atom_res.value.context)
+                return JacValue(self, ctx=atom_res.value, value=atom_res.value.context)
         elif kid[0].name == "KW_INFO":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):
-                return JacValue(self, value=atom_res.value.serialize(detailed=False))
+                return JacValue(
+                    self,
+                    ctx=atom_res.value,
+                    value=atom_res.value.serialize(detailed=False),
+                )
         elif kid[0].name == "KW_DETAILS":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):
-                return JacValue(self, value=atom_res.value.serialize(detailed=True))
+                return JacValue(
+                    self,
+                    ctx=atom_res.value,
+                    value=atom_res.value.serialize(detailed=True),
+                )
         return atom_res
 
     def run_dict_built_in(self, jac_ast, atom_res):
