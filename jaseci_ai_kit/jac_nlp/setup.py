@@ -13,7 +13,7 @@ MODULES = [
     "use_enc",
     "use_qa",
     "zs_classifier",
-    "bi_enc",
+    "bi_enc"
 ]
 
 
@@ -23,10 +23,11 @@ def get_ver():
 
 
 def get_extras_requires():
-    extras_requires = {"all": MODULES}
+    extras_requires = {"all": []}
     for module in MODULES:
         with open(join("jac_nlp", module, "requirements.txt")) as req_file:
             extras_requires[module] = req_file.read().splitlines()
+            extras_requires["all"].extend(extras_requires[module])
     return extras_requires
 
 
