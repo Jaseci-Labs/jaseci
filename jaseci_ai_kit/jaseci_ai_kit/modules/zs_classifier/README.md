@@ -69,7 +69,7 @@ This tutorial shows you how to import and use `zs_classifier` with jac code.
         ```
 
         **Parameter details**
-        * `get_embeddings`: w
+        * `get_embeddings`: can be used to get embeddings for text from zs model
             * Input:
                 * `text` (str or List(str)): it can be string or list of string 
             * Returns: list of embdedding of length 768 size

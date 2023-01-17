@@ -110,7 +110,7 @@ var request = $.ajax({
     },
     success: (res) => {
         console.log("response:", res);
-        toggle("response-details").textContent =
+        toggle("response-details").textContent = JSON.stringify(res, undefined, 2);
         getUser(res.token);
     },
     error: (xhr, status, error) => {
