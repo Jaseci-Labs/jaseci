@@ -13,7 +13,8 @@ MODULES = [
     "use_enc",
     "use_qa",
     "zs_classifier",
-    "bi_enc"
+    "bi_enc",
+    "topic_ext",
 ]
 
 
