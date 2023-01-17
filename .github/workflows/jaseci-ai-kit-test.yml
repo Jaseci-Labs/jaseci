@@ -39,7 +39,7 @@ jobs:
     - name: Install jaseci_ai_kit
       run: |
         cd jaseci_ai_kit/
-        sh install_all.sh
+        source install_all.sh
 
     - name: Verify jaseci_ai_kit installation
       run: |
