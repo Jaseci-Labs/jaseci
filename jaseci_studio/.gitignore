@@ -30,3 +30,4 @@ dist-ssr
 /playwright-report/
 /playwright/.cache/
 /public/ui_kit
+/sandbox

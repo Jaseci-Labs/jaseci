@@ -66,9 +66,9 @@ graph faq {
         );
 
         // Connecting the nodes together
-        faq_root --> faq_answer_1;
-        faq_root --> faq_answer_2;
-        faq_root --> faq_answer_3;
+        faq_root ++> faq_answer_1;
+        faq_root ++> faq_answer_2;
+        faq_root ++> faq_answer_3;
     }
 }
 ```
@@ -106,12 +106,16 @@ In this context, the `spawn` designates a code block with programmatic functiona
 In this block:
 
 - We spawn 4 nodes, one of the type `faq_root` and three of the type `faq_state`.
-- We connect each of the faq answer states to the faq root with `faq_root --> faq_answer_*`.
+- We connect each of the faq answer states to the faq root with `faq_root ++> faq_answer_*`.
 - We set the `faq_root` as the anchor node of the graph. As we will later see, spawning a graph will return its anchor node.
 
 > **Warning**
 >
 > An anchor node is required for every graph block. It must be assigned inside the spawn block of the graph definition.
+
+> **Warning**
+>
+> In jaseci 1.4 or later, creating an edge uses the syntax `++>` and referencing an edge uses `-->`.
 
 ## Initialize the Graph
 

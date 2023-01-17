@@ -104,6 +104,7 @@ def build_summary_file():
         "support/codelabs/canonicai/images",
         "examples/CanoniCAI/codelabs/lang_docs/images",
         "jaseci_ai_kit/jaseci_ai_kit/modules/ph/assets",
+        "jaseci_core/svc/",
     ]
     for images in imageFiles:
         files = get_images(os.path.join(root, images))

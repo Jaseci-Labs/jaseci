@@ -272,7 +272,7 @@ class JsctlTest(TestCaseHelper, TestCase):
     def test_jsctl_run_tests(self):
         self.call(f"sentinel register {os.path.dirname(__file__)}/teststest.jac")
         r = self.call_split("sentinel test")
-        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[0].startswith("Testing assert should be"))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
@@ -322,7 +322,7 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def test_jsctl_jac_test(self):
         r = self.call_split(f"jac test {os.path.dirname(__file__)}/teststest.jac")
-        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[0].startswith("Testing assert should be"))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
@@ -330,20 +330,20 @@ class JsctlTest(TestCaseHelper, TestCase):
         r = self.call_split(
             f"jac test {os.path.dirname(__file__)}/teststest.jac -single the_second"
         )
-        self.assertTrue(r[0].startswith('Testing "a second test"'))
+        self.log(r)
+        self.assertTrue(r[0].startswith("Testing a second test"))
         self.assertTrue(r[2].startswith('  "tests": 1'))
         self.assertTrue(r[5].startswith('  "success": true'))
 
     def test_jsctl_jac_test_jir(self):
         r = self.call_split(f"jac test {os.path.dirname(__file__)}/teststest.jir")
-        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[0].startswith("Testing assert should be"))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
     def test_jac_cli_test(self):
         r = self.jac_call_split("test jaseci/jsctl/tests/teststest.jir")
-        self.log(r)
-        self.assertTrue(r[0].startswith('Testing "assert should be'))
+        self.assertTrue(r[0].startswith("Testing assert should be"))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 

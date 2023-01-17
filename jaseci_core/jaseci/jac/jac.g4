@@ -48,7 +48,7 @@ walker_block:
 	)* walk_exit_block? RBRACE;
 
 test:
-	KW_TEST NAME? STRING KW_WITH (
+	KW_TEST NAME? multistring KW_WITH (
 		graph_ref
 		| KW_GRAPH graph_block
 	) KW_BY (
@@ -207,7 +207,7 @@ global_ref: KW_GLOBAL DOT (obj_built_in | NAME);
 atom:
 	INT
 	| FLOAT
-	| STRING
+	| multistring
 	| BOOL
 	| NULL
 	| NAME
@@ -341,6 +341,8 @@ any_type:
 	| KW_NODE
 	| KW_EDGE
 	| KW_TYPE;
+
+multistring: STRING+;
 
 /* Lexer rules */
 TYP_STRING: 'str';

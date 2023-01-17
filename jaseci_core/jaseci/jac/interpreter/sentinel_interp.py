@@ -138,7 +138,7 @@ class SentinelInterp(Interp):
     def load_test(self, jac_ast):
         """
         test:
-            KW_TEST NAME? STRING KW_WITH (
+            KW_TEST NAME? multistring KW_WITH (
                 graph_ref
                 | KW_GRAPH graph_block
             ) KW_BY (
@@ -147,11 +147,12 @@ class SentinelInterp(Interp):
             );
         """
         kid = self.set_cur_ast(jac_ast)
+        self.run_multistring(kid[2]) if kid[1].name == "NAME" else self.run_multistring(
+            kid[1]
+        )
         testcase = {
             "name": kid[1].token_text() if kid[1].name == "NAME" else "",
-            "title": kid[2].token_text()
-            if kid[1].name == "NAME"
-            else kid[1].token_text(),
+            "title": self.pop().value,
             "graph_ref": None,
             "graph_block": None,
             "walker_ref": None,
