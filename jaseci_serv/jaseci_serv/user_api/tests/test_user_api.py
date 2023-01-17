@@ -10,7 +10,7 @@ from django.test import TestCase
 
 from unittest.mock import MagicMock, Mock
 
-from jaseci_serv.svc import MailService
+from jaseci_serv.svc import MetaService, MailService
 from jaseci_serv.svc.mail import MAIL_CONFIG
 
 
@@ -36,6 +36,9 @@ class UserApiPublicTests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
+        self.meta = MetaService()
+        self.hook = self.meta.build_hook()
+        self.meta.get_service("mail").reset(self.hook)
         self.client = APIClient()
 
     def tearDown(self):
