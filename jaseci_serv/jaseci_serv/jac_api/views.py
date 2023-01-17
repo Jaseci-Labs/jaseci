@@ -137,7 +137,7 @@ class AbstractJacAPIView(APIView):
                     "query": req_query,
                     "body": req_data.copy(),
                 },
-                "_raw_req_ctx": raw_req_data,
+                "_raw_req_ctx": raw_req_data.decode("utf-8"),
             }
         )
         req_data.update(req_query)

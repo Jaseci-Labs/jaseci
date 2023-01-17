@@ -12,12 +12,12 @@ class WebhookApi:
     Webhook API
     """
 
-    @Interface.public_api(url_args=["type"], allowed_methods=["post"])
-    def webhook(self, type: str, _req_ctx: dict = {}, _raw_req_ctx: bytes = None):
+    @Interface.public_api(url_args=["provider"], allowed_methods=["post"])
+    def webhook(self, provider: str, _req_ctx: dict = {}, _raw_req_ctx: str = None):
         """Handle webhook logic"""
         req_body = _req_ctx["body"]
 
-        if type == "stripe":
+        if provider == "stripe":
             stripe_service = MetaService().get_service("stripe")
             stripe = stripe_service.poke()
 
@@ -45,7 +45,7 @@ class WebhookApi:
             global_snt_id = self._h.get_glob("GLOB_SENTINEL")
             global_snt = self._h.get_obj(master_id, global_snt_id)
 
-            payload = {"event_type": req_body["type"], "event_payload": req_body}
+            payload = {"event": req_body}
             self.seek_committer(master)
 
             wlk = stripe_service.get_walker(req_body["type"])
