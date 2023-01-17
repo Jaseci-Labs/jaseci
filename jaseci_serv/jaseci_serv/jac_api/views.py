@@ -126,7 +126,7 @@ class AbstractJacAPIView(APIView):
                         }
                     )
 
-    def proc_request_ctx(self, request, req_data):
+    def proc_request_ctx(self, request, req_data, raw_req_data):
         user_slzr.requests_for_emails = request
         req_query = request.GET.dict()
         req_data.update(
@@ -136,13 +136,15 @@ class AbstractJacAPIView(APIView):
                     "headers": dict(request.headers),
                     "query": req_query,
                     "body": req_data.copy(),
-                }
+                },
+                "_raw_req_ctx": raw_req_data,
             }
         )
         req_data.update(req_query)
 
     def proc_request(self, request, **kwargs):
         """Parse request to field set"""
+        raw_req_data = request.body
         pl_peek = str(dict(request.data))[:256]
         logger.info(str(f"Incoming call to {type(self).__name__} with {pl_peek}"))
         self.start_time = time()
@@ -153,7 +155,7 @@ class AbstractJacAPIView(APIView):
 
         self.proc_prime_ctx(request, req_data)
         self.proc_file_ctx(request, req_data)
-        self.proc_request_ctx(request, req_data)
+        self.proc_request_ctx(request, req_data, raw_req_data)
 
         req_data.update(kwargs)
 
