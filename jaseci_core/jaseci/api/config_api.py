@@ -21,6 +21,7 @@ class ConfigApi:
             "TASK_CONFIG",
             "MAIL_CONFIG",
             "PROMON_CONFIG",
+            "STRIPE_CONFIG",
             "META_CONFIG",
         ]
 

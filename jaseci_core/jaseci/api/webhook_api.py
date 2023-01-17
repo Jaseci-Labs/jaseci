@@ -5,7 +5,6 @@ from jaseci.api.interface import Interface
 from fastapi import HTTPException
 from json import loads
 from jaseci.svc import MetaService
-from jaseci.svc.stripe import STRIPE_ERR_MSG
 
 
 class WebhookApi:
@@ -20,6 +19,9 @@ class WebhookApi:
 
         if type == "stripe":
             stripe = MetaService().get_service("stripe")
+
+            # to be updated
+            stripe.get_event(_req_ctx)
 
             payload_obj = req_body.get("data").get("object")
             customer_id = payload_obj.get("customer")
@@ -39,15 +41,13 @@ class WebhookApi:
 
             node = self._h.get_obj(master_id, node_id)
 
-            # walker name that will be called
-            # set in global vars
-            wlk = stripe.walker
-
             global_snt_id = self._h.get_glob("GLOB_SENTINEL")
             global_snt = self._h.get_obj(master_id, global_snt_id)
 
             payload = {"event_type": req_body["type"], "event_payload": req_body}
             self.seek_committer(master)
+
+            wlk = stripe.get_walker(req_body["type"])
 
             return master.walker_run(
                 name=wlk, nd=node, ctx=payload, _req_ctx=_req_ctx, snt=global_snt
