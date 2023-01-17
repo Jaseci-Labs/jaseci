@@ -22,10 +22,10 @@ jobs:
 
     - uses: actions/checkout@v2
 
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: "3.8"
+        python-version: "3.10"
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -38,11 +38,14 @@ jobs:
 
     - name: Install jaseci_ai_kit
       run: |
-        pip3 install jaseci_ai_kit/
+        cd jaseci_ai_kit/
+        source install_all.sh
 
     - name: Verify jaseci_ai_kit installation
       run: |
-        python -c "import jaseci_ai_kit"
+        python -c "import jac_nlp"
+        python -c "import jac_misc"
+        python -c "import jac_speech"
 
     - name: Run tests
       run: |

@@ -1,0 +1,2 @@
+hdbscan==0.8.29
+umap-learn==0.5.3
