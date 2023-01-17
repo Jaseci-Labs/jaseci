@@ -1,6 +1,6 @@
-from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci.actions.live_actions import load_module_actions, unload_module
 import pytest
+from jaseci.actions.live_actions import load_module_actions, unload_module
+from jaseci.utils.test_core import CoreTest, jac_testcase
 
 
 class ZS_Classifier_Test(CoreTest):
@@ -18,6 +18,11 @@ class ZS_Classifier_Test(CoreTest):
     @pytest.mark.order(1)
     @jac_testcase("zs_classifier.jac", "test_zs_classify")
     def test_zs_classify(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @pytest.mark.order(2)
+    @jac_testcase("zs_classifier.jac", "test_get_embedding")
+    def test_get_embedding(self, ret):
         self.assertEqual(ret["success"], True)
 
     @classmethod

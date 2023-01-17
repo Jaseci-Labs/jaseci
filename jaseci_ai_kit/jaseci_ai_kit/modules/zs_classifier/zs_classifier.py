@@ -1,17 +1,14 @@
 from typing import List, Union
+
+import numpy as np
 from fastapi import HTTPException
-from jaseci.actions.live_actions import jaseci_action
-
-# import torch
-from flair.models import TARSClassifier
 from flair.data import Sentence
-
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from flair.models import TARSClassifier
+from jaseci.actions.live_actions import jaseci_action
 
 
 def init_model():
     """load the tars classifier for ZS classification"""
-
     global classifier
     model_name = "tars-base"
     classifier = TARSClassifier.load(model_name)
@@ -20,6 +17,20 @@ def init_model():
 
 # initialize the classifier
 init_model()
+
+
+# API for getting the cosine similarity
+@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+def cosine_sim(vec_a: List[float], vec_b: List[float]):
+    """
+    Caculate the cosine similarity score of two given vectors
+    Param 1 - First vector
+    Param 2 - Second vector
+    Return - float between 0 and 1
+    """
+
+    result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
+    return result.astype(float)
 
 
 # defining the api for ZS classification
@@ -49,6 +60,27 @@ def classify(text: Union[str, List[str]], classes: List[str]):
         return response_data_format
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(f"Exception :{e}"))
+
+
+@jaseci_action(act_group=["zs_classifier"], allow_remote=True)
+def get_embeddings(texts: Union[str, List[str]]):
+    """
+    API to get embbeddings for text
+    """
+    embedder = classifier.tars_embeddings
+    if isinstance(texts, str):
+        label_sentences = Sentence([texts])
+        embedder.embed(label_sentences)
+        return label_sentences.get_embedding().cpu().detach().numpy().tolist()
+    else:
+        embedding_list = []
+        for text in texts:
+            label_sentences = Sentence(text)
+            embedder.embed(label_sentences)
+            embedding_list.append(
+                label_sentences.get_embedding().cpu().detach().numpy().tolist()
+            )
+        return embedding_list
 
 
 if __name__ == "__main__":
