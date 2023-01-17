@@ -46,7 +46,7 @@ class WebhookApi:
             global_snt_id = self._h.get_glob("GLOB_SENTINEL")
             global_snt = self._h.get_obj(master_id, global_snt_id)
 
-            payload = {"event_type": req_body["type"], "stripe_payload": req_body}
+            payload = {"event_type": req_body["type"], "event_payload": req_body}
             self.seek_committer(master)
 
             return master.walker_run(
