@@ -45,7 +45,6 @@ jobs:
       run: |
         python -c "import jac_nlp"
         python -c "import jac_misc"
-        python -c "import jac_vision"
         python -c "import jac_speech"
 
     - name: Run tests

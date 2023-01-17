@@ -43,5 +43,5 @@ setup(
     },
     author="Jason Mars",
     author_email="jason@jaseci.org",
-    url="https://github.com/Jaseci-Labs/jaseci/jaseci_ai_kit/jac_nlp",
+    url="https://github.com/Jaseci-Labs/jaseci",
 )
