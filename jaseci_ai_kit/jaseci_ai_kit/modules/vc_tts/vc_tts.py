@@ -8,6 +8,7 @@ from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
 
 from .action_utils import synthesizer
+from .text import clean_text
 
 model_name = "tts_models/en/vctk/vits"
 
@@ -25,6 +26,8 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
 
     speaker_id = {"male": model.speakers[3], "female": model.speakers[2]}
     ret_dict = {}
+
+    input_text = clean_text(input_text, ["english_cleaners"])
 
     try:
         if save_path != "":
