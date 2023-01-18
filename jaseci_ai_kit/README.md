@@ -62,6 +62,8 @@ The `jac_misc` package contains a collection of miscellaneous models that can be
 | `translator` | Text Translation | [Link](#text-translation-translator) | No Training req. | Ready       | Text Translation for 50 languages to 50 languages | [Multilingual Denoising Pre-training for Neural Machine Translation](https://arxiv.org/abs/2001.08210), [Huggingface MBart Docs](https://huggingface.co/transformers/model_doc/mbart.html) |
 | `cluster` | Text Cluster | [Link](#text-cluster-cluster) | No Training req. | Experimetal | Indentifying Posible Similar Clusters in Set of Documents | [UMAP](https://umap-learn.readthedocs.io/en/latest/) , [HBDSCAN](https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html) |
 | `pdf_ext` | PDF Extractor | [Link](#pdf-extractor-pdf_ext) | No Training req.| Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
+| `ph` | Personalized Head | [Link](jac_misc/jac_misc/ph/README.md) | Training Req. | Experimental  | Extract content from a PDF file via PyPDF2 | |
+
 
 To load the `jac_misc.translator` package into jaseci in local environment, run the following command in the jsctl console.
 ```bash

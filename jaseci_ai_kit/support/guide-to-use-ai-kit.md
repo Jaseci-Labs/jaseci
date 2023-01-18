@@ -35,13 +35,13 @@ jsctl jac run [file_name].jir
 
  #### To load a module from Jaseci AI kit;
 
- We can simply do `pip install jaseci_ai_kit` in the python environment we are currently working and import the ai models from jaseci ai kit to the jaseci using `actions load module jaseci_ai_kit.[module_name]` command.
+ We can simply do `pip install jac_nlp[bi_enc]` in the python environment we are currently working and import the bi_enc from jac_nlp to the jaseci using `actions load module jac_nlp.[module_name]` command. Make sure to install the required modules for the model you are trying to load. if you have multiple models to load, install by `pip install jac_nlp[bi_enc,use_enc]` or `pip install jac_nlp[all]` to install all the models.
 
  Example module load:
 
  ```
  $ jsctl
-jaseci > actions load module jaseci_ai_kit.bi_enc
+jaseci > actions load module jac_nlp.bi_enc
 {
   "success": true
 }
@@ -65,7 +65,7 @@ Once we cloned the jaseci main repository to local machine we can load AI models
 Example local load:
 
 ```
-jaseci > actions load local jaseci_ai_kit\jaseci_ai_kit\modules\use_enc\use_enc.py
+jaseci > actions load local jaseci_ai_kit\jaseci_nlp\use_enc\use_enc.py
 
 {
   "success": true
