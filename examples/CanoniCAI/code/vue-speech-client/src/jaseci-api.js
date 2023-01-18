@@ -7,7 +7,7 @@ export default {
   methods: {
     async jacTalk(request) {
       let data = {
-        ctx: { "request": request },
+        ctx: { "question": request },
         name: "talk"
       }
       let result = await fetch(apiUrl + '/js/walker_run', {
