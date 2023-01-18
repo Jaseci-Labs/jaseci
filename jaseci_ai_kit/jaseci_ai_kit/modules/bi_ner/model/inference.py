@@ -11,9 +11,9 @@ from torch.nn import Module
 from torch.nn.functional import pad
 from tqdm import tqdm
 
-from ..datamodel.example import TypedSpan, batch_examples, BatchedExamples
-from ..datamodel.utils import invert
-from .base_encoder import Base_BI_enc, BI_Enc_NER
+from datamodel.example import TypedSpan, batch_examples, BatchedExamples
+from datamodel.utils import invert
+from model.base_encoder import Base_BI_enc, BI_Enc_NER
 
 torch.set_num_threads(cpu_count() // 2)
 
@@ -21,7 +21,7 @@ torch.set_num_threads(cpu_count() // 2)
 _Model = TypeVar("_Model", bound=Module)
 
 
-class InferenceBinder(Base_BI_enc):
+class Bi_NER_Infer(Base_BI_enc):
     def __init__(
         self,
         span_classifier: BI_Enc_NER,
@@ -31,34 +31,35 @@ class InferenceBinder(Base_BI_enc):
         max_entity_length: int,
         model_args,
     ):
-        super(InferenceBinder, self).__init__(model_args)
+        super(Bi_NER_Infer, self).__init__(model_args)
         self._classifier = span_classifier
         self._classifier.eval()
         self._classifier.drop_descriptions_encoder()
         self._classifier.train = None
-
+        self._encoded_descriptions=self._classifier._encoded_descriptions
         self._category_mapping = deepcopy(category_mapping)
         self._category_id_mapping = invert(self._category_mapping)
         self._no_entity_category = no_entity_category
-
         self._max_sequence_length = max_sequence_length
         self._max_entity_length = max_entity_length
-
+        self._text_length: List[Optional[int]]=None
+        self._no_entity_category_id=None
+        self._stride_length=None
     def train(self: _Model, mode: bool = True) -> _Model:
         raise NotImplementedError
 
     @torch.no_grad()
     def add_entity_types(self, descriptions: Dict[str, str]) -> None:
         names, texts = map(list, zip(*descriptions.items()))
-        entity_representations = self._description_encoder(texts)
+        entity_representations = self._classifier._description_encoder(texts)
         self._encoded_descriptions.update(zip(names, entity_representations))
 
     @torch.no_grad()
     def forward(self, texts: List[str]) -> List[Set[TypedSpan]]:
         stride = 0.9
-        stride_length = int(self._max_sequence_length * stride)
+        self._stride_length = int(self._max_sequence_length * stride)
 
-        text_lengths: List[Optional[int]] = [None] * len(texts)
+        self._text_length: List[Optional[int]] = [None] * len(texts)
         examples = list(
             self._classifier.prepare_inputs(
                 texts,
@@ -66,13 +67,14 @@ class InferenceBinder(Base_BI_enc):
                 category_mapping=self._category_mapping,
                 no_entity_category=self._no_entity_category,
                 stride=stride,
-                text_lengths=text_lengths,
+                text_lengths=self._text_length,
             )
         )
 
-        no_entity_category_id = self._category_mapping[self._no_entity_category]
+        self._no_entity_category_id = self._category_mapping[self._no_entity_category]
 
         predictions_collector = [defaultdict(int) for _ in texts]
+        
         for batch in tqdm(
             batch_examples(
                 examples,
@@ -83,8 +85,10 @@ class InferenceBinder(Base_BI_enc):
             ),
             total=len(examples),
         ):
-            predictions: LongTensor = self._classifier(**batch)
-
+            entity_representations,token_representations = self._classifier(**batch)
+            token_representations,entity_representations = self._classifier.get_head_emb(token_representations,entity_representations)
+            predictions: LongTensor = self._classifier.get_loss(entity_representations,token_representations)
+           
             batched_examples: BatchedExamples = batch["examples"]
 
             batch_size, length = batched_examples.start_offset.shape
@@ -119,7 +123,7 @@ class InferenceBinder(Base_BI_enc):
             padding_mask = torch.concat(padding_masks, dim=-1)
 
             entities_mask = (
-                (predictions != no_entity_category_id)
+                (predictions != self._no_entity_category_id)
                 & padding_mask
                 & (span_end != -100)
                 & (span_start != -100)
@@ -163,73 +167,23 @@ class InferenceBinder(Base_BI_enc):
 
         all_entities = [set() for _ in texts]
         for text_id, preds in enumerate(predictions_collector):
-            text_length = text_lengths[text_id]
+            text_length = self._text_length[text_id]
             strided_text_length = (
-                (text_length // stride_length) + (text_length % stride_length > 0)
-            ) * stride_length
+                (text_length // self._stride_length) + (text_length % self._stride_length > 0)
+            ) * self._stride_length
             for (entity, entity_token_start), count_preds in preds.items():
                 # [1, 2, 3, ..., MAX, MAX, ..., MAX, MAX - 1, ..., 3, 2, 1]
                 #  bin sizes are stride_length except for the last bin
                 total_predictions = min(
-                    (entity_token_start // stride_length) + 1,
+                    (entity_token_start // self._stride_length) + 1,
                     (
                         max(strided_text_length - self._max_sequence_length, 0)
-                        // stride_length
+                        // self._stride_length
                     )
                     + 1,
-                    ((strided_text_length - entity_token_start) // stride_length) + 1,
+                    ((strided_text_length - entity_token_start) // self._stride_length) + 1,
                 )
                 if count_preds >= total_predictions // 2:
                     all_entities[text_id].add(entity)
 
         return all_entities
-
-
-def evaluate(
-    predictions: Iterable[Set[TypedSpan]],
-    ground_truth: Iterable[Set[TypedSpan]],
-    categories: List[str],
-) -> Dict[str, float]:
-    n_categories = len(categories)
-    category_id_mapping = dict(enumerate(categories))
-    category_mapping = invert(category_id_mapping)
-
-    def group_by_category(entities: Set[TypedSpan]) -> Dict[str, Set[Tuple[int, int]]]:
-        groups = {cat: set() for cat in categories}
-        for entity in entities:
-            groups[entity.type].add((entity.start, entity.end))
-        return groups
-
-    true_positives = np.zeros(n_categories, dtype=int)
-    false_positives = np.zeros(n_categories, dtype=int)
-    false_negatives = np.zeros(n_categories, dtype=int)
-
-    for true_entities, predicted_entities in zip(ground_truth, predictions):
-        true_groups = group_by_category(true_entities)
-        predicted_groups = group_by_category(predicted_entities)
-
-        for category in categories:
-            category_id = category_mapping[category]
-            true_set = true_groups[category]
-            predicted_set = predicted_groups[category]
-
-            true_positives[category_id] += len(true_set.intersection(predicted_set))
-            false_positives[category_id] += len(predicted_set.difference(true_set))
-            false_negatives[category_id] += len(true_set.difference(predicted_set))
-
-    category_f1 = true_positives / (
-        true_positives + (false_positives + false_negatives) / 2
-    )
-    for category_id, f1 in enumerate(category_f1):
-        category = category_id_mapping[category_id]
-        print(f"{category}: {f1 * 100:.2f}%")
-
-    micro_f1 = true_positives.sum() / (
-        true_positives.sum() + (false_positives.sum() + false_negatives.sum()) / 2
-    )
-
-    f1_macro = category_f1.mean()
-    print(f"macro F1: {f1_macro * 100:.2f}%")
-    print(f"micro F1: {micro_f1 * 100:.2f}%")
-
-    return {"macro": f1_macro, "micro": micro_f1}

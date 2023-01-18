@@ -1,8 +1,8 @@
 from typing import Tuple, Callable, List, Set, Iterable, Dict
 import json
 from transformers import BatchEncoding
-from ..datamodel.example import TypedSpan, Example
-from ..datamodel.dataset import NERDataset
+from datamodel.example import TypedSpan, Example
+from datamodel.dataset import NERDataset
 
 
 def prepare_descriptions() -> Dict[str, str]:

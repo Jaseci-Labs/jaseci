@@ -5,12 +5,12 @@ from typing import Dict, List  # , Set, Iterable, Tuple
 import os
 import traceback
 from fastapi import HTTPException
-from .model.base_encoder import BI_Enc_NER
-from .model.inference import InferenceBinder
-from .datamodel.utils import invert, get_category_id_mapping
-from .model.tokenize_data import get_datasets
+# from model.base_encoder import BI_Enc_NER
+from model.inference import PH_Base
+from datamodel.utils import invert, get_category_id_mapping
+from model.tokenize_data import get_datasets
 from jaseci.actions.live_actions import jaseci_action
-
+from model.ph_func import train_ph,BI_P_Head,PHClassifier
 
 def config_setup(category_name: List[str] = None):
     global model, example_encoder, category_id_mapping, device
@@ -27,7 +27,7 @@ def config_setup(category_name: List[str] = None):
         category_name = ["PER", "ORG", "LOC", "MISC"]
     category_id_mapping = get_category_id_mapping(model_args, category_name)
     model_args["descriptions"] = category_name
-    model = BI_Enc_NER(model_args)
+    model = BI_P_Head(model_args)
     example_encoder = partial(
         model.prepare_inputs,
         category_mapping=invert(category_id_mapping),
@@ -102,7 +102,7 @@ def train(dataset: Dict = None, from_scratch=True, training_parameters: Dict = N
     )
     train_resp = trainer.train()
     model.eval()
-    inference_model = InferenceBinder(
+    inference_model = PH_Base(
         model,
         category_mapping=invert(category_id_mapping),
         no_entity_category=model_args["unk_category"],
@@ -184,7 +184,7 @@ def load_model(model_path):
     try:
         model.load(model_path)
         model.to(device)
-        inference_model = InferenceBinder(
+        inference_model = PH_Base(
             model,
             category_mapping=invert(category_id_mapping),
             no_entity_category=model_args["unk_category"],
@@ -197,6 +197,42 @@ def load_model(model_path):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# API for training
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def train_ph_api(dataset: Dict = None, from_scratch=True, training_parameters: Dict = None):
+    """
+    Take list of context, candidate, labels and trains the model
+    """
+    try:
+        global model, inference_model
+        if training_parameters is not None:
+            with open(t_config_fname, "w+") as jsonfile:
+                train_args.update(training_parameters)
+                json.dump(train_args, jsonfile, indent=4)
+        if from_scratch:
+            category_name = list(
+                set(ele["entity_type"] for val in dataset["annotations"] for ele in val)
+            )
+            config_setup(category_name=category_name)
+        train_dataset = get_datasets(dataset, example_encoder)
+        train_ph(model,train_dataset,train_args)
+        model.eval()
+        inference_model = PH_Base(
+            model,
+            category_mapping=invert(category_id_mapping),
+            no_entity_category=model_args["unk_category"],
+            max_sequence_length=model_args["max_sequence_length"],
+            max_entity_length=model_args["max_entity_length"],
+            model_args=model_args
+        )
+        inference_model.to(device)
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+    return None
+
 
 
 if __name__ == "__main__":
