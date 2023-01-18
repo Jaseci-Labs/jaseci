@@ -82,7 +82,7 @@ jobs:
       - name: Push to pypi
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.JASECI_JSKIT_PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.JAC_AI_PYPI_TOKEN }}
         run: |
           cd jaseci_ai_kit/jac_nlp
           python3 -m build
@@ -106,7 +106,7 @@ jobs:
       - name: Push to pypi
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.JASECI_JSKIT_PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.JAC_AI_PYPI_TOKEN }}
         run: |
           cd jaseci_ai_kit/jac_speech
           python3 -m build
@@ -130,7 +130,7 @@ jobs:
       - name: Push to pypi
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.JASECI_JSKIT_PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.JAC_AI_PYPI_TOKEN }}
         run: |
           cd jaseci_ai_kit/jac_vision
           python3 -m build
@@ -154,7 +154,7 @@ jobs:
       - name: Push to pypi
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.JASECI_JSKIT_PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.JAC_AI_PYPI_TOKEN }}
         run: |
           cd jaseci_ai_kit/jac_misc
           python3 -m build
