@@ -19,6 +19,8 @@ We have 3 different types of nodes:
 - `faq_root`: This is the entry point of the FAQ handler. We will make the decision on the most relevant answer at this node.
 - `faq_state`: This node represents a FAQ entry. It contains a candidate answer from the knowledge base.
 
+To start, let's create a new jac file and name it `faq.jac` and we will be putting the code in this section in this file.
+
 Now let's define the custom node types.
 
 ```jac
@@ -144,11 +146,6 @@ This is the first walker we have introduced, so let's break it down.
 ## Run the `init` Walker
 
 Now, let's run the init walker to initialize the graph.
-First put all of the above code snippet into a single jac file and name it `faq.jac`, including
-
-- nodes definition
-- graph definition
-- init walker
 
 Run `jsctl` to get into the jaseci shell environment:
 
