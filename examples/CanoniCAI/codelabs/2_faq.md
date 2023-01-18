@@ -257,18 +257,25 @@ In our application, we are using it for zero-shot question-answering, i.e. no cu
 
 Jaseci has a set of built-in libraries or packages that are called Jaseci actions.
 These actions cover a wide-range of state-of-the-art AI models across many different NLP tasks.
-These actions are packaged in a Python module called `jaseci_ai_kit`.
+There are few packages named   `jac_nlp`, `jac_vision`, `jac_speech` and `jac_misc` for NLP, vision, speech and miscellaneous tasks respectively.
+The `jac_nlp` package contains the Universal Sentence Encoder QA model that we are going to use.
 
-To install `jaseci_ai_kit`:
+To install `jac_nlp`:
 
 ```bash
-pip install jaseci_ai_kit
+pip install jac_nlp[use_qa] # This will install the USE QA model which we need for this example
+```
+But if you want to install all or some of the models in `jac_nlp`:
+
+```bash
+pip install jac_nlp[all] # This will install all the models in jac_nlp
+pip install jac_nlp[use_qa,use_enc] # This will install the USE QA model and the USE encoder model
 ```
 
 Now we load the action we need into our jaseci environment
 
 ```bash
-jaseci > actions load module jaseci_ai_kit.use_qa
+jaseci > actions load module jac_nlp.use_qa
 ```
 
 Let's update our walker logic to use the USE QA model:
