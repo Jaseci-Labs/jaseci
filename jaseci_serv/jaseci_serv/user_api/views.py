@@ -164,6 +164,14 @@ class UpdateUserView(APIView):
     def post(self, request, id):
         user = get_user_model().objects.get(id=id)
 
+        current_user = {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "is_activated": user.is_activated,
+            "is_superuser": user.is_superuser,
+        }
+
         if user is None or not request.data or type(request.data) is not dict:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -171,6 +179,23 @@ class UpdateUserView(APIView):
             user, request.data, {"is_activated": bool, "is_superuser": bool}
         ):
             user.save()
+
+            elastic = MetaService().get_service("elastic")
+            if elastic.is_running():
+                activity = elastic.app.generate_from_request(request)
+
+                activity["misc"] = {
+                    "old": current_user,
+                    "new": {
+                        "id": user.id,
+                        "email": user.email,
+                        "name": user.name,
+                        "is_activated": user.is_activated,
+                        "is_superuser": user.is_superuser,
+                    },
+                }
+                elastic.app.doc_activity(activity)
+
             return Response("Update Success!")
         else:
             return Response("No changes found!")
