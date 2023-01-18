@@ -1,5 +1,6 @@
 from jaseci.svc import CommonService
 from .config import ELASTIC_CONFIG
+from .manifest import ELASTIC_MANIFEST
 from requests import get, post
 from datetime import datetime
 from copy import copy
@@ -18,6 +19,7 @@ class ElasticService(CommonService):
 
     def run(self, hook=None):
         self.app = Elastic(self.config)
+        self.app.health("timeout=1s")
 
     ####################################################
     #                    OVERRIDDEN                    #
@@ -25,6 +27,9 @@ class ElasticService(CommonService):
 
     def build_config(self, hook) -> dict:
         return hook.service_glob("ELASTIC_CONFIG", ELASTIC_CONFIG)
+
+    def build_manifest(self, hook) -> dict:
+        return hook.service_glob("ELASTIC_MANIFEST", ELASTIC_MANIFEST)
 
 
 class Elastic:
@@ -46,20 +51,20 @@ class Elastic:
         if config["auth"]:
             self.headers["Authorization"] = config["auth"]
 
-    def _get(self, url: str, json: dict):
-        return get(f"{self.url}/{url}", json=json, headers=self.headers).json()
+    def _get(self, url: str, json: dict = None):
+        return get(f"{self.url}{url}", json=json, headers=self.headers).json()
 
-    def _post(self, url: str, json: dict):
-        return post(f"{self.url}/{url}", json=json, headers=self.headers).json()
+    def _post(self, url: str, json: dict = None):
+        return post(f"{self.url}{url}", json=json, headers=self.headers).json()
 
     def post(self, url: str, body: dict, index: str = "", suffix: str = ""):
-        return self._post(f"{index or self.common_index}{suffix}{url}", body)
+        return self._post(f"/{index or self.common_index}{suffix}{url}", body)
 
     def post_act(self, url: str, body: dict, suffix: str = ""):
         return self.post(url, body, self.activity_index, suffix)
 
     def get(self, url: str, body: dict, index: str = "", suffix: str = ""):
-        return self._get(f"{index or self.common_index}{suffix}{url}", body)
+        return self._get(f"/{index or self.common_index}{suffix}{url}", body)
 
     def get_act(self, url: str, body: dict, suffix: str = ""):
         return self.get(url, body, self.activity_index, suffix)
@@ -154,3 +159,6 @@ class Elastic:
             },
             "data": data,
         }
+
+    def health(self, query: str = ""):
+        return self._get(f"/_cluster/health?{query}")
