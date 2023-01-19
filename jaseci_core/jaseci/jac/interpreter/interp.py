@@ -992,9 +992,10 @@ class Interp(VirtualMachine):
         else:
             try:
                 atom_res.value = typ.value(atom_res.value)
-            except Exception:
+            except Exception as e:
                 self.rt_error(
-                    f"Invalid cast of {atom_res.jac_type()} " f"to {jwv(typ.value)}",
+                    f"Invalid cast of {atom_res.jac_type()} "
+                    f"to {jwv(typ.value)}: {e}",
                     kid[0],
                 )
             return atom_res
