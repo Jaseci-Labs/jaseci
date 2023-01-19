@@ -24,8 +24,7 @@ setup(
     name="jac_speech",
     version=get_ver(),
     packages=find_packages(include=["jac_speech", "jac_speech.*"]),
-    install_requires=["jaseci", "pytest>=7.0.1,<7.1",
-                      "pytest-order>=1.0.1,<1.1"],
+    install_requires=["jaseci", "pytest>=7.0.1,<7.1", "pytest-order>=1.0.1,<1.1"],
     extras_require=get_extras_requires(),
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml", "requirements.txt"],
