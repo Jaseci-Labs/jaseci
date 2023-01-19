@@ -16,134 +16,77 @@ Module `tts` implemented for synthesizing audio waves for the given text documen
     ```
 2.  Load `tts` module in jac by command
     ```
-    actions load module jaseci_ai_kit.tts
+    actions load module jac_speech.tts
     ```
+    
 ## **2. Synthesize audio using jaseci `tts` module.**
 
 In this section we will take an input raw text and will output the list of amplitude values of the synthesized audio. This can use to save or play the audio files using a necessary library in a preffered language.
 
-To synthesize audios we can use the `synthesize` action in the `tts` module.
+To synthesize audios we can use the `synthesize` action in the `vc_tts` module.
 
-**Example:**
-```
-walker synthesize{
-    has text_input = "Hello world, I miss you so much";
-    can tts.synthesize;
-    result = tts.synthesize(text_input);
-    report result;
-}
-```
-
-**Output:**
-```
-    Synthesizing speeches with Tacotron2 and WaveGlow.
-    "success" : True,
-    "report" : [{
-    "audio_wave"  :  [
-        -1.3996235793456435e-05,
-        -1.5296747733373195e-05,
-        -1.5828527466510423e-05,
-        .
-        .
-        .
-      ]
-    }
-  ],
-  "final_node": "urn:uuid:492ef31c-052e-477d-a003-0e8b436d8d26",
-  "yielded": false
-}
-
-```
 **Parameters in `synthesize` action**
 
-1. text (str) : Input text string. The accepted language is English
-2. path (str) : If you want to save the generated audio in your file system, provide the output path here.
-3. rate (int) : The audio bitrate.
-4. base64 (boolean) : If you want to convert the output into base64, set this value to `True`
+1. text (str) : Input text string. The accepted language is only English in this version.
+2. speaker (str) : The expected voice actor, the accepted values are here only (male,female or random)
+3. path (str) : If you want to save the generated audio in your file system, provide the output path here.
 
-## **3. Save generated audio into the local file system.**
+Example Jac code
 
-You can save generated audio into local file system using the `save_audio` action from the jaseci `tts` module.
-
-**Example:**
 ```
-walker save_audio{
-    has text_input = "Hello world!.";
+walker synthesize {
     can tts.synthesize;
-    can tts.save_audio;
-
-    has result = tts.synthesize(text = text_input, base64_val= False);
-    report tts.save_audio(result.audio_wave , "./");
+    report tts.synthesize(input_text = "Hello World!", speaker= "male", save_path="./");
 }
 ```
 
-**Output:**
+Example Output
 ```
 {
   "success": true,
   "report": [
     {
       "save_status": true,
-      "file_path": "./audio_file_1671440039.5007231.wav"
+      "voice": "male",
+      "file_path": "./audio_file_1673841425.549086.wav"
     }
   ],
-  "final_node": "urn:uuid:e6073e75-1c25-4494-afac-eac01ee7043f",
+  "final_node": "urn:uuid:fc151279-3cd7-4e67-8122-80ec766fc2b2",
   "yielded": false
 }
 ```
-You will see the saved audio in the given file path after completion of excuting this code.
 
-**Parameters in `save_audio` action**
+## **3. Voice conversion using jaseci `tts` module.**
 
-1. audio_data (list) : list of amplitude.
-2. path (str) : Path to save the audio file.
-3. rate (int) : audio bitrate.
+In this section we will take an input raw text and an reference audio file will output the list of amplitude values of the synthesized audio, and the output audio will mimic the voice from the reference audio. Btw the output audio will have an american accent. This can use to save or play the audio files using a necessary library in a preffered language.
 
-## **4. Switching between available models.**
 
-The jaseci tts module currently have two version of Tacotron2 models as sequence to sequence models and waveglow and hifigan as vocorder models. You can switch between these models using `load_seq2seqmodel` and `load_vocorder` actions acordingly. try the following example.
+1. input_text (str) : Input text string. The accepted language is only English in this version.
+2. reference_audio (str) : The file path to the reference audio to clone voice. This refference audio is currenlty accepted only in wav format.
+3. save_path (str) :  If you want to save the generated audio in your file system, provide the output path here.
 
-**Example:**
+Example Jac code
+
 ```
-walker init{
-    has text_input = "Hello world!.";
-    can tts.synthesize;
-    can tts.save_audio;
-    can tts.load_seq2seqmodel;
-    can tts.load_vocorder;
-
-    has seq2seq = tts.load_seq2seqmodel("tacotron2_v1");
-    has vocorder = tts.load_vocorder("hifigan");
-
-    has result = tts.synthesize(text = text_input);
-    report tts.save_audio(result.audio_wave , "./");
+walker clone_voice {
+    can tts.clone_voice;
+    report tts.clone_voice(input_text = "Hello World!", reference_audio= "./test_ref_audio.wav", save_path="./");
 }
 ```
 
-**Output:**
+Example Output
+
 ```
-Synthesizing speeches with Tacotron2 and HIFIGAN.
 {
   "success": true,
   "report": [
     {
       "save_status": true,
-      "file_path": "./audio_file_1671441264.5380483.wav"
+      "file_path": "./cloned_audio_file_1673841506.9412549.wav"
     }
   ],
-  "final_node": "urn:uuid:d0993dcf-d022-4b8e-98f6-a86aa7a05652",
+  "final_node": "urn:uuid:0cb44bb9-3f63-4336-86a2-4ed9fb4c7da5",
   "yielded": false
 }
 ```
-
-**Parameters in `load_seq2seqmodel` action**
-
-1. model_name (str) : Model name, possible values : tacotron2_v1, tacotron2_v2.
-2. force_reload (bool) : If true model and model is available in the cache will reuse it.
-
-**Parameters in `load_vocorder` action**
-
-1. model_name (str) : Model name, possible values : waveglow, hifigan.
-2. force_reload (bool) : If true model and model is available in the cache will reuse it.
-
 
