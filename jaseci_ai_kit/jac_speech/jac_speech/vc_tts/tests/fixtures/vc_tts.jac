@@ -12,5 +12,5 @@ walker test_synthesize_male {
 
 walker test_clone_voice {
     can vc_tts.clone_voice;
-    report vc_tts.clone_voice(input_text = "Hello World!", reference_audio= "./jac_speech/vc_tts/tests/test_ref_audio.wav", save_path="./");
+    report vc_tts.clone_voice(input_text = "Hello World!", reference_audio= "jac_speech/vc_tts/tests/test_ref_audio.wav", save_path="./");
 }
