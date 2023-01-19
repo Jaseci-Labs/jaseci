@@ -5,7 +5,7 @@ from os import system
 from sys import executable as PYTHON_PATH
 from pkg_resources import require
 
-ORDERD_REQ = ["TTS==0.10.2", "numpy>=1.23.0,<1.24.0"]
+ORDERD_REQ = ["TTS==0.10.2"]
 
 
 def requires(packages):
