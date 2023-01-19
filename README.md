@@ -33,15 +33,15 @@
 - [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
 ## The JAC Language Guide
 
-- [Key Abstractions and Concepts](support/guide/lang_docs/key_concepts.md)
-  - [Graphs](support/guide/lang_docs/graphs.md)
-  - [Walkers](support/guide/lang_docs/walkers.md)
-    - [Walkers By Example](support/guide/lang_docs/walkers_by_example.md)
-  - [Abilities](support/guide/lang_docs/abilities.md)
-    - [`here` and `visitor`](support/guide/lang_docs/here_visitor.md)
-    - [Abilities By Example](support/guide/lang_docs/abilities_by_example.md)
-  - [Actions](support/guide/lang_docs/actions.md)
-    - [Actions By Example](support/guide/lang_docs/actions_by_example.md)
+- [Key Abstractions and Concepts](examples/CanoniCAI/codelabs/lang_docs/key_concepts.md)
+  - [Graphs](examples/CanoniCAI/codelabs/lang_docs/graphs.md)
+  - [Walkers](examples/CanoniCAI/codelabs/lang_docs/walkers.md)
+    - [Walkers By Example](examples/CanoniCAI/codelabs/lang_docs/walkers_by_example.md)
+  - [Abilities](examples/CanoniCAI/codelabs/lang_docs/abilities.md)
+    - [`here` and `visitor`](examples/CanoniCAI/codelabs/lang_docs/here_visitor.md)
+    - [Abilities By Example](examples/CanoniCAI/codelabs/lang_docs/abilities_by_example.md)
+  - [Actions](examples/CanoniCAI/codelabs/lang_docs/actions.md)
+    - [Actions By Example](examples/CanoniCAI/codelabs/lang_docs/actions_by_example.md)
 
 ## Jac Language Features
 
@@ -75,24 +75,24 @@
 ## Jaseci AI Library Reference
 
 - [Jaseci AI Kit Overview](jaseci_ai_kit/README.md)
-  - [CL Summarization](jaseci_ai_kit/jaseci_ai_kit/modules/cl_summer/README.md)
-  - [Bart Summarization](jaseci_ai_kit/jaseci_ai_kit/modules/bart_sum/README.md)
-  - [T5 Summarization](jaseci_ai_kit/jaseci_ai_kit/modules/t5_sum/README.md)
-  - [Bi-Encoder](jaseci_ai_kit/jaseci_ai_kit/modules/encoders/README.md)
-  - [FLair NER](jaseci_ai_kit/jaseci_ai_kit/modules/ent_ext/README.md)
-  - [Fasttext Classifier](jaseci_ai_kit/jaseci_ai_kit/modules/fast_enc/README.md)
-  - [Object Detection](jaseci_ai_kit/jaseci_ai_kit/modules/object_detection/readme.md)
-  - [Text Segmenter](jaseci_ai_kit/jaseci_ai_kit/modules/text_seg/README.md)
-  - [Text Clustering](jaseci_ai_kit/jaseci_ai_kit/modules/cluster/README.md)
-  - [Transformer NER](jaseci_ai_kit/jaseci_ai_kit/modules/tfm_ner/README.md)
-  - [USE Encoder](jaseci_ai_kit/jaseci_ai_kit/modules/use_enc/README.md)
-  - [USE QA](jaseci_ai_kit/jaseci_ai_kit/modules/use_qa/README.md)
-  - [Personalized Head](jaseci_ai_kit/jaseci_ai_kit/modules/ph/README.md)
-  - [Speech2Text](jaseci_ai_kit/jaseci_ai_kit/modules/stt/README.md)
-  - [Translator](jaseci_ai_kit/jaseci_ai_kit/modules/translator/README.md)
+  - [CL Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/cl_summer/README.md)
+  - [Bart Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/bart_sum/README.md)
+  - [T5 Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/t5_sum/README.md)
+  - [Bi-Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/bi_enc/README.md)
+  - [FLair NER](jaseci_ai_kit/jac_nlp/jac_nlp/ent_ext/README.md)
+  - [Fasttext Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/fast_enc/README.md)
+  - [Text Segmenter](jaseci_ai_kit/jac_nlp/jac_nlp/text_seg/README.md)
+  - [Text Clustering](jaseci_ai_kit/jac_misc/jac_misc/cluster/README.md)
+  - [Transformer NER](jaseci_ai_kit/jac_nlp/jac_nlp/tfm_ner/README.md)
+  - [USE Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/use_enc/README.md)
+  - [USE QA](jaseci_ai_kit/jac_nlp/jac_nlp/use_qa/README.md)
+  - [Personalized Head](jaseci_ai_kit/jac_misc/jac_misc/ph/README.md)
+  - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
+  - [Translator](jaseci_ai_kit/jac_misc/jac_misc/translator/README.md)
+  - [ZS Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/zs_classifier/README.md)
 
-- [Guide to use Jaseci AI Kit](jaseci_ai_kit/jaseci_ai_kit/guid-to-use-ai-kit.md)
-- [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/jaseci_ai_kit/README.md)
+- [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
+- [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/README.md)
 
 ## Jaseci Studio and UI Widget Library
 
@@ -119,6 +119,7 @@
 - [Services/JsOrc](jaseci_core/jaseci/svc/README.md)
   - [Task](jaseci_core/jaseci/svc/task/README.md)
   - [Mail](jaseci_core/jaseci/svc/mail/README.md)
+- [JSORC Action Management Engine](jaseci_core/jaseci/svc/JSORC.md)
 
 ## Contributing to Jaseci
 

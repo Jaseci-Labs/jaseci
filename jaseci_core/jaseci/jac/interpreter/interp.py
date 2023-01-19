@@ -748,7 +748,7 @@ class Interp(VirtualMachine):
         atom:
             INT
             | FLOAT
-            | STRING
+            | multistring
             | BOOL
             | NULL
             | NAME
@@ -773,8 +773,8 @@ class Interp(VirtualMachine):
                 self.push(JacValue(self, value=int(kid[0].token_text())))
             elif kid[0].name == "FLOAT":
                 self.push(JacValue(self, value=float(kid[0].token_text())))
-            elif kid[0].name == "STRING":
-                self.push(JacValue(self, value=parse_str_token(kid[0].token_text())))
+            elif kid[0].name == "multistring":
+                self.run_multistring(kid[0])
             elif kid[0].name == "BOOL":
                 self.push(JacValue(self, value=bool(kid[0].token_text() == "true")))
             elif kid[0].name == "NULL":
@@ -1010,13 +1010,21 @@ class Interp(VirtualMachine):
 
         if kid[0].name == "KW_CONTEXT":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):
-                return JacValue(self, value=atom_res.value.context)
+                return JacValue(self, ctx=atom_res.value, value=atom_res.value.context)
         elif kid[0].name == "KW_INFO":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):
-                return JacValue(self, value=atom_res.value.serialize(detailed=False))
+                return JacValue(
+                    self,
+                    ctx=atom_res.value,
+                    value=atom_res.value.serialize(detailed=False),
+                )
         elif kid[0].name == "KW_DETAILS":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):
-                return JacValue(self, value=atom_res.value.serialize(detailed=True))
+                return JacValue(
+                    self,
+                    ctx=atom_res.value,
+                    value=atom_res.value.serialize(detailed=True),
+                )
         return atom_res
 
     def run_dict_built_in(self, jac_ast, atom_res):
@@ -1767,6 +1775,18 @@ class Interp(VirtualMachine):
         else:
             self.rt_error("Unrecognized type", kid[0])
 
+    def run_multistring(self, jac_ast):
+        """
+        multistring: STRING+;
+        """
+        if self.attempt_bytecode(jac_ast):
+            return
+        kid = self.set_cur_ast(jac_ast)
+        ret = ""
+        for i in kid:
+            ret += parse_str_token(i.token_text())
+        self.push(JacValue(self, value=ret))
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage
@@ -1823,6 +1843,7 @@ class Interp(VirtualMachine):
                 "assignment",
                 "copy_assign",
                 "inc_assign",
+                "multistring",
             ]:
                 return self.pop()
             else:

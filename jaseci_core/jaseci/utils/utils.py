@@ -10,6 +10,7 @@ import types
 import base64
 import re
 import json
+import sys
 import functools
 import traceback
 import inspect
@@ -84,6 +85,10 @@ def dummy_bp(inspect):
 def print_stack_to_log():
     tb = traceback.extract_stack()
     log_var_out(tb)
+
+
+def exc_stack_as_str_list():
+    return traceback.format_exception(*sys.exc_info())
 
 
 uuid_re = re.compile(

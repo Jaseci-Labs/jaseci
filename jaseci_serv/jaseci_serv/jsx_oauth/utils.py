@@ -1,3 +1,4 @@
+from jaseci_serv.svc import MetaService
 from jaseci_serv.jsx_oauth.models import PROVIDERS_MAPPING
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
@@ -10,10 +11,17 @@ from knox.models import AuthToken
 from django.contrib.auth import authenticate, get_user_model
 from datetime import timedelta
 from rest_framework.response import Response
+from rest_framework.exceptions import APIException
 from rest_framework import serializers
 from allauth.socialaccount.helpers import complete_social_login
 from allauth.account import app_settings as allauth_settings
 from requests.exceptions import HTTPError
+
+
+class RegistrationConflict(APIException):
+    status_code = 409
+    default_detail = "User is already registered with this e-mail address!"
+    default_code = "Registration failed!"
 
 
 class JSXSocialLoginSerializer(SocialLoginSerializer):
@@ -99,9 +107,7 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
                     .exists()
                 )
                 if account_exists:
-                    raise serializers.ValidationError(
-                        _("User is already registered with this e-mail address."),
-                    )
+                    raise RegistrationConflict()
 
             login.lookup()
             login.save(request, connect=True)
@@ -146,6 +152,10 @@ class JSXSocialLoginView(SocialLoginView):
         # self.login()
         self.user.is_activated = True
         self.user.name = self.serializer.validated_data.get("name")
+        self.user.master = (
+            MetaService().build_master(h=self.user._h, name=self.user.email).id
+        )
+        self.user._h.commit()
         self.user.save()
         auth_token = AuthToken.objects.filter(user_id=self.user.id)
         if auth_token:

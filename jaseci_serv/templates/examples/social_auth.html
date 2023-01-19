@@ -114,8 +114,10 @@ var request = $.ajax({
         getUser(res.token);
     },
     error: (xhr, status, error) => {
-        alert("Error occurs on getting token! Will redirect you to default page...");
-        window.location.href = redirect_uri;
+        alert("Error occurs on getting token!");
+        toggle("response-details").textContent = JSON.stringify(
+            JSON.parse(xhr.responseText), undefined, 2
+        );;
     }
 });
 {% else %}

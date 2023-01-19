@@ -841,5 +841,13 @@ class jacListener(ParseTreeListener):
     def exitAny_type(self, ctx: jacParser.Any_typeContext):
         pass
 
+    # Enter a parse tree produced by jacParser#multistring.
+    def enterMultistring(self, ctx: jacParser.MultistringContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#multistring.
+    def exitMultistring(self, ctx: jacParser.MultistringContext):
+        pass
+
 
 del jacParser

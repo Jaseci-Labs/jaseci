@@ -165,7 +165,7 @@ class JacApi:
     def check_for_file(self, file):
         if not os.path.isfile(file):
             ret = "File does not exsist!"
-            return ret
+            return ret, ret
         filename = os.path.basename(file)
         dir = os.path.dirname(os.path.realpath(file))
         return filename, dir
