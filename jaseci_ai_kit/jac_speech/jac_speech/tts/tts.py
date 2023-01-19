@@ -22,8 +22,7 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
 
     speaker = speaker.lower()
     if speaker not in speakers:
-        raise ValueError(
-            "The value for the speaker can be male,female or random")
+        raise ValueError("The value for the speaker can be male,female or random")
 
     speaker_id = {"male": model.speakers[3], "female": model.speakers[2]}
     ret_dict = {}
