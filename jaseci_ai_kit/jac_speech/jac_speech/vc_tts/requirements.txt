@@ -1,0 +1,4 @@
+soundfile<=0.11.0
+unidecode==1.3.6
+inflect<=6.0.2
+TTS==0.10.2
