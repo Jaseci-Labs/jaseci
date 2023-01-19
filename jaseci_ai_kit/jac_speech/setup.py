@@ -1,5 +1,29 @@
 from setuptools import setup, find_packages
+from setuptools.command.install import install
 from os.path import join
+from os import system
+from sys import executable as PYTHON_PATH
+from pkg_resources import require
+
+ORDERD_REQ = ["TTS==0.10.2"]
+
+
+def requires(packages):
+    require("pip")
+    CMD_TMPLT = '"' + PYTHON_PATH + '" -m pip install %s'
+    for pkg in packages:
+        system(CMD_TMPLT % (pkg,))
+
+
+class OrderedInstall(install):
+    def run(self):
+        requires(ORDERD_REQ)
+        install.run(self)
+
+
+CMD_CLASSES = {
+    "install": OrderedInstall,
+}
 
 MODULES = ["stt", "tts"]
 
@@ -24,6 +48,7 @@ setup(
     packages=find_packages(include=["jac_speech", "jac_speech.*"]),
     install_requires=["jaseci", "pytest>=7.0.1,<7.1", "pytest-order>=1.0.1,<1.1"],
     extras_require=get_extras_requires(),
+    cmdclass=CMD_CLASSES,
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml", "requirements.txt"],
     },
