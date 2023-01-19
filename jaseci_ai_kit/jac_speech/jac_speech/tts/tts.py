@@ -1,96 +1,91 @@
-import json
-import torch
-import base64
-import warnings
+import os
+import time
 
-import numpy as np
+from TTS.api import TTS
 
 from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
 
-from .action_utils import (
-    rate,
-    force_reload,
-    save_file,
-    prediction,
-    load_seq2seq_model,
-    load_vocorder_model,
-)
+from .action_utils import synthesizer
+from .text import clean_text
 
-warnings.filterwarnings("ignore")
-warnings.warn("ignore")
+model_name = "tts_models/en/vctk/vits"
+
+model = TTS(model_name)
+
+speakers = ["male", "female", "random"]
 
 
-seq2seqmodel = load_seq2seq_model("tacotron2_v1", force_reload)
-vocorder = load_vocorder_model("waveglow", force_reload)
+@jaseci_action(act_group=["vc_tts"], allow_remote=True)
+def synthesize(input_text: str, speaker: str, save_path: str = ""):
 
+    speaker = speaker.lower()
+    if speaker not in speakers:
+        raise ValueError(
+            "The value for the speaker can be male,female or random")
 
-@jaseci_action(act_group=["tts"], allow_remote=True)
-def load_seq2seqmodel(model_name: str = "tacotron2", force_reload: bool = False):
-    """
-    Load the sequence to sequence model. This can be use to switch beween available models.
-    """
-    global seq2seq_model
+    speaker_id = {"male": model.speakers[3], "female": model.speakers[2]}
+    ret_dict = {}
+
+    input_text = clean_text(input_text, ["english_cleaners"])
+
     try:
-        seq2seq_model = load_seq2seq_model(model_name, force_reload)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        if save_path != "":
+            if os.path.exists(save_path):
+                file_name = "audio_file_" + str(time.time()) + ".wav"
+                file_path = os.path.join(save_path, file_name)
+                model.tts_to_file(
+                    text=input_text, speaker=speaker_id[speaker], file_path=file_path
+                )
+                ret_dict = {
+                    "save_status": True,
+                    "voice": speaker,
+                    "file_path": file_path,
+                }
+            else:
+                ret_dict = {"save_status": False}
+                raise ValueError("The provided path does not exists")
 
-    return f"[Model Loaded] : {model_name}"
-
-
-@jaseci_action(act_group=["tts"], allow_remote=True)
-def load_vocorder(model_name: str = "waveglow", force_reload: bool = False):
-    """
-    Load the vocorder model. This can be use to switch between available vocordel models.
-    """
-    global vocorder
-    try:
-        vocorder = load_vocorder_model(model_name, force_reload)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    return f"[Model Loaded] : {model_name}"
-
-
-@jaseci_action(act_group=["tts"], allow_remote=True)
-def synthesize(text: str, base64_val: bool = False, path: str = "", rate: int = rate):
-    """
-    Inferencing using sequence to sequence model and vocorder model.
-    """
-    try:
-        synthesize_audio = prediction(text, seq2seqmodel, vocorder)
-        if base64_val:
-            json_encoded_list = json.dumps(synthesize_audio.tolist())
-            output_list = base64.b64encode(json_encoded_list)
         else:
-            output_list = synthesize_audio.tolist()
+            audio_wav = model.tts(input_text, speaker=speaker_id[speaker])
+            ret_dict = {"audio_data": audio_wav}
 
-        if path != "":
-            audio_data = np.array(output_list, dtype="float32")
-            status = save_file(audio_data, path, rate)
-            ret = {"audio_wave": output_list, "saving_status": status}
-        else:
-            output_list = synthesize_audio.tolist()
-            ret = {
-                "audio_wave": output_list,
-            }
-        return ret
+        return ret_dict
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["tts"], allow_remote=True)
-def save_audio(audio_data: list, path: str = "", rate: int = rate):
-    """
-    Saving the audio in the given file path.
-    """
+@jaseci_action(act_group=["vc_tts"], allow_remote=True)
+def clone_voice(input_text: str, reference_audio: str, save_path: str = "./"):
+
+    ret_dict = {}
     try:
-        audio_data = np.array(audio_data, dtype="float32")
-        status = save_file(audio_data, path, rate)
-        return status
+        if save_path != "":
+            if os.path.exists(save_path):
+                file_name = "cloned_audio_file_" + str(time.time()) + ".wav"
+                file_path = os.path.join(save_path, file_name)
+                audio_wav = synthesizer.tts(
+                    text=input_text, language_name="en", speaker_wav=reference_audio
+                )
+
+                synthesizer.save_wav(wav=audio_wav, path=file_path)
+                ret_dict = {"save_status": True, "file_path": file_path}
+            else:
+                ret_dict = {"save_status": False}
+                raise ValueError("The provided path does not exists")
+        else:
+            audio_wav = synthesizer.tts(
+                text=input_text,
+                language_name="en",
+                speaker_wav=reference_audio,
+            )
+            ret_dict = ret_dict = {"audio_data": audio_wav}
+        return ret_dict
+
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
