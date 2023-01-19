@@ -8,22 +8,6 @@
 
 In this section, we will walk you through on how to register and update your jac code on a remote instance. The steps are as follows:
 
-### Managing your application with Jaseci Studio
-
-Jaseci Studio provides a UI for easily managing and visualising changes to your Jaseci project.
-
-We will install Jaseci studio by going to the [latest jaseci release](https://github.com/Jaseci-Labs/jaseci/releases/latest) where we can download the binary that is relevant to our operating system.
-
-Once we have the application installed and when we launch it, we are first greeted with a login screen. We then enter our server endpoint in the `host` and `port` fields. Then, we enter the login credentials for the account we created earlier with `jsserv`.
-
-We can verify that the information we entered is correct by clicking "Test Connection". If there is an error, check that your server is still running and ensure that there is no typo in any of the fields.
-
-Click connect once you have verified that all is good.
-![login](./images/studio_login.png)
-_Jaseci Studio Login Screen_
-
-For a summary of the features Jaseci Studio currently has, [click here](https://github.com/Jaseci-Labs/jaseci/blob/main/jaseci_studio/features.md).
-
 #### Register jac code on a remote instance
 
 First you have to login to jaseci control from the terminal.
@@ -192,6 +176,22 @@ PAYLOAD: {
 ```
 
 For the payload sent to the /js/walker_run, the name (name of walker to be called), ctx (information sent to the walker), snt (sentinel ID of the program ), detailed (returns additional information for the walker), nd (node walker will be set to, if not included will go to the root node). This is how we interact with jac application through restful API endpoints. In this example we ran the talk walker.
+
+### Managing your application with Jaseci Studio
+
+Jaseci Studio provides a UI for easily managing and visualising changes to your Jaseci project.
+
+We will install Jaseci studio by going to the [latest jaseci release](https://github.com/Jaseci-Labs/jaseci/releases/latest) where we can download the binary that is relevant to our operating system.
+
+Once we have the application installed and when we launch it, we are first greeted with a login screen. We then enter our server endpoint in the `host` and `port` fields. Then, we enter the login credentials for the account we created earlier with `jsserv`.
+
+We can verify that the information we entered is correct by clicking "Test Connection". If there is an error, check that your server is still running and ensure that there is no typo in any of the fields.
+
+Click connect once you have verified that all is good.
+![login](./images/studio_login.png)
+_Jaseci Studio Login Screen_
+
+For a summary of the features Jaseci Studio currently has, [click here](https://github.com/Jaseci-Labs/jaseci/blob/main/jaseci_studio/features.md).
 
 ## Bringing in the AI models for the dialogue
 
