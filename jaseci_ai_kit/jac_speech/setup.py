@@ -25,7 +25,7 @@ CMD_CLASSES = {
     "install": OrderedInstall,
 }
 
-MODULES = ["stt", "tts"]
+MODULES = ["stt", "tts", "vc_tts"]
 
 
 def get_ver():
