@@ -10,26 +10,26 @@ class TestTTSModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(TestTTSModule, cls).setUpClass()
-        ret = load_module_actions("jaseci_ai_kit.vc_tts")
+        ret = load_module_actions("jac_speech.tts")
         assert ret == True
 
     @pytest.mark.order(1)
-    @jac_testcase("vc_tts.jac", "test_synthesize_female")
+    @jac_testcase("tts.jac", "test_synthesize_female")
     def test_synthesize_female(self, ret):
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(2)
-    @jac_testcase("vc_tts.jac", "test_synthesize_male")
+    @jac_testcase("tts.jac", "test_synthesize_male")
     def test_synthesize_male(self, ret):
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(3)
-    @jac_testcase("vc_tts.jac", "test_clone_voice")
+    @jac_testcase("tts.jac", "test_clone_voice")
     def test_clone_voice(self, ret):
         self.assertEqual(ret["success"], True)
 
     @classmethod
     def tearDownClass(cls):
         super(TestTTSModule, cls).tearDownClass()
-        ret = unload_module("jaseci_ai_kit.modules.vc_tts.vc_tts")
+        ret = unload_module("jac_speech.tts.tts")
         assert ret == True
