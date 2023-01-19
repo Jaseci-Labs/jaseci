@@ -18,12 +18,12 @@ Module `tts` implemented for synthesizing audio waves for the given text documen
     ```
     actions load module jac_speech.tts
     ```
-    
+
 ## **2. Synthesize audio using jaseci `tts` module.**
 
 In this section we will take an input raw text and will output the list of amplitude values of the synthesized audio. This can use to save or play the audio files using a necessary library in a preffered language.
 
-To synthesize audios we can use the `synthesize` action in the `vc_tts` module.
+To synthesize audios we can use the `synthesize` action in the `tts` module.
 
 **Parameters in `synthesize` action**
 
