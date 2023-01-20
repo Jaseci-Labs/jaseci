@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from os.path import join
 
-MODULES = []
+MODULES = ['rftm']
 
 
 def get_ver():

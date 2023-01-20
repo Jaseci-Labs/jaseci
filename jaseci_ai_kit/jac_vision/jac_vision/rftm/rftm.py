@@ -17,17 +17,18 @@ def setup(device: str = None):
     )
     detector = RFTM(device=_device)
 
+
 setup(device=None)
 
+
 @jaseci_action(act_group=["rftm"], allow_remote=True)
-def get_anomaly_index(frames: list, b64:bool = False) -> float:
+def predict(frames: list, b64: bool = False) -> float:
     try:
         if b64:
             import base64
             import io
-            frames = [
-                Image.open(io.BytesIO(base64.b64decode(frame))) for frame in frames
-            ]
+
+            frames = [io.BytesIO(base64.b64decode(frame)) for frame in frames]
         if len(frames) != 16:
             raise ValueError("Must have 16 frames")
         inputs = torch.Tensor(1, 3, 16, 240, 320).to()

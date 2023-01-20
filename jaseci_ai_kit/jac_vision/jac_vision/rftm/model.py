@@ -20,13 +20,13 @@ class RFTM:
             self.device = device
 
         self.model = generate_model(device)
-        checkpoint = torch.load("./weight/rftm_resnet101.pth", map_location=self.device)
+        checkpoint = torch.load("./weights/rftm_resnet101.pth", map_location=self.device)
         self.model.load_state_dict(checkpoint["state_dict"])
         self.model.eval()
 
         self.classifier = Learner().to(self.device)
         checkpoint = torch.load(
-            "./weight/rftm_classifier.pth", map_location=self.device
+            "./weights/rftm_classifier.pth", map_location=self.device
         )
         self.classifier.load_state_dict(checkpoint["net"])
 
