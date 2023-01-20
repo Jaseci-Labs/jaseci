@@ -1,9 +1,13 @@
+import os
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from rest_framework.test import APIClient
 
 from time import sleep
+from jaseci.utils.utils import logger
+
+APP_PATH = os.path.join(os.path.dirname(__file__), "example_jac")
 
 
 class JsorcLoadTest:
@@ -129,3 +133,100 @@ class JsorcLoadTest:
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         return res.data
+
+    def synthetic_apps(self, experiment, mem):
+        """
+        Run synthetic application
+        """
+        results = {}
+        node_mem = [int(mem) * 1024]
+        # node_mem = [4 * 1024, 6 * 1024, 8 * 1024]
+        # node_mem = [4 * 1024]
+        # apps = [
+        #    # "sentence_pairing",
+        #    # "discussion_analysis",
+        #    "zeroshot_faq_bot",
+        #    # "flight_chatbot",
+        #    # "restaurant_chatbot",
+        #    # "virtual_assistant",
+        #    # "flow_analysis",
+        # ]
+        apps = [experiment]
+        app_to_actions = {
+            "zeroshot_faq_bot": ["text_seg", "use_qa"],
+            "sentence_pairing": ["use_enc", "bi_enc"],
+            "discussion_analysis": ["bi_enc", "cl_summer"],
+            "flight_chatbot": ["use_qa", "ent_ext"],
+            "restaurant_chatbot": ["bi_enc", "tfm_ner"],
+            "virtual_assistant": ["text_seg", "bi_enc", "tfm_ner", "ent_ext", "use_qa"],
+            "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
+        }
+        # policies = ["evaluation"]
+        policies = ["all_local"]
+        # policies = ["all_remote", "all_local"]
+        # policies = ["all_remote", "all_local", "evaluation"]
+        for app in apps:
+            jac_file = os.path.join(APP_PATH, f"{app}.jac")
+            self.sentinel_register(jac_file)
+            action_modules = app_to_actions[app]
+            for policy in policies:
+                if policy == "all_local" or policy == "all_remote":
+                    policy_params = [{}]
+                else:
+                    policy_params = [{"node_mem": nm} for nm in node_mem]
+
+                for pparams in policy_params:
+                    if policy == "all_local":
+                        jsorc_policy = "Default"
+                        for module in action_modules:
+                            self.load_action(module, "local", wait_for_ready=True)
+                    elif policy == "all_remote":
+                        jsorc_policy = "Default"
+                        for module in action_modules:
+                            self.load_action(module, "remote", wait_for_ready=True)
+                    elif policy == "evaluation":
+                        jsorc_policy = "Evaluation"
+                        # For JSORC mode, we start as remote everything
+                        for module in action_modules:
+                            self.load_action(module, "remote", wait_for_ready=True)
+                    else:
+                        logger.error(f"Unrecognized policy {policy}")
+                        return
+
+                    self.set_jsorc_actionpolicy(jsorc_policy, policy_params=pparams)
+                    #
+                    # Experiment Start
+                    #
+                    self.start_benchmark()
+                    self.start_actions_tracking()
+                    start_ts = time.time()
+                    if policy == "all_local" or policy == "all_remote":
+                        experiment_duration = 3 * 60
+                    else:
+                        experiment_duration = 5 * 60
+                    while (time.time() - start_ts) < experiment_duration:
+                        res = self.run_walker(app)
+                    result = self.stop_benchmark()
+                    action_result = self.stop_actions_tracking()
+                    if policy == "all_local" or policy == "all_remote":
+                        policy_str = policy
+                    else:
+                        policy_str = f"{policy}-mem-{pparams['node_mem']}"
+                    results.setdefault(app, {})[policy_str] = {
+                        "walker_level": result,
+                        "action_level": action_result,
+                    }
+                    #
+                    # Experiment Ends. Unload actions. Reset the cluster
+                    #
+                    if policy == "all_local":
+                        for module in action_modules:
+                            self.unload_action(module, mode="local", retire_svc=True)
+                    elif policy == "all_remote":
+                        for module in action_modules:
+                            self.unload_action(module, mode="remote", retire_svc=True)
+                    else:
+                        for module in action_modules:
+                            self.unload_action(module, mode="auto", retire_svc=True)
+                    sleep(10)
+        return results
