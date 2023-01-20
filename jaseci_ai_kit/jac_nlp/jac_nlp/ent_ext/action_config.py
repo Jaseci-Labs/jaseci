@@ -1,6 +1,6 @@
 ENT_EXT_ACTION_CONFIG = {
-    "module": "jaseci_ai_kit.ent_ext",
-    "loaded_module": "jaseci_ai_kit.modules.ent_ext.ent_ext",
+    "module": "jac_nlp.ent_ext",
+    "loaded_module": "jac_nlp.ent_ext.ent_ext",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -25,7 +25,7 @@ ENT_EXT_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jaseci_ai_kit.ent_ext:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.ent_ext:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -51,12 +51,12 @@ ENT_EXT_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "ent-ext",
-                                "image": "jaseci/jaseci-ai:1.3.6.3",
+                                "image": "jaseci/jac-nlp:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "requests": {"memory": "5Gi"},
-                                    "limits": {"memory": "6Gi"},
+                                    "limits": {"memory": "3Gi"},
+                                    "requests": {"memory": "3Gi"},
                                 },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"}

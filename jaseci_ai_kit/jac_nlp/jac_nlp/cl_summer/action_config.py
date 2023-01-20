@@ -1,6 +1,6 @@
 CL_SUMMER_ACTION_CONFIG = {
-    "module": "jaseci_ai_kit.cl_summer",
-    "loaded_module": "jaseci_ai_kit.modules.cl_summer.cl_summer",
+    "module": "jac_nlp.cl_summer",
+    "loaded_module": "jac_nlp.cl_summer.cl_summer",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -25,7 +25,7 @@ CL_SUMMER_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jaseci_ai_kit.cl_summer:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.cl_summer:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -54,12 +54,12 @@ CL_SUMMER_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "cl-summer",
-                                "image": "jaseci/jaseci-ai:1.3.6.3",
+                                "image": "jaseci/jac-nlp:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "2Gi"},
-                                    "requests": {"memory": "2Gi"},
+                                    "limits": {"memory": "3Gi"},
+                                    "requests": {"memory": "3Gi"},
                                 },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"}

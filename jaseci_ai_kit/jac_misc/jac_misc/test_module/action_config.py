@@ -1,16 +1,17 @@
-FAST_ENC_ACTION_CONFIG = {
-    "module": "jac_nlp.fast_enc",
-    "loaded_module": "jac_nlp.fast_enc.fast_enc",
+TEST_MODULE_ACTION_CONFIG = {
+    "local": "/jaseci/jaseci_ai_kit/jac_misc/test_module/test_module.py",
+    "module": "jac_misc.test_module",
+    "loaded_module": "jac_misc.test_module.test_module",
     "remote": {
         "Service": {
             "kind": "Service",
             "apiVersion": "v1",
-            "metadata": {"name": "fast-enc", "creationTimestamp": None},
+            "metadata": {"name": "test-module", "creationTimestamp": None},
             "spec": {
                 "ports": [
                     {"name": "http", "protocol": "TCP", "port": 80, "targetPort": 80}
                 ],
-                "selector": {"pod": "fast-enc"},
+                "selector": {"pod": "test-module"},
                 "type": "ClusterIP",
                 "sessionAffinity": "None",
                 "internalTrafficPolicy": "Cluster",
@@ -21,46 +22,42 @@ FAST_ENC_ACTION_CONFIG = {
             "kind": "ConfigMap",
             "apiVersion": "v1",
             "metadata": {
-                "name": "fast-enc-up",
+                "name": "test-module-up",
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_nlp.fast_enc:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_misc.test_module:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
             "kind": "Deployment",
             "apiVersion": "apps/v1",
-            "metadata": {"name": "fast-enc", "creationTimestamp": None},
+            "metadata": {"name": "test-module", "creationTimestamp": None},
             "spec": {
                 "replicas": 1,
-                "selector": {"matchLabels": {"pod": "fast-enc"}},
+                "selector": {"matchLabels": {"pod": "test-module"}},
                 "template": {
                     "metadata": {
-                        "name": "fast-enc",
+                        "name": "test-module",
                         "creationTimestamp": None,
-                        "labels": {"pod": "fast-enc"},
+                        "labels": {"pod": "test-module"},
                     },
                     "spec": {
                         "volumes": [
                             {
                                 "name": "prod-script",
                                 "configMap": {
-                                    "name": "fast-enc-up",
+                                    "name": "test-module-up",
                                     "defaultMode": 420,
                                 },
                             }
                         ],
                         "containers": [
                             {
-                                "name": "fast-enc",
-                                "image": "jaseci/jac-nlp:1.4.0.6",
+                                "name": "test-module",
+                                "image": "jaseci/jac-misc:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
-                                "resources": {
-                                    "limits": {"memory": "3Gi"},
-                                    "requests": {"memory": "3Gi"},
-                                },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"}
                                 ],

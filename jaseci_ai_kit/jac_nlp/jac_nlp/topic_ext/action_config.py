@@ -1,16 +1,16 @@
-FAST_ENC_ACTION_CONFIG = {
-    "module": "jac_nlp.fast_enc",
-    "loaded_module": "jac_nlp.fast_enc.fast_enc",
+TOPIC_EXT_ACTION_CONFIG = {
+    "module": "jac_nlp.topic_ext",
+    "loaded_module": "jac_nlp.topic_ext.topic_ext",
     "remote": {
         "Service": {
             "kind": "Service",
             "apiVersion": "v1",
-            "metadata": {"name": "fast-enc", "creationTimestamp": None},
+            "metadata": {"name": "topic-ext", "creationTimestamp": None},
             "spec": {
                 "ports": [
                     {"name": "http", "protocol": "TCP", "port": 80, "targetPort": 80}
                 ],
-                "selector": {"pod": "fast-enc"},
+                "selector": {"pod": "topic-ext"},
                 "type": "ClusterIP",
                 "sessionAffinity": "None",
                 "internalTrafficPolicy": "Cluster",
@@ -21,39 +21,39 @@ FAST_ENC_ACTION_CONFIG = {
             "kind": "ConfigMap",
             "apiVersion": "v1",
             "metadata": {
-                "name": "fast-enc-up",
+                "name": "topic-ext-up",
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_nlp.fast_enc:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.topic_ext:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
             "kind": "Deployment",
             "apiVersion": "apps/v1",
-            "metadata": {"name": "fast-enc", "creationTimestamp": None},
+            "metadata": {"name": "topic-ext", "creationTimestamp": None},
             "spec": {
                 "replicas": 1,
-                "selector": {"matchLabels": {"pod": "fast-enc"}},
+                "selector": {"matchLabels": {"pod": "topic-ext"}},
                 "template": {
                     "metadata": {
-                        "name": "fast-enc",
+                        "name": "topic-ext",
                         "creationTimestamp": None,
-                        "labels": {"pod": "fast-enc"},
+                        "labels": {"pod": "topic-ext"},
                     },
                     "spec": {
                         "volumes": [
                             {
                                 "name": "prod-script",
                                 "configMap": {
-                                    "name": "fast-enc-up",
+                                    "name": "topic-ext-up",
                                     "defaultMode": 420,
                                 },
                             }
                         ],
                         "containers": [
                             {
-                                "name": "fast-enc",
+                                "name": "topic-ext",
                                 "image": "jaseci/jac-nlp:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],

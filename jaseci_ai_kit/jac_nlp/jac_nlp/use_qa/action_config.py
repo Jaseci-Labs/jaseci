@@ -1,6 +1,6 @@
 USE_QA_ACTION_CONFIG = {
-    "module": "jaseci_ai_kit.use_qa",
-    "loaded_module": "jaseci_ai_kit.modules.use_qa.use_qa",
+    "module": "jac_nlp.use_qa",
+    "loaded_module": "jac_nlp.use_qa.use_qa",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -25,7 +25,7 @@ USE_QA_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jaseci_ai_kit.use_qa:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.use_qa:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -54,7 +54,7 @@ USE_QA_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "use-qa",
-                                "image": "jaseci/jaseci-ai:1.3.6.3",
+                                "image": "jaseci/jac-nlp:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
