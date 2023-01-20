@@ -15,8 +15,8 @@ class YolosDetector:
         inputs = self.feature_extractor(images=image, return_tensors="pt").to(self.device)
         outputs = self.model(**inputs)
 
-        target_sizes = torch.tensor([image.size[::-1]])
-        results = self.feature_extractor.post_process_object_detection(outputs, threshold=0.9, target_sizes=target_sizes)[0]
+        target_sizes = torch.tensor([image.size[::-1]]).to(self.device)
+        results = self.feature_extractor.post_process_object_detection(outputs, threshold=threshold, target_sizes=target_sizes)[0]
 
         detections = []
         for score, label, box in zip(

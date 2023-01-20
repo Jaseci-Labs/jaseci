@@ -4,6 +4,8 @@ import torch
 from jaseci.actions.live_actions import jaseci_action
 import traceback
 from fastapi import HTTPException
+import base64
+import io
 
 from .model import RFTM, ToTensor
 
@@ -25,9 +27,6 @@ setup(device=None)
 def predict(frames: list, b64: bool = False) -> float:
     try:
         if b64:
-            import base64
-            import io
-
             frames = [io.BytesIO(base64.b64decode(frame)) for frame in frames]
         if len(frames) != 16:
             raise ValueError("Must have 16 frames")
