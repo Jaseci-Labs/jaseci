@@ -89,7 +89,7 @@ walker init{
 }
 ```
 
-## **3. Extract topic for each clusters**
+## **5. Extract topic for each clusters**
 
 Use `topic_ext.topic_extraction` action to extract top n number of topics from each cluster.
 
@@ -242,3 +242,31 @@ Run the jac code in the terminal with `jac run topic_extraction.jac` command. Yo
   "yielded": false
 }
 ```
+
+## **6. Generate headings for each clusters**
+
+Use `topic_ext.headline_generation` action to generate a relevant heading for each cluster.
+
+```jac
+walker init{
+    can file.load_json;
+    has text = file.load_json("text_data.json");
+
+    can use.encode;
+    has encode = use.encode(visitor.text);
+
+    can cluster.get_umap;
+    final_features = cluster.get_umap(encode,2);
+
+    can cluster.get_cluster_labels;
+    labels = cluster.get_cluster_labels(final_features,"hbdscan",2,2);
+
+    can topic_ext.topic_extraction;
+    topic_dict = topic_ext.headline_generation(texts=text,classes=labels);
+}
+```
+
+**Parameters of `topic_ext.headline_generation`**
+
+- `texts` - (list of strings) list of input text documents.
+- `labels` - (list of int) list of labels associated with each text documents.
