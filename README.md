@@ -71,6 +71,7 @@
   - [Std](docs/docs/Developing_with_JAC/Language_Features/actions/std.md)
   - [Vectors](docs/docs/Developing_with_JAC/Language_Features/actions/vectors.md)
   - [Walker](docs/docs/Developing_with_JAC/Language_Features/actions/walker.md)
+  - [Elastic](docs/docs/Developing_with_JAC/Language_Features/actions/elastic.md)
 
 ## Jaseci AI Library Reference
 
