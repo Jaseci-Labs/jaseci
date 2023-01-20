@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from os.path import join
 
-MODULES = ["stt", "tts"]
+MODULES = ["stt", "tts", "vc_tts"]
 
 
 def get_ver():

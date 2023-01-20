@@ -16,7 +16,7 @@ Module `tts` implemented for synthesizing audio waves for the given text documen
     ```
 2.  Load `tts` module in jac by command
     ```
-    actions load module jaseci_ai_kit.tts
+    actions load module jac_speech.tts
     ```
 ## **2. Synthesize audio using jaseci `tts` module.**
 

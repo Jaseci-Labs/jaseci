@@ -30,6 +30,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg
+        sudo apt-get install -y espeak-ng
         python -m pip install --upgrade pip
 
     - name: Install jaseci_core
