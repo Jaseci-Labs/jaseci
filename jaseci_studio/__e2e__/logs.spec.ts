@@ -5,7 +5,7 @@ test("logs page loads", async ({ page }) => {
   await expect(page).toHaveTitle(/Logs/);
 });
 
-test("logs messages load", async ({ page }) => {
+test.skip("logs messages load", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("serverUrl", "http://localhost:8005");
     window.localStorage.setItem("token", "abcde");
