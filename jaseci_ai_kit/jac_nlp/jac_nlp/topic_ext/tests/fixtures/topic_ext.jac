@@ -18,7 +18,7 @@ walker test_topic_ext{
         ];
     has labels = [2, 0, 2, 0, 0, 2, 1, 0, 2, 3, 3, 1, 3, 1, 0];
 
-    report topic_ext.topic_extraction(texts=texts,classes=labels,n_topics=5);
+    report topic_ext.topic_extraction(texts=texts,classes=labels,n_topics=5,min_tokens=1,max_tokens=2);
 }
 
 

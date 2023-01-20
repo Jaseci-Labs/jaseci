@@ -93,6 +93,16 @@ walker init{
 
 Use `topic_ext.topic_extraction` action to extract top n number of topics from each cluster.
 
+
+**Parameters of `topic_ext.topic_extraction`**
+
+- `texts` - (list of strings) list of input text documents.
+- `labels` - (list of int) list of labels associated with each text documents.
+- `n_topics` - (int) - Default 5 - number of topics to extract from each cluster.
+- `min_tokens` - (int) - Default 1 - number of minimum words per topic.
+- `max_tokens` - (int) - Default 2 - number of maximum words per topic.
+
+
 ```jac
 walker init{
     can file.load_json;
@@ -111,13 +121,6 @@ walker init{
     topic_dict = topic_ext.topic_extraction(texts=text,classes=labels,n_topics=5);
 }
 ```
-
-**Parameters of `topic_ext.topic_extraction`**
-
-- `texts` - (list of strings) list of input text documents.
-- `labels` - (list of int) list of labels associated with each text documents.
-- `n_topics` - (int) number of topics to extract from each cluster.
-
 
 Save the above full code in a file with name `topic_extraction.jac` and save the following text data inside the same directory with name `text_data.json`.
 
@@ -247,6 +250,12 @@ Run the jac code in the terminal with `jac run topic_extraction.jac` command. Yo
 
 Use `topic_ext.headline_generation` action to generate a relevant heading for each cluster.
 
+**Parameters of `topic_ext.headline_generation`**
+
+- `texts` - (list of strings) list of input text documents.
+- `labels` - (list of int) list of labels associated with each text documents.
+
+
 ```jac
 walker init{
     can file.load_json;
@@ -265,8 +274,3 @@ walker init{
     topic_dict = topic_ext.headline_generation(texts=text,classes=labels);
 }
 ```
-
-**Parameters of `topic_ext.headline_generation`**
-
-- `texts` - (list of strings) list of input text documents.
-- `labels` - (list of int) list of labels associated with each text documents.
