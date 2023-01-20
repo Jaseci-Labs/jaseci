@@ -1,5 +1,19 @@
 # **Text to Speech with Voice Cloning (`vc_tts`)**
 
+Before loading the module install `espeak-ng` using the command `sudo apt-get install -y espeak-ng`.
+
+# **Walk through**
+
+## **1. Import text to speech (`vc_tts`) module in jac**
+
+1. For executing jaseci Open terminal and run follow command.
+    ```
+    jsctl -m
+    ```
+2.  Load `vc_tts` module in jac by command
+    ```
+    actions load module jac_speech.vc_tts
+
 ## **2. Synthesize audio using jaseci `vc_tts` module.**
 
 In this section we will take an input raw text and will output the list of amplitude values of the synthesized audio. This can use to save or play the audio files using a necessary library in a preffered language.
