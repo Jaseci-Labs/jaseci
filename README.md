@@ -89,8 +89,10 @@
   - [USE QA](jaseci_ai_kit/jac_nlp/jac_nlp/use_qa/README.md)
   - [Personalized Head](jaseci_ai_kit/jac_misc/jac_misc/ph/README.md)
   - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
+  - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/tts/README.md)
   - [Translator](jaseci_ai_kit/jac_misc/jac_misc/translator/README.md)
   - [ZS Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/zs_classifier/README.md)
+  - [Topic Extraction](jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext/README.md)
 
 - [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
 - [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/README.md)
