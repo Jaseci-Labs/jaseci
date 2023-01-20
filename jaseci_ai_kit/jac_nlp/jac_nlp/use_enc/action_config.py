@@ -1,7 +1,6 @@
 USE_ENC_ACTION_CONFIG = {
-    "local": "/jaseci/jaseci_ai_kit/jaseci_ai_kit/modules/use_enc/use_enc.py",
-    "module": "jaseci_ai_kit.use_enc",
-    "loaded_module": "jaseci_ai_kit.modules.use_enc.use_enc",
+    "module": "jac_nlp.use_enc",
+    "loaded_module": "jac_nlp.use_enc.use_enc",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -26,7 +25,7 @@ USE_ENC_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jaseci_ai_kit.use_enc:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.use_enc:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -55,7 +54,7 @@ USE_ENC_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "use-enc",
-                                "image": "jaseci/jaseci-ai:1.3.6.3",
+                                "image": "jaseci/jac-nlp:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

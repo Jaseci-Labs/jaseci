@@ -1,16 +1,16 @@
-FAST_ENC_ACTION_CONFIG = {
-    "module": "jac_nlp.fast_enc",
-    "loaded_module": "jac_nlp.fast_enc.fast_enc",
+STT_ACTION_CONFIG = {
+    "module": "jac_speech.stt",
+    "loaded_module": "jac_speech.stt.stt",
     "remote": {
         "Service": {
             "kind": "Service",
             "apiVersion": "v1",
-            "metadata": {"name": "fast-enc", "creationTimestamp": None},
+            "metadata": {"name": "stt", "creationTimestamp": None},
             "spec": {
                 "ports": [
                     {"name": "http", "protocol": "TCP", "port": 80, "targetPort": 80}
                 ],
-                "selector": {"pod": "fast-enc"},
+                "selector": {"pod": "stt"},
                 "type": "ClusterIP",
                 "sessionAffinity": "None",
                 "internalTrafficPolicy": "Cluster",
@@ -21,40 +21,40 @@ FAST_ENC_ACTION_CONFIG = {
             "kind": "ConfigMap",
             "apiVersion": "v1",
             "metadata": {
-                "name": "fast-enc-up",
+                "name": "stt-up",
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_nlp.fast_enc:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_speech.stt:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
             "kind": "Deployment",
             "apiVersion": "apps/v1",
-            "metadata": {"name": "fast-enc", "creationTimestamp": None},
+            "metadata": {"name": "stt", "creationTimestamp": None},
             "spec": {
                 "replicas": 1,
-                "selector": {"matchLabels": {"pod": "fast-enc"}},
+                "selector": {"matchLabels": {"pod": "stt"}},
                 "template": {
                     "metadata": {
-                        "name": "fast-enc",
+                        "name": "stt",
                         "creationTimestamp": None,
-                        "labels": {"pod": "fast-enc"},
+                        "labels": {"pod": "stt"},
                     },
                     "spec": {
                         "volumes": [
                             {
                                 "name": "prod-script",
                                 "configMap": {
-                                    "name": "fast-enc-up",
+                                    "name": "stt-up",
                                     "defaultMode": 420,
                                 },
                             }
                         ],
                         "containers": [
                             {
-                                "name": "fast-enc",
-                                "image": "jaseci/jac-nlp:1.4.0.6",
+                                "name": "stt",
+                                "image": "jaseci/jac-speech:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

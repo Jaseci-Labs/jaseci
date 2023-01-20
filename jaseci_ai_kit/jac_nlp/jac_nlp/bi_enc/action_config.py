@@ -1,6 +1,6 @@
 BI_ENC_ACTION_CONFIG = {
-    "module": "jaseci_ai_kit.bi_enc",
-    "loaded_module": "jaseci_ai_kit.modules.encoder.bi_enc",
+    "module": "jac_nlp.bi_enc",
+    "loaded_module": "jac_nlp.bi_enc.bi_enc",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -25,7 +25,7 @@ BI_ENC_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jaseci_ai_kit.bi_enc:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.bi_enc:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -51,12 +51,12 @@ BI_ENC_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "bi-enc",
-                                "image": "jaseci/jaseci-ai:1.3.6.3",
+                                "image": "jaseci/jac-nlp:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "2Gi"},
-                                    "requests": {"memory": "2Gi"},
+                                    "limits": {"memory": "3Gi"},
+                                    "requests": {"memory": "3Gi"},
                                 },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"}

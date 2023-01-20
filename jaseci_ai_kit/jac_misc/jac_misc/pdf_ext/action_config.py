@@ -1,6 +1,6 @@
 PDF_EXT_ACTION_CONFIG = {
-    "module": "jaseci_ai_kit.pdf_ext",
-    "loaded_module": "jaseci_ai_kit.modules.pdf_ext.pdf_ext",
+    "module": "jac_misc.pdf_ext",
+    "loaded_module": "jac_misc.pdf_ext.pdf_ext",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -25,7 +25,7 @@ PDF_EXT_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jaseci_ai_kit.pdf_ext:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_misc.pdf_ext:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -51,7 +51,7 @@ PDF_EXT_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "pdf-ext",
-                                "image": "jaseci/jaseci-ai:1.3.6.3",
+                                "image": "jaseci/jac-misc:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

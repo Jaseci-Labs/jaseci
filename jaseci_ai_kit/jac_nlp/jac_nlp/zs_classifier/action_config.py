@@ -1,16 +1,16 @@
-FAST_ENC_ACTION_CONFIG = {
-    "module": "jac_nlp.fast_enc",
-    "loaded_module": "jac_nlp.fast_enc.fast_enc",
+ZS_CLASSIFIER_ACTION_CONFIG = {
+    "module": "jac_nlp.zs_classifier",
+    "loaded_module": "jac_nlp.zs_classifier.zs_classifier",
     "remote": {
         "Service": {
             "kind": "Service",
             "apiVersion": "v1",
-            "metadata": {"name": "fast-enc", "creationTimestamp": None},
+            "metadata": {"name": "zs-classifier", "creationTimestamp": None},
             "spec": {
                 "ports": [
                     {"name": "http", "protocol": "TCP", "port": 80, "targetPort": 80}
                 ],
-                "selector": {"pod": "fast-enc"},
+                "selector": {"pod": "zs-classifier"},
                 "type": "ClusterIP",
                 "sessionAffinity": "None",
                 "internalTrafficPolicy": "Cluster",
@@ -21,39 +21,39 @@ FAST_ENC_ACTION_CONFIG = {
             "kind": "ConfigMap",
             "apiVersion": "v1",
             "metadata": {
-                "name": "fast-enc-up",
+                "name": "zs-classifier-up",
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_nlp.fast_enc:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.zs_classifier:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
             "kind": "Deployment",
             "apiVersion": "apps/v1",
-            "metadata": {"name": "fast-enc", "creationTimestamp": None},
+            "metadata": {"name": "zs-classifier", "creationTimestamp": None},
             "spec": {
                 "replicas": 1,
-                "selector": {"matchLabels": {"pod": "fast-enc"}},
+                "selector": {"matchLabels": {"pod": "zs-classifier"}},
                 "template": {
                     "metadata": {
-                        "name": "fast-enc",
+                        "name": "zs-classifier",
                         "creationTimestamp": None,
-                        "labels": {"pod": "fast-enc"},
+                        "labels": {"pod": "zs-classifier"},
                     },
                     "spec": {
                         "volumes": [
                             {
                                 "name": "prod-script",
                                 "configMap": {
-                                    "name": "fast-enc-up",
+                                    "name": "zs-classifier-up",
                                     "defaultMode": 420,
                                 },
                             }
                         ],
                         "containers": [
                             {
-                                "name": "fast-enc",
+                                "name": "zs-classifier",
                                 "image": "jaseci/jac-nlp:1.4.0.6",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
