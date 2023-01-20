@@ -37,7 +37,7 @@ summarizer = pipeline(
 )
 
 
-def c_tf_idf(documents, m, ngram_range=(1, 1)):
+def c_tf_idf(documents, m, ngram_range=(1, 2)):
     """
     Calculating class based tf_idf vectors.
 
@@ -100,7 +100,7 @@ def generate_topic_label(documents: List[str]) -> str:
 
     Returns:
     -------------
-    head_line: Dict, a dictio
+    head_line: Dict, a dictionary of class labels and headlines.
 
     """
 
