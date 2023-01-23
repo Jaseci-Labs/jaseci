@@ -491,11 +491,11 @@ class JsOrc:
     ###################################################
     #                 ACTION MANAGER                  #
     ###################################################
-    def load_action_config(self, name, config_mod):
+    def load_action_config(self, config, name):
         """
         Load the config for an action
         """
-        return load_action_config(config_mod, name)
+        return load_action_config(config, name)
 
     def load_actions(self, name, mode):
         """
