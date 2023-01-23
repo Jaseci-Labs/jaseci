@@ -185,13 +185,13 @@ class JsorcLoadTest:
                     elif policy == "all_remote":
                         jsorc_policy = "Default"
                         for module in action_modules:
-                            self.load_action_config("jac_nlp", module)
+                            self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     elif policy == "evaluation":
                         jsorc_policy = "Evaluation"
                         # For JSORC mode, we start as remote everything
                         for module in action_modules:
-                            self.load_action_config("jac_nlp", module)
+                            self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     else:
                         logger.error(f"Unrecognized policy {policy}")
