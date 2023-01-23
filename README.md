@@ -31,6 +31,7 @@
 - [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
 - [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
 - [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
+- [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
 ## The JAC Language Guide
 
 - [Key Abstractions and Concepts](examples/CanoniCAI/codelabs/lang_docs/key_concepts.md)
