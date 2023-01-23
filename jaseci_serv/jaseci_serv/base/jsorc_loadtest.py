@@ -1,4 +1,5 @@
 import os
+import time
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -39,7 +40,7 @@ class JsorcLoadTest:
 
         self.test = test
 
-    def run_test(self, experiment, mem):
+    def run_test(self, experiment, mem, policy):
         """
         Run the corresponding jsorc test
         """
@@ -47,7 +48,7 @@ class JsorcLoadTest:
         if experiment == "":
             return test_func()
         else:
-            return test_func(experiment, mem)
+            return test_func(experiment, mem, policy)
 
     def load_action(self, name, mode, wait_for_ready=False):
         """
@@ -121,37 +122,40 @@ class JsorcLoadTest:
         return res.data
 
     def start_actions_tracking(self):
-        payload = {"op": "jsorc_actionstracking_start"}
+        payload = {"op": "jsorc_trackact_start"}
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         return res.data
 
     def stop_actions_tracking(self):
-        payload = {"op": "jsorc_actionstracking_stop"}
+        payload = {"op": "jsorc_trackact_stop"}
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         return res.data
 
-    def synthetic_apps(self, experiment, mem):
+    def load_action_config(self, action_pkg, action_module):
+        """ """
+        payload = {
+            "op": "jsorc_actions_config",
+            "config": action_pkg,
+            "name": action_module,
+        }
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        return res.data
+
+    def synthetic_apps(self, experiment, mem, policy):
         """
         Run synthetic application
+        Available applications are in jaseci_serv/base/example_jac
         """
         results = {}
         node_mem = [int(mem) * 1024]
-        # node_mem = [4 * 1024, 6 * 1024, 8 * 1024]
-        # node_mem = [4 * 1024]
-        # apps = [
-        #    # "sentence_pairing",
-        #    # "discussion_analysis",
-        #    "zeroshot_faq_bot",
-        #    # "flight_chatbot",
-        #    # "restaurant_chatbot",
-        #    # "virtual_assistant",
-        #    # "flow_analysis",
-        # ]
         apps = [experiment]
+        policies = [policy]
         app_to_actions = {
             "zeroshot_faq_bot": ["text_seg", "use_qa"],
             "sentence_pairing": ["use_enc", "bi_enc"],
@@ -161,10 +165,7 @@ class JsorcLoadTest:
             "virtual_assistant": ["text_seg", "bi_enc", "tfm_ner", "ent_ext", "use_qa"],
             "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
         }
-        # policies = ["evaluation"]
-        policies = ["all_local"]
-        # policies = ["all_remote", "all_local"]
-        # policies = ["all_remote", "all_local", "evaluation"]
+
         for app in apps:
             jac_file = os.path.join(APP_PATH, f"{app}.jac")
             self.sentinel_register(jac_file)
@@ -179,15 +180,18 @@ class JsorcLoadTest:
                     if policy == "all_local":
                         jsorc_policy = "Default"
                         for module in action_modules:
+                            self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "local", wait_for_ready=True)
                     elif policy == "all_remote":
                         jsorc_policy = "Default"
                         for module in action_modules:
+                            self.load_action_config("jac_nlp", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     elif policy == "evaluation":
                         jsorc_policy = "Evaluation"
                         # For JSORC mode, we start as remote everything
                         for module in action_modules:
+                            self.load_action_config("jac_nlp", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     else:
                         logger.error(f"Unrecognized policy {policy}")

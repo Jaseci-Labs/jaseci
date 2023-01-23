@@ -102,6 +102,7 @@ data:
   prod_up: |-
     cd /jaseci/jaseci_core; source install_live.sh;
     cd /jaseci/jaseci_serv; source install_live.sh;
+    cd /jaseci/jaseci_ai_kit; source install_all.sh;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
