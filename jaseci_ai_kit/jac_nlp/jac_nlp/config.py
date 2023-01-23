@@ -1,16 +1,16 @@
-from .bart_sum.action_config import BART_SUM_ACTION_CONFIG
-from .bi_enc.action_config import BI_ENC_ACTION_CONFIG
-from .bi_ner.action_config import BI_NER_ACTION_CONFIG
-from .cl_summer.action_config import CL_SUMMER_ACTION_CONFIG
-from .ent_ext.action_config import ENT_EXT_ACTION_CONFIG
-from .fast_enc.action_config import FAST_ENC_ACTION_CONFIG
-from .sbert_sim.action_config import SBERT_SIM_ACTION_CONFIG
-from .text_seg.action_config import TEXT_SEG_ACTION_CONFIG
-from .tfm_ner.action_config import TFM_NER_ACTION_CONFIG
-from .topic_ext.action_config import TOPIC_EXT_ACTION_CONFIG
-from .use_enc.action_config import USE_ENC_ACTION_CONFIG
-from .use_qa.action_config import USE_QA_ACTION_CONFIG
-from .zs_classifier.action_config import ZS_CLASSIFIER_ACTION_CONFIG
+from .action_configs.bart_sum_action_config import BART_SUM_ACTION_CONFIG
+from .action_configs.bi_enc_action_config import BI_ENC_ACTION_CONFIG
+from .action_configs.bi_ner_action_config import BI_NER_ACTION_CONFIG
+from .action_configs.cl_summer_action_config import CL_SUMMER_ACTION_CONFIG
+from .action_configs.ent_ext_action_config import ENT_EXT_ACTION_CONFIG
+from .action_configs.fast_enc_action_config import FAST_ENC_ACTION_CONFIG
+from .action_configs.sbert_sim_action_config import SBERT_SIM_ACTION_CONFIG
+from .action_configs.text_seg_action_config import TEXT_SEG_ACTION_CONFIG
+from .action_configs.tfm_ner_action_config import TFM_NER_ACTION_CONFIG
+from .action_configs.topic_ext_action_config import TOPIC_EXT_ACTION_CONFIG
+from .action_configs.use_enc_action_config import USE_ENC_ACTION_CONFIG
+from .action_configs.use_qa_action_config import USE_QA_ACTION_CONFIG
+from .action_configs.zs_classifier_action_config import ZS_CLASSIFIER_ACTION_CONFIG
 
 ACTION_CONFIGS = {
     "bart_sum": BART_SUM_ACTION_CONFIG,
