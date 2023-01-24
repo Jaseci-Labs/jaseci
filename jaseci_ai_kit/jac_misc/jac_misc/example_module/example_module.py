@@ -1,9 +1,9 @@
 from jaseci.actions.live_actions import jaseci_action
 
 
-@jaseci_action(act_group=["test_module"], allow_remote=True)
+@jaseci_action(act_group=["example_module"], allow_remote=True)
 def call(a: str):
-    return f"test module received {a}."
+    return f"example module received {a}."
 
 
 if __name__ == "__main__":
