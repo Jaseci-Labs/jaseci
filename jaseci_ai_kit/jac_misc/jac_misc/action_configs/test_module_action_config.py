@@ -1,7 +1,7 @@
-TEST_MODULE_ACTION_CONFIG = {
-    "local": "/jaseci/jaseci_ai_kit/jac_misc/test_module/test_module.py",
-    "module": "jac_misc.test_module",
-    "loaded_module": "jac_misc.test_module.test_module",
+EXAMPLE_MODULE_ACTION_CONFIG = {
+    "local": "/jaseci/jaseci_ai_kit/jac_misc/example_module/example_module.py",
+    "module": "jac_misc.example_module",
+    "loaded_module": "jac_misc.example_module.example_module",
     "remote": {
         "Service": {
             "kind": "Service",
@@ -26,7 +26,7 @@ TEST_MODULE_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_misc.test_module:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_misc.example_module:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
