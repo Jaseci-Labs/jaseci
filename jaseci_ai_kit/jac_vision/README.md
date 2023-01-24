@@ -1,0 +1,2 @@
+# Jaseci Vision Package `(jac_vision)`
+The `jac_vision` package contains a collection of state-of-the-art Computer Vision models that can be used to perform various computer vision tasks such as image classification, object detection, image segmentation etc. following is a list of all the models available in the `jac_vision` package.

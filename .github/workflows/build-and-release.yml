@@ -205,6 +205,7 @@ jobs:
           context: ./support/docker/
           tags: |
             jaseci/jaseci:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jaseci:latest
           build-args: |
             JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
@@ -259,6 +260,7 @@ jobs:
           context: ./support/docker/
           tags: |
             jaseci/jac-nlp:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-nlp:latest
           build-args: |
             JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
@@ -315,6 +317,7 @@ jobs:
           context: ./support/docker/
           tags: |
             jaseci/jac-speech:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-speech:latest
           build-args: |
             JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
@@ -371,6 +374,7 @@ jobs:
           context: ./support/docker/
           tags: |
             jaseci/jac-vision:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-vision:latest
           build-args: |
             JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
@@ -427,6 +431,7 @@ jobs:
           context: ./support/docker/
           tags: |
             jaseci/jac-misc:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-misc:latest
           build-args: |
             JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}

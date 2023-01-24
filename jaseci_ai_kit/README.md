@@ -1,60 +1,74 @@
-# Jaseci Kit
-Jaseci Kit is a collection of state-of-the-art machine learning models that are readily available to load into jaseci.
+# Jaseci AI Kit
+Jaseci AI Kit is a collection of state-of-the-art machine learning models from different domains (NLP, Computer Vision, Speech etc.) that are readily available to load into jaseci. Jaseci AI Kit consist of 4 Main Python Packages
+- `jac_nlp` - Natural Language Processing
+- `jac_vision` - Computer Vision
+- `jac_speech` - Speech
+- `jac_misc` - Miscellaneous
+
+## Installation
+Each module can be installed individually or all at once. To install all modules at once.
+```bash
+pip install jac_nlp[all] #Installs all the modules present in the jac_nlp package
+pip install jac_misc[translator] #Installs the translator module present in the jac_misc package
+pip install jac_speech[stt, tts] #Installs the stt and tts modules present in the jac_speech package
+```
+
+# Jaseci NLP Package `(jac_nlp)`
+The `jac_nlp` package contains a collection of state-of-the-art NLP models that can be used to perform various nlp tasks such as named entity recongnition, text summerization, embedding generation, topic extraction etc. following is a list of all the models available in the `jac_nlp` package.
 
 
-# Model Directory
+| Module      | Model Type       |Model Name       | Example                             | Type                    | Status       | Description                                                 | Resources                                 |
+| ----------- | ---------------- | ---------------- | ----------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
+| `use_enc`   | Text Encoder      |USE Encoder      | [Link](#use-encoder-use_enc)        | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
+| `use_qa`    | Text Encoder      |USE QA           | [Link](#use-qa-use_qa)              | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
+| `fast_enc`  | Text Encoder      |FastText         | [Link](#fasttext-encoder-fast_enc)  | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
+| `bi_enc`    | Text Encoder      |Bi-encoder       | [Link](#bi-encoder-bi_enc)          | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
+| `sbert_sim` | Text Encoder      |SBert Similarity | [Link](#sbert-similarity-sbert_sim) | Training req./Zero-shot | Ready        | SBert Encoders for Sentence Similarity                      | [Paper](https://arxiv.org/abs/1908.10084) |
+| `ent_ext`/ `lstm_ner` | Named Entity Recognition      |Flair NER       | [Link](#entity-extraction-ent_ext)                    | Training req.  | Ready        | Entity extraction using the FLAIR NER framework                   |                                                                                                         |
+| `tfm_ner`             | Named Entity Recognition      |Transformer NER | [Link](#entity-extraction-using-transformers-tfm_ner) | Training req.  | Ready        | Token classification on Transformer models, can be used for NER   | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
+| `cl_summer` | Summarization      |Summarizer | [Link](#summarizer-clsummer)         | No Training req. | Ready  | Extractive Summarization using Sumy                  | [Doc.](https://miso-belica.github.io/sumy/)                                                                       |
+| `t5_sum`    | Summarization      |Summarizer | [Link](#t5-summarization-t5sum)      | No Training req. | Ready  | Abstractive Summarization using the T5 Model         | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf)      |
+| `bart_sum`  | Summarization      |Summarizer | [Link](#bart-summarization-bart_sum) | No Training req. | Ready  | Abstractive Summarization using the Bart Large Model | [Huggingface](https://huggingface.co/transformers/model_doc/bart.html), [Paper](https://arxiv.org/abs/1910.13461) |
+| `text_seg`   | Text Processing      |Text Segmenter   | [Link](#text-segmenter-text_seg)     | No Training req. | Experimetal | Topical Change Detection in Documents             | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec)                                                                                                                        |
+| `topic_ext` | Text Analysis      |Topic Extraction | [Link](#topic-extraction-topic_ext) | No Training req. | Experimetal | Indentifying most relevent topics for given set of documents |           |
 
-## Encoders
+
+
+To load the `jac_nlp.use_enc` package into jaseci in local environment, run the following command in the jsctl console.
+```bash
+jsctl > actions load module jac_nlp.use_enc
+```
+# Jaseci Vision Package `(jac_vision)`
+The `jac_vision` package contains a collection of state-of-the-art Computer Vision models that can be used to perform various computer vision tasks such as image classification, object detection, image segmentation etc. following is a list of all the models available in the `jac_vision` package.
+
+# Jaseci Speech Package `(jac_speech)`
+The `jac_speech` package contains a collection of state-of-the-art Speech models that can be used to perform various speech tasks such as speech to text, text to speech etc. following is a list of all the models available in the `jac_speech` package.
+
+| Module      | Model Type       | Model Name       | Example                             | Type                    | Status       | Description                                                 | Resources                                 |
+| ----------- | ---------------- |---------------- | ----------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
+| `stt`  | Speech to Text | Whisper |  [Link](#speech2text-stt) | No Training req. | Ready  | transcription or translation of a give audio sequence. | [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf), [OpenAI Whisper](https://openai.com/blog/whisper/)                                                                                                               |
+| `tts`  | Text to Speech | Tacotron | [Link](#)                | No Training req. | Ready  | List of Amplitudes of the synthesized audio wav.       | [Tacotron2](https://arxiv.org/abs/1712.05884), [Waveglow](https://arxiv.org/abs/1811.00002), [Hifigan](https://arxiv.org/abs/2010.05646), [Nvidia Tacotron2 implementation](https://github.com/NVIDIA/tacotron2), [SpeechBrain](https://speechbrain.github.io/index.html) |
+
+To load the `jac_speech.stt` package into jaseci in local environment, run the following command in the jsctl console.
+```bash
+jsctl > actions load module jac_speech.stt
+```
+
+# Jaseci Misc Package `(jac_misc)`
+The `jac_misc` package contains a collection of miscellaneous models that can be used to perform various tasks such as translation, pdf extraction, personalized head etc. following is a list of all the models available in the `jac_misc` package.
+
 | Module      | Model Name       | Example                             | Type                    | Status       | Description                                                 | Resources                                 |
 | ----------- | ---------------- | ----------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
-| `use_enc`   | USE Encoder      | [Link](#use-encoder-use_enc)        | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
-| `use_qa`    | USE QA           | [Link](#use-qa-use_qa)              | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
-| `fast_enc`  | FastText         | [Link](#fasttext-encoder-fast_enc)  | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
-| `bi_enc`    | Bi-encoder       | [Link](#bi-encoder-bi_enc)          | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
-| `sbert_sim` | SBert Similarity | [Link](#sbert-similarity-sbert_sim) | Training req./Zero-shot | Ready        | SBert Encoders for Sentence Similarity                      | [Paper](https://arxiv.org/abs/1908.10084) |
-| `poly_enc`  | Poly-encoder     |                                     | Training req./Zero-shot | Experimental | Poly Encoder                                                | [Paper](https://arxiv.org/abs/1905.01969) |
-| `cross_enc` | Cross-encoder    |                                     | Training req./Zero-shot | Experimental | Cross Encoder                                               | [Paper](https://arxiv.org/abs/1905.01969) |
-
-## Entity
-| Module                | Model Name      | Example                                               | Type           | Status       | Description                                                       | Resources                                                                                               |
-| --------------------- | --------------- | ----------------------------------------------------- | -------------- | ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `ent_ext`/ `lstm_ner` | Flair NER       | [Link](#entity-extraction-ent_ext)                    | Training req.  | Ready        | Entity extraction using the FLAIR NER framework                   |                                                                                                         |
-| `tfm_ner`             | Transformer NER | [Link](#entity-extraction-using-transformers-tfm_ner) | Training req.  | Ready        | Token classification on Transformer models, can be used for NER   | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
-| `lstm_ner`            | LSTM NER        |                                                       | Traininig req. | Experimental | Entity extraction/Slot filling via Long-short Term Memory Network |                                                                                                         |
-
-## Summarization
-| Module      | Model Name | Example                              | Type             | Status | Description                                          | Resources                                                                                                         |
-| ----------- | ---------- | ------------------------------------ | ---------------- | ------ | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `cl_summer` | Summarizer | [Link](#summarizer-clsummer)         | No Training req. | Ready  | Extractive Summarization using Sumy                  | [Doc.](https://miso-belica.github.io/sumy/)                                                                       |
-| `t5_sum`    | Summarizer | [Link](#t5-summarization-t5sum)      | No Training req. | Ready  | Abstractive Summarization using the T5 Model         | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf)      |
-| `bart_sum`  | Summarizer | [Link](#bart-summarization-bart_sum) | No Training req. | Ready  | Abstractive Summarization using the Bart Large Model | [Huggingface](https://huggingface.co/transformers/model_doc/bart.html), [Paper](https://arxiv.org/abs/1910.13461) |
-
-## Speech
-| Module | Model Name  | Example                  | Type             | Status | Description                                            | Resources                                                                                                                                                                                                                                                                 |
-| ------ | ----------- | ------------------------ | ---------------- | ------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `stt`  | Speech2Text | [Link](#speech2text-stt) | No Training req. | Ready  | transcription or translation of a give audio sequence. | [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf), [OpenAI Whisper](https://openai.com/blog/whisper/)                                                                                                               |
-| `tts`  | Text2Speech | [Link](#)                | No Training req. | Ready  | List of Amplitudes of the synthesized audio wav.       | [Tacotron2](https://arxiv.org/abs/1712.05884), [Waveglow](https://arxiv.org/abs/1811.00002), [Hifigan](https://arxiv.org/abs/2010.05646), [Nvidia Tacotron2 implementation](https://github.com/NVIDIA/tacotron2), [SpeechBrain](https://speechbrain.github.io/index.html) |
-
-## Text Processing
-| Module       | Model Name       | Example                              | Type             | Status      | Description                                       | Resources                                                                                                                                                                                  |
-| ------------ | ---------------- | ------------------------------------ | ---------------- | ----------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `text_seg`   | Text Segmenter   | [Link](#text-segmenter-text_seg)     | No Training req. | Experimetal | Topical Change Detection in Documents             | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec)                                                                                                                        |
 | `translator` | Text Translation | [Link](#text-translation-translator) | No Training req. | Ready       | Text Translation for 50 languages to 50 languages | [Multilingual Denoising Pre-training for Neural Machine Translation](https://arxiv.org/abs/2001.08210), [Huggingface MBart Docs](https://huggingface.co/transformers/model_doc/mbart.html) |
-
-## Text Clustering
-| Module    | Model Name   | Example                       | Type             | Status      | Description                                               | Resources                                                                                                                         |
-| --------- | ------------ | ----------------------------- | ---------------- | ----------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `cluster` | Text Cluster | [Link](#text-cluster-cluster) | No Training req. | Experimetal | Indentifying Posible Similar Clusters in Set of Documents | [UMAP](https://umap-learn.readthedocs.io/en/latest/) , [HBDSCAN](https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html) |
+| `pdf_ext` | PDF Extractor | [Link](#pdf-extractor-pdf_ext) | No Training req.| Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
+| `ph` | Personalized Head | [Link](jac_misc/jac_misc/ph/README.md) | Training Req. | Experimental  | Extract content from a PDF file via PyPDF2 | |
 
-## Text Analysis
-| Module      | Model Name       | Example                             | Type             | Status      | Description                                                  | Resources |
-| ----------- | ---------------- | ----------------------------------- | ---------------- | ----------- | ------------------------------------------------------------ | --------- |
-| `topic_ext` | Topic Extraction | [Link](#topic-extraction-topic_ext) | No Training req. | Experimetal | Indentifying most relevent topics for given set of documents |           |
 
-## Non-AI Tools
-| Module    | Model Name    | Example                        | Status | Description                                | Resources                                        |
-| --------- | ------------- | ------------------------------ | ------ | ------------------------------------------ | ------------------------------------------------ |
-| `pdf_ext` | PDF Extractor | [Link](#pdf-extractor-pdf_ext) | Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
+To load the `jac_misc.translator` package into jaseci in local environment, run the following command in the jsctl console.
+```bash
+jsctl > actions load module jac_misc.translator
+```
 
 # Examples
 
