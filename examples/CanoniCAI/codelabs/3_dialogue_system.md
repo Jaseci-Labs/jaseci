@@ -197,8 +197,13 @@ Copy `bi_enc.jac` and `clf_train_1.json` to your working directory.
 Let's first load the Bi-encoder action library into Jaseci.
 ```bash
 $ jsctl
-jaseci > actions load module jaseci_ai_kit.bi_enc
+jaseci > actions load module jac_nlp.bi_enc
 ```
+
+> **Note**
+>
+> If you are on the older `jaseci_ai_kit` python package, replace `jac_nlp.bi_enc` with `jaseci_ai_kit.bi_enc`.
+
 We have provided an example training file that contains some starting point training data for the two intents, `test drive` and `order a tesla`.
 
 ```jac
@@ -678,11 +683,13 @@ We are using a transformer-based token classification model.
 
 First, we need to load the actions. The action set is called `tfm_ner` (`tfm` stands for transformer).
 ```bash
-jaseci > actions load module jaseci_ai_kit.tfm_ner
+jaseci > actions load module jac_nlp.tfm_ner
 ```
-> **Warning**
+
+> **Note**
 >
-> If you installed `jaseci_ai_kit` prior to September 5th, 2022, please upgrade via `pip install --upgrade jaseci_ai_kit`. There has been an update to the module that you will need for remainder of this exercise. You can check your installed version via `pip show jaseci_ai_kit`. You need to be on version 1.3.4.6 or higher.
+> If you are on the older `jaseci_ai_kit` python package, replace `jac_nlp.tfm_ner` with `jaseci_ai_kit.tfm_ner`.
+
 
 Similar to Bi-encoder, we have provided a jac program to train and inference with this model, as well as an example training dataset.
 Go into the `code/` directory and copy `tfm_ner.jac` and `ner_train.json` to your working directory.

@@ -261,25 +261,32 @@ In our application, we are using it for zero-shot question-answering, i.e. no cu
 Jaseci has a set of built-in libraries or packages that are called Jaseci actions.
 These actions cover a wide-range of state-of-the-art AI models across many different NLP tasks.
 There are few packages named   `jac_nlp`, `jac_vision`, `jac_speech` and `jac_misc` for NLP, vision, speech and miscellaneous tasks respectively.
-The `jac_nlp` package contains the Universal Sentence Encoder QA model that we are going to use.
+The `jac_nlp` package contains the Universal Sentence Encoder QA model that we are going to use, as well as Bi Encoder and Transformer based NER models that will come up later in this guide.
 
 To install `jac_nlp`:
 
 ```bash
-pip install jac_nlp[use_qa] # This will install the USE QA model which we need for this example
+pip install jac_nlp[use_qa, bi_enc, tfm_ner] # This will install the models which we need for this example
 ```
-But if you want to install all or some of the models in `jac_nlp`:
+But if you want to install all the models in `jac_nlp`:
 
 ```bash
 pip install jac_nlp[all] # This will install all the models in jac_nlp
-pip install jac_nlp[use_qa,use_enc] # This will install the USE QA model and the USE encoder model
 ```
+
+> **Note**
+>
+> We recently implemented a new organizational structure to `jaseci_ai_kit` to accomodate more and larger models being introduced to the suite. If you started this guide prior to January 24th, 2023, you might have installed the python package `jaseci_ai_kit`. This has been replaced with four separate packages, `jac_nlp`, `jac_speech`, `jac_vision` and `jac_misc`. You can continue to use the `jaseci_ai_kit` you have installed as it will still function and work with your existing code. Just replace `jac_nlp` with `jaseci_ai_kit` throughout this guide. They will be noted as well. If you are just starting this guide, we recommend instaling the new packages (i.e. `jac_nlp`).
 
 Now we load the action we need into our jaseci environment
 
 ```bash
 jaseci > actions load module jac_nlp.use_qa
 ```
+
+> **Note**
+>
+> If you are on the older `jaseci_ai_kit` python package, replace `jac_nlp.use_qa` with `jaseci_ai_kit.use_qa`.
 
 Let's update our walker logic to use the USE QA model:
 
