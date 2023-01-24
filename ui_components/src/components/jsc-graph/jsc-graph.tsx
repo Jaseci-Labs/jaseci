@@ -682,6 +682,23 @@ export class JscGraph {
 
                   <jsc-divider label="Hidden Edges" orientation="horizontal"></jsc-divider>
                   {!this.hiddenEdgeGroups?.size && <div>No hidden edges</div>}
+                  {Array.from(this.hiddenEdgeGroups).map(group => (
+                    <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
+                      <jsc-chip label={group}>
+                        <svg
+                          slot="right"
+                          onClick={() => this.showEdgeGroup(group)}
+                          style={{ cursor: 'pointer' }}
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          class="inline-block w-4 h-4 stroke-current"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </jsc-chip>
+                    </div>
+                  ))}
                 </div>
               </div>
 
