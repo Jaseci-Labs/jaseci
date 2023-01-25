@@ -115,13 +115,6 @@
   - [Built-in Actions](ui_components/docs/built-in-actions.md)
   - [Connecting an API](ui_components/docs/connecting-an-api.md)
 
-## DevOps Guides
-- [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
-- [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
-- [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
-- [Locust Load Test for JASECI](support/locust/README.md)
-- [Setting up Monitoring for JASECI](support/monitoring/README.md)
-
 ## Jaseci X Features
 - [Stripe Integration](jaseci_serv/jaseci_serv/jsx_stripe/README.md)
 - [Single Sign-on Socail](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
@@ -156,3 +149,10 @@
   - [Products Built with Jaseci](https://jaseci.org/products/)
   - [Jaseci in the News](https://jaseci.org/blog/)
   - [Contact Us](https://jaseci.org/contact-us/)
+
+## Misc DevOps Guides
+- [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
+- [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
+- [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
+- [Locust Load Test for JASECI](support/locust/README.md)
+- [Setting up Monitoring for JASECI](support/monitoring/README.md)

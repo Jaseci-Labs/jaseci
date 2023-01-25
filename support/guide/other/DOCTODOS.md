@@ -3,3 +3,5 @@
 - Can use new script command in jsctl to run lists of command from file
 - Tests can be named and executed individually
 - Individual `jac` cli commandls
+- Kwargs for actions
+- Update for new connect operator
