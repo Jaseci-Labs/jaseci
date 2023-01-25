@@ -11,12 +11,12 @@ Module `topic_ext` implemented for extracting topics from set of documents. This
     ```
 2.  Load `topic_ext` module in jac shell session
     ```
-    actions load module jaseci_ai_kit.topic_ext
+    actions load module jac_nlp.topic_ext
     ```
 3.  Load suplimentery modules in jac shell session
     ```
-    actions load module jaseci_ai_kit.use_enc
-    actions load module jaseci_ai_kit.cluster
+    actions load module jac_nlp.use_enc
+    actions load module jac_misc.cluster
     ```
 
 ## **2. Prepare text for clusters**

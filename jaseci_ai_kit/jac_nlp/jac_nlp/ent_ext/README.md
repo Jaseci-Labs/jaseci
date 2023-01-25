@@ -65,7 +65,7 @@ Different models can be loaded as per the requirement on the basis of size and
     ```
 2. Load module `ent_ext` in jac by cmd
     ```
-    actions load module jaseci_ai_kit.ent_ext
+    actions load module jac_nlp.ent_ext
     ```
 ### **2. Classify Entity** :
 For this tutorial we are going to classify entity text with `flair ner(ent_ext)` module on `tars-ner` pretrained model.
@@ -377,7 +377,7 @@ and storing dataset file in directory name `dataset` and put all required file i
     ```
 2. Load module `ent_ext` in jac by cmd
     ```
-    actions load module jaseci_ai_kit.ent_ext
+    actions load module jac_nlp.ent_ext
     ```
 ### **3. Few-shot classification `(Train, Test and Validate model)`**
 

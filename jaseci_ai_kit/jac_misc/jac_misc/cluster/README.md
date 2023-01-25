@@ -11,11 +11,11 @@ Module `cluster` implemented for clustering text document into similar clusters.
     ```
 2.  Load `cluster` module in jac shell session
     ```
-    actions load module jaseci_ai_kit.cluster
+    actions load module jac_misc.cluster
     ```
 3. Load `use_enc` module in jac shell session
    ```
-   actions load module jaseci_ai_kit.use_enc
+   actions load module jac_nlp.use_enc
    ```
 
 ## **2. Prepare text for clusters**

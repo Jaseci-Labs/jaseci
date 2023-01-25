@@ -18,6 +18,19 @@ def mse_loss(output, target):
     return loss
 
 
+class VectorSimilarityLoss(torch.nn.Module):
+    def __init__(self, output_dim=128):
+        super(VectorSimilarityLoss, self).__init__()
+        self.output_dim = output_dim
+
+    def forward(self, output, target):
+        output1, output2 = output[:, : self.output_dim], output[:, self.output_dim :]
+        similarity = torch.nn.functional.cosine_similarity(output1, output2, dim=1)
+        target = target.float()
+        loss = torch.nn.functional.cross_entropy(similarity, target)
+        return loss
+
+
 class CustomLoss(torch.nn.Module):
     def __init__(self, python_file: str = "heads/custom.py", **kwargs):
         super().__init__()

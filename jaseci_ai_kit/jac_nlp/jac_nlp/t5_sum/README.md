@@ -14,7 +14,7 @@ Module `t5_sum` uses the hugging face T5 transformer model to provide abstractiv
     ```
 2.  Load cl_summer module in jac by command
     ```
-    actions load module jaseci_ai_kit.t5_sum
+    actions load module jac_nlp.t5_sum
     ```
 
 

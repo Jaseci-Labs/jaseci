@@ -4,7 +4,6 @@ Module `use_qa` uses the [`multilingual-qa`](https://tfhub.dev/google/universal-
 For this tutorial we are going to leverage the `USE QA` for **text classification**.
 
 
-
 1. Preparing [dataset](#1-praparing-dataset) for evaluation
 2. Import [Use-QA(use_qa)](#2-import-use-qause_qa-module-in-jac) module in jac
 3. Evaluate the models [effectiveness](#3-evaluate-the-models-effectiveness)
@@ -161,7 +160,7 @@ For this part, we are going to use Python. First,
 
 2. Load `use_qa` module in jac by command
     ```
-    actions load module jaseci_ai_kit.use_qa
+    actions load module jac_nlp.use_qa
     ```
 
 ## **3. Evaluate the models effectiveness**
