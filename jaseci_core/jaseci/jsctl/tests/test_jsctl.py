@@ -32,6 +32,11 @@ class JsctlTest(TestCaseHelper, TestCase):
         # self.log(ret)
         return json.loads(ret)
 
+    def jac_call_cast(self, cmd):
+        ret = self.jac_call(cmd)
+        # self.log(ret)
+        return json.loads(ret)
+
     def call_split(self, cmd):
         ret = self.call(cmd)
         # self.log(ret)
@@ -342,10 +347,15 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertTrue(r[7].startswith('  "success": true'))
 
     def test_jac_long_str_build(self):
-        self.logger_on()
-        r = self.jac_call_split(f"run {os.path.dirname(__file__)}/longstring.jac")
-        self.log(r)
-        self.assertTrue(r[0].startswith("Lorem Ipsum is simply dummy text of the"))
+        r = self.jac_call_cast(f"run {os.path.dirname(__file__)}/longstring.jac")
+        self.assertTrue(
+            r["report"][0].startswith("Lorem Ipsum is simply dummy text of the")
+        )
+        self.assertTrue(
+            r["report"][0].endswith(
+                "Aldus PageMaker including versions of Lorem Ipsum."
+            )
+        )
 
     def test_jac_cli_test(self):
         r = self.jac_call_split(f"test {os.path.dirname(__file__)}/teststest.jir")
