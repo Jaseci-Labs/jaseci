@@ -209,6 +209,7 @@ def get_global_actions():
             or i.startswith("internal.")
             or i.startswith("zlib.")
             or i.startswith("webtool.")
+            or i.startswith("url.")
         ):
             global_action_list.append(
                 Action(
