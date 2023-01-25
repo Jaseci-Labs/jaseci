@@ -90,6 +90,8 @@
     - [USE QA](jaseci_ai_kit/jac_nlp/jac_nlp/use_qa/README.md)
     - [ZS Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/zs_classifier/README.md)
     - [Topic Extraction](jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext/README.md)
+    - [BI Encoder for NER](jaseci_ai_kit/jac_nlp/jac_nlp/bi_ner/README.md)
+    - [SBERT Similarity](jaseci_ai_kit/jac_nlp/jac_nlp/sbert_sim/README.md)
 
   - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
 
