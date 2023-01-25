@@ -357,7 +357,6 @@ An example knowledge base file look like this
 
 Save the above json in a file named `tesla_faq.json` and make sure it is in the same location as `faq.jac`.
 Let's now update the `init` walker.
-Because we are going to use the `ingest_faq` walker to generate the graph, we won't need the static graph definition.
 
 ```jac
 walker init {
