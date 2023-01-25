@@ -8,7 +8,9 @@ The process of converting spoken words into written text is called speech to tex
 
 ### **Functionality of Jaseci Speech to Text Module (`stt`)**
 
-Before work with the Jaseci `stt` module make sure to install fmmeg via `sudo apt-get install ffmpeg`. And load the jaseci `stt` module via `actions load module jaseci_ai_kit.stt`.
+Before work with the Jaseci `stt` module make sure to install fmmeg via `sudo apt-get install ffmpeg`. 
+Then install `pip install jac_speech[all]` which will also install the speech-to-text module which we are going to use later in this section.
+And load the jaseci `stt` module via `actions load module jac_speech.stt`.
 
 **Transcribe**
 
