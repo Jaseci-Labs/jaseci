@@ -368,6 +368,9 @@ walker init {
     }
 }
 ```
+> *Note*
+>
+> Even though we are trying to initializing the graph using the init walker here, let's keep the original static graph definition (`graph faq`) and not delete it from the code, as it will be needed later on in this guide.
 
 What we are doing here is
 
