@@ -6,7 +6,12 @@ from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
 from fastapi import HTTPException
 
-from .action_utils import c_tf_idf, extract_top_n_words_per_topic, generate_topic_label
+from .action_utils import (
+    c_tf_idf,
+    extract_top_n_words_per_topic,
+    generate_topic_label,
+    mmr,
+)
 
 warnings.filterwarnings("ignore")
 warnings.warn("ignore")
@@ -61,6 +66,35 @@ def headline_generation(texts: list, classes: list):
         ret_dict = document_table.set_index("label").to_dict()["headline"]
         return ret_dict
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["topic_ext"], allow_remote=True)
+def keyword_extraction(
+    sentence: str,
+    n_words: int,
+    min_tokens: int = 1,
+    max_tokens: int = 1,
+    diversity: float = 0.02,
+):
+    if min_tokens > max_tokens:
+        raise ValueError(
+            "The value of min_tokens shoul be less or equal than the value of max_tokens"
+        )
+
+    try:
+        keywords = mmr(
+            input_text=sentence,
+            top_n=n_words,
+            n_gram_range=(min_tokens, max_tokens),
+            diversity=diversity,
+        )
+        return keywords
+    except ValueError as ve:
+        print(
+            "Try decresing the value of n_words, The n_words should be less or equal to number of unique words in the sentence after removing stopwords"
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
