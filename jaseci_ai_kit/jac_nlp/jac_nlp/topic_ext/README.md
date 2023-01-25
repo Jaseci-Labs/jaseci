@@ -301,7 +301,7 @@ Use `topic_ext.keyword_extraction` action to generate a relevant heading for eac
 - `n_words` - (int) number of words or phrases to extract from each cluster..
 - `min_tokens` - (int) - Default 1 - number of minimum words per topic.
 - `max_tokens` - (int) Default 1 - number of maximum words per topic.
-- `diversity` - (float) default 0.02 - The expected level of diversity. Increasing the diversity value will minimize the words with similar meaning in the resulted words list,
+- `diversity` - (float) default 0.02 - The expected level of diversity. Increasing the diversity value will reduce the words with similar meaning in the resulted words list and the vise versa.
 
 
 ```jac
