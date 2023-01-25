@@ -11,7 +11,7 @@ At this point a `js.session` file will be generated at the current directory whi
 
 To start a in memory session `-m` or `--mem-only` flag can be used. This won't create a session file but will create a temporary session in memory;
 
-### Running a Jaseci Program
+### **Running a Jaseci Program**
 
 ```
 jsctl> jac run [file_name].jac
@@ -29,15 +29,47 @@ This will create a `[file_name].jir` file in the working directory. To run the c
 ```
 jsctl jac run [file_name].jir
 ```
-### Using Jaseci AI kit
+### **Using Jaseci AI kit**
 
  Jaseci Kit is a collection of state-of-the-art machine learning models that are already trained on large amount of data and available to load into jaseci can retrained with our owndata.
 
- #### To load a module from Jaseci AI kit;
+ The AI models in Jaseci AI kit falls under four categories, Jac NLP, Jac Speech, Jac Vision and Jac Miscellaneous. For instance, if you only intend to use the "bi enc" model from the JAC NLP, you can simply install only the necessary packages for `bi_enc` with only a single command. For examples that will make this more clear, see below.
 
- We can simply do `pip install jac_nlp[bi_enc]` in the python environment we are currently working and import the bi_enc from jac_nlp to the jaseci using `actions load module jac_nlp.[module_name]` command. Make sure to install the required modules for the model you are trying to load. if you have multiple models to load, install by `pip install jac_nlp[bi_enc,use_enc]` or `pip install jac_nlp[all]` to install all the models.
+ #### **Installing and loading models from Jaseci AI kit**
 
- Example module load:
+
+If you wanna install only a specific model you can simply do `pip install model_group[model_name]` in the python environment which you currently working. Use "pip install model group[model name1,model name2]" to install several models from the same group, or "pip install model group[all]" to install all of the models. Details of model groups and available models in each group can be viewed [here](../README.md).
+
+
+**Examples**
+
+To install `bi_enc` model.
+
+```
+pip install jac_nlp[bi_enc]
+```
+
+To install `bi_enc` and `use_enc` models at once.
+
+```
+pip install jac_nlp[bi_enc,use_enc]
+```
+
+### **Load installed models in Jaseci Shell**
+
+To use the models features in jac code you have to load the installed model as a jaseci action. There are three ways to load models.
+
+
+	- Module load
+	- Remote load
+	- Local load
+ Example model load in jaseci shell:
+
+#### Load module
+
+After successfull `pip` installation you can load the module from jaseci shell with `actions load module [model_group].model_name`
+
+Example:
 
  ```
  $ jsctl
@@ -47,7 +79,7 @@ jaseci > actions load module jac_nlp.bi_enc
 }
 ```
 
-#### Load from remote
+#### **Load from remote**
 
 Also we can load jaseci ai models from a remote server using  `actions load remote [url_to_model]` command. For this each AI model should deployed as a separate service. This URL should obtained from the remote server which AI model was deployed.
 
@@ -59,7 +91,7 @@ jaseci > actions load remote  http://192.168.49.2:32267
 }
 ```
 
-#### Load from local
+#### **Load from local**S
 
 Once we cloned the jaseci main repository to local machine we can load AI models from jaseci_ai_kit using `actions load local [path_to_model]`.
 Example local load:
