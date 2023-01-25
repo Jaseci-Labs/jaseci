@@ -33,6 +33,7 @@ setup(
         "pytest-cov",
         "gprof2dot",
         "metadata_parser",
+        "validators",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
