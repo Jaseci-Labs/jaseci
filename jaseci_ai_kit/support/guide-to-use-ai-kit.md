@@ -1,7 +1,7 @@
 
 # Guidance to work with Jaseci AI kit
 
-In this page, you will find all the basic commands needed to work with Jaseci AI kit.
+In this page, you will find all the basic commands needed to work with Jaseci AI kit and it's sub packages.
 
 ### Starting a Jaseci Shell session;
 ```
