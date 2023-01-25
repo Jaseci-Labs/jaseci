@@ -161,7 +161,7 @@ For this part, we are going to use Python. First,
 
 2. Load `use_qa` module in jac by command
     ```
-    actions load module jaseci_ai_kit.use_qa
+    actions load module jac_nlp.use_qa
     ```
 
 ## **3. Evaluate the models effectiveness**

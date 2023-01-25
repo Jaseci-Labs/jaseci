@@ -98,7 +98,7 @@ For train, test and validation dataset, we are going to creating list of dict an
     ```
 2. Load module tfm_ner in jac by cmd
     ```
-    actions load module jaseci_ai_kit.tfm_ner
+    actions load module jac_nlp.tfm_ner
     ```
 
 ## **3. Model training and validation**
