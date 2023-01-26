@@ -1,4 +1,4 @@
-from jaseci.svc import MetaService as Ms
+from jaseci.svc import MetaService as Ms, PostgresService
 from jaseci_serv.svc import (
     MailService,
     RedisService,
@@ -42,3 +42,4 @@ class MetaService(Ms):
         self.add_service_builder("mail", MailService)
         self.add_service_builder("promon", PromotheusService)
         self.add_service_builder("elastic", ElasticService)
+        self.add_service_builder("postgres", PostgresService)

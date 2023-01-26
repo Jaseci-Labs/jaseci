@@ -455,6 +455,7 @@ class JsOrc:
         self.services[name] = svc
 
     def build_service(self, name, background, *args, **kwargs):
+        from jaseci.hook import MemoryHook
 
         svc = self.services.get(name)
 
@@ -462,7 +463,14 @@ class JsOrc:
             logger.error(f"Service {name} is not yet set!")
             return None
 
-        svc = svc(*args, **kwargs)
+        if getattr(svc, "db_bypass", False) or (
+            len(args) > 0
+            and isinstance(args[0], MemoryHook)
+            and args[0].database.is_running()
+        ):
+            svc = svc(*args, **kwargs)
+        else:
+            return None
 
         if background:
             self.background[name] = svc

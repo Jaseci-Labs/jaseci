@@ -157,6 +157,9 @@ spec:
             - name: PROMON_HOST
               value: jaseci-prometheus-server
 
+            - name: JSORC_AUTOMATION
+              value: "true"
+
           volumeMounts:
             - name: prod-script
               mountPath: /script
