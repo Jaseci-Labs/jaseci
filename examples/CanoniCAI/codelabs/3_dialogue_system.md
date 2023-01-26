@@ -191,7 +191,7 @@ A Bi-encoder model has two transformer-based encoders that each encodes the inpu
 
 Now let's train the model.
 We have created a jac program and sample training data for this.
-They are in the `code` directory next to this tutorial.
+They are in the `code` directory ([link](https://github.com/Jaseci-Labs/jaseci/tree/main/examples/CanoniCAI/code)) next to this tutorial.
 Copy `bi_enc.jac` and `clf_train_1.json` to your working directory.
 
 Let's first load the Bi-encoder action library into Jaseci.
