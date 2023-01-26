@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from os.path import join
 
-MODULES = ["rftm", "yolos", "dpt"]
+MODULES = ["rftm", "yolos", "dpt", "detr"]
 
 
 def get_ver():
