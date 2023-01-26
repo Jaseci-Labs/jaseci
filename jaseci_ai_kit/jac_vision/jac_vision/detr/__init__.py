@@ -1,1 +1,1 @@
-from .detr import * # noqa
+from .detr import *  # noqa

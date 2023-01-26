@@ -1,1 +1,1 @@
-from .yolos import * # noqa
+from .yolos import *  # noqa

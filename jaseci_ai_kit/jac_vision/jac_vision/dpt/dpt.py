@@ -8,7 +8,6 @@ import base64
 import io
 
 
-
 def setup(model: str = "dpt-large", device: str = None):
     global detector
     if device is None:
@@ -29,7 +28,7 @@ def estimate(image: str, b64: bool = False) -> str:
             if b64
             else Image.open(image)
         )
-        depth_img = detector.estimate(_image).convert(mode ="1").tobitmap()
+        depth_img = detector.estimate(_image).convert(mode="1").tobitmap()
         return base64.b64encode(depth_img).decode("utf-8")
     except Exception as e:
         traceback.print_exc()
@@ -45,7 +44,10 @@ def estimate_batch(images: list, b64: bool = False) -> list:
             else [Image.open(image) for image in images]
         )
         depth_imgs = detector.estimate_batch(_images)
-        return [base64.b64encode(depth_img.convert(mode ="1").tobitmap()).decode("utf-8") for depth_img in depth_imgs]
+        return [
+            base64.b64encode(depth_img.convert(mode="1").tobitmap()).decode("utf-8")
+            for depth_img in depth_imgs
+        ]
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

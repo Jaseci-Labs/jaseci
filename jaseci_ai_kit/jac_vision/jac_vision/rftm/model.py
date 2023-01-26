@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import math
 from functools import partial
+
 try:
     import accimage
 except ImportError:
@@ -20,7 +21,9 @@ class RFTM:
             self.device = device
 
         self.model = generate_model(device)
-        checkpoint = torch.load("./weights/rftm_resnet101.pth", map_location=self.device)
+        checkpoint = torch.load(
+            "./weights/rftm_resnet101.pth", map_location=self.device
+        )
         self.model.load_state_dict(checkpoint["state_dict"])
         self.model.eval()
 
