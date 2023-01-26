@@ -38,7 +38,7 @@
         },
         {
           "name": "keyword.control.jac",
-          "match": "\\b(if|elif|else|while|for|while|global|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert|yield)\\b"
+          "match": "\\b(if|elif|else|while|for|while|global|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert|yield|try|catch)\\b"
         },
         {
           "name": "variable.other.property",
@@ -281,7 +281,7 @@
           "name": "keyword.operator.jac"
         },
         {
-          "match": "(?x)\n\\b(?<![\\.\\$])\n(?:\n  (and|or|not) # logical\n  |\n  (is|isnt) # comparison\n)\n(?!\\s*:)\\b",
+          "match": "(?x)\n\\b(?<![\\.\\$])\n(?:\n  (and|or|not) # logical\n  |\n  (is|isn't) # comparison\n)\n(?!\\s*:)\\b",
           "captures": {
             "1": {
               "name": "keyword.operator.logical.jac"
