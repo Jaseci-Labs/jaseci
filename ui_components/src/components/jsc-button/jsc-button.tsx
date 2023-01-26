@@ -14,10 +14,11 @@ export class Button {
   @Prop() label: string;
   @Prop() events: string;
   @Prop() name: string;
-  @Prop() variant: 'default' | 'link' = 'default';
+  @Prop() variant: 'default' | 'link' | 'ghost' = 'default';
   @Prop() color: string;
   @Prop() active: string;
   @Prop() tooltip: string;
+  @Prop() block: string;
   @Prop({ attribute: 'fullwidth' }) fullWidth: string;
   @Prop({ attribute: 'tooltipposition' }) tooltipPosition: string;
   @Prop({ attribute: 'tooltippalette' }) tooltipPalette: string;
@@ -37,6 +38,7 @@ export class Button {
         'w-full',
         this.palette && `btn-${this.palette}`,
         this.variant === 'link' && ['btn-link'],
+        this.variant === 'ghost' && ['btn-ghost'],
         this.active === 'true' && ['btn-active'],
         this.noRadius === 'true' && ['rounded-none'],
         this.size && {
@@ -45,6 +47,7 @@ export class Button {
           'btn-md': this.size === 'md',
           'btn-xs': this.size === 'xs',
         },
+        this.block === 'true' && ['block!', 'text-left!'],
       ])}
     >
       {this.label}
