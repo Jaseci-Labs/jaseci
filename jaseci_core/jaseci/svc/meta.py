@@ -9,6 +9,7 @@ from jaseci.svc import (
     TaskService,
     PrometheusService,
     ElasticService,
+    DatabaseService,
     ServiceState as Ss,
 )
 
@@ -89,13 +90,14 @@ class MetaService(CommonService, MetaProperties):
         h = self.build_context("hook")
         h.meta = self
         if self.run_svcs:
+            h.database = self.get_service("database", h)
             h.promon = self.get_service("promon", h)
             h.redis = self.get_service("redis", h)
             h.task = self.get_service("task", h)
             h.mail = self.get_service("mail", h)
             h.elastic = self.get_service("elastic", h)
 
-            if not self.is_automated():
+            if not self.is_automated() and h.database.is_running():
                 h.mail.start(h)
                 h.redis.start(h)
                 h.task.start(h)
@@ -140,6 +142,7 @@ class MetaService(CommonService, MetaProperties):
         self.add_service_builder("mail", MailService)
         self.add_service_builder("promon", PrometheusService)
         self.add_service_builder("elastic", ElasticService)
+        self.add_service_builder("database", DatabaseService)
 
 
 def interval_check(signum, frame):

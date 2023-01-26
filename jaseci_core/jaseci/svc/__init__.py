@@ -5,6 +5,7 @@ from .task import TaskService
 from .mail import MailService
 from .prometheus import PrometheusService
 from .elastic import ElasticService
+from .database import DatabaseService
 from .meta import MetaService
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     "MailService",
     "PrometheusService",
     "ElasticService",
+    "DatabaseService",
     "MetaService",
     "Kube",
 ]
