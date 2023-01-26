@@ -18,6 +18,16 @@ class TextTopicExtModule(CoreTest):
     def test_topic_ext(self, ret):
         self.assertEqual(ret["success"], True)
 
+    @pytest.mark.order(2)
+    @jac_testcase("topic_ext.jac", "test_headline_gen")
+    def test_headline_gen(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @pytest.mark.order(3)
+    @jac_testcase("topic_ext.jac", "test_keyword_ext")
+    def test_keyword_ext(self, ret):
+        self.assertEqual(ret["success"], True)
+
     @classmethod
     def tearDownClass(cls):
         super(TextTopicExtModule, cls).tearDownClass()

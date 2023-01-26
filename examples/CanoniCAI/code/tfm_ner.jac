@@ -3,7 +3,6 @@ node tfm_ner {
 
     can train {
         train_data = file.load_json(visitor.train_file);
-        std.out(train_data);
         tfm_ner.train(
             mode = "default",
             epochs = visitor.num_train_epochs,

@@ -1,6 +1,7 @@
 import importlib.util
 import torch.nn as nn
 import torch.nn.functional as F
+import torch
 
 from .base import BaseModel
 
@@ -59,6 +60,30 @@ class PHVector2Vector(BaseModel):
     def forward(self, emb):
         x = self.encoder(emb)
         x = self.decoder(x)
+        return x
+
+
+class PHVectorSimilarity(BaseModel):
+    def __init__(
+        self, input_dim, ph_nhead, ph_ff_dim, batch_first, ph_nlayers, output_dim
+    ):
+        super().__init__()
+        self.input_dim = input_dim
+        self.ph_v2v = PHVector2Vector(
+            input_dim, ph_nhead, ph_ff_dim, batch_first, ph_nlayers, output_dim
+        )
+
+    def forward(self, emb):
+        if emb.shape[1] == self.input_dim * 2:
+            emb1 = emb[:, : self.input_dim]
+            emb2 = emb[:, self.input_dim :]
+            assert emb1.shape == emb2.shape
+            x1 = self.ph_v2v(emb1)
+            x2 = self.ph_v2v(emb2)
+            x = torch.cat((x1, x2), dim=1)
+        else:
+            assert emb.shape[1] == self.input_dim
+            x = self.ph_v2v(emb)
         return x
 
 

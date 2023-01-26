@@ -163,7 +163,7 @@ For this part, we are going to use Python. First,
 
 2. Load `use_enc` module in jac by command
     ```
-    actions load module jaseci_ai_kit.use_enc
+    actions load module jac_nlp.use_enc
     ```
 
 ## **3. Evaluate the models effectiveness**

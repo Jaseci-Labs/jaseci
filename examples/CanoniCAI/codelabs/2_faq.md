@@ -19,6 +19,8 @@ We have 3 different types of nodes:
 - `faq_root`: This is the entry point of the FAQ handler. We will make the decision on the most relevant answer at this node.
 - `faq_state`: This node represents a FAQ entry. It contains a candidate answer from the knowledge base.
 
+To start, let's create a new jac file and name it `faq.jac` and we will be putting the code in this section in this file.
+
 Now let's define the custom node types.
 
 ```jac
@@ -144,11 +146,6 @@ This is the first walker we have introduced, so let's break it down.
 ## Run the `init` Walker
 
 Now, let's run the init walker to initialize the graph.
-First put all of the above code snippet into a single jac file and name it `faq.jac`, including
-
-- nodes definition
-- graph definition
-- init walker
 
 Run `jsctl` to get into the jaseci shell environment:
 
@@ -260,19 +257,33 @@ In our application, we are using it for zero-shot question-answering, i.e. no cu
 
 Jaseci has a set of built-in libraries or packages that are called Jaseci actions.
 These actions cover a wide-range of state-of-the-art AI models across many different NLP tasks.
-These actions are packaged in a Python module called `jaseci_ai_kit`.
+There are few packages named   `jac_nlp`, `jac_vision`, `jac_speech` and `jac_misc` for NLP, vision, speech and miscellaneous tasks respectively.
+The `jac_nlp` package contains the Universal Sentence Encoder QA model that we are going to use, as well as Bi Encoder and Transformer based NER models that will come up later in this guide.
 
-To install `jaseci_ai_kit`:
+To install `jac_nlp`:
 
 ```bash
-pip install jaseci_ai_kit
+pip install jac_nlp[use_qa, bi_enc, tfm_ner] # This will install the models which we need for this example
 ```
+But if you want to install all the models in `jac_nlp`:
+
+```bash
+pip install jac_nlp[all] # This will install all the models in jac_nlp
+```
+
+> **Note**
+>
+> We recently implemented a new organizational structure to `jaseci_ai_kit` to accomodate more and larger models being introduced to the suite. If you started this guide prior to January 24th, 2023, you might have installed the python package `jaseci_ai_kit`. This has been replaced with four separate packages, `jac_nlp`, `jac_speech`, `jac_vision` and `jac_misc`. You can continue to use the `jaseci_ai_kit` you have installed as it will still function and work with your existing code. Just replace `jac_nlp` with `jaseci_ai_kit` throughout this guide. They will be noted as well. If you are just starting this guide, we recommend instaling the new packages (i.e. `jac_nlp`).
 
 Now we load the action we need into our jaseci environment
 
 ```bash
-jaseci > actions load module jaseci_ai_kit.use_qa
+jaseci > actions load module jac_nlp.use_qa
 ```
+
+> **Note**
+>
+> If you are on the older `jaseci_ai_kit` python package, replace `jac_nlp.use_qa` with `jaseci_ai_kit.use_qa`.
 
 Let's update our walker logic to use the USE QA model:
 
@@ -346,7 +357,6 @@ An example knowledge base file look like this
 
 Save the above json in a file named `tesla_faq.json` and make sure it is in the same location as `faq.jac`.
 Let's now update the `init` walker.
-Because we are going to use the `ingest_faq` walker to generate the graph, we won't need the static graph definition.
 
 ```jac
 walker init {
@@ -357,6 +367,9 @@ walker init {
     }
 }
 ```
+> *Note*
+>
+> Even though we are trying to initializing the graph using the init walker here, let's keep the original static graph definition (`graph faq`) and not delete it from the code, as it will be needed later on in this guide.
 
 What we are doing here is
 

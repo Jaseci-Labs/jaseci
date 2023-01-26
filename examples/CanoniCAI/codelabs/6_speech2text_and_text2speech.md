@@ -8,7 +8,9 @@ The process of converting spoken words into written text is called speech to tex
 
 ### **Functionality of Jaseci Speech to Text Module (`stt`)**
 
-Before work with the Jaseci `stt` module make sure to install fmmeg via `sudo apt-get install ffmpeg`. And load the jaseci `stt` module via `actions load module jaseci_ai_kit.stt`.
+Before work with the Jaseci `stt` module make sure to install fmmeg via `sudo apt-get install ffmpeg`. 
+Then install `pip install jac_speech[all]` which will also install the speech-to-text module which we are going to use later in this section.
+And load the jaseci `stt` module via `actions load module jac_speech.stt`.
 
 **Transcribe**
 
@@ -70,76 +72,76 @@ Output
 
 ### **Introduction**
 
-The text to speech or speech synthesizing is converting written text into audio forms. The Jaseci's `tts` module consists of two models, `encoder` and `decoder`. The encoder aka seq2seq model is similar to the Tacotron2 which converts text sequences in to mel-spectrograms. The decoder converts the audio into wav format.
+The text to speech or speech synthesizing is converting written text into audio forms.
 
-### **Functionality of Jaseci Text to Speech Module (`stt`)**
 
-Right before jump in to code lab of the Jaseci `tts` module make sure to install dependencies of sound files via `sudo apt-get install -y libsndfile1` and load the jaseci `tts` module via `actions load module jaseci_ai_kit.tts`.
+### **Functionality of Jaseci Text to Speech Module (`vc_tts`)**
+
+Right before jump in to code lab of the Jaseci `vc_tts` module make sure to install dependencies of sound files via `sudo apt-get install -y libsndfile1 espeak-ng` and load the jaseci `vc_tts` module via `actions load module jac_speech.vc_tts`.
 
 **Synthesize**
 
-From the provided raw text of input, this action can produce the amplitudes of the speech. This list of amplitudes can either be used to make audio in your preferred format , or it can be saved into a local file system as a wav file by providing the path to the preferred location.
+From the provided raw text of input, this action can produce the amplitudes of the speech. You can select your preffred voice as `male` or `female`. This list of amplitudes can either be used to make audio in your preferred format , or it can be saved into a local file system as a wav file by providing the path to the preferred location.
 
 Example
 ```jac
 walker init{
     has text_input = "Hello world! This is a sample audio generated from the Text to speech model";
-    can tts.synthesize;
-    can tts.save_audio;
+    can vc_tts.synthesize;
 
-    has result = tts.synthesize(text = text_input, base64_val=True, path = "./");
+    has result = vc_tts.synthesize(text = text_input, speaker= "female", path = "./");
 }
 ```
+
 > **Note**
 >
-> `tss` module allows users to switch between available models to find out what works best for their scenario. Currently Jasecis `tts` module has two version of Tacotron2(seq2seq) aka `tacotron2_v1` and `tacotron2_v2` model and two of vocoders named `waveglow` and `hifigan`.
-
-
-To switch between sequence to sequence models add following lines on begining of the above code snippet,
-
-```jac
-can tts.load_seq2seqmodel;
-has seq2seq_model = tts.load_seq2seqmodel("tacotron2_v2"); # tts.load_seq2seqmodel("tacotron2_v1") for version 1
-
-```
-
-To switch between vocoder models add following lines on begining of the above code snippet,
-
-```jac
-can tts.load_vocorder;
-has vocorder = tts.load_vocorder("hifigan"); #tts.load_vocorder("waveglow") for waveglow
-```
-> **Note**
->
-> If you don't wanna save the generated file into the current file system simply ignore giving the path variable. Also you can use `tts.save_audio` action to save the generated file into a preffered location.
+> If you don't wanna save the generated file into the current file system simply ignore giving the path variable.
 >
 
 Output
 ```json
-"Synthesizing speeches with Tacotron2 and WaveGlow."
+{
+  "success": true,
+  "report": [
     {
-    "success":true,
-    "report" : [{"audio_wave":[
-    -4.882027133135125e-05,
-        -5.661428804160096e-05,
-        -1.2833814253099263e-05,
-        4.787599027622491e-05,
-        7.041289063636214e-05,
-        3.106917574768886e-05,
-        -3.908021608367562e-05,
-        -7.629024185007438e-05
-      ],
-      "saving_status": {
-        "save_status": true,
-        "file_path": "./audio_file_1671611719.8306742.wav"
-      }
+      "save_status": true,
+      "voice": "female",
+      "file_path": "./audio_file_1673841425.549086.wav"
     }
   ],
-  "final_node": "urn:uuid:65ce89db-39c5-4e8e-a7f7-083652412b7a",
+  "final_node": "urn:uuid:fc151279-3cd7-4e67-8122-80ec766fc2b2",
   "yielded": false
 }
 ```
 
 If the code is properly executed, the created audio will be saved to the 'jac' program's current file directory.  Change the input text and play around the program.
 
+
+**Clone Voice**
+
+The voice conversion, often known as voice cloning, facility is supported by the jaseci "vc tts" module. Aka you can enter a sample voice that is at least 2.5 minutes long, and the algorithm will create the audio files by imitating the voices from the reference audio files that you have provided. Please take aware that the audio generated here will simply mimic the voice; the accent will still be American English.
+
+Example
+
+```
+walker clone_voice {
+    can vc_tts.clone_voice;
+    has input_text = "
+    "Hello, I'm Papal Christian and I'm going to tell you all the things I did. I did two years of calculations. I said, we did a little. it's the coursetle. it's the course of the multipurpose. I did after a year of foot. And after that, at that time I was going to do the gymnasticconsists of several degs. The gymnastics that consists of several degrees. And it's there, but I'm going to do it."
+
+    report vc_tts.clone_voice(input_text = input_text, reference_audio= "./test_ref_audio.wav", save_path="./");
+}
+```
+
+Example
+
+```
+{
+  "success": true,
+  "report": [
+    {
+      "save_status": true,
+      "file_path": "./cloned_audio_file_1673841506.9412549.wav"
+    }
+  ],
 

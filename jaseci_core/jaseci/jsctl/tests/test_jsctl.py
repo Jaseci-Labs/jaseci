@@ -32,6 +32,11 @@ class JsctlTest(TestCaseHelper, TestCase):
         # self.log(ret)
         return json.loads(ret)
 
+    def jac_call_cast(self, cmd):
+        ret = self.jac_call(cmd)
+        # self.log(ret)
+        return json.loads(ret)
+
     def call_split(self, cmd):
         ret = self.call(cmd)
         # self.log(ret)
@@ -341,8 +346,19 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
+    def test_jac_long_str_build(self):
+        r = self.jac_call_cast(f"run {os.path.dirname(__file__)}/longstring.jac")
+        self.assertTrue(
+            r["report"][0].startswith("Lorem Ipsum is simply dummy text of the")
+        )
+        self.assertTrue(
+            r["report"][0].endswith(
+                "Aldus PageMaker including versions of Lorem Ipsum."
+            )
+        )
+
     def test_jac_cli_test(self):
-        r = self.jac_call_split("test jaseci/jsctl/tests/teststest.jir")
+        r = self.jac_call_split(f"test {os.path.dirname(__file__)}/teststest.jir")
         self.assertTrue(r[0].startswith("Testing assert should be"))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
@@ -361,7 +377,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertEqual(r["report"], [{}, 4])
 
     def test_jsctl_jac_dot_jir(self):
-        r = self.call("jac dot jaseci/jsctl/tests/teststest.jir")
+        r = self.call(f"jac dot {os.path.dirname(__file__)}/teststest.jir")
         self.assertEqual(r, 'strict digraph root {\n    "n0" [ label="n0:root"  ]\n}\n')
 
     def test_jsctl_jac_run_jir_walk(self):

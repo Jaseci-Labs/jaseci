@@ -84,13 +84,17 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         # load action
         payload = {
             "op": "jsorc_actions_config",
-            "name": "test_module",
-            "config": "jaseci_ai_kit.config",
+            "name": "example_module",
+            "config": "jac_misc.config",
         }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        payload = {"op": "jsorc_actions_load", "name": "test_module", "mode": "module"}
+        payload = {
+            "op": "jsorc_actions_load",
+            "name": "example_module",
+            "mode": "module",
+        }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
@@ -111,7 +115,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         self.assertTrue("actions_calls" in res.data[0])
-        self.assertTrue("test_module.call" in res.data[0]["actions_calls"])
+        self.assertTrue("example_module.call" in res.data[0]["actions_calls"])
 
     @skip_without_kube
     def test_benchmark(self):
@@ -185,26 +189,30 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         """
         payload = {
             "op": "jsorc_actions_config",
-            "name": "test_module",
-            "config": "jaseci_ai_kit.config",
+            "name": "example_module",
+            "config": "jac_misc.config",
         }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        payload = {"op": "jsorc_actions_load", "name": "test_module", "mode": "module"}
+        payload = {
+            "op": "jsorc_actions_load",
+            "name": "example_module",
+            "mode": "module",
+        }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data["action_status"]["mode"], "module")
         self.assertEqual(
-            res.data["action_status"]["module"]["name"], "jaseci_ai_kit.test_module"
+            res.data["action_status"]["module"]["name"], "jac_misc.example_module"
         )
         self.assertTrue(
-            "jaseci_ai_kit.modules.test_module.test_module"
+            "jac_misc.example_module.example_module"
             in self.master.actions_module_list()
         )
-        self.assertTrue("test_module.call" in self.master.actions_list())
+        self.assertTrue("example_module.call" in self.master.actions_list())
 
     @skip_without_kube
     def test_jsorc_actions_unload_auto(self):
@@ -213,25 +221,33 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         """
         payload = {
             "op": "jsorc_actions_config",
-            "name": "test_module",
-            "config": "jaseci_ai_kit.config",
+            "name": "example_module",
+            "config": "jac_misc.config",
         }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        payload = {"op": "jsorc_actions_load", "name": "test_module", "mode": "module"}
+        payload = {
+            "op": "jsorc_actions_load",
+            "name": "example_module",
+            "mode": "module",
+        }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertTrue("test_module.call" in self.master.actions_list())
+        self.assertTrue("example_module.call" in self.master.actions_list())
 
-        payload = {"op": "jsorc_actions_unload", "name": "test_module", "mode": "auto"}
+        payload = {
+            "op": "jsorc_actions_unload",
+            "name": "example_module",
+            "mode": "auto",
+        }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        self.assertFalse("test_module.call" in self.master.actions_list())
+        self.assertFalse("example_module.call" in self.master.actions_list())
         self.assertFalse(
-            "jaseci_ai_kit.modules.test_module.test_module"
+            "jac_misc.example_module.example_module"
             in self.master.actions_module_list()
         )
 
@@ -242,13 +258,17 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         """
         payload = {
             "op": "jsorc_actions_config",
-            "name": "test_module",
-            "config": "jaseci_ai_kit.config",
+            "name": "example_module",
+            "config": "jac_misc.config",
         }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        payload = {"op": "jsorc_actions_load", "name": "test_module", "mode": "remote"}
+        payload = {
+            "op": "jsorc_actions_load",
+            "name": "example_module",
+            "mode": "remote",
+        }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
@@ -256,7 +276,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         while True:
             payload = {
                 "op": "jsorc_actions_load",
-                "name": "test_module",
+                "name": "example_module",
                 "mode": "remote",
             }
             res = self.client.post(
@@ -265,7 +285,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
             if res.data["action_status"]["remote"]["status"] == "READY":
                 break
         self.assertEqual(res.data["action_status"]["mode"], "remote")
-        self.assertTrue("test_module.call" in self.master.actions_list())
+        self.assertTrue("example_module.call" in self.master.actions_list())
 
     @skip_without_kube
     def test_jsorc_actions_unload_remote_and_retire_pod(self):
@@ -274,8 +294,8 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         """
         payload = {
             "op": "jsorc_actions_config",
-            "name": "test_module",
-            "config": "jaseci_ai_kit.config",
+            "name": "example_module",
+            "config": "jac_misc.config",
         }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
@@ -284,7 +304,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         while True:
             payload = {
                 "op": "jsorc_actions_load",
-                "name": "test_module",
+                "name": "example_module",
                 "mode": "remote",
             }
             res = self.client.post(
@@ -299,14 +319,14 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         # actions unload will reture microservice pod by default
         payload = {
             "op": "jsorc_actions_unload",
-            "name": "test_module",
+            "name": "example_module",
             "mode": "remote",
         }
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         # check that the action is unloaded
-        self.assertFalse("test_module.call" in self.master.actions_list())
+        self.assertFalse("example_module.call" in self.master.actions_list())
         # Wait for the pod to be terminated
         # NOTE: Have to wait here because kubernetes has a 30s grace period for deleting pod
         time.sleep(35)

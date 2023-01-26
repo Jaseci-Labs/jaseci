@@ -64,7 +64,7 @@ jobs:
           python3 -m build
           python3 -m twine upload --skip-existing dist/*
 
-  push_jaseci_ai_kit_to_pypi:
+  push_jac_nlp_to_pypi:
     runs-on: ubuntu-latest
 
     steps:
@@ -82,9 +82,81 @@ jobs:
       - name: Push to pypi
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.JASECI_JSKIT_PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.JAC_AI_PYPI_TOKEN }}
         run: |
-          cd jaseci_ai_kit
+          cd jaseci_ai_kit/jac_nlp
+          python3 -m build
+          python3 -m twine upload --skip-existing dist/*
+
+  push_jac_speech_to_pypi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+          pip install build
+
+      - name: Push to pypi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.JAC_AI_PYPI_TOKEN }}
+        run: |
+          cd jaseci_ai_kit/jac_speech
+          python3 -m build
+          python3 -m twine upload --skip-existing dist/*
+
+  push_jac_vision_to_pypi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+          pip install build
+
+      - name: Push to pypi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.JAC_AI_PYPI_TOKEN }}
+        run: |
+          cd jaseci_ai_kit/jac_vision
+          python3 -m build
+          python3 -m twine upload --skip-existing dist/*
+
+  push_jac_misc_to_pypi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+          pip install build
+
+      - name: Push to pypi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.JAC_AI_PYPI_TOKEN }}
+        run: |
+          cd jaseci_ai_kit/jac_misc
           python3 -m build
           python3 -m twine upload --skip-existing dist/*
 
@@ -133,19 +205,20 @@ jobs:
           context: ./support/docker/
           tags: |
             jaseci/jaseci:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jaseci:latest
           build-args: |
             JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
           file: ./support/docker/jaseci.Dockerfile
 
-  build-and-release-jaseci-ai-docker-image:
-    name: Build Jaseci AI Docker image and push to dockerhub
+  build-and-release-jac-nlp-image:
+    name: Build jac-nlp Docker image and push to dockerhub
     runs-on: ubuntu-latest
     needs:
       [
         push_jaseci_core_to_pypi,
         push_jaseci_serv_to_pypi,
-        push_jaseci_ai_kit_to_pypi,
+        push_jac_nlp_to_pypi,
       ]
 
     steps:
@@ -180,29 +253,29 @@ jobs:
             core.setOutput('no-v-tag', no_v_tag)
 
       # build the image and push to docker hub
-      # 2. jaseci with jaseci_ai_kit
       - name: Build and push image -- Jaseci with jaseci-ai-kit
         uses: docker/build-push-action@v3
         with:
           push: true
           context: ./support/docker/
           tags: |
-            jaseci/jaseci-ai:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-nlp:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-nlp:latest
           build-args: |
             JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_AI_KIT_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
-            BUILD_WITH_AI=1
+            BUILD_WITH=jac-nlp
           file: ./support/docker/jaseci.Dockerfile
 
-  build-and-release-jaseci-text-cpu-docker-image:
-    name: Build Jaseci Text CPU Docker image and push to dockerhub
+  build-and-release-jac-speech-image:
+    name: Build jac-speech Docker image and push to dockerhub
     runs-on: ubuntu-latest
     needs:
       [
         push_jaseci_core_to_pypi,
         push_jaseci_serv_to_pypi,
-        push_jaseci_ai_kit_to_pypi,
+        push_jac_speech_to_pypi,
       ]
 
     steps:
@@ -237,29 +310,29 @@ jobs:
             core.setOutput('no-v-tag', no_v_tag)
 
       # build the image and push to docker hub
-      # 2. jaseci with jaseci_ai_kit
       - name: Build and push image -- Jaseci with jaseci-ai-kit
         uses: docker/build-push-action@v3
         with:
           push: true
-          context: .
+          context: ./support/docker/
           tags: |
-            jaseci/jaseci-text-cpu:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-speech:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-speech:latest
           build-args: |
             JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_AI_KIT_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
-            BUILD_WITH_AI=1
-          file: ./support/docker/jaseci-text-cpu.Dockerfile
+            BUILD_WITH=jac-speech
+          file: ./support/docker/jaseci.Dockerfile
 
-  build-and-release-jaseci-speech-docker-image:
-    name: Build Jaseci speech Docker image and push to dockerhub
+  build-and-release-jac-vision-image:
+    name: Build jac-vision Docker image and push to dockerhub
     runs-on: ubuntu-latest
     needs:
       [
         push_jaseci_core_to_pypi,
         push_jaseci_serv_to_pypi,
-        push_jaseci_ai_kit_to_pypi,
+        push_jac_vision_to_pypi,
       ]
 
     steps:
@@ -294,18 +367,74 @@ jobs:
             core.setOutput('no-v-tag', no_v_tag)
 
       # build the image and push to docker hub
-      # 2. jaseci with jaseci_ai_kit
       - name: Build and push image -- Jaseci with jaseci-ai-kit
         uses: docker/build-push-action@v3
         with:
           push: true
-          context: .
+          context: ./support/docker/
           tags: |
-            jaseci/jaseci-speech:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-vision:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-vision:latest
           build-args: |
             JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
             JASECI_AI_KIT_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
-            BUILD_WITH_AI=1
-          file: ./support/docker/jaseci-speech.Dockerfile
+            BUILD_WITH=jac-vision
+          file: ./support/docker/jaseci.Dockerfile
 
+  build-and-release-jac-misc-image:
+    name: Build jac-misc Docker image and push to dockerhub
+    runs-on: ubuntu-latest
+    needs:
+      [
+        push_jaseci_core_to_pypi,
+        push_jaseci_serv_to_pypi,
+        push_jac_misc_to_pypi,
+      ]
+
+    steps:
+      # Someimtes there is a delay before the new pypi pacakges become available
+      - name: Sleep for 300s
+        uses: juliangruber/sleep-action@v1
+        with:
+          time: 300s
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # setup Docker build action
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      # login to dockerhub
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # a little string manipulation to get the tag number without the leading letter v
+      - name: Set versions
+        uses: actions/github-script@v6
+        id: set_version
+        with:
+          script: |
+            const tag = context.ref.substring(10)
+            const no_v_tag = tag.replace('v', '')
+            core.setOutput('no-v-tag', no_v_tag)
+
+      # build the image and push to docker hub
+      - name: Build and push image -- Jaseci with jaseci-ai-kit
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          context: ./support/docker/
+          tags: |
+            jaseci/jac-misc:${{steps.set_version.outputs.no-v-tag}}
+            jaseci/jac-misc:latest
+          build-args: |
+            JASECI_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            JASECI_SERV_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            JASECI_AI_KIT_PYPI_VERSION=${{steps.set_version.outputs.no-v-tag}}
+            BUILD_WITH=jac-misc
+          file: ./support/docker/jaseci.Dockerfile

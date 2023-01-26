@@ -209,6 +209,7 @@ def get_global_actions():
             or i.startswith("internal.")
             or i.startswith("zlib.")
             or i.startswith("webtool.")
+            or i.startswith("url.")
         ):
             global_action_list.append(
                 Action(
@@ -256,13 +257,16 @@ def load_remote_actions(url):
 def gen_remote_func_hook(url, act_name, param_names):
     """Generater for function calls for remote action calls"""
 
-    def func(*args):
+    def func(*args, **kwargs):
         params = {}
         for i in range(len(param_names)):
             if i < len(args):
                 params[param_names[i]] = args[i]
             else:
                 params[param_names[i]] = None
+        for i in kwargs.keys():
+            if i in param_names:
+                params[i] = kwargs[i]
         act_url = f"{url.rstrip('/')}/{act_name.split('.')[-1]}"
         res = requests.post(
             act_url, headers={"content-type": "application/json"}, json=params
