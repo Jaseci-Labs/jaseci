@@ -61,13 +61,6 @@ export class JscGraphContextMenu {
     }
   }
 
-  @Listen('scroll', { target: 'window' })
-  handleScroll(e) {
-    if (this.contextMenuEl.style.display === 'block') {
-    }
-  }
-
-  @Listen('keydown', { target: 'window' })
   render() {
     return (
       <div
