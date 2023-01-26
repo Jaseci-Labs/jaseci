@@ -1,40 +1,9 @@
 #!/bin/bash
 
-JAC_NLP_MODULES=(
-	"bart_sum"
-	"cl_summer"
-	"ent_ext"
-	"fast_enc"
-	"sbert_sim"
-	"t5_sum"
-	"text_seg"
-	"tfm_ner"
-	"use_enc"
-	"use_qa"
-	"zs_classifier"
-	"bi_enc"
-	"topic_ext"
-)
-
-JAC_SPEECH_MODULES=(
-	"stt"
-	"tts"
-	"vc_tts"
-)
-
-JAC_MISC_MODULES=(
-	"pdf_ext"
-	"translator"
-	"cluster"
-	"ph"
-)
-
-JAC_VISION_MODULES=(
-	"detr"
-	"rftm"
-	"yolos"
-	"dpt"
-)
+JAC_NLP_MODULES=("bart_sum" "cl_summer" "ent_ext" "fast_enc" "sbert_sim" "t5_sum" "text_seg" "tfm_ner" "use_enc" "use_qa" "zs_classifier" "bi_enc" "topic_ext")
+JAC_SPEECH_MODULES=("stt" "tts" "vc_tts")
+JAC_MISC_MODULES=("pdf_ext" "translator" "cluster" "ph")
+JAC_VISION_MODULES=("detr" "rftm" "yolos" "dpt")
 
 install_modules() {
 	if [[ $1 == "all" ]]; then
