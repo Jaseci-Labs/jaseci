@@ -29,7 +29,7 @@ class DPTLarge:
             align_corners=False,
         )
 
-        output = prediction.squeeze().cpu().numpy()
+        output = prediction.squeeze().cpu().detach().numpy()
         formatted = (output * 255 / np.max(output)).astype("uint8")
         depth = Image.fromarray(formatted)
 
@@ -52,10 +52,10 @@ class DPTLarge:
         print(prediction.shape)
         output = prediction.squeeze().cpu().detach().numpy()
         formatted = (output * 255 / np.max(output)).astype("uint8")
-        # depth = Image.fromarray(formatted)
+        depth_imgs = [Image.fromarray(formatted[i]) for i in range(len(formatted))]
 
         del inputs, outputs
-        return formatted
+        return depth_imgs
 
     def get_labels(self):
         return self.model.config.id2label.values()
