@@ -1,7 +1,0 @@
-transformers
-sentence-transformers
-torch
-fastapi
-uvicorn
-nltk
-sumy

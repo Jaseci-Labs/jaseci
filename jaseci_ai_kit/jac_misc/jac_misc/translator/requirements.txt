@@ -1,0 +1,4 @@
+transformers >= 4.0.0
+torch>=1.10.2,<2.0.0
+sentencepiece
+protobuf>=3.20.1,<3.21

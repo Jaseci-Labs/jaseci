@@ -48,7 +48,7 @@ walker_block:
 	)* walk_exit_block? RBRACE;
 
 test:
-	KW_TEST NAME? STRING KW_WITH (
+	KW_TEST NAME? multistring KW_WITH (
 		graph_ref
 		| KW_GRAPH graph_block
 	) KW_BY (
@@ -94,13 +94,20 @@ event_clause:
 	KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
 
 preset_in_out:
-	DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
+	DBL_COLON param_list? (DBL_COLON | COLON_OUT expression);
 
 dotted_name: NAME DOT NAME;
 
 name_list: NAME (COMMA NAME)*;
 
-expr_list: expression (COMMA expression)*;
+param_list:
+	expr_list
+	| kw_expr_list
+	| expr_list COMMA kw_expr_list;
+
+expr_list: connect (COMMA connect)*;
+
+kw_expr_list: NAME EQ connect (COMMA NAME EQ connect)*;
 
 code_block: LBRACE statement* RBRACE | COLON statement;
 
@@ -177,7 +184,7 @@ copy_assign: CPY_EQ expression;
 
 inc_assign: (PEQ | MEQ | TEQ | DEQ) expression;
 
-connect: logical ( (NOT)? edge_ref expression)?;
+connect: logical ( (NOT edge_ref | connect_op) expression)?;
 
 logical: compare ((KW_AND | KW_OR) compare)*;
 
@@ -200,7 +207,7 @@ global_ref: KW_GLOBAL DOT (obj_built_in | NAME);
 atom:
 	INT
 	| FLOAT
-	| STRING
+	| multistring
 	| BOOL
 	| NULL
 	| NAME
@@ -210,7 +217,7 @@ atom:
 	| dict_val
 	| LPAREN expression RPAREN
 	| ability_op NAME spawn_ctx?
-	| atom atom_trailer+
+	| atom atom_trailer
 	| KW_SYNC atom
 	| spawn
 	| ref
@@ -221,7 +228,7 @@ atom_trailer:
 	DOT built_in
 	| DOT NAME
 	| index_slice
-	| LPAREN expr_list? RPAREN
+	| LPAREN param_list? RPAREN
 	| ability_op NAME spawn_ctx?;
 
 ability_op: DBL_COLON | DBL_COLON NAME COLON;
@@ -260,8 +267,8 @@ string_built_in:
 	)?;
 
 node_edge_ref:
-	node_ref filter_ctx?
-	| edge_ref (node_ref filter_ctx?)?;
+	node_ref filter_ctx? node_edge_ref?
+	| edge_ref node_edge_ref?;
 
 node_ref: NODE_DBL_COLON NAME;
 
@@ -273,17 +280,19 @@ type_ref: TYPE_DBL_COLON NAME;
 
 edge_ref: edge_to | edge_from | edge_any;
 
-edge_to:
-	'-->'
-	| '-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
+edge_to: '-->' | '-' ('[' NAME filter_ctx? ']')? '->';
 
-edge_from:
-	'<--'
-	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '-';
+edge_from: '<--' | '<-' ('[' NAME filter_ctx? ']')? '-';
 
-edge_any:
-	'<-->'
-	| '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
+edge_any: '<-->' | '<-' ('[' NAME filter_ctx? ']')? '->';
+
+connect_op: connect_to | connect_from | connect_any;
+
+connect_to: '++>' | '+' ('[' NAME spawn_ctx? ']')? '+>';
+
+connect_from: '<++' | '<+' ('[' NAME spawn_ctx? ']')? '+';
+
+connect_any: '<++>' | '<+' ('[' NAME spawn_ctx? ']')? '+>';
 
 list_val: LSQUARE expr_list? RSQUARE;
 
@@ -303,7 +312,7 @@ spawn_object:
 	| graph_spawn
 	| type_spawn;
 
-spawn_edge: expression edge_ref;
+spawn_edge: expression connect_op;
 
 node_spawn: spawn_edge? node_ref spawn_ctx?;
 
@@ -332,6 +341,8 @@ any_type:
 	| KW_NODE
 	| KW_EDGE
 	| KW_TYPE;
+
+multistring: STRING+;
 
 /* Lexer rules */
 TYP_STRING: 'str';

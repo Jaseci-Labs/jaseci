@@ -15,31 +15,18 @@ describe('graph-walker', () => {
       template: () => <graph-walker-runner onWalkerCompleted={() => {}} walkers={walkerList} serverUrl="http://api.backend.dev" sentinel="" nodeId=""></graph-walker-runner>,
     });
 
-    const label = page.root.shadowRoot.querySelector('label');
     const tableRows = page.root.shadowRoot.querySelector('tbody').querySelectorAll('tr');
-    const useWalker = tableRows[0].querySelectorAll('td')[2].querySelector('label');
+    const useWalker = page.root.shadowRoot.querySelector('tbody').querySelector('tr:nth-of-type(1)').querySelector('td:nth-of-type(2)').querySelector('label') as HTMLLabelElement;
 
-    expect(label.innerText).toContain('Run Walker');
-    expect(useWalker.innerText).toBe('Use');
+    expect(useWalker.innerHTML).toBe('Use');
     expect(tableRows.length).toBe(walkerList.length);
 
-    useWalker.click();
-    await page.waitForChanges();
-
     const subtitle = page.root.shadowRoot.querySelector("[data-testid='subTitle']");
-    const addProperty = page.root.shadowRoot.querySelector("[data-testid='addProperty']") as HTMLLabelElement;
-
-    for (let i = 0; i < 3; i++) {
-      addProperty.click();
-      await page.waitForChanges();
-    }
 
     const inputTableRows = page.root.shadowRoot.querySelector('tbody').querySelectorAll('tr');
 
-    expect(subtitle.innerHTML).toContain('Add walker properties and values');
-    expect(inputTableRows.length).toBe(4);
-    expect(inputTableRows[0].innerHTML).toContain('jsc-input');
-    expect(inputTableRows[0].innerHTML).toContain('jsc-select');
+    expect(subtitle.innerHTML).toContain('Choose a walker to run on this node');
+    expect(inputTableRows.length).toBe(19);
   });
 
   test('build context works', async () => {

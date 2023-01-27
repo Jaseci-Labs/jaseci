@@ -45,7 +45,7 @@ class AbstractJacAPIView(APIView):
         """
         self.proc_request(request, **kwargs)
         api_result = self.caller.general_interface_to_api(self.cmd, type(self).__name__)
-        self.log_request_stats()
+        self.log_request_stats(request)
         return self.issue_response(api_result)
 
     def post(self, request, **kwargs):
@@ -56,10 +56,10 @@ class AbstractJacAPIView(APIView):
         """
         self.proc_request(request, **kwargs)
         api_result = self.caller.general_interface_to_api(self.cmd, type(self).__name__)
-        self.log_request_stats()
+        self.log_request_stats(request)
         return self.issue_response(api_result)
 
-    def log_request_stats(self):
+    def log_request_stats(self, request):
         """Api call preamble"""
         tot_time = time() - self.start_time
         save_count = 0
@@ -83,6 +83,11 @@ class AbstractJacAPIView(APIView):
                 f" saving {Cc.TY}{save_count}{Cc.EC} objects."
             )
         )
+
+        hook = self.caller._h
+        hook.meta.app.post_request_hook(type(self).__name__, request, tot_time) if (
+            hook.meta.run_svcs and hook.meta.app != None
+        ) else None
 
     def proc_prime_ctx(self, request, req_data):
         try:
@@ -148,11 +153,11 @@ class AbstractJacAPIView(APIView):
             request.data.dict() if type(request.data) is not dict else request.data
         )
 
-        req_data.update(kwargs)
-
         self.proc_prime_ctx(request, req_data)
         self.proc_file_ctx(request, req_data)
         self.proc_request_ctx(request, req_data)
+
+        req_data.update(kwargs)
 
         self.cmd = req_data
         self.set_caller(request)
@@ -211,7 +216,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
         self.proc_request(request, **kwargs)
 
         api_result = self.caller.public_interface_to_api(self.cmd, type(self).__name__)
-        self.log_request_stats()
+        self.log_request_stats(request)
         return self.issue_response(api_result)
 
     def post(self, request, **kwargs):
@@ -223,7 +228,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
         self.proc_request(request, **kwargs)
 
         api_result = self.caller.public_interface_to_api(self.cmd, type(self).__name__)
-        self.log_request_stats()
+        self.log_request_stats(request)
         return self.issue_response(api_result)
 
     def set_caller(self, request):

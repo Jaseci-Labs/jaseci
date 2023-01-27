@@ -444,7 +444,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         """Test API for loading an application"""
         enc_str = base64.b64encode(
             b"node sample { has apple;} "
-            + b"walker testwalker{ new = spawn here --> node::sample; "
+            + b"walker testwalker{ new = spawn here ++> node::sample; "
             + b"report new; }"
         ).decode()
         payload = {
@@ -577,7 +577,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "op": "sentinel_set",
             "snt": sent.jid,
             "code": "node sample { has apple;} "
-            + "walker testwalker{ new = spawn here --> node::sample; "
+            + "walker testwalker{ new = spawn here ++> node::sample; "
             + "report new; }",
             "encoded": False,
         }
@@ -664,7 +664,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             "op": "sentinel_set",
             "snt": sent.jid,
             "code": "node a { has b; } walker testwalker"
-            + "{ r = spawn here --> node::a; r.b = 6; }",
+            + "{ r = spawn here ++> node::a; r.b = 6; }",
             "encoded": False,
         }
         res = self.client.post(
@@ -1612,12 +1612,15 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
+        self.assertIn("in jac_try_exception", " ".join(res["stack_trace"]))
         self.assertIn(
-            "in jac_try_exception\n    raise TryException(self.jac_exception(e, "
-            "jac_ast))\njaseci.jac.machine.machine_state.TryException: ",
-            res["stack_trace"],
+            "raise TryException(self.jac_exception(e, jac_ast))",
+            " ".join(res["stack_trace"]),
         )
-
+        self.assertIn(
+            "jaseci.jac.machine.machine_state.TryException: ",
+            " ".join(res["stack_trace"]),
+        )
         self.assertIn(
             "zsb:walker_exception_no_try_else - line 6, col 20",
             res["errors"][0],

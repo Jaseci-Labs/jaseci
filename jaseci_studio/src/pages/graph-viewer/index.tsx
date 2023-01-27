@@ -3,13 +3,13 @@ import { Card, Flex, Title } from "@mantine/core";
 function GraphViewerPage() {
   return (
     <>
-      <Flex justify={"center"} align="center">
+      <Flex justify={"center"}>
         <Card
-          w="90%"
-          h="90%"
+          w="100%"
+          h="100%"
           withBorder
           shadow={"md"}
-          p={30}
+          p={8}
           radius={"md"}
           sx={{ margin: "0 auto" }}
         >
@@ -18,7 +18,7 @@ function GraphViewerPage() {
           </Title>
 
           <jsc-graph
-            height="80vh"
+            height="85vh"
             serverUrl="http://localhost:8888"
           ></jsc-graph>
         </Card>

@@ -72,18 +72,18 @@ graph dialogue_system {
             response = "You can order a Tesla through our design studio."
         );
 
-        dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;
-        dialogue_root -[intent_transition(intent="order a tesla")]-> how_to_order_state;
+        dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;
+        dialogue_root +[intent_transition(intent="order a tesla")]+> how_to_order_state;
     }
 }
 ```
 We have already covered the syntax for graph definition, such as the `anchor` node and the `spawn` block in the previous section.
 Refer to the FAQ graph definition step if you need a refresher.
 
-We have a new language syntax here `dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;`.
+We have a new language syntax here `dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;`.
 Let's break this down!
-* If you recall, we have used a similar but simpler syntax to connect two nodes with an edge `faq_root --> faq_state;`. This connect `faq_root` to `faq_state` with a **generic** edge pointing to `faq_state`;
-* In `dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;`, we are connecting the two states with a **custom** edge of the type `intent_transition`.
+* If you recall, we have used a similar but simpler syntax to connect two nodes with an edge `faq_root ++> faq_state;`. This connect `faq_root` to `faq_state` with a **generic** edge pointing to `faq_state`;
+* In `dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;`, we are connecting the two states with a **custom** edge of the type `intent_transition`.
 * In addition, we are initializing the variable `intent` of the edge to be `test drive`.
 
 To summarize, with this graph, a user will start at the dialogue root state when they first start the conversation.
@@ -94,7 +94,7 @@ Let's create an `init` walker to for this new jac program.
 ```jac
 walker init {
     root {
-        spawn here --> graph::dialogue_system;
+        spawn here ++> graph::dialogue_system;
     }
 }
 ```
@@ -139,7 +139,7 @@ Let's update the init walker to include this walker.
 ```jac
 walker init {
     root {
-        spawn here --> graph::dialogue_system;
+        spawn here ++> graph::dialogue_system;
         spawn here walker::talk;
     }
 }
@@ -191,14 +191,19 @@ A Bi-encoder model has two transformer-based encoders that each encodes the inpu
 
 Now let's train the model.
 We have created a jac program and sample training data for this.
-They are in the `code` directory next to this tutorial.
+They are in the `code` directory ([link](https://github.com/Jaseci-Labs/jaseci/tree/main/examples/CanoniCAI/code)) next to this tutorial.
 Copy `bi_enc.jac` and `clf_train_1.json` to your working directory.
 
 Let's first load the Bi-encoder action library into Jaseci.
 ```bash
 $ jsctl
-jaseci > actions load module jaseci_ai_kit.bi_enc
+jaseci > actions load module jac_nlp.bi_enc
 ```
+
+> **Note**
+>
+> If you are on the older `jaseci_ai_kit` python package, replace `jac_nlp.bi_enc` with `jaseci_ai_kit.bi_enc`.
+
 We have provided an example training file that contains some starting point training data for the two intents, `test drive` and `order a tesla`.
 
 ```jac
@@ -584,15 +589,15 @@ graph dialogue_system {
 
         how_to_order_state = spawn node::how_to_order_state;
 
-        dialogue_root -[intent_transition(intent="test drive")]-> test_drive_state;
-        test_drive_state -[intent_transition(intent="cancel")]-> td_canceled;
-        test_drive_state -[entity_transition(entities=["name", "address"])]-> td_confirmation;
-        test_drive_state -[intent_transition(intent="provide name or address")]-> test_drive_state;
-        td_confirmation - [intent_transition(intent="yes")]-> td_confirmed;
-        td_confirmation - [intent_transition(intent="no")]-> test_drive_state;
-        td_confirmation - [intent_transition(intent="cancel")]-> td_canceled;
+        dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;
+        test_drive_state +[intent_transition(intent="cancel")]+> td_canceled;
+        test_drive_state +[entity_transition(entities=["name", "address"])]+> td_confirmation;
+        test_drive_state +[intent_transition(intent="provide name or address")]+> test_drive_state;
+        td_confirmation +[intent_transition(intent="yes")]+> td_confirmed;
+        td_confirmation +[intent_transition(intent="no")]+> test_drive_state;
+        td_confirmation +[intent_transition(intent="cancel")]+> td_canceled;
 
-        dialogue_root -[intent_transition(intent="order a tesla")]-> how_to_order_state;
+        dialogue_root +[intent_transition(intent="order a tesla")]+> how_to_order_state;
     }
 }
 ```
@@ -678,11 +683,13 @@ We are using a transformer-based token classification model.
 
 First, we need to load the actions. The action set is called `tfm_ner` (`tfm` stands for transformer).
 ```bash
-jaseci > actions load module jaseci_ai_kit.tfm_ner
+jaseci > actions load module jac_nlp.tfm_ner
 ```
-> **Warning**
+
+> **Note**
 >
-> If you installed `jaseci_ai_kit` prior to September 5th, 2022, please upgrade via `pip install --upgrade jaseci_ai_kit`. There has been an update to the module that you will need for remainder of this exercise. You can check your installed version via `pip show jaseci_ai_kit`. You need to be on version 1.3.4.6 or higher.
+> If you are on the older `jaseci_ai_kit` python package, replace `jac_nlp.tfm_ner` with `jaseci_ai_kit.tfm_ner`.
+
 
 Similar to Bi-encoder, we have provided a jac program to train and inference with this model, as well as an example training dataset.
 Go into the `code/` directory and copy `tfm_ner.jac` and `ner_train.json` to your working directory.

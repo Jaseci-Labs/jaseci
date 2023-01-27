@@ -3,7 +3,6 @@ node tfm_ner {
 
     can train {
         train_data = file.load_json(visitor.train_file);
-        std.out(train_data);
         tfm_ner.train(
             mode = "default",
             epochs = visitor.num_train_epochs,
@@ -24,7 +23,7 @@ walker train {
     has train_file;
     has num_train_epochs = 50, from_scratch = true;
     root {
-        spawn here --> node::tfm_ner;
+        spawn here ++> node::tfm_ner;
         take --> node::tfm_ner;
     }
     tfm_ner: here::train;
@@ -34,7 +33,7 @@ walker infer {
     has query, interactive = true;
     has labels, prediction;
     root {
-        spawn here --> node::tfm_ner;
+        spawn here ++> node::tfm_ner;
         take --> node::tfm_ner;
     }
     tfm_ner {

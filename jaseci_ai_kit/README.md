@@ -1,47 +1,74 @@
-# Jaseci Kit
-Jaseci Kit is a collection of state-of-the-art machine learning models that are readily available to load into jaseci.
+# Jaseci AI Kit
+Jaseci AI Kit is a collection of state-of-the-art machine learning models from different domains (NLP, Computer Vision, Speech etc.) that are readily available to load into jaseci. Jaseci AI Kit consist of 4 Main Python Packages
+- `jac_nlp` - Natural Language Processing
+- `jac_vision` - Computer Vision
+- `jac_speech` - Speech
+- `jac_misc` - Miscellaneous
 
-# Model Directory
+## Installation
+Each module can be installed individually or all at once. To install all modules at once.
+```bash
+pip install jac_nlp[all] #Installs all the modules present in the jac_nlp package
+pip install jac_misc[translator] #Installs the translator module present in the jac_misc package
+pip install jac_speech[stt, tts] #Installs the stt and tts modules present in the jac_speech package
+```
 
-## Encoders
+# Jaseci NLP Package `(jac_nlp)`
+The `jac_nlp` package contains a collection of state-of-the-art NLP models that can be used to perform various nlp tasks such as named entity recongnition, text summerization, embedding generation, topic extraction etc. following is a list of all the models available in the `jac_nlp` package.
+
+
+| Module      | Model Type       |Model Name       | Example                             | Type                    | Status       | Description                                                 | Resources                                 |
+| ----------- | ---------------- | ---------------- | ----------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
+| `use_enc`   | Text Encoder      |USE Encoder      | [Link](#use-encoder-use_enc)        | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
+| `use_qa`    | Text Encoder      |USE QA           | [Link](#use-qa-use_qa)              | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
+| `fast_enc`  | Text Encoder      |FastText         | [Link](#fasttext-encoder-fast_enc)  | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
+| `bi_enc`    | Text Encoder      |Bi-encoder       | [Link](#bi-encoder-bi_enc)          | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
+| `sbert_sim` | Text Encoder      |SBert Similarity | [Link](#sbert-similarity-sbert_sim) | Training req./Zero-shot | Ready        | SBert Encoders for Sentence Similarity                      | [Paper](https://arxiv.org/abs/1908.10084) |
+| `ent_ext`/ `lstm_ner` | Named Entity Recognition      |Flair NER       | [Link](#entity-extraction-ent_ext)                    | Training req.  | Ready        | Entity extraction using the FLAIR NER framework                   |                                                                                                         |
+| `tfm_ner`             | Named Entity Recognition      |Transformer NER | [Link](#entity-extraction-using-transformers-tfm_ner) | Training req.  | Ready        | Token classification on Transformer models, can be used for NER   | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
+| `cl_summer` | Summarization      |Summarizer | [Link](#summarizer-clsummer)         | No Training req. | Ready  | Extractive Summarization using Sumy                  | [Doc.](https://miso-belica.github.io/sumy/)                                                                       |
+| `t5_sum`    | Summarization      |Summarizer | [Link](#t5-summarization-t5sum)      | No Training req. | Ready  | Abstractive Summarization using the T5 Model         | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf)      |
+| `bart_sum`  | Summarization      |Summarizer | [Link](#bart-summarization-bart_sum) | No Training req. | Ready  | Abstractive Summarization using the Bart Large Model | [Huggingface](https://huggingface.co/transformers/model_doc/bart.html), [Paper](https://arxiv.org/abs/1910.13461) |
+| `text_seg`   | Text Processing      |Text Segmenter   | [Link](#text-segmenter-text_seg)     | No Training req. | Experimetal | Topical Change Detection in Documents             | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec)                                                                                                                        |
+| `topic_ext` | Text Analysis      |Topic Extraction | [Link](#topic-extraction-topic_ext) | No Training req. | Experimetal | Indentifying most relevent topics for given set of documents |           |
+
+
+
+To load the `jac_nlp.use_enc` package into jaseci in local environment, run the following command in the jsctl console.
+```bash
+jsctl > actions load module jac_nlp.use_enc
+```
+# Jaseci Vision Package `(jac_vision)`
+The `jac_vision` package contains a collection of state-of-the-art Computer Vision models that can be used to perform various computer vision tasks such as image classification, object detection, image segmentation etc. following is a list of all the models available in the `jac_vision` package.
+
+# Jaseci Speech Package `(jac_speech)`
+The `jac_speech` package contains a collection of state-of-the-art Speech models that can be used to perform various speech tasks such as speech to text, text to speech etc. following is a list of all the models available in the `jac_speech` package.
+
+| Module      | Model Type       | Model Name       | Example                             | Type                    | Status       | Description                                                 | Resources                                 |
+| ----------- | ---------------- |---------------- | ----------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
+| `stt`  | Speech to Text | Whisper |  [Link](#speech2text-stt) | No Training req. | Ready  | transcription or translation of a give audio sequence. | [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf), [OpenAI Whisper](https://openai.com/blog/whisper/)                                                                                                               |
+| `tts`  | Text to Speech | Tacotron | [Link](#)                | No Training req. | Ready  | List of Amplitudes of the synthesized audio wav.       | [Tacotron2](https://arxiv.org/abs/1712.05884), [Waveglow](https://arxiv.org/abs/1811.00002), [Hifigan](https://arxiv.org/abs/2010.05646), [Nvidia Tacotron2 implementation](https://github.com/NVIDIA/tacotron2), [SpeechBrain](https://speechbrain.github.io/index.html) |
+
+To load the `jac_speech.stt` package into jaseci in local environment, run the following command in the jsctl console.
+```bash
+jsctl > actions load module jac_speech.stt
+```
+
+# Jaseci Misc Package `(jac_misc)`
+The `jac_misc` package contains a collection of miscellaneous models that can be used to perform various tasks such as translation, pdf extraction, personalized head etc. following is a list of all the models available in the `jac_misc` package.
+
 | Module      | Model Name       | Example                             | Type                    | Status       | Description                                                 | Resources                                 |
 | ----------- | ---------------- | ----------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
-| `use_enc`   | USE Encoder      | [Link](#use-encoder-use_enc)        | Zero-shot               | Ready        | Sentence-level embedding pre-trained on general text corpus | [Paper](https://arxiv.org/abs/1803.11175) |
-| `use_qa`    | USE QA           | [Link](#use-qa-use_qa)              | Zero-shot               | Ready        | Sentence-level embedding pre-trained on Q&A data corpus     | [Paper](https://arxiv.org/abs/1803.11175) |
-| `fast_enc`  | FastText         | [Link](#fasttext-encoder-fast_enc)  | Training req.           | Ready        | FastText Text Classifier                                    | [Paper](https://arxiv.org/abs/1712.09405) |
-| `bi_enc`    | Bi-encoder       | [Link](#bi-encoder-bi_enc)          | Training req./Zero-shot | Ready        | Dual sentence-level encoders                                | [Paper](https://arxiv.org/abs/1803.11175) |
-| `sbert_sim` | SBert Similarity | [Link](#sbert-similarity-sbert_sim) | Training req./Zero-shot | Ready        | SBert Encoders for Sentence Similarity                      | [Paper](https://arxiv.org/abs/1908.10084) |
-| `poly_enc`  | Poly-encoder     |                                     | Training req./Zero-shot | Experimental | Poly Encoder                                                | [Paper](https://arxiv.org/abs/1905.01969) |
-| `cross_enc` | Cross-encoder    |                                     | Training req./Zero-shot | Experimental | Cross Encoder                                               | [Paper](https://arxiv.org/abs/1905.01969) |
-
-## Entity
-| Module                | Model Name      | Example                                               | Type           | Status       | Description                                                       | Resources                                                                                               |
-| --------------------- | --------------- | ----------------------------------------------------- | -------------- | ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `ent_ext`/ `lstm_ner` | Flair NER       | [Link](#entity-extraction-ent_ext)                    | Training req.  | Ready        | Entity extraction using the FLAIR NER framework                   |                                                                                                         |
-| `tfm_ner`             | Transformer NER | [Link](#entity-extraction-using-transformers-tfm_ner) | Training req.  | Ready        | Token classification on Transformer models, can be used for NER   | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification) |
-| `lstm_ner`            | LSTM NER        |                                                       | Traininig req. | Experimental | Entity extraction/Slot filling via Long-short Term Memory Network |                                                                                                         |
-
-## Summarization
-| Module      | Model Name | Example                         | Type             | Status | Description                                  | Resources                                                                                                    |
-| ----------- | ---------- | ------------------------------- | ---------------- | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `cl_summer` | Summarizer | [Link](#summarizer-clsummer)    | No Training req. | Ready  | Extractive Summarization using Sumy          | [Doc.](https://miso-belica.github.io/sumy/)                                                                  |
-| `t5_sum`    | Summarizer | [Link](#t5-summarization-t5sum) | No Training req. | Ready  | Abstractive Summarization using the T5 Model | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf) |
-
-
-## Text Processing
-| Module     | Model Name     | Example                          | Type             | Status      | Description                           | Resources                                                           |
-| ---------- | -------------- | -------------------------------- | ---------------- | ----------- | ------------------------------------- | ------------------------------------------------------------------- |
-| `text_seg` | Text Segmenter | [Link](#text-segmenter-text_seg) | No Training req. | Experimetal | Topical Change Detection in Documents | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec) |
-
-## Text Clustering
-| Module    | Model Name   | Example                       | Type             | Status      | Description                                               | Resources                                                                                                                         |
-| --------- | ------------ | ----------------------------- | ---------------- | ----------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `translator` | Text Translation | [Link](#text-translation-translator) | No Training req. | Ready       | Text Translation for 50 languages to 50 languages | [Multilingual Denoising Pre-training for Neural Machine Translation](https://arxiv.org/abs/2001.08210), [Huggingface MBart Docs](https://huggingface.co/transformers/model_doc/mbart.html) |
 | `cluster` | Text Cluster | [Link](#text-cluster-cluster) | No Training req. | Experimetal | Indentifying Posible Similar Clusters in Set of Documents | [UMAP](https://umap-learn.readthedocs.io/en/latest/) , [HBDSCAN](https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html) |
+| `pdf_ext` | PDF Extractor | [Link](#pdf-extractor-pdf_ext) | No Training req.| Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
+| `ph` | Personalized Head | [Link](jac_misc/jac_misc/ph/README.md) | Training Req. | Experimental  | Extract content from a PDF file via PyPDF2 | |
 
-## Non-AI Tools
-| Module    | Model Name    | Example                        | Status | Description                                | Resources                                        |
-| --------- | ------------- | ------------------------------ | ------ | ------------------------------------------ | ------------------------------------------------ |
-| `pdf_ext` | PDF Extractor | [Link](#pdf-extractor-pdf_ext) | Ready  | Extract content from a PDF file via PyPDF2 | [Doc.](https://pypdf2.readthedocs.io/en/latest/) |
+
+To load the `jac_misc.translator` package into jaseci in local environment, run the following command in the jsctl console.
+```bash
+jsctl > actions load module jac_misc.translator
+```
 
 # Examples
 
@@ -793,6 +820,146 @@ walker summarization {
 }
 ```
 
+###  Bart Summarization (`bart_sum`)
+`bart_sum` uses the BART transformer model to perform abstractive summary on a body of text.
+
+There are 2 ways to use `bart_sum` module.
+1. Given a text, it will return the summary of the text.
+2. Given a web page url, it will return the summary of the web page.
+
+Both the methods uses a single action `summarize` to get the summary. Following are the parameters of the function.
+* `text` - Text to be summarized. Type: `Union[List[str], str]` (Optional)
+* `url` - Url of the web page to be summarized. Type: `str` (Optional)
+* `max_length` - Maximum character length of the summary. Type: `int` Default: `100`
+* `min_length` - Minimum character length of the summary. Type: `int` Default: `10`
+
+Return type of the action is `List[str]`.
+
+#### Example Jac Usage:
+Following example will return the summary of the a single text.
+
+```jac
+walker test_summarize_single {
+    can bart_sum.summarize;
+    report bart_sum.summarize("There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.", 10);
+}
+```
+You can also pass a list of texts to get the summary of all the texts.
+```jac
+walker test_summarize_batch {
+    can bart_sum.summarize;
+    report bart_sum.summarize(
+        ["There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
+        "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
+        "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude."],
+        10
+    );
+}
+```
+Following example will return the summary of the web page.
+
+```jac
+walker test_summarize_url {
+    can bart_sum.summarize;
+    report bart_sum.summarize(null, "https://in.mashable.com/");
+}
+```
+
+## Speech
+### Speech2Text (`stt`)
+`stt` uses the `whisper-tiny` to get the transcription or translation of a give audio sequence.
+
+`stt.transcribe` to get the transcription. Following are the parameters of the action.
+* `language` - Spoken Language in the Audio. Type: Type: `str` Default: `en`
+* `array` - Audio Array (should be sampled at 16kHz). Type: `list[float]` (Optional)
+* `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
+* `url` - Web URL to a Audio file. Type: `str` (Optional)
+
+Return type of the action is `str`.
+
+#### Example Jac Usage:
+```jac
+walker transribe_array {
+    can stt.transcribe, stt.audio_to_array;
+    audio_array = stt.audio_to_array("test.mp3");
+    report stt.transcribe("en", audio_array);
+}
+
+walker transribe_file {
+    can stt.transcribe;
+    report stt.transcribe("en", null, "test.mp3");
+}
+
+walker transribe_url {
+    can stt.transcribe;
+    report stt.transcribe("fr", null, null, "https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3");
+}
+```
+
+`stt.translate` to get the english translation of a audio sequence of different language. Following are the parameters of the action.
+* `language` - Spoken Language in the Audio. Type: Type: `str` Default: `en`
+* `array` - Audio Array (should be sampled at 16kHz). Type: `list[float]` (Optional)
+* `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
+* `url` - Web URL to a Audio file. Type: `str` (Optional)
+
+Return type of the action is `str`.
+
+#### Example Jac Usage:
+```jac
+walker translate {
+    can stt.translate;
+    report stt.translate("fr", null, null, "https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3");
+}
+```
+### Text2Speech (`tts`)
+Implementation of the `tts` module produces audio wavs from the input text sequence.
+
+* `synthesize`: Synthesize audio wavs for the input text sequence and will return the list of amlitude values of the audio wav. provide an option to save the audio wav in a prefered file location if the correct file path is passed as a parameter.
+  * Input
+    * `text` : (String) Input text sequence. This input text sequence will undergo with text preprocessing steps, such as expanding abrivations, converting numbers into ordinal format and removing unnessary white spaces.
+    * `base64_val`: (Boolean). Set this to true if you need the return value in base64.
+    * `path` : (String) Set the path correctly if you need to save the audio in a prefered location. ignore if you don't wanna save.
+    * `rate` : The bitrate of the audio. This is not mandotory field.
+  * Return
+    * Dictionary
+* `save_audio` : This action will save the audio amplitude as a wav file in a prefered location.
+  * Input
+    * `audio_data`: (List) a list of amplitude(float) values
+    * `path` : (String) The location path to save the audio.
+    * `rate`: (Int) The audio bitrate.
+  * Return
+    * Dictionary
+* `load_seq2seqmodel` : This action will load the sequence to sequence model given in the input.
+  * Input
+    * `model_name` : String, model name. possible names {`tacotron2_v1`, `tacotron2_v2`}
+    * `force_reload` : Boolean.
+  * Return
+    * String, status and of name of the loaded model.
+* `load_vocorder` : This action will load the vocorder model given in the input.
+  * Input
+    * `model_name` : String, model name. possible names {`waveglow`, `hifigan`}
+    * `force_reload` : Boolean.
+  * Return
+    * String, status and of name of the loaded model.
+
+#### Example Jac Usage:
+
+```
+walker init{
+    has text_input = "Hello world!, This is a test run";
+    can tts.synthesize;
+    can tts.save_audio;
+    can tts.load_seq2seqmodel;
+    can tts.load_vocorder;
+
+    has seq2seq = tts.load_seq2seqmodel("tacotron2_v1");
+    has vocorder = tts.load_vocorder("hifigan");
+
+    has result = tts.synthesize(text = text_input);
+    report tts.save_audio(result.audio_wave , "./");
+}
+```
+
 ## Text Processing
 ### Text Segmenter (`text_seg`)
 `text_seg` Text segmentation is a method of splitting a document into smaller parts, which is usually called segments. It is widely used in text processing. Each segment has its relevant meaning. Those segments categorized as word, sentence, topic, phrase etc. module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
@@ -833,6 +1000,32 @@ walker text_seg_example {
         threshold=threshold
         );
     std.out(resp_data);
+}
+```
+
+### Text Translation (`translator`)
+Module `translator` uses the `mbart-large-50-many-to-many` to perform multilingual translation. It can translate from 50 languages to 50 languages.
+
+Following are the parameters for the action `translator.translate`:
+* `text` - Text to be translated. Type: `Union[List[str], str]`
+* `src_lang` - Source language of the text. Type: `str`
+* `tgt_lang` - Target language of the text. Type: `str`
+
+Return type of the action is `List[str]`.
+
+#### Example Jac Usage:
+Example JAC Code to translate text from Hindi to English:
+```jac
+walker test_translate_hindi_eng {
+    can translator.translate;
+    report translator.translate("नमस्ते, आप कैसे हैं?", "hi_IN", "en_XX"); # Returns ["Hello, how are you?"]
+}
+```
+Example JAC Code to translate text from English to German:
+```jac
+walker test_translate_eng_german {
+    can translator.translate;
+    report translator.translate("Hello, how are you?", "en_XX", "de_DE"); # Returns ["Hallo, wie geht es dir?"]
 }
 ```
 
@@ -896,6 +1089,59 @@ walker text_cluster_example{
     labels = cluster.get_cluster_labels(final_features,"hbdscan",2,2);
     std.out(labels);
 
+}
+```
+
+### Topic Extraction (`topic_ext`)
+
+Module `topic_ext` implemented for producing most relevant and possible set of topics for given set of text documents. Following is an example usage of the `topic_ext` module.
+
+* `topic_ext.topic_extraction`: This action extracts top n number of topics from each cluster. The the text along with cluster label for the text cluster should be provided here as an input.
+  * Input
+    * `texts` - (list of strings) list of input text documents.
+    * `labels` - (list of int) list of labels associated with each text documents.
+    * `n_topics` - (int) number of topics to extract from each cluster.
+  * Returns
+    * A dictionary which contains relevant topics for each clusters.
+
+* **Input data file `topic_extraction.json`**
+  ```json
+  [
+    "still waiting card",
+    "countries supporting",
+    "card still arrived weeks",
+    "countries accounts suppor",
+    "provide support countries",
+    "waiting week card still coming",
+    "track card process delivery",
+    "countries getting support",
+    "know get card lost",
+    "send new card",
+    "still received new card",
+    "info card delivery",
+    "new card still come",
+    "way track delivery card",
+    "countries currently support"]
+    ```
+
+* #### Example Jac Usage:
+
+```jac
+walker init{
+    can file.load_json;
+    has text = file.load_json("topic_extraction.json");
+
+    can use.encode;
+    has encode = use.encode(visitor.text);
+
+    can cluster.get_umap;
+    final_features = cluster.get_umap(encode,2);
+
+    can cluster.get_cluster_labels;
+    labels = cluster.get_cluster_labels(final_features,"hbdscan",2,2);
+
+    can topic_ext.topic_extraction;
+    topic_dict = topic_ext.topic_extraction(texts=text,classes=labels,n_topics=5);
 }
 ```
 

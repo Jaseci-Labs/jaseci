@@ -160,16 +160,45 @@ class Interp(VirtualMachine):
                 ret.append(i.token_text())
         return ret
 
+    def run_param_list(self, jac_ast):
+        """
+        param_list:
+            expr_list
+            | kw_expr_list
+            | expr_list COMMA kw_expr_list;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        ret = {"args": [], "kwargs": {}}
+        if kid[0].name == "expr_list":
+            ret["args"] = self.run_expr_list(kid[0]).value
+        elif kid[0].name == "kw_expr_list":
+            ret["kwargs"] = self.run_kw_expr_list(kid[0]).value
+        if len(kid) > 1:
+            ret["kwargs"] = self.run_kw_expr_list(kid[2]).value
+        return JacValue(self, value=ret)
+
     def run_expr_list(self, jac_ast):
         """
-        expr_list: expression (COMMA expression)*;
+        expr_list: connect (COMMA connect)*;
         """
         kid = self.set_cur_ast(jac_ast)
         ret = []
         for i in kid:
-            if i.name == "expression":
-                self.run_expression(i)
-                ret.append(self.pop().value)
+            if i.name != "COMMA":
+                ret.append(self.run_rule(i).value)
+        return JacValue(self, value=ret)
+
+    def run_kw_expr_list(self, jac_ast):
+        """
+        kw_expr_list: NAME EQ connect (COMMA NAME EQ connect)*;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        ret = {}
+        while len(kid):
+            ret[kid[0].token_text()] = self.run_rule(kid[2]).value
+            kid = kid[3:]
+            if len(kid):
+                kid = kid[1:]
         return JacValue(self, value=ret)
 
     def run_code_block(self, jac_ast):
@@ -507,7 +536,7 @@ class Interp(VirtualMachine):
 
     def run_connect(self, jac_ast):
         """
-        connect: logical ( (NOT)? edge_ref expression)?;
+        connect: logical ( (NOT edge_ref | connect_op) expression)?;
         """
         kid = self.set_cur_ast(jac_ast)
         if len(kid) < 2:
@@ -532,12 +561,12 @@ class Interp(VirtualMachine):
             direction = kid[1].kid[0].name
             for i in target.obj_list():
                 for j in base.obj_list():
-                    use_edge = self.run_edge_ref(kid[1], is_spawn=True)
+                    use_edge = self.run_connect_op(kid[1])
                     self.rt_check_type(i, Node, kid[-1])
                     self.rt_check_type(j, Node, kid[-1])
-                    if direction == "edge_from":
+                    if direction == "connect_from":
                         j.attach_inbound(i, [use_edge])
-                    elif direction == "edge_to":
+                    elif direction == "connect_to":
                         j.attach_outbound(i, [use_edge])
                     else:
                         j.attach_bidirected(i, [use_edge])
@@ -719,7 +748,7 @@ class Interp(VirtualMachine):
         atom:
             INT
             | FLOAT
-            | STRING
+            | multistring
             | BOOL
             | NULL
             | NAME
@@ -744,8 +773,8 @@ class Interp(VirtualMachine):
                 self.push(JacValue(self, value=int(kid[0].token_text())))
             elif kid[0].name == "FLOAT":
                 self.push(JacValue(self, value=float(kid[0].token_text())))
-            elif kid[0].name == "STRING":
-                self.push(JacValue(self, value=parse_str_token(kid[0].token_text())))
+            elif kid[0].name == "multistring":
+                self.run_multistring(kid[0])
             elif kid[0].name == "BOOL":
                 self.push(JacValue(self, value=bool(kid[0].token_text() == "true")))
             elif kid[0].name == "NULL":
@@ -785,7 +814,7 @@ class Interp(VirtualMachine):
             DOT built_in
             | DOT NAME
             | index_slice
-            | LPAREN expr_list? RPAREN
+            | LPAREN param_list? RPAREN
             | ability_op NAME spawn_ctx?;
         """
         try:
@@ -824,9 +853,9 @@ class Interp(VirtualMachine):
                     return atom_res
                 return self.run_index_slice(kid[0], atom_res)
             elif kid[0].name == "LPAREN":
-                param_list = []
-                if kid[1].name == "expr_list":
-                    param_list = self.run_expr_list(kid[1]).value
+                param_list = {"args": [], "kwargs": {}}
+                if kid[1].name == "param_list":
+                    param_list = self.run_param_list(kid[1]).value
                 if isinstance(atom_res.value, Action):
                     ret = atom_res.value.trigger(param_list, self._jac_scope, self)
                     return JacValue(self, value=ret)
@@ -963,9 +992,10 @@ class Interp(VirtualMachine):
         else:
             try:
                 atom_res.value = typ.value(atom_res.value)
-            except Exception:
+            except Exception as e:
                 self.rt_error(
-                    f"Invalid cast of {atom_res.jac_type()} " f"to {jwv(typ.value)}",
+                    f"Invalid cast of {atom_res.jac_type()} "
+                    f"to {jwv(typ.value)}: {e}",
                     kid[0],
                 )
             return atom_res
@@ -981,13 +1011,21 @@ class Interp(VirtualMachine):
 
         if kid[0].name == "KW_CONTEXT":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):
-                return JacValue(self, value=atom_res.value.context)
+                return JacValue(self, ctx=atom_res.value, value=atom_res.value.context)
         elif kid[0].name == "KW_INFO":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):
-                return JacValue(self, value=atom_res.value.serialize(detailed=False))
+                return JacValue(
+                    self,
+                    ctx=atom_res.value,
+                    value=atom_res.value.serialize(detailed=False),
+                )
         elif kid[0].name == "KW_DETAILS":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):
-                return JacValue(self, value=atom_res.value.serialize(detailed=True))
+                return JacValue(
+                    self,
+                    ctx=atom_res.value,
+                    value=atom_res.value.serialize(detailed=True),
+                )
         return atom_res
 
     def run_dict_built_in(self, jac_ast, atom_res):
@@ -1241,44 +1279,54 @@ class Interp(VirtualMachine):
         self.rt_error(f"Call to {str_op} is invalid.", jac_ast)
         return atom_res
 
-    def run_node_edge_ref(self, jac_ast):
+    def run_node_edge_ref(self, jac_ast, viable_nodes=None):
         """
         node_edge_ref:
-            node_ref filter_ctx?
-            | edge_ref (node_ref filter_ctx?)?;
+            node_ref filter_ctx? node_edge_ref?
+            | edge_ref node_edge_ref?;
         """
         kid = self.set_cur_ast(jac_ast)
+        result = JacSet()
         if kid[0].name == "node_ref":
-            result = self.run_node_ref(kid[0])
-            if len(kid) > 1:
-                result = self.run_filter_ctx(kid[1], result)
-            return JacValue(self, value=result)
+            result = self.run_node_ref(kid[0], viable_nodes=viable_nodes)
+            kid = kid[1:]
+            if len(kid) and kid[0].name == "filter_ctx":
+                result = self.run_filter_ctx(kid[0], result)
+                kid = kid[1:]
+            if len(kid):
+                result = self.run_node_edge_ref(kid[0], viable_nodes=result).value
 
         elif kid[0].name == "edge_ref":
-            relevant_edges = self.run_edge_ref(kid[0])
-            result = self.edge_to_node_jac_set(self.run_edge_ref(kid[0]))
-            if len(kid) > 1 and kid[1].name == "node_ref":
-                nres = self.run_node_ref(kid[1])
-                if len(kid) > 2:
-                    nres = self.run_filter_ctx(kid[2], nres)
-                result = result * nres
-                relevant_edges = self.edges_filter_on_nodes(relevant_edges, result)
-            self._relevant_edges = relevant_edges
-            return JacValue(self, value=result)
+            if not viable_nodes:
+                viable_nodes = [None]
+            self._relevant_edges = JacSet()
+            for i in viable_nodes:
+                relevant_edges = self.run_edge_ref(kid[0], location=i)
+                result += self.visibility_prune(
+                    self.edge_to_node_jac_set(relevant_edges, location=i)
+                )
+                kid = kid[1:]
+                if len(kid):
+                    result = self.run_node_edge_ref(kid[0], viable_nodes=result).value
 
-    def run_node_ref(self, jac_ast, is_spawn=False):
+                    relevant_edges = self.edges_filter_on_nodes(relevant_edges, result)
+                self._relevant_edges += relevant_edges
+        return JacValue(self, value=result)
+
+    def run_node_ref(self, jac_ast, is_spawn=False, viable_nodes=None):
         """
         node_ref: NODE_DBL_COLON NAME;
         """
         kid = self.set_cur_ast(jac_ast)
         if not is_spawn:
             result = JacSet()
+            viable_nodes = self.visibility_prune(viable_nodes)
             if len(kid) > 1:
-                for i in self.viable_nodes().obj_list():
+                for i in viable_nodes.obj_list():
                     if i.get_architype().is_instance(kid[-1].token_text()):
                         result.add_obj(i)
             else:
-                result += self.viable_nodes()
+                result += viable_nodes
         else:
             result = self.parent().run_architype(
                 kid[-1].token_text(), kind="node", caller=self
@@ -1319,42 +1367,24 @@ class Interp(VirtualMachine):
         )
         return JacValue(self, value=obj)
 
-    def run_edge_ref(self, jac_ast, is_spawn=False):
+    def run_edge_ref(self, jac_ast, location=None):
         """
         edge_ref: edge_to | edge_from | edge_any;
         """
         kid = self.set_cur_ast(jac_ast)
-        if not is_spawn:
-            return self.run_rule(kid[0])
-        else:
-            if len(kid[0].kid) > 2:
-                result = self.parent().run_architype(
-                    kid[0].kid[2].token_text(), kind="edge", caller=self
-                )
-                if kid[0].kid[3].name == "spawn_ctx":
-                    self.run_spawn_ctx(kid[0].kid[3], result)
-                elif kid[0].kid[3].name == "filter_ctx":
-                    self.rt_error("Filtering not allowed here", kid[0].kid[3])
-            else:
-                result = Edge(
-                    m_id=self._m_id,
-                    h=self._h,
-                    kind="edge",
-                    name="generic",
-                )
-            return result
+        return self.run_rule(kid[0], location)
 
-    def run_edge_to(self, jac_ast):
+    def run_edge_to(self, jac_ast, location=None):
         """
         edge_to:
             '-->'
             | '-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '->';
         """
         kid = self.set_cur_ast(jac_ast)
+        if not location:
+            location = self.current_node
         result = JacSet()
-        for i in (
-            self.current_node.outbound_edges() + self.current_node.bidirected_edges()
-        ):
+        for i in location.outbound_edges() + location.bidirected_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
                 continue
             result.add_obj(i)
@@ -1364,17 +1394,17 @@ class Interp(VirtualMachine):
             self.rt_error("Assigning values not allowed here", kid[3])
         return result
 
-    def run_edge_from(self, jac_ast):
+    def run_edge_from(self, jac_ast, location=None):
         """
         edge_from:
             '<--'
             | '<-' ('[' NAME (spawn_ctx | filter_ctx)? ']')? '-';
         """
         kid = self.set_cur_ast(jac_ast)
+        if not location:
+            location = self.current_node
         result = JacSet()
-        for i in (
-            self.current_node.inbound_edges() + self.current_node.bidirected_edges()
-        ):
+        for i in location.inbound_edges() + location.bidirected_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
                 continue
             result.add_obj(i)
@@ -1384,7 +1414,7 @@ class Interp(VirtualMachine):
             self.rt_error("Assigning values not allowed here", kid[3])
         return result
 
-    def run_edge_any(self, jac_ast):
+    def run_edge_any(self, jac_ast, location=None):
         """
         edge_any:
             '<-->'
@@ -1392,8 +1422,10 @@ class Interp(VirtualMachine):
         NOTE: these do not use strict bidirected semantic but any edge
         """
         kid = self.set_cur_ast(jac_ast)
+        if not location:
+            location = self.current_node
         result = JacSet()
-        for i in self.current_node.attached_edges():
+        for i in location.attached_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
                 continue
             result.add_obj(i)
@@ -1401,6 +1433,26 @@ class Interp(VirtualMachine):
             result = self.run_filter_ctx(kid[3], result)
         elif len(kid) > 2 and kid[3].name == "spawn_ctx":
             self.rt_error("Assigning values not allowed here", kid[3])
+        return result
+
+    def run_connect_op(self, jac_ast):
+        """
+        connect_op: connect_to | connect_from | connect_any;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        if len(kid[0].kid) > 2:
+            result = self.parent().run_architype(
+                kid[0].kid[2].token_text(), kind="edge", caller=self
+            )
+            if kid[0].kid[3].name == "spawn_ctx":
+                self.run_spawn_ctx(kid[0].kid[3], result)
+        else:
+            result = Edge(
+                m_id=self._m_id,
+                h=self._h,
+                kind="edge",
+                name="generic",
+            )
         return result
 
     def run_list_val(self, jac_ast):
@@ -1498,16 +1550,16 @@ class Interp(VirtualMachine):
 
     def run_spawn_edge(self, jac_ast):
         """
-        spawn_edge: expression edge_ref;
+        spawn_edge: expression connect_op;
         """
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[0])
         loc = self.pop().value
         if isinstance(loc, JacSet):
-            edge_set = [self.run_edge_ref(kid[1], is_spawn=True) for _ in loc]
+            edge_set = [self.run_connect_op(kid[1]) for _ in loc]
             loc = loc.obj_list()
         else:
-            edge_set = self.run_edge_ref(kid[1], is_spawn=True)
+            edge_set = self.run_connect_op(kid[1])
         return {
             "location": loc,
             "use_edge": edge_set,
@@ -1528,9 +1580,9 @@ class Interp(VirtualMachine):
             sp = self.run_spawn_edge(kid[0])
             if isinstance(sp["location"], Node):
                 ret_node = self.run_node_ref(kid[1], is_spawn=True)
-                if sp["direction"] == "edge_from":
+                if sp["direction"] == "connect_from":
                     sp["location"].attach_inbound(ret_node, [sp["use_edge"]])
-                elif sp["direction"] == "edge_to":
+                elif sp["direction"] == "connect_to":
                     sp["location"].attach_outbound(ret_node, [sp["use_edge"]])
                 else:
                     sp["location"].attach_bidirected(ret_node, [sp["use_edge"]])
@@ -1542,9 +1594,9 @@ class Interp(VirtualMachine):
                 sp["location"] = sp["location"].obj_list()
                 for i in range(len(sp["location"])):
                     ret_node = self.run_node_ref(kid[1], is_spawn=True)
-                    if sp["direction"] == "edge_from":
+                    if sp["direction"] == "connect_from":
                         sp["location"][i].attach_inbound(ret_node, [sp["use_edge"][i]])
-                    elif sp["direction"] == "edge_to":
+                    elif sp["direction"] == "connect_to":
                         sp["location"][i].attach_outbound(ret_node, [sp["use_edge"][i]])
                     else:
                         sp["location"][i].attach_bidirected(
@@ -1569,9 +1621,9 @@ class Interp(VirtualMachine):
             sp = self.run_spawn_edge(kid[0])
             if isinstance(sp["location"], Node):
                 ret_node = self.run_graph_ref(kid[1])
-                if sp["direction"] == "edge_from":
+                if sp["direction"] == "connect_from":
                     sp["location"].attach_inbound(ret_node, [sp["use_edge"]])
-                elif sp["direction"] == "edge_to":
+                elif sp["direction"] == "connect_to":
                     sp["location"].attach_outbound(ret_node, [sp["use_edge"]])
                 else:
                     sp["location"].attach_bidirected(ret_node, [sp["use_edge"]])
@@ -1581,9 +1633,9 @@ class Interp(VirtualMachine):
                 sp["location"] = sp["location"].obj_list()
                 for i in range(len(sp["location"])):
                     ret_node = self.run_graph_ref(kid[1])
-                    if sp["direction"] == "edge_from":
+                    if sp["direction"] == "connect_from":
                         sp["location"][i].attach_inbound(ret_node, [sp["use_edge"][i]])
-                    elif sp["direction"] == "edge_to":
+                    elif sp["direction"] == "connect_to":
                         sp["location"][i].attach_outbound(ret_node, [sp["use_edge"][i]])
                     else:
                         sp["location"][i].attach_bidirected(
@@ -1724,6 +1776,18 @@ class Interp(VirtualMachine):
         else:
             self.rt_error("Unrecognized type", kid[0])
 
+    def run_multistring(self, jac_ast):
+        """
+        multistring: STRING+;
+        """
+        if self.attempt_bytecode(jac_ast):
+            return
+        kid = self.set_cur_ast(jac_ast)
+        ret = ""
+        for i in kid:
+            ret += parse_str_token(i.token_text())
+        self.push(JacValue(self, value=ret))
+
     def destroy(self):
         """
         Destroys self from memory and persistent storage
@@ -1751,6 +1815,16 @@ class Interp(VirtualMachine):
             self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
         self.inherit_runtime_state(m)
 
+    def visibility_prune(self, node_set=None):
+        """Returns all nodes that shouldnt be ignored"""
+        ret = JacSet()
+        if node_set is None:
+            node_set = self.current_node.attached_nodes()
+        for i in node_set:
+            if i not in self.ignore_node_ids.obj_list():
+                ret.add_obj(i)
+        return ret
+
     def run_rule(self, jac_ast, *args):
         """Helper to run rule if exists in execution context"""
         try:
@@ -1770,6 +1844,7 @@ class Interp(VirtualMachine):
                 "assignment",
                 "copy_assign",
                 "inc_assign",
+                "multistring",
             ]:
                 return self.pop()
             else:

@@ -50,7 +50,6 @@ const attachCSS = (renderedTag: string, css: JaseciComponent['css']) => {
 
 // creates a single tag and attaches the props in the correct format
 export const renderComponent = (jaseciComponent: JaseciComponent) => {
-  console.log({ listeners: jaseciComponent.listeners });
   const renderedTag = renderTag(componentMap[jaseciComponent.component], {
     withChildren: !!jaseciComponent.sections && Object.keys(jaseciComponent.sections).length > 0,
   });

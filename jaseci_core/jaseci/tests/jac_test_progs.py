@@ -19,13 +19,13 @@ bug_check1 = """
         spawn {
             state_node = spawn node::state;
             state_2 = spawn node::state;
-            state_node -[transition(intent_label =
-                        "THIS IS AN INTENT_LABEL")]-> state_2;
+            state_node +[transition(intent_label =
+                        "THIS IS AN INTENT_LABEL")]+> state_2;
         }
     }
 
     walker init {
-        spawn here --> graph::test_graph;
+        spawn here ++> graph::test_graph;
         spawn --> walker::test_walker;
         report -->[0].cand_intents;
         report -->;
@@ -59,7 +59,7 @@ net_root_std_lib = """
     walker init {
         root {
             report [here.info['jid'], net.root().info['jid']];
-            spawn here --> node::generic;
+            spawn here ++> node::generic;
             take -->;
         }
         generic {
@@ -84,7 +84,7 @@ nd_equals_error_correct_line = """
 
     walker init {
         root {
-            spawn here --> node::plain;
+            spawn here ++> node::plain;
             take -->;
         }
         plain {
@@ -103,7 +103,7 @@ strange_ability_bug = """
 
     walker init {
         root {
-            spawn here --> node::plain;
+            spawn here ++> node::plain;
         }
     }
 
@@ -148,7 +148,7 @@ node_inheritance = """
 
     walker init {
         root {
-            a=spawn here --> node::super;
+            a=spawn here ++> node::super;
         }
         take -->;
         super {
@@ -200,9 +200,9 @@ inherited_ref = """
 
     walker init {
         root {
-            spawn here --> node::super;
-            spawn here --> node::plain;
-            spawn here --> node::plain2;
+            spawn here ++> node::super;
+            spawn here ++> node::plain;
+            spawn here ++> node::plain2;
         }
         take --> node::plain;
         plain {
@@ -247,7 +247,7 @@ node_inheritance_chain_check = """
 
     walker init {
         root {
-            a=spawn here --> node::super;
+            a=spawn here ++> node::super;
         }
         take -->;
         super {
@@ -263,12 +263,12 @@ global_reregistering = """
 
     walker init {
         root {
-            spawn here - -> node::plain;
-            spawn here - -> node::plain;
-            spawn here - -> node::plain;
+            spawn here ++> node::plain;
+            spawn here ++> node::plain;
+            spawn here ++> node::plain;
         }
         report global.a;
-        take - ->;
+        take -->;
     }
     """
 
@@ -304,7 +304,7 @@ multi_breaks = """
     }
 
     walker init {
-        nd=spawn here --> node::plain;
+        nd=spawn here ++> node::plain;
         nd::breakdance;
         nd::breakdance;
         report nd.val;
@@ -315,8 +315,8 @@ reffy_deref_check = """
     node plain{has expected_answer;}
 
     walker init {
-        nd = spawn here --> node::plain;
-        spawn here --> node::plain;
+        nd = spawn here ++> node::plain;
+        spawn here ++> node::plain;
 
         report *&-->[0] == *&-->[1];
 
@@ -335,7 +335,7 @@ vanishing_can_check = """
     walker init {
         root {
             take --> node::plain else {
-                nd=spawn here --> node::plain;
+                nd=spawn here ++> node::plain;
                 report nd.info['jid'];
                 disengage;
             }
@@ -384,10 +384,10 @@ walker_with_exit_after_node = """
             a+=1;
         }
         root {
-            spawn here --> node::echeck;
-            spawn here --> node::echeck;
-            spawn here --> node::echeck;
-            spawn here --> node::echeck;
+            spawn here ++> node::echeck;
+            spawn here ++> node::echeck;
+            spawn here ++> node::echeck;
+            spawn here ++> node::echeck;
         }
         take -->;
         report a;
@@ -413,10 +413,10 @@ depth_first_take = """
             n6=spawn node::a(num=6);
             n7=spawn node::a(num=7);
 
-            here --> n1 --> n2 --> n3;
-                            n2 --> n4;
-                     n1 --> n5 --> n6;
-                            n5 --> n7;
+            here ++> n1 ++> n2 ++> n3;
+                            n2 ++> n4;
+                     n1 ++> n5 ++> n6;
+                            n5 ++> n7;
         }
 
         a: report here.num;
@@ -439,10 +439,10 @@ breadth_first_take = """
             n6=spawn node::a(num=6);
             n7=spawn node::a(num=7);
 
-            here --> n1 --> n2 --> n3;
-                            n2 --> n4;
-                     n1 --> n5 --> n6;
-                            n5 --> n7;
+            here ++> n1 ++> n2 ++> n3;
+                            n2 ++> n4;
+                     n1 ++> n5 ++> n6;
+                            n5 ++> n7;
         }
 
         a: report here.num;
@@ -476,8 +476,8 @@ inheritance_override_here_check = """
     }
 
     walker init {
-        n1 = spawn here --> node::a;
-        n2 = spawn here --> node::c;
+        n1 = spawn here ++> node::a;
+        n2 = spawn here ++> node::c;
         -->[0]::sum;
         -->[1]::sum;
     }
@@ -490,8 +490,8 @@ dot_private_hidden = """
     }
 
     walker init {
-        n1 = spawn here --> node::a;
-        n2 = spawn here --> node::a;
+        n1 = spawn here ++> node::a;
+        n2 = spawn here ++> node::a;
     }
     """
 
@@ -501,7 +501,7 @@ check_destroy_node_has_var = """
     }
 
     walker create {
-        n = spawn here --> node::a;
+        n = spawn here ++> node::a;
         n.x = spawn node::a;
         report n.x.type;
     }
@@ -636,5 +636,20 @@ block_scope_check = """
             report i;
         }
         report i;
+    }
+"""
+
+ignore_check = """
+    walker init {
+        has nds=[];
+        with entry{
+            for i=0 to i<10 by i+=1 {
+                nds.l::append(spawn here ++> node::generic);
+            }
+            ignore nds[0];
+            ignore nds[4];
+            take -->;
+        }
+        report "hi";
     }
 """

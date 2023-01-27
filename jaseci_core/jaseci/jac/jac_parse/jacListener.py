@@ -233,12 +233,28 @@ class jacListener(ParseTreeListener):
     def exitName_list(self, ctx: jacParser.Name_listContext):
         pass
 
+    # Enter a parse tree produced by jacParser#param_list.
+    def enterParam_list(self, ctx: jacParser.Param_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#param_list.
+    def exitParam_list(self, ctx: jacParser.Param_listContext):
+        pass
+
     # Enter a parse tree produced by jacParser#expr_list.
     def enterExpr_list(self, ctx: jacParser.Expr_listContext):
         pass
 
     # Exit a parse tree produced by jacParser#expr_list.
     def exitExpr_list(self, ctx: jacParser.Expr_listContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#kw_expr_list.
+    def enterKw_expr_list(self, ctx: jacParser.Kw_expr_listContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#kw_expr_list.
+    def exitKw_expr_list(self, ctx: jacParser.Kw_expr_listContext):
         pass
 
     # Enter a parse tree produced by jacParser#code_block.
@@ -665,6 +681,38 @@ class jacListener(ParseTreeListener):
     def exitEdge_any(self, ctx: jacParser.Edge_anyContext):
         pass
 
+    # Enter a parse tree produced by jacParser#connect_op.
+    def enterConnect_op(self, ctx: jacParser.Connect_opContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#connect_op.
+    def exitConnect_op(self, ctx: jacParser.Connect_opContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#connect_to.
+    def enterConnect_to(self, ctx: jacParser.Connect_toContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#connect_to.
+    def exitConnect_to(self, ctx: jacParser.Connect_toContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#connect_from.
+    def enterConnect_from(self, ctx: jacParser.Connect_fromContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#connect_from.
+    def exitConnect_from(self, ctx: jacParser.Connect_fromContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#connect_any.
+    def enterConnect_any(self, ctx: jacParser.Connect_anyContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#connect_any.
+    def exitConnect_any(self, ctx: jacParser.Connect_anyContext):
+        pass
+
     # Enter a parse tree produced by jacParser#list_val.
     def enterList_val(self, ctx: jacParser.List_valContext):
         pass
@@ -791,6 +839,14 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#any_type.
     def exitAny_type(self, ctx: jacParser.Any_typeContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#multistring.
+    def enterMultistring(self, ctx: jacParser.MultistringContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#multistring.
+    def exitMultistring(self, ctx: jacParser.MultistringContext):
         pass
 
 

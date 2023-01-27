@@ -8,5 +8,5 @@ graph rando {
 }
 
 walker go {
-    spawn here --> graph::rando;
+    spawn here ++> graph::rando;
 }

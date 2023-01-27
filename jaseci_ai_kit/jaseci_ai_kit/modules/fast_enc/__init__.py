@@ -1,1 +1,0 @@
-from fasttext import *  # noqa

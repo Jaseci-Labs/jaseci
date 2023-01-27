@@ -2,7 +2,7 @@
 
 Jaseci can be installed on a single machine or on a Kubernetes cluster.
 
-The setup section is split into two parts: 
+The setup section is split into two parts:
 - a standalone local setup
 - a cloud and kubernetes setup *(Coming Soon)*
 
@@ -12,10 +12,17 @@ We've built a command line tool to help you effectively work with Jaseci from yo
 
 ### Requirements
 
-1. Python 3
+1. Python 3.10 or higher
 2. pip3
 
 ### Installation (for Users of Jaseci and Jac coders)
+
+Prerequiste packages: (install via the package manager according to your OS)
+* python3.10-dev
+* g++
+* build-essential
+* pkg-config
+* cmake
 
 Generally, installing Jaseci requires the following commands:
 
@@ -50,7 +57,7 @@ To run commands for Jaseci we need a terminal that accepts bash arguments. We re
 
 4.Open the Ubuntu terminal. for more information on installation see [here.](https://docs.microsoft.com/en-us/windows/wsl/install)
 
- Install Python and Pip packet Manager
+ Install Python and Pip package Manager
 
 5. Check version of Python and Pip by running :
 ```
@@ -59,10 +66,11 @@ pip3 --version
 ```
 If these packages are installed they will return a version number. Move to step 7 if a version number is present.
 
-6.Install Python3 and pip3 by running the following:
+6.Install Python3 and pip3 and other dependencies by running the following:
 ```
 sudo apt update
-sudo apt install python3-dev python3-pip
+sudo apt install python3.10-dev python3-pip
+sudo apt-get install git g++ build-essential pkg-config cmake
 ```
 7.Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
 ```
@@ -95,7 +103,7 @@ If these packages are installed they will return a version number. Move to step 
 2. Install Python3 and pip3 by running the following:
 ```
 brew update
-brew install python
+brew install python3.10
 ```
 3. Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
 ```
@@ -125,7 +133,8 @@ If these packages are installed they will return a version number. Move to step 
 2. Install Python3 and pip3 by running the following:
 ```
 sudo apt update
-sudo apt install python3-dev python3-pip
+sudo apt install python3.10-dev python3-pip
+sudo apt-get install git g++ build-essential pkg-config cmake
 ```
 3. Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
 ```
@@ -150,4 +159,8 @@ Once it shows a list of options and commands, your installation is complete.
 4. Install Jaseci Server from main branch: `cd jaseci_serv; source install.sh; cd -`
 5. (for AI) Install Jaseci Kit from main branch: `cd jaseci_ai_kit; source install.sh; cd -`
 
-Note: You'll have to add `--max-line-length=88 --extend-ignore=E203` args to flake8 for linting. If you use VSCode, you should update it there too. 
+> **Note**
+>
+> Be sure to have the following packages installed to allow `sentence_piece` to be built for AI  Kit: `sudo apt -y install --no-install-recommends git g++ build-essential pkg-config cmake`
+
+Note: You'll have to add `--max-line-length=88 --extend-ignore=E203` args to flake8 for linting. If you use VSCode, you should update it there too.

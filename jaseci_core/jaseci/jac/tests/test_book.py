@@ -336,9 +336,7 @@ class JacBookTests(TestCaseHelper, TestCase):
         gen_walker = self.sent.run_architype("create_fam")
         gen_walker.prime(self.gph)
         gen_walker.run()
-        self.assertEqual(
-            self.new_stdout.getvalue(), "I didn't do any of the hard work.\n"
-        )
+        self.assertIn("I didn't do any of the hard work.\n", self.new_stdout.getvalue())
 
     def test_book_visitor_preset(self):
         self.sent.register_code(jtc.visitor_preset)

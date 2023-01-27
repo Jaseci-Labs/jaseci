@@ -193,13 +193,13 @@ class WalkerInterp(Interp):
     def run_preset_in_out(self, jac_ast, obj, act):
         """
         preset_in_out:
-            DBL_COLON expr_list? (DBL_COLON | COLON_OUT expression);
+            DBL_COLON param_list? (DBL_COLON | COLON_OUT expression);
 
         obj: The node or edge with preset
         act: The action associated with preset
         """
         kid = self.set_cur_ast(jac_ast)
-        param_list = []
+        param_list = {"args": [], "kwargs": []}
         m = Interp(parent_override=self.parent(), caller=self)
         arch = obj.get_architype()
         m.push_scope(
@@ -207,8 +207,8 @@ class WalkerInterp(Interp):
         )
         m._jac_scope.set_agent_refs(cur_node=self.current_node, cur_walker=self)
 
-        if kid[1].name == "expr_list":
-            param_list = m.run_expr_list(kid[1]).value
+        if kid[1].name == "param_list":
+            param_list = m.run_param_list(kid[1]).value
         try:
             result = act.trigger(param_list, self._jac_scope, self)
         except Exception as e:
@@ -236,14 +236,6 @@ class WalkerInterp(Interp):
                 self.call_ability(nd=nd, name=i.name, act_list=act_list)
             if not i.preset_in_out:  # All preset in and outs get executed
                 already_executed.append(i.name)
-
-    def viable_nodes(self):
-        """Returns all nodes that shouldnt be ignored"""
-        ret = JacSet()
-        for i in self.current_node.attached_nodes():
-            if i not in self.ignore_node_ids.obj_list():
-                ret.add_obj(i)
-        return ret
 
     def scope_and_run(self, jac_ast, run_func):
         """

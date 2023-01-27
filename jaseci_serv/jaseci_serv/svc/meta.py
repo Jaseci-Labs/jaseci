@@ -1,5 +1,11 @@
 from jaseci.svc import MetaService as Ms
-from jaseci_serv.svc import MailService, RedisService, TaskService, PromotheusService
+from jaseci_serv.svc import (
+    MailService,
+    RedisService,
+    TaskService,
+    PromotheusService,
+    ElasticService,
+)
 from .config import RUN_SVCS
 
 
@@ -35,3 +41,4 @@ class MetaService(Ms):
         self.add_service_builder("task", TaskService)
         self.add_service_builder("mail", MailService)
         self.add_service_builder("promon", PromotheusService)
+        self.add_service_builder("elastic", ElasticService)

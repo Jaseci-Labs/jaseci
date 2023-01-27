@@ -1,4 +1,10 @@
+# Test Artifacts
 logoutput/
 modeloutput*/
 pretrained_model
 heads/
+output/
+results/
+train/
+dist/
+weights/

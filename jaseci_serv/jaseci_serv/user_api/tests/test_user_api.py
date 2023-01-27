@@ -8,6 +8,11 @@ from rest_framework import status
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
+from unittest.mock import MagicMock, Mock
+
+from jaseci_serv.svc import MetaService, MailService
+from jaseci_serv.svc.mail import MAIL_CONFIG
+
 
 # Consts for url
 CREATE_USER_URL = reverse("user_api:create")
@@ -24,8 +29,16 @@ get_user = get_user_model().objects.get
 class UserApiPublicTests(TestCaseHelper, TestCase):
     """Tests for user API (public)"""
 
+    def __init__(self, *args, **kwargs):
+        MAIL_CONFIG["enabled"] = True
+        MailService.connect = MagicMock(return_value=Mock())
+        super(UserApiPublicTests, self).__init__(*args, **kwargs)
+
     def setUp(self):
         super().setUp()
+        self.meta = MetaService()
+        self.hook = self.meta.build_hook()
+        self.meta.get_service("mail").reset(self.hook)
         self.client = APIClient()
 
     def tearDown(self):

@@ -9,7 +9,7 @@ spawn_graph_node = """
     }
     walker init {
         root {
-            spawn here --> graph::test_graph;
+            spawn here ++> graph::test_graph;
             take --> node::test_node;
         }
         test_node {
@@ -159,9 +159,9 @@ destroy_disconn = """
     }
 
     walker init{
-        node1 = spawn here --> node::testnode ;
-        node2 = spawn here --> node::testnode ;
-        node1 --> node2;
+        node1 = spawn here ++> node::testnode ;
+        node2 = spawn here ++> node::testnode ;
+        node1 ++> node2;
         std.out(-->);
         destroy node1;
         # All node destroys queue'd after walk
@@ -179,7 +179,7 @@ array_assign = """
 
     walker init{
         root {
-            node1 = spawn here --> node::testnode ;
+            node1 = spawn here ++> node::testnode ;
             node1.apple = [[1,2],[3,4]];
             take node1;
         }
@@ -202,7 +202,7 @@ array_md_assign = """
 
     walker init{
         root {
-            node1 = spawn here --> node::testnode ;
+            node1 = spawn here ++> node::testnode ;
             node1.apple = [[1,2],[3,4]];
             take node1;
         }
@@ -221,7 +221,7 @@ dereference = """
 
     walker init{
         root {
-            node1 = spawn here --> node::testnode ;
+            node1 = spawn here ++> node::testnode ;
             std.out(&node1);
         }
     }
@@ -237,9 +237,9 @@ pre_post_walking = """
 
         with entry {
             count = 5;
-            spawn here --> node::testnode ;
-            spawn here --> node::testnode ;
-            spawn here --> node::testnode ;
+            spawn here ++> node::testnode ;
+            spawn here ++> node::testnode ;
+            spawn here ++> node::testnode ;
             take -->;
         }
 
@@ -261,9 +261,9 @@ pre_post_walking_dis = """
 
         with entry {
             count = 5;
-            spawn here --> node::testnode ;
-            spawn here --> node::testnode ;
-            spawn here --> node::testnode ;
+            spawn here ++> node::testnode ;
+            spawn here ++> node::testnode ;
+            spawn here ++> node::testnode ;
             take -->;
         }
 
@@ -283,9 +283,9 @@ length = """
     }
 
     walker init {
-        spawn here --> node::testnode ;
-        spawn here --> node::testnode ;
-        spawn here --> node::testnode ;
+        spawn here ++> node::testnode ;
+        spawn here ++> node::testnode ;
+        spawn here ++> node::testnode ;
         std.out((-->).length);
         var = -->;
         std.out(var.length);
@@ -307,7 +307,7 @@ list_remove = """
     node testnode { has lst; }
 
     walker init {
-        nd=spawn here --> node::testnode ;
+        nd=spawn here ++> node::testnode ;
         nd.lst=[['b', 333],['c',245],['a', 56]];
         std.out(nd.lst);
         destroy nd.lst[1];
@@ -332,7 +332,7 @@ can_action = """
     }
 
     walker init {
-        a= spawn here --> node::testnode (A=56);
+        a= spawn here ++> node::testnode (A=56);
         a::ptest;
     }
     """
@@ -352,7 +352,7 @@ can_action_params = """
     }
 
     walker init {
-        a= spawn here --> node::testnode (A=56);
+        a= spawn here ++> node::testnode (A=56);
         a::ptest(A=43);
         a::ptest(A=a.A+5);
     }
@@ -377,7 +377,7 @@ cross_scope_report = """
     }
 
     walker init {
-        a= spawn here --> node::testnode (A=56);
+        a= spawn here ++> node::testnode (A=56);
         a::ptest;
         report here;
     }
@@ -391,7 +391,7 @@ has_private = """
 
     walker init {
         root {
-            spawn here --> node::testnode (apple=5, banana=6, grape=1);
+            spawn here ++> node::testnode (apple=5, banana=6, grape=1);
             take -->;
         }
         testnode {
@@ -407,9 +407,9 @@ array_idx_of_expr = """
     }
 
     walker init {
-        spawn here --> node::testnode ;
-        spawn here --> node::testnode ;
-        spawn here --> node::testnode ;
+        spawn here ++> node::testnode ;
+        spawn here ++> node::testnode ;
+        spawn here ++> node::testnode ;
         std.out((-->).length);
         var = -->[0];
         std.out([var].length);
@@ -423,7 +423,7 @@ dict_assign = """
 
     walker init{
         root {
-            node1 = spawn here --> node::testnode ;
+            node1 = spawn here ++> node::testnode ;
             node1.apple = {"one": 1, "two": 2};
             take node1;
         }
@@ -446,7 +446,7 @@ dict_md_assign = """
 
     walker init{
         root {
-            node1 = spawn here --> node::testnode ;
+            node1 = spawn here ++> node::testnode ;
             node1.apple = {"one": {"inner": 44}, "two": 2};
             take node1;
         }
@@ -466,7 +466,7 @@ dict_keys = """
 
     walker init{
         root {
-            node1 = spawn here --> node::testnode ;
+            node1 = spawn here ++> node::testnode ;
             node1.apple = {"one": {"inner": 44}, "two": 2};
             take node1;
         }
@@ -489,7 +489,7 @@ cond_dict_keys = """
 
     walker init{
         root {
-            node1 = spawn here --> node::testnode ;
+            node1 = spawn here ++> node::testnode ;
             node1.apple = {"one": {"inner": 44}, "two": 2};
             take node1;
         }
@@ -522,14 +522,14 @@ fam_example = """
 
     walker create_fam {
         root {
-            spawn here --> node::man;
-            spawn here --> node::woman;
-            --> node::man <-[married]-> --> node::woman;
+            spawn here ++> node::man;
+            spawn here ++> node::woman;
+            --> node::man <+[married]+> --> node::woman;
             take -->;
         }
         woman {
-            son = spawn here <-[mom]- node::man;
-            son <-[dad]- <-[married]->;
+            son = spawn here <+[mom]+ node::man;
+            son <+[dad]+ <-[married]->;
         }
         man {
             std.out("I didn't do any of the hard work.");
@@ -549,7 +549,7 @@ visitor_preset = """
     walker init {
         has year=std.time_now();
         root {
-            person1 = spawn here -->
+            person1 = spawn here ++>
                 node::person(name="Josh", byear="1995-01-01");
             take --> ;
         }
@@ -583,7 +583,7 @@ visitor_local_aciton = """
         has year = std.time_now();
         has person1;
         root {
-            person1 = spawn here --> node::person;
+            person1 = spawn here ++> node::person;
             std.out(person1.context);
             person1::reset;
             take -->;
@@ -605,13 +605,13 @@ copy_assign_to_edge = """
     edge family: has kind;
 
     walker init {
-        person1 = spawn here -[friend(meeting_place = "college")] ->
+        person1 = spawn here +[friend(meeting_place = "college")]+>
             node::person(name = "Josh", age = 32);
-        person2 = spawn here -[family(kind = "sister")] ->
+        person2 = spawn here +[family(kind = "sister")]+>
             node::person(name = "Jane", age = 30);
 
-        twin1 = spawn here -[friend]-> node::person;
-        twin2 = spawn here -[family]-> node::person;
+        twin1 = spawn here +[friend]+> node::person;
+        twin2 = spawn here +[family]+> node::person;
         twin1 := person1;
         twin2 := person2;
 

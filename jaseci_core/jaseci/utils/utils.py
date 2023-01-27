@@ -10,6 +10,7 @@ import types
 import base64
 import re
 import json
+import sys
 import functools
 import traceback
 import inspect
@@ -17,6 +18,8 @@ import unittest
 from time import time
 
 from pprint import pformat
+
+from jaseci.utils.log_utils import LimitedSlidingBuffer
 
 
 class ColCodes:
@@ -43,7 +46,7 @@ def connect_logger_handler(target_logger, handler, level=logging.WARN):
 
 logger = logging.getLogger("core")
 logger.propagate = False
-logs = io.StringIO()
+logs = LimitedSlidingBuffer()
 if len(logger.handlers) < 1:
     connect_logger_handler(logger, logging.StreamHandler(), logging.INFO)
     connect_logger_handler(logger, logging.StreamHandler(stream=logs), logging.INFO)
@@ -82,6 +85,10 @@ def dummy_bp(inspect):
 def print_stack_to_log():
     tb = traceback.extract_stack()
     log_var_out(tb)
+
+
+def exc_stack_as_str_list():
+    return traceback.format_exception(*sys.exc_info())
 
 
 uuid_re = re.compile(

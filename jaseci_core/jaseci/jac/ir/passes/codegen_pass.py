@@ -196,10 +196,19 @@ class CodeGenPass(IrPass):
         elif kid[0].name == "FLOAT":
             val = float(kid[0].token_text())
             self.emit(node, JsOp.LOAD_CONST, JsType.FLOAT, to_bytes(val))
-        elif kid[0].name == "STRING":
-            val = parse_str_token(kid[0].token_text())
-            self.emit(node, JsOp.LOAD_CONST, JsType.STRING, byte_length(val))
-            if byte_length(val) > 0:
+        elif kid[0].name == "multistring":
+            val = ""
+            for i in kid[0].kid:
+                val += parse_str_token(i.token_text())
+            str_len = byte_length(val)
+            self.emit(
+                node,
+                JsOp.LOAD_CONST,
+                JsType.STRING,
+                byte_length(str_len),
+                to_bytes(str_len),
+            )
+            if str_len > 0:
                 self.emit(node, to_bytes(val))
         elif kid[0].name == "BOOL":
             val = int(kid[0].token_text() == "true")

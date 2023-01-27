@@ -10,6 +10,7 @@ import {
   IconGauge,
   IconHome2,
   IconPrompt,
+  IconServerBolt,
   IconVectorBezierCircle,
   TablerIcon,
 } from "@tabler/icons";
@@ -83,6 +84,11 @@ const linksConfig = [
     icon: IconPrompt,
     label: "View Logs",
     href: "/logs",
+  },
+  {
+    icon: IconServerBolt,
+    label: "Manage Actions",
+    href: "/actions",
   },
 ];
 

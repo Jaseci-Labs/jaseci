@@ -1,0 +1,70 @@
+{
+    "tts_models": {
+        "multilingual": {
+            "multi-dataset": {
+                "your_tts": {
+                    "description": "Your TTS model accompanying the paper https://arxiv.org/abs/2112.02418",
+                    "github_rls_url": "https://coqui.gateway.scarf.sh/v0.10.1_models/tts_models--multilingual--multi-dataset--your_tts.zip",
+                    "default_vocoder": null
+                }
+            }
+        },
+        "en": {
+            "ljspeech": {
+                "tacotron2-DDC": {
+                    "description": "Tacotron2 with Double Decoder Consistency.",
+                    "github_rls_url": "https://coqui.gateway.scarf.sh/v0.6.1_models/tts_models--en--ljspeech--tacotron2-DDC.zip",
+                    "default_vocoder": "vocoder_models/en/ljspeech/hifigan_v2",
+                    "author": "Eren Gölge @erogol",
+                    "license": "apache 2.0",
+                    "contact": "egolge@coqui.com"
+                },
+                "sam": {
+                    "tacotron-DDC": {
+                        "description": "Tacotron2 with Double Decoder Consistency trained with Aceenture's Sam dataset.",
+                        "github_rls_url": "https://coqui.gateway.scarf.sh/v0.6.1_models/tts_models--en--sam--tacotron-DDC.zip",
+                        "default_vocoder": "vocoder_models/en/sam/hifigan_v2",
+                        "author": "Eren Gölge @erogol",
+                        "license": "apache 2.0",
+                        "contact": "egolge@coqui.com"
+                    }
+                }
+            }
+        },
+        "vocoder_models": {
+            "universal": {
+                "libri-tts": {
+                    "wavegrad": {
+                        "github_rls_url": "https://coqui.gateway.scarf.sh/v0.6.1_models/vocoder_models--universal--libri-tts--wavegrad.zip",
+                        "author": "Eren Gölge @erogol",
+                        "license": "MPL",
+                        "contact": "egolge@coqui.com"
+                    },
+                    "fullband-melgan": {
+                        "github_rls_url": "https://coqui.gateway.scarf.sh/v0.6.1_models/vocoder_models--universal--libri-tts--fullband-melgan.zip",
+                        "author": "Eren Gölge @erogol",
+                        "license": "MPL",
+                        "contact": "egolge@coqui.com"
+                    }
+                }
+            },
+            "en": {
+                "ljspeech": {
+                    "multiband-melgan": {
+                        "github_rls_url": "https://coqui.gateway.scarf.sh/v0.6.1_models/vocoder_models--en--ljspeech--multiband-melgan.zip",
+                        "author": "Eren Gölge @erogol",
+                        "license": "MPL",
+                        "contact": "egolge@coqui.com"
+                    },
+                    "hifigan_v2": {
+                        "description": "HiFiGAN_v2 LJSpeech vocoder from https://arxiv.org/abs/2010.05646.",
+                        "github_rls_url": "https://coqui.gateway.scarf.sh/v0.6.1_models/vocoder_models--en--ljspeech--hifigan_v2.zip",
+                        "author": "@erogol",
+                        "license": "apache 2.0",
+                        "contact": "egolge@coqui.ai"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -26,3 +26,16 @@ class FileLibTest(CoreTest):
             "///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=",
         )
         self.assertFalse(os.path.exists("file.gif"))
+
+    def test_kwargs_bin_load_save(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("file_stuff.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "kwargs_bin_load_save"}])
+        self.assertEqual(
+            ret["report"][0],
+            "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX"
+            "///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=",
+        )
+        self.assertFalse(os.path.exists("file.gif"))

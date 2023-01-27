@@ -6,6 +6,8 @@ from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
 from jaseci.element.element import Element
+from jaseci.svc import MetaService
+
 import sys
 import json
 
@@ -206,3 +208,13 @@ def clear_report(meta):
     meta["interp"].report = []
     if hasattr(meta["interp"], "save"):
         meta["interp"].save()
+
+
+@jaseci_action()
+def log_activity(
+    log: dict, action: str = "", query: str = "", suffix: str = "", meta: dict = {}
+):
+    elastic = MetaService().get_service("elastic").poke()
+    activity = elastic.generate_from_meta(meta, log)
+
+    return elastic.doc_activity(activity, query, suffix)

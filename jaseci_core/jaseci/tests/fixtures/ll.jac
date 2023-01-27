@@ -109,23 +109,23 @@ walker get_gen_day {
         }
     }
     life: take --> node::year == date.quantize_to_year(cur_date) else {
-            new = spawn here --> node::year;
+            new = spawn here ++> node::year;
             new.year = date.quantize_to_year(cur_date);
             take --> node::year == date.quantize_to_year(cur_date);
         }
     year: take --> node::month == date.quantize_to_month(cur_date) else {
-            new = spawn here --> node::month;
+            new = spawn here ++> node::month;
             new.month = date.quantize_to_month(cur_date);
             take --> node::month == date.quantize_to_month(cur_date);
         }
     month: take --> node::week == date.quantize_to_week(cur_date) else {
-            new = spawn here --> node::week;
+            new = spawn here ++> node::week;
             new.week = date.quantize_to_week(cur_date);
             take --> node::week == date.quantize_to_week(cur_date);
         }
     week: take --> node::day == date.quantize_to_day(cur_date) else {
             latest_day = spawn here walker::get_latest_day(before_date=cur_date);
-            new = spawn here --> node::day;
+            new = spawn here ++> node::day;
             new.day = date.quantize_to_day(cur_date);
             if(latest_day) {
                 new.order = latest_day.order;
@@ -238,7 +238,7 @@ walker move_workette {
     if(!dest_node): disengage;
     workette {
         here !<-[parent]- <-[parent]-;
-        here <-[parent]- dest_node;
+        here <+[parent]+ dest_node;
         report here;
     }
 }
@@ -261,7 +261,7 @@ walker create_workette {
     has title;
     has wtype, note;
     day, week, month, year, life, workette {
-        new = spawn here -[parent]->
+        new = spawn here +[parent]+>
             node::workette(name=title, wtype=wtype, note=note, is_MIT=is_MIT, snooze_till=snooze_till, cur_date=cur_date, is_ritual=is_ritual, color=color);
         report new;
     }
@@ -276,8 +276,8 @@ walker carry_forward {
         if(!(here.is_ritual) and
            (here.status == 'done' or
             here.status == 'canceled')): skip;
-        new_workette = spawn here <-[past]- node::workette;
-        new_workette <-[parent]- parent;
+        new_workette = spawn here <+[past]+ node::workette;
+        new_workette <+[parent]+ parent;
         new_workette := here;
         if(new_workette.is_ritual): new_workette.status="open";
         spawn -[parent]-> node::workette
@@ -315,7 +315,7 @@ walker gen_rand_life {
         if(num_workettes == 0): disengage;
         gen_num = rand.integer(3, 5);
         for i=0 to i<gen_num by i+=1 {
-            spawn here -[parent]-> node::workette(name=rand.sentence());
+            spawn here +[parent]+> node::workette(name=rand.sentence());
         }
         take --> ;
         num_workettes -= 1;
@@ -582,7 +582,7 @@ walker init {
     has owner;
     has anchor life_node;
     take (--> node::life == owner) else {
-        life_node = spawn here --> node::life;
+        life_node = spawn here ++> node::life;
         life_node.owner = owner;
         disengage;
     }

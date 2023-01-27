@@ -1,3 +1,3 @@
 walker gen {
-    spawn here --> node::plain;
+    spawn here ++> node::plain;
 }
