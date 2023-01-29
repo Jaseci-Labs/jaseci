@@ -1,19 +1,18 @@
-# **USE Encoder (`use_enc`)**
+# **USE QA (`use_qa`)**
+Module `use_qa` uses the [`multilingual-qa`](https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/3) to generate sentence level embeddings. The sentence level embeddings can then be used to calculate best match between question and available answers via cosine similarity and/or dist_score.
 
-Module **`use_enc`** uses the universal sentence encoder to generate sentence level embeddings. The sentence level embeddings can then be used to calculate the similarity between two given text via cosine similarity and/or dot product.
-
-For this tutorial we are going to leverage the `Use encoder` for **Zero-shot text classification**.
+For this tutorial we are going to leverage the `USE QA` for **text classification**.
 
 
 
 1. Preparing [dataset](#1-praparing-dataset) for evaluation
-2. Import [Use-Encoder(use_enc)](#2-import-use-encoderuse_enc-module-in-jac) module in jac
+2. Import [Use-QA(use_qa)](#2-import-use-qause_qa-module-in-jac) module in jac
 3. Evaluate the models [effectiveness](#3-evaluate-the-models-effectiveness)
 
 # **Walk through**
 
 ## **1. Praparing dataset**
-For this tutorial, we are going to leverage the `use_encoder` for text classification, which is categorizing an incoming text into a one of predefined class. for demonstration purpose, we are going to use the SNIPS dataset as an example here. [snips dataset](https://huggingface.co/datasets/snips_built_in_intents).
+For this tutorial, we are going to leverage the `use_qa` for text classification, which is categorizing an incoming text into a one of predefined class. for demonstration purpose, we are going to use the SNIPS dataset as an example here. [snips dataset](https://huggingface.co/datasets/snips_built_in_intents).
 
 SNIPS is a popular intent classificawtion datasets that covers intents such as `
 [
@@ -29,8 +28,8 @@ SNIPS is a popular intent classificawtion datasets that covers intents such as `
     "ShareETA"
 ]
     `
-We need to do a little data format conversion to create a version of SNIPS that work with our `use_encoder` implemenation.
-For this part, we are going to use Python. First,
+We need to do a little data format conversion to create a version of SNIPS that work with our `use_qa` implemenation.
+For this part, we are going to use Python. First, 
 
 1. `Import the dataset` from huggingface [dataset library](https://huggingface.co/datasets/snips_built_in_intents).
     ```python
@@ -40,8 +39,7 @@ For this part, we are going to use Python. First,
     dataset = load_dataset("snips_built_in_intents")
     print(dataset["train"][:2])
     ```
-    If imported successsfuly, you should see the data format to be something like this in output
-
+    If imported successsfuly, you should see the data format to be something like this
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
 
 2. `Converting the format` from the SNIPS out of the box to the format that can be ingested by use_encoder.
@@ -155,52 +153,53 @@ For this part, we are going to use Python. First,
 		}
         ```
 
-##  **2. Import USE-Encoder(use_enc) module in jac**
+##  **2. Import USE-QA(use_qa) module in jac**
 1. Open terminal and run jaseci by follow command.
    ```
    jsctl -m
    ```
 
-2. Load `use_enc` module in jac by command
+2. Load `use_qa` module in jac by command
     ```
-    actions load module jac_nlp.use_enc
+    actions load module jaseci_kit.use_qa
     ```
 
 ## **3. Evaluate the models effectiveness**
-For this tutorial, we are going to `evaluation of text classification` with `use_encoder` for intent classification its tested on snips test dataset, which is categorizing an incoming text into a one of predefined class.
+For this tutorial, we are going to `evaluation of text classification` with `use_qa` for intent classification its tested on snips test dataset, which is categorizing an incoming text into a one of predefined class.
 
 * **Creating Jac Program (evaluation use_enc)**
-    1. Create a file by name use_enc.jac
+    1. Create a file by name use_qa.jac
 
-    2. Create node model_dir and use_encoder in use_enc.jac file
+    2. Create node model_dir and use_encoder in use_qa.jac file
         ```
         node model_dir;
-        node use_encoder {};
+        node use_qa {};
         ```
 
-    3. Initializing node use_encoder and import text classify train and infer ability inside node.
+    3. Initializing node `use_qa` and import `qa_classify` ability inside node.
         ```python
         # import ability
-        can use.text_similarity, use.text_classify;
+        can  use.qa_classify;
         ```
-    4. Initialize module eval_text_classification inside use_encoder node.
+    4. Initialize module eval_text_classification inside `use_qa` node.
         ```python
-        # classify text amd evaluate text classification
+        # evaluate text classification
         can eval_text_classification with eval_text_classification entry{
             test_data = file.load_json(visitor.test_file);
+            // std.out(test_data);
             classes = test_data["classes"];
             result = [];
             for itm in test_data["text"]{
                 text = itm["text"];
                 class_true = itm["class"];
-                resp = use.text_classify(
+                resp = use.qa_classify(
                     text = text,
                     classes = classes.list
                     );
                 result.list::append({"text":text,"class_true":class_true,"class_pred":resp["match"]});
             }
-            fn = "result_use_enc.json";
-            file.dump_json(fn, result);
+            fn = "result_use_qa.json";
+            file.dump_json(fn, result);        
         }
         ```
         **Parameter details**
@@ -213,23 +212,23 @@ For this tutorial, we are going to `evaluation of text classification` with `use
 
         for the evaluation we are passing here test data file e.g. `test.json` for evaluation.
 
-    5. Adding edge name of `use_model` in `use_enc.jac` file for connecting nodes inside graph.
+    5. Adding edge name of `use_model` in `use_qa.jac` file for connecting nodes inside graph.
 
         ```
         # adding edge
         edge use_model {
             has model_type;
-        }
+        }        
         ```
-
-    6. Adding graph name of `use_encoder_graph` for initializing node .
+    
+    6. Adding graph name of `use_qa_graph` for initializing node .
         ```
-        graph use_encoder_graph {
+        graph use_qa_graph {
             has anchor use_model_dir;
             spawn {
                 use_model_dir = spawn node::model_dir;
-                use_encoder_node = spawn node::use_encoder;
-                use_model_dir -[use_model(model_type="use_encoder")]-> use_encoder_node;
+                use_qa_node = spawn node::use_qa;
+                use_model_dir -[use_model(model_type="use_qa")]-> use_qa_node;
             }
         }
         ```
@@ -238,14 +237,14 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         ```
         walker init {
             root {
-            spawn here ++> graph::use_encoder_graph;
+            spawn here --> graph::use_qa_graph; 
             }
         }
         ```
     8. Creating walker name of `eval_text_classification` for getting parameter from context or default and calling ability `text_classify`.
         ```
-        # Declaring the walker:
-        walker eval_text_classification{
+        # Declaring the walker: 
+        walker eval_text_classification{ 
             has test_file="test.json";
             root {
                 take --> node::model_dir;
@@ -277,8 +276,8 @@ For this tutorial, we are going to `evaluation of text classification` with `use
                         );
                     result.list::append({"text":text,"class_true":class_true,"class_pred":resp["match"]});
                 }
-                fn = "result_use_enc.json";
-                file.dump_json(fn, result);
+                fn = "result_use_qa.json";
+                file.dump_json(fn, result);        
             }
         }
 
@@ -300,13 +299,13 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         # initialize init walker
         walker init {
             root {
-            spawn here ++> graph::use_encoder_graph;
+            spawn here --> graph::use_encoder_graph; 
             }
         }
 
 
-        # Declaring the walker fro calling :
-        walker eval_text_classification{
+        # Declaring the walker fro calling : 
+        walker eval_text_classification{ 
             has test_file="test.json";
             root {
                 take --> node::model_dir;
@@ -316,63 +315,45 @@ For this tutorial, we are going to `evaluation of text classification` with `use
             }
         }
         ```
-    **Steps for running use_enc.jac program**
-    * Execute the follow command for Build `use_enc.jac`
+    **Steps for running use_qa.jac program**
+    * Execute the follow command for Build `use_qa.jac`
         ```
-        jac build use_enc.jac
+        jac build use_qa.jac
         ```
 
     * Execute the follow command to Activate sentinal
         ```
-        sentinel set -snt active:sentinel -mode ir use_enc.jir
+        sentinel set -snt active:sentinel -mode ir use_qa.jir
         ```
         **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
-        > sentinel register -set_active true -mode ir use_enc.jir
-    * Execute the walker `eval_text_classification` with default parameter for evaluation `use_enc` module by following command
+        > sentinel register -set_active true -mode ir use_qa.jir
+    * Execute the walker `eval_text_classification` with default parameter for evaluation `use_qa` module by following command
         ```
         walker run eval_text_classification
         ```
-    After executing walker `eval_text_classification` result data will store in file `result_use_enc.json` in your current local path.
+    After executing walker `eval_text_classification` result data will store in file `result_use_qa.json` in your current local path.
 
     **Evaluation Result**
     ```
-    Evaluation accuracy score        :  0.0303
-    Evaluation F1_score              :  0.0495
+        Evaluation accuracy score        :  0.7424
+        Evaluation F1_score              :  0.6503
 
-    Evaluation classification_report :
+        Evaluation classification_report : 
 
                             precision    recall  f1-score   support
 
-            BookRestaurant       0.00      0.00      0.00        17
-             ComparePlaces       0.50      0.33      0.40         3
-             GetDirections       0.06      0.33      0.10         3
-           GetPlaceDetails       0.00      0.00      0.00        13
+            BookRestaurant       0.74      1.00      0.85        17
+             ComparePlaces       1.00      0.67      0.80         3
+             GetDirections       1.00      0.67      0.80         3
+           GetPlaceDetails       1.00      0.23      0.38        13
      GetTrafficInformation       0.00      0.00      0.00         1
-                GetWeather       0.00      0.00      0.00        13
-               RequestRide       0.00      0.00      0.00         2
-               SearchPlace       0.00      0.00      0.00         5
-      ShareCurrentLocation       0.00      0.00      0.00         4
-                  ShareETA       0.00      0.00      0.00         5
+                GetWeather       0.87      1.00      0.93        13
+               RequestRide       0.67      1.00      0.80         2
+               SearchPlace       0.29      0.40      0.33         5
+      ShareCurrentLocation       0.57      1.00      0.73         4
+                  ShareETA       1.00      0.80      0.89         5
 
-                  accuracy                           0.03        66
-                 macro avg       0.06      0.07      0.05        66
-              weighted avg       0.03      0.03      0.02        66
+                  accuracy                           0.74        66
+                 macro avg       0.71      0.68      0.65        66
+              weighted avg       0.80      0.74      0.71        66
     ```
-
-# Batch Encoding
-
-### What is batch encoding?
-Batch encoding is a technique of converting a `list` of categorical variables into numerical values so that it could be easily fitted to a machine learning model.
-
-In jaseci, how you implement it is by importing the USE model from the AI Kit and using the `encode` function, instead of passing a string you will pass an array to the `encode` function.
-
-```
-walker get_encoding {
-    can use.encode;
-    can list_of_text = ["I hate bananas", "guava is a decent fruit", "I love apples"];
-    
-    report use.encode(list_of_text);
-}
-```
-
-Based on the result that was spits out from the model each encoding is corresponding respective to how you list it in an array for e.g.  the encoding of "i hate bananas" is located in the first element of the data returned from the encoding result, "guava is a decent fruit" is located in the second element of the data returned from the encoding result, vice versa.

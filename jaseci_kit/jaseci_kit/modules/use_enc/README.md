@@ -30,7 +30,7 @@ SNIPS is a popular intent classificawtion datasets that covers intents such as `
 ]
     `
 We need to do a little data format conversion to create a version of SNIPS that work with our `use_encoder` implemenation.
-For this part, we are going to use Python. First,
+For this part, we are going to use Python. First, 
 
 1. `Import the dataset` from huggingface [dataset library](https://huggingface.co/datasets/snips_built_in_intents).
     ```python
@@ -163,7 +163,7 @@ For this part, we are going to use Python. First,
 
 2. Load `use_enc` module in jac by command
     ```
-    actions load module jac_nlp.use_enc
+    actions load module jaseci_kit.use_enc
     ```
 
 ## **3. Evaluate the models effectiveness**
@@ -200,7 +200,7 @@ For this tutorial, we are going to `evaluation of text classification` with `use
                 result.list::append({"text":text,"class_true":class_true,"class_pred":resp["match"]});
             }
             fn = "result_use_enc.json";
-            file.dump_json(fn, result);
+            file.dump_json(fn, result);        
         }
         ```
         **Parameter details**
@@ -219,9 +219,9 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         # adding edge
         edge use_model {
             has model_type;
-        }
+        }        
         ```
-
+    
     6. Adding graph name of `use_encoder_graph` for initializing node .
         ```
         graph use_encoder_graph {
@@ -238,14 +238,14 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         ```
         walker init {
             root {
-            spawn here ++> graph::use_encoder_graph;
+            spawn here --> graph::use_encoder_graph; 
             }
         }
         ```
     8. Creating walker name of `eval_text_classification` for getting parameter from context or default and calling ability `text_classify`.
         ```
-        # Declaring the walker:
-        walker eval_text_classification{
+        # Declaring the walker: 
+        walker eval_text_classification{ 
             has test_file="test.json";
             root {
                 take --> node::model_dir;
@@ -278,7 +278,7 @@ For this tutorial, we are going to `evaluation of text classification` with `use
                     result.list::append({"text":text,"class_true":class_true,"class_pred":resp["match"]});
                 }
                 fn = "result_use_enc.json";
-                file.dump_json(fn, result);
+                file.dump_json(fn, result);        
             }
         }
 
@@ -300,13 +300,13 @@ For this tutorial, we are going to `evaluation of text classification` with `use
         # initialize init walker
         walker init {
             root {
-            spawn here ++> graph::use_encoder_graph;
+            spawn here --> graph::use_encoder_graph; 
             }
         }
 
 
-        # Declaring the walker fro calling :
-        walker eval_text_classification{
+        # Declaring the walker fro calling : 
+        walker eval_text_classification{ 
             has test_file="test.json";
             root {
                 take --> node::model_dir;
@@ -339,8 +339,8 @@ For this tutorial, we are going to `evaluation of text classification` with `use
     Evaluation accuracy score        :  0.0303
     Evaluation F1_score              :  0.0495
 
-    Evaluation classification_report :
-
+    Evaluation classification_report : 
+    
                             precision    recall  f1-score   support
 
             BookRestaurant       0.00      0.00      0.00        17
@@ -358,21 +358,3 @@ For this tutorial, we are going to `evaluation of text classification` with `use
                  macro avg       0.06      0.07      0.05        66
               weighted avg       0.03      0.03      0.02        66
     ```
-
-# Batch Encoding
-
-### What is batch encoding?
-Batch encoding is a technique of converting a `list` of categorical variables into numerical values so that it could be easily fitted to a machine learning model.
-
-In jaseci, how you implement it is by importing the USE model from the AI Kit and using the `encode` function, instead of passing a string you will pass an array to the `encode` function.
-
-```
-walker get_encoding {
-    can use.encode;
-    can list_of_text = ["I hate bananas", "guava is a decent fruit", "I love apples"];
-    
-    report use.encode(list_of_text);
-}
-```
-
-Based on the result that was spits out from the model each encoding is corresponding respective to how you list it in an array for e.g.  the encoding of "i hate bananas" is located in the first element of the data returned from the encoding result, "guava is a decent fruit" is located in the second element of the data returned from the encoding result, vice versa.
