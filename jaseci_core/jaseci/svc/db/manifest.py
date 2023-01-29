@@ -1,65 +1,129 @@
 DB_MANIFEST = {
     "Service": [
         {
-            "apiVersion": "v1",
             "kind": "Service",
-            "metadata": {"name": "jaseci-redis"},
-            "spec": {
-                "selector": {"pod": "jaseci-redis"},
-                "ports": [{"protocol": "TCP", "port": 6379, "targetPort": 6379}],
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "jaseci-db"
             },
+            "spec": {
+                "selector": {
+                    "pod": "jaseci-db"
+                },
+                "ports": [
+                    {
+                        "protocol": "TCP",
+                        "port": 5432,
+                        "targetPort": 5432
+                    }
+                ]
+            }
         }
     ],
     "Deployment": [
         {
             "apiVersion": "apps/v1",
             "kind": "Deployment",
-            "metadata": {"name": "jaseci-redis"},
+            "metadata": {
+                "name": "jaseci-db"
+            },
             "spec": {
                 "replicas": 1,
-                "selector": {"matchLabels": {"pod": "jaseci-redis"}},
+                "selector": {
+                    "matchLabels": {
+                        "pod": "jaseci-db"
+                    }
+                },
                 "template": {
-                    "metadata": {"labels": {"pod": "jaseci-redis"}},
+                    "metadata": {
+                        "labels": {
+                            "pod": "jaseci-db"
+                        }
+                    },
                     "spec": {
                         "containers": [
                             {
-                                "name": "jaseci-redis-master",
-                                "image": "redis",
+                                "name": "jaseci-db",
+                                "image": "postgres:alpine",
                                 "imagePullPolicy": "IfNotPresent",
-                                "command": ["redis-server", "/redis-master/redis.conf"],
-                                "resources": {"limits": {"cpu": "0.2"}},
-                                "ports": [{"containerPort": 6379}],
-                                "volumeMounts": [
-                                    {"mountPath": "/redis-master-data", "name": "data"},
-                                    {"mountPath": "/redis-master", "name": "config"},
+                                "env": [
+                                    {
+                                        "name": "POSTGRES_USER",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "jaseci-db-credentials",
+                                                "key": "user"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "POSTGRES_PASSWORD",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "name": "jaseci-db-credentials",
+                                                "key": "password"
+                                            }
+                                        }
+                                    }
                                 ],
+                                "ports": [
+                                    {
+                                        "containerPort": 5432
+                                    }
+                                ],
+                                "volumeMounts": [
+                                    {
+                                        "name": "jaseci-db-volume",
+                                        "mountPath": "/var/lib/postgresql/data",
+                                        "subPath": "jaseci"
+                                    }
+                                ]
                             }
                         ],
                         "volumes": [
-                            {"name": "data", "emptyDir": {}},
                             {
-                                "name": "config",
-                                "configMap": {
-                                    "name": "jaseci-redis-config",
-                                    "items": [
-                                        {"key": "redis-config", "path": "redis.conf"}
-                                    ],
-                                },
-                            },
-                        ],
-                    },
-                },
-            },
+                                "name": "jaseci-db-volume",
+                                "persistentVolumeClaim": {
+                                    "claimName": "jaseci-db-pvc"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
         }
     ],
-    "ConfigMap": [
+    "Secret": [
         {
             "apiVersion": "v1",
-            "kind": "ConfigMap",
-            "metadata": {"name": "jaseci-redis-config"},
-            "data": {
-                "redis-config": "maxmemory 1000mb\nmaxmemory-policy allkeys-lru\n"
+            "kind": "Secret",
+            "metadata": {
+                "name": "jaseci-db-credentials"
             },
+            "type": "Opaque",
+            "data": {
+                "user": "cG9zdGdyZXM=",
+                "password": "bGlmZWxvZ2lmeWphc2VjaQ=="
+            }
+        }
+    ],
+    "PersistantVolumeClaim": [
+        {
+            "kind": "PersistentVolumeClaim",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "jaseci-db-pvc"
+            },
+            "spec": {
+                "accessModes": [
+                    "ReadWriteOnce"
+                ],
+                "resources": {
+                    "requests": {
+                        "storage": "10Gi"
+                    }
+                }
+            }
         }
     ],
 }
