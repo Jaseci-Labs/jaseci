@@ -18,32 +18,15 @@ class DBService(CommonService):
     #                     COMMONS                     #
     ###################################################
 
-    # def get(self, name):
-    #     return self.app.get(name)
+    def cursor(self):
+        self.app = DBConnect(**DB_CONFIG)
+        return self.app.cursor()
 
-    # def set(self, name, val):
-    #     self.app.set(name, val)
+    def close(self):
+        return self.app.close()
 
-    # def exists(self, name):
-    #     return self.app.exists(name)
-
-    # def delete(self, name):
-    #     self.app.delete(name)
-
-    # def hget(self, name, key):
-    #     return self.app.hget(name, key)
-
-    # def hset(self, name, key, val):
-    #     self.app.hset(name, key, val)
-
-    # def hexists(self, name, key):
-    #     return self.app.hexists(name, key)
-
-    # def hdel(self, name, key):
-    #     self.app.hdel(name, key)
-
-    # def hkeys(self, name):
-    #     return self.app.hkeys(name)
+    def commit(self):
+        return self.app.commit()
 
     ###################################################
     #                     CONFIG                      #
