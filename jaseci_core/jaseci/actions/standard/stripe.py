@@ -22,7 +22,7 @@ def create_product_price(
     productId: str,
     amount: int,
     currency: str,
-    interval: str,
+    recurring: dict = {},
     **kwargs,
 ):
     """modify product price"""
@@ -31,8 +31,7 @@ def create_product_price(
         product=productId,
         unit_amount=amount,
         currency=currency,
-        recurring={"interval": interval},
-        **kwargs,
+        **recurring if recurring else {} ** kwargs,
     )
 
 
@@ -83,7 +82,7 @@ def attach_payment_method(payment_method_id: str, customer_id: str, **kwargs):
 
 
 @jaseci_action()
-def delete_payment_method(payment_method_id: str, **kwargs):
+def detach_payment_method(payment_method_id: str, **kwargs):
     """detach payment method from customer"""
 
     return stripe().PaymentMethod.detach(payment_method=payment_method_id, **kwargs)
@@ -152,7 +151,7 @@ def create_payment_intents(
     customer_id: str,
     amount: int,
     currency: str,
-    payment_method_types: str = "card",
+    payment_method_types: list = ["card"],
     **kwargs,
 ):
     """Create customer payment"""
@@ -161,7 +160,7 @@ def create_payment_intents(
         customer=customer_id,
         amount=amount,
         currency=currency,
-        payment_method_types=[payment_method_types],
+        payment_method_types=payment_method_types,
         **kwargs,
     )
 
@@ -170,61 +169,58 @@ def create_payment_intents(
 def get_customer_subscription(customer_id: str, **kwargs):
     """retrieve customer subcription list"""
 
-    subscription = stripe().Subscription.list(customer=customer_id, **kwargs)
-
-    if not subscription.data:
-        return {"status": "inactive", "message": "Customer has no subscription"}
-
-    return subscription
+    return stripe().Subscription.list(customer=customer_id, **kwargs)
 
 
 @jaseci_action()
-def create_payment_method(card_type: str, card: dict, **kwargs):
+def create_payment_method(card_type: str, card: dict, billing_details: dict, **kwargs):
     """create payment method"""
 
-    return stripe().PaymentMethod.create(type=card_type, card=card, **kwargs)
+    return stripe().PaymentMethod.create(
+        type=card_type, card=card, billing_details=billing_details, **kwargs
+    )
 
 
 @jaseci_action()
 def create_trial_subscription(
-    payment_method_id: str,
     customer_id: str,
     items: list,
+    payment_method_id: str,
     trial_period_days: int = 14,
-    expand: list = [],
     **kwargs,
 ):
     """create customer trial subscription"""
 
-    # attach payment method to customer
-    attach_payment_method(payment_method_id, customer_id)
+    if payment_method_id:
+        # attach payment method to customer
+        attach_payment_method(payment_method_id, customer_id)
 
-    # set card to default payment method
-    update_default_payment_method(customer_id, payment_method_id)
+        # set card to default payment method
+        update_default_payment_method(customer_id, payment_method_id)
 
     return stripe().Subscription.create(
         customer=customer_id,
         items=items,
         trial_period_days=trial_period_days,
-        expand=expand,
         **kwargs,
     )
 
 
 @jaseci_action()
 def create_subscription(
-    payment_method_id: str,
-    items: list,
     customer_id: str,
+    items: list,
+    payment_method_id: str,
     **kwargs,
 ):
     """create customer subscription"""
 
-    # attach payment method to customer
-    attach_payment_method(payment_method_id, customer_id)
+    if payment_method_id:
+        # attach payment method to customer
+        attach_payment_method(payment_method_id, customer_id)
 
-    # set card to default payment method
-    update_default_payment_method(customer_id, payment_method_id)
+        # set card to default payment method
+        update_default_payment_method(customer_id, payment_method_id)
 
     return stripe().Subscription.create(customer=customer_id, items=items, **kwargs)
 
@@ -244,7 +240,7 @@ def get_subscription(subscription_id: str, **kwargs):
 
 
 @jaseci_action()
-def update_subscription(
+def update_subscription_item(
     subscription_id: str, subscription_item_id: str, price_id: str, **kwargs
 ):
     """update subcription details"""
