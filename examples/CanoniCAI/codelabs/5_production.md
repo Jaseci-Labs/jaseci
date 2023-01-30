@@ -56,6 +56,31 @@ Two new syntax here:
 * `report` returns variable from walker to its caller. When calling a walker via its REST API, the content of the API response payload will be what is reported.
 * `yield report` is a shorthand for yielding and reporting at the same time. This is equivalane to `yield; report response;`.
 
+## Preparing the `init` walker for production
+Up until this point, we have been running our code with just `jac run`.
+`jac run` executes the `init` walker of your progarm (analogues to the `__main__` function of python).
+Here is what the current `init` walker looks like
+```jac
+walker init {
+    root {
+        spawn here ++> graph::tesla_ai;
+        spawn here walker::talk;
+    }
+}
+```
+It is currently achieving two things.
+`spawn here ++> graph::tesla_ai;` initializes the graph and `spawn here walker::talk` run the walker.
+This is okay for testing purpose but when actually serving this application, we only need to initialize the graph once.
+So remove `spawn here walker::talk` from the init walker before proceeding to the next step.
+The init walker should look just contain the graph spawn code, like below:
+```jac
+walker init {
+    root {
+        spawn here ++> graph::tesla_ai;
+    }
+}
+```
+
 ## Introduce `sentinel`
 `sentinel` is the overseer of walkers, nodes and edges.
 It is the abstraction Jaseci uses to encapsulate compiled walkers and architype nodes and edges.
