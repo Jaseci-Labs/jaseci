@@ -110,7 +110,7 @@ def collate_examples(
             ).long(),
             pad_sequence(all_end_offsets, batch_first=True, padding_value=-100).long(),
         )
-    return res
+    return res["input_ids"],res["labels"]
 
 
 def batch_examples(

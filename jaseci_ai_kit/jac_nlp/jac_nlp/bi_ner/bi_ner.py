@@ -3,14 +3,17 @@ from transformers import Trainer, TrainingArguments
 import json
 from typing import Dict, List
 import os
+# import sys
+# sys.path.append(os.getcwd())
 import traceback
 from fastapi import HTTPException
-
+# print("In module products __package__, __name__ ==", __package__, __name__)
 from .model.base_encoder import BI_Enc_NER
 from .model.inference import Bi_NER_Infer
 from .datamodel.utils import invert, get_category_id_mapping
 from .model.tokenize_data import get_datasets
 from jaseci.actions.live_actions import jaseci_action
+# from .model.ph_func import train_ph,BI_P_Head,PHClassifier,prepare_inputs
 
 
 def config_setup(category_name: List[str] = None):
@@ -205,7 +208,44 @@ def load_model(model_path):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# # API for training
+# @jaseci_action(act_group=["bi_ner"], allow_remote=True)
+# def train_ph_api(dataset: Dict = None, from_scratch=True, training_parameters: Dict = None):
+#     """
+#     Take list of context, candidate, labels and trains the model
+#     """
+#     try:
+#         global model, inference_model
+#         if training_parameters is not None:
+#             with open(t_config_fname, "w+") as jsonfile:
+#                 train_args.update(training_parameters)
+#                 json.dump(train_args, jsonfile, indent=4)
+#         if from_scratch:
+#             category_name = list(
+#                 set(ele["entity_type"] for val in dataset["annotations"] for ele in val)
+#             )
+#             config_setup(category_name=category_name)
+#             print(category_name)
+#         train_dataset = get_datasets(dataset, example_encoder)
+#         train_ph(model,train_dataset,train_args)
+#         model.eval()
+#         inference_model = PH_Base(
+#             model,
+#             category_mapping=invert(category_id_mapping),
+#             no_entity_category=model_args["unk_category"],
+#             max_sequence_length=model_args["max_sequence_length"],
+#             max_entity_length=model_args["max_entity_length"],
+#             model_args=model_args
+#         )
+#         inference_model.to(device)
+#     except Exception as e:
+#         print(e)
+#         traceback.print_exc()
+#     return None
+
+
 if __name__ == "__main__":
+
     from jaseci.actions.remote_actions import launch_server
 
     launch_server(port=8000)
