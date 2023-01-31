@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Card,
   Divider,
@@ -9,20 +10,14 @@ import {
   ThemeIcon,
   Title,
 } from "@mantine/core";
-import LogsViewer from "../components/LogsViewer/LogsViewer";
-import { IBM_Plex_Mono } from "@next/font/google";
-import { useDebouncedState, useScrollIntoView } from "@mantine/hooks";
-import LevelFilter from "../components/LogsViewer/LevelFilter";
 import {
-  IconArrowDown,
-  IconArrowUp,
   IconCircleCheck,
   IconCircleDashed,
-  IconPlayerPause,
-  IconPlayerPlay,
+  IconGitBranchDeleted,
 } from "@tabler/icons";
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import LoadedActions from "../components/LoadedActions";
 
 function ManageActionsPage() {
   const [opened, setOpened] = useState(false);
@@ -45,7 +40,6 @@ function ManageActionsPage() {
       <Flex justify={"center"} align="center">
         <Card
           w="90%"
-          h="600px"
           withBorder
           shadow={"md"}
           radius="md"
@@ -56,68 +50,16 @@ function ManageActionsPage() {
             <Title order={3} mb={"xl"}>
               Manage Actions
             </Title>
-            <Button onClick={() => setOpened(true)}>Upload Action</Button>
+            <Button onClick={() => setOpened(true)}>Import Action</Button>
           </Flex>
 
           <Grid>
-            <Grid.Col span={5}>
-              <Title order={4}>Available Actions</Title>
+            <Grid.Col span={12}>
+              <Title order={4}>Available Modules</Title>
               <Divider></Divider>
-
-              <List
-                spacing="xs"
-                size="sm"
-                center
-                icon={
-                  <ThemeIcon color="teal" size={24} radius="xl">
-                    <IconCircleDashed size={16} />
-                  </ThemeIcon>
-                }
-                sx={{ paddingTop: "20px" }}
-              >
-                {actions.slice(0, 4).map((action) => (
-                  <List.Item key={action.name}>
-                    <span>{action.name}</span>
-                    <Button
-                      size="xs"
-                      sx={{ marginLeft: "12px" }}
-                      variant="light"
-                    >
-                      Load
-                    </Button>
-                  </List.Item>
-                ))}
-              </List>
-            </Grid.Col>
-
-            <Grid.Col span={7}>
-              <Title order={4}>Loaded Actions</Title>
-              <Divider></Divider>
-
-              <List
-                spacing="xs"
-                size="sm"
-                center
-                icon={
-                  <ThemeIcon color="teal" size={24} radius="xl">
-                    <IconCircleCheck size={16} />
-                  </ThemeIcon>
-                }
-                sx={{ paddingTop: "20px" }}
-              >
-                {actions.slice(4).map((action) => (
-                  <List.Item key={action.name}>
-                    {action.name}
-                    <Button
-                      size="xs"
-                      sx={{ marginLeft: "12px" }}
-                      variant="light"
-                    >
-                      Unload
-                    </Button>
-                  </List.Item>
-                ))}
-              </List>
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <LoadedActions></LoadedActions>
+              </Box>
             </Grid.Col>
           </Grid>
         </Card>
@@ -125,7 +67,7 @@ function ManageActionsPage() {
         <Modal
           opened={opened}
           onClose={() => setOpened(false)}
-          title="Upload Action"
+          title="Import Action"
         >
           {/* Modal content */}
         </Modal>
