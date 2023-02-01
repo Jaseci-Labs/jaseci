@@ -50,7 +50,8 @@ export class JscGraph {
   @State() graphs: Graph[] = [];
   @State() walkers: Walker[] = [];
   @State() serverUrl: string = localStorage.getItem('serverUrl') || 'http://localhost:8000';
-  @State() hiddenGroups: Set<string> = new Set();
+  @State() hiddenNodeGroups: Set<string> = new Set();
+  @State() hiddenEdgeGroups: Set<string> = new Set();
   @State() activeSentinel: string;
   @State() expandedNodes: string[] = [];
 
@@ -63,7 +64,7 @@ export class JscGraph {
   nodes: vis.data.DataSet<any, string>;
 
   @State() clickedNode: vis.Node & { context: {}; info: {}; details: {} };
-  @State() clickedEdge: vis.Edge & { context: {}; info: {}; details: {} };
+  @State() clickedEdge: vis.Edge & { context: {}; info: {}; details: {}; group: string };
   @State() selectedInfoTab: 'details' | 'context' | 'info' = 'context';
   @State() selectedNodes: vis.IdType[] = [];
 
@@ -296,15 +297,28 @@ export class JscGraph {
     const displayedNodes = new visData.DataSet(
       this.nodes.get({
         filter: (node: vis.Node) => {
-          return !this.hiddenGroups.has(node.group) && !this.queuedNodes.has(node.id.toString());
+          return !this.queuedNodes.has(node.id.toString());
         },
       }),
     );
 
+    // determine which nodes are to be hidden
+    let hiddenNodes = this.nodes.get({
+      filter: (node: vis.Node) => {
+        return this.hiddenNodeGroups.has(node.group);
+      },
+    });
+
+    let unhiddenNodes = this.nodes.get({
+      filter: (node: vis.Node) => {
+        return !this.hiddenNodeGroups.has(node.group) && node.hidden && !this.queuedNodes.has(node.id.toString());
+      },
+    });
+
     const displayedEdges = new visData.DataSet(
       this.edges.get({
-        filter: (node: vis.Node) => {
-          return !this.queuedEdges.has(node.id.toString());
+        filter: (edge: vis.Edge) => {
+          return !this.queuedEdges.has(edge.id.toString());
         },
       }),
     );
@@ -312,12 +326,45 @@ export class JscGraph {
     this.edges = displayedEdges;
     this.nodes = displayedNodes;
 
+    // hide nodes by setting hidden property to true
+    hiddenNodes = hiddenNodes.map(node => ({ ...node, hidden: true }));
+    unhiddenNodes = unhiddenNodes.map(node => ({ ...node, hidden: false }));
+
+    console.log({ hiddenNodes });
+
+    this.nodes.update([...hiddenNodes, ...unhiddenNodes]);
+
     this.network.setData({ edges: displayedEdges as any, nodes: displayedNodes as any });
+  }
+
+  refreshEdges() {
+    // determine which nodes are to be hidden
+    let hiddenEdges = this.edges.get({
+      filter: (edge: vis.Edge & { group: string }) => {
+        return this.hiddenEdgeGroups.has(edge.group);
+      },
+    });
+
+    let unhiddenEdges = this.edges.get({
+      filter: (edge: vis.Edge & { group: string }) => {
+        return !this.hiddenNodeGroups.has(edge.group) && edge.hidden && !this.queuedNodes.has(edge.id.toString());
+      },
+    });
+
+    // hide nodes by setting hidden property to true
+    hiddenEdges = hiddenEdges.map(edge => ({ ...edge, hidden: true }));
+    unhiddenEdges = unhiddenEdges.map(edge => ({ ...edge, hidden: false }));
+
+    console.log({ hiddenEdges, unhiddenEdges, hiddenGroups: this.hiddenEdgeGroups });
+
+    this.edges.update([...hiddenEdges, ...unhiddenEdges]);
+
+    this.network.setData({ edges: this.edges as any, nodes: this.nodes as any });
   }
 
   hideNodeGroup() {
     if (this.clickedNode) {
-      this.hiddenGroups.add(this.clickedNode.group);
+      this.hiddenNodeGroups.add(this.clickedNode.group);
 
       // force update ui
       this.clickedNode = null;
@@ -327,8 +374,30 @@ export class JscGraph {
     }
   }
 
+  hideEdgeGroup() {
+    if (this.clickedEdge) {
+      this.hiddenEdgeGroups.add(this.clickedEdge.group);
+
+      // force update ui
+      this.clickedEdge = null;
+      this.clickedEdge = undefined;
+
+      this.refreshEdges();
+    }
+  }
+
+  showEdgeGroup(group: string) {
+    this.hiddenEdgeGroups.delete(group);
+
+    // force update ui
+    this.clickedEdge = null;
+    this.clickedEdge = undefined;
+
+    this.refreshEdges();
+  }
+
   showNodeGroup(group: string) {
-    this.hiddenGroups.delete(group);
+    this.hiddenNodeGroups.delete(group);
 
     // force update ui
     this.clickedNode = null;
@@ -374,7 +443,11 @@ export class JscGraph {
     const connectedEdges = this.network.getConnectedEdges(nodeId);
     this.edges
       .get()
-      .filter((edge: vis.Edge) => connectedEdges.includes(edge.id) && edge.to !== nodeId)
+      .filter((edge: vis.Edge) => {
+        // get the to node, so we can only collapse objects that are not hidden
+        const toNode = this.nodes.get(edge.to);
+        return connectedEdges.includes(edge.id) && edge.to !== nodeId && !edge.hidden && !toNode.hidden;
+      })
       .forEach((edgeData: vis.Edge) => {
         // queue the nodes and edges to be removed
         this.queuedEdges.add(edgeData.id.toString());
@@ -526,7 +599,7 @@ export class JscGraph {
                     overflowX: 'hidden',
                   }}
                 >
-                  <jsc-divider label="Node Info" orientation="horizontal"></jsc-divider>
+                  <jsc-divider label={'Information'} orientation="horizontal"></jsc-divider>
 
                   {this.clickedNode || this.clickedEdge ? (
                     <graph-node-info
@@ -579,16 +652,42 @@ export class JscGraph {
                     overflowX: 'hidden',
                   }}
                 >
-                  <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
-                  <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
-                  {!this.hiddenGroups?.size && <div>No hidden nodes</div>}
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
+                    <div>
+                      {this.clickedEdge && <jsc-button size="xs" palette="info" label={`Hide '${this.clickedEdge.group}' Edges`} onClick={() => this.hideEdgeGroup()}></jsc-button>}
+                    </div>
+                  </div>
 
-                  {Array.from(this.hiddenGroups).map(group => (
+                  <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
+                  {!this.hiddenNodeGroups?.size && <div>No hidden nodes</div>}
+
+                  {Array.from(this.hiddenNodeGroups).map(group => (
                     <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
                       <jsc-chip label={group}>
                         <svg
                           slot="right"
                           onClick={() => this.showNodeGroup(group)}
+                          style={{ cursor: 'pointer' }}
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          class="inline-block w-4 h-4 stroke-current"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </jsc-chip>
+                    </div>
+                  ))}
+
+                  <jsc-divider label="Hidden Edges" orientation="horizontal"></jsc-divider>
+                  {!this.hiddenEdgeGroups?.size && <div>No hidden edges</div>}
+                  {Array.from(this.hiddenEdgeGroups).map(group => (
+                    <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
+                      <jsc-chip label={group}>
+                        <svg
+                          slot="right"
+                          onClick={() => this.showEdgeGroup(group)}
                           style={{ cursor: 'pointer' }}
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
