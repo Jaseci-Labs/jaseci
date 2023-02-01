@@ -7,7 +7,6 @@ import os
 
 
 MODULES = ["stt", "vc_tts"]
-INSTALLABLE_MODULES = []
 ORDEREDREQS = ["TTS==0.10.2"]
 
 
