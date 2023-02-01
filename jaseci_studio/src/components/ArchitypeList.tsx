@@ -9,20 +9,29 @@ import {
   Badge,
   Group,
   ActionIcon,
-  Popover,
   Overlay,
   Button,
   SegmentedControl,
   LoadingOverlay,
 } from "@mantine/core";
-import { IconTrash } from "@tabler/icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { IconCode, IconTrash } from "@tabler/icons";
+import {
+  UseMutateFunction,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { SetStateAction } from "jotai";
+import { Dispatch, useEffect, useState } from "react";
 import { Architype } from "../hooks/useRegisterArchetype";
 import { client } from "./ReactQuery";
 
-function ArchitypeList() {
+function ArchitypeList({
+  setEditorValue,
+}: {
+  setEditorValue: Dispatch<SetStateAction<string>>;
+}) {
   const [filter, setFilter] = useState<"all" | "node" | "walker" | "edge">(
     "all"
   );
@@ -33,6 +42,7 @@ function ArchitypeList() {
       client
         .post<Architype[]>("/js/architype_list", {
           kind: filter === "all" ? undefined : filter,
+          detailed: true,
         })
         .then((res) => res.data)
   );
@@ -86,6 +96,8 @@ function ArchitypeList() {
           <Stack p="xs">
             {architypes?.map((architype) => (
               <ArchitypeCard
+                setEditorValue={setEditorValue}
+                key={architype.jid}
                 architype={architype}
                 removeArchitype={removeArchitype}
               ></ArchitypeCard>
@@ -97,10 +109,24 @@ function ArchitypeList() {
   );
 }
 
-function ArchitypeCard({ architype, removeArchitype }) {
+function ArchitypeCard({
+  architype,
+  removeArchitype,
+  setEditorValue,
+}: {
+  architype: Architype;
+  removeArchitype: UseMutateFunction<any, any, string, unknown>;
+  setEditorValue: Dispatch<SetStateAction<string>>;
+}) {
   const [showDelete, setShowDelete] = useState(false);
+
+  const loadArchitypeSrcCode = () => {
+    const src = JSON.parse(architype.code_ir)?.ir?.src;
+    setEditorValue(src);
+  };
+
   return (
-    <Card key={architype.jid} withBorder sx={{ position: "relative" }}>
+    <Card withBorder sx={{ position: "relative" }} onClick={() => {}}>
       <Group position="apart" align="start">
         <Flex gap={"xs"} align="center" mb="xs">
           <Text size="sm">{architype.name}</Text>
@@ -137,14 +163,25 @@ function ArchitypeCard({ architype, removeArchitype }) {
           {dayjs(architype.j_timestamp).format("DD/MM/YYYY HH:mm:ss A")}
         </Text>
 
-        <ActionIcon
-          color="red"
-          variant="light"
-          size="xs"
-          onClick={() => setShowDelete(true)}
-        >
-          <IconTrash></IconTrash>
-        </ActionIcon>
+        <Group>
+          <ActionIcon
+            color="teal"
+            variant="light"
+            size="xs"
+            onClick={() => loadArchitypeSrcCode()}
+          >
+            <IconCode></IconCode>
+          </ActionIcon>
+
+          <ActionIcon
+            color="red"
+            variant="light"
+            size="xs"
+            onClick={() => setShowDelete(true)}
+          >
+            <IconTrash></IconTrash>
+          </ActionIcon>
+        </Group>
       </Group>
     </Card>
   );

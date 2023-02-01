@@ -1,13 +1,4 @@
-import {
-  Flex,
-  Card,
-  Title,
-  Button,
-  Group,
-  Box,
-  Grid,
-  Divider,
-} from "@mantine/core";
+import { Flex, Card, Title, Button, Group, Grid } from "@mantine/core";
 import Editor from "../components/Editor";
 import useRegisterArchetype from "../hooks/useRegisterArchetype";
 import { useStudioEditor } from "../hooks/useStudioEditor";
@@ -16,15 +7,22 @@ import ArchitypeList from "../components/ArchitypeList";
 
 function ArchetypePage() {
   const editor = useStudioEditor();
-  const { data: activeSentinel, isLoading } = getActiveSentinel();
+  const { data: activeSentinel } = getActiveSentinel();
   const { mutate: registerArchitype } = useRegisterArchetype(
     editor.highlightError,
     editor.hideErrors
   );
-  const { editorValue } = editor;
+  const { editorValue, setEditorValue } = editor;
+
+  // const openViewer = () => {
+  //   if (typeof window !== "undefined") {
+  //     invoke("open_graph_viewer");
+  //   }
+  // };
 
   return (
     <div>
+      {/* <button onClick={() => openViewer()}>Open Graph Viewer</button> */}
       <Flex justify={"center"} align="center">
         <Card
           w="90%"
@@ -54,7 +52,7 @@ function ArchetypePage() {
 
           <Grid sx={{ height: "600px" }}>
             <Grid.Col span={5}>
-              <ArchitypeList></ArchitypeList>
+              <ArchitypeList setEditorValue={setEditorValue}></ArchitypeList>
             </Grid.Col>
 
             <Grid.Col span={7}>

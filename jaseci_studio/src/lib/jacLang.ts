@@ -61,6 +61,7 @@ export const jacLang: languages.IMonarchLanguage = {
     "break",
     "class",
     "continue",
+    "can",
     "walker",
     "node",
     "edge",
@@ -191,6 +192,8 @@ export const jacLang: languages.IMonarchLanguage = {
     "__import__",
   ],
 
+  builtins: ["report"],
+
   brackets: [
     { open: "{", close: "}", token: "delimiter.curly" },
     { open: "[", close: "]", token: "delimiter.bracket" },
@@ -241,10 +244,10 @@ export const jacLang: languages.IMonarchLanguage = {
     root: [
       { include: "@whitespace" },
       { include: "@numbers" },
-      { include: "@strings" },
 
       [/[,:;]/, "delimiter"],
       [/[{}\[\]()]/, "@brackets"],
+      // [/[$]/, "@operators"],
 
       [/@[a-zA-Z_]\w*/, "tag"],
       [
@@ -252,6 +255,7 @@ export const jacLang: languages.IMonarchLanguage = {
         {
           cases: {
             "@keywords": "keyword",
+            "@builtins": "keyword",
             "@default": "identifier",
           },
         },

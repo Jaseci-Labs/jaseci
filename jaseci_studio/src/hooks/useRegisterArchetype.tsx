@@ -10,6 +10,7 @@ export type Architype = {
   j_timestamp: string;
   j_type: string;
   code_sig: string;
+  code_ir: string;
 };
 
 type SuccessResponse = {

@@ -91,6 +91,7 @@ export function useStudioEditor() {
     handleEditorChange,
     highlightError,
     hideErrors,
+    setEditorValue,
     editorValue,
   };
 }

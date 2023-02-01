@@ -1,14 +1,4 @@
-import {
-  Accordion,
-  Box,
-  Button,
-  Card,
-  Group,
-  List,
-  Stack,
-  ThemeIcon,
-  useMantineTheme,
-} from "@mantine/core";
+import { Accordion, Box, Button, Stack, useMantineTheme } from "@mantine/core";
 import { IconGitBranchDeleted } from "@tabler/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { client } from "./ReactQuery";

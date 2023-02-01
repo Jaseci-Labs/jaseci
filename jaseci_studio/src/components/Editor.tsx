@@ -10,6 +10,7 @@ function Editor({ editor }: { editor: ReturnType<typeof useStudioEditor> }) {
         height="100%"
         beforeMount={handleEditorBeforeMount}
         theme="vs-dark"
+        value={editorValue}
         onChange={handleEditorChange}
         defaultLanguage="jac"
         defaultPath="inmemory://jac.json"
