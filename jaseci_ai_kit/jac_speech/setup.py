@@ -6,7 +6,7 @@ import platform
 import os
 
 
-MODULES = ["stt", "tts", "vc_tts"]
+MODULES = ["stt", "vc_tts"]
 INSTALLABLE_MODULES = []
 ORDEREDREQS = ["TTS==0.10.2"]
 
