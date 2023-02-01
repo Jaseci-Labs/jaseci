@@ -7,3 +7,7 @@ output/
 results/
 train/
 dist/
+config.cfg
+audio_file_*
+cloned_audio_file_*
+mypath/
