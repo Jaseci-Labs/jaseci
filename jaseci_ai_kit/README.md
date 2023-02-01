@@ -13,6 +13,10 @@ pip install jac_misc[translator] #Installs the translator module present in the 
 pip install jac_speech[stt, tts] #Installs the stt and tts modules present in the jac_speech package
 ```
 
+| :zap: For Contributors              |
+|:---------------------------|
+| Use the `install.sh` to install the modules you need. `bash install.sh all` will install all the modules. `bash install.sh stt use_enc` will install only the stt and use_enc modules. |
+
 # Jaseci NLP Package `(jac_nlp)`
 The `jac_nlp` package contains a collection of state-of-the-art NLP models that can be used to perform various nlp tasks such as named entity recongnition, text summerization, embedding generation, topic extraction etc. following is a list of all the models available in the `jac_nlp` package.
 

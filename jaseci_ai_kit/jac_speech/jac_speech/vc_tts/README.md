@@ -2,7 +2,7 @@
 
 | :warning: WARNING          |
 |:---------------------------|
-| This modules is requires strict dependancies. therefore if you plan to use this with other modules, makesure to install this module in the beggining. Otherwise other modules will break.|
+| This module requires strict dependencies. As a result, if you intend to use this with other modules, make sure to install it first. Otherwise, other modules will fail.|
 
 Before loading the module install `espeak-ng` using the command `sudo apt-get install -y espeak-ng`.
 
