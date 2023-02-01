@@ -1,5 +1,5 @@
 cd jac_speech
-pip install -e .[all]
+pip install .[all]
 cd ../jac_nlp
 pip install -e .[all]
 cd ../jac_misc
