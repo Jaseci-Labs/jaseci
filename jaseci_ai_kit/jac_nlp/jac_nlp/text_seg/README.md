@@ -14,7 +14,7 @@ Module `text_seg` implemented for the Topical Change Detection in Documents via 
     ```
 2.  Load `text_seg` module in jac by command
     ```
-    actions load module jaseci_ai_kit.text_seg
+    actions load module jac_nlp.text_seg
     ```
 
 

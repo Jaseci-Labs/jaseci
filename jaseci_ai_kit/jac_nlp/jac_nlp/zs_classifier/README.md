@@ -15,7 +15,7 @@ This tutorial shows you how to import and use `zs_classifier` with jac code.
 1. Open terminal and run jaseci by cmd
     > jsctl -m
 2. Load `zs_classifier` module in jac by cmd
-    > actions load module jaseci_ai_kit.zs_classifier
+    > actions load module jac_nlp.zs_classifier
 ### **2. ZeroShot Predictions** 
 * **Creating  a Jac Walker (`predict_zs`)**
     1. Create a file by name `zs_classifier.jac`

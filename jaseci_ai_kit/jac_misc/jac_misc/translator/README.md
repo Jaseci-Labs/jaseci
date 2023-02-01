@@ -14,7 +14,7 @@ Module `translator` uses the `mbart-large-50-many-to-many` to perform multilingu
     ```
 2.  Load translator module in jac
     ```bash
-    jsctl> actions load module jaseci_ai_kit.translator
+    jsctl> actions load module jac_misc.translator
     ```
 
 

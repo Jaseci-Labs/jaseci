@@ -77,23 +77,31 @@
 ## Jaseci AI Library Reference
 
 - [Jaseci AI Kit Overview](jaseci_ai_kit/README.md)
-  - [CL Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/cl_summer/README.md)
-  - [Bart Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/bart_sum/README.md)
-  - [T5 Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/t5_sum/README.md)
-  - [Bi-Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/bi_enc/README.md)
-  - [FLair NER](jaseci_ai_kit/jac_nlp/jac_nlp/ent_ext/README.md)
-  - [Fasttext Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/fast_enc/README.md)
-  - [Text Segmenter](jaseci_ai_kit/jac_nlp/jac_nlp/text_seg/README.md)
-  - [Text Clustering](jaseci_ai_kit/jac_misc/jac_misc/cluster/README.md)
-  - [Transformer NER](jaseci_ai_kit/jac_nlp/jac_nlp/tfm_ner/README.md)
-  - [USE Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/use_enc/README.md)
-  - [USE QA](jaseci_ai_kit/jac_nlp/jac_nlp/use_qa/README.md)
-  - [Personalized Head](jaseci_ai_kit/jac_misc/jac_misc/ph/README.md)
-  - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
-  - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/tts/README.md)
-  - [Translator](jaseci_ai_kit/jac_misc/jac_misc/translator/README.md)
-  - [ZS Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/zs_classifier/README.md)
-  - [Topic Extraction](jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext/README.md)
+  - [Jaseci NLP features](jaseci_ai_kit/jac_nlp/README.md)
+    - [CL Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/cl_summer/README.md)
+    - [Bart Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/bart_sum/README.md)
+    - [T5 Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/t5_sum/README.md)
+    - [Bi-Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/bi_enc/README.md)
+    - [FLair NER](jaseci_ai_kit/jac_nlp/jac_nlp/ent_ext/README.md)
+    - [Fasttext Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/fast_enc/README.md)
+    - [Text Segmenter](jaseci_ai_kit/jac_nlp/jac_nlp/text_seg/README.md)
+    - [Transformer NER](jaseci_ai_kit/jac_nlp/jac_nlp/tfm_ner/README.md)
+    - [USE Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/use_enc/README.md)
+    - [USE QA](jaseci_ai_kit/jac_nlp/jac_nlp/use_qa/README.md)
+    - [ZS Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/zs_classifier/README.md)
+    - [Topic Extraction](jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext/README.md)
+    - [BI Encoder for NER](jaseci_ai_kit/jac_nlp/jac_nlp/bi_ner/README.md)
+    - [SBERT Similarity](jaseci_ai_kit/jac_nlp/jac_nlp/sbert_sim/README.md)
+
+  - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
+
+    - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
+    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/tts/README.md)
+
+  - [Jaseci miscellaneous AI features](jaseci_ai_kit/jac_misc/README.md)
+    - [Clustering](jaseci_ai_kit/jac_misc/jac_misc/cluster/README.md)
+    - [Personalized Head](jaseci_ai_kit/jac_misc/jac_misc/ph/README.md)
+    - [Translator](jaseci_ai_kit/jac_misc/jac_misc/translator/README.md)
 
 - [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
 - [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/README.md)
@@ -106,13 +114,6 @@
   - [Basic Concepts](ui_components/docs/basic-concepts.md)
   - [Built-in Actions](ui_components/docs/built-in-actions.md)
   - [Connecting an API](ui_components/docs/connecting-an-api.md)
-
-## DevOps Guides
-- [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
-- [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
-- [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
-- [Locust Load Test for JASECI](support/locust/README.md)
-- [Setting up Monitoring for JASECI](support/monitoring/README.md)
 
 ## Jaseci X Features
 - [Stripe Integration](jaseci_serv/jaseci_serv/jsx_stripe/README.md)
@@ -148,3 +149,10 @@
   - [Products Built with Jaseci](https://jaseci.org/products/)
   - [Jaseci in the News](https://jaseci.org/blog/)
   - [Contact Us](https://jaseci.org/contact-us/)
+
+## Misc DevOps Guides
+- [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
+- [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
+- [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
+- [Locust Load Test for JASECI](support/locust/README.md)
+- [Setting up Monitoring for JASECI](support/monitoring/README.md)

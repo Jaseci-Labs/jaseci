@@ -8,7 +8,7 @@ Or, you might be making a reservation at a restaurant which requires information
 We refer to these as action-oriented conversational AI requests, as they often lead to a certain action or objective.
 
 When interacting with a real human agent to accomplish this type of action-oriented requests, the interaction can get messy and unscripted and it also varies from person to person.
-Again, use the restaurant reservation as an example, one migh prefer to follow the guidance of the agent and provide one piece of information at a time, while others might prefer to provide all the neccessary information in one sentence at the beginning of the interaction.
+Again, use the restaurant reservation as an example, one might prefer to follow the guidance of the agent and provide one piece of information at a time, while others might prefer to provide all the neccessary information in one sentence at the beginning of the interaction.
 
 Therefore, in order to build a robust and flexible conversational AI to mimic a real human agent to support these types of messy action-oriented requests, we are going to need an architecture that is different than the single-turn FAQ.
 
@@ -191,7 +191,7 @@ A Bi-encoder model has two transformer-based encoders that each encodes the inpu
 
 Now let's train the model.
 We have created a jac program and sample training data for this.
-They are in the `code` directory next to this tutorial.
+They are in the `code` directory ([link](https://github.com/Jaseci-Labs/jaseci/tree/main/examples/CanoniCAI/code)) next to this tutorial.
 Copy `bi_enc.jac` and `clf_train_1.json` to your working directory.
 
 Let's first load the Bi-encoder action library into Jaseci.

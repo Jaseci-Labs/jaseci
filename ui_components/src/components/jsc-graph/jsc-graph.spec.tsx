@@ -94,4 +94,42 @@ describe('jsc-graph', () => {
 
     expect(graph.nodes.length).toBe(2);
   });
+
+  test('hide nodes', async () => {
+    mockFetch.json(graph_node_view, 'https://api.backend.dev/js/graph_node_view');
+    const graph = new JscGraph();
+    const networkContainer = document.createElement('div');
+    graph.serverUrl = 'https://api.backend.dev';
+    graph.token = 'faketoken';
+    graph.graphId = 'urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549';
+    graph.nodes = new DataSet(formatNodes(graph_node_view) as any);
+    graph.edges = new DataSet(formatNodes(graph_node_view) as any);
+    graph.network = new vis.Network(networkContainer, { nodes: graph.nodes as any, edges: graph.edges as any });
+
+    graph.clickedNode = graph.nodes.get()[0];
+    graph.hideNodeGroup(graph.clickedNode.group);
+    expect(graph.nodes.get()[0].hidden).toBe(true);
+    expect(graph.nodes.get({ filter: node => node.hidden }).length).toBeLessThan(graph.nodes.get().length);
+
+    graph.network.destroy();
+  });
+
+  test('hide edges', async () => {
+    mockFetch.json(graph_collapse, 'https://api.backend.dev/js/graph_node_view');
+    const graph = new JscGraph();
+    const networkContainer = document.createElement('div');
+    graph.serverUrl = 'https://api.backend.dev';
+    graph.token = 'faketoken';
+    graph.graphId = 'urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549';
+    graph.nodes = new DataSet(formatNodes(graph_node_view) as any);
+    graph.edges = new DataSet(formatNodes(graph_node_view) as any);
+    graph.network = new vis.Network(networkContainer, { nodes: graph.nodes as any, edges: graph.edges as any });
+
+    graph.clickedEdge = graph.edges.get()[0];
+    graph.hideEdgeGroup(graph.clickedEdge.group);
+    expect(graph.edges.get()[0].hidden).toBe(true);
+    expect(graph.edges.get({ filter: edge => edge.hidden }).length).toBeLessThan(graph.edges.get().length);
+
+    graph.network.destroy();
+  });
 });

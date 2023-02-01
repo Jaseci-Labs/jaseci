@@ -263,7 +263,7 @@ The `jac_nlp` package contains the Universal Sentence Encoder QA model that we a
 To install `jac_nlp`:
 
 ```bash
-pip install jac_nlp[use_qa, bi_enc, tfm_ner] # This will install the models which we need for this example
+pip install jac_nlp[use_qa,bi_enc,tfm_ner] # This will install the models which we need for this example
 ```
 But if you want to install all the models in `jac_nlp`:
 
@@ -357,7 +357,6 @@ An example knowledge base file look like this
 
 Save the above json in a file named `tesla_faq.json` and make sure it is in the same location as `faq.jac`.
 Let's now update the `init` walker.
-Because we are going to use the `ingest_faq` walker to generate the graph, we won't need the static graph definition.
 
 ```jac
 walker init {
@@ -368,6 +367,9 @@ walker init {
     }
 }
 ```
+> *Note*
+>
+> Even though we are trying to initializing the graph using the init walker here, let's keep the original static graph definition (`graph faq`) and not delete it from the code, as it will be needed later on in this guide.
 
 What we are doing here is
 
@@ -404,4 +406,3 @@ On the right is the architecture diagram of the complete system we are going to 
 - Testing.
 - Deploying your Jac application to a production environment.
 - Training data collection and curation.
-

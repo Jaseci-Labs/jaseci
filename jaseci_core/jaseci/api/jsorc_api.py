@@ -187,10 +187,12 @@ class JsOrcApi:
     def jsorc_actions_config(self, config: str, name: str):
         """
         Loading the config of an action module
+        config: name of the ai kit package (e.g. jac_nlp.config, jac_vision.config)
+        name: name of the action module (e.g. use_enc, bi_enc)
         """
         hook = self._h
         if hook.meta.run_svcs:
-            res = hook.meta.app.load_action_config(name, config)
+            res = hook.meta.app.load_action_config(config, name)
             return {"success": res}
         else:
             return {"success": False, "message": "No running JSORC service."}

@@ -93,7 +93,7 @@ jsctl -m
 - Load the 'personalized_head' module using the command below.
 
 ```bash
-actions load module jaseci_ai_kit.ph
+actions load module jac_misc.ph
 ```
 
 - Run the JAC program using the command below.
@@ -259,7 +259,7 @@ jsctl -m
 - Load the 'personalized_head' module using the command below.
 
 ```bash
-actions load module jaseci_ai_kit.ph
+actions load module jac_misc.ph
 ```
 
 - Run the JAC program using the command below.
