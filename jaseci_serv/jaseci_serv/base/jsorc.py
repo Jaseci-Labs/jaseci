@@ -5,9 +5,11 @@ from .jsorc_loadtest import JsorcLoadTest
 
 class JsOrcApi(CoreJsOrcApi):
     @Interface.admin_api()
-    def jsorc_loadtest(self, test: str, experiment: str = "", mem: int = 0):
+    def jsorc_loadtest(
+        self, test: str, experiment: str = "", mem: int = 0, policy: str = "all_local"
+    ):
         """
         A jsorc loadtest
         """
         tester = JsorcLoadTest(test)
-        return tester.run_test(experiment, mem)
+        return tester.run_test(experiment, mem, policy)

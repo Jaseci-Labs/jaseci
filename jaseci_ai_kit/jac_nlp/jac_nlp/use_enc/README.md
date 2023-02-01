@@ -358,3 +358,22 @@ For this tutorial, we are going to `evaluation of text classification` with `use
                  macro avg       0.06      0.07      0.05        66
               weighted avg       0.03      0.03      0.02        66
     ```
+
+
+# Batch Encoding
+
+### What is batch encoding?
+Batch encoding is a technique of converting a `list` of categorical variables into numerical values so that it could be easily fitted to a machine learning model.
+
+In jaseci, how you implement it is by importing the USE model from the AI Kit and using the `encode` function, instead of passing a string you will pass an array to the `encode` function.
+
+```
+walker get_encoding {
+    can use.encode;
+    can list_of_text = ["I hate bananas", "guava is a decent fruit", "I love apples"];
+    
+    report use.encode(list_of_text);
+}
+```
+
+Based on the result that was spits out from the model each encoding is corresponding respective to how you list it in an array for e.g.  the encoding of "i hate bananas" is located in the first element of the data returned from the encoding result, "guava is a decent fruit" is located in the second element of the data returned from the encoding result, vice versa.
