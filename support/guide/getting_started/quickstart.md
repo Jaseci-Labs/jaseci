@@ -71,10 +71,10 @@ jaseci > help
 
 Documented commands (type help <topic>):
 ========================================
-actions    clear   global  logger  master  sentinel  walker
-alias      config  graph   login   object  stripe
-architype  edit    jac     ls      reset   tool
-
+actions    booktool  global  jsorc   logout  prometheus  sentinel  wapi
+alias      clear     graph   load    ls      publogin    service
+apply      config    info    logger  master  reset       user
+architype  edit      jac     login   object  script      walker
 Undocumented commands:
 ======================
 exit  help  quit
