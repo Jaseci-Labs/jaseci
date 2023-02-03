@@ -6,12 +6,24 @@ import traceback
 from fastapi import HTTPException
 import base64
 import io
-
+import os
+import requests
 from .model import RFTM, ToTensor
+
+RTFM_CLASSIFIER_WEIGHTS = "https://huggingface.co/spaces/jaseci/video-anomaly-detection/resolve/main/rftm_classifier.pth"
+RTFM_RESNET_101_WEIGHTS = "https://huggingface.co/spaces/jaseci/video-anomaly-detection/resolve/main/rftm_resnet101.pth"
 
 
 def setup(device: str = None):
     global detector, _device
+    os.makedirs("weights", exist_ok=True)
+    if not os.path.exists(os.path.join("weights", "rftm_classifier.pth")):
+        with open("weights/rftm_classifier.pth", "wb") as f:
+            f.write(requests.get(RTFM_CLASSIFIER_WEIGHTS).content)
+    if not os.path.exists(os.path.join("weights", "rftm_resnet101.pth")):
+        with open("weights/rftm_resnet101.pth", "wb") as f:
+            f.write(requests.get(RTFM_RESNET_101_WEIGHTS).content)
+
     _device = (
         torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if device is None
