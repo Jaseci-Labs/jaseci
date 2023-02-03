@@ -371,7 +371,7 @@ In jaseci, how you implement it is by importing the USE model from the AI Kit an
 walker get_encoding {
     can use.encode;
     can list_of_text = ["I hate bananas", "guava is a decent fruit", "I love apples"];
-    
+
     report use.encode(list_of_text);
 }
 ```
