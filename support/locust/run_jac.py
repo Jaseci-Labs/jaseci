@@ -71,7 +71,6 @@ class SeqTask(SequentialTaskSet):
 
     @task
     def create_graph(self):
-
         headers = {"authorization": f"Token {self.user_token}"}
         response = self.client.post(
             "/js/graph_create", headers=headers, json={"set_active": True}
@@ -95,7 +94,6 @@ class SeqTask(SequentialTaskSet):
 
     @task
     def delete_graph(self):
-
         headers = {"authorization": f"Token {self.user_token}"}
         response = self.client.post(
             "/js/graph_delete", headers=headers, json={"gph": self.graph_id}

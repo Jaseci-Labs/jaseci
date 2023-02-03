@@ -6,7 +6,6 @@ import time
 
 
 class PrometheusService(CommonService):
-
     ###################################################
     #                     BUILDER                     #
     ###################################################

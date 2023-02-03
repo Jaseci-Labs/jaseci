@@ -102,7 +102,6 @@ class AbstractJacAPIView(APIView):
 
     def proc_file_ctx(self, request, req_data):
         for key in request.FILES:
-
             req_data.pop(key)
             file_ref = (
                 req_data["ctx"]
@@ -112,7 +111,6 @@ class AbstractJacAPIView(APIView):
             file_ref[key] = []
 
             for file in request.FILES.getlist(key):
-
                 file_type = type(file.file)
                 if file_type is BytesIO:
                     file_base64 = b64encode(file.file.getvalue()).decode("utf-8")

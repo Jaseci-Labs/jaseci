@@ -62,7 +62,6 @@ def tokenize_and_preserve_labels(sentence, text_labels, tokenizer):
     labels = []
     sentence = sentence.strip()
     for word, label in zip(sentence.split(), text_labels.split(",")):
-
         # Tokenize the word and count # of subwords the word is broken into
         tokenized_word = tokenizer.tokenize(word)
         n_subwords = len(tokenized_word)

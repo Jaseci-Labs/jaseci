@@ -818,7 +818,6 @@ class Tacotron2(nn.Module):
         )
 
     def infer(self, inputs, input_lengths):
-
         embedded_inputs = self.embedding(inputs).transpose(1, 2)
         encoder_outputs = self.encoder.infer(embedded_inputs, input_lengths)
         mel_outputs, gate_outputs, alignments, mel_lengths = self.decoder.infer(

@@ -219,7 +219,6 @@ class MemoryHook:
     ###################################################
 
     def find_class_and_import(self, j_type, mod):
-
         cls = self.meta.get_context(j_type)
 
         if not cls:

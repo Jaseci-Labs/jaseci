@@ -18,6 +18,7 @@ config.read("config.cfg")
 # initializing the FastApi object
 app = FastAPI()
 
+
 # declaring the request body content for intent classification
 class ParseText(BaseModel):
     text: Optional[str] = None
@@ -34,6 +35,7 @@ class UpdateData(BaseModel):
 
 tars_model_name = config["TARS_MODEL"]["INTENT_MODEL"]
 tars = TARSClassifier.load(tars_model_name)
+
 
 # defining the api for intentclassification
 @app.post("/intentclassification")
