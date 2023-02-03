@@ -25,7 +25,6 @@ def topic_extraction(
     min_tokens: int = 1,
     max_tokens: int = 2,
 ):
-
     if min_tokens > max_tokens:
         raise ValueError(
             "The value of min_tokens shoul be less or equal than the value of max_tokens"

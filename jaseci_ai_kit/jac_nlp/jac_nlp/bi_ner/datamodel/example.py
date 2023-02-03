@@ -59,7 +59,6 @@ def collate_examples(
     pad_length: Optional[int] = None,
     return_batch_examples: bool = True,
 ) -> Dict[str, Union[BatchedExamples, Optional[LongTensor]]]:
-
     all_text_ids: List[int] = []
     all_example_starts: List[int] = []
     all_input_ids: List[LongTensor] = []
@@ -146,7 +145,6 @@ def strided_split(
     max_entity_length: int,
     cls_token_id: int,
 ) -> Iterable[Example]:
-
     assert 0 < stride <= max_sequence_length
 
     sequence_length = len(encoding.ids)

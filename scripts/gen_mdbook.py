@@ -15,7 +15,6 @@ toc_path = os.path.join(root, "README.md")
 
 
 def main():
-
     # ensure main TOC readme exists before continuing
     if not os.path.exists(toc_path):
         sys.exit()
@@ -47,7 +46,6 @@ def main():
 
 
 def build_summary_file():
-
     readme = ""
     if not os.path.exists(toc_path):
         sys.exit()
@@ -112,7 +110,6 @@ def build_summary_file():
 
 
 def process_line(line):
-
     beginheading = line.find("[")
     endheading = line.find("]")
 
@@ -130,7 +127,6 @@ def process_line(line):
 
 
 def import_assets(files):
-
     for file in files:
         common_path = os.path.commonprefix([output_path, file])
         relative_path = file.replace(common_path, "")
@@ -150,7 +146,7 @@ def get_images(path=None):
         f = []
         d = []
         x = 0
-        for (dirpath, dirnames, filenames) in walk(path):
+        for dirpath, dirnames, filenames in walk(path):
             while x < len(filenames):
                 filenames[x] = path + "/" + filenames[x]
                 x = x + 1
@@ -222,7 +218,6 @@ def clean_mdbook():
 
 
 def import_theme():
-
     if not os.path.exists(output_path + "/theme"):
         os.makedirs(output_path + "/theme")
 

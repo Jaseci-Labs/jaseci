@@ -250,7 +250,6 @@ class WaveGlow(torch.nn.Module):
         return torch.cat(output_audio, 1), log_s_list, log_det_W_list
 
     def infer(self, spect, sigma=1.0):
-
         spect = self.upsample(spect)
         # trim conv artifacts. maybe pad spec to kernel multiple
         time_cutoff = self.upsample.kernel_size[0] - self.upsample.stride[0]
@@ -289,7 +288,6 @@ class WaveGlow(torch.nn.Module):
         return audio
 
     def infer_onnx(self, spect, z, sigma=0.9):
-
         spect = self.upsample(spect)
         # trim conv artifacts. maybe pad spec to kernel multiple
         time_cutoff = self.upsample.kernel_size[0] - self.upsample.stride[0]

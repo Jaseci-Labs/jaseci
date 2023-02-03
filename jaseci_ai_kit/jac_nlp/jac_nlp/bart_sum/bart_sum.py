@@ -24,7 +24,6 @@ def summarize(
     min_length: int = 10,
     num_beams: int = 4,
 ) -> List[str]:
-
     try:
         if text is not None:
             if isinstance(text, str):

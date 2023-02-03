@@ -26,7 +26,6 @@ DEFAULT_CONFIG = {"enabled": False}
 
 
 class CommonService:
-
     _daemon = {}
 
     def __init__(self, hook=None):
@@ -380,7 +379,6 @@ class JsOrc:
             return e
 
     def check(self, namespace, svc_name, hook):
-
         svc = self.meta.get_service(svc_name, hook)
 
         if not svc.is_running():
@@ -455,7 +453,6 @@ class JsOrc:
         self.services[name] = svc
 
     def build_service(self, name, background, *args, **kwargs):
-
         svc = self.services.get(name)
 
         if not svc:

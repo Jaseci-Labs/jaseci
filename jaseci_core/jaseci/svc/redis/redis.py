@@ -11,7 +11,6 @@ from .manifest import REDIS_MANIFEST
 
 
 class RedisService(CommonService):
-
     ###################################################
     #                     BUILDER                     #
     ###################################################

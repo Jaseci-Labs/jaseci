@@ -77,7 +77,6 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertEqual(len(self.call_cast("graph list")), 4)
 
     def test_jsctl_carry_forward(self):
-
         ret = self.call(f"actions load local {self.infer_loc}")
         ret = self.call(
             f"sentinel register {os.path.dirname(__file__)}/ll.jac -name ll -set_active true"

@@ -24,7 +24,6 @@ def summarize(
     sent_count: int = 1,
     summarizer_type: str = "LsaSummarizer",
 ):
-
     LANGUAGE = "english"
 
     # checking which summarization models to use
