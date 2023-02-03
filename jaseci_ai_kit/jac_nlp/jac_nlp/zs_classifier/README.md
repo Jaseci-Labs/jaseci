@@ -16,7 +16,7 @@ This tutorial shows you how to import and use `zs_classifier` with jac code.
     > jsctl -m
 2. Load `zs_classifier` module in jac by cmd
     > actions load module jac_nlp.zs_classifier
-### **2. ZeroShot Predictions** 
+### **2. ZeroShot Predictions**
 * **Creating  a Jac Walker (`predict_zs`)**
     1. Create a file by name `zs_classifier.jac`
     2. Create `predict_zs` walker
@@ -31,7 +31,7 @@ This tutorial shows you how to import and use `zs_classifier` with jac code.
         **Parameter details**
         * `classify`: used to classify text among the classes provided
             * Input:
-                * `text` (str or List(str)): it can be string or list of string 
+                * `text` (str or List(str)): it can be string or list of string
                 * `classes` (List): list of classes that text needs to be classified
             * Returns: list of classes with the confidence score for each
 
@@ -58,7 +58,7 @@ This tutorial shows you how to import and use `zs_classifier` with jac code.
     ]
     ```
 
-### **3. ZeroShot Embeddings** 
+### **3. ZeroShot Embeddings**
 * **Creating  a Jac Walker (`get_embeddings`)**
     1. Create `get_embeddings` walker in the `zs_classifier.jac`
         ```jac
@@ -71,7 +71,7 @@ This tutorial shows you how to import and use `zs_classifier` with jac code.
         **Parameter details**
         * `get_embeddings`: can be used to get embeddings for text from zs model
             * Input:
-                * `text` (str or List(str)): it can be string or list of string 
+                * `text` (str or List(str)): it can be string or list of string
             * Returns: list of embdedding of length 768 size
 
 * **Steps for running `zs_classifier.jac` program**

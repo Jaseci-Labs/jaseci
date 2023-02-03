@@ -39,7 +39,7 @@ const config = {
           editUrl:
             'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
-        
+
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
@@ -79,7 +79,7 @@ const config = {
             position: 'right',
           },
         ],
-        
+
       },
       footer: {
         style: 'dark',
@@ -113,7 +113,7 @@ const config = {
           {
             title: 'More',
             items: [
-              
+
               {
                 label: 'GitHub',
                 href: 'https://github.com/Jaseci-Labs/jaseci',
@@ -126,9 +126,9 @@ const config = {
       prism: {
         theme: require('prism-react-renderer/themes/dracula'),
         darkTheme: darkCodeTheme,
-        
+
       },
-     
+
     }),
 };
 

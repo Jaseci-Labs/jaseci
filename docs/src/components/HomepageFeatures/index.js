@@ -41,7 +41,7 @@ const FeatureList = [
 ];
 
 function Feature({imgUrl,href, title, description}) {
- 
+
   const imageUrl = useBaseUrl(imgUrl);
   return (
       <div className={clsx('col col--4', styles.feature)}>
@@ -55,7 +55,7 @@ function Feature({imgUrl,href, title, description}) {
       </div>
   );
   }
-  
+
   export default function HomepageFeatures() {
     return (
       <section className={styles.features}>
@@ -69,7 +69,7 @@ function Feature({imgUrl,href, title, description}) {
       </section>
     );
   }
-  
+
 
   /*
   ,

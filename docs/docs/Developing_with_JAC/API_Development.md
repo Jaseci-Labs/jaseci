@@ -4,7 +4,7 @@ sidebar_position: 5
 
 # API Development
 
-# Overview 
+# Overview
 JAC programs can be transformed to have fully functional APIs. This is done with the help of the `jaseci-serv` package. You will be able to expose your JAseci Program to API calls in order to operate the same way when you use the command line to enter your responses.
 
 ### Installing Jaseci Server
@@ -17,13 +17,13 @@ pip install jaseci-serv
 
 #### Running your Dev Server
 
-The Dev Server can be easily started up with a single command but before we do we need to establish a database for out program. 
+The Dev Server can be easily started up with a single command but before we do we need to establish a database for out program.
 Run the following in the root directory of your main file. This will create a mydatabase.db file in your directory.
 
 ```
 jsserv makemigrations base
 ```
-Then run this next command to install the schema and Database for your JAC program. Run: 
+Then run this next command to install the schema and Database for your JAC program. Run:
 ```
 jsserv migrate
 ```
@@ -50,11 +50,11 @@ login http://localhost:8000
 
 ## JAC I/O for APIs
 
-### Outputting your payload 
+### Outputting your payload
 
 To return a response to Walkers when calls are made we need to use the report key word in the JAC program.
 Report will return all the information  below when calls are made .
-```jac 
+```jac
  report {"message": message, "utterance": utterance, "intent": chosen_intent, "scores": qa_scores, "node": nodeobj};
  ```
 
@@ -67,7 +67,7 @@ The `ctx` field has the name of the variable and the value to be sent to the wal
     "name" :"talker", # name of walker to be called
     "nd": "urn:uuid:f7153e9d-739d-4427-b93e-570f84ce560f", # node walker will be set to, if not included will go to the main node.
     "ctx" : {"utterance":"one pager website "}, # information sent to the walker
-    "snt" : "urn:uuid:8da9ffaa-0cec-4f01-a4a0-5084be2c1fee", #sentinel ID  of the program 
+    "snt" : "urn:uuid:8da9ffaa-0cec-4f01-a4a0-5084be2c1fee", #sentinel ID  of the program
     "detailed" : "false" # returns additional information for the walker
 }
 ```
@@ -75,14 +75,14 @@ Walker talker will ow have it's variable set to the value sent in the POST reque
 
 ```jac
 walker talker {
-    
+
     has utterance = "";
- 
+
 
     Node_state {
 
         if(!utterance) {
-            
+
             report {"message" :"No utterance set"}
             } else {
                 report {"message":"Utteracne has been set"}
@@ -91,13 +91,13 @@ walker talker {
 
 ### Sending Status code
 
-Status code can be returned using the same report function. 
+Status code can be returned using the same report function.
 
 ```jac
 report : status = statusCode
 
 ```
-### Logging Errors 
+### Logging Errors
 To log errors we use the standar JAseci action `std.err()`
 
 ```
@@ -134,7 +134,7 @@ Make a  request to  Dev Server to retrieve the user token. The user token grants
 
 
 
-### Using Postman 
+### Using Postman
 
 
 In Postman add  in to the header section  the word "token" followed by space then the actual  token retrieved.
@@ -144,7 +144,7 @@ You can now make POST request to the exposed APIs of your JAC program.
 
 ### Calling your Walkers
 
-You will make API calls to the walker  you specify. To make calls to your walker you will send your request to this endpoint : `http://localhost:8000/js/walker_run` . 
+You will make API calls to the walker  you specify. To make calls to your walker you will send your request to this endpoint : `http://localhost:8000/js/walker_run` .
 
 
 
@@ -154,7 +154,7 @@ Post request to the walker will be in this format :
     "name" :"talker", # name of walker to be called
     "nd": "urn:uuid:f7153e9d-739d-4427-b93e-570f84ce560f", # node walker will be set to, if not included will go to the root node.
     "ctx" : {"utterance":"one pager website "}, # information sent to the walker
-    "snt" : "urn:uuid:8da9ffaa-0cec-4f01-a4a0-5084be2c1fee", #sentinel ID  of the program 
+    "snt" : "urn:uuid:8da9ffaa-0cec-4f01-a4a0-5084be2c1fee", #sentinel ID  of the program
     "detailed" : "false" # returns additional information for the walker
 }
 ```

@@ -47,7 +47,7 @@ Workspace can be created and switched using below command
 terraform workspace new <environment-Name>
 ```
 
-or you can select when you want to run updates on any environmnet using 
+or you can select when you want to run updates on any environmnet using
 
 ```bash
 terraform workspace select <environment-Name>

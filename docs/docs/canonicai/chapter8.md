@@ -39,7 +39,7 @@ PUT is used to update data from a specified resource.
 request.put(url, data, headers);
 ```
 
-## DELETE 
+## DELETE
 
 DELETE is used to delete data from a specified resource.
 
@@ -56,7 +56,7 @@ walker get_todo {
     has uid;
     has title;
     has completed = false;
-    
+
     has url = "https://jsonplaceholder.typicode.com/todos/1";
     has headers = {};
 
@@ -67,10 +67,10 @@ walker post_todo {
     has uid;
     has title;
     has completed = false;
-    
+
     has url = "https://jsonplaceholder.typicode.com/todos/";
     has headers = {};
-    
+
     report request.post(url, {"userId": uid, "title": title, "completed": completed}, headers);
 }
 
@@ -78,7 +78,7 @@ walker put_todo {
     has uid;
     has title;
     has completed = false;
-    
+
     has url = "https://jsonplaceholder.typicode.com/todos/1";
     has headers = {};
 
@@ -90,7 +90,7 @@ walker delete_todo {
     has uid;
     has title;
     has completed = false;
-    
+
     has url = "https://jsonplaceholder.typicode.com/todos/1";
     has headers = {};
 
@@ -103,9 +103,9 @@ Let's test the application we build, create a file name **api.jac** and copy ove
 First let's run get_todo walker:
 * jac run api.jac -walk get_todo
 
-Let's see the result: 
+Let's see the result:
 ```
-jaseci > jac run api.jac -walk get_todo  
+jaseci > jac run api.jac -walk get_todo
 {
   "success": true,
   "report": [
@@ -147,10 +147,10 @@ jaseci > jac run api.jac -walk post_todo
 ```
 
 put_todo walker:
-* jac run api.jac -walk put_todo -ctx "{\"id\": 201, \"title\":\"hi\"}" 
+* jac run api.jac -walk put_todo -ctx "{\"id\": 201, \"title\":\"hi\"}"
 
 ```
-jaseci > jac run api.jac -walk put_todo -ctx "{\"id\": 201, \"title\":\"hi\"}" 
+jaseci > jac run api.jac -walk put_todo -ctx "{\"id\": 201, \"title\":\"hi\"}"
 {
   "success": true,
   "report": [

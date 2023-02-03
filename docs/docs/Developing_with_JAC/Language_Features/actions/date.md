@@ -1,5 +1,5 @@
 # Date Actions
-Jaseci has it's own set of built-in Date Functions 
+Jaseci has it's own set of built-in Date Functions
 
 ### Quantize to Year
 ```jac
@@ -18,7 +18,7 @@ z = date.quantize_to_month(x);
 std.out(z);
 
 ```
-### Quantive to Week 
+### Quantive to Week
 ```jac
 #take a standard python datetime string and extract the month out of it accordingly
 x = '2021-12-12';
@@ -33,7 +33,7 @@ x = '2021-12-12';
 z = date.quantize_to_day(x);
 std.out(z);
 ```
-### Date Difference 
+### Date Difference
 ```jac
 #t akes two datetime string and returns an integer that is the number of days in between the two given dates.
 
