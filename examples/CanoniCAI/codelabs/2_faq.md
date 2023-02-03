@@ -263,12 +263,12 @@ The `jac_nlp` package contains the Universal Sentence Encoder QA model that we a
 To install `jac_nlp`:
 
 ```bash
-pip install jac_nlp[use_qa, bi_enc, tfm_ner] # This will install the models which we need for this example
+pip install "jac_nlp[use_qa,bi_enc,tfm_ner]" # This will install the models which we need for this example, make sure to include the quotations
 ```
 But if you want to install all the models in `jac_nlp`:
 
 ```bash
-pip install jac_nlp[all] # This will install all the models in jac_nlp
+pip install "jac_nlp[all]" # This will install all the models in jac_nlp, again making sure to include the quotations
 ```
 
 > **Note**
@@ -406,4 +406,3 @@ On the right is the architecture diagram of the complete system we are going to 
 - Testing.
 - Deploying your Jac application to a production environment.
 - Training data collection and curation.
-

@@ -260,9 +260,37 @@ After registering, you can then run walker run, just like before in a local jsct
 ```bash
 @jaseci > walker run talk -ctx "{\"question\": \"I want to schedule a test drive\"}"
 ```
-> **Important**
+
+If this is the first time you are running your jac program on this jsserv instance, this query will not succeed. That is because we need to load the two AI models (bi_enc and tfm_ner) we trained onto the server.
+To help you with this, we have provided another jac file `ai_model.jac`.
+Find this file in the repo at [this location](https://github.com/Jaseci-Labs/jaseci/blob/main/examples/CanoniCAI/code/ai_model.jac) and put it in your working directory.
+Then at the top of your `tesla_ai.jac` import everything with `import {*} with "./ai_model.jac";`.
+Note you have modified your jac code since the last time you register with the server sentinel, so in order for the new walkers to be usable, you will need to re-build the jir and register again.
+```bash
+@jaseci > jac build main.jac
+@jaseci > sentinel set -snt active:sentinel -mode ir main.jir
+```
+
+> **Note**
 >
-> If this is the first time you are running your jac program on this jsserv instance, you will also need to repeat the actions load commands to load the actions. And for any AI models, use their respective `load_model` action to load the trained models.
+> Notice the `active:sentinel` syntax. This is an alias. There are many aliases built in with Jaseci that makes it easier to run certain commands. In this case, `active:sentinel` is the alias for the currently active sentinel and is equivalent to typing out the full UUID. If you are curious about what other aliases there are, run `alias list` in jsctl.
+
+To load the previously trained bi-enc model, run
+```bash
+@jaseci > walker run load_model -ctx "{\"model_type\": \"bi_enc\", \"model_path\": \"YOUR_MODEL_PATH\"}"
+```
+Similarly, to load the tfm-ner model,
+```bash
+@jaseci > walker run load_model -ctx "{\"model_type\": \"tfm_ner\", \"model_path\": \"YOUR_MODEL_PATH\"}"
+```
+> **Note**
+>
+> Pay attention to the model path. We recommend using absolute path for the model path (e.g. `/home/user/saved_model`). For relative path, the path needs to be relative to the place where the `jsserv runserver` is running in.
+
+Once both models have been loaded, try the talk walker request again
+```bash
+@jaseci > walker run talk -ctx "{\"question\": \"I want to schedule a test drive\"}"
+```
 
 And viola! Now you are running your jac program in a jaseci server with jsserv.
 The Jaseci server supports a wide range of API endpoints.
