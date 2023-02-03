@@ -8,7 +8,6 @@ from .config import ELASTIC_CONFIG
 
 
 class ElasticService(Es):
-
     ####################################################
     #                    OVERRIDDEN                    #
     ####################################################

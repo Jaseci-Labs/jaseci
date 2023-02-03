@@ -14,7 +14,6 @@ from .config import MAIL_CONFIG
 
 
 class MailService(CommonService):
-
     ###################################################
     #                     BUILDER                     #
     ###################################################

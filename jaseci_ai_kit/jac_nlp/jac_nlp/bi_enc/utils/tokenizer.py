@@ -77,7 +77,6 @@ class SelectionDataset(Dataset):
         return ret
 
     def batchify_join_str(self, batch):
-
         (
             contexts_token_ids_list_batch,
             contexts_input_masks_list_batch,

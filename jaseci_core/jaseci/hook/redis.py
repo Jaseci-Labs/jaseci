@@ -17,7 +17,6 @@ from .memory import MemoryHook
 
 class RedisHook(MemoryHook):
     def __init__(self):
-
         # proxy redis, to be overriden by build_apps
         self.redis = ProxyService()
         self.red_touch_count = 0
@@ -130,7 +129,6 @@ class RedisHook(MemoryHook):
     ###################################################
 
     def clear_cache(self):
-
         if self.redis.is_running():
             self.redis.app.flushdb()
 

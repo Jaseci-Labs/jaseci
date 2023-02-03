@@ -358,12 +358,14 @@ def script(filename, profile, output):
             with open(output, "a") as f:
                 f.write(f"Output for {i}:\n")
                 f.write(res.stdout)
-    perf = perf_test_stop(prof)
-    click.echo(perf)
+    if profile:
+        perf = perf_test_stop(prof)
+        click.echo(perf)
     if output:
         with open(output, "a") as f:
             f.write(f"\nProfile:\n")
-            f.write(perf)
+            if profile:
+                f.write(perf)
         click.echo(f"[saved to {output}]")
 
 

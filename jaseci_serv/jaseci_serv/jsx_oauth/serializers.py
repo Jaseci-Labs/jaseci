@@ -88,7 +88,6 @@ class JXSSocialLoginSerializer(SocialLoginSerializer):
             raise serializers.ValidationError(_("Incorrect value"))
 
         if not login.is_existing:
-
             if allauth_settings.UNIQUE_EMAIL:
                 # check we have an account already with this email address?
                 account_exists = (
