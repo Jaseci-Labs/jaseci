@@ -2,7 +2,6 @@ from jaseci.utils.test_core import CoreTest, jac_testcase
 
 
 class UrlTest(CoreTest):
-
     fixture_src = __file__
 
     @jac_testcase("url.jac", "is_valid_test")

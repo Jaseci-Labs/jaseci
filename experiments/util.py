@@ -2,6 +2,7 @@ import requests
 import subprocess
 import config
 
+
 # Authenticate
 def authenticate():
     payload = {"email": config.user_email, "password": config.user_pw}

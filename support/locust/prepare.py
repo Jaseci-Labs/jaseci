@@ -6,6 +6,7 @@ import os
 TEST_PATH = os.environ.get("LOCUST_TEST_SRC", "")
 HOST = os.environ.get("LOCUST_HOST", "http://localhost:8888")
 
+
 # Log in as user 0, return the token
 def login(userID: int):
     userName = utils.gen_username(userID)

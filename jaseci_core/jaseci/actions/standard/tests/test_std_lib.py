@@ -2,7 +2,6 @@ from jaseci.utils.test_core import CoreTest
 
 
 class StdLibTest(CoreTest):
-
     fixture_src = __file__
 
     def test_clear_report(self):
