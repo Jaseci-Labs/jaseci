@@ -363,8 +363,8 @@ def script(filename, profile, output):
         click.echo(perf)
     if output:
         with open(output, "a") as f:
-            f.write(f"\nProfile:\n")
             if profile:
+                f.write(f"\nProfile:\n")
                 f.write(perf)
         click.echo(f"[saved to {output}]")
 
