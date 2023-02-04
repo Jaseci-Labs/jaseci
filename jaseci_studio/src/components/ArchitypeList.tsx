@@ -23,7 +23,8 @@ import {
 } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { SetStateAction } from "jotai";
-import { Dispatch, useEffect, useState } from "react";
+import { Dispatch, useState } from "react";
+import useArchitypeList from "../hooks/useArtchitypeList";
 import { Architype } from "../hooks/useRegisterArchetype";
 import { client } from "./ReactQuery";
 
@@ -36,16 +37,9 @@ function ArchitypeList({
     "all"
   );
 
-  const { data: architypes, isLoading: architypesLoading } = useQuery(
-    ["architypes", filter],
-    () =>
-      client
-        .post<Architype[]>("/js/architype_list", {
-          kind: filter === "all" ? undefined : filter,
-          detailed: true,
-        })
-        .then((res) => res.data)
-  );
+  const { data: architypes, isLoading: architypesLoading } = useArchitypeList({
+    filter,
+  });
 
   const queryClient = useQueryClient();
 
@@ -93,7 +87,7 @@ function ArchitypeList({
         {/* {JSON.stringify(architypes)} */}
         <Box sx={{ overflow: "scroll", height: "500px", position: "relative" }}>
           <LoadingOverlay visible={architypesLoading}></LoadingOverlay>
-          <Stack p="xs">
+          <Stack p="xs" data-testid="architype-cards">
             {architypes?.map((architype) => (
               <ArchitypeCard
                 setEditorValue={setEditorValue}
