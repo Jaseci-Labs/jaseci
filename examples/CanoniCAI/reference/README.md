@@ -17,14 +17,14 @@ actions load module jac_nlp.use_qa
 Get the `tfm_ner.jac` and `ner_train.json` files from the `./code` directory and train `tfm_ner` with the training data.
 
 ```
-jac tfm_ner.jac -walk train -ctx "{\"train_file\": \"ner_train.json\"}"
+jac run tfm_ner.jac -walk train -ctx "{\"train_file\": \"ner_train.json\"}"
 ```
 **Step 3: Train encoder**
 
 Get the `bi_enc.jac` and `clf_train.json` files from the `./code` directory and train `bi_enc` with the training data.
 
 ```
-jac run bi_enc.jac -walk train -ctx "{\"train_file\": \"clf_train.json\"}"
+jac run bi_enc.jac -walk train -ctx "{\"train_file\": \"clf_train_2.json\"}"
 ```
 
 **Step 4: Build the tesla conversational ai system**
