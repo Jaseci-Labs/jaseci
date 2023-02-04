@@ -15,7 +15,7 @@ graph tesla_ai {
         dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;
         dialogue_root +[intent_transition(intent="i have a question")]+> faq_root;
 
-        test_drive_state +[entity_transition(entities=["name", "address", "date"])]+> td_confirmation;
+        test_drive_state +[entity_transition(entities=["name", "address"])]+> td_confirmation;
         test_drive_state +[intent_transition(intent="provide name or address")]+> test_drive_state;
         test_drive_state +[intent_transition(intent="cancel")]+> td_canceled;
 

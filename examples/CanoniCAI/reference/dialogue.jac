@@ -130,10 +130,8 @@ node test_drive_state:dialogue_state {
             visitor.response = "What is your address?";
         elif ("address" in visitor.wlk_ctx["entities"] and "name" not in visitor.wlk_ctx["entities"]):
             visitor.response = "What is your name?";
-        elif ("address" in visitor.wlk_ctx["entities"] and "name" in visitor.wlk_ctx["entities"] and "date" not in visitor.wlk_ctx["entities"]):
-            visitor.response = "What is your prefered date?";
         else:
-            visitor.response = "To set you up with a test drive, we will need your name and address and a date.";
+            visitor.response = "To set you up with a test drive, we will need your name and address.";
     }
 }
 
@@ -151,7 +149,7 @@ node td_confirmation:dialogue_state {
     }
     can nlg {
         visitor.response =
-            "Can you confirm your name to be " + visitor.wlk_ctx["entities"]["name"][0] + " and your address as " + visitor.wlk_ctx["entities"]["address"][0] + " and prefered date as " +visitor.wlk_ctx["entities"]["date"][0] +"?";
+            "Can you confirm your name to be " + visitor.wlk_ctx["entities"]["name"][0] + " and your address as " + visitor.wlk_ctx["entities"]["address"][0] +"?";
     }
 }
 
