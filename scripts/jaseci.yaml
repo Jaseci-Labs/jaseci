@@ -48,7 +48,9 @@ metadata:
   namespace: default
 data:
   prod_up: |-
-    cd /;
+    cd /jaseci/jaseci_core; source install_live.sh;
+    cd /jaseci/jaseci_serv; source install_live.sh;
+    # while true; do sleep 10000; done
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -71,7 +73,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jaseci-ai:latest
+          image: jaseci/jaseci:latest
           resources:
             requests:
               memory: "350Mi"
@@ -101,11 +103,17 @@ spec:
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: host-mount
+              mountPath: /jaseci/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: host-mount
+          hostPath:
+            path: /run/desktop/mnt/host/wsl/jaseci
+            type: Directory
 ---
 kind: Service
 apiVersion: v1

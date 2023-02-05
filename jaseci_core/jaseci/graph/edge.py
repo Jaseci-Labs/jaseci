@@ -97,6 +97,8 @@ class Edge(Element, Anchored):
         return True
 
     def is_fast(self):
+        # TODO: CHANGE THIS FOR FAST EDGE EXPERIMENT
+        # return False
         return sys.getsizeof(self.context) < 2000
 
     def save(self):
