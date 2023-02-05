@@ -15,6 +15,7 @@ MODULES = [
     "zs_classifier",
     "bi_enc",
     "topic_ext",
+    "gpt2",
 ]
 
 
