@@ -34,6 +34,7 @@ setup(
         "gprof2dot",
         "metadata_parser",
         "validators",
+        "GitPython",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
