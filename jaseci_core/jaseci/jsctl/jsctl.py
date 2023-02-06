@@ -9,14 +9,15 @@ import pickle
 
 import click
 import requests
-from click_shell import shell
 from click.testing import CliRunner
+from click_shell import shell
 from jaseci import __version__
 from jaseci.element.super_master import SuperMaster
 from jaseci.svc import MetaService
-from jaseci.utils.utils import copy_func
+from jaseci.utils.utils import copy_func, perf_test_start, perf_test_stop
+
 from .book_tools import Book, modifiedBook
-from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
+from .jac_talk_utils import chat_setup, run_jactalk_shell, train_model
 
 session = None
 
@@ -358,14 +359,12 @@ def script(filename, profile, output):
             with open(output, "a") as f:
                 f.write(f"Output for {i}:\n")
                 f.write(res.stdout)
-    if profile:
-        perf = perf_test_stop(prof)
-        click.echo(perf)
+    perf = perf_test_stop(prof)
+    click.echo(perf)
     if output:
         with open(output, "a") as f:
-            if profile:
-                f.write(f"\nProfile:\n")
-                f.write(perf)
+            f.write("\nProfile:\n")
+            f.write(perf)
         click.echo(f"[saved to {output}]")
 
 
@@ -400,6 +399,20 @@ def booktool(op, output):
         click.echo(f"[saved to {output}]")
 
 
+@click.command(help="JacChatbot for NLP")
+@click.argument("cmd", type=str, default="init", required=True)
+def jactalk(cmd):
+    if cmd == "init":
+        click.echo("Initializing JacTalk....")
+        chat_setup()
+    elif cmd == "train":
+        click.echo("Training....")
+        train_model()
+    elif cmd == "shell":
+        click.echo("Starting Tesla Faq chatbot ...")
+        run_jactalk_shell()
+
+
 jsctl.add_command(login)
 jsctl.add_command(publogin)
 jsctl.add_command(logout)
@@ -409,6 +422,7 @@ jsctl.add_command(clear)
 jsctl.add_command(reset)
 jsctl.add_command(script)
 jsctl.add_command(booktool)
+jsctl.add_command(jactalk)
 cmd_tree_builder(extract_api_tree())
 cmd_tree_builder(extract_api_tree()["jac"], group_func=jac)
 
