@@ -10,16 +10,16 @@ META_CONFIG = {
     "kubernetes": KUBERNETES_CONFIG,
 }
 
-USER = os.environ.get("POSTGRES_USER", "postgres")
+USER = os.environ.get("POSTGRES_USER")
 
 DATABASE = {
     "enabled": os.environ.get("JSORC_DB_REGEN") == "true",
     "pod": os.environ.get("JSORC_POD_NAME", "jaseci"),
     "host": os.environ.get("POSTGRES_HOST", "jaseci-db"),
-    "db": os.environ.get("POSTGRES_DB", "postgres"),
+    "db": os.environ.get("DBNAME", "postgres"),
     "name": USER,
     "user": USER,
-    "password": os.environ.get("POSTGRES_PASSWORD", "lifelogifyjaseci"),
+    "password": os.environ.get("POSTGRES_PASSWORD"),
     "port": os.getenv("POSTGRES_PORT", 5432),
 }
 

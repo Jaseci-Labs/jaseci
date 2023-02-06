@@ -151,7 +151,7 @@ spec:
             - name: POSTGRES_HOST
               value: jaseci-db
 
-            - name: POSTGRES_DB
+            - name: DBNAME
               value: postgres
 
             - name: JSORC_POD_NAME

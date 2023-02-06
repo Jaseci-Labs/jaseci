@@ -9,7 +9,7 @@ from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import load_action_config
 from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
 from .state import ServiceState as Ss
-from .config import META_CONFIG, KUBERNETES_CONFIG, DATABASE as db, POSTGRES_MANIFEST
+from .config import META_CONFIG, KUBERNETES_CONFIG, DATABASE, POSTGRES_MANIFEST
 
 import time
 import numpy as np
@@ -293,13 +293,13 @@ class JsOrc:
 
     def db_check(self):
         try:
-            if db["enabled"]:
+            if DATABASE["enabled"]:
                 connection = psycopg2.connect(
-                    host=db["host"],
-                    dbname=db["db"],
-                    user=db["user"],
-                    password=db["password"],
-                    port=db["port"],
+                    host=DATABASE["host"],
+                    dbname=DATABASE["db"],
+                    user=DATABASE["user"],
+                    password=DATABASE["password"],
+                    port=DATABASE["port"],
                 )
                 connection.close()
             self.has_db = True
@@ -317,7 +317,7 @@ class JsOrc:
         self.db_check()
         if self.has_db:
             for item in self.kubernetes.core.list_namespaced_pod(
-                namespace=self.namespace, label_selector=f"pod={db['pod']}"
+                namespace=self.namespace, label_selector=f"pod={DATABASE['pod']}"
             ).items:
                 self.kubernetes.core.delete_namespaced_pod(item["name"], self.namespace)
 
