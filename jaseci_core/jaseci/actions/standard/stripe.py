@@ -31,12 +31,13 @@ def create_product_price(
         product=productId,
         unit_amount=amount,
         currency=currency,
-        **recurring if recurring else {} ** kwargs,
+        **recurring if recurring else {},
+        **kwargs,
     )
 
 
 @jaseci_action()
-def product_list(detailed: bool, **kwargs):
+def product_list(detailed: bool = False, **kwargs):
     """retrieve all producs"""
 
     return stripe().Product.list(**{"active": True} if detailed else {}, **kwargs)
@@ -76,7 +77,7 @@ def attach_payment_method(payment_method_id: str, customer_id: str, **kwargs):
         update_default_payment_method(customer_id, payment_method_id)
         is_default = False
 
-    paymentMethod.is_default = is_default
+    paymentMethod["is_default"] = is_default
 
     return paymentMethod
 
@@ -185,13 +186,13 @@ def create_payment_method(card_type: str, card: dict, billing_details: dict, **k
 def create_trial_subscription(
     customer_id: str,
     items: list,
-    payment_method_id: str,
+    payment_method_id: str = "",
     trial_period_days: int = 14,
     **kwargs,
 ):
     """create customer trial subscription"""
 
-    if payment_method_id:
+    if payment_method_id != "":
         # attach payment method to customer
         attach_payment_method(payment_method_id, customer_id)
 
@@ -210,12 +211,12 @@ def create_trial_subscription(
 def create_subscription(
     customer_id: str,
     items: list,
-    payment_method_id: str,
+    payment_method_id: str = "",
     **kwargs,
 ):
     """create customer subscription"""
 
-    if payment_method_id:
+    if payment_method_id != "":
         # attach payment method to customer
         attach_payment_method(payment_method_id, customer_id)
 
