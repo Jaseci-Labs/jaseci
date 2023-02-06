@@ -66,3 +66,9 @@ def get_embeddings(text: Union[List[str], str]) -> List:
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    from jaseci.actions.remote_actions import launch_server
+
+    launch_server(port=8000)
