@@ -83,7 +83,6 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
     def put(self, request, *args, **kwargs):
-
         user = request.user
         current_user = {
             "id": user.id,

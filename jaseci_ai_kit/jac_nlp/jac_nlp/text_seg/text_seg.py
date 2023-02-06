@@ -44,7 +44,6 @@ def segmentation(text, threshold=0.85):
             else:
                 sub_segments.append(sentences[sent_ind])
         else:
-
             if not sub_segments:
                 sub_segments.append(sentences[index])
             segments.append(" ".join(sub_segments))

@@ -12,7 +12,6 @@ from .config import TASK_CONFIG
 
 
 class TaskService(CommonService):
-
     ###################################################
     #                   INITIALIZER                   #
     ###################################################

@@ -1,7 +1,7 @@
 ---
 title: Control Flow
 ---
-## Select Statement 
+## Select Statement
 ```jac
 # simple If statement
 walker init {

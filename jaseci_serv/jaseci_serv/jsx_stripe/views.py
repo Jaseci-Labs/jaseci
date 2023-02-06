@@ -10,7 +10,6 @@ from jaseci_serv.base.models import JaseciObject
 
 
 class StripeView(APIView):
-
     http_method_names = ["post"]
     permission_classes = (IsAuthenticated, IsAdminUser)
 

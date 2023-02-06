@@ -12,7 +12,6 @@ from copy import copy
 
 
 class ElasticService(CommonService):
-
     ###################################################
     #                     BUILDER                     #
     ###################################################

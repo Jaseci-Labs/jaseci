@@ -47,7 +47,7 @@ For this tutorial, we are going to `train and Predict` the `bi-ner` for `Named E
 
     3. Declaring Predict walker for extracting entities
         ```
-        #  
+        #
         walker predict{
             # passing input data for prediction
             has test_data_file = "test_dataset.json";
@@ -68,8 +68,8 @@ For this tutorial, we are going to `train and Predict` the `bi-ner` for `Named E
         * `infer`: will be used to predits the most suitable candidate for a provided context, takes text or embedding
             * Input:
                 * `contexts` (string or list of strings): context which needs to be classified
-            * Return: a dictionary of entities type and value with start and end index 
-    
+            * Return: a dictionary of entities type and value with start and end index
+
     **Steps for running `bi_ner.jac` programm**
 
     4. Build `bi_ner.jac` by run cmd
@@ -87,7 +87,7 @@ For this tutorial, we are going to `train and Predict` the `bi-ner` for `Named E
     ```
    {
         "text": [
-            "IL-2 gene expression and NF-kappa B activation through CD28 requires reactive oxygen production by 5-lipoxygenase.", 
+            "IL-2 gene expression and NF-kappa B activation through CD28 requires reactive oxygen production by 5-lipoxygenase.",
             "Activation of the CD28 surface receptor provides a major costimulatory signal for T cell activation resulting in enhanced production of interleukin-2 (IL-2) and cell proliferation."
         ],
         "annotations": [
