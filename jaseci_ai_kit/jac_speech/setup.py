@@ -1,9 +1,10 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 from os.path import join
-import sys
-import platform
 import os
+from os import system
+from sys import executable as PYTHON_PATH
+from pkg_resources import require
 
 
 MODULES = ["stt", "vc_tts"]
@@ -11,10 +12,6 @@ ORDEREDREQS = ["TTS==0.10.2"]
 
 
 def requires(packages):
-    from os import system
-    from sys import executable as PYTHON_PATH
-    from pkg_resources import require
-
     require("pip")
     CMD_TMPLT = '"' + PYTHON_PATH + '" -m pip install %s'
     for pkg in packages:
