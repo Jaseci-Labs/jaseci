@@ -63,6 +63,7 @@ class ActionsApi:
 
         :param url: The url of the API server supporting Jaseci actions.
         """
+
         success = lact.load_remote_actions(url)
         if success:
             cur_config = self.config_get("ACTION_SETS")
@@ -76,7 +77,12 @@ class ActionsApi:
                     "ACTION_SETS",
                     json.dumps({"local": [], "remote": [url], "module": []}),
                 )
-        return {"success": success}
+        resp = {"success": success}
+
+        if self._h.task.is_running():
+            resp["task_loader"] = self._h.task.load_action(url, remote=True)
+
+        return resp
 
     @Interface.admin_api(cli_args=["mod"])
     def actions_load_module(self, mod: str):
@@ -105,7 +111,13 @@ class ActionsApi:
                     "ACTION_SETS",
                     json.dumps({"local": [], "remote": [], "module": [mod]}),
                 )
-        return {"success": success}
+
+        resp = {"success": success}
+
+        if self._h.task.is_running():
+            resp["task_loader"] = self._h.task.load_action(mod)
+
+        return resp
 
     # @interface.admin_api()
     # def actions_get(self, name: str, value: str):

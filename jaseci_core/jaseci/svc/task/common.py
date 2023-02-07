@@ -9,6 +9,22 @@ from requests import get, post
 from requests.exceptions import HTTPError
 
 
+class LoadRemoteAction(Task):
+    def run(self, url: str):
+        from jaseci.svc import MetaService
+
+        master = MetaService().build_super_master(persist=False)
+        return master.actions_load_remote(url)
+
+
+class LoadLocalAction(Task):
+    def run(self, mod: str):
+        from jaseci.svc import MetaService
+
+        master = MetaService().build_super_master(persist=False)
+        return master.actions_load_module(mod)
+
+
 class Queue(Task):
     def run(self, wlk, nd, args):
         from jaseci.svc import MetaService

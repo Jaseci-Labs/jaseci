@@ -3,8 +3,15 @@ from celery.app.control import Inspect
 from celery.backends.base import DisabledBackend
 
 from jaseci.svc import CommonService
-from .common import Queue, ScheduledWalker, ScheduledSequence
+from .common import (
+    LoadLocalAction,
+    LoadRemoteAction,
+    Queue,
+    ScheduledWalker,
+    ScheduledSequence,
+)
 from .config import TASK_CONFIG
+from multiprocessing import current_process
 
 #################################################
 #                   TASK APP                   #
@@ -18,6 +25,8 @@ class TaskService(CommonService):
 
     def __init__(self, hook=None):
         self.inspect: Inspect = None
+        self.load_local_action: LoadLocalAction = None
+        self.load_remote_action: LoadRemoteAction = None
         self.queue: Queue = None
         self.scheduled_walker: ScheduledWalker = None
         self.scheduled_sequence: ScheduledSequence = None
@@ -34,6 +43,8 @@ class TaskService(CommonService):
 
         # -------------------- TASKS -------------------- #
 
+        self.load_local_action = self.app.register_task(LoadLocalAction())
+        self.load_remote_action = self.app.register_task(LoadRemoteAction())
         self.queue = self.app.register_task(Queue())
         self.scheduled_walker = self.app.register_task(ScheduledWalker())
         self.scheduled_sequence = self.app.register_task(ScheduledSequence())
@@ -88,6 +99,16 @@ class TaskService(CommonService):
 
     def add_queue(self, wlk, nd, *args):
         return self.queue.delay(wlk.jid, nd.jid, args).task_id
+
+    def load_action(self, val: str, remote: bool = False):
+        if current_process().name == "MainProcess":
+            return (
+                self.load_remote_action.delay(val)
+                if remote
+                else self.load_local_action.delay(val)
+            ).task_id
+        else:
+            return "IGNORED"
 
     ###################################################
     #                     CLEANER                     #
