@@ -14,7 +14,7 @@ you can use [Chocolatey](https://chocolatey.org/install) to install velero.
 choco install velero
 ```
 
-1. Create S3 bucket 
+1. Create S3 bucket
 
 Velero requires an object storage bucket to store backups in, preferably unique to a single Kubernetes cluster. Create an S3 bucket, replacing placeholders appropriately:
 ```bash
@@ -115,7 +115,7 @@ velero install \
     --snapshot-location-config region=$REGION
 ```
 
-4. To check 
+4. To check
    ```bash
    kubectl get all -n velero
    ```
@@ -150,9 +150,9 @@ velero backup create --from-schedule <NAME> --include-namespaces default
 ```
 velero backup describe <NAME>
 ```
-# Restore 
+# Restore
 ```
-velero restore create --from-backup <NAME> 
+velero restore create --from-backup <NAME>
 
 velero restore get
 ```

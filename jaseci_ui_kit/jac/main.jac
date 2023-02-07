@@ -8,7 +8,7 @@ walker get_props {
             if here.context[prop]: props[prop] = here.context[prop];
         }
     }
-       
+
 }
 
 walker pre_renderer {
