@@ -13,6 +13,10 @@ pip install jac_misc[translator] #Installs the translator module present in the 
 pip install jac_speech[stt, tts] #Installs the stt and tts modules present in the jac_speech package
 ```
 
+| :zap: For Contributors              |
+|:---------------------------|
+| Use the `install.sh` to install the modules you need. `bash install.sh all` will install all the modules. `bash install.sh stt use_enc` will install only the stt and use_enc modules. |
+
 # Jaseci NLP Package `(jac_nlp)`
 The `jac_nlp` package contains a collection of state-of-the-art NLP models that can be used to perform various nlp tasks such as named entity recongnition, text summerization, embedding generation, topic extraction etc. following is a list of all the models available in the `jac_nlp` package.
 
@@ -31,6 +35,8 @@ The `jac_nlp` package contains a collection of state-of-the-art NLP models that 
 | `bart_sum`  | Summarization      |Summarizer | [Link](#bart-summarization-bart_sum) | No Training req. | Ready  | Abstractive Summarization using the Bart Large Model | [Huggingface](https://huggingface.co/transformers/model_doc/bart.html), [Paper](https://arxiv.org/abs/1910.13461) |
 | `text_seg`   | Text Processing      |Text Segmenter   | [Link](#text-segmenter-text_seg)     | No Training req. | Experimetal | Topical Change Detection in Documents             | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec)                                                                                                                        |
 | `topic_ext` | Text Analysis      |Topic Extraction | [Link](#topic-extraction-topic_ext) | No Training req. | Experimetal | Indentifying most relevent topics for given set of documents |           |
+| `gpt2` | Text Generation      |GPT-2 | [Link](#text-generation-gpt2) | No Training req. | Experimetal |  Predicting the next sentence in a sequence of text | [Huggingface](https://huggingface.co/transformers/model_doc/gpt2.html)           |
+
 
 
 
@@ -1002,6 +1008,42 @@ walker text_seg_example {
     std.out(resp_data);
 }
 ```
+
+### Text Generation (`gpt2`)
+Module `gp2` uses the OpenAI's `GPT-2-medium` to perform text genreation on a given text.
+
+The `gpt2.generate` action allows you to generate text based on the input text you provide.
+
+Inputs:
+- text: input text, either a string or a list of strings
+- max_length: maximum length of the generated text (default: 30)
+- min_length: minimum length of the generated text (default: 10)
+- num_return_sequences: number of sequences to return (default: 3)
+
+Output: a list of generated text sequences
+
+The `gtp2.get_embeddings` action allows you to get the embeddings for the input text.
+
+Inputs:
+- text: input text, either a string or a list of strings
+
+Output: a list of embeddings for the input text
+
+#### Example Jac Usage:
+Given a text or a list of texts, it will return the generated text.
+
+walker test_generate {
+    can gpt2.generate;
+    report gpt2.generate(text= "Hello, my name is", num_return_sequences= 5);
+}
+
+Given a text or a list of texts, it will return the embeddings of the text.
+
+walker test_get_embeddings {
+    can gpt2.get_embeddings;
+    report gpt2.get_embeddings(text= ["Hello, my name is GPT2", "GPT2 is an Text-to-Text Generation Model" ]);
+}
+
 
 ### Text Translation (`translator`)
 Module `translator` uses the `mbart-large-50-many-to-many` to perform multilingual translation. It can translate from 50 languages to 50 languages.
