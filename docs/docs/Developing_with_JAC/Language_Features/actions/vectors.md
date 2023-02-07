@@ -1,6 +1,6 @@
 #  Vector Actions
 
-### Cosine Similarity 
+### Cosine Similarity
 
 
 ```jac

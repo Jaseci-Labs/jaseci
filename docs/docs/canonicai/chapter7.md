@@ -36,11 +36,11 @@ assert(value_1, value_2);
 In test in jac we mainly use the key ``assert`` which checks two values and see whether it's true or false, if it's false the test will fail and if true the test will pass. In this case we us it to match against the response of the current query from the flow file to the response that comes back when data is being reported.
 
 
-In the next section which is very important, we will be modifying the `talk` walker so it can allow us to test multiple flows in one test without sharing contexts to other new conversations. 
+In the next section which is very important, we will be modifying the `talk` walker so it can allow us to test multiple flows in one test without sharing contexts to other new conversations.
 
 More specifically why we need to modify the `talk` walker because, it houses `yield` (will be explained in the next section) which in this case it retains the context of the walker and we are building a dynamic test file that houses many conversation flow.
 
-We added a key to the walker called `retain_context`, when set to `false` it will walk through the graph and automatically unset the yield. 
+We added a key to the walker called `retain_context`, when set to `false` it will walk through the graph and automatically unset the yield.
 ```
 walker talk {
     has question, interactive = false; has retain_context = true;
@@ -84,22 +84,22 @@ walker talk {
     }
 }
 ```
-So let's get to the test file. This test will 
+So let's get to the test file. This test will
 ```
 test "testing va flows"
 with graph::tesla_sales_rep by walker::empty {
     flows = file.load_json("[LOCATION OF TEST FILE].json");
-    
+
     for flow in flows {
 
         for s, step in flow["flow"] {
            spawn here walker::talk(question = step["query"], retain_context=true);
                 res = std.get_report();
-                
+
                 std.log("HERE >>> ", step["query"] , " ==== ", res[-1]);
-                
+
                 assert(res[-1] == step['response']);
-                
+
                 if((s+1) == flow['flow'].length){
                     spawn here walker::talk(retain_context=false);
                 }

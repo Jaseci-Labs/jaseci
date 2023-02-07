@@ -1,10 +1,10 @@
 ---
 title : Control Flow
 ---
-## Control FLow 
+## Control FLow
 The If statement
 
-```jac 
+```jac
 # Simple IF statement
 if(condition){
     #execute if condition is true
@@ -21,10 +21,10 @@ if(condition){
 }
 ```
 *elif*
-```jac 
+```jac
 if(condition){
      #execute code if condition is true
-} 
+}
 elif(condition 2){
      #execute code if condition 2 is true
 }

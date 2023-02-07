@@ -9,7 +9,7 @@ A node is a representation of an entity.
 * Nodes accumulate context via a push function, context can be read ass well
 * Nodes can execute a set of actions upon entry and exit.
 
-```jac 
+```jac
 node [name of node]{
     # to declare a variable
     has variable;
