@@ -4,6 +4,8 @@ import useRegisterArchetype from "../hooks/useRegisterArchetype";
 import { useStudioEditor } from "../hooks/useStudioEditor";
 import { getActiveSentinel } from "../hooks/useGetActiveSentinel";
 import ArchitypeList from "../components/ArchitypeList";
+import useArchitypeList from "../hooks/useArtchitypeList";
+import { useState } from "react";
 
 function ArchetypePage() {
   const editor = useStudioEditor();
@@ -13,6 +15,13 @@ function ArchetypePage() {
     editor.hideErrors
   );
   const { editorValue, setEditorValue } = editor;
+
+  const [filter, setFilter] = useState<"all" | "node" | "walker" | "edge">(
+    "all"
+  );
+  const { data: architypes, isLoading: architypesLoading } = useArchitypeList({
+    filter,
+  });
 
   // const openViewer = () => {
   //   if (typeof window !== "undefined") {
@@ -52,7 +61,12 @@ function ArchetypePage() {
 
           <Grid sx={{ height: "600px" }}>
             <Grid.Col span={5}>
-              <ArchitypeList setEditorValue={setEditorValue}></ArchitypeList>
+              <ArchitypeList
+                architypes={architypes}
+                loading={architypesLoading}
+                setFilter={setFilter}
+                setEditorValue={setEditorValue}
+              ></ArchitypeList>
             </Grid.Col>
 
             <Grid.Col span={7}>

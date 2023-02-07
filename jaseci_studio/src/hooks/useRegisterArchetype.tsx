@@ -73,7 +73,7 @@ function useRegisterArchetype(
 }
 
 // get line and column numbers from errors
-function parseErrors(errors: string[]) {
+export function parseErrors(errors: string[]) {
   const ranges: { line: number; column: number; message: string }[] = [];
 
   errors.map((error) => {

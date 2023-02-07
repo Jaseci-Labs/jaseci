@@ -18,29 +18,25 @@ import { IconCode, IconTrash } from "@tabler/icons";
 import {
   UseMutateFunction,
   useMutation,
-  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { SetStateAction } from "jotai";
 import { Dispatch, useState } from "react";
-import useArchitypeList from "../hooks/useArtchitypeList";
 import { Architype } from "../hooks/useRegisterArchetype";
 import { client } from "./ReactQuery";
 
 function ArchitypeList({
   setEditorValue,
+  architypes,
+  loading,
+  setFilter,
 }: {
   setEditorValue: Dispatch<SetStateAction<string>>;
+  setFilter: Dispatch<SetStateAction<string>>;
+  architypes: Architype[];
+  loading: boolean;
 }) {
-  const [filter, setFilter] = useState<"all" | "node" | "walker" | "edge">(
-    "all"
-  );
-
-  const { data: architypes, isLoading: architypesLoading } = useArchitypeList({
-    filter,
-  });
-
   const queryClient = useQueryClient();
 
   // remove architype
@@ -86,7 +82,7 @@ function ArchitypeList({
         <Divider mb="md"></Divider>
         {/* {JSON.stringify(architypes)} */}
         <Box sx={{ overflow: "scroll", height: "500px", position: "relative" }}>
-          <LoadingOverlay visible={architypesLoading}></LoadingOverlay>
+          <LoadingOverlay visible={loading}></LoadingOverlay>
           <Stack p="xs" data-testid="architype-cards">
             {architypes?.map((architype) => (
               <ArchitypeCard
@@ -103,7 +99,7 @@ function ArchitypeList({
   );
 }
 
-function ArchitypeCard({
+export function ArchitypeCard({
   architype,
   removeArchitype,
   setEditorValue,

@@ -1,17 +1,12 @@
-import { render } from "@testing-library/react";
+import { render, renderHook, RenderHookOptions } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const createTestQueryClient = () =>
+export const createTestQueryClient = () =>
   new QueryClient({
     defaultOptions: {
       queries: {
         retry: false,
       },
-    },
-    logger: {
-      log: console.log,
-      warn: console.warn,
-      error: () => {},
     },
   });
 
@@ -30,4 +25,10 @@ export function renderWithClient(ui: React.ReactElement) {
         </QueryClientProvider>
       ),
   };
+}
+
+export function renderHookWithClient(hook: () => unknown) {
+  const testQueryClient = createTestQueryClient();
+
+  return renderHook(hook, { wrapper });
 }
