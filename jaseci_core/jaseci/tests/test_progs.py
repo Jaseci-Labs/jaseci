@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 from jaseci.svc import ServiceState
 
@@ -528,3 +529,55 @@ class JacTests(TestCaseHelper, TestCase):
             api_name="walker_run", params={"name": "init"}
         )
         self.assertEqual(len(res["report"]), 9)
+
+    def test_module_on_async(self):
+        with open("jaseci/tests/fixtures/non_existing_action.py", "w") as file:
+            file.write(
+                "from jaseci.actions.live_actions import jaseci_action\n@jaseci_action(act_group=['sim1'])\ndef tester():\n\treturn 1"
+            )
+
+        mast = self.meta.build_super_master()
+        mast._h.task.state = ServiceState.RUNNING
+        mast.sentinel_register(name="test", code=jtp.async_module, auto_run="")
+
+        # sequence is relevant
+        mast.actions_load_local("jaseci/tests/fixtures/non_existing_action.py")
+        mast.actions_load_local("jaseci/tests/fixtures/existing_action.py")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "a", "ctx": {}},
+        )
+
+        self.assertTrue(res["success"])
+
+        # will return [1,2] since all local actions are loaded on MainProcess
+        self.assertEqual([1, 2], res["report"])
+
+        os.remove("jaseci/tests/fixtures/non_existing_action.py")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "b", "ctx": {}},
+        )
+
+        self.assertTrue(res["is_queued"])
+
+        res = mast.general_interface_to_api(
+            api_name="walker_queue_wait",
+            params={"task_id": res["result"], "timeout": 15},
+        )
+
+        self.assertEqual("SUCCESS", res["status"])
+
+        # since sim1 file is already removed
+        # upon running of task with sim1 it will try to rebuild
+        # but file is already been deleted
+        # without the fix it will throw error and will not continue on other action_sets
+        # return would be [None, None] if not yet fixed
+        self.assertEqual([None, 2], res["result"]["response"]["report"])
+
+        self.assertIn(
+            "Cannot execute sim1.tester - Not Found",
+            res["result"]["response"]["errors"][0],
+        )
