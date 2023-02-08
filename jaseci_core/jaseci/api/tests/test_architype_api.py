@@ -23,8 +23,6 @@ class ArchitypeApiTest(CoreTest):
             ],
         )
 
-        self.log(ret)
-
         self.assertEqual(ret["success"], True)
         self.assertEqual(ret["architype"]["name"], "test_architype")
 
@@ -61,8 +59,6 @@ class ArchitypeApiTest(CoreTest):
             self.smast,
             ["architype_get", {"arch": ret["architype"]["jid"], "mode": "code"}],
         )
-
-        self.log(architype_get_ret)
 
         self.assertEqual(architype_get_ret["architype"]["name"], "test_architype")
         self.assertEqual(
