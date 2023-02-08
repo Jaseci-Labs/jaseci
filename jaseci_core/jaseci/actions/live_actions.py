@@ -89,6 +89,7 @@ def load_local_actions(file: str):
             spec.loader.exec_module(mod)
             return True
     except Exception:
+        logger.error(f"Cannot hot load local actions from {file}.")
         return False
 
 
@@ -112,7 +113,7 @@ def load_module_actions(mod, loaded_module=None):
         if mod:
             return True
     except Exception:
-        pass
+        logger.error(f"Cannot hot load module actions from {mod}.")
 
     return False
 
