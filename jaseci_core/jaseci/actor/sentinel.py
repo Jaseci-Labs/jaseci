@@ -95,7 +95,9 @@ class Sentinel(Element, JacCode, SentinelInterp):
 
     def register_architype(self, code, opt_level=4):
         """Adds an architype based on jac code"""
-        tree = self.compile_jac(code, start_rule="architype", opt_level=opt_level)
+        tree = self.compile_jac(
+            code, dir="./", start_rule="architype", opt_level=opt_level
+        )
         if not tree:
             return None
         return self.load_architype(tree)

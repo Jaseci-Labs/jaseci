@@ -5,9 +5,18 @@ import Script from "next/script";
 import { theme } from "../../theme";
 import ReactQuery from "../components/ReactQuery";
 import { NavbarMinimal } from "../components/Navbar";
+import { NotificationsProvider } from "@mantine/notifications";
+import { useEffect, useState } from "react";
 
 export default function App(props: AppProps) {
   const { Component, pageProps } = props;
+  const [showSidebar, setShowSidebar] = useState(false);
+
+  useEffect(() => {
+    if (window?.__TAURI_METADATA__?.__currentWindow?.label === "main") {
+      setShowSidebar(true);
+    }
+  }, []);
 
   return (
     <>
@@ -27,8 +36,12 @@ export default function App(props: AppProps) {
       <ReactQuery>
         <MantineProvider withGlobalStyles withNormalizeCSS theme={theme}>
           <div data-theme="greenheart">
-            <AppShell navbar={<NavbarMinimal></NavbarMinimal>}>
-              <Component {...pageProps} />
+            <AppShell
+              navbar={showSidebar ? <NavbarMinimal></NavbarMinimal> : <></>}
+            >
+              <NotificationsProvider>
+                <Component {...pageProps} />
+              </NotificationsProvider>
             </AppShell>
           </div>
         </MantineProvider>
