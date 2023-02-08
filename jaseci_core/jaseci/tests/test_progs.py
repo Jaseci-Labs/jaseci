@@ -1,4 +1,5 @@
 import os
+import pytest
 from unittest import TestCase
 from jaseci.svc import ServiceState
 
@@ -530,14 +531,17 @@ class JacTests(TestCaseHelper, TestCase):
         )
         self.assertEqual(len(res["report"]), 9)
 
+    @pytest.mark.order(1)
     def test_module_on_async(self):
+        mast = self.meta.build_super_master()
+        if not mast._h.task.is_running():
+            self.skip_test("Celery not running")
+
         with open("jaseci/tests/fixtures/non_existing_action.py", "w") as file:
             file.write(
                 "from jaseci.actions.live_actions import jaseci_action\n@jaseci_action(act_group=['sim1'])\ndef tester():\n\treturn 1"
             )
 
-        mast = self.meta.build_super_master()
-        mast._h.task.state = ServiceState.RUNNING
         mast.sentinel_register(name="test", code=jtp.async_module, auto_run="")
 
         # sequence is relevant
