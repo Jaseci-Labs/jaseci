@@ -26,7 +26,7 @@
 
 ---
 
-![login view](./images//login.png)
+![login view](/docs/static/img/studio-features/login.png)
 
 ---
 
@@ -34,7 +34,7 @@
 
 ---
 
-![summary view](./images//summary_view.png)
+![summary view](/docs/static/img/studio-features/summary_view.png)
 
 ---
 
@@ -42,7 +42,7 @@
 
 ---
 
-![graph viewer](./images//graph_viewer.png)
+![graph viewer](/docs/static/img/studio-features/graph_viewer.png)
 
 ---
 
@@ -50,4 +50,4 @@
 
 ---
 
-![logs viewer](./images//logs_viewer.png)
+![logs viewer](/docs/static/img/studio-features/logs_viewer.png)
