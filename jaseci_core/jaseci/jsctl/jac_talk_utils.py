@@ -66,8 +66,11 @@ def update_file(infile):
 
 def chat_setup():
     try:
+        # base bot directory
+        bot_dir = curr_path / "sample_bot"
         # Create temporary dir
         base_path = tempfile.mkdtemp()
+        
         # Clone into temporary dir
         git.Repo.clone_from(
             "https://github.com/Jaseci-Labs/jaseci.git",
@@ -75,54 +78,12 @@ def chat_setup():
             branch="main",
             depth=1,
         )
-        # Copy desired file from temporary dir
-        # shutil.move(os.path.join(base_path, 'test.sh'), '.')
+        # copy bot template dir from temp to base bot dir
+        shutil.copytree(
+            os.path.join(base_path, "examples/jactlak_template/"),
+            bot_dir,
+        )
         # Remove temporary dir
-        base_dir = curr_path / "sample_bot"
-        data_dir = base_dir / "data_dir"
-
-        isExist = os.path.exists(data_dir)
-        if not isExist:
-            os.makedirs(data_dir)
-        shutil.copy2(
-            os.path.join(base_path, "examples/CanoniCAI/code/clf_train_2.json"),
-            data_dir / "bi_train.json",
-        )
-        shutil.copy2(
-            os.path.join(base_path, "examples/CanoniCAI/code/ner_train.json"),
-            data_dir / "ner_train.json",
-        )
-
-        model_dir = base_dir / "model_dir"
-        isExist = os.path.exists(model_dir)
-        if not isExist:
-            os.makedirs(model_dir)
-        shutil.copy2(
-            os.path.join(base_path, "examples/CanoniCAI/code/tfm_ner.jac"),
-            model_dir / "tfm_ner.jac",
-        )
-        shutil.copy2(
-            os.path.join(base_path, "examples/CanoniCAI/code/bi_enc.jac"),
-            model_dir / "bi_enc.jac",
-        )
-        updated_jac = update_file(
-            os.path.join(base_path, "examples/CanoniCAI/reference/tesla_ai.jac")
-        )
-        # update jac code import
-        with open((base_dir / "jac_talk.jac"), "w") as fp:
-            fp.write(updated_jac)
-        shutil.copy2(
-            os.path.join(base_path, "examples/CanoniCAI/reference/faq.jac"),
-            base_dir / "faq.jac",
-        )
-        shutil.copy2(
-            os.path.join(base_path, "examples/CanoniCAI/reference/graph.jac"),
-            base_dir / "graph.jac",
-        )
-        shutil.copy2(
-            os.path.join(base_path, "examples/CanoniCAI/reference/dialogue.jac"),
-            base_dir / "dialogue.jac",
-        )
         shutil.rmtree(base_path)
     except Exception as e:
         shutil.rmtree(base_path)
@@ -139,16 +100,16 @@ def load_model(model_name):
 def train_model():
     try:
         if load_model("tfm_ner"):
-            train_file = curr_path / "sample_bot/data_dir/ner_train.json"
-            jac_file = curr_path / "sample_bot/model_dir/tfm_ner.jac"
+            train_file = curr_path / "sample_bot/ner/train_ner.json"
+            jac_file = curr_path / "sample_bot/ner/ner.jac"
             run_fl = JacExecutable()
             run_fl.train(jac_file, train_file)
         else:
             logger.error("unable to load NER model")
             return
         if load_model("bi_enc"):
-            train_file = curr_path / "sample_bot/data_dir/bi_train.json"
-            jac_file = curr_path / "sample_bot/model_dir/bi_enc.jac"
+            train_file = curr_path / "sample_bot/encoder/train_enc.json"
+            jac_file = curr_path / "sample_bot/encoder/enc.jac"
             run_fl = JacExecutable()
             run_fl.train(jac_file, train_file)
         else:
