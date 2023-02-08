@@ -70,7 +70,7 @@ def chat_setup():
         bot_dir = curr_path / "sample_bot"
         # Create temporary dir
         base_path = tempfile.mkdtemp()
-        
+
         # Clone into temporary dir
         git.Repo.clone_from(
             "https://github.com/Jaseci-Labs/jaseci.git",
