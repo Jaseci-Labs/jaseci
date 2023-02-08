@@ -316,10 +316,15 @@ class JsOrc:
 
         self.db_check()
         if self.has_db:
-            for item in self.kubernetes.core.list_namespaced_pod(
-                namespace=self.namespace, label_selector=f"pod={DATABASE['pod']}"
-            ).items:
-                self.kubernetes.core.delete_namespaced_pod(item["name"], self.namespace)
+            try:
+                for item in self.kubernetes.core.list_namespaced_pod(
+                    namespace=self.namespace, label_selector=f"pod={DATABASE['pod']}"
+                ).items:
+                    self.kubernetes.core.delete_namespaced_pod(
+                        item["name"], self.namespace
+                    )
+            except Exception:
+                raise Exception("Force termination to restart the pod!")
 
     ###################################################
     #                     BUILDER                     #

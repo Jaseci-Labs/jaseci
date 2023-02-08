@@ -88,7 +88,7 @@ class MetaService(CommonService, MetaProperties):
     def build_hook(self):
         h = self.build_context("hook")
         h.meta = self
-        if self.run_svcs:
+        if self.run_svcs and self.app.has_db:
             h.promon = self.get_service("promon", h)
             h.redis = self.get_service("redis", h)
             h.task = self.get_service("task", h)
