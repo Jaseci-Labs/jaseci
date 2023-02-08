@@ -26,9 +26,3 @@ export function renderWithClient(ui: React.ReactElement) {
       ),
   };
 }
-
-export function renderHookWithClient(hook: () => unknown) {
-  const testQueryClient = createTestQueryClient();
-
-  return renderHook(hook, { wrapper });
-}
