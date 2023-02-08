@@ -10,6 +10,16 @@ client.interceptors.request.use(
     const token = localStorage.getItem("token");
     const serverUrl = localStorage.getItem("serverUrl");
 
+    if (process.env.NODE_ENV === "test") {
+      return {
+        ...request,
+        baseURL: "http://localhost:8500",
+        headers: {
+          Authorization: `token ${token}`,
+        },
+      };
+    }
+
     if (serverUrl && token) {
       return {
         ...request,

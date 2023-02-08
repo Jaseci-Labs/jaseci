@@ -7,6 +7,7 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import {
+  IconCode,
   IconGauge,
   IconHome2,
   IconPrompt,
@@ -89,6 +90,11 @@ const linksConfig = [
     icon: IconServerBolt,
     label: "Manage Actions",
     href: "/actions",
+  },
+  {
+    icon: IconCode,
+    label: "Architypes",
+    href: "/architype",
   },
 ];
 
