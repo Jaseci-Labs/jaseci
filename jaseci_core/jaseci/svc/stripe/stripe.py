@@ -8,7 +8,6 @@ from .config import STRIPE_CONFIG
 
 
 class StripeService(CommonService):
-
     ###################################################
     #                     BUILDER                     #
     ###################################################
