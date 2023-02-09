@@ -1,0 +1,50 @@
+{
+    "happy":[
+        "hahaha",
+        "hahahahhaha",
+        "haha",
+        "lol",
+        "lol",
+        "great",
+        "nice",
+        "awesome",
+        "that was funny"
+    ],
+    "affirm": [
+        "yes let's do it",
+		"yes",
+        "that's for sure",
+        "for sure",
+        "yes that is correct",
+        "let's give it a try",
+        "yeah correct",
+		"correct",
+		"indeed"
+    ],
+    "deny": [
+        "i don't think so",
+        "no",
+        "nope",
+        "nah",
+        "no way",
+        "no not correct",
+        "that's wrong"
+    ],
+	"greet":[
+		"hey",
+		"hello",
+		"hi",
+		"good morning",
+		"good evening",
+		"hey there"
+	],
+     "faq": [
+        "hey can I just ask you some generic questions",
+        "can I ask you a questions?",
+        "yo quick question",
+        "a few things I am hope you can quickly answer for me",
+        "you know about any FAQ?",
+        "FAQ time, i have questions"
+    ]
+
+}
