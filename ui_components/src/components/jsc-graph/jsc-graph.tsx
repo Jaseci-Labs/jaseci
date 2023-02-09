@@ -2,6 +2,7 @@ import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
 import * as visData from 'vis-data';
 import { formatEdges, formatNodes } from './utils';
+import { JscGraphContextMenu } from './graph-context-menu';
 
 type EndpointBody = {
   gph?: string | null;
@@ -73,6 +74,7 @@ export class JscGraph {
   formatEdges = formatEdges;
 
   networkEl!: HTMLDivElement;
+  contextMenuEl!: JscGraphContextMenu;
 
   async getActiveGraph(): Promise<Graph> {
     return await fetch(`${this.serverUrl}/js/graph_active_get`, {
@@ -362,9 +364,9 @@ export class JscGraph {
     this.network.setData({ edges: this.edges as any, nodes: this.nodes as any });
   }
 
-  hideNodeGroup() {
+  hideNodeGroup(group: string) {
     if (this.clickedNode) {
-      this.hiddenNodeGroups.add(this.clickedNode.group);
+      this.hiddenNodeGroups.add(group);
 
       // force update ui
       this.clickedNode = null;
@@ -374,9 +376,9 @@ export class JscGraph {
     }
   }
 
-  hideEdgeGroup() {
+  hideEdgeGroup(group: string) {
     if (this.clickedEdge) {
-      this.hiddenEdgeGroups.add(this.clickedEdge.group);
+      this.hiddenEdgeGroups.add(group);
 
       // force update ui
       this.clickedEdge = null;
@@ -481,7 +483,32 @@ export class JscGraph {
       this.selectedNodes = this.network.getSelectedNodes();
     });
 
+    this.network.on('oncontext', params => {
+      console.log({ params });
+      params.event.preventDefault();
+      this.contextMenuEl.hide();
+
+      const node = this.network.getNodeAt({
+        x: params?.pointer.DOM.x,
+        y: params?.pointer.DOM.y,
+      });
+
+      const edge = this.network.getEdgeAt({
+        x: params?.pointer.DOM.x,
+        y: params?.pointer.DOM.y,
+      });
+
+      if (node || edge) {
+        node && this.network.selectNodes([node]);
+        edge && this.network.selectEdges([edge]);
+        this.contextMenuEl.setClickedItem({ clickedNode: !!node ? this.nodes.get([node])[0] : null, clickedEdge: edge ? this.edges.get([edge])[0] : null });
+        this.contextMenuEl.show();
+        this.contextMenuEl.setPos(params.pointer.DOM.x, params.pointer.DOM.y);
+      }
+    });
+
     this.network.on('click', params => {
+      this.contextMenuEl.hide();
       // reset ui if we click on the background
       if (!params.nodes?.length && !params.edges?.length) {
         this.network.unselectAll();
@@ -491,10 +518,6 @@ export class JscGraph {
       }
 
       this.handleNetworkClick(this.network, params);
-    });
-
-    this.network.on('zoom', data => {
-      console.log(data);
     });
 
     this.network.on('doubleClick', async params => {
@@ -524,24 +547,6 @@ export class JscGraph {
       } else {
         this.expandedNodes.push(this.nd);
         this.getGraphState();
-      }
-    });
-
-    this.network.on('oncontext', params => {
-      params.event.preventDefault();
-      const node = this.network.getNodeAt({
-        x: params.pointer.DOM.x,
-        y: params.pointer.DOM.y,
-      });
-
-      if (node) {
-        // this.nd = node.toString();
-        // select and focus on node
-        this.network.selectNodes([node]);
-        this.network.focus(node, {
-          scale: 1.0,
-          animation: { duration: 1000, easingFunction: 'easeInOutQuad' },
-        });
       }
     });
   }
@@ -652,13 +657,6 @@ export class JscGraph {
                     overflowX: 'hidden',
                   }}
                 >
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
-                    <div>
-                      {this.clickedEdge && <jsc-button size="xs" palette="info" label={`Hide '${this.clickedEdge.group}' Edges`} onClick={() => this.hideEdgeGroup()}></jsc-button>}
-                    </div>
-                  </div>
-
                   <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
                   {!this.hiddenNodeGroups?.size && <div>No hidden nodes</div>}
 
@@ -710,6 +708,37 @@ export class JscGraph {
                   <jsc-button size="sm" label={'Expand Recursively'} onClick={() => this.expandNodesRecursively(this.selectedNodes[0]?.toString())}></jsc-button>
                 )}
               </div>
+
+              {/* context menu */}
+              <jsc-graph-context-menu
+                onExpandNode={async e => {
+                  this.network.selectNodes([e.detail.id]);
+                  this.expandSelectedNodes();
+                  this.contextMenuEl.hide();
+                }}
+                onExpandNodeRecursively={async e => {
+                  this.network.selectNodes([e.detail.id]);
+                  this.expandNodesRecursively(e.detail.id);
+                  this.contextMenuEl.hide();
+                }}
+                onHideNodeGroup={async e => {
+                  this.hideNodeGroup(e.detail.group);
+                  this.contextMenuEl.hide();
+                }}
+                onHideEdgeGroup={async e => {
+                  this.hideEdgeGroup(e.detail.group);
+                  this.contextMenuEl.hide();
+                }}
+                onEnableZoom={() => {
+                  this.network.setOptions({ interaction: { zoomView: true } });
+                }}
+                onDisableZoom={() => {
+                  this.network.setOptions({ interaction: { zoomView: false } });
+                }}
+                ref={el => (this.contextMenuEl = el as any)}
+              ></jsc-graph-context-menu>
+
+              {/* end context menu */}
 
               {/*Graph Switcher*/}
               <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999', display: 'flex', gap: '2px' }}>

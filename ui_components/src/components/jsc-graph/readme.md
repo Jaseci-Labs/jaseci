@@ -5,55 +5,79 @@
 <!-- Auto Generated Below -->
 
 
-## Properties
+## Events
 
-| Property  | Attribute  | Description | Type                    | Default              |
-| --------- | ---------- | ----------- | ----------------------- | -------------------- |
-| `css`     | `css`      |             | `string`                | `JSON.stringify({})` |
-| `events`  | `events`   |             | `string`                | `undefined`          |
-| `graphId` | `graph-id` |             | `string`                | `''`                 |
-| `height`  | `height`   |             | `string`                | `'100vh'`            |
-| `onFocus` | `on-focus` |             | `"expand" \| "isolate"` | `'expand'`           |
-| `token`   | `token`    |             | `string`                | `''`                 |
+| Event                   | Description | Type                                                                         |
+| ----------------------- | ----------- | ---------------------------------------------------------------------------- |
+| `disableZoom`           |             | `CustomEvent<any>`                                                           |
+| `enableZoom`            |             | `CustomEvent<any>`                                                           |
+| `expandNode`            |             | `CustomEvent<Node & { context: {}; info: {}; details: {}; group: string; }>` |
+| `expandNodeRecursively` |             | `CustomEvent<Node & { context: {}; info: {}; details: {}; group: string; }>` |
+| `hideEdgeGroup`         |             | `CustomEvent<Edge & { context: {}; info: {}; details: {}; group: string; }>` |
+| `hideNodeGroup`         |             | `CustomEvent<Node & { context: {}; info: {}; details: {}; group: string; }>` |
+
+
+## Methods
+
+### `hide() => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
+### `setClickedItem({ clickedNode, clickedEdge }: { clickedNode?: GraphNode; clickedEdge?: GraphEdge; }) => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
+### `setPos(x: number, y: number) => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
+### `show() => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
 
 
 ## Dependencies
 
 ### Used by
 
- - [jsc-app](../jsc-app)
+ - [jsc-graph](.)
 
 ### Depends on
 
-- [jsc-card](../jsc-card)
-- [jsc-auth-form](../jsc-auth-form)
 - [jsc-divider](../jsc-divider)
-- [graph-node-info](../graph-node-info)
-- [graph-walker-runner](../graph-walker-runner)
 - [jsc-button](../jsc-button)
-- [jsc-chip](../jsc-chip)
-- [jsc-select](../jsc-select)
-- [jsc-checkbox](../jsc-checkbox)
 
 ### Graph
 ```mermaid
 graph TD;
-  jsc-graph --> jsc-card
-  jsc-graph --> jsc-auth-form
-  jsc-graph --> jsc-divider
-  jsc-graph --> graph-node-info
-  jsc-graph --> graph-walker-runner
-  jsc-graph --> jsc-button
-  jsc-graph --> jsc-chip
-  jsc-graph --> jsc-select
-  jsc-graph --> jsc-checkbox
-  jsc-auth-form --> jsc-inputbox
-  jsc-auth-form --> jsc-anchor
-  jsc-auth-form --> jsc-button
-  graph-walker-runner --> jsc-inputbox
-  graph-walker-runner --> jsc-select
-  jsc-app --> jsc-graph
-  style jsc-graph fill:#f9f,stroke:#333,stroke-width:4px
+  jsc-graph-context-menu --> jsc-divider
+  jsc-graph-context-menu --> jsc-button
+  jsc-graph --> jsc-graph-context-menu
+  style jsc-graph-context-menu fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------
