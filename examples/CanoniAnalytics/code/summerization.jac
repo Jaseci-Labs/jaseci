@@ -1,21 +1,23 @@
+import {*} with './build_graph.jac';
+
 // generates the summary based on a corpse of text
-walker summarization {
-    can t5_sum.classify_text;
+walker summerizer {
+    can bart_sum.summarize;
     has text;
-    has anchor result;
+    has summery;
 
-    result = t5_sum.classify_text(text, 5, 100);
-
-    report result;
-}
-
-walker use_encoder {
-    can use.encode;
-    has text;
-
-    report use.encode(text);
+    summery = bart_sum.summarize(text, 20);
+    std.out(summery);
 }
 
 walker init{
+    root{
+         spawn here walker::build_graph;
+         take-->;
+    }
 
+    scene{
+        spawn here walker::summerizer(text=here.description);
+        take -->node::scene;
+    }
 }

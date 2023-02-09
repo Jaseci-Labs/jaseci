@@ -3,13 +3,22 @@ node root;
 node scene{
     has name;
     has description;
+    has desc_summery;
+
+    can set_summery with summerizer entry{
+        here.desc_summery = visitor.summery;
+    }
 }
 
 node actor{
     has name;
     has dialogue;
-}
+    has dialogue_summery;
 
+    can set_summery with summerizer entry{
+        here.dialogue_summery = visitor.summery;
+    }
+}
 
 walker build_graph{
     can file.load_json;
@@ -34,5 +43,11 @@ walker build_graph{
                         spawn scene ++>node::actor(name=name, dialogue=dialogue);
                     }
         }
+}
+
+walker init{
+    root{
+         spawn here walker::build_graph;
+    }
 }
 

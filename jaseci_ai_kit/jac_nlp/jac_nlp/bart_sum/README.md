@@ -14,7 +14,7 @@ Module `bart_sum` uses the `bart-large-cnn` to get the abstractive summary of a 
     ```
 2.  Load bart_sum module in jac
     ```
-    actions load module jaseci_ai_kit.bart_sum
+    actions load module jac_nlp.bart_sum
     ```
 
 
