@@ -23,6 +23,7 @@
     - [Installing Jaseci Studios](docs/docs/getting-started/jaseci_studios.md)
 
   - [Interfacing A Jaseci Machine](docs/docs/getting-started/content.md)
+    - [Three modes of Interacting with Jaseci](docs/docs/intrefacing_jaseci/interaction_modes.md)
     - [Jsctl: The Jaseci Command Line Interface](docs/docs/interfacing_jaseci/jsctl.md)
     - [The Very Basics: CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
     - [Jac Api Collection](docs/docs/interfacing_jaseci/api_collection.md)
