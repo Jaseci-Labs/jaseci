@@ -492,6 +492,14 @@ class JsctlTest(TestCaseHelper, TestCase):
             ],
         )
 
+    def test_jac_talk(self):
+        r = self.call("jactalk init")
+        self.assertIn("Initializing JacTalk", r)
+        r = self.call("jactalk train")
+        self.assertIn("Training", r)
+        r = self.call("jactalk shell")
+        self.assertIn("Starting", r)
+
 
 class JsctlTestWithSession(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
