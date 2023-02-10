@@ -1271,7 +1271,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    def test_master_allusers_search(self):
+    def test_jac_admin_master_allusers_search(self):
+        """Test API for searching users"""
         public_client = APIClient()
         payload = {
             "op": "user_create",
@@ -1298,9 +1299,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(search_res.status_code, status.HTTP_200_OK)
         self.assertEqual(res_obj["total"], 4)
         self.assertEqual(search_res_obj["total"], 1)
-        self.assertEqual(
-            search_res_obj["data"][0]["user"], payload["name"]
-        )
+        self.assertEqual(search_res_obj["data"][0]["user"], payload["name"])
 
     def test_asim_bug_check(self):
         """Test public API for summoning walker"""
