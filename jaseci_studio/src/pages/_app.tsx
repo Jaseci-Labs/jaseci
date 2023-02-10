@@ -5,6 +5,8 @@ import Script from "next/script";
 import { theme } from "../../theme";
 import ReactQuery from "../components/ReactQuery";
 import { NavbarMinimal } from "../components/Navbar";
+import { NotificationsProvider } from "@mantine/notifications";
+import { useState } from "react";
 
 export default function App(props: AppProps) {
   const { Component, pageProps } = props;
@@ -28,7 +30,9 @@ export default function App(props: AppProps) {
         <MantineProvider withGlobalStyles withNormalizeCSS theme={theme}>
           <div data-theme="greenheart">
             <AppShell navbar={<NavbarMinimal></NavbarMinimal>}>
-              <Component {...pageProps} />
+              <NotificationsProvider>
+                <Component {...pageProps} />
+              </NotificationsProvider>
             </AppShell>
           </div>
         </MantineProvider>

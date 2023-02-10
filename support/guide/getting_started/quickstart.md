@@ -71,10 +71,10 @@ jaseci > help
 
 Documented commands (type help <topic>):
 ========================================
-actions    clear   global  logger  master  sentinel  walker
-alias      config  graph   login   object  stripe
-architype  edit    jac     ls      reset   tool
-
+actions    booktool  global  jsorc   logout  prometheus  sentinel  wapi
+alias      clear     graph   load    ls      publogin    service
+apply      config    info    logger  master  reset       user
+architype  edit      jac     login   object  script      walker
 Undocumented commands:
 ======================
 exit  help  quit
@@ -104,7 +104,7 @@ test   Command line tooling for running all test in both .jac code files...
 
 As you get to know Jaseci and Jac, you'll want to try things and tinker a bit. In this section, we'll get to know how jsctl can be used as the main platform for this play. A typical flow will involve jumping into shell-mode, writing some code, running that code to observe its output, visualizing the state of the graph, and rendering that graph in dot to see its visualization.
 
-#### Installing Graphiz
+<!-- #### Installing Graphiz
 
 Graphiz is a software package that comes with a tool called `dot`. Dot is a standardized and open graph description language that is a key primitive of Graphiz. The dot tool takes in dot code and renders it nicely.
 
@@ -120,7 +120,7 @@ Run the following command to install `Graphiz` on MacOS:
 
 `brew install graphiz`
 
-That's it!
+That's it! -->
 
 #### Using Graphiz
 

@@ -653,3 +653,21 @@ ignore_check = """
         report "hi";
     }
 """
+
+async_module = """
+walker a {
+    can sim1.tester, sim2.tester;
+    with entry {
+        report sim1.tester();
+        report sim2.tester();
+    }
+}
+
+async walker b {
+    can sim1.tester, sim2.tester;
+    with entry {
+        report sim1.tester();
+        report sim2.tester();
+    }
+}
+"""

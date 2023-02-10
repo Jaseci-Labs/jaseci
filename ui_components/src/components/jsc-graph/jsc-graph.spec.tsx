@@ -107,7 +107,7 @@ describe('jsc-graph', () => {
     graph.network = new vis.Network(networkContainer, { nodes: graph.nodes as any, edges: graph.edges as any });
 
     graph.clickedNode = graph.nodes.get()[0];
-    graph.hideNodeGroup();
+    graph.hideNodeGroup(graph.clickedNode.group);
     expect(graph.nodes.get()[0].hidden).toBe(true);
     expect(graph.nodes.get({ filter: node => node.hidden }).length).toBeLessThan(graph.nodes.get().length);
 
@@ -126,7 +126,7 @@ describe('jsc-graph', () => {
     graph.network = new vis.Network(networkContainer, { nodes: graph.nodes as any, edges: graph.edges as any });
 
     graph.clickedEdge = graph.edges.get()[0];
-    graph.hideEdgeGroup();
+    graph.hideEdgeGroup(graph.clickedEdge.group);
     expect(graph.edges.get()[0].hidden).toBe(true);
     expect(graph.edges.get({ filter: edge => edge.hidden }).length).toBeLessThan(graph.edges.get().length);
 

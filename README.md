@@ -4,9 +4,36 @@
 [![jaseci_serv Tests](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-serv-test.yml/badge.svg)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-serv-test.yml) [![PyPi version](https://badgen.net/pypi/v/jaseci-serv/)](https://pypi.org/project/jaseci-serv)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+## Introduction
+
+- [What and Why Jaseci?](docs/docs/Introduction/What_and_why_jaseci.md)
+- [Architecture of Jaseci and Jac](docs/docs/Introduction/Architecture_of_jaseci.md)
+- [Abstraction of Jaseci](docs/docs/Introduction/abstraction_of_jaseci.md)
+
 ## Getting Started
 
-- [Installing Jaseci](support/guide/getting_started/installation.md)
+  - [Installation](docs/docs/getting-started/content.md)
+    - [Installing Jaseci](support/guide/getting_started/installation.md)
+      - [Installing on Windows](support/guide/getting_started/installation.md#installing-on-windows)
+      - [Installing on Mac](support/guide/getting_started/installation.md#installing-on-mac)
+      - [Installing on Linux](support/guide/getting_started/installation.md#installing-on-linux)
+      - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
+    - [Setting Up Your Editor](support/guide/getting_started/setting_up_your_editor.md)
+    - [Installing Jac AI Kit and Graphiz](docs/docs/getting-started/jac_ai_kit_and_graphiz.md)
+    - [Installing Jaseci Studios](docs/docs/getting-started/jaseci_studios.md)
+
+  - [Interfacing A Jaseci Machine](docs/docs/getting-started/content.md)
+    - [Three modes of Interacting with Jaseci](docs/docs/interfacing_jaseci/interaction_modes.md)
+    - [Jsctl: The Jaseci Command Line Interface](docs/docs/interfacing_jaseci/jsctl.md)
+    - [The Very Basics: CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
+    - [Jac Api Collection](docs/docs/interfacing_jaseci/api_collection.md)
+
+  - [Taking Jac for a Test Drive](docs/docs/getting-started/content.md)
+    - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
+    - [Writing Your First App](support/guide/getting_started/writing_your_first_app.md)
+    - [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md)
+
+<!-- - [Installing Jaseci](support/guide/getting_started/installation.md)
   - [Installing on Windows](support/guide/getting_started/installation.md#installing-on-windows)
   - [Installing on Mac](support/guide/getting_started/installation.md#installing-on-mac)
   - [Installing on Linux](support/guide/getting_started/installation.md#installing-on-linux)
@@ -14,7 +41,7 @@
 - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
 - [Setting Up Your Editor](support/guide/getting_started/setting_up_your_editor.md)
 - [Writing Your First App](support/guide/getting_started/writing_your_first_app.md)
-- [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md)
+- [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md) -->
 
 ## Codelabs and Guides
 
@@ -32,6 +59,7 @@
 - [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
 - [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
 - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
+
 ## The JAC Language Guide
 
 - [Key Abstractions and Concepts](examples/CanoniCAI/codelabs/lang_docs/key_concepts.md)
@@ -92,11 +120,12 @@
     - [Topic Extraction](jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext/README.md)
     - [BI Encoder for NER](jaseci_ai_kit/jac_nlp/jac_nlp/bi_ner/README.md)
     - [SBERT Similarity](jaseci_ai_kit/jac_nlp/jac_nlp/sbert_sim/README.md)
+    - [GPT2](jaseci_ai_kit/jac_nlp/jac_nlp/gpt2/README.md)
 
   - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
 
     - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
-    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/tts/README.md)
+    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/vc_tts/README.md)
 
   - [Jaseci miscellaneous AI features](jaseci_ai_kit/jac_misc/README.md)
     - [Clustering](jaseci_ai_kit/jac_misc/jac_misc/cluster/README.md)

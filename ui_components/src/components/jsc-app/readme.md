@@ -59,8 +59,9 @@ graph TD;
   jsc-graph --> jsc-divider
   jsc-graph --> graph-node-info
   jsc-graph --> graph-walker-runner
-  jsc-graph --> jsc-button
   jsc-graph --> jsc-chip
+  jsc-graph --> jsc-button
+  jsc-graph --> jsc-graph-context-menu
   jsc-graph --> jsc-select
   jsc-graph --> jsc-checkbox
   jsc-auth-form --> jsc-inputbox
@@ -68,6 +69,8 @@ graph TD;
   jsc-auth-form --> jsc-button
   graph-walker-runner --> jsc-inputbox
   graph-walker-runner --> jsc-select
+  jsc-graph-context-menu --> jsc-divider
+  jsc-graph-context-menu --> jsc-button
   style jsc-app fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

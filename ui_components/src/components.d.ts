@@ -85,6 +85,7 @@ export namespace Components {
     }
     interface JscButton {
         "active": string;
+        "block": string;
         "color": string;
         "css": string;
         "events": string;
@@ -98,7 +99,7 @@ export namespace Components {
         "tooltip": string;
         "tooltipPalette": string;
         "tooltipPosition": string;
-        "variant": 'default' | 'link';
+        "variant": 'default' | 'link' | 'ghost';
     }
     interface JscButtonGroup {
         "buttons": string;
@@ -276,6 +277,12 @@ export namespace Components {
         "height": string;
         "onFocus": 'expand' | 'isolate';
         "token": string;
+    }
+    interface JscGraphContextMenu {
+        "hide": () => Promise<void>;
+        "setClickedItem": ({ clickedNode, clickedEdge }: { clickedNode?: GraphNode; clickedEdge?: GraphEdge; }) => Promise<void>;
+        "setPos": (x: number, y: number) => Promise<void>;
+        "show": () => Promise<void>;
     }
     interface JscHero {
         "action": string;
@@ -557,6 +564,10 @@ export interface JscCheckboxCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLJscCheckboxElement;
 }
+export interface JscGraphContextMenuCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLJscGraphContextMenuElement;
+}
 export interface JscInputboxCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLJscInputboxElement;
@@ -754,6 +765,12 @@ declare global {
         prototype: HTMLJscGraphElement;
         new (): HTMLJscGraphElement;
     };
+    interface HTMLJscGraphContextMenuElement extends Components.JscGraphContextMenu, HTMLStencilElement {
+    }
+    var HTMLJscGraphContextMenuElement: {
+        prototype: HTMLJscGraphContextMenuElement;
+        new (): HTMLJscGraphContextMenuElement;
+    };
     interface HTMLJscHeroElement extends Components.JscHero, HTMLStencilElement {
     }
     var HTMLJscHeroElement: {
@@ -921,6 +938,7 @@ declare global {
         "jsc-dropdown": HTMLJscDropdownElement;
         "jsc-dropdown-item": HTMLJscDropdownItemElement;
         "jsc-graph": HTMLJscGraphElement;
+        "jsc-graph-context-menu": HTMLJscGraphContextMenuElement;
         "jsc-hero": HTMLJscHeroElement;
         "jsc-inputbox": HTMLJscInputboxElement;
         "jsc-label": HTMLJscLabelElement;
@@ -1025,6 +1043,7 @@ declare namespace LocalJSX {
     }
     interface JscButton {
         "active"?: string;
+        "block"?: string;
         "color"?: string;
         "css"?: string;
         "events"?: string;
@@ -1038,7 +1057,7 @@ declare namespace LocalJSX {
         "tooltip"?: string;
         "tooltipPalette"?: string;
         "tooltipPosition"?: string;
-        "variant"?: 'default' | 'link';
+        "variant"?: 'default' | 'link' | 'ghost';
     }
     interface JscButtonGroup {
         "buttons"?: string;
@@ -1212,6 +1231,14 @@ declare namespace LocalJSX {
         "height"?: string;
         "onFocus"?: 'expand' | 'isolate';
         "token"?: string;
+    }
+    interface JscGraphContextMenu {
+        "onDisableZoom"?: (event: JscGraphContextMenuCustomEvent<any>) => void;
+        "onEnableZoom"?: (event: JscGraphContextMenuCustomEvent<any>) => void;
+        "onExpandNode"?: (event: JscGraphContextMenuCustomEvent<GraphNode>) => void;
+        "onExpandNodeRecursively"?: (event: JscGraphContextMenuCustomEvent<GraphNode>) => void;
+        "onHideEdgeGroup"?: (event: JscGraphContextMenuCustomEvent<GraphEdge>) => void;
+        "onHideNodeGroup"?: (event: JscGraphContextMenuCustomEvent<GraphNode>) => void;
     }
     interface JscHero {
         "action"?: string;
@@ -1506,6 +1533,7 @@ declare namespace LocalJSX {
         "jsc-dropdown": JscDropdown;
         "jsc-dropdown-item": JscDropdownItem;
         "jsc-graph": JscGraph;
+        "jsc-graph-context-menu": JscGraphContextMenu;
         "jsc-hero": JscHero;
         "jsc-inputbox": JscInputbox;
         "jsc-label": JscLabel;
@@ -1563,6 +1591,7 @@ declare module "@stencil/core" {
             "jsc-dropdown": LocalJSX.JscDropdown & JSXBase.HTMLAttributes<HTMLJscDropdownElement>;
             "jsc-dropdown-item": LocalJSX.JscDropdownItem & JSXBase.HTMLAttributes<HTMLJscDropdownItemElement>;
             "jsc-graph": LocalJSX.JscGraph & JSXBase.HTMLAttributes<HTMLJscGraphElement>;
+            "jsc-graph-context-menu": LocalJSX.JscGraphContextMenu & JSXBase.HTMLAttributes<HTMLJscGraphContextMenuElement>;
             "jsc-hero": LocalJSX.JscHero & JSXBase.HTMLAttributes<HTMLJscHeroElement>;
             "jsc-inputbox": LocalJSX.JscInputbox & JSXBase.HTMLAttributes<HTMLJscInputboxElement>;
             "jsc-label": LocalJSX.JscLabel & JSXBase.HTMLAttributes<HTMLJscLabelElement>;

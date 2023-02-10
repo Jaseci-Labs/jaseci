@@ -72,41 +72,49 @@ def assimilate_action(func, act_group=None, aliases=list()):
 
 def load_local_actions(file: str):
     """Load all jaseci actions from python file"""
-    name = file.rstrip(".py")
-    name = ".".join(name.split("/")[-2:])
-    # Assumes parent folder of py file is a package for internal relative
-    # imports, name is package.module and package path is added to sys path
-    spec = spec_from_file_location(name, str(file))
-    if spec is None:
-        logger.error(f"Cannot hot load from action file {file}")
+    try:
+        name = file.rstrip(".py")
+        name = ".".join(name.split("/")[-2:])
+        # Assumes parent folder of py file is a package for internal relative
+        # imports, name is package.module and package path is added to sys path
+        spec = spec_from_file_location(name, str(file))
+        if spec is None:
+            logger.error(f"Cannot hot load from action file {file}")
+            return False
+        else:
+            module_dir = os.path.dirname(os.path.dirname(os.path.realpath(file)))
+            if module_dir not in sys.path:
+                sys.path.append(module_dir)
+            mod = module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return True
+    except Exception:
+        logger.error(f"Cannot hot load local actions from {file}.")
         return False
-    else:
-        module_dir = os.path.dirname(os.path.dirname(os.path.realpath(file)))
-        if module_dir not in sys.path:
-            sys.path.append(module_dir)
-        mod = module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        return True
 
 
 def load_module_actions(mod, loaded_module=None):
     """Load all jaseci actions from python module"""
-    if mod in sys.modules:
-        del sys.modules[mod]
-    if loaded_module and loaded_module in sys.modules:
-        del sys.modules[loaded_module]
-    if mod in live_action_modules:
-        for i in live_action_modules[mod]:
-            if i in live_actions:
-                del live_actions[i]
-    if loaded_module in live_action_modules:
-        for i in live_action_modules[loaded_module]:
-            if i in live_actions:
-                del live_actions[i]
+    try:
+        if mod in sys.modules:
+            del sys.modules[mod]
+        if loaded_module and loaded_module in sys.modules:
+            del sys.modules[loaded_module]
+        if mod in live_action_modules:
+            for i in live_action_modules[mod]:
+                if i in live_actions:
+                    del live_actions[i]
+        if loaded_module in live_action_modules:
+            for i in live_action_modules[loaded_module]:
+                if i in live_actions:
+                    del live_actions[i]
 
-    mod = importlib.import_module(mod)
-    if mod:
-        return True
+        mod = importlib.import_module(mod)
+        if mod:
+            return True
+    except Exception:
+        logger.error(f"Cannot hot load module actions from {mod}.")
+
     return False
 
 
