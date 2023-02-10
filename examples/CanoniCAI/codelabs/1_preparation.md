@@ -24,6 +24,12 @@ If the command above displays the help menu for `jsctl`, then you have successfu
 >
 > Take a look and get familiarized with these commands while you are at it. `jsctl` will be frequently used throughout this journey.
 
+The following sections will require training files from the Jaseci repository:
+
+`https://github.com/Jaseci-Labs/jaseci`
+
+After forking the repository, the files can be found in `examples/CanoniCAI/code`
+
 ## Key Concepts
 
 Please refer to [Key Abstractions and Concepts](lang_docs/key_concepts.md) for the key new concepts in a nutshell. These will make more sense as you go through this guide.

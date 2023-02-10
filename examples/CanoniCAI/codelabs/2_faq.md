@@ -19,7 +19,7 @@ We have 3 different types of nodes:
 - `faq_root`: This is the entry point of the FAQ handler. We will make the decision on the most relevant answer at this node.
 - `faq_state`: This node represents a FAQ entry. It contains a candidate answer from the knowledge base.
 
-To start, let's create a new jac file and name it `faq.jac` and we will be putting the code in this section in this file.
+To start, let's create a new jac file in `examples/CanoniCAI/code` and name it `faq.jac`. We will be putting the code in this section in this file.
 
 Now let's define the custom node types.
 
