@@ -1,11 +1,9 @@
 # **Text to Speech with Voice Cloning (`vc_tts`)**
 
-| :warning: WARNING          |
-|:---------------------------|
-| This module requires strict dependencies. As a result, if you intend to use this with other modules, make sure to install it first. Otherwise, other modules will fail.|
+| This module requires strict dependencies. As a result, if you intend to use this with other modules, make sure to install it first. Otherwise, other modules will fail. |
 
 Before loading the module install `espeak-ng` using the command `sudo apt-get install -y espeak-ng`.
-
+And if you used previouse version of `jac_speech.tts` then upgrade numba version to `0.56`.after installing `jaseci.vc_tts`
 # **Walk through**
 
 ## **1. Import text to speech (`vc_tts`) module in jac**
