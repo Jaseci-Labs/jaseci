@@ -125,7 +125,7 @@
   - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
 
     - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
-    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/tts/README.md)
+    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/vc_tts/README.md)
 
   - [Jaseci miscellaneous AI features](jaseci_ai_kit/jac_misc/README.md)
     - [Clustering](jaseci_ai_kit/jac_misc/jac_misc/cluster/README.md)
