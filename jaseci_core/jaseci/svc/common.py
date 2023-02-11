@@ -33,7 +33,7 @@ class CommonService:
         self.enabled = False
         self.state = Ss.NOT_STARTED
         self.quiet = True
-        self.build_settings()
+        self.build_settings(hook)
 
     ###################################################
     #                   PROPERTIES                    #
@@ -92,9 +92,9 @@ class CommonService:
     def has_failed(self):
         return self.state.has_failed()
 
-    def build_settings(self) -> dict:
+    def build_settings(self, hook) -> dict:
         try:
-            self.manifest = self.build_manifest()
+            self.manifest = self.build_manifest(hook)
             self.manifest_meta = {}
             if self.manifest:
                 self.manifest_meta["__OLD_CONFIG__"] = self.manifest.pop(
@@ -104,7 +104,7 @@ class CommonService:
                     "__UNSAFE_PARAPHRASE__", ""
                 )
 
-            config = self.build_config()
+            config = self.build_config(hook)
             self.enabled = config.pop("enabled", False)
             self.quiet = config.pop("quiet", False)
             self.config = config
@@ -114,10 +114,10 @@ class CommonService:
             self.manifest = None
             self.manifest_meta = {}
 
-    def build_config(self) -> dict:
+    def build_config(self, hook) -> dict:
         return DEFAULT_CONFIG
 
-    def build_manifest(self) -> dict:
+    def build_manifest(self, hook) -> dict:
         pass
 
     # ------------------- DAEMON -------------------- #
