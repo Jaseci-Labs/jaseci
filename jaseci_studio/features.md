@@ -3,6 +3,7 @@
 1. Login
 2. Summary View
    1. See number of distinct nodes, edges and walkers and graphs
+   2. View version of jaseci instance
 3. Graph Viewer
    1. View node and edge information (context, details, info)
    2. Run walker on node
@@ -11,12 +12,16 @@
    5. Node Interactions
       1. Expand/Collapse
       2. Expand Node Recursively
-   6. Hide groups of node
+   6. Hide groups of node and edges
    7. Expand node or view only connected nodes on click
 4. Logs Viewer
    1. Filter logs
    2. Scroll to top / bottom / pause logs
    3. Filter by level
+5. Managing Architypes
+   1. View architypes and remove architypes
+   2. Write and register architypes
+   3. View architype code
 
 ## Screenshots
 
@@ -26,7 +31,7 @@
 
 ---
 
-![login view](./images//login.png)
+![login view](/docs/static/img/studio-features/login.png)
 
 ---
 
@@ -34,7 +39,7 @@
 
 ---
 
-![summary view](./images//summary_view.png)
+![summary view](/docs/static/img/studio-features/summary_view.png)
 
 ---
 
@@ -42,7 +47,7 @@
 
 ---
 
-![graph viewer](./images//graph_viewer.png)
+![graph viewer](/docs/static/img/studio-features/graph_viewer.png)
 
 ---
 
@@ -50,4 +55,4 @@
 
 ---
 
-![logs viewer](./images//logs_viewer.png)
+![logs viewer](/docs/static/img/studio-features/logs_viewer.png)
