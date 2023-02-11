@@ -66,14 +66,14 @@ class MetaService(CommonService):
     #                    CONTEXT                      #
     ###################################################
 
-    def add_context(self, ctx, cls, *args, **kwargs):
-        MetaService.app.add_context(ctx, cls, *args, **kwargs)
+    def add_context(self, cls_name, cls, *args, **kwargs):
+        MetaService.app.add_context(cls_name, cls, *args, **kwargs)
 
     def build_context(self, cls_name, **kwargs):
         return MetaService.app.build_context(cls_name, **kwargs)
 
-    def get_context(self, ctx):
-        return MetaService.app.context.get(ctx, {}).get("class")
+    def get_context(self, cls_name):
+        return MetaService.app.context.get(cls_name, {}).get("class")
 
     ###################################################
     #                     COMMON                      #
