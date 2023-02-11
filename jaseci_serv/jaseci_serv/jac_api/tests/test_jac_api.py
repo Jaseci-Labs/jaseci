@@ -1,4 +1,5 @@
 import base64
+import json
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -1269,6 +1270,36 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse("jac_api:master_allusers"), payload, format="json"
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_jac_admin_master_allusers_search(self):
+        """Test API for searching users"""
+        public_client = APIClient()
+        payload = {
+            "op": "user_create",
+            "name": "john.doe@gmail.com",
+            "global_init": "init",
+            "other_fields": {
+                "password": "yoyoyoyoyoyo",
+                "name": "John Doe",
+                "is_activated": True,
+            },
+        }
+
+        public_client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
+
+        res = self.sclient.post(reverse("jac_api:master_allusers"), {}, format="json")
+        res_obj = json.loads(res.content)
+
+        search_res = self.sclient.post(
+            reverse("jac_api:master_allusers"), {"search": "john.doe"}, format="json"
+        )
+        search_res_obj = json.loads(search_res.content)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(search_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_obj["total"], 4)
+        self.assertEqual(search_res_obj["total"], 1)
+        self.assertEqual(search_res_obj["data"][0]["user"], payload["name"])
 
     def test_asim_bug_check(self):
         """Test public API for summoning walker"""

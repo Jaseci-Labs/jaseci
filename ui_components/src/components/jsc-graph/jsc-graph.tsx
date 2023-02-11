@@ -40,7 +40,7 @@ export class JscGraph {
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
   @Prop() token: string = '';
-  @Prop() graphId: string = '';
+  @Prop({ attribute: 'graphid' }) graphId: string = '';
   @Prop() onFocus: 'expand' | 'isolate' = 'expand';
   @Prop() height = '100vh';
 
@@ -75,6 +75,19 @@ export class JscGraph {
 
   networkEl!: HTMLDivElement;
   contextMenuEl!: JscGraphContextMenu;
+
+  @Watch('graphId')
+  async graphIdChange(newValue) {
+    if (this.network) {
+      this.nodes.clear();
+      this.edges.clear();
+
+      this.network.setData({ nodes: this.nodes as any, edges: this.edges as any });
+    }
+
+    this.nd = newValue;
+    await this.getGraphState();
+  }
 
   async getActiveGraph(): Promise<Graph> {
     return await fetch(`${this.serverUrl}/js/graph_active_get`, {
@@ -332,8 +345,6 @@ export class JscGraph {
     hiddenNodes = hiddenNodes.map(node => ({ ...node, hidden: true }));
     unhiddenNodes = unhiddenNodes.map(node => ({ ...node, hidden: false }));
 
-    console.log({ hiddenNodes });
-
     this.nodes.update([...hiddenNodes, ...unhiddenNodes]);
 
     this.network.setData({ edges: displayedEdges as any, nodes: displayedNodes as any });
@@ -356,8 +367,6 @@ export class JscGraph {
     // hide nodes by setting hidden property to true
     hiddenEdges = hiddenEdges.map(edge => ({ ...edge, hidden: true }));
     unhiddenEdges = unhiddenEdges.map(edge => ({ ...edge, hidden: false }));
-
-    console.log({ hiddenEdges, unhiddenEdges, hiddenGroups: this.hiddenEdgeGroups });
 
     this.edges.update([...hiddenEdges, ...unhiddenEdges]);
 
@@ -462,9 +471,12 @@ export class JscGraph {
 
   async componentDidLoad() {
     try {
+      this.contextMenuEl.hide();
       // set the initial graph
-      let activeGraph: Graph = await this.getActiveGraph();
-      this.graphId = activeGraph?.jid;
+      if (!this.graphId) {
+        let activeGraph: Graph = await this.getActiveGraph();
+        this.graphId = activeGraph?.jid;
+      }
 
       // make root node collapsible by default
       this.expandedNodes.push(this.graphId);
@@ -532,14 +544,10 @@ export class JscGraph {
 
       this.nd = node.toString();
 
-      console.log({ cnode: this.expandedNodes });
-
       if (this.expandedNodes.includes(this.nd)) {
         this.handleCollapse(node.toString());
         this.refreshNodes();
-        console.log({ qnodes: this.queuedNodes });
         this.expandedNodes = this.expandedNodes.filter(nd => nd !== this.nd).filter(nd => !this.queuedNodes.has(nd));
-        console.log({ cnodes: this.expandedNodes });
 
         // clear the queued nodes and edges to be removed
         this.queuedEdges.clear();
@@ -586,7 +594,7 @@ export class JscGraph {
                   justifyContent: 'space-between',
                   paddingTop: '5px',
                   paddingBottom: '5px',
-                  zIndex: '9999',
+                  zIndex: '2',
                   overflowY: 'auto',
                 }}
               >
@@ -700,13 +708,10 @@ export class JscGraph {
                 </div>
               </div>
 
-              <div style={{ position: 'absolute', display: 'flex', top: '20px', left: '20px', gap: '20px', zIndex: '9999' }}>
+              <div style={{ position: 'absolute', display: 'flex', top: '20px', left: '20px', gap: '20px', zIndex: '2' }}>
                 {this.nd && <jsc-button size="sm" label={'View Root'} onClick={() => this.viewRoot()}></jsc-button>}
                 {this.selectedNodes?.length > 1 && <jsc-button size="sm" label={'Expand Nodes'} onClick={() => this.expandSelectedNodes()}></jsc-button>}
                 {this.selectedNodes?.length > 1 && <jsc-button size="sm" label={'Collapse Nodes'} onClick={() => this.collapseSelectedNodes()}></jsc-button>}
-                {this.selectedNodes?.length === 1 && (
-                  <jsc-button size="sm" label={'Expand Recursively'} onClick={() => this.expandNodesRecursively(this.selectedNodes[0]?.toString())}></jsc-button>
-                )}
               </div>
 
               {/* context menu */}
@@ -730,10 +735,10 @@ export class JscGraph {
                   this.contextMenuEl.hide();
                 }}
                 onEnableZoom={() => {
-                  this.network.setOptions({ interaction: { zoomView: true } });
+                  this.network?.setOptions({ interaction: { zoomView: true, dragView: true, dragNodes: true } });
                 }}
                 onDisableZoom={() => {
-                  this.network.setOptions({ interaction: { zoomView: false } });
+                  this.network?.setOptions({ interaction: { zoomView: false, dragView: false, dragNodes: false } });
                 }}
                 ref={el => (this.contextMenuEl = el as any)}
               ></jsc-graph-context-menu>
@@ -741,16 +746,19 @@ export class JscGraph {
               {/* end context menu */}
 
               {/*Graph Switcher*/}
-              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999', display: 'flex', gap: '2px' }}>
-                <jsc-select
-                  size="sm"
-                  placeholder={'Select Graph'}
-                  onValueChanged={e => {
-                    this.graphId = e.detail.split(':').slice(1).join(':');
-                    localStorage.setItem('selectedGraph', this.graphId);
-                  }}
-                  options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
-                ></jsc-select>
+              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '2', display: 'flex', gap: '2px' }}>
+                {/* If graphid is provided, an external graph switcher is used */}
+                {!this.graphId && (
+                  <jsc-select
+                    size="sm"
+                    placeholder={'Select Graph'}
+                    onValueChanged={e => {
+                      this.graphId = e.detail.split(':').slice(1).join(':');
+                      localStorage.setItem('selectedGraph', this.graphId);
+                    }}
+                    options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
+                  ></jsc-select>
+                )}
 
                 <jsc-checkbox
                   label={'Expand nodes on click'}
