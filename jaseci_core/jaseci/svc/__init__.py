@@ -1,5 +1,5 @@
 from .state import ServiceState
-from .common import CommonService, ProxyService, JsOrc, Kube
+from .common import CommonService, JsOrc, Kube
 from .redis import RedisService
 from .task import TaskService
 from .mail import MailService
@@ -11,7 +11,6 @@ __all__ = [
     "ServiceState",
     "JsOrc",
     "CommonService",
-    "ProxyService",
     "RedisService",
     "TaskService",
     "MailService",
