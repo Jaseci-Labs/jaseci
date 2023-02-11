@@ -69,8 +69,8 @@ class MetaService(CommonService):
     def add_context(self, ctx, cls, *args, **kwargs):
         MetaService.app.add_context(ctx, cls, *args, **kwargs)
 
-    def build_context(self, ctx, *args, **kwargs):
-        return MetaService.app.build_context(ctx, *args, **kwargs)
+    def build_context(self, cls_name, **kwargs):
+        return MetaService.app.build_context(cls_name, **kwargs)
 
     def get_context(self, ctx):
         return MetaService.app.context.get(ctx, {}).get("class")
@@ -107,17 +107,13 @@ class MetaService(CommonService):
 
         return h
 
-    def build_master(self, *args, **kwargs):
-        return self.__common("master", *args, **kwargs)
+    def build_master(self, h=None, name=None):
+        h = self.build_hook() if h is None else h
+        return self.build_context("master", **{"h": h, "name": name})
 
-    def build_super_master(self, *args, **kwargs):
-        return self.__common("super_master", *args, **kwargs)
-
-    def __common(self, ctx, *args, **kwargs):
-        if not kwargs.get("h", None):
-            kwargs["h"] = self.build_hook()
-
-        return self.build_context(ctx, *args, **kwargs)
+    def build_super_master(self, h=None, name=None):
+        h = self.build_hook() if h is None else h
+        return self.build_context("super_master", **{"h": h, "name": name})
 
     ###################################################
     #                   OVERRIDEN                     #
