@@ -24,9 +24,10 @@
 
   - [Interfacing A Jaseci Machine](docs/docs/getting-started/content.md)
     - [Three modes of Interacting with Jaseci](docs/docs/interfacing_jaseci/interaction_modes.md)
-    - [Jsctl: The Jaseci Command Line Interface](docs/docs/interfacing_jaseci/jsctl.md)
-    - [The Very Basics: CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
-    - [Jac Api Collection](docs/docs/interfacing_jaseci/api_collection.md)
+    - [Local JSCTL Mode](docs/docs/interfacing_jaseci/jsctl.md)
+      - [CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
+    - [Remote JSCTL Mode](docs/docs/interfacing_jaseci/remote_jsctl.md)
+    - [Application Mode: Jac Api Collection](docs/docs/interfacing_jaseci/api_collection.md)
 
   - [Taking Jac for a Test Drive](docs/docs/getting-started/content.md)
     - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
@@ -125,7 +126,7 @@
   - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
 
     - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
-    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/vc_tts/README.md)
+    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/tts/README.md)
 
   - [Jaseci miscellaneous AI features](jaseci_ai_kit/jac_misc/README.md)
     - [Clustering](jaseci_ai_kit/jac_misc/jac_misc/cluster/README.md)
