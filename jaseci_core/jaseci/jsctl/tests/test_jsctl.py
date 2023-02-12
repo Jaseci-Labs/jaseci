@@ -470,9 +470,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertGreater(after, before)
 
     def test_jsctl_script(self):
-        self.logger_on()
         r = self.call(f"script {os.path.dirname(__file__)}/jsctl_script")
-        self.log(r)
         self.assertEqual(r, "[]\n\n[]\n\n{}\n\n")
 
     def test_jsctl_script_output(self):

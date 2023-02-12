@@ -84,13 +84,13 @@ class CommonService:
         )
 
     def is_ready(self):
-        return self.state.is_ready() and self.app is None
+        return self.state == Ss.NOT_STARTED and self.app is None
 
     def is_running(self):
-        return self.state.is_running() and not (self.app is None)
+        return self.state == Ss.RUNNING and not (self.app is None)
 
     def has_failed(self):
-        return self.state.has_failed()
+        return self.state == Ss.FAILED
 
     def build_settings(self, hook) -> dict:
         try:
