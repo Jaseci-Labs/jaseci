@@ -1,3 +1,4 @@
+from celery.utils.functional import dictfilter
 from prometheus_api_client import PrometheusConnect
 from jaseci.svc import CommonService
 from .config import PROMON_CONFIG
@@ -68,7 +69,15 @@ class PrometheusService(CommonService):
             util = self.app.get_current_metric_value(
                 f"kube_pod_info{{namespace='{namespace}'}}"
             )
+
+
         res = {}
+
+        for pod in util:
+            pod_name = pod["metric"]["pod"]
+            if exclude_prom and "prometheus" in pod_name:
+                continue
+
         for pod in util:
             pod_name = pod["metric"]["pod"]
             if exclude_prom and "prometheus" in pod_name:
@@ -280,6 +289,28 @@ class Disk(Info):
         util = self.app.get_current_metric_value(
             'sum(avg (node_filesystem_free_bytes{mountpoint!="/boot", '
             'fstype!="tmpfs"}) without (mountpoint)) by (node)'
+        )
+        res = {}
+        for node in util:
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
+        return res
+
+    def read(self) -> dict:
+        util = self.app.get_current_metric_value(
+            "sum (rate (node_disk_read_bytes_total{}[10m])) by (node)"
+        )
+        res = {}
+        for node in util:
+            node_name = node["metric"]["node"]
+            node_util = float(node["value"][1])
+            res[node_name] = node_util
+        return res
+
+    def write(self) -> dict:
+        util = self.app.get_current_metric_value(
+            "sum (rate (node_disk_write_bytes_total{}[10m])) by (node)"
         )
         res = {}
         for node in util:
