@@ -1,4 +1,4 @@
-# Creationg a Custom Jaseci Action using T5
+# Creating a Custom Jaseci Action using T5
 In this section, we will be creating a T5 transformer based summarization module for jaseci.
 > **Note**
 >
