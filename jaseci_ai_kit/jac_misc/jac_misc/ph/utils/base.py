@@ -1,3 +1,4 @@
+from typing import Any, Dict
 import torch.nn as nn
 import numpy as np
 from abc import abstractmethod
@@ -9,8 +10,11 @@ from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from torch.utils.data.sampler import SubsetRandomSampler
 from collections import OrderedDict
+import os
+import shutil
 
 from .logger import TensorboardWriter, get_logger
+from . import model as model_module
 
 
 class BaseModel(nn.Module):
@@ -288,3 +292,78 @@ class BaseDataLoader(DataLoader):
             return None
         else:
             return DataLoader(sampler=self.valid_sampler, **self.init_kwargs)
+
+
+class BaseInference:
+    def __init__(self, config: Dict, logger, uuid: str = None) -> None:
+        self.config = config
+        model_config = self.config["Model"]
+        self.infer_config = self.config["Inference"]
+
+        self.model = getattr(model_module, model_config["type"])(
+            **model_config.get("args", {})
+        )
+
+        # loading pretrained weights
+        if self.infer_config["weights"]:
+            if not os.path.exists(f"heads/{uuid}/current.pth"):
+                shutil.copyfile(
+                    self.infer_config["weights"], f"heads/{self.id}/current.pth"
+                )
+                self.logger.info(
+                    "Loading default checkpoint: {} ...".format(
+                        self.infer_config["weights"]
+                    )
+                )
+
+            checkpoint = torch.load(f"heads/{self.id}/current.pth")
+            state_dict = checkpoint.get("state_dict", checkpoint)
+            model_keys = list(self.model.state_dict().keys())
+            if model_keys[0].startswith("model."):
+                new_state_dict = OrderedDict()
+                for k, v in state_dict.items():
+                    name = "model." + k
+                    new_state_dict[name] = v
+                state_dict = new_state_dict
+            self.model.load_state_dict(state_dict)
+            logger.info("Checkpoint loaded.")
+
+        # Setting the device
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = self.model.to(self.device)
+        self.model.eval()
+
+        # Get Intermediate Activations
+        self.out_activation_layer = self.infer_config.get("out_activation_layer", None)
+        if self.out_activation_layer:
+            self.activation = {}
+            getattr(self.model, self.out_activation_layer).register_forward_hook(
+                self.get_activation(self.out_activation_layer)
+            )
+
+    @torch.no_grad()
+    def predict(self, data: Any) -> Any:
+        data = self.preprocess(data)
+        data = data.to(self.device)
+        output = self.model(data)
+        if self.out_activation_layer:
+            output = self.activation[self.out_activation_layer]
+        output = self.postprocess(output)
+        return output
+
+    def preprocess(self, data: Any) -> Any:
+        raise NotImplementedError
+
+    def postprocess(self, data: Any) -> Any:
+        raise NotImplementedError
+
+    def load_weights(self, weights: str) -> None:
+        checkpoint = torch.load(weights)
+        state_dict = checkpoint.get("state_dict", checkpoint)
+        self.model.load_state_dict(state_dict)
+
+    def get_activation(self, name):
+        def hook(model, input, output):
+            self.activation[name] = output.detach()
+
+        return hook
