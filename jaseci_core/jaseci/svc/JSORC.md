@@ -96,7 +96,8 @@ There are also a set of APIs for performance tracking and becnhmarking:
 For more examples of these APIs, check out the JSORC unit tests (https://github.com/Jaseci-Labs/jaseci/blob/main/jaseci_serv/jaseci_serv/jsorc/tests/test_jsorc_api_kube.py).
 
 ### JSORC Architecture
-![](./jsorc_implementation_arch.png)
+
+![](jsorc_implementation_arch.png)
 
 Above is a overview diagram of the JSORC implementation architecture.
 JSORC is housed inside the MetaService.
