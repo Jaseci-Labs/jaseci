@@ -68,14 +68,14 @@ Details on which module is included in each package and how to install selective
 
 > **Note**
 >
-> For macOS, there is currently a [known compatibility issue](https://developer.apple.com/forums/thread/700906) between `tensorflow-text` and Apple custom ARM-based silicon (M1, M2, etc.). If you are on a Mac machine with an Apple chip, you can still use `jaseci` and `jaseci-serv` and majority of the AI modules come with Jaseci, with the exception of those depending on `tensorflow-text`, which includes `use_enc` and `use_qa` in the `jac-nlp` packages.
+> For macOS, there is currently a [known compatibility issue](https://developer.apple.com/forums/thread/700906) between `tensorflow-text` and Apple custom ARM-based silicon (M1, M2, etc.). If you are on a Mac machine with an Apple chip, you can still use `jaseci` and `jaseci-serv` and majority of the AI modules come with Jaseci, with the exception of those depending on `tensorflow-text`, which includes `use_enc` and `use_qa` in the `jac-nlp` package.
 >
 > Alternatively, you can build `tensorflow-text` from source following solutions provided by the [community](https://github.com/Jaseci-Labs/jaseci.git).
 
 ## Upgrade Versions
 To upgrade installed version of Jaseci core packages to the latest version from Pypi
 ```bash
-pip install --upgrade jaseci, jaseci_serv
+pip install --upgrade jaseci jaseci_serv
 ```
 Similarly, to upgrade the jaseci AI kit packages from Pypi
 ```bash
