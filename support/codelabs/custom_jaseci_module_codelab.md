@@ -1,4 +1,4 @@
-# Build a Custom Jaseci Module
+# Build a Custom Jaseci Action Module
 
 In this tutorial, you are going to learn how to build a custom jaseci module with python. In this application I will teach you how to create a basic calculator module for jaseci.
 
