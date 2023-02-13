@@ -1,1 +1,0 @@
-ELASTIC_MANIFEST = {}

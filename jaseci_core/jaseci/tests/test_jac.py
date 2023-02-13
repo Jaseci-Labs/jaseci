@@ -9,7 +9,7 @@ from jaseci.actor.sentinel import Sentinel
 from jaseci.graph.graph import Graph
 from jaseci.jac.jac_parse.jacLexer import jacLexer
 from jaseci.jac.jac_parse.jacParser import jacParser
-from jaseci.svc import MetaService
+from jaseci import JsOrc
 from jaseci.utils.utils import TestCaseHelper
 
 
@@ -18,7 +18,6 @@ class JacTests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.meta = MetaService()
 
     def tearDown(self):
         super().tearDown()
@@ -34,14 +33,14 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_sentinel_loading_jac_code(self):
         """Test the generation of jaseci trees for programs in grammar"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jtc.prog1)
         self.assertIsNotNone(sent.run_architype("get_gen_day"))
         self.assertIsNotNone(sent.arch_ids.get_obj_by_name("week", kind="node"))
 
     def test_sentinel_loading_jac_code_multiple_times(self):
         """Test registering resets correctly for multiple attempts"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jtc.prog0)
         num_arch = len(sent.arch_ids)
         sent.register_code(jtc.prog0)
@@ -51,7 +50,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_sentinel_register_dep_on_static_errors(self):
         """Test Jac registering is dependant on correct static/dynamic code"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         correct = "node b { has anchor a; }"
         wrong1 = "adfdsf"
         sent.register_code(correct)
@@ -67,7 +66,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_sentinel_loading_arhitype(self):
         """Test the generation of jaseci trees for programs in grammar"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jtc.prog1)
         self.assertGreater(
             len(sent.arch_ids.get_obj_by_name("month", kind="node").code_ir), 5
@@ -75,7 +74,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_sentinel_running_basic_walker(self):
         """Test the execution of a basic walker building graph"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
         test_walker = sent.run_architype("get_gen_day")
@@ -91,7 +90,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_sentinel_setp_running_walker(self):
         """Test the execution of a basic walker building graph"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
         test_walker = sent.run_architype("get_gen_day")
@@ -114,7 +113,7 @@ class JacTests(TestCaseHelper, TestCase):
         """
         Test that  no loss or gain of data on second trak on second trek
         """
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -137,7 +136,7 @@ class JacTests(TestCaseHelper, TestCase):
         scalably (node contexts dont get deleted when arch_ids deleted)
         """
         lact.load_local_actions(os.path.dirname(__file__) + "/infer.py")
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
         test_walker = sent.run_architype("get_gen_day")
@@ -154,7 +153,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_sent_loads_complex_walker_and_arch(self):
         """Test loading attributes of arch and walkers"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("testnode", kind="node").run()
         test_walker = sent.run_architype("testwalk")
@@ -173,7 +172,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_work(self):
         """Test that multiple edges between the same two nodes are allowed"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edgey)
         test_walker = sent.run_architype("init")
@@ -188,7 +187,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_delete_all(self):
         """Test that multiple edges deleted correctly if delete all"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edgey2)
         test_walker = sent.run_architype("init")
@@ -199,7 +198,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_delete_all_specific(self):
         """Test that multiple edges deleted correctly if delete all"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edgey2b)
         test_walker = sent.run_architype("init")
@@ -210,7 +209,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_delete_all_labeled(self):
         """Test that multiple edges deleted correctly if delete all"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edgey2c)
         test_walker = sent.run_architype("init")
@@ -221,7 +220,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_multiple_edged_between_nodes_delete_filtered(self):
         """Test that multiple edges deleted correctly if delete filtered"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edgey3)
         test_walker = sent.run_architype("init")
@@ -232,7 +231,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_generic_can_be_used_to_specify_generic_edges(self):
         """Test that generic edge tag works"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edgey4)
         test_walker = sent.run_architype("init")
@@ -243,7 +242,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_can_disconnect_multi_nodes_simultaneously(self):
         """Test disconnecting mutilpe nodes"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edgey5)
         test_walker = sent.run_architype("init")
@@ -254,7 +253,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_can_connect_multi_nodes_simultaneously(self):
         """Test connecting mutilpe nodes"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edgey6)
         test_walker = sent.run_architype("init")
@@ -265,7 +264,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_can_disconnect_multi_nodes_advanced(self):
         """Test disconnecting mutilpe nodes advanced"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edgey7)
         test_walker = sent.run_architype("init")
@@ -276,7 +275,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_accessing_edges_basic(self):
         """Test accessing Edges"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edge_access)
         test_walker = sent.run_architype("init")
@@ -292,7 +291,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_has_assign(self):
         """Test assignment on definition"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.has_assign)
         test_walker = sent.run_architype("init")
@@ -309,7 +308,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_global_get_set(self):
         """Test assignment on definition"""
-        mast = self.meta.build_super_master()
+        mast = JsOrc.super_master()
         sent = Sentinel(m_id=mast.jid, h=mast._h)
         gph = Graph(m_id=mast.jid, h=mast._h)
         sent.register_code(jtc.set_get_global)
@@ -323,7 +322,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_global_set_requires_admin(self):
         """Test assignment on definition"""
-        mast = self.meta.build_master()
+        mast = JsOrc.master()
         sent = Sentinel(m_id=mast.jid, h=mast._h)
         gph = Graph(m_id=mast.jid, h=mast._h)
         sent.register_code(jtc.set_get_global2)
@@ -337,14 +336,14 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_sentinel_version_label(self):
         """Test sentinel version labeling"""
-        mast = self.meta.build_master()
+        mast = JsOrc.master()
         sent = Sentinel(m_id=mast.jid, h=mast._h)
         sent.register_code(jtc.version_label)
         self.assertEqual(sent.version, "alpha-1.0")
 
     def test_visibility_builtins(self):
         """Test builtins to see into nodes and edges"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.visibility_builtins)
         test_walker = sent.run_architype("init")
@@ -357,7 +356,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_spawn_ctx_for_edges_nodes(self):
         """Test builtins to see into nodes and edges"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.spawn_ctx_edge_node)
         test_walker = sent.run_architype("init")
@@ -370,7 +369,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     def test_filter_ctx_for_edges_nodes(self):
         """Test builtins to see into nodes and edges"""
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.filter_ctx_edge_node)
         test_walker = sent.run_architype("init")
@@ -380,7 +379,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(len(test_walker.report[1]), 0)
 
     def test_null_handling(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.null_handleing)
         test_walker = sent.run_architype("init")
@@ -392,7 +391,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(test_walker.report[3], False)
 
     def test_bool_type_convert(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.bool_type_convert)
         test_walker = sent.run_architype("init")
@@ -402,7 +401,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(True, test_walker.report[1]["name"])
 
     def test_typecasts(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.typecasts)
         test_walker = sent.run_architype("init")
@@ -416,7 +415,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(test_walker.report[5], "Types comes back correct")
 
     def test_typecast_error(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.typecasts_error)
         test_walker = sent.run_architype("init")
@@ -429,7 +428,7 @@ class JacTests(TestCaseHelper, TestCase):
         )
 
     def test_filter_on_context(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.filter_on_context)
         test_walker = sent.run_architype("init")
@@ -440,7 +439,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertIn("name", test_walker.report[0][2].keys())
 
     def test_string_manipulation(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.string_manipulation)
         test_walker = sent.run_architype("init")
@@ -479,7 +478,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[29], True)
 
     def test_list_manipulation(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.list_manipulation)
         test_walker = sent.run_architype("init")
@@ -499,7 +498,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[10], [])
 
     def test_list_reversed(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.list_reversed)
         test_walker = sent.run_architype("init")
@@ -510,7 +509,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[1], [4, 2, 7])
 
     def test_dict_manipulation(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.dict_manipulation)
         test_walker = sent.run_architype("init")
@@ -527,7 +526,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[7], {})
 
     def test_string_join(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.string_join)
         test_walker = sent.run_architype("init")
@@ -537,7 +536,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[0], "test_me_now")
 
     def test_sub_list(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.sub_list)
         test_walker = sent.run_architype("init")
@@ -549,7 +548,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[0][2], 7)
 
     def test_destroy_and_misc(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.destroy_and_misc)
         test_walker = sent.run_architype("init")
@@ -574,7 +573,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[9], True)
 
     def test_arbitrary_assign_on_element(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.arbitrary_assign_on_element)
         test_walker = sent.run_architype("init")
@@ -586,7 +585,7 @@ class JacTests(TestCaseHelper, TestCase):
         )
 
     def test_try_else_stmts(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.try_else_stmts)
         test_walker = sent.run_architype("init")
@@ -611,7 +610,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[3], 2)
 
     def test_node_edge_same_name(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.node_edge_same_name)
         test_walker = sent.run_architype("init")
@@ -624,7 +623,7 @@ class JacTests(TestCaseHelper, TestCase):
         )
 
     def test_testcases(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jtc.testcases)
         sent.run_tests(silent=True)
         self.assertEqual(len(sent.testcases), 4)
@@ -632,7 +631,7 @@ class JacTests(TestCaseHelper, TestCase):
             self.assertEqual(i["passed"], True)
 
     def test_testcase_asserts(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jtc.testcase_asserts)
         sent.run_tests(silent=True)
         self.assertEqual(len(sent.testcases), 3)
@@ -641,7 +640,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(sent.testcases[2]["passed"], False)
 
     def test_report_not_to_jacset(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.report_not_to_jacset)
         test_walker = sent.run_architype("init")
@@ -652,7 +651,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertIn("j_type", rep[0][0].keys())
 
     def test_walker_spawn_unwrap_check(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.walker_spawn_unwrap_check)
         test_walker = sent.run_architype("init")
@@ -662,7 +661,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertTrue(rep[0].startswith("urn:uuid"))
 
     def test_std_get_report(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.std_get_report)
         test_walker = sent.run_architype("init")
@@ -672,7 +671,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep, [3, 5, 6, 7, [3, 5, 6, 7], 8])
 
     def test_func_with_array_index(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.func_with_array_index)
         test_walker = sent.run_architype("init")
@@ -682,7 +681,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep, [3, 5, 3])
 
     def test_rt_error_test1(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.rt_error_test1)
         test_walker = sent.run_architype("init")
@@ -693,7 +692,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertIn(" col ", test_walker.runtime_errors[0])
 
     def test_root_type_nodes(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.root_type_nodes)
         test_walker = sent.run_architype("init")
@@ -703,7 +702,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(report, ["root", "root"])
 
     def test_invalid_key_error(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.invalid_key_error)
         test_walker = sent.run_architype("init")
@@ -713,7 +712,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertGreater(len(errors), 0)
 
     def test_auto_cast(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.auto_cast)
         test_walker = sent.run_architype("init")
@@ -723,7 +722,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(report, [True, True])
 
     def test_no_error_on_dict_key_assign(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.no_error_on_dict_key_assign)
         test_walker = sent.run_architype("init")
@@ -734,7 +733,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(len(test_walker.runtime_errors), 0)
 
     def test_report_status(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.report_status)
         test_walker = sent.run_architype("init")
@@ -745,7 +744,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(test_walker.report_status, 302)
 
     def test_graph_in_graph(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.graph_in_graph)
         test_walker = sent.run_architype("init")
@@ -755,7 +754,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(len(report), 3)
 
     def test_min_max_on_list(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.min_max_on_list)
         test_walker = sent.run_architype("init")
@@ -765,7 +764,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(report, [531.1, 3, 5, 1])
 
     def test_edge_bug(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.edge_bug)
         test_walker = sent.run_architype("init")
@@ -775,7 +774,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(len(report[0]), 4)
 
     def test_rand_choice(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.rand_choice)
         test_walker = sent.run_architype("init")
@@ -785,7 +784,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertIn(report[1], report[0])
 
     def test_struct_types(self):
-        sent = Sentinel(m_id=0, h=self.meta.build_hook())
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
         gph = Graph(m_id=0, h=sent._h)
         sent.register_code(jtc.struct_types)
         test_walker = sent.run_architype("init")

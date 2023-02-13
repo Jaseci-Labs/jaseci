@@ -17,8 +17,10 @@ from jaseci.api.jac_api import JacApi
 from jaseci.api.user_api import UserApi
 from jaseci.api.queue_api import QueueApi
 from jaseci.api.webhook_api import WebhookApi
+from jaseci import JsOrc
 
 
+@JsOrc.context(name="master")
 class Master(
     Element,
     Interface,

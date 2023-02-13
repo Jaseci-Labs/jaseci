@@ -3,8 +3,10 @@ Webhook API
 """
 from jaseci.api.interface import Interface
 from fastapi import HTTPException
-from json import loads
-from jaseci.svc import MetaService
+from jaseci import JsOrc
+from jaseci.svc.stripe_svc import StripeService
+
+import stripe as _stripe
 
 
 class WebhookApi:
@@ -18,8 +20,8 @@ class WebhookApi:
         req_body = _req_ctx["body"]
 
         if provider == "stripe":
-            stripe_service = MetaService().get_service("stripe")
-            stripe = stripe_service.poke()
+            stripe_service = JsOrc.svc("stripe", StripeService)
+            stripe = stripe_service.poke(_stripe)
 
             # to be updated
             stripe_service.get_event(_raw_req_ctx, _req_ctx["headers"])

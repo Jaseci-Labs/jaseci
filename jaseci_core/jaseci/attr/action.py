@@ -9,6 +9,9 @@ from jaseci.jac.jac_set import JacSet
 import inspect
 import time
 
+from jaseci import JsOrc
+from jaseci.utils.actions.actions_manager import ActionManager
+
 # ACTION_PACKAGE = 'jaseci.actions.'
 
 
@@ -55,7 +58,10 @@ class Action(Item):
         self.do_auto_conversions(args, param_list)
         args = args[0] + args[4]
         hook = scope.parent._h
-        hook.meta.app.pre_action_call_hook() if hook.meta.run_svcs else None
+
+        action_manager = JsOrc.get("action_manager", ActionManager)
+        action_manager.pre_action_call_hook()
+
         ts = time.time()
         if "meta" in args:
             result = func(
@@ -85,7 +91,7 @@ class Action(Item):
                 )
                 raise
         t = time.time() - ts
-        hook.meta.app.post_action_call_hook(
-            self.value, t
-        ) if hook.meta.run_svcs else None
+
+        action_manager.post_action_call_hook(self.value, t)
+
         return result

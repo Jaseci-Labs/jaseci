@@ -11,21 +11,25 @@ from django.core.exceptions import ObjectDoesNotExist
 import jaseci as core_mod
 from jaseci.hook import RedisHook
 from jaseci.utils import utils
-from jaseci.utils.json_handler import json_str_to_jsci_dict
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 from datetime import datetime
 import json
 
+from jaseci import JsOrc
 
+
+@JsOrc.repository(name="hook", priority=2)
 class OrmHook(RedisHook):
     """
     Hooks Django ORM database for Jaseci objects to Jaseci's core engine.
     """
 
-    def __init__(self, objects, globs):
-        self.objects = objects
-        self.globs = globs
+    def __init__(self):
+        from jaseci_serv.base.models import GlobalVars, JaseciObject
+
+        self.objects = JaseciObject.objects
+        self.globs = GlobalVars.objects
         self.db_touch_count = 0
         super().__init__()
 

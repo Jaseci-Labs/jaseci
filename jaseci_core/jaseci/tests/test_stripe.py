@@ -1,9 +1,7 @@
 import stripe
 from unittest.mock import Mock
-from unittest import mock
 from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci.svc.stripe.config import STRIPE_CONFIG
-from jaseci.svc.meta import MetaService
+from jaseci import JsOrc
 
 
 class StripeTests(CoreTest):
@@ -13,16 +11,14 @@ class StripeTests(CoreTest):
 
     @classmethod
     def setUpClass(cls):
-        STRIPE_CONFIG["enabled"] = True
-        STRIPE_CONFIG[
+        config = JsOrc.settings("STRIPE_CONFIG")
+        config["enabled"] = True
+        config[
             "api_key"
         ] = "sk_test_51JWUIeCZO78n7fsZnPvualWhmJg1DcCI332kKnWF3q2sKGwnPADjEmNblfFWi4pWAWPuJwHxpeSoJGc0J5ButHN900Q2xBz1se"
-        STRIPE_CONFIG["webhook_key"] = "test_webhook_key"
+        config["webhook_key"] = "test_webhook_key"
 
-        meta = MetaService()
-        hook = meta.build_hook()
-
-        meta.get_service("stripe").reset(hook)
+        JsOrc.svc_reset("stripe")
 
         super(StripeTests, cls).setUpClass()
         stripe.Product.create = Mock()
