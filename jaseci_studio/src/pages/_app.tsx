@@ -6,7 +6,6 @@ import { theme } from "../../theme";
 import ReactQuery from "../components/ReactQuery";
 import { NavbarMinimal } from "../components/Navbar";
 import { NotificationsProvider } from "@mantine/notifications";
-import { useState } from "react";
 
 export default function App(props: AppProps) {
   const { Component, pageProps } = props;
