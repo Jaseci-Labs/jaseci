@@ -113,3 +113,21 @@ You'll need to add `--max-line-length=88 --extend-ignore=E203` arguments to `fla
 We recommend setting it up in your preferred code editor or IDE, e.g. VSCode.
 
 The Jaseci Open Source Contribution Guidelines can be found [here](../../../CONTRIBUTING.md).
+
+# Running a Jaseci Container
+The [Jaseci Docker images](https://hub.docker.com/r/jaseci/jaseci) are built with the dependencies and the Jaseci package installed.
+A Docker container runs in a virtual environment.
+```bash
+docker pull jaseci/jaseci:latest # Download the latest Jaseci image
+docker run -it jaseci/jaseci:latest /bin/bash # Start the container and launch an interactive terminal inside it
+```
+This will open up a terminal inside the running container.
+
+We also provide several other [Docker images](https://hub.docker.com/u/jaseci/starred).
+These images include the core jaseci installation as well as one of the jaseci AI kit package.
+For example, [jaseci/jac-nlp](https://hub.docker.com/r/jaseci/jac-nlp) have all modules in `jac_nlp` installed.
+
+```bash
+docker pull jaseci/jac_nlp:latest
+docker run -it jaseci/jac_nlp:latest /bin/bash
+```
