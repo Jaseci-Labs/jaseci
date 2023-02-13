@@ -5,12 +5,13 @@ import uuid as uuid_gen
 import os
 import shutil
 from collections import OrderedDict
+import json
 
 from .utils import model as model_module
 from .utils import process as process_module
 from .utils.logger import get_logger
 import logging
-from .utils.util import deep_update, write_yaml
+from .utils.util import deep_update, write_yaml, read_yaml
 
 from .train import train
 
@@ -129,6 +130,8 @@ class InferenceList:
 
     def __init__(self, config: Dict = None) -> None:  # type: ignore
         self.config = config
+        with open("heads/config.yaml", "w") as f:
+            json.dump(config, f)
         os.makedirs("heads", exist_ok=True)
         self.ie_list = {}
 
@@ -142,6 +145,14 @@ class InferenceList:
         else:
             ie = InferenceEngine(self.config, uuid)
         self.ie_list[ie.id] = ie
+        if not os.path.exists("heads/ph_list.json"):
+            with open("heads/ph_list.json", "w") as f:
+                json.dump([], f)
+        with open("heads/ph_list.json", "r+") as f:
+            ph_list = json.load(f)
+            ph_list.append(ie.id)
+            f.seek(0)
+            json.dump(ph_list, f)
         return ie.id
 
     def predict(self, uuid: str, data: Any) -> Any:
@@ -191,5 +202,30 @@ class InferenceList:
         else:
             raise ImproperConnectionState("Inference Engine not found.")
 
+    def delete_head(self, uuid: str) -> None:
+        if self.check(uuid):
+            del self.ie_list[uuid]
+            with open("heads/ph_list.json", "r+") as f:
+                json.dump(list(set(json.load(f)).remove(uuid)), f)
+            shutil.rmtree(f"heads/{uuid}")
+        else:
+            raise ImproperConnectionState("Inference Engine not found.")
+
+    def load_head(self, uuid: str) -> None:
+        config = read_yaml(f"heads/{uuid}/config.yaml")
+        self.ie_list[uuid] = InferenceEngine(config, uuid)
+        if os.path.exists(f"heads/{uuid}/current.pth"):
+            self.ie_list[uuid].load_weights(f"heads/{uuid}/current.pth")
+
     def check(self, uuid: str) -> bool:
-        return uuid in self.ie_list
+        if os.path.exists("heads/ph_list.json"):
+            with open("heads/ph_list.json", "r") as f:
+                ph_list = json.load(f)
+        else:
+            ph_list = []
+        if uuid in ph_list and uuid in self.ie_list:
+            return True
+        if uuid in ph_list:
+            self.load_head(uuid)
+            return True
+        return False

@@ -4,6 +4,7 @@ import warnings
 import os
 import traceback
 from fastapi import HTTPException
+import logging
 
 from jaseci.actions.live_actions import jaseci_action
 
@@ -21,7 +22,12 @@ def setup():
     global il, list_config
     dirname = os.path.dirname(__file__)
     list_config = read_yaml(os.path.join(dirname, "config.yaml"))
-    il = None
+    if os.path.exists("heads/config.yaml") and os.path.exists("heads/custom.py"):
+        logging.info("Found a heads list in the current directory. Loading it ...")
+        il = InferenceList(config=read_yaml("heads/config.yaml"))
+    else:
+        logging.info("No heads list found. Run create_head_list to create one.")
+        il = None
 
 
 setup()
