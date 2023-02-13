@@ -1,166 +1,115 @@
-## Installing Jaseci
+# Install Jaseci
+Jaseci is tested and supported on the following systems:
+* python 3.10 or higher
+* Ubuntu 18.04 or later
+* Windows WSL2
+* macOS* (see note below for compatibility with Apple silicon)
 
-Jaseci can be installed on a single machine or on a Kubernetes cluster.
-
-The setup section is split into two parts:
-- a standalone local setup
-- a cloud and kubernetes setup *(Coming Soon)*
-
-### Setup (Local)
-
-We've built a command line tool to help you effectively work with Jaseci from your terminal. This tool gives you complete control over jaseci and makes working with instances even better. Let's get started!
-
-### Requirements
-
-1. Python 3.10 or higher
-2. pip3
-
-### Installation (for Users of Jaseci and Jac coders)
-
-Prerequiste packages: (install via the package manager according to your OS)
+## Pre-requiste
+Jaseci requires the following dependencies:
 * python3.10-dev
 * g++
 * build-essential
 * pkg-config
 * cmake
 
-Generally, installing Jaseci requires the following commands:
-
-1. Install Jaseci by running: `pip3 install jaseci`
-2. Install Jaseci Server by running: `pip3 install jaseci-serv`
-3. (for AI) Install Jaseci Kit by running: `pip3 install jaseci-ai-kit`
-
-Here are step-by-step guides on getting Jaseci Installed on different platforms:
-
-- [Installing on Windows](#installing-on-windows)
-- [Installing on Mac](#installing-on-mac)
-- [Installing on Linux](#installing-on-linux)
-
-#### Installing on Windows
-
-To run commands for Jaseci we need a terminal that accepts bash arguments. We recommend using the Ubuntu terminal that comes as the default with WSL.
-
-1. Check if WSL is installed by running the following the Windows powershell terminal :
-
- ```python
- wsl -l -v
- ```
- This will return  the flavour of the distribution used for WSL. The version column will show the version of WSL.
-
-2. If no version is specified open windows powershell in  adminstrator mode and install WSL by running :
-
+To install in Debian (or WSL2),
 ```bash
-  wsl --install
-````
-
-3. Restart your Computer
-
-4.Open the Ubuntu terminal. for more information on installation see [here.](https://docs.microsoft.com/en-us/windows/wsl/install)
-
- Install Python and Pip package Manager
-
-5. Check version of Python and Pip by running :
+apt-get install python3.10-dev python3-pip git g++ build-essential pkg-config cmake
 ```
-python3 --version
-pip3 --version
-```
-If these packages are installed they will return a version number. Move to step 7 if a version number is present.
+> **Note**
+>
+> For macOS, install the above dependencies using one of macOS package manager such as [Homebrew](https://brew.sh/) and [MacPorts](https://www.macports.org/).
 
-6.Install Python3 and pip3 and other dependencies by running the following:
-```
-sudo apt update
-sudo apt install python3.10-dev python3-pip
-sudo apt-get install git g++ build-essential pkg-config cmake
-```
-7.Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
-```
+## Install via `pip`
+Install Jaseci with Python's `pip` package manager
+```bash
+# Upgrade pip to the latest
+pip install --upgrade pip
+
+# Core Jaseci
 pip install jaseci
+
+# Jaseci server
+pip install jaseci-serv
 ```
+To check for succesfull installation, execute in terminal
+```bash
+jsctl info
 ```
-pip install jaseci-ai-kit
+The following output should show.
+```bash
+{
+  "Version": "1.4.0.8",
+  "Creator": "Jason Mars and friends",
+  "URL": "https://jaseci.org"
+}
 ```
 
-8. To ensure our installation is working run :
-```
-jsctl
-```
-The Jsctl terminal will be activated. It will look like this :
-```
->jsctl
-```
+### Additional Pacakges for AI Modules
+`jaseci` and `jaseci-serv` packages provide the core of the Jaseci framework.
+To build jaseci program with AI modules, you need to install additional pacakges.
+```bash
+# Jaseci AI modules for Natural Language Processing (NLP)
+pip install jac_nlp[all]
 
-#### Installing on Mac
+# Jaseci AI modules for Speech
+pip install jac_speech[all]
 
-Install Python and Pip packet Manager
+# Jaseci AI modules for Computer Vision
+pip install jac_vision[all]
 
-1. Check the version of Python and Pip by running :
+# Other Jaseci AI modules
+pip install jac_misc[all]
 ```
-python3 --version
-pip3 --version
-```
-If these packages are installed they will return a version number. Move to step 3 if a version number is present.
-
-2. Install Python3 and pip3 by running the following:
-```
-brew update
-brew install python3.10
-```
-3. Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
-```
-pip install jaseci
-```
-```
-pip install jaseci-ai-kit
-```
-
-4. To ensure our installation is working run :
-```
-jsctl
-```
-Once it shows a list of options and commands, you're installation is complete.
-
-#### Installing on Linux
-
-Install Python and Pip packet Manager
-
-1. Check the version of Python and Pip by running :
-```
-python3 --version
-pip3 --version
-```
-If these packages are installed they will return a version number. Move to step x if a version number is present.
-
-2. Install Python3 and pip3 by running the following:
-```
-sudo apt update
-sudo apt install python3.10-dev python3-pip
-sudo apt-get install git g++ build-essential pkg-config cmake
-```
-3. Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
-```
-pip install jaseci
-```
-```
-pip install jaseci-kit
-```
-
-4. To ensure our installation is working run :
-```
-jsctl
-```
-Once it shows a list of options and commands, your installation is complete.
-
-
-### Installation (for Contributors of Jaseci)
-
-1. Install black: `pip3 install black`
-2. Install pre-commit: `pip3 install pre-commit; pre-commit install`
-3. Install Jaseci from main branch: `cd jaseci_core; source install.sh; cd -`
-4. Install Jaseci Server from main branch: `cd jaseci_serv; source install.sh; cd -`
-5. (for AI) Install Jaseci Kit from main branch: `cd jaseci_ai_kit; source install.sh; cd -`
+You do not need to install all of the above packages or even everything in a specific `jac_*` package.
+You can cherry-pick specific modules to install based on what is needed for your application.
+Details on which module is included in each package and how to install selectively can be found [here](../../..//jaseci_ai_kit/README.md#Installation)
 
 > **Note**
 >
-> Be sure to have the following packages installed to allow `sentence_piece` to be built for AI  Kit: `sudo apt -y install --no-install-recommends git g++ build-essential pkg-config cmake`
+> For macOS, there is currently a [known compatibility issue](https://developer.apple.com/forums/thread/700906) between `tensorflow-text` and Apple custom ARM-based silicon (M1, M2, etc.). If you are on a Mac machine with an Apple chip, you can still use `jaseci` and `jaseci-serv` and majority of the AI modules come with Jaseci, with the exception of those depending on `tensorflow-text`, which includes `use_enc` and `use_qa` in the `jac-nlp` packages.
+>
+> Alternatively, you can build `tensorflow-text` from source following solutions provided by the [community](https://github.com/Jaseci-Labs/jaseci.git).
 
-Note: You'll have to add `--max-line-length=88 --extend-ignore=E203` args to flake8 for linting. If you use VSCode, you should update it there too.
+## Upgrade Versions
+To upgrade installed version of Jaseci core packages to the latest version from Pypi
+```bash
+pip install --upgrade jaseci, jaseci_serv
+```
+Similarly, to upgrade the jaseci AI kit packages from Pypi
+```bash
+pip install --upgrade jac_nlp[all]
+pip install --upgrade jac_speech[all]
+pip install --upgrade jac_vision[all]
+pip install --upgrade jac_misc[all]
+```
+
+To install specific version of Jaseci
+```bash
+pip install jaseci==1.4.0.0
+```
+
+## Build from Source
+If you wish to use the development version of Jaseci, you can download the source code from Github and build from source.
+```bash
+git clone https://github.com/Jaseci-Labs/jaseci.git
+cd jaseci/jaseci/ && source install.sh
+cd jaseci/jaseci_serv && source install.sh
+cd jaseci/jaseci_ai_kit && source install.sh all
+```
+
+## For Contributors
+If you'd like to make contribution to Jaseci Open Source, you should build from source.
+In addition, you should set up the following in your development environment to follow the Jaseci Open Source Code Standards.
+```bash
+# Install black
+pip install black
+# Install pre-commit
+pip install pre-commit
+pre-commit install
+```
+You'll need to add `--max-line-length=88 --extend-ignore=E203` arguments to `flake8` for linting.
+We recommend setting it up in your preferred code editor or IDE, e.g. VSCode.
+
+The Jaseci Open Source Contribution Guidelines can be found [here](../../../CONTRIBUTING.md).
