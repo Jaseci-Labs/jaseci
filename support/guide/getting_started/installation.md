@@ -3,7 +3,7 @@ Jaseci is tested and supported on the following systems:
 * python 3.10 or higher
 * Ubuntu 18.04 or later
 * Windows WSL2
-* macOS* (see note below)
+* macOS* (see note below for compatibility with Apple silicon)
 
 ## Pre-requiste
 Jaseci requires the following dependencies:
