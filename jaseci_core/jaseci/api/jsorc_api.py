@@ -9,6 +9,7 @@ from time import time
 from base64 import b64decode
 
 from jaseci import JsOrc
+from jaseci.utils.utils import logger
 from jaseci.svc.kube_svc import KubeService
 from jaseci.utils.actions.actions_manager import ActionManager
 
@@ -21,7 +22,7 @@ class JsOrcApi:
     """
 
     @Interface.admin_api()
-    def load_yaml(self, files: list, namespace: str = "default"):
+    def load_yaml(self, files: list, namespace: str = None):
         """
         applying list of yaml files without associating to any modules/services
         """
@@ -33,13 +34,16 @@ class JsOrcApi:
             for file in files:
                 for conf in yaml.safe_load_all(b64decode(file["base64"])):
                     kind = conf["kind"]
-                    kube.create(kind, namespace, conf)
+                    kube.create(
+                        kind, conf["metadata"]["name"], conf, namespace=namespace
+                    )
                     if not res.get(kind):
                         res[kind] = []
                     res[kind].append(conf)
 
             return res
         except Exception:
+            logger.exception("Error loading yaml!")
             return {"message": "load_yaml is not supported on non automated JsOrc!"}
 
     @Interface.admin_api(cli_args=["name"])
@@ -65,12 +69,12 @@ class JsOrcApi:
         old_config = self._h.get_glob(name)
         if old_config:
             old_config = loads(old_config)
-            old_config.pop("__OLD_CONFIG__", None)
+            old_config.pop("__OLD_CONFIG__", {})
             for kind, confs in old_config.items():
-                names = []
+                _confs = {}
                 for conf in confs:
-                    names.append(conf["metadata"]["name"])
-                old_config[kind] = names
+                    _confs.update({conf["metadata"]["name"]: conf})
+                old_config[kind] = _confs
 
             new_config["__OLD_CONFIG__"] = old_config
 

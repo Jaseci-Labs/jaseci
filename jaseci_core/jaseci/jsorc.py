@@ -602,13 +602,17 @@ class JsOrc:
                             for kind, confs in service.manifest.items():
                                 for conf in confs:
                                     name = conf["metadata"]["name"]
-                                    names = old_config_map.get(kind, [])
-                                    if name in names:
-                                        names.remove(name)
+                                    _confs = old_config_map.get(kind, {})
+                                    if name in _confs.keys():
+                                        _confs.pop(name)
 
                                     if kind == "Service":
                                         pod_name = name
-                                    res = kube.read(kind, name)
+                                    res = kube.read(
+                                        kind,
+                                        name,
+                                        namespace=kube.resolve_namespace(conf),
+                                    )
                                     if (
                                         hasattr(res, "status")
                                         and res.status == 404
@@ -635,12 +639,20 @@ class JsOrc:
                                     old_config_map
                                     and type(old_config_map) is dict
                                     and kind in old_config_map
-                                    and name in old_config_map[kind]
+                                    and name in old_config_map[kind].keys()
                                 ):
-                                    old_config_map.get(kind, []).remove(name)
+                                    old_config_map.get(kind, {}).pop(name)
 
-                                for to_be_removed in old_config_map.get(kind, []):
-                                    res = kube.read(kind, to_be_removed)
+                                for to_be_removed in old_config_map.get(
+                                    kind, {}
+                                ).keys():
+                                    res = kube.read(
+                                        kind,
+                                        to_be_removed,
+                                        namespace=kube.resolve_namespace(
+                                            old_config_map["kind"][to_be_removed]
+                                        ),
+                                    )
                                     if (
                                         not isinstance(res, ApiException)
                                         and res.metadata
