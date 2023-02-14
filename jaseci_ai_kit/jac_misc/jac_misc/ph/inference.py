@@ -134,6 +134,10 @@ class InferenceList:
             json.dump(config, f)
         os.makedirs("heads", exist_ok=True)
         self.ie_list = {}
+        self.ph_list = []
+        if os.path.exists("heads/ph_list.json"):
+            with open("heads/ph_list.json", "r") as f:
+                self.ph_list = json.load(f)
 
     def add(self, config: Dict = None, uuid: str = None) -> str:  # type: ignore
         if self.check(uuid):
@@ -148,10 +152,10 @@ class InferenceList:
         if not os.path.exists("heads/ph_list.json"):
             with open("heads/ph_list.json", "w") as f:
                 json.dump([], f)
-        with open("heads/ph_list.json", "r+") as f:
+        with open("heads/ph_list.json", "r") as f:
             ph_list = json.load(f)
             ph_list.append(ie.id)
-            f.seek(0)
+        with open("heads/ph_list.json", "w") as f:
             json.dump(ph_list, f)
         return ie.id
 
@@ -205,8 +209,9 @@ class InferenceList:
     def delete_head(self, uuid: str) -> None:
         if self.check(uuid):
             del self.ie_list[uuid]
-            with open("heads/ph_list.json", "r+") as f:
-                json.dump(list(set(json.load(f)).remove(uuid)), f)
+            self.ph_list.remove(uuid)
+            with open("heads/ph_list.json", "w") as f:
+                json.dump(self.ph_list, f)
             shutil.rmtree(f"heads/{uuid}")
         else:
             raise ImproperConnectionState("Inference Engine not found.")
@@ -218,14 +223,9 @@ class InferenceList:
             self.ie_list[uuid].load_weights(f"heads/{uuid}/current.pth")
 
     def check(self, uuid: str) -> bool:
-        if os.path.exists("heads/ph_list.json"):
-            with open("heads/ph_list.json", "r") as f:
-                ph_list = json.load(f)
-        else:
-            ph_list = []
-        if uuid in ph_list and uuid in self.ie_list:
+        if uuid in self.ph_list and uuid in self.ie_list:
             return True
-        if uuid in ph_list:
+        if uuid in self.ph_list:
             self.load_head(uuid)
             return True
         return False
