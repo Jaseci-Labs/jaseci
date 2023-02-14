@@ -6,13 +6,14 @@ import uuid as uuid_gen
 import os
 import shutil
 from collections import OrderedDict
+import json
 
 from .utils import model as model_module
 from .utils import process as process_module
 from .utils.base import BaseInference
 from .utils.logger import get_logger
 import logging
-from .utils.util import deep_update, write_yaml
+from .utils.util import deep_update, write_yaml, read_yaml
 
 from .train import train
 
@@ -91,8 +92,14 @@ class InferenceList:
 
     def __init__(self, config: Dict = None) -> None:  # type: ignore
         self.config = config
+        with open("heads/config.yaml", "w") as f:
+            json.dump(config, f)
         os.makedirs("heads", exist_ok=True)
         self.ie_list = {}
+        self.ph_list = []
+        if os.path.exists("heads/ph_list.json"):
+            with open("heads/ph_list.json", "r") as f:
+                self.ph_list = json.load(f)
 
     def add(self, config: Dict = None, uuid: str = None) -> str:  # type: ignore
         if self.check(uuid):
@@ -104,6 +111,14 @@ class InferenceList:
         else:
             ie = InferenceEngine(self.config, uuid)
         self.ie_list[ie.id] = ie
+        if not os.path.exists("heads/ph_list.json"):
+            with open("heads/ph_list.json", "w") as f:
+                json.dump([], f)
+        with open("heads/ph_list.json", "r") as f:
+            self.ph_list = json.load(f)
+            self.ph_list.append(ie.id)
+        with open("heads/ph_list.json", "w") as f:
+            json.dump(self.ph_list, f)
         return ie.id
 
     def predict(self, uuid: str, data: Any) -> Any:
@@ -153,5 +168,26 @@ class InferenceList:
         else:
             raise ImproperConnectionState("Inference Engine not found.")
 
+    def delete_head(self, uuid: str) -> None:
+        if self.check(uuid):
+            del self.ie_list[uuid]
+            self.ph_list.remove(uuid)
+            with open("heads/ph_list.json", "w") as f:
+                json.dump(self.ph_list, f)
+            shutil.rmtree(f"heads/{uuid}")
+        else:
+            raise ImproperConnectionState("Inference Engine not found.")
+
+    def load_head(self, uuid: str) -> None:
+        config = read_yaml(f"heads/{uuid}/config.yaml")
+        self.ie_list[uuid] = InferenceEngine(config, uuid)
+        if os.path.exists(f"heads/{uuid}/current.pth"):
+            self.ie_list[uuid].load_weights(f"heads/{uuid}/current.pth")
+
     def check(self, uuid: str) -> bool:
-        return uuid in self.ie_list
+        if uuid in self.ph_list and uuid in self.ie_list:
+            return True
+        if uuid in self.ph_list:
+            self.load_head(uuid)
+            return True
+        return False
