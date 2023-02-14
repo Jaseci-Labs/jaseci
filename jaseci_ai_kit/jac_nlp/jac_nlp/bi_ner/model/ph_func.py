@@ -231,15 +231,12 @@ class BI_P_Head(Base_BI_enc):
     ) -> Union[LongTensor, Tuple[Tensor, LongTensor]]:
         """Predicts entity type ids. If true label ids are given,
         calculates loss as well."""
-        # print(input_ids.shape)
-        # input_ids=input_ids.squeeze(0)
-        # print(input_ids.shape)
-        batch_size,sequence_length = input_ids
-        # input_ids = pad(
-        #     input_ids,
-        #     [0, self._max_sequence_length - sequence_length],
-        #     value=self._token_tokenizer.pad_token_id,
-        # )
+        batch_size,sequence_length = input_ids.shape
+        input_ids = pad(
+            input_ids,
+            [0, self._max_sequence_length - sequence_length],
+            value=self._token_tokenizer.pad_token_id,
+        )
 
         token_representations = self._token_encoder(
             input_ids=input_ids.to(self.device)

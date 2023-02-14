@@ -21,22 +21,32 @@ try:
                         "unk_entity_type_id":-1,
                         "unk_category":"<UNK>",
                         "descriptions":[
-                            "LOC",
-                            "PER"
+                            "Fin_Corp"
                             ]
                     }
                 },
          "type":"CustomModel"
         },
         "Inference":{
-            "postprocess": {
-                "type": "CustomProcessor",
-                "args": {}
-            },  
-            "preprocess": {
-                "type": "CustomProcessor",
-                "args": {}
-            }
+            "type":"CustomInference"
+            # "postprocess": {
+            #     "type": "CustomProcessor",
+            #     "args": {
+                    
+            #     }
+            # },  
+            # "preprocess": {
+            #     "type": "CustomProcessor",
+            #     "args": {"inf_args":{
+            #                     "unk_entity_type_id":-1,
+            #                     "unk_category":"<UNK>",
+            #                     "max_sequence_length":128,
+            #                     "descriptions":[
+            #                         "Fin_Corp",
+            #                         "PER"
+            #                         ]
+            #                     }}
+            # }
         }
       },
     "python": model_data
@@ -53,7 +63,8 @@ try:
                 "Trainer":{
                     "name": "CustomTrainer",
                     "trainer":{
-                        "epochs": 3
+                        "epochs": 10,
+                        "tensorboard":False
                     },
                     "dataloader": {
                         "args":{
@@ -65,27 +76,28 @@ try:
                                 "unk_entity_type_id":-1,
                                 "unk_category":"<UNK>",
                                 "descriptions":[
-                                    "LOC",
-                                    "PER"
+                                       "Fin_Corp"
                                     ]
                                 }
                             },
                         "type": "CustomDataLoader"
                     },
-                    "loss":{
-                        "args":{
-                            "loss_args":{
-                                "n_classes":2
-                            }
-                        },
-                    "type": "Loss"
-                    }
-                }
+                    "loss":"custom_loss",
+                    "loss_args":{
+                        "n_classes":1
+                    },
+                    "metrics":[]
+            }
             }
             }
             response = requests.post('http://localhost:8000/train_head/',json=train_json)
             print(response.status_code)
             print(response.text)
+            if response.status_code==200:
+                pred_json={"uuid":"sample","data":"What does Site-Built Housing mean?"}
+                response = requests.post('http://localhost:8000/predict/',json=pred_json)
+                print(response.status_code)
+                print(response.text)
 except Exception as e:
     print(f"Exceptions : {e}")
     print(traceback.print_exc())
