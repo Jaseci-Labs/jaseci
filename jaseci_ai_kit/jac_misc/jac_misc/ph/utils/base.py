@@ -308,7 +308,7 @@ class BaseInference:
         if self.infer_config["weights"]:
             if not os.path.exists(f"heads/{uuid}/current.pth"):
                 shutil.copyfile(
-                    self.infer_config["weights"], f"heads/{self.id}/current.pth"
+                    self.infer_config["weights"], f"heads/{uuid}/current.pth"
                 )
                 self.logger.info(
                     "Loading default checkpoint: {} ...".format(
@@ -316,7 +316,7 @@ class BaseInference:
                     )
                 )
 
-            checkpoint = torch.load(f"heads/{self.id}/current.pth")
+            checkpoint = torch.load(f"heads/{uuid}/current.pth")
             state_dict = checkpoint.get("state_dict", checkpoint)
             model_keys = list(self.model.state_dict().keys())
             if model_keys[0].startswith("model."):
