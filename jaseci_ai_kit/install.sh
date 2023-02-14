@@ -11,11 +11,11 @@ install_modules() {
 		cd jac_speech
 		pip install .[all]
 		cd ../jac_nlp
-		pip install -e .[all]
+		pip install .[all]
 		cd ../jac_misc
-		pip install -e .[all]
+		pip install .[all]
 		cd ../jac_vision
-		pip install -e .[all]
+		pip install .[all]
 		return
 	fi
 
@@ -24,19 +24,19 @@ install_modules() {
 		echo -e "\033[0;32mInstalling ${module}\033[0m"
 		if [[ " ${JAC_NLP_MODULES[@]} " =~ " ${module} " ]]; then
 			cd jac_nlp
-			pip install -e .[${module}]
+			pip install .[${module}]
 			cd ..
 		elif [[ " ${JAC_SPEECH_MODULES[@]} " =~ " ${module} " ]]; then
 			cd jac_speech
-			pip install -e .[${module}]
+			pip install .[${module}]
 			cd ..
 		elif [[ " ${JAC_MISC_MODULES[@]} " =~ " ${module} " ]]; then
 			cd jac_misc
-			pip install -e .[${module}]
+			pip install .[${module}]
 			cd ..
 		elif [[ " ${JAC_VISION_MODULES[@]} " =~ " ${module} " ]]; then
 			cd jac_vision
-			pip install -e .[${module}]
+			pip install .[${module}]
 			cd ..
 		else
 			# add color to  echo "Invalid module: ${module}"
