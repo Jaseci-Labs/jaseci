@@ -68,12 +68,6 @@
   - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
   - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
 
-<!-- - [Main](docs/docs/Developing_with_JAC/Language_Feature.md)
-  - [FileHnadling](docs/docs/Developing_with_JAC/Language_Features/FileHnadling.md) Find out if you can write to json
-  - [Multipart](docs/docs/Developing_with_JAC/Language_Features/multipart.md)
-  - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
-  - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md) -->
-  <!-- stuff missing in globals -->
 
 ## Codelabs and Guides
 
@@ -105,35 +99,6 @@
     - [Abilities By Example](examples/CanoniCAI/codelabs/lang_docs/abilities_by_example.md)
   - [Actions](examples/CanoniCAI/codelabs/lang_docs/actions.md)
     - [Actions By Example](examples/CanoniCAI/codelabs/lang_docs/actions_by_example.md)
-
-<!-- ## Jac Language Features -->
-
-<!-- - [Main](docs/docs/Developing_with_JAC/Language_Feature.md)
-  - [ControlFlow](docs/docs/Developing_with_JAC/Language_Features/ControlFlow.md)
-  - [FileHnadling](docs/docs/Developing_with_JAC/Language_Features/FileHnadling.md)
-  - [Operator](docs/docs/Developing_with_JAC/Language_Features/Operator.md)
-  - [Data Types](docs/docs/Developing_with_JAC/Language_Features/dataTypes.md)
-  - [Function](docs/docs/Developing_with_JAC/Language_Features/function.md)
-  - [Globals](docs/docs/Developing_with_JAC/Language_Features/globals.md)
-  - [Input/Output](docs/docs/Developing_with_JAC/Language_Features/input_output.md)
-  - [Multipart](docs/docs/Developing_with_JAC/Language_Features/multipart.md)
-  - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
-  - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md) -->
-
-<!-- ## Standard Actions
-
-  - [Alias](docs/docs/Developing_with_JAC/Language_Features/actions/alias.md)
-  - [Date](docs/docs/Developing_with_JAC/Language_Features/actions/date.md)
-  - [File](docs/docs/Developing_with_JAC/Language_Features/actions/file.md)
-  - [Global](docs/docs/Developing_with_JAC/Language_Features/actions/global.md)
-  - [Jaseci](docs/docs/Developing_with_JAC/Language_Features/actions/jaseci.md)
-  - [Net](docs/docs/Developing_with_JAC/Language_Features/actions/net.md)
-  - [Rand](docs/docs/Developing_with_JAC/Language_Features/actions/rand.md)
-  - [Request](docs/docs/Developing_with_JAC/Language_Features/actions/request.md)
-  - [Std](docs/docs/Developing_with_JAC/Language_Features/actions/std.md)
-  - [Vectors](docs/docs/Developing_with_JAC/Language_Features/actions/vectors.md)
-  - [Walker](docs/docs/Developing_with_JAC/Language_Features/actions/walker.md)
-  - [Elastic](docs/docs/Developing_with_JAC/Language_Features/actions/elastic.md) -->
 
 ## Jaseci AI Library Reference
 
