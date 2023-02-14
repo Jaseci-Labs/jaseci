@@ -304,6 +304,8 @@ class BaseInference:
             **model_config.get("args", {})
         )
 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         # loading pretrained weights
         if self.infer_config["weights"]:
             if not os.path.exists(f"heads/{uuid}/current.pth"):
@@ -316,7 +318,9 @@ class BaseInference:
                     )
                 )
 
-            checkpoint = torch.load(f"heads/{uuid}/current.pth")
+            checkpoint = torch.load(
+                f"heads/{uuid}/current.pth", map_location=torch.device("cpu")
+            )
             state_dict = checkpoint.get("state_dict", checkpoint)
             model_keys = list(self.model.state_dict().keys())
             if model_keys[0].startswith("model."):
@@ -329,7 +333,6 @@ class BaseInference:
             logger.info("Checkpoint loaded.")
 
         # Setting the device
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self.model.to(self.device)
         self.model.eval()
 
@@ -360,7 +363,7 @@ class BaseInference:
     def load_weights(self, weights: str) -> None:
         checkpoint = torch.load(weights)
         state_dict = checkpoint.get("state_dict", checkpoint)
-        self.model.load_state_dict(state_dict)
+        self.model.load_state_dict(state_dict, map_location=torch.device("cpu"))
 
     def get_activation(self, name):
         def hook(model, input, output):
