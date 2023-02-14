@@ -92,3 +92,39 @@ jaseci > jac run movie.jac
 ```
 
 To be amazed by the graph view and the read the summeries you have to register the updated code in the jaseci server.
+
+Steps to re-launch the new program in Jaseci Studio;
+
+**Step 1:** Build the jac file
+```
+jac build movie.jac
+```
+
+**Step 2:** Sentinel register the `jir`   file.
+```
+sentinel register movie.jir -set_active true -mode ir
+```
+
+**Step 3:** Get the sentinel ID (`jid`)
+
+```
+sentinel get
+```
+
+or
+
+```
+sentinel list
+```
+
+**Step 3:** Sentinel Set
+
+```
+sentinel set -snt JID -mode ir movie.jir
+```
+
+**Step 4:** Start and login to the server
+
+**Step 5:** sentinel register in server
+
+**Step 5:** Start the Jaseci Studio and view the graph

@@ -4,10 +4,7 @@ import {*} with './build_graph.jac';
 walker summerizer {
     can bart_sum.summarize;
     has text;
-    has summery;
-
-    summery = bart_sum.summarize(text, 20);
-    std.out(summery);
+    has summery = bart_sum.summarize(text=text, max_length=50, min_length=10);
 }
 
 walker init{
