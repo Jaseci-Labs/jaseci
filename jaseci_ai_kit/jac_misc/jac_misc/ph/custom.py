@@ -3,7 +3,7 @@ from torch import nn
 from torch.utils.data import Dataset
 from typing import Iterable, Dict, Optional, List
 from torch import LongTensor
-from jac_nlp.bi_ner.model.ph_model import BI_P_Head, prepare_inputs, collate_examples 
+from jac_nlp.bi_ner.model.ph_model import BI_P_Head, prepare_inputs, collate_examples
 from jac_nlp.bi_ner.model.loss import ContrastiveThresholdLoss
 from jac_nlp.bi_ner.model.tokenize_data import get_datasets
 from jac_nlp.bi_ner.datamodel.utils import get_category_id_mapping, invert
@@ -13,13 +13,13 @@ from jac_nlp.bi_ner.datamodel.example import (
     BatchedExamples,
     TypedSpan,
 )
-# from jac_nlp.bi_ner.datamodel import example
 from functools import partial
 from torch.nn.functional import pad
 from jac_misc.ph.utils.base import BaseInference
 from typing import Any
 from collections import defaultdict
 import json
+
 
 def collate_fn(
     examples: Iterable[Example],
@@ -57,7 +57,7 @@ class CustomLoss(torch.nn.Module):
             output[2].unsqueeze(-2).repeat(1, 1, _max_entity_length, 1), labels
         )
 
-        return (_span_coef * span_loss + _start_coef * start_loss + _end_coef * end_loss)
+        return _span_coef * span_loss + _start_coef * start_loss + _end_coef * end_loss
 
 
 class CustomModel(nn.Module):
@@ -99,8 +99,11 @@ class CustomModel(nn.Module):
 class CustomDataset(Dataset):
     def __init__(self, train_args) -> None:
         super(CustomDataset, self).__init__()
-        with open("/home/ubuntu/jaseci/jaseci_ai_kit/jac_misc/jac_misc/ph/ph_train_data.json","r") as fp:
-          self.data = json.load(fp)
+        with open(
+            "/home/ubuntu/jaseci/jaseci_ai_kit/jac_misc/jac_misc/ph/ph_train_data.json",
+            "r",
+        ) as fp:
+            self.data = json.load(fp)
         category_id_mapping = get_category_id_mapping(
             train_args, train_args["descriptions"]
         )

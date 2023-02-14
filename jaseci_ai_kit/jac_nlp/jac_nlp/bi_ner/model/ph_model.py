@@ -20,7 +20,7 @@ from .metric import CosSimilarity
 from .loss import ContrastiveThresholdLoss
 from ..datamodel.example import Example, strided_split, TypedSpan, BatchedExamples
 from .base_encoder import Base_BI_enc
-from ..datamodel.utils import pad_images, invert
+from ..datamodel.utils import pad_images
 
 _Model = TypeVar("_Model", bound="BI_P_Head")
 
@@ -335,6 +335,7 @@ def prepare_inputs(
             cls_token_id=_token_tokenizer.cls_token_id,
         )
 
+
 def collate_examples(
     examples: Iterable[Example],
     *,
@@ -393,4 +394,4 @@ def collate_examples(
             pad_sequence(all_end_offsets, batch_first=True, padding_value=-100).long(),
         )
         return res
-    return res["input_ids"],res["labels"]
+    return res["input_ids"], res["labels"]
