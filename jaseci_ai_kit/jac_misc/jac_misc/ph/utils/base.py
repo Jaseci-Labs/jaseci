@@ -310,7 +310,7 @@ class BaseInference:
                 shutil.copyfile(
                     self.infer_config["weights"], f"heads/{uuid}/current.pth"
                 )
-                self.logger.info(
+                logger.info(
                     "Loading default checkpoint: {} ...".format(
                         self.infer_config["weights"]
                     )
