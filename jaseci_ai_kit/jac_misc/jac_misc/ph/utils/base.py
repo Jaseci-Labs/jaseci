@@ -192,7 +192,7 @@ class BaseTrainer:
         """
         resume_path = str(resume_path)
         self.logger.info("Loading checkpoint: {} ...".format(resume_path))
-        checkpoint = torch.load(resume_path)
+        checkpoint = torch.load(resume_path, map_location=torch.device("cpu"))
         self.start_epoch = checkpoint.get("epoch", 0) + 1
         self.epochs += checkpoint.get("epoch", 0)
         self.mnt_best = checkpoint.get("monitor_best", 0)
@@ -304,19 +304,23 @@ class BaseInference:
             **model_config.get("args", {})
         )
 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         # loading pretrained weights
         if self.infer_config["weights"]:
             if not os.path.exists(f"heads/{uuid}/current.pth"):
                 shutil.copyfile(
-                    self.infer_config["weights"], f"heads/{self.id}/current.pth"
+                    self.infer_config["weights"], f"heads/{uuid}/current.pth"
                 )
-                self.logger.info(
+                logger.info(
                     "Loading default checkpoint: {} ...".format(
                         self.infer_config["weights"]
                     )
                 )
 
-            checkpoint = torch.load(f"heads/{self.id}/current.pth")
+            checkpoint = torch.load(
+                f"heads/{uuid}/current.pth", map_location=torch.device("cpu")
+            )
             state_dict = checkpoint.get("state_dict", checkpoint)
             model_keys = list(self.model.state_dict().keys())
             if model_keys[0].startswith("model."):
@@ -329,7 +333,6 @@ class BaseInference:
             logger.info("Checkpoint loaded.")
 
         # Setting the device
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self.model.to(self.device)
         self.model.eval()
 
@@ -358,7 +361,7 @@ class BaseInference:
         raise NotImplementedError
 
     def load_weights(self, weights: str) -> None:
-        checkpoint = torch.load(weights)
+        checkpoint = torch.load(weights, map_location=torch.device("cpu"))
         state_dict = checkpoint.get("state_dict", checkpoint)
         self.model.load_state_dict(state_dict)
 

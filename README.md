@@ -21,7 +21,7 @@
       - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
     - [Setting Up Your Editor](support/guide/getting_started/setting_up_your_editor.md)
     - [Installing Jac AI Kit and Graphiz](docs/docs/getting-started/jac_ai_kit_and_graphiz.md)
-    - [Installing Jaseci Studios](docs/docs/getting-started/jaseci_studios.md)
+    - [Installing Jaseci Studios](jaseci_studio/README.md)
 
   - [Interfacing A Jaseci Machine](docs/docs/getting-started/content.md)
     - [Three modes of Interacting with Jaseci](docs/docs/interfacing_jaseci/interaction_modes.md)
@@ -143,7 +143,6 @@
   - [Connecting an API](ui_components/docs/connecting-an-api.md)
 
 ## Jaseci X Features
-- [Stripe Integration](jaseci_serv/jaseci_serv/jsx_stripe/README.md)
 - [Single Sign-on Socail](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
 
 ## Jaseci Core Internals
