@@ -84,16 +84,16 @@ export function LoginForm() {
         radius={"md"}
         sx={{ width: "95%", maxWidth: "600px", margin: "0 auto" }}
       >
-        {searchParams.get("redirected") &&
-          searchParams.get("reason") === "not_activated" && (
+        {searchParams?.get("redirected") &&
+          searchParams?.get("reason") === "not_activated" && (
             <Alert mb="md" color="red" aria-label="Result">
               Your account is not activated. Please check your email for
               activation link.
             </Alert>
           )}
 
-        {searchParams.get("redirected") &&
-          searchParams.get("reason") === "not_superuser" && (
+        {searchParams?.get("redirected") &&
+          searchParams?.get("reason") === "not_superuser" && (
             <Alert
               mb="md"
               icon={<IconShieldX></IconShieldX>}
