@@ -192,7 +192,7 @@ class BaseTrainer:
         """
         resume_path = str(resume_path)
         self.logger.info("Loading checkpoint: {} ...".format(resume_path))
-        checkpoint = torch.load(resume_path)
+        checkpoint = torch.load(resume_path, map_location=torch.device("cpu"))
         self.start_epoch = checkpoint.get("epoch", 0) + 1
         self.epochs += checkpoint.get("epoch", 0)
         self.mnt_best = checkpoint.get("monitor_best", 0)
@@ -361,9 +361,9 @@ class BaseInference:
         raise NotImplementedError
 
     def load_weights(self, weights: str) -> None:
-        checkpoint = torch.load(weights)
+        checkpoint = torch.load(weights, map_location=torch.device("cpu"))
         state_dict = checkpoint.get("state_dict", checkpoint)
-        self.model.load_state_dict(state_dict, map_location=torch.device("cpu"))
+        self.model.load_state_dict(state_dict)
 
     def get_activation(self, name):
         def hook(model, input, output):
