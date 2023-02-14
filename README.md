@@ -143,7 +143,6 @@
   - [Connecting an API](ui_components/docs/connecting-an-api.md)
 
 ## Jaseci X Features
-- [Stripe Integration](jaseci_serv/jaseci_serv/jsx_stripe/README.md)
 - [Single Sign-on Socail](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
 
 ## Jaseci Core Internals
