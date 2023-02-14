@@ -153,10 +153,10 @@ class InferenceList:
             with open("heads/ph_list.json", "w") as f:
                 json.dump([], f)
         with open("heads/ph_list.json", "r") as f:
-            ph_list = json.load(f)
-            ph_list.append(ie.id)
+            self.ph_list = json.load(f)
+            self.ph_list.append(ie.id)
         with open("heads/ph_list.json", "w") as f:
-            json.dump(ph_list, f)
+            json.dump(self.ph_list, f)
         return ie.id
 
     def predict(self, uuid: str, data: Any) -> Any:
