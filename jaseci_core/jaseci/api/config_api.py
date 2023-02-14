@@ -22,6 +22,7 @@ class ConfigApi:
             "MAIL_CONFIG",
             "PROMON_CONFIG",
             "ELASTIC_CONFIG",
+            "STRIPE_CONFIG",
             "META_CONFIG",
         ]
 
