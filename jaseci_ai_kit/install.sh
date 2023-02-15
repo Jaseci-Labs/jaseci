@@ -14,9 +14,9 @@ install_modules() {
 		cd ../jac_speech
 		pip install .[all]
 		cd ../jac_misc
-		pip install -e .[all]
+		pip install .[all]
 		cd ../jac_vision
-		pip install -e .[all]
+		pip install .[all]
 		return
 	fi
 
