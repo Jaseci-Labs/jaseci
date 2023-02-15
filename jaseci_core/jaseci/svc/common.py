@@ -86,13 +86,13 @@ class CommonService:
         )
 
     def is_ready(self):
-        return self.state.is_ready() and self.app is None
+        return self.state == Ss.NOT_STARTED and self.app is None
 
     def is_running(self):
-        return self.state.is_running() and not (self.app is None)
+        return self.state == Ss.RUNNING and not (self.app is None)
 
     def has_failed(self):
-        return self.state.has_failed()
+        return self.state == Ss.FAILED
 
     def build_settings(self, hook) -> dict:
         try:
@@ -154,11 +154,6 @@ class CommonService:
     def failed(self):
         self.app = None
         self.state = Ss.FAILED
-
-
-class ProxyService(CommonService):
-    def __init__(self):
-        super().__init__(__class__)
 
 
 class Kube:
@@ -753,55 +748,3 @@ class JsOrc:
 
     def optimize(self, jsorc_interval):
         self.actions_optimizer.run(jsorc_interval)
-
-
-class MetaProperties:
-    def __init__(self, cls):
-        self.cls = cls
-
-        if not hasattr(cls, "_app"):
-            setattr(cls, "_app", None)
-            setattr(cls, "_enabled", True)
-            setattr(cls, "_state", Ss.NOT_STARTED)
-            setattr(cls, "_quiet", False)
-            setattr(cls, "_running_interval", 0)
-
-    @property
-    def app(self) -> JsOrc:
-        return self.cls._app
-
-    @app.setter
-    def app(self, val: JsOrc):
-        self.cls._app = val
-
-    @property
-    def state(self) -> Ss:
-        return self.cls._state
-
-    @state.setter
-    def state(self, val: Ss):
-        self.cls._state = val
-
-    @property
-    def enabled(self) -> bool:
-        return self.cls._enabled
-
-    @enabled.setter
-    def enabled(self, val: bool):
-        pass
-
-    @property
-    def quiet(self) -> bool:
-        return self.cls._quiet
-
-    @quiet.setter
-    def quiet(self, val: bool):
-        pass
-
-    @property
-    def running_interval(self) -> int:
-        return self.cls._running_interval
-
-    @running_interval.setter
-    def running_interval(self, val: int):
-        self.cls._running_interval = val
