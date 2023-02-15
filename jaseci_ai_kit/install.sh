@@ -8,9 +8,10 @@ JAC_VISION_MODULES=("detr" "rftm" "yolos" "dpt")
 install_modules() {
 	if [[ $1 == "all" ]]; then
 		echo -e "\033[0;32mInstalling all the modules\033[0m"
-		cd jac_speech
+
+		cd jac_nlp
 		pip install .[all]
-		cd ../jac_nlp
+		cd ../jac_speech
 		pip install .[all]
 		cd ../jac_misc
 		pip install .[all]
