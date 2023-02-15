@@ -9,6 +9,7 @@
 - [What and Why Jaseci?](docs/docs/Introduction/What_and_why_jaseci.md)
 - [Architecture of Jaseci and Jac](docs/docs/Introduction/Architecture_of_jaseci.md)
 - [Abstraction of Jaseci](docs/docs/Introduction/abstraction_of_jaseci.md)
+<!-- Information is needed for the above sections to be complete -->
 
 ## Getting Started
 
@@ -20,28 +21,53 @@
       - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
     - [Setting Up Your Editor](support/guide/getting_started/setting_up_your_editor.md)
     - [Installing Jac AI Kit and Graphiz](docs/docs/getting-started/jac_ai_kit_and_graphiz.md)
-    - [Installing Jaseci Studios](docs/docs/getting-started/jaseci_studios.md)
+    - [Installing Jaseci Studios](jaseci_studio/README.md)
 
   - [Interfacing A Jaseci Machine](docs/docs/getting-started/content.md)
     - [Three modes of Interacting with Jaseci](docs/docs/interfacing_jaseci/interaction_modes.md)
-    - [Jsctl: The Jaseci Command Line Interface](docs/docs/interfacing_jaseci/jsctl.md)
-    - [The Very Basics: CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
-    - [Jac Api Collection](docs/docs/interfacing_jaseci/api_collection.md)
+    - [Local JSCTL Mode](docs/docs/interfacing_jaseci/jsctl.md)
+      - [CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
+    - [Remote JSCTL Mode](docs/docs/interfacing_jaseci/remote_jsctl.md)
+    - [Application Mode: Jac Api Collection](docs/docs/interfacing_jaseci/api_collection.md)
 
   - [Taking Jac for a Test Drive](docs/docs/getting-started/content.md)
     - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
     - [Writing Your First App](support/guide/getting_started/writing_your_first_app.md)
     - [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md)
 
-<!-- - [Installing Jaseci](support/guide/getting_started/installation.md)
-  - [Installing on Windows](support/guide/getting_started/installation.md#installing-on-windows)
-  - [Installing on Mac](support/guide/getting_started/installation.md#installing-on-mac)
-  - [Installing on Linux](support/guide/getting_started/installation.md#installing-on-linux)
-  - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
-- [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
-- [Setting Up Your Editor](support/guide/getting_started/setting_up_your_editor.md)
-- [Writing Your First App](support/guide/getting_started/writing_your_first_app.md)
-- [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md) -->
+<!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
+<!-- Second we must write the content for the coming soon sections -->
+
+## Language Basics
+
+  - [Data Types, Numbers, Arithmetic and Logic](docs/docs/Language_basics/Num_ari_log.md)
+    - [Operators](docs/docs/Developing_with_JAC/Language_Features/Operator.md)
+    - [Precedence](docs/docs/Language_basics/precedence.md)
+    - [Data Types](docs/docs/Developing_with_JAC/Language_Features/dataTypes.md)
+  - [Lists Strings and Dictionaries](docs/docs/Language_basics/lists_dicts_dicts.md)
+    - [Library of String Operations](docs/docs/Language_basics/strings.md)
+    - [Library of List Operations](docs/docs/Language_basics/lists.md)
+    - [Library of Dictionary Operations](docs/docs/Language_basics/dictionaries.md)
+  - [Control Flow](docs/docs/Developing_with_JAC/Language_Features/ControlFlow.md)
+  - [Input/Output](docs/docs/Developing_with_JAC/Language_Features/input_output.md)
+  - [Globals](docs/docs/Developing_with_JAC/Language_Features/globals.md)
+  - [Functions](docs/docs/Developing_with_JAC/Language_Features/function.md)
+  - [File Handling](docs/docs/Developing_with_JAC/Language_Features/actions/file.md)
+  - [Actions](docs/docs/getting-started/content.md)
+    - [Alias](docs/docs/Developing_with_JAC/Language_Features/actions/alias.md)
+    - [Date](docs/docs/Developing_with_JAC/Language_Features/actions/date.md)
+    - [Jaseci](docs/docs/Developing_with_JAC/Language_Features/actions/jaseci.md)
+    - [Net](docs/docs/Developing_with_JAC/Language_Features/actions/net.md)
+    - [Rand](docs/docs/Developing_with_JAC/Language_Features/actions/rand.md)
+    - [Request](docs/docs/Developing_with_JAC/Language_Features/actions/request.md)
+    - [Std](docs/docs/Developing_with_JAC/Language_Features/actions/std.md)
+    - [Vectors](docs/docs/Developing_with_JAC/Language_Features/actions/vectors.md)
+    - [Walker](docs/docs/Developing_with_JAC/Language_Features/actions/walker.md)
+    - [Elastic](docs/docs/Developing_with_JAC/Language_Features/actions/elastic.md)
+  - [Multipart](docs/docs/Developing_with_JAC/Language_Features/multipart.md)
+  - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
+  - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
+
 
 ## Codelabs and Guides
 
@@ -54,7 +80,8 @@
   6. [Use speech to text and speech to text modules](examples/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
   7. [Collect Training Data via Crowdsource](examples/CanoniCAI/codelabs/7_crowdsource.md)
   8. [Contritbute to Jaseci Open Source](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
-- [Build a Custom Jaseci Module](support/codelabs/custom_jaseci_module_codelab.md)
+- [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
+- [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
 - [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
 - [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
 - [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
@@ -63,6 +90,7 @@
 ## The JAC Language Guide
 
 - [Key Abstractions and Concepts](examples/CanoniCAI/codelabs/lang_docs/key_concepts.md)
+<!-- - [OOP](docs/docs/Developing_with_JAC/Language_Features/OOP.md) -->
   - [Graphs](examples/CanoniCAI/codelabs/lang_docs/graphs.md)
   - [Walkers](examples/CanoniCAI/codelabs/lang_docs/walkers.md)
     - [Walkers By Example](examples/CanoniCAI/codelabs/lang_docs/walkers_by_example.md)
@@ -71,36 +99,6 @@
     - [Abilities By Example](examples/CanoniCAI/codelabs/lang_docs/abilities_by_example.md)
   - [Actions](examples/CanoniCAI/codelabs/lang_docs/actions.md)
     - [Actions By Example](examples/CanoniCAI/codelabs/lang_docs/actions_by_example.md)
-
-## Jac Language Features
-
-- [Main](docs/docs/Developing_with_JAC/Language_Feature.md)
-  - [ControlFlow](docs/docs/Developing_with_JAC/Language_Features/ControlFlow.md)
-  - [FileHnadling](docs/docs/Developing_with_JAC/Language_Features/FileHnadling.md)
-  - [OOP](docs/docs/Developing_with_JAC/Language_Features/OOP.md)
-  - [Operator](docs/docs/Developing_with_JAC/Language_Features/Operator.md)
-  - [Data Types](docs/docs/Developing_with_JAC/Language_Features/dataTypes.md)
-  - [Function](docs/docs/Developing_with_JAC/Language_Features/function.md)
-  - [Globals](docs/docs/Developing_with_JAC/Language_Features/globals.md)
-  - [Input/Output](docs/docs/Developing_with_JAC/Language_Features/input_output.md)
-  - [Multipart](docs/docs/Developing_with_JAC/Language_Features/multipart.md)
-  - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
-  - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
-
-## Standard Actions
-
-  - [Alias](docs/docs/Developing_with_JAC/Language_Features/actions/alias.md)
-  - [Date](docs/docs/Developing_with_JAC/Language_Features/actions/date.md)
-  - [File](docs/docs/Developing_with_JAC/Language_Features/actions/file.md)
-  - [Global](docs/docs/Developing_with_JAC/Language_Features/actions/global.md)
-  - [Jaseci](docs/docs/Developing_with_JAC/Language_Features/actions/jaseci.md)
-  - [Net](docs/docs/Developing_with_JAC/Language_Features/actions/net.md)
-  - [Rand](docs/docs/Developing_with_JAC/Language_Features/actions/rand.md)
-  - [Request](docs/docs/Developing_with_JAC/Language_Features/actions/request.md)
-  - [Std](docs/docs/Developing_with_JAC/Language_Features/actions/std.md)
-  - [Vectors](docs/docs/Developing_with_JAC/Language_Features/actions/vectors.md)
-  - [Walker](docs/docs/Developing_with_JAC/Language_Features/actions/walker.md)
-  - [Elastic](docs/docs/Developing_with_JAC/Language_Features/actions/elastic.md)
 
 ## Jaseci AI Library Reference
 
@@ -145,7 +143,6 @@
   - [Connecting an API](ui_components/docs/connecting-an-api.md)
 
 ## Jaseci X Features
-- [Stripe Integration](jaseci_serv/jaseci_serv/jsx_stripe/README.md)
 - [Single Sign-on Socail](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
 
 ## Jaseci Core Internals
@@ -184,4 +181,3 @@
 - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
 - [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
 - [Locust Load Test for JASECI](support/locust/README.md)
-- [Setting up Monitoring for JASECI](support/monitoring/README.md)

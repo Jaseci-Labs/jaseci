@@ -8,6 +8,7 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.db import models
+from django.db.models import Q
 
 from jaseci.api.interface import Interface
 from jaseci.element.master import Master as CoreMaster
@@ -79,7 +80,9 @@ class Master(CoreMaster):
 
 class SuperMaster(Master, JsOrcApi, CoreSuper):
     @Interface.admin_api()
-    def master_allusers(self, limit: int = 10, offset: int = 0, asc: bool = False):
+    def master_allusers(
+        self, limit: int = 10, offset: int = 0, asc: bool = False, search: str = None
+    ):
         """
         Returns info on a set of users, limit specifies the number of users to
         return and offset specfies where to start
@@ -91,6 +94,11 @@ class SuperMaster(Master, JsOrcApi, CoreSuper):
 
         if not asc:
             users = users.order_by("-time_created")
+
+        if search:
+            condition = Q(email__icontains=search) | Q(name__icontains=search)
+            users = users.complex_filter(condition)
+
         total = users.count()
         end = offset + limit if limit else total
         filtered_users = []

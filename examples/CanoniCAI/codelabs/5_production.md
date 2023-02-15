@@ -267,8 +267,8 @@ Find this file in the repo at [this location](https://github.com/Jaseci-Labs/jas
 Then at the top of your `tesla_ai.jac` import everything with `import {*} with "./ai_model.jac";`.
 Note you have modified your jac code since the last time you register with the server sentinel, so in order for the new walkers to be usable, you will need to re-build the jir and register again.
 ```bash
-@jaseci > jac build main.jac
-@jaseci > sentinel set -snt active:sentinel -mode ir main.jir
+@jaseci > jac build tesla_ai.jac
+@jaseci > sentinel set -snt active:sentinel -mode ir tesla_ai.jir
 ```
 
 > **Note**

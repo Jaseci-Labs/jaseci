@@ -1,0 +1,23 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "id": 2,
+      "user": "test3@mail.com",
+      "jid": "urn:uuid:1607fce5-c105-423e-b053-3373e394a4d9",
+      "name": "Test User2",
+      "created_date": "2023-02-09T11:06:17.129007",
+      "is_activated": true,
+      "is_superuser": false
+    },
+    {
+      "id": 1,
+      "user": "admin@mail.com",
+      "jid": "urn:uuid:d4116fce-1a1c-453c-a396-cecc02260c94",
+      "name": "",
+      "created_date": "2022-11-24T01:16:33.729351",
+      "is_activated": true,
+      "is_superuser": true
+    }
+  ]
+}
