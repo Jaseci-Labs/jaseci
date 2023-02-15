@@ -10,14 +10,13 @@ node scene{
     }
 }
 
+edge acts{
+    has name;
+}
+
 node actor{
     has name;
     has dialogue;
-    has dialogue_summery;
-
-    can set_summery with summerizer entry{
-        here.dialogue_summery = visitor.summery;
-    }
 }
 
 node location{
@@ -59,9 +58,11 @@ walker build_graph{
 
             if content[1].type == dict:
                 for actor in content[1]{
-                    name = actor;
-                    dialogue = content[1][actor];
-                        spawn scene ++>node::actor(name=name, dialogue=dialogue);
+                        name = actor;
+                        dialogue = content[1][actor];
+
+                        spawn scene +[acts(name=name)]+>node::actor(name=name, dialogue=dialogue);
+
                     }
         }
 }
