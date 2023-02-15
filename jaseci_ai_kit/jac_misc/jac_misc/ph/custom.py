@@ -42,23 +42,21 @@ class CustomLoss(torch.nn.Module):
         self._loss_fn = ContrastiveThresholdLoss(
             n_classes=n_classes, ignore_id=-100, reduction="mean", beta=beta
         )
-
+        self._span_coef = 0.6
+        self._start_coef = 0.2
+        self._end_coef = 0.2
+        self._max_entity_length = 30
+        
     def forward(self, output, labels):
-        _span_coef = 0.6
-        _start_coef = 0.2
-        _end_coef = 0.2
-        _max_entity_length = 30
-
         span_loss = self._loss_fn(output[0], labels)
         start_loss = self._loss_fn(
-            output[1].unsqueeze(-2).repeat(1, 1, _max_entity_length, 1), labels
+            output[1].unsqueeze(-2).repeat(1, 1, self._max_entity_length, 1), labels
         )
         end_loss = self._loss_fn(
-            output[2].unsqueeze(-2).repeat(1, 1, _max_entity_length, 1), labels
+            output[2].unsqueeze(-2).repeat(1, 1, self._max_entity_length, 1), labels
         )
 
-        return _span_coef * span_loss + _start_coef * start_loss + _end_coef * end_loss
-
+        return self._span_coef * span_loss + self._start_coef * start_loss + self._end_coef * end_loss
 
 class CustomModel(nn.Module):
     def __init__(self, model_args) -> None:
@@ -66,14 +64,14 @@ class CustomModel(nn.Module):
         self.model = BI_P_Head(model_args)
         # print(f"in custom model{model_args}")
         con_encoder_layer = nn.TransformerEncoderLayer(
-            d_model=768,
-            nhead=12,
+            d_model=128,
+            nhead=8,
             dim_feedforward=128,
             batch_first=True,
         )
         cand_encoder_layer = nn.TransformerEncoderLayer(
-            d_model=768,
-            nhead=12,
+            d_model=128,
+            nhead=8,
             dim_feedforward=30,
             batch_first=True,
         )
@@ -146,8 +144,8 @@ class CustomInference(BaseInference):
         self._text_length: List[Optional[int]] = [None] * len(data)
         examples = list(
             prepare_inputs(
-                [data],
-                [None] * len([data]),
+                data,
+                [None] * len(data),
                 category_mapping=category_mapping,
                 no_entity_category=self._no_entity_category,
                 stride=self.stride,
@@ -159,11 +157,11 @@ class CustomInference(BaseInference):
             batch_size=1,
             collate_fn=partial(collate_fn, return_batch_examples=True),
         )
-        predictions_collector = [defaultdict(int) for _ in [data]]
+        predictions_collector = [defaultdict(int) for _ in data]
         for batch in example:
-            data = batch["input_ids"]
-            data = data.to(self.device)
-            predictions: LongTensor = self.model(data[0])
+            input_data = batch["input_ids"]
+            input_data = input_data.to(self.device)
+            predictions: LongTensor = self.model(input_data[0])
             batched_examples: BatchedExamples = batch["examples"]
 
             batch_size, length = batched_examples.start_offset.shape
@@ -198,7 +196,7 @@ class CustomInference(BaseInference):
             padding_mask = torch.concat(padding_masks, dim=-1)
             entities_mask = (
                 (predictions != self._no_entity_category_id)
-                & padding_mask
+                # & padding_mask
                 & (span_end != -100)
                 & (span_start != -100)
             )
@@ -215,6 +213,7 @@ class CustomInference(BaseInference):
                 .repeat(1, inf_args["max_sequence_length"], self._max_entity_length)
                 .to(self.device)
             )
+
             chosen_text_ids = entity_text_ids[entities_mask]
             chosen_category_ids = predictions[entities_mask]
             chosen_span_starts = span_start[entities_mask]
@@ -232,13 +231,12 @@ class CustomInference(BaseInference):
                         TypedSpan(
                             start.item(),
                             end.item(),
-                            self._category_id_mapping[category_id.item()],
+                            category_id_mapping[category_id.item()],
                         ),
                         token_start.item(),
                     )
                 ] += 1
-
-        all_entities = [set() for _ in [data]]
+        all_entities = [set() for _ in data]
         for text_id, preds in enumerate(predictions_collector):
             text_length = self._text_length[text_id]
             strided_text_length = (
@@ -260,5 +258,4 @@ class CustomInference(BaseInference):
                 )
                 if count_preds >= total_predictions // 2:
                     all_entities[text_id].add(entity)
-        print(all_entities)
         return all_entities
