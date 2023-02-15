@@ -7,3 +7,8 @@ walker test_get_embedding{
     can zs_classifier.get_embeddings;
      report zs_classifier.get_embeddings(texts="I am so glad you liked it!");
 }
+
+walker test_train_classifier{
+    can zs_classifier.train;
+     report zs_classifier.train(dataset={"amazing":"surprised"});
+}
