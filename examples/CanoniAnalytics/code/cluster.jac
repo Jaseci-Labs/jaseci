@@ -1,3 +1,4 @@
+#generate clusters for lists of senetences or phrases.
 walker cluster {
     can use.encode;
     can cluster.get_umap;

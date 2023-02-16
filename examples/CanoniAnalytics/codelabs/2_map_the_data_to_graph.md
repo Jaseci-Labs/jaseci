@@ -2,6 +2,8 @@
 
 The one and only data structure used Jaseci is Graph. So first let's map the movie script in to a graph. Movie script is saved in a `json` file, and the basic structure of the movie script is as follows;
 
+## 1. Exploring the data
+
 ```json
 
 {"scene_1 name" : ["scene_1 description", {"actor_1 name": "[actor_1 dialodues]", "actor_2 name": "[actor_2 dilogue]"}],
@@ -60,6 +62,7 @@ Sample from the movie script;
 }
 ```
 
+## 2. Creating nodes
 So, lets dive into the code;
 
 first we will need to have two types of nodes in this graph, `scenes` and `actors` in addition to `root` node.  lets define those nodes in jac.
@@ -80,7 +83,8 @@ node actor{
 
 As you can see in the above code the `scene` type nodes has two variable called `name` and `description`. we can declare variables in `jac` with the `has` key word. Similarly the `actor` type nodes has two variables called `name` and `dialogue`. now let's build the graph by connecting these nodes by edges and assigning variables to them.
 
-To build the graph we are creating the build_graph walker. To get more clear picture about Jaseci walkers go to [here](../../CanoniCAI/codelabs/lang_docs/walkers_by_example.md) and [here](../../CanoniCAI/codelabs/lang_docs/walkers.md).
+## 3. Building the initial graph
+To build the graph we are creating the build_graph walker. To get more clear picture about Jaseci walkers go to [here](../../CanoniCAI/codelabs/lang_docs/walkers.md) for some example programs using walkers concept go to here [here](../../CanoniCAI/codelabs/lang_docs/walkers_by_example.md).
 
 ```jac
 walker build_graph{
@@ -157,6 +161,8 @@ To view the graph structure in terminal you can run
 jac dot movie.jac
 ```
 Since the graph is more complecated and huge you won't be able to illustrate the final look of the graph in the terminal. So, We are going to open the graph in Jaseci Studio in next steps.
+
+## 4. Bringing the graph into Jaseci Studio
 
 First let's build the jac program we created with following command.
 
@@ -292,3 +298,119 @@ Click on the yellow color nodes and see ho actors and scene are connected.
 The image below shows one instance of a scene node.
 
 ![Jaseci Studio Movie Graph]("./../../images/example_scene_node.png)
+
+## 5. Ading Advance Features to the Graph
+
+In order to get a clearer idea of the movie script, let's now add more features to the graph which we already created.
+
+- The scene node contains three tags: "EXT," "INT," and "EXT./INT." The EXT tag denotes external scenes, whilst the INT tag denotes interior scenes.
+- Moreover, the scene names contain an ID (an integer number) at the start of the name.
+
+Lets reflect these information in the graph.
+
+- Add another `node` called location;
+
+```
+node location{
+    has location_name;
+}
+```
+- Add ID attribute to the scene `node`;
+
+```
+node scene{
+    has id;
+    has name;
+    has description;
+}
+```
+- Add an `edge` to connect actors to scene `node`.
+
+```
+edge acts;
+```
+
+- Update build_graph `walker`.
+
+```
+walker build_graph{
+    can file.load_json;
+    has movie = file.load_json("movie_data_sam.json");
+
+    location_ext = spawn here ++> node::location(location_name="EXT");
+    location_int = spawn here ++> node::location(location_name="INT");
+    location_ext_int = spawn here ++> node::location(location_name="INT and EXT");
+
+    for movie_scene in movie {
+        _scene_name = movie_scene;
+        content = movie[movie_scene];
+
+        scene_tag = _scene_name.str::split(" ")[1];
+        scene_id = _scene_name.str::split(" ")[0];
+        scene_name = _scene_name.str::split("T.")[-1];
+
+        if content.type == str:
+            description = content;
+            if scene_tag == "EXT.":
+                scene = spawn location_ext ++> node::scene(id=scene_id, name=scene_name, description=description);
+            elif scene_tag == "INT.":
+                scene = spawn location_int ++> node::scene(id=scene_id, name=scene_name, description=description);
+            else:
+                scene = spawn location_ext_int ++> node::scene(id=scene_id, name=scene_name, description=description);
+
+        if content.type == list:
+            if content[0].type == str:
+                description = content[0];
+            if scene_tag == "EXT.":
+                scene = spawn location_ext ++> node::scene(id=scene_id, name=scene_name, description=description);
+            elif scene_tag == "INT.":
+                scene = spawn location_int ++> node::scene(id=scene_id, name=scene_name, description=description);
+            else:
+                scene = spawn location_ext_int ++> node::scene(id=scene_id, name=scene_name, description=description);
+
+            if content[1].type == dict:
+                for _actor in content[1]{
+                        name = _actor;
+                        dialogue = content[1][_actor];
+
+                        spawn scene +[acts]+>node::actor(name=name,dialogue=dialogue);
+                    }
+        }
+  ```
+
+1. Here we are first spawning the location nodes from the roots node.
+2. `scene_id = _scene_name.str::split(" ")[0];` is to extract the scene ID from the scene name.
+3. `scene_tag = _scene_name.str::split(" ")[1];` is to extract the scene tag from the scene name.
+4. After these steps spawning scene nodes from the location node based on the scene tag.
+
+Let's save these updated codes and refresh the graph in the Jaseci Studio.
+
+Since we updated the code we have to build the code again using following code inside the`jsctl` terminal.
+
+```
+jac build movie.jac
+```
+
+Login in to the Jaseci server again and delete the existing graph created and recreate a empty graph using the following commands.
+
+```
+graph delete active:graph
+graph create -set_active true
+```
+
+Run the sentinel register command;
+
+```
+sentinel register -set_active true -mode ir movie.jir
+```
+Login to the Jaseci Studio and view the refreshed graph. If everything is fine you should see a output similar to this;
+
+This is how the initial view of the graph;
+
+![Jaseci Studio Movie Graph]("./../../images/initial_view_movie_graph_2.png)
+
+Example of location node;
+
+![Jaseci Studio Movie Graph]("./../../images/example_location_node_view.png)
+
+
