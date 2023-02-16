@@ -562,10 +562,10 @@ walker init{
     with entry{
         _list = [1,2,3,4];
         p = _list.list::pairwise;
-        report pairwise[0];
-        report pairwise[1];
-        report pairwise[2];
-        report pairwise[3];
+        report p[0];
+        report p[1];
+        report p[2];
+        report p[3];
     }
     }
 """
