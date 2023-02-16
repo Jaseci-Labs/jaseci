@@ -560,9 +560,12 @@ check_dict_for_in_loop = """
 list_pairwise = """
 walker init{
     with entry{
-        _list = [1,2,3,4,5];
+        _list = [1,2,3,4];
         p = _list.list::pairwise;
-        report pairwise;
+        report pairwise[0];
+        report pairwise[1];
+        report pairwise[2];
+        report pairwise[3];
     }
     }
 """

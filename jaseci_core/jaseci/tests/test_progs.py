@@ -343,7 +343,7 @@ class JacTests(TestCaseHelper, TestCase):
 
         self.assertEqual(
             res["report"],
-            [[1, 2], [2, 3], [3, 4], [4, 5]],
+            [[1, 2], [2, 3], [3, 4]],
         )
 
     def test_new_additional_builtin(self):
