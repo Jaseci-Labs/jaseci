@@ -77,6 +77,25 @@ class Master(CoreMaster):
         except Exception:
             return False
 
+    @Interface.private_api()
+    def master_self(self, detailed: bool = False):
+        """
+        Returns the masters object
+        """
+        info = self.serialize(detailed=detailed)
+        if detailed:
+            for user in get_user_model().objects.filter(email=info["name"])[0:1]:
+                info["__meta__"] = {
+                    "id": user.id,
+                    "jid": user.master.urn,
+                    "email": user.email,
+                    "name": user.name,
+                    "created_date": user.time_created.isoformat(),
+                    "is_activated": user.is_activated,
+                    "is_superuser": user.is_superuser,
+                }
+        return info
+
 
 class SuperMaster(Master, JsOrcApi, CoreSuper):
     @Interface.admin_api()

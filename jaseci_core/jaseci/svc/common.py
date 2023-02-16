@@ -9,10 +9,12 @@ from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import load_action_config
 from jaseci.svc.actions_optimizer.actions_optimizer import ActionsOptimizer
 from .state import ServiceState as Ss
-from .config import META_CONFIG, KUBERNETES_CONFIG
+from .config import META_CONFIG, KUBERNETES_CONFIG, DATABASE, POSTGRES_MANIFEST
 
 import time
 import numpy as np
+
+import psycopg2
 
 ###################################################
 #                  UNSAFE PARAMS                  #
@@ -287,6 +289,42 @@ class JsOrc:
             actions_history=self.actions_history,
             actions_calls=self.actions_calls,
         )
+        self.db_check()
+
+    def db_check(self):
+        try:
+            if DATABASE["enabled"]:
+                connection = psycopg2.connect(
+                    host=DATABASE["host"],
+                    dbname=DATABASE["db"],
+                    user=DATABASE["user"],
+                    password=DATABASE["password"],
+                    port=DATABASE["port"],
+                )
+                connection.close()
+            self.has_db = True
+        except Exception:
+            self.has_db = False
+
+    def db_regen(self):
+        for kind, confs in POSTGRES_MANIFEST.items():
+            for conf in confs:
+                name = conf["metadata"]["name"]
+                res = self.read(kind, name, self.namespace)
+                if hasattr(res, "status") and res.status == 404 and conf:
+                    self.create(kind, name, self.namespace, conf)
+
+        self.db_check()
+        if self.has_db:
+            try:
+                for item in self.kubernetes.core.list_namespaced_pod(
+                    namespace=self.namespace, label_selector=f"pod={DATABASE['pod']}"
+                ).items:
+                    self.kubernetes.core.delete_namespaced_pod(
+                        item["name"], self.namespace
+                    )
+            except Exception:
+                raise Exception("Force termination to restart the pod!")
 
     ###################################################
     #                     BUILDER                     #
@@ -294,12 +332,15 @@ class JsOrc:
 
     def build(self):
         try:
-            hook = self.build_context("hook")
-            config = hook.service_glob("META_CONFIG", META_CONFIG)
+            config = META_CONFIG
+            if self.has_db:
+                hook = self.build_context("hook")
+                config = hook.service_glob("META_CONFIG", META_CONFIG)
+                self.prometheus = self.meta.get_service("promon", hook)
+
             if config.pop("automation", False):
                 self.kubernetes = Kube(**config.pop("kubernetes", KUBERNETES_CONFIG))
                 self.actions_optimizer.kube = self.kubernetes
-                self.prometheus = self.meta.get_service("promon", hook)
                 self.backoff_interval = config.pop("backoff_interval", 10)
                 self.namespace = config.pop("namespace", "default")
                 self.actions_optimizer.namespace = self.namespace
@@ -313,16 +354,19 @@ class JsOrc:
             self.automated = False
 
     def interval_check(self):
-        hook = self.meta.build_hook()
-        for svc in self.keep_alive:
-            try:
-                self.check(self.namespace, svc, hook)
-            except Exception as e:
-                logger.exception(
-                    f"Error checking {svc} !\n" f"{e.__class__.__name__}: {e}"
-                )
-        self.optimize(jsorc_interval=self.backoff_interval)
-        self.record_system_state()
+        if self.has_db:
+            hook = self.meta.build_hook()
+            for svc in self.keep_alive:
+                try:
+                    self.check(self.namespace, svc, hook)
+                except Exception as e:
+                    logger.exception(
+                        f"Error checking {svc} !\n" f"{e.__class__.__name__}: {e}"
+                    )
+            self.optimize(jsorc_interval=self.backoff_interval)
+            self.record_system_state()
+        else:
+            self.db_regen()
 
     ###################################################
     #                   KUBERNETES                    #
