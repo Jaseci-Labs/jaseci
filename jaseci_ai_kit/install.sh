@@ -10,7 +10,7 @@ install_modules() {
 		echo -e "\033[0;32mInstalling all the modules\033[0m"
 
 		cd jac_nlp
-		pip install -e .[all]
+		pip install .[all]
 		cd ../jac_speech
 		pip install .[all]
 		cd ../jac_misc
