@@ -35,7 +35,7 @@ function ArchitypeList({
   onRunWalker,
 }: {
   onRunWalker: (walkerName: string) => void;
-  setEditorValue: Dispatch<SetStateAction<string>>;
+  setEditorValue: (value: string) => void;
   setFilter: Dispatch<SetStateAction<string>>;
   architypes: Architype[];
   loading: boolean;
@@ -115,7 +115,7 @@ export function ArchitypeCard({
   architype: Architype;
   removeArchitype: UseMutateFunction<any, any, string, unknown>;
   onRunWalker: () => void;
-  setEditorValue: Dispatch<SetStateAction<string>>;
+  setEditorValue: (value: string) => void;
 }) {
   const [showDelete, setShowDelete] = useState(false);
 
