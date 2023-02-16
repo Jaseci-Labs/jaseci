@@ -50,6 +50,7 @@
     - [Library of Dictionary Operations](docs/docs/Language_basics/dictionaries.md)
   - [Control Flow](docs/docs/Developing_with_JAC/Language_Features/ControlFlow.md)
   - [Input/Output](docs/docs/Developing_with_JAC/Language_Features/input_output.md)
+  - [Imports](docs/docs/Developing_with_JAC/Language_Features/imports.md)
   - [Globals](docs/docs/Developing_with_JAC/Language_Features/globals.md)
   - [Functions](docs/docs/Developing_with_JAC/Language_Features/function.md)
   - [File Handling](docs/docs/Developing_with_JAC/Language_Features/actions/file.md)
