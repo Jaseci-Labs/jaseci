@@ -1156,7 +1156,10 @@ class Interp(VirtualMachine):
                         self, value=atom_res.value.index(min(atom_res.value))
                     )
                 elif op == "pairwise":
-                    result = JacValue(self, value=list(pairwise(atom_res.value)))
+                    result = JacValue(
+                        self, value=[list(s) for s in pairwise(atom_res.value)]
+                    )
+
                 elif len(kid) < 2 and op == "pop":
                     result = JacValue(self, value=atom_res.value.pop())
                     self.candidate_writethrough()
