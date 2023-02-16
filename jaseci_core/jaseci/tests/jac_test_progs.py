@@ -557,6 +557,16 @@ check_dict_for_in_loop = """
     }
 """
 
+list_pairwise = """
+walker init{
+    with entry{
+        _list = [1,2,3,4,5];
+        p = _list.list::pairwise;
+        report pairwise;
+    }
+    }
+"""
+
 check_new_builtin = """
     walker init {
         with entry {
@@ -577,6 +587,7 @@ check_new_builtin = """
         }
     }
 """
+
 
 continue_issue = """
     walker init {

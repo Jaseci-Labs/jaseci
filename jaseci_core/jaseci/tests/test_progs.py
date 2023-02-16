@@ -333,6 +333,19 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(res["report"], [{"key1": "key1", "key2": 2}])
         self.assertIn("Key is not str type : <class 'int'>!", res["errors"][0])
 
+    def test_list_pairwise(self):
+        mast = self.meta.build_master()
+        mast.sentinel_register(name="test", code=jtp.list_pairwise, auto_run="")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+
+        self.assertEqual(
+            res["report"],
+            [[1, 2], [2, 3], [3, 4], [4, 5]],
+        )
+
     def test_new_additional_builtin(self):
         mast = self.meta.build_master()
         mast.sentinel_register(name="test", code=jtp.check_new_builtin, auto_run="")
