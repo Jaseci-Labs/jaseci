@@ -2,7 +2,7 @@ import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
 import * as visData from 'vis-data';
 import { formatEdges, formatNodes } from './utils';
-import { JscGraphContextMenu } from './graph-context-menu';
+import { GraphNode, JscGraphContextMenu, NodeGroupConfig } from './graph-context-menu';
 
 type EndpointBody = {
   gph?: string | null;
@@ -300,6 +300,7 @@ export class JscGraph {
 
     // we don't want to have a clicked edge if we click on a node
     if (selection.nodes.length) {
+      console.log({ selection });
       this.clickedNode = this.nodes.get([node])[0];
       this.clickedEdge = undefined;
     } else {
@@ -469,6 +470,10 @@ export class JscGraph {
       });
   }
 
+  async handleNodeGroupConfigChange(config: NodeGroupConfig) {
+    this.nodes.update(this.nodes.get().map((node: GraphNode) => ({ ...node, label: node.context[config[node.group]?.displayedVar] || node.label })));
+  }
+
   async componentDidLoad() {
     try {
       this.contextMenuEl.hide();
@@ -510,12 +515,20 @@ export class JscGraph {
         y: params?.pointer.DOM.y,
       });
 
-      if (node || edge) {
-        node && this.network.selectNodes([node]);
-        edge && this.network.selectEdges([edge]);
-        this.contextMenuEl.setClickedItem({ clickedNode: !!node ? this.nodes.get([node])[0] : null, clickedEdge: edge ? this.edges.get([edge])[0] : null });
-        this.contextMenuEl.show();
+      console.log({ node, edge });
+
+      if ((node && edge) || (node && !edge)) {
+        this.network.selectNodes([node]);
         this.contextMenuEl.setPos(params.pointer.DOM.x, params.pointer.DOM.y);
+        this.contextMenuEl.setClickedItem({ clickedNode: this.nodes.get([node])[0], clickedEdge: null });
+        this.contextMenuEl.show();
+      }
+
+      if (edge && !node) {
+        this.network.selectEdges([edge]);
+        this.contextMenuEl.setPos(params.pointer.DOM.x, params.pointer.DOM.y);
+        this.contextMenuEl.setClickedItem({ clickedNode: null, clickedEdge: edge ? this.edges.get([edge])[0] : null });
+        this.contextMenuEl.show();
       }
     });
 
@@ -723,7 +736,7 @@ export class JscGraph {
                 }}
                 onExpandNodeRecursively={async e => {
                   this.network.selectNodes([e.detail.id]);
-                  this.expandNodesRecursively(e.detail.id);
+                  this.expandNodesRecursively(e.detail.id as string);
                   this.contextMenuEl.hide();
                 }}
                 onHideNodeGroup={async e => {
@@ -739,6 +752,10 @@ export class JscGraph {
                 }}
                 onDisableZoom={() => {
                   this.network?.setOptions({ interaction: { zoomView: false, dragView: false, dragNodes: false } });
+                }}
+                onNodeGroupConfigChange={e => {
+                  this.handleNodeGroupConfigChange(e.detail);
+                  localStorage.setItem('nodeGroupConfig', JSON.stringify(e.detail));
                 }}
                 ref={el => (this.contextMenuEl = el as any)}
               ></jsc-graph-context-menu>
