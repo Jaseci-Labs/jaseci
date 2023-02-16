@@ -3,10 +3,6 @@ from transformers import (
     GPT2Tokenizer,
     GPT2Model,
     AutoTokenizer,
-    TextDataset,
-    DataCollatorForLanguageModeling,
-    Trainer,
-    TrainingArguments,
     AutoModelWithLMHead,
 )
 import torch
@@ -15,7 +11,7 @@ import traceback
 from fastapi import HTTPException
 from typing import List, Union
 import os
-from train import prepare_data, load_dataset, get_trainer
+from .train import prepare_data, load_dataset, get_trainer
 import shutil
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
