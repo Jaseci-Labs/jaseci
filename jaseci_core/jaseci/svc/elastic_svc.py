@@ -9,7 +9,7 @@ from copy import copy
 #################################################
 
 
-@JsOrc.service(name="elastic", config="ELASTIC_CONFIG")
+@JsOrc.service(name="elastic", config="ELASTIC_CONFIG", manifest="ELASTIC_MANIFEST")
 class ElasticService(JsOrc.CommonService):
     ###################################################
     #                     BUILDER                     #

@@ -228,12 +228,13 @@ class KubeService(JsOrc.CommonService):
         except Exception:
             return False
 
-    def terminate_jaseci(self, name: str, namespace: str = None):
+    def terminate_jaseci(self, name: str, namespace: str = None) -> bool:
         namespace = namespace or self.namespace
         try:
             for item in self.core.list_namespaced_pod(
                 namespace=namespace, label_selector=f"pod={name}"
             ).items:
-                self.core.delete_namespaced_pod(item["name"], namespace)
+                self.core.delete_namespaced_pod(item.metadata.name, namespace)
+                raise SystemExit("Force termination to restart the pod!")
         except Exception:
-            raise Exception("Force termination to restart the pod!")
+            return False

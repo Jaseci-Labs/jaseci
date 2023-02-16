@@ -223,8 +223,10 @@ class JsOrc:
     def run(cls):
         if not cls.__running__:
             cls.__running__ == True
-            hook = cls.hook()
-            config = hook.service_glob("JSORC_CONFIG", cls.settings("JSORC_CONFIG"))
+            config = cls.settings("JSORC_CONFIG")
+            if cls.db_check():
+                hook = cls.hook()
+                config = hook.service_glob("JSORC_CONFIG", config)
             cls._backoff_interval = max(5, config.get("backoff_interval", 10))
             cls._regeneration_queues = config.get("pre_loaded_services", [])
             cls.push_interval(1)
@@ -361,21 +363,21 @@ class JsOrc:
         # highest priority
         instance = cls._services[service][0]
 
-        hook = cls.hook(use_proxy=instance["proxy"])
-
-        config = hook.service_glob(
-            instance["config"],
-            cls.settings(instance["config"], cls.settings("DEFAULT_CONFIG")),
+        config = cls.settings(instance["config"], cls.settings("DEFAULT_CONFIG"))
+        manifest = cls.settings(
+            instance["manifest"] or "DEFAULT_MANIFEST", cls.settings("DEFAULT_MANIFEST")
         )
 
-        manifest = (
-            hook.service_glob(
-                instance["manifest"],
-                cls.settings(instance["manifest"], cls.settings("DEFAULT_MANIFEST")),
+        if cls.db_check():
+            hook = cls.hook(use_proxy=instance["proxy"])
+
+            config = hook.service_glob(instance["config"], config)
+
+            manifest = (
+                hook.service_glob(instance["manifest"], manifest)
+                if instance["manifest"]
+                else {}
             )
-            if instance["manifest"]
-            else {}
-        )
 
         instance: JsOrc.CommonService = instance["type"](config, manifest)
 
@@ -578,7 +580,7 @@ class JsOrc:
             cls._regenerating = True
             from jaseci.svc.kube_svc import KubeService
 
-            if cls.db_check():
+            if cls._has_db:
                 from jaseci.utils.actions.actions_manager import ActionManager
 
                 while cls._regeneration_queues:
@@ -684,16 +686,16 @@ class JsOrc:
                 action_manager.record_system_state()
             else:
                 kube = cls.svc("kube", KubeService)
-                for kind, confs in cls.settings("DB_REGEN_MANIFEST", {}).items():
-                    for conf in confs:
-                        name = conf["metadata"]["name"]
-                        res = kube.read(kind, name)
-                        if hasattr(res, "status") and res.status == 404 and conf:
-                            kube.create(kind, name, conf)
-
-                if cls.db_check():
-                    dbrc = cls.settings("DB_REGEN_CONFIG")
-                    kube.terminate_jaseci(dbrc["pod"])
+                dbrc = cls.settings("DB_REGEN_CONFIG")
+                while not cls._has_db or not kube.terminate_jaseci(dbrc["pod"]):
+                    for kind, confs in cls.settings("DB_REGEN_MANIFEST", {}).items():
+                        for conf in confs:
+                            name = conf["metadata"]["name"]
+                            res = kube.read(kind, name)
+                            if hasattr(res, "status") and res.status == 404 and conf:
+                                kube.create(kind, name, conf)
+                    sleep(1)
+                    cls.db_check()
 
             cls._regenerating = False
 
