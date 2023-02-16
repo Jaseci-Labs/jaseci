@@ -100,6 +100,8 @@ metadata:
   namespace: default
 data:
   prod_up: |-
+    git clone https://github.com/Jaseci-Labs/jaseci.git;
+    cd /jaseci; git checkout jsorc_asplos;
     cd /jaseci/jaseci_core; source install_live.sh;
     cd /jaseci/jaseci_serv; source install_live.sh;
     cd /jaseci/jaseci_ai_kit; source install_all.sh;
@@ -125,10 +127,10 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jac-nlp:1.4.0.5
+          image: jaseci/jac-nlp:1.4.0.9
           resources:
             requests:
-              memory: "4Gi"
+              memory: "350Mi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
@@ -158,17 +160,11 @@ spec:
           volumeMounts:
             - name: prod-script
               mountPath: /script
-            - name: host-mount
-              mountPath: /jaseci/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
-        - name: host-mount
-          hostPath:
-            path: /run/desktop/mnt/host/wsl/jaseci
-            type: Directory
 ---
 kind: Service
 apiVersion: v1
