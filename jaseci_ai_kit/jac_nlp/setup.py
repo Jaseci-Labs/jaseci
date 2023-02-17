@@ -40,7 +40,7 @@ setup(
     install_requires=["jaseci", "pytest>=7.0.1,<7.1", "pytest-order>=1.0.1,<1.1"],
     extras_require=get_extras_requires(),
     package_data={
-        "": ["*.json", "*.cfg", "VERSION", "*.yaml", "requirements.txt"],
+        "": ["*.json", "*.cfg", "VERSION", "*.yaml", "requirements.txt", "*.jac"],
     },
     author="Jason Mars",
     author_email="jason@jaseci.org",
