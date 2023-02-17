@@ -9,10 +9,11 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from jaseci import JsOrc
 from jaseci.element.element import Element
 from jaseci.utils.utils import logger, ColCodes as Cc
+from jaseci.utils.actions.actions_manager import ActionManager
 from jaseci_serv.base.models import Master as ServMaster
-from jaseci_serv.svc import MetaService
 from jaseci_serv.user_api import serializers as user_slzr
 
 
@@ -84,10 +85,9 @@ class AbstractJacAPIView(APIView):
             )
         )
 
-        hook = self.caller._h
-        hook.meta.app.post_request_hook(type(self).__name__, request, tot_time) if (
-            hook.meta.run_svcs and hook.meta.app != None
-        ) else None
+        JsOrc.get("action_manager", ActionManager).post_request_hook(
+            type(self).__name__, request, tot_time
+        )
 
     def proc_prime_ctx(self, request, req_data):
         try:
@@ -234,7 +234,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
         self.caller = ServMaster(
-            h=MetaService().build_hook(),
+            h=JsOrc.hook(),
             persist=False,
         )
 

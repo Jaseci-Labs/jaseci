@@ -1,9 +1,10 @@
 from jaseci.actions.live_actions import jaseci_action
-from jaseci.svc import MetaService
+from jaseci import JsOrc
+from jaseci.svc.mail_svc import Mailer
 
 
 @jaseci_action()
 def send(sender, recipients, subject, text, html):
-    MetaService().get_service("mail").poke().send_custom_email(
+    JsOrc.svc("mail").poke(Mailer).send_custom_email(
         sender, recipients, subject, (text, html)
     )

@@ -23,9 +23,22 @@ rules:
       "policy",
       "rbac.authorization.k8s.io",
       "storage.k8s.io",
-      "v1"
+      "v1",
+      "apiextensions.k8s.io",
+      "apm.k8s.elastic.co",
+      "beat.k8s.elastic.co",
+      "elasticsearch.k8s.elastic.co",
+      "enterprisesearch.k8s.elastic.co",
+      "kibana.k8s.elastic.co",
+      "agent.k8s.elastic.co",
+      "authorization.k8s.io",
+      "autoscaling.k8s.elastic.co",
+      "coordination.k8s.io",
+      "maps.k8s.elastic.co",
+      "stackconfigpolicy.k8s.elastic.co"
     ]
     resources: [
+      "events",
       "certificatesigningrequests",
       "clusterroles",
       "clusterrolebindings",
@@ -59,9 +72,41 @@ rules:
       "statefulsets",
       "storageclasses",
       "validatingwebhookconfigurations",
-      "volumeattachments"
+      "volumeattachments",
+      "customresourcedefinitions",
+      "apmservers",
+      "apmservers/status",
+      "apmservers/finalizers",
+      "beats",
+      "beats/finalizers",
+      "beats/status",
+      "elasticsearches",
+      "elasticsearches/finalizers",
+      "elasticsearches/status",
+      "enterpriselicenses",
+      "enterpriselicenses/status",
+      "enterprisesearches",
+      "enterprisesearches/finalizers",
+      "enterprisesearches/status",
+      "kibanas",
+      "kibanas/status",
+      "kibanas/finalizers",
+      "agents",
+      "agents/finalizers",
+      "agents/status",
+      "subjectaccessreviews",
+      "elasticsearchautoscalers",
+      "elasticsearchautoscalers/finalizers",
+      "elasticsearchautoscalers/status",
+      "leases",
+      "elasticmapsservers",
+      "elasticmapsservers/finalizers",
+      "elasticmapsservers/status",
+      "stackconfigpolicies",
+      "stackconfigpolicies/finalizers",
+      "stackconfigpolicies/status"
     ]
-    verbs: ["get", "watch", "list", "update", "patch", "create", "delete"]
+    verbs: ["get", "watch", "list", "update", "patch", "create", "delete", "deletecollection"]
   - nonResourceURLs: [
       "/metrics"
     ]
@@ -151,11 +196,26 @@ spec:
             - name: POSTGRES_HOST
               value: jaseci-db
 
+            - name: DBNAME
+              value: postgres
+
+            - name: JSORC_POD_NAME
+              value: jaseci
+
             - name: REDIS_HOST
               value: jaseci-redis
 
-            - name: PROMON_HOST
+            - name: PROME_HOST
               value: jaseci-prometheus-server
+
+            - name: JSORC_DB_REGEN
+              value: "true"
+
+            - name: KUBE_NAMESPACE
+              value: default
+
+            # - name: ELASTIC_HOST
+            #   value: jaseci-es-internal-http.elastic-system.svc.cluster.local
 
           volumeMounts:
             - name: prod-script
@@ -166,18 +226,6 @@ spec:
           configMap:
             name: jaseci-up
 ---
-kind: Service
-apiVersion: v1
-metadata:
-  name: jaseci-db
-spec:
-  selector:
-    pod: jaseci-db
-  ports:
-    - protocol: TCP
-      port: 5432
-      targetPort: 5432
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -187,56 +235,3 @@ data:
   user: cG9zdGdyZXM=
   password: bGlmZWxvZ2lmeWphc2VjaQ==
 ---
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: jaseci-db-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: jaseci-db
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      pod: jaseci-db
-  template:
-    metadata:
-      labels:
-        pod: jaseci-db
-    spec:
-      containers:
-        - name: jaseci-db
-          image: postgres:alpine
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: jaseci-db-credentials
-                  key: user
-
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: jaseci-db-credentials
-                  key: password
-
-          ports:
-            - containerPort: 5432
-          volumeMounts:
-            - name: jaseci-db-volume
-              mountPath: /var/lib/postgresql/data
-              subPath: jaseci
-
-      volumes:
-        - name: jaseci-db-volume
-          persistentVolumeClaim:
-            claimName: jaseci-db-pvc

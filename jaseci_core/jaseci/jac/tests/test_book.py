@@ -5,7 +5,7 @@ from unittest import TestCase
 import jaseci.jac.tests.book_code as jtc
 from jaseci.actor.sentinel import Sentinel
 from jaseci.graph.graph import Graph
-from jaseci.svc import MetaService
+from jaseci import JsOrc
 from jaseci.utils.utils import TestCaseHelper
 
 
@@ -14,7 +14,7 @@ class JacBookTests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.sent = Sentinel(m_id=0, h=MetaService().build_hook())
+        self.sent = Sentinel(m_id=0, h=JsOrc.hook())
         self.gph = Graph(m_id=0, h=self.sent._h)
         self.old_stdout = sys.stdout
         self.new_stdout = io.StringIO()
