@@ -148,10 +148,11 @@
 
 ## Jaseci Core Internals
 
-- [Services/JsOrc](jaseci_core/jaseci/svc/README.md)
-  - [Task](jaseci_core/jaseci/svc/task/README.md)
-  - [Mail](jaseci_core/jaseci/svc/mail/README.md)
-- [JSORC Action Management Engine](jaseci_core/jaseci/svc/JSORC.md)
+- [JsOrc](jaseci_core/jaseci/svc/docs/JSORC.md)
+  - [Development](jaseci_core/jaseci/svc/docs/JsOrc%20Development.md)
+  - [Task](jaseci_core/jaseci/svc/docs/task_svc.md)
+  - [Mail](jaseci_core/jaseci/svc/docs/mail_svc.md)
+- [JSORC Action Management Engine](jaseci_core/jaseci/svc/docs/JSORC.md)
 
 ## Contributing to Jaseci
 
