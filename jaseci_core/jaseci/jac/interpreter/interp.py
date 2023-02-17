@@ -22,6 +22,7 @@ from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from copy import copy, deepcopy
 from base64 import b64decode
+from itertools import pairwise
 
 from jaseci.jac.jsci_vm.op_codes import JsCmp
 
@@ -1158,6 +1159,11 @@ class Interp(VirtualMachine):
                     result = JacValue(
                         self, value=atom_res.value.index(min(atom_res.value))
                     )
+                elif op == "pairwise":
+                    result = JacValue(
+                        self, value=[list(s) for s in pairwise(atom_res.value)]
+                    )
+
                 elif len(kid) < 2 and op == "pop":
                     result = JacValue(self, value=atom_res.value.pop())
                     self.candidate_writethrough()
