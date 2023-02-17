@@ -149,7 +149,7 @@
 ## Jaseci Core Internals
 
 - [JsOrc](jaseci_core/jaseci/svc/docs/JSORC.md)
-  - [Development](jaseci_core/jaseci/svc/docs/JsOrc%20Development.md)
+  - [Development](jaseci_core/jaseci/svc/docs/jsorc_development.md)
   - [Task](jaseci_core/jaseci/svc/docs/task_svc.md)
   - [Mail](jaseci_core/jaseci/svc/docs/mail_svc.md)
 - [JSORC Action Management Engine](jaseci_core/jaseci/svc/docs/JSORC.md)
