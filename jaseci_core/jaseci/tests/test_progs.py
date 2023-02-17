@@ -331,7 +331,7 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertIn("Key is not str type : <class 'int'>!", res["errors"][0])
 
     def test_list_pairwise(self):
-        mast = self.meta.build_master()
+        mast = JsOrc.master()
         mast.sentinel_register(name="test", code=jtp.list_pairwise, auto_run="")
 
         res = mast.general_interface_to_api(
