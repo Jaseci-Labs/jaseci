@@ -2,7 +2,7 @@
 User API
 """
 from jaseci.api.interface import Interface
-from jaseci.svc.meta import MetaService
+from jaseci import JsOrc
 
 
 class UserApi:
@@ -107,14 +107,14 @@ class UserApi:
         Abstraction for user creation for elegant overriding
         """
 
-        return MetaService().build_master(h=self._h, name=name)
+        return JsOrc.master(h=self._h, name=name)
 
     def superuser_creator(self, name, password: str = "", other_fields: dict = {}):
         """
         Abstraction for super user creation for elegant overriding
         """
 
-        return MetaService().build_super_master(h=self._h, name=name)
+        return JsOrc.super_master(h=self._h, name=name)
 
     def user_global_init(
         self,

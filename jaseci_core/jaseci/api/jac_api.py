@@ -6,7 +6,7 @@ import json
 import os
 
 from jaseci.api.interface import Interface
-from jaseci.svc import MetaService
+from jaseci import JsOrc
 
 
 class JacApi:
@@ -158,7 +158,7 @@ class JacApi:
         return faux.graph_get(nd=faux.active_gph(), mode="dot", detailed=detailed)
 
     def faux_master(self):
-        faux = MetaService(run_svcs=False).build_super_master()
+        faux = JsOrc.super_master()
         faux._h.mem["global"] = deepcopy(self._h.mem["global"])
         return faux
 

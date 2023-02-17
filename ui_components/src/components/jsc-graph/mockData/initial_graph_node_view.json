@@ -43,6 +43,6 @@
     "j_access": "private",
     "j_r_acc_ids": [],
     "j_rw_acc_ids": [],
-    "context": {}
+    "context": { "name": "Main" }
   }
 ]
