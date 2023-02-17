@@ -36,8 +36,8 @@ class MailService(JsOrc.CommonService):
                         holder[v] = conf
         return holder
 
-    @JsOrc.inject(repositories=["hook"])
-    def __convert_config(self, hook):
+    def __convert_config(self):
+        hook = JsOrc.hook()
         version = self.config.get("version", 2)
         migrate = self.config.get("migrate", False)
         if version == 1 or migrate:
