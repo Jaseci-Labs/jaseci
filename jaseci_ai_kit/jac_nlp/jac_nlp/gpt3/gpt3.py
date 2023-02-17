@@ -4,6 +4,15 @@ from jaseci.actions.live_actions import jaseci_action
 import traceback
 from fastapi import HTTPException
 
+DEFAULT_ARGS = {
+    "model": "text-davinci-003",
+    "temperature": 0,
+    "max_tokens": 100,
+    "top_p": 1,
+    "frequency_penalty": 0.0,
+    "presence_penalty": 0.0,
+}
+
 
 def setup(api_key: str):
     if api_key:
@@ -28,10 +37,10 @@ def set_api_key(api_key: str):
 
 
 @jaseci_action(act_group=["gpt3"], allow_remote=True)
-def generate(text: str, args: dict = {}):
+def generate(text: str, args: dict = DEFAULT_ARGS):
     try:
         response = openai.Completion.create(prompt=text, **args)
-        return response
+        return response["choices"]
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
