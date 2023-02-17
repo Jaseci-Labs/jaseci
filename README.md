@@ -50,6 +50,7 @@
     - [Library of Dictionary Operations](docs/docs/Language_basics/dictionaries.md)
   - [Control Flow](docs/docs/Developing_with_JAC/Language_Features/ControlFlow.md)
   - [Input/Output](docs/docs/Developing_with_JAC/Language_Features/input_output.md)
+  - [Imports](docs/docs/Developing_with_JAC/Language_Features/imports.md)
   - [Globals](docs/docs/Developing_with_JAC/Language_Features/globals.md)
   - [Functions](docs/docs/Developing_with_JAC/Language_Features/function.md)
   - [File Handling](docs/docs/Developing_with_JAC/Language_Features/actions/file.md)
@@ -147,10 +148,11 @@
 
 ## Jaseci Core Internals
 
-- [Services/JsOrc](jaseci_core/jaseci/svc/README.md)
-  - [Task](jaseci_core/jaseci/svc/task/README.md)
-  - [Mail](jaseci_core/jaseci/svc/mail/README.md)
-- [JSORC Action Management Engine](jaseci_core/jaseci/svc/JSORC.md)
+- [JsOrc](jaseci_core/jaseci/svc/docs/JSORC.md)
+  - [Development](jaseci_core/jaseci/svc/docs/jsorc_development.md)
+  - [Task](jaseci_core/jaseci/svc/docs/task_svc.md)
+  - [Mail](jaseci_core/jaseci/svc/docs/mail_svc.md)
+- [JSORC Action Management Engine](jaseci_core/jaseci/svc/docs/JSORC.md)
 
 ## Contributing to Jaseci
 

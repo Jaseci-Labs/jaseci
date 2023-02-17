@@ -20,6 +20,9 @@ from jaseci.jac.interpreter.walker_interp import WalkerInterp
 import uuid
 import hashlib
 
+from jaseci import JsOrc
+from jaseci.svc.task_svc import TaskService
+
 
 class Walker(Element, WalkerInterp, Anchored):
     """Walker class for Jaseci"""
@@ -130,7 +133,7 @@ class Walker(Element, WalkerInterp, Anchored):
 
     def run(self, start_node=None, prime_ctx=None, request_ctx=None, profiling=False):
         """Executes Walker to completion"""
-        if self.for_queue() and self._h.task.is_running():
+        if self.for_queue() and JsOrc.svc("task").is_running():
             start_node = (
                 start_node
                 if not (start_node is None)
@@ -143,7 +146,7 @@ class Walker(Element, WalkerInterp, Anchored):
 
             return {
                 "is_queued": True,
-                "result": self._h.task.add_queue(
+                "result": JsOrc.svc("task", TaskService).add_queue(
                     self,
                     start_node,
                     prime_ctx or self.context,
@@ -228,7 +231,7 @@ class Walker(Element, WalkerInterp, Anchored):
         """
         Destroys self from memory and persistent storage
         """
-        if not self.for_queue() or not self._h.task.is_running():
+        if not self.for_queue() or not JsOrc.svc("task").is_running():
             WalkerInterp.destroy(self)
             super().destroy()
 

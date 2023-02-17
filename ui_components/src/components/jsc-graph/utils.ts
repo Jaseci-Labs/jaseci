@@ -1,11 +1,14 @@
 import * as vis from 'vis-network';
+import { NodeGroupConfig } from './graph-context-menu';
 
 export function formatNodes(data: any[] = []): vis.Node[] {
+  let nodeGroupConfig: NodeGroupConfig = JSON.parse(localStorage.getItem('nodeGroupConfig') || '{}');
+
   return data
     ?.filter((item: any) => item.j_type === 'node' || item.j_type === 'graph')
     .map((node: any) => ({
       id: node.jid,
-      label: node.name,
+      label: node.context[nodeGroupConfig[node.name]?.displayedVar] || node.name,
       group: node.name,
       context: { ...node.context },
       details: { j_parent: node.j_parent, j_master: node.j_master, j_access: node.j_access, dimension: node.dimension },
