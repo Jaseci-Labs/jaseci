@@ -12,6 +12,9 @@ class GPT3Tests(CoreTest):
         ret = load_module_actions("jac_nlp.gpt3")
         assert ret == True
 
+    def test_generate(self):
+        self.assertEqual(1, 1)  # TODO: implement the test for gpt3 generate
+
     @classmethod
     def tearDownClass(cls):
         super(GPT3Tests, cls).tearDownClass()
