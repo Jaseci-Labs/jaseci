@@ -18,9 +18,8 @@ def setup(api_key: str):
     if api_key:
         openai.api_key = api_key
     else:
-        raise HTTPException(
-            status_code=400,
-            detail="Please provide an API key through the OPENAI_API_KEY environment variable or the set_api_key action.",
+        print(
+            "Please provide an API key through the OPENAI_API_KEY environment variable or the set_api_key action."
         )
 
 
