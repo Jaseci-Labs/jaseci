@@ -2,6 +2,13 @@
 
 The one and only data structure used Jaseci is Graph. So first let's map the movie script in to a graph. Movie script is saved in a `json` file, and the basic structure of the movie script is as follows;
 
+- [Map the movie data in to a Graph]()
+    - [1. Exploring the data](#1-exploring-the-data)
+    - [2. Creating Nodes](#2-creating-nodes)
+    - [3. Building the initial graph](#3-building-the-initial-graph)
+    - [4. Bringing the graph into Jaseci Studio](#4-bringing-the-graph-into-jaseci-studio)
+    - [5. Ading Advance Features to the Graph](#5-ading-advance-features-to-the-graph)
+
 ## 1. Exploring the data
 
 ```json

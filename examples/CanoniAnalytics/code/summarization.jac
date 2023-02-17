@@ -1,4 +1,4 @@
-import {*} with './build_graph_1.jac';
+import {*} with './build_graph.jac';
 
 // generates the summary based on a corpse of text
 walker summarizer {
