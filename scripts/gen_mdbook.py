@@ -28,12 +28,17 @@ def main():
     os.makedirs(output_path + "/src")
 
     # build SUMMARY.md based on README.md
+    print(1)
     build_summary_file()
 
     # init mdbook
+    print(2)
+
     init_mdbook()
 
     # booktool
+    print(3)
+
     generate_booktool_cheatsheet()
     generate_booktool_stdlib()
     generate_booktool_class()
@@ -90,10 +95,7 @@ def build_summary_file():
                     for rf_line in repo_file_lines:
                         docfile.write(rf_line)
 
-    with open(output_path + "/src/SUMMARY.md", "a") as summaryfile:
-        summaryfile.write("- [Standrad Library](stdlib.md) \n")
-        summaryfile.write("- [CheatSheet](cheatsheet.md) \n")
-        summaryfile.write("- [classes](classes.md) \n")
+ 
 
     # list of all image folders . Add relative path here to include images in mdbook
     imageFiles = [
@@ -103,6 +105,8 @@ def build_summary_file():
         "examples/CanoniCAI/codelabs/lang_docs/images",
         "jaseci_ai_kit/jaseci_ai_kit/modules/ph/assets",
         "jaseci_core/svc/",
+        "docs/docs/interfacing_jaseci/",
+        "support/codelabs/",
     ]
     for images in imageFiles:
         files = get_images(os.path.join(root, images))
@@ -164,6 +168,7 @@ def get_images(path=None):
 
 
 def init_mdbook():
+    print(output_path)
     subprocess.call(
         [
             "mdbook",
@@ -190,26 +195,26 @@ def build_mdbook():
 
 
 def generate_booktool_cheatsheet():
+    print(root)
     subprocess.call(
         [
             "jsctl",
             "booktool",
             "mdcheatsheet",
             "--output",
-            output_path + "/src/cheatsheet.md",
+            "support/guide/other/cheatsheet.md",
         ]
     )
 
 
 def generate_booktool_stdlib():
     subprocess.call(
-        ["jsctl", "booktool", "mdstdlib", "--output", output_path + "/src/stdlib.md"]
+        ["jsctl", "booktool", "mdstdlib", "--output", "support/guide/other/stdlib.md"]
     )
-
 
 def generate_booktool_class():
     subprocess.call(
-        ["jsctl", "booktool", "mdclasses", "--output", output_path + "/src/classes.md"]
+        ["jsctl", "booktool", "mdclasses", "--output", "support/guide/other/classes.md"]
     )
 
 
