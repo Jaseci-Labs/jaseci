@@ -1,9 +1,10 @@
 from jaseci.actions.live_actions import jaseci_action
-from jaseci.svc import MetaService
+from jaseci import JsOrc
+from jaseci.svc.elastic_svc import ElasticService, Elastic
 
 
 def elastic():
-    return MetaService().get_service("elastic").poke()
+    return JsOrc.svc("elastic", ElasticService).poke(Elastic)
 
 
 @jaseci_action()

@@ -13,10 +13,10 @@ from click_shell import shell
 from click.testing import CliRunner
 from jaseci import __version__
 from jaseci.element.super_master import SuperMaster
-from jaseci.svc import MetaService
 from jaseci.utils.utils import copy_func
 from .book_tools import Book, modifiedBook
 from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
+from jaseci import JsOrc
 
 session = None
 
@@ -25,7 +25,7 @@ def reset_state():
     global session
     session = {
         "filename": "js.session",
-        "user": [MetaService(run_svcs=False).build_super_master(name="admin")],
+        "user": [JsOrc.super_master(name="admin")],
         "mem-only": session["mem-only"] if session is not None else False,
         "connection": {"url": None, "token": None, "headers": None},
     }

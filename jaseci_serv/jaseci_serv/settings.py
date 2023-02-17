@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     "django_celery_results",
     "django_celery_beat",
     "jaseci_serv.jsx_oauth",
+    # this MUST always be the last app
+    "jaseci_serv.svc",
 ]
 
 MIDDLEWARE = [

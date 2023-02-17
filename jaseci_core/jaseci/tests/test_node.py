@@ -4,23 +4,16 @@ from jaseci.actor.architype import Architype
 from jaseci.attr import action
 from jaseci.graph.edge import Edge
 from jaseci.graph.node import Node
-from jaseci.svc import MetaService
+from jaseci import JsOrc
 from jaseci.utils.utils import TestCaseHelper
 
 
 class NodeTests(TestCaseHelper, TestCase):
     """Tests for the funcationality of Jaseci node class"""
 
-    def setUp(self):
-        super().setUp()
-        self.meta = MetaService()
-
-    def tearDown(self):
-        super().tearDown()
-
     def test_node_connections(self):
         """Test connecting and disconnecting etc of nodes"""
-        node1 = Node(m_id=0, h=self.meta.build_hook())
+        node1 = Node(m_id=0, h=JsOrc.hook())
         node2 = Node(m_id=0, h=node1._h)
         node3 = Node(m_id=0, h=node1._h)
         node4 = Node(m_id=0, h=node1._h)
@@ -49,7 +42,7 @@ class NodeTests(TestCaseHelper, TestCase):
 
     def test_add_context_to_node_and_destroy(self):
         """Test adding and removing contexts nodes"""
-        node1 = Node(m_id=0, h=self.meta.build_hook())
+        node1 = Node(m_id=0, h=JsOrc.hook())
         node1.context["yeah dude"] = "SUP"
         self.assertEqual(node1.context["yeah dude"], "SUP")
         self.assertEqual(len(node1.context.keys()), 1)
@@ -58,7 +51,7 @@ class NodeTests(TestCaseHelper, TestCase):
 
     def test_add_entry_action_to_node_and_destroy(self):
         """Test connecting and disconnecting etc of nodes"""
-        node1 = Architype(m_id=0, h=self.meta.build_hook())
+        node1 = Architype(m_id=0, h=JsOrc.hook())
         act = action.Action(m_id=0, h=node1._h, name="yeah dude", value="SUP")
         node1.entry_action_ids.add_obj(act)
         self.assertEqual(
@@ -74,7 +67,7 @@ class NodeTests(TestCaseHelper, TestCase):
 
     def test_adding_and_removing_from_hdnodes(self):
         """Test adding nodes and removing them from HDGDs"""
-        node1 = Node(m_id=0, h=self.meta.build_hook())
+        node1 = Node(m_id=0, h=JsOrc.hook())
         hdgd1 = Node(m_id=0, h=node1._h, name="yeah dude", dimension=1)
         node1.make_member_of(hdgd1)
         self.assertEqual(node1.parent_node_ids.obj_list()[0], hdgd1)
@@ -89,7 +82,7 @@ class NodeTests(TestCaseHelper, TestCase):
 
     def test_inherit_from_element_edge(self):
         """Test that inheriting params with kwargs works"""
-        hook = self.meta.build_hook()
+        hook = JsOrc.hook()
         a = Edge(
             name="my edge",
             m_id=0,

@@ -71,6 +71,7 @@ graph TD;
   graph-walker-runner --> jsc-select
   jsc-graph-context-menu --> jsc-divider
   jsc-graph-context-menu --> jsc-button
+  jsc-graph-context-menu --> jsc-select
   style jsc-app fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

@@ -65,3 +65,19 @@ it('should set clicked item', async () => {
   expect(contextMenuEl).not.toBeNull();
   expect(page.rootInstance.clickedNode.id).toBe('node1');
 });
+
+it('should update the node config', async () => {
+  const page = await newSpecPage({
+    components: [JscGraphContextMenu],
+    html: `<jsc-graph-context-menu><jsc-graph-context-menu>`,
+  });
+
+  // click a node
+  const contextMenuEl: JscGraphContextMenu = page.rootInstance;
+  contextMenuEl.setNodeGroupConfig('imprint', 'displayedVar', 'name');
+
+  // show context menu
+
+  expect(contextMenuEl).not.toBeNull();
+  expect(contextMenuEl.nodeGroupConfig).toStrictEqual({ imprint: { displayedVar: 'name', color: null } });
+});

@@ -1,13 +1,14 @@
 """Built in actions for Jaseci"""
 import stripe as s
 
-from jaseci.svc import MetaService
+from jaseci import JsOrc
+from jaseci.svc.stripe_svc import StripeService
 from datetime import datetime
 from jaseci.actions.live_actions import jaseci_action
 
 
 def stripe() -> s:
-    return MetaService().get_service("stripe").poke()
+    return JsOrc.svc("stripe", StripeService).poke()
 
 
 @jaseci_action()
