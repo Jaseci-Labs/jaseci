@@ -217,6 +217,7 @@ export class JscGraph {
 
       if (!this.network) {
         this.network = new vis.Network(
+          // added fallback for
           this.networkEl,
           { edges: this.edges as any, nodes: this.nodes as any },
           {
@@ -476,7 +477,7 @@ export class JscGraph {
 
   async componentDidLoad() {
     try {
-      this.contextMenuEl.hide();
+      this.contextMenuEl?.hide();
       // set the initial graph
       if (!this.graphId) {
         let activeGraph: Graph = await this.getActiveGraph();
@@ -496,11 +497,11 @@ export class JscGraph {
       console.log(err);
     }
 
-    this.network.on('selectNode', () => {
+    this.network?.on('selectNode', () => {
       this.selectedNodes = this.network.getSelectedNodes();
     });
 
-    this.network.on('oncontext', params => {
+    this.network?.on('oncontext', params => {
       console.log({ params });
       params.event.preventDefault();
       this.contextMenuEl.hide();
@@ -532,7 +533,7 @@ export class JscGraph {
       }
     });
 
-    this.network.on('click', params => {
+    this.network?.on('click', params => {
       this.contextMenuEl.hide();
       // reset ui if we click on the background
       if (!params.nodes?.length && !params.edges?.length) {
@@ -545,7 +546,7 @@ export class JscGraph {
       this.handleNetworkClick(this.network, params);
     });
 
-    this.network.on('doubleClick', async params => {
+    this.network?.on('doubleClick', async params => {
       this.prevNd = this.nd;
 
       const node = this.network.getNodeAt({

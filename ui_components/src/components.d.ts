@@ -282,6 +282,7 @@ export namespace Components {
     interface JscGraphContextMenu {
         "hide": () => Promise<void>;
         "setClickedItem": ({ clickedNode, clickedEdge }: { clickedNode?: GraphNode; clickedEdge?: GraphEdge; }) => Promise<void>;
+        "setNodeGroupConfig": (groupName: string, key: keyof NodeGroupConfig[string], value: string) => Promise<void>;
         "setPos": (x: number, y: number) => Promise<void>;
         "show": () => Promise<void>;
     }

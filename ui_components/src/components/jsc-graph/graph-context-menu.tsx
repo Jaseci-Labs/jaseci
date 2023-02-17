@@ -58,6 +58,7 @@ export class JscGraphContextMenu {
     this.contextMenuEl.style.top = `${y}px`;
   }
 
+  @Method()
   setNodeGroupConfig(groupName: string, key: keyof NodeGroupConfig[string], value: string) {
     if (this.nodeGroupConfig[groupName] === undefined) {
       this.nodeGroupConfig[groupName] = { displayedVar: null, color: null };
