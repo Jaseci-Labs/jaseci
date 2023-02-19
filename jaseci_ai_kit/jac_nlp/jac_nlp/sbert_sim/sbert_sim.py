@@ -156,7 +156,7 @@ def get_dot_score(vec_a: list, vec_b: list):
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
-def load_model(model_name="all-MiniLM-L12-v2", model_type="default"):
+def load_model(model_name="all-mpnet-base-v2", model_type="default"):
     """
     Load models load in the memory for similarty scoring
     model_type : can be default or tfm_model
@@ -194,8 +194,8 @@ def get_train_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+load_model()
+
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
-
-    load_model()
     launch_server(port=8000)
