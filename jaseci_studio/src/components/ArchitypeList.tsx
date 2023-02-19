@@ -13,8 +13,9 @@ import {
   Button,
   SegmentedControl,
   LoadingOverlay,
+  Tooltip,
 } from "@mantine/core";
-import { IconCode, IconTrash } from "@tabler/icons";
+import { IconApi, IconCode, IconTrash } from "@tabler/icons";
 import {
   UseMutateFunction,
   useMutation,
@@ -31,8 +32,10 @@ function ArchitypeList({
   architypes,
   loading,
   setFilter,
+  onRunWalker,
 }: {
-  setEditorValue: Dispatch<SetStateAction<string>>;
+  onRunWalker: (walkerName: string) => void;
+  setEditorValue: (value: string) => void;
   setFilter: Dispatch<SetStateAction<string>>;
   architypes: Architype[];
   loading: boolean;
@@ -79,13 +82,17 @@ function ArchitypeList({
           ]}
           onChange={(value) => setFilter(value as any)}
         />
+
         <Divider mb="md"></Divider>
-        {/* {JSON.stringify(architypes)} */}
+
         <Box sx={{ overflow: "scroll", height: "500px", position: "relative" }}>
           <LoadingOverlay visible={loading}></LoadingOverlay>
           <Stack p="xs" data-testid="architype-cards">
             {architypes?.map((architype) => (
               <ArchitypeCard
+                onRunWalker={() => {
+                  onRunWalker(architype.name);
+                }}
                 setEditorValue={setEditorValue}
                 key={architype.jid}
                 architype={architype}
@@ -103,10 +110,12 @@ export function ArchitypeCard({
   architype,
   removeArchitype,
   setEditorValue,
+  onRunWalker,
 }: {
   architype: Architype;
   removeArchitype: UseMutateFunction<any, any, string, unknown>;
-  setEditorValue: Dispatch<SetStateAction<string>>;
+  onRunWalker: () => void;
+  setEditorValue: (value: string) => void;
 }) {
   const [showDelete, setShowDelete] = useState(false);
 
@@ -154,23 +163,40 @@ export function ArchitypeCard({
         </Text>
 
         <Group>
-          <ActionIcon
-            color="teal"
-            variant="light"
-            size="xs"
-            onClick={() => loadArchitypeSrcCode()}
-          >
-            <IconCode></IconCode>
-          </ActionIcon>
+          {architype.kind === "walker" && (
+            <Tooltip label="Run Walker">
+              <ActionIcon
+                color="blue"
+                variant="light"
+                size="xs"
+                onClick={onRunWalker}
+              >
+                <IconApi></IconApi>
+              </ActionIcon>
+            </Tooltip>
+          )}
 
-          <ActionIcon
-            color="red"
-            variant="light"
-            size="xs"
-            onClick={() => setShowDelete(true)}
-          >
-            <IconTrash></IconTrash>
-          </ActionIcon>
+          <Tooltip label="View Code">
+            <ActionIcon
+              color="teal"
+              variant="light"
+              size="xs"
+              onClick={() => loadArchitypeSrcCode()}
+            >
+              <IconCode></IconCode>
+            </ActionIcon>
+          </Tooltip>
+
+          <Tooltip label="Delete Architype">
+            <ActionIcon
+              color="red"
+              variant="light"
+              size="xs"
+              onClick={() => setShowDelete(true)}
+            >
+              <IconTrash></IconTrash>
+            </ActionIcon>
+          </Tooltip>
         </Group>
       </Group>
     </Card>

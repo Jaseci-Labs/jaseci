@@ -14,6 +14,7 @@ test("ArchitypeList", async () => {
   const result = renderWithClient(
     <MantineProvider>
       <ArchitypeList
+        onRunWalker={() => {}}
         setEditorValue={() => {}}
         setFilter={setFilter}
         architypes={architypeList}
@@ -31,6 +32,7 @@ test("ArchitypeCard component", async () => {
   const result = renderWithClient(
     <MantineProvider>
       <ArchitypeCard
+        onRunWalker={() => {}}
         architype={architype}
         setEditorValue={() => {}}
         removeArchitype={() => {}}
