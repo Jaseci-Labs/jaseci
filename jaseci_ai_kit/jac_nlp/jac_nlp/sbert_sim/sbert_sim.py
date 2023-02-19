@@ -198,4 +198,5 @@ load_model()
 
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
+
     launch_server(port=8000)
