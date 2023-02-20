@@ -12,3 +12,4 @@ audio_file_*
 cloned_audio_file_*
 mypath/
 weights/
+gpt2-trained
