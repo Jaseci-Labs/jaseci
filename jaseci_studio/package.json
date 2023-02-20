@@ -19,6 +19,7 @@
     "@mantine/hooks": "^5.7.1",
     "@mantine/next": "^5.7.1",
     "@mantine/notifications": "^5.10.2",
+    "@mantine/prism": "^5.10.4",
     "@monaco-editor/react": "^4.4.6",
     "@next/font": "^13.0.5",
     "@tabler/icons": "^1.110.0",

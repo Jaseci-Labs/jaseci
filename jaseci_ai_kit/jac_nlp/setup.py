@@ -16,6 +16,7 @@ MODULES = [
     "bi_enc",
     "topic_ext",
     "gpt2",
+    "gpt3",
 ]
 
 
