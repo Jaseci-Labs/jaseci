@@ -37,6 +37,17 @@ client.interceptors.request.use(
   }
 );
 
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response.status === 401 || error.response.status === 403) {
+      window.location.replace("/?redirected=true&reason=not_superuser");
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 const queryClient = new QueryClient();
 
 function ReactQuery({ children }: { children: ReactNode }) {

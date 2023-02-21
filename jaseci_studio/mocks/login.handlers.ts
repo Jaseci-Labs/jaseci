@@ -15,4 +15,13 @@ export const loginHandlers: Array<
       })
     );
   }),
+  rest.get("http://localhost:8005/user/manage/", (req, res, ctx) => {
+    return res(
+      ctx.json({
+        token: "abcde",
+        is_activated: true,
+        is_superuser: true,
+      })
+    );
+  }),
 ];

@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "scripts": {
     "setup:ui": "cd ../ui_components && yarn install && yarn build",
-    "dev": "next dev -p 1420",
-    "build": "next build && next export -o dist",
+    "dev": "NODE_ENV=development next dev -p 1420",
+    "build": "NODE_ENV=production next build && next export -o dist",
     "tauri": "tauri",
     "test:e2e": "playwright test",
     "test:unit": "vitest test",
