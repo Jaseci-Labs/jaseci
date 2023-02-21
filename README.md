@@ -28,7 +28,7 @@
     - [Local JSCTL Mode](docs/docs/interfacing_jaseci/jsctl.md)
       - [CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
     - [Remote JSCTL Mode](docs/docs/interfacing_jaseci/remote_jsctl.md)
-    - [Application Mode: Jac Api Collection](docs/docs/interfacing_jaseci/api_collection.md)
+    - [Application Mode: Jac Api Collection](support/guide/other/classes.md)
 
   - [Taking Jac for a Test Drive](docs/docs/getting-started/content.md)
     - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
