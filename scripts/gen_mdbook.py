@@ -95,8 +95,6 @@ def build_summary_file():
                     for rf_line in repo_file_lines:
                         docfile.write(rf_line)
 
- 
-
     # list of all image folders . Add relative path here to include images in mdbook
     imageFiles = [
         "examples/CanoniCAI/images",
@@ -211,6 +209,7 @@ def generate_booktool_stdlib():
     subprocess.call(
         ["jsctl", "booktool", "mdstdlib", "--output", "support/guide/other/stdlib.md"]
     )
+
 
 def generate_booktool_class():
     subprocess.call(
