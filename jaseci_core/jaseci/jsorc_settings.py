@@ -157,7 +157,7 @@ class JsOrcSettings:
         "quiet": False,
         "automated": True,
         "url": (
-            f'http://{os.getenv("ELASTIC_HOST", "localhost")}'
+            f'https://{os.getenv("ELASTIC_HOST", "localhost")}'
             f':{os.getenv("ELASTIC_PORT", "9200")}'
         ),
         "auth": os.getenv("ELASTIC_AUTH"),

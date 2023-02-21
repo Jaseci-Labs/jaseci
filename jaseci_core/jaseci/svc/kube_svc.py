@@ -1,3 +1,4 @@
+from base64 import b64decode
 from jaseci import JsOrc
 
 from kubernetes import config as kubernetes_config
@@ -8,6 +9,7 @@ from kubernetes.client import (
     RbacAuthorizationV1Api,
     ApiextensionsV1Api,
     AdmissionregistrationV1Api,
+    CustomObjectsApi,
 )
 from kubernetes.client.rest import ApiException
 
@@ -44,6 +46,7 @@ class KubeService(JsOrc.CommonService):
         self.api_ext = ApiextensionsV1Api(self.app)
         self.auth = RbacAuthorizationV1Api(self.app)
         self.reg_api = AdmissionregistrationV1Api(self.app)
+        self.custom = CustomObjectsApi(self.app)
 
         self.ping()
         self.defaults()
@@ -65,6 +68,13 @@ class KubeService(JsOrc.CommonService):
             "StatefulSet": self.api.create_namespaced_stateful_set,
             "CustomResourceDefinition": self.api_ext.create_custom_resource_definition,
             "ValidatingWebhookConfiguration": self.reg_api.create_validating_webhook_configuration,
+            "Elasticsearch": lambda namespace, body: self.custom.create_namespaced_custom_object(
+                group="elasticsearch.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="elasticsearches",
+                body=body,
+            ),
         }
         self.patch_apis = {
             "Namespace": self.core.patch_namespace,
@@ -82,6 +92,14 @@ class KubeService(JsOrc.CommonService):
             "StatefulSet": self.api.patch_namespaced_stateful_set,
             "CustomResourceDefinition": self.api_ext.patch_custom_resource_definition,
             "ValidatingWebhookConfiguration": self.reg_api.patch_validating_webhook_configuration,
+            "Elasticsearch": lambda name, namespace, body: self.custom.patch_namespaced_custom_object(
+                group="elasticsearch.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="elasticsearches",
+                name=name,
+                body=body,
+            ),
         }
         self.delete_apis = {
             "Namespace": self.core.delete_namespace,
@@ -99,6 +117,13 @@ class KubeService(JsOrc.CommonService):
             "StatefulSet": self.api.delete_namespaced_stateful_set,
             "CustomResourceDefinition": self.api_ext.delete_custom_resource_definition,
             "ValidatingWebhookConfiguration": self.reg_api.delete_validating_webhook_configuration,
+            "Elasticsearch": lambda name, namespace: self.custom.delete_namespaced_custom_object(
+                group="elasticsearch.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="elasticsearches",
+                name=name,
+            ),
         }
         self.read_apis = {
             "Namespace": self.core.read_namespace,
@@ -115,6 +140,13 @@ class KubeService(JsOrc.CommonService):
             "StatefulSet": self.api.read_namespaced_stateful_set,
             "CustomResourceDefinition": self.api_ext.read_custom_resource_definition,
             "ValidatingWebhookConfiguration": self.reg_api.read_validating_webhook_configuration,
+            "Elasticsearch": lambda name, namespace: self.custom.get_namespaced_custom_object(
+                group="elasticsearch.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="elasticsearches",
+                name=name,
+            ),
         }
 
     ###################################################
@@ -227,6 +259,23 @@ class KubeService(JsOrc.CommonService):
             )
         except Exception:
             return False
+
+    def get_secret(
+        self, name: str, attr: str, namespace: str = None, log_pref: str = ""
+    ):
+        namespace = namespace or self.namespace
+        try:
+            return b64decode(
+                self.core.read_namespaced_secret(
+                    name=name,
+                    namespace=namespace,
+                ).data[attr]
+            ).decode()
+        except Exception as e:
+            logger.exception(
+                f"{log_pref} Error getting secret `{attr}` from `{name}` with namespace `{namespace}` -- {e}"
+            )
+            return None
 
     def terminate_jaseci(self, name: str, namespace: str = None) -> bool:
         namespace = namespace or self.namespace

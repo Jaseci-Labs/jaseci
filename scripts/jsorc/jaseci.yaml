@@ -80,6 +80,7 @@ rules:
       "beats",
       "beats/finalizers",
       "beats/status",
+      "elasticsearch",
       "elasticsearches",
       "elasticsearches/finalizers",
       "elasticsearches/status",
@@ -214,8 +215,8 @@ spec:
             - name: KUBE_NAMESPACE
               value: default
 
-            # - name: ELASTIC_HOST
-            #   value: jaseci-es-internal-http.elastic-system.svc.cluster.local
+            - name: ELASTIC_HOST
+              value: jaseci-es-internal-http.elastic-system.svc.cluster.local
 
           volumeMounts:
             - name: prod-script

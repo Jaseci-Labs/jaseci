@@ -621,16 +621,19 @@ class JsOrc:
                                         and conf
                                     ):
                                         kube.create(kind, name, conf)
-                                    elif (
-                                        not isinstance(res, ApiException)
-                                        and res.metadata
-                                    ):
-                                        if res.metadata.labels:
+                                    elif not isinstance(res, ApiException):
+                                        config_version = 1
+                                        if isinstance(res, dict):
+                                            if "labels" in res["metadata"]:
+                                                config_version = (
+                                                    res["metadata"]
+                                                    .get("labels", {})
+                                                    .get("config_version", 1)
+                                                )
+                                        elif res.metadata.labels:
                                             config_version = res.metadata.labels.get(
                                                 "config_version", 1
                                             )
-                                        else:
-                                            config_version = 1
 
                                         if config_version != conf.get("metadata").get(
                                             "labels", {}
@@ -655,9 +658,9 @@ class JsOrc:
                                             old_config_map["kind"][to_be_removed]
                                         ),
                                     )
-                                    if (
-                                        not isinstance(res, ApiException)
-                                        and res.metadata
+                                    if not isinstance(res, ApiException) and (
+                                        (isinstance(res, dict) and res.get("metadata"))
+                                        or res.metadata
                                     ):
                                         if kind not in cls.settings(
                                             "UNSAFE_KINDS"
@@ -669,16 +672,7 @@ class JsOrc:
                                             logger.info(
                                                 f"You don't have permission to delete `{kind}` for `{to_be_removed}` with namespace `{kube.namespace}`!"
                                             )
-
-                            if kube.is_pod_running(pod_name):
-                                logger.info(
-                                    f"Pod state is running. Trying to Restart {regeneration_queue}..."
-                                )
-                                cls.svc_reset(regeneration_queue)
-                            else:
-                                cls._regeneration_queues.append(regeneration_queue)
-                        else:
-                            cls.svc_reset(regeneration_queue)
+                        cls.svc_reset(regeneration_queue)
                     sleep(1)
 
                 action_manager = cls.get("action_manager", ActionManager)
@@ -721,10 +715,6 @@ class JsOrc:
 
 def interval_check(signum, frame):
     JsOrc.regenerate()
-    logger.info(
-        f"Backing off for {JsOrc._backoff_interval} seconds before the next interval check..."
-    )
-
     # wait interval_check to be finished before decrement
     JsOrc._running_interval -= 1
     JsOrc.push_interval(JsOrc._backoff_interval)

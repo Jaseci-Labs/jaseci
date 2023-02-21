@@ -5908,16 +5908,16 @@ webhooks:
     resources:
     - stackconfigpolicies
 
-# ---
-# apiVersion: elasticsearch.k8s.elastic.co/v1
-# kind: Elasticsearch
-# metadata:
-#   name: jaseci
-#   namespace: elastic-system
-# spec:
-#   version: 8.6.2
-#   nodeSets:
-#   - name: default
-#     count: 1
-#     config:
-#       node.store.allow_mmap: false
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: jaseci
+  namespace: elastic-system
+spec:
+  version: 8.6.2
+  nodeSets:
+  - name: default
+    count: 1
+    config:
+      node.store.allow_mmap: false
