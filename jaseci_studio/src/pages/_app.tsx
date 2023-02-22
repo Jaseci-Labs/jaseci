@@ -16,6 +16,7 @@ import { NotificationsProvider } from "@mantine/notifications";
 import { SpotlightProvider, openSpotlight } from "@mantine/spotlight";
 import type { SpotlightAction } from "@mantine/spotlight";
 import { open } from "@tauri-apps/api/shell";
+import { setCookie, getCookie } from "cookies-next";
 
 import {
   IconHome,
@@ -27,7 +28,7 @@ import {
   IconVectorBezierCircle,
   IconHome2,
 } from "@tabler/icons";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { useHotkeys } from "@mantine/hooks";
 
@@ -82,7 +83,10 @@ const createActions = (
 export default function App(props: AppProps) {
   const { Component, pageProps } = props;
   const navigate = useRouter().push;
-  const [colorScheme, setColorScheme] = useState<ColorScheme>("dark");
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(
+    (getCookie("colorScheme") as ColorScheme) || "light"
+  );
+
   useHotkeys([
     ["mod+L", () => navigate("/logs")],
     ["mod+O", () => navigate("/architype")],
@@ -94,6 +98,7 @@ export default function App(props: AppProps) {
 
   const toggleColorScheme = useCallback(() => {
     setColorScheme(colorScheme === "dark" ? "light" : "dark");
+    setCookie("colorScheme", colorScheme === "dark" ? "light" : "dark");
   }, [colorScheme]);
 
   const actions = useMemo(
