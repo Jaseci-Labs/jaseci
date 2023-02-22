@@ -15,7 +15,7 @@ In this section also we will be using the movie script graph which we build for 
 ```jac
 import {*} with './build_graph.jac';
 ```
-Now let's create a walker to detect semantically similar two text phrases. We are using `use.encode` action from `use.enc` module in Jaseci to get embeddings for the given sentence and `vector.cosine_sim` standard action to get the similarity value of two encoded sentences. we are using the dialogue from each actor in a scene to demonstrate this task. The dialogues come in as a list (observe the `movie_data.json` to understand this). We are feeding all the sentences in the dialogue as one phrase to make this simple.
+Now let's create a walker to detect semantically similar two text phrases. We are using `use.encode` action from `use.enc` module in Jaseci (to view more information about `use.enc` goto [here](../../../../jaseci/jaseci_ai_kit/jac_nlp/jac_nlp/use_enc/README.md) to get embeddings for the given sentence and `vector.cosine_sim` standard action to get the similarity value of two encoded sentences. we are using the dialogue from each actor in a scene to demonstrate this task. The dialogues come in as a list (observe the `movie_data.json` to understand this). We are feeding all the sentences in the dialogue as one phrase to make this simple.
 
 ```jac
 walker find_similar_sentences{
