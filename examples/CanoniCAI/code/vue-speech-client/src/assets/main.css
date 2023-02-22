@@ -1,0 +1,65 @@
+@import './base.css';
+
+.central {
+  display: flex;
+  justify-content: center;
+}
+
+#logo {
+  margin-top: 50px;
+}
+
+#voices {
+  margin-top: 10px;
+  border-radius: 5px;
+  background-color: #282828;
+  color: white;
+  height: 30px;
+}
+
+#title {
+  margin-bottom: 30px;
+}
+
+.transcript {
+  background-color: #164e63;
+}
+
+.transcript-container {
+  margin-left: 10%;
+  display: flex;
+}
+
+.response-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-right: 10%;
+}
+
+.response {
+  background-color: #134e4a;
+}
+
+.chat {
+  border-radius: 5px;
+  max-width: 60%;
+  margin-top: 20px;
+  color: white;
+  padding: 10px;
+}
+
+#recognition {
+  margin: 50px;
+}
+
+#mic {
+  cursor: pointer;
+}
+
+.live {
+  color: #15803d;
+}
+
+.icon-large {
+  font-size: 192px;
+}

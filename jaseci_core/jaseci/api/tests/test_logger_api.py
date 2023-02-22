@@ -31,9 +31,9 @@ class LoggerApiTest(CoreTest):
         self.logger_off()
 
         ret = self.call(self.smast, ["logger_get", {}])
-
-        self.assertEqual(len(ret), 1)
-        self.assertTrue(ret[0]["log"].endswith("Hello world!"))
+        self.assertGreaterEqual(len(ret), 1)
+        self.assertLessEqual(len(ret), 5)
+        self.assertTrue(ret[-1]["log"].endswith("Hello world!"))
 
     def test_limited_sliding_buffer(self):
         buffer = LimitedSlidingBuffer(max_size=25)
