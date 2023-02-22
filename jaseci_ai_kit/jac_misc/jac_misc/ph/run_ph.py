@@ -20,30 +20,13 @@ try:
                         "span_coef": 0.6,
                         "unk_entity_type_id": -1,
                         "unk_category": "<UNK>",
-                        "descriptions": ["Fin_Corp"],
+                        "descriptions": ["LOC"],
                     }
                 },
                 "type": "CustomModel",
             },
             "Inference": {
                 "type": "CustomInference"
-                # "postprocess": {
-                #     "type": "CustomProcessor",
-                #     "args": {
-                #     }
-                # },
-                # "preprocess": {
-                #     "type": "CustomProcessor",
-                #     "args": {"inf_args":{
-                #                     "unk_entity_type_id":-1,
-                #                     "unk_category":"<UNK>",
-                #                     "max_sequence_length":128,
-                #                     "descriptions":[
-                #                         "Fin_Corp",
-                #                         "PER"
-                #                         ]
-                #                     }}
-                # }
             },
         },
         "python": model_data,
@@ -62,7 +45,7 @@ try:
                 "config": {
                     "Trainer": {
                         "name": "CustomTrainer",
-                        "trainer": {"epochs": 2, "tensorboard": False},
+                        "trainer": {"epochs": 25, "tensorboard": False},
                         "dataloader": {
                             "args": {
                                 "train_args": {
@@ -72,7 +55,8 @@ try:
                                     "max_entity_length": 30,
                                     "unk_entity_type_id": -1,
                                     "unk_category": "<UNK>",
-                                    "descriptions": ["Fin_Corp"],
+                                    "descriptions": ["LOC"],
+                                    "data_file":"ph/ph_train_data.json"
                                 }
                             },
                             "type": "CustomDataLoader",
@@ -91,7 +75,18 @@ try:
             if response.status_code == 200:
                 pred_json = {
                     "uuid": "sample",
-                    "data": "What does Site-Built Housing mean?",
+                    "data": {
+                        "inf_args": {
+                            "unk_entity_type_id": -1,
+                            "unk_category": "<UNK>",
+                            "max_sequence_length": 128,
+                            "descriptions": ["PER","LOC"],
+                        },
+                        "dataset": [
+                            "China is surpassed in area by only Russia",
+                            "China also faces South Korea and Japan, across the Yellow Sea",
+                        ],
+                    },
                 }
                 response = requests.post(
                     "http://localhost:8000/predict/", json=pred_json
