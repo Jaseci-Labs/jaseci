@@ -85,7 +85,7 @@ export function LoginForm() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <Box mb="xl">
             <Title>Login</Title>
-            <Text color="gray">Connect to a server to start</Text>
+            <Text color="dimmed">Connect to a server to start</Text>
           </Box>
           <Stack>
             <Grid sx={{ width: "100%", display: "flex" }} columns={6}>
