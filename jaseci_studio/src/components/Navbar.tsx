@@ -15,7 +15,6 @@ import {
   IconVectorBezierCircle,
   TablerIcon,
 } from "@tabler/icons";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -111,12 +110,16 @@ export const NavbarMinimal = () => {
   return (
     <Navbar height={"100vh"} width={{ base: 80 }} p="md">
       <Center>
-        <Image
+        <img
           height={42}
           width={40}
           alt="Jaseci Logo"
-          src="/Jaseci-Submark.png"
-        ></Image>
+          src={
+            process.env.NEXT_PUBLIC_TAURI
+              ? "Jaseci-Submark.png"
+              : "/static/studio/Jaseci-Submark.png"
+          }
+        ></img>
       </Center>
       <Navbar.Section grow mt={50}>
         <Stack justify="center" spacing={0}>

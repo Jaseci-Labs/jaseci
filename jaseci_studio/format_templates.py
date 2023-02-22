@@ -13,12 +13,18 @@ def parse_args():
 
 def search_and_parse(soup, tag):
     for x in soup.find_all(tag):
-        if x.get("src") and x["src"].startswith("/_next/"):
+        if (
+            x.get("src")
+            and (x["src"].endswith(".png") or x["src"].endswith(".jpg"))
+            and (not x["src"].startswith("/static"))
+        ):
             x["src"] = '{% static "' + x["src"] + '" %}'
-        if x.get("href") and x["href"].startswith("/_next/"):
+        if x.get("src") and x["src"].startswith("/studio/_next/"):
+            x["src"] = '{% static "' + x["src"] + '" %}'
+        if x.get("src") and x["src"].startswith("ui_kit/"):
+            x["src"] = '{% static "' + "/studio/" + x["src"] + '" %}'
+        if x.get("href") and x["href"].startswith("/studio/_next/"):
             x["href"] = '{% static "' + x["href"] + '" %}'
-        if x.get("src") and (x["src"].endswith(".png") or x["src"].endswith(".jpg")):
-            x["src"] = "/static" + x["src"]
 
 
 def main():

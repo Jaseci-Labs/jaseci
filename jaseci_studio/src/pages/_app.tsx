@@ -109,13 +109,13 @@ export default function App(props: AppProps) {
           name="viewport"
           content="minimum-scale=1, initial-scale=1, width=device-width"
         />
-        <link type={"text/css"} href="/ui_kit/components/components.css"></link>
+        <link type={"text/css"} href="ui_kit/components/components.css"></link>
       </Head>
-      <Script
+      <script
         type={"module"}
-        src={"/ui_kit/components/components.esm.js"}
-      ></Script>
-      <Script noModule src={"/ui_kit/components/components.js"}></Script>
+        src={"ui_kit/components/components.esm.js"}
+      ></script>
+      <script noModule src={"ui_kit/components/components.js"}></script>
       <ReactQuery>
         <MantineProvider
           withGlobalStyles
