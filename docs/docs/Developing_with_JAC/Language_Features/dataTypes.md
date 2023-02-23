@@ -16,7 +16,7 @@ walker init {
 
     summary = {'int': a, 'float': b, 'bool': c, 'string': d, 'list': e, 'dict': f};
 
-    std.out(sumary);
+    std.out(summary);
 }
 ```
 

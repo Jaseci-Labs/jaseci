@@ -6,7 +6,7 @@ Jaseci allows for in-code use of common  request methods.
 # url : string  - url to where the request will be made
 # data : dictionary - data being sent that will be converetd to json.
 # header : dicionary -  header data
-response = request.get(url ,data , headers)
+response = request.get(url ,data , headers);
 ```
 ### Post Request
 ```jac
@@ -14,7 +14,7 @@ response = request.get(url ,data , headers)
 # url : string  - url to where the request will be made
 # data : dictionary - data being sent that will be converetd to json.
 # header : dicionary -  header data
-response = request.post(url ,data , headers)
+response = request.post(url ,data , headers);
 ```
 ### Put Request
 ```jac
@@ -22,7 +22,7 @@ response = request.post(url ,data , headers)
 # url : string  - url to where the request will be made
 # data : dictionary - data being sent that will be converetd to json.
 # header : dicionary -  header data
-response = request.put(url ,data , headers)
+response = request.put(url ,data , headers);
 ```
 
 ### Delete Request
@@ -31,7 +31,7 @@ response = request.put(url ,data , headers)
 # url : string  - url to where the request will be made
 # data : dictionary - data being sent that will be converetd to json.
 # header : dicionary -  header data
-response = request.delete(url ,data , headers)
+response = request.delete(url ,data , headers);
 ```
 
 ### Head Request
@@ -40,7 +40,7 @@ response = request.delete(url ,data , headers)
 # url : string  - url to where the request will be made
 # data : dictionary - data being sent that will be converetd to json.
 # header : dicionary -  header data
-response = request.head(url ,data , headers)
+response = request.head(url ,data , headers);
 ```
 
 ### Option Request
@@ -49,7 +49,7 @@ response = request.head(url ,data , headers)
 # url : string  - url to where the request will be made
 # data : dictionary - data being sent that will be converetd to json.
 # header : dicionary -  header data
-response = request.get(url ,data , headers)
+response = request.get(url ,data , headers);
 ```
 
 ### File upload
@@ -59,7 +59,7 @@ response = request.get(url ,data , headers)
 # file : single base64 encoded file
 # files : list of base64 encode files.
 # header : dicionary -  header data
-response = request.multipart_base64(url ,file , headers)
+response = request.multipart_base64(url ,file , headers);
 ```
 
 ### Download File
@@ -67,6 +67,6 @@ response = request.multipart_base64(url ,file , headers)
 # url : string  - url to where the request will be made
 # header : dicionary -  header data
 # encoding : strign - file format , default is utf-8
-downloaded_file = request.file_download_base64(url,header,encoding)
+downloaded_file = request.file_download_base64(url,header,encoding);
 
 ```

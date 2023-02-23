@@ -7,7 +7,7 @@ node year {
 }
 
 jacset  = [year1,year2,year3];
-value = net.max(jac_set)
+value = net.max(jac_set);
 ```
 ### Minimum Anchor Value
 ```jac
@@ -18,7 +18,7 @@ node year {
 }
 
 jacset  = [year1,year2,year3];
-value = net.min(jac_set)
+value = net.min(jac_set);
 ```
 ### Get Node Root
 ```jac
@@ -28,5 +28,5 @@ node year {
 }
 
 jacset  = [year1,year2,year3];
-value = net.root(jac_set)
+value = net.root(jac_set);
 ```
