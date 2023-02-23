@@ -298,82 +298,130 @@ walker init{
 
 **Example Usage**
 ```
-
+walker init{
+    _list = ["Hello", "World"];
+    report " ".str::join(_list);
+}
 ```
 
 **Expected Oputput**
 ```
+"report": [
+    "Hello World"
+  ]
 ```
 
-| Op               | Args | Description |
-| ---------------- | ---- | ----------- |
-| .str::startswith |      |             |
+| Op               | Args   | Description                                                |
+| ---------------- | ------ | ---------------------------------------------------------- |
+| .str::startswith | params | Return true if the string starts with the given substring. |
 
 
 **Example Usage**
 ```
+walker init{
+    _string = "Hello World";
+    report _string.str::startswith("H");
+}
 ```
 
 **Expected Oputput**
 ```
+"report": [
+    true
+  ]
 ```
 
-| Op             | Args | Description |
-| -------------- | ---- | ----------- |
-| .str::endswith |      |             |
+| Op             | Args   | Description                                              |
+| -------------- | ------ | -------------------------------------------------------- |
+| .str::endswith | params | Return true if the string ends with the given substring. |
 
 **Example Usage**
 ```
+walker init{
+    _string = "Hello World";
+    report _string.str::endsswith("d");
+}
 ```
 
 **Expected Oputput**
 ```
+"report": [
+    true
+  ]
 ```
 
-| Op            | Args | Description |
-| ------------- | ---- | ----------- |
-| .str::replace |      |             |
+| Op            | Args   | Description                                  |
+| ------------- | ------ | -------------------------------------------- |
+| .str::replace | params | Replace the string with the given substring. |
 
 **Example Usage**
 ```
+walker init{
+    _string = "Hello World";
+    report _string.str::replace("World", "Jaseci");
+}
 ```
 
 **Expected Oputput**
 ```
+"report": [
+    "Hello Jaseci"
+  ]
 ```
 
-| Op          | Args     | Description |
-| ----------- | -------- | ----------- |
-| .str::strip | optional |             |
+| Op          | Args     | Description                                                                                                                                   |
+| ----------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| .str::strip | optional | Removes any leading (spaces at the beginning) and trailing (spaces at the end) characters (space is the default leading character to remove). |
 
 **Example Usage**
 ```
+walker init{
+    _string = "  Hello World  ";
+    report _string.str::strip;
+}
 ```
 
 **Expected Oputput**
 ```
+"report": [
+    "Hello World"
+  ]
 ```
 
-| Op           | Args     | Description |
-| ------------ | -------- | ----------- |
-| .str::lstrip | optional |             |
+| Op           | Args     | Description                                                                                                  |
+| ------------ | -------- | ------------------------------------------------------------------------------------------------------------ |
+| .str::lstrip | optional | Removes any leading (spaces at the beginning) characters (space is the default leading character to remove). |
 
 **Example Usage**
 ```
+walker init{
+    _string = "  Hello World  ";
+    report _string.str::lstrip;
+}
 ```
 
 **Expected Oputput**
 ```
+"report": [
+    "Hello World  "
+  ]
 ```
 
-| Op           | Args     | Description |
-| ------------ | -------- | ----------- |
-| .str::rstrip | optional |             |
+| Op           | Args     | Description                                                                                         |
+| ------------ | -------- | --------------------------------------------------------------------------------------------------- |
+| .str::rstrip | optional | Removes trailing (spaces at the end) characters (space is the default leading character to remove). |
 
 **Example Usage**
 ```
+walker init{
+    _string = "  Hello World  ";
+    report _string.str::rstrip;
+}
 ```
 
 **Expected Oputput**
 ```
+"report": [
+    "  Hello World"
+  ]
 ```
