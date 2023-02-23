@@ -131,6 +131,14 @@ class InferenceList:
         if self.check(uuid):
             ph_config = self.ie_list[uuid].ph_config
             if config:
+                # If the training data is passed in, save it to a file first
+                dataset = config["Trainer"]["dataloader"]["args"].get("data_dict", None)
+                if dataset:
+                    data_loc = config["Trainer"]["dataloader"]["args"].get("data_dir")
+                    with open(data_loc, "w") as fout:
+                        json.dump(dataset, fout)
+                    del config["Trainer"]["dataloader"]["args"]["data_dict"]
+
                 deep_update(ph_config, config)
                 write_yaml(ph_config, f"heads/{uuid}/config.yaml")
             resume = (
