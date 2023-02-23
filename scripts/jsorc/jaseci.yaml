@@ -1,14 +1,20 @@
-# Jaseci Service Account
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jaseci
+  labels:
+    name: jaseci
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: jaseci-account
-  namespace: default
+  namespace: jaseci
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  namespace: default
+  namespace: jaseci
   name: jaseci-orc
 rules:
   - apiGroups: [
@@ -117,11 +123,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: jaseci-orc-rolebinding
-  namespace: default
+  namespace: jaseci
 subjects:
   - kind: ServiceAccount
     name: jaseci-account
-    namespace: default
+    namespace: jaseci
 roleRef:
   kind: ClusterRole
   name: jaseci-orc
@@ -131,6 +137,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jaseci
+  namespace: jaseci
 spec:
   selector:
     pod: jaseci
@@ -143,7 +150,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: jaseci-up
-  namespace: default
+  namespace: jaseci
 data:
   prod_up: |-
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
@@ -159,6 +166,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jaseci
+  namespace: jaseci
 spec:
   replicas: 1
   selector:
@@ -182,6 +190,9 @@ spec:
           ports:
             - containerPort: 80
           env:
+            - name: KUBE_NAMESPACE
+              value: jaseci
+
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -195,28 +206,22 @@ spec:
                   key: password
 
             - name: POSTGRES_HOST
-              value: jaseci-db
+              value: jaseci-db.jaseci-database.svc.cluster.local
 
             - name: DBNAME
               value: postgres
 
-            - name: JSORC_POD_NAME
-              value: jaseci
-
-            - name: REDIS_HOST
-              value: jaseci-redis
-
-            - name: PROME_HOST
-              value: jaseci-prometheus-server
-
             - name: JSORC_DB_REGEN
               value: "true"
 
-            - name: KUBE_NAMESPACE
-              value: default
+            - name: REDIS_HOST
+              value: jaseci-redis.jaseci-redis.svc.cluster.local
+
+            - name: PROME_HOST
+              value: jaseci-prometheus-server.prometheus.svc.cluster.local
 
             - name: ELASTIC_HOST
-              value: jaseci-es-internal-http.elastic-system.svc.cluster.local
+              value: jaseci-es-internal-http.elastic.svc.cluster.local
 
           volumeMounts:
             - name: prod-script
@@ -231,6 +236,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: jaseci-db-credentials
+  namespace: jaseci
 type: Opaque
 data:
   user: cG9zdGdyZXM=

@@ -2,7 +2,7 @@ from jaseci import JsOrc
 from jaseci.svc.kube_svc import KubeService
 from requests import get, post
 from datetime import datetime
-from copy import copy
+from copy import copy, deepcopy
 from base64 import b64encode
 
 
@@ -11,22 +11,36 @@ from base64 import b64encode
 #################################################
 
 
-@JsOrc.service(name="elastic", config="ELASTIC_CONFIG", manifest="ELASTIC_MANIFEST")
+@JsOrc.service(
+    name="elastic",
+    config="ELASTIC_CONFIG",
+    manifest="ELASTIC_MANIFEST",
+    dedicated=False,
+)
 class ElasticService(JsOrc.CommonService):
     ###################################################
     #                     BUILDER                     #
     ###################################################
 
-    def __init__(self, config: dict, manifest: dict):
-        if not config.get("auth"):
-            sec = JsOrc.svc("kube", KubeService).get_secret(
-                "jaseci-es-elastic-user", "elastic", "elastic-system"
-            )
-            config["auth"] = f'basic {b64encode(f"elastic:{sec}".encode()).decode()}'
-
-        super().__init__(config, manifest)
-
     def run(self):
+        if not self.config.get("auth"):
+            elasticsearches = self.manifest.get("Elasticsearch", [])
+            if elasticsearches:
+                kube = JsOrc.svc("kube", KubeService)
+                elasticsearch: dict = deepcopy(elasticsearches[0]["metadata"])
+                sec = kube.get_secret(
+                    f'{elasticsearch.get("name", "jaseci")}-es-elastic-user',
+                    "elastic",
+                    kube.resolve_namespace(
+                        elasticsearch.get("namespace", "elastic"),
+                        elasticsearch,
+                        self.dedicated,
+                    ),
+                )
+                self.config[
+                    "auth"
+                ] = f'basic {b64encode(f"elastic:{sec}".encode()).decode()}'
+
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")
 
@@ -164,5 +178,5 @@ class Elastic:
         }
 
     def health(self, query: str = ""):
-        if self._get(f"/_cluster/health?{query}")["timed_out"]:
+        if self._get(f"/_cluster/health?{query}").get("timed_out", True):
             raise Exception("Cannot connect on elastic service!")

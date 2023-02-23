@@ -54,10 +54,11 @@ class JsOrc:
         def daemon(self):
             return __class__._daemon
 
-        def __init__(self, config: dict, manifest: dict):
+        def __init__(self, config: dict, manifest: dict, dedicated: bool = True):
             self.app = None
             self.error = None
             self.state = State.NOT_STARTED
+            self.dedicated = dedicated
 
             # ------------------- CONFIG -------------------- #
 
@@ -379,7 +380,9 @@ class JsOrc:
                 else {}
             )
 
-        instance: JsOrc.CommonService = instance["type"](config, manifest)
+        instance: JsOrc.CommonService = instance["type"](
+            config, manifest, instance["dedicated"]
+        )
 
         if instance.has_failed() and service not in cls._regeneration_queues:
             cls._regeneration_queues.append(service)
@@ -456,6 +459,7 @@ class JsOrc:
         manifest: str = None,
         priority: int = 0,
         proxy: bool = False,
+        dedicated: bool = True,
     ):
         """
         Save the class in services options
@@ -464,6 +468,7 @@ class JsOrc:
         manifest: manifest name from datasource
         priority: duplicate name will use the highest priority
         proxy: allow proxy service
+        dedicated: if service will spawn to be dedicated to this app
         """
 
         def decorator(service: T) -> T:
@@ -476,6 +481,7 @@ class JsOrc:
                     "manifest": manifest,
                     "priority": priority,
                     "proxy": proxy,
+                    "dedicated": dedicated,
                     "date_added": int(datetime.utcnow().timestamp() * 1000),
                 },
             )
@@ -594,7 +600,6 @@ class JsOrc:
                         and service.automated
                     ):
                         if service.manifest and kube.is_running():
-                            pod_name = ""
                             old_config_map = deepcopy(
                                 service.manifest_meta.get("__OLD_CONFIG__", {})
                             )
@@ -603,24 +608,27 @@ class JsOrc:
                             )
                             for kind, confs in service.manifest.items():
                                 for conf in confs:
-                                    name = conf["metadata"]["name"]
+                                    conf = deepcopy(conf)
+                                    metadata: dict = conf["metadata"]
+                                    name = metadata["name"]
+                                    namespace = kube.resolve_namespace(
+                                        kind, metadata, service.dedicated
+                                    )
                                     _confs = old_config_map.get(kind, {})
                                     if name in _confs.keys():
                                         _confs.pop(name)
 
-                                    if kind == "Service":
-                                        pod_name = name
                                     res = kube.read(
                                         kind,
                                         name,
-                                        namespace=kube.resolve_namespace(conf),
+                                        namespace,
                                     )
                                     if (
                                         hasattr(res, "status")
                                         and res.status == 404
                                         and conf
                                     ):
-                                        kube.create(kind, name, conf)
+                                        kube.create(kind, name, conf, namespace)
                                     elif not isinstance(res, ApiException):
                                         config_version = 1
                                         if isinstance(res, dict):
@@ -638,7 +646,7 @@ class JsOrc:
                                         if config_version != conf.get("metadata").get(
                                             "labels", {}
                                         ).get("config_version", 1):
-                                            kube.patch(kind, name, conf)
+                                            kube.patch(kind, name, conf, namespace)
 
                                 if (
                                     old_config_map
@@ -648,16 +656,13 @@ class JsOrc:
                                 ):
                                     old_config_map.get(kind, {}).pop(name)
 
-                                for to_be_removed in old_config_map.get(
+                                for to_be_removed, conf in old_config_map.get(
                                     kind, {}
                                 ).keys():
-                                    res = kube.read(
-                                        kind,
-                                        to_be_removed,
-                                        namespace=kube.resolve_namespace(
-                                            old_config_map["kind"][to_be_removed]
-                                        ),
+                                    namespace = kube.resolve_namespace(
+                                        kind, conf["metadata"], service.dedicated
                                     )
+                                    res = kube.read(kind, to_be_removed, namespace)
                                     if not isinstance(res, ApiException) and (
                                         (isinstance(res, dict) and res.get("metadata"))
                                         or res.metadata
@@ -667,10 +672,10 @@ class JsOrc:
                                         ) or unsafe_paraphrase == cls.settings(
                                             "UNSAFE_PARAPHRASE"
                                         ):
-                                            kube.delete(kind, to_be_removed)
+                                            kube.delete(kind, to_be_removed, namespace)
                                         else:
                                             logger.info(
-                                                f"You don't have permission to delete `{kind}` for `{to_be_removed}` with namespace `{kube.namespace}`!"
+                                                f"You don't have permission to delete `{kind}` for `{to_be_removed}` with namespace `{namespace}`!"
                                             )
                         cls.svc_reset(regeneration_queue)
                     sleep(1)
@@ -680,16 +685,18 @@ class JsOrc:
                 action_manager.record_system_state()
             else:
                 kube = cls.svc("kube", KubeService)
-                dbrc = cls.settings("DB_REGEN_CONFIG")
-                while not cls._has_db or not kube.terminate_jaseci(dbrc["pod"]):
+                while not cls.db_check():
                     for kind, confs in cls.settings("DB_REGEN_MANIFEST", {}).items():
                         for conf in confs:
-                            name = conf["metadata"]["name"]
-                            res = kube.read(kind, name)
+                            conf = deepcopy(conf)
+                            metadata = conf["metadata"]
+                            name = metadata["name"]
+                            namespace = kube.resolve_namespace(kind, metadata)
+                            res = kube.read(kind, name, namespace)
                             if hasattr(res, "status") and res.status == 404 and conf:
-                                kube.create(kind, name, conf)
+                                kube.create(kind, name, conf, namespace)
                     sleep(1)
-                    cls.db_check()
+                raise SystemExit("Force termination to restart the pod!")
 
             cls._regenerating = False
 

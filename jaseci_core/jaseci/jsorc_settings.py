@@ -1,6 +1,8 @@
 import os
 import yaml
 
+from time import time
+
 
 def load_default_yaml(file):
     manifest = {}
@@ -37,18 +39,20 @@ class JsOrcSettings:
 
     JSORC_CONFIG = {
         "backoff_interval": 10,
-        "pre_loaded_services": ["kube", "redis", "prome", "mail", "task", "elastic"],
+        "pre_loaded_services": ["redis", "prome", "mail", "task", "elastic"],
     }
 
     ###############################################################################################################
     # -------------------------------------------------- KUBE --------------------------------------------------- #
     ###############################################################################################################
 
+    KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", f"jaseci-{int(time() * 100000)}")
+
     KUBE_CONFIG = {
         "enabled": bool(os.getenv("KUBE_NAMESPACE")),
         "quiet": True,
         "automated": False,
-        "namespace": os.getenv("KUBE_NAMESPACE", "default"),
+        "namespace": KUBE_NAMESPACE,
         "in_cluster": True,
         "config": None,
     }
@@ -161,8 +165,8 @@ class JsOrcSettings:
             f':{os.getenv("ELASTIC_PORT", "9200")}'
         ),
         "auth": os.getenv("ELASTIC_AUTH"),
-        "common_index": "common",
-        "activity_index": "activity",
+        "common_index": f"{KUBE_NAMESPACE}-common",
+        "activity_index": f"{KUBE_NAMESPACE}-activity",
     }
 
     ELASTIC_MANIFEST = load_default_yaml("elastic")
@@ -173,7 +177,6 @@ class JsOrcSettings:
 
     DB_REGEN_CONFIG = {
         "enabled": os.environ.get("JSORC_DB_REGEN") == "true",
-        "pod": os.environ.get("JSORC_POD_NAME", "jaseci"),
         "host": os.environ.get("POSTGRES_HOST", "jaseci-db"),
         "db": os.environ.get("DBNAME", "postgres"),
         "user": os.environ.get("POSTGRES_USER"),

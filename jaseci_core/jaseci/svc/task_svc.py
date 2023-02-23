@@ -17,13 +17,13 @@ class TaskService(JsOrc.CommonService):
     #                   INITIALIZER                   #
     ###################################################
 
-    def __init__(self, config: dict, manifest: dict):
+    def __init__(self, config: dict, manifest: dict, dedicated: bool = True):
         self.inspect: Inspect = None
         self.queue: Queue = None
         self.scheduled_walker: ScheduledWalker = None
         self.scheduled_sequence: ScheduledSequence = None
 
-        super().__init__(config, manifest)
+        super().__init__(config, manifest, dedicated)
 
     ###################################################
     #                     BUILDER                     #

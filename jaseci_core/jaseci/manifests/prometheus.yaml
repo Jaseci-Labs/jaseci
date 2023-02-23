@@ -12,6 +12,7 @@ metadata:
     app.kubernetes.io/instance: jaseci-prometheus
     app.kubernetes.io/version: "2.5.0"
   name: jaseci-prometheus-kube-state-metrics
+  namespace: prometheus
 imagePullSecrets:
   []
 ---
@@ -26,6 +27,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-alertmanager
+  namespace: prometheus
   annotations:
     {}
 ---
@@ -40,6 +42,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-node-exporter
+  namespace: prometheus
   annotations:
     {}
 ---
@@ -54,6 +57,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-pushgateway
+  namespace: prometheus
   annotations:
     {}
 ---
@@ -68,6 +72,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-server
+  namespace: prometheus
   annotations:
     {}
 ---
@@ -82,6 +87,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-alertmanager
+  namespace: prometheus
 data:
   allow-snippet-annotations: "false"
   alertmanager.yml: |
@@ -105,6 +111,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-server
+  namespace: prometheus
 data:
   allow-snippet-annotations: "false"
   alerting_rules.yml: |
@@ -438,6 +445,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-alertmanager
+  namespace: prometheus
 spec:
   accessModes:
     - ReadWriteOnce
@@ -456,6 +464,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-server
+  namespace: prometheus
 spec:
   accessModes:
     - ReadWriteOnce
@@ -476,6 +485,7 @@ metadata:
     app.kubernetes.io/instance: jaseci-prometheus
     app.kubernetes.io/version: "2.5.0"
   name: jaseci-prometheus-kube-state-metrics
+  namespace: prometheus
 rules:
 
 - apiGroups: ["certificates.k8s.io"]
@@ -624,6 +634,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-alertmanager
+  namespace: prometheus
 rules:
   []
 ---
@@ -638,6 +649,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-pushgateway
+  namespace: prometheus
 rules:
   []
 ---
@@ -652,6 +664,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-server
+  namespace: prometheus
 rules:
   - apiGroups:
       - ""
@@ -696,6 +709,7 @@ metadata:
     app.kubernetes.io/instance: jaseci-prometheus
     app.kubernetes.io/version: "2.5.0"
   name: jaseci-prometheus-kube-state-metrics
+  namespace: prometheus
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -703,6 +717,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: jaseci-prometheus-kube-state-metrics
+  namespace: prometheus
 ---
 # Source: prometheus/templates/alertmanager/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -715,9 +730,11 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-alertmanager
+  namespace: prometheus
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-alertmanager
+    namespace: prometheus
 
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -735,9 +752,11 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-pushgateway
+  namespace: prometheus
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-pushgateway
+    namespace: prometheus
 
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -755,9 +774,11 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-server
+  namespace: prometheus
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-server
+    namespace: prometheus
 
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -769,6 +790,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jaseci-prometheus-kube-state-metrics
+  namespace: prometheus
   labels:
     helm.sh/chart: kube-state-metrics-4.13.0
     app.kubernetes.io/managed-by: Helm
@@ -802,6 +824,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-alertmanager
+  namespace: prometheus
 spec:
   ports:
     - name: http
@@ -828,6 +851,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-node-exporter
+  namespace: prometheus
 spec:
   ports:
     - name: metrics
@@ -853,6 +877,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-pushgateway
+  namespace: prometheus
 spec:
   ports:
     - name: http
@@ -876,6 +901,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-server
+  namespace: prometheus
 spec:
   ports:
     - name: http
@@ -900,6 +926,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-node-exporter
+  namespace: prometheus
 spec:
   selector:
     matchLabels:
@@ -969,6 +996,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jaseci-prometheus-kube-state-metrics
+  namespace: prometheus
   labels:
     helm.sh/chart: kube-state-metrics-4.13.0
     app.kubernetes.io/managed-by: Helm
@@ -1035,6 +1063,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-alertmanager
+  namespace: prometheus
 spec:
   selector:
     matchLabels:
@@ -1124,6 +1153,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-pushgateway
+  namespace: prometheus
 spec:
   selector:
     matchLabels:
@@ -1179,6 +1209,7 @@ metadata:
     chart: prometheus-15.10.5
     heritage: Helm
   name: jaseci-prometheus-server
+  namespace: prometheus
 spec:
   selector:
     matchLabels:
