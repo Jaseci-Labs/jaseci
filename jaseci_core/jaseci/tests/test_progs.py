@@ -344,7 +344,7 @@ class JacTests(TestCaseHelper, TestCase):
         )
 
     def test_list_unique(self):
-        mast = self.meta.build_master()
+        mast = JsOrc.master()
         mast.sentinel_register(name="test", code=jtp.list_unique, auto_run="")
 
         res = mast.general_interface_to_api(
