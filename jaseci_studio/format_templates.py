@@ -35,7 +35,7 @@ def main():
         # add script to store user info into window on page load
         # is a workaround so i don't need redux
         django_script = BeautifulSoup(
-            '<script>window.django = {is_authenticated: "{{ request.user.is_authenticated }}" === "True" ? true : false, user_plan: "{{user_plan}}"};</script>',
+            '<script>window.django = {is_authenticated: "{{ request.user.is_authenticated }}" === "True" ? true : false, user: "{{request.user}}"};</script>',
             "html.parser",
         )
         head = soup.find("head")

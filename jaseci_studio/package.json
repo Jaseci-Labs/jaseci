@@ -5,7 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "setup:ui": "cd ../ui_components && yarn install && yarn build",
-    "dev": "next dev -p 1420",
+    "dev": "NEXT_PUBLIC_TAURI=true next dev -p 1420",
     "build": "next build && next export -o dist",
     "build:app": "NEXT_PUBLIC_TAURI=true next build && next export -o dist",
     "tauri": "tauri",

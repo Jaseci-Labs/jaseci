@@ -82,6 +82,10 @@ export function LoginForm() {
       if (window.location?.hostname) {
         setValue("host", window.location.hostname);
       }
+
+      if (window["django"]?.user?.includes("@")) {
+        setValue("email", window["django"]?.user);
+      }
     }
   }, []);
 
