@@ -1159,6 +1159,8 @@ class Interp(VirtualMachine):
                     result = JacValue(
                         self, value=[list(s) for s in pairwise(atom_res.value)]
                     )
+                elif op == "unique":
+                    result = JacValue(self, value=list(set(atom_res.value)))
 
                 elif len(kid) < 2 and op == "pop":
                     result = JacValue(self, value=atom_res.value.pop())
