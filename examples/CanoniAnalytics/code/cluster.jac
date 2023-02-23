@@ -1,12 +1,27 @@
-#generate clusters for lists of senetences or phrases.
-walker cluster {
-    can use.encode;
+walker get_dialog_clusters{
     can cluster.get_umap;
+    can cluster.get_cluster_labels;
+    can sbert_sim.load_model;
+    can use.encode;
 
-    has list_of_text;
-    has anchor embeddings;
+    has movie = file.load_json("movie_data.json");
 
-    embeddings = cluster.get_umap(text_embeddings=use.encode(list_of_text), n_components=2);
+    dialogues = [];
 
-    report embeddings;
+    for movie_scene in movie {
+        content = movie[movie_scene];
+        if content[1].type == dict:
+            {
+                actors_list = content[1].dict::keys;
+                for _actor in actors_list:
+                {
+                    _dialogue = " ".str::join(content[1][_actor]);
+                    dialogues.list::append(_dialogue);
+                }
+            }
+        }
+
+    encodes = use.encode(dialogues);
+    cluster_lables = cluster.get_umap(encodes,25);
+    report cluster_lables;
 }
