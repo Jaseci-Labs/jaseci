@@ -30,6 +30,27 @@ walker find_similar_sentences{
     }
 }
 
+walker get_actors_dialogue{
+    actors_list = [];
+    root{
+         spawn here walker::build_graph;
+         take-->;
+    }
+
+    location{
+        take-->;
+    }
+
+    scene{
+        childrens = -->node::actor;
+
+        std.out(childrens.name);
+        take -->;
+    }
+
+
+}
+
 
 walker init{
     has _list;
