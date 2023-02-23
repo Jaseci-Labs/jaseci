@@ -22,7 +22,7 @@ export function ChangeGraphModal({
   onClose: () => void;
   onChangeActiveGraph: (activeGraph: string, user: string) => void;
 }) {
-  const LIMIT = 1;
+  const LIMIT = 10;
   const [activePage, setActivePage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebouncedValue(search, 200);

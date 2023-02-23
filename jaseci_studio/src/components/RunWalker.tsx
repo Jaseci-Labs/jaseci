@@ -99,8 +99,14 @@ function RunWalker({
 
       <Box
         sx={(theme) => ({
-          background: theme.colors.gray[2],
-          border: "1px solid " + theme.colors.gray[5],
+          background:
+            theme.colorScheme === "dark"
+              ? theme.colors.dark[7]
+              : theme.colors.gray[2],
+          border:
+            "1px solid " + theme.colorScheme === "dark"
+              ? theme.colors.dark[5]
+              : theme.colors.gray[5],
           borderRadius: 8,
           minHeight: "300px",
           maxHeight: "400px",

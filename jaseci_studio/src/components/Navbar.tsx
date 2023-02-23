@@ -15,7 +15,6 @@ import {
   IconVectorBezierCircle,
   TablerIcon,
 } from "@tabler/icons";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -75,33 +74,36 @@ function NavbarLink({ icon: Icon, label, active, onClick }: NavbarLinkProps) {
 
 const linksConfig = [
   { icon: IconHome2, label: "Home", href: "/" },
-  { icon: IconGauge, label: "Dashboard", href: "/dashboard" },
+  { icon: IconGauge, label: "Dashboard", href: "/dashboard/" },
   {
     icon: IconVectorBezierCircle,
     label: "Graph Viewer",
-    href: "/graph-viewer",
+    href: "/graph-viewer/",
   },
   {
     icon: IconPrompt,
     label: "View Logs",
-    href: "/logs",
+    href: "/logs/",
   },
   {
     icon: IconServerBolt,
     label: "Manage Actions",
-    href: "/actions",
+    href: "/actions/",
   },
   {
     icon: IconCode,
     label: "Architypes",
-    href: "/architype",
+    href: "/architype/",
   },
 ];
 
 export const NavbarMinimal = () => {
   const router = useRouter();
   const pathName = usePathname();
-  const defaultActive = linksConfig.findIndex((link) => link.href === pathName);
+  const defaultActive = linksConfig.findIndex((link) =>
+    pathName.endsWith(link.href)
+  );
+
   const [active, setActive] = useState(
     defaultActive === -1 ? 0 : defaultActive
   );
@@ -111,21 +113,27 @@ export const NavbarMinimal = () => {
   return (
     <Navbar height={"100vh"} width={{ base: 80 }} p="md">
       <Center>
-        <Image
+        <img
           height={42}
           width={40}
           alt="Jaseci Logo"
-          src="/Jaseci-Submark.png"
-        ></Image>
+          src={
+            process.env.NEXT_PUBLIC_TAURI
+              ? "Jaseci-Submark.png"
+              : "/static/studio/Jaseci-Submark.png"
+          }
+        ></img>
       </Center>
       <Navbar.Section grow mt={50}>
         <Stack justify="center" spacing={0}>
           {linksConfig.map((link, index) => (
             <NavbarLink
               key={link.label}
-              active={index === active}
+              active={
+                link.href.replaceAll("/", "") === pathName.replaceAll("/", "")
+              }
               onClick={() => {
-                setActive(index);
+                // setActive(index);
                 router.push(link.href);
               }}
               icon={link.icon}

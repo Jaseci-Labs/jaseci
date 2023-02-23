@@ -1,24 +1,6 @@
-import {
-  Flex,
-  Card,
-  Title,
-  Button,
-  Group,
-  Grid,
-  Tabs,
-  JsonInput,
-  Box,
-  Text,
-  Divider,
-  Autocomplete,
-  Select,
-  TextInput,
-  Checkbox,
-  Badge,
-  ThemeIcon,
-} from "@mantine/core";
+import { Flex, Card, Title, Button, Group, Grid, Tabs } from "@mantine/core";
 import Editor from "../components/Editor";
-import useRegisterArchetype, { Architype } from "../hooks/useRegisterArchetype";
+import useRegisterArchetype from "../hooks/useRegisterArchetype";
 import { useStudioEditor } from "../hooks/useStudioEditor";
 import { getActiveSentinel } from "../hooks/useGetActiveSentinel";
 import ArchitypeList from "../components/ArchitypeList";
