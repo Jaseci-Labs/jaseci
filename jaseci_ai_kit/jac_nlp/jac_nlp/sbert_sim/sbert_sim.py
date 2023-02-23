@@ -127,7 +127,7 @@ def getembeddings(text: List[str]):
     model.eval()
     try:
         embeddings = model.encode(text)
-        return {np.squeeze(np.asarray(embeddings)).tolist()}
+        return np.squeeze(np.asarray(embeddings)).tolist()
     except Exception as e:
         print(e)
         return f"Error Occured : {str(e)}"
