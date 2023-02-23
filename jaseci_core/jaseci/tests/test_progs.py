@@ -343,6 +343,19 @@ class JacTests(TestCaseHelper, TestCase):
             [[[1, 2], [2, 3], [3, 4]]],
         )
 
+    def test_list_unique(self):
+        mast = JsOrc.master()
+        mast.sentinel_register(name="test", code=jtp.list_unique, auto_run="")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run", params={"name": "init"}
+        )
+
+        self.assertEqual(
+            res["report"],
+            [[1, 2, 3, 4, 5]],
+        )
+
     def test_new_additional_builtin(self):
         mast = JsOrc.master()
         mast.sentinel_register(name="test", code=jtp.check_new_builtin, auto_run="")
