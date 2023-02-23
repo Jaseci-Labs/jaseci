@@ -47,10 +47,12 @@ jobs:
           cd jaseci_serv/
           source install_live.sh
           jsserv test
+        env:
+          REDIS_ENABLED: "true"
 
       - name: test jaseci_serv without redis
         run: |
           cd jaseci_serv/
           pytest -x
         env:
-          REDIS_ENABLED: "False"
+          REDIS_ENABLED: "false"

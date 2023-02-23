@@ -4,6 +4,8 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
+from jaseci import JsOrc
+from jaseci.svc.task_svc import TaskService
 from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.element.element import Element
 from jaseci.graph.node import Node
@@ -795,12 +797,14 @@ class Interp(VirtualMachine):
             elif kid[0].name == "KW_SYNC":
                 self.run_atom(kid[1])
                 val = self.pop()
-                task_func = self._h.task
-                if not task_func.is_running():
-                    raise Exception("Task hook is not yet initialized!")
                 self.push(
                     JacValue(
-                        self, value=task_func.get_by_task_id(val.value["result"], True)
+                        self,
+                        value=(
+                            JsOrc.svc("task")
+                            .poke(TaskService)
+                            .get_by_task_id(val.value["result"], True)
+                        ),
                     )
                 )
             else:

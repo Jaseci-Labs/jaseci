@@ -7,8 +7,8 @@ from django.utils.translation import ugettext_lazy as _
 from django_rest_passwordreset.signals import reset_password_token_created
 from rest_framework import serializers
 
-from jaseci.utils.utils import logger
-from jaseci_serv.svc import MetaService
+from jaseci import JsOrc
+from jaseci_serv.svc.mail_svc import Mailer
 
 requests_for_emails = None
 
@@ -22,15 +22,14 @@ def send_activation_email(email):
         )
     else:
         link = "invalid"
-
-    MetaService().get_service("mail").poke().send_activation_email(email, code, link)
+    JsOrc.svc("mail").poke(Mailer).send_activation_email(email, code, link)
 
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(
     sender, instance, reset_password_token, *args, **kwargs
 ):
-    MetaService().get_service("mail").poke().send_reset_email(
+    JsOrc.svc("mail").poke(Mailer).send_reset_email(
         reset_password_token.user.email, reset_password_token.key
     )
 

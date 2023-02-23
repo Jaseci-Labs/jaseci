@@ -35,3 +35,7 @@ node_modules
 # Docs
 mdbook/
 
+# Docs Pathe
+/support/guide/other/cheatsheet.md
+/support/guide/other/classes.md
+/support/guide/other/stdlib.md

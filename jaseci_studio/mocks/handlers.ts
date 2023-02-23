@@ -4,6 +4,7 @@ import { jsPublicHandler } from "./js_public.handlers";
 import { loginHandlers } from "./login.handlers";
 import { logsHandler } from "./logs.handlers";
 import { objectHandlers } from "./object.handlers";
+import { walkerHandlers } from "./walker.handlers";
 
 export default [
   ...loginHandlers,
@@ -12,4 +13,5 @@ export default [
   ...jsPublicHandler,
   ...jsAdminHandler,
   ...objectHandlers,
+  ...walkerHandlers,
 ];
