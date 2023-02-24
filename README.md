@@ -28,6 +28,7 @@
     - [Local JSCTL Mode](docs/docs/interfacing_jaseci/jsctl.md)
       - [CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
     - [Remote JSCTL Mode](docs/docs/interfacing_jaseci/remote_jsctl.md)
+    - [Application Mode: Jac Api Collection](support/guide/other/classes.md)
 
   - [Taking Jac for a Test Drive](docs/docs/getting-started/content.md)
     - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
@@ -68,6 +69,29 @@
   - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
   - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
 
+## Jaseci Archetype and Graphs
+  - [Nodes](docs/docs/jaseci_architype/nodes.md)
+    - [Detailed Explanation of Nodes](docs/docs/jaseci_architype/node_explanation.md)
+    - [Info and Context Command](docs/docs/jaseci_architype/info_and_context.md)
+    - [Creating Graphs](docs/docs/jaseci_architype/spawning_nodes.md)
+    - [Node Abilities - jaseci’s Functions](docs/docs/jaseci_architype/node_abilities.md)
+    - [Referencing and dereferencing nodes](docs/docs/jaseci_architype/referencing_dereferencing.md)
+    - [Types of Nodes](docs/docs/jaseci_architype/node_types.md)
+    - [Additional Info](docs/docs/jaseci_architype/additional_info.md)
+  - [Edges](docs/docs/jaseci_architype/edges.md)
+    - [Explanation](docs/docs/jaseci_architype/deges_explanation.md)
+    - [Connect operator](docs/docs/jaseci_architype/connect_edges.md)
+    - [Plucking values from nodes](docs/docs/jaseci_architype/plucking_values.md)
+    - [Types of edges](docs/docs/jaseci_architype/types_edges.md)
+  - [Walkers](docs/docs/jaseci_architype/walkers.md)
+    - [Explanation](docs/docs/jaseci_architype/walkers_explanation.md)
+    - [Take, yield, ignore destroy](docs/docs/jaseci_architype/take.md)
+    - [Technical Semantics](docs/docs/jaseci_architype/technical_semantics.md)
+    - [Walkers spawning other walkers](docs/docs/jaseci_architype/walkers_spawning_walkers.md)
+    - [Basic walks](docs/docs/jaseci_architype/basic_walks.md)
+    - [Breath first and depth first walks](docs/docs/jaseci_architype/breath_first_walks.md)
+    - [Here and visitors the this reference of jaseci](docs/docs/jaseci_architype/here_and_visitors.md)
+  - [Combining it All](docs/docs/jaseci_architype/combining_it_all.md)
 
 ## Codelabs and Guides
 
