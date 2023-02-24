@@ -12,9 +12,7 @@ url_link = "https://imsdb.com/all-scripts.html"
 _whitespace_re = re.compile(r"\s+")
 
 
-def get_script(
-    film_url,
-):
+def get_script(film_url):
     """
     Scrape the script from the given url.
 
