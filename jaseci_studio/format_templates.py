@@ -13,12 +13,18 @@ def parse_args():
 
 def search_and_parse(soup, tag):
     for x in soup.find_all(tag):
-        if x.get("src") and x["src"].startswith("/_next/"):
+        if (
+            x.get("src")
+            and (x["src"].endswith(".png") or x["src"].endswith(".jpg"))
+            and (not x["src"].startswith("/static"))
+        ):
             x["src"] = '{% static "' + x["src"] + '" %}'
-        if x.get("href") and x["href"].startswith("/_next/"):
+        if x.get("src") and x["src"].startswith("/studio/_next/"):
+            x["src"] = '{% static "' + x["src"] + '" %}'
+        if x.get("src") and x["src"].startswith("ui_kit/"):
+            x["src"] = '{% static "' + "/studio/" + x["src"] + '" %}'
+        if x.get("href") and x["href"].startswith("/studio/_next/"):
             x["href"] = '{% static "' + x["href"] + '" %}'
-        if x.get("src") and (x["src"].endswith(".png") or x["src"].endswith(".jpg")):
-            x["src"] = "/static" + x["src"]
 
 
 def main():
@@ -29,7 +35,7 @@ def main():
         # add script to store user info into window on page load
         # is a workaround so i don't need redux
         django_script = BeautifulSoup(
-            '<script>window.django = {is_authenticated: "{{ request.user.is_authenticated }}" === "True" ? true : false, user_plan: "{{user_plan}}"};</script>',
+            '<script>window.django = {is_authenticated: "{{ request.user.is_authenticated }}" === "True" ? true : false, user: "{{request.user}}"};</script>',
             "html.parser",
         )
         head = soup.find("head")

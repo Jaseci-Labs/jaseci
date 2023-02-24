@@ -347,3 +347,23 @@ walker init{
     ]
   ],
 ```
+
+
+| Op            | Args | Description                                     |
+| ------------- | ---- | ----------------------------------------------- |
+| .list::unique | none | Return sorted list of unique items from a list. |
+
+
+**Example Usage**
+```
+walker init{
+    _list = [1,2,3,4,2,3,4,5];
+    report _list.list::unique;
+}
+```
+**Expected Output**
+```
+"report": [
+    [1,2,3,4,5]
+  ],
+```
