@@ -33,7 +33,6 @@ type LoginParams = Pick<
 export function LoginForm() {
   const [mode, setMode] = useState<"test" | "connect">();
   const router = useRouter();
-  const { token } = router.query;
   const { isLoading, error, data, mutateAsync } = useMutation({
     mutationFn: ({ serverUrl, email, password }: LoginParams) =>
       fetch(`${serverUrl}/user/token/`, {
@@ -91,12 +90,12 @@ export function LoginForm() {
   }, []);
 
   useEffect(() => {
-    if (token && window["django"]) {
-      localStorage.setItem("token", token as string);
+    if (router?.query?.token && window["django"]) {
+      localStorage.setItem("token", router?.query?.token as string);
       localStorage.setItem("serverUrl", window.location.origin);
       router.push("/dashboard");
     }
-  }, [token]);
+  }, [router?.query?.token]);
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", height: "100vh" }}>
