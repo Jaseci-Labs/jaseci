@@ -6,7 +6,7 @@ export const theme: MantineTheme = {
   globalStyles() {
     return {
       body: {
-        background: "#f8f9fa",
+        // background: "#f8f9fa",
       },
     };
   },
