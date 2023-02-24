@@ -5,6 +5,8 @@ import json
 
 from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
+from jaseci.actions.remote_actions import launch_server
+
 
 url_link = "https://imsdb.com/all-scripts.html"
 _whitespace_re = re.compile(r"\s+")
@@ -135,6 +137,5 @@ def scrape_content(url: str):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
 
     launch_server(port=8000)
