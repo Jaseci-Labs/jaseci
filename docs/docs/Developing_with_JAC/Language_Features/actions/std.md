@@ -28,6 +28,12 @@ std.out(data);
 # any string passed will be printed on to the screen
 std.input("> ");
 ```
+### Js Input
+```jac
+# takes input from the terminal
+# any string passed will be printed on to the screen
+std.js_input("> ");
+```
 ### Standar Error
 ```jac
 # printing to standard error
