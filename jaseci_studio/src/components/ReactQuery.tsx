@@ -47,7 +47,7 @@ function ReactQuery({ children }: { children: ReactNode }) {
     const token = localStorage.getItem("token");
     const serverUrl = localStorage.getItem("serverUrl");
 
-    if (!token || !serverUrl) {
+    if ((!token || !serverUrl) && pathname !== "/") {
       router.push("/");
       localStorage.clear();
     }

@@ -15,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import FormTextField from "./FormTextField";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 const connectionSchema = z.object({
@@ -33,6 +33,7 @@ type LoginParams = Pick<
 export function LoginForm() {
   const [mode, setMode] = useState<"test" | "connect">();
   const router = useRouter();
+  const { token } = router.query;
   const { isLoading, error, data, mutateAsync } = useMutation({
     mutationFn: ({ serverUrl, email, password }: LoginParams) =>
       fetch(`${serverUrl}/user/token/`, {
@@ -88,6 +89,14 @@ export function LoginForm() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (token && window["django"]) {
+      localStorage.setItem("token", token as string);
+      localStorage.setItem("serverUrl", window.location.origin);
+      router.push("/dashboard");
+    }
+  }, [token]);
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", height: "100vh" }}>
