@@ -6,7 +6,7 @@ import functools
 import json
 import os
 import pickle
-
+import webbrowser
 import click
 import requests
 from click_shell import shell
@@ -270,6 +270,36 @@ def login(url, username, password):
             pickle.dump(session, f)
 
 
+@click.command(help="Launch Jaseci Studio")
+def studio():
+    token = session["connection"]["token"]
+
+    if not token:
+        click.echo(
+            click.style(
+                "It doesn't look like you're logged in to a Jaseci instance. Please log in to a Jaseci instance to use this command.\n",
+                fg="red",
+            )
+        )
+    else:
+        url = session["connection"]["url"] + "/studio/"
+
+        if token == "PUBLIC":
+            click.echo(
+                click.style(
+                    "You are logged in as a public user. Please log in to a Jaseci instance to use this command.\n",
+                    fg="red",
+                )
+            )
+
+            webbrowser.open(url)
+        else:
+            click.echo(click.style("Launching Jaseci Studio...", fg="green"))
+            click.echo(click.style("URL: ", fg="green", bold=True) + url)
+            click.echo(click.style(f"Token: {token}", fg="green"))
+            webbrowser.open(url + "?token=" + token)
+
+
 @click.command(help="Command for unauthenticated log into live Jaseci server")
 @click.argument("url", type=str, required=True)
 def publogin(url):
@@ -408,6 +438,7 @@ jsctl.add_command(ls)
 jsctl.add_command(clear)
 jsctl.add_command(reset)
 jsctl.add_command(script)
+jsctl.add_command(studio)
 jsctl.add_command(booktool)
 cmd_tree_builder(extract_api_tree())
 cmd_tree_builder(extract_api_tree()["jac"], group_func=jac)
