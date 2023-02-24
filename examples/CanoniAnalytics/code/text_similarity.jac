@@ -14,6 +14,8 @@ walker find_similar_sentences{
     has dialogue_2;
     has sim_value;
 
+    sbert_sim.load_model();
+
     phrase_1 = "";
     for lot in dialogue_1:
         phrase_1 = phrase_1 + ' ' + lot;

@@ -1,6 +1,6 @@
 # Find Semantically Similar Sentences
 
-Semantic similarity of sentence is a measure of distance between sentences based on how similar their meanings or semantic contents are. Sentence similarity models take input texts and turn them into vectors (embeddings) that capture semantic data and determine how similar (near) they are to one another using a similarity metrics such as cosine similarity.
+Semantic similarity of two sentences is a measure of how closely related their meanings are. It involves comparing the underlying semantic representations of the sentences to determine the degree of overlap or similarity between them. This is typically done using techniques from natural language processing (NLP), such as word embeddings or semantic networks. The resulting similarity score can be used in various applications, such as text classification, question answering, or information retrieval, to identify relevant and related content. A high semantic similarity score suggests that the two sentences convey similar ideas, while a low score indicates that they are dissimilar.
 
 
 - [Find Semantically Similar Sentences](#find-semantically-similar-sentences)
@@ -15,7 +15,7 @@ In this section also we will be using the movie script graph which we build for 
 ```jac
 import {*} with './build_graph.jac';
 ```
-Now let's create a walker to detect semantically similar two text phrases. We are using `use.encode` action from `use.enc` module in Jaseci (to view more information about `use.enc` goto [here](../../../../jaseci/jaseci_ai_kit/jac_nlp/jac_nlp/use_enc/README.md) to get embeddings for the given sentence and `vector.cosine_sim` standard action to get the similarity value of two encoded sentences. we are using the dialogue from each actor in a scene to demonstrate this task. The dialogues come in as a list (observe the `movie_data.json` to understand this). We are feeding all the sentences in the dialogue as one phrase to make this simple.
+Now let's create a walker to detect semantically similar two text phrases. We are using `sbert` encoder from `jac_nlp.sbert` module in Jaseci (to view more information about `sbert` goto [here](../../../../jaseci/jaseci_ai_kit/jac_nlp/jac_nlp/sbert/README.md) to get embeddings for the given sentence and `vector.cosine_sim` standard action to get the similarity value of two encoded sentences. we are using the dialogue from each actor in a scene to demonstrate this task. The dialogues come in as a list (observe the `movie_data.json` to understand this). We are feeding all the sentences in the dialogue as one phrase to make this simple.
 
 ```jac
 walker find_similar_sentences{
@@ -23,9 +23,15 @@ walker find_similar_sentences{
     can use.encode;
     can vector.cosine_sim;
 
+    can sbert_sim.load_model;
+    can sbert_sim.getembeddings;
+    can vector.cosine_sim;
+
     has dialogue_1;
     has dialogue_2;
     has sim_value;
+
+    sbert_sim.load_model();
 
     phrase_1 = "";
     for lot in dialogue_1:
@@ -35,11 +41,11 @@ walker find_similar_sentences{
     for lot in dialogue_2:
         phrase_2 = phrase_2 + ' ' + lot;
 
-    encode1 = use.encode(phrase_1);
-    encode2 = use.encode(phrase_2);
+    encode1 = sbert_sim.getembeddings(phrase_1);
+    encode2 = sbert_sim.getembeddings(phrase_2);
 
     sim_value =  vector.cosine_sim(encode1,encode2);
-    if sim_value[0] >= 0.7:
+    if sim_value >= 0.6:
     {
         std.out(sim_value);
         std.out("phrase 1 :",phrase_1);
@@ -47,13 +53,14 @@ walker find_similar_sentences{
     }
 }
 ```
-- `can use.encode` is to import the embedding action,
+- `can sbert_sim.load_model;` and `sbert_sim.load_model();` is to import and load the default `sbert` sim model.
+- `can sbert_sim.getembeddings` is to import the embedding action,
 - `can vector.cosine_sim` is to import the cosine similarity action,
 - We need to compare two dialogues, so we are initializing two variables as `dialogue_1` and `dialogue_2`.
 - As mentioned earlier, dialogues come as a list object, so we are converting them into phrases using simple `for` loop logic.
-- `encode1 = use.encode(phrase_1)` and `encode2 = use.encode(phrase_2)` to get embeddings for `pharase_1` and `pharase_2` respectively.
+- `encode1 = sbert_sim.getembeddings(phrase_1)` and `encode2 = sbert_sim.getembeddings(phrase_2)` to get embeddings for `pharase_1` and `pharase_2` respectively.
 - `sim_value =  vector.cosine_sim(encode1,encode2)` is to get the similarity score for the two text phrases.
-- Later, we are defining a threshold value as 0.7, so the sentence pairs that exceed the threshold value are considered similar phrases.
+- Later, we are defining a threshold value as 0.6, so the sentence pairs that exceed the threshold value are considered similar phrases.
 
 ## Wrapping things together with init walker
 
@@ -99,7 +106,7 @@ The attributes of actor nodes that are linked to scene nodes are dialogues.
 Save all of these code in a `jac` file. You have to first load the `use.enc` action module before executing this code.
 
 ```
-actions load module jac_nlp.use_enc
+actions load module jac_nlp.sbert
 jac run text_similarity.jac
 ```
 If everything works fine you will see an output similar to this.
