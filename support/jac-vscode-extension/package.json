@@ -1,0 +1,113 @@
+{
+  "name": "jac",
+  "displayName": "Jac",
+  "description": "Simple jac extension example",
+  "author": "Gimel Dick",
+  "repository": "https://github.com/openlawlibrary/pygls",
+  "license": "Apache-2.0",
+  "version": "0.11.3",
+  "publisher": "jaseci-labs",
+  "engines": {
+    "vscode": "^1.62.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "countDownBlocking",
+        "title": "Count down 10 seconds [Blocking]"
+      },
+      {
+        "command": "countDownNonBlocking",
+        "title": "Count down 10 seconds [Non Blocking]"
+      },
+      {
+        "command": "progress",
+        "title": "Start the progress!"
+      },
+      {
+        "command": "registerCompletions",
+        "title": "Register completions"
+      },
+      {
+        "command": "showConfigurationAsync",
+        "title": "Show Json Example Configuration [Async]"
+      },
+      {
+        "command": "showConfigurationCallback",
+        "title": "Show Json Example Configuration [Callback]"
+      },
+      {
+        "command": "showConfigurationThread",
+        "title": "Show Json Example Configuration [Thread]"
+      },
+      {
+        "command": "unregisterCompletions",
+        "title": "Unregister completions"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Jac Server Configuration",
+      "properties": {
+        "jac.pythonPath": {
+          "scope": "resource",
+          "type": "string",
+          "description": "Path to the python executable to use for the language server."
+        },
+        "jac.exampleConfiguration": {
+          "scope": "resource",
+          "type": "string",
+          "default": "You can override this message."
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "jac",
+        "aliases": [
+          "Jac Programming Language",
+          "jac"
+        ],
+        "extensions": [
+          ".jac"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./file-icon.svg",
+          "dark": "./file-icon.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "jac",
+        "scopeName": "source.jac",
+        "path": "./syntaxes/jac.tmLanguage.json"
+      }
+    ]
+  },
+  "main": "./client/out/extension",
+  "activationEvents": [
+    "onLanguage:jac"
+  ],
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.6",
+    "@types/vscode": "^1.62.0",
+    "@typescript-eslint/eslint-plugin": "^5.3.0",
+    "@typescript-eslint/parser": "^5.3.0",
+    "eslint": "^8.2.0",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^7.0.0"
+  }
+}
