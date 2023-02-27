@@ -15,14 +15,15 @@
 # limitations under the License.                                           #
 ############################################################################
 import asyncio
+from functools import partial
 import os
-import sys
 import time
 import uuid
 from typing import Optional
 from jaseci.jac.ir.ast_builder import (
     JacAstBuilder,
 )
+from .utils import debounce
 
 
 from lsprotocol.types import (
@@ -53,7 +54,9 @@ from lsprotocol.types import (
     DocumentSymbolParams,
 )
 from pygls.server import LanguageServer
-from server.document_symbols import get_document_symbols
+from server.document_symbols import (
+    get_document_symbols,
+)
 
 from server.utils import deconstruct_error_message
 
@@ -75,30 +78,33 @@ class JacLanguageServer(LanguageServer):
 
     def __init__(self, *args):
         super().__init__(*args)
+        self.diagnostics_debounce = None
 
-    def on_text_document_did_open(self, text_document: TextDocumentItem):
-        self.show_message("file opened")
-        jac_server.show_message("testing")
-        self.workspace[text_document.uri] = text_document
+    # def on_text_document_did_open(self, text_document: TextDocumentItem):
+    #     self.show_message("file opened")
+    #     jac_server.show_message("testing")
+    #     self.workspace[text_document.uri] = text_document
 
-        diagnostics = self._diagnose(text_document.uri)
+    #     diagnostics = self._diagnose(text_document.uri)
 
-        self.publish_diagnostics(text_document.uri, diagnostics)
+    #     self.publish_diagnostics(text_document.uri, diagnostics)
 
-    def on_text_document_did_change(self, text_document: TextDocumentItem):
-        self.workspace[text_document.uri] = text_document
+    # def on_text_document_did_change(self, text_document: TextDocumentItem):
+    #     self.workspace[text_document.uri] = text_document
 
-        diagnostics = self._diagnose(text_document.uri)
+    # diagnostics = self._diagnose(text_document.uri)
 
-        self.publish_diagnostics(text_document.uri, diagnostics)
+    # self.publish_diagnostics(text_document.uri, diagnostics)
 
 
-def _diagnose(lsp: LanguageServer, doc_uri: str):
-    doc = lsp.workspace.get_document(doc_uri)
-    errors = []
+@debounce(0.3, keyed_by="doc_uri")
+def _diagnose(ls: JacLanguageServer, doc_uri: str):
+    doc = ls.workspace.get_document(doc_uri)
     source = doc.source
-    mod_name = os.path.basename(doc_uri).split(".")[0]
+    mod_name = os.path.basename(doc.uri).split(".")[0]
     tree = JacAstBuilder(mod_name, jac_text=source)
+
+    errors = []
 
     for error in tree._parse_errors:
         unformatted_error = deconstruct_error_message(error)
@@ -118,7 +124,8 @@ def _diagnose(lsp: LanguageServer, doc_uri: str):
         )
 
         errors.append(diagnostic)
-    return errors
+
+    ls.publish_diagnostics(doc.uri, errors)
 
 
 jac_server = JacLanguageServer("jac-lsp", "v0.1")
@@ -163,17 +170,16 @@ async def count_down_10_seconds_non_blocking(ls, *args):
         await asyncio.sleep(COUNT_DOWN_SLEEP_IN_SECONDS)
 
 
+# traverse the current ast line where character was changes
+
+
 @jac_server.feature(TEXT_DOCUMENT_DID_CHANGE)
-def did_change(ls, params: DidChangeTextDocumentParams):
+async def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
-    doc = params.text_document
-    ls.show_message("changed")
     try:
-        diagnostics = _diagnose(ls, doc.uri)
+        _diagnose(ls, params.text_document.uri)
     except Exception as e:
-        print("an error", e)
-    print(diagnostics)
-    ls.publish_diagnostics(doc.uri, diagnostics)
+        print(e)
 
 
 @jac_server.feature(TEXT_DOCUMENT_DID_CLOSE)
@@ -185,15 +191,9 @@ def did_close(server: JacLanguageServer, params: DidCloseTextDocumentParams):
 @jac_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls: LanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    doc = params.text_document
-    ls.show_message(f"Text Document Did Open Called (uri: {doc.uri})")
-    try:
-        diagnostics = _diagnose(ls, doc.uri)
-        ls.publish_diagnostics(doc.uri, diagnostics)
-    except Exception as e:
-        print("an error", e)
-    # ls.show_message_log("result")
-    # result_2 = _diagnose(ls, params)
+    doc = ls.workspace.get_document(params.text_document.uri)
+
+    _diagnose(ls, doc.uri)
 
 
 # show message when client connects
@@ -274,7 +274,7 @@ async def show_configuration_async(ls: JacLanguageServer, *args):
             )
         )
 
-        example_config = config[0].get("exampleConfiguration")
+        example_config = config[0].get("pythonPath")
 
         ls.show_message(f"jsonServer.exampleConfiguration value: {example_config}")
         ls.show_message(f"testing 123!!")
@@ -289,7 +289,7 @@ def show_configuration_callback(ls: JacLanguageServer, *args):
 
     def _config_callback(config):
         try:
-            example_config = config[0].get("exampleConfiguration")
+            example_config = config[0].get("pythonPath")
 
             ls.show_message(f"jsonServer.exampleConfiguration value: {example_config}")
 
@@ -309,10 +309,17 @@ def show_configuration_callback(ls: JacLanguageServer, *args):
 
 
 @jac_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
-def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
+async def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
+    start = time.time_ns()
     """Document symbol request."""
     uri = params.text_document.uri
-    doc = ls.workspace.get_document(uri)
-    symbols = get_document_symbols(ls, doc.uri)
 
-    return symbols
+    doc = ls.workspace.get_document(uri)
+
+    get_document_symbols(ls, doc.uri)
+
+    end = time.time_ns()
+
+    print(f"Symbols Retrieved - Time: {(end - start) / 1000000}ms")
+
+    return doc.symbols
