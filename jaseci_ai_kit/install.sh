@@ -1,6 +1,6 @@
 #!/bin/bash
 
-JAC_NLP_MODULES=("bart_sum" "cl_summer" "ent_ext" "fast_enc" "sbert_sim" "t5_sum" "text_seg" "tfm_ner" "use_enc" "use_qa" "zs_classifier" "bi_enc" "topic_ext", "gpt2", "gpt3")
+JAC_NLP_MODULES=("bart_sum" "cl_summer" "ent_ext" "fast_enc" "sbert_sim" "t5_sum" "text_seg" "tfm_ner" "use_enc" "use_qa" "zs_classifier" "bi_enc" "topic_ext" "gpt2" "gpt3")
 JAC_SPEECH_MODULES=("stt" "vc_tts")
 JAC_MISC_MODULES=("pdf_ext" "translator" "cluster" "ph")
 JAC_VISION_MODULES=("detr" "rftm" "yolos" "dpt")

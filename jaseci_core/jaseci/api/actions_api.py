@@ -79,7 +79,7 @@ class ActionsApi:
         return {"success": success}
 
     @Interface.admin_api(cli_args=["mod"])
-    def actions_load_module(self, mod: str):
+    def actions_load_module(self, mod: str, ctx: dict = {}):
         """
         Hot load a python module and assimilate any Jaseci Actions
 
@@ -92,7 +92,7 @@ class ActionsApi:
         :param mod: The import style module to load actions from.
             (i.e., jaseci_ai_kit.bi_enc)
         """
-        success = lact.load_module_actions(mod)
+        success = lact.load_module_actions(mod, ctx=ctx)
         if success:
             cur_config = self.config_get("ACTION_SETS")
             if cur_config and (not isinstance(cur_config, list)):

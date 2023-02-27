@@ -93,7 +93,7 @@ def load_local_actions(file: str):
         return False
 
 
-def load_module_actions(mod, loaded_module=None):
+def load_module_actions(mod, loaded_module=None, ctx={}):
     """Load all jaseci actions from python module"""
     try:
         if mod in sys.modules:
@@ -110,6 +110,13 @@ def load_module_actions(mod, loaded_module=None):
                     del live_actions[i]
 
         mod = importlib.import_module(mod)
+        try:
+            if hasattr(mod, "setup"):
+                mod.setup(**ctx)
+        except Exception:
+            logger.error(
+                f"Cannot run setup for module {mod}. Refer the setup parameters."
+            )
         if mod:
             return True
     except Exception:
