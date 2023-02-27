@@ -1,3 +1,4 @@
+# load data from json file and rearrange the data
 walker load_data{
     can file.load_json;
     has movie = file.load_json("movie_data.json");
@@ -20,9 +21,8 @@ walker load_data{
     report dialogue;
 }
 
-
+# clustering dialogues
 walker get_dialog_clusters{
-
     can cluster.get_umap;
     can cluster.get_cluster_labels;
 
@@ -42,6 +42,8 @@ walker get_dialog_clusters{
     with exit {report cluster_lables;}
 }
 
+
+# extract top topics from each cluster
 walker get_topics{
 
     can topic_ext.topic_extraction;

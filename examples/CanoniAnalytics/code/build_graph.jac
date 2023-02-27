@@ -1,5 +1,6 @@
 node root;
 
+# scene node and it's attributes
 node scene{
     has id;
     has name;
@@ -14,20 +15,24 @@ node scene{
     can set_keywords with keyword_generator entry{
         here.keywords = visitor.keywords;
     }
-
 }
 
+# edges conecting scene nodes to actors
 edge acts;
 
+# actor node and it's attributes
 node actor{
     has name;
     has dialogue;
 }
 
+# location node and it's attributes
 node location{
     has location_name;
 }
 
+
+# walker building the graph
 walker build_graph{
     can file.load_json;
     has movie = file.load_json("movie_data.json");
@@ -69,7 +74,6 @@ walker build_graph{
                         dialogue = content[1][_actor];
 
                         spawn scene +[acts]+>node::actor(name=name,dialogue=dialogue);
-
                     }
         }
 }
