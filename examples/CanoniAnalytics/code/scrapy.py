@@ -7,7 +7,6 @@ from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
 
-
 url_link = "https://imsdb.com/all-scripts.html"
 _whitespace_re = re.compile(r"\s+")
 
@@ -66,7 +65,6 @@ def find_between(text, first, last):
     Return:
     ------------
     substring: String.
-
     """
     start = text.index(first) + len(first)
     end = text.index(last, start)
@@ -76,7 +74,10 @@ def find_between(text, first, last):
 
 
 def actors_content(scene):
-    """ """
+    """
+    Extract information about scenes.
+
+    """
     scene_items = scene.replace("\r", "").split("\n")
     actors = []
     actor_line = []
@@ -112,9 +113,8 @@ def actors_content(scene):
         return scene_desc
 
 
-@jaseci_action(act_group=["scrappy"], allow_remote=True)
+@jaseci_action(act_group=["scrapy"], allow_remote=True)
 def scrape_content(url: str):
-
     try:
         movie_script = get_script(url)
         movie_scenes = {}
@@ -129,6 +129,7 @@ def scrape_content(url: str):
 
         with open("movie_data.json", "w") as outfile:
             json.dump(movie_scenes, outfile)
+        return movie_scenes
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
