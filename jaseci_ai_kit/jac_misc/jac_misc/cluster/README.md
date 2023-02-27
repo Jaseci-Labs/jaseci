@@ -37,6 +37,8 @@ walker features{
 
 In this section we are using use.encode jaseci module to encode raw text. The `use.encode` will return size of 512 vectors for each text document. We are reducing the dimention of vectors using `cluster.get_umap` action.
 
+UMAP (Uniform Manifold Approximation and Projection) is a dimensionality reduction algorithm used for visualizing and exploring high-dimensional data. It aims to preserve both global and local structure of the data by representing it as a low-dimensional embedding while minimizing distortion. It has been shown to be highly effective in preserving non-linear structure and identifying clusters in high-dimensional datasets. UMAP has applications in various fields including machine learning, image processing, and bioinformatics.
+
 ** Parameters of `cluster.get_umap`**
 
 - `text_embeddings`: list -  This is a mandotory field. list of text embeddings should pass here.
@@ -65,6 +67,17 @@ node feature_embedd{
 ## **3. Get cluster labels**
 
 We will obtain cluster labels for each text document in this section. The output from the previous section is the input here. To get cluster lables we are using `cluster.get_cluster_labels`  action.
+
+For clustering with Jaseci there are two algorithms are available. **HBDSCAN** algorithm and the **Kmeans** Algorithm.
+
+### **HBDSCAN clustering Algorithm**
+
+HDBSCAN (Hierarchical Density-Based Spatial Clustering of Applications with Noise) is a density-based clustering algorithm that seeks to identify clusters of varying densities in a dataset. It constructs a hierarchy of clusters by recursively partitioning data points based on their local density and connectivity. The algorithm automatically determines the number of clusters and identifies noise points as well. HDBSCAN has been shown to be effective in identifying clusters of varying shapes and sizes in high-dimensional datasets. It has applications in various fields including image processing, social network analysis, and bioinformatics.
+
+
+### **Kmeans clustering algorithm**
+
+K-means is a popular clustering algorithm used for partitioning a dataset into k clusters, where k is a pre-defined number. It works by iteratively assigning each data point to the nearest centroid (mean) and then re-calculating the centroids based on the new cluster assignments. The algorithm stops when the cluster assignments no longer change significantly or after a maximum number of iterations. K-means is widely used due to its simplicity, scalability, and efficiency in handling large datasets. It has applications in various fields including customer segmentation, image processing, and bioinformatics. However, it assumes that the clusters are spherical and have equal variance, which may not always be the case in real-world scenarios.
 
 **Parameters of `cluster.get_cluster_labels`**
 
