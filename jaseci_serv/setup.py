@@ -28,6 +28,7 @@ setup(
         "pytest-django",
         "dj-rest-auth[with_social]",
         "django-allauth>=0.52.0",
+        "tzdata>=2022.7",
     ],
     package_data={
         "": ["*.jac", "VERSION", "templates/examples/*.html"],
