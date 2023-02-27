@@ -303,3 +303,15 @@ def is_true(val):
         if type(val) is str
         else val is True  # is_async might be non bool
     )
+
+
+class InvalidApiException(Exception):
+    pass
+
+
+def find_first_api(api_name, **api_endpoints):
+    for path, api_list in api_endpoints.items():
+        api = next(filter(lambda x: api_name == "_".join(x["groups"]), api_list), None)
+        if api:
+            return path, api
+    raise InvalidApiException(f"api {api_name} is not existing!")
