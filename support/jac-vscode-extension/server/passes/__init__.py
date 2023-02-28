@@ -66,3 +66,35 @@ class ArchitypePass(IrPass):
 
                 if node.kid[0].name == "KW_EDGE":
                     self.output["edges"].append(architype)
+
+
+class ReferencePass(IrPass):
+    def __init__(self, to_screen=True, with_exit=False, **kwargs):
+        super().__init__(**kwargs)
+        self.to_screen = to_screen
+        self.with_exit = with_exit
+        self.output = []
+
+    def enter_node(self, node):
+        slot = None
+        if node.name == "node_ref":
+            slot = "nodes"
+        elif node.name == "walker_ref":
+            slot = "walkers"
+        elif node.name == "graph_ref":
+            slot = "graphs"
+
+        if slot:
+            try:
+                if node.kid:
+                    self.output.append(
+                        {
+                            "name": node.kid[1].token_text(),
+                            "line": node.loc[0],
+                            "start": node.kid[1].loc[1],
+                            "end": node.kid[1].loc[1] + len(node.kid[1].token_text()),
+                            "architype": slot,
+                        }
+                    )
+            except IndexError:
+                pass

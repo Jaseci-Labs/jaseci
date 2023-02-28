@@ -23,17 +23,25 @@ from typing import Optional
 from jaseci.jac.ir.ast_builder import (
     JacAstBuilder,
 )
+from jaseci.utils.utils import logger
+
+from server.passes import ReferencePass
 from .utils import debounce
 
 
 from lsprotocol.types import (
     TEXT_DOCUMENT_DOCUMENT_SYMBOL,
     TEXT_DOCUMENT_COMPLETION,
-    TEXT_DOCUMENT_DID_CHANGE,
+    WORKSPACE_SYMBOL,
     TEXT_DOCUMENT_DID_CLOSE,
     TEXT_DOCUMENT_DID_OPEN,
+    TEXT_DOCUMENT_DID_SAVE,
+    TEXT_DOCUMENT_HOVER,
     DiagnosticSeverity,
 )
+
+from pygls.workspace import Workspace
+
 from lsprotocol.types import (
     CompletionItem,
     CompletionList,
@@ -43,6 +51,8 @@ from lsprotocol.types import (
     Diagnostic,
     DidChangeTextDocumentParams,
     DidCloseTextDocumentParams,
+    DidSaveTextDocumentParams,
+    MarkedString,
     DidOpenTextDocumentParams,
     MessageType,
     Position,
@@ -52,10 +62,19 @@ from lsprotocol.types import (
     RegistrationParams,
     WorkspaceConfigurationParams,
     DocumentSymbolParams,
+    WorkspaceSymbolParams,
+    Hover,
+    HoverParams,
+    MarkupContent,
+    MarkupKind,
 )
 from pygls.server import LanguageServer
 from server.document_symbols import (
+    get_architype_ast,
+    get_change_block_text,
     get_document_symbols,
+    get_tree_architypes,
+    remove_symbols_in_range,
 )
 
 from server.utils import deconstruct_error_message
@@ -79,6 +98,34 @@ class JacLanguageServer(LanguageServer):
     def __init__(self, *args):
         super().__init__(*args)
         self.diagnostics_debounce = None
+        self.workspace_filled = False
+
+
+def fill_workspace(ls):
+    """Fills the workspace with documents."""
+    # get all files in the workspace
+    files = [
+        os.path.join(root, name)
+        for root, dirs, files in os.walk(ls.workspace.root_path)
+        for name in files
+        if name.endswith(".jac")
+    ]
+
+    try:
+        for file in files:
+            with open(file, "r") as f:
+                text = f.read()
+
+            doc = TextDocumentItem(
+                uri="file://" + file, text=text, language_id="jac", version=0
+            )
+            ls.workspace.put_document(doc)
+
+            _diagnose(ls, doc.uri)
+
+        ls.workspace_filled = True
+    except Exception as e:
+        logger.error(e)
 
     # def on_text_document_did_open(self, text_document: TextDocumentItem):
     #     self.show_message("file opened")
@@ -97,7 +144,7 @@ class JacLanguageServer(LanguageServer):
     # self.publish_diagnostics(text_document.uri, diagnostics)
 
 
-@debounce(0.3, keyed_by="doc_uri")
+@debounce(0.5, keyed_by="doc_uri")
 def _diagnose(ls: JacLanguageServer, doc_uri: str):
     doc = ls.workspace.get_document(doc_uri)
     source = doc.source
@@ -173,13 +220,46 @@ async def count_down_10_seconds_non_blocking(ls, *args):
 # traverse the current ast line where character was changes
 
 
-@jac_server.feature(TEXT_DOCUMENT_DID_CHANGE)
+# @jac_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 async def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
-    try:
-        _diagnose(ls, params.text_document.uri)
-    except Exception as e:
-        print(e)
+    _diagnose(ls, params.text_document.uri)
+
+
+#     try:
+#         start = time.time_ns()
+#         doc = ls.workspace.get_document(params.text_document.uri)
+#         [start_line, end_line, block_text] = get_change_block_text(
+#             ls, params.text_document.uri, params.content_changes[0]
+#         )
+
+#         # handle whole document
+#         if start_line == 0 and end_line == 0:
+#             doc.symbols = get_document_symbols(ls, doc.uri)
+#             return
+
+#         change_tree = get_architype_ast(block_text)
+#         architypes = get_tree_architypes(change_tree)
+
+#         new_symbols = get_document_symbols(
+#             ls,
+#             params.text_document.uri,
+#             architypes=architypes,
+#             shift_lines=start_line,
+#         )
+
+#         retained_symbols = remove_symbols_in_range(
+#             start_line, end_line, symbols=doc.symbols
+#         )
+
+#         doc.symbols = retained_symbols + new_symbols
+
+#         print("block text", block_text)
+#         end = time.time_ns()
+
+#         print("Time to symbols changes: (ms)", (end - start) / 1000000)
+#     except Exception as e:
+#         print(e)
 
 
 @jac_server.feature(TEXT_DOCUMENT_DID_CLOSE)
@@ -188,12 +268,45 @@ def did_close(server: JacLanguageServer, params: DidCloseTextDocumentParams):
     server.show_message("Text Document Did Close")
 
 
+@jac_server.feature(TEXT_DOCUMENT_DID_SAVE)
+def did_save(server: JacLanguageServer, params: DidSaveTextDocumentParams):
+    """Text document did save notification."""
+    _diagnose(server, params.text_document.uri)
+
+
 @jac_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls: LanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
+
+    if ls.workspace_filled is False:
+        fill_workspace(ls)
+        return
+
     doc = ls.workspace.get_document(params.text_document.uri)
 
     _diagnose(ls, doc.uri)
+
+
+def get_word_at_position(text: str, position: int) -> str:
+    """
+    Given some text and the position of a starting character,
+    returns the word containing the starting character.
+    """
+    word_start = None
+    word_end = None
+    for i in range(position, -1, -1):
+        if not text[i].isalnum() and text[i] not in ["_", "$"]:
+            word_start = i + 1
+            break
+    if word_start is None:
+        word_start = 0
+    for i in range(position, len(text)):
+        if not text[i].isalnum() and text[i] not in ["_", "$"]:
+            word_end = i
+            break
+    if word_end is None:
+        word_end = len(text)
+    return text[word_start:word_end]
 
 
 # show message when client connects
@@ -308,6 +421,20 @@ def show_configuration_callback(ls: JacLanguageServer, *args):
     )
 
 
+@jac_server.feature(WORKSPACE_SYMBOL)
+async def workspace_symbol(ls: JacLanguageServer, params: WorkspaceSymbolParams):
+    """Workspace symbol request."""
+    symbols = []
+    for doc in ls.workspace.documents.values():
+        if hasattr(doc, "symbols"):
+            symbols += doc.symbols
+            continue
+
+        doc.symbols = get_document_symbols(ls, doc.uri)
+
+    return symbols
+
+
 @jac_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
 async def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
     start = time.time_ns()
@@ -316,10 +443,61 @@ async def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
 
     doc = ls.workspace.get_document(uri)
 
-    get_document_symbols(ls, doc.uri)
+    # if hasattr(doc, "symbols"):
+    # return doc.symbols
+
+    doc.symbols = get_document_symbols(ls, doc.uri)
 
     end = time.time_ns()
 
-    print(f"Symbols Retrieved - Time: {(end - start) / 1000000}ms")
+    logger.info(f"Symbols Retrieved - Time: {(end - start) / 1000000}ms")
 
     return doc.symbols
+
+
+def provide_hover(doc_uri: str, position: Position):
+    pass
+
+
+def get_architype_variables(ls: JacLanguageServer, uri: str, name: str, architype: str):
+    """Get the variables for the given architype."""
+    doc = ls.workspace.get_document(uri)
+
+    for item in doc.architypes[architype]:
+        if item["name"] == name:
+            return item["vars"]
+
+    return []
+
+
+@jac_server.feature(TEXT_DOCUMENT_HOVER)
+async def hover(ls: JacLanguageServer, params: HoverParams):
+    """Hover request."""
+    uri = params.text_document.uri
+    position = params.position
+
+    doc = ls.workspace.get_document(uri)
+    source = doc.source
+    line = source.split()[position.line]
+
+    if doc.ir:
+        hover_pass = ReferencePass(ir=doc.ir)
+        hover_pass.run()
+
+        ref_table = hover_pass.output
+
+        for ref in ref_table:
+            if (
+                ref["line"] == position.line + 1
+                and ref["start"] <= position.character <= ref["end"]
+            ):
+                vars = get_architype_variables(ls, uri, ref["name"], ref["architype"])
+                vars = [var["name"] for var in vars]
+                return Hover(
+                    contents=MarkupContent(
+                        kind=MarkupKind.Markdown,
+                        value=f"_{ref['architype'][:-1]}_::{ref['name']}({', '.join(vars)})",
+                    )
+                )
+
+    return None
