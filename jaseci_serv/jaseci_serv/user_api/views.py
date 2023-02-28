@@ -9,14 +9,13 @@ from knox.auth import TokenAuthentication
 from jaseci_serv.user_api.serializers import UserSerializer
 from jaseci_serv.user_api.serializers import SuperUserSerializer
 from jaseci_serv.user_api.serializers import AuthTokenSerializer
-from jaseci_serv.user_api.serializers import send_activation_email
 from jaseci_serv.base.models import lookup_global_config
 from datetime import timedelta
 
 from rest_framework.response import Response
 import base64
 
-from jaseci_serv.svc import MetaService
+from jaseci import JsOrc
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -94,7 +93,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
         response = self.update(request, *args, **kwargs)
 
-        elastic = MetaService().get_service("elastic")
+        elastic = JsOrc.svc("elastic")
         if elastic.is_running():
             activity = elastic.app.generate_from_request(request)
 
@@ -179,7 +178,7 @@ class UpdateUserView(APIView):
         ):
             user.save()
 
-            elastic = MetaService().get_service("elastic")
+            elastic = JsOrc.svc("elastic")
             if elastic.is_running():
                 activity = elastic.app.generate_from_request(request)
 

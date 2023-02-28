@@ -5,6 +5,9 @@ from click.testing import CliRunner
 import json
 import os
 
+from jaseci import JsOrc
+from jaseci.svc.redis_svc import RedisService
+
 
 class JsctlTest(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
@@ -15,6 +18,7 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
+        JsOrc.svc("redis", RedisService).clear()
 
     def call(self, cmd: str):
         res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl, ["-m"] + cmd.split())
@@ -154,6 +158,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         r = self.call("config get APPLE -do_check False")
         self.assertEqual(r.strip(), "Grape2")
         r = self.call_cast("config list")
+
         self.assertEqual(len(r), 1)
 
     def test_jsctl_default_snt_setting(self):

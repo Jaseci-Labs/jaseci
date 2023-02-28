@@ -4,6 +4,7 @@ from jaseci.utils.utils import TestCaseHelper
 from jaseci.utils.id_list import IdList
 from django.test import TestCase
 
+from jaseci import JsOrc
 from jaseci_serv.base.models import JaseciObject
 from jaseci.graph import node
 from jaseci.graph import edge
@@ -136,8 +137,10 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
     def test_redis_connection(self):
         """Test redis connection"""
 
-        redis = self.user._h.redis
+        redis = JsOrc.svc("redis")
+        self.assertTrue(redis.is_running())
 
+        redis = JsOrc.hook().redis
         self.assertTrue(redis.is_running())
 
         redis.set("test", "this is a test")

@@ -15,9 +15,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import FormTextField from "./FormTextField";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { IconShield, IconShieldX } from "@tabler/icons";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 
 const connectionSchema = z.object({
   email: z.string().email(),
@@ -47,7 +49,7 @@ export function LoginForm() {
       }).then((res) => res.json()),
   });
 
-  const { control, handleSubmit } = useForm({
+  const { control, handleSubmit, setValue } = useForm({
     resolver: zodResolver(connectionSchema),
   });
 
@@ -74,6 +76,30 @@ export function LoginForm() {
       }
     );
   }
+
+  useEffect(() => {
+    if (window["django"]) {
+      if (window.location?.port) {
+        setValue("port", window.location.port);
+      }
+
+      if (window.location?.hostname) {
+        setValue("host", window.location.hostname);
+      }
+
+      if (window["django"]?.user?.includes("@")) {
+        setValue("email", window["django"]?.user);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (router?.query?.token && window["django"]) {
+      localStorage.setItem("token", router?.query?.token as string);
+      localStorage.setItem("serverUrl", window.location.origin);
+      router.push("/dashboard");
+    }
+  }, [router?.query?.token]);
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", height: "100vh" }}>
@@ -107,7 +133,7 @@ export function LoginForm() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <Box mb="xl">
             <Title>Login</Title>
-            <Text color="gray">Connect to a server to start</Text>
+            <Text color="dimmed">Connect to a server to start</Text>
           </Box>
           <Stack>
             <Grid sx={{ width: "100%", display: "flex" }} columns={6}>

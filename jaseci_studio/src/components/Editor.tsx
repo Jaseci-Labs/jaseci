@@ -7,7 +7,7 @@ function Editor({ editor }: { editor: ReturnType<typeof useStudioEditor> }) {
   return (
     <>
       <MonacoEditor
-        height="100%"
+        height="600px"
         beforeMount={handleEditorBeforeMount}
         theme="vs-dark"
         value={editorValue}

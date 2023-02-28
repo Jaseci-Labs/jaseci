@@ -38,12 +38,14 @@
 
  - [graph-walker-runner](../graph-walker-runner)
  - [jsc-graph](../jsc-graph)
+ - [jsc-graph-context-menu](../jsc-graph)
 
 ### Graph
 ```mermaid
 graph TD;
   graph-walker-runner --> jsc-select
   jsc-graph --> jsc-select
+  jsc-graph-context-menu --> jsc-select
   style jsc-select fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

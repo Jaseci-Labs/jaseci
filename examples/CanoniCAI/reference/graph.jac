@@ -1,4 +1,5 @@
 import {*} with "./dialogue.jac";
+import {*} with "./faq.jac";
 
 graph tesla_ai {
     has anchor dialogue_root;
@@ -9,11 +10,10 @@ graph tesla_ai {
         td_confirmed = spawn node::td_confirmed;
         td_canceled = spawn node::td_canceled;
 
-        get_more_details_state = spawn node::get_more_details_state;
-        faq_root = spawn graph::faq;
+        faq_root_state = spawn node::faq_root;
 
         dialogue_root +[intent_transition(intent="test drive")]+> test_drive_state;
-        dialogue_root +[intent_transition(intent="i have a question")]+> faq_root;
+        dialogue_root +[intent_transition(intent="i have a question")]+> faq_root_state;
 
         test_drive_state +[entity_transition(entities=["name", "address"])]+> td_confirmation;
         test_drive_state +[intent_transition(intent="provide name or address")]+> test_drive_state;

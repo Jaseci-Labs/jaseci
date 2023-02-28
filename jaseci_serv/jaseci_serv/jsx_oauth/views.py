@@ -8,7 +8,7 @@ from allauth.socialaccount.providers.okta.views import OktaOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from jaseci_serv.jsx_oauth import serializers
+from jaseci_serv.jsx_oauth.utils import GetExampleUrlSerializer
 from django.conf import settings
 from django.views import View
 from django.shortcuts import render
@@ -22,7 +22,7 @@ from jaseci_serv.jsx_oauth.utils import JSXSocialLoginView
 
 
 class ExampleUrlView(GenericAPIView):
-    serializer_class = serializers.GetExampleUrlSerializer
+    serializer_class = GetExampleUrlSerializer
 
     def post(self, request):
         serializer_data = self.serializer_class(data=request.data)

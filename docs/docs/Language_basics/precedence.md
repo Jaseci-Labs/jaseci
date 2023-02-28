@@ -4,9 +4,9 @@
 |-------------------|-------------------|-------------------|
 | 1 | ( ), [ ], ., ::, spawn | Parenthetical/grouping, node/edge manipulation |
 | 2 | ^, [] | Exponent, Index |
-| 3 | *, /, % | Multiplication, division, modulo |
+| 3 | *, /, % | Multiplication, division, modulos |
 | 4 | +, - | Addition, subtraction |
 | 5 | ==, !=, >=, <=, >, <, in, not in | Comparison |
 | 6 | &&, ||, and, or | Logical |
-| 7 | -->, <--, -[]->, <-[]- | Connect |
+| 7 | ++>, <++, +[]+>, <+[]+ | Connect |
 | 8 | =, +=, -=, *=, /=, := | Assignment |

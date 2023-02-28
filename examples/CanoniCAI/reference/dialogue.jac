@@ -40,24 +40,37 @@ node dialogue_state:cai_state {
     can tfm_ner.extract_entity;
 
     can classify_intent {
-        intent_labels = -[intent_transition]->.edge.intent;
-        visitor.wlk_ctx["intent"] = bi_enc.infer(
-            contexts = [visitor.question],
-            candidates = intent_labels,
-            context_type = "text",
-            candidate_type = "text"
-        )[0]["predicted"]["label"];
+        try {
+            intent_labels = -[intent_transition]->.edge.intent;
+            visitor.wlk_ctx["intent"] = bi_enc.infer(
+                contexts = [visitor.question],
+                candidates = intent_labels,
+                context_type = "text",
+                candidate_type = "text"
+            )[0]["predicted"]["label"];
+        } else with error {
+            std.log("Failed when classifying intent.");
+            std.log(error);
+        }
     }
 
     can extract_entities {
-        res = tfm_ner.extract_entity(visitor.question);
-        for ent in res {
-            ent_type = ent["entity_value"];
-            ent_text = ent["entity_text"];
-            if (!(ent_type in visitor.wlk_ctx["entities"])){
-                visitor.wlk_ctx["entities"][ent_type] = [];
+        try {
+            res = tfm_ner.extract_entity(visitor.question);
+            for ent in res {
+                ent_type = ent["entity_value"];
+                ent_text = ent["entity_text"];
+                # We are saving and accumulating extracted entities in a list.
+                # An alternative design is to clear previously extracted entities with new ones.
+                # This could work better depending on the use case.
+                if (!(ent_type in visitor.wlk_ctx["entities"])){
+                    visitor.wlk_ctx["entities"][ent_type] = [];
+                }
+                visitor.wlk_ctx["entities"][ent_type].l::append(ent_text);
             }
-            visitor.wlk_ctx["entities"][ent_type].l::append(ent_text);
+        } else with error {
+            std.log("Failed when extracting entities.");
+            std.log(error);
         }
     }
 
@@ -86,8 +99,6 @@ node dialogue_state:cai_state {
     can nlg {}
 }
 
-node dialogue_root;
-
 node dialogue_root:dialogue_state {
     has name = "dialogue_root";
     can nlu {
@@ -95,6 +106,7 @@ node dialogue_root:dialogue_state {
     }
     can process {
         visitor.wlk_ctx["next_state"] = (-[intent_transition(intent==visitor.wlk_ctx["intent"])]->)[0];
+        visitor.wlk_ctx["prev_state"] = here;
     }
     can nlg {
         visitor.response = "Sorry I can't handle that just yet. Anything else I can help you with?";

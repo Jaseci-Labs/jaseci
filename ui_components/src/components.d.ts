@@ -7,6 +7,7 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { Walker } from "./components/jsc-graph/jsc-graph";
 import { ItemsPropValue, JustifyPropValue } from "./types/propTypes";
+import { GraphEdge, GraphNode, NodeGroupConfig } from "./components/jsc-graph/graph-context-menu";
 export namespace Components {
     interface GraphNodeInfo {
         "context": { [key: string]: any };
@@ -281,6 +282,7 @@ export namespace Components {
     interface JscGraphContextMenu {
         "hide": () => Promise<void>;
         "setClickedItem": ({ clickedNode, clickedEdge }: { clickedNode?: GraphNode; clickedEdge?: GraphEdge; }) => Promise<void>;
+        "setNodeGroupConfig": (groupName: string, key: keyof NodeGroupConfig[string], value: string) => Promise<void>;
         "setPos": (x: number, y: number) => Promise<void>;
         "show": () => Promise<void>;
     }
@@ -1239,6 +1241,7 @@ declare namespace LocalJSX {
         "onExpandNodeRecursively"?: (event: JscGraphContextMenuCustomEvent<GraphNode>) => void;
         "onHideEdgeGroup"?: (event: JscGraphContextMenuCustomEvent<GraphEdge>) => void;
         "onHideNodeGroup"?: (event: JscGraphContextMenuCustomEvent<GraphNode>) => void;
+        "onNodeGroupConfigChange"?: (event: JscGraphContextMenuCustomEvent<NodeGroupConfig>) => void;
     }
     interface JscHero {
         "action"?: string;
