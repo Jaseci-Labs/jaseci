@@ -17,6 +17,7 @@ MODULES = [
     "topic_ext",
     "gpt2",
     "gpt3",
+    "sentiment",
 ]
 
 
