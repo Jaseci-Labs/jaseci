@@ -27,21 +27,22 @@ pip install jac_speech[stt, vc_tts] #Installs the stt and tts modules present in
 The `jac_nlp` package contains a collection of state-of-the-art NLP models that can be used to perform various nlp tasks such as named entity recongnition, text summerization, embedding generation, topic extraction etc. following is a list of all the models available in the `jac_nlp` package.
 
 
-| Module                | Model Type               | Model Name       | Example                                               | Type                    | Status      | Description                                                     | Resources                                                                                                         |
-| --------------------- | ------------------------ | ---------------- | ----------------------------------------------------- | ----------------------- | ----------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `use_enc`             | Text Encoder             | USE Encoder      | [Link](#use-encoder-use_enc)                          | Zero-shot               | Ready       | Sentence-level embedding pre-trained on general text corpus     | [Paper](https://arxiv.org/abs/1803.11175)                                                                         |
-| `use_qa`              | Text Encoder             | USE QA           | [Link](#use-qa-use_qa)                                | Zero-shot               | Ready       | Sentence-level embedding pre-trained on Q&A data corpus         | [Paper](https://arxiv.org/abs/1803.11175)                                                                         |
-| `fast_enc`            | Text Encoder             | FastText         | [Link](#fasttext-encoder-fast_enc)                    | Training req.           | Ready       | FastText Text Classifier                                        | [Paper](https://arxiv.org/abs/1712.09405)                                                                         |
-| `bi_enc`              | Text Encoder             | Bi-encoder       | [Link](#bi-encoder-bi_enc)                            | Training req./Zero-shot | Ready       | Dual sentence-level encoders                                    | [Paper](https://arxiv.org/abs/1803.11175)                                                                         |
-| `sbert_sim`           | Text Encoder             | SBert Similarity | [Link](#sbert-similarity-sbert_sim)                   | Training req./Zero-shot | Ready       | SBert Encoders for Sentence Similarity                          | [Paper](https://arxiv.org/abs/1908.10084)                                                                         |
-| `ent_ext`/ `lstm_ner` | Named Entity Recognition | Flair NER        | [Link](#entity-extraction-ent_ext)                    | Training req.           | Ready       | Entity extraction using the FLAIR NER framework                 |                                                                                                                   |
-| `tfm_ner`             | Named Entity Recognition | Transformer NER  | [Link](#entity-extraction-using-transformers-tfm_ner) | Training req.           | Ready       | Token classification on Transformer models, can be used for NER | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification)           |
-| `cl_summer`           | Summarization            | Summarizer       | [Link](#summarizer-clsummer)                          | No Training req.        | Ready       | Extractive Summarization using Sumy                             | [Doc.](https://miso-belica.github.io/sumy/)                                                                       |
-| `t5_sum`              | Summarization            | Summarizer       | [Link](#t5-summarization-t5sum)                       | No Training req.        | Ready       | Abstractive Summarization using the T5 Model                    | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf)      |
-| `bart_sum`            | Summarization            | Summarizer       | [Link](#bart-summarization-bart_sum)                  | No Training req.        | Ready       | Abstractive Summarization using the Bart Large Model            | [Huggingface](https://huggingface.co/transformers/model_doc/bart.html), [Paper](https://arxiv.org/abs/1910.13461) |
-| `text_seg`            | Text Processing          | Text Segmenter   | [Link](#text-segmenter-text_seg)                      | No Training req.        | Experimetal | Topical Change Detection in Documents                           | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec)                                               |
-| `topic_ext`           | Text Analysis            | Topic Extraction | [Link](#topic-extraction-topic_ext)                   | No Training req.        | Experimetal | Indentifying most relevent topics for given set of documents    |                                                                                                                   |
-| `gpt2`                | Text Generation          | GPT-2            | [Link](#text-generation-gpt2)                         | No Training req.        | Experimetal | Predicting the next sentence in a sequence of text              | [Huggingface](https://huggingface.co/transformers/model_doc/gpt2.html)                                            |
+| Module                | Model Type               | Model Name         | Example                                               | Type                    | Status      | Description                                                                           | Resources                                                                                                         |
+| --------------------- | ------------------------ | ------------------ | ----------------------------------------------------- | ----------------------- | ----------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `use_enc`             | Text Encoder             | USE Encoder        | [Link](#use-encoder-use_enc)                          | Zero-shot               | Ready       | Sentence-level embedding pre-trained on general text corpus                           | [Paper](https://arxiv.org/abs/1803.11175)                                                                         |
+| `use_qa`              | Text Encoder             | USE QA             | [Link](#use-qa-use_qa)                                | Zero-shot               | Ready       | Sentence-level embedding pre-trained on Q&A data corpus                               | [Paper](https://arxiv.org/abs/1803.11175)                                                                         |
+| `fast_enc`            | Text Encoder             | FastText           | [Link](#fasttext-encoder-fast_enc)                    | Training req.           | Ready       | FastText Text Classifier                                                              | [Paper](https://arxiv.org/abs/1712.09405)                                                                         |
+| `bi_enc`              | Text Encoder             | Bi-encoder         | [Link](#bi-encoder-bi_enc)                            | Training req./Zero-shot | Ready       | Dual sentence-level encoders                                                          | [Paper](https://arxiv.org/abs/1803.11175)                                                                         |
+| `sbert_sim`           | Text Encoder             | SBert Similarity   | [Link](#sbert-similarity-sbert_sim)                   | Training req./Zero-shot | Ready       | SBert Encoders for Sentence Similarity                                                | [Paper](https://arxiv.org/abs/1908.10084)                                                                         |
+| `ent_ext`/ `lstm_ner` | Named Entity Recognition | Flair NER          | [Link](#entity-extraction-ent_ext)                    | Training req.           | Ready       | Entity extraction using the FLAIR NER framework                                       |                                                                                                                   |
+| `tfm_ner`             | Named Entity Recognition | Transformer NER    | [Link](#entity-extraction-using-transformers-tfm_ner) | Training req.           | Ready       | Token classification on Transformer models, can be used for NER                       | [Huggingface](https://huggingface.co/docs/transformers/tasks/token_classification#token-classification)           |
+| `cl_summer`           | Summarization            | Summarizer         | [Link](#summarizer-clsummer)                          | No Training req.        | Ready       | Extractive Summarization using Sumy                                                   | [Doc.](https://miso-belica.github.io/sumy/)                                                                       |
+| `t5_sum`              | Summarization            | Summarizer         | [Link](#t5-summarization-t5sum)                       | No Training req.        | Ready       | Abstractive Summarization using the T5 Model                                          | [Doc.](https://huggingface.co/docs/transformers/model_doc/t5), [Paper](https://arxiv.org/pdf/1910.10683.pdf)      |
+| `bart_sum`            | Summarization            | Summarizer         | [Link](#bart-summarization-bart_sum)                  | No Training req.        | Ready       | Abstractive Summarization using the Bart Large Model                                  | [Huggingface](https://huggingface.co/transformers/model_doc/bart.html), [Paper](https://arxiv.org/abs/1910.13461) |
+| `text_seg`            | Text Processing          | Text Segmenter     | [Link](#text-segmenter-text_seg)                      | No Training req.        | Experimetal | Topical Change Detection in Documents                                                 | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec)                                               |
+| `topic_ext`           | Text Analysis            | Topic Extraction   | [Link](#topic-extraction-topic_ext)                   | No Training req.        | Experimetal | Indentifying most relevent topics for given set of documents                          |                                                                                                                   |
+| `sentiment`           | Text Analysis            | Sentiment Analysis | [Link](#sentiment-analysis)                           | No Training req.        | Experimetal | Determining the overall sentiment expressed is text as positive, negative, or neutral |                                                                                                                   |
+| `gpt2`                | Text Generation          | GPT-2              | [Link](#text-generation-gpt2)                         | No Training req.        | Experimetal | Predicting the next sentence in a sequence of text                                    | [Huggingface](https://huggingface.co/transformers/model_doc/gpt2.html)                                            |
 
 
 
@@ -1190,6 +1191,24 @@ walker init{
 
     can topic_ext.topic_extraction;
     topic_dict = topic_ext.topic_extraction(texts=text,classes=labels,n_topics=5);
+}
+```
+
+### Sentiment Analysis
+
+Module `sentiment` implemented for analysing the sentiment in a given list of text. This module accepts as input a set of sentences.
+
+- `texts` - (list of strings) list of input text documents.
+
+* #### Example Jac Usage:
+
+```jac
+walker test_predict{
+    can sentiment.predict;
+
+    has texts = ["I love you", "I hate you"];
+
+    report sentiment.predict(texts);
 }
 ```
 

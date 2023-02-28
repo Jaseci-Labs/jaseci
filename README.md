@@ -143,6 +143,7 @@
     - [BI Encoder for NER](jaseci_ai_kit/jac_nlp/jac_nlp/bi_ner/README.md)
     - [SBERT Similarity](jaseci_ai_kit/jac_nlp/jac_nlp/sbert_sim/README.md)
     - [GPT2](jaseci_ai_kit/jac_nlp/jac_nlp/gpt2/README.md)
+    - [Sentiment Analysis](jaseci_ai_kit/jac_nlp/jac_nlp/sentiment/README.md)
 
   - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
 
