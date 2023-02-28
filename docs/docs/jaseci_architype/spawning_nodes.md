@@ -41,3 +41,18 @@ Statically creating graphs means creating a graph that is already fixed and does
 After that, the spawn keyword is used to begin the creation of nodes and edges, by using spawn node:: followed by the type of node you want to create (e.g. user or state). You can also specify a name for each node using the name property. Nodes and edges can be connected together using the ++>  operator.
 
 The transition keyword is used to create an edge with a specific intent label. In the example above, the graph has three states: root_state, home_price_inquiry, and prob_of_approval, and a user node. These states and the user node are connected to each other through transitions with intent labels such as "home price inquiry" or "probability of loan approval".
+
+# Semantics of Graphs in Jaseci: Directed Doubly Edged, Multigraphs with Distinct Node and Edge Identities
+
+In Jaseci, we elect to assume the following semantics for the graphs in Jaseci:
+
+1. Graphs are directed with a special case of a doubly directed edge
+type which can be utilized practically as an undirected edge.
+2. Both nodes and edges have their own distinct identities (i,e. an edge isn’t representable
+as a pairing of two nodes). This point is important as both nodes and edges can have
+contexts.
+3. Multigraphs (i.e., parallel edges) are allowed, including self-loop edges.
+4. Graphs are not required to be acyclic.
+5. No hypergraphs, as I wouldn’t want Jaseci programmers heads to explode.
+
+Refer to [Wikipedias description of graphs](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)) to learn more about graphs.
