@@ -3,7 +3,7 @@ from torch import nn
 from torch.utils.data import Dataset
 from typing import Iterable, Dict, Optional, List
 from torch import LongTensor
-from jac_nlp.bi_ner.model.ph_model import BI_P_Head, prepare_inputs, collate_examples
+from jac_nlp.bi_ner.model.ph_model import BI_P_Head, prepare_inputs, collate_examples,ph_init, get_embeddings, get_scores
 from jac_nlp.bi_ner.model.loss import ContrastiveThresholdLoss
 from jac_nlp.bi_ner.model.tokenize_data import get_datasets
 from jac_nlp.bi_ner.datamodel.utils import get_category_id_mapping, invert
@@ -16,6 +16,7 @@ from jac_nlp.bi_ner.datamodel.example import (
 from functools import partial
 from torch.nn.functional import pad
 from jac_misc.ph.utils.base import BaseInference
+
 from typing import Any
 from collections import defaultdict
 import json
@@ -26,8 +27,6 @@ def collate_fn(
     _max_sequence_length=128,
     return_batch_examples: bool = False,
 ) -> Dict[str, Optional[LongTensor]]:
-    # print("custom collate fucntions")
-    # print(examples)
     return collate_examples(
         examples,
         padding_token_id=100,
@@ -61,18 +60,18 @@ class CustomLoss(torch.nn.Module):
 class CustomModel(nn.Module):
     def __init__(self, model_args) -> None:
         super(CustomModel, self).__init__()
-        self.model = BI_P_Head(model_args)
+        ph_init(model_args)
         # print(f"in custom model{model_args}")
         con_encoder_layer = nn.TransformerEncoderLayer(
-            d_model=128,
-            nhead=8,
+            d_model=768,
+            nhead=12,
             dim_feedforward=128,
             batch_first=True,
         )
         cand_encoder_layer = nn.TransformerEncoderLayer(
-            d_model=128,
-            nhead=8,
-            dim_feedforward=30,
+            d_model=768,
+            nhead=12,
+            dim_feedforward=128,
             batch_first=True,
         )
         self.con_encoder = nn.TransformerEncoder(
@@ -81,26 +80,27 @@ class CustomModel(nn.Module):
         self.cand_encoder = nn.TransformerEncoder(
             encoder_layer=cand_encoder_layer, num_layers=1
         )
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.con_encoder.to(device)
+        self.cand_encoder.to(device)
+
 
     def forward(self, x):
         mode = "train"
         if x.ndimension() == 1:
             x = x.unsqueeze(0)
             mode = None
-        ent_emb, token_emb = self.model(x)
+        ent_emb, token_emb = get_embeddings(x)
         token_emb = self.con_encoder(token_emb)
         ent_emb = self.cand_encoder(ent_emb)
-        scores = self.model.get_scores(token_emb, ent_emb, mode)
+        scores = get_scores(token_emb, ent_emb, mode)
         return scores
 
 
 class CustomDataset(Dataset):
     def __init__(self, train_args) -> None:
         super(CustomDataset, self).__init__()
-        with open(
-            "/home/ubuntu/jaseci/jaseci_ai_kit/jac_misc/jac_misc/ph/ph_train_data.json",
-            "r",
-        ) as fp:
+        with open(train_args["data_file"], "r") as fp:
             self.data = json.load(fp)
         category_id_mapping = get_category_id_mapping(
             train_args, train_args["descriptions"]
@@ -126,26 +126,20 @@ class CustomInference(BaseInference):
     @torch.no_grad()
     def predict(self, data: Any) -> Any:
         self._max_entity_length = 30
-        inf_args = {
-            "unk_entity_type_id": -1,
-            "unk_category": "<UNK>",
-            "max_sequence_length": 128,
-            "descriptions": ["Fin_Corp"],
-        }
         category_id_mapping = get_category_id_mapping(
-            inf_args, inf_args["descriptions"]
+            data["inf_args"], data["inf_args"]["descriptions"]
         )
         category_mapping = invert(category_id_mapping)
-        self._no_entity_category = inf_args["unk_category"]
-        self._no_entity_category_id = inf_args["unk_entity_type_id"]
+        self._no_entity_category = data["inf_args"]["unk_category"]
+        self._no_entity_category_id = data["inf_args"]["unk_entity_type_id"]
         self.stride = 0.9
-        self._stride_length = int(inf_args["max_sequence_length"] * self.stride)
+        self._stride_length = int(data["inf_args"]["max_sequence_length"] * self.stride)
         # tokenization and data transformation
-        self._text_length: List[Optional[int]] = [None] * len(data)
+        self._text_length: List[Optional[int]] = [None] * len(data["dataset"])
         examples = list(
             prepare_inputs(
-                data,
-                [None] * len(data),
+                data["dataset"],
+                [None] * len(data["dataset"]),
                 category_mapping=category_mapping,
                 no_entity_category=self._no_entity_category,
                 stride=self.stride,
@@ -157,7 +151,7 @@ class CustomInference(BaseInference):
             batch_size=1,
             collate_fn=partial(collate_fn, return_batch_examples=True),
         )
-        predictions_collector = [defaultdict(int) for _ in data]
+        predictions_collector = [defaultdict(int) for _ in data["dataset"]]
         for batch in example:
             input_data = batch["input_ids"]
             input_data = input_data.to(self.device)
@@ -168,17 +162,17 @@ class CustomInference(BaseInference):
             span_start = (
                 pad(
                     batched_examples.start_offset,
-                    [0, inf_args["max_sequence_length"] - length],
+                    [0, data["inf_args"]["max_sequence_length"] - length],
                     value=-100,
                 )
-                .view(batch_size, inf_args["max_sequence_length"], 1)
+                .view(batch_size, data["inf_args"]["max_sequence_length"], 1)
                 .repeat(1, 1, self._max_entity_length)
                 .to(self.device)
             )
 
             end_offset = pad(
                 batched_examples.end_offset,
-                [0, inf_args["max_sequence_length"] - length],
+                [0, data["inf_args"]["max_sequence_length"] - length],
                 value=-100,
             ).to(self.device)
 
@@ -201,8 +195,8 @@ class CustomInference(BaseInference):
                 & (span_start != -100)
             )
             entity_token_start = (
-                torch.arange(inf_args["max_sequence_length"])
-                .reshape(1, inf_args["max_sequence_length"], 1)
+                torch.arange(data["inf_args"]["max_sequence_length"])
+                .reshape(1, data["inf_args"]["max_sequence_length"], 1)
                 .repeat(batch_size, 1, self._max_entity_length)
                 .to(self.device)
             )
@@ -210,7 +204,7 @@ class CustomInference(BaseInference):
             entity_text_ids = (
                 torch.tensor(batched_examples.text_ids)
                 .view(batch_size, 1, 1)
-                .repeat(1, inf_args["max_sequence_length"], self._max_entity_length)
+                .repeat(1, data["inf_args"]["max_sequence_length"], self._max_entity_length)
                 .to(self.device)
             )
 
@@ -236,7 +230,7 @@ class CustomInference(BaseInference):
                         token_start.item(),
                     )
                 ] += 1
-        all_entities = [set() for _ in data]
+        all_entities = [set() for _ in data["dataset"]]
         for text_id, preds in enumerate(predictions_collector):
             text_length = self._text_length[text_id]
             strided_text_length = (
@@ -249,7 +243,7 @@ class CustomInference(BaseInference):
                 total_predictions = min(
                     (entity_token_start // self._stride_length) + 1,
                     (
-                        max(strided_text_length - inf_args["max_sequence_length"], 0)
+                        max(strided_text_length - data["inf_args"]["max_sequence_length"], 0)
                         // self._stride_length
                     )
                     + 1,
