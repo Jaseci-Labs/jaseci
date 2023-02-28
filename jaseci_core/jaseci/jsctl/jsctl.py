@@ -15,7 +15,7 @@ from jaseci import __version__
 from jaseci.element.super_master import SuperMaster
 from jaseci.utils.utils import copy_func
 from .book_tools import Book, modifiedBook
-from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
+from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, find_first_api
 from jaseci import JsOrc
 
 session = None
@@ -83,17 +83,19 @@ def remote_api_call(payload, api_name):
     Constructs and issues call to remote server
     NOTE: Untested
     """
-    for i in SuperMaster.all_apis(None):
-        if api_name == "_".join(i["groups"]):
-            if i in SuperMaster._private_api:
-                path = "/js/" + api_name
-            elif i in SuperMaster._admin_api:
-                path = "/js_admin/" + api_name
-            elif i in SuperMaster._public_api:
-                path = "/js_public/" + api_name
-            break
-    ret = requests.post(
-        session["connection"]["url"] + path,
+    path, api = find_first_api(
+        api_name,
+        js_public=SuperMaster._public_api,
+        js=SuperMaster._private_api,
+        js_admin=SuperMaster._admin_api,
+    )
+
+    method = requests.post
+    if "post" not in api["allowed_methods"]:
+        method = requests.get
+
+    ret = method(
+        session["connection"]["url"] + f"/{path}/{api_name}",
         json=payload,
         headers=session["connection"]["headers"],
     )

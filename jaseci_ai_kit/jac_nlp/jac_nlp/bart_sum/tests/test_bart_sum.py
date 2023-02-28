@@ -15,6 +15,10 @@ class BartSumTests(CoreTest):
     def test_summarize_single(self, ret):
         self.assertEqual(len(ret["report"][0]), 1)
 
+    @jac_testcase("bart_sum.jac", "test_summarize_single_percentage")
+    def test_summarize_single_percentage(self, ret):
+        self.assertEqual(len(ret["report"][0]), 1)
+
     @jac_testcase("bart_sum.jac", "test_summarize_url")
     def test_summarize_url(self, ret):
         self.assertEqual(len(ret["report"][0]), 1)
