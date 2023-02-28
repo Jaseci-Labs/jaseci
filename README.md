@@ -13,24 +13,24 @@
 
 ## Getting Started
 
-  - [Installation](docs/docs/getting-started/content.md)
+  - [Installation](docs/docs/getting-started/installation_intro.md)
     - [Installing Jaseci](support/guide/getting_started/installation.md)
       - [Installing on Windows](support/guide/getting_started/installation.md#installing-on-windows)
       - [Installing on Mac](support/guide/getting_started/installation.md#installing-on-mac)
       - [Installing on Linux](support/guide/getting_started/installation.md#installing-on-linux)
       - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
     - [Setting Up Your Editor](support/guide/getting_started/setting_up_your_editor.md)
-    - [Installing Jac AI Kit and Graphiz](docs/docs/getting-started/jac_ai_kit_and_graphiz.md)
+    - [Installing Graphiz](docs/docs/getting-started/jac_ai_kit_and_graphiz.md)
     - [Installing Jaseci Studios](jaseci_studio/README.md)
 
-  - [Interfacing A Jaseci Machine](docs/docs/getting-started/content.md)
+  - [Interfacing A Jaseci Machine](docs/docs/getting-started/interfacing.md)
     - [Three modes of Interacting with Jaseci](docs/docs/interfacing_jaseci/interaction_modes.md)
     - [Local JSCTL Mode](docs/docs/interfacing_jaseci/jsctl.md)
       - [CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
     - [Remote JSCTL Mode](docs/docs/interfacing_jaseci/remote_jsctl.md)
     - [Application Mode: Jac Api Collection](support/guide/other/classes.md)
 
-  - [Taking Jac for a Test Drive](docs/docs/getting-started/content.md)
+  - [Taking Jac for a Test Drive](docs/docs/getting-started/testdrive.md)
     - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
     - [Writing Your First App](support/guide/getting_started/writing_your_first_app.md)
     - [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md)
@@ -81,6 +81,7 @@
     - [Referencing and dereferencing nodes](docs/docs/jaseci_architype/referencing_dereferencing.md)
   - [Edges](docs/docs/jaseci_architype/edges.md)
     - [Exploring Jaseci Edge Abstractions](docs/docs/jaseci_architype/deges_explanation.md)
+    - [Edge abilities in Jaseci](docs/docs/jaseci_architype/edge_ability.md)
     - [Connect operator](docs/docs/jaseci_architype/connect_edges.md)
     - [Plucking values from nodes](docs/docs/jaseci_architype/plucking_values.md)
   - [Walkers](docs/docs/jaseci_architype/walkers.md)
