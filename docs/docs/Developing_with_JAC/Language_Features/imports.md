@@ -42,7 +42,7 @@ You can specify which types of objects you want to import (graphs, nodes, or wal
  walker init {
     has num=4;
     with entry {
-        spawn here --> graph::dummy;
+        spawn here ++> graph::dummy;
     }
     report here.context;
     report num;

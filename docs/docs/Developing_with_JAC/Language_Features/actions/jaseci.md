@@ -50,7 +50,7 @@ details = jaseci.object_get(object);
 ```jac
 # Get the object access mode for any jaseci object.
 # object : element - jaseci object
-accessMode  = jaseci.object_perms_set(object)
+accessMode  = jaseci.object_perms_set(object);
 
 ```
 
@@ -123,7 +123,7 @@ jaseci.graph_active_unset();
 ### Get Default Graph
 ```jac
 # detailed : boolean - default false , true to return graph details (optional)
-grph = jaseci.graph_active_get()
+grph = jaseci.graph_active_get();
 ```
 ### Delete Graph
 ```jac
@@ -237,7 +237,7 @@ message = jaseci.sentinel_delete(snt);
 # wlk : walker - walker to be ran
 # nd : node -  node where walker will be placed
 # ctx : dictionary  - context for walker
-response  = jaseci.walker_summon()
+response  = jaseci.walker_summon();
 ```
 
 ### Register Walker
