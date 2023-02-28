@@ -18,6 +18,7 @@ HEAD_NOT_FOUND = "No Active head found. Please create a head first using create_
 HEAD_LIST_NOT_FOUND = "No Active head list found. Use create_head_list first."
 
 
+@jaseci_action(act_group=["ph"], allow_remote=True)
 def setup():
     global il, list_config
     dirname = os.path.dirname(__file__)
@@ -29,8 +30,6 @@ def setup():
         logging.info("No heads list found. Run create_head_list to create one.")
         il = None
 
-
-setup()
 
 ### Start of PersonalizedHead Actions ###
 

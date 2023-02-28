@@ -113,13 +113,11 @@ SUPPORTED_LANGUAGES = [
 ]
 
 
+@jaseci_action(act_group=["stt"], allow_remote=True)
 def setup(size: str = "tiny"):
     global model, processor
     model = WhisperForConditionalGeneration.from_pretrained(f"openai/whisper-{size}")
     processor = WhisperProcessor.from_pretrained(f"openai/whisper-{size}")
-
-
-setup()
 
 
 def get_array(audio_file: str = None) -> np.ndarray:

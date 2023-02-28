@@ -8,6 +8,7 @@ import io
 from PIL import Image
 
 
+@jaseci_action(act_group=["yolos"], allow_remote=True)
 def setup(device: str = None):
     global detector
     if device is None:
@@ -15,9 +16,6 @@ def setup(device: str = None):
     else:
         _device = torch.device(device)
     detector = YolosDetector(device=_device)
-
-
-setup(device=None)
 
 
 @jaseci_action(act_group=["yolos"], allow_remote=True)

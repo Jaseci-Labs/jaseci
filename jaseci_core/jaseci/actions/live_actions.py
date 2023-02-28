@@ -70,7 +70,7 @@ def assimilate_action(func, act_group=None, aliases=list()):
     return func
 
 
-def load_local_actions(file: str):
+def load_local_actions(file: str, ctx: dict = {}):
     """Load all jaseci actions from python file"""
     try:
         name = file.rstrip(".py")
@@ -87,13 +87,20 @@ def load_local_actions(file: str):
                 sys.path.append(module_dir)
             mod = module_from_spec(spec)
             spec.loader.exec_module(mod)
+            try:
+                if hasattr(mod, "setup"):
+                    mod.setup(**ctx)
+            except Exception:
+                logger.error(
+                    f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+                )
             return True
     except Exception:
         logger.error(f"Cannot hot load local actions from {file}.")
         return False
 
 
-def load_module_actions(mod, loaded_module=None, ctx={}):
+def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     """Load all jaseci actions from python module"""
     try:
         if mod in sys.modules:
@@ -115,7 +122,7 @@ def load_module_actions(mod, loaded_module=None, ctx={}):
                 mod.setup(**ctx)
         except Exception:
             logger.error(
-                f"Cannot run setup for module {mod}. Refer the setup parameters."
+                f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
             )
         if mod:
             return True

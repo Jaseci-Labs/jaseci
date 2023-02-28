@@ -21,6 +21,7 @@ tokenizer = None
 generator = None
 
 
+@jaseci_action(act_group=["gpt2"], allow_remote=True)
 def setup(model_name: str = "gpt2", get_embeddings: bool = False):
     global model, tokenizer, generator
     if get_embeddings:
@@ -31,9 +32,6 @@ def setup(model_name: str = "gpt2", get_embeddings: bool = False):
     else:
         model, tokenizer = None, None
         generator = pipeline("text-generation", model=model_name, tokenizer="gpt2")
-
-
-setup(model_name="gpt2", get_embeddings=False)
 
 
 @jaseci_action(act_group=["gpt2"], allow_remote=True)

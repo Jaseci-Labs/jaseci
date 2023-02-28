@@ -8,6 +8,7 @@ import base64
 import io
 
 
+@jaseci_action(act_group=["detr"], allow_remote=True)
 def setup(model: str = "detr-resnet-50", device: str = None):
     global detector
     if device is None:
@@ -15,9 +16,6 @@ def setup(model: str = "detr-resnet-50", device: str = None):
     else:
         _device = torch.device(device)
     detector = DetrDetector(device=_device, model=model)
-
-
-setup(model="detr-resnet-50", device=None)
 
 
 @jaseci_action(act_group=["detr"], allow_remote=True)

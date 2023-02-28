@@ -8,6 +8,7 @@ import base64
 import io
 
 
+@jaseci_action(act_group=["dpt"], allow_remote=True)
 def setup(model: str = "dpt-large", device: str = None):
     global detector
     if device is None:
@@ -15,9 +16,6 @@ def setup(model: str = "dpt-large", device: str = None):
     else:
         _device = torch.device(device)
     detector = DPTLarge(device=_device, model=model)
-
-
-setup(model="dpt-large", device=None)
 
 
 @jaseci_action(act_group=["dpt"], allow_remote=True)

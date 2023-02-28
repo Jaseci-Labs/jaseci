@@ -19,7 +19,7 @@ class ActionsApi:
     """
 
     @Interface.admin_api(cli_args=["file"])
-    def actions_load_local(self, file: str):
+    def actions_load_local(self, file: str, ctx: dict = {}):
         """
         Hot load a python module and assimilate any Jaseci Actions
 
@@ -33,7 +33,7 @@ class ActionsApi:
         :param file: The python file with full to load actions from.
             (i.e., ~/local/myact.py)
         """
-        success = lact.load_local_actions(file)
+        success = lact.load_local_actions(file, ctx=ctx)
         if success:
             cur_config = self.config_get("ACTION_SETS")
             if cur_config and (not isinstance(cur_config, list)):

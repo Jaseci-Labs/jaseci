@@ -6,17 +6,17 @@ import traceback
 import torch
 
 
+@jaseci_action(act_group=["translator"], allow_remote=True)
 def setup():
+    global model, tokenizer
     model = MBartForConditionalGeneration.from_pretrained(
         "facebook/mbart-large-50-many-to-many-mmt"
     )
     tokenizer = MBart50TokenizerFast.from_pretrained(
         "facebook/mbart-large-50-many-to-many-mmt"
     )
-    return model, tokenizer
 
 
-model, tokenizer = setup()
 supported_languages = list(tokenizer.lang_code_to_id.keys())
 
 
@@ -33,6 +33,7 @@ def translate(text: Union[str, List[str]], src_lang: str, tgt_lang: str) -> List
     Returns:
         List[str]: Translated text.
     """
+    global model, tokenizer
     try:
         if src_lang not in supported_languages:
             raise ValueError(f"Unsupported source language: {src_lang}")
