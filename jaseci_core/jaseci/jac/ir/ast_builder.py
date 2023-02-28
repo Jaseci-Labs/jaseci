@@ -21,10 +21,12 @@ class JacAstBuilder:
         mod_dir="./",
         jac_text=None,
         start_rule="start",
+        prediction_mode=None,
     ):
         self.root = Ast(mod_name)
         self._parse_errors = []
         self._start_rule = start_rule
+        self._prediction_mode = prediction_mode
         self._mod_dir = mod_dir
         self.dependencies = []
         if jac_text:
@@ -38,6 +40,9 @@ class JacAstBuilder:
         stream = CommonTokenStream(lexer)
         errors = JacTreeError(self)
         parser = jacParser(stream)
+        # set a prediction mode based on performance and accuracy needs
+        if self._prediction_mode:
+            parser._interp.predictionMode = self._prediction_mode
         parser.removeErrorListeners()
         parser.addErrorListener(errors)
         tree = getattr(parser, self._start_rule)()
