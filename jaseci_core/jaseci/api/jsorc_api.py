@@ -1,14 +1,13 @@
 """
 JSORC APIs
 """
-
-import yaml
 import json
-from json import dumps, loads
+from json import dumps
 from time import time
 from base64 import b64decode
 
 from jaseci import JsOrc
+from jaseci.jsorc_utils import convert_yaml_manifest, ManifestType
 from jaseci.utils.utils import logger
 from jaseci.svc.kube_svc import KubeService
 from jaseci.utils.actions.actions_manager import ActionManager
@@ -22,7 +21,12 @@ class JsOrcApi:
     """
 
     @Interface.admin_api()
-    def load_yaml(self, files: list):
+    def load_yaml(
+        self,
+        files: list,
+        manifest_type: str = "DEDICATED",
+        manual_namespace: str = "default",
+    ):
         """
         applying list of yaml files without associating to any modules/services
         """
@@ -32,60 +36,55 @@ class JsOrcApi:
 
             res = {}
             for file in files:
-                for conf in yaml.safe_load_all(b64decode(file["base64"])):
-                    kind = conf["kind"]
-                    namespace = kube.resolve_namespace(kind, conf["metadata"])
-                    kube.create(
-                        kind,
-                        conf["metadata"]["name"],
-                        conf,
-                        namespace,
-                    )
-                    if not res.get(kind):
-                        res[kind] = []
-                    res[kind].append(conf)
-
+                for kind, confs in kube.resolve_manifest(
+                    convert_yaml_manifest(b64decode(file["base64"])),
+                    ManifestType[manifest_type],
+                    manual_namespace,
+                ).items():
+                    for name, conf in confs.items():
+                        metadata: dict = conf["metadata"]
+                        kube.create(
+                            kind,
+                            metadata["name"],
+                            conf,
+                            metadata.get("namespace"),
+                        )
+                        if not res.get(kind):
+                            res[kind] = {}
+                        res[kind].update({name: conf})
             return res
         except Exception:
             logger.exception("Error loading yaml!")
             return {"message": "load_yaml is not supported on non automated JsOrc!"}
 
-    @Interface.admin_api(cli_args=["name"])
-    def apply_yaml(self, name: str, file: list, unsafe_paraphrase: str = ""):
+    @Interface.admin_api(cli_args=["service"])
+    def apply_yaml(self, service: str, file: list, unsafe_paraphrase: str = ""):
         """
         apply manifest yaml to specific service
         """
+        svc = JsOrc.svc(service)
 
         new_config = {}
 
         config_version = str(time())
 
-        for conf in yaml.safe_load_all(b64decode(file[0]["base64"])):
-            kind = conf["kind"]
-            labels = conf.get("metadata").get("labels")
-            if not labels.get("config_version"):
-                labels["config_version"] = config_version
+        for kind, confs in convert_yaml_manifest(b64decode(file[0]["base64"])).items():
+            for name, conf in confs.items():
+                metadata = conf["metadata"]
+                labels: dict = metadata.get("labels", {})
+                if not labels.get("config_version"):
+                    labels["config_version"] = config_version
+                    metadata["labels"] = labels
 
-            if not new_config.get(kind):
-                new_config[kind] = []
-            new_config[kind].append(conf)
+                if not new_config.get(kind):
+                    new_config[kind] = {}
+                new_config[kind].update({name: conf})
 
-        old_config = self._h.get_glob(name)
-        if old_config:
-            old_config = loads(old_config)
-            old_config.pop("__OLD_CONFIG__", {})
-            for kind, confs in old_config.items():
-                _confs = {}
-                for conf in confs:
-                    _confs.update({conf["metadata"]["name"]: conf})
-                old_config[kind] = _confs
+        if unsafe_paraphrase == JsOrc.settings("UNSAFE_PARAPHRASE"):
+            new_config["__UNSAFE_PARAPHRASE__"] = unsafe_paraphrase
 
-            new_config["__OLD_CONFIG__"] = old_config
-
-            if unsafe_paraphrase == JsOrc.settings("UNSAFE_PARAPHRASE"):
-                new_config["__UNSAFE_PARAPHRASE__"] = unsafe_paraphrase
-
-        self._h.save_glob(name, dumps(new_config))
+        self._h.save_glob(svc.source["manifest"], dumps(new_config))
+        JsOrc.add_regeneration_queue(service)
 
         return new_config
 

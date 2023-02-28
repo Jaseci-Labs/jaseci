@@ -4,6 +4,7 @@ from celery.app.control import Inspect
 from celery.backends.base import DisabledBackend
 
 from jaseci import JsOrc
+from jaseci.jsorc_utils import ManifestType
 from .tasks import Queue, ScheduledWalker, ScheduledSequence
 
 #################################################
@@ -17,13 +18,19 @@ class TaskService(JsOrc.CommonService):
     #                   INITIALIZER                   #
     ###################################################
 
-    def __init__(self, config: dict, manifest: dict, dedicated: bool = True):
+    def __init__(
+        self,
+        config: dict,
+        manifest: dict,
+        manifest_type: ManifestType = ManifestType.DEDICATED,
+        source: dict = {},
+    ):
         self.inspect: Inspect = None
         self.queue: Queue = None
         self.scheduled_walker: ScheduledWalker = None
         self.scheduled_sequence: ScheduledSequence = None
 
-        super().__init__(config, manifest, dedicated)
+        super().__init__(config, manifest, manifest_type, source)
 
     ###################################################
     #                     BUILDER                     #

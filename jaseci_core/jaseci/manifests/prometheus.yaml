@@ -717,7 +717,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: jaseci-prometheus-kube-state-metrics
-  namespace: prometheus
+  namespace: $j{ServiceAccount["jaseci-prometheus-kube-state-metrics"].metadata.namespace}
 ---
 # Source: prometheus/templates/alertmanager/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -734,7 +734,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-alertmanager
-    namespace: prometheus
+    namespace: $j{ServiceAccount["jaseci-prometheus-alertmanager"].metadata.namespace}
 
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -756,7 +756,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-pushgateway
-    namespace: prometheus
+    namespace: $j{ServiceAccount["jaseci-prometheus-pushgateway"].metadata.namespace}
 
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -778,7 +778,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-server
-    namespace: prometheus
+    namespace: $j{ServiceAccount["jaseci-prometheus-server"].metadata.namespace}
 
 roleRef:
   apiGroup: rbac.authorization.k8s.io

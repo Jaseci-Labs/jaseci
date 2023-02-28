@@ -1,24 +1,6 @@
 import os
-import yaml
-
 from time import time
-
-
-def load_default_yaml(file):
-    manifest = {}
-    with open(
-        f"{os.path.dirname(os.path.abspath(__file__))}/manifests/{file}.yaml", "r"
-    ) as stream:
-        try:
-            for conf in yaml.safe_load_all(stream):
-                kind = conf["kind"]
-                if not manifest.get(kind):
-                    manifest[kind] = []
-                manifest[kind].append(conf)
-        except yaml.YAMLError as exc:
-            print(exc)
-
-    return manifest
+from .jsorc_utils import load_default_yaml, get_service_map
 
 
 class JsOrcSettings:
@@ -32,6 +14,8 @@ class JsOrcSettings:
 
     UNSAFE_PARAPHRASE = "I know what I'm doing!"
     UNSAFE_KINDS = ["PersistentVolumeClaim"]
+
+    SERVICE_MANIFEST_MAP = get_service_map("database", "redis", "elastic", "prome")
 
     ###############################################################################################################
     # -------------------------------------------------- JSORC -------------------------------------------------- #
@@ -63,8 +47,8 @@ class JsOrcSettings:
 
     REDIS_CONFIG = {
         "enabled": True,
-        "quiet": False,
-        "automated": True,
+        "quiet": True,
+        "automated": False,
         "host": os.getenv("REDIS_HOST", "localhost"),
         "port": os.getenv("REDIS_PORT", "6379"),
         "db": os.getenv("REDIS_DB", "1"),
@@ -84,7 +68,7 @@ class JsOrcSettings:
     TASK_CONFIG = {
         "enabled": True,
         "quiet": True,
-        "automated": True,
+        "automated": False,
         "broker_url": DEFAULT_REDIS_URL,
         "result_backend": DEFAULT_REDIS_URL,
         "broker_connection_retry_on_startup": True,

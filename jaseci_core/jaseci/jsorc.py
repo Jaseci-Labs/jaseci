@@ -1,17 +1,17 @@
 import signal
 import psycopg2
 
-from enum import Enum
 from time import sleep
 from copy import deepcopy
+from json import dumps, loads
 from datetime import datetime
 from typing import TypeVar, Any, Union
 
 from .utils.utils import logger
 from .jsorc_settings import JsOrcSettings
+from .jsorc_utils import State, CommonService as cs, ManifestType
 
 from kubernetes.client.rest import ApiException
-from multiprocessing import Process, current_process
 
 # For future use
 # from concurrent.futures import ThreadPoolExecutor
@@ -20,162 +20,10 @@ from multiprocessing import Process, current_process
 T = TypeVar("T")
 
 
-class State(Enum):
-    FAILED = -1
-    NOT_STARTED = 0
-    STARTED = 1
-    RUNNING = 2
-
-    def is_ready(self):
-        return self == State.NOT_STARTED
-
-    def is_running(self):
-        return self == State.RUNNING
-
-    def has_failed(self):
-        return self == State.FAILED
-
-
 class JsOrc:
-    #######################################################################################################
-    #                                             INNER CLASS                                             #
-    #######################################################################################################
+    # ------------------- ALIAS ------------------- #
 
-    class CommonService:
-        ###################################################
-        #                   PROPERTIES                    #
-        ###################################################
-
-        # ------------------- DAEMON -------------------- #
-
-        _daemon = {}
-
-        @property
-        def daemon(self):
-            return __class__._daemon
-
-        def __init__(self, config: dict, manifest: dict, dedicated: bool = True):
-            self.app = None
-            self.error = None
-            self.state = State.NOT_STARTED
-            self.dedicated = dedicated
-
-            # ------------------- CONFIG -------------------- #
-
-            self.config = config
-            self.enabled = config.pop("enabled", False)
-            self.quiet = config.pop("quiet", False)
-            self.automated = config.pop("automated", False)
-
-            # ------------------ MANIFEST ------------------- #
-
-            self.manifest = manifest
-            self.manifest_meta = {
-                "__OLD_CONFIG__": manifest.pop("__OLD_CONFIG__", {}),
-                "__UNSAFE_PARAPHRASE__": manifest.pop("__UNSAFE_PARAPHRASE__", ""),
-            }
-
-            self.start()
-
-        ###################################################
-        #                     BUILDER                     #
-        ###################################################
-
-        def start(self):
-            try:
-                if self.enabled and self.is_ready():
-                    self.state = State.STARTED
-                    self.run()
-                    self.state = State.RUNNING
-                    self.post_run()
-            except Exception as e:
-                if not (self.quiet):
-                    logger.error(
-                        f"Skipping {self.__class__.__name__} due to initialization "
-                        f"failure!\n{e.__class__.__name__}: {e}"
-                    )
-                self.failed(e)
-
-            return self
-
-        def run(self):
-            raise Exception(f"Not properly configured! Please override run method!")
-
-        def post_run(self):
-            pass
-
-        # ------------------- DAEMON -------------------- #
-
-        def spawn_daemon(self, **targets):
-            if current_process().name == "MainProcess":
-                for name, target in targets.items():
-                    dae: Process = self.daemon.get(name)
-                    if not dae or not dae.is_alive():
-                        process = Process(target=target, daemon=True)
-                        process.start()
-                        self.daemon[name] = process
-
-        def terminate_daemon(self, *names):
-            for name in names:
-                dae: Process = self.daemon.pop(name, None)
-                if not (dae is None) and dae.is_alive():
-                    logger.info(f"Terminating {name} ...")
-                    dae.terminate()
-
-        ###################################################
-        #                     COMMONS                     #
-        ###################################################
-
-        def poke(self, cast: T = None, msg: str = None) -> Union[T, Any]:
-            if self.is_running():
-                return (
-                    self
-                    if cast and cast.__name__ == self.__class__.__name__
-                    else self.app
-                )
-            raise Exception(
-                msg or f"{self.__class__.__name__} is disabled or not yet configured!"
-            )
-
-        def is_ready(self):
-            return self.state.is_ready() and self.app is None
-
-        def is_running(self):
-            return self.state.is_running() and not (self.app is None)
-
-        def has_failed(self):
-            return self.state.has_failed()
-
-        def failed(self, error: Exception = None):
-            self.app = None
-            self.state = State.FAILED
-            self.error = error
-
-        @classmethod
-        def proxy(cls):
-            return cls({}, {})
-
-        # ---------------- PROXY EVENTS ----------------- #
-
-        def on_delete(self):
-            pass
-
-        # ------------------- EVENTS -------------------- #
-
-        def __del__(self):
-            self.on_delete()
-
-        def __getstate__(self):
-            return {}
-
-        def __setstate__(self, ignored):
-            # for build on pickle load
-            self.state = State.FAILED
-            del self
-
-    #######################################################################################################
-    #                                             JSORC CLASS                                             #
-    #######################################################################################################
+    CommonService = cs
 
     # ----------------- REFERENCE ----------------- #
 
@@ -202,7 +50,7 @@ class JsOrc:
     _backoff_interval = 10
     _running_interval = 0
     __running__ = False
-    __proxy__ = CommonService.proxy()
+    __proxy__ = cs.proxy()
 
     # ------------------- REGEN ------------------- #
 
@@ -224,10 +72,10 @@ class JsOrc:
     def run(cls):
         if not cls.__running__:
             cls.__running__ == True
-            config = cls.settings("JSORC_CONFIG")
+            config: dict = cls.settings("JSORC_CONFIG")
             if cls.db_check():
                 hook = cls.hook()
-                config = hook.service_glob("JSORC_CONFIG", config)
+                config = hook.get_or_create_glob("JSORC_CONFIG", config)
             cls._backoff_interval = max(5, config.get("backoff_interval", 10))
             cls._regeneration_queues = config.get("pre_loaded_services", [])
             cls.push_interval(1)
@@ -357,7 +205,7 @@ class JsOrc:
     # ------------------ service ------------------ #
 
     @classmethod
-    def _svc(cls, service: str) -> CommonService:
+    def _svc(cls, service: str) -> cs:
         if service not in cls._services:
             raise Exception(f"Service {service} is not existing!")
 
@@ -372,16 +220,16 @@ class JsOrc:
         if cls.db_check():
             hook = cls.hook(use_proxy=instance["proxy"])
 
-            config = hook.service_glob(instance["config"], config)
+            config = hook.get_or_create_glob(instance["config"], config)
 
             manifest = (
-                hook.service_glob(instance["manifest"], manifest)
+                hook.get_or_create_glob(instance["manifest"], manifest)
                 if instance["manifest"]
                 else {}
             )
 
-        instance: JsOrc.CommonService = instance["type"](
-            config, manifest, instance["dedicated"]
+        instance: cs = instance["type"](
+            config, manifest, instance["manifest_type"], instance
         )
 
         if instance.has_failed() and service not in cls._regeneration_queues:
@@ -390,7 +238,7 @@ class JsOrc:
         return instance
 
     @classmethod
-    def svc(cls, service: str, cast: T = None) -> Union[T, CommonService]:
+    def svc(cls, service: str, cast: T = None) -> Union[T, cs]:
         """
         Get service. Initialize when not yet existing.
         ex: task
@@ -409,7 +257,7 @@ class JsOrc:
         return cls._service_instances[service]
 
     @classmethod
-    def svc_reset(cls, service, cast: T = None) -> Union[T, CommonService]:
+    def svc_reset(cls, service, cast: T = None) -> Union[T, cs]:
         """
         Service reset now deletes the actual instance and rebuild it
         """
@@ -457,9 +305,9 @@ class JsOrc:
         name: str = None,
         config: str = None,
         manifest: str = None,
+        manifest_type: ManifestType = ManifestType.DEDICATED,
         priority: int = 0,
         proxy: bool = False,
-        dedicated: bool = True,
     ):
         """
         Save the class in services options
@@ -468,7 +316,7 @@ class JsOrc:
         manifest: manifest name from datasource
         priority: duplicate name will use the highest priority
         proxy: allow proxy service
-        dedicated: if service will spawn to be dedicated to this app
+        manifest_type: manifest process type
         """
 
         def decorator(service: T) -> T:
@@ -479,9 +327,9 @@ class JsOrc:
                     "type": service,
                     "config": config or f"{name.upper()}_CONFIG",
                     "manifest": manifest,
+                    "manifest_type": manifest_type,
                     "priority": priority,
                     "proxy": proxy,
-                    "dedicated": dedicated,
                     "date_added": int(datetime.utcnow().timestamp() * 1000),
                 },
             )
@@ -576,129 +424,151 @@ class JsOrc:
     def settings(cls, name: str, default: T = None) -> Union[T, Any]:
         return getattr(cls._settings, name, default)
 
+    @classmethod
+    def overrided_namespace(
+        cls, name: str, manifest_type: ManifestType = ManifestType.DEDICATED
+    ) -> tuple:
+        manual_namespace = cls.settings("SERVICE_MANIFEST_MAP").get(name)
+        if manual_namespace:
+            if manual_namespace == "SOURCE":
+                manifest_type = ManifestType.SOURCE
+            else:
+                manual_namespace == manual_namespace.lower()
+                manifest_type = ManifestType.MANUAL
+                return manifest_type, manual_namespace
+
+        return (manifest_type,)
+
     #################################################
     #                  AUTOMATION                   #
     #################################################
 
     @classmethod
+    def add_regeneration_queue(cls, service: str):
+        cls.svc(service).state = State.RESTART
+        cls._regeneration_queues.append(service)
+
+    @classmethod
     def regenerate(cls):
         if not cls._regenerating:
             cls._regenerating = True
-            from jaseci.svc.kube_svc import KubeService
 
             if cls._has_db:
-                from jaseci.utils.actions.actions_manager import ActionManager
-
-                while cls._regeneration_queues:
-                    regeneration_queue = cls._regeneration_queues.pop(0)
-                    service = cls.svc(regeneration_queue)
-                    kube = cls.svc("kube", KubeService)
-
-                    if (
-                        not service.is_running()
-                        and service.enabled
-                        and service.automated
-                    ):
-                        if service.manifest and kube.is_running():
-                            old_config_map = deepcopy(
-                                service.manifest_meta.get("__OLD_CONFIG__", {})
-                            )
-                            unsafe_paraphrase = service.manifest_meta.get(
-                                "__UNSAFE_PARAPHRASE__", ""
-                            )
-                            for kind, confs in service.manifest.items():
-                                for conf in confs:
-                                    conf = deepcopy(conf)
-                                    metadata: dict = conf["metadata"]
-                                    name = metadata["name"]
-                                    namespace = kube.resolve_namespace(
-                                        kind, metadata, service.dedicated
-                                    )
-                                    _confs = old_config_map.get(kind, {})
-                                    if name in _confs.keys():
-                                        _confs.pop(name)
-
-                                    res = kube.read(
-                                        kind,
-                                        name,
-                                        namespace,
-                                    )
-                                    if (
-                                        hasattr(res, "status")
-                                        and res.status == 404
-                                        and conf
-                                    ):
-                                        kube.create(kind, name, conf, namespace)
-                                    elif not isinstance(res, ApiException):
-                                        config_version = 1
-                                        if isinstance(res, dict):
-                                            if "labels" in res["metadata"]:
-                                                config_version = (
-                                                    res["metadata"]
-                                                    .get("labels", {})
-                                                    .get("config_version", 1)
-                                                )
-                                        elif res.metadata.labels:
-                                            config_version = res.metadata.labels.get(
-                                                "config_version", 1
-                                            )
-
-                                        if config_version != conf.get("metadata").get(
-                                            "labels", {}
-                                        ).get("config_version", 1):
-                                            kube.patch(kind, name, conf, namespace)
-
-                                if (
-                                    old_config_map
-                                    and type(old_config_map) is dict
-                                    and kind in old_config_map
-                                    and name in old_config_map[kind].keys()
-                                ):
-                                    old_config_map.get(kind, {}).pop(name)
-
-                                for to_be_removed, conf in old_config_map.get(
-                                    kind, {}
-                                ).keys():
-                                    namespace = kube.resolve_namespace(
-                                        kind, conf["metadata"], service.dedicated
-                                    )
-                                    res = kube.read(kind, to_be_removed, namespace)
-                                    if not isinstance(res, ApiException) and (
-                                        (isinstance(res, dict) and res.get("metadata"))
-                                        or res.metadata
-                                    ):
-                                        if kind not in cls.settings(
-                                            "UNSAFE_KINDS"
-                                        ) or unsafe_paraphrase == cls.settings(
-                                            "UNSAFE_PARAPHRASE"
-                                        ):
-                                            kube.delete(kind, to_be_removed, namespace)
-                                        else:
-                                            logger.info(
-                                                f"You don't have permission to delete `{kind}` for `{to_be_removed}` with namespace `{namespace}`!"
-                                            )
-                        cls.svc_reset(regeneration_queue)
-                    sleep(1)
-
-                action_manager = cls.get("action_manager", ActionManager)
-                action_manager.optimize(jsorc_interval=cls._backoff_interval)
-                action_manager.record_system_state()
+                cls.regenerate_service()
             else:
-                kube = cls.svc("kube", KubeService)
-                while not cls.db_check():
-                    for kind, confs in cls.settings("DB_REGEN_MANIFEST", {}).items():
-                        for conf in confs:
-                            conf = deepcopy(conf)
-                            metadata = conf["metadata"]
-                            name = metadata["name"]
-                            namespace = kube.resolve_namespace(kind, metadata)
-                            res = kube.read(kind, name, namespace)
-                            if hasattr(res, "status") and res.status == 404 and conf:
-                                kube.create(kind, name, conf, namespace)
-                    sleep(1)
-                raise SystemExit("Force termination to restart the pod!")
+                cls.regenerate_database()
 
             cls._regenerating = False
+
+    @classmethod
+    def regenerate_service(cls):
+        from jaseci.svc.kube_svc import KubeService
+        from jaseci.utils.actions.actions_manager import ActionManager
+
+        kube = cls.svc("kube", KubeService)
+        while cls._regeneration_queues:
+            regeneration_queue = cls._regeneration_queues.pop(0)
+            service = cls.svc(regeneration_queue)
+            hook = cls.hook(use_proxy=service.source["proxy"])
+            if not service.is_running() and service.enabled and service.automated:
+                if service.manifest and kube.is_running():
+                    manifest = kube.resolve_manifest(
+                        loads(hook.get_glob(service.source["manifest"])),
+                        *cls.overrided_namespace(
+                            regeneration_queue, service.manifest_type
+                        ),
+                    )
+
+                    rmhists: dict = hook.get_or_create_glob(
+                        "RESOLVED_MANIFEST_HISTORY", {}
+                    )
+
+                    _rmhist = rmhists.get(service.source["manifest"], [{}])[0]
+                    rmhist = deepcopy(_rmhist)
+
+                    for kind, confs in manifest.items():
+                        for name, conf in confs.items():
+                            namespace = conf["metadata"].get("namespace")
+
+                            if kind in rmhist and name in rmhist[kind]:
+                                rmhist[kind].pop(name, None)
+
+                            res = kube.read(kind, name, namespace)
+                            if hasattr(res, "status") and res.status == 404:
+                                kube.create(kind, name, conf, namespace)
+                            elif not isinstance(res, ApiException):
+                                config_version = 1
+
+                                if isinstance(res, dict):
+                                    if "labels" in res["metadata"]:
+                                        config_version = (
+                                            res["metadata"]
+                                            .get("labels", {})
+                                            .get("config_version", 1)
+                                        )
+                                elif res.metadata.labels:
+                                    config_version = res.metadata.labels.get(
+                                        "config_version", 1
+                                    )
+
+                                if config_version != conf.get("metadata").get(
+                                    "labels", {}
+                                ).get("config_version", 1):
+                                    kube.patch(kind, name, conf, namespace)
+
+                    for kind, confs in rmhist.items():
+                        for name, conf in confs.items():
+                            namespace = conf["metadata"].get("namespace")
+                            res = kube.read(kind, name, namespace, quiet=True)
+                            if not isinstance(res, ApiException) and (
+                                (isinstance(res, dict) and res.get("metadata"))
+                                or res.metadata
+                            ):
+                                if kind not in cls.settings(
+                                    "UNSAFE_KINDS"
+                                ) or service.manifest_unsafe_paraphrase == cls.settings(
+                                    "UNSAFE_PARAPHRASE"
+                                ):
+                                    kube.delete(kind, name, namespace)
+                                else:
+                                    logger.info(
+                                        f"You don't have permission to delete `{kind}` for `{name}` with namespace `{namespace}`!"
+                                    )
+
+                    if _rmhist != manifest:
+                        if service.source["manifest"] not in rmhists:
+                            rmhists[service.source["manifest"]] = [manifest]
+                        else:
+                            rmhists[service.source["manifest"]].insert(0, manifest)
+                        hook.save_glob("RESOLVED_MANIFEST_HISTORY", dumps(rmhists))
+                        hook.commit()
+
+                cls.svc_reset(regeneration_queue)
+            sleep(1)
+
+        action_manager = cls.get("action_manager", ActionManager)
+        action_manager.optimize(jsorc_interval=cls._backoff_interval)
+        action_manager.record_system_state()
+
+    @classmethod
+    def regenerate_database(cls):
+        from jaseci.svc.kube_svc import KubeService
+
+        kube = cls.svc("kube", KubeService)
+
+        if kube.is_running():
+            while not cls.db_check():
+                for kind, confs in kube.resolve_manifest(
+                    cls.settings("DB_REGEN_MANIFEST", {}),
+                    *cls.overrided_namespace("database"),
+                ).items():
+                    for name, conf in confs.items():
+                        namespace = conf["metadata"].get("namespace")
+                        res = kube.read(kind, name, namespace)
+                        if hasattr(res, "status") and res.status == 404 and conf:
+                            kube.create(kind, name, conf, namespace)
+                sleep(1)
+        raise SystemExit("Force termination to restart the pod!")
 
     @classmethod
     def db_check(cls):
@@ -722,6 +592,7 @@ class JsOrc:
 
 def interval_check(signum, frame):
     JsOrc.regenerate()
+
     # wait interval_check to be finished before decrement
     JsOrc._running_interval -= 1
     JsOrc.push_interval(JsOrc._backoff_interval)

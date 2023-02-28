@@ -2,7 +2,7 @@ from jaseci import JsOrc
 from jaseci.svc.kube_svc import KubeService
 from requests import get, post
 from datetime import datetime
-from copy import copy, deepcopy
+from copy import copy
 from base64 import b64encode
 
 
@@ -11,12 +11,7 @@ from base64 import b64encode
 #################################################
 
 
-@JsOrc.service(
-    name="elastic",
-    config="ELASTIC_CONFIG",
-    manifest="ELASTIC_MANIFEST",
-    dedicated=False,
-)
+@JsOrc.service(name="elastic", config="ELASTIC_CONFIG", manifest="ELASTIC_MANIFEST")
 class ElasticService(JsOrc.CommonService):
     ###################################################
     #                     BUILDER                     #
@@ -24,22 +19,20 @@ class ElasticService(JsOrc.CommonService):
 
     def run(self):
         if not self.config.get("auth"):
-            elasticsearches = self.manifest.get("Elasticsearch", [])
+            kube = JsOrc.svc("kube", KubeService)
+            elasticsearches = kube.resolve_manifest(
+                self.manifest, *JsOrc.overrided_namespace("elastic", self.manifest_type)
+            ).get("Elasticsearch", [])
             if elasticsearches:
-                kube = JsOrc.svc("kube", KubeService)
-                elasticsearch: dict = deepcopy(elasticsearches[0]["metadata"])
-                sec = kube.get_secret(
-                    f'{elasticsearch.get("name", "jaseci")}-es-elastic-user',
+                metadata: dict = elasticsearches["jaseci"]["metadata"]
+                auth = kube.get_secret(
+                    f'{metadata.get("name")}-es-elastic-user',
                     "elastic",
-                    kube.resolve_namespace(
-                        elasticsearch.get("namespace", "elastic"),
-                        elasticsearch,
-                        self.dedicated,
-                    ),
+                    metadata.get("namespace"),
                 )
                 self.config[
                     "auth"
-                ] = f'basic {b64encode(f"elastic:{sec}".encode()).decode()}'
+                ] = f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
 
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")

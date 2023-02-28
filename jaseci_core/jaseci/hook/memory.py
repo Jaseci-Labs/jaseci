@@ -99,7 +99,7 @@ class MemoryHook:
 
     # ----------------- SERVICE GLOB ----------------- #
 
-    def service_glob(self, name, val):
+    def get_or_create_glob(self, name, val):
         if not self.has_glob(name):
             self.save_glob(name, dumps(val))
             self.commit()

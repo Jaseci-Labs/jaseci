@@ -191,7 +191,9 @@ spec:
             - containerPort: 80
           env:
             - name: KUBE_NAMESPACE
-              value: jaseci
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
 
             - name: POSTGRES_USER
               valueFrom:
@@ -206,7 +208,7 @@ spec:
                   key: password
 
             - name: POSTGRES_HOST
-              value: jaseci-db.jaseci-database.svc.cluster.local
+              value: jaseci-db
 
             - name: DBNAME
               value: postgres
@@ -215,13 +217,19 @@ spec:
               value: "true"
 
             - name: REDIS_HOST
-              value: jaseci-redis.jaseci-redis.svc.cluster.local
+              value: jaseci-redis
 
             - name: PROME_HOST
-              value: jaseci-prometheus-server.prometheus.svc.cluster.local
+              value: jaseci-prometheus-server
+
+            # - name: PROME_NAMESPACE
+            #   value: testing
 
             - name: ELASTIC_HOST
-              value: jaseci-es-internal-http.elastic.svc.cluster.local
+              value: jaseci-es-internal-http
+
+            # - name: ELASTIC_NAMESPACE
+            #   value: SOURCE
 
           volumeMounts:
             - name: prod-script

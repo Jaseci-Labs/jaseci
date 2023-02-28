@@ -3,9 +3,7 @@ from prometheus_api_client import PrometheusConnect
 from jaseci import JsOrc
 
 
-@JsOrc.service(
-    name="prome", config="PROME_CONFIG", manifest="PROME_MANIFEST", dedicated=False
-)
+@JsOrc.service(name="prome", config="PROME_CONFIG", manifest="PROME_MANIFEST")
 class PrometheusService(JsOrc.CommonService):
     ###################################################
     #                     BUILDER                     #
