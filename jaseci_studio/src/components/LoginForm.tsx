@@ -16,10 +16,9 @@ import { z } from "zod";
 import FormTextField from "./FormTextField";
 import { useMutation } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { IconShield, IconShieldX } from "@tabler/icons";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
 
 const connectionSchema = z.object({
   email: z.string().email(),
