@@ -4,7 +4,9 @@ You will gain an understanding of the several text analysis methods offered by J
 
 
 ## Table of the Content
-
-1. Preparation
-2. Map the script into a graph.
-3. Get the summery of scene descriptions
+1. [Preparation](/codelabs/1_preparation.md)
+2. [Map the script into a graph](/codelabs/2_map_the_data_to_graph.md)
+3. [Get the summery of scene descriptions](codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)
+4. [Find semantically similar sentences](codelabs/4_find_semantically_similar_sentences.md)
+5. [Clustering documents](codelabs/5_clustering_documents.md)
+6. [Sentiment analysis of dialogues](codelabs/6_sentiment_analysis.md)
