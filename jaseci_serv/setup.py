@@ -46,7 +46,12 @@ setup(
         "django-allauth>=0.52.0",
     ],
     package_data={
-        "": ["*.jac", "VERSION", "templates/examples/*.html"],
+        "": [
+            "*.jac",
+            "VERSION",
+            "templates/examples/*.html",
+            "templates/studio/*.html",
+        ],
     },
     scripts=["jsserv"],
     author="Jason Mars",
