@@ -15,7 +15,6 @@
 # limitations under the License.                                           #
 ############################################################################
 import asyncio
-from functools import partial
 import os
 import time
 import uuid
@@ -442,9 +441,6 @@ async def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
     uri = params.text_document.uri
 
     doc = ls.workspace.get_document(uri)
-
-    # if hasattr(doc, "symbols"):
-    # return doc.symbols
 
     doc.symbols = get_document_symbols(ls, doc.uri)
 

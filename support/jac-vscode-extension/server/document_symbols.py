@@ -10,6 +10,7 @@ from jaseci.jac.ir.ast_builder import JacAstBuilder, JacTreeBuilder
 from jaseci.jac.jac_parse.jacListener import jacListener
 from jaseci.jac.jac_parse.jacParser import jacParser
 from jaseci.jac.jac_parse.jacLexer import jacLexer
+from server.builder import JacAstBuilderSLL
 
 from server.passes import ArchitypePass
 from lsprotocol.types import (
@@ -43,9 +44,11 @@ def _get_architypes(lsp: LanguageServer, doc_uri: str, source: str = None):
         if not source:
             source = doc.source
         start = time.time_ns()
-        tree = JacAstBuilder(
-            mod_name, jac_text=source, prediction_mode=PredictionMode.SLL
-        )
+        try:
+            tree = JacAstBuilderSLL(mod_name, jac_text=source)
+        except Exception as e:
+            print(e)
+        # tree = JacAstBuilder(mod_name, jac_text=source)
         # keep a reference to the root node for passes
         doc.ir = tree.root
         end = time.time_ns()
@@ -316,10 +319,9 @@ def remove_symbols_in_range(
 
 
 def get_architype_ast(block_text: str, start_rule="architype"):
-    ast = JacAstBuilder(
+    ast = JacAstBuilderSLL(
         mod_name="architype_tree",
         jac_text=block_text,
-        prediction_mode=PredictionMode.SLL,
         start_rule=start_rule,
     )
 
