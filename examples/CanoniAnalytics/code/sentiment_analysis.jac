@@ -1,6 +1,5 @@
 import {*} with './build_graph.jac';
 
-
 walker get_actors_dialogue{
     has anchor actors_dict = {};
 
@@ -14,9 +13,9 @@ walker get_actors_dialogue{
     }
 
     scene{
-        childrens = -->node::actor;
+        children = -->node::actor;
 
-        for item in childrens:
+        for item in children:
             {
                 if item.name in actors_dict.dict.keys:
                     {
@@ -34,11 +33,17 @@ walker get_actors_dialogue{
 
 walker init{
     can sentiment.predict;
-
     has actors_details_dict = spawn here walker::get_actors_dialogue;
 
     for key in actors_details_dict:{
-        sentiment.predict(actors_details_dict[key]);
-    }
+        try:{
+            texts = actors_details_dict[key];
+            pred = sentiment.predict(texts);
+            std.out(pred);
+        }
 
+        else with error{
+            std.out(error);
+        }
+}
 }
