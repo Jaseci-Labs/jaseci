@@ -75,11 +75,11 @@ node person {
         byear = visitor.year;
     }
     can print_out with exit {
-        std.out(byear,"␣from␣",visitor.info);
+        std.out(byear," from ",visitor.info);
     }
     can reset { #<-- Could add 'with activity' for equivalent behavior
         ::set_back_to_95;
-        std.out("resetting␣year␣to␣1995:", here.context);
+        std.out("resetting year to 1995:", here.context);
     }
     can set_back_to_95: byear="1995-01-01";
  }
@@ -116,11 +116,11 @@ node person {
         byear = visitor.year;
     }
     can print_out with exit {
-        std.out(byear,"␣from␣",visitor.info);
+        std.out(byear," from ",visitor.info);
     }
     can reset { //<-- Could add 'with activity' for equivalent behavior
         byear="1995-01-01";
-        std.out("resetting␣birth␣year␣to␣1995:", here.context);
+        std.out("resetting birth year to 1995:", here.context);
     }
 }
 

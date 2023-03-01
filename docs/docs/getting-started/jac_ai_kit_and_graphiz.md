@@ -16,4 +16,3 @@ Run the following command to install `Graphiz` on MacOS:
 
 That's it!
 
-# Jaseci AI Kit

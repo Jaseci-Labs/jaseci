@@ -46,12 +46,12 @@ function LogsViewer({
   return (
     <Card
       ref={scrollableRef}
-      sx={{
-        background: "#FAFAFA",
+      sx={(theme) => ({
+        background: theme.colorScheme === "dark" ? undefined : "#FAFAFA",
         height: "500px",
         overflow: "auto",
         textRendering: "optimizeLegibility",
-      }}
+      })}
     >
       <Table
         fontSize="xs"

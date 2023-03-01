@@ -567,6 +567,16 @@ walker init{
     }
 """
 
+list_unique = """
+walker init{
+    with entry{
+        _list = [1,2,3,4,2,3,4,5];
+        p = _list.list::unique;
+        report p;
+    }
+    }
+"""
+
 check_new_builtin = """
     walker init {
         with entry {

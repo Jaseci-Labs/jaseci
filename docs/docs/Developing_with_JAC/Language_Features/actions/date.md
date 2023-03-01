@@ -35,10 +35,26 @@ std.out(z);
 ```
 ### Date Difference
 ```jac
-#t akes two datetime string and returns an integer that is the number of days in between the two given dates.
+#takes two datetime string and returns an integer that is the number of days in between the two given dates.
 
 z = date.date_day_diff('2021-12-12','2022-12-12');
 std.out(z);
 ```
-
+### Date and Time Now
+```jac
+z = date.datetime_now();
+std.out(z);
+// Outputs the date and current time
+```
+### Date Now
+```jac
+z = date.date_now();
+std.out(z);
+// Outputs the current Date
+```
+### Date Timestamp Now
+```jac
+z = date.timestamp_now();
+std.out(z);
+// Outputs a timestamp
 ```

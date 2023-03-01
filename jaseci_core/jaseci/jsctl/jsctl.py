@@ -6,7 +6,7 @@ import functools
 import json
 import os
 import pickle
-
+import webbrowser
 import click
 import requests
 from click_shell import shell
@@ -15,7 +15,7 @@ from jaseci import __version__
 from jaseci.element.super_master import SuperMaster
 from jaseci.utils.utils import copy_func
 from .book_tools import Book, modifiedBook
-from jaseci.utils.utils import logger, perf_test_start, perf_test_stop
+from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, find_first_api
 from jaseci import JsOrc
 
 session = None
@@ -83,17 +83,19 @@ def remote_api_call(payload, api_name):
     Constructs and issues call to remote server
     NOTE: Untested
     """
-    for i in SuperMaster.all_apis(None):
-        if api_name == "_".join(i["groups"]):
-            if i in SuperMaster._private_api:
-                path = "/js/" + api_name
-            elif i in SuperMaster._admin_api:
-                path = "/js_admin/" + api_name
-            elif i in SuperMaster._public_api:
-                path = "/js_public/" + api_name
-            break
-    ret = requests.post(
-        session["connection"]["url"] + path,
+    path, api = find_first_api(
+        api_name,
+        js_public=SuperMaster._public_api,
+        js=SuperMaster._private_api,
+        js_admin=SuperMaster._admin_api,
+    )
+
+    method = requests.post
+    if api["allowed_methods"] != None and "post" not in api["allowed_methods"]:
+        method = requests.get
+
+    ret = method(
+        session["connection"]["url"] + f"/{path}/{api_name}",
         json=payload,
         headers=session["connection"]["headers"],
     )
@@ -270,6 +272,36 @@ def login(url, username, password):
             pickle.dump(session, f)
 
 
+@click.command(help="Launch Jaseci Studio")
+def studio():
+    token = session["connection"]["token"]
+
+    if not token:
+        click.echo(
+            click.style(
+                "It doesn't look like you're logged in to a Jaseci instance. Please log in to a Jaseci instance to use this command.\n",
+                fg="red",
+            )
+        )
+    else:
+        url = session["connection"]["url"] + "/studio/"
+
+        if token == "PUBLIC":
+            click.echo(
+                click.style(
+                    "You are logged in as a public user. Please log in to a Jaseci instance to use this command.\n",
+                    fg="red",
+                )
+            )
+
+            webbrowser.open(url)
+        else:
+            click.echo(click.style("Launching Jaseci Studio...", fg="green"))
+            click.echo(click.style("URL: ", fg="green", bold=True) + url)
+            click.echo(click.style(f"Token: {token}", fg="green"))
+            webbrowser.open(url + "?token=" + token)
+
+
 @click.command(help="Command for unauthenticated log into live Jaseci server")
 @click.argument("url", type=str, required=True)
 def publogin(url):
@@ -408,6 +440,7 @@ jsctl.add_command(ls)
 jsctl.add_command(clear)
 jsctl.add_command(reset)
 jsctl.add_command(script)
+jsctl.add_command(studio)
 jsctl.add_command(booktool)
 cmd_tree_builder(extract_api_tree())
 cmd_tree_builder(extract_api_tree()["jac"], group_func=jac)

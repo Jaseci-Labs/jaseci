@@ -60,12 +60,13 @@ function ArchitypeList({
   return (
     <>
       <Box
-        sx={{
+        sx={(theme) => ({
           width: "100%",
           height: "100%",
           overflowY: "auto",
-          background: "#f5f5f5",
-        }}
+          background:
+            theme.colorScheme === "dark" ? theme.colors.dark[7] : "#f5f5f5",
+        })}
         px={"md"}
         py="md"
       >
@@ -158,7 +159,7 @@ export function ArchitypeCard({
       </Group>
 
       <Group position="apart" align="center">
-        <Text color="gray" size="xs">
+        <Text color="dimmed" size="xs">
           {dayjs(architype.j_timestamp).format("DD/MM/YYYY HH:mm:ss A")}
         </Text>
 

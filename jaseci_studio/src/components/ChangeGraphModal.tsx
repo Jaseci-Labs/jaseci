@@ -22,7 +22,7 @@ export function ChangeGraphModal({
   onClose: () => void;
   onChangeActiveGraph: (activeGraph: string, user: string) => void;
 }) {
-  const LIMIT = 1;
+  const LIMIT = 10;
   const [activePage, setActivePage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebouncedValue(search, 200);
@@ -115,7 +115,7 @@ export function ChangeGraphModal({
           </Box>
 
           <Pagination
-            total={Math.ceil(data?.total / 1)}
+            total={Math.ceil(data?.total / LIMIT)}
             page={activePage}
             onChange={setActivePage}
             disabled={!data?.total}

@@ -12,7 +12,7 @@ num = rand.integer(0, 10);
 ```
 ### Random Selection
 ```jac
-a_list = ['apple','mango','orange']
+a_list = ['apple','mango','orange'];
 # Randomly selects and return item from list
 num = rand.choice(a_list);
 ```

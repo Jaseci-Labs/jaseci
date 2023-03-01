@@ -14,17 +14,16 @@ type User = {
 export const useGetMasterAllUsers = ({
   search,
   offset,
+  limit,
 }: {
   search: string;
   offset: number;
   limit: number;
 }) => {
-  let LIMIT = 1;
-
   return useQuery(["master_allusers", search, offset], async () => {
     const response = await client.post<{ data: User[]; total: number }>(
       "/js_admin/master_allusers",
-      { search, offset, limit: LIMIT }
+      { search, offset, limit }
     );
 
     return response.data;
