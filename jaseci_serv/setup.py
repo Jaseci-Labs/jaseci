@@ -1,3 +1,4 @@
+from logging import Logger
 import os
 import subprocess
 from setuptools import setup, find_packages
@@ -9,7 +10,8 @@ class ExportStudioCommand(install):
     """Custom install setup to help run shell commands (outside shell) before installation"""
 
     def run(self):
-        studio_dir = os.getcwd().replace("jaseci_serv", "jaseci_studio")
+        base_dir = os.path.dirname(os.getcwd())
+        studio_dir = os.path.join(base_dir, "jaseci_studio")
 
         subprocess.run(["ls"], cwd=studio_dir)
         subprocess.run(["sh", "export_studio.sh"], cwd=studio_dir)
@@ -27,6 +29,7 @@ setup(
     version=get_ver(),
     packages=find_packages(),
     cmdclass={"install": ExportStudioCommand},
+    include_package_data=True,
     install_requires=[
         "jaseci",
         "Django>=3.2.12,<3.3.0",
@@ -49,8 +52,9 @@ setup(
         "": [
             "*.jac",
             "VERSION",
-            "templates/examples/*.html",
-            "templates/studio/*.html",
+            "../templates/examples/*.html",
+            "../templates/studio/*.html",
+            "../static/studio/**/*",
         ],
     },
     scripts=["jsserv"],
