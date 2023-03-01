@@ -49,7 +49,7 @@ class ActionsApi:
         return {"success": success}
 
     @Interface.admin_api(cli_args=["url"])
-    def actions_load_remote(self, url: str):
+    def actions_load_remote(self, url: str, ctx: dict = {}):
         """
         Hot link to a container linked action library
 
@@ -63,7 +63,7 @@ class ActionsApi:
 
         :param url: The url of the API server supporting Jaseci actions.
         """
-        success = lact.load_remote_actions(url)
+        success = lact.load_remote_actions(url, ctx=ctx)
         if success:
             cur_config = self.config_get("ACTION_SETS")
             if cur_config and (not isinstance(cur_config, list)):
