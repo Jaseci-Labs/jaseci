@@ -1,22 +1,6 @@
 import os
-import yaml
-
-
-def load_default_yaml(file):
-    manifest = {}
-    with open(
-        f"{os.path.dirname(os.path.abspath(__file__))}/manifests/{file}.yaml", "r"
-    ) as stream:
-        try:
-            for conf in yaml.safe_load_all(stream):
-                kind = conf["kind"]
-                if not manifest.get(kind):
-                    manifest[kind] = []
-                manifest[kind].append(conf)
-        except yaml.YAMLError as exc:
-            print(exc)
-
-    return manifest
+from time import time
+from .jsorc_utils import load_default_yaml, get_service_map
 
 
 class JsOrcSettings:
@@ -31,24 +15,28 @@ class JsOrcSettings:
     UNSAFE_PARAPHRASE = "I know what I'm doing!"
     UNSAFE_KINDS = ["PersistentVolumeClaim"]
 
+    SERVICE_MANIFEST_MAP = get_service_map("database", "redis", "elastic", "prome")
+
     ###############################################################################################################
     # -------------------------------------------------- JSORC -------------------------------------------------- #
     ###############################################################################################################
 
     JSORC_CONFIG = {
         "backoff_interval": 10,
-        "pre_loaded_services": ["kube", "redis", "prome", "mail", "task", "elastic"],
+        "pre_loaded_services": ["redis", "prome", "mail", "task", "elastic"],
     }
 
     ###############################################################################################################
     # -------------------------------------------------- KUBE --------------------------------------------------- #
     ###############################################################################################################
 
+    KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", f"jaseci-{int(time() * 100000)}")
+
     KUBE_CONFIG = {
         "enabled": bool(os.getenv("KUBE_NAMESPACE")),
         "quiet": True,
         "automated": False,
-        "namespace": os.getenv("KUBE_NAMESPACE", "default"),
+        "namespace": KUBE_NAMESPACE,
         "in_cluster": True,
         "config": None,
     }
@@ -60,7 +48,7 @@ class JsOrcSettings:
     REDIS_CONFIG = {
         "enabled": True,
         "quiet": True,
-        "automated": True,
+        "automated": False,
         "host": os.getenv("REDIS_HOST", "localhost"),
         "port": os.getenv("REDIS_PORT", "6379"),
         "db": os.getenv("REDIS_DB", "1"),
@@ -80,7 +68,7 @@ class JsOrcSettings:
     TASK_CONFIG = {
         "enabled": True,
         "quiet": True,
-        "automated": True,
+        "automated": False,
         "broker_url": DEFAULT_REDIS_URL,
         "result_backend": DEFAULT_REDIS_URL,
         "broker_connection_retry_on_startup": True,
@@ -157,12 +145,12 @@ class JsOrcSettings:
         "quiet": False,
         "automated": True,
         "url": (
-            f'http://{os.getenv("ELASTIC_HOST", "localhost")}'
+            f'https://{os.getenv("ELASTIC_HOST", "localhost")}'
             f':{os.getenv("ELASTIC_PORT", "9200")}'
         ),
         "auth": os.getenv("ELASTIC_AUTH"),
-        "common_index": "common",
-        "activity_index": "activity",
+        "common_index": f"{KUBE_NAMESPACE}-common",
+        "activity_index": f"{KUBE_NAMESPACE}-activity",
     }
 
     ELASTIC_MANIFEST = load_default_yaml("elastic")
@@ -173,7 +161,6 @@ class JsOrcSettings:
 
     DB_REGEN_CONFIG = {
         "enabled": os.environ.get("JSORC_DB_REGEN") == "true",
-        "pod": os.environ.get("JSORC_POD_NAME", "jaseci"),
         "host": os.environ.get("POSTGRES_HOST", "jaseci-db"),
         "db": os.environ.get("DBNAME", "postgres"),
         "user": os.environ.get("POSTGRES_USER"),

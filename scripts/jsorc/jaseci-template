@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: jaseci
+  name: $j{namespace}
   labels:
     name: jaseci
 ---
@@ -9,12 +9,12 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: jaseci-account
-  namespace: jaseci
+  namespace: $j{namespace}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  namespace: jaseci
+  namespace: $j{namespace}
   name: jaseci-orc
 rules:
   - apiGroups: [
@@ -123,11 +123,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: jaseci-orc-rolebinding
-  namespace: jaseci
+  namespace: $j{namespace}
 subjects:
   - kind: ServiceAccount
     name: jaseci-account
-    namespace: jaseci
+    namespace: $j{namespace}
 roleRef:
   kind: ClusterRole
   name: jaseci-orc
@@ -137,7 +137,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jaseci
-  namespace: jaseci
+  namespace: $j{namespace}
 spec:
   selector:
     pod: jaseci
@@ -150,11 +150,11 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: jaseci-up
-  namespace: jaseci
+  namespace: $j{namespace}
 data:
   prod_up: |-
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone https://github.com/Jaseci-Labs/jaseci.git
+    git clone -b elastic/manifest-update https://github.com/amadolid/jaseci.git
     cd jaseci;
     cd jaseci_core; source install.sh;
     cd ../jaseci_serv; source install.sh;
@@ -166,7 +166,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jaseci
-  namespace: jaseci
+  namespace: $j{namespace}
 spec:
   replicas: 1
   selector:
@@ -225,11 +225,7 @@ spec:
             - name: ELASTIC_HOST
               value: jaseci-es-internal-http
 
-            # - name: PROME_NAMESPACE
-            #   value: testing
-
-            # - name: ELASTIC_NAMESPACE
-            #   value: SOURCE
+$j{env_vars}
 
           volumeMounts:
             - name: prod-script
@@ -244,7 +240,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: jaseci-db-credentials
-  namespace: jaseci
+  namespace: $j{namespace}
 type: Opaque
 data:
   user: cG9zdGdyZXM=
