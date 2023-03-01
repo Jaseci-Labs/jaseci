@@ -39,7 +39,6 @@ function ArchetypePage() {
 
   return (
     <div>
-      {/* <button onClick={() => openViewer()}>Open Graph Viewer</button> */}
       <Flex justify={"center"} align="center">
         <Card
           w="90%"

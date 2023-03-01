@@ -118,9 +118,9 @@ export const NavbarMinimal = () => {
           width={40}
           alt="Jaseci Logo"
           src={
-            process.env.NEXT_PUBLIC_TAURI
-              ? "Jaseci-Submark.png"
-              : "/static/studio/Jaseci-Submark.png"
+            process.env.NEXT_PUBLIC_JSSERV
+              ? "/static/studio/Jaseci-Submark.png"
+              : "Jaseci-Submark.png"
           }
         ></img>
       </Center>

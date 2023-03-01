@@ -91,7 +91,7 @@ def remote_api_call(payload, api_name):
     )
 
     method = requests.post
-    if "post" not in api["allowed_methods"]:
+    if api["allowed_methods"] != None and "post" not in api["allowed_methods"]:
         method = requests.get
 
     ret = method(
