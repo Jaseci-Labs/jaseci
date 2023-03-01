@@ -59,7 +59,7 @@ class JsOrcSettings:
 
     REDIS_CONFIG = {
         "enabled": True,
-        "quiet": False,
+        "quiet": True,
         "automated": True,
         "host": os.getenv("REDIS_HOST", "localhost"),
         "port": os.getenv("REDIS_PORT", "6379"),
