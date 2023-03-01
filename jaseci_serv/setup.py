@@ -28,8 +28,8 @@ setup(
     name="jaseci_serv",
     version=get_ver(),
     packages=find_packages(),
-    cmdclass={"install": ExportStudioCommand},
-    include_package_data=True,
+    # cmdclass={"install": ExportStudioCommand},
+    # include_package_data=True,
     install_requires=[
         "jaseci",
         "Django>=3.2.12,<3.3.0",
