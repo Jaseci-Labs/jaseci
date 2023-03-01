@@ -261,7 +261,7 @@ def unload_remote_actions(url):
         logger.error(f"Cannot unload remote action from {url}: {e}")
 
 
-def load_remote_actions(url):
+def load_remote_actions(url, ctx: dict = {}):
     """Load all jaseci actions from live pod"""
     headers = {"content-type": "application/json"}
     try:
@@ -269,6 +269,13 @@ def load_remote_actions(url):
         spec = spec.json()
         for i in spec.keys():
             live_actions[i] = gen_remote_func_hook(url, i, spec[i])
+            if i.endswith(".setup"):
+                try:
+                    live_actions[i](**ctx)
+                except Exception:
+                    logger.error(
+                        f"Cannot run set up for remote action {i}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+                    )
         return True
 
     except Exception as e:
