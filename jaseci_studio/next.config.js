@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath: process.env.NEXT_PUBLIC_TAURI ? undefined : "/studio",
+  basePath: process.env.NEXT_PUBLIC_JSSERV ? "/studio" : undefined,
   reactStrictMode: true,
   swcMinify: true,
   images: {

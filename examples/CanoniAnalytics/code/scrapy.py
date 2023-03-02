@@ -77,6 +77,15 @@ def actors_content(scene):
     """
     Extract information about scenes.
 
+    Parameters:
+    ------------
+    scene : String
+
+    Return:
+    ------------
+    scene_dict: Dictionary
+    actors_dict: Dictionary
+
     """
     scene_items = scene.replace("\r", "").split("\n")
     actors = []

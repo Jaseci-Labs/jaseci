@@ -52,119 +52,121 @@ function LogsPage() {
 
   return (
     <>
-      <Head>
-        <title>Logs</title>
-      </Head>
+      <>
+        <Head>
+          <title>Logs</title>
+        </Head>
 
-      <Flex justify={"center"} align="center">
-        <Card
-          w="90%"
-          h="90%"
-          withBorder
-          shadow={"md"}
-          radius="md"
-          sx={{ margin: "0 auto" }}
-          p={30}
-        >
-          <Title order={3} mb={"xl"}>
-            Logs
-          </Title>
-          <Card withBorder px={0} pt={0} sx={{ maxHeight: "90vh" }}>
-            <Box p="xs">
-              <TextInput
-                label="Filter"
-                variant="default"
-                spellCheck="false"
-                placeholder="Enter search term e.g jaseci, jaseci|objects, anything"
-                size="xs"
-                defaultValue={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              ></TextInput>
-              <Flex justify="space-between" mt="xs">
-                <Group>
-                  <Select
-                    aria-label="Choose Time"
-                    placeholder="Choose Time"
-                    size="xs"
-                    variant="default"
-                    defaultValue="realTime"
-                    data={[
-                      { value: "realTime", label: "Real-time" },
-                      { value: "lastHour", label: "Last Hour" },
-                      { value: "last3Hours", label: "Last 3 Hours" },
-                      { value: "Last Day", label: "Last Day" },
-                    ]}
-                  />
+        <Flex justify={"center"} align="center">
+          <Card
+            w="90%"
+            h="90%"
+            withBorder
+            shadow={"md"}
+            radius="md"
+            sx={{ margin: "0 auto" }}
+            p={30}
+          >
+            <Title order={3} mb={"xl"}>
+              Logs
+            </Title>
+            <Card withBorder px={0} pt={0} sx={{ maxHeight: "90vh" }}>
+              <Box p="xs">
+                <TextInput
+                  label="Filter"
+                  variant="default"
+                  spellCheck="false"
+                  placeholder="Enter search term e.g jaseci, jaseci|objects, anything"
+                  size="xs"
+                  defaultValue={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                ></TextInput>
+                <Flex justify="space-between" mt="xs">
+                  <Group>
+                    <Select
+                      aria-label="Choose Time"
+                      placeholder="Choose Time"
+                      size="xs"
+                      variant="default"
+                      defaultValue="realTime"
+                      data={[
+                        { value: "realTime", label: "Real-time" },
+                        { value: "lastHour", label: "Last Hour" },
+                        { value: "last3Hours", label: "Last 3 Hours" },
+                        { value: "Last Day", label: "Last Day" },
+                      ]}
+                    />
 
-                  <Tooltip
-                    data-testId="pause-logs"
-                    label={paused ? "Resume Logs" : "Pause Logs"}
-                    withArrow
-                  >
-                    <ActionIcon
-                      onClick={() => setPaused((prevValue) => !prevValue)}
-                      variant="light"
-                      color="orange"
-                      aria-label="Pause Logs"
+                    <Tooltip
+                      data-testId="pause-logs"
+                      label={paused ? "Resume Logs" : "Pause Logs"}
+                      withArrow
                     >
-                      {paused ? (
-                        <IconPlayerPlay size={16}> </IconPlayerPlay>
-                      ) : (
-                        <IconPlayerPause size={16} />
-                      )}
-                    </ActionIcon>
-                  </Tooltip>
+                      <ActionIcon
+                        onClick={() => setPaused((prevValue) => !prevValue)}
+                        variant="light"
+                        color="orange"
+                        aria-label="Pause Logs"
+                      >
+                        {paused ? (
+                          <IconPlayerPlay size={16}> </IconPlayerPlay>
+                        ) : (
+                          <IconPlayerPause size={16} />
+                        )}
+                      </ActionIcon>
+                    </Tooltip>
 
-                  <Tooltip
-                    data-testid="scroll-to-top"
-                    label="Scroll to Top"
-                    withArrow
-                  >
-                    <ActionIcon
-                      variant="light"
-                      color="orange"
-                      onClick={() => {
-                        setScrollDirection("top");
-                      }}
-                      aria-label="Scroll to Top"
+                    <Tooltip
+                      data-testid="scroll-to-top"
+                      label="Scroll to Top"
+                      withArrow
                     >
-                      <IconArrowUp size={16} />
-                    </ActionIcon>
-                  </Tooltip>
+                      <ActionIcon
+                        variant="light"
+                        color="orange"
+                        onClick={() => {
+                          setScrollDirection("top");
+                        }}
+                        aria-label="Scroll to Top"
+                      >
+                        <IconArrowUp size={16} />
+                      </ActionIcon>
+                    </Tooltip>
 
-                  <Tooltip
-                    data-testid="scroll-to-bottom"
-                    label="Scroll to Bottom"
-                    withArrow
-                  >
-                    <ActionIcon
-                      variant="light"
-                      color="orange"
-                      onClick={() => {
-                        setScrollDirection("bottom");
-                      }}
-                      aria-label="Scroll to Bottom"
+                    <Tooltip
+                      data-testid="scroll-to-bottom"
+                      label="Scroll to Bottom"
+                      withArrow
                     >
-                      <IconArrowDown size={16} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Group>
+                      <ActionIcon
+                        variant="light"
+                        color="orange"
+                        onClick={() => {
+                          setScrollDirection("bottom");
+                        }}
+                        aria-label="Scroll to Bottom"
+                      >
+                        <IconArrowDown size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
 
-                <LevelFilter setLevel={setLevel} level={level}></LevelFilter>
-              </Flex>
-            </Box>
-            <Divider></Divider>
-            <LogsViewer
-              scrollDirection={scrollDirection}
-              scrollRefs={[scrollTargetRef, scrollableRef]}
-              paused={paused}
-              level={level}
-              font={ibmPlexMono}
-              searchTerm={searchTerm}
-            ></LogsViewer>
+                  <LevelFilter setLevel={setLevel} level={level}></LevelFilter>
+                </Flex>
+              </Box>
+              <Divider></Divider>
+              <LogsViewer
+                scrollDirection={scrollDirection}
+                scrollRefs={[scrollTargetRef, scrollableRef]}
+                paused={paused}
+                level={level}
+                font={ibmPlexMono}
+                searchTerm={searchTerm}
+              ></LogsViewer>
+            </Card>
           </Card>
-        </Card>
-      </Flex>
+        </Flex>
+      </>
     </>
   );
 }
