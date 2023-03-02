@@ -115,7 +115,7 @@ export function ChangeGraphModal({
           </Box>
 
           <Pagination
-            total={Math.ceil(data?.total / 1)}
+            total={Math.ceil(data?.total / LIMIT)}
             page={activePage}
             onChange={setActivePage}
             disabled={!data?.total}

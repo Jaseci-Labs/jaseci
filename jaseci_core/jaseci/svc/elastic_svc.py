@@ -1,7 +1,9 @@
 from jaseci import JsOrc
+from jaseci.svc.kube_svc import KubeService
 from requests import get, post
 from datetime import datetime
 from copy import copy
+from base64 import b64encode
 
 
 #################################################
@@ -16,6 +18,22 @@ class ElasticService(JsOrc.CommonService):
     ###################################################
 
     def run(self):
+        if not self.config.get("auth"):
+            kube = JsOrc.svc("kube", KubeService)
+            elasticsearches = kube.resolve_manifest(
+                self.manifest, *JsOrc.overrided_namespace("elastic", self.manifest_type)
+            ).get("Elasticsearch", [])
+            if elasticsearches:
+                metadata: dict = elasticsearches["jaseci"]["metadata"]
+                auth = kube.get_secret(
+                    f'{metadata.get("name")}-es-elastic-user',
+                    "elastic",
+                    metadata.get("namespace"),
+                )
+                self.config[
+                    "auth"
+                ] = f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
+
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")
 
@@ -40,10 +58,14 @@ class Elastic:
             self.headers["Authorization"] = config["auth"]
 
     def _get(self, url: str, json: dict = None):
-        return get(f"{self.url}{url}", json=json, headers=self.headers).json()
+        return get(
+            f"{self.url}{url}", json=json, headers=self.headers, verify=False
+        ).json()
 
     def _post(self, url: str, json: dict = None):
-        return post(f"{self.url}{url}", json=json, headers=self.headers).json()
+        return post(
+            f"{self.url}{url}", json=json, headers=self.headers, verify=False
+        ).json()
 
     def post(self, url: str, body: dict, index: str = "", suffix: str = ""):
         return self._post(f"/{index or self.common_index}{suffix}{url}", body)
@@ -149,4 +171,5 @@ class Elastic:
         }
 
     def health(self, query: str = ""):
-        return self._get(f"/_cluster/health?{query}")
+        if self._get(f"/_cluster/health?{query}").get("timed_out", True):
+            raise Exception("Cannot connect on elastic service!")
