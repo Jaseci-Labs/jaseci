@@ -222,4 +222,4 @@ run this jac code and observe the `movie_data.json` file generated in the curren
 
 > **Note**
 > This data scraping algorithm is tailored to extract information from the given link's **Thore** movie.
-> You can try scrapping script from another movie as your interest by customizing the scrapping script.s
+> You can try scraping the script from another movie if that piques your interest by customizing the scrapping script.
