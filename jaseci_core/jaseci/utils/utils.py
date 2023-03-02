@@ -71,7 +71,7 @@ if len(app_logger.handlers) < 1:
     app_rotating_file_handler = handlers.TimedRotatingFileHandler(
         os.path.join(LOGS_DIR, "app.log"), when="midnight", backupCount=180
     )
-    connect_logger_handler(logger, app_rotating_file_handler, logging.INFO)
+    connect_logger_handler(app_logger, app_rotating_file_handler, logging.INFO)
 
 
 def log_var_out(val):
