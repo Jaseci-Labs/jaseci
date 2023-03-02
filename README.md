@@ -110,7 +110,7 @@
   4. [Find semantically similar sentences](examples/CanoniAnalytics/codelabs/4_find_semantically_similar_sentences.md)
   5. [Clustering documents](examples/CanoniAnalytics/codelabs/5_clustering_documents.md)
   6. [Sentiment analysis of dialogues](examples/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
-  7. [Creating custom action to scrap movie data](codelabs/7_creating_custom_action_to_scrap_movie_data.md)
+  7. [Creating custom action to scrap movie data](examples/CanoniAnalytics/codelabs/7_creating_custom_action_to_scrap_movie_data.md)
 - [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
 - [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
 - [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
