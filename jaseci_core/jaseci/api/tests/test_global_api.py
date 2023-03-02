@@ -1,4 +1,5 @@
 from jaseci.utils.test_core import CoreTest
+from jaseci import JsOrc
 import jaseci.tests.jac_test_code as jtc
 
 
@@ -10,11 +11,10 @@ class GlobalApiTest(CoreTest):
     def setUp(self):
         super().setUp()
 
-        self.smast2 = self.meta.build_super_master(h=self.smast._h)
+        self.smast2 = JsOrc.super_master(h=self.smast._h)
         self.smast.sentinel_register(name="test", code=jtc.basic)
 
-        self.mast = self.meta.build_master()
-        self.mast2 = self.meta.build_super_master(h=self.mast._h)
+        self.mast2 = JsOrc.master(h=self.mast._h)
         self.mast.sentinel_register(name="test", code=jtc.basic)
 
     def tearDown(self):

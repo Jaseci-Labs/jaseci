@@ -4,10 +4,11 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
+from jaseci import JsOrc
+from jaseci.svc.kube_svc import KubeService
 from jaseci.utils.utils import TestCaseHelper
 from jaseci_serv.utils.test_utils import skip_without_kube
 from django.test import TestCase
-from jaseci_serv.svc import MetaService
 
 import os
 import json
@@ -21,10 +22,6 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.meta = MetaService()
-        # Need to reset the MetaService to load in MetaConfig
-        # because DB is reset between test
-        self.meta.reset()
 
         self.user = get_user_model().objects.create_user(
             "throwawayJSCITfdfdEST_test@jaseci.com", "password"
@@ -38,35 +35,6 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         self.client.force_authenticate(self.user)
         self.notadminc = APIClient()
         self.notadminc.force_authenticate(self.nonadmin)
-
-        # Enable JSORC
-        self.enable_jsorc()
-
-    def enable_jsorc(self):
-        payload = {"op": "config_get", "name": "META_CONFIG", "do_check": False}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-
-        meta_config = json.loads(res.data)
-        meta_config["automation"] = True
-        meta_config["keep_alive"] = ["promon"]
-
-        # Set automation to be true
-        payload = {
-            "op": "config_set",
-            "name": "META_CONFIG",
-            "value": meta_config,
-            "do_check": False,
-        }
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-
-        payload = {"op": "service_refresh", "name": "meta"}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
 
     def tearDown(self):
         super().tearDown()
@@ -288,7 +256,8 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         self.assertTrue("example_module.call" in self.master.actions_list())
 
     @skip_without_kube
-    def test_jsorc_actions_unload_remote_and_retire_pod(self):
+    @JsOrc.inject(services=["kube"])
+    def test_jsorc_actions_unload_remote_and_retire_pod(self, kube: KubeService = None):
         """
         Test JSORC unload a remote action and retire the corresponding microservices
         """
@@ -313,9 +282,7 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
             if res.data["action_status"]["remote"]["status"] == "READY":
                 break
         # confirm pod is running
-        self.assertTrue(
-            self.meta.app.kubernetes.is_running("test-module", self.meta.app.namespace)
-        )
+        self.assertTrue(kube.is_pod_running("test-module"))
         # actions unload will reture microservice pod by default
         payload = {
             "op": "jsorc_actions_unload",
@@ -331,6 +298,4 @@ class JsorcAPIKubeTests(TestCaseHelper, TestCase):
         # NOTE: Have to wait here because kubernetes has a 30s grace period for deleting pod
         time.sleep(35)
         # check the pod is no longer alive
-        self.assertFalse(
-            self.meta.app.kubernetes.is_running("test-module", self.meta.app.namespace)
-        )
+        self.assertFalse(kube.is_pod_running("test-module"))

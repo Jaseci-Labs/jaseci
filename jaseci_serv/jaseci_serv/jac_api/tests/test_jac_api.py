@@ -30,7 +30,7 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         self.auth_client = APIClient()
         self.auth_client.force_authenticate(self.user)
         self.suser = get_user_model().objects.create_superuser(
-            "JSCITfdfdEST_test2@jaseci.com", "password"
+            "JSCITfdfdEST_test2@jaseci.com", "password", name="Administrator"
         )
         self.sauth_client = APIClient()
         self.sauth_client.force_authenticate(self.suser)
@@ -247,6 +247,25 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual("SUCCESS", res.data["status"])
         self.assertIsNone(res.data["result"]["anchor"])
         self.assertTrue(res.data["result"]["response"]["success"])
+
+    def test_master_self_detailed(self):
+        """Test public API for walker callback"""
+        zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(len(res.data), 2)
+        payload = {"op": "walker_run", "name": "master_self"}
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        ).data
+        self.assertIn("__meta__", res["report"][0].keys())
+        meta = res["report"][0]["__meta__"]
+        self.assertEqual(meta["email"], "jscitfdfdest_test2@jaseci.com")
+        self.assertEqual(meta["name"], "Administrator")
+        self.assertTrue(meta["is_activated"])
+        self.assertTrue(meta["is_superuser"])
 
 
 class PrivateJacApiTests(TestCaseHelper, TestCase):

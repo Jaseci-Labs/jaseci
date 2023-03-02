@@ -1,6 +1,6 @@
 import * as vis from 'vis-network';
 import { JscGraph } from './jsc-graph';
-import { mockFetch } from '@stencil/core/testing';
+import { mockFetch, newSpecPage } from '@stencil/core/testing';
 import graph_active_get from './mockData/graph_active_get.json';
 import graph_node_view from './mockData/initial_graph_node_view.json';
 import graph_list from './mockData/graph_list.json';
@@ -8,6 +8,7 @@ import graph_collapse from './mockData/graph_collapse.json';
 import { formatEdges, formatNodes } from './utils';
 import * as visData from 'vis-data';
 import { DataSet } from 'vis-data';
+import { JscGraphContextMenu } from './graph-context-menu';
 
 describe('jsc-graph', () => {
   afterEach(() => {
@@ -131,5 +132,23 @@ describe('jsc-graph', () => {
     expect(graph.edges.get({ filter: edge => edge.hidden }).length).toBeLessThan(graph.edges.get().length);
 
     graph.network.destroy();
+  });
+
+  test('handle node display value key change', async () => {
+    mockFetch.json(graph_node_view, 'https://api.backend.dev/js/graph_node_view');
+    const graph = new JscGraph();
+    const networkContainer = document.createElement('div');
+    graph.serverUrl = 'https://api.backend.dev';
+    graph.network = new vis.Network(networkContainer, { edges: [], nodes: [] });
+    graph.token = 'faketoken';
+    graph.graphId = 'urn:uuid:b35f3240-7768-4d2f-a795-3701f78ed549';
+    graph.nodes = new DataSet(formatNodes(graph_node_view) as any);
+    graph.edges = new DataSet(formatNodes(graph_node_view) as any);
+
+    console.log(graph.nodes.get({ filter: node => node.label === 'app' }));
+    expect(graph.nodes.get({ filter: node => node.label === 'app' }).length).toBe(1);
+
+    graph.handleNodeGroupConfigChange({ app: { displayedVar: 'name' } });
+    expect(graph.nodes.get({ filter: node => node.label === 'Main' }).length).toBe(1);
   });
 });

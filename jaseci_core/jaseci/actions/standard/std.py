@@ -6,7 +6,8 @@ from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
 from jaseci.element.element import Element
-from jaseci.svc import MetaService
+from jaseci import JsOrc
+from jaseci.svc.elastic_svc import Elastic
 
 import sys
 import json
@@ -214,7 +215,7 @@ def clear_report(meta):
 def log_activity(
     log: dict, action: str = "", query: str = "", suffix: str = "", meta: dict = {}
 ):
-    elastic = MetaService().get_service("elastic").poke()
+    elastic = JsOrc.svc("elastic").poke(Elastic)
     activity = elastic.generate_from_meta(meta, log)
 
     return elastic.doc_activity(activity, query, suffix)

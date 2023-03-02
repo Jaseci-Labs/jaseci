@@ -1,5 +1,6 @@
 import Head from "next/head";
 import { LoginForm } from "../components/LoginForm";
+import useUserInfo from "../hooks/useUserInfo";
 
 function IndexPage() {
   return (

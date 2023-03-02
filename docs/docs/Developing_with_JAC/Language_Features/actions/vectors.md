@@ -54,4 +54,11 @@ new_data = [[3,2,3],[4,9,6]];
 reduced_data = vector.dim_reduce_apply(new_data, model);
 ```
 
+### Vector Sort by Key
+```jac
+args: data: dict (*req), reverse: _empty (False), key_pos: _empty (None)
+```
+Param 1 - List of items Param 2 - if Reverse Param 3 (Optional) - Index of the key
+to be used for sorting if param 1 is a list of tuples.
+Deprecated
 
