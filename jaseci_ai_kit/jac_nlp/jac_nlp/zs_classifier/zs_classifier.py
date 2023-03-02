@@ -1,9 +1,11 @@
-from typing import List, Union
+from typing import Dict, List, Union
 
 import numpy as np
 from fastapi import HTTPException
-from flair.data import Sentence
+from flair.data import Corpus, Sentence
+from flair.datasets import FlairDatapointDataset
 from flair.models import TARSClassifier
+from flair.trainers import ModelTrainer
 from jaseci.actions.live_actions import jaseci_action
 
 
@@ -20,7 +22,7 @@ init_model()
 
 
 # API for getting the cosine similarity
-@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+@jaseci_action(act_group=["zs_classifier"], allow_remote=True)
 def cosine_sim(vec_a: List[float], vec_b: List[float]):
     """
     Caculate the cosine similarity score of two given vectors
@@ -31,6 +33,48 @@ def cosine_sim(vec_a: List[float], vec_b: List[float]):
 
     result = np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
     return result.astype(float)
+
+
+# defining the api for ZS classification
+@jaseci_action(act_group=["zs_classifier"], allow_remote=True)
+def train(dataset: Union[Dict[str, str], List[Dict[str, str]]]):
+    """
+    API for classifying text among classes provided
+    """
+    global classifier
+    label_type = "zs_classifier"
+    task_name = "zs_train"
+    try:
+        if isinstance(dataset, list):
+            sent_list = []
+            for sent in dataset:
+                text, label = list(sent.items())[0]
+                sent_list.append(Sentence(text).add_label(label_type, label))
+            train_data = FlairDatapointDataset(sent_list)
+        else:
+            text, label = list(dataset.items())[0]
+            train_data = FlairDatapointDataset(
+                [Sentence(text).add_label(label_type, label)]
+            )
+        corpus = Corpus(train=train_data, test=train_data, dev=train_data)
+        classifier.add_and_switch_to_new_task(
+            task_name,
+            label_dictionary=corpus.make_label_dictionary(label_type=label_type),
+            label_type=label_type,
+        )
+        trainer = ModelTrainer(classifier, corpus)
+        trainer.train(
+            base_path="model/",
+            learning_rate=0.02,
+            mini_batch_size=1,
+            max_epochs=5,
+            train_with_dev=True,
+            train_with_test=True,
+        )
+        classifier = TARSClassifier.load("model/final-model.pt")
+        return "Training Completed"
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(f"Exception :{e}"))
 
 
 # defining the api for ZS classification
