@@ -218,3 +218,8 @@ walker init{
 }
 ```
 run this jac code and observe the `movie_data.json` file generated in the current working directory.
+
+
+> **Note**
+> This data scraping algorithm is tailored to extract information from the given link's **Thore** movie.
+> You can try scrapping script from another movie as your interest by customizing the scrapping script.s
