@@ -305,7 +305,6 @@ def prepare_inputs(
     _max_sequence_length=128,
     _max_entity_length=30,
 ) -> Iterable[Example]:
-
     encodings: Optional[List[EncodingFast]] = _token_tokenizer(
         texts,
         truncation=False,
