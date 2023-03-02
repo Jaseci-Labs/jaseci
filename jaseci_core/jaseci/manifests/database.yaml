@@ -3,6 +3,7 @@ kind: Service
 metadata:
   creationTimestamp: null
   name: jaseci-db
+  namespace: database
 spec:
   internalTrafficPolicy: Cluster
   ports:
@@ -17,24 +18,24 @@ status:
   loadBalancer: {}
 
 ---
-
 apiVersion: v1
-data:
-  password: bGlmZWxvZ2lmeWphc2VjaQ==
-  user: cG9zdGdyZXM=
 kind: Secret
 metadata:
   creationTimestamp: null
   name: jaseci-db-credentials
+  namespace: database
+data:
+  password: bGlmZWxvZ2lmeWphc2VjaQ==
+  user: cG9zdGdyZXM=
 type: Opaque
 
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   creationTimestamp: null
   name: jaseci-db-pvc
+  namespace: database
 spec:
   accessModes:
   - ReadWriteOnce
@@ -52,6 +53,7 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   name: jaseci-db
+  namespace: database
 spec:
   progressDeadlineSeconds: 600
   replicas: 1

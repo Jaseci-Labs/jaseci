@@ -1,4 +1,4 @@
-from jaseci import JsOrc
+from base64 import b64decode
 
 from kubernetes import config as kubernetes_config
 from kubernetes.client import (
@@ -8,9 +8,12 @@ from kubernetes.client import (
     RbacAuthorizationV1Api,
     ApiextensionsV1Api,
     AdmissionregistrationV1Api,
+    CustomObjectsApi,
 )
 from kubernetes.client.rest import ApiException
 
+from jaseci import JsOrc
+from jaseci.jsorc_utils import ManifestType, placeholder_resolver
 from jaseci.utils.utils import logger
 
 
@@ -44,6 +47,9 @@ class KubeService(JsOrc.CommonService):
         self.api_ext = ApiextensionsV1Api(self.app)
         self.auth = RbacAuthorizationV1Api(self.app)
         self.reg_api = AdmissionregistrationV1Api(self.app)
+        self.custom = CustomObjectsApi(self.app)
+
+        self._cached_namespace = set()
 
         self.ping()
         self.defaults()
@@ -65,6 +71,13 @@ class KubeService(JsOrc.CommonService):
             "StatefulSet": self.api.create_namespaced_stateful_set,
             "CustomResourceDefinition": self.api_ext.create_custom_resource_definition,
             "ValidatingWebhookConfiguration": self.reg_api.create_validating_webhook_configuration,
+            "Elasticsearch": lambda namespace, body: self.custom.create_namespaced_custom_object(
+                group="elasticsearch.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="elasticsearches",
+                body=body,
+            ),
         }
         self.patch_apis = {
             "Namespace": self.core.patch_namespace,
@@ -82,6 +95,14 @@ class KubeService(JsOrc.CommonService):
             "StatefulSet": self.api.patch_namespaced_stateful_set,
             "CustomResourceDefinition": self.api_ext.patch_custom_resource_definition,
             "ValidatingWebhookConfiguration": self.reg_api.patch_validating_webhook_configuration,
+            "Elasticsearch": lambda name, namespace, body: self.custom.patch_namespaced_custom_object(
+                group="elasticsearch.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="elasticsearches",
+                name=name,
+                body=body,
+            ),
         }
         self.delete_apis = {
             "Namespace": self.core.delete_namespace,
@@ -99,6 +120,13 @@ class KubeService(JsOrc.CommonService):
             "StatefulSet": self.api.delete_namespaced_stateful_set,
             "CustomResourceDefinition": self.api_ext.delete_custom_resource_definition,
             "ValidatingWebhookConfiguration": self.reg_api.delete_validating_webhook_configuration,
+            "Elasticsearch": lambda name, namespace: self.custom.delete_namespaced_custom_object(
+                group="elasticsearch.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="elasticsearches",
+                name=name,
+            ),
         }
         self.read_apis = {
             "Namespace": self.core.read_namespace,
@@ -115,6 +143,13 @@ class KubeService(JsOrc.CommonService):
             "StatefulSet": self.api.read_namespaced_stateful_set,
             "CustomResourceDefinition": self.api_ext.read_custom_resource_definition,
             "ValidatingWebhookConfiguration": self.reg_api.read_validating_webhook_configuration,
+            "Elasticsearch": lambda name, namespace: self.custom.get_namespaced_custom_object(
+                group="elasticsearch.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="elasticsearches",
+                name=name,
+            ),
         }
 
     ###################################################
@@ -135,29 +170,26 @@ class KubeService(JsOrc.CommonService):
             logger.info(f"Kubernetes cluster environment check failed: {e}")
             return False
 
-    def resolve_namespace(self, conf: dict, namespace: str = None):
-        return conf.get("metadata", {}).get("namespace") or namespace or self.namespace
-
     def create(
         self,
         kind: str,
         name: str,
         conf: dict,
-        namespace: str = None,
+        namespace: str,
         log_pref: str = "",
+        quiet: bool = False,
     ):
-        namespace = self.resolve_namespace(conf, namespace)
         try:
-            logger.info(
-                f"{log_pref} Creating {kind} for `{name}` with namespace `{namespace}`"
+            quiet or logger.info(
+                f"{log_pref} Creating {kind} for `{name}` with namespace: `{namespace}`"
             )
             if kind in self._no_namespace:
                 self.create_apis[kind](body=conf)
             else:
                 self.create_apis[kind](namespace=namespace, body=conf)
         except ApiException as e:
-            logger.error(
-                f"{log_pref} Error creating {kind} for `{name}` with namespace `{namespace}` -- {e}"
+            quiet or logger.error(
+                f"{log_pref} Error creating {kind} for `{name}` with namespace: `{namespace}` -- {e}"
             )
 
     def patch(
@@ -165,57 +197,68 @@ class KubeService(JsOrc.CommonService):
         kind: str,
         name: str,
         conf: dict,
-        namespace: str = None,
+        namespace: str,
         log_pref: str = "",
+        quiet: bool = False,
     ):
-        namespace = self.resolve_namespace(conf, namespace)
         try:
-            logger.info(
-                f"{log_pref} Patching {kind} for `{name}` with namespace `{namespace}`"
+            quiet or logger.info(
+                f"{log_pref} Patching {kind} for `{name}` with namespace: `{namespace}`"
             )
             if kind in self._no_namespace:
                 self.patch_apis[kind](name=name, body=conf)
             else:
                 self.patch_apis[kind](name=name, namespace=namespace, body=conf)
         except ApiException as e:
-            logger.error(
-                f"{log_pref} Error patching {kind} for `{name}` with namespace `{namespace}` -- {e}"
+            quiet or logger.error(
+                f"{log_pref} Error patching {kind} for `{name}` with namespace: `{namespace}` -- {e}"
             )
 
-    def read(self, kind: str, name: str, namespace: str = None, log_pref: str = ""):
-        namespace = namespace or self.namespace
+    def read(
+        self,
+        kind: str,
+        name: str,
+        namespace: str,
+        log_pref: str = "",
+        quiet: bool = False,
+    ):
         try:
-            logger.info(
-                f"{log_pref} Retrieving {kind} for `{name}` with namespace `{namespace}`"
+            quiet or logger.info(
+                f"{log_pref} Retrieving {kind} for `{name}` with namespace: `{namespace}`"
             )
             if kind in self._no_namespace:
                 return self.read_apis[kind](name=name)
             else:
                 return self.read_apis[kind](name=name, namespace=namespace)
         except ApiException as e:
-            logger.error(
-                f"{log_pref} Error retrieving {kind} for `{name}` with namespace `{namespace}` -- {e}"
+            quiet or logger.error(
+                f"{log_pref} Error retrieving {kind} for `{name}` with namespace: `{namespace}` -- {e}"
             )
             return e
 
-    def delete(self, kind: str, name: str, namespace: str = None, log_pref: str = ""):
-        namespace = namespace or self.namespace
+    def delete(
+        self,
+        kind: str,
+        name: str,
+        namespace: str,
+        log_pref: str = "",
+        quiet: bool = False,
+    ):
         try:
-            logger.info(
-                f"{log_pref} Deleting {kind} for `{name}` with namespace `{namespace}`"
+            quiet or logger.info(
+                f"{log_pref} Deleting {kind} for `{name}` with namespace: `{namespace}`"
             )
             if kind in self._no_namespace:
                 return self.delete_apis[kind](name=name)
             else:
                 return self.delete_apis[kind](name=name, namespace=namespace)
         except ApiException as e:
-            logger.error(
-                f"{log_pref} Error deleting {kind} for `{name}` with namespace `{namespace}` -- {e}"
+            quiet or logger.error(
+                f"{log_pref} Error deleting {kind} for `{name}` with namespace: `{namespace}` -- {e}"
             )
             return e
 
-    def is_pod_running(self, name: str, namespace: str = None):
-        namespace = namespace or self.namespace
+    def is_pod_running(self, name: str, namespace: str):
         try:
             return (
                 self.core.list_namespaced_pod(
@@ -228,13 +271,67 @@ class KubeService(JsOrc.CommonService):
         except Exception:
             return False
 
-    def terminate_jaseci(self, name: str, namespace: str = None) -> bool:
-        namespace = namespace or self.namespace
+    def get_secret(
+        self,
+        name: str,
+        attr: str,
+        namespace: str,
+        log_pref: str = "",
+        quiet: bool = False,
+    ):
         try:
-            for item in self.core.list_namespaced_pod(
-                namespace=namespace, label_selector=f"pod={name}"
-            ).items:
-                self.core.delete_namespaced_pod(item.metadata.name, namespace)
-                raise SystemExit("Force termination to restart the pod!")
-        except Exception:
-            return False
+            return b64decode(
+                self.core.read_namespaced_secret(
+                    name=name,
+                    namespace=namespace,
+                ).data[attr]
+            ).decode()
+        except Exception as e:
+            quiet or logger.exception(
+                f"{log_pref} Error getting secret `{attr}` from `{name}` with namespace: `{namespace}` -- {e}"
+            )
+            return None
+
+    def resolve_manifest(
+        self,
+        manifest: dict,
+        manifest_type: ManifestType = ManifestType.DEDICATED,
+        manual_namespace: str = None,
+    ) -> dict:
+        for kind, confs in manifest.items():
+            if kind not in self._no_namespace:
+                for conf in confs.values():
+                    metadata: dict = conf["metadata"]
+                    namespace = metadata.get("namespace", "default")
+                    if manifest_type == ManifestType.DEDICATED:
+                        namespace = self.namespace
+                        metadata["namespace"] = namespace
+                    elif manifest_type == ManifestType.MANUAL:
+                        namespace = manual_namespace
+                        metadata["namespace"] = namespace
+
+                    if namespace and namespace not in self._cached_namespace:
+                        res = self.read("Namespace", namespace, None)
+                        if hasattr(res, "status") and res.status == 404:
+                            self.create(
+                                "Namespace",
+                                namespace,
+                                {
+                                    "apiVersion": "v1",
+                                    "kind": "Namespace",
+                                    "metadata": {
+                                        "name": namespace,
+                                        "labels": {"name": namespace},
+                                    },
+                                },
+                                None,
+                            )
+                            # don't add it on cache since create is possible to fail
+                        elif (
+                            isinstance(res, dict) and "metadata" in res
+                        ) or res.metadata:
+                            self._cached_namespace.add(namespace)
+
+        placeholder_resolver(manifest, manifest)
+
+        return manifest
