@@ -116,6 +116,7 @@
 - [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
 - [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
 - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
+- [Enhancing User Experience with Personalized Content using PH](examples/CanoniCAI/codelabs/ph.md)
 
 ## Jaseci AI Library Reference
 

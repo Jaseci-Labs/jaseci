@@ -25,8 +25,6 @@ from ..datamodel.utils import pad_images
 _Model = TypeVar("_Model", bound="BI_P_Head")
 
 
-
-
 class BI_P_Head(Base_BI_enc):
     def __init__(self, param) -> None:
 
@@ -397,8 +395,9 @@ def collate_examples(
         )
         return res
     return res["input_ids"], res["labels"]
-    
-def ph_init(model_args: Dict=None):
+
+
+def ph_init(model_args: Dict = None):
     global ph_model
 
     if model_args["descriptions"] is None:
@@ -407,8 +406,10 @@ def ph_init(model_args: Dict=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ph_model.to(device)
 
+
 def get_embeddings(data):
     return ph_model(data)
+
 
 def get_scores(token_emb, ent_emb, mode):
     return ph_model.get_scores(token_emb, ent_emb, mode)

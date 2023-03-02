@@ -25,9 +25,7 @@ try:
                 },
                 "type": "CustomModel",
             },
-            "Inference": {
-                "type": "CustomInference"
-            },
+            "Inference": {"type": "CustomInference"},
         },
         "python": model_data,
     }
@@ -56,7 +54,7 @@ try:
                                     "unk_entity_type_id": -1,
                                     "unk_category": "<UNK>",
                                     "descriptions": ["LOC"],
-                                    "data_file":"ph/ph_train_data.json"
+                                    "data_file": "ph/ph_train_data.json",
                                 }
                             },
                             "type": "CustomDataLoader",
@@ -80,11 +78,11 @@ try:
                             "unk_entity_type_id": -1,
                             "unk_category": "<UNK>",
                             "max_sequence_length": 128,
-                            "descriptions": ["PER","LOC"],
+                            "descriptions": ["PER", "LOC"],
                         },
                         "dataset": [
                             "China is surpassed in area by only Russia",
-                            "China also faces South Korea and Japan, across the Yellow Sea",
+                            "China also faces Korea and Japan across the Yellow Sea",
                         ],
                     },
                 }

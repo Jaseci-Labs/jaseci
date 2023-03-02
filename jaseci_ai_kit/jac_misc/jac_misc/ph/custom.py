@@ -3,7 +3,13 @@ from torch import nn
 from torch.utils.data import Dataset
 from typing import Iterable, Dict, Optional, List
 from torch import LongTensor
-from jac_nlp.bi_ner.model.ph_model import BI_P_Head, prepare_inputs, collate_examples,ph_init, get_embeddings, get_scores
+from jac_nlp.bi_ner.model.ph_model import (
+    prepare_inputs,
+    collate_examples,
+    ph_init,
+    get_embeddings,
+    get_scores,
+)
 from jac_nlp.bi_ner.model.loss import ContrastiveThresholdLoss
 from jac_nlp.bi_ner.model.tokenize_data import get_datasets
 from jac_nlp.bi_ner.datamodel.utils import get_category_id_mapping, invert
@@ -45,7 +51,7 @@ class CustomLoss(torch.nn.Module):
         self._start_coef = 0.2
         self._end_coef = 0.2
         self._max_entity_length = 30
-        
+
     def forward(self, output, labels):
         span_loss = self._loss_fn(output[0], labels)
         start_loss = self._loss_fn(
@@ -55,7 +61,12 @@ class CustomLoss(torch.nn.Module):
             output[2].unsqueeze(-2).repeat(1, 1, self._max_entity_length, 1), labels
         )
 
-        return self._span_coef * span_loss + self._start_coef * start_loss + self._end_coef * end_loss
+        return (
+            self._span_coef * span_loss
+            + self._start_coef * start_loss
+            + self._end_coef * end_loss
+        )
+
 
 class CustomModel(nn.Module):
     def __init__(self, model_args) -> None:
@@ -83,7 +94,6 @@ class CustomModel(nn.Module):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.con_encoder.to(device)
         self.cand_encoder.to(device)
-
 
     def forward(self, x):
         mode = "train"
@@ -204,7 +214,9 @@ class CustomInference(BaseInference):
             entity_text_ids = (
                 torch.tensor(batched_examples.text_ids)
                 .view(batch_size, 1, 1)
-                .repeat(1, data["inf_args"]["max_sequence_length"], self._max_entity_length)
+                .repeat(
+                    1, data["inf_args"]["max_sequence_length"], self._max_entity_length
+                )
                 .to(self.device)
             )
 
@@ -243,7 +255,11 @@ class CustomInference(BaseInference):
                 total_predictions = min(
                     (entity_token_start // self._stride_length) + 1,
                     (
-                        max(strided_text_length - data["inf_args"]["max_sequence_length"], 0)
+                        max(
+                            strided_text_length
+                            - data["inf_args"]["max_sequence_length"],
+                            0,
+                        )
                         // self._stride_length
                     )
                     + 1,
