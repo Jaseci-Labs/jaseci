@@ -77,7 +77,7 @@ Click connect once you have verified that all is good.
 
 ### **3. Collecting data for codelab**
 
-Movie scripts data is the textual data that we use in this coding lab. Here we are going to scrap movie scrip data from [Imbdsm]() website. We we have given you the python scrapping script [here](../misc/scrapping_example.py) and the python script [here](../code/scrapy.py) which we can be run as a Jaseci action.
+Movie scripts data is the textual data that we use in this coding lab. Here we are going to scrap movie scrip data from [Imbdsm](https://imsdb.com/) website. We have given you the python script [here](../code/scrapy.py) which we can be run as a Jaseci action.
 
 Steps to run Jaseci custom action to scrape data.
 
