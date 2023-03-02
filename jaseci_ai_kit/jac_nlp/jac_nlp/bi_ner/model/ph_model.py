@@ -27,7 +27,6 @@ _Model = TypeVar("_Model", bound="BI_P_Head")
 
 class BI_P_Head(Base_BI_enc):
     def __init__(self, param) -> None:
-
         super(BI_P_Head, self).__init__(param)
         global _token_tokenizer
         self._metric = CosSimilarity(scale=0.07)
