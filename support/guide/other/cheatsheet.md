@@ -494,7 +494,7 @@
  </tr><tr> 
  <td>load yaml</td><td> 
  <ul><li>files: list (*req)</li>
-<li> namespace: str (default)</li>
+<li> namespace: str (None)</li>
 </ul> 
  </td> 
  </tr><tr> 

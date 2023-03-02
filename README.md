@@ -93,31 +93,6 @@
     - [Here and visitors the this reference of jaseci](docs/docs/jaseci_architype/here_and_visitors.md)
   - [Combining it All](docs/docs/jaseci_architype/combining_it_all.md)
 
-## Codelabs and Guides
-
-- [Building a Conversational AI System](examples/CanoniCAI/CCAI_codelab.md)
-  1. [Preparation and Background](examples/CanoniCAI/codelabs/1_preparation.md)
-  2. [Automated FAQ Answering Chatbot](examples/CanoniCAI/codelabs/2_faq.md)
-  3. [Multi-turn Dialogue System](examples/CanoniCAI/codelabs/3_dialogue_system.md)
-  4. [Unify the Dialogue and FAQ Systems](examples/CanoniCAI/codelabs/4_unify_system.md)
-  5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
-  6. [Use speech to text and speech to text modules](examples/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
-  7. [Collect Training Data via Crowdsource](examples/CanoniCAI/codelabs/7_crowdsource.md)
-  8. [Contritbute to Jaseci Open Source](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
-- [Building a Text Analytics Engine](examples/CanoniAnalytics/README.md)
-  1. [Preparation](examples/CanoniAnalytics/codelabs/1_preparation.md)
-  2. [Map the script into a graph](examples/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
-  3. [Get the summery of scene descriptions](examples/CanoniAnalytics/codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)
-  4. [Find semantically similar sentences](examples/CanoniAnalytics/codelabs/4_find_semantically_similar_sentences.md)
-  5. [Clustering documents](examples/CanoniAnalytics/codelabs/5_clustering_documents.md)
-  6. [Sentiment analysis of dialogues](examples/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
-- [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
-- [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
-- [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
-- [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
-- [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
-- [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
-
 ## Jaseci AI Library Reference
 
 - [Jaseci AI Kit Overview](jaseci_ai_kit/README.md)
@@ -161,16 +136,42 @@
   - [Built-in Actions](ui_components/docs/built-in-actions.md)
   - [Connecting an API](ui_components/docs/connecting-an-api.md)
 
-## Jaseci X Features
-- [Single Sign-on Socail](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
+## Advanced Topics
 
-## Jaseci Core Internals
+  - [Jaseci X Features](docs/docs/advanced_topics/jaseci_features.md)
+    - [Single Sign-on Socail](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
 
-- [JsOrc](jaseci_core/jaseci/svc/docs/JSORC.md)
-  - [Development](jaseci_core/jaseci/svc/docs/jsorc_development.md)
-  - [Task](jaseci_core/jaseci/svc/docs/task_svc.md)
-  - [Mail](jaseci_core/jaseci/svc/docs/mail_svc.md)
-- [JSORC Action Management Engine](jaseci_core/jaseci/svc/docs/JSORC.md)
+  - [Jaseci Core Internals](docs/docs/advanced_topics/jaseci_core.md)
+    - [JsOrc](jaseci_core/jaseci/svc/docs/JSORC.md)
+      - [Development](jaseci_core/jaseci/svc/docs/jsorc_development.md)
+      - [Task](jaseci_core/jaseci/svc/docs/task_svc.md)
+      - [Mail](jaseci_core/jaseci/svc/docs/mail_svc.md)
+    - [JSORC Action Management Engine](jaseci_core/jaseci/svc/docs/JSORC.md)
+
+## Codelabs and Guides
+
+- [Building a Conversational AI System](examples/CanoniCAI/CCAI_codelab.md)
+  1. [Preparation and Background](examples/CanoniCAI/codelabs/1_preparation.md)
+  2. [Automated FAQ Answering Chatbot](examples/CanoniCAI/codelabs/2_faq.md)
+  3. [Multi-turn Dialogue System](examples/CanoniCAI/codelabs/3_dialogue_system.md)
+  4. [Unify the Dialogue and FAQ Systems](examples/CanoniCAI/codelabs/4_unify_system.md)
+  5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
+  6. [Use speech to text and speech to text modules](examples/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
+  7. [Collect Training Data via Crowdsource](examples/CanoniCAI/codelabs/7_crowdsource.md)
+  8. [Contritbute to Jaseci Open Source](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
+- [Building a Text Analytics Engine](examples/CanoniAnalytics/README.md)
+  1. [Preparation](examples/CanoniAnalytics/codelabs/1_preparation.md)
+  2. [Map the script into a graph](examples/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
+  3. [Get the summery of scene descriptions](examples/CanoniAnalytics/codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)
+  4. [Find semantically similar sentences](examples/CanoniAnalytics/codelabs/4_find_semantically_similar_sentences.md)
+  5. [Clustering documents](examples/CanoniAnalytics/codelabs/5_clustering_documents.md)
+  6. [Sentiment analysis of dialogues](examples/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
+- [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
+- [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
+- [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
+- [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
+- [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
+- [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
 
 ## Contributing to Jaseci
 
