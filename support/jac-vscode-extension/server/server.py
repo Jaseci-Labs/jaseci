@@ -138,28 +138,13 @@ def fill_workspace(ls):
                 ls, architypes=doc.architypes, doc_uri=doc.uri
             )
             doc.dependencies = {}
+            update_doc_deps(ls, doc.uri)
 
             # _diagnose(ls, doc.uri)
 
         ls.workspace_filled = True
     except Exception as e:
         logger.error(e)
-
-    # def on_text_document_did_open(self, text_document: TextDocumentItem):
-    #     self.show_message("file opened")
-    #     jac_server.show_message("testing")
-    #     self.workspace[text_document.uri] = text_document
-
-    #     diagnostics = self._diagnose(text_document.uri)
-
-    #     self.publish_diagnostics(text_document.uri, diagnostics)
-
-    # def on_text_document_did_change(self, text_document: TextDocumentItem):
-    #     self.workspace[text_document.uri] = text_document
-
-    # diagnostics = self._diagnose(text_document.uri)
-
-    # self.publish_diagnostics(text_document.uri, diagnostics)
 
 
 # @debounce(0.5, keyed_by="doc_uri")
@@ -398,15 +383,15 @@ def show_configuration_callback(ls: JacLanguageServer, *args):
 
 @jac_server.feature(WORKSPACE_SYMBOL)
 @jac_server.catch()
-async def workspace_symbol(ls: JacLanguageServer, params: WorkspaceSymbolParams):
+def workspace_symbol(ls: JacLanguageServer, params: WorkspaceSymbolParams):
     """Workspace symbol request."""
     symbols = []
     for doc in ls.workspace.documents.values():
         if hasattr(doc, "symbols"):
-            symbols += doc.symbols
-            continue
-
-        doc.symbols = get_document_symbols(ls, doc.uri)
+            symbols.extend(doc.symbols)
+        else:
+            doc_symbols = get_document_symbols(ls, doc.uri)
+            symbols.extend(doc_symbols)
 
     return symbols
 
@@ -596,7 +581,20 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     doc._tree = tree
     doc.symbols = get_document_symbols(ls, doc.uri)
     doc.dependencies = {}
+    update_doc_deps(ls, doc_uri)
 
+    end = time.time_ns()
+    time_ms = (end - start) / 1000000
+
+    if debounced:
+        logger.info(f"Debounced: Updated Document Tree - Time: {time_ms}ms")
+    else:
+        logger.info(f"Updated Document Tree - Time: {time_ms}ms")
+
+
+def update_doc_deps(ls: JacLanguageServer, doc_uri: str):
+    """Update the document dependencies"""
+    doc = ls.workspace.get_document(doc_uri)
     # get architypes for dependencies
     for dep in doc._tree.dependencies:
         mod_name = dep.loc[2]
@@ -637,11 +635,3 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
                 ls, architypes=uri_architypes, doc_uri=uri
             )
             doc.dependencies[mod_name]["symbols"].extend(new_symbols)
-
-    end = time.time_ns()
-    time_ms = (end - start) / 1000000
-
-    if debounced:
-        logger.info(f"Debounced: Updated Document Tree - Time: {time_ms}ms")
-    else:
-        logger.info(f"Updated Document Tree - Time: {time_ms}ms")
