@@ -18,6 +18,7 @@ def setup(model_name: str = "t5-small", tokenizer_name: str = "t5-small"):
 
 setup()
 
+
 # generates summary based on text
 def t5_generate_sum(text, min_length, max_length):
     preprocess_text = text.strip().replace("\n", "")
