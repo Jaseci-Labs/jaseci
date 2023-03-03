@@ -9,7 +9,8 @@ from flair.trainers import ModelTrainer
 from jaseci.actions.live_actions import jaseci_action
 
 
-def init_model():
+@jaseci_action(act_group=["zs_classifier"], allow_remote=True)
+def setup():
     """load the tars classifier for ZS classification"""
     global classifier
     model_name = "tars-base"
@@ -18,7 +19,7 @@ def init_model():
 
 
 # initialize the classifier
-init_model()
+setup()
 
 
 # API for getting the cosine similarity

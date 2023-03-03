@@ -38,7 +38,8 @@ embeddings = StackedEmbeddings(embeddings=embedding_types)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def init_model(reload=False):
+@jaseci_action(act_group=["ent_ext"], allow_remote=True)
+def setup(reload=False):
     """create a tagger as per the model provided through config"""
 
     global tagger, NER_MODEL_NAME, NER_LABEL_TYPE, MODEL_TYPE, config
@@ -57,7 +58,7 @@ def init_model(reload=False):
 
 
 # initialize the tagger
-init_model()
+setup()
 
 
 def train_entity(train_params: dict):
@@ -369,7 +370,7 @@ def load_model(model_path="default_path", default=False):
     global tagger
     try:
         if default is True:
-            init_model()
+            setup()
             return f"[deafaul model loaded model from] : {config['TAGGER_MODEL']['NER_MODEL']}"  # noqa
         if type(model_path) is str:
             model_path = Path(model_path)
@@ -403,7 +404,7 @@ def set_config(ner_model: str = None, model_type: str = None):
     with open("config.cfg", "w") as configfile:
         config.write(configfile)
     try:
-        init_model(reload=True)
+        setup(reload=True)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return "Config setup is complete."

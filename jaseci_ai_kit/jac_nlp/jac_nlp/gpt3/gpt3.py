@@ -14,25 +14,20 @@ DEFAULT_ARGS = {
 }
 
 
+@jaseci_action(act_group=["gpt3"], allow_remote=True)
 def setup(api_key: str):
     if api_key:
         openai.api_key = api_key
+    elif os.environ.get("OPENAI_API_KEY", None):
+        openai.api_key = os.environ.get("OPENAI_API_KEY")
     else:
-        print(
-            "Please provide an API key through the OPENAI_API_KEY environment variable or the set_api_key action."
+        raise HTTPException(
+            status_code=500,
+            detail="Please provide an API key through the OPENAI_API_KEY environment variable or the set_api_key action.",
         )
 
 
 setup(api_key=os.environ.get("OPENAI_API_KEY", None))
-
-
-@jaseci_action(act_group=["gpt3"], allow_remote=True)
-def set_api_key(api_key: str):
-    try:
-        setup(api_key)
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["gpt3"], allow_remote=True)

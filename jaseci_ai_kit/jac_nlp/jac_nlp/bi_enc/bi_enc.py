@@ -29,7 +29,8 @@ def set_seed(seed):
     torch.manual_seed(seed)
 
 
-def config_setup():
+@jaseci_action(act_group=["bi_enc"], allow_remote=True)
+def setup():
     """
     Loading configurations from utils/config.cfg and
     initialize tokenizer and model
@@ -69,7 +70,7 @@ def config_setup():
     set_seed(train_config["seed"])
 
 
-config_setup()
+setup()
 
 
 # API for getting the cosine similarity
@@ -181,7 +182,7 @@ def train(dataset: Dict = None, from_scratch=False, training_parameters: Dict = 
     train_data = {"contexts": [], "candidates": [], "labels": []}
     if from_scratch is True:
         save_model(model_config["model_save_path"])
-        config_setup()
+        setup()
     model.train()
     try:
         if training_parameters is not None:
@@ -289,7 +290,7 @@ def set_model_config(model_parameters: Dict = None):
             model_config.update(model_parameters)
             json.dump(model_config, jsonfile, indent=4)
 
-        config_setup()
+        setup()
         return "Config setup is complete."
 
     except Exception as e:
