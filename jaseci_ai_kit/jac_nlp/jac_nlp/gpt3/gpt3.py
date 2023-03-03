@@ -21,9 +21,8 @@ def setup(api_key: str):
     elif os.environ.get("OPENAI_API_KEY", None):
         openai.api_key = os.environ.get("OPENAI_API_KEY")
     else:
-        raise HTTPException(
-            status_code=500,
-            detail="Please provide an API key through the OPENAI_API_KEY environment variable or the set_api_key action.",
+        print(
+            "No API key provided. Please set the OPENAI_API_KEY environment variable or pass it to the setup function."
         )
 
 
