@@ -158,6 +158,7 @@ data:
     cd jaseci;
     cd jaseci_core; source install.sh;
     cd ../jaseci_serv; source install.sh;
+    cd /;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -184,7 +185,9 @@ spec:
           image: python:3-slim
           resources:
             requests:
-              memory: "350Mi"
+              memory: "4Gi"
+            limits:
+              memory: "4Gi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
@@ -227,11 +230,28 @@ $j{env_vars}
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: jaseci-logs
+              mountPath: /.jaseci_logs/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: jaseci-logs
+          persistentVolumeClaim:
+            claimName: jaseci-logs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: $j{namespace}
+  name: jaseci-logs
+spec:
+  resources:
+    requests:
+      storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
 ---
 apiVersion: v1
 kind: Secret
