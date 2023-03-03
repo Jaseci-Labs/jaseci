@@ -78,6 +78,13 @@ class KubeService(JsOrc.CommonService):
                 plural="elasticsearches",
                 body=body,
             ),
+            "Kibana": lambda namespace, body: self.custom.create_namespaced_custom_object(
+                group="kibana.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="kibanas",
+                body=body,
+            ),
         }
         self.patch_apis = {
             "Namespace": self.core.patch_namespace,
@@ -100,6 +107,14 @@ class KubeService(JsOrc.CommonService):
                 version="v1",
                 namespace=namespace,
                 plural="elasticsearches",
+                name=name,
+                body=body,
+            ),
+            "Kibana": lambda name, namespace, body: self.custom.patch_namespaced_custom_object(
+                group="kibana.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="kibanas",
                 name=name,
                 body=body,
             ),
@@ -127,6 +142,13 @@ class KubeService(JsOrc.CommonService):
                 plural="elasticsearches",
                 name=name,
             ),
+            "Kibana": lambda name, namespace: self.custom.delete_namespaced_custom_object(
+                group="kibana.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="kibanas",
+                name=name,
+            ),
         }
         self.read_apis = {
             "Namespace": self.core.read_namespace,
@@ -148,6 +170,13 @@ class KubeService(JsOrc.CommonService):
                 version="v1",
                 namespace=namespace,
                 plural="elasticsearches",
+                name=name,
+            ),
+            "Kibana": lambda name, namespace: self.custom.get_namespaced_custom_object(
+                group="kibana.k8s.elastic.co",
+                version="v1",
+                namespace=namespace,
+                plural="kibanas",
                 name=name,
             ),
         }
@@ -287,7 +316,7 @@ class KubeService(JsOrc.CommonService):
                 ).data[attr]
             ).decode()
         except Exception as e:
-            quiet or logger.exception(
+            quiet or logger.error(
                 f"{log_pref} Error getting secret `{attr}` from `{name}` with namespace: `{namespace}` -- {e}"
             )
             return None
