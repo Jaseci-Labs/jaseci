@@ -206,18 +206,19 @@ def get_global_actions():
     hook = MemoryHook()
     for i in live_actions.keys():
         if (
-            i.startswith("std.")
+            i.startswith("date.")
             or i.startswith("file.")
+            or i.startswith("internal.")
+            or i.startswith("jaseci.")
             or i.startswith("net.")
             or i.startswith("rand.")
-            or i.startswith("vector.")
+            or i.startswith("regex.")
             or i.startswith("request.")
-            or i.startswith("date.")
-            or i.startswith("jaseci.")
-            or i.startswith("internal.")
-            or i.startswith("zlib.")
-            or i.startswith("webtool.")
+            or i.startswith("std.")
             or i.startswith("url.")
+            or i.startswith("vector.")
+            or i.startswith("webtool.")
+            or i.startswith("zlib.")
         ):
             global_action_list.append(
                 Action(
