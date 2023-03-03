@@ -21,6 +21,11 @@ class ArchitypePass(IrPass):
                         var = {}
                         var["name"] = child_node.kid[0].token_text()
                         var["line"], var["col"] = child_node.kid[0].loc[:2]
+
+                        if var["name"] == "anchor":
+                            var["name"] = child_node.kid[1].token_text()
+                            var["line"], var["col"] = child_node.kid[1].loc[:2]
+
                         vars.append(var)
 
         return vars
@@ -37,6 +42,7 @@ class ArchitypePass(IrPass):
                 architype["name"] = node.kid[1].token_text()
                 architype["line"] = node.kid[1].loc[0]
                 architype["col"] = node.kid[1].loc[1]
+                architype["src"] = node.loc[2]
 
                 # only continue processing if architype has a block
                 if node.kid and not len(node.kid) > 2:
@@ -79,6 +85,8 @@ class ReferencePass(IrPass):
         slot = None
         if node.name == "node_ref":
             slot = "nodes"
+        if node.name == "connect_op" or node.name == "edge_ref":
+            slot = "edges"
         elif node.name == "walker_ref":
             slot = "walkers"
         elif node.name == "graph_ref":
@@ -87,6 +95,18 @@ class ReferencePass(IrPass):
         if slot:
             try:
                 if node.kid:
+                    if slot == "edges":
+                        self.output.append(
+                            {
+                                "name": node.kid[0].kid[2].token_text(),
+                                "line": node.loc[0],
+                                "start": node.kid[0].kid[2].loc[1],
+                                "end": node.kid[0].kid[2].loc[1]
+                                + len(node.kid[0].kid[2].token_text()),
+                                "architype": slot,
+                            }
+                        )
+                        return
                     self.output.append(
                         {
                             "name": node.kid[1].token_text(),

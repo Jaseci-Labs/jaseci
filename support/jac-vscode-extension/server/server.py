@@ -1,35 +1,25 @@
-############################################################################
-# Copyright(c) Open Law Library. All rights reserved.                      #
-# See ThirdPartyNotices.txt in the project root for additional notices.    #
-#                                                                          #
-# Licensed under the Apache License, Version 2.0 (the "License")           #
-# you may not use this file except in compliance with the License.         #
-# You may obtain a copy of the License at                                  #
-#                                                                          #
-#     http: // www.apache.org/licenses/LICENSE-2.0                         #
-#                                                                          #
-# Unless required by applicable law or agreed to in writing, software      #
-# distributed under the License is distributed on an "AS IS" BASIS,        #
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
-# See the License for the specific language governing permissions and      #
-# limitations under the License.                                           #
-############################################################################
 import asyncio
+from functools import wraps
 import os
 import time
+from threading import Timer
 import uuid
-from typing import Optional
+from typing import Callable, Optional
 from jaseci.jac.ir.ast_builder import (
     JacAstBuilder,
 )
 from jaseci.utils.utils import logger
-
+from .completions import completions, action_modules, get_builtin_action
+from server.builder import JacAstBuilderSLL
 from server.passes import ReferencePass
-from .utils import debounce
+from server.passes.import_pass import ImportPass
+
+# from .utils import debounce
 
 
 from lsprotocol.types import (
     TEXT_DOCUMENT_DOCUMENT_SYMBOL,
+    TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_COMPLETION,
     WORKSPACE_SYMBOL,
     TEXT_DOCUMENT_DID_CLOSE,
@@ -39,10 +29,8 @@ from lsprotocol.types import (
     DiagnosticSeverity,
 )
 
-from pygls.workspace import Workspace
 
 from lsprotocol.types import (
-    CompletionItem,
     CompletionList,
     CompletionOptions,
     CompletionParams,
@@ -66,6 +54,7 @@ from lsprotocol.types import (
     HoverParams,
     MarkupContent,
     MarkupKind,
+    TextDocumentContentChangeEvent,
 )
 from pygls.server import LanguageServer
 from server.document_symbols import (
@@ -76,7 +65,7 @@ from server.document_symbols import (
     remove_symbols_in_range,
 )
 
-from server.utils import deconstruct_error_message
+from server.utils import debounce, deconstruct_error_message
 
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
@@ -99,6 +88,22 @@ class JacLanguageServer(LanguageServer):
         self.diagnostics_debounce = None
         self.workspace_filled = False
 
+    def catch(self, log=False):
+        def decorator(func: Callable):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if log:
+                        self.show_message_log(str(e), MessageType.Error)
+                    else:
+                        self.show_message(str(e), MessageType.Error)
+
+            return wrapper
+
+        return decorator
+
 
 def fill_workspace(ls):
     """Fills the workspace with documents."""
@@ -119,8 +124,20 @@ def fill_workspace(ls):
                 uri="file://" + file, text=text, language_id="jac", version=0
             )
             ls.workspace.put_document(doc)
+            doc = ls.workspace.get_document(doc.uri)
+            tree = JacAstBuilder(
+                mod_name=doc.filename,
+                mod_dir=os.path.dirname(doc.path) + "/",
+                jac_text=doc.source,
+            )
+            doc._tree = tree
+            doc.architypes = get_tree_architypes(tree.root)
+            doc.symbols = get_document_symbols(
+                ls, architypes=doc.architypes, doc_uri=doc.uri
+            )
+            doc.dependencies = {}
 
-            _diagnose(ls, doc.uri)
+            # _diagnose(ls, doc.uri)
 
         ls.workspace_filled = True
     except Exception as e:
@@ -143,12 +160,12 @@ def fill_workspace(ls):
     # self.publish_diagnostics(text_document.uri, diagnostics)
 
 
-@debounce(0.5, keyed_by="doc_uri")
+# @debounce(0.5, keyed_by="doc_uri")
 def _diagnose(ls: JacLanguageServer, doc_uri: str):
     doc = ls.workspace.get_document(doc_uri)
     source = doc.source
-    mod_name = os.path.basename(doc.uri).split(".")[0]
-    tree = JacAstBuilder(mod_name, jac_text=source)
+    mod_name = os.path.basename(doc.uri)
+    tree = JacAstBuilder(mod_name, jac_text=source, mod_dir=os.path.dirname(doc.path))
 
     errors = []
 
@@ -177,23 +194,6 @@ def _diagnose(ls: JacLanguageServer, doc_uri: str):
 jac_server = JacLanguageServer("jac-lsp", "v0.1")
 
 
-@jac_server.feature(
-    TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[","])
-)
-def completions(params: Optional[CompletionParams] = None) -> CompletionList:
-    """Returns completion items."""
-    return CompletionList(
-        is_incomplete=False,
-        items=[
-            CompletionItem(label='"'),
-            CompletionItem(label="["),
-            CompletionItem(label="]"),
-            CompletionItem(label="{"),
-            CompletionItem(label="}"),
-        ],
-    )
-
-
 @jac_server.command(JacLanguageServer.CMD_COUNT_DOWN_BLOCKING)
 def count_down_10_seconds_blocking(ls, *args):
     """Starts counting down and showing message synchronously.
@@ -219,46 +219,12 @@ async def count_down_10_seconds_non_blocking(ls, *args):
 # traverse the current ast line where character was changes
 
 
-# @jac_server.feature(TEXT_DOCUMENT_DID_CHANGE)
+@jac_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 async def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
-    _diagnose(ls, params.text_document.uri)
-
-
-#     try:
-#         start = time.time_ns()
-#         doc = ls.workspace.get_document(params.text_document.uri)
-#         [start_line, end_line, block_text] = get_change_block_text(
-#             ls, params.text_document.uri, params.content_changes[0]
-#         )
-
-#         # handle whole document
-#         if start_line == 0 and end_line == 0:
-#             doc.symbols = get_document_symbols(ls, doc.uri)
-#             return
-
-#         change_tree = get_architype_ast(block_text)
-#         architypes = get_tree_architypes(change_tree)
-
-#         new_symbols = get_document_symbols(
-#             ls,
-#             params.text_document.uri,
-#             architypes=architypes,
-#             shift_lines=start_line,
-#         )
-
-#         retained_symbols = remove_symbols_in_range(
-#             start_line, end_line, symbols=doc.symbols
-#         )
-
-#         doc.symbols = retained_symbols + new_symbols
-
-#         print("block text", block_text)
-#         end = time.time_ns()
-
-#         print("Time to symbols changes: (ms)", (end - start) / 1000000)
-#     except Exception as e:
-#         print(e)
+    updated = soft_update(ls, params.text_document.uri, params.content_changes[0])
+    if not updated:
+        update_doc_tree_debounced(ls, params.text_document.uri)
 
 
 @jac_server.feature(TEXT_DOCUMENT_DID_CLOSE)
@@ -267,23 +233,31 @@ def did_close(server: JacLanguageServer, params: DidCloseTextDocumentParams):
     server.show_message("Text Document Did Close")
 
 
+@jac_server.thread()
 @jac_server.feature(TEXT_DOCUMENT_DID_SAVE)
-def did_save(server: JacLanguageServer, params: DidSaveTextDocumentParams):
+def did_save(ls: JacLanguageServer, params: DidSaveTextDocumentParams):
     """Text document did save notification."""
-    _diagnose(server, params.text_document.uri)
+    # doc = ls.workspace.get_document(params.text_document.uri)
+    # tree = JacAstBuilder(
+    #     "test",
+    #     mod_dir=os.dirname(doc.path),
+    #     jac_text=doc.source,
+    #     start_rule="import_module",
+    # )
+    # imports = ImportPass(ir=tree.root)
+    # imports.run()
+
+    _diagnose(ls, params.text_document.uri)
 
 
 @jac_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls: LanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-
     if ls.workspace_filled is False:
         fill_workspace(ls)
         return
 
-    doc = ls.workspace.get_document(params.text_document.uri)
-
-    _diagnose(ls, doc.uri)
+    # _diagnose(ls, doc.uri)
 
 
 def get_word_at_position(text: str, position: int) -> str:
@@ -421,6 +395,7 @@ def show_configuration_callback(ls: JacLanguageServer, *args):
 
 
 @jac_server.feature(WORKSPACE_SYMBOL)
+@jac_server.catch()
 async def workspace_symbol(ls: JacLanguageServer, params: WorkspaceSymbolParams):
     """Workspace symbol request."""
     symbols = []
@@ -435,15 +410,17 @@ async def workspace_symbol(ls: JacLanguageServer, params: WorkspaceSymbolParams)
 
 
 @jac_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
-async def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
+@jac_server.catch()
+def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
+    print("Retrieving Symbols...")
     start = time.time_ns()
     """Document symbol request."""
     uri = params.text_document.uri
-
     doc = ls.workspace.get_document(uri)
+    if hasattr(doc, "symbols"):
+        return doc.symbols
 
     doc.symbols = get_document_symbols(ls, doc.uri)
-
     end = time.time_ns()
 
     logger.info(f"Symbols Retrieved - Time: {(end - start) / 1000000}ms")
@@ -451,33 +428,56 @@ async def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
     return doc.symbols
 
 
-def provide_hover(doc_uri: str, position: Position):
-    pass
-
-
 def get_architype_variables(ls: JacLanguageServer, uri: str, name: str, architype: str):
     """Get the variables for the given architype."""
     doc = ls.workspace.get_document(uri)
+    architype_pool = doc.architypes
 
-    for item in doc.architypes[architype]:
+    for dep in doc.dependencies.values():
+        architypes = dep["architypes"]
+        for key, value in architypes.items():
+            if key == architype:
+                architype_pool[key].extend([value])
+            else:
+                architype_pool[key] = [value]
+
+    for item in architype_pool[architype]:
         if item["name"] == name:
             return item["vars"]
 
     return []
 
 
+@jac_server.thread()
 @jac_server.feature(TEXT_DOCUMENT_HOVER)
-async def hover(ls: JacLanguageServer, params: HoverParams):
+@jac_server.catch()
+def hover(ls: JacLanguageServer, params: HoverParams):
     """Hover request."""
     uri = params.text_document.uri
     position = params.position
 
     doc = ls.workspace.get_document(uri)
     source = doc.source
-    line = source.split()[position.line]
+    line = source.splitlines()[position.line]
 
-    if doc.ir:
-        hover_pass = ReferencePass(ir=doc.ir)
+    # Get the word at the position and the word before it
+    word_at_position = doc.word_at_position(position)
+    before_word = line[: position.character].strip().split(".")[0].split(" ")[-1]
+
+    # Check if the word is a builtin action and return the docstring
+    if before_word in action_modules.keys():
+        action = get_builtin_action(word_at_position, before_word)
+        if action:
+            args = ", ".join(action["args"])
+            doc = f'_action({before_word})_: **{action["name"]}({args})**'
+            if action["doc"]:
+                doc += f'\n\n{action["doc"]}'
+
+            return Hover(contents=MarkupContent(kind=MarkupKind.Markdown, value=doc))
+
+    # handle hover for architypes
+    if hasattr(doc, "_tree"):
+        hover_pass = ReferencePass(ir=doc._tree.root)
         hover_pass.run()
 
         ref_table = hover_pass.output
@@ -495,5 +495,101 @@ async def hover(ls: JacLanguageServer, params: HoverParams):
                         value=f"_{ref['architype'][:-1]}_::{ref['name']}({', '.join(vars)})",
                     )
                 )
+    else:
+        return None
 
-    return None
+
+@jac_server.thread()
+@jac_server.feature(
+    TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[".", ":"])
+)
+@jac_server.catch()
+def handle_completions(params: Optional[CompletionParams] = None) -> CompletionList:
+    return completions(jac_server, params)
+
+
+def soft_update(
+    ls: JacLanguageServer, doc_uri: str, change: TextDocumentContentChangeEvent
+):
+    """Update the document tree if certain conditions are met."""
+    doc = ls.workspace.get_document(doc_uri)
+    if change.text == ";" or change.text == "{" or doc.version % 10 == 0:
+        update_doc_tree(ls, doc_uri)
+        return True
+
+
+def update_doc_tree_debounced(ls: JacLanguageServer, doc_uri: str):
+    doc = ls.workspace.get_document(doc_uri)
+    if hasattr(doc, "_tree_timer"):
+        doc._tree_timer.cancel()
+
+    doc._tree_timer = Timer(0.8, update_doc_tree, args=(ls, doc_uri, True))
+    doc._tree_timer.start()
+
+
+@jac_server.thread()
+def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False):
+    """Update the document tree"""
+    start = time.time_ns()
+    doc = ls.workspace.get_document(doc_uri)
+    # JacAstBuilder._ast_head_map = {}
+
+    JacAstBuilder._ast_head_map.pop(doc.path)
+    tree = JacAstBuilder(
+        jac_text=doc.source,
+        mod_name=doc.filename,
+        mod_dir=os.path.dirname(doc.path) + "/",
+    )
+    doc = ls.workspace.get_document(doc_uri)
+    doc._tree = tree
+    doc.symbols = get_document_symbols(ls, doc.uri)
+    doc.dependencies = {}
+
+    # get architypes for dependencies
+    for dep in doc._tree.dependencies:
+        mod_name = dep.loc[2]
+        if mod_name not in doc.dependencies:
+            doc.dependencies[mod_name] = {
+                "architypes": {"nodes": [], "edges": [], "walkers": [], "graphs": []},
+                "symbols": [],
+            }
+
+        new_architypes = get_tree_architypes(dep)
+
+        for key, value in new_architypes.items():
+            doc.dependencies[mod_name]["architypes"][key].extend(value)
+
+    # find a uri that end with the module name and is not the current document and create symbols
+    for mod_name in doc.dependencies.keys():
+        uri_matches = [
+            uri for uri in ls.workspace.documents.keys() if uri.endswith(mod_name)
+        ]
+
+        for uri in uri_matches:
+            uri_architypes = {"nodes": [], "edges": [], "walkers": [], "graphs": []}
+            uri_doc = ls.workspace.get_document(uri)
+            doc_architypes = uri_doc.architypes
+
+            # compare architypes in the current document with the architypes in the dependency
+            for slot, value in doc_architypes.items():
+                for architype in value:
+                    if list(
+                        filter(
+                            lambda x: x["name"] == architype["name"],
+                            doc_architypes[slot],
+                        )
+                    ):
+                        uri_architypes[slot].extend([architype])
+
+            new_symbols = get_document_symbols(
+                ls, architypes=uri_architypes, doc_uri=uri
+            )
+            doc.dependencies[mod_name]["symbols"].extend(new_symbols)
+
+    end = time.time_ns()
+    time_ms = (end - start) / 1000000
+
+    if debounced:
+        logger.info(f"Debounced: Updated Document Tree - Time: {time_ms}ms")
+    else:
+        logger.info(f"Updated Document Tree - Time: {time_ms}ms")

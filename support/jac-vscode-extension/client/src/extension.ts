@@ -99,37 +99,8 @@ export function activate(context: ExtensionContext): void {
 
     if (!pythonPath) {
       window.showErrorMessage(
-        "Unable to start the jac language server. \n Select a Python interpreter first where Jaseci is installed.",
-        "Select Python Interpreter",
-        "Cancel"
+        "Unable to start the jac language server. \n Select a Python interpreter first where Jaseci is installed."
       );
-      // .then((selection) => {
-      //   if (selection === "Select Python Interpreter") {
-      //     const options = {
-      //       placeHolder: "Select Python Interpreter",
-      //       matchOnDescription: true,
-      //       matchOnDetail: true,
-      //     };
-
-      //     const workspaceFolder = workspace.workspaceFolders[0];
-
-      //     window
-      //       .showQuickPick(
-      //         extensions
-      //           .getExtension("ms-python.python")
-      //           .exports.getInterpreterDetails(workspaceFolder.uri),
-      //         options
-      //       )
-      //       .then((selected) => {
-      //         if (selected) {
-      //           workspaceConfig.update(
-      //             "pythonPath",
-      //             selected,
-      //             ConfigurationTarget.Workspace
-      //           );
-      //         }
-      //       });
-      //   }
 
       throw new Error("`jacServer.pythonPath` is not set");
       // });

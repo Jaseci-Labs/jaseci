@@ -4,7 +4,12 @@ from jaseci.jac.ir.ast_builder import (
 from jaseci.jac.jac_parse.jacParser import jacParser, ParseTreeWalker
 from jaseci.jac.jac_parse.jacLexer import jacLexer
 from jaseci.jac.ir.ast_builder import JacTreeBuilder
-from antlr4 import InputStream, CommonTokenStream, PredictionMode
+from antlr4 import (
+    InputStream,
+    CommonTokenStream,
+    PredictionMode,
+)
+from antlr4.error.Errors import ParseCancellationException
 
 
 class JacAstBuilderSLL(JacAstBuilder):
@@ -12,8 +17,9 @@ class JacAstBuilderSLL(JacAstBuilder):
         self,
         mod_name,
         jac_text,
+        mod_dir="./",
     ):
-        super().__init__(mod_name, jac_text=jac_text)
+        super().__init__(mod_name, jac_text=jac_text, mod_dir=mod_dir)
 
     def jac_code_to_ast(self, jac_str):
         """Parse language and build ast from string"""
@@ -29,3 +35,6 @@ class JacAstBuilderSLL(JacAstBuilder):
         builder = JacTreeBuilder(builder=self, code=jac_str)
         walker = ParseTreeWalker()
         walker.walk(builder, tree)
+
+    # def prepare_imports(self):
+    # self.builder.run_import_module(self.root)

@@ -34,7 +34,7 @@ P = ParamSpec("P")
 
 
 def debounce(
-    interval_s: int, keyed_by: Optional[str] = None
+    interval_s: int, keyed_by: Optional[str] = None, after=None
 ) -> Callable[[Callable[P, None]], Callable[P, None]]:
     """Debounce calls to this function until interval_s seconds have passed.
     Decorator copied from https://github.com/python-lsp/python-lsp-
@@ -54,7 +54,11 @@ def debounce(
             def run() -> None:
                 with lock:
                     del timers[key]
-                return func(*args, **kwargs)
+                func(*args, **kwargs)
+                if after:
+                    after(*args, **kwargs)
+
+                return
 
             with lock:
                 old_timer = timers.get(key)
