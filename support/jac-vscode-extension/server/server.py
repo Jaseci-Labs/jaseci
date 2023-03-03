@@ -26,7 +26,9 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_SAVE,
     TEXT_DOCUMENT_HOVER,
+    TEXT_DOCUMENT_DEFINITION,
     DiagnosticSeverity,
+    DefinitionParams,
 )
 
 
@@ -39,7 +41,7 @@ from lsprotocol.types import (
     DidChangeTextDocumentParams,
     DidCloseTextDocumentParams,
     DidSaveTextDocumentParams,
-    MarkedString,
+    Location,
     DidOpenTextDocumentParams,
     MessageType,
     Position,
@@ -65,7 +67,7 @@ from server.document_symbols import (
     remove_symbols_in_range,
 )
 
-from server.utils import debounce, deconstruct_error_message
+from server.utils import debounce, deconstruct_error_message, get_architype_class
 
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
@@ -428,7 +430,7 @@ def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
     return doc.symbols
 
 
-def get_architype_variables(ls: JacLanguageServer, uri: str, name: str, architype: str):
+def get_architype_data(ls: JacLanguageServer, uri: str, name: str, architype: str):
     """Get the variables for the given architype."""
     doc = ls.workspace.get_document(uri)
     architype_pool = doc.architypes
@@ -438,14 +440,64 @@ def get_architype_variables(ls: JacLanguageServer, uri: str, name: str, archityp
         for key, value in architypes.items():
             if key == architype:
                 architype_pool[key].extend([value])
-            else:
-                architype_pool[key] = [value]
 
     for item in architype_pool[architype]:
         if item["name"] == name:
-            return item["vars"]
+            return item
 
     return []
+
+
+def get_symbol_data(ls: JacLanguageServer, uri: str, name: str, architype: str):
+    """Get the variables for the given architype."""
+    doc = ls.workspace.get_document(uri)
+    if not hasattr(doc, "symbols"):
+        return None
+        doc.symbols = get_document_symbols(ls, doc.uri)
+
+    symbols_pool = doc.symbols
+
+    for dep in doc.dependencies.values():
+        symbols = dep["symbols"]
+        symbols_pool.extend(symbols)
+
+    for symbol in symbols_pool:
+        if symbol.name == name and symbol.kind == get_architype_class(architype):
+            return symbol
+
+    return None
+
+
+@jac_server.feature(TEXT_DOCUMENT_DEFINITION)
+def definition(ls: JacLanguageServer, params: DefinitionParams):
+    doc_uri = params.text_document.uri
+    doc = ls.workspace.get_document(doc_uri)
+
+    position = params.position
+
+    # handle hover for architypes
+    if hasattr(doc, "_tree"):
+        hover_pass = ReferencePass(ir=doc._tree.root)
+        hover_pass.run()
+
+        ref_table = hover_pass.output
+
+        for ref in ref_table:
+            if (
+                ref["line"] == position.line + 1
+                and ref["start"] <= position.character <= ref["end"]
+            ):
+                symbol = get_symbol_data(ls, doc_uri, ref["name"], ref["architype"])
+
+                if symbol is None:
+                    return None
+
+                return symbol.location
+
+    else:
+        return None
+
+    return
 
 
 @jac_server.thread()
@@ -487,8 +539,8 @@ def hover(ls: JacLanguageServer, params: HoverParams):
                 ref["line"] == position.line + 1
                 and ref["start"] <= position.character <= ref["end"]
             ):
-                vars = get_architype_variables(ls, uri, ref["name"], ref["architype"])
-                vars = [var["name"] for var in vars]
+                arch = get_architype_data(ls, uri, ref["name"], ref["architype"])
+                vars = [var["name"] for var in arch["vars"]]
                 return Hover(
                     contents=MarkupContent(
                         kind=MarkupKind.Markdown,

@@ -4,6 +4,7 @@ import re
 import sys
 import threading
 from typing import Any, Callable, Dict, Optional
+from lsprotocol.types import SymbolKind
 
 if sys.version_info < (3, 10):
     from typing_extensions import ParamSpec
@@ -72,3 +73,17 @@ def debounce(
         return debounced
 
     return wrapper
+
+
+def get_architype_class(type: str) -> SymbolKind:
+    kind = SymbolKind.Variable
+    if type in ["node", "nodes"]:
+        kind = SymbolKind.Class
+    if type in ["walker", "walkers"]:
+        kind = SymbolKind.Function
+    if type in ["edge", "edges"]:
+        kind = SymbolKind.Interface
+    if type in ["graph", "graphs"]:
+        kind = SymbolKind.Namespace
+
+    return kind

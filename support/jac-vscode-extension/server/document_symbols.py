@@ -24,7 +24,7 @@ from lsprotocol.types import (
 )
 from typing import List, Tuple, TypedDict
 
-from server.utils import debounce
+from server.utils import debounce, get_architype_class
 
 
 class ArchitypeInfo(TypedDict):
@@ -86,17 +86,7 @@ def _create_architype_symbol(
     type: str, node: ArchitypeInfo, doc_uri: str, shift_lines: int = 0
 ) -> SymbolInformation:
     """Create a symbol for a node or walker"""
-    match type:
-        case "node":
-            kind = SymbolKind.Class
-        case "walker":
-            kind = SymbolKind.Function
-        case "edge":
-            kind = SymbolKind.Interface
-        case "graph":
-            kind = SymbolKind.Namespace
-        case _:
-            kind = SymbolKind.Property
+    kind = get_architype_class(type)
 
     symbol = SymbolInformation(
         name=node["name"],
