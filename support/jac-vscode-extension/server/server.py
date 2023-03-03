@@ -112,10 +112,12 @@ def fill_workspace(ls):
     # get all files in the workspace
     files = [
         os.path.join(root, name)
-        for root, dirs, files in os.walk(ls.workspace.root_path)
+        for root, _dirs, files in os.walk(ls.workspace.root_path)
         for name in files
         if name.endswith(".jac")
     ]
+
+    logger.log(f"Gathered files: \n\n{files}")
 
     try:
         for file in files:
