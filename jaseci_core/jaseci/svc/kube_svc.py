@@ -357,6 +357,8 @@ class KubeService(JsOrc.CommonService):
         manual_namespace: str = None,
     ) -> dict:
         for kind, confs in manifest.items():
+            logger.info(kind)
+            logger.info(confs)
             if kind not in self._no_namespace:
                 for conf in confs.values():
                     metadata: dict = conf["metadata"]
