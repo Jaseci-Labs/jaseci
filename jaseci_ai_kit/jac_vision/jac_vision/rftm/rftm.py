@@ -14,6 +14,7 @@ RTFM_CLASSIFIER_WEIGHTS = "https://huggingface.co/spaces/jaseci/video-anomaly-de
 RTFM_RESNET_101_WEIGHTS = "https://huggingface.co/spaces/jaseci/video-anomaly-detection/resolve/main/rftm_resnet101.pth"
 
 
+@jaseci_action(act_group=["rftm"], allow_remote=True)
 def setup(device: str = None):
     global detector, _device
     os.makedirs("weights", exist_ok=True)

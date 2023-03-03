@@ -8,6 +8,7 @@ import base64
 import io
 
 
+@jaseci_action(act_group=["detr"], allow_remote=True)
 def setup(model: str = "detr-resnet-50", device: str = None):
     global detector
     if device is None:
