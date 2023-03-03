@@ -73,6 +73,11 @@ walker test_train {
 }
 ```
 
+### Setup Parameters
+- `get_embeddings` - Whether to get the embeddings of the text. Type: `bool` Default: `False`
+* `model` - GPT Model variant to be used for summarizing the text. Type: `str` Default: `gpt2`
+
+
 # **References**
 - [GPT-2](https://openai.com/blog/better-language-models/)
 - [HuggingFace](https://huggingface.co/transformers/model_doc/gpt2.html)

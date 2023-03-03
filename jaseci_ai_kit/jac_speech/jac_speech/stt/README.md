@@ -95,6 +95,9 @@ walker transribe_array {
 }
 ```
 
+### Setup Parameters
+* `size` - Size of the model. Type: `str` Default: `tiny`
+
 # **References**
 * [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf) by Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman, Christine McLeavey, Ilya Sutskever.
 * [OpenAI Whisper](https://openai.com/blog/whisper/)
