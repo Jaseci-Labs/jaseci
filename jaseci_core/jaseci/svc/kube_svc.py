@@ -85,6 +85,13 @@ class KubeService(JsOrc.CommonService):
                 plural="kibanas",
                 body=body,
             ),
+            "Beat": lambda namespace, body: self.custom.create_namespaced_custom_object(
+                group="beat.k8s.elastic.co",
+                version="v1beta1",
+                namespace=namespace,
+                plural="beats",
+                body=body,
+            ),
         }
         self.patch_apis = {
             "Namespace": self.core.patch_namespace,
@@ -115,6 +122,14 @@ class KubeService(JsOrc.CommonService):
                 version="v1",
                 namespace=namespace,
                 plural="kibanas",
+                name=name,
+                body=body,
+            ),
+            "Beat": lambda name, namespace, body: self.custom.patch_namespaced_custom_object(
+                group="beat.k8s.elastic.co",
+                version="v1beta1",
+                namespace=namespace,
+                plural="beats",
                 name=name,
                 body=body,
             ),
@@ -149,6 +164,13 @@ class KubeService(JsOrc.CommonService):
                 plural="kibanas",
                 name=name,
             ),
+            "Beat": lambda name, namespace: self.custom.delete_namespaced_custom_object(
+                group="beat.k8s.elastic.co",
+                version="v1beta1",
+                namespace=namespace,
+                plural="beats",
+                name=name,
+            ),
         }
         self.read_apis = {
             "Namespace": self.core.read_namespace,
@@ -177,6 +199,13 @@ class KubeService(JsOrc.CommonService):
                 version="v1",
                 namespace=namespace,
                 plural="kibanas",
+                name=name,
+            ),
+            "Beat": lambda name, namespace: self.custom.get_namespaced_custom_object(
+                group="beat.k8s.elastic.co",
+                version="v1beta1",
+                namespace=namespace,
+                plural="beats",
                 name=name,
             ),
         }
