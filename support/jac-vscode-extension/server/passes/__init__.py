@@ -75,13 +75,17 @@ class ArchitypePass(IrPass):
 
 
 class ReferencePass(IrPass):
-    def __init__(self, to_screen=True, with_exit=False, **kwargs):
+    def __init__(self, to_screen=True, with_exit=False, dependencies=[], **kwargs):
         super().__init__(**kwargs)
         self.to_screen = to_screen
         self.with_exit = with_exit
         self.output = []
+        self.dependencies = []
 
     def enter_node(self, node):
+        if node in self.dependencies:
+            return
+
         slot = None
         if node.name == "node_ref":
             slot = "nodes"

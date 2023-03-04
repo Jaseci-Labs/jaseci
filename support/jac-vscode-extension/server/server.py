@@ -11,6 +11,7 @@ from jaseci.jac.ir.ast_builder import (
 from jaseci.utils.utils import logger
 
 from server.architypes_utils import get_architype_class
+from server.passes.semantic_token_pass import SemanticTokenPass
 from .completions import completions, action_modules, get_builtin_action
 from server.passes import ReferencePass
 
@@ -29,6 +30,11 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_DEFINITION,
     DiagnosticSeverity,
     DefinitionParams,
+    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
+    SemanticTokensLegend,
+    SemanticTokensParams,
+    SemanticTokens,
+    SemanticTokens,
 )
 
 
@@ -41,7 +47,6 @@ from lsprotocol.types import (
     DidChangeTextDocumentParams,
     DidCloseTextDocumentParams,
     DidSaveTextDocumentParams,
-    Location,
     DidOpenTextDocumentParams,
     MessageType,
     Position,
@@ -88,6 +93,7 @@ class JacLanguageServer(LanguageServer):
         super().__init__(*args)
         self.diagnostics_debounce = None
         self.workspace_filled = False
+        self._max_workers = 4
 
     def catch(self, log=False):
         def decorator(func: Callable):
@@ -220,7 +226,7 @@ async def did_change(ls, params: DidChangeTextDocumentParams):
 @jac_server.feature(TEXT_DOCUMENT_DID_CLOSE)
 def did_close(server: JacLanguageServer, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
-    server.show_message("Text Document Did Close")
+    server.show_message("Jac document closed")
 
 
 @jac_server.thread()
@@ -241,10 +247,14 @@ def did_save(ls: JacLanguageServer, params: DidSaveTextDocumentParams):
 
 
 @jac_server.feature(TEXT_DOCUMENT_DID_OPEN)
-def did_open(ls: LanguageServer, params: DidOpenTextDocumentParams):
+def did_open(ls: JacLanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     if ls.workspace_filled is False:
         fill_workspace(ls)
+        try:
+            ls.semantic_tokens_refresh()
+        except Exception as e:
+            logger.error(e)
 
     # _diagnose(ls, doc.uri)
 
@@ -273,33 +283,16 @@ def get_word_at_position(text: str, position: int) -> str:
 
 # show message when client connects
 
-# @json_server.feature(
+
+# @jac_server.feature(
 #     TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-#     SemanticTokensLegend(token_types=["operator"], token_modifiers=[]),
+#     SemanticTokensLegend(token_types=["operator", "keyword"], token_modifiers=[]),
 # )
 # def semantic_tokens(ls: JacLanguageServer, params: SemanticTokensParams):
-#     """See https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
-#     for details on how semantic tokens are encoded."""
-
-#     TOKENS = ["test_walker", "another_walker"]
-
-#     uri = params.text_document.uri
-#     doc = ls.workspace.get_document(uri)
-
-#     last_line = 0
-#     last_start = 0
-
-#     data = []
-
-#     for lineno, line in enumerate(doc.lines):
-#         last_start = 0
-
-#         for match in TOKENS.finditer(line):
-#             start, end = match.span()
-#             data += [(lineno - last_line), (start - last_start), (end - start), 0, 0]
-
-#             last_line = lineno
-#             last_start = start
+#     doc = ls.workspace.get_document(params.text_document.uri)
+#     token_pass = SemanticTokenPass(ir=doc._tree.root)
+#     token_pass.run()
+#     data = token_pass.tokens
 
 #     return SemanticTokens(data=data)
 
@@ -469,12 +462,15 @@ def definition(ls: JacLanguageServer, params: DefinitionParams):
 
     # handle hover for architypes
     if hasattr(doc, "_tree"):
-        hover_pass = ReferencePass(ir=doc._tree.root)
+        hover_pass = ReferencePass(
+            ir=doc._tree.root, dependencies=doc._tree.dependencies
+        )
         hover_pass.run()
 
         ref_table = hover_pass.output
 
-        for ref in ref_table:
+        # we reverse the table so nodes that are in the current file are prioritized
+        for ref in ref_table[::-1]:
             if (
                 ref["line"] == position.line + 1
                 and ref["start"] <= position.character <= ref["end"]
@@ -595,9 +591,9 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     end = time.time_ns()
     time_ms = (end - start) / 1000000
 
-    return tree
-
     if debounced:
         logger.info(f"Debounced: Updated Document Tree - Time: {time_ms}ms")
     else:
         logger.info(f"Updated Document Tree - Time: {time_ms}ms")
+
+    return tree

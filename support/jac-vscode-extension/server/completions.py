@@ -180,21 +180,16 @@ def completions(
         )
 
     # handle completion for edges
-    if (
-        last_word.startswith("+[")
-        or last_word.startswith("-[")
-        or last_word.startswith("<-[")
-        or last_word.startswith("(-[")
-        or last_word.startswith("(<-[")
-    ):
-        edge_names = [edge["name"] for edge in doc.architypes["edges"]]
-        return CompletionList(
-            is_incomplete=False,
-            items=[
-                CompletionItem(label=edge_name, kind=CompletionItemKind.Interface)
-                for edge_name in edge_names
-            ],
-        )
+    for item in ["+[", "<+[", "-[", "<-[", "(-[", "(<-["]:
+        if last_word.startswith(item) or last_word.startswith("!" + item):
+            edge_names = [edge["name"] for edge in doc.architypes["edges"]]
+            return CompletionList(
+                is_incomplete=False,
+                items=[
+                    CompletionItem(label=edge_name, kind=CompletionItemKind.Interface)
+                    for edge_name in edge_names
+                ],
+            )
 
     return CompletionList(
         is_incomplete=False,

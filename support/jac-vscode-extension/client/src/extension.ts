@@ -20,15 +20,7 @@
 
 import * as net from "net";
 import * as path from "path";
-import {
-  ExtensionContext,
-  ExtensionMode,
-  workspace,
-  window,
-  extensions,
-  ConfigurationTarget,
-  Uri,
-} from "vscode";
+import { ExtensionContext, ExtensionMode, workspace, window } from "vscode";
 import {
   LanguageClient,
   LanguageClientOptions,
