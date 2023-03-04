@@ -2,14 +2,8 @@ import os
 import time
 from pygls.server import LanguageServer
 from antlr4 import *
-from antlr4.error.ErrorListener import ErrorListener
-from antlr4.TokenStreamRewriter import TokenStreamRewriter
 
-from jaseci.jac.ir.ast_builder import JacAstBuilder, JacTreeBuilder
-
-from jaseci.jac.jac_parse.jacListener import jacListener
-from jaseci.jac.jac_parse.jacParser import jacParser
-from jaseci.jac.jac_parse.jacLexer import jacLexer
+from jaseci.jac.ir.ast_builder import JacAstBuilder
 from server.builder import JacAstBuilderSLL
 
 from server.passes import ArchitypePass
@@ -19,12 +13,11 @@ from lsprotocol.types import (
     Location,
     Position,
     Range,
-    DidChangeTextDocumentParams,
     TextDocumentContentChangeEvent,
 )
 from typing import List, Tuple, TypedDict
 
-from server.utils import debounce, get_architype_class
+from server.architypes_utils import get_architype_class
 
 
 class ArchitypeInfo(TypedDict):
@@ -43,12 +36,7 @@ def get_architypes_from_tree(tree: JacAstBuilder):
 
 def _get_architypes(lsp: LanguageServer, doc_uri: str):
     try:
-        mod_name = os.path.basename(doc_uri)
         doc = lsp.workspace.get_document(doc_uri)
-
-        if not hasattr(doc, "_tree"):
-            doc._tree = JacAstBuilderSLL(jac_text=doc.source, mod_name=mod_name)
-
         start = time.time_ns()
         end = time.time_ns()
         print(f"parsing tree took {(end - start) / 1000000} ms")
@@ -70,16 +58,6 @@ def _get_architypes(lsp: LanguageServer, doc_uri: str):
         print(e)
 
         return {"nodes": [], "edges": [], "graphs": [], "walkers": []}
-
-
-def get_tree_architypes(tree: JacAstBuilder):
-    """Get architypes from a tree"""
-    architype_pass = ArchitypePass(ir=tree)
-    architype_pass.run()
-
-    architypes = architype_pass.output
-
-    return architypes
 
 
 def _create_architype_symbol(

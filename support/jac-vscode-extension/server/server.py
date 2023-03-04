@@ -9,10 +9,10 @@ from jaseci.jac.ir.ast_builder import (
     JacAstBuilder,
 )
 from jaseci.utils.utils import logger
+
+from server.architypes_utils import get_architype_class
 from .completions import completions, action_modules, get_builtin_action
-from server.builder import JacAstBuilderSLL
 from server.passes import ReferencePass
-from server.passes.import_pass import ImportPass
 
 # from .utils import debounce
 
@@ -60,14 +60,13 @@ from lsprotocol.types import (
 )
 from pygls.server import LanguageServer
 from server.document_symbols import (
-    get_architype_ast,
-    get_change_block_text,
     get_document_symbols,
-    get_tree_architypes,
-    remove_symbols_in_range,
+)
+from server.utils import (
+    deconstruct_error_message,
+    update_doc_deps,
 )
 
-from server.utils import debounce, deconstruct_error_message, get_architype_class
 
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
@@ -117,8 +116,6 @@ def fill_workspace(ls):
         if name.endswith(".jac")
     ]
 
-    logger.log(f"Gathered files: \n\n{files}")
-
     try:
         for file in files:
             with open(file, "r") as f:
@@ -129,18 +126,25 @@ def fill_workspace(ls):
             )
             ls.workspace.put_document(doc)
             doc = ls.workspace.get_document(doc.uri)
-            tree = JacAstBuilder(
-                mod_name=doc.filename,
-                mod_dir=os.path.dirname(doc.path) + "/",
-                jac_text=doc.source,
-            )
-            doc._tree = tree
-            doc.architypes = get_tree_architypes(tree.root)
-            doc.symbols = get_document_symbols(
-                ls, architypes=doc.architypes, doc_uri=doc.uri
-            )
-            doc.dependencies = {}
+            update_doc_tree(ls, doc_uri=doc.uri)
+            logger.info("Processing ..." + doc.uri)
+
+        for doc in ls.workspace.documents.values():
+            # architypes are present for all files at this point
+            # so we can update the dependencies
             update_doc_deps(ls, doc.uri)
+            # tree = JacAstBuilder(
+            #     mod_name=doc.filename,
+            #     mod_dir=os.path.dirname(doc.path) + "/",
+            #     jac_text=doc.source,
+            # )
+            # doc._tree = tree
+            # doc.architypes = get_tree_architypes(tree.root)
+            # doc.symbols = get_document_symbols(
+            #     ls, architypes=doc.architypes, doc_uri=doc.uri
+            # )
+            # doc.dependencies = {}
+            # update_doc_deps(ls, doc.uri)
 
             # _diagnose(ls, doc.uri)
 
@@ -151,10 +155,7 @@ def fill_workspace(ls):
 
 # @debounce(0.5, keyed_by="doc_uri")
 def _diagnose(ls: JacLanguageServer, doc_uri: str):
-    doc = ls.workspace.get_document(doc_uri)
-    source = doc.source
-    mod_name = os.path.basename(doc.uri)
-    tree = JacAstBuilder(mod_name, jac_text=source, mod_dir=os.path.dirname(doc.path))
+    tree = update_doc_tree(ls, doc_uri)
 
     errors = []
 
@@ -177,7 +178,7 @@ def _diagnose(ls: JacLanguageServer, doc_uri: str):
 
         errors.append(diagnostic)
 
-    ls.publish_diagnostics(doc.uri, errors)
+    ls.publish_diagnostics(doc_uri, errors)
 
 
 jac_server = JacLanguageServer("jac-lsp", "v0.1")
@@ -240,11 +241,10 @@ def did_save(ls: JacLanguageServer, params: DidSaveTextDocumentParams):
 
 
 @jac_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls: LanguageServer, params: DidOpenTextDocumentParams):
+def did_open(ls: LanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     if ls.workspace_filled is False:
         fill_workspace(ls)
-        return
 
     # _diagnose(ls, doc.uri)
 
@@ -399,7 +399,6 @@ def workspace_symbol(ls: JacLanguageServer, params: WorkspaceSymbolParams):
 
 
 @jac_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
-@jac_server.catch()
 def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
     print("Retrieving Symbols...")
     start = time.time_ns()
@@ -408,9 +407,10 @@ def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
     doc = ls.workspace.get_document(uri)
     if hasattr(doc, "symbols"):
         return doc.symbols
-
-    doc.symbols = get_document_symbols(ls, doc.uri)
-    end = time.time_ns()
+    else:
+        update_doc_tree(ls, uri)
+        doc_symbols = get_document_symbols(ls, doc.uri)
+        return doc_symbols
 
     logger.info(f"Symbols Retrieved - Time: {(end - start) / 1000000}ms")
 
@@ -420,6 +420,9 @@ def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
 def get_architype_data(ls: JacLanguageServer, uri: str, name: str, architype: str):
     """Get the variables for the given architype."""
     doc = ls.workspace.get_document(uri)
+    if not hasattr(doc, "architypes"):
+        return []
+
     architype_pool = doc.architypes
 
     for dep in doc.dependencies.values():
@@ -443,6 +446,8 @@ def get_symbol_data(ls: JacLanguageServer, uri: str, name: str, architype: str):
         doc.symbols = get_document_symbols(ls, doc.uri)
 
     symbols_pool = doc.symbols
+    if not hasattr(doc, "dependencies"):
+        doc.dependencies = update_doc_deps(ls, doc.uri)
 
     for dep in doc.dependencies.values():
         symbols = dep["symbols"]
@@ -566,17 +571,19 @@ def update_doc_tree_debounced(ls: JacLanguageServer, doc_uri: str):
     doc._tree_timer.start()
 
 
-@jac_server.thread()
+# @jac_server.thread()
 def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False):
     """Update the document tree"""
     start = time.time_ns()
     doc = ls.workspace.get_document(doc_uri)
     # JacAstBuilder._ast_head_map = {}
 
-    JacAstBuilder._ast_head_map.pop(doc.path)
+    if doc.path in JacAstBuilder._ast_head_map.keys():
+        JacAstBuilder._ast_head_map.pop(doc.path)
+
     tree = JacAstBuilder(
-        jac_text=doc.source,
         mod_name=doc.filename,
+        jac_text=doc.source,
         mod_dir=os.path.dirname(doc.path) + "/",
     )
     doc = ls.workspace.get_document(doc_uri)
@@ -588,52 +595,9 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     end = time.time_ns()
     time_ms = (end - start) / 1000000
 
+    return tree
+
     if debounced:
         logger.info(f"Debounced: Updated Document Tree - Time: {time_ms}ms")
     else:
         logger.info(f"Updated Document Tree - Time: {time_ms}ms")
-
-
-def update_doc_deps(ls: JacLanguageServer, doc_uri: str):
-    """Update the document dependencies"""
-    doc = ls.workspace.get_document(doc_uri)
-    # get architypes for dependencies
-    for dep in doc._tree.dependencies:
-        mod_name = dep.loc[2]
-        if mod_name not in doc.dependencies:
-            doc.dependencies[mod_name] = {
-                "architypes": {"nodes": [], "edges": [], "walkers": [], "graphs": []},
-                "symbols": [],
-            }
-
-        new_architypes = get_tree_architypes(dep)
-
-        for key, value in new_architypes.items():
-            doc.dependencies[mod_name]["architypes"][key].extend(value)
-
-    # find a uri that end with the module name and is not the current document and create symbols
-    for mod_name in doc.dependencies.keys():
-        uri_matches = [
-            uri for uri in ls.workspace.documents.keys() if uri.endswith(mod_name)
-        ]
-
-        for uri in uri_matches:
-            uri_architypes = {"nodes": [], "edges": [], "walkers": [], "graphs": []}
-            uri_doc = ls.workspace.get_document(uri)
-            doc_architypes = uri_doc.architypes
-
-            # compare architypes in the current document with the architypes in the dependency
-            for slot, value in doc_architypes.items():
-                for architype in value:
-                    if list(
-                        filter(
-                            lambda x: x["name"] == architype["name"],
-                            doc_architypes[slot],
-                        )
-                    ):
-                        uri_architypes[slot].extend([architype])
-
-            new_symbols = get_document_symbols(
-                ls, architypes=uri_architypes, doc_uri=uri
-            )
-            doc.dependencies[mod_name]["symbols"].extend(new_symbols)
