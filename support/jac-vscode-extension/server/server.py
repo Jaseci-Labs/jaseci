@@ -94,7 +94,7 @@ class JacLanguageServer(LanguageServer):
         self.diagnostics_debounce = None
         self.workspace_filled = False
         self._max_workers = 4
-        self.closed_documents = {}
+        self.go_to_def_used = False
 
     def catch(self, log=False):
         def decorator(func: Callable):
@@ -441,7 +441,7 @@ def get_symbol_data(ls: JacLanguageServer, uri: str, name: str, architype: str):
 
     symbols_pool = doc.symbols
     if not hasattr(doc, "dependencies"):
-        doc.dependencies = update_doc_deps(ls, doc.uri)
+        update_doc_deps(ls, doc.uri)
 
     for dep in doc.dependencies.values():
         symbols = dep["symbols"]
@@ -462,6 +462,12 @@ def definition(ls: JacLanguageServer, params: DefinitionParams):
     doc = ls.workspace.get_document(doc_uri)
 
     position = params.position
+
+    # if the document version is 0, the dependencies might not be up to date
+    # this is only necessary for the first time go to definition is called
+    if doc.version == 0 and not ls.go_to_def_used:
+        update_doc_tree(ls, doc_uri)
+        ls.go_to_def_used = True
 
     # handle hover for architypes
     if hasattr(doc, "_tree"):
@@ -588,7 +594,6 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     doc = ls.workspace.get_document(doc_uri)
     doc._tree = tree
     doc.symbols = get_document_symbols(ls, doc.uri)
-    doc.dependencies = {}
     try:
         update_doc_deps(ls, doc_uri)
     except Exception as e:
