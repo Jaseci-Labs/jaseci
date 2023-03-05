@@ -94,7 +94,6 @@ class JacLanguageServer(LanguageServer):
         self.diagnostics_debounce = None
         self.workspace_filled = False
         self._max_workers = 4
-        self.go_to_def_used = False
 
     def catch(self, log=False):
         def decorator(func: Callable):
@@ -423,7 +422,7 @@ def get_architype_data(ls: JacLanguageServer, uri: str, name: str, architype: st
         architypes = dep["architypes"]
         for key, value in architypes.items():
             if key == architype:
-                architype_pool[key].extend([value])
+                architype_pool[key].extend(value)
 
     for item in architype_pool[architype]:
         if item["name"] == name:
@@ -465,9 +464,9 @@ def definition(ls: JacLanguageServer, params: DefinitionParams):
 
     # if the document version is 0, the dependencies might not be up to date
     # this is only necessary for the first time go to definition is called
-    if doc.version == 0 and not ls.go_to_def_used:
-        update_doc_tree(ls, doc_uri)
-        ls.go_to_def_used = True
+    # if doc.version == 0 and not ls.go_to_def_used:
+    #     update_doc_tree(ls, doc_uri)
+    #     ls.go_to_def_used = True
 
     # handle hover for architypes
     if hasattr(doc, "_tree"):
@@ -514,15 +513,15 @@ def hover(ls: JacLanguageServer, params: HoverParams):
     before_word = line[: position.character].strip().split(".")[0].split(" ")[-1]
 
     # Check if the word is a builtin action and return the docstring
-    if before_word in action_modules.keys():
-        action = get_builtin_action(word_at_position, before_word)
-        if action:
-            args = ", ".join(action["args"])
-            doc = f'_action({before_word})_: **{action["name"]}({args})**'
-            if action["doc"]:
-                doc += f'\n\n{action["doc"]}'
+    # if before_word in action_modules.keys():
+    #     action = get_builtin_action(word_at_position, before_word)
+    #     if action:
+    #         args = ", ".join(action["args"])
+    #         doc = f'_action({before_word})_: **{action["name"]}({args})**'
+    #         if action["doc"]:
+    #             doc += f'\n\n{action["doc"]}'
 
-            return Hover(contents=MarkupContent(kind=MarkupKind.Markdown, value=doc))
+    #         return Hover(contents=MarkupContent(kind=MarkupKind.Markdown, value=doc))
 
     # handle hover for architypes
     if hasattr(doc, "_tree"):
@@ -562,7 +561,12 @@ def soft_update(
 ):
     """Update the document tree if certain conditions are met."""
     doc = ls.workspace.get_document(doc_uri)
-    if change.text == ";" or change.text == "{" or doc.version % 10 == 0:
+    if (
+        change.text == ";"
+        or change.text == "{"
+        or doc.version % 10 == 0
+        or len(doc.lines) < 300
+    ):
         update_doc_tree(ls, doc_uri)
         return True
 
@@ -581,7 +585,6 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     """Update the document tree"""
     start = time.time_ns()
     doc = ls.workspace.get_document(doc_uri)
-    JacAstBuilder._ast_head_map = {}
 
     if doc.path in JacAstBuilder._ast_head_map.keys():
         JacAstBuilder._ast_head_map.pop(doc.path)
