@@ -86,16 +86,24 @@ class ArchitypePass(IrPass):
 
 
 class ReferencePass(IrPass):
-    def __init__(self, to_screen=True, with_exit=False, dependencies=[], **kwargs):
+    def __init__(self, to_screen=True, with_exit=False, deps=[], **kwargs):
         super().__init__(**kwargs)
         self.to_screen = to_screen
         self.with_exit = with_exit
         self.output = []
-        self.dependencies = []
+        self.deps = deps
+        self.comments = []
 
     def enter_node(self, node):
-        if node in self.dependencies:
-            return
+        if node.name == "PY_COMMENT":
+            self.comments.append(
+                {
+                    "text": node.token_text(),
+                    "line": node.loc[0],
+                    "start": node.loc[1],
+                    "end": node.loc[1] + len(node.token_text()),
+                }
+            )
 
         slot = None
         if node.name == "node_ref":
@@ -133,3 +141,15 @@ class ReferencePass(IrPass):
                     )
             except IndexError:
                 pass
+
+    def traverse(self, node=None):
+        if node is None:
+            node = self.ir
+        self.enter_node(node)
+
+        # skip children of imported elements
+        if not (node.name == "element" and node in self.deps):
+            for i in node.kid:
+                self.traverse(i)
+
+        self.exit_node(node)

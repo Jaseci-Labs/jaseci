@@ -104,63 +104,30 @@ def completions(
         return CompletionList(is_incomplete=False, items=[])
 
     # completion for jaseci built in actions
-    if "std." in last_word:
-        return CompletionList(
-            is_incomplete=False,
-            items=[
-                CompletionItem(label=action["name"], kind=CompletionItemKind.Function)
-                for action in std_actions
-            ],
-        )
-
-    if "file." in last_word:
-        return CompletionList(
-            is_incomplete=False,
-            items=[
-                CompletionItem(label=action["name"], kind=CompletionItemKind.Function)
-                for action in file_actions
-            ],
-        )
-
-    if "net." in last_word:
-        return CompletionList(
-            is_incomplete=False,
-            items=[
-                CompletionItem(label=action["name"], kind=CompletionItemKind.Function)
-                for action in net_actions
-            ],
-        )
-
-    if "date." in last_word:
-        return CompletionList(
-            is_incomplete=False,
-            items=[
-                CompletionItem(label=action["name"], kind=CompletionItemKind.Function)
-                for action in date_actions
-            ],
-        )
-
-    if "mail." in last_word:
-        return CompletionList(
-            is_incomplete=False,
-            items=[
-                CompletionItem(label=action["name"], kind=CompletionItemKind.Function)
-                for action in mail_actions
-            ],
-        )
-
-    if "vector." in last_word:
-        return CompletionList(
-            is_incomplete=False,
-            items=[
-                CompletionItem(label=action["name"], kind=CompletionItemKind.Function)
-                for action in vector_actions
-            ],
-        )
+    for mod in action_modules.keys():
+        if (
+            last_word.find(mod + ".") != -1
+            and last_word.find(".", last_word.find(mod + ".") + len(mod + ".")) == -1
+            and last_word.find("(", last_word.find(mod + ".") + len(mod + ".")) == -1
+        ):
+            return CompletionList(
+                is_incomplete=False,
+                items=[
+                    CompletionItem(
+                        label=action["name"], kind=CompletionItemKind.Function
+                    )
+                    for action in action_modules[mod]
+                ],
+            )
 
     # handle completion for architypes references
     if "node::" in last_word and hasattr(doc, "architypes"):
         node_names = [node["name"] for node in doc.architypes["nodes"]]
+
+        for dep in doc.dependencies.values():
+            architypes = dep["architypes"]
+            node_names.extend([node["name"] for node in architypes["nodes"]])
+
         return CompletionList(
             is_incomplete=False,
             items=[
@@ -171,6 +138,9 @@ def completions(
 
     if "walker::" in last_word and hasattr(doc, "architypes"):
         walker_names = [walker["name"] for walker in doc.architypes["walkers"]]
+        for dep in doc.dependencies.values():
+            architypes = dep["architypes"]
+            walker_names.extend([node["name"] for node in architypes["walkers"]])
         return CompletionList(
             is_incomplete=False,
             items=[
@@ -183,6 +153,10 @@ def completions(
     for item in ["+[", "<+[", "-[", "<-[", "(-[", "(<-["]:
         if last_word.startswith(item) or last_word.startswith("!" + item):
             edge_names = [edge["name"] for edge in doc.architypes["edges"]]
+            for dep in doc.dependencies.values():
+                architypes = dep["architypes"]
+                edge_names.extend([node["name"] for node in architypes["edges"]])
+
             return CompletionList(
                 is_incomplete=False,
                 items=[

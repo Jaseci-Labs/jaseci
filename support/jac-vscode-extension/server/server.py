@@ -2,7 +2,6 @@ import asyncio
 from functools import wraps
 import os
 import time
-from threading import Timer
 import uuid
 from typing import Callable, Optional
 from jaseci.jac.ir.ast_builder import (
@@ -23,7 +22,6 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_COMPLETION,
     WORKSPACE_SYMBOL,
-    TEXT_DOCUMENT_DID_CLOSE,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_SAVE,
     TEXT_DOCUMENT_HOVER,
@@ -31,10 +29,6 @@ from lsprotocol.types import (
     DiagnosticSeverity,
     DefinitionParams,
     TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-    SemanticTokensLegend,
-    SemanticTokensParams,
-    SemanticTokens,
-    SemanticTokens,
 )
 
 
@@ -68,6 +62,7 @@ from server.document_symbols import (
     get_document_symbols,
 )
 from server.utils import (
+    debounce,
     deconstruct_error_message,
     update_doc_deps,
 )
@@ -395,10 +390,10 @@ def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
     doc = ls.workspace.get_document(uri)
     if hasattr(doc, "symbols"):
         symbols = doc.symbols
-        # TODO: remove this
-        if hasattr(doc, "dependencies"):
-            for key, value in doc.dependencies.items():
-                symbols.extend(value["symbols"])
+        # # TODO: remove this
+        # if hasattr(doc, "dependencies"):
+        #     for key, value in doc.dependencies.items():
+        #         symbols.extend(value["symbols"])
         return symbols
     else:
         update_doc_tree(ls, uri)
@@ -462,17 +457,9 @@ def definition(ls: JacLanguageServer, params: DefinitionParams):
 
     position = params.position
 
-    # if the document version is 0, the dependencies might not be up to date
-    # this is only necessary for the first time go to definition is called
-    # if doc.version == 0 and not ls.go_to_def_used:
-    #     update_doc_tree(ls, doc_uri)
-    #     ls.go_to_def_used = True
-
-    # handle hover for architypes
+    # get symbols under cursor
     if hasattr(doc, "_tree"):
-        hover_pass = ReferencePass(
-            ir=doc._tree.root, dependencies=doc._tree.dependencies
-        )
+        hover_pass = ReferencePass(ir=doc._tree.root, deps=doc._tree.dependencies)
         hover_pass.run()
 
         ref_table = hover_pass.output
@@ -496,7 +483,7 @@ def definition(ls: JacLanguageServer, params: DefinitionParams):
     return
 
 
-@jac_server.thread()
+# @jac_server.thread()
 @jac_server.feature(TEXT_DOCUMENT_HOVER)
 @jac_server.catch()
 def hover(ls: JacLanguageServer, params: HoverParams):
@@ -513,19 +500,19 @@ def hover(ls: JacLanguageServer, params: HoverParams):
     before_word = line[: position.character].strip().split(".")[0].split(" ")[-1]
 
     # Check if the word is a builtin action and return the docstring
-    # if before_word in action_modules.keys():
-    #     action = get_builtin_action(word_at_position, before_word)
-    #     if action:
-    #         args = ", ".join(action["args"])
-    #         doc = f'_action({before_word})_: **{action["name"]}({args})**'
-    #         if action["doc"]:
-    #             doc += f'\n\n{action["doc"]}'
+    if before_word in action_modules.keys():
+        action = get_builtin_action(word_at_position, before_word)
+        if action:
+            args = ", ".join(action["args"])
+            doc = f'_action({before_word})_: **{action["name"]}({args})**'
+            if action["doc"]:
+                doc += f'\n\n{action["doc"]}'
 
-    #         return Hover(contents=MarkupContent(kind=MarkupKind.Markdown, value=doc))
+            return Hover(contents=MarkupContent(kind=MarkupKind.Markdown, value=doc))
 
     # handle hover for architypes
     if hasattr(doc, "_tree"):
-        hover_pass = ReferencePass(ir=doc._tree.root)
+        hover_pass = ReferencePass(ir=doc._tree.root, deps=doc._tree.dependencies)
         hover_pass.run()
 
         ref_table = hover_pass.output
@@ -571,13 +558,9 @@ def soft_update(
         return True
 
 
+@debounce(0.8, keyed_by="doc_uri")
 def update_doc_tree_debounced(ls: JacLanguageServer, doc_uri: str):
-    doc = ls.workspace.get_document(doc_uri)
-    if hasattr(doc, "_tree_timer"):
-        doc._tree_timer.cancel()
-
-    doc._tree_timer = Timer(0.8, update_doc_tree, args=(ls, doc_uri, True))
-    doc._tree_timer.start()
+    update_doc_tree(ls, doc_uri)
 
 
 # @jac_server.thread()
