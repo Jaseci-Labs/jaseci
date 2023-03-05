@@ -91,6 +91,18 @@ def get_tree_architypes(tree: JacAstBuilder, pass_deps=False):
     return architypes
 
 
+def update_ast_head(ls: LanguageServer, doc_uri: str):
+    doc = ls.workspace.get_document(doc_uri)
+
+    # update the ast map
+    for file, dependencies in ls.dep_table.items():
+        if doc.path in dependencies:
+            try:
+                JacAstBuilder._ast_head_map.pop(file)
+            except KeyError:
+                pass
+
+
 def update_doc_deps(ls: LanguageServer, doc_uri: str):
     """Update the document dependencies"""
     doc = ls.workspace.get_document(doc_uri)
@@ -105,6 +117,8 @@ def update_doc_deps(ls: LanguageServer, doc_uri: str):
 
             if dep in tree.root.kid:
                 valid_sources.append(path)
+
+    ls.dep_table[doc.path] = [s for s in valid_sources if s != doc.path]
 
     try:
         for path, dep_tree in doc._tree._ast_head_map.items():

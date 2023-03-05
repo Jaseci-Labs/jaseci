@@ -64,6 +64,7 @@ from server.document_symbols import (
 from server.utils import (
     debounce,
     deconstruct_error_message,
+    update_ast_head,
     update_doc_deps,
 )
 
@@ -89,6 +90,7 @@ class JacLanguageServer(LanguageServer):
         self.diagnostics_debounce = None
         self.workspace_filled = False
         self._max_workers = 4
+        self.dep_table = {}
 
     def catch(self, log=False):
         def decorator(func: Callable):
@@ -131,24 +133,24 @@ def fill_workspace(ls):
             update_doc_tree(ls, doc_uri=doc.uri)
             logger.info("Processing ..." + doc.uri)
 
-        for doc in ls.workspace.documents.values():
-            # architypes are present for all files at this point
-            # so we can update the dependencies
-            update_doc_deps(ls, doc.uri)
-            # tree = JacAstBuilder(
-            #     mod_name=doc.filename,
-            #     mod_dir=os.path.dirname(doc.path) + "/",
-            #     jac_text=doc.source,
-            # )
-            # doc._tree = tree
-            # doc.architypes = get_tree_architypes(tree.root)
-            # doc.symbols = get_document_symbols(
-            #     ls, architypes=doc.architypes, doc_uri=doc.uri
-            # )
-            # doc.dependencies = {}
-            # update_doc_deps(ls, doc.uri)
+        # for doc in ls.workspace.documents.values():
+        # architypes are present for all files at this point
+        # so we can update the dependencies
+        # update_doc_deps(ls, doc.uri)
+        # tree = JacAstBuilder(
+        #     mod_name=doc.filename,
+        #     mod_dir=os.path.dirname(doc.path) + "/",
+        #     jac_text=doc.source,
+        # )
+        # doc._tree = tree
+        # doc.architypes = get_tree_architypes(tree.root)
+        # doc.symbols = get_document_symbols(
+        #     ls, architypes=doc.architypes, doc_uri=doc.uri
+        # )
+        # doc.dependencies = {}
+        # update_doc_deps(ls, doc.uri)
 
-            # _diagnose(ls, doc.uri)
+        # _diagnose(ls, doc.uri)
 
         ls.workspace_filled = True
     except Exception as e:
@@ -223,6 +225,9 @@ async def did_change(ls, params: DidChangeTextDocumentParams):
 @jac_server.feature(TEXT_DOCUMENT_DID_SAVE)
 def did_save(ls: JacLanguageServer, params: DidSaveTextDocumentParams):
     """Text document did save notification."""
+    doc = ls.workspace.get_document(params.text_document.uri)
+    if doc.version > 1:
+        update_ast_head(ls, doc.uri)
     # doc = ls.workspace.get_document(params.text_document.uri)
     # tree = JacAstBuilder(
     #     "test",
@@ -569,14 +574,17 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     start = time.time_ns()
     doc = ls.workspace.get_document(doc_uri)
 
-    if doc.path in JacAstBuilder._ast_head_map.keys():
-        JacAstBuilder._ast_head_map.pop(doc.path)
+    # if doc.path in JacAstBuilder._ast_head_map.keys():
+    # JacAstBuilder._ast_head_map.pop(doc.path)
 
     tree = JacAstBuilder(
         mod_name=doc.filename,
         jac_text=doc.source,
         mod_dir=os.path.dirname(doc.path) + "/",
     )
+    if tree._parse_errors:
+        return
+
     doc = ls.workspace.get_document(doc_uri)
     doc._tree = tree
     doc.symbols = get_document_symbols(ls, doc.uri)
