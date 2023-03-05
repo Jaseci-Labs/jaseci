@@ -1,3 +1,4 @@
+import copy
 import os
 import time
 from pygls.server import LanguageServer
@@ -42,8 +43,13 @@ def _get_architypes(lsp: LanguageServer, doc_uri: str):
         print(f"parsing tree took {(end - start) / 1000000} ms")
 
         start = time.time_ns()
-        architype_pass = ArchitypePass(ir=doc._tree.root)
-        architype_pass.run()
+        # we need to copy the root because the architype pass modifies the tree
+        # and we don't want to modify the tree in the workspace so deps are still valid
+        architype_pass = ArchitypePass(ir=doc._tree.root, deps=doc._tree.dependencies)
+        try:
+            architype_pass.run()
+        except Exception as e:
+            print(e)
 
         end = time.time_ns()
         print(f"architype pass took {(end - start) / 1000000} ms")

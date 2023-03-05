@@ -399,7 +399,12 @@ def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
     uri = params.text_document.uri
     doc = ls.workspace.get_document(uri)
     if hasattr(doc, "symbols"):
-        return doc.symbols
+        symbols = doc.symbols
+        # TODO: remove this
+        if hasattr(doc, "dependencies"):
+            for key, value in doc.dependencies.items():
+                symbols.extend(value["symbols"])
+        return symbols
     else:
         update_doc_tree(ls, uri)
         doc_symbols = get_document_symbols(ls, doc.uri)
@@ -432,7 +437,7 @@ def get_architype_data(ls: JacLanguageServer, uri: str, name: str, architype: st
 
 
 def get_symbol_data(ls: JacLanguageServer, uri: str, name: str, architype: str):
-    """Get the variables for the given architype."""
+    """Returns the symbol data for the given architype."""
     doc = ls.workspace.get_document(uri)
     if not hasattr(doc, "symbols"):
         return None
@@ -446,7 +451,9 @@ def get_symbol_data(ls: JacLanguageServer, uri: str, name: str, architype: str):
         symbols = dep["symbols"]
         symbols_pool.extend(symbols)
 
-    for symbol in symbols_pool:
+    for symbol in symbols_pool[::-1]:
+        # we want to consider dependencies first because the dependencies are in doc.symbols with the wrong uri
+        # doc.dependencies have the correct uri
         if symbol.name == name and symbol.kind == get_architype_class(architype):
             return symbol
 
@@ -572,7 +579,7 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     """Update the document tree"""
     start = time.time_ns()
     doc = ls.workspace.get_document(doc_uri)
-    # JacAstBuilder._ast_head_map = {}
+    JacAstBuilder._ast_head_map = {}
 
     if doc.path in JacAstBuilder._ast_head_map.keys():
         JacAstBuilder._ast_head_map.pop(doc.path)
@@ -586,7 +593,10 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     doc._tree = tree
     doc.symbols = get_document_symbols(ls, doc.uri)
     doc.dependencies = {}
-    update_doc_deps(ls, doc_uri)
+    try:
+        update_doc_deps(ls, doc_uri)
+    except Exception as e:
+        logger.error(f"Error updating document dependencies: {e}")
 
     end = time.time_ns()
     time_ms = (end - start) / 1000000

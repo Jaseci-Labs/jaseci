@@ -1,5 +1,6 @@
 import functools
 import inspect
+import os
 import re
 import sys
 import threading
@@ -109,30 +110,38 @@ def update_doc_deps(ls: LanguageServer, doc_uri: str):
     # find a uri that end with the module name and is not the current document and create symbols
     for mod_name in doc.dependencies.keys():
         uri_matches = [
-            uri for uri in ls.workspace.documents.keys() if uri.endswith(mod_name)
+            uri
+            for uri in ls.workspace.documents.keys()
+            if os.path.basename(uri) == mod_name and uri != doc.uri
         ]
 
         for uri in uri_matches:
-            uri_architypes = {"nodes": [], "edges": [], "walkers": [], "graphs": []}
+            matched_architypes = {"nodes": [], "edges": [], "walkers": [], "graphs": []}
             uri_doc = ls.workspace.get_document(uri)
             # some dependencies might not have been parsed yet
             if not hasattr(uri_doc, "architypes"):
                 continue
 
-            doc_architypes = uri_doc.architypes
+            match_architypes = uri_doc.architypes
 
             # compare architypes in the current document with the architypes in the dependency
-            for slot, value in doc_architypes.items():
-                for architype in value:
-                    if list(
-                        filter(
-                            lambda x: x["name"] == architype["name"],
-                            doc_architypes[slot],
-                        )
-                    ):
-                        uri_architypes[slot].extend([architype])
-
+            for slot, value in match_architypes.items():
+                try:
+                    for architype in value:
+                        # some architypes are lists and idk why, gotta investigate
+                        if not isinstance(architype, dict):
+                            continue
+                        if list(
+                            filter(
+                                lambda x: x["name"] == architype["name"],
+                                doc.dependencies[architype["src"]]["architypes"][slot],
+                            )
+                        ):
+                            matched_architypes[slot].extend([architype])
+                except Exception as e:
+                    # we gotta keep going
+                    print(e)
             new_symbols = get_document_symbols(
-                ls, architypes=uri_architypes, doc_uri=uri
+                ls, architypes=matched_architypes, doc_uri=uri
             )
             doc.dependencies[mod_name]["symbols"].extend(new_symbols)

@@ -4,11 +4,10 @@ from antlr4 import RuleNode
 
 
 class ArchitypePass(IrPass):
-    def __init__(self, to_screen=True, with_exit=False, **kwargs):
+    def __init__(self, deps=[], **kwargs):
         super().__init__(**kwargs)
-        self.to_screen = to_screen
-        self.with_exit = with_exit
         self.output = {"nodes": [], "walkers": [], "edges": [], "graphs": []}
+        self.deps = deps
 
     def extract_vars(self, nodes: List[RuleNode]):
         vars = []
@@ -72,6 +71,18 @@ class ArchitypePass(IrPass):
 
                 if node.kid[0].name == "KW_EDGE":
                     self.output["edges"].append(architype)
+
+    def traverse(self, node=None):
+        if node is None:
+            node = self.ir
+        self.enter_node(node)
+
+        # skip children of imported elements
+        if not (node.name == "element" and node in self.deps):
+            for i in node.kid:
+                self.traverse(i)
+
+        self.exit_node(node)
 
 
 class ReferencePass(IrPass):
