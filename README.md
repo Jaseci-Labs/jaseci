@@ -70,6 +70,7 @@
   - [Multipart](docs/docs/Developing_with_JAC/Language_Features/multipart.md)
   - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
   - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
+  - [Set Filtering](docs/docs/Developing_with_JAC/Language_Features/set_filtering.md)
 
 ## Jaseci Archetype and Graphs
   - [Nodes](docs/docs/jaseci_architype/nodes.md)
@@ -166,12 +167,14 @@
   4. [Find semantically similar sentences](examples/CanoniAnalytics/codelabs/4_find_semantically_similar_sentences.md)
   5. [Clustering documents](examples/CanoniAnalytics/codelabs/5_clustering_documents.md)
   6. [Sentiment analysis of dialogues](examples/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
+  7. [Creating custom action to scrap movie data](examples/CanoniAnalytics/codelabs/7_creating_custom_action_to_scrap_movie_data.md)
 - [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
 - [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
 - [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
 - [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
 - [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
 - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
+- [Enhancing User Experience with Personalized Content using PH](examples/CanoniCAI/codelabs/ph.md)
 
 ## Contributing to Jaseci
 

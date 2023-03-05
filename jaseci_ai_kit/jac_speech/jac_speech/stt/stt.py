@@ -113,6 +113,7 @@ SUPPORTED_LANGUAGES = [
 ]
 
 
+@jaseci_action(act_group=["stt"], allow_remote=True)
 def setup(size: str = "tiny"):
     global model, processor
     model = WhisperForConditionalGeneration.from_pretrained(f"openai/whisper-{size}")

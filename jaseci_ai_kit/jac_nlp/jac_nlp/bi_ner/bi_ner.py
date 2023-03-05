@@ -13,7 +13,8 @@ from .model.tokenize_data import get_datasets
 from jaseci.actions.live_actions import jaseci_action
 
 
-def config_setup(category_name: List[str] = None):
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def setup(category_name: List[str] = None):
     global model, example_encoder, category_id_mapping, device
     global model_args, m_config_fname, train_args, t_config_fname
 
@@ -38,7 +39,7 @@ def config_setup(category_name: List[str] = None):
 
 
 # initialize the model
-config_setup()
+setup()
 
 
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
@@ -87,7 +88,7 @@ def train(dataset: Dict = None, from_scratch=True, training_parameters: Dict = N
     def_category = list(category_id_mapping.values())
     def_category.pop(-1)
     if from_scratch or not (sorted(def_category) == sorted(category_name)):
-        config_setup(category_name=category_name)
+        setup(category_name=category_name)
     train_dataset = get_datasets(dataset, example_encoder)
 
     training_args = TrainingArguments(
@@ -162,7 +163,7 @@ def set_model_config(model_parameters: Dict = None):
             model_args.update(model_parameters)
             json.dump(model_args, jsonfile, indent=4)
 
-        config_setup()
+        setup()
         return "Config setup is complete."
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -8,6 +8,7 @@ import io
 from PIL import Image
 
 
+@jaseci_action(act_group=["yolos"], allow_remote=True)
 def setup(device: str = None):
     global detector
     if device is None:

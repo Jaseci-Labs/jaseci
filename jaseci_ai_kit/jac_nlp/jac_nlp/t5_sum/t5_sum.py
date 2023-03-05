@@ -4,9 +4,19 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration  # , T5Config
 
 # from fastapi import HTTPException
 
-model = T5ForConditionalGeneration.from_pretrained("t5-small")
-tokenizer = T5Tokenizer.from_pretrained("t5-small")
+model = None
+tokenizer = None
 device = torch.device("cpu")
+
+
+@jaseci_action(act_group=["t5_sum"], allow_remote=True)
+def setup(model_name: str = "t5-small", tokenizer_name: str = "t5-small"):
+    global model, tokenizer
+    model = T5ForConditionalGeneration.from_pretrained(model_name)
+    tokenizer = T5Tokenizer.from_pretrained(tokenizer_name)
+
+
+setup()
 
 
 # generates summary based on text

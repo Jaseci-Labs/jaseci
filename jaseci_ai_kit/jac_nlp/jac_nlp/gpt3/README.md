@@ -57,6 +57,10 @@ walker test_generate {
     });
 }
 ```
+
+### Setup Parameters
+- `api_key`: OpenAI's api key
+or you can set the `OPENAI_API_KEY` environment variable. Refer to - [GPT-3 API](https://beta.openai.com/docs/api-reference/introduction) to get the api key.
 # **References**
 - [GPT-3](https://openai.com/blog/gpt-3-apps/)
 - [GPT-3 API](https://beta.openai.com/docs/api-reference/introduction)

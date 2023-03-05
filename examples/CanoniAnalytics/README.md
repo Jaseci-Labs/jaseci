@@ -10,3 +10,4 @@ You will gain an understanding of the several text analysis methods offered by J
 4. [Find semantically similar sentences](codelabs/4_find_semantically_similar_sentences.md)
 5. [Clustering documents](codelabs/5_clustering_documents.md)
 6. [Sentiment analysis of dialogues](codelabs/6_sentiment_analysis.md)
+7. [Creating custom action to scrap movie data](codelabs/7_creating_custom_action_to_scrap_movie_data.md)

@@ -55,8 +55,7 @@ class SocialAuthTest(TestCaseHelper, TestCase):
             secret="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",
         )
         self.google_app.sites.add(
-            Site.objects.first(),
-            Site.objects.create(domain="google.com", name="google"),
+            Site.objects.create(domain="testserver", name="testserver"),
         )
         self.google_app.save()
 

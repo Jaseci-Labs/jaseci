@@ -1,3 +1,6 @@
+import shutil
+from os import path
+
 import pytest
 from jaseci.actions.live_actions import load_module_actions, unload_module
 from jaseci.utils.test_core import CoreTest, jac_testcase
@@ -25,8 +28,15 @@ class ZS_Classifier_Test(CoreTest):
     def test_get_embedding(self, ret):
         self.assertEqual(ret["success"], True)
 
+    @pytest.mark.order(3)
+    @jac_testcase("zs_classifier.jac", "test_train_classifier")
+    def test_train_classifier(self, ret):
+        self.assertEqual(ret["success"], True)
+
     @classmethod
     def tearDownClass(cls):
         super(ZS_Classifier_Test, cls).tearDownClass()
         ret = unload_module("jac_nlp.zs_classifier.zs_classifier")
         assert ret is True
+        if path.exists("model") and path.isdir("model"):
+            shutil.rmtree("model")
