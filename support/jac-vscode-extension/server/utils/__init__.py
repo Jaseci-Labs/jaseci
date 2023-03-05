@@ -96,8 +96,21 @@ def update_doc_deps(ls: LanguageServer, doc_uri: str):
     doc = ls.workspace.get_document(doc_uri)
     ### UPDATE SYMBOLS
     doc.dependencies = {}
+    valid_sources = []
+
+    for dep in doc._tree.dependencies:
+        for path, tree in doc._tree._ast_head_map.items():
+            if path in valid_sources:
+                continue
+
+            if dep in tree.root.kid:
+                valid_sources.append(path)
+
     try:
         for path, dep_tree in doc._tree._ast_head_map.items():
+            if path not in valid_sources:
+                continue
+
             if "file://" + path == doc.uri:
                 continue
 

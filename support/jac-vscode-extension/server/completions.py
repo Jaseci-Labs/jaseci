@@ -9,6 +9,7 @@ from lsprotocol.types import (
     CompletionList,
     CompletionItem,
     CompletionItemKind,
+    InsertTextFormat,
 )
 
 
@@ -165,7 +166,35 @@ def completions(
                 ],
             )
 
+    keywords = [
+        "node",
+        "walker",
+        "edge",
+        "architype",
+        "import",
+        "from",
+        "with",
+        "in",
+        "graph",
+        "report",
+        "disengage",
+        "take",
+    ]
+
+    snippet = CompletionItem(
+        label="loop",
+        kind=CompletionItemKind.Keyword,
+        detail="for loop",
+        documentation="Python for loop snippet",
+        insert_text="for ${1:item} in ${2:iterable}:\n    ${3:# body of the loop}",
+        insert_text_format=InsertTextFormat.Snippet,
+    )
+
     return CompletionList(
         is_incomplete=False,
-        items=[],
+        items=[
+            CompletionItem(label=keyword, kind=CompletionItemKind.Keyword)
+            for keyword in keywords
+        ]
+        + [snippet],
     )
