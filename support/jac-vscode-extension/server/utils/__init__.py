@@ -1,12 +1,11 @@
 import functools
 import inspect
-import os
 import re
 import sys
 import threading
 from typing import Any, Callable, Dict, Optional
 from pygls.server import LanguageServer
-from server.builder import JacAstBuilderSLL
+from server.builder import JacAstBuilder
 from server.document_symbols import get_document_symbols
 from server.passes import ArchitypePass
 
@@ -79,9 +78,12 @@ def debounce(
     return wrapper
 
 
-def get_tree_architypes(tree: JacAstBuilderSLL):
+def get_tree_architypes(tree: JacAstBuilder, pass_deps=False):
     """Get architypes from a tree"""
-    architype_pass = ArchitypePass(ir=tree)
+    if pass_deps:
+        architype_pass = ArchitypePass(ir=tree.root, deps=tree.dependencies)
+    else:
+        architype_pass = ArchitypePass(ir=tree.root)
     architype_pass.run()
 
     architypes = architype_pass.output
@@ -92,56 +94,20 @@ def get_tree_architypes(tree: JacAstBuilderSLL):
 def update_doc_deps(ls: LanguageServer, doc_uri: str):
     """Update the document dependencies"""
     doc = ls.workspace.get_document(doc_uri)
-    # get architypes for dependencies
-    for dep in doc._tree.dependencies:
-        mod_name = dep.loc[2]
-        if mod_name not in doc.dependencies:
-            doc.dependencies[mod_name] = {
-                "architypes": {"nodes": [], "edges": [], "walkers": [], "graphs": []},
-                "symbols": [],
-            }
-
-        new_architypes = get_tree_architypes(dep)
-
-        for key, value in new_architypes.items():
-            doc.dependencies[mod_name]["architypes"][key].extend(value)
-
     ### UPDATE SYMBOLS
-    # find a uri that end with the module name and is not the current document and create symbols
-    for mod_name in doc.dependencies.keys():
-        uri_matches = [
-            uri
-            for uri in ls.workspace.documents.keys()
-            if os.path.basename(uri) == mod_name and uri != doc.uri
-        ]
-
-        for uri in uri_matches:
-            matched_architypes = {"nodes": [], "edges": [], "walkers": [], "graphs": []}
-            uri_doc = ls.workspace.get_document(uri)
-            # some dependencies might not have been parsed yet
-            if not hasattr(uri_doc, "architypes"):
+    doc.dependencies = {}
+    try:
+        for path, dep_tree in doc._tree._ast_head_map.items():
+            if "file://" + path == doc.uri:
                 continue
 
-            match_architypes = uri_doc.architypes
-
-            # compare architypes in the current document with the architypes in the dependency
-            for slot, value in match_architypes.items():
-                try:
-                    for architype in value:
-                        # some architypes are lists and idk why, gotta investigate
-                        if not isinstance(architype, dict):
-                            continue
-                        if list(
-                            filter(
-                                lambda x: x["name"] == architype["name"],
-                                doc.dependencies[architype["src"]]["architypes"][slot],
-                            )
-                        ):
-                            matched_architypes[slot].extend([architype])
-                except Exception as e:
-                    # we gotta keep going
-                    print(e)
+            architypes = get_tree_architypes(dep_tree, pass_deps=True)
             new_symbols = get_document_symbols(
-                ls, architypes=matched_architypes, doc_uri=uri
+                ls, architypes=architypes, doc_uri="file://" + path
             )
-            doc.dependencies[mod_name]["symbols"].extend(new_symbols)
+            dependencies = {
+                "file://" + path: {"architypes": architypes, "symbols": new_symbols}
+            }
+            doc.dependencies.update(dependencies)
+    except Exception as e:
+        print(e)

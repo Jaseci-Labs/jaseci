@@ -94,6 +94,7 @@ class JacLanguageServer(LanguageServer):
         self.diagnostics_debounce = None
         self.workspace_filled = False
         self._max_workers = 4
+        self.closed_documents = {}
 
     def catch(self, log=False):
         def decorator(func: Callable):
@@ -130,6 +131,7 @@ def fill_workspace(ls):
             doc = TextDocumentItem(
                 uri="file://" + file, text=text, language_id="jac", version=0
             )
+            ls.workspace
             ls.workspace.put_document(doc)
             doc = ls.workspace.get_document(doc.uri)
             update_doc_tree(ls, doc_uri=doc.uri)
@@ -221,12 +223,6 @@ async def did_change(ls, params: DidChangeTextDocumentParams):
     updated = soft_update(ls, params.text_document.uri, params.content_changes[0])
     if not updated:
         update_doc_tree_debounced(ls, params.text_document.uri)
-
-
-@jac_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: JacLanguageServer, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    server.show_message("Jac document closed")
 
 
 @jac_server.thread()

@@ -98,7 +98,6 @@ def get_document_symbols(
     shift_lines: int = 0,
 ) -> List[SymbolInformation]:
     """Return a list of symbols in the document"""
-    doc = ls.workspace.get_document(doc_uri)
     if not architypes:
         start = time.time_ns()
         architypes = _get_architypes(ls, doc_uri)
@@ -109,9 +108,6 @@ def get_document_symbols(
 
     try:
         for walker in architypes["walkers"]:
-            if walker["src"] not in [doc.filename, doc.uri]:
-                continue
-
             symbol = _create_architype_symbol(
                 "walker", walker, doc_uri, shift_lines=shift_lines
             )
@@ -141,9 +137,6 @@ def get_document_symbols(
         print(e)
 
     for node in architypes["nodes"]:
-        if node["src"] not in [doc.filename, doc.uri]:
-            continue
-
         node_symbol = _create_architype_symbol(
             "node", node, doc_uri, shift_lines=shift_lines
         )
@@ -172,9 +165,6 @@ def get_document_symbols(
             symbols.append(var_symbol)
 
     for edge in architypes["edges"]:
-        if edge["src"] not in [doc.filename, doc.uri]:
-            continue
-
         symbol = _create_architype_symbol(
             "edge", edge, doc_uri, shift_lines=shift_lines
         )
@@ -201,8 +191,6 @@ def get_document_symbols(
 
             symbols.append(var_symbol)
     for graph in architypes["graphs"]:
-        if graph["src"] not in [doc.filename, doc.uri]:
-            continue
         symbol = _create_architype_symbol(
             "graph", graph, doc_uri, shift_lines=shift_lines
         )
