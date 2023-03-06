@@ -95,6 +95,9 @@ class ReferencePass(IrPass):
         self.comments = []
 
     def enter_node(self, node):
+        if node.name == "import_module":
+            print(node)
+
         if node.name == "PY_COMMENT":
             self.comments.append(
                 {

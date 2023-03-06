@@ -22,6 +22,7 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_COMPLETION,
     WORKSPACE_SYMBOL,
+    Location,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_SAVE,
     TEXT_DOCUMENT_HOVER,
@@ -454,12 +455,47 @@ def get_symbol_data(ls: JacLanguageServer, uri: str, name: str, architype: str):
     return None
 
 
+def handle_go_to_file(ls: JacLanguageServer, uri: str, position: Position):
+    """Handles the go to file request."""
+    doc = ls.workspace.get_document(uri)
+    line = doc.lines[position.line]
+    tokens = line.split()
+
+    try:
+        if (
+            tokens[0] == "import"
+            and tokens[2] == "with"
+            and (line.endswith(";\n") or line.endswith(";"))
+        ):
+            relative_path = tokens[3].strip("\"';")
+            base_path = os.path.dirname(doc.path)
+            file_path = os.path.abspath(os.path.join(base_path, relative_path))
+
+            if os.path.exists(file_path):
+                location = Location(
+                    uri=file_path,
+                    range=Range(
+                        start=Position(line=0, character=0),
+                        end=Position(line=0, character=0),
+                    ),
+                )
+                return location
+
+    except IndexError:
+        return None
+
+    return None
+
+
 @jac_server.feature(TEXT_DOCUMENT_DEFINITION)
 def definition(ls: JacLanguageServer, params: DefinitionParams):
     doc_uri = params.text_document.uri
     doc = ls.workspace.get_document(doc_uri)
 
     position = params.position
+    file_location = handle_go_to_file(ls, doc_uri, position)
+    if file_location is not None:
+        return file_location
 
     # get symbols under cursor
     if hasattr(doc, "_tree"):
