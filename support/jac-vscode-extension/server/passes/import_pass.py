@@ -16,4 +16,4 @@ class ImportPass(IrPass):
                     import_path = node.kid[5].token()["text"]
             except IndexError:
                 pass
-        print("done with node")
+        

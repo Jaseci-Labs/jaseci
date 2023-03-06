@@ -1,7 +1,6 @@
 import time
 from pygls.server import LanguageServer
 from antlr4 import *
-from jaseci.utils.utils import logger
 from jaseci.jac.ir.ast_builder import JacAstBuilder
 from server.builder import JacAstBuilderSLL
 
@@ -38,7 +37,7 @@ def _get_architypes(lsp: LanguageServer, doc_uri: str):
         doc = lsp.workspace.get_document(doc_uri)
         start = time.time_ns()
         end = time.time_ns()
-        logger.info(f"parsing tree took {(end - start) / 1000000} ms")
+        
 
         start = time.time_ns()
         # we need to copy the root because the architype pass modifies the tree
@@ -50,19 +49,18 @@ def _get_architypes(lsp: LanguageServer, doc_uri: str):
         try:
             architype_pass.run()
         except Exception as e:
-            print(e)
+            pass
 
         end = time.time_ns()
-        print(f"architype pass took {(end - start) / 1000000} ms")
+        
 
         # get a dictionary of all architypes in the file
         architypes = architype_pass.output
         doc.architypes = architypes
 
-        # print(architypes)
         return architypes
     except Exception as e:
-        print(e)
+        pass
 
         return {"nodes": [], "edges": [], "graphs": [], "walkers": []}
 
@@ -103,7 +101,7 @@ def get_document_symbols(
         start = time.time_ns()
         architypes = _get_architypes(ls, doc_uri)
         end = time.time_ns()
-        print(f"_get_architypes took {(end - start) / 1000000} ms")
+        
 
     symbols: List[SymbolInformation] = []
 
@@ -135,7 +133,7 @@ def get_document_symbols(
 
                 symbols.append(var_symbol)
     except Exception as e:
-        logger.error(e)
+        pass
 
     for node in architypes["nodes"]:
         node_symbol = _create_architype_symbol(

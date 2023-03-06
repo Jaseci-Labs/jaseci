@@ -7,7 +7,7 @@ from typing import Callable, Optional
 from jaseci.jac.ir.ast_builder import (
     JacAstBuilder,
 )
-from jaseci.utils.utils import logger
+
 
 from server.architypes_utils import get_architype_class
 from server.passes.semantic_token_pass import SemanticTokenPass
@@ -89,7 +89,7 @@ class JacLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = "jacServer"
 
     def __init__(self, *args):
-        super().__init__(*args)
+        super().__init__(*args, max_workers=4)
         self.diagnostics_debounce = None
         self.workspace_filled = False
         # more works = more memory, more memory = more responsive
@@ -134,11 +134,11 @@ def fill_workspace(ls):
             ls.workspace.put_document(doc)
             doc = ls.workspace.get_document(doc.uri)
             update_doc_tree(ls, doc_uri=doc.uri)
-            logger.info("Processing ..." + doc.uri)
+          
 
         ls.workspace_filled = True
     except Exception as e:
-        logger.error(e)
+        pass
 
 
 def publish_errors(ls: JacLanguageServer, doc_uri: str, parse_errors: list):
@@ -208,7 +208,7 @@ async def did_change(ls, params: DidChangeTextDocumentParams):
         if not updated:
             update_doc_tree_debounced(ls, params.text_document.uri)
     except Exception as e:
-        logger.error(e)
+        pass
 
 
 # @jac_server.thread()
@@ -220,17 +220,6 @@ def did_save(ls: JacLanguageServer, params: DidSaveTextDocumentParams):
         update_ast_head(ls, doc.uri)
         update_doc_tree_debounced(ls, doc.uri)
 
-    # doc = ls.workspace.get_document(params.text_document.uri)
-    # tree = JacAstBuilder(
-    #     "test",
-    #     mod_dir=os.dirname(doc.path),
-    #     jac_text=doc.source,
-    #     start_rule="import_module",
-    # )
-    # imports = ImportPass(ir=tree.root)
-    # imports.run()
-
-    # _diagnose(ls, params.text_document.uri)
 
 
 @jac_server.feature(TEXT_DOCUMENT_DID_OPEN)
@@ -241,31 +230,10 @@ def did_open(ls: JacLanguageServer, params: DidOpenTextDocumentParams):
             fill_workspace(ls)
             # ls.semantic_tokens_refresh()
         except Exception as e:
-            logger.error(e)
+            pass
 
     # _diagnose(ls, doc.uri)
 
-
-def get_word_at_position(text: str, position: int) -> str:
-    """
-    Given some text and the position of a starting character,
-    returns the word containing the starting character.
-    """
-    word_start = None
-    word_end = None
-    for i in range(position, -1, -1):
-        if not text[i].isalnum() and text[i] not in ["_", "$"]:
-            word_start = i + 1
-            break
-    if word_start is None:
-        word_start = 0
-    for i in range(position, len(text)):
-        if not text[i].isalnum() and text[i] not in ["_", "$"]:
-            word_end = i
-            break
-    if word_end is None:
-        word_end = len(text)
-    return text[word_start:word_end]
 
 
 # show message when client connects
@@ -381,8 +349,6 @@ def workspace_symbol(ls: JacLanguageServer, params: WorkspaceSymbolParams):
 
 @jac_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
 def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
-    print("Retrieving Symbols...")
-    start = time.time_ns()
     """Document symbol request."""
     uri = params.text_document.uri
     doc = ls.workspace.get_document(uri)
@@ -393,11 +359,8 @@ def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
         doc_symbols = get_document_symbols(ls, doc.uri)
         return [s for s in doc_symbols if s.location.uri == uri]
 
-    logger.info(f"Symbols Retrieved - Time: {(end - start) / 1000000}ms")
 
-    return doc.symbols
-
-
+@jac_server.thread()
 def get_architype_data(ls: JacLanguageServer, uri: str, name: str, architype: str):
     """Get the variables for the given architype."""
     doc = ls.workspace.get_document(uri)
@@ -489,13 +452,16 @@ def definition(ls: JacLanguageServer, params: DefinitionParams):
 
         # get symbols under cursor
         if JacAstBuilder._ast_head_map.get(doc.path):
-            hover_pass = ReferencePass(
+            ref_table_pass = ReferencePass(
                 ir=get_ast_from_path(doc.path).root,
                 deps=get_ast_from_path(doc.path).dependencies,
             )
-            hover_pass.run()
+            try:
+                ref_table_pass.run()
+            except Exception:
+                return None
 
-            ref_table = hover_pass.output
+            ref_table = ref_table_pass.output
 
             # we reverse the table so nodes that are in the current file are prioritized
             for ref in ref_table[::-1]:
@@ -515,7 +481,7 @@ def definition(ls: JacLanguageServer, params: DefinitionParams):
 
         return
     except Exception as e:
-        logger.error(e)
+        pass
 
 
 # @jac_server.thread()
@@ -555,6 +521,8 @@ def hover(ls: JacLanguageServer, params: HoverParams):
             )
             hover_pass.run()
 
+           
+
             ref_table = hover_pass.output
 
             for ref in ref_table:
@@ -573,7 +541,7 @@ def hover(ls: JacLanguageServer, params: HoverParams):
         else:
             return None
     except Exception as e:
-        logger.error(e)
+        pass
 
 
 # @jac_server.thread()
@@ -584,7 +552,7 @@ def handle_completions(params: Optional[CompletionParams] = None) -> CompletionL
     try:
         return completions(jac_server, params)
     except Exception as e:
-        logger.error(e)
+        pass
 
 
 def soft_update(
@@ -596,13 +564,12 @@ def soft_update(
         update_doc_tree(ls, doc_uri)
         return True
 
-
-@debounce(1, keyed_by="doc_uri")
+@jac_server.thread()
 def update_doc_tree_debounced(ls: JacLanguageServer, doc_uri: str):
     update_doc_tree(ls, doc_uri)
 
 
-# @jac_server.thread()
+@jac_server.thread()
 def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False):
     """Update the document tree"""
     start = time.time_ns()
@@ -629,14 +596,10 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
         else:
             update_doc_deps(ls, doc_uri)
     except Exception as e:
-        logger.error(f"Error updating document dependencies: {e}")
+        pass
 
     end = time.time_ns()
     time_ms = (end - start) / 1000000
 
-    if debounced:
-        logger.info(f"Debounced: Updated Document Tree - Time: {time_ms}ms")
-    else:
-        logger.info(f"Updated Document Tree - Time: {time_ms}ms")
 
     return tree

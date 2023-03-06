@@ -8,7 +8,6 @@ from pygls.server import LanguageServer
 from server.builder import JacAstBuilder
 from server.document_symbols import get_document_symbols
 from server.passes import ArchitypePass
-from jaseci.utils.utils import logger
 
 if sys.version_info < (3, 10):
     from typing_extensions import ParamSpec
@@ -156,7 +155,7 @@ def update_doc_deps(ls: LanguageServer, doc_uri: str):
             }
             doc.dependencies.update(dependencies)
     except Exception as e:
-        logger.error(e)
+        pass
 
 
 def get_ast_from_path(path: str):

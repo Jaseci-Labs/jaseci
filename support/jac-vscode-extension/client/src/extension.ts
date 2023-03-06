@@ -105,5 +105,6 @@ export function activate(context: ExtensionContext): void {
 }
 
 export function deactivate(): Thenable<void> {
+  console.log("JAC ext deactivated!")
   return client ? client.stop() : Promise.resolve();
 }
