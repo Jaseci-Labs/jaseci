@@ -1,0 +1,1 @@
+git+https://github.com/PrithivirajDamodaran/Parrot_Paraphraser.git@720a87a1ee557d8ed8d9a021adbdd1dd5616c5f9#egg=parrot

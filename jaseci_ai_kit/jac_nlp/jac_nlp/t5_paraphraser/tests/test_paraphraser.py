@@ -9,7 +9,7 @@ class ParaphraseModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(ParaphraseModule, cls).setUpClass()
-        ret = load_module_actions("jac_nlp.t5_phraser")
+        ret = load_module_actions("jac_nlp.t5_paraphraser")
         assert ret == True
 
     @pytest.mark.order(1)

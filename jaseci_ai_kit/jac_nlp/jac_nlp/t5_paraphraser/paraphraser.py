@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore")
 parrot = Parrot(model_tag="prithivida/parrot_paraphraser_on_T5", use_gpu=False)
 
 
-@jaseci_action(act_group=["t5_phraser"], allow_remote=True)
+@jaseci_action(act_group=["t5_paraphraser"], allow_remote=True)
 def paraphrase_text(phrases: List):
     para_phrases = {}
     for phrase in phrases:
