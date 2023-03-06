@@ -8,6 +8,7 @@ from pygls.server import LanguageServer
 from server.builder import JacAstBuilder
 from server.document_symbols import get_document_symbols
 from server.passes import ArchitypePass
+from jaseci.utils.utils import logger
 
 if sys.version_info < (3, 10):
     from typing_extensions import ParamSpec
@@ -17,6 +18,18 @@ else:
 
 def deconstruct_error_message(error_message):
     pattern = re.compile(r"^.*:\sline\s(\d+):(\d+)\s-\s(.+)$")
+    bad_import_pattern = re.compile(r"^.*?Line (\d+): (.+)$")
+
+    match = bad_import_pattern.match(error_message)
+    if match:
+        line_number = match.group(1)
+        error_text = match.group(2)
+
+        return (
+            int(line_number),
+            0,
+            error_text,
+        )
 
     match = pattern.match(error_message)
 
@@ -93,6 +106,7 @@ def get_tree_architypes(tree: JacAstBuilder, pass_deps=False):
 
 def update_ast_head(ls: LanguageServer, doc_uri: str):
     doc = ls.workspace.get_document(doc_uri)
+    JacAstBuilder._ast_head_map.pop(doc.path)
 
     # update the ast map
     for file, dependencies in ls.dep_table.items():
@@ -103,6 +117,11 @@ def update_ast_head(ls: LanguageServer, doc_uri: str):
                 pass
 
 
+# @debounce(2, keyed_by="doc_uri")
+def update_doc_deps_debounced(ls: LanguageServer, doc_uri: str):
+    update_doc_deps(ls, doc_uri)
+
+
 def update_doc_deps(ls: LanguageServer, doc_uri: str):
     """Update the document dependencies"""
     doc = ls.workspace.get_document(doc_uri)
@@ -110,8 +129,8 @@ def update_doc_deps(ls: LanguageServer, doc_uri: str):
     doc.dependencies = {}
     valid_sources = []
 
-    for dep in doc._tree.dependencies:
-        for path, tree in doc._tree._ast_head_map.items():
+    for dep in get_ast_from_path(doc.path).dependencies:
+        for path, tree in get_ast_from_path(doc.path)._ast_head_map.items():
             if path in valid_sources:
                 continue
 
@@ -121,7 +140,7 @@ def update_doc_deps(ls: LanguageServer, doc_uri: str):
     ls.dep_table[doc.path] = [s for s in valid_sources if s != doc.path]
 
     try:
-        for path, dep_tree in doc._tree._ast_head_map.items():
+        for path, dep_tree in get_ast_from_path(doc.path)._ast_head_map.items():
             if path not in valid_sources:
                 continue
 
@@ -137,4 +156,9 @@ def update_doc_deps(ls: LanguageServer, doc_uri: str):
             }
             doc.dependencies.update(dependencies)
     except Exception as e:
-        print(e)
+        logger.error(e)
+
+
+def get_ast_from_path(path: str):
+    """Given some path, return the ast"""
+    return JacAstBuilder._ast_head_map.get(path)

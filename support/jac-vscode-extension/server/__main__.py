@@ -23,7 +23,7 @@ logging.basicConfig(filename="pygls.log", level=logging.DEBUG, filemode="w")
 
 
 def add_arguments(parser):
-    parser.description = "simple json server example"
+    parser.description = "Jac Language Server"
 
     parser.add_argument("--tcp", action="store_true", help="Use TCP server")
     parser.add_argument("--ws", action="store_true", help="Use WebSocket server")

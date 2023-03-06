@@ -1,7 +1,21 @@
 from typing import Optional
 from pygls.server import LanguageServer
 import inspect
-from jaseci.actions.standard import file, std, date, mail, net, vector
+from jaseci.actions.standard import (
+    file,
+    std,
+    date,
+    mail,
+    net,
+    vector,
+    stripe,
+    request,
+    rand,
+    task,
+    url,
+    zlib,
+    webtool,
+)
 
 
 from lsprotocol.types import (
@@ -72,6 +86,77 @@ net_actions = [
     if "@jaseci_action" in inspect.getsource(func[1])
 ]
 
+stripe_actions = [
+    {
+        "name": func[0],
+        "args": inspect.getfullargspec(func[1]).args,
+        "doc": inspect.getdoc(func[1]),
+    }
+    for func in inspect.getmembers(stripe, inspect.isfunction)
+    if "@jaseci_action" in inspect.getsource(func[1])
+]
+
+request_actions = [
+    {
+        "name": func[0],
+        "args": inspect.getfullargspec(func[1]).args,
+        "doc": inspect.getdoc(func[1]),
+    }
+    for func in inspect.getmembers(request, inspect.isfunction)
+    if "@jaseci_action" in inspect.getsource(func[1])
+]
+
+rand_actions = [
+    {
+        "name": func[0],
+        "args": inspect.getfullargspec(func[1]).args,
+        "doc": inspect.getdoc(func[1]),
+    }
+    for func in inspect.getmembers(rand, inspect.isfunction)
+    if "@jaseci_action" in inspect.getsource(func[1])
+]
+
+task_actions = [
+    {
+        "name": func[0],
+        "args": inspect.getfullargspec(func[1]).args,
+        "doc": inspect.getdoc(func[1]),
+    }
+    for func in inspect.getmembers(task, inspect.isfunction)
+    if "@jaseci_action" in inspect.getsource(func[1])
+]
+
+url_actions = [
+    {
+        "name": func[0],
+        "args": inspect.getfullargspec(func[1]).args,
+        "doc": inspect.getdoc(func[1]),
+    }
+    for func in inspect.getmembers(url, inspect.isfunction)
+    if "@jaseci_action" in inspect.getsource(func[1])
+]
+
+zlib_actions = [
+    {
+        "name": func[0],
+        "args": inspect.getfullargspec(func[1]).args,
+        "doc": inspect.getdoc(func[1]),
+    }
+    for func in inspect.getmembers(zlib, inspect.isfunction)
+    if "@jaseci_action" in inspect.getsource(func[1])
+]
+
+webtool_actions = [
+    {
+        "name": func[0],
+        "args": inspect.getfullargspec(func[1]).args,
+        "doc": inspect.getdoc(func[1]),
+    }
+    for func in inspect.getmembers(zlib, inspect.isfunction)
+    if "@jaseci_action" in inspect.getsource(func[1])
+]
+
+
 action_modules = {
     "std": std_actions,
     "file": file_actions,
@@ -79,6 +164,13 @@ action_modules = {
     "vector": vector_actions,
     "mail": mail_actions,
     "net": net_actions,
+    "stripe": stripe_actions,
+    "request": request_actions,
+    "url": url_actions,
+    "rand": rand_actions,
+    "task": task_actions,
+    "zlib": zlib_actions,
+    "webtool": webtool_actions,
 }
 
 

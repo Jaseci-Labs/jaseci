@@ -1,9 +1,7 @@
-import copy
-import os
 import time
 from pygls.server import LanguageServer
 from antlr4 import *
-
+from jaseci.utils.utils import logger
 from jaseci.jac.ir.ast_builder import JacAstBuilder
 from server.builder import JacAstBuilderSLL
 
@@ -40,12 +38,15 @@ def _get_architypes(lsp: LanguageServer, doc_uri: str):
         doc = lsp.workspace.get_document(doc_uri)
         start = time.time_ns()
         end = time.time_ns()
-        print(f"parsing tree took {(end - start) / 1000000} ms")
+        logger.info(f"parsing tree took {(end - start) / 1000000} ms")
 
         start = time.time_ns()
         # we need to copy the root because the architype pass modifies the tree
         # and we don't want to modify the tree in the workspace so deps are still valid
-        architype_pass = ArchitypePass(ir=doc._tree.root, deps=doc._tree.dependencies)
+        architype_pass = ArchitypePass(
+            ir=JacAstBuilder._ast_head_map.get(doc.path).root,
+            deps=JacAstBuilder._ast_head_map.get(doc.path).dependencies,
+        )
         try:
             architype_pass.run()
         except Exception as e:
@@ -134,7 +135,7 @@ def get_document_symbols(
 
                 symbols.append(var_symbol)
     except Exception as e:
-        print(e)
+        logger.error(e)
 
     for node in architypes["nodes"]:
         node_symbol = _create_architype_symbol(

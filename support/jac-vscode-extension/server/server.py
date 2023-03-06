@@ -65,8 +65,10 @@ from server.document_symbols import (
 from server.utils import (
     debounce,
     deconstruct_error_message,
+    get_ast_from_path,
     update_ast_head,
     update_doc_deps,
+    update_doc_deps_debounced,
 )
 
 
@@ -90,7 +92,7 @@ class JacLanguageServer(LanguageServer):
         super().__init__(*args)
         self.diagnostics_debounce = None
         self.workspace_filled = False
-        self._max_workers = 4
+        # more works = more memory, more memory = more responsive
         self.dep_table = {}
 
     def catch(self, log=False):
@@ -133,25 +135,6 @@ def fill_workspace(ls):
             doc = ls.workspace.get_document(doc.uri)
             update_doc_tree(ls, doc_uri=doc.uri)
             logger.info("Processing ..." + doc.uri)
-
-        # for doc in ls.workspace.documents.values():
-        # architypes are present for all files at this point
-        # so we can update the dependencies
-        # update_doc_deps(ls, doc.uri)
-        # tree = JacAstBuilder(
-        #     mod_name=doc.filename,
-        #     mod_dir=os.path.dirname(doc.path) + "/",
-        #     jac_text=doc.source,
-        # )
-        # doc._tree = tree
-        # doc.architypes = get_tree_architypes(tree.root)
-        # doc.symbols = get_document_symbols(
-        #     ls, architypes=doc.architypes, doc_uri=doc.uri
-        # )
-        # doc.dependencies = {}
-        # update_doc_deps(ls, doc.uri)
-
-        # _diagnose(ls, doc.uri)
 
         ls.workspace_filled = True
     except Exception as e:
@@ -220,18 +203,23 @@ async def count_down_10_seconds_non_blocking(ls, *args):
 @jac_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 async def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
-    updated = soft_update(ls, params.text_document.uri, params.content_changes[0])
-    if not updated:
-        update_doc_tree_debounced(ls, params.text_document.uri)
+    try:
+        updated = soft_update(ls, params.text_document.uri, params.content_changes[0])
+        if not updated:
+            update_doc_tree_debounced(ls, params.text_document.uri)
+    except Exception as e:
+        logger.error(e)
 
 
-@jac_server.thread()
+# @jac_server.thread()
 @jac_server.feature(TEXT_DOCUMENT_DID_SAVE)
 def did_save(ls: JacLanguageServer, params: DidSaveTextDocumentParams):
     """Text document did save notification."""
     doc = ls.workspace.get_document(params.text_document.uri)
     if doc.version > 1:
         update_ast_head(ls, doc.uri)
+        update_doc_tree_debounced(ls, doc.uri)
+
     # doc = ls.workspace.get_document(params.text_document.uri)
     # tree = JacAstBuilder(
     #     "test",
@@ -242,16 +230,16 @@ def did_save(ls: JacLanguageServer, params: DidSaveTextDocumentParams):
     # imports = ImportPass(ir=tree.root)
     # imports.run()
 
-    _diagnose(ls, params.text_document.uri)
+    # _diagnose(ls, params.text_document.uri)
 
 
 @jac_server.feature(TEXT_DOCUMENT_DID_OPEN)
 def did_open(ls: JacLanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     if ls.workspace_filled is False:
-        fill_workspace(ls)
         try:
-            ls.semantic_tokens_refresh()
+            fill_workspace(ls)
+            # ls.semantic_tokens_refresh()
         except Exception as e:
             logger.error(e)
 
@@ -487,100 +475,116 @@ def handle_go_to_file(ls: JacLanguageServer, uri: str, position: Position):
     return None
 
 
+# @jac_server.thread()
 @jac_server.feature(TEXT_DOCUMENT_DEFINITION)
 def definition(ls: JacLanguageServer, params: DefinitionParams):
-    doc_uri = params.text_document.uri
-    doc = ls.workspace.get_document(doc_uri)
+    try:
+        doc_uri = params.text_document.uri
+        doc = ls.workspace.get_document(doc_uri)
 
-    position = params.position
-    file_location = handle_go_to_file(ls, doc_uri, position)
-    if file_location is not None:
-        return file_location
+        position = params.position
+        file_location = handle_go_to_file(ls, doc_uri, position)
+        if file_location is not None:
+            return file_location
 
-    # get symbols under cursor
-    if hasattr(doc, "_tree"):
-        hover_pass = ReferencePass(ir=doc._tree.root, deps=doc._tree.dependencies)
-        hover_pass.run()
+        # get symbols under cursor
+        if JacAstBuilder._ast_head_map.get(doc.path):
+            hover_pass = ReferencePass(
+                ir=get_ast_from_path(doc.path).root,
+                deps=get_ast_from_path(doc.path).dependencies,
+            )
+            hover_pass.run()
 
-        ref_table = hover_pass.output
+            ref_table = hover_pass.output
 
-        # we reverse the table so nodes that are in the current file are prioritized
-        for ref in ref_table[::-1]:
-            if (
-                ref["line"] == position.line + 1
-                and ref["start"] <= position.character <= ref["end"]
-            ):
-                symbol = get_symbol_data(ls, doc_uri, ref["name"], ref["architype"])
+            # we reverse the table so nodes that are in the current file are prioritized
+            for ref in ref_table[::-1]:
+                if (
+                    ref["line"] == position.line + 1
+                    and ref["start"] <= position.character <= ref["end"]
+                ):
+                    symbol = get_symbol_data(ls, doc_uri, ref["name"], ref["architype"])
 
-                if symbol is None:
-                    return None
+                    if symbol is None:
+                        return None
 
-                return symbol.location
+                    return symbol.location
 
-    else:
-        return None
+        else:
+            return None
 
-    return
+        return
+    except Exception as e:
+        logger.error(e)
 
 
 # @jac_server.thread()
 @jac_server.feature(TEXT_DOCUMENT_HOVER)
-@jac_server.catch()
 def hover(ls: JacLanguageServer, params: HoverParams):
     """Hover request."""
-    uri = params.text_document.uri
-    position = params.position
+    try:
+        uri = params.text_document.uri
+        position = params.position
 
-    doc = ls.workspace.get_document(uri)
-    source = doc.source
-    line = source.splitlines()[position.line]
+        doc = ls.workspace.get_document(uri)
+        source = doc.source
+        line = source.splitlines()[position.line]
 
-    # Get the word at the position and the word before it
-    word_at_position = doc.word_at_position(position)
-    before_word = line[: position.character].strip().split(".")[0].split(" ")[-1]
+        # Get the word at the position and the word before it
+        word_at_position = doc.word_at_position(position)
+        before_word = line[: position.character].strip().split(".")[0].split(" ")[-1]
 
-    # Check if the word is a builtin action and return the docstring
-    if before_word in action_modules.keys():
-        action = get_builtin_action(word_at_position, before_word)
-        if action:
-            args = ", ".join(action["args"])
-            doc = f'_action({before_word})_: **{action["name"]}({args})**'
-            if action["doc"]:
-                doc += f'\n\n{action["doc"]}'
+        # Check if the word is a builtin action and return the docstring
+        if before_word in action_modules.keys():
+            action = get_builtin_action(word_at_position, before_word)
+            if action:
+                args = ", ".join(action["args"])
+                doc = f'_action({before_word})_: **{action["name"]}({args})**'
+                if action["doc"]:
+                    doc += f'\n\n{action["doc"]}'
 
-            return Hover(contents=MarkupContent(kind=MarkupKind.Markdown, value=doc))
-
-    # handle hover for architypes
-    if hasattr(doc, "_tree"):
-        hover_pass = ReferencePass(ir=doc._tree.root, deps=doc._tree.dependencies)
-        hover_pass.run()
-
-        ref_table = hover_pass.output
-
-        for ref in ref_table:
-            if (
-                ref["line"] == position.line + 1
-                and ref["start"] <= position.character <= ref["end"]
-            ):
-                arch = get_architype_data(ls, uri, ref["name"], ref["architype"])
-                vars = [var["name"] for var in arch["vars"]]
                 return Hover(
-                    contents=MarkupContent(
-                        kind=MarkupKind.Markdown,
-                        value=f"_{ref['architype'][:-1]}_::{ref['name']}({', '.join(vars)})",
-                    )
+                    contents=MarkupContent(kind=MarkupKind.Markdown, value=doc)
                 )
-    else:
-        return None
+
+        # handle hover for architypes
+        if JacAstBuilder._ast_head_map.get(doc.path):
+            hover_pass = ReferencePass(
+                ir=get_ast_from_path(doc.path).root,
+                deps=get_ast_from_path(doc.path).dependencies,
+            )
+            hover_pass.run()
+
+            ref_table = hover_pass.output
+
+            for ref in ref_table:
+                if (
+                    ref["line"] == position.line + 1
+                    and ref["start"] <= position.character <= ref["end"]
+                ):
+                    arch = get_architype_data(ls, uri, ref["name"], ref["architype"])
+                    vars = [var["name"] for var in arch["vars"]]
+                    return Hover(
+                        contents=MarkupContent(
+                            kind=MarkupKind.Markdown,
+                            value=f"_{ref['architype'][:-1]}_::{ref['name']}({', '.join(vars)})",
+                        )
+                    )
+        else:
+            return None
+    except Exception as e:
+        logger.error(e)
 
 
-@jac_server.thread()
+# @jac_server.thread()
 @jac_server.feature(
     TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[".", ":"])
 )
-@jac_server.catch()
 def handle_completions(params: Optional[CompletionParams] = None) -> CompletionList:
-    return completions(jac_server, params)
+    try:
+        return completions(jac_server, params)
+    except Exception as e:
+        logger.error(e)
 
 
 def soft_update(
@@ -588,17 +592,12 @@ def soft_update(
 ):
     """Update the document tree if certain conditions are met."""
     doc = ls.workspace.get_document(doc_uri)
-    if (
-        change.text == ";"
-        or change.text == "{"
-        or doc.version % 10 == 0
-        or len(doc.lines) < 300
-    ):
+    if change.text == ";" or change.text == "{" or doc.version % 20 == 0:
         update_doc_tree(ls, doc_uri)
         return True
 
 
-@debounce(0.8, keyed_by="doc_uri")
+@debounce(1, keyed_by="doc_uri")
 def update_doc_tree_debounced(ls: JacLanguageServer, doc_uri: str):
     update_doc_tree(ls, doc_uri)
 
@@ -608,9 +607,6 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     """Update the document tree"""
     start = time.time_ns()
     doc = ls.workspace.get_document(doc_uri)
-
-    # if doc.path in JacAstBuilder._ast_head_map.keys():
-    # JacAstBuilder._ast_head_map.pop(doc.path)
 
     tree = JacAstBuilder(
         mod_name=doc.filename,
@@ -624,12 +620,14 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
         publish_errors(ls, doc_uri, [])
 
     doc = ls.workspace.get_document(doc_uri)
-    doc._tree = tree
     doc.symbols = [
         s for s in get_document_symbols(ls, doc.uri) if s.location.uri == doc_uri
     ]
     try:
-        update_doc_deps(ls, doc_uri)
+        if doc.version > 1:
+            update_doc_deps_debounced(ls, doc_uri)
+        else:
+            update_doc_deps(ls, doc_uri)
     except Exception as e:
         logger.error(f"Error updating document dependencies: {e}")
 
