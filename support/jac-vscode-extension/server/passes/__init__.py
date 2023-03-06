@@ -78,7 +78,7 @@ class ArchitypePass(IrPass):
         self.enter_node(node)
 
         # skip children of imported elements
-        if not (node.name == "element" and node in self.deps):
+        if not node in self.deps:
             for i in node.kid:
                 self.traverse(i)
 

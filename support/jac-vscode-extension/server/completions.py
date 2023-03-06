@@ -12,6 +12,8 @@ from lsprotocol.types import (
     InsertTextFormat,
 )
 
+from server.architypes_utils import get_architype_class
+
 
 std_actions = [
     {
@@ -123,17 +125,26 @@ def completions(
 
     # handle completion for architypes references
     if "node::" in last_word and hasattr(doc, "architypes"):
-        node_names = [node["name"] for node in doc.architypes["nodes"]]
+        node_names = [
+            node.name
+            for node in doc.symbols
+            if get_architype_class("node") == node.kind
+        ]
 
         for dep in doc.dependencies.values():
-            architypes = dep["architypes"]
-            node_names.extend([node["name"] for node in architypes["nodes"]])
+            symbols = dep["symbols"]
+            dep_node_names = [
+                node.name
+                for node in symbols
+                if get_architype_class("node") == node.kind
+            ]
+            node_names.extend(dep_node_names)
 
         return CompletionList(
             is_incomplete=False,
             items=[
                 CompletionItem(label=node_name, kind=CompletionItemKind.Class)
-                for node_name in node_names
+                for node_name in list(set(node_names))
             ],
         )
 
@@ -146,7 +157,7 @@ def completions(
             is_incomplete=False,
             items=[
                 CompletionItem(label=node_name, kind=CompletionItemKind.Function)
-                for node_name in walker_names
+                for node_name in list(set(walker_names))
             ],
         )
 
@@ -162,7 +173,7 @@ def completions(
                 is_incomplete=False,
                 items=[
                     CompletionItem(label=edge_name, kind=CompletionItemKind.Interface)
-                    for edge_name in edge_names
+                    for edge_name in list(set(edge_names))
                 ],
             )
 

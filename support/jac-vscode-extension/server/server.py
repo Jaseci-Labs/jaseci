@@ -157,13 +157,10 @@ def fill_workspace(ls):
         logger.error(e)
 
 
-# @debounce(0.5, keyed_by="doc_uri")
-def _diagnose(ls: JacLanguageServer, doc_uri: str):
-    tree = update_doc_tree(ls, doc_uri)
-
+def publish_errors(ls: JacLanguageServer, doc_uri: str, parse_errors: list):
     errors = []
 
-    for error in tree._parse_errors:
+    for error in parse_errors:
         unformatted_error = deconstruct_error_message(error)
 
         if unformatted_error is None:
@@ -183,6 +180,12 @@ def _diagnose(ls: JacLanguageServer, doc_uri: str):
         errors.append(diagnostic)
 
     ls.publish_diagnostics(doc_uri, errors)
+
+
+# @debounce(0.5, keyed_by="doc_uri")
+def _diagnose(ls: JacLanguageServer, doc_uri: str):
+    tree = update_doc_tree(ls, doc_uri)
+    publish_errors(ls, doc_uri, tree._parse_errors)
 
 
 jac_server = JacLanguageServer("jac-lsp", "v0.1")
@@ -375,15 +378,16 @@ def show_configuration_callback(ls: JacLanguageServer, *args):
 @jac_server.catch()
 def workspace_symbol(ls: JacLanguageServer, params: WorkspaceSymbolParams):
     """Workspace symbol request."""
-    symbols = []
-    for doc in ls.workspace.documents.values():
-        if hasattr(doc, "symbols"):
-            symbols.extend(doc.symbols)
-        else:
-            doc_symbols = get_document_symbols(ls, doc.uri)
-            symbols.extend(doc_symbols)
+    pass
+    # symbols = []
+    # for doc in ls.workspace.documents.values():
+    #     if hasattr(doc, "symbols"):
+    #         symbols.extend(doc.symbols)
+    #     else:
+    #         doc_symbols = get_document_symbols(ls, doc.uri)
+    #         symbols.extend(doc_symbols)
 
-    return symbols
+    # return symbols
 
 
 @jac_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
@@ -394,16 +398,11 @@ def document_symbol(ls: JacLanguageServer, params: DocumentSymbolParams):
     uri = params.text_document.uri
     doc = ls.workspace.get_document(uri)
     if hasattr(doc, "symbols"):
-        symbols = doc.symbols
-        # # TODO: remove this
-        # if hasattr(doc, "dependencies"):
-        #     for key, value in doc.dependencies.items():
-        #         symbols.extend(value["symbols"])
-        return symbols
+        return [s for s in doc.symbols if s.location.uri == uri]
     else:
         update_doc_tree(ls, uri)
         doc_symbols = get_document_symbols(ls, doc.uri)
-        return doc_symbols
+        return [s for s in doc_symbols if s.location.uri == uri]
 
     logger.info(f"Symbols Retrieved - Time: {(end - start) / 1000000}ms")
 
@@ -583,11 +582,16 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
         mod_dir=os.path.dirname(doc.path) + "/",
     )
     if tree._parse_errors:
+        publish_errors(ls, doc_uri, tree._parse_errors)
         return
+    else:
+        publish_errors(ls, doc_uri, [])
 
     doc = ls.workspace.get_document(doc_uri)
     doc._tree = tree
-    doc.symbols = get_document_symbols(ls, doc.uri)
+    doc.symbols = [
+        s for s in get_document_symbols(ls, doc.uri) if s.location.uri == doc_uri
+    ]
     try:
         update_doc_deps(ls, doc_uri)
     except Exception as e:
