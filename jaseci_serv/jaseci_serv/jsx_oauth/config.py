@@ -3,7 +3,6 @@ import os
 OAUTH_APPS = [
     "rest_framework.authtoken",
     "dj_rest_auth",
-    "django.contrib.sites",
     "allauth",
     "allauth.account",
     "dj_rest_auth.registration",
