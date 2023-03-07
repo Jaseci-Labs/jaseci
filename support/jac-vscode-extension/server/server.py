@@ -40,7 +40,6 @@ from lsprotocol.types import (
     ConfigurationItem,
     Diagnostic,
     DidChangeTextDocumentParams,
-    DidCloseTextDocumentParams,
     DidSaveTextDocumentParams,
     DidOpenTextDocumentParams,
     MessageType,
@@ -134,7 +133,6 @@ def fill_workspace(ls):
             ls.workspace.put_document(doc)
             doc = ls.workspace.get_document(doc.uri)
             update_doc_tree(ls, doc_uri=doc.uri)
-          
 
         ls.workspace_filled = True
     except Exception as e:
@@ -221,7 +219,6 @@ def did_save(ls: JacLanguageServer, params: DidSaveTextDocumentParams):
         update_doc_tree_debounced(ls, doc.uri)
 
 
-
 @jac_server.feature(TEXT_DOCUMENT_DID_OPEN)
 def did_open(ls: JacLanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
@@ -233,7 +230,6 @@ def did_open(ls: JacLanguageServer, params: DidOpenTextDocumentParams):
             pass
 
     # _diagnose(ls, doc.uri)
-
 
 
 # show message when client connects
@@ -498,7 +494,13 @@ def hover(ls: JacLanguageServer, params: HoverParams):
 
         # Get the word at the position and the word before it
         word_at_position = doc.word_at_position(position)
-        before_word = line[: position.character].strip().split(".")[0].split(" ")[-1]
+        before_word = (
+            line[: position.character]
+            .strip()
+            .split(".")[0]
+            .split(" ")[-1]
+            .strip("=+-*<>!")
+        )
 
         # Check if the word is a builtin action and return the docstring
         if before_word in action_modules.keys():
@@ -519,9 +521,10 @@ def hover(ls: JacLanguageServer, params: HoverParams):
                 ir=get_ast_from_path(doc.path).root,
                 deps=get_ast_from_path(doc.path).dependencies,
             )
-            hover_pass.run()
-
-           
+            try:
+                hover_pass.run()
+            except Exception as e:
+                pass
 
             ref_table = hover_pass.output
 
@@ -564,6 +567,7 @@ def soft_update(
         update_doc_tree(ls, doc_uri)
         return True
 
+
 @jac_server.thread()
 def update_doc_tree_debounced(ls: JacLanguageServer, doc_uri: str):
     update_doc_tree(ls, doc_uri)
@@ -600,6 +604,5 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
 
     end = time.time_ns()
     time_ms = (end - start) / 1000000
-
 
     return tree

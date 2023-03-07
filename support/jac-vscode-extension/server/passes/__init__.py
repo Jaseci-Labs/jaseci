@@ -90,7 +90,7 @@ class ReferencePass(IrPass):
         super().__init__(**kwargs)
         self.to_screen = to_screen
         self.with_exit = with_exit
-        self.output = ()
+        self.output = []
         self.deps = deps
         self.comments = []
 
