@@ -3,6 +3,13 @@ from prometheus_api_client import PrometheusConnect
 from jaseci import JsOrc
 
 
+class MetricValue:
+    node = None
+    pod = None
+    def __init__(self, _node: dict, _pod: dict):
+        self.node = _node
+        self.pod = _pod
+
 @JsOrc.service(name="prome", config="PROME_CONFIG", manifest="PROME_MANIFEST")
 class PrometheusService(JsOrc.CommonService):
     ###################################################
@@ -53,7 +60,35 @@ class PrometheusService(JsOrc.CommonService):
             res[node].append(pod)
         return res
 
-    def info(
+    def node_info(
+            self,
+            namespace: str = "",
+            exclude_prom: bool = False,
+            timestamp: int = 0,
+            duration: int = 0,
+            ) -> dict:
+
+        if namespace == "":
+            util = self.app.get_current_metric_value("kube_node_info")
+        else:
+            util = self.app.get_current_metric_value(
+                f"kube_node_info{{namespace='{namespace}'}}"
+            )
+
+        res = {}
+        disk_read = self.disk.read()
+
+        node_names = [nodes["metric"]["node"] for nodes in util]
+
+        for node_name in node_names:
+            res[node_name] = {}
+
+        for node_name in node_names:
+            res[node_name]["disk_read_bytes"] = disk_read.get(node_name, 0)
+
+        return res
+
+    def pod_info(
         self,
         namespace: str = "",
         exclude_prom: bool = False,
@@ -82,17 +117,6 @@ class PrometheusService(JsOrc.CommonService):
             # res[pod_name] = pod["metric"]
             res[pod_name] = {}
 
-        if timestamp != 0 and duration != 0:
-            cpu = self.cpu.utilization_per_pod_cores(ts=timestamp, duration=duration)
-        else:
-            cpu = self.disk.read()
-        for pod in util:
-            pod_name = pod["metric"]["pod"]
-            if exclude_prom and "prometheus" in pod_name:
-                continue
-            pod_cpu = cpu.get(pod_name, 0)
-
-            res[pod_name]["cpu_utilization_cores"] = pod_cpu
         if timestamp != 0 and duration != 0:
             cpu = self.cpu.utilization_per_pod_cores(ts=timestamp, duration=duration)
         else:
@@ -145,6 +169,27 @@ class PrometheusService(JsOrc.CommonService):
             res[pod_name]["network_tran_bytes"] = pod_tran
 
         return res
+
+    def info(
+        self,
+        namespace: str = "",
+        exclude_prom: bool = False,
+        timestamp: int = 0,
+        duration: int = 0,
+        ) -> MetricValue:
+        node_value = self.node_info(
+            namespace=namespace,
+            exclude_prom=exclude_prom,
+            timestamp=timestamp,
+            duration=duration,
+        )
+        pod_value = self.pod_info(
+            namespace=namespace,
+            exclude_prom=exclude_prom,
+            timestamp=timestamp,
+            duration=duration,
+        )
+        return MetricValue(_node=node_value, _pod=pod_value)
 
 
 class Info:
