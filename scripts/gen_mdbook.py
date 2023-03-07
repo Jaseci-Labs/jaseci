@@ -99,6 +99,7 @@ def build_summary_file():
     imageFiles = [
         "examples/CanoniCAI/images",
         "support/guide/assets",
+        "docs/static/img/studio-features/",
         "support/codelabs/canonicai/images",
         "examples/CanoniCAI/codelabs/lang_docs/images",
         "jaseci_ai_kit/jaseci_ai_kit/modules/ph/assets",

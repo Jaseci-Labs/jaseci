@@ -131,6 +131,11 @@
 ## Jaseci Studio and UI Widget Library
 
 - [Jaseci Studio Features](jaseci_studio/features.md)
+  - [Login](jaseci_studio/login.md)
+  - [Dashboard](jaseci_studio/dashboard.md)
+  - [Graph Viewer](jaseci_studio/graphs.md)
+  - [Logs Viewer](jaseci_studio/logs.md)
+  - [Managing Architypes](jaseci_studio/architype.md)
 - [Jaseci UI Kit](ui_components/readme.md)
   - [Introduction](ui_components/docs/what-is-jaseci-ui-kit.md)
   - [Basic Concepts](ui_components/docs/basic-concepts.md)
