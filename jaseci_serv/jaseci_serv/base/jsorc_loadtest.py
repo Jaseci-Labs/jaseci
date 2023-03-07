@@ -1,9 +1,14 @@
+import os
+import time
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from rest_framework.test import APIClient
 
 from time import sleep
+from jaseci.utils.utils import logger
+
+APP_PATH = os.path.join(os.path.dirname(__file__), "example_jac")
 
 
 class JsorcLoadTest:
@@ -35,7 +40,7 @@ class JsorcLoadTest:
 
         self.test = test
 
-    def run_test(self, experiment, mem):
+    def run_test(self, experiment, mem, policy):
         """
         Run the corresponding jsorc test
         """
@@ -43,7 +48,7 @@ class JsorcLoadTest:
         if experiment == "":
             return test_func()
         else:
-            return test_func(experiment, mem)
+            return test_func(experiment, mem, policy)
 
     def load_action(self, name, mode, wait_for_ready=False):
         """
@@ -117,15 +122,115 @@ class JsorcLoadTest:
         return res.data
 
     def start_actions_tracking(self):
-        payload = {"op": "jsorc_actionstracking_start"}
+        payload = {"op": "jsorc_trackact_start"}
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         return res.data
 
     def stop_actions_tracking(self):
-        payload = {"op": "jsorc_actionstracking_stop"}
+        payload = {"op": "jsorc_trackact_stop"}
         res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         return res.data
+
+    def load_action_config(self, action_pkg, action_module):
+        """ """
+        payload = {
+            "op": "jsorc_actions_config",
+            "config": action_pkg,
+            "name": action_module,
+        }
+        res = self.sauth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        return res.data
+
+    def synthetic_apps(self, experiment, mem, policy):
+        """
+        Run synthetic application
+        Available applications are in jaseci_serv/base/example_jac
+        """
+        results = {}
+        node_mem = [int(mem) * 1024]
+        apps = [experiment]
+        policies = [policy]
+        app_to_actions = {
+            "zeroshot_faq_bot": ["text_seg", "use_qa"],
+            "sentence_pairing": ["use_enc", "bi_enc"],
+            "discussion_analysis": ["bi_enc", "cl_summer"],
+            "flight_chatbot": ["use_qa", "ent_ext"],
+            "restaurant_chatbot": ["bi_enc", "tfm_ner"],
+            "virtual_assistant": ["text_seg", "bi_enc", "tfm_ner", "ent_ext", "use_qa"],
+            "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
+        }
+
+        for app in apps:
+            jac_file = os.path.join(APP_PATH, f"{app}.jac")
+            self.sentinel_register(jac_file)
+            action_modules = app_to_actions[app]
+            for policy in policies:
+                if policy == "all_local" or policy == "all_remote":
+                    policy_params = [{}]
+                else:
+                    policy_params = [{"node_mem": nm} for nm in node_mem]
+
+                for pparams in policy_params:
+                    if policy == "all_local":
+                        jsorc_policy = "Default"
+                        for module in action_modules:
+                            self.load_action_config("jac_nlp.config", module)
+                            self.load_action(module, "local", wait_for_ready=True)
+                    elif policy == "all_remote":
+                        jsorc_policy = "Default"
+                        for module in action_modules:
+                            self.load_action_config("jac_nlp.config", module)
+                            self.load_action(module, "remote", wait_for_ready=True)
+                    elif policy == "evaluation":
+                        jsorc_policy = "Evaluation"
+                        # For JSORC mode, we start as remote everything
+                        for module in action_modules:
+                            self.load_action_config("jac_nlp.config", module)
+                            self.load_action(module, "remote", wait_for_ready=True)
+                    else:
+                        logger.error(f"Unrecognized policy {policy}")
+                        return
+
+                    self.set_jsorc_actionpolicy(jsorc_policy, policy_params=pparams)
+                    #
+                    # Experiment Start
+                    #
+                    self.start_benchmark()
+                    self.start_actions_tracking()
+                    start_ts = time.time()
+                    if policy == "all_local" or policy == "all_remote":
+                        experiment_duration = 3 * 60
+                    else:
+                        experiment_duration = 5 * 60
+                    while (time.time() - start_ts) < experiment_duration:
+                        res = self.run_walker(app)
+                    result = self.stop_benchmark()
+                    action_result = self.stop_actions_tracking()
+                    if policy == "all_local" or policy == "all_remote":
+                        policy_str = policy
+                    else:
+                        policy_str = f"{policy}-mem-{pparams['node_mem']}"
+                    results.setdefault(app, {})[policy_str] = {
+                        "walker_level": result,
+                        "action_level": action_result,
+                    }
+                    #
+                    # Experiment Ends. Unload actions. Reset the cluster
+                    #
+                    if policy == "all_local":
+                        for module in action_modules:
+                            self.unload_action(module, mode="local", retire_svc=True)
+                    elif policy == "all_remote":
+                        for module in action_modules:
+                            self.unload_action(module, mode="remote", retire_svc=True)
+                    else:
+                        for module in action_modules:
+                            self.unload_action(module, mode="auto", retire_svc=True)
+                    sleep(10)
+        return results

@@ -31,7 +31,7 @@ class V2VPostProcessor:
         pass
 
     def process(self, output: torch.Tensor) -> list:
-        return output.tolist()[0]
+        return output.tolist()
 
 
 class V2VPreProcessor:

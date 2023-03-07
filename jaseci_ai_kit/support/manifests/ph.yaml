@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ph
+spec:
+  selector:
+    pod: ph
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ph-up
+  namespace: default
+data:
+  prod_up: |-
+    uvicorn jac_misc.ph:serv_actions --host 0.0.0.0 --port 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ph
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      pod: ph
+  template:
+    metadata:
+      labels:
+        pod: ph
+      name: ph
+    spec:
+      containers:
+        - name: ph
+          imagePullPolicy: IfNotPresent
+          image: jaseci/jac-misc:1.4.0.6
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "1Gi"
+          command: [bash, -c, "source script/prod_up"]
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: prod-script
+              mountPath: /script
+            - name: ph-volume
+              mountPath: /heads/
+              subPath: personalized_heads
+
+      volumes:
+        - name: prod-script
+          configMap:
+            name: ph-up
+        - name: ph-volume
+          persistentVolumeClaim:
+            claimName: ph-pvc
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ph-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---

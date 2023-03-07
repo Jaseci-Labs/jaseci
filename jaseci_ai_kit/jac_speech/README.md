@@ -6,15 +6,15 @@ Each module can be installed individually or all at once. To install all modules
 ```bash
 pip install jac_speech[all] # Installs all the modules present in the jac_speech package
 pip install jac_speech[stt] # Installs the  stt module present in the jac_speech package
-pip install jac_speech[stt, tts] # Installs the stt and tts module present in the jac_speech package
+pip install jac_speech[stt,vc_tts] # Installs the stt and vc_tts module present in the jac_speech package
 ```
 
 ## List of Models
 
-| Module      | Model Type       | Model Name       | Docs                             | Type                    | Status       | Description                                                 | Resources                                 |
-| ----------- | ---------------- |---------------- | ----------------------------------- | ----------------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------- |
-| `stt`  | Speech to Text | Whisper |  [Link](jac_speech/stt/README.md) | No Training req. | Ready  | transcription or translation of a give audio sequence. | [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf), [OpenAI Whisper](https://openai.com/blog/whisper/)                                                                                                               |
-| `tts`  | Text to Speech | Tacotron | [Link](jac_speech/tts/README.md) | No Training req. | Ready  | List of Amplitudes of the synthesized audio wav.       | [Tacotron2](https://arxiv.org/abs/1712.05884), [Waveglow](https://arxiv.org/abs/1811.00002), [Hifigan](https://arxiv.org/abs/2010.05646), [Nvidia Tacotron2 implementation](https://github.com/NVIDIA/tacotron2), [SpeechBrain](https://speechbrain.github.io/index.html) |
+| Module   | Model Type     | Model Name | Docs                                | Type             | Status | Description                                            | Resources                                                                                                                                                   |
+| -------- | -------------- | ---------- | ----------------------------------- | ---------------- | ------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stt`    | Speech to Text | Whisper    | [Link](jac_speech/stt/README.md)    | No Training req. | Ready  | transcription or translation of a give audio sequence. | [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf), [OpenAI Whisper](https://openai.com/blog/whisper/) |
+| `vc_tts` | Text to Speech | Coqui      | [Link](jac_speech/vc_tts/README.md) | No Training req. | Ready  | List of Amplitudes of the synthesized audio wav.       |                                                                                                                                                             |
 
 
 ## Usage

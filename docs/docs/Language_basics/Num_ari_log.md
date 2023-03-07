@@ -1,0 +1,3 @@
+# Data Types, Numbers, Arithmetic and Logic
+
+Welcome to the exploration of the basic features of Jaseci. As a versatile programming language, Jaseci offers a wide range of capabilities that are found in other programming languages. In this section, we will delve into the core features of Jaseci, including input and output, a variety of data types, arithmetic and logical operators, comparison operators, and assignment operators. So, let's get started and uncover the full potential of Jaseci!

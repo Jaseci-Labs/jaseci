@@ -4,11 +4,11 @@ sidebar_position: 2
 
 # Language Features
 
-## Input and Output 
+## Input and Output
 
 To print on to the terminal we use :
 
-```jac 
+```jac
 std.out("Hello World");
 
 ```
@@ -106,10 +106,10 @@ a -= 4 * -5;
 a *= 4 / 4;
 a /= 4 - 6;
 ```
-## Control FLow 
+## Control FLow
 The If statement
 
-```jac 
+```jac
 # Simple IF statement
 if(condition){
     #execute if condition is true
@@ -126,10 +126,10 @@ if(condition){
 }
 ```
 *elif*
-```jac 
+```jac
 if(condition){
      #execute code if condition is true
-} 
+}
 elif(condition 2){
      #execute code if condition 2 is true
 }
@@ -142,4 +142,4 @@ else {
 ```
 ## Functions and Actions
 
-Nodes and Walkers have 
+Nodes and Walkers have

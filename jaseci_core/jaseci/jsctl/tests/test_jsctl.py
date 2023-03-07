@@ -5,6 +5,9 @@ from click.testing import CliRunner
 import json
 import os
 
+from jaseci import JsOrc
+from jaseci.svc.redis_svc import RedisService
+
 
 class JsctlTest(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
@@ -15,6 +18,7 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def setUp(self):
         super().setUp()
+        JsOrc.svc("redis", RedisService).clear()
 
     def call(self, cmd: str):
         res = CliRunner(mix_stderr=False).invoke(jsctl.jsctl, ["-m"] + cmd.split())
@@ -29,6 +33,11 @@ class JsctlTest(TestCaseHelper, TestCase):
 
     def call_cast(self, cmd):
         ret = self.call(cmd)
+        # self.log(ret)
+        return json.loads(ret)
+
+    def jac_call_cast(self, cmd):
+        ret = self.jac_call(cmd)
         # self.log(ret)
         return json.loads(ret)
 
@@ -72,7 +81,6 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertEqual(len(self.call_cast("graph list")), 4)
 
     def test_jsctl_carry_forward(self):
-
         ret = self.call(f"actions load local {self.infer_loc}")
         ret = self.call(
             f"sentinel register {os.path.dirname(__file__)}/ll.jac -name ll -set_active true"
@@ -150,6 +158,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         r = self.call("config get APPLE -do_check False")
         self.assertEqual(r.strip(), "Grape2")
         r = self.call_cast("config list")
+
         self.assertEqual(len(r), 1)
 
     def test_jsctl_default_snt_setting(self):
@@ -341,8 +350,19 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
 
+    def test_jac_long_str_build(self):
+        r = self.jac_call_cast(f"run {os.path.dirname(__file__)}/longstring.jac")
+        self.assertTrue(
+            r["report"][0].startswith("Lorem Ipsum is simply dummy text of the")
+        )
+        self.assertTrue(
+            r["report"][0].endswith(
+                "Aldus PageMaker including versions of Lorem Ipsum."
+            )
+        )
+
     def test_jac_cli_test(self):
-        r = self.jac_call_split("test jaseci/jsctl/tests/teststest.jir")
+        r = self.jac_call_split(f"test {os.path.dirname(__file__)}/teststest.jir")
         self.assertTrue(r[0].startswith("Testing assert should be"))
         self.assertTrue(r[4].startswith('  "tests": 3'))
         self.assertTrue(r[7].startswith('  "success": true'))
@@ -361,7 +381,7 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.assertEqual(r["report"], [{}, 4])
 
     def test_jsctl_jac_dot_jir(self):
-        r = self.call("jac dot jaseci/jsctl/tests/teststest.jir")
+        r = self.call(f"jac dot {os.path.dirname(__file__)}/teststest.jir")
         self.assertEqual(r, 'strict digraph root {\n    "n0" [ label="n0:root"  ]\n}\n')
 
     def test_jsctl_jac_run_jir_walk(self):

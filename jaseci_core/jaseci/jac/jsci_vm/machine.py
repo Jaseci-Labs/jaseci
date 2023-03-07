@@ -143,9 +143,13 @@ class VirtualMachine(MachineState, Stack, InstPtr):
         if typ in [JsType.TYPE]:
             val = type_map[JsType(operand2)]
             self._ip += 2
-        elif typ in [JsType.INT, JsType.STRING]:
+        elif typ in [JsType.INT]:
             val = from_bytes(type_map[typ], self.offset(3, operand2))
             self._ip += 2 + operand2
+        elif typ in [JsType.STRING]:
+            str_len = from_bytes(type_map[JsType.INT], self.offset(3, operand2))
+            val = from_bytes(type_map[typ], self.offset(3 + operand2, str_len))
+            self._ip += 2 + operand2 + str_len
         elif typ in [JsType.FLOAT]:
             val = from_bytes(float, self.offset(2, 8))
             self._ip += 1 + 8

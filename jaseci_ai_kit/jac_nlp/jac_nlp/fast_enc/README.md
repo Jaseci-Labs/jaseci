@@ -140,7 +140,7 @@ For this part, we are going to use Python. First,
 1. Open terminal and run jaseci by cmd
     > jsctl -m
 2. Load `fast_enc` module in jac by cmd
-    > actions load module jaseci_ai_kit.fast_enc
+    > actions load module jac_nlp.fast_enc
 
 ### **3. Train the model**
 For this tutorial, we are going to `train and test` the `fast_enc` for `intent classification` its `train` on snips `train datasets` and `test` on `test dataset`, which is categorizing an incoming text into a one of predefined intents.
@@ -379,14 +379,14 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         ```
         jaseci > walker run train_and_evaluate_fasttext -ctx "{\"train_file\":\"train.json\",\"test_file\":\"test.json\",\"train_with_existing\":\"false\"}"
         Training...
-        Wrote 261 sentences to C:\Users\satyam.singh\anaconda3\envs\pytorch\lib\site-packages\jaseci_ai_kit\modules\fasttext\pretrained_model\train.txt
+        Wrote 261 sentences to <file_location>.singh\anaconda3\envs\pytorch\lib\site-packages\jac_nlp\jac_nlp\fasttext\pretrained_model\train.txt
         Read 0M words
         Number of words:  577
         Number of labels: 10
         Progress: 100.0% words/sec/thread:  105638 lr:  0.000000 avg.loss:  1.230422 ETA:   0h 0m 0s
         Saving...
 
-        Model saved to C:\Users\satyam.singh\anaconda3\envs\pytorch\lib\site-packages\jaseci_ai_kit\modules\fasttext\pretrained_model\model.ftz.
+        Model saved to <file_location>.singh\anaconda3\envs\pytorch\lib\site-packages\jac_nlp\jac_nlp\fasttext\pretrained_model\model.ftz.
 
         LABELS (10):
         - BookRestaurant

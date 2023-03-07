@@ -77,8 +77,14 @@ class ArchitypeApi:
                 'ir': Intermediate representation of architype
                 'architype': Architype object print
         """
+        # ternary python example
+        a = 1 if True else 2
+
         if mode == "code":
-            return {"code": arch._jac_ast.get_text()}
+            try:
+                return {"code": arch.get_jac_ast().src}
+            except AttributeError:
+                return {"code": "No code available for architype"}
         elif mode == "ir":
             return {"ir": arch.ir_dict()}
         else:

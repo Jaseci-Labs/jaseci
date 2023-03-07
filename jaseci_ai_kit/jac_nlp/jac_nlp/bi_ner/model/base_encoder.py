@@ -226,7 +226,6 @@ class BI_Enc_NER(Base_BI_enc):
         no_entity_category: str,
         text_lengths: Optional[List] = None,
     ) -> Iterable[Example]:
-
         encodings: Optional[List[EncodingFast]] = self._token_tokenizer(
             texts,
             truncation=False,

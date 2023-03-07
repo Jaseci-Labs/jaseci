@@ -2,6 +2,7 @@ import { Component, Element, h, Prop, State, Watch } from '@stencil/core';
 import * as vis from 'vis-network';
 import * as visData from 'vis-data';
 import { formatEdges, formatNodes } from './utils';
+import { GraphNode, JscGraphContextMenu, NodeGroupConfig } from './graph-context-menu';
 
 type EndpointBody = {
   gph?: string | null;
@@ -39,7 +40,7 @@ export class JscGraph {
   @Prop() css: string = JSON.stringify({});
   @Prop({ mutable: true }) events: string;
   @Prop() token: string = '';
-  @Prop() graphId: string = '';
+  @Prop({ attribute: 'graphid' }) graphId: string = '';
   @Prop() onFocus: 'expand' | 'isolate' = 'expand';
   @Prop() height = '100vh';
 
@@ -50,7 +51,8 @@ export class JscGraph {
   @State() graphs: Graph[] = [];
   @State() walkers: Walker[] = [];
   @State() serverUrl: string = localStorage.getItem('serverUrl') || 'http://localhost:8000';
-  @State() hiddenGroups: Set<string> = new Set();
+  @State() hiddenNodeGroups: Set<string> = new Set();
+  @State() hiddenEdgeGroups: Set<string> = new Set();
   @State() activeSentinel: string;
   @State() expandedNodes: string[] = [];
 
@@ -63,7 +65,7 @@ export class JscGraph {
   nodes: vis.data.DataSet<any, string>;
 
   @State() clickedNode: vis.Node & { context: {}; info: {}; details: {} };
-  @State() clickedEdge: vis.Edge & { context: {}; info: {}; details: {} };
+  @State() clickedEdge: vis.Edge & { context: {}; info: {}; details: {}; group: string };
   @State() selectedInfoTab: 'details' | 'context' | 'info' = 'context';
   @State() selectedNodes: vis.IdType[] = [];
 
@@ -72,6 +74,20 @@ export class JscGraph {
   formatEdges = formatEdges;
 
   networkEl!: HTMLDivElement;
+  contextMenuEl!: JscGraphContextMenu;
+
+  @Watch('graphId')
+  async graphIdChange(newValue) {
+    if (this.network) {
+      this.nodes.clear();
+      this.edges.clear();
+
+      this.network.setData({ nodes: this.nodes as any, edges: this.edges as any });
+    }
+
+    this.nd = newValue;
+    await this.getGraphState();
+  }
 
   async getActiveGraph(): Promise<Graph> {
     return await fetch(`${this.serverUrl}/js/graph_active_get`, {
@@ -201,6 +217,7 @@ export class JscGraph {
 
       if (!this.network) {
         this.network = new vis.Network(
+          // added fallback for
           this.networkEl,
           { edges: this.edges as any, nodes: this.nodes as any },
           {
@@ -284,6 +301,7 @@ export class JscGraph {
 
     // we don't want to have a clicked edge if we click on a node
     if (selection.nodes.length) {
+      console.log({ selection });
       this.clickedNode = this.nodes.get([node])[0];
       this.clickedEdge = undefined;
     } else {
@@ -296,15 +314,28 @@ export class JscGraph {
     const displayedNodes = new visData.DataSet(
       this.nodes.get({
         filter: (node: vis.Node) => {
-          return !this.hiddenGroups.has(node.group) && !this.queuedNodes.has(node.id.toString());
+          return !this.queuedNodes.has(node.id.toString());
         },
       }),
     );
 
+    // determine which nodes are to be hidden
+    let hiddenNodes = this.nodes.get({
+      filter: (node: vis.Node) => {
+        return this.hiddenNodeGroups.has(node.group);
+      },
+    });
+
+    let unhiddenNodes = this.nodes.get({
+      filter: (node: vis.Node) => {
+        return !this.hiddenNodeGroups.has(node.group) && node.hidden && !this.queuedNodes.has(node.id.toString());
+      },
+    });
+
     const displayedEdges = new visData.DataSet(
       this.edges.get({
-        filter: (node: vis.Node) => {
-          return !this.queuedEdges.has(node.id.toString());
+        filter: (edge: vis.Edge) => {
+          return !this.queuedEdges.has(edge.id.toString());
         },
       }),
     );
@@ -312,12 +343,41 @@ export class JscGraph {
     this.edges = displayedEdges;
     this.nodes = displayedNodes;
 
+    // hide nodes by setting hidden property to true
+    hiddenNodes = hiddenNodes.map(node => ({ ...node, hidden: true }));
+    unhiddenNodes = unhiddenNodes.map(node => ({ ...node, hidden: false }));
+
+    this.nodes.update([...hiddenNodes, ...unhiddenNodes]);
+
     this.network.setData({ edges: displayedEdges as any, nodes: displayedNodes as any });
   }
 
-  hideNodeGroup() {
+  refreshEdges() {
+    // determine which nodes are to be hidden
+    let hiddenEdges = this.edges.get({
+      filter: (edge: vis.Edge & { group: string }) => {
+        return this.hiddenEdgeGroups.has(edge.group);
+      },
+    });
+
+    let unhiddenEdges = this.edges.get({
+      filter: (edge: vis.Edge & { group: string }) => {
+        return !this.hiddenNodeGroups.has(edge.group) && edge.hidden && !this.queuedNodes.has(edge.id.toString());
+      },
+    });
+
+    // hide nodes by setting hidden property to true
+    hiddenEdges = hiddenEdges.map(edge => ({ ...edge, hidden: true }));
+    unhiddenEdges = unhiddenEdges.map(edge => ({ ...edge, hidden: false }));
+
+    this.edges.update([...hiddenEdges, ...unhiddenEdges]);
+
+    this.network.setData({ edges: this.edges as any, nodes: this.nodes as any });
+  }
+
+  hideNodeGroup(group: string) {
     if (this.clickedNode) {
-      this.hiddenGroups.add(this.clickedNode.group);
+      this.hiddenNodeGroups.add(group);
 
       // force update ui
       this.clickedNode = null;
@@ -327,8 +387,30 @@ export class JscGraph {
     }
   }
 
+  hideEdgeGroup(group: string) {
+    if (this.clickedEdge) {
+      this.hiddenEdgeGroups.add(group);
+
+      // force update ui
+      this.clickedEdge = null;
+      this.clickedEdge = undefined;
+
+      this.refreshEdges();
+    }
+  }
+
+  showEdgeGroup(group: string) {
+    this.hiddenEdgeGroups.delete(group);
+
+    // force update ui
+    this.clickedEdge = null;
+    this.clickedEdge = undefined;
+
+    this.refreshEdges();
+  }
+
   showNodeGroup(group: string) {
-    this.hiddenGroups.delete(group);
+    this.hiddenNodeGroups.delete(group);
 
     // force update ui
     this.clickedNode = null;
@@ -374,7 +456,11 @@ export class JscGraph {
     const connectedEdges = this.network.getConnectedEdges(nodeId);
     this.edges
       .get()
-      .filter((edge: vis.Edge) => connectedEdges.includes(edge.id) && edge.to !== nodeId)
+      .filter((edge: vis.Edge) => {
+        // get the to node, so we can only collapse objects that are not hidden
+        const toNode = this.nodes.get(edge.to);
+        return connectedEdges.includes(edge.id) && edge.to !== nodeId && !edge.hidden && !toNode.hidden;
+      })
       .forEach((edgeData: vis.Edge) => {
         // queue the nodes and edges to be removed
         this.queuedEdges.add(edgeData.id.toString());
@@ -385,11 +471,18 @@ export class JscGraph {
       });
   }
 
+  async handleNodeGroupConfigChange(config: NodeGroupConfig) {
+    this.nodes.update(this.nodes.get().map((node: GraphNode) => ({ ...node, label: node.context[config[node.group]?.displayedVar] || node.label })));
+  }
+
   async componentDidLoad() {
     try {
+      this.contextMenuEl?.hide();
       // set the initial graph
-      let activeGraph: Graph = await this.getActiveGraph();
-      this.graphId = activeGraph?.jid;
+      if (!this.graphId) {
+        let activeGraph: Graph = await this.getActiveGraph();
+        this.graphId = activeGraph?.jid;
+      }
 
       // make root node collapsible by default
       this.expandedNodes.push(this.graphId);
@@ -404,11 +497,44 @@ export class JscGraph {
       console.log(err);
     }
 
-    this.network.on('selectNode', () => {
+    this.network?.on('selectNode', () => {
       this.selectedNodes = this.network.getSelectedNodes();
     });
 
-    this.network.on('click', params => {
+    this.network?.on('oncontext', params => {
+      console.log({ params });
+      params.event.preventDefault();
+      this.contextMenuEl.hide();
+
+      const node = this.network.getNodeAt({
+        x: params?.pointer.DOM.x,
+        y: params?.pointer.DOM.y,
+      });
+
+      const edge = this.network.getEdgeAt({
+        x: params?.pointer.DOM.x,
+        y: params?.pointer.DOM.y,
+      });
+
+      console.log({ node, edge });
+
+      if ((node && edge) || (node && !edge)) {
+        this.network.selectNodes([node]);
+        this.contextMenuEl.setPos(params.pointer.DOM.x, params.pointer.DOM.y);
+        this.contextMenuEl.setClickedItem({ clickedNode: this.nodes.get([node])[0], clickedEdge: null });
+        this.contextMenuEl.show();
+      }
+
+      if (edge && !node) {
+        this.network.selectEdges([edge]);
+        this.contextMenuEl.setPos(params.pointer.DOM.x, params.pointer.DOM.y);
+        this.contextMenuEl.setClickedItem({ clickedNode: null, clickedEdge: edge ? this.edges.get([edge])[0] : null });
+        this.contextMenuEl.show();
+      }
+    });
+
+    this.network?.on('click', params => {
+      this.contextMenuEl.hide();
       // reset ui if we click on the background
       if (!params.nodes?.length && !params.edges?.length) {
         this.network.unselectAll();
@@ -420,11 +546,7 @@ export class JscGraph {
       this.handleNetworkClick(this.network, params);
     });
 
-    this.network.on('zoom', data => {
-      console.log(data);
-    });
-
-    this.network.on('doubleClick', async params => {
+    this.network?.on('doubleClick', async params => {
       this.prevNd = this.nd;
 
       const node = this.network.getNodeAt({
@@ -436,14 +558,10 @@ export class JscGraph {
 
       this.nd = node.toString();
 
-      console.log({ cnode: this.expandedNodes });
-
       if (this.expandedNodes.includes(this.nd)) {
         this.handleCollapse(node.toString());
         this.refreshNodes();
-        console.log({ qnodes: this.queuedNodes });
         this.expandedNodes = this.expandedNodes.filter(nd => nd !== this.nd).filter(nd => !this.queuedNodes.has(nd));
-        console.log({ cnodes: this.expandedNodes });
 
         // clear the queued nodes and edges to be removed
         this.queuedEdges.clear();
@@ -451,24 +569,6 @@ export class JscGraph {
       } else {
         this.expandedNodes.push(this.nd);
         this.getGraphState();
-      }
-    });
-
-    this.network.on('oncontext', params => {
-      params.event.preventDefault();
-      const node = this.network.getNodeAt({
-        x: params.pointer.DOM.x,
-        y: params.pointer.DOM.y,
-      });
-
-      if (node) {
-        // this.nd = node.toString();
-        // select and focus on node
-        this.network.selectNodes([node]);
-        this.network.focus(node, {
-          scale: 1.0,
-          animation: { duration: 1000, easingFunction: 'easeInOutQuad' },
-        });
       }
     });
   }
@@ -508,7 +608,7 @@ export class JscGraph {
                   justifyContent: 'space-between',
                   paddingTop: '5px',
                   paddingBottom: '5px',
-                  zIndex: '9999',
+                  zIndex: '2',
                   overflowY: 'auto',
                 }}
               >
@@ -526,7 +626,7 @@ export class JscGraph {
                     overflowX: 'hidden',
                   }}
                 >
-                  <jsc-divider label="Node Info" orientation="horizontal"></jsc-divider>
+                  <jsc-divider label={'Information'} orientation="horizontal"></jsc-divider>
 
                   {this.clickedNode || this.clickedEdge ? (
                     <graph-node-info
@@ -579,11 +679,10 @@ export class JscGraph {
                     overflowX: 'hidden',
                   }}
                 >
-                  <div>{this.clickedNode && <jsc-button size="xs" label={`Hide '${this.clickedNode.group}' Nodes`} onClick={() => this.hideNodeGroup()}></jsc-button>}</div>
                   <jsc-divider label="Hidden Nodes" orientation="horizontal"></jsc-divider>
-                  {!this.hiddenGroups?.size && <div>No hidden nodes</div>}
+                  {!this.hiddenNodeGroups?.size && <div>No hidden nodes</div>}
 
-                  {Array.from(this.hiddenGroups).map(group => (
+                  {Array.from(this.hiddenNodeGroups).map(group => (
                     <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
                       <jsc-chip label={group}>
                         <svg
@@ -600,29 +699,84 @@ export class JscGraph {
                       </jsc-chip>
                     </div>
                   ))}
+
+                  <jsc-divider label="Hidden Edges" orientation="horizontal"></jsc-divider>
+                  {!this.hiddenEdgeGroups?.size && <div>No hidden edges</div>}
+                  {Array.from(this.hiddenEdgeGroups).map(group => (
+                    <div style={{ marginRight: '4px', marginBottom: '4px', display: 'inline-flex' }}>
+                      <jsc-chip label={group}>
+                        <svg
+                          slot="right"
+                          onClick={() => this.showEdgeGroup(group)}
+                          style={{ cursor: 'pointer' }}
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          class="inline-block w-4 h-4 stroke-current"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </jsc-chip>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div style={{ position: 'absolute', display: 'flex', top: '20px', left: '20px', gap: '20px', zIndex: '9999' }}>
+              <div style={{ position: 'absolute', display: 'flex', top: '20px', left: '20px', gap: '20px', zIndex: '2' }}>
                 {this.nd && <jsc-button size="sm" label={'View Root'} onClick={() => this.viewRoot()}></jsc-button>}
                 {this.selectedNodes?.length > 1 && <jsc-button size="sm" label={'Expand Nodes'} onClick={() => this.expandSelectedNodes()}></jsc-button>}
                 {this.selectedNodes?.length > 1 && <jsc-button size="sm" label={'Collapse Nodes'} onClick={() => this.collapseSelectedNodes()}></jsc-button>}
-                {this.selectedNodes?.length === 1 && (
-                  <jsc-button size="sm" label={'Expand Recursively'} onClick={() => this.expandNodesRecursively(this.selectedNodes[0]?.toString())}></jsc-button>
-                )}
               </div>
 
+              {/* context menu */}
+              <jsc-graph-context-menu
+                onExpandNode={async e => {
+                  this.network.selectNodes([e.detail.id]);
+                  this.expandSelectedNodes();
+                  this.contextMenuEl.hide();
+                }}
+                onExpandNodeRecursively={async e => {
+                  this.network.selectNodes([e.detail.id]);
+                  this.expandNodesRecursively(e.detail.id as string);
+                  this.contextMenuEl.hide();
+                }}
+                onHideNodeGroup={async e => {
+                  this.hideNodeGroup(e.detail.group);
+                  this.contextMenuEl.hide();
+                }}
+                onHideEdgeGroup={async e => {
+                  this.hideEdgeGroup(e.detail.group);
+                  this.contextMenuEl.hide();
+                }}
+                onEnableZoom={() => {
+                  this.network?.setOptions({ interaction: { zoomView: true, dragView: true, dragNodes: true } });
+                }}
+                onDisableZoom={() => {
+                  this.network?.setOptions({ interaction: { zoomView: false, dragView: false, dragNodes: false } });
+                }}
+                onNodeGroupConfigChange={e => {
+                  this.handleNodeGroupConfigChange(e.detail);
+                  localStorage.setItem('nodeGroupConfig', JSON.stringify(e.detail));
+                }}
+                ref={el => (this.contextMenuEl = el as any)}
+              ></jsc-graph-context-menu>
+
+              {/* end context menu */}
+
               {/*Graph Switcher*/}
-              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '9999', display: 'flex', gap: '2px' }}>
-                <jsc-select
-                  size="sm"
-                  placeholder={'Select Graph'}
-                  onValueChanged={e => {
-                    this.graphId = e.detail.split(':').slice(1).join(':');
-                    localStorage.setItem('selectedGraph', this.graphId);
-                  }}
-                  options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
-                ></jsc-select>
+              <div style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: '2', display: 'flex', gap: '2px' }}>
+                {/* If graphid is provided, an external graph switcher is used */}
+                {!this.graphId && (
+                  <jsc-select
+                    size="sm"
+                    placeholder={'Select Graph'}
+                    onValueChanged={e => {
+                      this.graphId = e.detail.split(':').slice(1).join(':');
+                      localStorage.setItem('selectedGraph', this.graphId);
+                    }}
+                    options={this.graphs?.map(graph => ({ label: `${graph.name}:${graph.jid}` }))}
+                  ></jsc-select>
+                )}
 
                 <jsc-checkbox
                   label={'Expand nodes on click'}

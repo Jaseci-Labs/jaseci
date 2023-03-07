@@ -11,12 +11,12 @@ Module `topic_ext` implemented for extracting topics from set of documents. This
     ```
 2.  Load `topic_ext` module in jac shell session
     ```
-    actions load module jaseci_ai_kit.topic_ext
+    actions load module jac_nlp.topic_ext
     ```
 3.  Load suplimentery modules in jac shell session
     ```
-    actions load module jaseci_ai_kit.use_enc
-    actions load module jaseci_ai_kit.cluster
+    actions load module jac_nlp.use_enc
+    actions load module jac_misc.cluster
     ```
 
 ## **2. Prepare text for clusters**
@@ -272,5 +272,59 @@ walker init{
 
     can topic_ext.topic_extraction;
     topic_dict = topic_ext.headline_generation(texts=text,classes=labels);
+}
+```
+Exepected output:
+
+```json
+{
+  "success": true,
+  "report": [
+    {
+      "0": "Countries Account Suppor",
+      "1": "Track Card Delivery: Track Card Processing Delivery",
+      "2": "Waiting Week Card Still Coming",
+      "3": "Send New Card to New Address"
+    }
+  ],
+  "final_node": "urn:uuid:e83f23f5-73d2-42a0-bebf-e87590e0db6e",
+  "yielded": false
+}
+```
+## **7. Extract keyword from a single document **
+
+Use `topic_ext.keyword_extraction` action to generate a relevant heading for each cluster.
+
+**Parameters of `topic_ext.keyword_extraction`**
+
+- `sentence` - (list of strings) list of input text documents.
+- `n_words` - (int) number of words or phrases to extract from each cluster..
+- `min_tokens` - (int) - Default 1 - number of minimum words per topic.
+- `max_tokens` - (int) Default 1 - number of maximum words per topic.
+- `diversity` - (float) default 0.02 - The expected level of diversity. Increasing the diversity value will reduce the words with similar meaning in the resulted words list and the vise versa.
+
+
+```jac
+walker init{
+    can topic_ext.keyword_extraction;
+    has texts = "I like dogs";
+
+    report topic_ext.keyword_extraction(sentence=texts, n_words=2, min_tokens = 1, max_tokens = 1, diversity = 0.02);
+}
+```
+
+Exepected output:
+
+```json
+{
+  "success": true,
+  "report": [
+    [
+      "dogs",
+      "like"
+    ]
+  ],
+  "final_node": "urn:uuid:f91997c7-7d54-44ef-b238-2a8ea2f94418",
+  "yielded": false
 }
 ```

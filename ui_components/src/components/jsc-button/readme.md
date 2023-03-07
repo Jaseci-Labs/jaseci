@@ -10,6 +10,7 @@
 | Property          | Attribute         | Description | Type                                                                                                       | Default              |
 | ----------------- | ----------------- | ----------- | ---------------------------------------------------------------------------------------------------------- | -------------------- |
 | `active`          | `active`          |             | `string`                                                                                                   | `undefined`          |
+| `block`           | `block`           |             | `string`                                                                                                   | `undefined`          |
 | `color`           | `color`           |             | `string`                                                                                                   | `undefined`          |
 | `css`             | `css`             |             | `string`                                                                                                   | `JSON.stringify({})` |
 | `events`          | `events`          |             | `string`                                                                                                   | `undefined`          |
@@ -23,7 +24,7 @@
 | `tooltip`         | `tooltip`         |             | `string`                                                                                                   | `undefined`          |
 | `tooltipPalette`  | `tooltippalette`  |             | `string`                                                                                                   | `undefined`          |
 | `tooltipPosition` | `tooltipposition` |             | `string`                                                                                                   | `undefined`          |
-| `variant`         | `variant`         |             | `"default" \| "link"`                                                                                      | `'default'`          |
+| `variant`         | `variant`         |             | `"default" \| "ghost" \| "link"`                                                                           | `'default'`          |
 
 
 ## Dependencies
@@ -33,6 +34,7 @@
  - [jsc-auth-form](../jsc-auth-form)
  - [jsc-dropdown](../jsc-dropdown)
  - [jsc-graph](../jsc-graph)
+ - [jsc-graph-context-menu](../jsc-graph)
 
 ### Graph
 ```mermaid
@@ -40,6 +42,7 @@ graph TD;
   jsc-auth-form --> jsc-button
   jsc-dropdown --> jsc-button
   jsc-graph --> jsc-button
+  jsc-graph-context-menu --> jsc-button
   style jsc-button fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

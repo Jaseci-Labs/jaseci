@@ -54,7 +54,7 @@ STT_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "stt",
-                                "image": "jaseci/jac-speech:1.4.0.6",
+                                "image": "jaseci/jac-speech:latest",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

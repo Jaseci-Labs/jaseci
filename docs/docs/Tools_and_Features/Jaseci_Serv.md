@@ -7,7 +7,7 @@ Jaseci Serv allows for the development of APIs to interact with your JAC Program
 
 ## Setting up Jaseci Serv
 
-1.clone this repositroy: 
+1.clone this repositroy:
 
 *2.Install Jaseci-Serv*
 ```
@@ -33,7 +33,7 @@ This will start your Jaseci Server to run your application. Visit localhost:8000
 
 Let's now spawn 2 new terminal in our current working directory.
 
-In new terminal 1 
+In new terminal 1
 
 1. Create an account for the server.
 ```
@@ -43,7 +43,7 @@ You will be prompted to enter an email and password.
 
 In new  terminal 2
 
-2. Start jsctl. Run : 
+2. Start jsctl. Run :
 ```
 jsctl
 ```

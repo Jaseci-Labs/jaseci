@@ -557,6 +557,26 @@ check_dict_for_in_loop = """
     }
 """
 
+list_pairwise = """
+walker init{
+    with entry{
+        _list = [1,2,3,4];
+        p = _list.list::pairwise;
+        report p;
+    }
+    }
+"""
+
+list_unique = """
+walker init{
+    with entry{
+        _list = [1,2,3,4,2,3,4,5];
+        p = _list.list::unique;
+        report p;
+    }
+    }
+"""
+
 check_new_builtin = """
     walker init {
         with entry {
@@ -577,6 +597,7 @@ check_new_builtin = """
         }
     }
 """
+
 
 continue_issue = """
     walker init {
@@ -651,5 +672,96 @@ ignore_check = """
             take -->;
         }
         report "hi";
+    }
+"""
+
+async_module = """
+walker a {
+    can sim1.tester, sim2.tester;
+    with entry {
+        report sim1.tester();
+        report sim2.tester();
+    }
+}
+
+async walker b {
+    can sim1.tester, sim2.tester;
+    with entry {
+        report sim1.tester();
+        report sim2.tester();
+    }
+}
+"""
+
+set_of_syntax = """
+    node a {
+        has arr = [1,2,3,4,5,6];
+    }
+
+    node b {
+        has arr = [1,2,3,4,5,6];
+    }
+
+    node c {
+        has arr = [1,2,3,4,5,6];
+    }
+
+    node d {
+        has arr = [1,2,3,4,5,6];
+    }
+
+    node e {
+        has arr = [1,2,3,4,5,6];
+    }
+
+    node f {
+        has arr = [7,8,9];
+    }
+
+    walker simple {
+        root {
+            spawn here ++> node::a();
+            spawn here ++> node::b();
+            spawn here ++> node::c();
+            spawn here ++> node::d();
+            spawn here ++> node::e();
+            spawn here ++> node::f();
+            take --> node::a(arr subsetof [1,0,2,0,3,0,4,0,5,0,6]);
+            take --> node::b(arr supersetof [1,2,3]);
+
+            // will not be printed
+            take --> node::c(arr supersetof [1,0,2,0,3,0,4,0,5,0,6]);
+            take --> node::d(arr subsetof [1,2,3]);
+
+            // will not be printed
+            take --> node::e(arr disjointof [1,2,3]);
+
+            // will be printed
+            take --> node::f(arr disjointof [1,2,3]);
+        }
+
+        a {
+            report "a";
+        }
+
+        b {
+            report "b";
+        }
+
+        c {
+            report "c";
+        }
+
+        d {
+            report "d";
+        }
+
+        e {
+            report "e";
+        }
+
+        f {
+            report "f";
+        }
     }
 """

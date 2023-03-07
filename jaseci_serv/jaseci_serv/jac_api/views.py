@@ -9,10 +9,11 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from jaseci import JsOrc
 from jaseci.element.element import Element
 from jaseci.utils.utils import logger, ColCodes as Cc
+from jaseci.utils.actions.actions_manager import ActionManager
 from jaseci_serv.base.models import Master as ServMaster
-from jaseci_serv.svc import MetaService
 from jaseci_serv.user_api import serializers as user_slzr
 
 
@@ -84,10 +85,9 @@ class AbstractJacAPIView(APIView):
             )
         )
 
-        hook = self.caller._h
-        hook.meta.app.post_request_hook(type(self).__name__, request, tot_time) if (
-            hook.meta.run_svcs and hook.meta.app != None
-        ) else None
+        JsOrc.get("action_manager", ActionManager).post_request_hook(
+            type(self).__name__, request, tot_time
+        )
 
     def proc_prime_ctx(self, request, req_data):
         try:
@@ -102,7 +102,6 @@ class AbstractJacAPIView(APIView):
 
     def proc_file_ctx(self, request, req_data):
         for key in request.FILES:
-
             req_data.pop(key)
             file_ref = (
                 req_data["ctx"]
@@ -112,7 +111,6 @@ class AbstractJacAPIView(APIView):
             file_ref[key] = []
 
             for file in request.FILES.getlist(key):
-
                 file_type = type(file.file)
                 if file_type is BytesIO:
                     file_base64 = b64encode(file.file.getvalue()).decode("utf-8")
@@ -128,7 +126,7 @@ class AbstractJacAPIView(APIView):
                         }
                     )
 
-    def proc_request_ctx(self, request, req_data):
+    def proc_request_ctx(self, request, req_data, raw_req_data):
         user_slzr.requests_for_emails = request
         req_query = request.GET.dict()
         req_data.update(
@@ -138,13 +136,15 @@ class AbstractJacAPIView(APIView):
                     "headers": dict(request.headers),
                     "query": req_query,
                     "body": req_data.copy(),
-                }
+                },
+                "_raw_req_ctx": raw_req_data.decode("utf-8"),
             }
         )
         req_data.update(req_query)
 
     def proc_request(self, request, **kwargs):
         """Parse request to field set"""
+        raw_req_data = request.body
         pl_peek = str(dict(request.data))[:256]
         logger.info(str(f"Incoming call to {type(self).__name__} with {pl_peek}"))
         self.start_time = time()
@@ -155,7 +155,7 @@ class AbstractJacAPIView(APIView):
 
         self.proc_prime_ctx(request, req_data)
         self.proc_file_ctx(request, req_data)
-        self.proc_request_ctx(request, req_data)
+        self.proc_request_ctx(request, req_data, raw_req_data)
 
         req_data.update(kwargs)
 
@@ -234,7 +234,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
     def set_caller(self, request):
         """Assigns the calling api interface obj"""
         self.caller = ServMaster(
-            h=MetaService().build_hook(),
+            h=JsOrc.hook(),
             persist=False,
         )
 

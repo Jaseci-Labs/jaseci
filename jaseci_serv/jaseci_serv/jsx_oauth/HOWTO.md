@@ -68,3 +68,12 @@ POST
 > https://www.facebook.com/dialog/oauth/?client_id=`{{your Facebook OAuth App's client ID}}`&redirect_uri=`{{your Facebook OAuth App's allowed callback URI set in Facebook OAuth App}}`&scope=email&state=`{{your any random str}}`
 - Upon successful login authorization code should now be present on URL and can be used on [getting Access Token](./HOWTO.md)
 - Try it on your local using `/auth/examples/facebook/`
+
+---
+# **`FEATURE`**
+- Allowed to bind multiple provider to a single account
+    - response will have "type" and "details" field for FE handling
+        - `REGISTRATION`: New account
+        - `EXISTING`: Existing account
+        - `ACTIVATION`: Existing account but just got activated
+        - `BINDING`: Existing account but just got binded with different login type

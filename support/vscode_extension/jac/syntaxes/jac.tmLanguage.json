@@ -1,298 +1,298 @@
 {
-    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-    "name": "Jac Programming Language",
-    "patterns": [
-        {
-            "include": "#comments"
-        },
-        {
-            "include": "#keywords"
-        },
-        {
-            "include": "#strings"
-        },
-        {
-            "include": "#functional"
-        },
-        {
-            "include": "#operators"
-        },
-        {
-            "include": "#entity_block_definition"
-        }
-    ],
-    "repository": {
-        "keywords": {
-            "patterns": [
-                {
-                    "name": "storage.modifier.jac",
-                    "match": "\\b(import|ignore|with|strict|context|details|info|activity|length|keys)\\b"
-                },
-                {
-                    "match": "\\b(str|int|float|list|dict|bool|test|type)\\b",
-                    "name": "support.type.jac"
-                },
-                {
-                    "match": "\\b(edge|graph|node|walker|digraph|subgraph)\\b",
-                    "name": "storage.type.entity.jac"
-                },
-                {
-                    "name": "keyword.control.jac",
-                    "match": "\\b(if|elif|else|while|for|while|global|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert|yield)\\b"
-                },
-                {
-                    "name": "variable.other.property",
-                    "match": "\\b(has|can|anchor|private)\\b"
-                },
-                {
-                    "name": "keyword.control.flow.jac",
-                    "comment": "Highlights 'report' et al. that preceeds a '-->'",
-                    "match": "\\s*\\b(?<!\\.)(report|destroy|here|take|in)\\b(?=.*[-\\\\])"
-                },
-                {
-                    "match": "\\b(null|true|false)\\b",
-                    "name": "constant.language.c"
-                }
-            ]
-        },
-        "entity_block_definition": {
-            "begin": "^\\s*(node|edge|walker|graph)\\s+([A-Za-z][\\w]*|(?:\\w+(?:(?:\\,\\s?|\\:)(?:\\w+|\\s\\w))+))(\\s*({)|;)",
-            "name": "source.jac.embedded.source",
-            "beginCaptures": {
-                "1": {
-                    "name": "storage.type.entity.jac"
-                },
-                "2": {
-                    "name": "entity.name.type.entity.jac"
-                },
-                "3": {
-                    "name": "punctuation.definition.tag.jac"
-                }
-            },
-            "end": "\\s*\\(}|;)",
-            "endCaptures": {
-                "0": {
-                    "name": "punctuation.definition.tag.jac"
-                }
-            }
-        },
-        "strings": {
-            "patterns": [
-                {
-                    "include": "#double_quote"
-                },
-                {
-                    "include": "#single_quote"
-                }
-            ]
-        },
-        "double_quote": {
-            "name": "string.quoted.double.jac",
-            "begin": "\"",
-            "end": "\"",
-            "patterns": [
-                {
-                    "name": "constant.character.escape.jac",
-                    "match": "\\\\."
-                }
-            ]
-        },
-        "single_quote": {
-            "name": "string.quoted.double.jac",
-            "begin": "'",
-            "end": "'",
-            "patterns": [
-                {
-                    "name": "constant.character.escape.jac",
-                    "match": "\\\\."
-                }
-            ]
-        },
-        "comments": {
-            "patterns": [
-                {
-                    "include": "#number_comment"
-                },
-                {
-                    "include": "#dblslash_comment"
-                },
-                {
-                    "include": "#comment_block"
-                }
-            ]
-        },
-        "number_comment": {
-            "name": "comment.line.number-sign.jac",
-            "begin": "(\\#)",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.definition.comment.jac"
-                }
-            },
-            "end": "($)",
-            "patterns": [
-                {
-                    "include": "#codetags"
-                }
-            ]
-        },
-        "dblslash_comment": {
-            "name": "comment.line.double-slash.jac",
-            "begin": "(\\/\\/)",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.definition.comment.jac"
-                }
-            },
-            "end": "(?=\\n)",
-            "patterns": [
-                {
-                    "include": "#codetags"
-                }
-            ]
-        },
-        "comment_block": {
-            "name": "comment.block.jac",
-            "begin": "(\\/\\*)",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.definition.comment.begin.jac"
-                }
-            },
-            "end": "(\\*\\/)",
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.definition.comment.end.jac"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#codetags"
-                }
-            ]
-        },
-        "codetags": {
-            "match": "(?:\\b(NOTE|XXX|HACK|FIXME|BUG|TODO)\\b)",
-            "captures": {
-                "1": {
-                    "name": "keyword.codetag.notation.jac"
-                }
-            }
-        },
-        "functional": {
-            "name": "source.jac.functional",
-            "patterns": [
-                {
-                    "include": "#function_calls"
-                }
-            ]
-        },
-        "function_calls": {
-            "match": "(\\w+)(\\()",
-            "captures": {
-                "1": {
-                    "name": "support.function.functional_calls.jac"
-                },
-                "2": {
-                    "name": "punctuation.definition.tag.jac"
-                }
-            }
-        },
-        "operators": {
-            "patterns": [
-                {
-                    "match": "(?:([a-zA-Z$_][\\w$]*)?\\s+|(?<![\\w$]))(and=|or=)",
-                    "captures": {
-                        "1": {
-                            "name": "variable.assignment.jac"
-                        },
-                        "2": {
-                            "name": "keyword.operator.assignment.compound.jac"
-                        }
-                    }
-                },
-                {
-                    "match": "([a-zA-Z$_][\\w$]*)?\\s*(%=|\\+=|-=|\\*=|&&=|\\|\\|=|\\?=|(?<!\\()/=)",
-                    "captures": {
-                        "1": {
-                            "name": "variable.assignment.jac"
-                        },
-                        "2": {
-                            "name": "keyword.operator.assignment.compound.jac"
-                        }
-                    }
-                },
-                {
-                    "match": "([a-zA-Z$_][\\w$]*)?\\s*(&=|\\^=|<<=|>>=|>>>=|\\|=)",
-                    "captures": {
-                        "1": {
-                            "name": "variable.assignment.coffee"
-                        },
-                        "2": {
-                            "name": "keyword.operator.assignment.compound.bitwise.jac"
-                        }
-                    }
-                },
-                {
-                    "match": "<<|>>>|>>",
-                    "name": "keyword.operator.bitwise.shift.jac"
-                },
-                {
-                    "match": "!=|<=|>=|==|<|>",
-                    "name": "keyword.operator.comparison.jac"
-                },
-                {
-                    "match": "&&|!|\\|\\|",
-                    "name": "keyword.operator.logical.jac"
-                },
-                {
-                    "match": "&|\\||\\^|~",
-                    "name": "keyword.operator.bitwise.jac"
-                },
-                {
-                    "match": "([a-zA-Z$_][\\w$]*)?\\s*(=|:(?!:))(?![>=])",
-                    "captures": {
-                        "1": {
-                            "name": "variable.assignment.jac"
-                        },
-                        "2": {
-                            "name": "keyword.operator.assignment.jac"
-                        }
-                    }
-                },
-                {
-                    "match": "--",
-                    "name": "keyword.operator.decrement.jac"
-                },
-                {
-                    "match": "\\+\\+",
-                    "name": "keyword.operator.increment.jac"
-                },
-                {
-                    "match": "\\.\\.\\.",
-                    "name": "keyword.operator.splat.jac"
-                },
-                {
-                    "match": "\\?",
-                    "name": "keyword.operator.existential.jac"
-                },
-                {
-                    "match": "%|\\*|/|-|\\+",
-                    "name": "keyword.operator.jac"
-                },
-                {
-                    "match": "(?x)\n\\b(?<![\\.\\$])\n(?:\n  (and|or|not) # logical\n  |\n  (is|isnt) # comparison\n)\n(?!\\s*:)\\b",
-                    "captures": {
-                        "1": {
-                            "name": "keyword.operator.logical.jac"
-                        },
-                        "2": {
-                            "name": "keyword.operator.comparison.jac"
-                        }
-                    }
-                }
-            ]
-        }
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Jac Programming Language",
+  "patterns": [
+    {
+      "include": "#comments"
     },
-    "scopeName": "source.jac"
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#functional"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#entity_block_definition"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "storage.modifier.jac",
+          "match": "\\b(import|ignore|with|strict|context|details|info|activity|length|keys|async|sync)\\b"
+        },
+        {
+          "match": "\\b(str|int|float|list|dict|bool|test|type)\\b",
+          "name": "support.type.jac"
+        },
+        {
+          "match": "\\b(edge|graph|node|walker|digraph|subgraph)\\b",
+          "name": "storage.type.entity.jac"
+        },
+        {
+          "name": "keyword.control.jac",
+          "match": "\\b(if|elif|else|while|for|while|global|in|by|to|report|take|ignore|skip|disengage|break|continue|destroy|spawn|entry|exit|assert|yield|try|catch)\\b"
+        },
+        {
+          "name": "variable.other.property",
+          "match": "\\b(has|can|anchor|private)\\b"
+        },
+        {
+          "name": "keyword.control.flow.jac",
+          "comment": "Highlights 'report' et al. that preceeds a '-->'",
+          "match": "\\s*\\b(?<!\\.)(report|destroy|here|take|in)\\b(?=.*[-\\\\])"
+        },
+        {
+          "match": "\\b(null|true|false)\\b",
+          "name": "constant.language.c"
+        }
+      ]
+    },
+    "entity_block_definition": {
+      "begin": "^\\s*(node|edge|walker|graph)\\s+([A-Za-z][\\w]*|(?:\\w+(?:(?:\\,\\s?|\\:)(?:\\w+|\\s\\w))+))(\\s*({)|;)",
+      "name": "source.jac.embedded.source",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.entity.jac"
+        },
+        "2": {
+          "name": "entity.name.type.entity.jac"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.jac"
+        }
+      },
+      "end": "\\s*\\(}|;)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.tag.jac"
+        }
+      }
+    },
+    "strings": {
+      "patterns": [
+        {
+          "include": "#double_quote"
+        },
+        {
+          "include": "#single_quote"
+        }
+      ]
+    },
+    "double_quote": {
+      "name": "string.quoted.double.jac",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.jac",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "single_quote": {
+      "name": "string.quoted.double.jac",
+      "begin": "'",
+      "end": "'",
+      "patterns": [
+        {
+          "name": "constant.character.escape.jac",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "include": "#number_comment"
+        },
+        {
+          "include": "#dblslash_comment"
+        },
+        {
+          "include": "#comment_block"
+        }
+      ]
+    },
+    "number_comment": {
+      "name": "comment.line.number-sign.jac",
+      "begin": "(\\#)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.comment.jac"
+        }
+      },
+      "end": "($)",
+      "patterns": [
+        {
+          "include": "#codetags"
+        }
+      ]
+    },
+    "dblslash_comment": {
+      "name": "comment.line.double-slash.jac",
+      "begin": "(\\/\\/)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.comment.jac"
+        }
+      },
+      "end": "(?=\\n)",
+      "patterns": [
+        {
+          "include": "#codetags"
+        }
+      ]
+    },
+    "comment_block": {
+      "name": "comment.block.jac",
+      "begin": "(\\/\\*)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.comment.begin.jac"
+        }
+      },
+      "end": "(\\*\\/)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.comment.end.jac"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#codetags"
+        }
+      ]
+    },
+    "codetags": {
+      "match": "(?:\\b(NOTE|XXX|HACK|FIXME|BUG|TODO)\\b)",
+      "captures": {
+        "1": {
+          "name": "keyword.codetag.notation.jac"
+        }
+      }
+    },
+    "functional": {
+      "name": "source.jac.functional",
+      "patterns": [
+        {
+          "include": "#function_calls"
+        }
+      ]
+    },
+    "function_calls": {
+      "match": "(\\w+)(\\()",
+      "captures": {
+        "1": {
+          "name": "support.function.functional_calls.jac"
+        },
+        "2": {
+          "name": "punctuation.definition.tag.jac"
+        }
+      }
+    },
+    "operators": {
+      "patterns": [
+        {
+          "match": "(?:([a-zA-Z$_][\\w$]*)?\\s+|(?<![\\w$]))(and=|or=)",
+          "captures": {
+            "1": {
+              "name": "variable.assignment.jac"
+            },
+            "2": {
+              "name": "keyword.operator.assignment.compound.jac"
+            }
+          }
+        },
+        {
+          "match": "([a-zA-Z$_][\\w$]*)?\\s*(%=|\\+=|-=|\\*=|&&=|\\|\\|=|\\?=|(?<!\\()/=)",
+          "captures": {
+            "1": {
+              "name": "variable.assignment.jac"
+            },
+            "2": {
+              "name": "keyword.operator.assignment.compound.jac"
+            }
+          }
+        },
+        {
+          "match": "([a-zA-Z$_][\\w$]*)?\\s*(&=|\\^=|<<=|>>=|>>>=|\\|=)",
+          "captures": {
+            "1": {
+              "name": "variable.assignment.coffee"
+            },
+            "2": {
+              "name": "keyword.operator.assignment.compound.bitwise.jac"
+            }
+          }
+        },
+        {
+          "match": "<<|>>>|>>",
+          "name": "keyword.operator.bitwise.shift.jac"
+        },
+        {
+          "match": "!=|<=|>=|==|<|>",
+          "name": "keyword.operator.comparison.jac"
+        },
+        {
+          "match": "&&|!|\\|\\|",
+          "name": "keyword.operator.logical.jac"
+        },
+        {
+          "match": "&|\\||\\^|~",
+          "name": "keyword.operator.bitwise.jac"
+        },
+        {
+          "match": "([a-zA-Z$_][\\w$]*)?\\s*(=|:(?!:))(?![>=])",
+          "captures": {
+            "1": {
+              "name": "variable.assignment.jac"
+            },
+            "2": {
+              "name": "keyword.operator.assignment.jac"
+            }
+          }
+        },
+        {
+          "match": "--",
+          "name": "keyword.operator.decrement.jac"
+        },
+        {
+          "match": "\\+\\+",
+          "name": "keyword.operator.increment.jac"
+        },
+        {
+          "match": "\\.\\.\\.",
+          "name": "keyword.operator.splat.jac"
+        },
+        {
+          "match": "\\?",
+          "name": "keyword.operator.existential.jac"
+        },
+        {
+          "match": "%|\\*|/|-|\\+",
+          "name": "keyword.operator.jac"
+        },
+        {
+          "match": "(?x)\n\\b(?<![\\.\\$])\n(?:\n  (and|or|not) # logical\n  |\n  (is|isn't) # comparison\n)\n(?!\\s*:)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.logical.jac"
+            },
+            "2": {
+              "name": "keyword.operator.comparison.jac"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "scopeName": "source.jac"
 }

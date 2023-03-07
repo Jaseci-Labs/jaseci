@@ -1,7 +1,7 @@
 
-# Text Segmenter 
+# Text Segmenter
 `text_seg` module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
-* `get_segements`: gets different topics in the context provided, given a threshold 
+* `get_segements`: gets different topics in the context provided, given a threshold
 
 
 To load the Text Segmenter run :
@@ -10,13 +10,13 @@ To load the Text Segmenter run :
 actions load module jaseci_ai_kit.text_seg
 ```
 
-    * Input 
+    * Input
         * `text`(String): text the contain the entire context
         * `threshold`(Float): range is between 0-1, make each sentence as segment if, threshold is 1.
     * Returns: List of Sentences that best summarizes the context
-  
+
 * `load_model`: to load the available model for text segmentation
-    * Input 
+    * Input
         * `model_name`(String): name of the transformer model to load, options are:
             * `wiki`: trained on wikipedia data
             * `legal`: trained on legal documents

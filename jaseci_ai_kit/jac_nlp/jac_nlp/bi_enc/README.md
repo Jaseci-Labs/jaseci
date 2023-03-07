@@ -145,7 +145,7 @@ For this part, we are going to use Python. First,
 1. Open terminal and run jaseci by cmd
     > jsctl -m
 2. Load `bi_enc` module in jac by cmd
-    > actions load module jaseci_ai_kit.bi_enc
+    > actions load module jac_nlp.bi_enc
 
 ### **3. Train the model**
 For this tutorial, we are going to `train and infer` the `biencoder` for `intent classification` its `train` on snips `train datasets` and `infer` on `test dataset`, which is categorizing an incoming text into a one of predefined intents.

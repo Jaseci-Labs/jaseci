@@ -19,7 +19,6 @@ speakers = ["male", "female", "random"]
 
 @jaseci_action(act_group=["vc_tts"], allow_remote=True)
 def synthesize(input_text: str, speaker: str, save_path: str = ""):
-
     speaker = speaker.lower()
     if speaker not in speakers:
         raise ValueError("The value for the speaker can be male,female or random")
@@ -58,7 +57,6 @@ def synthesize(input_text: str, speaker: str, save_path: str = ""):
 
 @jaseci_action(act_group=["vc_tts"], allow_remote=True)
 def clone_voice(input_text: str, reference_audio: str, save_path: str = "./"):
-
     ret_dict = {}
     try:
         if save_path != "":

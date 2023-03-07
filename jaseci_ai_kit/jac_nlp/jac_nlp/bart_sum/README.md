@@ -14,7 +14,7 @@ Module `bart_sum` uses the `bart-large-cnn` to get the abstractive summary of a 
     ```
 2.  Load bart_sum module in jac
     ```
-    actions load module jaseci_ai_kit.bart_sum
+    actions load module jac_nlp.bart_sum
     ```
 
 
@@ -26,8 +26,8 @@ There are 2 ways to use `bart_sum` module.
 Both the methods uses a single action `summarize` to get the summary. Following are the parameters of the function.
 * `text` - Text to be summarized. Type: `Union[List[str], str]` (Optional)
 * `url` - Url of the web page to be summarized. Type: `str` (Optional)
-* `max_length` - Maximum character length of the summary. Type: `int` Default: `100`
-* `min_length` - Minimum character length of the summary. Type: `int` Default: `10`
+* `max_length` - Maximum character length of the summary. Type: `int, float` Default: `1.0` (Float value between 0 and 1 will be considered as percentage of the text token length)
+* `min_length` - Minimum character length of the summary. Type: `int, float` Default: `0.1` (Float value between 0 and 1 will be considered as percentage of the text token length)
 
 Return type of the action is `List[str]`.
 
@@ -45,9 +45,9 @@ You can also pass a list of texts to get the summary of all the texts.
 walker test_summarize_batch {
     can bart_sum.summarize;
     report bart_sum.summarize(
-        ["There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.", 
+        ["There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
         "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
-        "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude."], 
+        "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude."],
         10
     );
 }
@@ -62,6 +62,10 @@ walker test_summarize_url {
     report bart_sum.summarize(null, "https://in.mashable.com/");
 }
 ```
+
+### Setup Parameters
+* `tokenizer` - Tokenizer to be used for tokenizing the text. Type: `str` Default: `facebook/bart-large-cnn`
+* `model` - Model to be used for summarizing the text. Type: `str` Default: `facebook/bart-large-cnn`
 
 # **References**
 * [Bart Summarizer](https://huggingface.co/transformers/model_doc/bart.html)

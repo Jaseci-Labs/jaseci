@@ -21,7 +21,7 @@ walker identify_intent{
       pred = ph.predict(uuid=uid, data=input_text);
       report pred;
 
-      # training the head for 3 epochs. default is 100. you can override other parameters too. 
+      # training the head for 3 epochs. default is 100. you can override other parameters too.
       # refer the default config.
       ph.train_head('ph', {
           "Trainer":{

@@ -31,13 +31,13 @@ state, input_state{
     input_state{
 
         #These operating context can be embedded within other operating context.
-        
+
     }
 
 }
 
 closing_state{
- 
+
     #execute code specific to  closing_state nodes
 
 }

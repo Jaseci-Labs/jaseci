@@ -86,7 +86,6 @@ def get_umap(
     n_components: int = 2,
     random_state: int = 42,
 ):
-
     try:
         umap_embedds = get_umap_embedds(
             text_embeddings=text_embeddings,

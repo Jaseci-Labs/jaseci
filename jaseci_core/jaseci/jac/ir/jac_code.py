@@ -38,7 +38,6 @@ class JacJsonDec(json.JSONDecoder):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):
-
         if isinstance(obj, dict) and "loc" in obj and "kid" in obj:
             ret = Ast(mod_name=obj["loc"][2])
             for i in obj.keys():

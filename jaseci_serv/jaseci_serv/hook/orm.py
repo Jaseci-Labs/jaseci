@@ -7,25 +7,30 @@ FIX: Serious permissions work needed
 import uuid
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import OperationalError
 
 import jaseci as core_mod
 from jaseci.hook import RedisHook
 from jaseci.utils import utils
-from jaseci.utils.json_handler import json_str_to_jsci_dict
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 from datetime import datetime
 import json
 
+from jaseci import JsOrc
 
+
+@JsOrc.repository(name="hook", priority=2)
 class OrmHook(RedisHook):
     """
     Hooks Django ORM database for Jaseci objects to Jaseci's core engine.
     """
 
-    def __init__(self, objects, globs):
-        self.objects = objects
-        self.globs = globs
+    def __init__(self):
+        from jaseci_serv.base.models import GlobalVars, JaseciObject
+
+        self.objects = JaseciObject.objects
+        self.globs = GlobalVars.objects
         self.db_touch_count = 0
         super().__init__()
 
@@ -47,6 +52,10 @@ class OrmHook(RedisHook):
                     exc_info=True,
                 )
                 return None
+            except OperationalError as e:
+                logger.error(f"Operation failed due to {e}")
+                return None
+
             class_for_type = self.find_class_and_import(loaded_obj.j_type, core_mod)
             kwargs = {"h": self, "m_id": loaded_obj.j_master.urn, "auto_save": False}
             ret_obj = class_for_type(**kwargs)
@@ -74,6 +83,8 @@ class OrmHook(RedisHook):
             # NOTE: Should look at this at some point
             # logger.error("Object does not exists so delete aborted!")
             pass
+        except OperationalError as e:
+            logger.error(f"Operation failed due to {e}")
 
     # --------------------- GLOB --------------------- #
 
@@ -92,6 +103,9 @@ class OrmHook(RedisHook):
                     str(f"Global {name} does not exist in Django ORM!"), exc_info=True
                 )
                 return None
+            except OperationalError as e:
+                logger.error(f"Operation failed due to {e}")
+                return None
 
             super().commit_glob_to_cache(name, glob)
             return glob
@@ -101,14 +115,26 @@ class OrmHook(RedisHook):
         """
         Checks for global config existance in store
         """
-        return super().has_glob_in_store(name) or self.globs.filter(name=name).count()
+        ret = super().has_glob_in_store(name)
+
+        if not ret:
+            try:
+                return self.globs.filter(name=name).count() > 0
+            except OperationalError as e:
+                logger.error(f"Operation failed due to {e}")
+                logger.error(name)
+
+        return ret
 
     def list_glob_from_store(self):
         """Get list of global config to externally hooked general store"""
         globs = super().list_glob_from_store()
 
         if not globs:
-            return [entry["name"] for entry in self.globs.values("name")]
+            try:
+                return [entry["name"] for entry in self.globs.values("name")]
+            except OperationalError as e:
+                logger.error(f"Operation failed due to {e}")
 
         return globs
 
@@ -119,22 +145,30 @@ class OrmHook(RedisHook):
             self.globs.get(name=name).delete()
         except ObjectDoesNotExist:
             pass
+        except OperationalError as e:
+            logger.error(f"Operation failed due to {e}")
 
     ####################################################
     #                    COMMITTER                     #
     ####################################################
 
     def commit_obj(self, item):
-        item_from_db, created = self.objects.get_or_create(jid=item.id)
-        map_assignment_of_matching_fields(item_from_db, item)
-        item_from_db.jsci_obj = item.jsci_payload()
-        item_from_db.save()
+        try:
+            item_from_db, created = self.objects.get_or_create(jid=item.id)
+            map_assignment_of_matching_fields(item_from_db, item)
+            item_from_db.jsci_obj = item.jsci_payload()
+            item_from_db.save()
+        except OperationalError as e:
+            logger.error(f"Operation failed due to {e}")
 
     def commit_glob(self, name, value):
         self.commit_glob_to_cache(name, value)
-        item_from_db, created = self.globs.get_or_create(name=name)
-        item_from_db.value = value
-        item_from_db.save()
+        try:
+            item_from_db, created = self.globs.get_or_create(name=name)
+            item_from_db.value = value
+            item_from_db.save()
+        except OperationalError as e:
+            logger.error(f"Operation failed due to {e}")
 
     def commit(self, skip_cache=False):
         """Write through all saves to store"""

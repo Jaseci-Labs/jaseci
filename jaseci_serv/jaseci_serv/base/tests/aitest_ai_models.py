@@ -5,24 +5,17 @@ import jaseci.tests.jac_test_code as jtc
 from jaseci.actor.sentinel import sentinel
 from jaseci.graph.graph import Graph
 from jaseci.utils.utils import TestCaseHelper
-from jaseci_serv.svc import MetaService
+from jaseci import JsOrc
 
 
 class JacTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
-    def setUp(self):
-        super().setUp()
-        self.meta = MetaService()
-
-    def tearDown(self):
-        super().tearDown()
-
     def test_basic_use_calls_from_jac(self):
         """Test the execution of a basic walker building graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = Graph(m_id=0, h=self.meta.build_hook())
+        gph = Graph(m_id=0, h=JsOrc.hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -38,7 +31,7 @@ class JacTests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building Graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = Graph(m_id=0, h=self.meta.build_hook())
+        gph = Graph(m_id=0, h=JsOrc.hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -54,7 +47,7 @@ class JacTests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building Graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = Graph(m_id=0, h=self.meta.build_hook())
+        gph = Graph(m_id=0, h=JsOrc.hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()
@@ -70,7 +63,7 @@ class JacTests(TestCaseHelper, TestCase):
         """Test the execution of a basic walker building Graph"""
         if not lact.load_remote_actions("http://js-use-qa"):
             self.skipTest("external resource not available")
-        gph = Graph(m_id=0, h=self.meta.build_hook())
+        gph = Graph(m_id=0, h=JsOrc.hook())
         sent = sentinel(m_id=gph._m_id, h=gph._h)
         sent.register_code(jtc.prog1)
         test_node = sent.arch_ids.get_obj_by_name("life", kind="node").run()

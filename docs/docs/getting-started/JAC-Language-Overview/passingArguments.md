@@ -17,7 +17,7 @@ spawn::talker(name="Jaseci" ,value = 10);
 ```
 
 ### Passing Arguments to Nodes
-```jac 
+```jac
 node::calculator(first_number, second_number);
 ```
 

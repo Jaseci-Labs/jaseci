@@ -7,7 +7,9 @@ from random import sample
 from typing import List
 
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from transformers import T5ForConditionalGeneration, T5Tokenizer, pipeline
+from sentence_transformers import SentenceTransformer
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
@@ -26,6 +28,8 @@ language_model = T5ForConditionalGeneration.from_pretrained(
 headline_generator = T5ForConditionalGeneration.from_pretrained(
     config["MODELS_NAMES"]["HEADLINE_GENERATOR"]
 )
+
+sentence_embed = SentenceTransformer(config["MODELS_NAMES"]["DOCUMENT_EMBED"])
 
 summarizer = pipeline(
     "summarization",
@@ -122,3 +126,44 @@ def generate_topic_label(documents: List[str]) -> str:
     head_line = tokenizer.decode(output[0][1:-1])
 
     return head_line
+
+
+def mmr(input_text, top_n, n_gram_range=(1, 1), diversity=0.02):
+    """
+    Maximal Marginal Relevance based algorithm for extracting keywords
+    """
+
+    # Extract similarity within words, and between words and the document
+    doc_embedding = sentence_embed.encode([input_text])
+    count = CountVectorizer(ngram_range=n_gram_range, stop_words="english").fit(
+        [input_text]
+    )
+    candidates = count.get_feature_names_out()
+    candidate_embeddings = sentence_embed.encode(candidates)
+
+    word_doc_similarity = cosine_similarity(candidate_embeddings, doc_embedding)
+    word_similarity = cosine_similarity(candidate_embeddings)
+
+    # Initialize candidates and already choose best keyword/keyphras
+    keywords_idx = [np.argmax(word_doc_similarity)]
+    candidates_idx = [i for i in range(len(candidates)) if i != keywords_idx[0]]
+
+    for _ in range(top_n - 1):
+        # Extract similarities within candidates and
+        # between candidates and selected keywords/phrases
+        candidate_similarities = word_doc_similarity[candidates_idx, :]
+        target_similarities = np.max(
+            word_similarity[candidates_idx][:, keywords_idx], axis=1
+        )
+
+        # Calculate MMR
+        mmr = (
+            1 - diversity
+        ) * candidate_similarities - diversity * target_similarities.reshape(-1, 1)
+        mmr_idx = candidates_idx[np.argmax(mmr)]
+
+        # Update keywords & candidates
+        keywords_idx.append(mmr_idx)
+        candidates_idx.remove(mmr_idx)
+
+    return [candidates[idx] for idx in keywords_idx]

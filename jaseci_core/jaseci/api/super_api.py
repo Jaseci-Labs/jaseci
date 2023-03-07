@@ -37,7 +37,9 @@ class SuperApi:
         return ret
 
     @Interface.admin_api()
-    def master_allusers(self, limit: int = 0, offset: int = 0, asc: bool = False):
+    def master_allusers(
+        self, limit: int = 0, offset: int = 0, asc: bool = False, search: str = None
+    ):
         """
         Returns info on a set of users, limit specifies the number of users to
         return and offset specfies where to start

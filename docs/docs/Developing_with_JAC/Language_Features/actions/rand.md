@@ -12,12 +12,12 @@ num = rand.integer(0, 10);
 ```
 ### Random Selection
 ```jac
-a_list = ['apple','mango','orange']
+a_list = ['apple','mango','orange'];
 # Randomly selects and return item from list
 num = rand.choice(a_list);
 ```
 ### Generate Random Word
-```jac 
+```jac
 # generate a random word
  wrd = rand.word();
  ```
@@ -48,7 +48,7 @@ paragraph = rand.paragraph();
  test  = rand.text();
  ```
 ### Generate time
-```jac 
+```jac
 # Generate a random datetime between range.
 
 returned time = rand.time("2020-10-25", "2020-11-26);

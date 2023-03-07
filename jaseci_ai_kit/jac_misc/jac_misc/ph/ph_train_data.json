@@ -1,0 +1,33 @@
+{
+	"text": [
+        "Japan began the defence of their Asian Cup title with a lucky 2-1 win against Syria in a Group C championship match on Friday.",
+        "But China saw their luck desert them in the second match of the group crashing to a surprise 2-0 defeat to newcomers Uzbekistan."
+            ],
+            "annotations": [
+                [
+                    {
+                        "start_index": 0,
+                        "end_index": 5,
+                        "entity_type": "LOC"
+                    },
+                    {
+                        "start_index": 78,
+                        "end_index": 83,
+                        "entity_type": "LOC"
+                    }
+                ],
+                [
+                    {
+                        "start_index": 4,
+                        "end_index": 9,
+                        "entity_type": "LOC"
+                    },
+                    {
+                        "start_index": 117,
+                        "end_index": 127,
+                        "entity_type": "LOC"
+                    }
+                ]
+            ]
+
+}

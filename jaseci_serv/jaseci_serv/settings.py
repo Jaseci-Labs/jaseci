@@ -15,6 +15,9 @@ import sys
 
 from .jsx_oauth.config import *
 
+# Increase data upload max size for requests
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -51,8 +54,9 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_celery_results",
     "django_celery_beat",
-    "jaseci_serv.jsx_stripe",
     "jaseci_serv.jsx_oauth",
+    # this MUST always be the last app
+    "jaseci_serv.svc",
 ]
 
 MIDDLEWARE = [
@@ -209,8 +213,6 @@ JASECI_CONFIGS = [
 
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-
-JSX_STRIPE_DIR = os.path.join(BASE_DIR, "jaseci_serv/jsx_stripe")
 
 
 #################################################

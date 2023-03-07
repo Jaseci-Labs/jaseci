@@ -299,3 +299,9 @@ walker simple_custom_payload_with_file {
         report global.info['request_context']["body"]["fileTypeField"];
     }
 }
+
+walker master_self {
+    with entry {
+        report jaseci.master_self(true);
+    }
+}

@@ -14,7 +14,7 @@ Module `cl_summer` uses the `sumy summarizer` to extract summary from text.
     ```
 2.  Load cl_summer module in jac by command
     ```
-    actions load module jaseci_ai_kit.cl_summer
+    actions load module jac_nlp.cl_summer
     ```
 
 

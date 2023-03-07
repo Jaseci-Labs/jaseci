@@ -113,6 +113,7 @@ SUPPORTED_LANGUAGES = [
 ]
 
 
+@jaseci_action(act_group=["stt"], allow_remote=True)
 def setup(size: str = "tiny"):
     global model, processor
     model = WhisperForConditionalGeneration.from_pretrained(f"openai/whisper-{size}")
@@ -156,6 +157,7 @@ def transcribe(
         elif url is not None:
             downloaded_audio_file = download(url)
             audio_array = get_array(downloaded_audio_file)
+            os.remove(downloaded_audio_file)
         else:
             raise ValueError("Must provide array, audio_file, or url")
 

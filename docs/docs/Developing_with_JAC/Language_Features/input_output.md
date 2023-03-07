@@ -3,11 +3,11 @@ title : Input and output
 ---
 
 
-# Input and Output 
+# Input and Output
 
 To print on to the terminal we use :
 
-```jac 
+```jac
 std.out("Hello World");
 
 ```

@@ -54,7 +54,7 @@ ZS_CLASSIFIER_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "zs-classifier",
-                                "image": "jaseci/jac-nlp:1.4.0.6",
+                                "image": "jaseci/jac-nlp:latest",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

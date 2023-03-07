@@ -2,7 +2,6 @@ from jaseci.utils.test_core import CoreTest, jac_testcase
 
 
 class ZlibTest(CoreTest):
-
     fixture_src = __file__
 
     data_uncompressed = "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII="

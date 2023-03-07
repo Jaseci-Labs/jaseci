@@ -6,6 +6,7 @@ import pdb
 import importlib
 import pkgutil
 import logging
+import logging.handlers as handlers
 import types
 import base64
 import re
@@ -21,6 +22,8 @@ from pprint import pformat
 
 from jaseci.utils.log_utils import LimitedSlidingBuffer
 
+LOGS_DIR = ".jaseci_logs/"
+
 
 class ColCodes:
     TY = "\033[33m"
@@ -34,7 +37,6 @@ def master_from_meta(meta):
     return meta["h"].get_obj(meta["m_id"], meta["m_id"])
 
 
-# Get an instance of a logger
 def connect_logger_handler(target_logger, handler, level=logging.WARN):
     """Attaches standard formatting and adds handler to logger"""
     target_logger.setLevel(level)
@@ -44,18 +46,32 @@ def connect_logger_handler(target_logger, handler, level=logging.WARN):
     target_logger.addHandler(handler)
 
 
+# Get an instance of a logger
 logger = logging.getLogger("core")
 logger.propagate = False
 logs = LimitedSlidingBuffer()
+# Create the logs folder
+os.makedirs(LOGS_DIR, exist_ok=True)
 if len(logger.handlers) < 1:
     connect_logger_handler(logger, logging.StreamHandler(), logging.INFO)
     connect_logger_handler(logger, logging.StreamHandler(stream=logs), logging.INFO)
+    # set up a timed rotating file handler
+    core_rotating_file_handler = handlers.TimedRotatingFileHandler(
+        os.path.join(LOGS_DIR, "core.log"), when="midnight", backupCount=180
+    )
+    connect_logger_handler(logger, core_rotating_file_handler, logging.INFO)
+
 
 app_logger = logging.getLogger("app")
 app_logger.propagate = False
 if len(app_logger.handlers) < 1:
     connect_logger_handler(app_logger, logging.StreamHandler(), logging.INFO)
     connect_logger_handler(app_logger, logging.StreamHandler(stream=logs), logging.INFO)
+    # set up a timed rotating file handler
+    app_rotating_file_handler = handlers.TimedRotatingFileHandler(
+        os.path.join(LOGS_DIR, "app.log"), when="midnight", backupCount=180
+    )
+    connect_logger_handler(app_logger, app_rotating_file_handler, logging.INFO)
 
 
 def log_var_out(val):
@@ -303,3 +319,15 @@ def is_true(val):
         if type(val) is str
         else val is True  # is_async might be non bool
     )
+
+
+class InvalidApiException(Exception):
+    pass
+
+
+def find_first_api(api_name, **api_endpoints):
+    for path, api_list in api_endpoints.items():
+        api = next(filter(lambda x: api_name == "_".join(x["groups"]), api_list), None)
+        if api:
+            return path, api
+    raise InvalidApiException(f"api {api_name} is not existing!")

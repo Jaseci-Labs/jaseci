@@ -44,11 +44,33 @@ pip3 --version
 ```
 If these packages are installed they will return a version number. Move to step x if a version number is present.
 
-6.Install Python3 and pip3 by running the following:
+6. Install Python3 and pip3 by running the following:
 ```
 sudo apt update
 sudo apt install python3-dev python3-pip
 ```
+
+In order for all of the jaseci dependencies to work, you will need to be using python 3.10 or higher. To change you default version, use:
+```
+sudo update-alternatives --config python3
+```
+
+You should see a prompt that looks similar to this:
+
+```
+There are 2 choices for the alternative python3 (providing /usr/bin/python3).
+
+  Selection    Path                 Priority   Status
+  ------------------------------------------------------------
+      0            /usr/bin/python3.10   2         auto mode
+    * 1            /usr/bin/python3.10   2         manual mode
+      2            /usr/bin/python3.8    1         manual mode
+
+      Press <enter> to keep the current choice[*], or type selection number:
+```
+
+Select python3.10 or higher.
+
 7.Once the Python and pip packages are installed. Now to install Jaseci and Jaseci Kit
 ```
 pip install jaseci

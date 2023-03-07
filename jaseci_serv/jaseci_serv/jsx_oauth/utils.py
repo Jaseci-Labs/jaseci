@@ -1,9 +1,10 @@
-from jaseci_serv.svc import MetaService
-from jaseci_serv.jsx_oauth.models import PROVIDERS_MAPPING
+from jaseci import JsOrc
+from jaseci_serv.jsx_oauth.models import PROVIDERS_MAPPING, SocialLoginProvider
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 from dj_rest_auth.registration.serializers import SocialLoginSerializer
 from jaseci_serv.base.models import lookup_global_config
+from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from knox.settings import knox_settings
@@ -16,12 +17,24 @@ from rest_framework import serializers
 from allauth.socialaccount.helpers import complete_social_login
 from allauth.account import app_settings as allauth_settings
 from requests.exceptions import HTTPError
+from enum import Enum
+
+
+class LoginType(Enum):
+    REGISTRATION = "New account"
+    EXISTING = "Existing account"
+    ACTIVATION = "Existing account but just got activated"
+    BINDING = "Existing account but just got binded with different login type"
 
 
 class RegistrationConflict(APIException):
     status_code = 409
     default_detail = "User is already registered with this e-mail address!"
     default_code = "Registration failed!"
+
+
+class GetExampleUrlSerializer(serializers.Serializer):
+    provider = serializers.ChoiceField(choices=SocialLoginProvider.choices)
 
 
 class JSXSocialLoginSerializer(SocialLoginSerializer):
@@ -96,24 +109,37 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
             complete_social_login(request, login)
         except HTTPError:
             raise serializers.ValidationError(_("Incorrect value"))
-        if not login.is_existing:
-            if allauth_settings.UNIQUE_EMAIL:
-                # Do we have an account already with this email address?
-                account_exists = (
-                    get_user_model()
-                    .objects.filter(
-                        email=login.user.email,
-                    )
-                    .exists()
-                )
-                if account_exists:
-                    raise RegistrationConflict()
 
+        attrs["type"] = LoginType.EXISTING
+
+        if not login.is_existing:
             login.lookup()
+            try:
+                user = get_user_model().objects.get(
+                    email=login.user.email,
+                )
+                login.user = user
+                attrs["type"] = LoginType.BINDING
+            except ObjectDoesNotExist:
+                pass
             login.save(request, connect=True)
-        attrs["user"] = login.account.user
-        if "name" in login.account.extra_data.keys():
-            attrs["name"] = login.account.extra_data.get("name", "")
+
+        user = login.account.user
+        attrs["user"] = user
+
+        if not user.is_activated:
+            user.is_activated = True
+            if user.has_usable_password():
+                attrs["type"] = LoginType.ACTIVATION
+            else:
+                if "name" in login.account.extra_data.keys():
+                    user.name = login.account.extra_data.get("name", "")
+                user.master = JsOrc.master(h=user._h, name=user.email).id
+                attrs["type"] = LoginType.REGISTRATION
+
+            user._h.commit()
+            user.save()
+
         return attrs
 
 
@@ -125,7 +151,7 @@ class JSXSocialLoginView(SocialLoginView):
     # permission_classes = [IsValidateLicense, AllowAny]
 
     def get_callback_url(self, request):
-        callback_url = request.POST.get("callback_url")
+        callback_url = request.data.get("callback_url")
         if callback_url:
             return callback_url
 
@@ -140,23 +166,13 @@ class JSXSocialLoginView(SocialLoginView):
             'Please provide a valid provider name e.g. "GOOGLE"'
         )
 
-    def dispatch(self, request, *args, **kwargs):
-        self.callback_url = self.get_callback_url(request)
-        return super().dispatch(request, *args, **kwargs)
-
     def post(self, request, *args, **kwargs):
         self.request = request
+        self.callback_url = self.get_callback_url(request)
         self.serializer = self.get_serializer(data=self.request.data)
         self.serializer.is_valid(raise_exception=True)
-        self.user = self.serializer.validated_data.get("user")
-        # self.login()
-        self.user.is_activated = True
-        self.user.name = self.serializer.validated_data.get("name")
-        self.user.master = (
-            MetaService().build_master(h=self.user._h, name=self.user.email).id
-        )
-        self.user._h.commit()
-        self.user.save()
+        data = self.serializer.validated_data
+        self.user = data.get("user")
         auth_token = AuthToken.objects.filter(user_id=self.user.id)
         if auth_token:
             AuthToken.objects.filter(user_id=self.user.id).delete()
@@ -170,10 +186,13 @@ class JSXSocialLoginView(SocialLoginView):
         auth_user = authenticate(
             request=self.request, username=self.user.email, password=self.user.password
         )
+        login_type = data.get("type")
         return Response(
             {
                 "email": auth_user.email if auth_user else self.user.email,
                 "token": token,
                 "exp": instance.expiry,
+                "type": login_type.name,
+                "details": login_type.value,
             }
         )

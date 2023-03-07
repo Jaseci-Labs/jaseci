@@ -155,7 +155,6 @@ def train(
     if len(train_data) != 0:
         completed = create_train_data(train_data, "train")
         if completed is True:
-
             # loading training dataset
             data_set(
                 train_file,

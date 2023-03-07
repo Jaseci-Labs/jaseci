@@ -1,21 +1,21 @@
 # Alias Actions
 Alias provides names  for long string like UUIDs.
 
-### Register Alias 
-```jac 
+### Register Alias
+```jac
 #name (str): The name for the alias created by caller.
 #value (str): The value for that name to map to (i.e., UUID)
 response  = jaseci.alias_register(name,value);
 
 ```
 ### List Aliases
-```jac 
+```jac
 # List all string to string alias that caller can use
 jaseci.alias_list()
 
 ```
 
-### Delete Alias 
+### Delete Alias
 
 ```jac
 # Delete an active string to string alias mapping
@@ -23,7 +23,7 @@ jaseci.alias_list()
 jaseci.alias_delete()
 ```
 ### Clear Alias
-```jac 
+```jac
 #  Removes  all aliases.
 jaseci.alias_clear()
 

@@ -19,7 +19,7 @@ We have 3 different types of nodes:
 - `faq_root`: This is the entry point of the FAQ handler. We will make the decision on the most relevant answer at this node.
 - `faq_state`: This node represents a FAQ entry. It contains a candidate answer from the knowledge base.
 
-To start, let's create a new jac file and name it `faq.jac` and we will be putting the code in this section in this file.
+To start, let's create a new jac file in `examples/CanoniCAI/code` and name it `faq.jac`. We will be putting the code in this section in this file.
 
 Now let's define the custom node types.
 
@@ -263,12 +263,12 @@ The `jac_nlp` package contains the Universal Sentence Encoder QA model that we a
 To install `jac_nlp`:
 
 ```bash
-pip install jac_nlp[use_qa, bi_enc, tfm_ner] # This will install the models which we need for this example
+pip install "jac_nlp[use_qa,bi_enc,tfm_ner]" # This will install the models which we need for this example, make sure to include the quotations
 ```
 But if you want to install all the models in `jac_nlp`:
 
 ```bash
-pip install jac_nlp[all] # This will install all the models in jac_nlp
+pip install "jac_nlp[all]" # This will install all the models in jac_nlp, again making sure to include the quotations
 ```
 
 > **Note**
@@ -357,7 +357,6 @@ An example knowledge base file look like this
 
 Save the above json in a file named `tesla_faq.json` and make sure it is in the same location as `faq.jac`.
 Let's now update the `init` walker.
-Because we are going to use the `ingest_faq` walker to generate the graph, we won't need the static graph definition.
 
 ```jac
 walker init {
@@ -368,6 +367,9 @@ walker init {
     }
 }
 ```
+> *Note*
+>
+> Even though we are trying to initializing the graph using the init walker here, let's keep the original static graph definition (`graph faq`) and not delete it from the code, as it will be needed later on in this guide.
 
 What we are doing here is
 
@@ -404,4 +406,3 @@ On the right is the architecture diagram of the complete system we are going to 
 - Testing.
 - Deploying your Jac application to a production environment.
 - Training data collection and curation.
-

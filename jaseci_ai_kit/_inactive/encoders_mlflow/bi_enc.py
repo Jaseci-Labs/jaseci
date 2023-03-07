@@ -222,7 +222,6 @@ def train(
     """
     global model
     try:
-
         train_data = {"contexts": [], "candidates": [], "labels": []}
         if from_scratch is True:
             save_model(model_config["model_save_path"])

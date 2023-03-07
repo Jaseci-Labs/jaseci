@@ -11,7 +11,6 @@ import mlflow
 def train_model(
     use_mlflow, model, tokenizer, contexts, candidates, labels, train_config
 ):
-
     context_transform = token_util.SelectionJoinTransform(
         tokenizer=tokenizer, max_len=train_config["max_contexts_length"]
     )

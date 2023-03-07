@@ -44,3 +44,10 @@ walker test_headline_gen{
 
     report topic_ext.headline_generation(texts=texts,classes=labels);
 }
+
+walker test_keyword_ext{
+    can topic_ext.keyword_extraction;
+    has texts = "I like dogs";
+
+    report topic_ext.keyword_extraction(sentence=texts, n_words=2, min_tokens = 1, max_tokens = 1, diversity = 0.02);
+}

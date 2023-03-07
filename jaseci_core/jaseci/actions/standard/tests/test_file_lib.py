@@ -3,7 +3,6 @@ import os
 
 
 class FileLibTest(CoreTest):
-
     fixture_src = __file__
 
     def test_json_dump(self):

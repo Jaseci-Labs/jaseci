@@ -2,7 +2,7 @@
 
 There are two version of the Jaseci docker image and they are both built using the `jaseci.Dockerfile` in this directory.
 
-Note: docker images are automatically built and pushed to dockerhub on tagging by the github actions. 
+Note: docker images are automatically built and pushed to dockerhub on tagging by the github actions.
 
 ### Full Jaseci image
 To build the full jaseci docker image, which include the core Jaseci package (`jaseci`), the Jaseci server (`jaseci-serv` or `jsserv`) and the AI models in the Jaseci AI Kit (`jaseci-ai-kit`), run the following

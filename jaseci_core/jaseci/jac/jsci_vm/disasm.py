@@ -54,10 +54,15 @@ class DisAsm(InstPtr):
         if typ in [JsType.TYPE]:
             self._asm.append([self.cur_op(), typ.name, JsType(operand2).name])
             self._ip += 2
-        elif typ in [JsType.INT, JsType.STRING]:
+        elif typ in [JsType.INT]:
             val = from_bytes(type_map[typ], self.offset(3, operand2))
             self._asm.append([self.cur_op(), typ.name, operand2, val])
             self._ip += 2 + operand2
+        elif typ in [JsType.STRING]:
+            str_len = from_bytes(type_map[JsType.INT], self.offset(3, operand2))
+            val = from_bytes(type_map[typ], self.offset(3 + operand2, str_len))
+            self._asm.append([self.cur_op(), typ.name, operand2, str_len, val])
+            self._ip += 2 + operand2 + str_len
         elif typ in [JsType.FLOAT]:
             val = from_bytes(float, self.offset(2, 8))
             self._asm.append([self.cur_op(), typ.name, val])

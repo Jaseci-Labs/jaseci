@@ -4,6 +4,7 @@ import torch
 
 
 from .base import BaseDataLoader
+from torch.utils.data.dataloader import default_collate
 
 
 class SnipsDataLoader(BaseDataLoader):
@@ -42,6 +43,10 @@ class CustomDataLoader(BaseDataLoader):
         spec.loader.exec_module(module)
         # get the model
         self.dataset = getattr(module, "CustomDataset")(**kwargs)
+        try:
+            collate_fn = getattr(module, "collate_fn")
+        except AttributeError:
+            collate_fn = default_collate
         super().__init__(
-            self.dataset, batch_size, shuffle, validation_split, num_workers
+            self.dataset, batch_size, shuffle, validation_split, num_workers, collate_fn
         )

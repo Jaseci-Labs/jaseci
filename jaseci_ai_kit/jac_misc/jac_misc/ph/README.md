@@ -51,7 +51,7 @@ walker identify_intent{
       pred = ph.predict(uuid=uid, data=input_text);
       report pred;
 
-      # training the head for 3 epochs. default is 100. you can override other parameters too. 
+      # training the head for 3 epochs. default is 100. you can override other parameters too.
       # refer the default config. and using the snips dataset. check the example folder for train.json.
       ph.train_head('ph', {
           "Trainer":{
@@ -93,7 +93,7 @@ jsctl -m
 - Load the 'personalized_head' module using the command below.
 
 ```bash
-actions load module jaseci_ai_kit.ph
+actions load module jac_misc.ph
 ```
 
 - Run the JAC program using the command below.
@@ -259,7 +259,7 @@ jsctl -m
 - Load the 'personalized_head' module using the command below.
 
 ```bash
-actions load module jaseci_ai_kit.ph
+actions load module jac_misc.ph
 ```
 
 - Run the JAC program using the command below.

@@ -41,7 +41,7 @@ class JacAstBuilder:
         parser.removeErrorListeners()
         parser.addErrorListener(errors)
         tree = getattr(parser, self._start_rule)()
-        builder = JacTreeBuilder(self)
+        builder = JacTreeBuilder(builder=self, code=jac_str)
         walker = ParseTreeWalker()
         walker.walk(builder, tree)
 
@@ -52,8 +52,9 @@ class JacAstBuilder:
 class JacTreeBuilder(ParseTreeListener):
     """Converter class from Antlr trees to Jaseci Tree"""
 
-    def __init__(self, builder):
+    def __init__(self, builder, code):
         self.builder = builder
+        self.code = code
         self.node_stack = []
 
     def run_import_module(self, jac_ast):
@@ -189,6 +190,8 @@ class JacTreeBuilder(ParseTreeListener):
             new_node = Ast(mod_name=self.builder.root.loc[2])
         new_node.name = jacParser.ruleNames[ctx.getRuleIndex()]
         new_node.loc[0] = ctx.start.line
+        if new_node.name == "architype":
+            new_node.src = self.get_code(ctx)
         new_node.loc[1] = ctx.start.column
 
         if len(self.node_stack) and new_node.name != "import_module":
@@ -217,6 +220,17 @@ class JacTreeBuilder(ParseTreeListener):
         new_node.loc[3]["token"] = token
 
         self.node_stack[-1].kid.append(new_node)
+
+    def get_code(self, ctx):
+        out = ""
+        lines = self.code.split("\n")
+
+        for idx, i in enumerate(lines[ctx.start.line - 1 : ctx.stop.line]):
+            out += i
+            if idx != ctx.stop.line - 1:
+                out += "\n"
+
+        return out
 
 
 class JacTreeError(ErrorListener):

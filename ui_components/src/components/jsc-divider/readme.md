@@ -24,11 +24,13 @@
 ### Used by
 
  - [jsc-graph](../jsc-graph)
+ - [jsc-graph-context-menu](../jsc-graph)
 
 ### Graph
 ```mermaid
 graph TD;
   jsc-graph --> jsc-divider
+  jsc-graph-context-menu --> jsc-divider
   style jsc-divider fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

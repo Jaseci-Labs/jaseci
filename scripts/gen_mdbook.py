@@ -15,7 +15,6 @@ toc_path = os.path.join(root, "README.md")
 
 
 def main():
-
     # ensure main TOC readme exists before continuing
     if not os.path.exists(toc_path):
         sys.exit()
@@ -29,12 +28,17 @@ def main():
     os.makedirs(output_path + "/src")
 
     # build SUMMARY.md based on README.md
+    print(1)
     build_summary_file()
 
     # init mdbook
+    print(2)
+
     init_mdbook()
 
     # booktool
+    print(3)
+
     generate_booktool_cheatsheet()
     generate_booktool_stdlib()
     generate_booktool_class()
@@ -47,7 +51,6 @@ def main():
 
 
 def build_summary_file():
-
     readme = ""
     if not os.path.exists(toc_path):
         sys.exit()
@@ -92,11 +95,6 @@ def build_summary_file():
                     for rf_line in repo_file_lines:
                         docfile.write(rf_line)
 
-    with open(output_path + "/src/SUMMARY.md", "a") as summaryfile:
-        summaryfile.write("- [Standrad Library](stdlib.md) \n")
-        summaryfile.write("- [CheatSheet](cheatsheet.md) \n")
-        summaryfile.write("- [classes](classes.md) \n")
-
     # list of all image folders . Add relative path here to include images in mdbook
     imageFiles = [
         "examples/CanoniCAI/images",
@@ -105,6 +103,8 @@ def build_summary_file():
         "examples/CanoniCAI/codelabs/lang_docs/images",
         "jaseci_ai_kit/jaseci_ai_kit/modules/ph/assets",
         "jaseci_core/svc/",
+        "docs/docs/interfacing_jaseci/",
+        "support/codelabs/",
     ]
     for images in imageFiles:
         files = get_images(os.path.join(root, images))
@@ -112,7 +112,6 @@ def build_summary_file():
 
 
 def process_line(line):
-
     beginheading = line.find("[")
     endheading = line.find("]")
 
@@ -130,7 +129,6 @@ def process_line(line):
 
 
 def import_assets(files):
-
     for file in files:
         common_path = os.path.commonprefix([output_path, file])
         relative_path = file.replace(common_path, "")
@@ -150,7 +148,7 @@ def get_images(path=None):
         f = []
         d = []
         x = 0
-        for (dirpath, dirnames, filenames) in walk(path):
+        for dirpath, dirnames, filenames in walk(path):
             while x < len(filenames):
                 filenames[x] = path + "/" + filenames[x]
                 x = x + 1
@@ -168,6 +166,7 @@ def get_images(path=None):
 
 
 def init_mdbook():
+    print(output_path)
     subprocess.call(
         [
             "mdbook",
@@ -194,26 +193,27 @@ def build_mdbook():
 
 
 def generate_booktool_cheatsheet():
+    print(root)
     subprocess.call(
         [
             "jsctl",
             "booktool",
             "mdcheatsheet",
             "--output",
-            output_path + "/src/cheatsheet.md",
+            "support/guide/other/cheatsheet.md",
         ]
     )
 
 
 def generate_booktool_stdlib():
     subprocess.call(
-        ["jsctl", "booktool", "mdstdlib", "--output", output_path + "/src/stdlib.md"]
+        ["jsctl", "booktool", "mdstdlib", "--output", "support/guide/other/stdlib.md"]
     )
 
 
 def generate_booktool_class():
     subprocess.call(
-        ["jsctl", "booktool", "mdclasses", "--output", output_path + "/src/classes.md"]
+        ["jsctl", "booktool", "mdclasses", "--output", "support/guide/other/classes.md"]
     )
 
 
@@ -222,7 +222,6 @@ def clean_mdbook():
 
 
 def import_theme():
-
     if not os.path.exists(output_path + "/theme"):
         os.makedirs(output_path + "/theme")
 

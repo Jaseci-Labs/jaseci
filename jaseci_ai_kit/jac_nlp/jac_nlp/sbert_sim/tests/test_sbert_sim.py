@@ -15,32 +15,27 @@ class SbertSimTest(CoreTest):
     @pytest.mark.order(1)
     @jac_testcase("sbert_sim.jac", "test_sbert_sim_load_model")
     def test_sbert_sim_load_model(self, ret):
-
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(2)
     @jac_testcase("sbert_sim.jac", "test_train_sbert_sim")
     def test_train_sbert_sim(self, ret):
-
         self.assertEqual(ret["success"], True)
         self.assertEqual(ret["report"][0], "Model Training is completed")
 
     @pytest.mark.order(4)
     @jac_testcase("sbert_sim.jac", "test_get_text_sim")
     def test_get_text_sim(self, ret):
-
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(5)
     @jac_testcase("sbert_sim.jac", "test_sbert_sim_get_train_config")
     def test_sbert_sim_get_train_config(self, ret):
-
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(5)
     @jac_testcase("sbert_sim.jac", "test_sbert_sim_get_cos_score")
     def test_sbert_sim_cos_score(self, ret):
-
         self.assertEqual(ret["success"], True)
 
     @pytest.mark.order(5)

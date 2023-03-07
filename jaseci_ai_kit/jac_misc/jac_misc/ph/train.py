@@ -54,12 +54,17 @@ def train(args):
         model = torch.nn.DataParallel(model, device_ids=device_ids)
 
     # get function handles of loss and metrics
-    if trainer_config["loss"] != "custom_loss":
-        criterion = getattr(loss_module, trainer_config["loss"])
-    else:
+    if trainer_config["loss"] == "custom_loss":
         criterion = getattr(loss_module, "CustomLoss")(
             **trainer_config.get("loss_args", {})
         )
+    elif trainer_config["loss"] == "vector_similarity_loss":
+        criterion = getattr(loss_module, "VectorSimilarityLoss")(
+            **trainer_config.get("loss_args", {})
+        )
+    else:
+        criterion = getattr(loss_module, trainer_config["loss"])
+
     metrics = [getattr(metric_module, metric) for metric in trainer_config["metrics"]]
 
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler

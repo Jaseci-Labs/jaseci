@@ -1,58 +1,64 @@
-# Standard Actions 
+# Standard Actions
 
 ### Logging output
-```jac 
+```jac
 
 # printing output to log
 data = {
     "type" : "String",
-    "name" " "Jaseci"
-}
-result  = std.log(data)
+    "name" : "Jaseci"
+};
+result  = std.log(data);
 
 ```
 ### Output
-```jac 
+```jac
 data = {
     "type" : "String",
-    "name" " "Jaseci"
-}
+    "name" : "Jaseci"
+};
 
 # print on to the termnial
-std.out(data)
+std.out(data);
 
 ```
-### Input 
-```jac 
-# takes input from the terminal 
+### Input
+```jac
+# takes input from the terminal
 # any string passed will be printed on to the screen
-std.input("> ")
+std.input("> ");
+```
+### Js Input
+```jac
+# takes input from the terminal
+# any string passed will be printed on to the screen
+std.js_input("> ");
 ```
 ### Standar Error
-```jac 
+```jac
 # printing to standard error
 
-std.eer()
+std.eer();
 
 ```
 ### Sort Columns
-```jac 
+```jac
 # Sorts in place list of lists by column
 # Param 1 - list
 # Param 2 - col number (optional)
 # Param 3 - boolean as to whether things should be reversed (optional)
-#Return - Sorted list
-sorted_list = std.sort_by_col(param1,param2)
+# Return - Sorted list
+sorted_list = std.sort_by_col(param1,param2);
 
 ```
 ### UTC time
-```jac 
+```jac
 # Get utc date time for now in iso format
-time  = std.time_now()
+time  = std.time_now();
 
 ```
 ### Set Global Variable
-```jac 
+```jac
 
 # set global varibale visible to all walker
 # name : string
@@ -62,14 +68,14 @@ global_variable = std.set_global(name,value);
 
 ```
 ### Get Global Variable
-```jac 
+```jac
 # get global variable
 # name : name of variable
 global_variable = std.get_global(name);
 
 ```
 ### Load local actions to Jaseci
-```jac 
+```jac
 # load local actions date to jaseci
 action = std.actload_local("date.py");
 
@@ -77,7 +83,7 @@ action = std.actload_local("date.py");
 
 ### Load remote actions to Jaseci
 ```jac
-action = std.actload_remote(url)
+action = std.actload_remote(url);
 
 ```
 ### Load module actions to Jaseci
@@ -86,15 +92,15 @@ action = std.actload_remote(url)
 action = std.actload_module('use_qa');
 ```
 ### Destroy Global
-```jac 
-global = std.destroy_global(name)
+```jac
+global = std.destroy_global(name);
 ```
 
 ### Set object Permission
-```jac 
-element - target element
-mode - valid permission (public, private, read_only)
-object = std.set_perms(element,mode)
+```jac
+# element - target element
+# mode - valid permission (public, private, read_only)
+object = std.set_perms(element,mode);
 ```
 
 ### Get object Permission
@@ -116,10 +122,10 @@ obj = std.get_perms(object);
 # readonly : Boolean read-only flag
 # Returns sorted list
 
-object  = std.grant_perms(obj,element,readonly)
+object  = std.grant_perms(obj,element,readonly);
 ```
 ### Revoke Permission
-```jac 
+```jac
 # Remove permission for user to access a jaseci object
 # obj : target element
 # element : master to be revoke permission
@@ -128,7 +134,7 @@ objects = std.revoke_perms(obj,element);
 ```
 
 ### Get Report
-```jac 
+```jac
 # Get current report so far from walker run
 
 reprt = std.get_report();

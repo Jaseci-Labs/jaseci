@@ -3,7 +3,6 @@ from time import time
 from rest_framework.test import APIClient
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
-from django.contrib.sites.models import Site
 from allauth.socialaccount.models import SocialApp
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from jaseci_serv.base.models import User
@@ -53,10 +52,6 @@ class SocialAuthTest(TestCaseHelper, TestCase):
             name="Google OAuth",
             client_id="384752611190-e04jb43i8cnfp953r1m1f5mq5abd919i.apps.googleusercontent.com",
             secret="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",
-        )
-        self.google_app.sites.add(
-            Site.objects.first(),
-            Site.objects.create(domain="google.com", name="google"),
         )
         self.google_app.save()
 

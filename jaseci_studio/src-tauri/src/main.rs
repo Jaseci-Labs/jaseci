@@ -101,9 +101,19 @@ async fn connect(connection_parts: ConnectionParts) -> Result<String, bool> {
     return Ok(result);
 }
 
+#[tauri::command]
+async fn open_graph_viewer(handle: tauri::AppHandle) {
+    println!("Opening Graph Viewer...");
+    let graph_viewer_window = tauri::WindowBuilder::new(&handle, "graph-viewer", tauri::WindowUrl::App("/graph-viewer".parse().unwrap()))
+        .title("Graph Viewer")
+        .resizable(true)
+        .build()
+        .unwrap();
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, test_connection, connect])
+        .invoke_handler(tauri::generate_handler![greet, test_connection, connect, open_graph_viewer])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

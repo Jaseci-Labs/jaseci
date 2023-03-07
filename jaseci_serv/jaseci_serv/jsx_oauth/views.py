@@ -8,7 +8,7 @@ from allauth.socialaccount.providers.okta.views import OktaOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from jaseci_serv.jsx_oauth import serializers
+from jaseci_serv.jsx_oauth.utils import GetExampleUrlSerializer
 from django.conf import settings
 from django.views import View
 from django.shortcuts import render
@@ -21,20 +21,31 @@ from allauth.socialaccount.models import SocialApp
 from jaseci_serv.jsx_oauth.utils import JSXSocialLoginView
 
 
+def generate_state():
+    return "".join(
+        random.choices(
+            string.ascii_uppercase + string.ascii_lowercase + string.digits, k=64
+        )
+    )
+
+
 class ExampleUrlView(GenericAPIView):
-    serializer_class = serializers.GetExampleUrlSerializer
+    serializer_class = GetExampleUrlSerializer
 
     def post(self, request):
         serializer_data = self.serializer_class(data=request.data)
         serializer_data.is_valid(raise_exception=True)
         provider = serializer_data.validated_data.get("provider")
-        callback_url = f"{request.build_absolute_uri('/')[:-1]}{settings.DEFAULT_CALLBACK_URL_FOR_SSO}"
+        provider_map = PROVIDERS_MAPPING[provider]
+        callback_url = f'{request.build_absolute_uri("/")[:-1]}{provider_map["DEFAULT_REDIRECT_URI"]}'
         social_app = SocialApp.objects.filter(provider=provider.lower()).first()
         if social_app:
             return Response(
                 {
-                    "url": PROVIDERS_MAPPING[provider]["LOGIN_URL"].format(
-                        callback_url=callback_url, client_id=social_app.client_id
+                    "url": provider_map["LOGIN_URL"].format(
+                        callback_url=callback_url,
+                        client_id=social_app.client_id,
+                        state=generate_state(),
                     )
                 }
             )
@@ -96,13 +107,6 @@ class ExampleLiveView(View):
                 "provider": provider,
                 "code": code,
                 "client_id": social_app.client_id,
-                "state": self.generate_state(),
+                "state": generate_state(),
             },
-        )
-
-    def generate_state(self):
-        return "".join(
-            random.choices(
-                string.ascii_uppercase + string.ascii_lowercase + string.digits, k=64
-            )
         )

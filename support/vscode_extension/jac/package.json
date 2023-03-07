@@ -2,7 +2,7 @@
     "name": "jac",
     "displayName": "JAC",
     "description": "VSCode Extension for the JAC Programming Language",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "publisher": "jaseci-labs",
     "icon": "images/icon.png",
     "engines": {

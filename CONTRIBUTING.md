@@ -205,3 +205,4 @@ All informational content which do not directly refer to modules / libraries or 
 * If any images are used, ensure they are stored in the `[your_guide]/assets` folder and referenced using relative paths.
 * The markdown pages of your guide must be named based on the title of the rendered page in lowercase, non-whitepsace characters, e.g. `this_is_my_guide.md`.
 * Once the guide is added, ensure that you update the main `README.md` in the root directory of the codebase to include references to your new guide under the applicable section.
+* To include your images to the documentation include the path to the folder in to this file `scripts/gen_mdbook.py` in the ` imageFiles` list .

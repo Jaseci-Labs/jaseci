@@ -1,8 +1,7 @@
 import json
 from json import JSONDecoder, JSONEncoder
-from uuid import UUID
 
-from jaseci.svc import MetaService
+from jaseci import JsOrc
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 
@@ -45,7 +44,7 @@ class JaseciJsonDecoder(JSONDecoder):
                 self.transform(obj[key], idx)
 
     def convert(self, urn):
-        return MetaService().build_hook().get_obj_from_store(urn)
+        return JsOrc.hook().get_obj_from_store(urn)
 
 
 def json_str_to_jsci_dict(input_str, parent_obj=None):
