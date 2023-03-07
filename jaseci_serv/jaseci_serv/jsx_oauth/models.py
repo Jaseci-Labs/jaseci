@@ -17,17 +17,17 @@ class SocialLoginProvider(models.TextChoices):
 PROVIDERS_MAPPING = {
     SocialLoginProvider.GOOGLE: {
         "URL_KEY": SocialLoginProvider.GOOGLE + "_REDIRECT_URI",
-        "LOGIN_URL": "https://accounts.google.com/o/oauth2/v2/auth?redirect_uri={callback_url}&prompt=consent&response_type=code&client_id={client_id}&scope=openid%20email%20profile&access_type=offline",
+        "LOGIN_URL": "https://accounts.google.com/o/oauth2/v2/auth?redirect_uri={callback_url}&prompt=consent&response_type=code&client_id={client_id}&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile%20openid",
         "DEFAULT_REDIRECT_URI": "/auth/examples/google/",
     },
     SocialLoginProvider.FACEBOOK: {
         "URL_KEY": SocialLoginProvider.FACEBOOK + "_REDIRECT_URI",
-        "LOGIN_URL": "https://www.facebook.com/v15.0/dialog/oauth?client_id={client_id}&redirect_uri={callback_url}&state={{st=state123abc,ds=123456789}}",
+        "LOGIN_URL": "https://www.facebook.com/dialog/oauth/?client_id={client_id}&redirect_uri={callback_url}&scope=email&state={state}",
         "DEFAULT_REDIRECT_URI": "/auth/examples/facebook/",
     },
     SocialLoginProvider.GITHUB: {
         "URL_KEY": SocialLoginProvider.GITHUB + "_REDIRECT_URI",
-        "LOGIN_URL": "",
+        "LOGIN_URL": "https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={callback_url}&scope=read:user,user:email&state={state}",
         "DEFAULT_REDIRECT_URI": "/auth/examples/github/",
     },
     SocialLoginProvider.MICROSOFT: {

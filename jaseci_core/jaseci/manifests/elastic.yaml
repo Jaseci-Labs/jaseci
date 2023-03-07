@@ -5182,7 +5182,6 @@ spec:
     storage: true
     subresources:
       status: {}
-
 ---
 # Source: eck-operator/templates/service-account.yaml
 apiVersion: v1
@@ -5899,7 +5898,6 @@ webhooks:
     - UPDATE
     resources:
     - stackconfigpolicies
-
 ---
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
@@ -5913,3 +5911,16 @@ spec:
     count: 1
     config:
       node.store.allow_mmap: false
+
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: jaseci
+  namespace: elastic
+spec:
+  version: 8.6.2
+  count: 1
+  elasticsearchRef:
+    name: jaseci
+

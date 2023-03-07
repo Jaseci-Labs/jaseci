@@ -3,7 +3,6 @@ import os
 OAUTH_APPS = [
     "rest_framework.authtoken",
     "dj_rest_auth",
-    "django.contrib.sites",
     "allauth",
     "allauth.account",
     "dj_rest_auth.registration",
@@ -28,5 +27,3 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
-
-DEFAULT_CALLBACK_URL_FOR_SSO = "/auth/examples/google/"
