@@ -19,7 +19,7 @@ class ActionsApi:
     """
 
     @Interface.admin_api(cli_args=["file"])
-    def actions_load_local(self, file: str):
+    def actions_load_local(self, file: str, ctx: dict = {}):
         """
         Hot load a python module and assimilate any Jaseci Actions
 
@@ -33,7 +33,7 @@ class ActionsApi:
         :param file: The python file with full to load actions from.
             (i.e., ~/local/myact.py)
         """
-        success = lact.load_local_actions(file)
+        success = lact.load_local_actions(file, ctx=ctx)
         if success:
             cur_config = self.config_get("ACTION_SETS")
             if cur_config and (not isinstance(cur_config, list)):
@@ -49,7 +49,7 @@ class ActionsApi:
         return {"success": success}
 
     @Interface.admin_api(cli_args=["url"])
-    def actions_load_remote(self, url: str):
+    def actions_load_remote(self, url: str, ctx: dict = {}):
         """
         Hot link to a container linked action library
 
@@ -63,7 +63,7 @@ class ActionsApi:
 
         :param url: The url of the API server supporting Jaseci actions.
         """
-        success = lact.load_remote_actions(url)
+        success = lact.load_remote_actions(url, ctx=ctx)
         if success:
             cur_config = self.config_get("ACTION_SETS")
             if cur_config and (not isinstance(cur_config, list)):
@@ -79,7 +79,7 @@ class ActionsApi:
         return {"success": success}
 
     @Interface.admin_api(cli_args=["mod"])
-    def actions_load_module(self, mod: str):
+    def actions_load_module(self, mod: str, ctx: dict = {}):
         """
         Hot load a python module and assimilate any Jaseci Actions
 
@@ -92,7 +92,7 @@ class ActionsApi:
         :param mod: The import style module to load actions from.
             (i.e., jaseci_ai_kit.bi_enc)
         """
-        success = lact.load_module_actions(mod)
+        success = lact.load_module_actions(mod, ctx=ctx)
         if success:
             cur_config = self.config_get("ACTION_SETS")
             if cur_config and (not isinstance(cur_config, list)):

@@ -70,7 +70,7 @@ def assimilate_action(func, act_group=None, aliases=list()):
     return func
 
 
-def load_local_actions(file: str):
+def load_local_actions(file: str, ctx: dict = {}):
     """Load all jaseci actions from python file"""
     try:
         name = file.rstrip(".py")
@@ -87,13 +87,20 @@ def load_local_actions(file: str):
                 sys.path.append(module_dir)
             mod = module_from_spec(spec)
             spec.loader.exec_module(mod)
+            try:
+                if hasattr(mod, "setup"):
+                    mod.setup(**ctx)
+            except Exception:
+                logger.error(
+                    f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+                )
             return True
     except Exception:
         logger.error(f"Cannot hot load local actions from {file}.")
         return False
 
 
-def load_module_actions(mod, loaded_module=None):
+def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     """Load all jaseci actions from python module"""
     try:
         if mod in sys.modules:
@@ -110,6 +117,13 @@ def load_module_actions(mod, loaded_module=None):
                     del live_actions[i]
 
         mod = importlib.import_module(mod)
+        try:
+            if hasattr(mod, "setup"):
+                mod.setup(**ctx)
+        except Exception:
+            logger.error(
+                f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+            )
         if mod:
             return True
     except Exception:
@@ -247,7 +261,7 @@ def unload_remote_actions(url):
         logger.error(f"Cannot unload remote action from {url}: {e}")
 
 
-def load_remote_actions(url):
+def load_remote_actions(url, ctx: dict = {}):
     """Load all jaseci actions from live pod"""
     headers = {"content-type": "application/json"}
     try:
@@ -255,6 +269,13 @@ def load_remote_actions(url):
         spec = spec.json()
         for i in spec.keys():
             live_actions[i] = gen_remote_func_hook(url, i, spec[i])
+            if i.endswith(".setup") and ctx:
+                try:
+                    live_actions[i](**ctx)
+                except Exception:
+                    logger.error(
+                        f"Cannot run set up for remote action {i}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+                    )
         return True
 
     except Exception as e:
