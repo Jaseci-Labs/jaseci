@@ -305,3 +305,19 @@ def gen_remote_func_hook(url, act_name, param_names):
     func.__module__ = "js_remote_hook"
 
     return func
+
+
+def call_action(action_name: str, ctx: dict = {}) -> None:
+    """
+    Call an action by name
+    """
+    try:
+        action_name = action_name.strip()
+        if action_name in live_actions.keys():
+            res = live_actions[action_name](**ctx)
+            return res, True
+        else:
+            raise Exception(f"Action {action_name} not found")
+    except Exception as e:
+        logger.error(f"Error calling action {action_name}: {e}")
+        return None, False

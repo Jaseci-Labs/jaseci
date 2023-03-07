@@ -160,3 +160,11 @@ class ActionsApi:
         Unload modules loaded for actions
         """
         return {"success": lact.unload_actionset(name)}
+
+    @Interface.admin_api(cli_args=["name"])
+    def actions_call(self, name: str, ctx: dict = {}):
+        """
+        Call an action by name
+        """
+        ret, sucess = lact.call_action(name, ctx=ctx)
+        return {"success": sucess, "result": ret}
