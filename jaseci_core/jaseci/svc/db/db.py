@@ -3,8 +3,8 @@ from .config import DB_CONFIG
 from .manifest import DB_MANIFEST
 from psycopg2 import connect as DBConnect
 
-class DBService(CommonService):
 
+class DBService(CommonService):
     ###################################################
     #                     BUILDER                     #
     ###################################################
@@ -12,7 +12,6 @@ class DBService(CommonService):
     def run(self, hook=None):
         self.app = DBConnect(**DB_CONFIG)
         self.app.autocommit = True
-
 
     ###################################################
     #                     COMMONS                     #
@@ -37,5 +36,3 @@ class DBService(CommonService):
 
     def build_manifest(self, hook) -> dict:
         return hook.service_glob("DB_MANIFEST", DB_MANIFEST)
-
-

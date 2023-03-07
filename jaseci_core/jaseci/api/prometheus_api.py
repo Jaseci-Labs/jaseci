@@ -45,4 +45,22 @@ class PrometheusApi:
             exclude_prom=exclude_prom,
             timestamp=timestamp,
             duration=duration,
-        )
+        ).pod
+
+    @Interface.admin_api()
+    def prometheus_node_info(
+        self,
+        namespace: str = "",
+        exclude_prom: bool = False,
+        timestamp: int = 0,
+        duration: int = 0,
+    ):
+        """
+        Return pods info and metrics
+        """
+        return prome().info(
+            namespace=namespace,
+            exclude_prom=exclude_prom,
+            timestamp=timestamp,
+            duration=duration,
+        ).node

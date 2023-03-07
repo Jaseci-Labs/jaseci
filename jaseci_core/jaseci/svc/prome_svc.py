@@ -6,9 +6,11 @@ from jaseci import JsOrc
 class MetricValue:
     node = None
     pod = None
+
     def __init__(self, _node: dict, _pod: dict):
         self.node = _node
         self.pod = _pod
+
 
 @JsOrc.service(name="prome", config="PROME_CONFIG", manifest="PROME_MANIFEST")
 class PrometheusService(JsOrc.CommonService):
@@ -61,13 +63,12 @@ class PrometheusService(JsOrc.CommonService):
         return res
 
     def node_info(
-            self,
-            namespace: str = "",
-            exclude_prom: bool = False,
-            timestamp: int = 0,
-            duration: int = 0,
-            ) -> dict:
-
+        self,
+        namespace: str = "",
+        exclude_prom: bool = False,
+        timestamp: int = 0,
+        duration: int = 0,
+    ) -> dict:
         if namespace == "":
             util = self.app.get_current_metric_value("kube_node_info")
         else:
@@ -101,7 +102,6 @@ class PrometheusService(JsOrc.CommonService):
             util = self.app.get_current_metric_value(
                 f"kube_pod_info{{namespace='{namespace}'}}"
             )
-
 
         res = {}
 
@@ -176,7 +176,7 @@ class PrometheusService(JsOrc.CommonService):
         exclude_prom: bool = False,
         timestamp: int = 0,
         duration: int = 0,
-        ) -> MetricValue:
+    ) -> MetricValue:
         node_value = self.node_info(
             namespace=namespace,
             exclude_prom=exclude_prom,

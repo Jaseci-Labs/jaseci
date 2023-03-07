@@ -3,43 +3,23 @@ DB_MANIFEST = {
         {
             "kind": "Service",
             "apiVersion": "v1",
-            "metadata": {
-                "name": "jaseci-db"
-            },
+            "metadata": {"name": "jaseci-db"},
             "spec": {
-                "selector": {
-                    "pod": "jaseci-db"
-                },
-                "ports": [
-                    {
-                        "protocol": "TCP",
-                        "port": 5432,
-                        "targetPort": 5432
-                    }
-                ]
-            }
+                "selector": {"pod": "jaseci-db"},
+                "ports": [{"protocol": "TCP", "port": 5432, "targetPort": 5432}],
+            },
         }
     ],
     "Deployment": [
         {
             "apiVersion": "apps/v1",
             "kind": "Deployment",
-            "metadata": {
-                "name": "jaseci-db"
-            },
+            "metadata": {"name": "jaseci-db"},
             "spec": {
                 "replicas": 1,
-                "selector": {
-                    "matchLabels": {
-                        "pod": "jaseci-db"
-                    }
-                },
+                "selector": {"matchLabels": {"pod": "jaseci-db"}},
                 "template": {
-                    "metadata": {
-                        "labels": {
-                            "pod": "jaseci-db"
-                        }
-                    },
+                    "metadata": {"labels": {"pod": "jaseci-db"}},
                     "spec": {
                         "containers": [
                             {
@@ -52,78 +32,59 @@ DB_MANIFEST = {
                                         "valueFrom": {
                                             "secretKeyRef": {
                                                 "name": "jaseci-db-credentials",
-                                                "key": "user"
+                                                "key": "user",
                                             }
-                                        }
+                                        },
                                     },
                                     {
                                         "name": "POSTGRES_PASSWORD",
                                         "valueFrom": {
                                             "secretKeyRef": {
                                                 "name": "jaseci-db-credentials",
-                                                "key": "password"
+                                                "key": "password",
                                             }
-                                        }
-                                    }
+                                        },
+                                    },
                                 ],
-                                "ports": [
-                                    {
-                                        "containerPort": 5432
-                                    }
-                                ],
+                                "ports": [{"containerPort": 5432}],
                                 "volumeMounts": [
                                     {
                                         "name": "jaseci-db-volume",
                                         "mountPath": "/var/lib/postgresql/data",
-                                        "subPath": "jaseci"
+                                        "subPath": "jaseci",
                                     }
-                                ]
+                                ],
                             }
                         ],
                         "volumes": [
                             {
                                 "name": "jaseci-db-volume",
-                                "persistentVolumeClaim": {
-                                    "claimName": "jaseci-db-pvc"
-                                }
+                                "persistentVolumeClaim": {"claimName": "jaseci-db-pvc"},
                             }
-                        ]
-                    }
-                }
-            }
+                        ],
+                    },
+                },
+            },
         }
     ],
     "Secret": [
         {
             "apiVersion": "v1",
             "kind": "Secret",
-            "metadata": {
-                "name": "jaseci-db-credentials"
-            },
+            "metadata": {"name": "jaseci-db-credentials"},
             "type": "Opaque",
-            "data": {
-                "user": "cG9zdGdyZXM=",
-                "password": "bGlmZWxvZ2lmeWphc2VjaQ=="
-            }
+            "data": {"user": "cG9zdGdyZXM=", "password": "bGlmZWxvZ2lmeWphc2VjaQ=="},
         }
     ],
     "PersistantVolumeClaim": [
         {
             "kind": "PersistentVolumeClaim",
             "apiVersion": "v1",
-            "metadata": {
-                "name": "jaseci-db-pvc"
-            },
+            "metadata": {"name": "jaseci-db-pvc"},
             "spec": {
-                "accessModes": [
-                    "ReadWriteOnce"
-                ],
-                "resources": {
-                    "requests": {
-                        "storage": "10Gi"
-                    }
-                }
-            }
+                "accessModes": ["ReadWriteOnce"],
+                "resources": {"requests": {"storage": "10Gi"}},
+            },
         }
     ],
 }
