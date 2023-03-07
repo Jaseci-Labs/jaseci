@@ -78,6 +78,7 @@ class PrometheusService(JsOrc.CommonService):
 
         res = {}
         disk_read = self.disk.read()
+        disk_write = self.disk.write()
 
         node_names = [nodes["metric"]["node"] for nodes in util]
 
@@ -86,6 +87,9 @@ class PrometheusService(JsOrc.CommonService):
 
         for node_name in node_names:
             res[node_name]["disk_read_bytes"] = disk_read.get(node_name, 0)
+
+        for node_name in node_names:
+            res[node_name]["disk_write_bytes"] = disk_write.get(node_name, 0)
 
         return res
 
