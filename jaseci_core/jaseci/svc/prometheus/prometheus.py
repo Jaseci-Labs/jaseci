@@ -88,6 +88,28 @@ class PrometheusService(CommonService):
         if timestamp != 0 and duration != 0:
             cpu = self.cpu.utilization_per_pod_cores(ts=timestamp, duration=duration)
         else:
+            cpu = self.disk.read()
+        for pod in util:
+            pod_name = pod["metric"]["pod"]
+            if exclude_prom and "prometheus" in pod_name:
+                continue
+            pod_cpu = cpu.get(pod_name, 0)
+
+            res[pod_name]["cpu_utilization_cores"] = pod_cpu
+        if timestamp != 0 and duration != 0:
+            cpu = self.cpu.utilization_per_pod_cores(ts=timestamp, duration=duration)
+        else:
+            cpu = self.cpu.utilization_per_pod_cores()
+        for pod in util:
+            pod_name = pod["metric"]["pod"]
+            if exclude_prom and "prometheus" in pod_name:
+                continue
+            pod_cpu = cpu.get(pod_name, 0)
+
+            res[pod_name]["cpu_utilization_cores"] = pod_cpu
+        if timestamp != 0 and duration != 0:
+            cpu = self.cpu.utilization_per_pod_cores(ts=timestamp, duration=duration)
+        else:
             cpu = self.cpu.utilization_per_pod_cores()
         for pod in util:
             pod_name = pod["metric"]["pod"]
