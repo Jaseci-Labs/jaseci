@@ -16,4 +16,3 @@ class ImportPass(IrPass):
                     import_path = node.kid[5].token()["text"]
             except IndexError:
                 pass
-        

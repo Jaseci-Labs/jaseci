@@ -22,10 +22,13 @@ import time
 
 import pytest
 from mock import Mock
-from lsprotocol.types import (DidCloseTextDocumentParams,
-                              DidOpenTextDocumentParams, TextDocumentIdentifier,
-                              WorkspaceConfigurationResponse,
-                              TextDocumentItem)
+from lsprotocol.types import (
+    DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams,
+    TextDocumentIdentifier,
+    WorkspaceConfigurationResponse,
+    TextDocumentItem,
+)
 from pygls.server import StdOutTransportAdapter
 from pygls.workspace import Document, Workspace
 
@@ -39,22 +42,21 @@ from ...server import (
     show_configuration_thread,
 )
 
-fake_document_uri = 'file://fake_doc.txt'
-fake_document_content = 'text'
+fake_document_uri = "file://fake_doc.txt"
+fake_document_content = "text"
 fake_document = Document(fake_document_uri, fake_document_content)
 
 
-server = JsonLanguageServer('test-json-server', 'v1')
+server = JsonLanguageServer("test-json-server", "v1")
 server.publish_diagnostics = Mock()
 server.show_message = Mock()
 server.show_message_log = Mock()
-server.lsp.workspace = Workspace('', None)
+server.lsp.workspace = Workspace("", None)
 server.lsp._send_only_body = True
 server.workspace.get_document = Mock(return_value=fake_document)
 
 
 def _reset_mocks(stdin=None, stdout=None):
-
     stdin = stdin or io.StringIO()
     stdout = stdout or io.StringIO()
 
@@ -69,17 +71,18 @@ def test_completions():
     labels = [i.label for i in completion_list.items]
 
     assert '"' in labels
-    assert '[' in labels
-    assert ']' in labels
-    assert '{' in labels
-    assert '}' in labels
+    assert "[" in labels
+    assert "]" in labels
+    assert "{" in labels
+    assert "}" in labels
 
 
 def test_did_close():
     _reset_mocks()
 
     params = DidCloseTextDocumentParams(
-        text_document=TextDocumentIdentifier(uri=fake_document_uri))
+        text_document=TextDocumentIdentifier(uri=fake_document_uri)
+    )
 
     did_close(server, params)
 
@@ -100,10 +103,13 @@ async def test_did_open():
         expected_msg = err.msg
 
     params = DidOpenTextDocumentParams(
-        text_document=TextDocumentItem(uri=fake_document_uri,
-                                       language_id='json',
-                                       version=1,
-                                       text=fake_document_content))
+        text_document=TextDocumentItem(
+            uri=fake_document_uri,
+            language_id="json",
+            version=1,
+            text=fake_document_content,
+        )
+    )
 
     await did_open(server, params)
 
@@ -126,20 +132,17 @@ def test_show_configuration_callback():
     show_configuration_callback(server)
 
     # Grab the request id
-    id_ = json.loads(stdout.getvalue())['id']
+    id_ = json.loads(stdout.getvalue())["id"]
 
     # Simulate the client response
     server.lsp._procedure_handler(
         WorkspaceConfigurationResponse(
-            id=id_,
-            result=[
-                {'exampleConfiguration': 'some_value'}
-            ]
+            id=id_, result=[{"exampleConfiguration": "some_value"}]
         )
     )
 
     server.show_message.assert_called_with(
-        f'jsonServer.exampleConfiguration value: some_value'
+        f"jsonServer.exampleConfiguration value: some_value"
     )
 
 
@@ -152,25 +155,19 @@ async def test_show_configuration_async():
         await asyncio.sleep(0.1)
 
         # Grab the request id
-        id_ = json.loads(stdout.getvalue())['id']
+        id_ = json.loads(stdout.getvalue())["id"]
 
         # Simulate the client response
         server.lsp._procedure_handler(
             WorkspaceConfigurationResponse(
-                id=id_,
-                result=[
-                    {"exampleConfiguration": "some_value"}
-                ]
+                id=id_, result=[{"exampleConfiguration": "some_value"}]
             )
         )
 
-    await asyncio.gather(
-        show_configuration_async(server),
-        send_response()
-    )
+    await asyncio.gather(show_configuration_async(server), send_response())
 
     server.show_message.assert_called_with(
-        f'jsonServer.exampleConfiguration value: some_value'
+        f"jsonServer.exampleConfiguration value: some_value"
     )
 
 
@@ -186,20 +183,17 @@ def test_show_configuration_thread():
     time.sleep(1)
 
     # Grab the request id
-    id_ = json.loads(stdout.getvalue())['id']
+    id_ = json.loads(stdout.getvalue())["id"]
 
     # Simulate the client response
     server.lsp._procedure_handler(
         WorkspaceConfigurationResponse(
-            id=id_,
-            result=[
-                {'exampleConfiguration': 'some_value'}
-            ]
+            id=id_, result=[{"exampleConfiguration": "some_value"}]
         )
     )
 
     thread.join()
 
     server.show_message.assert_called_with(
-        f'jsonServer.exampleConfiguration value: some_value'
+        f"jsonServer.exampleConfiguration value: some_value"
     )
