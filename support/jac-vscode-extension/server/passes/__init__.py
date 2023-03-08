@@ -21,7 +21,7 @@ class ArchitypePass(IrPass):
                         var["name"] = child_node.kid[0].token_text()
                         var["line"], var["col"] = child_node.kid[0].loc[:2]
 
-                        if var["name"] == "anchor":
+                        if var["name"] == "anchor" or var["name"] == "private":
                             var["name"] = child_node.kid[1].token_text()
                             var["line"], var["col"] = child_node.kid[1].loc[:2]
 

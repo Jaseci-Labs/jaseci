@@ -14,40 +14,41 @@
 # See the License for the specific language governing permissions and      #
 # limitations under the License.                                           #
 ############################################################################
-import asyncio
 import io
 import json
-import threading
-import time
+import os
 
 import pytest
 from mock import Mock
-from lsprotocol.types import (
-    DidCloseTextDocumentParams,
-    DidOpenTextDocumentParams,
-    TextDocumentIdentifier,
-    WorkspaceConfigurationResponse,
-    TextDocumentItem,
-)
+from lsprotocol.types import Position, HoverParams, CompletionParams, Hover
 from pygls.server import StdOutTransportAdapter
 from pygls.workspace import Document, Workspace
+from server.completions import get_builtin_action
+
+from server.utils import update_doc_deps
 
 from ...server import (
-    JsonLanguageServer,
+    JacLanguageServer,
     completions,
-    did_close,
+    hover,
+    # did_close,
     did_open,
-    show_configuration_async,
-    show_configuration_callback,
-    show_configuration_thread,
+    update_doc_tree,
+    # show_configuration_async,
+    # show_configuration_callback,
+    # show_configuration_thread,
 )
 
-fake_document_uri = "file://fake_doc.txt"
-fake_document_content = "text"
+doc_path = os.path.join(os.getcwd(), "server/tests/unit/fixtures/main.jac")
+with open(doc_path, "r") as f:
+    # read the contents of the file
+    fake_document_content = f.read()
+
+fake_document_uri = "file://" + doc_path
 fake_document = Document(fake_document_uri, fake_document_content)
 
 
-server = JsonLanguageServer("test-json-server", "v1")
+server = JacLanguageServer("test-jac-server", "v1")
 server.publish_diagnostics = Mock()
 server.show_message = Mock()
 server.show_message_log = Mock()
@@ -67,133 +68,139 @@ def _reset_mocks(stdin=None, stdout=None):
 
 
 def test_completions():
-    completion_list = completions()
+    # test default completions
+    completion_list = completions(
+        server,
+        CompletionParams(
+            text_document=fake_document, position=Position(line=22, character=1)
+        ),
+    )
     labels = [i.label for i in completion_list.items]
 
-    assert '"' in labels
-    assert "[" in labels
-    assert "]" in labels
-    assert "{" in labels
-    assert "}" in labels
+    assert "node" in labels
+    assert "walker" in labels
+    assert "edge" in labels
+    assert "architype" in labels
+    assert "import" in labels
+    assert "from" in labels
 
 
-def test_did_close():
+def test_architype_completions():
     _reset_mocks()
+    # test completion for a node
+    update_doc_tree(server, fake_document_uri)
+    update_doc_deps(server, fake_document_uri)
 
-    params = DidCloseTextDocumentParams(
-        text_document=TextDocumentIdentifier(uri=fake_document_uri)
+    completion_list = completions(
+        server,
+        CompletionParams(
+            text_document=fake_document, position=Position(line=13, character=41)
+        ),
+    )
+    labels = [i.label for i in completion_list.items]
+
+    assert "house" in labels
+    assert "person" in labels
+    assert "extra_node" in labels
+
+    # test completion for an edge
+    completion_list = completions(
+        server,
+        CompletionParams(
+            text_document=fake_document, position=Position(line=13, character=24)
+        ),
     )
 
-    did_close(server, params)
+    labels = [i.label for i in completion_list.items]
 
-    # Check if show message is called
-    server.show_message.assert_called_once()
+    assert "sample" in labels
+    assert "test_edge" in labels
+    assert "extra_edge" in labels
+
+    # test completion for a walker
+    completion_list = completions(
+        server,
+        CompletionParams(
+            text_document=fake_document, position=Position(line=14, character=30)
+        ),
+    )
+
+    labels = [i.label for i in completion_list.items]
+
+    assert "count_members" in labels
+    assert "init" in labels
+    assert "extra_walker" in labels
 
 
-@pytest.mark.asyncio
-async def test_did_open():
+def test_action_completions():
+    """Test completion for built in actions."""
+    completion_list = completions(
+        server,
+        CompletionParams(
+            text_document=fake_document, position=Position(line=15, character=12)
+        ),
+    )
+    labels = [i.label for i in completion_list.items]
+    assert "log" in labels
+    assert "out" in labels
+    assert "some_random_fn" not in labels
+
+
+def test_hover_action():
+    """Test hover for built in actions."""
+    action_data = get_builtin_action("actload_local", "std")
+    hover_data = hover(
+        server,
+        HoverParams(
+            text_document=fake_document, position=Position(line=15, character=13)
+        ),
+    )
+
+    assert type(hover_data) is Hover
+    assert action_data["name"] in hover_data.contents.value
+    assert action_data["doc"] in hover_data.contents.value
+    assert action_data["args"][0] in hover_data.contents.value
+
+
+def test_hover_architype():
+    """Test hover for architypes."""
     _reset_mocks()
+    update_doc_tree(server, fake_document_uri)
+    update_doc_deps(server, fake_document_uri)
 
-    expected_msg = None
-
-    # Get expected error message
-    try:
-        json.loads(fake_document_content)
-    except json.JSONDecodeError as err:
-        expected_msg = err.msg
-
-    params = DidOpenTextDocumentParams(
-        text_document=TextDocumentItem(
-            uri=fake_document_uri,
-            language_id="json",
-            version=1,
-            text=fake_document_content,
-        )
+    # Test hover for a node
+    hover_data = hover(
+        server,
+        HoverParams(
+            text_document=fake_document, position=Position(line=13, character=42)
+        ),
     )
 
-    await did_open(server, params)
+    assert type(hover_data) is Hover
+    assert "house" in hover_data.contents.value
+    assert "msg" in hover_data.contents.value
 
-    # Check publish diagnostics is called
-    server.publish_diagnostics.assert_called_once()
-
-    # Check publish diagnostics args message
-    args = server.publish_diagnostics.call_args
-    assert args[0][1][0].message is expected_msg
-
-    # Check other methods are called
-    server.show_message.assert_called_once()
-    server.show_message_log.assert_called_once()
-
-
-def test_show_configuration_callback():
-    stdout = io.StringIO()
-    _reset_mocks(stdout=stdout)
-
-    show_configuration_callback(server)
-
-    # Grab the request id
-    id_ = json.loads(stdout.getvalue())["id"]
-
-    # Simulate the client response
-    server.lsp._procedure_handler(
-        WorkspaceConfigurationResponse(
-            id=id_, result=[{"exampleConfiguration": "some_value"}]
-        )
+    # Test hover for an edge
+    hover_data = hover(
+        server,
+        HoverParams(
+            text_document=fake_document, position=Position(line=13, character=22)
+        ),
     )
 
-    server.show_message.assert_called_with(
-        f"jsonServer.exampleConfiguration value: some_value"
+    assert type(hover_data) is Hover
+    assert "test_edge" in hover_data.contents.value
+    assert "apple" in hover_data.contents.value
+
+    # Test hover for a walker
+    hover_data = hover(
+        server,
+        HoverParams(
+            text_document=fake_document, position=Position(line=14, character=28)
+        ),
     )
-
-
-@pytest.mark.asyncio
-async def test_show_configuration_async():
-    stdout = io.StringIO()
-    _reset_mocks(stdout=stdout)
-
-    async def send_response():
-        await asyncio.sleep(0.1)
-
-        # Grab the request id
-        id_ = json.loads(stdout.getvalue())["id"]
-
-        # Simulate the client response
-        server.lsp._procedure_handler(
-            WorkspaceConfigurationResponse(
-                id=id_, result=[{"exampleConfiguration": "some_value"}]
-            )
-        )
-
-    await asyncio.gather(show_configuration_async(server), send_response())
-
-    server.show_message.assert_called_with(
-        f"jsonServer.exampleConfiguration value: some_value"
-    )
-
-
-def test_show_configuration_thread():
-    stdout = io.StringIO()
-    _reset_mocks(stdout=stdout)
-
-    thread = threading.Thread(
-        target=show_configuration_thread,
-        args=(server,),
-    )
-    thread.start()
-    time.sleep(1)
-
-    # Grab the request id
-    id_ = json.loads(stdout.getvalue())["id"]
-
-    # Simulate the client response
-    server.lsp._procedure_handler(
-        WorkspaceConfigurationResponse(
-            id=id_, result=[{"exampleConfiguration": "some_value"}]
-        )
-    )
-
-    thread.join()
-
-    server.show_message.assert_called_with(
-        f"jsonServer.exampleConfiguration value: some_value"
-    )
+    assert type(hover_data) is Hover
+    assert "extra_walker" in hover_data.contents.value
+    assert "a" in hover_data.contents.value
+    assert "b" in hover_data.contents.value
+    assert "c" in hover_data.contents.value

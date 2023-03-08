@@ -35,10 +35,6 @@ def get_architypes_from_tree(tree: JacAstBuilder):
 def _get_architypes(lsp: LanguageServer, doc_uri: str):
     try:
         doc = lsp.workspace.get_document(doc_uri)
-        start = time.time_ns()
-        end = time.time_ns()
-
-        start = time.time_ns()
         # we need to copy the root because the architype pass modifies the tree
         # and we don't want to modify the tree in the workspace so deps are still valid
         architype_pass = ArchitypePass(
@@ -54,11 +50,11 @@ def _get_architypes(lsp: LanguageServer, doc_uri: str):
 
         # get a dictionary of all architypes in the file
         architypes = architype_pass.output
+
         doc.architypes = architypes
 
         return architypes
     except Exception as e:
-        pass
 
         return {"nodes": [], "edges": [], "graphs": [], "walkers": []}
 
@@ -96,9 +92,7 @@ def get_document_symbols(
 ) -> List[SymbolInformation]:
     """Return a list of symbols in the document"""
     if not architypes:
-        start = time.time_ns()
         architypes = _get_architypes(ls, doc_uri)
-        end = time.time_ns()
 
     symbols: List[SymbolInformation] = []
 

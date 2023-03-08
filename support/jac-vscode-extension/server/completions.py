@@ -174,6 +174,40 @@ action_modules = {
 }
 
 
+keywords = [
+    "node",
+    "walker",
+    "edge",
+    "architype",
+    "import",
+    "from",
+    "with",
+    "in",
+    "graph",
+    "report",
+    "disengage",
+    "take",
+]
+
+snippet = CompletionItem(
+    label="loop",
+    kind=CompletionItemKind.Keyword,
+    detail="for loop",
+    documentation="Python for loop snippet",
+    insert_text="for ${1:item} in ${2:iterable}:\n    ${3:# body of the loop}",
+    insert_text_format=InsertTextFormat.Snippet,
+)
+
+default_completions = CompletionList(
+    is_incomplete=False,
+    items=[
+        CompletionItem(label=keyword, kind=CompletionItemKind.Keyword)
+        for keyword in keywords
+    ]
+    + [snippet],
+)
+
+
 def get_builtin_action(action_name: str, module_name: str) -> str:
     """Returns the docstring for an action"""
     for action in action_modules[module_name]:
@@ -190,6 +224,9 @@ def completions(
     doc = server.workspace.get_document(params.text_document.uri)
     line = doc.source.splitlines()[params.position.line]
     before_cursor = line[: params.position.character]
+
+    if not before_cursor:
+        return default_completions
 
     # get the last word before the cursor
     last_word = before_cursor.split()[-1]
@@ -269,35 +306,4 @@ def completions(
                 ],
             )
 
-    keywords = [
-        "node",
-        "walker",
-        "edge",
-        "architype",
-        "import",
-        "from",
-        "with",
-        "in",
-        "graph",
-        "report",
-        "disengage",
-        "take",
-    ]
-
-    snippet = CompletionItem(
-        label="loop",
-        kind=CompletionItemKind.Keyword,
-        detail="for loop",
-        documentation="Python for loop snippet",
-        insert_text="for ${1:item} in ${2:iterable}:\n    ${3:# body of the loop}",
-        insert_text_format=InsertTextFormat.Snippet,
-    )
-
-    return CompletionList(
-        is_incomplete=False,
-        items=[
-            CompletionItem(label=keyword, kind=CompletionItemKind.Keyword)
-            for keyword in keywords
-        ]
-        + [snippet],
-    )
+    return default_completions

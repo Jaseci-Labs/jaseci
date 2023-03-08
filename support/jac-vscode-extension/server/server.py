@@ -62,7 +62,6 @@ from server.document_symbols import (
     get_document_symbols,
 )
 from server.utils import (
-    debounce,
     deconstruct_error_message,
     get_ast_from_path,
     update_ast_head,
@@ -574,7 +573,7 @@ def update_doc_tree_debounced(ls: JacLanguageServer, doc_uri: str):
 
 
 @jac_server.thread()
-def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False):
+def update_doc_tree(ls: JacLanguageServer, doc_uri: str):
     """Update the document tree"""
     start = time.time_ns()
     doc = ls.workspace.get_document(doc_uri)
@@ -594,6 +593,7 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str, debounced: bool = False
     doc.symbols = [
         s for s in get_document_symbols(ls, doc.uri) if s.location.uri == doc_uri
     ]
+
     try:
         if doc.version > 1:
             update_doc_deps_debounced(ls, doc_uri)
