@@ -36,6 +36,10 @@ All the methods uses a single action `transcribe` to get the transcription. Foll
 * `array` - Audio Array (should be sampled at 16kHz). Type: `list[float]` (Optional)
 * `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
 * `url` - Web URL to a Audio file. Type: `str` (Optional)
+* `timestamp` - Whether to return the timestamp of the transcription. Type: `bool` Default: `false`
+
+> **Note**
+> Timestamp works only in longform mode and Longform mode only supports audio file or url. If you want to use features language support, setup the module with `longform` parameter set to `false`.
 
 Return type of the action is `str`.
 
@@ -96,7 +100,8 @@ walker transribe_array {
 ```
 
 ### Setup Parameters
-* `size` - Size of the model. Type: `str` Default: `tiny`
+* `size` - Size of the model. Type: `str` Default: `medium`
+* `longform` - Whether to use the longform model. Type: `bool` Default: `false`
 
 # **References**
 * [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf) by Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman, Christine McLeavey, Ilya Sutskever.
