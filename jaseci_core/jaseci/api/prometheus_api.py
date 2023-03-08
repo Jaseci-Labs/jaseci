@@ -40,12 +40,16 @@ class PrometheusApi:
         """
         Return pods info and metrics
         """
-        return prome().info(
-            namespace=namespace,
-            exclude_prom=exclude_prom,
-            timestamp=timestamp,
-            duration=duration,
-        ).pod
+        return (
+            prome()
+            .info(
+                namespace=namespace,
+                exclude_prom=exclude_prom,
+                timestamp=timestamp,
+                duration=duration,
+            )
+            .pod
+        )
 
     @Interface.admin_api()
     def prometheus_node_info(
@@ -58,9 +62,13 @@ class PrometheusApi:
         """
         Return pods info and metrics
         """
-        return prome().info(
-            namespace=namespace,
-            exclude_prom=exclude_prom,
-            timestamp=timestamp,
-            duration=duration,
-        ).node
+        return (
+            prome()
+            .info(
+                namespace=namespace,
+                exclude_prom=exclude_prom,
+                timestamp=timestamp,
+                duration=duration,
+            )
+            .node
+        )
