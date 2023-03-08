@@ -368,7 +368,7 @@ class Disk(Info):
 
     def write(self) -> dict:
         util = self.app.get_current_metric_value(
-            "sum (rate (node_disk_write_bytes_total{}[10m])) by (node)"
+            "sum (rate (node_disk_written_bytes_total{}[10m])) by (node)"
         )
         res = {}
         for node in util:
