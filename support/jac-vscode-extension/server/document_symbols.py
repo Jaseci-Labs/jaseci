@@ -1,6 +1,5 @@
 import time
 from pygls.server import LanguageServer
-from antlr4 import *
 from jaseci.jac.ir.ast_builder import JacAstBuilder
 from server.builder import JacAstBuilderSLL
 
@@ -55,7 +54,6 @@ def _get_architypes(lsp: LanguageServer, doc_uri: str):
 
         return architypes
     except Exception as e:
-
         return {"nodes": [], "edges": [], "graphs": [], "walkers": []}
 
 
