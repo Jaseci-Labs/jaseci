@@ -47,7 +47,7 @@ ingress:
   enabled: true
   className: nginx-ingress
   hosts:
-    - host: newdevapi.apps.zeroshotbot.con
+    - host: test.xyz.com
       paths:
         - path: /
           pathType: Prefix
