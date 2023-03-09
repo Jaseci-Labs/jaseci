@@ -1,53 +1,21 @@
 {
   "name": "jac",
-  "displayName": "Jac",
-  "description": "Simple jac extension example",
-  "author": "Gimel Dick",
-  "repository": "https://github.com/openlawlibrary/pygls",
-  "license": "Apache-2.0",
-  "version": "0.11.3",
+  "displayName": "JAC",
+  "description": "VSCode Extension for the JAC Programming Language",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jaseci-Labs/jaseci.git"
+  },
+  "version": "0.0.5",
   "publisher": "jaseci-labs",
   "engines": {
     "vscode": "^1.62.0"
   },
+  "homepage": "https://www.jaseci.org/",
   "categories": [
-    "Other"
+    "Programming Languages"
   ],
   "contributes": {
-    "commands": [
-      {
-        "command": "countDownBlocking",
-        "title": "Count down 10 seconds [Blocking]"
-      },
-      {
-        "command": "countDownNonBlocking",
-        "title": "Count down 10 seconds [Non Blocking]"
-      },
-      {
-        "command": "progress",
-        "title": "Start the progress!"
-      },
-      {
-        "command": "registerCompletions",
-        "title": "Register completions"
-      },
-      {
-        "command": "showConfigurationAsync",
-        "title": "Show Json Example Configuration [Async]"
-      },
-      {
-        "command": "showConfigurationCallback",
-        "title": "Show Json Example Configuration [Callback]"
-      },
-      {
-        "command": "showConfigurationThread",
-        "title": "Show Json Example Configuration [Thread]"
-      },
-      {
-        "command": "unregisterCompletions",
-        "title": "Unregister completions"
-      }
-    ],
     "configuration": {
       "type": "object",
       "title": "Jac Server Configuration",
