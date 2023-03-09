@@ -141,7 +141,7 @@ def fill_workspace(ls):
         pass
 
 
-def publish_errors(ls: JacLanguageServer, doc_uri: str, parse_errors: list):
+def get_doc_errors(ls: JacLanguageServer, doc_uri: str, parse_errors: list):
     errors = []
 
     for error in parse_errors:
@@ -162,14 +162,7 @@ def publish_errors(ls: JacLanguageServer, doc_uri: str, parse_errors: list):
         )
 
         errors.append(diagnostic)
-
-    ls.publish_diagnostics(doc_uri, errors)
-
-
-# @debounce(0.5, keyed_by="doc_uri")
-def _diagnose(ls: JacLanguageServer, doc_uri: str):
-    tree = update_doc_tree(ls, doc_uri)
-    publish_errors(ls, doc_uri, tree._parse_errors)
+    return errors
 
 
 jac_server = JacLanguageServer("jac-lsp", "v0.1")
@@ -570,10 +563,13 @@ def update_doc_tree(ls: JacLanguageServer, doc_uri: str):
         mod_dir=os.path.dirname(doc.path) + "/",
     )
     if tree._parse_errors:
-        publish_errors(ls, doc_uri, tree._parse_errors)
+        errors = get_doc_errors(ls, doc_uri, tree._parse_errors)
+
+        ls.publish_diagnostics(doc_uri, errors)
         return
     else:
-        publish_errors(ls, doc_uri, [])
+        errors = get_doc_errors(ls, doc_uri, [])
+        ls.publish_diagnostics(doc_uri, errors)
 
     doc = ls.workspace.get_document(doc_uri)
     doc.symbols = [

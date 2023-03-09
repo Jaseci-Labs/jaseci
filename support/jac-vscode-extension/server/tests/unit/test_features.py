@@ -22,12 +22,15 @@ from lsprotocol.types import Position, HoverParams, CompletionParams, Hover
 from pygls.server import StdOutTransportAdapter
 from pygls.workspace import Document, Workspace
 from server.completions import get_builtin_action
-
 from server.utils import update_doc_deps
+
 
 from ...server import (
     JacLanguageServer,
+    JacAstBuilder,
+    Diagnostic,
     completions,
+    get_doc_errors,
     hover,
     definition,
     DefinitionParams,
@@ -315,14 +318,25 @@ def test_definition():
 
 def test_did_open():
     _reset_mocks()
-    doc = server.workspace.get_document(fake_document_uri)
     server.workspace._root_path = os.path.dirname(fake_document.path)
     did_open(server, DidOpenTextDocumentParams(text_document=fake_document))
+    doc = server.workspace.get_document(fake_document_uri)
 
     assert doc is not None
     assert len(doc.symbols) > 0
     assert len(doc.dependencies.keys()) > 0
 
 
-def test_diagnostics():
-    pass
+def test_get_doc_errors():
+    _reset_mocks()
+    server.workspace._root_path = os.path.dirname(fake_document.path)
+    did_open(server, DidOpenTextDocumentParams(text_document=fake_document))
+    doc = server.workspace.get_document(fake_document_uri)
+    tree = JacAstBuilder(
+        mod_name=doc.filename,
+        jac_text=doc.source + "\n walke invalid_walker",
+        mod_dir=os.path.dirname(doc.path) + "/",
+    )
+    errors = get_doc_errors(server, doc.uri, tree._parse_errors)
+    assert len(errors) > 0
+    assert type(errors[0]) is Diagnostic
