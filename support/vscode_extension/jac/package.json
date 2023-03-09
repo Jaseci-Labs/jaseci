@@ -6,6 +6,7 @@
     "type": "git",
     "url": "https://github.com/Jaseci-Labs/jaseci.git"
   },
+  "icon": "images/icon.png",
   "version": "0.0.5",
   "publisher": "jaseci-labs",
   "engines": {
@@ -44,8 +45,8 @@
         ],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./file-icon.svg",
-          "dark": "./file-icon.svg"
+          "light": "./images/file-icon.svg",
+          "dark": "./images/file-icon.svg"
         }
       }
     ],
