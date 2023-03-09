@@ -692,3 +692,27 @@ async walker b {
     }
 }
 """
+
+walker_null_args = """
+node c {
+    has c1, c2;
+}
+
+walker b {
+    has anchor b1, b2;
+    with entry {
+        report b1;
+        report b2;
+    }
+}
+
+walker a {
+    has a1;
+
+    with entry {
+        a2 = null;
+        te = spawn here walker::b(b1 = a1, b2 = a2);
+        te = spawn here ++> node::c(c1=a1, c2=a2);
+    }
+}
+"""
