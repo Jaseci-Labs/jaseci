@@ -1,24 +1,50 @@
-# Example JSON VSCode extension with example Pygls Language Server
+# Jac Extension
 
-This is a slightly more detailed example Language Server than the Hello World one. Like Hello World, it uses LSP Completions as its central feature, but adds some long-running background work to demonstrate methods to handle asynchronicity and progress notifications.
+This extension provides support for the [Jac](https://doc.jaseci.org) programming language. It provides syntax highlighting and leverages the LSP to provide a rich editing experience.
 
-Although we include a complete VSCode client here, you may also be interested in Microsoft's [client template for Python tools](https://github.com/microsoft/vscode-python-tools-extension-template). It is focussed on Python-related Language Server tooling, but it is specifically tailored to Pygls, so may have some unique insights.
+# Quick Start
+
+When you install the extension you will need to add a setting to your `settings.json` file that points to the python path of your Jaseci environment.
+
+1. Activate your python environment where for which Jaseci is installed.
+2. Create a `.vscode/settings.json` file in your project root if one is not already present.
+3. Go to your terminal and run `which python` and copy the path.
+4. Update your `settings.json` file in the `.vscode` directory by adding `jac.pythonPath` to the settings object with the path you copied.
+
+Example:
+
+```json
+{
+  "jac.pythonPath": "/Users/john_doe/mambaforge/envs/jac/bin/python"
+}
+```
+
+# Features
+
+- Code completion
+- Syntax highlighting
+- Snippets
+- Go to definition
+- Document symbols, workspace symbols
+- Variables hint, and documentation on hover
+
+# Contributing
 
 ## Install Server Dependencies
 
 1. `python -m venv env`
-1. `python -m pip install -e .` from root directory
-1. Create `.vscode/settings.json` file and set `python.interpreterPath` to point to your python environment where `pygls` is installed
+2. `python -m pip install -e .` from root directory
+3. Create `.vscode/settings.json` file and set `jac.pythonPath` to point to your python environment where `jaseci` is installed
 
 ## Install Client Dependencies
 
 Open terminal and execute following commands:
 
-1. `npm install`
-1. `cd client/ && npm install`
+1. `yarn install`
+1. `cd client/ && yarn install`
 
-## Run Example
+## Run Extension
 
 1. Open this directory in VS Code
-1. Open debug view (`ctrl + shift + D`)
-1. Select `Server + Client` and press `F5`
+2. Open debug view (`ctrl + shift + D`)
+3. Select `Server + Client` and press `F5`

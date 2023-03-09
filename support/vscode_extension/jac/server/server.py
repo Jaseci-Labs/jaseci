@@ -29,7 +29,6 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_DEFINITION,
     DiagnosticSeverity,
     DefinitionParams,
-    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
 )
 
 
@@ -309,16 +308,15 @@ def show_configuration_callback(ls: JacLanguageServer, *args):
 @jac_server.catch()
 def workspace_symbol(ls: JacLanguageServer, params: WorkspaceSymbolParams):
     """Workspace symbol request."""
-    pass
-    # symbols = []
-    # for doc in ls.workspace.documents.values():
-    #     if hasattr(doc, "symbols"):
-    #         symbols.extend(doc.symbols)
-    #     else:
-    #         doc_symbols = get_document_symbols(ls, doc.uri)
-    #         symbols.extend(doc_symbols)
+    symbols = []
+    for doc in ls.workspace.documents.values():
+        if hasattr(doc, "symbols"):
+            symbols.extend(doc.symbols)
+        else:
+            doc_symbols = get_document_symbols(ls, doc.uri)
+            symbols.extend(doc_symbols)
 
-    # return symbols
+    return symbols
 
 
 @jac_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
