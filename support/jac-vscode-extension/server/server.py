@@ -419,7 +419,7 @@ def handle_go_to_file(ls: JacLanguageServer, uri: str, position: Position):
 
             if os.path.exists(file_path):
                 location = Location(
-                    uri=file_path,
+                    uri="file://" + file_path,
                     range=Range(
                         start=Position(line=0, character=0),
                         end=Position(line=0, character=0),

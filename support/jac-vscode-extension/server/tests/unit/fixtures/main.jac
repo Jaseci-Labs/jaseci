@@ -24,6 +24,13 @@ edge test_edge {
     has apple;
 }
 
+walker another_walker {
+    root {
+        spawn here walker::count_members;
+        some_extra_node = node::extra_node;
+        here +[extra_edge]+> some_extra_node;
+    }
+}
 
 
 

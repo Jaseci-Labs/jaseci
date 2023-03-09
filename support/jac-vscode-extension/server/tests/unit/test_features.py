@@ -15,10 +15,8 @@
 # limitations under the License.                                           #
 ############################################################################
 import io
-import json
 import os
 
-import pytest
 from mock import Mock
 from lsprotocol.types import Position, HoverParams, CompletionParams, Hover
 from pygls.server import StdOutTransportAdapter
@@ -31,6 +29,9 @@ from ...server import (
     JacLanguageServer,
     completions,
     hover,
+    definition,
+    DefinitionParams,
+    Location,
     # did_close,
     did_open,
     update_doc_tree,
@@ -204,3 +205,108 @@ def test_hover_architype():
     assert "a" in hover_data.contents.value
     assert "b" in hover_data.contents.value
     assert "c" in hover_data.contents.value
+
+
+def test_definition():
+    _reset_mocks()
+    update_doc_tree(server, fake_document_uri)
+    update_doc_deps(server, fake_document_uri)
+
+    # test go to definition for a node
+    location = definition(
+        server,
+        DefinitionParams(
+            text_document=fake_document, position=Position(line=13, character=42)
+        ),
+    )
+
+    assert type(location) is Location
+    assert location.uri == fake_document_uri
+    assert location.range.start.line == 2
+    assert location.range.start.character == 5
+
+    # test go to definition for an edge
+    location = definition(
+        server,
+        DefinitionParams(
+            text_document=fake_document, position=Position(line=13, character=22)
+        ),
+    )
+
+    assert type(location) is Location
+    assert location.uri == fake_document_uri
+    assert location.range.start.line == 22
+    assert location.range.start.character == 5
+
+    # test go to definition for a walker
+    location = definition(
+        server,
+        DefinitionParams(
+            text_document=fake_document, position=Position(line=28, character=28)
+        ),
+    )
+
+    assert type(location) is Location
+    assert location.uri == fake_document_uri
+    assert location.range.start.line == 19
+    assert location.range.start.character == 7
+
+    # test go to definition for a walker in a different file
+    location = definition(
+        server,
+        DefinitionParams(
+            text_document=fake_document, position=Position(line=14, character=28)
+        ),
+    )
+
+    assert type(location) is Location
+    assert location.uri == "file://" + os.path.join(
+        os.path.dirname(fake_document.path), "extras.jac"
+    )
+    assert location.range.start.line == 2
+    assert location.range.start.character == 7
+
+    # test go to definition for an edge in a different file
+    location = definition(
+        server,
+        DefinitionParams(
+            text_document=fake_document, position=Position(line=30, character=16)
+        ),
+    )
+
+    assert type(location) is Location
+    assert location.uri == "file://" + os.path.join(
+        os.path.dirname(fake_document.path), "extras.jac"
+    )
+    assert location.range.start.line == 1
+    assert location.range.start.character == 5
+
+    # test go to definition for a node in a different file
+    location = definition(
+        server,
+        DefinitionParams(
+            text_document=fake_document, position=Position(line=29, character=33)
+        ),
+    )
+
+    assert type(location) is Location
+    assert location.uri == "file://" + os.path.join(
+        os.path.dirname(fake_document.path), "extras.jac"
+    )
+    assert location.range.start.line == 0
+    assert location.range.start.character == 5
+
+    # test go to definition for a import filename
+    location = definition(
+        server,
+        DefinitionParams(
+            text_document=fake_document, position=Position(line=0, character=17)
+        ),
+    )
+
+    assert type(location) is Location
+    assert location.uri == "file://" + os.path.join(
+        os.path.dirname(fake_document.path), "extras.jac"
+    )
+    assert location.range.start.line == 0
+    assert location.range.start.character == 0
