@@ -1,26 +1,24 @@
-# VSCode Extension for the JAC programming language
+# Example JSON VSCode extension with example Pygls Language Server
 
-README coming soon :)
+This is a slightly more detailed example Language Server than the Hello World one. Like Hello World, it uses LSP Completions as its central feature, but adds some long-running background work to demonstrate methods to handle asynchronicity and progress notifications.
 
-## Known Issues
+Although we include a complete VSCode client here, you may also be interested in Microsoft's [client template for Python tools](https://github.com/microsoft/vscode-python-tools-extension-template). It is focussed on Python-related Language Server tooling, but it is specifically tailored to Pygls, so may have some unique insights.
 
-The Jac extensions provide language support for JAC (syntax highlighting) and useful tools that integrate with the Jaseci runtime.
+## Install Server Dependencies
 
-Full Guide for what to do is present here: https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide
+1. `python -m venv env`
+1. `python -m pip install -e .` from root directory
+1. Create `.vscode/settings.json` file and set `python.interpreterPath` to point to your python environment where `pygls` is installed
 
-Helpful video is here: https://www.youtube.com/watch?v=5msZv-nKebI
+## Install Client Dependencies
 
-Example of syntax highlighting: https://github.com/microsoft/vscode/blob/main/extensions/cpp/syntaxes/c.tmLanguage.json, https://github.com/microsoft/vscode/blob/main/extensions/python/syntaxes/MagicPython.tmLanguage.json
+Open terminal and execute following commands:
 
-## Features
+1. `npm install`
+1. `cd client/ && npm install`
 
-- JAC Language Support
-- DOT Language Support
-- View DOT Graph (CMD/CTRL + Shift + V)
+## Run Example
 
-## Release Notes
-
-### 0.0.3
-
-- DOT Language Support
-- DOT Graph visualizer
+1. Open this directory in VS Code
+1. Open debug view (`ctrl + shift + D`)
+1. Select `Server + Client` and press `F5`
