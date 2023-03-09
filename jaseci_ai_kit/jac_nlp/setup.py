@@ -18,6 +18,7 @@ MODULES = [
     "gpt2",
     "gpt3",
     "sentiment",
+    "t5_paraphraser"
 ]
 
 
