@@ -27,6 +27,7 @@ Example:
 - Go to definition
 - Document symbols, workspace symbols
 - Variables hint, and documentation on hover
+- Diagnostics
 
 # Contributing
 
