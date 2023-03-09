@@ -33,6 +33,7 @@ from ...server import (
     DefinitionParams,
     Location,
     # did_close,
+    DidOpenTextDocumentParams,
     did_open,
     update_doc_tree,
     # show_configuration_async,
@@ -310,3 +311,18 @@ def test_definition():
     )
     assert location.range.start.line == 0
     assert location.range.start.character == 0
+
+
+def test_did_open():
+    _reset_mocks()
+    doc = server.workspace.get_document(fake_document_uri)
+    server.workspace._root_path = os.path.dirname(fake_document.path)
+    did_open(server, DidOpenTextDocumentParams(text_document=fake_document))
+
+    assert doc is not None
+    assert len(doc.symbols) > 0
+    assert len(doc.dependencies.keys()) > 0
+
+
+def test_diagnostics():
+    pass

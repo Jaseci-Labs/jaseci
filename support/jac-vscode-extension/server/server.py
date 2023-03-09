@@ -133,6 +133,9 @@ def fill_workspace(ls):
             doc = ls.workspace.get_document(doc.uri)
             update_doc_tree(ls, doc_uri=doc.uri)
 
+        # update all dependencies
+        for doc in ls.workspace.documents.values():
+            update_doc_deps(ls, doc_uri=doc.uri)
         ls.workspace_filled = True
     except Exception as e:
         pass
@@ -221,30 +224,13 @@ def did_save(ls: JacLanguageServer, params: DidSaveTextDocumentParams):
 @jac_server.feature(TEXT_DOCUMENT_DID_OPEN)
 def did_open(ls: JacLanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
+
     if ls.workspace_filled is False:
         try:
             fill_workspace(ls)
-            # ls.semantic_tokens_refresh()
+
         except Exception as e:
             pass
-
-    # _diagnose(ls, doc.uri)
-
-
-# show message when client connects
-
-
-# @jac_server.feature(
-#     TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-#     SemanticTokensLegend(token_types=["operator", "keyword"], token_modifiers=[]),
-# )
-# def semantic_tokens(ls: JacLanguageServer, params: SemanticTokensParams):
-#     doc = ls.workspace.get_document(params.text_document.uri)
-#     token_pass = SemanticTokenPass(ir=doc._tree.root)
-#     token_pass.run()
-#     data = token_pass.tokens
-
-#     return SemanticTokens(data=data)
 
 
 @jac_server.command(JacLanguageServer.CMD_PROGRESS)
