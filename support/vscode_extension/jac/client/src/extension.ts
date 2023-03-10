@@ -94,8 +94,9 @@ async function getPythonPath() {
     return;
   }
 
-  const pythonPath =
-    extension.exports.settings.getExecutionDetails().execCommand;
+  const pythonPath = await extension.exports.settings.getExecutionDetails()
+    .execCommand[0];
+
   if (!pythonPath) {
     return;
   }
@@ -104,38 +105,44 @@ async function getPythonPath() {
 }
 
 export async function activate(context: ExtensionContext): Promise<void> {
-  if (context.extensionMode === ExtensionMode.Development) {
-    // Development - Run the server manually
-    const path = await getPythonPath();
-    client = startLangServerTCP(2087);
-    window.showInformationMessage(`Python path: ${path}`);
-  } else {
-    const cwd = path.join(__dirname, "..", "..");
-    const workspaceConfig = workspace.getConfiguration("jac");
+  try {
+    if (context.extensionMode === ExtensionMode.Development) {
+      // Development - Run the server manually
+      client = startLangServerTCP(2087);
+    } else {
+      const cwd = path.join(__dirname, "..", "..");
+      const workspaceConfig = workspace.getConfiguration("jac");
 
-    let pythonPath = workspaceConfig.get<string>("pythonPath");
+      const pythonPath = workspaceConfig.get<string>("pythonPath");
 
-    if (!pythonPath) {
+      if (pythonPath) {
+        window.showInformationMessage(`Path 1: ${pythonPath}`);
+        client = startLangServer(pythonPath, ["-m", "server"], cwd);
+        context.subscriptions.push(client.start() as any);
+      }
       // get python path from python extension
-      pythonPath = await getPythonPath();
+      else
+        await getPythonPath().then(async (pythonPath) => {
+          client = startLangServer(pythonPath, ["-m", "server"], cwd);
+          context.subscriptions.push(client.start() as any);
+
+          if (!pythonPath) {
+            window.showErrorMessage(
+              "Unable to start the jac language server. \n Select a Python interpreter first where Jaseci is installed."
+            );
+
+            throw new Error("`jac.pythonPath` is not set");
+          }
+        });
     }
-
-    if (!pythonPath) {
-      window.showErrorMessage(
-        "Unable to start the jac language server. \n Select a Python interpreter first where Jaseci is installed."
-      );
-
-      throw new Error("`jac.pythonPath` is not set");
-    }
-
-    client = startLangServer(pythonPath, ["-m", "server"], cwd);
+  } catch (e) {
+    window.showErrorMessage(
+      "Unable to activate Jac extension. Try setting or updating your python path and make sure Jaseci is installed there."
+    );
   }
-
-  context.subscriptions.push(client.start() as any);
 }
 
 export function deactivate(): Thenable<void> {
   console.log("JAC ext deactivated!");
   return client ? client.stop() : Promise.resolve();
 }
-You need to sthethamatcs'ation location
