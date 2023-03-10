@@ -13,6 +13,11 @@ class TextParaphraserModule(CoreTest):
         ret = load_module_actions("jac_nlp.paraphraser")
         assert ret == True
 
+    @pytest.mark.order(1)
+    @jac_testcase("paraphraser.jac", "test_paraphrase")
+    def test_predict(self, ret):
+        self.assertEqual(ret["success"], True)
+
     @classmethod
     def tearDownClass(cls):
         super(TextParaphraserModule, cls).tearDownClass()
