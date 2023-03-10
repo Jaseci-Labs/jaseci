@@ -1,4 +1,5 @@
 import torch
+import os
 import warnings
 import configparser
 
@@ -8,9 +9,10 @@ from jaseci.actions.remote_actions import launch_server
 from fastapi import HTTPException
 
 config = configparser.ConfigParser()
+config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
 
-model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"]["T5_LARGE_HIQAULITY"])
-tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"]["T5_LARGE_HIQAULITY"])
+model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"]["T5-LARGE"])
+tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"]["T5-LARGE"])
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
