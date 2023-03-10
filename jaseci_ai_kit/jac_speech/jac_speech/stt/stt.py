@@ -117,7 +117,7 @@ longform_pipeline = None
 
 
 @jaseci_action(act_group=["stt"], allow_remote=True)
-def setup(size: str = "medium", longform: bool = False):
+def setup(size: str = "tiny", longform: bool = False, chunk_length_s: int = 18):
     global model, processor
     if longform:
         if model is not None or processor is not None:
@@ -127,7 +127,7 @@ def setup(size: str = "medium", longform: bool = False):
         longform_pipeline = pipeline(
             "automatic-speech-recognition",
             model=f"openai/whisper-{size}",
-            chunk_length_s=30,
+            chunk_length_s=chunk_length_s,
         )
         return
     if longform_pipeline is not None:

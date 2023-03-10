@@ -100,8 +100,9 @@ walker transribe_array {
 ```
 
 ### Setup Parameters
-* `size` - Size of the model. Type: `str` Default: `medium`
+* `size` - Size of the model. Type: `str` Default: `tiny`
 * `longform` - Whether to use the longform model. Type: `bool` Default: `false`
+* `chunk_length_s` - Length of the audio chunk in seconds. Type: `int` Default: `18`
 
 # **References**
 * [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf) by Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman, Christine McLeavey, Ilya Sutskever.
