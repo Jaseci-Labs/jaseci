@@ -37,3 +37,13 @@ class Lang14Test(CoreTest):
         )
         ret = self.call(self.mast, ["walker_run", {"name": "multistring"}])
         self.assertEqual(ret["report"][0], "This is a multistring")
+
+    def test_free_ref_ifs(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("free_refs.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "init"}])
+        self.log(ret)
+        self.assertEqual(ret["report"], [True, True, True])
+        self.assertEqual(ret["success"], True)

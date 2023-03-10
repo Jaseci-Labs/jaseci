@@ -1301,7 +1301,8 @@ class Interp(VirtualMachine):
         """
         node_edge_ref:
             node_ref filter_ctx? node_edge_ref?
-            | edge_ref node_edge_ref?;
+            | edge_ref node_edge_ref?
+            | list_val node_edge_ref?;
         """
         kid = self.set_cur_ast(jac_ast)
         result = JacSet()

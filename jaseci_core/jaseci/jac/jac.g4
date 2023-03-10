@@ -190,7 +190,18 @@ logical: compare ((KW_AND | KW_OR) compare)*;
 
 compare: NOT compare | arithmetic (cmp_op arithmetic)*;
 
-cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin | SUB_OF | SUPER_OF | DISJOINT_OF;
+cmp_op:
+	EE
+	| LT
+	| GT
+	| LTE
+	| GTE
+	| NE
+	| KW_IN
+	| nin
+	| SUB_OF
+	| SUPER_OF
+	| DISJOINT_OF;
 
 nin: NOT KW_IN;
 
@@ -268,7 +279,8 @@ string_built_in:
 
 node_edge_ref:
 	node_ref filter_ctx? node_edge_ref?
-	| edge_ref node_edge_ref?;
+	| edge_ref node_edge_ref?
+	| list_val node_edge_ref?;
 
 node_ref: NODE_DBL_COLON NAME;
 
