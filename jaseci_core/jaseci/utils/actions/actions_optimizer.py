@@ -21,6 +21,7 @@ import time
 from .actions_state import ActionsState
 
 POLICIES = ["Default", "Evaluation"]
+THRESHOLD = 0.2
 
 
 class ActionsOptimizer:
@@ -377,18 +378,26 @@ class ActionsOptimizer:
                             policy_state["past_configs"],
                             key=lambda x: x["avg_walker_lat"],
                         )
+                        # caluculate the decrease in % for the new configuration
+                        lat_decrease_pct = (
+                            policy_state["prev_best_config"]["avg_walker_lat"]
+                            - best_config["avg_walker_lat"]
+                        ) / policy_state["prev_best_config"]["avg_walker_lat"]
                         # Switch the system to the best config
                         del best_config["avg_walker_lat"]
                         self.actions_change = self._get_action_change(best_config)
 
                         # ADAPTIVE: if the selected best config is the same config as the previous best one, double the performance period
-                        if all(
-                            [
-                                best_config[act]
-                                == policy_state["prev_best_config"][act]["mode"]
-                                for act in best_config.keys()
-                                if act in action_configs.keys()
-                            ]
+                        if (
+                            all(
+                                [
+                                    best_config[act]
+                                    == policy_state["prev_best_config"][act]["mode"]
+                                    for act in best_config.keys()
+                                    if act in action_configs.keys()
+                                ]
+                            )
+                            and lat_decrease_pct > THRESHOLD
                         ):
                             policy_state["perf_phase"] *= 2
                             logger.info(
