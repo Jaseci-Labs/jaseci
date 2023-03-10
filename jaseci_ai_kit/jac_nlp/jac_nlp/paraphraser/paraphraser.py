@@ -48,3 +48,7 @@ def paraphrase(text: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    launch_server(port=8000)
