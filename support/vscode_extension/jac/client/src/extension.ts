@@ -96,14 +96,14 @@ async function getPythonPath() {
   }
 
   if (!extension) {
-    return;
+    return null;
   }
 
   const pythonPath = await extension.exports.settings.getExecutionDetails()
     .execCommand[0];
 
   if (!pythonPath) {
-    return;
+    return null;
   }
 
   return pythonPath;
