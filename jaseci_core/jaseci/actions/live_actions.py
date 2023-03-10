@@ -218,6 +218,7 @@ def get_global_actions():
             or i.startswith("zlib.")
             or i.startswith("webtool.")
             or i.startswith("url.")
+            or i.startswith("regex.")
         ):
             global_action_list.append(
                 Action(
