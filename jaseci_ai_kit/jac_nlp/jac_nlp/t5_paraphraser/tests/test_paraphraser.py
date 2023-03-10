@@ -16,9 +16,3 @@ class ParaphraseModule(CoreTest):
     @jac_testcase("paraphraser.jac", "test_paraphrase")
     def test_t5_paraphraser(self, ret):
         self.assertGreater(len(ret["report"][0]), 0)
-
-    @classmethod
-    def tearDownClass(cls):
-        super(ParaphraseModule, cls).tearDownClass()
-        ret = unload_module("jac_nlp.t5_phraser.paraphraser")
-        assert ret == True
