@@ -32,6 +32,7 @@ If no `setup` is called, the default parameters are used.
 ### Setup Parameters
 * `size` - Size of the model. Type: `str` Default: `tiny`
 * `longform` - Whether to use the longform model. Type: `bool` Default: `false`. Use this model when audio clip is longer than 30 seconds.
+* `chunk_length_s` - Length of the audio chunk in seconds. Type: `int` Default: `18`
 
 ## **3. Transcribe**
 There are few ways to use `stt.trascribe` action.
