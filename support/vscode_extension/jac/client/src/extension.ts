@@ -20,7 +20,14 @@
 
 import * as net from "net";
 import * as path from "path";
-import { ExtensionContext, ExtensionMode, workspace, window } from "vscode";
+import {
+  ExtensionContext,
+  ExtensionMode,
+  workspace,
+  window,
+  extensions,
+  commands,
+} from "vscode";
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -78,30 +85,82 @@ function startLangServer(
   return new LanguageClient(command, serverOptions, getClientOptions());
 }
 
-export function activate(context: ExtensionContext): void {
-  if (context.extensionMode === ExtensionMode.Development) {
-    // Development - Run the server manually
-    client = startLangServerTCP(2087);
-  } else {
-    // Production - Client is going to run the server (for use within `.vsix` package)
-    const cwd = path.join(__dirname, "..", "..");
-    const workspaceConfig = workspace.getConfiguration("jac");
+async function selectPythonInterpreter() {
+  return await commands.executeCommand("python.setInterpreter");
+}
 
-    const pythonPath = workspaceConfig.get<string>("pythonPath");
-
-    if (!pythonPath) {
-      window.showErrorMessage(
-        "Unable to start the jac language server. \n Select a Python interpreter first where Jaseci is installed."
-      );
-
-      throw new Error("`jacServer.pythonPath` is not set");
-      // });
-    }
-
-    client = startLangServer(pythonPath, ["-m", "server"], cwd);
+async function getPythonPath() {
+  const extension = extensions.getExtension("ms-python.python");
+  if (!extension.isActive) {
+    await extension.activate();
   }
 
-  context.subscriptions.push(client.start() as any);
+  if (!extension) {
+    return null;
+  }
+
+  const pythonPath = await extension.exports.settings.getExecutionDetails()
+    .execCommand[0];
+
+  if (!pythonPath) {
+    return null;
+  }
+
+  return pythonPath;
+}
+
+export async function activate(context: ExtensionContext): Promise<void> {
+  try {
+    if (context.extensionMode === ExtensionMode.Development) {
+      // Development - Run the server manually
+      client = startLangServerTCP(2087);
+    } else {
+      const cwd = path.join(__dirname, "..", "..");
+      const workspaceConfig = workspace.getConfiguration("jac");
+
+      let pythonPath = workspaceConfig.get<string>("pythonPath");
+      // start server if jac.pytonPath is set
+      if (pythonPath) {
+        client = startLangServer(pythonPath, ["-m", "server"], cwd);
+        context.subscriptions.push(client.start() as any);
+      } else {
+        // get python path from python extension
+        await getPythonPath().then((resolvedPath) => {
+          if (!resolvedPath) return;
+          pythonPath = resolvedPath;
+          // start server if python path is set
+          client = startLangServer(pythonPath, ["-m", "server"], cwd);
+          context.subscriptions.push(client.start() as any);
+        });
+
+        // if no python path is set, ask user to select one
+        if (!pythonPath) {
+          const result = await window.showErrorMessage(
+            "Unable to start the jac language server. \n Select a Python interpreter first where Jaseci is installed.",
+            "Select Python Interpreter"
+          );
+          if (result === "Select Python Interpreter") {
+            await selectPythonInterpreter();
+            await getPythonPath().then((resolvedPath) => {
+              if (!resolvedPath) return;
+              pythonPath = resolvedPath;
+
+              // start server if python path is set
+              client = startLangServer(pythonPath, ["-m", "server"], cwd);
+              context.subscriptions.push(client.start() as any);
+            });
+          }
+
+          // if still no python path is set, throw error
+          if (!pythonPath) throw new Error("`jac.pythonPath` is not set");
+        }
+      }
+    }
+  } catch (e) {
+    window.showErrorMessage(
+      "Unable to activate Jac extension. Try setting or updating your python path and make sure Jaseci is installed there."
+    );
+  }
 }
 
 export function deactivate(): Thenable<void> {
