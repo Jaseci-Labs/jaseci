@@ -20,7 +20,13 @@
 
 import * as net from "net";
 import * as path from "path";
-import { ExtensionContext, ExtensionMode, workspace, window } from "vscode";
+import {
+  ExtensionContext,
+  ExtensionMode,
+  workspace,
+  window,
+  extensions,
+} from "vscode";
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -78,24 +84,48 @@ function startLangServer(
   return new LanguageClient(command, serverOptions, getClientOptions());
 }
 
-export function activate(context: ExtensionContext): void {
+async function getPythonPath() {
+  const extension = extensions.getExtension("ms-python.python");
+  if (!extension.isActive) {
+    await extension.activate();
+  }
+
+  if (!extension) {
+    return;
+  }
+
+  const pythonPath =
+    extension.exports.settings.getExecutionDetails().execCommand;
+  if (!pythonPath) {
+    return;
+  }
+
+  return pythonPath;
+}
+
+export async function activate(context: ExtensionContext): Promise<void> {
   if (context.extensionMode === ExtensionMode.Development) {
     // Development - Run the server manually
+    const path = await getPythonPath();
     client = startLangServerTCP(2087);
+    window.showInformationMessage(`Python path: ${path}`);
   } else {
-    // Production - Client is going to run the server (for use within `.vsix` package)
     const cwd = path.join(__dirname, "..", "..");
     const workspaceConfig = workspace.getConfiguration("jac");
 
-    const pythonPath = workspaceConfig.get<string>("pythonPath");
+    let pythonPath = workspaceConfig.get<string>("pythonPath");
+
+    if (!pythonPath) {
+      // get python path from python extension
+      pythonPath = await getPythonPath();
+    }
 
     if (!pythonPath) {
       window.showErrorMessage(
         "Unable to start the jac language server. \n Select a Python interpreter first where Jaseci is installed."
       );
 
-      throw new Error("`jacServer.pythonPath` is not set");
-      // });
+      throw new Error("`jac.pythonPath` is not set");
     }
 
     client = startLangServer(pythonPath, ["-m", "server"], cwd);
@@ -108,3 +138,4 @@ export function deactivate(): Thenable<void> {
   console.log("JAC ext deactivated!");
   return client ? client.stop() : Promise.resolve();
 }
+You need to sthethamatcs'ation location
