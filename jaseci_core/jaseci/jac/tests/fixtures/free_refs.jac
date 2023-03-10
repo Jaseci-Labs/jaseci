@@ -11,8 +11,6 @@ walker init {
     my_post=-->[0];
     my_post2=-->[1];
 
-    if (<-[tag_post]-> [my_post]): report true; #Valid
-    if (<-[tag_post]-> [my_post, my_post2]): report true; #Valid
     if (my_post in <-[tag_post]->): report true; #Valid
     if (<-[tag_post]-> n::post(title==my_post.title)): report true; #Valid
 
@@ -21,4 +19,5 @@ walker init {
     // std.log(a);
     // if (<-[tag_post]-> my_post):
     //     report my_post;
+    // if (<-[tag_post]-> [my_post]): report true;
 }

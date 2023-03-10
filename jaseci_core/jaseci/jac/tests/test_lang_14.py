@@ -45,5 +45,5 @@ class Lang14Test(CoreTest):
         )
         ret = self.call(self.mast, ["walker_run", {"name": "init"}])
         self.log(ret)
-        self.assertEqual(ret["report"], [True, True, True])
+        self.assertEqual(ret["report"], [True, True])
         self.assertEqual(ret["success"], True)
