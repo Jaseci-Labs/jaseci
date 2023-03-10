@@ -27,8 +27,6 @@ import {
   window,
   extensions,
   commands,
-  StatusBarItem,
-  StatusBarAlignment,
 } from "vscode";
 import {
   LanguageClient,
@@ -72,8 +70,6 @@ function startLangServerTCP(addr: number): LanguageClient {
     getClientOptions()
   );
 }
-
-let statusBar: StatusBarItem;
 
 function startLangServer(
   command: string,
@@ -122,16 +118,20 @@ export async function activate(context: ExtensionContext): Promise<void> {
       const cwd = path.join(__dirname, "..", "..");
       const workspaceConfig = workspace.getConfiguration("jac");
 
-      const pythonPath = workspaceConfig.get<string>("pythonPath");
-
+      let pythonPath = workspaceConfig.get<string>("pythonPath");
       // start server if jac.pytonPath is set
       if (pythonPath) {
         client = startLangServer(pythonPath, ["-m", "server"], cwd);
-        context.subscriptions.push(statusBar);
         context.subscriptions.push(client.start() as any);
       } else {
         // get python path from python extension
-        let pythonPath = await getPythonPath();
+        await getPythonPath().then((resolvedPath) => {
+          if (!resolvedPath) return;
+          pythonPath = resolvedPath;
+          // start server if python path is set
+          client = startLangServer(pythonPath, ["-m", "server"], cwd);
+          context.subscriptions.push(client.start() as any);
+        });
 
         // if no python path is set, ask user to select one
         if (!pythonPath) {
@@ -139,16 +139,17 @@ export async function activate(context: ExtensionContext): Promise<void> {
             "Unable to start the jac language server. \n Select a Python interpreter first where Jaseci is installed.",
             "Select Python Interpreter"
           );
-
           if (result === "Select Python Interpreter") {
             await selectPythonInterpreter();
-            pythonPath = await getPythonPath();
-          }
+            await getPythonPath().then((resolvedPath) => {
+              if (!resolvedPath) return;
+              pythonPath = resolvedPath;
 
-          // now it is more likely that a pythonPath is set
-          client = startLangServer(pythonPath, ["-m", "server"], cwd);
-          context.subscriptions.push(statusBar);
-          context.subscriptions.push(client.start() as any, statusBar);
+              // start server if python path is set
+              client = startLangServer(pythonPath, ["-m", "server"], cwd);
+              context.subscriptions.push(client.start() as any);
+            });
+          }
 
           // if still no python path is set, throw error
           if (!pythonPath) throw new Error("`jac.pythonPath` is not set");
