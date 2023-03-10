@@ -1,14 +1,15 @@
 # **Speech2Text (`stt`)**
 
-Module `stt` uses the `whisper-tiny` to get the transcription or translation of a give audio sequence.
+Module `stt` uses the `whisper` to get the transcription or translation of a give audio sequence.
 
 1. Import [`stt`](#1-import-speech2text-stt-module-in-jac) module in jac
-2. [Transcribe](#2-Transcribe)
-3. [Translate](#3-Translate)
+2. [Setup](#2-Setup)
+2. [Transcribe](#3-Transcribe)
+3. [Translate](#4-Translate)
 
 # **Walk through**
 
-##Prerequisites
+## Prerequisites
 1. FFmpeg
 ```bash
 sudo apt-get install ffmpeg
@@ -21,11 +22,18 @@ sudo apt-get install ffmpeg
     ```
 2.  Load whisper module in jac
     ```
-    actions load module jaseci_ai_kit.stt
+    actions load module jac_speech.stt
     ```
 
+## **2. Setup**
+Use the `setup` action call to configure the model.
+This step is optional.
+If no `setup` is called, the default parameters are used.
+### Setup Parameters
+* `size` - Size of the model. Type: `str` Default: `tiny`
+* `longform` - Whether to use the longform model. Type: `bool` Default: `false`. Use this model when audio clip is longer than 30 seconds.
 
-## **2. Transcribe**
+## **3. Transcribe**
 There are few ways to use `stt.trascribe` action.
 1. Given a audio sequence array, it will return the transcription of the audio.
 2. Given a audio file location, it will return the transcription of the audio.
@@ -39,7 +47,7 @@ All the methods uses a single action `transcribe` to get the transcription. Foll
 * `timestamp` - Whether to return the timestamp of the transcription. Type: `bool` Default: `false`
 
 > **Note**
-> Timestamp works only in longform mode and Longform mode only supports audio file or url. If you want to use features language support, setup the module with `longform` parameter set to `false`.
+> Timestamp works only in longform mode and longform mode only supports audio file or url and only support English.
 
 Return type of the action is `str`.
 
@@ -98,11 +106,6 @@ walker transribe_array {
     report stt.transcribe("en", audio_array);
 }
 ```
-
-### Setup Parameters
-* `size` - Size of the model. Type: `str` Default: `medium`
-* `longform` - Whether to use the longform model. Type: `bool` Default: `false`
-
 # **References**
 * [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf) by Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman, Christine McLeavey, Ilya Sutskever.
 * [OpenAI Whisper](https://openai.com/blog/whisper/)
