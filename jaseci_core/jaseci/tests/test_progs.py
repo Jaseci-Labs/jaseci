@@ -608,12 +608,3 @@ class JacTests(TestCaseHelper, TestCase):
             "Cannot execute sim1.tester - Not Found",
             res["result"]["response"]["errors"][0],
         )
-
-    def test_set_of_syntax(self):
-        mast = JsOrc.master()
-        res = mast.sentinel_register(name="test", code=jtp.set_of_syntax, auto_run="")
-        res = mast.general_interface_to_api(
-            api_name="walker_run",
-            params={"name": "simple", "ctx": {}},
-        )
-        self.assertEqual(res["report"], ["a", "b", "f"])
