@@ -1,6 +1,7 @@
-node_modules/
-node_modules/*
-out/
-./out/*
-package-lock.json
-yarn.lock
+out
+node_modules
+client/server
+.vscode-test
+.vscode/settings.json
+env
+*.visx

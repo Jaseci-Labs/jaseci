@@ -35,6 +35,7 @@ setup(
         "metadata_parser",
         "validators",
         "psycopg2-binary==2.9.5",
+        "pygls",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],

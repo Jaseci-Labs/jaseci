@@ -88,8 +88,8 @@ def load_local_actions(file: str):
             mod = module_from_spec(spec)
             spec.loader.exec_module(mod)
             return True
-    except Exception:
-        logger.error(f"Cannot hot load local actions from {file}.")
+    except Exception as e:
+        logger.error(f"Cannot hot load local actions from {file}: {e}")
         return False
 
 
@@ -112,8 +112,8 @@ def load_module_actions(mod, loaded_module=None):
         mod = importlib.import_module(mod)
         if mod:
             return True
-    except Exception:
-        logger.error(f"Cannot hot load module actions from {mod}.")
+    except Exception as e:
+        logger.error(f"Cannot hot load module actions from {mod}: {e}")
 
     return False
 
