@@ -67,6 +67,7 @@
       - [Vectors](docs/docs/Developing_with_JAC/Language_Features/actions/vectors.md)
       - [Walker](docs/docs/Developing_with_JAC/Language_Features/actions/walker.md)
       - [Elastic](docs/docs/Developing_with_JAC/Language_Features/actions/elastic.md)
+      - [Regex](docs/docs/Developing_with_JAC/Language_Features/actions/regex.md)
   - [Multipart](docs/docs/Developing_with_JAC/Language_Features/multipart.md)
   - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
   - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
