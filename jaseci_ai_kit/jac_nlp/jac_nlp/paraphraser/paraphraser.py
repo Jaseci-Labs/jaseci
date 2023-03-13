@@ -1,21 +1,24 @@
 import torch
 import os
-import warnings
 import configparser
+import warnings
 
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.actions.remote_actions import launch_server
 from fastapi import HTTPException
 
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
+warnings.filterwarnings("ignore")
+warnings.warn("ignore")
 
-model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"]["T5-LARGE"])
-tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"]["T5-LARGE"])
+# config = configparser.ConfigParser()
+# config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = model.to(device)
+# model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"]["T5-LARGE"])
+# tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"]["T5-LARGE"])
+
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# model = model.to(device)
 
 
 @jaseci_action(act_group=["paraphraser"], allow_remote=True)
