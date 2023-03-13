@@ -1,4 +1,4 @@
-from transformers import WhisperProcessor, WhisperForConditionalGeneration
+from transformers import WhisperProcessor, WhisperForConditionalGeneration, pipeline
 import librosa
 from jaseci.actions.live_actions import jaseci_action
 import numpy as np
@@ -112,10 +112,27 @@ SUPPORTED_LANGUAGES = [
     "su",
 ]
 
+model, processor = None, None
+longform_pipeline = None
+
 
 @jaseci_action(act_group=["stt"], allow_remote=True)
-def setup(size: str = "tiny"):
+def setup(size: str = "tiny", longform: bool = False, chunk_length_s: int = 18):
     global model, processor
+    if longform:
+        if model is not None or processor is not None:
+            del model, processor
+            model, processor = None, None
+        global longform_pipeline
+        longform_pipeline = pipeline(
+            "automatic-speech-recognition",
+            model=f"openai/whisper-{size}",
+            chunk_length_s=chunk_length_s,
+        )
+        return
+    if longform_pipeline is not None:
+        del longform_pipeline
+        longform_pipeline = None
     model = WhisperForConditionalGeneration.from_pretrained(f"openai/whisper-{size}")
     processor = WhisperProcessor.from_pretrained(f"openai/whisper-{size}")
 
@@ -126,6 +143,7 @@ setup()
 def get_array(audio_file: str = None) -> np.ndarray:
     """Get numpy array from audio file"""
     audio, _ = librosa.load(audio_file, sr=16000)
+    duration = librosa.get_duration(y=audio, sr=16000)
     return audio
 
 
@@ -143,9 +161,32 @@ def transcribe(
     array: List[float] = None,
     audio_file: str = None,
     url: str = None,
+    timestamp: bool = False,
 ) -> str:
     try:
-        global model, processor
+        global model, processor, longform_pipeline
+
+        if longform_pipeline is not None:
+            if audio_file is not None:
+                if timestamp:
+                    return longform_pipeline(audio_file, return_timestamps=True)[
+                        "chunks"
+                    ]
+                transcription = longform_pipeline(audio_file)["text"]
+                return transcription.strip()
+            elif url is not None:
+                downloaded_audio_file = download(url)
+                if timestamp:
+                    output = longform_pipeline(
+                        downloaded_audio_file, return_timestamps=True
+                    )["chunks"]
+                    os.remove(downloaded_audio_file)
+                    return output
+                transcription = longform_pipeline(downloaded_audio_file)["text"]
+                os.remove(downloaded_audio_file)
+                return transcription.strip()
+            else:
+                raise ValueError("Must provide audio_file or url")
 
         if language not in SUPPORTED_LANGUAGES:
             raise ValueError(f"Language {language} not supported")
