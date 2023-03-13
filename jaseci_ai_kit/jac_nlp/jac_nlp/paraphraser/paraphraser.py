@@ -11,14 +11,14 @@ from fastapi import HTTPException
 warnings.filterwarnings("ignore")
 warnings.warn("ignore")
 
-# config = configparser.ConfigParser()
-# config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
 
-# model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"]["T5-LARGE"])
-# tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"]["T5-LARGE"])
+model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"]["T5-LARGE"])
+tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"]["T5-LARGE"])
 
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# model = model.to(device)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
 
 
 @jaseci_action(act_group=["paraphraser"], allow_remote=True)
