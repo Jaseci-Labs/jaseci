@@ -619,7 +619,7 @@ class Interp(VirtualMachine):
 
     def run_cmp_op(self, jac_ast, val1, val2):
         """
-        cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin | SUB_OF | SUPER_OF | DISJOINT_OF;
+        cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin;
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "EE":
@@ -638,12 +638,6 @@ class Interp(VirtualMachine):
             self.push(JacValue(self, value=val1.value in val2.value))
         elif kid[0].name == "nin":
             self.push(JacValue(self, value=val1.value not in val2.value))
-        elif kid[0].name == "SUB_OF":
-            self.push(JacValue(self, value=set(val1.value).issubset(set(val2.value))))
-        elif kid[0].name == "SUPER_OF":
-            self.push(JacValue(self, value=set(val1.value).issuperset(set(val2.value))))
-        elif kid[0].name == "DISJOINT_OF":
-            self.push(JacValue(self, value=set(val1.value).isdisjoint(set(val2.value))))
 
     def run_arithmetic(self, jac_ast):
         """
