@@ -144,42 +144,56 @@
 
 ## Advanced Topics
 
+  - [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
+  - [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
+  - [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
+  - [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
+  - [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
+  - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
+  - [Enhancing User Experience with Personalized Content using PH](examples/CanoniCAI/codelabs/ph.md)
   - [Jaseci X Features](docs/docs/advanced_topics/jaseci_features.md)
-    - [Single Sign-on Socail](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
-
+    - [Single Sign-on Social](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
   - [Jaseci Core Internals](docs/docs/advanced_topics/jaseci_core.md)
     - [JsOrc](jaseci_core/jaseci/svc/docs/JSORC.md)
       - [Development](jaseci_core/jaseci/svc/docs/jsorc_development.md)
       - [Task](jaseci_core/jaseci/svc/docs/task_svc.md)
       - [Mail](jaseci_core/jaseci/svc/docs/mail_svc.md)
     - [JSORC Action Management Engine](jaseci_core/jaseci/svc/docs/JSORC.md)
+  - [Misc DevOps Guides](docs/docs/advanced_topics/Misc_DevOps_Guides.md)
+    - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
+    - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
+    - [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
+    - [Locust Load Test for JASECI](support/locust/README.md)
 
-## Codelabs and Guides
 
-- [Building a Conversational AI System](examples/CanoniCAI/CCAI_codelab.md)
-  1. [Preparation and Background](examples/CanoniCAI/codelabs/1_preparation.md)
-  2. [Automated FAQ Answering Chatbot](examples/CanoniCAI/codelabs/2_faq.md)
-  3. [Multi-turn Dialogue System](examples/CanoniCAI/codelabs/3_dialogue_system.md)
-  4. [Unify the Dialogue and FAQ Systems](examples/CanoniCAI/codelabs/4_unify_system.md)
-  5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
-  6. [Use speech to text and speech to text modules](examples/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
-  7. [Collect Training Data via Crowdsource](examples/CanoniCAI/codelabs/7_crowdsource.md)
-  8. [Contritbute to Jaseci Open Source](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
-- [Building a Text Analytics Engine](examples/CanoniAnalytics/README.md)
+## Best Practices
+  - [Walkers vs Abilities](docs/docs/best_practices/best_practice_1.md)
+
+## Sample Projects, Templates and Tutorials
+- [Cononi Cai](docs/docs/SampleProjects_templates_and_tutorials/cononi_cai.md)
+  - [Building a Conversational AI System](examples/CanoniCAI/CCAI_codelab.md)
+    1. [Preparation and Background](examples/CanoniCAI/codelabs/1_preparation.md)
+    2. [Automated FAQ Answering Chatbot](examples/CanoniCAI/codelabs/2_faq.md)
+    3. [Multi-turn Dialogue System](examples/CanoniCAI/codelabs/3_dialogue_system.md)
+    4. [Unify the Dialogue and FAQ Systems](examples/CanoniCAI/codelabs/4_unify_system.md)
+    5. [Bring Your Application to Production](examples/CanoniCAI/codelabs/5_production.md)
+    6. [Use speech to text and speech to text modules](examples/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
+    7. [Collect Training Data via Crowdsource](examples/CanoniCAI/codelabs/7_crowdsource.md)
+    8. [Contribute to Jaseci Open Source](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
+- [Cononi Vision](docs/docs/SampleProjects_templates_and_tutorials/cononi_vison.md)
+- [Cononi Analytics: Building a Text Analytics Engine](examples/CanoniAnalytics/README.md)
   1. [Preparation](examples/CanoniAnalytics/codelabs/1_preparation.md)
   2. [Map the script into a graph](examples/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
-  3. [Get the summery of scene descriptions](examples/CanoniAnalytics/codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)
+  3. [Get the summary of scene descriptions](examples/CanoniAnalytics/codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)
   4. [Find semantically similar sentences](examples/CanoniAnalytics/codelabs/4_find_semantically_similar_sentences.md)
   5. [Clustering documents](examples/CanoniAnalytics/codelabs/5_clustering_documents.md)
   6. [Sentiment analysis of dialogues](examples/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
   7. [Creating custom action to scrap movie data](examples/CanoniAnalytics/codelabs/7_creating_custom_action_to_scrap_movie_data.md)
-- [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
-- [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
-- [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
-- [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
-- [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
-- [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
-- [Enhancing User Experience with Personalized Content using PH](examples/CanoniCAI/codelabs/ph.md)
+- [Sample Projects](docs/docs/SampleProjects_templates_and_tutorials/sample_projects.md)
+- [Templates](docs/docs/SampleProjects_templates_and_tutorials/templates.md)
+
+## Error Handling and Solutions
+  - [Error Handling in Jaseci](docs/docs/error_handling/error_1.md)
 
 ## Contributing to Jaseci
 
@@ -204,9 +218,3 @@
   - [Products Built with Jaseci](https://jaseci.org/products/)
   - [Jaseci in the News](https://jaseci.org/blog/)
   - [Contact Us](https://jaseci.org/contact-us/)
-
-## Misc DevOps Guides
-- [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
-- [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
-- [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
-- [Locust Load Test for JASECI](support/locust/README.md)
