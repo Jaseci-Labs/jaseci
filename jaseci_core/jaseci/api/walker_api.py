@@ -169,6 +169,21 @@ class WalkerApi:
             start_node=prime, prime_ctx=ctx, request_ctx=_req_ctx, profiling=profiling
         )
 
+    @Interface.private_api(cli_args=["wlk"])
+    def walker_step(self, wlk: Walker, detailed: bool = False):
+        """
+        Executes walker (assumes walker is primed)
+        """
+        wlk.step()
+        ret = {
+            "current_node": wlk.current_node.serialize(detailed=detailed),
+            "next_node_ids": wlk.next_node_ids,
+            "walker_context": wlk.serialize(detailed=detailed)["context"],
+            "walker_report": wlk.report,
+            "profile": wlk.profile,
+        }
+        return ret
+
     @Interface.private_api(cli_args=["name"])
     def walker_run(
         self,
