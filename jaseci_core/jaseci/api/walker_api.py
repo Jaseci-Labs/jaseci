@@ -174,13 +174,13 @@ class WalkerApi:
         """
         Executes walker (assumes walker is primed)
         """
-        nd = wlk.current_node
         wlk.step()
         ret = {
-            "current_node": nd.serialize(detailed=detailed),
+            "current_node": wlk.current_node.serialize(detailed=detailed),
             "next_node_ids": wlk.next_node_ids,
             "walker_context": wlk.serialize(detailed=detailed)["context"],
             "walker_report": wlk.report,
+            "profile": wlk.profile,
         }
         return ret
 
