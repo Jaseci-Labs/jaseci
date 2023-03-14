@@ -14,11 +14,22 @@ warnings.warn("ignore")
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
 
-model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"]["T5-LARGE"])
-tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"]["T5-LARGE"])
+model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"]["T5-SMALL"])
+tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"]["T5-SMALL"])
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
+
+
+@jaseci_action(act_group=["setup"], allow_remote=True)
+def setup(model_name: str = "T5-SMALL", tokenizer_name: str = "T5-SMALL"):
+    global model, tokenizer
+
+    model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"][model_name])
+    tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"][model_name])
+
+
+setup()
 
 
 @jaseci_action(act_group=["paraphraser"], allow_remote=True)
