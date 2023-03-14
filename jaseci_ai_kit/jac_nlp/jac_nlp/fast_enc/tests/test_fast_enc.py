@@ -1,6 +1,8 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
 from jaseci.actions.live_actions import load_module_actions, unload_module
 import pytest
+import shutil
+from os import path
 
 
 class FastEncTest(CoreTest):
@@ -40,3 +42,6 @@ class FastEncTest(CoreTest):
         super(FastEncTest, cls).tearDownClass()
         ret = unload_module("jac_nlp.fast_enc.fast_enc")
         assert ret is True
+        for temp_path in ["modeloutput", "pretrained"]:
+            if path.exists(temp_path) and path.isdir(temp_path):
+                shutil.rmtree(temp_path)
