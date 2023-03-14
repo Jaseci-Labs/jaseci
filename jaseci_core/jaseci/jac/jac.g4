@@ -190,7 +190,7 @@ logical: compare ((KW_AND | KW_OR) compare)*;
 
 compare: NOT compare | arithmetic (cmp_op arithmetic)*;
 
-cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin;
+cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin | SUB_OF | SUPER_OF | DISJOINT_OF;
 
 nin: NOT KW_IN;
 
@@ -420,6 +420,9 @@ LTE: '<=';
 GTE: '>=';
 NE: '!=';
 KW_IN: 'in';
+SUB_OF: 'subsetof';
+SUPER_OF: 'supersetof';
+DISJOINT_OF: 'disjointof';
 KW_ANCHOR: 'anchor';
 KW_HAS: 'has';
 KW_GLOBAL: 'global';
