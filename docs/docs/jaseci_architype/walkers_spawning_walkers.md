@@ -1,6 +1,6 @@
 # Walker Spawning in Jaseci: Little Robots Walking Graphs
 
-Jaseci walkers act like little robots traversing graphs, with a unique ability to spawn other walkers that can also walk the graph and return a value to the parent walker. This powerful feature is achieved by specifying the variable to receive the returned value using the "has anchor some_variable" syntax.
+Jaseci walkers act like little robots traversing graphs, with a unique ability to spawn other walkers that can also walk the graph and return a value to the parent walker. This powerful feature is achieved by specifying the variable to receive the returned value using the **`has anchor some_variable`** syntax.
 
 Here's a simple example of how to use walker spawning in Jaseci:
 

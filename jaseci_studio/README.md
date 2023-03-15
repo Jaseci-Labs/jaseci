@@ -1,4 +1,4 @@
-# Installing Jaseci Studios
+# Installing Jaseci Studio
 
 Managing Your Jaseci Application with Jaseci Studio
 

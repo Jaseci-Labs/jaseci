@@ -171,7 +171,7 @@
   - [Walkers vs Abilities](docs/docs/best_practices/best_practice_1.md)
 
 ## Sample Projects, Templates and Tutorials
-- [Cononi Cai](docs/docs/SampleProjects_templates_and_tutorials/cononi_cai.md)
+- [Canoni CAI](docs/docs/SampleProjects_templates_and_tutorials/cononi_cai.md)
   - [Building a Conversational AI System](examples/CanoniCAI/CCAI_codelab.md)
     1. [Preparation and Background](examples/CanoniCAI/codelabs/1_preparation.md)
     2. [Automated FAQ Answering Chatbot](examples/CanoniCAI/codelabs/2_faq.md)
@@ -181,8 +181,8 @@
     6. [Use speech to text and speech to text modules](examples/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
     7. [Collect Training Data via Crowdsource](examples/CanoniCAI/codelabs/7_crowdsource.md)
     8. [Contribute to Jaseci Open Source](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
-- [Cononi Vision](docs/docs/SampleProjects_templates_and_tutorials/cononi_vison.md)
-- [Cononi Analytics: Building a Text Analytics Engine](examples/CanoniAnalytics/README.md)
+- [Canoni Vision](docs/docs/SampleProjects_templates_and_tutorials/cononi_vison.md)
+- [Canoni Analytics: Building a Text Analytics Engine](examples/CanoniAnalytics/README.md)
   1. [Preparation](examples/CanoniAnalytics/codelabs/1_preparation.md)
   2. [Map the script into a graph](examples/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
   3. [Get the summary of scene descriptions](examples/CanoniAnalytics/codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)

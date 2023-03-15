@@ -39,6 +39,6 @@ info: {
 
 The code snippet creates a simple node with an attribute named name. It then initializes a walker named ref_deref, which creates three new nodes named node0, node1, and node2 and assigns them to the simple node.
 
-The code then assigns the reference of the first node node0 to the var variable using the & operator. The std.out() function is used to print out the reference, object, and information related to the var variable.
+The code then assigns the reference of the first node node0 to the var variable using the & operator. The `std.out()` function is used to print out the reference, object, and information related to the var variable.
 
 When executed, the code will output the reference and information related to the node0 object. The obj output shows the UUID of the node0 object, while the info output shows the complete information related to the simple node, including its context, anchor, name, kind, and other attributes.
