@@ -42,7 +42,17 @@ Setting city name: {"name": "c1"}
 c1
 ```
 
-To see node abilities in advance let's define the following graph, which represent cities and connection between the them.
+To see node abilities in advance let's define the following graph, which represent cities and the connection between them.
+
+ 
+The code defines a node called city which has a property called name and an ability called set_name. set_name sets the name property to "c1" and prints a message to the console using std.out().
+
+The code also defines a walker called build_example which spawns a new city node.
+
+In the init walker, the root node spawns the build_example walker and then moves to the next node using take-->. The city node is the next node, and the walker triggers the set_name ability on this node using the syntax here::set_name. The std.out() function is then called to print the name property of the city node.
+
+The output of this code is "Setting city name: {"name": "c1"} c1", which indicates that the set_name ability successfully set the name property to "c1" and printed the message to the console.
+
 
 <div style="text-align:center"><img style="align:center" src="images/abilities_graph_example_1.png" /> <b>Example Graph</b></div>
 

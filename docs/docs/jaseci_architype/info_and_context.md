@@ -1,6 +1,6 @@
 # Info and Context Comand 
 
-In our coding language, Jaseci, you can use the "info" and "context" commands to view the content of a node or edge. Although the following example demonstrates the use of these commands on nodes, the same principles can be applied to edges as well. Take a look at the example below to see how to use the "info" and "context" commands.
+In our coding language, Jaseci, you can use the `info` and `context` commands to view the content of a node or edge. Although the following example demonstrates the use of these commands on nodes, the same principles can be applied to edges as well. Take a look at the example below to see how to use the `info` and `context` commands.
 
 ```jac
 node example{
@@ -18,4 +18,4 @@ walker init{
 }
 ```
 
-After executing the command above, you will observe that the context command displays variables such as name, result, and favourite quote, while the info command displays all the information related to the node.
+After executing the command above, you will observe that the `context` command displays variables such as name, result, and favourite quote, while the `info` command displays all the information related to the node.

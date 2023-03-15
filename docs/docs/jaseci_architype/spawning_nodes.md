@@ -1,6 +1,6 @@
 # Creating Graphs
 
-Now that you know about spawning nodes and viewing information about, you can now leverage that knowledge to create graphs. You create graphs by connecting multiple nodes. This is done using the connect operator ++> <++>. 
+Now that you know about spawning nodes and viewing information about, you can now leverage that knowledge to create graphs. You create graphs by connecting multiple nodes. This is done using the connect operator `++>` `<++>`. 
 
 ```jac
 walker init {
@@ -38,7 +38,7 @@ graph hlp_graph {
 
 Statically creating graphs means creating a graph that is already fixed and doesn't change. The code above shows an example of how to do that in Jaseci. The graph keyword is used to indicate that a new graph is being created, followed by the name of the graph. The {} are used to wrap everything related to the graph. An anchor named graph_root is declared using the has anchor keyword to identify the starting point of the graph.
 
-After that, the spawn keyword is used to begin the creation of nodes and edges, by using spawn node:: followed by the type of node you want to create (e.g. user or state). You can also specify a name for each node using the name property. Nodes and edges can be connected together using the ++>  operator.
+After that, the `spawn` keyword is used to begin the creation of nodes and edges, by using `spawn node::` followed by the type of node you want to create (e.g. user or state). You can also specify a name for each node using the name property. Nodes and edges can be connected together using the `++>`  operator.
 
 The transition keyword is used to create an edge with a specific intent label. In the example above, the graph has three states: root_state, home_price_inquiry, and prob_of_approval, and a user node. These states and the user node are connected to each other through transitions with intent labels such as "home price inquiry" or "probability of loan approval".
 
