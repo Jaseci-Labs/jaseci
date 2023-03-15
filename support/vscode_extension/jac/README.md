@@ -1,26 +1,51 @@
-# VSCode Extension for the JAC programming language
+# Jac Extension
 
-README coming soon :)
+This extension provides support for the [Jac](https://doc.jaseci.org) programming language. It provides syntax highlighting and leverages the LSP to provide a rich editing experience.
 
-## Known Issues
+# Quick Start
 
-The Jac extensions provide language support for JAC (syntax highlighting) and useful tools that integrate with the Jaseci runtime.
+When you install the extension you will need to add a setting to your `settings.json` file that points to the python path of your Jaseci environment.
 
-Full Guide for what to do is present here: https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide
+1. Activate your python environment where for which Jaseci is installed.
+2. Create a `.vscode/settings.json` file in your project root if one is not already present.
+3. Go to your terminal and run `which python` and copy the path.
+4. Update your `settings.json` file in the `.vscode` directory by adding `jac.pythonPath` to the settings object with the path you copied.
 
-Helpful video is here: https://www.youtube.com/watch?v=5msZv-nKebI
+Example:
 
-Example of syntax highlighting: https://github.com/microsoft/vscode/blob/main/extensions/cpp/syntaxes/c.tmLanguage.json, https://github.com/microsoft/vscode/blob/main/extensions/python/syntaxes/MagicPython.tmLanguage.json
+```json
+{
+  "jac.pythonPath": "/Users/john_doe/mambaforge/envs/jac/bin/python"
+}
+```
 
-## Features
+# Features
 
-- JAC Language Support
-- DOT Language Support
-- View DOT Graph (CMD/CTRL + Shift + V)
+- Code completion
+- Syntax highlighting
+- Snippets
+- Go to definition
+- Document symbols, workspace symbols
+- Variables hint, and documentation on hover
+- Diagnostics
 
-## Release Notes
+# Contributing
 
-### 0.0.3
+## Install Server Dependencies
 
-- DOT Language Support
-- DOT Graph visualizer
+1. `python -m venv env`
+2. `python -m pip install -e .` from root directory
+3. Create `.vscode/settings.json` file and set `jac.pythonPath` to point to your python environment where `jaseci` is installed
+
+## Install Client Dependencies
+
+Open terminal and execute following commands:
+
+1. `yarn install`
+1. `cd client/ && yarn install`
+
+## Run Extension
+
+1. Open this directory in VS Code
+2. Open debug view (`ctrl + shift + D`)
+3. Select `Server + Client` and press `F5`

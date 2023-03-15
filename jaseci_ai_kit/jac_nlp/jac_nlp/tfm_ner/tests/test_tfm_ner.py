@@ -2,6 +2,8 @@ from jaseci.utils.test_core import CoreTest, jac_testcase
 from jaseci.actions.live_actions import load_module_actions, unload_module
 import pytest
 import os
+import shutil
+from os import path
 
 
 class TfmNerTest(CoreTest):
@@ -63,3 +65,6 @@ class TfmNerTest(CoreTest):
         super(TfmNerTest, cls).tearDownClass()
         ret = unload_module("jac_nlp.tfm_ner.tfm_ner")
         assert ret is True
+        for temp_path in ["results", "modeloutput", "train", "test"]:
+            if path.exists(temp_path) and path.isdir(temp_path):
+                shutil.rmtree(temp_path)

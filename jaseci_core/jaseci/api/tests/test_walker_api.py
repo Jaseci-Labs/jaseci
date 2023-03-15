@@ -296,3 +296,21 @@ class WalkerApiTest(CoreTest):
         self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
         ret = self.call(self.mast, ["walker_run", {"name": "error_walker_action"}])
         self.assertIn('cannot execute the statement "disengage ; "', ret["errors"][0])
+
+    def test_walker_stepping(self):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("fam.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_spawn_create", {"name": "create_fam"}])
+        jid = ret["jid"]
+        ret = self.call(self.mast, ["walker_prime", {"wlk": jid}])
+        ret = self.call(self.mast, ["walker_step", {"wlk": jid}])
+        self.log(ret)
+        self.assertEqual(len(ret["next_node_ids"]), 2)
+        ret = self.call(self.mast, ["walker_step", {"wlk": jid}])
+        self.assertEqual(len(ret["next_node_ids"]), 1)
+        ret = self.call(self.mast, ["walker_step", {"wlk": jid}])
+        self.assertEqual(len(ret["next_node_ids"]), 0)
+        ret = self.call(self.mast, ["walker_step", {"wlk": jid}])
+        self.assertEqual(len(ret["next_node_ids"]), 0)

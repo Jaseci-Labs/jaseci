@@ -95,8 +95,8 @@ def load_local_actions(file: str, ctx: dict = {}):
                     f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
                 )
             return True
-    except Exception:
-        logger.error(f"Cannot hot load local actions from {file}.")
+    except Exception as e:
+        logger.error(f"Cannot hot load local actions from {file}: {e}")
         return False
 
 
@@ -126,8 +126,8 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
             )
         if mod:
             return True
-    except Exception:
-        logger.error(f"Cannot hot load module actions from {mod}.")
+    except Exception as e:
+        logger.error(f"Cannot hot load module actions from {mod}: {e}")
 
     return False
 
@@ -232,6 +232,7 @@ def get_global_actions():
             or i.startswith("zlib.")
             or i.startswith("webtool.")
             or i.startswith("url.")
+            or i.startswith("regex.")
         ):
             global_action_list.append(
                 Action(

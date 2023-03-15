@@ -609,11 +609,15 @@ class JacTests(TestCaseHelper, TestCase):
             res["result"]["response"]["errors"][0],
         )
 
-    def test_set_of_syntax(self):
+    def test_walker_run_with_null_arguments(self):
         mast = JsOrc.master()
-        res = mast.sentinel_register(name="test", code=jtp.set_of_syntax, auto_run="")
+        res = mast.sentinel_register(
+            name="test", code=jtp.walker_null_args, auto_run=""
+        )
         res = mast.general_interface_to_api(
             api_name="walker_run",
-            params={"name": "simple", "ctx": {}},
+            params={"name": "a", "ctx": {}},
         )
-        self.assertEqual(res["report"], ["a", "b", "f"])
+        self.assertTrue(res["success"])
+        self.assertTrue(res["report"], [None, None])
+        self.assertIsNone(res.get("errors"))
