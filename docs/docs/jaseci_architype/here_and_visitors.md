@@ -1,8 +1,8 @@
 # Understanding Contexts in Jaseci Programs
 
-In Jaseci programming, two scopes are visible at every execution point: the walker's scope and the node's scope. These scopes can be referenced using the special variables "here" and "visitor," respectively. The walker uses "here" to refer to the context of the node it is currently executing on, while abilities use "visitor" to refer to the context of the current walker executing.
+In Jaseci programming, two scopes are visible at every execution point: the walker's scope and the node's scope. These scopes can be referenced using the special variables **`here`** and **`visitor`**, respectively. The walker uses **here** to refer to the context of the node it is currently executing on, while abilities use **visitor** to refer to the context of the current walker executing.
 
-For example, let's say we have a Jaseci program that defines a "person" node with attributes such as "name," "age," and "profession." We also have a walker that iterates over all "person" nodes in the graph and prints out their names. We can access the "name" attribute of each node using the "here" context, like so:
+For example, let's say we have a Jaseci program that defines a **person** node with attributes such as **name**, **age**, and **profession**. We also have a walker that iterates over all "person" nodes in the graph and prints out their names. We can access the **name** attribute of each node using the **here** context, like so:
 
 ```jac
 node person {

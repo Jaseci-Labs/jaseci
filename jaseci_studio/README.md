@@ -1,3 +1,13 @@
+# Installing Jaseci Studio
+
+Managing Your Jaseci Application with Jaseci Studio
+
+Jaseci Studio provides a user-friendly interface for managing and visualizing changes to your Jaseci project. To install Jaseci Studio, simply visit the [latest jaseci release](https://github.com/Jaseci-Labs/jaseci/releases/latest) and download the binary that is relevant to your operating system. We have executables available for macOS/iOS, Windows, and Linux.
+
+While we will delve into the details of Jaseci Studio in a later section, it is worth noting that installing Jaseci Studio is a crucial step towards mastering Jaseci. If you are curious about the features of Jaseci Studio and how to develop applications with it, feel free to skip ahead to that section. However, for the purposes of this section, we will be developing in VS Code.
+
+For a comprehensive list of Jaseci Studio's features, [click here](https://github.com/Jaseci-Labs/jaseci/blob/main/jaseci_studio/features.md).
+
 # For Developers
 
 ## Setup
@@ -56,3 +66,15 @@ sudo apt install libwebkit2gtk-4.0-dev \
   - API mocks uses [msw](https://mswjs.io/)
 - Run `yarn test:unit` to run unit tests with [Vitest](https://vitest.dev/)
   - Component testing uses [react-testing-library](https://testing-library.com/docs/react-testing-library/intro)
+
+
+
+
+
+
+
+
+
+
+
+

@@ -2,7 +2,7 @@
 
 ## Shell Mode 
 
-In shell mode, all of the same Jaseci API functionality is available within a single session. To invoke shell-mode, simply execute jsctl without any commands and jsctl will enter shell mode as per the example below. Session Files At this point, it’s important to understand how sessions work. In a nutshell, a session captures the complete state of a jaseci machine. This state includes the status of memory, graphs, walkers, configurations, etc. The complete state of a Jaseci machine can be captured in a .session file. Every time state changes for a given session via the jsctl tool the assigned session file is updated. Additionally, jaseci masters have the choice of selecting which session file they want to use with the following command.
+In shell mode, all of the same Jaseci API functionality is available within a single session. To invoke shell-mode, simply execute `jsctl` without any commands and `jsctl` will enter shell mode as per the example below. Session Files At this point, it’s important to understand how sessions work. In a nutshell, a session captures the complete state of a jaseci machine. This state includes the status of memory, graphs, walkers, configurations, etc. The complete state of a Jaseci machine can be captured in a .session file. Every time state changes for a given session via the `jsctl` tool the assigned session file is updated. Additionally, jaseci masters have the choice of selecting which session file they want to use with the following command.
 
 ```
 haxor@linux:~/jaseci# jsctl
@@ -69,7 +69,7 @@ haxor@linux:~/jaseci#
 
 ## In-memory mode
 
-It's crucial to keep in mind that there is an in-memory mode that can be activated by using the -m or --mem-only flags. This option is ideal when you want to experiment with a machine in shell-mode or when you need to run a script in Jac without maintaining machine state after completion. Throughout this chapter, you will see the in-memory session mode being used frequently, giving you a better understanding of its usage. 
+It's crucial to keep in mind that there is an in-memory mode that can be activated by using the `-m` or `--mem-only` flags. This option is ideal when you want to experiment with a machine in shell-mode or when you need to run a script in Jac without maintaining machine state after completion. Throughout this chapter, you will see the in-memory session mode being used frequently, giving you a better understanding of its usage. 
 
 ## CLI Mode
 

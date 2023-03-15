@@ -39,9 +39,9 @@ node person {
  }
 ```
 
-The code provided offers an illustration of how to define a node equipped with abilities in Jaseci language. In this example, the "person" node comes with two attributes, "name" and "byear". The "set_year" ability executes on entry and updates the "byear" attribute based on the value of the "visitor.year" parameter. Similarly, the "print_out" ability executes on exit and outputs the "byear" attribute alongside the "visitor.info".
+The code provided offers an illustration of how to define a node equipped with abilities in Jaseci language. In this example, the **person** node comes with two attributes, **name** and **byear**. The **set_year** ability executes on entry and updates the **byear** attribute based on the value of the "visitor.year" parameter. Similarly, the "print_out" ability executes on exit and outputs the **byear** attribute alongside the "visitor.info".
 
-Moreover, the "reset" ability does not execute on entry or exit but sets the "byear" attribute to "1995-01-01". The "walker init" is equipped with a "setup" ability, which creates a "person" node and invokes the "reset" ability. The walker then advances to the next node and repeats the same steps.
+Moreover, the **reset** ability does not execute on entry or exit but sets the **byear** attribute to **1995-01-01**. The **walker init** is equipped with a **setup** ability, which creates a **person** node and invokes the **reset** ability. The walker then advances to the next node and repeats the same steps.
 
-Another walker, named "setter", comes with a "year" attribute and gets activated when a "person" node is created. This walker can be utilized to trigger the "set_year" ability. It's worth noting that abilities are self-contained in-memory compute operations, which can interact with the context and local variables of the node/edge/walker to which they are attached, without returning any value.
+Another walker, named **setter**, comes with a **year** attribute and gets activated when a **person** node is created. This walker can be utilized to trigger the **set_year** ability. It's worth noting that abilities are self-contained in-memory compute operations, which can interact with the context and local variables of the node/edge/walker to which they are attached, without returning any value.
 

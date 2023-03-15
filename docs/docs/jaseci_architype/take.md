@@ -11,7 +11,7 @@ The idea behind the abstraction of `skip` in the context of a walkers code block
 > Node/edge abilities also support the usage of the skip directive. The skip merely decides not to use the remaining steps of that `ability` itself in this context.
 
 
-Lets change the `init` walker of **Example 3** to demostrate how the `skip` command works;
+Lets change the `init` walker of [Example 3](technical_semantics.md) to demostrate how the `skip` command works;
 
 **Example 5:**
 
@@ -50,7 +50,7 @@ The skip command "breaks" out of a walker or ability rather than a loop, but oth
 
 The command `disengage` tells the walker to stop all execution and "disengage" from the graph (i.e., stop visiting nodes anymore from here) and can only be used inside the code body of a walker.
 
-To demonstrate how the `disengage` command functions, let's once more utilize the `init` walker from example 3;
+To demonstrate how the `disengage` command functions, let's once more utilize the `init` walker from [Example 3](technical_semantics.md)
 
 **Example 6:**
 

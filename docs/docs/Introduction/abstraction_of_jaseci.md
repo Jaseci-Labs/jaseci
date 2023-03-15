@@ -14,7 +14,7 @@ Jaseci aims to revolutionize how we perceive data and memory by making graphs, w
 
 One of the major innovations in Jaseci is the concept of walkers. This abstraction has never been seen in any programming language before and offers a new perspective on programmatic execution.
 
-A walker is a unit of execution that retains its local scope as it moves through a graph, executing its body on each node it visits. The body of the walker is defined using braces ( {} ) and is executed to completion on every node it reaches. The walker moves from node to node using the "take" keyword, making each iteration a node-bound iteration.
+A walker is a unit of execution that retains its local scope as it moves through a graph, executing its body on each node it visits. The body of the walker is defined using braces ( {} ) and is executed to completion on every node it reaches. The walker moves from node to node using the `take` keyword, making each iteration a node-bound iteration.
 
 Variables in a walker's body are divided into two categories: context variables, which retain their values as the walker moves through the graph, and local variables, which are reinitialized for each node-bound iteration.
 
@@ -22,4 +22,4 @@ Walkers offer a different approach to programmatic execution, distinct from the 
 
 Think of walkers as tiny self-contained robots or agents that can retain context as they move through a graph, interacting with the context of nodes and edges.
 
-In addition to the "take" command, which introduces new control flow options for node-bound iterations, Jaseci also introduces the keywords "disengage," "skip," and "ignore." These keywords allow walkers to stop walking the graph, skip over a node for execution, or ignore certain paths in the graph. These semantics are described in further detail in later chapters.
+In addition to the `take` command, which introduces new control flow options for node-bound iterations, Jaseci also introduces the keywords `disengage`, `skip`, and `ignore`. These keywords allow walkers to stop walking the graph, skip over a node for execution, or ignore certain paths in the graph. These semantics are described in further detail in later chapters.

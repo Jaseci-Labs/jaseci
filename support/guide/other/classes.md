@@ -378,7 +378,7 @@ No documentation yet.
 <div class='actionHeading'>load yaml</div>
 
  <div class='actionName'> cli: load yaml | api: load_yaml | auth: admin </div> 
- <div class ='actionsArgs'> files: list (*req), namespace: str (default)</div>
+ <div class ='actionsArgs'> files: list (*req), namespace: str (None)</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
 <div class='actionHeading'>apply yaml</div>
@@ -951,6 +951,18 @@ No documentation yet.
  <div class ='actionsArgs'> provider: str (*req), _req_ctx: dict ({}), _raw_req_ctx: str (None)</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
+ # APIs for admissionregistration_v1
+
+Ref: https://openapi-generator.tech
+
+Do not edit the class manually.
+
+ # APIs for apiextensions_v1
+
+Ref: https://openapi-generator.tech
+
+Do not edit the class manually.
+
  # APIs for apps_v1
 
 Ref: https://openapi-generator.tech
