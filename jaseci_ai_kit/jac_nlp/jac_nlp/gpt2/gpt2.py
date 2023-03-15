@@ -34,9 +34,6 @@ def setup(model_name: str = "gpt2", get_embeddings: bool = False):
         generator = pipeline("text-generation", model=model_name, tokenizer="gpt2")
 
 
-setup(model_name="gpt2", get_embeddings=False)
-
-
 @jaseci_action(act_group=["gpt2"], allow_remote=True)
 def generate(
     text: Union[List[str], str],
