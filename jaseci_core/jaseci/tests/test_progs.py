@@ -608,3 +608,16 @@ class JacTests(TestCaseHelper, TestCase):
             "Cannot execute sim1.tester - Not Found",
             res["result"]["response"]["errors"][0],
         )
+
+    def test_walker_run_with_null_arguments(self):
+        mast = JsOrc.master()
+        res = mast.sentinel_register(
+            name="test", code=jtp.walker_null_args, auto_run=""
+        )
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "a", "ctx": {}},
+        )
+        self.assertTrue(res["success"])
+        self.assertTrue(res["report"], [None, None])
+        self.assertIsNone(res.get("errors"))
