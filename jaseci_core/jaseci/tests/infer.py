@@ -31,3 +31,9 @@ def day_from_date(date: str):
 def date_day_diff(start_date: str, end_date: str):
     logger.warning("Deprecated! Use date...")
     return jsdate.date_day_diff(start_date, end_date)
+
+
+@jaseci_action()
+def date_now():
+    logger.warning("Deprecated! Use date...")
+    return jsdate.date_now()
