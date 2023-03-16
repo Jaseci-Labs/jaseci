@@ -291,9 +291,6 @@ def gen_remote_func_hook(url, act_name, param_names):
     """Generater for function calls for remote action calls"""
 
     def func(*args, **kwargs):
-        logger.info(args)
-        logger.info(kwargs)
-        logger.info(param_names)
         params = {}
         for i in range(len(param_names)):
             if i < len(args):
@@ -304,9 +301,7 @@ def gen_remote_func_hook(url, act_name, param_names):
             if i in param_names:
                 params[i] = kwargs[i]
         # Remove any None-valued parameters to use the default value of the action def
-        logger.info(params)
         params = dict([(k, v) for k, v in params.items() if v is not None])
-        logger.info(params)
         act_url = f"{url.rstrip('/')}/{act_name.split('.')[-1]}"
         res = requests.post(
             act_url, headers={"content-type": "application/json"}, json=params
@@ -325,8 +320,6 @@ def call_action(action_name: str, ctx: dict = {}) -> None:
     try:
         action_name = action_name.strip()
         if action_name in live_actions.keys():
-            logger.info(live_actions[action_name])
-            logger.info(ctx)
             res = live_actions[action_name](**ctx)
             return res, True
         else:
