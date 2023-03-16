@@ -18,9 +18,6 @@ def setup(model: str = "dpt-large", device: str = None):
     detector = DPTLarge(device=_device, model=model)
 
 
-setup(model="dpt-large", device=None)
-
-
 @jaseci_action(act_group=["dpt"], allow_remote=True)
 def estimate(image: str, b64: bool = False) -> str:
     try:

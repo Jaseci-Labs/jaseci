@@ -137,9 +137,6 @@ def setup(size: str = "tiny", longform: bool = False, chunk_length_s: int = 18):
     processor = WhisperProcessor.from_pretrained(f"openai/whisper-{size}")
 
 
-setup()
-
-
 def get_array(audio_file: str = None) -> np.ndarray:
     """Get numpy array from audio file"""
     audio, _ = librosa.load(audio_file, sr=16000)

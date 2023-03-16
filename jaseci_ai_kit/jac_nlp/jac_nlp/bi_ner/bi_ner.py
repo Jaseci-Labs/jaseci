@@ -38,10 +38,6 @@ def setup(category_name: List[str] = None):
     device = model.device
 
 
-# initialize the model
-setup()
-
-
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
 def infer(contexts: List[str]):
     """

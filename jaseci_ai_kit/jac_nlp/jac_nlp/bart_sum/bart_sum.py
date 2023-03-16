@@ -28,7 +28,6 @@ def setup(
 
 setup(tokenizer="facebook/bart-large-cnn", model="philschmid/bart-large-cnn-samsum")
 
-
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
 def summarize(
     text: Union[List[str], str] = None,  # type: ignore
