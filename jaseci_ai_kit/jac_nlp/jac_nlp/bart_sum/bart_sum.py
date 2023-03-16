@@ -21,7 +21,11 @@ def setup(
         bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
         logger.info(f"{model} - model loaded successfully")
     except Exception as e:
-        logger.error(f"unable to load model: {model} and tokenize: {tokenizer}\nException: {e}")
+        logger.error(
+            f"unable to load model: {model} and tokenize: {tokenizer}\nException: {e}"
+        )
+
+
 setup(tokenizer="facebook/bart-large-cnn", model="philschmid/bart-large-cnn-samsum")
 
 
@@ -67,6 +71,8 @@ def summarize(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     from jaseci.actions.remote_actions import launch_server
 
