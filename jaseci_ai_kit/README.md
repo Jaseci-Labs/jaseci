@@ -42,7 +42,16 @@ The `jac_nlp` package contains a collection of state-of-the-art NLP models that 
 | `text_seg`            | Text Processing          | Text Segmenter     | [Link](#text-segmenter-text_seg)                      | No Training req.        | Experimetal | Topical Change Detection in Documents                                                 | [Huggingface](https://huggingface.co/dennlinger/roberta-cls-consec)                                               |
 | `topic_ext`           | Text Analysis            | Topic Extraction   | [Link](#topic-extraction-topic_ext)                   | No Training req.        | Experimetal | Indentifying most relevent topics for given set of documents                          |                                                                                                                   |
 | `sentiment`           | Text Analysis            | Sentiment Analysis | [Link](#sentiment-analysis)                           | No Training req.        | Experimetal | Determining the overall sentiment expressed is text as positive, negative, or neutral |                                                                                                                   |
+| `paraphraser`         | Text Analysis            | paraphraser        | [Link](#paraphrasing)                                 | No Training req.        | Experimetal | Predicting the next sentence in a sequence of text                                    |
 | `gpt2`                | Text Generation          | GPT-2              | [Link](#text-generation-gpt2)                         | No Training req.        | Experimetal | Predicting the next sentence in a sequence of text                                    | [Huggingface](https://huggingface.co/transformers/model_doc/gpt2.html)                                            |
+
+
+
+
+
+
+
+
 
 
 
@@ -1209,6 +1218,24 @@ walker test_predict{
     has texts = ["I love you", "I hate you"];
 
     report sentiment.predict(texts);
+}
+```
+
+### Paraphrasing
+
+Module `paraphraser` implemented for paraphrasing the given input text.
+
+- `text` - (Strings) Input text phrases.
+
+* #### Example Jac Usage:
+
+```jac
+walker init{
+    can paraphraser.paraphrase;
+
+    has text = "Yiping Kang is inviting you to a scheduled Zoom meeting";
+
+    report paraphraser.paraphrase(text=text);
 }
 ```
 
