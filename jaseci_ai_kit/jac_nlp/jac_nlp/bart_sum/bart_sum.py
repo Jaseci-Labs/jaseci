@@ -26,6 +26,7 @@ def setup(
         )
 
 
+# setting up default model
 setup(tokenizer="facebook/bart-large-cnn", model="philschmid/bart-large-cnn-samsum")
 
 
