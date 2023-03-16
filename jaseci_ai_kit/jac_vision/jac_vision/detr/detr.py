@@ -18,9 +18,6 @@ def setup(model: str = "detr-resnet-50", device: str = None):
     detector = DetrDetector(device=_device, model=model)
 
 
-setup(model="detr-resnet-50", device=None)
-
-
 @jaseci_action(act_group=["detr"], allow_remote=True)
 def detect(image, b64: bool = False, threshold: float = 0.5) -> list:
     try:

@@ -18,9 +18,6 @@ def setup(device: str = None):
     detector = YolosDetector(device=_device)
 
 
-setup(device=None)
-
-
 @jaseci_action(act_group=["yolos"], allow_remote=True)
 def detect(image, b64: bool = False, threshold: float = 0.5) -> list:
     try:

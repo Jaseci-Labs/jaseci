@@ -20,9 +20,6 @@ def setup(
     bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
 
 
-setup(tokenizer="facebook/bart-large-cnn", model="facebook/bart-large-cnn")
-
-
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
 def summarize(
     text: Union[List[str], str] = None,  # type: ignore

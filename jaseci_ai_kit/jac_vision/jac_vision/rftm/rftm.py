@@ -33,9 +33,6 @@ def setup(device: str = None):
     detector = RFTM(device=_device)
 
 
-setup(device=None)
-
-
 @jaseci_action(act_group=["rftm"], allow_remote=True)
 def predict(frames: list, b64: bool = False) -> float:
     try:

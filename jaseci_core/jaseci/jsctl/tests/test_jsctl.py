@@ -421,6 +421,15 @@ class JsctlTest(TestCaseHelper, TestCase):
         r = self.call("walker run go")
         self.assertEqual(r.split()[0], "2020-01-01T00:00:00")
 
+    def test_jsctl_action_call(self):
+        self.call(f"actions load local {self.infer_loc}")
+        r = self.call(f"actions call infer.date_now")
+        r = json.loads(r)
+        import datetime
+
+        date_now = datetime.datetime.utcnow().date().isoformat()
+        self.assertEqual(r["result"], date_now)
+
     def test_jsctl_custom_report(self):
         self.call(
             f"sentinel register {os.path.dirname(__file__)}/glob_imp.jac -set_active true"

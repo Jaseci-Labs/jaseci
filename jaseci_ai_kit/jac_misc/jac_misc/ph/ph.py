@@ -31,8 +31,6 @@ def setup():
         il = None
 
 
-setup()
-
 ### Start of PersonalizedHead Actions ###
 
 
