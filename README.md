@@ -4,24 +4,29 @@
 [![jaseci_serv Tests](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-serv-test.yml/badge.svg)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-serv-test.yml) [![PyPi version](https://badgen.net/pypi/v/jaseci-serv/)](https://pypi.org/project/jaseci-serv)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## Introduction
 
-- [What and Why Jaseci?](docs/docs/Introduction/What_and_why_jaseci.md)
-- [Architecture of Jaseci and Jac](docs/docs/Introduction/Architecture_of_jaseci.md)
-- [Abstraction of Jaseci](docs/docs/Introduction/abstraction_of_jaseci.md)
+## Introduction
+- [What and Why Jaseci?](docs/docs/intro/1_what_and_why_jaseci.md)
+- [Architectures of Jaseci](docs/docs/intro/2_architecture_of_jaseci.md)
 <!-- Information is needed for the above sections to be complete -->
+- [Abstractions of Jaseci](docs/docs/intro/3_abstractions_of_jaseci.md)
+
 
 ## Getting Started
 
   - [Installation](docs/docs/getting-started/installation_intro.md)
     - [Installing Jaseci](support/guide/getting_started/installation.md)
       - [Installing on Windows](support/guide/getting_started/installation.md#installing-on-windows)
+<!-- Installing wsl in windows is in the docs directory but not linked to main readme-->
       - [Installing on Mac](support/guide/getting_started/installation.md#installing-on-mac)
       - [Installing on Linux](support/guide/getting_started/installation.md#installing-on-linux)
       - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
+
+<!-- there are several installation guides in repo, content is conflicting and some are not linked to main readme-->
     - [Setting Up Your Editor](support/guide/getting_started/setting_up_your_editor.md)
     - [Installing Graphiz](docs/docs/getting-started/jac_ai_kit_and_graphiz.md)
     - [Installing Jaseci Studios](jaseci_studio/README.md)
+<!-- Information is needed for the above sections to be complete -->
 
   - [Interfacing A Jaseci Machine](docs/docs/getting-started/interfacing.md)
     - [Three modes of Interacting with Jaseci](docs/docs/interfacing_jaseci/interaction_modes.md)
@@ -116,6 +121,8 @@
     - [Sentiment Analysis](jaseci_ai_kit/jac_nlp/jac_nlp/sentiment/README.md)
     - [Paraphraser Model](jaseci_ai_kit/jac_nlp/jac_nlp/paraphraser/README.md)
 
+<!-- The AI kit should be organized in task based -->
+
   - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
 
     - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
@@ -181,6 +188,9 @@
     6. [Use speech to text and speech to text modules](examples/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
     7. [Collect Training Data via Crowdsource](examples/CanoniCAI/codelabs/7_crowdsource.md)
     8. [Contribute to Jaseci Open Source](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
+
+<!-- there are some docs in the directory which is not linked to the main readme, btw thouse should goes under Jaseci docs, not under canoniCAI-->
+
 - [Canoni Vision](docs/docs/SampleProjects_templates_and_tutorials/cononi_vison.md)
 - [Canoni Analytics: Building a Text Analytics Engine](examples/CanoniAnalytics/README.md)
   1. [Preparation](examples/CanoniAnalytics/codelabs/1_preparation.md)
