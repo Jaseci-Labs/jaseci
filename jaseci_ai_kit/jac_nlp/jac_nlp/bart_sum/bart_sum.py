@@ -13,7 +13,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
 def setup(
-    tokenizer: str = "facebook/bart-large-cnn", model: str = "facebook/bart-large-cnn"
+    tokenizer: str = "facebook/bart-large-cnn",
+    model: str = "philschmid/bart-large-cnn-samsum",
 ):
     global bart_tokenizer, bart_model
     try:
@@ -24,10 +25,6 @@ def setup(
         logger.error(
             f"unable to load model: {model} and tokenize: {tokenizer}\nException: {e}"
         )
-
-
-# setting up default model
-setup(tokenizer="facebook/bart-large-cnn", model="philschmid/bart-large-cnn-samsum")
 
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
