@@ -6,18 +6,25 @@ import traceback
 from fastapi import HTTPException
 import requests
 from bs4 import BeautifulSoup
-
+from jaseci.utils.utils import logger
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
 def setup(
-    tokenizer: str = "facebook/bart-large-cnn", model: str = "facebook/bart-large-cnn"
+    tokenizer: str = "facebook/bart-large-cnn",
+    model: str = "philschmid/bart-large-cnn-samsum",
 ):
     global bart_tokenizer, bart_model
-    bart_tokenizer = BartTokenizer.from_pretrained(tokenizer)
-    bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
+    try:
+        bart_tokenizer = BartTokenizer.from_pretrained(tokenizer)
+        bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
+        logger.info(f"{model} - model loaded successfully")
+    except Exception as e:
+        logger.error(
+            f"unable to load model: {model} and tokenize: {tokenizer}\nException: {e}"
+        )
 
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
@@ -62,3 +69,9 @@ def summarize(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    from jaseci.actions.remote_actions import launch_server
+
+    launch_server(port=8000)

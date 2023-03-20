@@ -3,6 +3,7 @@ apiVersion: v1
 metadata:
   name: {{ include "jaseci.fullname" . }}-db-pvc
 spec:
+  storageClassName: gp2
   accessModes:
     - ReadWriteOnce
   resources:
