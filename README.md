@@ -12,6 +12,34 @@
 - [Abstractions of Jaseci](docs/docs/intro/3_abstractions_of_jaseci.md)
 
 
+## Installation
+
+- [Installing Jaseci](docs/docs/installation/1_installing_jaseci.md)
+  - [Installing for Users](docs/docs/installation/1_installing_jaseci.md#installation-for-jaseci-users)
+  - [Insralling for Contributors](docs/docs/installation/1_installing_jaseci.md#installation-for-jaseci-contributors)
+- [Installing Jaseci AI Kit](docs/docs/installation/2_installing_jaseci_ai_kit.md)
+- [Installing Jaseci Server](docs/docs/installation/3_installing_jaseci_server.md.md)
+- [Installing Jaseci Studio](docs/docs/installation/4_installing_jaseci_studio.md)
+
+
+## Developing with Jaseci
+
+### Jac Language Basics
+- [Data Types](docs/docs/developing_with_jaseci/jac_language_basics/1_data_types.md)
+  - [Dictionaries](docs/docs/developing_with_jaseci/jac_language_basics/1_data_types.md#dictionaries)
+  - [Lists](docs/docs/developing_with_jaseci/jac_language_basics/1_data_types.md#list)
+  - [Strings](docs/docs/developing_with_jaseci/jac_language_basics/1_data_types.md#strings)
+- [Operators, Comparison Operators and Precedence](docs/docs/developing_with_jaseci/jac_language_basics/2_operators_comparisons_presedence.md)
+<!-- Need to add more information on this topic-->
+- [Conditions and Loops](docs/docs/developing_with_jaseci/jac_language_basics/3_conditions_and_loops.md)
+<!-- Need to add more information on this topic-->
+- [Jasecis Received Words](docs/docs/developing_with_jaseci/jac_language_basics/4_jac_received_words.md)
+<!-- Need to add more information on this topic-->
+
+### Jaseci Standard Action Library
+
+
+
 ## Getting Started
 
   - [Installation](docs/docs/getting-started/installation_intro.md)
