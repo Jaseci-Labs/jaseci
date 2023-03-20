@@ -37,6 +37,13 @@
 <!-- Need to add more information on this topic-->
 
 ### Jaseci Standard Action Library
+<!-- Need to add explanation about this-->
+- [Jaseci Basic Actions](docs/docs/developing_with_jaseci/jac_std_actions/1_jaseci.md)
+<!-- Need to add expected output on actions examples-->
+- [Date Actions](docs/docs/developing_with_jaseci/jac_std_actions/2_date.md)
+<!-- Need to add expected output on actions examples, add explanations for input parameters-->
+- [File Actions](docs/docs/developing_with_jaseci/jac_std_actions/2_file.md)
+<!-- Need to add expected output on actions examples, add explanations for input parameters-->
 
 
 
