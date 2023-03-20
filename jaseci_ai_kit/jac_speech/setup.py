@@ -8,7 +8,7 @@ from pkg_resources import require
 
 
 MODULES = ["stt", "vc_tts"]
-ORDEREDREQS = ["TTS==0.10.2"]
+ORDEREDREQS = ["TTS==0.12.0"]
 
 
 def requires(packages):
