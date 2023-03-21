@@ -1578,6 +1578,40 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             {"sample": "sample"}, res["result"]["response"]["report"][2]["ctx"]
         )
 
+    @skip_without_redis
+    def test_async_with_update(self):
+        """Test async with attribute update"""
+        zsb_file = open(os.path.dirname(__file__) + "/async_update.jac").read()
+        payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
+        self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
+
+        payload = {"op": "walker_run", "name": "update_value"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        ).data
+
+        self.assertTrue(res["is_queued"])
+        task_id = res["result"]
+
+        res = self.client.get(
+            reverse("jac_api:walker_queue_wait") + f"?task_id={task_id}"
+        ).data
+
+        self.assertEqual("SUCCESS", res["status"])
+        self.assertIsNone(res["result"]["anchor"])
+        self.assertTrue(res["result"]["response"]["report"][0]["value"])
+
+        # clear current cache since it will still use the outdated _h.mem
+        # _h.mem will always be updated on actual because it will always renew on request
+        self.client.handler._force_user._h.clear_cache()
+
+        payload = {"op": "walker_run", "name": "get_value"}
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        ).data
+
+        self.assertTrue(res["report"][0]["value"])
+
     def test_multipart_json_string(self):
         """Test multipart using json string as ctx parameter"""
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
