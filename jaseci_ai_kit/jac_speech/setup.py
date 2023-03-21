@@ -9,7 +9,15 @@ MODULES = ["stt", "vc_tts"]
 
 class InstallTTS(install):
     def run(self):
-        subprocess.run([PYTHON_PATH, "-m", "pip", "install", "TTS @ git+https://github.com/coqui-ai/TTS.git@090cadf270711a61e3396f2f31eaaad54e32b5c1"])
+        subprocess.run(
+            [
+                PYTHON_PATH,
+                "-m",
+                "pip",
+                "install",
+                "TTS @ git+https://github.com/coqui-ai/TTS.git@090cadf270711a61e3396f2f31eaaad54e32b5c1",
+            ]
+        )
         super().run()
 
 
