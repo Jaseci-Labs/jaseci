@@ -1,26 +1,53 @@
 # **`HOW TO USE ELASTIC`**
 
-## **`SETUP ELASTIC CONFIG`**
+# **CONFIGURATION**
+## **`ATTRIBUTES`**
+
+| Attribute | Description |
+| ----------- | ----------- |
+| enabled | If service is enabled in config. The service can be available (upon building) but not enabled (from config) |
+| quiet | if error logs should be suppressed |
+| auth | Api key or token used as Authorization header |
+| common_index | default index where elastic log will be saved |
+| activity_index | dedicated elastic index for activity logs |
+### **`DEFAULT CONFIG`**
+
 ```js
 ELASTIC_CONFIG = {
-    "enabled": true,
+    "enabled": false,
     "quiet": false,
-    "url": "elastic url",
-    "auth": "token for elastic url",
+    "url": "localhost:9200",
+    "auth": null,
     "common_index": "common-log", // used as fallback when index is not specified
     "activity_index": "activity-log" // used for activity logs
 }
 
+// default manifest should be enough for now, no changes needed
 ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
 ```
 
-# **`TYPES ACTIONS`**
-## **std** `(Standard)`
-- This will be used for standard logging for activity. It uses base structure but can be overriden and add additional fields.
-
-
+### **`ENABLED CONFIG`**
 ```js
-// default structure
+ELASTIC_CONFIG = {
+    "enabled": true,
+    "quiet": false,
+    "url": "localhost:9200",
+    "auth": "ApiKey cVhsYU********************mJPUQ",
+    "common_index": "common-log",
+    "activity_index": "activity-log"
+}
+
+// default manifest should be able to handle automatic spawning of pods for elastic
+ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
+```
+---
+# **ACTION LIST**
+# **std.`log_activity`**
+- This will be used for standard logging for activity.
+- It will use base structure and can be overriden or add additional fields.
+
+### **`DEFAULT ACTIVITY LOG STRUCTURE`**
+```js
 // all of this fields can be overriden
 {
     "datetime": date_now,
@@ -46,19 +73,22 @@ ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
         "node": "current node's info"
     }
 }
-
-
+```
+##### **`HOW TO TRIGGER`**
+```js
 std.log_activity(
     log: {... fields to be included/overriden in default structure ...},
-    action: "your custom name for activity_action",
-    query: "additional url query the elastic supports",
-    suffix: "optional suffix of index. ex: -{{user's jid}}"
+    action: "testing_activity", //your custom name for activity_action
+    query: "", // additional url query the elastic supports
+    suffix: here.jid //"optional suffix of index. ex: -{{user's jid}}"
 )
 ```
 
-## **elastic** `(Customizable)`
+# **elastic.`post`**
+- This is the post request trigger to elastic.
+- url, body, index and suffix can be change
+##### **`HOW TO TRIGGER`**
 ```js
-// most customizable post action
 elastic.post(
     url: "your endpoint after elastic url + query",
     body: {
@@ -69,11 +99,19 @@ elastic.post(
     index: "jaseci-elastic-log", // default to common_index
     suffix: "empty or anything here" // default to empty
 );
-
-// similar to elastic.post but pointed to activity_index
+```
+# **elastic.`post_act`**
+- similar to elastic.post but always pointed to activity_index
+##### **`HOW TO TRIGGER`**
+```js
 elastic.post_act(url: str, body: dict, suffix: str = "");
+```
 
-// most customizable get action
+# **elastic.`get`**
+- This is the get request trigger to elastic.
+- url, body, index and suffix can be change
+##### **`HOW TO TRIGGER`**
+```js
 elastic.get(
     url: "your endpoint after elastic url + query",
     body: {
@@ -84,11 +122,20 @@ elastic.get(
     index: "jaseci-elastic-log", // default to common_index
     suffix: "empty or anything here" // default to empty
 );
-
-// similar to elastic.get but pointed to activity_index
+```
+# **elastic.`get_act`**
+- similar to elastic.get but always pointed to activity_index
+##### **`HOW TO TRIGGER`**
+```js
 elastic.get_act(url: str, body: dict, suffix: str = "");
+```
 
-// url is set to `/_doc` but log, query, index and sufix are still customizable
+# **elastic.`doc`**
+- this action will used for creation of log
+- url will be fixed and always pointed to **`/_doc`** endpoint.
+- log, index and suffix can be change
+##### **`HOW TO TRIGGER`**
+```js
 elastic.doc(
     log: {
         "your_custom_structure_if_needed": "any structure",
@@ -99,11 +146,21 @@ elastic.doc(
     index: "jaseci-elastic-log", // default to common_index
     suffix: "empty or anything here" // default to empty
 );
+```
 
-// similar to elastic.doc but pointed to activity_index
+# **elastic.`doc_activity`**
+- similar to elastic.doc but always pointed to activity_index
+##### **`HOW TO TRIGGER`**
+```js
 elastic.doc_activity(log: dict, query: str = "", suffix: str = "");
+```
 
-// url is set to `/_search` but body, query, index and sufix are still customizable
+# **elastic.`search`**
+- this action will used for retrieval of logs
+- url will be fixed and always pointed to **`/_search`** endpoint.
+- body, query, index and suffix can be change
+##### **`HOW TO TRIGGER`**
+```js
 elastic.search(
     body: {
         "your_request_body_if_needed": "testing",
@@ -114,24 +171,48 @@ elastic.search(
     index: "jaseci-elastic-log", // default to common_index
     suffix: "empty or anything here" // default to empty
 );
-
-// similar to elastic.search but pointed to activity_index
+```
+# **elastic.`search_activity`**
+- similar to elastic.search but pointed to activity_index
+##### **`HOW TO TRIGGER`**
+```js
 elastic.search_activity(body: dict, query: str = "", suffix: str = "");
+```
 
-// url is set to `/_mapping` but query, index and sufix are still customizable
+# **elastic.`mapping`**
+- this action will used for getting mapping of specified index
+- url will be fixed and always pointed to **`/_mapping`** endpoint.
+- query, index and suffix can be change
+##### **`HOW TO TRIGGER`**
+```js
 elastic.mapping(
     query: "additional url query the elastic supports ex: filter_path=aggregations.**.key" // default to empty
     index: "jaseci-elastic-log", // default to common_index
     suffix: "empty or anything here" // default to empty
 );
+```
 
-// similar to elastic.mapping but pointed to activity_index
+# **elastic.`mapping_activity`**
+- similar to elastic.mapping but pointed to activity_index
+##### **`HOW TO TRIGGER`**
+```js
 elastic.mapping_activity(query: str = "", suffix: str = "");
-
-// url is set to `/_aliases` but query is still customizable
+```
+# **elastic.`aliases`**
+- this action will used for getting aliases
+- url will be fixed and always pointed to **`/_aliases`** endpoint.
+- query can be change
+##### **`HOW TO TRIGGER`**
+```js
 elastic.aliases(query: str = "pretty=true");
+```
 
-// url is set to `/_reindex` but body, query is still customizable
+# **elastic.`reindex`**
+- this action will used for reindexing logs
+- url will be fixed and always pointed to **`/_reindex`** endpoint.
+- body and query can be change
+##### **`HOW TO TRIGGER`**
+```js
 elastic.reindex(
     body: {
         "source": {
