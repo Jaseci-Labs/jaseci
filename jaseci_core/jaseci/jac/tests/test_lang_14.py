@@ -44,6 +44,5 @@ class Lang14Test(CoreTest):
             ["sentinel_register", {"code": self.load_jac("free_refs.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "init"}])
-        self.log(ret)
         self.assertEqual(ret["report"], [True, True])
         self.assertEqual(ret["success"], True)
