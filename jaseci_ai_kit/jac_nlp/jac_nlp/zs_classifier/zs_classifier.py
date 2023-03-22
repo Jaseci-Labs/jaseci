@@ -18,10 +18,6 @@ def setup():
     print(f"loaded mode : [{model_name}]")
 
 
-# initialize the classifier
-setup()
-
-
 # API for getting the cosine similarity
 @jaseci_action(act_group=["zs_classifier"], allow_remote=True)
 def cosine_sim(vec_a: List[float], vec_b: List[float]):

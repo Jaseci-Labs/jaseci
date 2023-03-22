@@ -26,9 +26,6 @@ def setup(api_key: str):
         )
 
 
-setup(api_key=os.environ.get("OPENAI_API_KEY", None))
-
-
 @jaseci_action(act_group=["gpt3"], allow_remote=True)
 def generate(text: str, args: dict = DEFAULT_ARGS):
     try:

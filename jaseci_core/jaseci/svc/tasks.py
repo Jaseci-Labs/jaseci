@@ -19,6 +19,12 @@ class Queue(Task):
 
         nd = hook.get_obj_from_store(nd)
         resp = wlk.run(nd, *args)
+
+        # commit to cache first then db instead of `commit()` only
+        # this is to support both jsctl and jsserv
+        wlk._h.commit_all_cache_sync()
+        wlk._h.commit(True)
+
         wlk.destroy()
 
         return {"anchor": wlk.anchor_value(), "response": resp}

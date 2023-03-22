@@ -650,6 +650,36 @@ async walker simple_async_with_sync {
 }
 """
 
+async_syntax_with_update = """
+node a {
+    has value = false;
+}
+walker init {
+    root {
+        spawn here ++> node::a;
+    }
+}
+
+async walker update_value {
+    root {
+        take --> node::a;
+    }
+    a {
+        here.value = true;
+        report here.context;
+    }
+}
+
+walker get_value {
+    root {
+        take --> node::a;
+    }
+    a {
+        report here.context;
+    }
+}
+"""
+
 block_scope_check = """
     walker init {
         i=5;
@@ -693,75 +723,26 @@ async walker b {
 }
 """
 
-set_of_syntax = """
-    node a {
-        has arr = [1,2,3,4,5,6];
+walker_null_args = """
+node c {
+    has c1, c2;
+}
+
+walker b {
+    has anchor b1, b2;
+    with entry {
+        report b1;
+        report b2;
     }
+}
 
-    node b {
-        has arr = [1,2,3,4,5,6];
+walker a {
+    has a1;
+
+    with entry {
+        a2 = null;
+        te = spawn here walker::b(b1 = a1, b2 = a2);
+        te = spawn here ++> node::c(c1=a1, c2=a2);
     }
-
-    node c {
-        has arr = [1,2,3,4,5,6];
-    }
-
-    node d {
-        has arr = [1,2,3,4,5,6];
-    }
-
-    node e {
-        has arr = [1,2,3,4,5,6];
-    }
-
-    node f {
-        has arr = [7,8,9];
-    }
-
-    walker simple {
-        root {
-            spawn here ++> node::a();
-            spawn here ++> node::b();
-            spawn here ++> node::c();
-            spawn here ++> node::d();
-            spawn here ++> node::e();
-            spawn here ++> node::f();
-            take --> node::a(arr subsetof [1,0,2,0,3,0,4,0,5,0,6]);
-            take --> node::b(arr supersetof [1,2,3]);
-
-            // will not be printed
-            take --> node::c(arr supersetof [1,0,2,0,3,0,4,0,5,0,6]);
-            take --> node::d(arr subsetof [1,2,3]);
-
-            // will not be printed
-            take --> node::e(arr disjointof [1,2,3]);
-
-            // will be printed
-            take --> node::f(arr disjointof [1,2,3]);
-        }
-
-        a {
-            report "a";
-        }
-
-        b {
-            report "b";
-        }
-
-        c {
-            report "c";
-        }
-
-        d {
-            report "d";
-        }
-
-        e {
-            report "e";
-        }
-
-        f {
-            report "f";
-        }
-    }
+}
 """

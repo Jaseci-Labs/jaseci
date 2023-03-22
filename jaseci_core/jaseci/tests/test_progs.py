@@ -433,6 +433,39 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(2, res["result"]["anchor"])
         self.assertEqual([2, 2], res["result"]["response"]["report"])
 
+    @pytest.mark.order(3)
+    def test_async_syntax_with_update_and_celery(self):
+        mast = JsOrc.master()
+        if not JsOrc.svc("task").is_running():
+            self.skip_test("Celery not running")
+        mast.sentinel_register(
+            name="test", code=jtp.async_syntax_with_update, auto_run="init"
+        )
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "update_value", "ctx": {}},
+        )
+
+        self.assertTrue(res["is_queued"])
+
+        res = mast.general_interface_to_api(
+            api_name="walker_queue_wait",
+            params={"task_id": res["result"], "timeout": 15},
+        )
+
+        self.assertEqual("SUCCESS", res["status"])
+        self.assertTrue(res["result"]["response"]["report"][0]["value"])
+
+        # remove the node on current _h.mem and let the redis repopulate it
+        mast._h.mem.pop(res["result"]["response"]["final_node"], None)
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "get_value", "ctx": {}},
+        )
+
+        self.assertTrue(res["report"][0]["value"])
+
     def test_async_syntax_without_celery(self):
         mast = JsOrc.master()
         JsOrc.svc("task").state = State.NOT_STARTED
@@ -609,11 +642,15 @@ class JacTests(TestCaseHelper, TestCase):
             res["result"]["response"]["errors"][0],
         )
 
-    def test_set_of_syntax(self):
+    def test_walker_run_with_null_arguments(self):
         mast = JsOrc.master()
-        res = mast.sentinel_register(name="test", code=jtp.set_of_syntax, auto_run="")
+        res = mast.sentinel_register(
+            name="test", code=jtp.walker_null_args, auto_run=""
+        )
         res = mast.general_interface_to_api(
             api_name="walker_run",
-            params={"name": "simple", "ctx": {}},
+            params={"name": "a", "ctx": {}},
         )
-        self.assertEqual(res["report"], ["a", "b", "f"])
+        self.assertTrue(res["success"])
+        self.assertTrue(res["report"], [None, None])
+        self.assertIsNone(res.get("errors"))

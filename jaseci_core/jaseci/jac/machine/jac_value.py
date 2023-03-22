@@ -160,7 +160,14 @@ class JacValue:
                 return self.ctx[self.name : self.end]
             elif type(self.name) == int or self.name in self.ctx.keys():
                 return self.ctx[self.name]
-            elif not self.parent._assign_mode and not create_mode:
+            elif (
+                not self.parent._assign_mode
+                and not create_mode
+                and (
+                    not self.is_element
+                    or self.name not in self.is_element.get_architype().has_vars
+                )
+            ):
                 self.parent.rt_error(f"Key {self.name} not found in object/dict.")
         else:
             return None

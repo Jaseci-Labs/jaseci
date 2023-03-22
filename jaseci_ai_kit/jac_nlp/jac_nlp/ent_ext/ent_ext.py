@@ -57,10 +57,6 @@ def setup(reload=False):
     print(f"loaded mode : [{NER_MODEL_NAME}]")
 
 
-# initialize the tagger
-setup()
-
-
 def train_entity(train_params: dict):
     """
     funtion for training the model

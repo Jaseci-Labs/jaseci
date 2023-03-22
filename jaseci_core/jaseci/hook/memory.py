@@ -161,16 +161,17 @@ class MemoryHook:
     # ------------------ COMMITTER ------------------- #
     ####################################################
 
-    def commit(self):
-        for i in self.save_obj_list:
-            self.commit_obj_to_cache(i)
+    def commit(self, skip_cache=False):
+        if not skip_cache:
+            for i in self.save_obj_list:
+                self.commit_obj_to_cache(i)
 
-        self.save_obj_list = set()
+            self.save_obj_list = set()
 
-        for i in self.save_glob_dict.keys():
-            self.commit_glob_to_cache(name=i, value=self.save_glob_dict[i])
+            for i in self.save_glob_dict.keys():
+                self.commit_glob_to_cache(name=i, value=self.save_glob_dict[i])
 
-        self.save_glob_dict = {}
+            self.save_glob_dict = {}
 
     ###################################################
     #   CACHE CONTROL (SHOULD NOT OVERRIDEN ON ORM)   #

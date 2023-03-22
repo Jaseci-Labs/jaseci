@@ -19,6 +19,7 @@ MODULES = [
     "bi_ner",
     "gpt3",
     "sentiment",
+    "paraphraser",
 ]
 
 
