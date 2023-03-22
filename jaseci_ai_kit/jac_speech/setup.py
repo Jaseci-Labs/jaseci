@@ -1,32 +1,25 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 from os.path import join
-import os
-from os import system
 from sys import executable as PYTHON_PATH
-from pkg_resources import require
-
+import subprocess
 
 MODULES = ["stt", "vc_tts"]
-ORDEREDREQS = []
+ORDEREDREQS = ["TTS==0.12.0"]
 
 
-def requires(packages):
-    require("pip")
-    CMD_TMPLT = '"' + PYTHON_PATH + '" -m pip install %s'
-    for pkg in packages:
-        system(CMD_TMPLT % (pkg,))
-
-
-class OrderedInstall(install):
+class InstallTTS(install):
     def run(self):
-        requires(ORDEREDREQS)
-        install.run(self)
-
-
-def get_ver():
-    with open(os.path.join("./jac_speech", "VERSION")) as version_file:
-        return version_file.read().strip()
+        subprocess.run(
+            [
+                PYTHON_PATH,
+                "-m",
+                "pip",
+                "install",
+                "TTS @ git+https://github.com/coqui-ai/TTS.git@090cadf270711a61e3396f2f31eaaad54e32b5c1",
+            ]
+        )
+        super().run()
 
 
 def get_extras_requires():
