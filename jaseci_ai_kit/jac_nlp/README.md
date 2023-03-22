@@ -24,30 +24,37 @@ The `jac_nlp` package contains a collection of state-of-the-art NLP models that 
       - [Actions](#actions-5)
       - [Example Jac Usage:](#example-jac-usage-5)
     - [Entity Extraction Using Transformers (`tfm_ner`)](#entity-extraction-using-transformers-tfm_ner)
+      - [Actions](#actions-6)
       - [Example Jac Usage:](#example-jac-usage-6)
   - [Text Segmentation Modules](#text-segmentation-modules)
     - [Text Segmenter (`text_seg`)](#text-segmenter-text_seg)
+      - [Actions](#actions-7)
       - [Example Jac Usage:](#example-jac-usage-7)
   - [Summarization Models](#summarization-models)
     - [Summarizer (`cl_summer`)](#summarizer-cl_summer)
-      - [Actions](#actions-6)
+      - [Actions](#actions-8)
       - [Example Jac Usage](#example-jac-usage-8)
     - [T5 Summarization (`t5_sum`)](#t5-summarization-t5_sum)
-      - [Actions](#actions-7)
+      - [Actions](#actions-9)
       - [Example Jac Usage:](#example-jac-usage-9)
     - [Bart Summarization (`bart_sum`)](#bart-summarization-bart_sum)
-      - [Actions](#actions-8)
+      - [Actions](#actions-10)
       - [Example Jac Usage:](#example-jac-usage-10)
   - [Topic Modeling Models](#topic-modeling-models)
     - [Topic Extraction](#topic-extraction)
+      - [Actions](#actions-11)
   - [Sentiment Analysis Models](#sentiment-analysis-models)
     - [Sentiment Analysis](#sentiment-analysis)
-      - [Actions](#actions-9)
+      - [Actions](#actions-12)
       - [Example Jac Usage:](#example-jac-usage-11)
   - [Paraphraser Models](#paraphraser-models)
     - [Paraphraser](#paraphraser)
-      - [Actions](#actions-10)
+      - [Actions](#actions-13)
       - [Example Jac Usage:](#example-jac-usage-12)
+  - [Text Generation Models](#text-generation-models)
+    - [ChatGPT](#chatgpt)
+      - [Actions](#actions-14)
+      - [Example Jac Usage:](#example-jac-usage-13)
 
 ## Text Encoders
 
@@ -628,6 +635,8 @@ walker ent_ext_example {
 
 `tfm_ner` module uses transformers to identify and extract entities. It uses TokenClassification method from Huggingface.
 
+#### Actions
+
 * `train`: used to train transformer NER model
     * Input:
         * `train_data`: (List(Dict)): a list dictionary containing contexts and list of entities in each context
@@ -702,6 +711,7 @@ walker ent_ext_example {
     * Returns: "Config setup is complete." if model configuration is completed successfully
 
 #### Example Jac Usage:
+
 ```jac
 # Train and inference with a transformer-based NER model
 walker tfm_ner_example {
@@ -732,6 +742,9 @@ walker tfm_ner_example {
 ### Text Segmenter (`text_seg`)
 
 `text_seg` Text segmentation is a method of splitting a document into smaller parts, which is usually called segments. It is widely used in text processing. Each segment has its relevant meaning. Those segments categorized as word, sentence, topic, phrase etc. module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
+
+#### Actions
+
 * `get_segements`: gets different topics in the context provided, given a threshold
     * Input
         * `text`(String): text the contain the entire context
@@ -790,7 +803,8 @@ walker text_seg_example {
             * `LexRankSummarizer`
             * `LuhnSummarizer`
     * Returns: List of Sentences that best summarizes the context
-    * **Input text file `summarize.json`**
+
+  * **Input text file `summarize.json`**
         ```
         {
             "text": "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and   rude. The King of England was at war with him and had led a great army into Scotland to drive him out of the land. Battle after battle had been fought. Six times Bruce had led his brave little army against his foes and six times his men had been beaten and driven into flight. At last his army was scattered, and he was forced to hide in the woods and in lonely places among the mountains. One rainy day, Bruce lay on the ground under a crude shed listening to the patter of the drops on the roof above him. He was tired and unhappy. He was ready to give up all hope. It seemed to him that there was no use for him to try to do anything more. As he lay thinking, he saw a spider over his head making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short. 'Poor thing,' said Bruce: 'you, too, know what it is to fail.', But the spider did not lose hope with the sixth failure. With still more care, she made ready to try for the seventh time. Bruce almost forgot his own troubles as, he watched her swing herself out upon the slender line. Would she fail again? No! The thread was carried safely to the beam and fastened there."
@@ -928,6 +942,8 @@ Topic Extraction (`topic_ext`)
 
 Module `topic_ext` implemented for producing most relevant and possible set of topics for given set of text documents. Following is an example usage of the `topic_ext` module.
 
+#### Actions
+
 * `topic_ext.topic_extraction`: This action extracts top n number of topics from each cluster. The the text along with cluster label for the text cluster should be provided here as an input.
   * Input
     * `texts` - (list of strings) list of input text documents.
@@ -956,7 +972,7 @@ Module `topic_ext` implemented for producing most relevant and possible set of t
     "countries currently support"]
     ```
 
-* #### Example Jac Usage:
+#### Example Jac Usage:
 
 ```jac
 walker init{
@@ -1019,4 +1035,49 @@ walker init{
     report paraphraser.paraphrase(text=text);
 }
 ```
+
+## Text Generation Models
+
+### ChatGPT
+
+Module `gp2` uses the OpenAI's `GPT-2-medium` to perform text genreation on a given text.
+
+#### Actions
+
+The `generate` action allows you to generate text based on the input text you provide.
+
+Inputs:
+- text: input text, either a string or a list of strings
+- max_length: maximum length of the generated text (default: 30)
+- min_length: minimum length of the generated text (default: 10)
+- num_return_sequences: number of sequences to return (default: 3)
+
+Output: a list of generated text sequences
+
+The `gtp2.get_embeddings` action allows you to get the embeddings for the input text.
+
+Inputs:
+- text: input text, either a string or a list of strings
+
+Output: a list of embeddings for the input text
+
+#### Example Jac Usage:
+Given a text or a list of texts, it will return the generated text.
+
+```
+walker test_generate {
+    can gpt2.generate;
+    report gpt2.generate(text= "Hello, my name is", num_return_sequences= 5);
+}
+```
+
+Given a text or a list of texts, it will return the embeddings of the text.
+
+```
+walker test_get_embeddings {
+    can gpt2.get_embeddings;
+    report gpt2.get_embeddings(text= ["Hello, my name is GPT2", "GPT2 is an Text-to-Text Generation Model" ]);
+}
+```
+
 
