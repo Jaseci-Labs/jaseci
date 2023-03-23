@@ -69,6 +69,7 @@ def setup():
     model.to(train_config["device"])
     set_seed(train_config["seed"])
 
+setup()
 
 # API for getting the cosine similarity
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
