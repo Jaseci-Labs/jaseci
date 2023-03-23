@@ -72,6 +72,7 @@ def setup():
 
 setup()
 
+
 # API for getting the cosine similarity
 @jaseci_action(act_group=["bi_enc"], allow_remote=True)
 def cosine_sim(vec_a: List[float], vec_b: List[float]):
