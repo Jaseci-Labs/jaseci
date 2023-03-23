@@ -5,7 +5,7 @@ from datetime import datetime
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 from jaseci import JsOrc
 from jaseci.svc.elastic_svc import Elastic
 

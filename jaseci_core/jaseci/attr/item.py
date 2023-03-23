@@ -3,7 +3,7 @@ Item class for Jaseci
 
 Each item has an id, name, timestamp.
 """
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 
 
 class Item(Element):

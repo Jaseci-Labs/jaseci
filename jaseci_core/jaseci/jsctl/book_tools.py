@@ -1,5 +1,5 @@
 from jaseci.utils.utils import obj_class_cache, build_class_dict
-from jaseci.element.super_master import SuperMaster as Sm
+from jaseci.prim.super_master import SuperMaster as Sm
 from docstring_parser import parse
 from os.path import exists
 

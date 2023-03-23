@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from jaseci import JsOrc
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 from jaseci.utils.utils import logger, ColCodes as Cc
 from jaseci.utils.actions.actions_manager import ActionManager
 from jaseci_serv.base.models import Master as ServMaster

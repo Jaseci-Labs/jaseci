@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import jaseci.tests.jac_test_code as jtc
 from jaseci.actor.sentinel import Sentinel
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 from jaseci.graph.graph import Graph
 from jaseci.graph.node import Node
 from jaseci import JsOrc

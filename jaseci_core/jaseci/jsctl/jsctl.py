@@ -12,7 +12,7 @@ import requests
 from click_shell import shell
 from click.testing import CliRunner
 from jaseci import __version__
-from jaseci.element.super_master import SuperMaster
+from jaseci.prim.super_master import SuperMaster
 from jaseci.utils.utils import copy_func
 from .book_tools import Book, modifiedBook
 from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, find_first_api

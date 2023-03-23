@@ -5,8 +5,8 @@ Each node has an id, name, timestamp and it's set of edges.
 First node in list of 'member_node_ids' is designated root node
 """
 from collections import OrderedDict
-from jaseci.element.element import Element
-from jaseci.element.obj_mixins import Anchored
+from jaseci.prim.element import Element
+from jaseci.prim.obj_mixins import Anchored
 from jaseci.graph.edge import Edge
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger

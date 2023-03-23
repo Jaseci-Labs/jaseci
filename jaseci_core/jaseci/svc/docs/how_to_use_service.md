@@ -249,7 +249,7 @@ META_CONFIG = {
     = will call `build_context("hook")` but will run and add some default services such as `kube`, `jsorc`, `promon`, `redis`, `task`, `mail`
 ```python
         from jaseci.hook import RedisHook
-        from jaseci.element.master import Master
+        from jaseci.prim.master import Master
 
         ms1 = MetaService()
         ms1.add_context("hook", RedisHook, *args, **kwargs) # args/kwargs are optional
@@ -270,7 +270,7 @@ META_CONFIG = {
         #        need to override populate_context        #
         ###################################################
         # from jaseci.hook import RedisHook
-        # from jaseci.element.master import Master
+        # from jaseci.prim.master import Master
         # ms1 = MetaService()
         # ms1.add_context("hook", RedisHook, *args, **kwargs)
         # ms1.add_context("master", Master, *args, **kwargs)
@@ -295,7 +295,7 @@ META_CONFIG = {
         #        need to override populate_context        #
         ###################################################
         # from jaseci.hook import RedisHook
-        # from jaseci.element.super_master import SuperMaster
+        # from jaseci.prim.super_master import SuperMaster
         # ms1 = MetaService()
         # ms1.add_context("hook", RedisHook, *args, **kwargs)
         # ms1.add_context("super_master", SuperMaster, *args, **kwargs)

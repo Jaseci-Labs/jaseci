@@ -13,7 +13,7 @@ import json
 import uuid
 from datetime import datetime
 
-from jaseci.element.obj_mixins import Hookable
+from jaseci.prim.obj_mixins import Hookable
 from jaseci.hook import MemoryHook
 from jaseci.utils.id_list import IdList
 from jaseci.utils.json_handler import JaseciJsonEncoder, json_str_to_jsci_dict

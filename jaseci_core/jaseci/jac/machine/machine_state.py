@@ -9,7 +9,7 @@ from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import live_actions, load_preconfig_actions
 
 # from jaseci.actions.find_action import find_action
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.machine.jac_scope import JacScope

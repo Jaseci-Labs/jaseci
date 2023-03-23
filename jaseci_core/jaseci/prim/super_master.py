@@ -4,7 +4,7 @@ between user and Jaseci
 """
 
 from jaseci.api.jsorc_api import JsOrcApi
-from jaseci.element.master import Master
+from jaseci.prim.master import Master
 from jaseci.api.logger_api import LoggerApi
 from jaseci.api.config_api import ConfigApi
 from jaseci.api.global_api import GlobalApi

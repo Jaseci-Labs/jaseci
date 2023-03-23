@@ -2,7 +2,7 @@
 Object api as a mixin
 """
 from jaseci.api.interface import Interface
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 
 
 class ObjectApi:

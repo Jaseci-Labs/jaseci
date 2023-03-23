@@ -13,8 +13,8 @@ from jaseci.utils.utils import (
     perf_test_to_b64,
     exc_stack_as_str_list,
 )
-from jaseci.element.element import Element
-from jaseci.element.obj_mixins import Anchored
+from jaseci.prim.element import Element
+from jaseci.prim.obj_mixins import Anchored
 from jaseci.utils.id_list import IdList
 from jaseci.jac.interpreter.walker_interp import WalkerInterp
 import uuid

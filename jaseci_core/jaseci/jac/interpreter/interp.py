@@ -7,7 +7,7 @@ referenced through self.
 from jaseci import JsOrc
 from jaseci.svc.task_svc import TaskService
 from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 from jaseci.graph.node import Node
 from jaseci.graph.edge import Edge
 from jaseci.attr.action import Action

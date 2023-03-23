@@ -3,7 +3,7 @@ Main master handler for each user of Jaseci, serves as main interface between
 between user and Jaseci
 """
 
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 from jaseci.api.alias_api import AliasAPI
 from jaseci.api.object_api import ObjectApi
 from jaseci.api.graph_api import GraphApi

@@ -2,7 +2,7 @@
 Super (master) api as a mixin
 """
 from jaseci.api.interface import Interface
-from jaseci.element.master import Master
+from jaseci.prim.master import Master
 
 
 class SuperApi:

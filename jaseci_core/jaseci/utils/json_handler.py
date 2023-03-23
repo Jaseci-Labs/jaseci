@@ -8,7 +8,7 @@ from jaseci.utils.utils import logger
 
 class JaseciJsonEncoder(JSONEncoder):
     def default(self, obj):
-        from jaseci.element.element import Element
+        from jaseci.prim.element import Element
 
         if isinstance(obj, Element):
             return {"__mem_id__": obj.jid}
