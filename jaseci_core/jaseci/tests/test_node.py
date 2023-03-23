@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from jaseci.actor.architype import Architype
-from jaseci.attr import action
+from jaseci.prim import action
 from jaseci.graph.edge import Edge
 from jaseci.graph.node import Node
 from jaseci import JsOrc

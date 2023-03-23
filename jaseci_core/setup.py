@@ -42,8 +42,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "jsctl = jaseci.jsctl.jsctl:jsctl",
-            "jac = jaseci.jsctl.jsctl:jac",
+            "jsctl = jaseci.cli_tools.jsctl:jsctl",
+            "jac = jaseci.cli_tools.jsctl:jac",
         ]
     },
     author="Jason Mars",

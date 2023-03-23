@@ -215,7 +215,7 @@ def get_global_actions():
     Loads all global action hooks for use by Jac programs
     Attaches globals to mem_hook
     """
-    from jaseci.attr.action import Action
+    from jaseci.prim.action import Action
     from jaseci.hook.memory import MemoryHook
 
     global_action_list = []

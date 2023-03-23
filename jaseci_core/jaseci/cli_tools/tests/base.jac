@@ -1,4 +1,4 @@
-import {walker::{setter,init}} with "jaseci/jsctl/tests/import.jac";
+import {walker::setter, walker::init} with "jaseci/cli_tools/tests/import.jac";
 
 node person {
     has name;
