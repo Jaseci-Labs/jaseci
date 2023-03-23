@@ -71,7 +71,7 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
 
     # Create duplicate funtion for api endpoint and inject in call site globals
     @app.post(f"/{func.__name__}/")
-    def new_func(params: model):
+    def new_func(params: model = model()):
         pl_peek = str(dict(params.__dict__))[:128]
         logger.info(str(f"Incoming call to {func.__name__} with {pl_peek}"))
         start_time = time()
@@ -86,6 +86,8 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
         )
         return ret
 
+    if func.__name__ == "setup":
+        new_func = app.on_event("startup")(new_func)
     for i in aliases:
         new_func = app.post(f"/{i}/")(new_func)
         remote_actions[f"{'.'.join(act_group+[i])}"] = varnames
