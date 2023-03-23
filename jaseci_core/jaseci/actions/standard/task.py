@@ -1,7 +1,7 @@
 """Built in actions for Jaseci"""
 from jaseci import JsOrc
 from jaseci.actions.live_actions import jaseci_action
-from jaseci.svc.task_svc import TaskService
+from jaseci.extens.svc.task_svc import TaskService
 
 
 @jaseci_action()

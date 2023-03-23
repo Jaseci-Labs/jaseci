@@ -2,7 +2,7 @@
 import stripe as s
 
 from jaseci import JsOrc
-from jaseci.svc.stripe_svc import StripeService
+from jaseci.extens.svc.stripe_svc import StripeService
 from datetime import datetime
 from jaseci.actions.live_actions import jaseci_action
 

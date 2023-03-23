@@ -7,7 +7,7 @@ from jaseci.actions.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
 from jaseci.prim.element import Element
 from jaseci import JsOrc
-from jaseci.svc.elastic_svc import Elastic
+from jaseci.extens.svc.elastic_svc import Elastic
 
 import sys
 import json

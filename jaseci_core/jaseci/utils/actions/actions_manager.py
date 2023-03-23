@@ -1,5 +1,5 @@
 from jaseci import JsOrc
-from jaseci.svc.prome_svc import PrometheusService
+from jaseci.extens.svc.prome_svc import PrometheusService
 from jaseci.actions.live_actions import load_action_config
 from .actions_optimizer import ActionsOptimizer
 

@@ -6,7 +6,7 @@ import json
 import os
 
 from jaseci import JsOrc
-from jaseci.svc.redis_svc import RedisService
+from jaseci.extens.svc.redis_svc import RedisService
 
 
 class JsctlTest(TestCaseHelper, TestCase):

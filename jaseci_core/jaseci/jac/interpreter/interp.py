@@ -5,7 +5,7 @@ This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
 from jaseci import JsOrc
-from jaseci.svc.task_svc import TaskService
+from jaseci.extens.svc.task_svc import TaskService
 from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.prim.element import Element
 from jaseci.prim.node import Node

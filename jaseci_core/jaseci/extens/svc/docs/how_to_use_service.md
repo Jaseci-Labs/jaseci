@@ -1,6 +1,6 @@
 # **`HOW TO USE SERVICE`**
 
-## `CommonService` (jaseci.svc.common)
+## `CommonService` (jaseci.extens.svc.common)
 This class is the base for implementing service. Dev should use this class if they want to use Service's common attribute and life cycle.
 
 ---
@@ -88,7 +88,7 @@ This class is the base for implementing service. Dev should use this class if th
 
 - `build_manifest` (required to be overriden if you have kube settings)
     - will be called upon build and before `build_config`
-    - sample kube config are on `jaseci.svc.redis.manifest`
+    - sample kube config are on `jaseci.extens.svc.redis.manifest`
 ```python
     def build_manifest(self, hook) -> dict:
         return hook.service_glob("REDIS_MANIFEST", REDIS_MANIFEST) # common implementation using global vars
@@ -96,7 +96,7 @@ This class is the base for implementing service. Dev should use this class if th
 
 - `build_config` (required to be overriden)
     - will be called upon build and after `build_manifest`
-    - sample config are on `jaseci.svc.config`
+    - sample config are on `jaseci.extens.svc.config`
 ```python
     def build_config(self, hook) -> dict:
         return hook.service_glob("REDIS_CONFIG", REDIS_CONFIG) # common implementation using global vars

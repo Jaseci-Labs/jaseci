@@ -21,7 +21,7 @@ import uuid
 import hashlib
 
 from jaseci import JsOrc
-from jaseci.svc.task_svc import TaskService
+from jaseci.extens.svc.task_svc import TaskService
 
 
 class Walker(Element, WalkerInterp, Anchored):

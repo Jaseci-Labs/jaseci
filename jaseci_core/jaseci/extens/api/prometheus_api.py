@@ -3,7 +3,7 @@ Prometheus APIs
 """
 from jaseci.extens.api.interface import Interface
 from jaseci import JsOrc
-from jaseci.svc.prome_svc import PrometheusService
+from jaseci.extens.svc.prome_svc import PrometheusService
 
 
 def prome():

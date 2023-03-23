@@ -1,6 +1,6 @@
 from django.core import mail
 from jaseci import JsOrc
-from jaseci.svc.mail_svc import MailService as Ms, Mailer as Em
+from jaseci.extens.svc.mail_svc import MailService as Ms, Mailer as Em
 
 #################################################
 #                 EMAIL APP ORM                 #

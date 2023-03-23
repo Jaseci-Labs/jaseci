@@ -462,7 +462,7 @@ class JsOrc:
 
     @classmethod
     def regenerate_service(cls):
-        from jaseci.svc.kube_svc import KubeService
+        from jaseci.extens.svc.kube_svc import KubeService
         from jaseci.utils.actions.actions_manager import ActionManager
 
         kube = cls.svc("kube", KubeService)
@@ -552,7 +552,7 @@ class JsOrc:
 
     @classmethod
     def regenerate_database(cls):
-        from jaseci.svc.kube_svc import KubeService
+        from jaseci.extens.svc.kube_svc import KubeService
 
         kube = cls.svc("kube", KubeService)
 

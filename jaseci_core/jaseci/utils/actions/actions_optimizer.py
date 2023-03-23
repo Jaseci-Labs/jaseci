@@ -2,7 +2,7 @@
 Module that manage and optimizes the actions configuration of Jaseci
 """
 from jaseci import JsOrc
-from jaseci.svc.kube_svc import KubeService
+from jaseci.extens.svc.kube_svc import KubeService
 from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import (

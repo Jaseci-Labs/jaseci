@@ -1,6 +1,6 @@
 from jaseci.actions.live_actions import jaseci_action
 from jaseci import JsOrc
-from jaseci.svc.elastic_svc import ElasticService, Elastic
+from jaseci.extens.svc.elastic_svc import ElasticService, Elastic
 
 
 def elastic():
