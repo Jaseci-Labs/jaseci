@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from jaseci.actor.architype import Architype
+from jaseci.prim.architype import Architype
 from jaseci.prim import action
 from jaseci.graph.edge import Edge
 from jaseci.graph.node import Node

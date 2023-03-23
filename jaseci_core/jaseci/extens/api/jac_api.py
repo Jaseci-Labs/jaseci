@@ -5,7 +5,7 @@ from copy import deepcopy
 import json
 import os
 
-from jaseci.api.interface import Interface
+from jaseci.extens.api.interface import Interface
 from jaseci import JsOrc
 
 

@@ -2,13 +2,13 @@ import uuid
 from unittest import TestCase
 
 import jaseci.tests.jac_test_code as jtc
-from jaseci.actor.sentinel import Sentinel
+from jaseci.prim.sentinel import Sentinel
 from jaseci.prim.element import Element
 from jaseci.graph.graph import Graph
 from jaseci.graph.node import Node
 from jaseci import JsOrc
 from jaseci.utils.utils import TestCaseHelper, get_all_subclasses
-from jaseci.actor.architype import Architype
+from jaseci.prim.architype import Architype
 
 
 class ArchitypeTests(TestCaseHelper, TestCase):

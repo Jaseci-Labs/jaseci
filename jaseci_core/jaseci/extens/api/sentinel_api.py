@@ -1,9 +1,9 @@
 """
 Sentinel api functions as a mixin
 """
-from jaseci.api.interface import Interface
+from jaseci.extens.api.interface import Interface
 from jaseci.utils.id_list import IdList
-from jaseci.actor.sentinel import Sentinel
+from jaseci.prim.sentinel import Sentinel
 from jaseci.utils.utils import b64decode_str
 import uuid
 

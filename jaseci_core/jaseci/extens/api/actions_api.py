@@ -1,7 +1,7 @@
 """
 Admin Global api functions as a mixin
 """
-from jaseci.api.interface import Interface
+from jaseci.extens.api.interface import Interface
 import jaseci.actions.live_actions as lact
 import json
 

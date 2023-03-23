@@ -1,4 +1,3 @@
-import logging
 from jaseci.utils.log_utils import LimitedSlidingBuffer, parse_logs
 from jaseci.utils.test_core import CoreTest
 

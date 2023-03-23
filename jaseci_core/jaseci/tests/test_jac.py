@@ -5,7 +5,7 @@ from antlr4 import CommonTokenStream, InputStream
 
 import jaseci.actions.live_actions as lact
 import jaseci.tests.jac_test_code as jtc
-from jaseci.actor.sentinel import Sentinel
+from jaseci.prim.sentinel import Sentinel
 from jaseci.graph.graph import Graph
 from jaseci.jac.jac_parse.jacLexer import jacLexer
 from jaseci.jac.jac_parse.jacParser import jacParser

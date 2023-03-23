@@ -2,7 +2,7 @@
 Logger api as a mixin
 """
 import re
-from jaseci.api.interface import Interface
+from jaseci.extens.api.interface import Interface
 from jaseci.utils.log_utils import parse_logs
 from jaseci.utils.utils import logger, app_logger, logs
 from jaseci.utils.utils import connect_logger_handler

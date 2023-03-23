@@ -12,7 +12,7 @@ from jaseci.utils.utils import logger
 from jaseci.svc.kube_svc import KubeService
 from jaseci.utils.actions.actions_manager import ActionManager
 
-from jaseci.api.interface import Interface
+from jaseci.extens.api.interface import Interface
 
 
 class JsOrcApi:

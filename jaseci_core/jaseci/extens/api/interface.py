@@ -4,7 +4,7 @@ General master interface engine for client interfaces as mixin
 from inspect import signature, getdoc
 from jaseci.utils.utils import logger, is_jsonable, is_true, exc_stack_as_str_list
 from jaseci.prim.element import Element
-from jaseci.actor.walker import Walker
+from jaseci.prim.walker import Walker
 import json
 
 

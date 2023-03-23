@@ -1,7 +1,7 @@
 """
 Alias api as a mixin
 """
-from jaseci.api.interface import Interface
+from jaseci.extens.api.interface import Interface
 
 
 class AliasAPI:

@@ -1,5 +1,5 @@
-from jaseci.api.interface import Interface
-from jaseci.api.jsorc_api import JsOrcApi as CoreJsOrcApi
+from jaseci.extens.api.interface import Interface
+from jaseci.extens.api.jsorc_api import JsOrcApi as CoreJsOrcApi
 from .jsorc_loadtest import JsorcLoadTest
 
 

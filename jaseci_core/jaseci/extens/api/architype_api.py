@@ -1,9 +1,9 @@
 """
 Architype api functions as a mixin
 """
-from jaseci.api.interface import Interface
-from jaseci.actor.architype import Architype
-from jaseci.actor.sentinel import Sentinel
+from jaseci.extens.api.interface import Interface
+from jaseci.prim.architype import Architype
+from jaseci.prim.sentinel import Sentinel
 from jaseci.utils.utils import b64decode_str
 
 

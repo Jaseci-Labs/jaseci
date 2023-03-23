@@ -6,7 +6,7 @@ referenced through self.
 """
 from jaseci.graph.node import Node
 from jaseci.graph.edge import Edge
-from jaseci.actor.walker import Walker
+from jaseci.prim.walker import Walker
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
 

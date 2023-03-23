@@ -1,7 +1,7 @@
 """
 Master api as a mixin
 """
-from jaseci.api.interface import Interface
+from jaseci.extens.api.interface import Interface
 from jaseci.utils.id_list import IdList
 import uuid
 

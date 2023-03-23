@@ -1,7 +1,7 @@
 """
 User API
 """
-from jaseci.api.interface import Interface
+from jaseci.extens.api.interface import Interface
 from jaseci import JsOrc
 
 

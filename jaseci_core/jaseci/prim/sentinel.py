@@ -15,8 +15,8 @@ from jaseci.utils.utils import (
 from jaseci.utils.id_list import IdList
 from jaseci.jac.ir.jac_code import JacCode, jac_ir_to_ast
 from jaseci.jac.interpreter.sentinel_interp import SentinelInterp
-from jaseci.actor.walker import Walker
-from jaseci.actor.architype import Architype
+from jaseci.prim.walker import Walker
+from jaseci.prim.architype import Architype
 
 
 class Sentinel(Element, JacCode, SentinelInterp):

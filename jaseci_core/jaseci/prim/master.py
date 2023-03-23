@@ -4,19 +4,19 @@ between user and Jaseci
 """
 
 from jaseci.prim.element import Element
-from jaseci.api.alias_api import AliasAPI
-from jaseci.api.object_api import ObjectApi
-from jaseci.api.graph_api import GraphApi
-from jaseci.api.sentinel_api import SentinelApi
-from jaseci.api.walker_api import WalkerApi
-from jaseci.api.architype_api import ArchitypeApi
-from jaseci.api.config_api import ConfigApi
-from jaseci.api.interface import Interface
-from jaseci.api.master_api import MasterApi
-from jaseci.api.jac_api import JacApi
-from jaseci.api.user_api import UserApi
-from jaseci.api.queue_api import QueueApi
-from jaseci.api.webhook_api import WebhookApi
+from jaseci.extens.api.alias_api import AliasAPI
+from jaseci.extens.api.object_api import ObjectApi
+from jaseci.extens.api.graph_api import GraphApi
+from jaseci.extens.api.sentinel_api import SentinelApi
+from jaseci.extens.api.walker_api import WalkerApi
+from jaseci.extens.api.architype_api import ArchitypeApi
+from jaseci.extens.api.config_api import ConfigApi
+from jaseci.extens.api.interface import Interface
+from jaseci.extens.api.master_api import MasterApi
+from jaseci.extens.api.jac_api import JacApi
+from jaseci.extens.api.user_api import UserApi
+from jaseci.extens.api.queue_api import QueueApi
+from jaseci.extens.api.webhook_api import WebhookApi
 from jaseci import JsOrc
 
 

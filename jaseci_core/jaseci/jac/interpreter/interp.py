@@ -1012,7 +1012,7 @@ class Interp(VirtualMachine):
         obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
         """
         kid = self.set_cur_ast(jac_ast)
-        from jaseci.actor.walker import Walker
+        from jaseci.prim.walker import Walker
 
         if kid[0].name == "KW_CONTEXT":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):

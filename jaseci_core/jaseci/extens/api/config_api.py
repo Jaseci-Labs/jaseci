@@ -3,7 +3,7 @@ Admin config api functions as a mixin
 """
 
 from json import dumps
-from jaseci.api.interface import Interface
+from jaseci.extens.api.interface import Interface
 
 
 class ConfigApi:

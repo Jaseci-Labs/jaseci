@@ -1,8 +1,8 @@
 """
 Admin Global api functions as a mixin
 """
-from jaseci.api.interface import Interface
-from jaseci.actor.sentinel import Sentinel
+from jaseci.extens.api.interface import Interface
+from jaseci.prim.sentinel import Sentinel
 import uuid
 
 
