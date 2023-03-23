@@ -3,7 +3,7 @@ from django.test import TestCase
 import jaseci.actions.live_actions as lact
 import jaseci.tests.jac_test_code as jtc
 from jaseci.prim.sentinel import sentinel
-from jaseci.graph.graph import Graph
+from jaseci.prim.graph import Graph
 from jaseci.utils.utils import TestCaseHelper
 from jaseci import JsOrc
 

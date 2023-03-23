@@ -4,8 +4,8 @@ from unittest import TestCase
 
 import jaseci.tests.jac_test_progs as jtp
 from jaseci.prim.sentinel import Sentinel
-from jaseci.graph.graph import Graph
-from jaseci.graph.node import Node
+from jaseci.prim.graph import Graph
+from jaseci.prim.node import Node
 from jaseci.utils.utils import TestCaseHelper
 from jaseci import JsOrc
 from jaseci.jsorc_utils import State

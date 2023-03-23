@@ -7,7 +7,7 @@ First node in list of 'member_node_ids' is designated root node
 from collections import OrderedDict
 from jaseci.prim.element import Element
 from jaseci.prim.obj_mixins import Anchored
-from jaseci.graph.edge import Edge
+from jaseci.prim.edge import Edge
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 

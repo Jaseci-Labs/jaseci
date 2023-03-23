@@ -15,8 +15,8 @@ from jaseci.jac.jac_set import JacSet
 from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.utils.id_list import IdList
 from jaseci.jac.ir.ast import Ast
-from jaseci.graph.edge import Edge
-from jaseci.graph.node import Node
+from jaseci.prim.edge import Edge
+from jaseci.prim.node import Node
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.jsci_vm.op_codes import JsCmp
 

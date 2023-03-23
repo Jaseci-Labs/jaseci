@@ -3,8 +3,8 @@ Graph api functions as a mixin
 """
 from jaseci.extens.api.interface import Interface
 from jaseci.utils.id_list import IdList
-from jaseci.graph.graph import Graph
-from jaseci.graph.node import Node
+from jaseci.prim.graph import Graph
+from jaseci.prim.node import Node
 import uuid
 
 

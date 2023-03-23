@@ -8,8 +8,8 @@ from jaseci import JsOrc
 from jaseci.svc.task_svc import TaskService
 from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.prim.element import Element
-from jaseci.graph.node import Node
-from jaseci.graph.edge import Edge
+from jaseci.prim.node import Node
+from jaseci.prim.edge import Edge
 from jaseci.prim.action import Action
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast

@@ -2,7 +2,7 @@
 Graph  class for Jaseci
 
 """
-from jaseci.graph.node import Node
+from jaseci.prim.node import Node
 from jaseci.utils.id_list import IdList
 
 

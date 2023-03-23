@@ -10,8 +10,8 @@ is simply a list that only contains such elements.
 from jaseci.actions.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
 from jaseci.jac.jac_set import JacSet
-from jaseci.graph.node import Node
-from jaseci.graph.edge import Edge
+from jaseci.prim.node import Node
+from jaseci.prim.edge import Edge
 import uuid
 
 

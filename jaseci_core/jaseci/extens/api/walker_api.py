@@ -3,7 +3,7 @@ Walker api functions as a mixin
 """
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.walker import Walker
-from jaseci.graph.node import Node
+from jaseci.prim.node import Node
 from jaseci.prim.sentinel import Sentinel
 from jaseci.utils.id_list import IdList
 
