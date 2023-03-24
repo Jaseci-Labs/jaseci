@@ -48,6 +48,7 @@ def setup():
         del model, tokenizer
 
 
+setup()
 enum = {"default": 1, "append": 2, "incremental": 3}
 
 
@@ -202,7 +203,7 @@ def set_model_config(model_parameters: Dict = None):
         with open(m_config_fname, "w+") as jsonfile:
             json.dump(model_config, jsonfile, indent=4)
 
-        config_setup()
+        setup()
         return "Config setup is complete."
     except Exception as e:
         print(traceback.format_exc())
