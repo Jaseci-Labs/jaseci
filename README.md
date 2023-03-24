@@ -48,11 +48,14 @@
 
 ## Development
 - [Abstractions of Jaseci](docs/docs/development/1_abstractions.md)
+<!-- Tharuka has to review this entire section-->
   - [Graphs](docs/docs/development/1_abstractions.md#graphs)
   - [Walkers](docs/docs/development/1_abstractions.md#walkers)
   - [Abilities](docs/docs/development/1_abstractions.md#abilities)
   - [Here and Visitor](docs/docs/development/1_abstractions.md#here-and-visitor)
   - [Actions](docs/docs/development/1_abstractions.md#actions)
+    - [Jaseci Standard Actions Library]
+
 - [Operators of Jaseci](docs/docs/development/2_operations.md)
   <!-- Tharuka has to review this entire section-->
   - [Spawn](docs/docs/development/2_operations.md#spawn)
@@ -61,85 +64,84 @@
   - [Skip](docs/docs/development/2_operations.md#skip)
   - [Disengage](docs/docs/development/2_operations.md#disengage)
   - [Report](docs/docs/development/2_operations.md#report)
-  <!-- Should update more information on this topic-->
   - [Yield](docs/docs/development/2_operations.md#yield)
 
 
 
 Appendix
 
+## Language Basics
+
+  - [Data Types, Numbers, Arithmetic and Logic](docs/docs-archive/Language_basics/Num_ari_log.md)
+    - [Operators](docs/docs-archive/Developing_with_JAC/Language_Features/Operator.md)
+    - [Precedence](docs/docs-archive/Language_basics/precedence.md)
+    - [Data Types](docs/docs-archive/Developing_with_JAC/Language_Features/dataTypes.md)
+  - [Lists Strings and Dictionaries](docs/docs-archive/Language_basics/lists_dicts_dicts.md)
+    - [Library of String Operations](docs/docs-archive/Language_basics/strings.md)
+    - [Library of List Operations](docs/docs-archive/Language_basics/lists.md)
+    - [Library of Dictionary Operations](docs/docs-archive/Language_basics/dictionaries.md)
+  - [Control Flow](docs/docs-archive/Developing_with_JAC/Language_Features/ControlFlow.md)
+  - [Input/Output](docs/docs-archive/Developing_with_JAC/Language_Features/input_output.md)
+  - [Imports](docs/docs-archive/Developing_with_JAC/Language_Features/imports.md)
+  - [Globals](docs/docs-archive/Developing_with_JAC/Language_Features/globals.md)
+  - [Functions](docs/docs-archive/Developing_with_JAC/Language_Features/function.md)
+  - [File Handling](docs/docs-archive/Developing_with_JAC/Language_Features/actions/file.md)
+  - [Actions](examples/CanoniCAI/codelabs/lang_docs/actions.md)
+    - [Actions By Example](examples/CanoniCAI/codelabs/lang_docs/actions_by_example.md)
+    - [Jaseci Actions Library](docs/docs-archive/getting-started/content.md)
+      - [Alias](docs/docs-archive//Developing_with_JAC/Language_Features/actions/alias.md)
+      - [Date](docs/docs-archive//Developing_with_JAC/Language_Features/actions/date.md)
+      - [Jaseci](docs/docs-archive//Developing_with_JAC/Language_Features/actions/jaseci.md)
+      - [Net](docs/docs-archive//Developing_with_JAC/Language_Features/actions/net.md)
+      - [Rand](docs/docs-archive//Developing_with_JAC/Language_Features/actions/rand.md)
+      - [Request](docs/docs-archive//Developing_with_JAC/Language_Features/actions/request.md)
+      - [Std](docs/docs-archive//Developing_with_JAC/Language_Features/actions/std.md)
+      - [Vectors](docs/docs-archive//Developing_with_JAC/Language_Features/actions/vectors.md)
+      - [Walker](docs/docs-archive//Developing_with_JAC/Language_Features/actions/walker.md)
+      - [Elastic](docs/docs-archive//Developing_with_JAC/Language_Features/actions/elastic.md)
+      - [Regex](docs/docs-archive//Developing_with_JAC/Language_Features/actions/regex.md)
+  - [Multipart](docs/docs-archive//Developing_with_JAC/Language_Features/multipart.md)
+  - [Report Custom](docs/docs-archive//Developing_with_JAC/Language_Features/report_custom.md)
+  - [Walker Callback](docs/docs-archive//Developing_with_JAC/Language_Features/walker_callback.md)
+
+
   - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
 
-
-  - [Interfacing A Jaseci Machine](docs/docs/getting-started/interfacing.md)
-    - [Three modes of Interacting with Jaseci](docs/docs/interfacing_jaseci/interaction_modes.md)
-    - [Local JSCTL Mode](docs/docs/interfacing_jaseci/jsctl.md)
-      - [CLI vs Shell-mode, and Session Files](docs/docs/interfacing_jaseci/basics.md)
-    - [Remote JSCTL Mode](docs/docs/interfacing_jaseci/remote_jsctl.md)
+  - [Interfacing A Jaseci Machine](docs/docs-archive/getting-started/interfacing.md)
+    - [Three modes of Interacting with Jaseci](docs/docs-archive/interfacing_jaseci/interaction_modes.md)
+    - [Local JSCTL Mode](docs/docs-archive/interfacing_jaseci/jsctl.md)
+      - [CLI vs Shell-mode, and Session Files](docs/docs-archive/interfacing_jaseci/basics.md)
+    - [Remote JSCTL Mode](docs/docs-archive/interfacing_jaseci/remote_jsctl.md)
     - [Application Mode: Jac Api Collection](support/guide/other/classes.md)
 
-  - [Taking Jac for a Test Drive](docs/docs/getting-started/testdrive.md)
+  - [Taking Jac for a Test Drive](docs/docs-archive/getting-started/testdrive.md)
   - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
   - [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md)
 
 <!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
 <!-- Second we must write the content for the coming soon sections -->
 
-## Language Basics
-
-  - [Data Types, Numbers, Arithmetic and Logic](docs/docs/Language_basics/Num_ari_log.md)
-    - [Operators](docs/docs/Developing_with_JAC/Language_Features/Operator.md)
-    - [Precedence](docs/docs/Language_basics/precedence.md)
-    - [Data Types](docs/docs/Developing_with_JAC/Language_Features/dataTypes.md)
-  - [Lists Strings and Dictionaries](docs/docs/Language_basics/lists_dicts_dicts.md)
-    - [Library of String Operations](docs/docs/Language_basics/strings.md)
-    - [Library of List Operations](docs/docs/Language_basics/lists.md)
-    - [Library of Dictionary Operations](docs/docs/Language_basics/dictionaries.md)
-  - [Control Flow](docs/docs/Developing_with_JAC/Language_Features/ControlFlow.md)
-  - [Input/Output](docs/docs/Developing_with_JAC/Language_Features/input_output.md)
-  - [Imports](docs/docs/Developing_with_JAC/Language_Features/imports.md)
-  - [Globals](docs/docs/Developing_with_JAC/Language_Features/globals.md)
-  - [Functions](docs/docs/Developing_with_JAC/Language_Features/function.md)
-  - [File Handling](docs/docs/Developing_with_JAC/Language_Features/actions/file.md)
-  - [Actions](examples/CanoniCAI/codelabs/lang_docs/actions.md)
-    - [Actions By Example](examples/CanoniCAI/codelabs/lang_docs/actions_by_example.md)
-    - [Jaseci Actions Library](docs/docs/getting-started/content.md)
-      - [Alias](docs/docs/Developing_with_JAC/Language_Features/actions/alias.md)
-      - [Date](docs/docs/Developing_with_JAC/Language_Features/actions/date.md)
-      - [Jaseci](docs/docs/Developing_with_JAC/Language_Features/actions/jaseci.md)
-      - [Net](docs/docs/Developing_with_JAC/Language_Features/actions/net.md)
-      - [Rand](docs/docs/Developing_with_JAC/Language_Features/actions/rand.md)
-      - [Request](docs/docs/Developing_with_JAC/Language_Features/actions/request.md)
-      - [Std](docs/docs/Developing_with_JAC/Language_Features/actions/std.md)
-      - [Vectors](docs/docs/Developing_with_JAC/Language_Features/actions/vectors.md)
-      - [Walker](docs/docs/Developing_with_JAC/Language_Features/actions/walker.md)
-      - [Elastic](docs/docs/Developing_with_JAC/Language_Features/actions/elastic.md)
-      - [Regex](docs/docs/Developing_with_JAC/Language_Features/actions/regex.md)
-  - [Multipart](docs/docs/Developing_with_JAC/Language_Features/multipart.md)
-  - [Report Custom](docs/docs/Developing_with_JAC/Language_Features/report_custom.md)
-  - [Walker Callback](docs/docs/Developing_with_JAC/Language_Features/walker_callback.md)
-
 ## Jaseci Archetype and Graphs
-  - [Nodes](docs/docs/jaseci_architype/nodes.md)
-    - [Exploring the Fundamentals of Nodes in Jaseci](docs/docs/jaseci_architype/node_explanation.md)
+  - [Nodes](docs/docs-archive//jaseci_architype/nodes.md)
+    - [Exploring the Fundamentals of Nodes in Jaseci](docs/docs-archive//jaseci_architype/node_explanation.md)
     - [Abilities By Example](examples/CanoniCAI/codelabs/lang_docs/abilities_by_example.md)
-    - [Info and Context Command](docs/docs/jaseci_architype/info_and_context.md)
-    - [Creating Graphs](docs/docs/jaseci_architype/spawning_nodes.md)
-    - [Node Abilities - jaseci’s Functions](docs/docs/jaseci_architype/node_abilities.md)
+    - [Info and Context Command](docs/docs-archive//jaseci_architype/info_and_context.md)
+    - [Creating Graphs](docs/docs-archive//jaseci_architype/spawning_nodes.md)
+    - [Node Abilities - jaseci’s Functions](docs/docs-archive//jaseci_architype/node_abilities.md)
     - [Referencing and dereferencing nodes](docs/docs/jaseci_architype/referencing_dereferencing.md)
-  - [Edges](docs/docs/jaseci_architype/edges.md)
-    - [Exploring Jaseci Edge Abstractions](docs/docs/jaseci_architype/deges_explanation.md)
-    - [Edge abilities in Jaseci](docs/docs/jaseci_architype/edge_ability.md)
-    - [Connect operator](docs/docs/jaseci_architype/connect_edges.md)
-    - [Plucking values from nodes](docs/docs/jaseci_architype/plucking_values.md)
-  - [Walkers](docs/docs/jaseci_architype/walkers.md)
-    - [The Power of Walkers in Jaseci](docs/docs/jaseci_architype/walkers_explanation.md)
-    - [Take, yield, ignore destroy](docs/docs/jaseci_architype/take.md)
-    - [Walker Examples](docs/docs/jaseci_architype/technical_semantics.md)
-    - [Walkers spawning other walkers](docs/docs/jaseci_architype/walkers_spawning_walkers.md)
-    - [Breath first and depth first walks](docs/docs/jaseci_architype/breath_first_walks.md)
-    - [Here and visitors the this reference of jaseci](docs/docs/jaseci_architype/here_and_visitors.md)
-  - [Combining it All](docs/docs/jaseci_architype/combining_it_all.md)
+  - [Edges](docs/docs-archive//jaseci_architype/edges.md)
+    - [Exploring Jaseci Edge Abstractions](docs/docs-archive//jaseci_architype/deges_explanation.md)
+    - [Edge abilities in Jaseci](docs/docs-archive//jaseci_architype/edge_ability.md)
+    - [Connect operator](docs/docs-archive//jaseci_architype/connect_edges.md)
+    - [Plucking values from nodes](docs/docs-archive//jaseci_architype/plucking_values.md)
+  - [Walkers](docs/docs-archive//jaseci_architype/walkers.md)
+    - [The Power of Walkers in Jaseci](docs/docs-archive//jaseci_architype/walkers_explanation.md)
+    - [Take, yield, ignore destroy](docs/docs-archive//jaseci_architype/take.md)
+    - [Walker Examples](docs/docs-archive//jaseci_architype/technical_semantics.md)
+    - [Walkers spawning other walkers](docs/docs-archive//jaseci_architype/walkers_spawning_walkers.md)
+    - [Breath first and depth first walks](docs/docs-archive//jaseci_architype/breath_first_walks.md)
+    - [Here and visitors the this reference of jaseci](docs/docs-archive//jaseci_architype/here_and_visitors.md)
+  - [Combining it All](docs/docs-archive//jaseci_architype/combining_it_all.md)
 
 ## Jaseci AI Library Reference
 
@@ -194,14 +196,14 @@ Appendix
 
   - [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
   - [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
-  - [Stand Up an Jaseci Action Library Server](docs/docs/canonicai/chapter9.md)
-  - [Requests to APIs in Jac](docs/docs/canonicai/chapter8.md)
-  - [Testing CCAI Dialogues in Jac](docs/docs/canonicai/chapter7.md)
+  - [Stand Up an Jaseci Action Library Server](docs/docs-archive//canonicai/chapter9.md)
+  - [Requests to APIs in Jac](docs/docs-archive//canonicai/chapter8.md)
+  - [Testing CCAI Dialogues in Jac](docs/docs-archive//canonicai/chapter7.md)
   - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
   - [Enhancing User Experience with Personalized Content using PH](examples/CanoniCAI/codelabs/ph.md)
-  - [Jaseci X Features](docs/docs/advanced_topics/jaseci_features.md)
+  - [Jaseci X Features](docs/docs-archive//advanced_topics/jaseci_features.md)
     - [Single Sign-on Social](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
-  - [Jaseci Core Internals](docs/docs/advanced_topics/jaseci_core.md)
+  - [Jaseci Core Internals](docs/docs-archive//advanced_topics/jaseci_core.md)
     - [JsOrc](jaseci_core/jaseci/svc/docs/JSORC.md)
       - [Development](jaseci_core/jaseci/svc/docs/jsorc_development.md)
       - [Task](jaseci_core/jaseci/svc/docs/task_svc.md)
@@ -218,7 +220,7 @@ Appendix
   - [Walkers vs Abilities](docs/docs/best_practices/best_practice_1.md)
 
 ## Sample Projects, Templates and Tutorials
-- [Canoni Vision](docs/docs/SampleProjects_templates_and_tutorials/cononi_vison.md)
+- [Canoni Vision](docs/docs-archive//SampleProjects_templates_and_tutorials/cononi_vison.md)
 - [Canoni Analytics: Building a Text Analytics Engine](examples/CanoniAnalytics/README.md)
   1. [Preparation](examples/CanoniAnalytics/codelabs/1_preparation.md)
   2. [Map the script into a graph](examples/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
@@ -227,11 +229,11 @@ Appendix
   5. [Clustering documents](examples/CanoniAnalytics/codelabs/5_clustering_documents.md)
   6. [Sentiment analysis of dialogues](examples/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
   7. [Creating custom action to scrap movie data](examples/CanoniAnalytics/codelabs/7_creating_custom_action_to_scrap_movie_data.md)
-- [Sample Projects](docs/docs/SampleProjects_templates_and_tutorials/sample_projects.md)
-- [Templates](docs/docs/SampleProjects_templates_and_tutorials/templates.md)
+- [Sample Projects](docs/docs-archive//SampleProjects_templates_and_tutorials/sample_projects.md)
+- [Templates](docs/docs-archive//SampleProjects_templates_and_tutorials/templates.md)
 
 ## Error Handling and Solutions
-  - [Error Handling in Jaseci](docs/docs/error_handling/error_1.md)
+  - [Error Handling in Jaseci](docs/docs-archive//error_handling/error_1.md)
 
 ## Contributing to Jaseci
 
