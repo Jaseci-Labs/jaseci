@@ -337,7 +337,6 @@ cache_root = Path(Path.home(), ".jaseci/models")
 
 
 def model_base_path(cache_dir: Union[str, Path]) -> Path:
-
     cache_dir = Path(cache_dir)
 
     if not os.path.isabs(cache_dir):
