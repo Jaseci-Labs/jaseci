@@ -4,7 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP, SMTP_SSL
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 #################################################

@@ -1,4 +1,4 @@
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from redis import Redis
 
 

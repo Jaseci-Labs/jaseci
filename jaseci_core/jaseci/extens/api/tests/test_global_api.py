@@ -1,5 +1,5 @@
 from jaseci.utils.test_core import CoreTest
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 import jaseci.tests.jac_test_code as jtc
 
 

@@ -3,8 +3,8 @@ from celery.app.trace import build_tracer
 from celery.app.control import Inspect
 from celery.backends.base import DisabledBackend
 
-from jaseci import JsOrc
-from jaseci.jsorc_utils import ManifestType
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.jsorc.jsorc_utils import ManifestType
 from .tasks import Queue, ScheduledWalker, ScheduledSequence
 
 #################################################

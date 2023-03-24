@@ -6,7 +6,7 @@ from jaseci.prim.sentinel import Sentinel
 from jaseci.prim.element import Element
 from jaseci.prim.graph import Graph
 from jaseci.prim.node import Node
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.utils import TestCaseHelper, get_all_subclasses
 from jaseci.prim.architype import Architype
 

@@ -2,7 +2,7 @@
 Prometheus APIs
 """
 from jaseci.extens.api.interface import Interface
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.prome_svc import PrometheusService
 
 

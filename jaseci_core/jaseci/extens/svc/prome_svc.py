@@ -1,6 +1,6 @@
 import time
 from prometheus_api_client import PrometheusConnect
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 @JsOrc.service(name="prome", config="PROME_CONFIG", manifest="PROME_MANIFEST")

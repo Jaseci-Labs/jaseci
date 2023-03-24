@@ -1,5 +1,5 @@
 import stripe
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 #################################################
 #                  STRIPE APP                   #

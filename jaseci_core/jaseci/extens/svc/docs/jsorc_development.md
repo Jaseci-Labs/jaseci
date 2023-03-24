@@ -55,7 +55,7 @@
 #### **Syntax**
 - **`Declaration`**
 ```python
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 @JsOrc.service(
     # name of the service
@@ -82,7 +82,7 @@ class RedisService(JsOrc.CommonService):
 ```
 - **`Accessing`**
 ```python
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 def any_method():
     redis = JsOrc.svc("redis")
@@ -178,7 +178,7 @@ def any_method():
 #### **Syntax**
 - **`Declaration`**
 ```python
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 @JsOrc.repository(
     name="hook",
@@ -203,7 +203,7 @@ class OrmHook():
 ```
 - **`Accessing`**
 ```python
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 def anywhere_any_method():
     hook = JsOrc.src("hook") # or JsOrc.hook()
@@ -218,7 +218,7 @@ def anywhere_any_method():
 #### **Syntax**
 - **`Declaration`**
 ```python
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 @JsOrc.context(
     name="master",
@@ -243,7 +243,7 @@ class Master3():
 ```
 - **`Accessing`**
 ```python
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 def anywhere_any_method():
     master1 = JsOrc.ctx("master") # always new instance
@@ -259,7 +259,7 @@ def anywhere_any_method():
 # **`Additional Feature`** (preferably for testing)
 
 ```python
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 @JsOrc.inject(
     services = [

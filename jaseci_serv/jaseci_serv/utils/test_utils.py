@@ -1,6 +1,6 @@
 import unittest
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.kube_svc import KubeService
 
 

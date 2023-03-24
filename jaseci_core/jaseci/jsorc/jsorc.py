@@ -7,9 +7,9 @@ from json import dumps, loads
 from datetime import datetime
 from typing import TypeVar, Any, Union
 
-from .utils.utils import logger
-from .jsorc_settings import JsOrcSettings
-from .jsorc_utils import State, CommonService as cs, ManifestType
+from jaseci.utils.utils import logger
+from jaseci.jsorc.jsorc_settings import JsOrcSettings
+from jaseci.jsorc.jsorc_utils import State, CommonService as cs, ManifestType
 
 from kubernetes.client.rest import ApiException
 

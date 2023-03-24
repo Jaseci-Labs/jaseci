@@ -1,7 +1,7 @@
 import json
 from json import JSONDecoder, JSONEncoder
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 

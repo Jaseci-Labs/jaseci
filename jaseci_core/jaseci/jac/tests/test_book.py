@@ -5,7 +5,7 @@ from unittest import TestCase
 import jaseci.jac.tests.book_code as jtc
 from jaseci.prim.sentinel import Sentinel
 from jaseci.prim.graph import Graph
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.utils import TestCaseHelper
 
 

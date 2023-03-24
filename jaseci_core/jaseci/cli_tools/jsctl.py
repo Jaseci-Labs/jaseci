@@ -16,7 +16,7 @@ from jaseci.prim.super_master import SuperMaster
 from jaseci.utils.utils import copy_func
 from .book_tools import Book, modifiedBook
 from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, find_first_api
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 session = None
 

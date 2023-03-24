@@ -1,4 +1,4 @@
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.kube_svc import KubeService
 from requests import get, post
 from datetime import datetime

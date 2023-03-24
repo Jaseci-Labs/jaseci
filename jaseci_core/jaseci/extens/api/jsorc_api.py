@@ -6,8 +6,8 @@ from json import dumps
 from time import time
 from base64 import b64decode
 
-from jaseci import JsOrc
-from jaseci.jsorc_utils import convert_yaml_manifest, ManifestType
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.jsorc.jsorc_utils import convert_yaml_manifest, ManifestType
 from jaseci.utils.utils import logger
 from jaseci.extens.svc.kube_svc import KubeService
 from jaseci.utils.actions.actions_manager import ActionManager

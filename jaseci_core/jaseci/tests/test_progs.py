@@ -7,8 +7,8 @@ from jaseci.prim.sentinel import Sentinel
 from jaseci.prim.graph import Graph
 from jaseci.prim.node import Node
 from jaseci.utils.utils import TestCaseHelper
-from jaseci import JsOrc
-from jaseci.jsorc_utils import State
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.jsorc.jsorc_utils import State
 
 
 class JacTests(TestCaseHelper, TestCase):

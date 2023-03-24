@@ -2,7 +2,7 @@
 User API
 """
 from jaseci.extens.api.interface import Interface
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 class UserApi:

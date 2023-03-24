@@ -9,7 +9,7 @@ from jaseci.jac.jac_set import JacSet
 import inspect
 import time
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.actions.actions_manager import ActionManager
 
 # ACTION_PACKAGE = 'jaseci.actions.'

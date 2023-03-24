@@ -1,6 +1,6 @@
 import os
 from time import time
-from .jsorc_utils import load_default_yaml, get_service_map
+from jaseci.jsorc.jsorc_utils import load_default_yaml, get_service_map
 
 
 class JsOrcSettings:

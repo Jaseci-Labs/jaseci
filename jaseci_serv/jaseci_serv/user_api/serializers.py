@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 from django_rest_passwordreset.signals import reset_password_token_created
 from rest_framework import serializers
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci_serv.svc.mail_svc import Mailer
 
 requests_for_emails = None

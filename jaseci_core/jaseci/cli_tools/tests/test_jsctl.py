@@ -5,7 +5,7 @@ from click.testing import CliRunner
 import json
 import os
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.redis_svc import RedisService
 
 

@@ -4,7 +4,7 @@ from jaseci.prim.architype import Architype
 from jaseci.prim import action
 from jaseci.prim.edge import Edge
 from jaseci.prim.node import Node
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.utils import TestCaseHelper
 
 

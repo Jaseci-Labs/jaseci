@@ -5,7 +5,7 @@ from typing import Tuple
 from celery import Task
 from requests import get, post
 from requests.exceptions import HTTPError
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 DEFAULT_MSG = "Skipping scheduled walker!"
 

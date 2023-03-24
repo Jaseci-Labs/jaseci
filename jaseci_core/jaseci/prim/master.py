@@ -17,7 +17,7 @@ from jaseci.extens.api.jac_api import JacApi
 from jaseci.extens.api.user_api import UserApi
 from jaseci.extens.api.queue_api import QueueApi
 from jaseci.extens.api.webhook_api import WebhookApi
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 @JsOrc.context(name="master")

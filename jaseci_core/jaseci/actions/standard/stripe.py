@@ -1,7 +1,7 @@
 """Built in actions for Jaseci"""
 import stripe as s
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.stripe_svc import StripeService
 from datetime import datetime
 from jaseci.actions.live_actions import jaseci_action

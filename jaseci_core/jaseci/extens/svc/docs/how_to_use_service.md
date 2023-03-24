@@ -179,7 +179,7 @@ META_CONFIG = {
 - `add_context`
     - for adding a class that used for initalization
 ```python
-        from jaseci.hook import RedisHook
+        from jaseci.jsorc.redis import RedisHook
         from jaseci_serv.hook.orm import OrmHook
 
         ms1 = MetaService()
@@ -201,7 +201,7 @@ META_CONFIG = {
 - `get_context`
     - for getting the class without initializing
 ```python
-        from jaseci.hook import RedisHook
+        from jaseci.jsorc.redis import RedisHook
 
         ms1 = MetaService()
         ms1.add_context("hook", RedisHook, *args, **kwargs) # args/kwargs are optional
@@ -248,7 +248,7 @@ META_CONFIG = {
 - `build_hook`
     = will call `build_context("hook")` but will run and add some default services such as `kube`, `jsorc`, `promon`, `redis`, `task`, `mail`
 ```python
-        from jaseci.hook import RedisHook
+        from jaseci.jsorc.redis import RedisHook
         from jaseci.prim.master import Master
 
         ms1 = MetaService()
@@ -269,7 +269,7 @@ META_CONFIG = {
         #       No need to add this part unless you       #
         #        need to override populate_context        #
         ###################################################
-        # from jaseci.hook import RedisHook
+        # from jaseci.jsorc.redis import RedisHook
         # from jaseci.prim.master import Master
         # ms1 = MetaService()
         # ms1.add_context("hook", RedisHook, *args, **kwargs)
@@ -294,7 +294,7 @@ META_CONFIG = {
         #       No need to add this part unless you       #
         #        need to override populate_context        #
         ###################################################
-        # from jaseci.hook import RedisHook
+        # from jaseci.jsorc.redis import RedisHook
         # from jaseci.prim.super_master import SuperMaster
         # ms1 = MetaService()
         # ms1.add_context("hook", RedisHook, *args, **kwargs)

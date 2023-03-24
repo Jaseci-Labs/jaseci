@@ -1,7 +1,7 @@
 from json import dumps, loads
 import sys
 from jaseci.utils.utils import find_class_and_import
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 @JsOrc.repository(name="hook")

@@ -1,6 +1,4 @@
 from os.path import dirname, join
-from .jsorc_settings import JsOrcSettings
-from .jsorc import JsOrc
 
 
 def get_ver():
@@ -9,9 +7,8 @@ def get_ver():
 
 
 __version__ = get_ver()
-__creator__ = "Jason Mars and friends"
+__creator__ = "Jason Mars and contributors"
 __url__ = "https://jaseci.org"
-__all__ = ["JsOrc", "JsOrcSettings"]
 
 
 def load_standard():

@@ -1,5 +1,5 @@
 from jaseci.actions.live_actions import jaseci_action
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.mail_svc import Mailer
 
 

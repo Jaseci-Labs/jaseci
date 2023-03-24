@@ -1,7 +1,7 @@
 import os
 from unittest import TestCase
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.utils import TestCaseHelper
 
 

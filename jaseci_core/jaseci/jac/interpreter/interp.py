@@ -4,7 +4,7 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.task_svc import TaskService
 from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.prim.element import Element

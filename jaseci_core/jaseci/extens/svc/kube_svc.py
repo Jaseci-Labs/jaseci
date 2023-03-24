@@ -12,8 +12,8 @@ from kubernetes.client import (
 )
 from kubernetes.client.rest import ApiException
 
-from jaseci import JsOrc
-from jaseci.jsorc_utils import ManifestType, placeholder_resolver
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.jsorc.jsorc_utils import ManifestType, placeholder_resolver
 from jaseci.utils.utils import logger
 
 

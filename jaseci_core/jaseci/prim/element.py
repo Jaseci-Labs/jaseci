@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime
 
 from jaseci.prim.obj_mixins import Hookable
-from jaseci.hook import MemoryHook
+from jaseci.jsorc.memory import MemoryHook
 from jaseci.utils.id_list import IdList
 from jaseci.utils.json_handler import JaseciJsonEncoder, json_str_to_jsci_dict
 from jaseci.utils.utils import log_var_out, logger, camel_to_snake

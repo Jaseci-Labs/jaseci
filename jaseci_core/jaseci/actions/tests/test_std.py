@@ -3,7 +3,7 @@ from unittest import TestCase
 import jaseci.actions.tests.std_test_code as stc
 from jaseci.prim.sentinel import Sentinel
 from jaseci.prim.graph import Graph
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.utils import TestCaseHelper
 
 

@@ -3,7 +3,7 @@ Webhook API
 """
 from jaseci.extens.api.interface import Interface
 from fastapi import HTTPException
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.stripe_svc import StripeService
 
 import stripe as _stripe

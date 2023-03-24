@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, Mock
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.mail_svc import MailService
 from jaseci.utils.test_core import CoreTest
 

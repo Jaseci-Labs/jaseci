@@ -4,7 +4,7 @@ from jaseci.utils.utils import TestCaseHelper
 from jaseci.utils.id_list import IdList
 from django.test import TestCase
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci_serv.base.models import JaseciObject
 from jaseci.graph import node
 from jaseci.graph import edge

@@ -9,7 +9,7 @@ from jaseci.prim.sentinel import Sentinel
 from jaseci.prim.graph import Graph
 from jaseci.jac.jac_parse.jacLexer import jacLexer
 from jaseci.jac.jac_parse.jacParser import jacParser
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.utils import TestCaseHelper
 
 

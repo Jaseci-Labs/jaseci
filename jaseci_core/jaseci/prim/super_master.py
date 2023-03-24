@@ -11,7 +11,7 @@ from jaseci.extens.api.global_api import GlobalApi
 from jaseci.extens.api.super_api import SuperApi
 from jaseci.extens.api.actions_api import ActionsApi
 from jaseci.extens.api.prometheus_api import PrometheusApi
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 @JsOrc.context(name="super_master")
