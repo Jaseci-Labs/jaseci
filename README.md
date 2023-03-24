@@ -33,6 +33,7 @@
   - [Multi-turn Dialogue System](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/3_dialogue_system.md)
   - [Unify the Dialogue and FAQ Systems](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/4_unify_system.md)
   - [Bring Your Application to Production](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/5_production.md)
+
 - [Text Analitics Engine](docs/docs/examples_and_tutorials/CanoniAnalytics/README.md)
   - [Preparation and Background](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/1_preparation.md)
   - [Map the script into a graph](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
@@ -41,34 +42,13 @@
   - [Clustering documents](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/5_clustering_documents.md)
   - [Sentiment analysis of dialogues](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
   - [Creating custom action to scrap movie data](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/7_creating_custom_action_to_scrap_movie_data.md)
+
 - [Guide to Use speech to text and text to speech modules](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
 - [Collect Training Data via Crowdsource](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/7_crowdsource.md)
 - [Nammed Entity Recognition Module Example](docs/docs/examples_and_tutorials/ner_examples/README.md)
 - [Personalized Head Example Use Case](docs/docs/examples_and_tutorials/ph_example/ph.md)
 
-## Development
-- [Abstractions of Jaseci](docs/docs/development/1_abstractions.md)
-<!-- Tharuka has to review this entire section-->
-  - [Graphs](docs/docs/development/1_abstractions.md#graphs)
-  - [Walkers](docs/docs/development/1_abstractions.md#walkers)
-  - [Abilities](docs/docs/development/1_abstractions.md#abilities)
-  - [Here and Visitor](docs/docs/development/1_abstractions.md#here-and-visitor)
-  - [Actions](docs/docs/development/1_abstractions.md#actions)
-    - [Jaseci Standard Actions Library]
-
-- [Operators of Jaseci](docs/docs/development/2_operations.md)
-  <!-- Tharuka has to review this entire section-->
-  - [Spawn](docs/docs/development/2_operations.md#spawn)
-  <!-- Should update more information on this topic -->
-  - [Take](docs/docs/development/2_operations.md#take)
-  - [Skip](docs/docs/development/2_operations.md#skip)
-  - [Disengage](docs/docs/development/2_operations.md#disengage)
-  - [Report](docs/docs/development/2_operations.md#report)
-  - [Yield](docs/docs/development/2_operations.md#yield)
-
-
-
-Appendix
+# Appendix
 
 ## Language Basics
 
