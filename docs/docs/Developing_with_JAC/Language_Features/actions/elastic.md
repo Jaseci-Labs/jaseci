@@ -1,5 +1,33 @@
 # **`HOW TO USE ELASTIC`**
 
+## Enable Elastic in Jaseci
+The Elastic service in Jaseci is managed by JSORC, which automatically creates an Elastic container in your kubernetes cluster and connects it with the Jaseci container.
+
+If your Jaseci cluster doesn't currently have an Elastic running, you will need to trigger a service refresh on JSORC.
+
+First, make sure Elastic is enabled by setting the `enabled` field in Elastic config to be True. 
+We first get the current config via the `config_get` endpoint. (We are going to use jsctl for the following examples but you can also use API requests)
+```bash
+$ jsctl
+Jaseci 1.4.0.13
+Starting Shell...
+jaseci > config get ELASTIC_CONFIG
+```
+This will return a json of the current configuration for the Elastic Service.
+Check the field and make sure they are configured to your needs. (More details on the configuration attributes below.)
+
+Update the `enabled` field to be True if it is not already.
+Then save it with `config_set`.
+```bash
+jaseci > config set ELASTIC_CONFIG -value JSON_STRING_OF_THE_CONFIG
+```
+
+Final step to enable Elastic is to refresh the Elastic service for the updated configuration to take effect.
+```bash
+jaseci > service refresh elastic
+```
+JSORC will then refresh the Elastic service and creates the neccessary kuberentes resources.
+
 # **CONFIGURATION**
 ## **`ATTRIBUTES`**
 
