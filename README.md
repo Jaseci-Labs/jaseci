@@ -1,17 +1,17 @@
-# Jaseci Docs and Guides
+# Jaseci: Build the Next Generation of AI Products at Scale
 
 [![jaseci_core Unit Tests](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-core-test.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-core-test.yml) [![PyPi version](https://badgen.net/pypi/v/jaseci/)](https://pypi.org/project/jaseci)
 [![jaseci_serv Tests](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-serv-test.yml/badge.svg)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-serv-test.yml) [![PyPi version](https://badgen.net/pypi/v/jaseci-serv/)](https://pypi.org/project/jaseci-serv)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## Introduction
+# Introduction
 
-- [What and Why Jaseci?](docs/docs-archieve/Introduction/What_and_why_jaseci.md)
-- [Architecture of Jaseci and Jac](docs/docs/Introduction/Architecture_of_jaseci.md)
-- [Abstraction of Jaseci](docs/docs/Introduction/abstraction_of_jaseci.md)
+- [What and Why Jaseci?](docs/docs-archive/Introduction/What_and_why_jaseci.md)
+- [Architecture of Jaseci and Jac](docs/docs-archive/Introduction/Architecture_of_jaseci.md)
+- [Abstraction of Jaseci](docs/docs-archive/Introduction/abstraction_of_jaseci.md)
 <!-- Information is needed for the above sections to be complete -->
 
-## Getting Started
+# Getting Started
 
   - [Installation](docs/docs/getting_started/1_installation.md)
     - [Setting Up Windows](docs/docs/getting_started/1_installation.md#windows-setup)
@@ -21,9 +21,9 @@
   - [Setting Up Jaseci Server](docs/docs/getting_started/3_setup_jaseci_serv.md)
   - [Installing Jaseci Studios](jaseci_studio/README.md) <!-- Should update more information on this images,etc -->
   - [Write your first Jaseci Application](docs/docs/getting_started/5_write_your_first_app.md) <!-- Should update more explanation on this code -->
-  - [Learn More]()
+  - [Learn More](README.md#appendix)
 
-## Examples and Tutorials
+# Examples and Tutorials
 
 - [Building a Conversational AI](docs/docs/examples_and_tutorials/CanoniCAI/CCAI_codelab.md)
   - [Preparation and Background](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/1_preparation.md)
@@ -46,6 +46,19 @@
 - [Nammed Entity Recognition Module Example](docs/docs/examples_and_tutorials/ner_examples/README.md)
 - [Personalized Head Example Use Case](docs/docs/examples_and_tutorials/ph_example/ph.md)
 
+# Architecture
+
+# Development
+
+# JAC Language Syntax Reference
+
+# Testing and Debugging
+
+# Deployment
+
+# Resources
+
+
 # Appendix
 
 ## Language Basics
@@ -63,7 +76,7 @@
   - [Imports](docs/docs-archive/Developing_with_JAC/Language_Features/imports.md)
   - [Globals](docs/docs-archive/Developing_with_JAC/Language_Features/globals.md)
   - [Functions](docs/docs-archive/Developing_with_JAC/Language_Features/function.md)
-  - [File Handling](docs/docs-archive/Developing_with_JAC/Language_Features/actions/file.md)
+  - [File Handling](docs/docs/development/std_actions/3_file.md)
   - [Actions](examples/CanoniCAI/codelabs/lang_docs/actions.md)
     - [Actions By Example](examples/CanoniCAI/codelabs/lang_docs/actions_by_example.md)
     - [Jaseci Actions Library](docs/docs-archive/getting-started/content.md)
@@ -104,7 +117,7 @@
     - [Info and Context Command](docs/docs-archive//jaseci_architype/info_and_context.md)
     - [Creating Graphs](docs/docs-archive//jaseci_architype/spawning_nodes.md)
     - [Node Abilities - jaseci’s Functions](docs/docs-archive//jaseci_architype/node_abilities.md)
-    - [Referencing and dereferencing nodes](docs/docs/jaseci_architype/referencing_dereferencing.md)
+    - [Referencing and dereferencing nodes](docs/docs-archive/jaseci_architype/referencing_dereferencing.md)
   - [Edges](docs/docs-archive//jaseci_architype/edges.md)
     - [Exploring Jaseci Edge Abstractions](docs/docs-archive//jaseci_architype/deges_explanation.md)
     - [Edge abilities in Jaseci](docs/docs-archive//jaseci_architype/edge_ability.md)
@@ -177,9 +190,9 @@
   - [Testing CCAI Dialogues in Jac](docs/docs-archive//canonicai/chapter7.md)
   - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
   - [Enhancing User Experience with Personalized Content using PH](examples/CanoniCAI/codelabs/ph.md)
-  - [Jaseci X Features](docs/docs-archive//advanced_topics/jaseci_features.md)
+  - [Jaseci X Features](docs/docs/advanced_topics/jaseci_features.md)
     - [Single Sign-on Social](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
-  - [Jaseci Core Internals](docs/docs-archive//advanced_topics/jaseci_core.md)
+  - [Jaseci Core Internals](docs/docs/advanced_topics/jaseci_core.md)
     - [JsOrc](jaseci_core/jaseci/svc/docs/JSORC.md)
       - [Development](jaseci_core/jaseci/svc/docs/jsorc_development.md)
       - [Task](jaseci_core/jaseci/svc/docs/task_svc.md)
@@ -193,20 +206,7 @@
 
 
 ## Best Practices
-  - [Walkers vs Abilities](docs/docs/best_practices/best_practice_1.md)
-
-## Sample Projects, Templates and Tutorials
-- [Canoni Vision](docs/docs-archive//SampleProjects_templates_and_tutorials/cononi_vison.md)
-- [Canoni Analytics: Building a Text Analytics Engine](examples/CanoniAnalytics/README.md)
-  1. [Preparation](examples/CanoniAnalytics/codelabs/1_preparation.md)
-  2. [Map the script into a graph](examples/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
-  3. [Get the summary of scene descriptions](examples/CanoniAnalytics/codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)
-  4. [Find semantically similar sentences](examples/CanoniAnalytics/codelabs/4_find_semantically_similar_sentences.md)
-  5. [Clustering documents](examples/CanoniAnalytics/codelabs/5_clustering_documents.md)
-  6. [Sentiment analysis of dialogues](examples/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
-  7. [Creating custom action to scrap movie data](examples/CanoniAnalytics/codelabs/7_creating_custom_action_to_scrap_movie_data.md)
-- [Sample Projects](docs/docs-archive//SampleProjects_templates_and_tutorials/sample_projects.md)
-- [Templates](docs/docs-archive//SampleProjects_templates_and_tutorials/templates.md)
+  - [Walkers vs Abilities](docs/docs-archive/best_practices/best_practice_1.md)
 
 ## Error Handling and Solutions
   - [Error Handling in Jaseci](docs/docs-archive//error_handling/error_1.md)
@@ -219,11 +219,7 @@
 - [General Guide](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
 
-## Documenation TODOs
-
-- [Stuff that needs docs](support/guide/other/DOCTODOS.md)
-
-## Other Resources
+## Resources
 
 - [About this Release](CHANGELOG.md)
 - [Archived Notes](NOTES.md)
