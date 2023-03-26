@@ -13,17 +13,15 @@
 
 ## Getting Started
 
-  -[Installation](docs/docs/getting_started/1_installation.md)
-    -[Setting Up Windows](docs/docs/getting_started/1_installation.md#windows-setup)
-    -[Install Jaseci in Debian or WSL2](docs/docs/getting_started/1_installation.md#install-jaseci-in-debian-or-wsl2)
-    -[Install Jaseci on MacOS](docs/docs/getting_started/1_installation.md#install-jaseci-on-macos)
+  - [Installation](docs/docs/getting_started/1_installation.md)
+    - [Setting Up Windows](docs/docs/getting_started/1_installation.md#windows-setup)
+    - [Install Jaseci in Debian or WSL2](docs/docs/getting_started/1_installation.md#install-jaseci-in-debian-or-wsl2)
+    - [Install Jaseci on MacOS](docs/docs/getting_started/1_installation.md#install-jaseci-on-macos)
   - [Setting Up Your Editor](docs/docs/getting_started/2_setting_up_code_editor.md)
   - [Setting Up Jaseci Server](docs/docs/getting_started/3_setup_jaseci_serv.md)
-  - [Installing Jaseci Studios](jaseci_studio/README.md)
-<!-- Should update more information on this images,etc -->
-  - [Write your first Jaseci Application](docs/docs/getting_started/5_write_your_first_app.md)
-<!-- Should update more explanation on this code -->
-  - [Learn More]
+  - [Installing Jaseci Studios](jaseci_studio/README.md) <!-- Should update more information on this images,etc -->
+  - [Write your first Jaseci Application](docs/docs/getting_started/5_write_your_first_app.md) <!-- Should update more explanation on this code -->
+  - [Learn More]()
 
 ## Examples and Tutorials
 
@@ -85,8 +83,6 @@
   - [Walker Callback](docs/docs-archive//Developing_with_JAC/Language_Features/walker_callback.md)
 
 
-  - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
-
   - [Interfacing A Jaseci Machine](docs/docs-archive/getting-started/interfacing.md)
     - [Three modes of Interacting with Jaseci](docs/docs-archive/interfacing_jaseci/interaction_modes.md)
     - [Local JSCTL Mode](docs/docs-archive/interfacing_jaseci/jsctl.md)
@@ -101,7 +97,7 @@
 <!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
 <!-- Second we must write the content for the coming soon sections -->
 
-## Jaseci Archetype and Graphs
+## Jaseci Archetypes
   - [Nodes](docs/docs-archive//jaseci_architype/nodes.md)
     - [Exploring the Fundamentals of Nodes in Jaseci](docs/docs-archive//jaseci_architype/node_explanation.md)
     - [Abilities By Example](examples/CanoniCAI/codelabs/lang_docs/abilities_by_example.md)
@@ -217,6 +213,7 @@
 
 ## Contributing to Jaseci
 
+- [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
 - [Guide on Contributing](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
 - [Being an Contributor](support/guide/other/contributor_policy.md)
 - [General Guide](CONTRIBUTING.md)
