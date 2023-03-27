@@ -37,7 +37,7 @@ def setup():
     Loading configurations from utils/config.cfg and
     initialize tokenizer and model
     """
-    global model, tokenizer, model_config, train_config, t_config_fname, m_config_fname, BI_ENC_ROOT  # noqa
+    global model, tokenizer, model_config, train_config, t_config_fname, m_config_fname
     dirname = os.path.dirname(__file__)
     m_config_fname = os.path.join(dirname, "utils/model_config.json")
     t_config_fname = os.path.join(dirname, "utils/train_config.json")
