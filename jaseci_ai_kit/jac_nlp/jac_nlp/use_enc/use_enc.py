@@ -10,7 +10,7 @@ from jaseci.utils.utils import model_base_path
 MODULE_URL = "https://tfhub.dev/google/universal-sentence-encoder/4"
 
 
-USE_ENC_ROOT = str(model_base_path("jac_nlp/use_enc"))
+USE_ENC_ROOT = model_base_path("jac_nlp/use_enc")
 
 
 @jaseci_action(act_group=["use"], allow_remote=True)
@@ -20,11 +20,12 @@ def setup():
     """
     global module
     try:
-        module = hub.load(USE_ENC_ROOT)
+        module = tf.saved_model.load(os.path.join(USE_ENC_ROOT, "saved_model.pb"))
     except OSError:
         os.makedirs(USE_ENC_ROOT, exist_ok=True)
         module = hub.load(MODULE_URL)
         tf.saved_model.save(module, USE_ENC_ROOT)
+        tf.keras.backend.clear_session()
 
 
 @jaseci_action(act_group=["use"], aliases=["get_embedding"], allow_remote=True)

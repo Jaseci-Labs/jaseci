@@ -6,6 +6,7 @@ from transformers import AutoModel, AutoConfig, AutoTokenizer
 import traceback
 import numpy as np
 from jaseci.actions.live_actions import jaseci_action
+from jaseci.utils.utils import model_base_path
 import random
 import json
 import shutil
@@ -20,7 +21,7 @@ from jaseci.utils.utils import model_base_path
 # this is commented out because this causes issues with
 # unittest on machines with GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+BI_ENC_ROOT = model_base_path("jac_nlp/bi_enc")
 
 # funtion to set seed for the module
 def set_seed(seed):
@@ -43,7 +44,6 @@ def setup():
         model_config = json.load(jsonfile)
     with open(t_config_fname, "r") as jsonfile:
         train_config = json.load(jsonfile)
-    BI_ENC_ROOT = model_base_path("jac_nlp/bi_enc")
     os.makedirs(BI_ENC_ROOT, exist_ok=True)
     if all(
         os.path.isfile(os.path.join(BI_ENC_ROOT, file))
@@ -318,7 +318,7 @@ def save_model(model_path: str):
                  and '_' characters.""",
             )
         if not os.path.isabs(model_path):
-            model_path = str(BI_ENC_ROOT / Path(model_path))
+            model_path = os.path.join(BI_ENC_ROOT, model_path)
         os.makedirs(model_path, exist_ok=True)
         if model_config["shared"] is True:
             model.cont_bert.save_pretrained(model_path)
@@ -357,7 +357,7 @@ def load_model(model_path):
     """
     global model, tokenizer
     if not os.path.isabs(model_path):
-        model_path = str(BI_ENC_ROOT / Path(model_path))
+        model_path = os.path.join(BI_ENC_ROOT, model_path)
     if not os.path.exists(model_path):
         raise HTTPException(status_code=404, detail="Model path is not available")
     try:
