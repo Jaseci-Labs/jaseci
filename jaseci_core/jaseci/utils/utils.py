@@ -61,7 +61,6 @@ if len(logger.handlers) < 1:
     )
     connect_logger_handler(logger, core_rotating_file_handler, logging.INFO)
 
-
 app_logger = logging.getLogger("app")
 app_logger.propagate = False
 if len(app_logger.handlers) < 1:

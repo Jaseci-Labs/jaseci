@@ -1,3 +1,7 @@
+import threading
+import queue
+import logging.handlers
+from jaseci.utils.utils import logger
 from jaseci.actions.live_actions import jaseci_action
 from jaseci import JsOrc
 from jaseci.svc.elastic_svc import ElasticService, Elastic
@@ -5,6 +9,35 @@ from jaseci.svc.elastic_svc import ElasticService, Elastic
 
 def elastic():
     return JsOrc.svc("elastic", ElasticService).poke(Elastic)
+
+
+# has_queue_handler = any(
+#     isinstance(h, logging.handlers.QueueHandler) for h in logger.handlers
+# )
+# if not has_queue_handler:
+#     log_queue = queue.Queue()
+#     queue_handler = logging.handlers.QueueHandler(log_queue)
+#     logger.addHandler(queue_handler)
+#
+#     def elastic_log_worker():
+#         while True:
+#             try:
+#                 record = log_queue.get()
+#                 if record is None:
+#                     break
+#                 elastic_record = {
+#                     "@timestamp": logging.Formatter().formatTime(
+#                         record, "%Y-%m-%d %H:%M:%S"
+#                     ),
+#                     "message": record.getMessage(),
+#                     "level": record.levelname,
+#                 }
+#                 elastic().doc(log=elastic_record)
+#             except Exception:
+#                 pass
+#
+#     worker_thread = threading.Thread(target=elastic_log_worker, daemon=True)
+#     worker_thread.start()
 
 
 @jaseci_action()
