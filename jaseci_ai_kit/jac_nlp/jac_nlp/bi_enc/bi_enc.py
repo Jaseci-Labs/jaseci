@@ -23,6 +23,7 @@ from jaseci.utils.utils import model_base_path
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BI_ENC_ROOT = model_base_path("jac_nlp/bi_enc")
 
+
 # funtion to set seed for the module
 def set_seed(seed):
     random.seed(seed)
