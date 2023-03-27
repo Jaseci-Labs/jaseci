@@ -32,7 +32,6 @@ mydatabase
 celerybeat-schedule*
 node_modules
 *.jaseci_logs/
-_jaseci_ai_kit
 
 # Docs
 mdbook/
