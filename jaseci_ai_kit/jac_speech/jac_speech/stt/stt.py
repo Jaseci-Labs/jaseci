@@ -25,12 +25,15 @@ def setup(variant: str = "small"):
 def transcribe(
     audio_file: str = None,
     url: str = None,
+    array: list = None,
     language: str = "en",
     timestamp: bool = False,
 ):
     try:
         if url:
             audio_file = download_file(url)
+        elif array:
+            audio_file = array_to_file(array)
         if language != "en" and not model.is_multilingual:
             raise Exception(
                 "Model is not multilingual. Setup with a multilingual model."
@@ -66,10 +69,14 @@ def transcribe(
 
 
 @jaseci_action(act_group=["stt"], allow_remote=True)
-def translate(audio_file: str = None, url: str = None, timestamp: bool = False):
+def translate(
+    audio_file: str = None, url: str = None, array: list = None, timestamp: bool = False
+):
     try:
         if url:
             audio_file = download_file(url)
+        elif array:
+            audio_file = array_to_file(array)
         if not model.is_multilingual:
             raise Exception(
                 "Model is not multilingual. Setup with a multilingual model. Translation is not supported for English-only models."
@@ -112,6 +119,15 @@ def get_mel_spectrogram(audio_file: str):
     audio = whisper.pad_or_trim(audio.flatten())
     mel = whisper.log_mel_spectrogram(audio).to(DEVICE)
     return mel, audio_length
+
+
+def array_to_file(array):
+    import tempfile
+    import soundfile as sf
+
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+    sf.write(temp_file.name, np.array(array), 16000)
+    return temp_file.name
 
 
 def download_file(url):
