@@ -40,6 +40,7 @@ There are few ways to use `stt.trascribe` action.
 All the methods uses a single action `transcribe` to get the transcription. Following are the parameters of the action.
 * `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
 * `url` - Web URL to a Audio file. Type: `str` (Optional)
+* `array` - Audio array. Type: `list` (Optional) (Should be sampled at 16KHz)
 * `language` - Spoken Language in the Audio. Type: Type: `str` Default: `en`
 * `timestamp` - Whether to return the timestamp of the transcription. Type: `bool` Default: `false`
 
@@ -86,6 +87,7 @@ Similar to the `stt.transcribe`, `stt.traslate` support two ways to get the engl
 Following are the parameters of the action.
 * `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
 * `url` - Web URL to a Audio file. Type: `str` (Optional)
+* `array` - Audio array. Type: `list` (Optional) (Should be sampled at 16KHz)
 * `timestamp` - Whether to return the timestamp of the transcription. Type: `bool` Default: `false`
 
 Return type of the action is `dict`.
