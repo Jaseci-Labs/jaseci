@@ -2,24 +2,24 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 from os.path import join
 from sys import executable as PYTHON_PATH
-import subprocess
+from os import system
+from pkg_resources import require
 
 MODULES = ["stt", "vc_tts"]
 ORDEREDREQS = ["TTS==0.12.0"]
 
 
-class InstallTTS(install):
+def requires(packages):
+    require("pip")
+    CMD_TMPLT = '"' + PYTHON_PATH + '" -m pip install %s'
+    for pkg in packages:
+        system(CMD_TMPLT % (pkg,))
+
+
+class OrderedInstall(install):
     def run(self):
-        subprocess.run(
-            [
-                PYTHON_PATH,
-                "-m",
-                "pip",
-                "install",
-                "TTS @ git+https://github.com/coqui-ai/TTS.git@090cadf270711a61e3396f2f31eaaad54e32b5c1",
-            ]
-        )
-        super().run()
+        requires(ORDEREDREQS)
+        install.run(self)
 
 
 def get_extras_requires():
