@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: boyong
+  name: elastic-integration
   labels:
     name: jaseci
 ---
@@ -9,12 +9,12 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: jaseci-account
-  namespace: boyong
+  namespace: elastic-integration
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  namespace: boyong
+  namespace: elastic-integration
   name: jaseci-orc
 rules:
   - apiGroups: [
@@ -123,11 +123,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: jaseci-orc-rolebinding
-  namespace: boyong
+  namespace: elastic-integration
 subjects:
   - kind: ServiceAccount
     name: jaseci-account
-    namespace: boyong
+    namespace: elastic-integration
 roleRef:
   kind: ClusterRole
   name: jaseci-orc
@@ -137,7 +137,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jaseci
-  namespace: boyong
+  namespace: elastic-integration
 spec:
   selector:
     pod: jaseci
@@ -150,14 +150,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: jaseci-up
-  namespace: boyong
+  namespace: elastic-integration
 data:
   prod_up: |-
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone -b elastic/manifest-update https://github.com/amadolid/jaseci.git
     cd jaseci;
-    cd jaseci_core; source install.sh;
-    cd ../jaseci_serv; source install.sh;
+    cd jaseci_core; source install_live.sh;
+    cd ../jaseci_serv; source install_live.sh;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -166,7 +165,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jaseci
-  namespace: boyong
+  namespace: elastic-integration
 spec:
   replicas: 1
   selector:
@@ -181,7 +180,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: python:3-slim
+          image: jaseci/jaseci:latest
           resources:
             requests:
               memory: "350Mi"
@@ -226,29 +225,27 @@ spec:
               value: jaseci-es-internal-http
 
 
-            - name: ELASTIC_NAMESPACE
-              value: SOURCE
-            - name: ELASTIC_HOST
-              value: jaseci-es-internal-http.elastic.svc.cluster.local
-            - name: PROME_NAMESPACE
-              value: yow
-            - name: PROME_HOST
-              value: jaseci-prometheus-server.yow.svc.cluster.local
 
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: host-mount
+              mountPath: /jaseci/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: host-mount
+          hostPath:
+            path: /run/desktop/mnt/host/wsl/jaseci
+            type: Directory
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: jaseci-db-credentials
-  namespace: boyong
+  namespace: elastic-integration
 type: Opaque
 data:
   user: cG9zdGdyZXM=
