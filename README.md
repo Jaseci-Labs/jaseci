@@ -32,7 +32,7 @@
   - [Unify the Dialogue and FAQ Systems](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/4_unify_system.md)
   - [Bring Your Application to Production](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/5_production.md)
 
-- [Text Analitics Engine](docs/docs/examples_and_tutorials/CanoniAnalytics/README.md)
+- [Text Analytics Engine](docs/docs/examples_and_tutorials/CanoniAnalytics/README.md)
   - [Preparation and Background](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/1_preparation.md)
   - [Map the script into a graph](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
   - [Get the summery of scene descriptions](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)
@@ -43,7 +43,7 @@
 
 - [Guide to Use speech to text and text to speech modules](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
 - [Collect Training Data via Crowdsource](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/7_crowdsource.md)
-- [Nammed Entity Recognition Module Example](docs/docs/examples_and_tutorials/ner_examples/README.md)
+- [Named Entity Recognition Module Example](docs/docs/examples_and_tutorials/ner_examples/README.md)
 - [Personalized Head Example Use Case](docs/docs/examples_and_tutorials/ph_example/ph.md)
 
 # Architecture

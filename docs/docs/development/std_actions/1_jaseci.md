@@ -1,5 +1,4 @@
 # Jaseci Basic Actions Library
-Alias provides names  for long string like UUIDs.
 
 - [Jaseci Basic Actions Library](#jaseci-basic-actions-library)
   - [Alias](#alias)
