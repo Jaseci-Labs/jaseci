@@ -9,6 +9,6 @@ walker test_detect {
 walker test_detect_batch {
     can detr.detect_batch;
 
-    images = ['jac_vision/detr/tests/data/person_street_walking.webp', 'jac_vision/jac_vision/detr/tests/data/small_image_person.jpg'];
+    images = ['jac_vision/detr/tests/data/person_street_walking.webp', 'jac_vision/detr/tests/data/small_image_person.jpg'];
     report detr.detect_batch(images);
 }
