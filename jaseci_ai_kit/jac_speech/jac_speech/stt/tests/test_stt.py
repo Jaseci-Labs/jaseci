@@ -13,13 +13,13 @@ class Speech2TextModule(CoreTest):
         assert ret == True
 
     @pytest.mark.order(3)
-    @jac_testcase("stt.jac", "test_transribe_file")
-    def test_transribe_file(self, ret):
+    @jac_testcase("stt.jac", "test_transcribe_file")
+    def test_transcribe_file(self, ret):
         self.assertGreater(len(ret["report"][0]["text"]), 5)
 
     @pytest.mark.order(4)
-    @jac_testcase("stt.jac", "test_transribe_url")
-    def test_transribe_url(self, ret):
+    @jac_testcase("stt.jac", "test_transcribe_url")
+    def test_transcribe_url(self, ret):
         self.assertGreater(len(ret["report"][0]["text"]), 5)
 
     @pytest.mark.order(5)
