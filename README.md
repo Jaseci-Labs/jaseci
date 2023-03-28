@@ -49,6 +49,25 @@
 # Architecture
 
 # Development
+- [Abstractions of Jaseci](docs/docs/development/1_abstractions.md)
+  - [Graphs](docs/docs/development/1_abstractions.md#graphs)
+    - [Nodes](docs/docs/development/1_abstractions.md#nodes)
+    - [Edges](docs/docs/development/1_abstractions.md#edges)
+    - [Operators for connecting nodes and edges](docs/docs/development/1_abstractions.md#operators-for-connecting-nodes-and-edges)
+    - [Creating Graphs Examples](docs/docs/development/1_abstractions.md#creating-graphs-examples)
+    - [Referencing and Dereferencing Nodes and Edges](docs/docs/development/1_abstractions.md#referencing-and-dereferencing-nodes-and-edges)
+    - [Plucking values from nodes and edges](docs/docs/development/1_abstractions.md#plucking-values-from-nodes-and-edges)
+  - [Walkers](docs/docs/development/1_abstractions.md#walkers)
+    - [Init Walker with Examples](docs/docs/development/1_abstractions.md#init-walker-with-examples)
+    - [Walkers Navigating Graphs Examples](docs/docs/development/1_abstractions.md#walkers-navigating-graphs-examples)
+    - [Walker Spawning Examples](docs/docs/development/1_abstractions.md#walker-spawning-examples)
+  - [Abilities](docs/docs/development/1_abstractions.md#abilities)
+    - [Node Abilities Example](docs/docs/development/1_abstractions.md#node-abilities-example)
+    - [Walker Abilities Example](docs/docs/development/1_abstractions.md#walker-abilities-example)
+    - [Edge Abilities Example](docs/docs/development/1_abstractions.md#edge-abilities-example)
+    - [A Complete Example](docs/docs/development/1_abstractions.md#a-complete-example)
+    - [Here and Visitor](docs/docs/development/1_abstractions.md#here-and-visitor)
+  - [Actions](docs/docs/development/1_abstractions.md#actions)
 
 # JAC Language Syntax Reference
 
@@ -111,26 +130,7 @@
 <!-- Second we must write the content for the coming soon sections -->
 
 ## Jaseci Archetypes
-  - [Nodes](docs/docs-archive//jaseci_architype/nodes.md)
-    - [Exploring the Fundamentals of Nodes in Jaseci](docs/docs-archive//jaseci_architype/node_explanation.md)
-    - [Abilities By Example](examples/CanoniCAI/codelabs/lang_docs/abilities_by_example.md)
-    - [Info and Context Command](docs/docs-archive//jaseci_architype/info_and_context.md)
-    - [Creating Graphs](docs/docs-archive//jaseci_architype/spawning_nodes.md)
-    - [Node Abilities - jaseci’s Functions](docs/docs-archive//jaseci_architype/node_abilities.md)
-    - [Referencing and dereferencing nodes](docs/docs-archive/jaseci_architype/referencing_dereferencing.md)
-  - [Edges](docs/docs-archive//jaseci_architype/edges.md)
-    - [Exploring Jaseci Edge Abstractions](docs/docs-archive//jaseci_architype/deges_explanation.md)
-    - [Edge abilities in Jaseci](docs/docs-archive//jaseci_architype/edge_ability.md)
-    - [Connect operator](docs/docs-archive//jaseci_architype/connect_edges.md)
-    - [Plucking values from nodes](docs/docs-archive//jaseci_architype/plucking_values.md)
-  - [Walkers](docs/docs-archive//jaseci_architype/walkers.md)
-    - [The Power of Walkers in Jaseci](docs/docs-archive//jaseci_architype/walkers_explanation.md)
-    - [Take, yield, ignore destroy](docs/docs-archive//jaseci_architype/take.md)
-    - [Walker Examples](docs/docs-archive//jaseci_architype/technical_semantics.md)
-    - [Walkers spawning other walkers](docs/docs-archive//jaseci_architype/walkers_spawning_walkers.md)
-    - [Breath first and depth first walks](docs/docs-archive//jaseci_architype/breath_first_walks.md)
-    - [Here and visitors the this reference of jaseci](docs/docs-archive//jaseci_architype/here_and_visitors.md)
-  - [Combining it All](docs/docs-archive//jaseci_architype/combining_it_all.md)
+
 
 ## Jaseci AI Library Reference
 

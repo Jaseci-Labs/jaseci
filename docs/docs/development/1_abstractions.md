@@ -1,26 +1,31 @@
 # Abstractions of Jaseci
 
-There are a number of abstractions and concepts in Jac that is distinct from most (all?) other languages. These would be a good place to begin understanding for a seasoned / semi-seasoned programmer. In a nutshell...
+There are a number of abstractions and concepts in Jac that is distinct from most (all?) other languages. These would be a good place to begin understanding for a seasoned / semi-seasoned programmer.
 
 - [Abstractions of Jaseci](#abstractions-of-jaseci)
   - [Graphs](#graphs)
     - [Nodes](#nodes)
     - [Edges](#edges)
-    - [Examples](#examples)
+    - [Operators for connecting nodes and edges](#operators-for-connecting-nodes-and-edges)
+    - [Creating Graphs Examples](#creating-graphs-examples)
+    - [Referencing and Dereferencing Nodes and Edges](#referencing-and-dereferencing-nodes-and-edges)
+    - [Plucking values from nodes and edges](#plucking-values-from-nodes-and-edges)
   - [Walkers](#walkers)
-    - [Examples](#examples-1)
-      - [Basic Example](#basic-example)
-      - [Walkers Navigating Graphs Example](#walkers-navigating-graphs-example)
+    - [Init Walker with Examples](#init-walker-with-examples)
+    - [Walkers Navigating Graphs Examples](#walkers-navigating-graphs-examples)
+    - [Walker Spawning Examples](#walker-spawning-examples)
   - [Abilities](#abilities)
-    - [Examples](#examples-2)
+    - [Node Abilities Example](#node-abilities-example)
+    - [Walker Abilities Example](#walker-abilities-example)
+    - [Edge Abilities Example](#edge-abilities-example)
+    - [A Complete Example](#a-complete-example)
+    - [Here and Visitor](#here-and-visitor)
   - [Actions](#actions)
-    - [Examples](#examples-3)
-  - [Here and Visitor](#here-and-visitor)
-    - [Examples](#examples-4)
+    - [Jaseci Standard Actions](#jaseci-standard-actions)
 
 ## Graphs
 
-It is strange to see how our programming languages have evolved over the years, and yet, one fundamental data structure has been left behind. Almost every data structure used by programmers to solve problems can be represented as a graph or a special case of a graph, except for hash tables. This means that structures such as stacks, lists, queues, trees, heaps, and even graphs can be modeled with graphs. But, despite this, no programming language uses graph semantics as its first order data abstraction.
+It is strange to see how our programming languages have evolved over the years, and yet, one fundamental data structure has been left behind. **Almost every data structure used by programmers to solve problems can be represented as a graph or a special case of a graph, except for hash tables**. This means that structures such as stacks, lists, queues, trees, heaps, and even graphs can be modeled with graphs. But, despite this, no programming language uses graph semantics as its first order data abstraction.
 
 The graph semantic is incredibly rich and intuitive for humans to understand and is particularly well suited for conceptualizing and solving computational problems, especially in the field of AI. However, some may argue that there are graph libraries available in their preferred language and that a language forcing the concept is not necessary. To this, I argue that core design languages are based on their inherent abstractions, and with graphs not being one of them, the language is not optimized to allow programmers to easily utilize the rich semantics that graphs offer.
 
@@ -40,7 +45,18 @@ contexts.
 Refer to [Wikipedias description of graphs](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)) to learn more about graphs.
 
 ### Nodes
+In Jaseci, nodes are a crucial concept. There are two types of nodes:
 
+- **Root node**: It is the starting point of the graph and is a built-in node type. Each graph can have only one root node.
+- **Generic node**: It is a built-in node type that can be used throughout the Jaseci application. You can customize the name and properties of this node type as well.
+
+Here's an example code snippet to create and spawn a node:
+
+```jac
+node person{
+    has name, age, birthday, profession;
+}
+```
 
 ### Edges
 
@@ -52,18 +68,174 @@ By using custom edge types with specific behaviors, you can make your code more 
 
 Overall, edges in Jaseci are a powerful tool that can be used to create more complex, intelligent, and versatile applications.
 
-
-### Examples
+Here is a example of creating a edge in Jac Language.
 
 ```jac
-edge name_of_edge{
-    has name_of_variable;
+edge relationship{
+    has relationship_type;
 }
 ```
 
+### Operators for connecting nodes and edges
+
+In Jaseci, specific operators are used to connect nodes and edges to form graphs;
+
+-  **`++>`** : This operator is used to connect two nodes in a forward direction. For example, **`node1 ++> node2`** will connect node1 to node2.
+- **`<++>`** : This operator is used to connect two nodes in a backward direction. For example, **`node2 <++> node1`** will connect node2 to node1.
+- **`<+[name_of_edge]+>`** : This operator is used to connect two nodes in a backward direction with a custom edge type. For example, **`node2 <+[custom_edge]+> node1`** will connect node2 to node1 with a custom edge type named custom_edge.
+- **`+[name_of_edge]+>`** : This operator is used to connect two nodes in a forward direction with a custom edge type. For example, **`node1 +[custom_edge]+> node2`** will connect node1 to node2 with a custom edge type named custom_edge.
+- **`<+[name_of_edge(variable_declared = some_value)]+>`** : This operator is used to connect two nodes in a backward direction with a custom edge type that has a variable declared with a specific value. For example, **`node2 <+[custom_edge(my_var = 42)]+> node1`** will connect node2 to node1 with a custom edge type named custom_edge and a variable my_var declared with the value 42.
+- **`+[name_of_edge(variable_declared = some_value)]+>`** : This operator is used to connect two nodes in a forward direction with a custom edge type that has a variable declared with a specific value. For example, **`node1 +[custom_edge(my_var = "hello")]+> node2`** will connect node1 to node2 with a custom edge type named custom_edge and a variable my_var declared with the value "hello".
+
+These operators allow you to create complex graphs with customized edge types that can hold specific values. By using these operators, you can create a network of nodes that can represent complex data structures, such as trees or graphs. The use of customized edge types also allows you to define specific behavior for different types of connections between nodes.
+
+### Creating Graphs Examples
+
+Graphs can be created by connecting multiple nodes with edges. This is done using the connect operator `++>` `<++>`.
+
+```jac
+walker init {
+    node1 = spawn here node::person(name = "Josh", age = 32);
+    node2 = spawn here node::person(name = "Jane", age = 30);
+    node1 <++> node2;
+    here ++> node1;
+    node2 <++ here
+}
+```
+
+The code shown above generates a graph. You can visualize this graph using Jaseci Studios or the Graphviz graph viewer.
+<!-- Need to add links to Jaseci Studio docs and Graphviz docs -->
+
+**Statically Creating Graphs**
+
+Statically creating graphs means creating a graph that is already fixed and doesn't change. The code below shows an example of how to do that in Jaseci.
+
+```jac
+graph hlp_graph {
+ has anchor graph_root;
+    spawn {
+        graph_root = spawn node::state(name="root_state");
+        user_node = spawn node::user;
+
+        state_home_price_inquiry = spawn node::state(name="home_price_inquiry");
+        state_prob_of_approval = spawn node::state(name="prob_of_approval");
+        graph_root +[user]+> user_node;
+        graph_root +[transition(intent_label = "home price inquiry")]+>state_home_price_inquiry;
+        graph_root +[transition(intent_label = "robability of loan approval")]+> state_prob_of_approval;
+        state_home_price_inquiry +[transition(intent_label = "specifying location")]+> state_home_price_inquiry;
+        state_home_price_inquiry +[transition(intent_label = "home price inquiry")]+> state_home_price_inquiry;
+        state_home_price_inquiry +[transition(intent_label = "probability of loan approval")]+> state_prob_of_approval;
+        state_prob_of_approval +[transition(intent_label = "home price inquiry")]+> state_home_price_inquiry;
+    }
+}
+```
+
+The graph keyword is used to indicate that a new graph is being created, followed by the name of the graph. The {} are used to wrap everything related to the graph. An anchor named graph_root is declared using the has anchor keyword to identify the starting point of the graph.
+
+After that, the `spawn` keyword is used to begin the creation of nodes and edges, by using `spawn node::` followed by the type of node you want to create (e.g. user or state). You can also specify a name for each node using the name property. Nodes and edges can be connected together using the `++>`  operator.
+
+The transition keyword is used to create an edge with a specific intent label. In the example above, the graph has three states: root_state, home_price_inquiry, and prob_of_approval, and a user node. These states and the user node are connected to each other through transitions with intent labels such as "home price inquiry" or "probability of loan approval".
+
+
+### Referencing and Dereferencing Nodes and Edges
+
+<!-- Is this is related to nodes and edges??? or is this only for edges or is this is for all of the objects in Jaseci, need clarifications @Yiping -->
+
+In Jaseci language, referencing and dereferencing of nodes and edges are similar to the references in many programming languages, and they adopt the syntax of pointers in C/C++. The symbol & is used to retrieve the reference of an object, while the symbol * is used for dereferencing. Unlike C/C++, Jaseci references use a unique identifier in UUID format instead of memory locations.
+
+When an object is dereferenced, it is represented as a string in UUID format that corresponds to the unique identifier of the object. This UUID is equivalent to the jid in the object's .info. These referencing and dereferencing operations are useful for input and output of node locations to the client-side, among other applications.
+
+It is important to note that an instance of an archetype is internally represented as a string composed of a UUID that starts with "jac:uuid:". Although this may change in the future, if you assign such a string to a variable in a Jaseci program, the program will treat it like an object.
+
+```jac
+node simple: has name;
+
+ walker ref_deref {
+    with entry {
+        for i=0 to i<3 by i+=1:
+        spawn here ++> node::simple(name="node"+i.str);
+    }
+    var = &(++>[0]);
+    std.out('ref:', var);
+    std.out('obj:', *var);
+    std.out('info:',(*var).info);
+}
+```
+
+The code snippet creates a simple node with an attribute named name. It then initializes a walker named ref_deref, which creates three new nodes named node0, node1, and node2 and assigns them to the simple node.
+
+The code then assigns the reference of the first node node0 to the var variable using the & operator. The `std.out()` function is used to print out the reference, object, and information related to the var variable.
+
+Observe the following output generated by the above code snippet.
+
+```
+ref: urn:uuid:04295f7f-a5bf-4db3-87ce-e13653a81b25
+obj: jac:uuid:04295f7f-a5bf-4db3-87ce-e13653a81b25
+info: {
+    "context": {
+        "name": "node0"
+        },
+    "anchor": null,
+    "name": "simple",
+    "kind": "node",
+    "jid": "urn:uuid:04295f7f-a5bf-4db3-87ce-e13653a81b25",
+    "j_timestamp": "2022-08-10T15:57:00.577287",
+    "j_type": "node"
+}
+```
+
+When executed, the code will output the reference and information related to the node0 object. The obj output shows the UUID of the node0 object, while the info output shows the complete information related to the simple node, including its context, anchor, name, kind, and other attributes.
+
+### Plucking values from nodes and edges
+
+In Jaseci, you can easily extract information from nodes and edges by using the pluck feature. Edges in Jaseci have a unique feature that allows you to pluck values from neighboring nodes and edges themselves. By using the syntax **`-->`**, you can extract the value of a specific variable from a neighboring node. This will return a list of the values of that variable from all connected nodes. If you want to filter the results and only extract information from specific nodes, you can specify the name of the edge connected to the node and further specify what value the edge has by using the syntax **`-[name_of_edge(variable = value)]->.name_of_variable_needed`**.
+
+To pluck values from edges, you can simply use the syntax **`-->`** and specify the edge and variable name like this: **`--> .edge.name_of_variable_needed`**.
+
+Here is an example of plucking values from nodes and edges in Jaseci:
+
+```jac
+node person {
+    has name, age, profession;
+}
+edge society{
+    has location;
+}
+
+graph  people_in_society{
+    has anchor community;
+    spawn{
+        professions = ["lawyer", "doctor", "teacher", "athlete", "entrepreneur"];
+        community = spawn node::person(name = rand.word(), age = rand.integer(34, 56), profession = rand.choice(professions));
+        for i in professions{
+            spawn community +[society(location = rand.word())]+> node::person(name = rand.word(), age = rand.integer(34, 56), profession = rand.choice(professions));
+        }
+    }
+}
+walker print_names {
+    community = -[society]->;
+    people = -[society]->.name;
+    report {"Plucking people from edge": people};
+    location = -[society]->.edge.location;
+    report {"Plucking location from edges": location};
+}
+
+walker init{
+    spawn here ++> graph::people_in_society;
+    spawn here walker::print_names;
+    root{
+        take-->[0];
+    }
+}
+ ```
+
+ In this example, we create a graph called people_in_society that contains nodes representing people and an edge called society that connects the nodes. The society edge has a location variable. The print_names walker plucks the names of the people and their locations from the society edge and reports them.
+
+The pluck feature in Jaseci allows for easy extraction of information from nodes and edges, which can be useful in many different scenarios.
+
 ## Walkers
 
-One of the major innovations in Jaseci is the concept of walkers. This abstraction has never been seen in any programming language before and offers a new perspective on programmatic execution.
+One of other major innovations in Jaseci is the concept of walkers. This abstraction has never been seen in any programming language before and offers a new perspective on programmatic execution.
 
 In a nutshell, a walker is a unit of execution that retains state (its local scope) as it travels
 over a graphs. Walkers *walk* from node to node in the graph and executing its body.
@@ -78,9 +250,7 @@ Walkers offer a different approach to programmatic execution, distinct from the 
 
 When solving problems with walkers, a developer can think of that walker as a little self-contained robot or agent that can retain context as it spacially moves about a graph, interacting with the context in nodes and edges of that graph.
 
-### Examples
-
-#### Basic Example
+### Init Walker with Examples
 
 When we run a jac code, by default it's exucuting the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac run main.jac`
 
@@ -122,7 +292,7 @@ walker init{
 
 The statements from `second walker` and `init` are printed in the jac shell, and we may run just `second_walker` directly by using the command `jac run main.jac -walk second_walker`. Here, the `-walk` parameter instructs the `jsctl` to execute a certain walker.
 
-#### Walkers Navigating Graphs Example
+### Walkers Navigating Graphs Examples
 
 As mentioned earlier the walkers can traverse(walk) through the nodes of the graph in breadth first search (BFS) or depth first search(DFS) approaches.
 
@@ -139,7 +309,7 @@ We are creating the following graph to demostrate traversing of walkers in commi
 
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example;
 
-**Example 3:**
+**Example 1:**
 ```jac
 node plain: has number;
 
@@ -173,7 +343,7 @@ walker init {
 }
 ```
 
-**Output 3:**
+**Output 1:**
 ```
 1
 2
@@ -184,6 +354,37 @@ walker init {
 7
 ```
 `take` command lets the walker travers through graph nodes. You may notice by default, a walker travers with `take` command using the breadth first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example; More information about `take` command and keywords to operate walkers can be found [here](2_operations.md#take)
+
+In addition to the introduction of the `take` command to support new types of control flow for node-bound iterations. The keywords and semantics of `disengage`, `skip`, and `ignore` are also introduced. These instruct walkers to stop walking the graph, skip over a node for execution, and ignore certain paths of the graph. More information about these can be found in [here](2_operations.md#skip)
+
+<!-- Is it neccessary to have bfs,dfs traversals and skip, disengage traversals in the operators sections. I need feedback on this-->
+
+### Walker Spawning Examples
+
+Jaseci walkers act like little robots traversing graphs, with a unique ability to spawn other walkers that can also walk the graph and return a value to the parent walker. This powerful feature is achieved by specifying the variable to receive the returned value using the **`has anchor some_variable`** syntax.
+
+Here's a simple example of how to use walker spawning in Jaseci:
+
+**Example 1**
+```jac
+walker parent {
+    has result;
+
+    result = spawn here walker::child;
+
+    std.out("Child walker returned: ", result);
+}
+
+walker child {
+    has anchor return_value;
+
+    return_value = "Hello, I am the child walker!";
+}
+```
+
+In this example, the parent walker spawns the child walker and sets the return_value anchor to a string. The parent walker then assigns its result variable to the value returned by the child walker, and finally outputs the returned value using std.out.
+
+With this feature, you can easily create dynamic traversal patterns that adapt to changing data and requirements, making Jaseci a powerful tool for developing complex applications.
 
 ## Abilities
 
@@ -208,8 +409,11 @@ compute operations.
 > -   Abilities cannot interact outside of the context and local variables of the attached node, edge, or walker, and does not have a return meaning.
 >
 
-### Examples
+To see node abilities in advance let's define the following graph, which represent cities and the connection between them.
 
+<div style="text-align:center"><img style="align:center" src="images/abilities_graph_example_1.png" /> <b>Example Graph</b></div>
+
+### Node Abilities Example
 
 This is a very basic example of a node ability.
 
@@ -247,8 +451,6 @@ Setting city name: {"name": "c1"}
 c1
 ```
 
-To see node abilities in advance let's define the following graph, which represent cities and the connection between them.
-
 
 The code defines a node called city which has a property called name and an ability called set_name. set_name sets the name property to "c1" and prints a message to the console using std.out().
 
@@ -259,14 +461,12 @@ In the init walker, the root node spawns the build_example walker and then moves
 The output of this code is "Setting city name: {"name": "c1"} c1", which indicates that the set_name ability successfully set the name property to "c1" and printed the message to the console.
 
 
-<div style="text-align:center"><img style="align:center" src="images/abilities_graph_example_1.png" /> <b>Example Graph</b></div>
-
 > **Note**
 >
-> To generate random interger values we can use `rand.integer` action from the rand action library;  `rand.integer(15,100)` will output a integer value between 15 and 100;
+> To generate random interger values we can use `rand.integer` action from the rand action library;  `rand.integer(15,100)` will output a integer value between 15 and 100. More information about Jaseci standard actions can be found under the Jaseci [Actions](#actions) section;
 >
 
-The following example will set city names in each node;
+The following jac program extends the above example to set tourists in each city nodes.
 
 **Example 2:**
 
@@ -305,7 +505,7 @@ walker init{
 
 `set_tourists` is the node ability in city node. `here::set_tourists` triggers the node ability inside the `init` walker.  To get the variable value from the current context `here.context.{variable_name}` has been used. Look at the `std.out` statement inside the `set_tourist` node ability. The node ability can also defined as `can set_tourists with activity {}`. The both definitions works similarly.
 
-Run the example code to obtain following output.
+Run the example 2 code to obtain following output.
 
 **Output 2:**
 ```
@@ -330,7 +530,9 @@ can set_tourists{ #also can use "with activity"
 In the following example adds another walker named `traveller`. To collect the value of a variable which is inside a walker we are using `visitor` keyword. See how it has been used inside the code snippet;
 
 > **Note**
-> `here` refers to the current node scope pertinent to the program's execution point and `visitor` refers to the pertinent walker scope pertinent to that particular point of execution. All variables, built-in characteristics, and operations of the linked object instance are fully accessible through these references.
+> `here` refers to the current node scope pertinent to the program's execution point and `visitor` refers to the pertinent walker scope pertinent to that particular point of execution. All variables, built-in characteristics, and operations of the linked object instance are fully accessible through these references. More information about here and visitor canbe find in [here](#here-and-visitor)
+
+A more advance example of node ability is discussed in example 3;
 
 **Example 3:**
 
@@ -412,6 +614,8 @@ walker traveller{
 
 You might observe that while using a node's ability, the walkers' state remains unchanged.
 
+### Walker Abilities Example
+
 Let's call a walker ability from a node in the following example;
 
 **Example 4:**
@@ -485,6 +689,11 @@ Traveler enters the city
 
 Observe that the print statement "Traveler enters the city" comes from the `walker traveler` and triggers to executed when enters to a `city` node.
 
+### Edge Abilities Example
+<!-- Have to add an example here-->
+
+### A Complete Example
+
 Lets try adding following node ability inside city node;
 
 **Example 5**
@@ -515,6 +724,54 @@ When traveler leaves: 60 tourists are in the city c3
 ```
 `reset_tourists_1` executes when the `walker traveler` leaves the `city` node.
 
+### Here and Visitor
+
+At every execution point in a Jac/Jaseci program there are two scopes visible, that of the
+walker, and that of the node it is executing on. These contexts can be referenced with the
+special variables `here` and `visitor` respectively. Walkers use `here` to refer to the context of
+the node it is currently executing on, and abilities can use `visitor` to refer to the context of
+the current walker executing. Think of these are special `this` references.
+
+
+**Example:**
+```
+node person {
+    has name;
+    has byear;
+
+    #this sets the birth year from the setter
+    can date.quantize_to_year::visitor.year::>byear with setter entry;
+
+    #this executes upon exit of the walker from node
+    can std.out::byear," from ", visitor.info:: with exit;
+
+}
+
+walker init {
+
+    #collect the current time
+    has year=std.time_now();
+    root {
+        person1 = spawn here ++> node::person(name="Josh", byear="1992-01-01");
+        take --> ;
+    }
+
+    person {
+        spawn here walker::setter;
+    }
+}
+
+walker setter {
+    has year="1995-01-01";
+    }
+```
+
+**Output:**
+```
+1995-01-01T00:00:00  from  {"name": "setter", "kind": "walker", "jid": "urn:uuid:a3e5f4b6-aeda-4cd0-9552-506cb3b7c693", "j_timestamp": "2022-11-09T09:10:05.134836", "j_type": "walker", "context": {"year": "1995-01-01"}}
+1995-01-01T00:00:00  from  {"name": "init", "kind": "walker", "jid": "urn:uuid:47f1e467-a0e6-4772-a06a-204f6a1b69c3", "j_timestamp": "2022-11-09T09:10:05.129720", "j_type": "walker", "context": {"year": "2022-11-09T09:10:05.131397"}}
+```
+
 ## Actions
 
 Actions enables bindings to functionality specified outside of Jac/Jaseci and behave as function
@@ -525,8 +782,6 @@ packaged up as a Jaseci action library.
 > **Note**
 >
 > This action interface is the abstraction that allows Jaseci to do it's sophisticated serverless inter-machine optimizations, auto-scaling, auto-componentization etc.
-
-### Examples
 
 Jaseci has set of inbuilt actions. Also you can load and unload actions in `jsctl` shell. to see the available actions in jaseci session try running `actions list`. Here are two basic example of jaseci `date` actions.
 
@@ -595,52 +850,4 @@ Joe  Birthdate Quantized to year  1998-01-01T00:00:00
 Jack  Birthdate Quantized to year  1997-01-01T00:00:00
 ```
 
-## Here and Visitor
-
-At every execution point in a Jac/Jaseci program there are two scopes visible, that of the
-walker, and that of the node it is executing on. These contexts can be referenced with the
-special variables `here` and `visitor` respectively. Walkers use `here` to refer to the context of
-the node it is currently executing on, and abilities can use `visitor` to refer to the context of
-the current walker executing. Think of these are special `this` references.
-
-### Examples
-
-**Example:**
-```
-node person {
-    has name;
-    has byear;
-
-    #this sets the birth year from the setter
-    can date.quantize_to_year::visitor.year::>byear with setter entry;
-
-    #this executes upon exit of the walker from node
-    can std.out::byear," from ", visitor.info:: with exit;
-
-}
-
-walker init {
-
-    #collect the current time
-    has year=std.time_now();
-    root {
-        person1 = spawn here ++> node::person(name="Josh", byear="1992-01-01");
-        take --> ;
-    }
-
-    person {
-        spawn here walker::setter;
-    }
-}
-
-walker setter {
-    has year="1995-01-01";
-    }
-```
-
-**Output:**
-```
-1995-01-01T00:00:00  from  {"name": "setter", "kind": "walker", "jid": "urn:uuid:a3e5f4b6-aeda-4cd0-9552-506cb3b7c693", "j_timestamp": "2022-11-09T09:10:05.134836", "j_type": "walker", "context": {"year": "1995-01-01"}}
-1995-01-01T00:00:00  from  {"name": "init", "kind": "walker", "jid": "urn:uuid:47f1e467-a0e6-4772-a06a-204f6a1b69c3", "j_timestamp": "2022-11-09T09:10:05.129720", "j_type": "walker", "context": {"year": "2022-11-09T09:10:05.131397"}}
-```
-
+### Jaseci Standard Actions
