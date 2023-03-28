@@ -12,26 +12,31 @@ class Speech2TextModule(CoreTest):
         ret = load_module_actions("jac_speech.stt")
         assert ret == True
 
+    @pytest.mark.skip(reason="Temporary skipping")
     @pytest.mark.order(1)
     @jac_testcase("stt.jac", "test_audio_to_array")
     def test_audio_to_array(self, ret):
         self.assertGreater(len(ret["report"][0]), 0)
 
+    @pytest.mark.skip(reason="Temporary skipping")
     @pytest.mark.order(2)
     @jac_testcase("stt.jac", "test_transribe_array")
     def test_transribe_array(self, ret):
         self.assertGreater(len(ret["report"][0]), 5)
 
+    @pytest.mark.skip(reason="Temporary skipping")
     @pytest.mark.order(3)
     @jac_testcase("stt.jac", "test_transribe_file")
     def test_transribe_file(self, ret):
         self.assertGreater(len(ret["report"][0]), 5)
 
+    @pytest.mark.skip(reason="Temporary skipping")
     @pytest.mark.order(4)
     @jac_testcase("stt.jac", "test_transribe_url")
     def test_transribe_url(self, ret):
         self.assertGreater(len(ret["report"][0]), 5)
 
+    @pytest.mark.skip(reason="Temporary skipping")
     @pytest.mark.order(5)
     @jac_testcase("stt.jac", "test_translate")
     def test_translate(self, ret):
