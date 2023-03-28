@@ -4,28 +4,9 @@ import tensorflow as tf
 import tensorflow_text  # noqa
 from jaseci.actions.live_actions import jaseci_action
 from typing import Union
-import os
-from jaseci.utils.utils import model_base_path
-
-MODULE_URL = "https://tfhub.dev/google/universal-sentence-encoder/4"
 
 
-USE_ENC_ROOT = model_base_path("jac_nlp/use_enc")
-
-
-@jaseci_action(act_group=["use"], allow_remote=True)
-def setup():
-    """
-    Load Universal Sentence Encoder model
-    """
-    global module
-    try:
-        module = tf.saved_model.load(os.path.join(USE_ENC_ROOT, "saved_model.pb"))
-    except OSError:
-        os.makedirs(USE_ENC_ROOT, exist_ok=True)
-        module = hub.load(MODULE_URL)
-        tf.saved_model.save(module, USE_ENC_ROOT)
-        tf.keras.backend.clear_session()
+module = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 
 
 @jaseci_action(act_group=["use"], aliases=["get_embedding"], allow_remote=True)
