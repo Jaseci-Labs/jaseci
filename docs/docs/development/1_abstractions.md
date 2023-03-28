@@ -42,7 +42,7 @@ contexts.
 4. Graphs are not required to be acyclic.
 5. No hypergraphs, as I wouldn’t want Jaseci programmers heads to explode.
 
-Refer to [Wikipedias description of graphs](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)) to learn more about graphs.
+Refer to [Wikipedia description of graphs](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)) to learn more about graphs.
 
 ### Nodes
 In Jaseci, nodes are a crucial concept. There are two types of nodes:
@@ -76,7 +76,7 @@ edge relationship{
 }
 ```
 
-### Operators for connecting nodes and edges
+### Operators for connecting nodes
 
 In Jaseci, specific operators are used to connect nodes and edges to form graphs;
 
@@ -111,7 +111,7 @@ The code shown above generates a graph. You can visualize this graph using Jasec
 Statically creating graphs means creating a graph that is already fixed and doesn't change. The code below shows an example of how to do that in Jaseci.
 
 ```jac
-graph hlp_graph {
+graph assistant_graph {
  has anchor graph_root;
     spawn {
         graph_root = spawn node::state(name="root_state");
@@ -121,7 +121,7 @@ graph hlp_graph {
         state_prob_of_approval = spawn node::state(name="prob_of_approval");
         graph_root +[user]+> user_node;
         graph_root +[transition(intent_label = "home price inquiry")]+>state_home_price_inquiry;
-        graph_root +[transition(intent_label = "robability of loan approval")]+> state_prob_of_approval;
+        graph_root +[transition(intent_label = "probability of loan approval")]+> state_prob_of_approval;
         state_home_price_inquiry +[transition(intent_label = "specifying location")]+> state_home_price_inquiry;
         state_home_price_inquiry +[transition(intent_label = "home price inquiry")]+> state_home_price_inquiry;
         state_home_price_inquiry +[transition(intent_label = "probability of loan approval")]+> state_prob_of_approval;
@@ -139,7 +139,7 @@ The transition keyword is used to create an edge with a specific intent label. I
 
 ### Referencing and Dereferencing Nodes and Edges
 
-<!-- Is this is related to nodes and edges??? or is this only for edges or is this is for all of the objects in Jaseci, need clarifications @Yiping -->
+<!-- Is this is related to nodes and edges??? or is this only for edges or is this is for all of the objects in Jaseci, need clarifications -->
 
 In Jaseci language, referencing and dereferencing of nodes and edges are similar to the references in many programming languages, and they adopt the syntax of pointers in C/C++. The symbol & is used to retrieve the reference of an object, while the symbol * is used for dereferencing. Unlike C/C++, Jaseci references use a unique identifier in UUID format instead of memory locations.
 
@@ -248,11 +248,11 @@ Variables in a walker's body are divided into two categories: context variables,
 
 Walkers offer a different approach to programmatic execution, distinct from the common function-based model used in other languages. Instead of a function's scope being temporarily pushed onto a growing stack as functions call other functions, scopes in Jaseci can be laid out spatially on a graph and walkers can traverse the graph, carrying their scope with them. This new model introduces data-spatial problem solving, where walkers can access any scope at any time in a modular manner, unlike in the function-based model where scopes become inaccessible after a function is called until it returns.
 
-When solving problems with walkers, a developer can think of that walker as a little self-contained robot or agent that can retain context as it spacially moves about a graph, interacting with the context in nodes and edges of that graph.
+When solving problems with walkers, a developer can think of that walker as a little self-contained robot or agent that can retain context as it spatially moves about a graph, interacting with the context in nodes and edges of that graph.
 
 ### Init Walker with Examples
 
-When we run a jac code, by default it's exucuting the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac run main.jac`
+When we run a jac code, by default it's executing the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac run main.jac`
 
 **Example 1:**
 ```jac
@@ -300,7 +300,7 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 >
 > BFS is a traversal approach in which begins from root node and walk through all nodes on the same level before moving on to the next level. DFS is also a traversal approach in which the traverse begins at the root node and proceeds through the nodes as far as possible until we reach the node with no unvisited nearby nodes.
 
-We are creating the following graph to demostrate traversing of walkers in comming sections;
+We are creating the following graph to demonstrate traversing of walkers in the coming sections;
 
  <div style="text-align:center"><img style="align:center" src="images/traverse_graph_example.PNG" /> <b>Example Graph - Navigating </b></div>
 
@@ -353,7 +353,7 @@ walker init {
 6
 7
 ```
-`take` command lets the walker travers through graph nodes. You may notice by default, a walker travers with `take` command using the breadth first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example; More information about `take` command and keywords to operate walkers can be found [here](2_operations.md#take)
+`take` command lets the walker traverse through graph nodes. You may notice by default, a walker traverse with `take` command using the breadth first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example; More information about `take` command and keywords to operate walkers can be found [here](2_operations.md#take)
 
 In addition to the introduction of the `take` command to support new types of control flow for node-bound iterations. The keywords and semantics of `disengage`, `skip`, and `ignore` are also introduced. These instruct walkers to stop walking the graph, skip over a node for execution, and ignore certain paths of the graph. More information about these can be found in [here](2_operations.md#skip)
 
@@ -463,7 +463,7 @@ The output of this code is "Setting city name: {"name": "c1"} c1", which indicat
 
 > **Note**
 >
-> To generate random interger values we can use `rand.integer` action from the rand action library;  `rand.integer(15,100)` will output a integer value between 15 and 100. More information about Jaseci standard actions can be found under the Jaseci [Actions](#actions) section;
+> To generate random integer values we can use `rand.integer` action from the rand action library;  `rand.integer(15,100)` will output a integer value between 15 and 100. More information about Jaseci standard actions can be found under the Jaseci [Actions](#actions) section;
 >
 
 The following jac program extends the above example to set tourists in each city nodes.
@@ -516,7 +516,7 @@ Setting number of tourists in c3 city to 89
 Setting number of tourists in c3 city to 51
 Setting number of tourists in c3 city to 44
 ```
-The `init` walker visits `c2` and `c3` edges multiple times as you can observe in the graph visualization `c2` and `c3` has multiple paths. to avoid resettnig the number of tourists in each visit let's replace the `set_tourists` ability with following code snippet;
+The `init` walker visits `c2` and `c3` edges multiple times as you can observe in the graph visualization `c2` and `c3` has multiple paths. to avoid resetting the number of tourists in each visit let's replace the `set_tourists` ability with following code snippet;
 
 ```jac
 can set_tourists{ #also can use "with activity"
@@ -527,10 +527,10 @@ can set_tourists{ #also can use "with activity"
 }
 ```
 
-In the following example adds another walker named `traveller`. To collect the value of a variable which is inside a walker we are using `visitor` keyword. See how it has been used inside the code snippet;
+In the following example adds another walker named `traveler`. To collect the value of a variable which is inside a walker we are using `visitor` keyword. See how it has been used inside the code snippet;
 
 > **Note**
-> `here` refers to the current node scope pertinent to the program's execution point and `visitor` refers to the pertinent walker scope pertinent to that particular point of execution. All variables, built-in characteristics, and operations of the linked object instance are fully accessible through these references. More information about here and visitor canbe find in [here](#here-and-visitor)
+> `here` refers to the current node scope pertinent to the program's execution point and `visitor` refers to the pertinent walker scope pertinent to that particular point of execution. All variables, built-in characteristics, and operations of the linked object instance are fully accessible through these references. More information about here and visitor can be found in [here](#here-and-visitor)
 
 A more advance example of node ability is discussed in example 3;
 
@@ -548,9 +548,9 @@ node city{
         }
     }
 
-    can reset_tourists with traveller entry{
+    can reset_tourists with traveler entry{
         here.tourists = here.tourists + visitor.tours;
-        std.out("Total tourists in", here.context.name, "when traveller arrives:",here.tourists);
+        std.out("Total tourists in", here.context.name, "when traveler arrives:",here.tourists);
     }
 
 }
@@ -572,12 +572,12 @@ walker init{
 
     city{
         here::set_tourists;
-        spawn here walker::traveller;
+        spawn here walker::traveler;
         take-->;
     }
 }
 
-walker traveller{
+walker traveler{
     has tours = 1;
 }
 ```
@@ -585,27 +585,27 @@ walker traveller{
 
 ```
 Setting number of tourists in c1 city to 84
-Total tourists in c1 when traveller arrives: 85
+Total tourists in c1 when traveler arrives: 85
 Setting number of tourists in c2 city to 74
-Total tourists in c2 when traveller arrives: 75
+Total tourists in c2 when traveler arrives: 75
 Setting number of tourists in c3 city to 27
-Total tourists in c3 when traveller arrives: 28
-Total tourists in c2 when traveller arrives: 76
-Total tourists in c3 when traveller arrives: 29
-Total tourists in c3 when traveller arrives: 30
+Total tourists in c3 when traveler arrives: 28
+Total tourists in c2 when traveler arrives: 76
+Total tourists in c3 when traveler arrives: 29
+Total tourists in c3 when traveler arrives: 30
 ```
 
-As you can see number of tourists has been increased by one in each city with `walker traveller` entry to each node.The code phrase `with traveler entry` instructs the node ability `reset_tourists` to only execute when the `traveller` walker enters the "city" node.
+As you can see number of tourists has been increased by one in each city with `walker traveler` entry to each node.The code phrase `with traveler entry` instructs the node ability `reset_tourists` to only execute when the `traveler` walker enters the "city" node.
 
-We can try resetting variable values inside a walker using a ability of a node on a visit. lets update the `walker traveller` and add `reset_walker_values` ability inside the `city` node to see if this works.
+We can try resetting variable values inside a walker using a ability of a node on a visit. lets update the `walker traveler` and add `reset_walker_values` ability inside the `city` node to see if this works.
 
 ```jac
-can reset_walker_value with traveller entry{
+can reset_walker_value with traveler entry{
     visitor.walker_value =  1;
-    std.out("Total visit of traveller is",visitor.walker_value);
+    std.out("Total visit of traveler is",visitor.walker_value);
 }
 
-walker traveller{
+walker traveler{
     has tours = 1;
     has walker_value = 0;
     std.out(walker_value);
