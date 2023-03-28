@@ -4,7 +4,9 @@ from fastapi import HTTPException
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 from flair.models import TARSTagger, SequenceTagger
-from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
+
+# from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
+from flair.file_utils import cached_path
 from flair.data import Sentence
 from flair.trainers import ModelTrainer
 import pandas as pd
@@ -20,20 +22,24 @@ import warnings
 warnings.filterwarnings("ignore")
 
 config = configparser.ConfigParser()
+HOME_DIR = os.path.expanduser("~")
+MODEL_DIR = ".jaseci/models/jac_nlp/ent_ext"
+MODEL_PATH = os.path.join(HOME_DIR, MODEL_DIR)
+TARS_NER_PATH = (
+    "https://nlp.informatik.hu-berlin.de/resources/models/tars-ner/tars-ner.pt"
+)
+# # 1. initialize each embedding for LSTM
+# embedding_types = [
+#     # GloVe embeddings
+#     WordEmbeddings("glove"),
+#     # contextual string embeddings, forward
+#     FlairEmbeddings("news-forward"),
+#     # contextual string embeddings, backward
+#     FlairEmbeddings("news-backward"),
+# ]
 
-
-# 1. initialize each embedding for LSTM
-embedding_types = [
-    # GloVe embeddings
-    WordEmbeddings("glove"),
-    # contextual string embeddings, forward
-    FlairEmbeddings("news-forward"),
-    # contextual string embeddings, backward
-    FlairEmbeddings("news-backward"),
-]
-
-# embedding stack consists of Flair and GloVe embeddings
-embeddings = StackedEmbeddings(embeddings=embedding_types)
+# # embedding stack consists of Flair and GloVe embeddings
+# embeddings = StackedEmbeddings(embeddings=embedding_types)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -51,9 +57,9 @@ def setup(reload=False):
     if MODEL_TYPE.lower() == "trfmodel" and NER_MODEL_NAME.lower() != "none":
         tagger = TARSTagger(embeddings=NER_MODEL_NAME)
     elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in ["lstm", "gru"]:
-        tagger = SequenceTagger.load(NER_MODEL_NAME)
+        tagger = SequenceTagger.load(cached_path(NER_MODEL_NAME, MODEL_PATH))
     elif MODEL_TYPE.lower() in "tars" and NER_MODEL_NAME.lower() != "none":
-        tagger = TARSTagger.load(NER_MODEL_NAME)
+        tagger = TARSTagger.load(cached_path(TARS_NER_PATH, MODEL_PATH))
     print(f"loaded mode : [{NER_MODEL_NAME}]")
 
 
