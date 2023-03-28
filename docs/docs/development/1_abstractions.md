@@ -774,18 +774,18 @@ walker setter {
 
 ## Actions
 
-Actions enables bindings to functionality specified outside of Jac/Jaseci and behave as function
-calls with returns. These are analogous to library calls in traditional languages. This external
-functionality in practice takes the form of direct binding to python implementations that are
-packaged up as a Jaseci action library.
+
+Actions share the semantics as traditional function calls with returns, however these primarily serve to enable bindings to the functionality described outside of Jac/Jaseci (ie in a python module). These are comparable to library calls in conventional programming languages. Actions are essentially bindings to external functionality takes the form of a Jaseci action library’s direct connection to Python implementations.
 
 > **Note**
 >
 > This action interface is the abstraction that allows Jaseci to do it's sophisticated serverless inter-machine optimizations, auto-scaling, auto-componentization etc.
 
-Jaseci has set of inbuilt actions. Also you can load and unload actions in `jsctl` shell. to see the available actions in jaseci session try running `actions list`. Here are two basic example of jaseci `date` actions.
+### Jaseci Standard Actions
 
-**Example 1:**
+Jaseci has set of inbuilt actions. Also you can load and unload actions in `jsctl` shell. to see the available actions in jaseci session try running `actions list`. Here is a basic example of jaseci `date` actions.
+
+**Example:**
 
 ```jac
 node person {
@@ -810,44 +810,12 @@ walker init {
     std.out("Quantized date to week ", birthweek);
 }
 ```
-**Output 1:**
+**Output:**
 ```
 Date  1995-05-20
 Quantized date to year  1995-01-01T00:00:00
 Quantized date to month  1995-05-01T00:00:00
 Quantized date to week  1995-05-15T00:00:00
 ```
-The following example executes action in each person nodes of the graph.
 
-**Example 2:**
-```jac
-node person {
-    has name;
-    has birthday;
-}
 
-walker init {
-    can date.quantize_to_year;
-
-    root {
-        person1 = spawn here ++> node::person(name="Josh", birthday="1995-05-20");
-        person2 = spawn here ++> node::person(name="Joe", birthday="1998-04-23");
-        person3 = spawn here ++> node::person(name="Jack", birthday="1997-03-12");
-        take -->;
-    }
-
-    person {
-        birthyear = date.quantize_to_year(here.birthday);
-        std.out(here.name," Birthdate Quantized to year ",birthyear);
-        }
-}
-```
-
-**Output 2:**
-```
-Josh  Birthdate Quantized to year  1995-01-01T00:00:00
-Joe  Birthdate Quantized to year  1998-01-01T00:00:00
-Jack  Birthdate Quantized to year  1997-01-01T00:00:00
-```
-
-### Jaseci Standard Actions
