@@ -49,7 +49,11 @@ USE_ENC_ACTION_CONFIG = {
                                     "name": "use-enc-up",
                                     "defaultMode": 420,
                                 },
-                            }
+                            },
+                            {
+                                "name": "jac-nlp-volume",
+                                "persistentVolumeClaim": {"claimName": "jac-nlp-pvc"},
+                            },
                         ],
                         "containers": [
                             {
@@ -62,7 +66,11 @@ USE_ENC_ACTION_CONFIG = {
                                     "requests": {"memory": "3Gi"},
                                 },
                                 "volumeMounts": [
-                                    {"name": "prod-script", "mountPath": "/script"}
+                                    {"name": "prod-script", "mountPath": "/script"},
+                                    {
+                                        "name": "jac-nlp-volume",
+                                        "mountPath": "/root/.jaseci/models/jac_nlp/",
+                                    },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",

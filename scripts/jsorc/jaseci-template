@@ -154,10 +154,7 @@ metadata:
 data:
   prod_up: |-
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone https://github.com/Jaseci-Labs/jaseci.git
-    cd jaseci;
-    cd jaseci_core; source install.sh;
-    cd ../jaseci_serv; source install.sh;
+    cd /jaseci/jaseci_ai_kit/jac_nlp; pip install -e .[all]
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -181,7 +178,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: python:3-slim
+          image: jaseci/jac-nlp:latest
           resources:
             requests:
               memory: "350Mi"
@@ -230,11 +227,22 @@ $j{env_vars}
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: jac-nlp-volume
+              mountPath: /root/.jaseci/models/jac_nlp/
+            - name: host-mount
+              mountPath: /jaseci/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: jac-nlp-volume
+          persistentVolumeClaim:
+            claimName: jac-nlp-pvc
+        - name: host-mount
+          hostPath:
+            path: /run/desktop/mnt/host/wsl/jaseci
+            type: Directory
 ---
 apiVersion: v1
 kind: Secret
@@ -246,3 +254,14 @@ data:
   user: cG9zdGdyZXM=
   password: bGlmZWxvZ2lmeWphc2VjaQ==
 ---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: jac-nlp-pvc
+  namespace: $j{namespace}
+spec:
+  resources:
+    requests:
+      storage: 20Gi
+  accessModes:
+    - ReadWriteMany
