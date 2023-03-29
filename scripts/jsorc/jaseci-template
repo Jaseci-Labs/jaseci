@@ -153,13 +153,11 @@ metadata:
   namespace: $j{namespace}
 data:
   prod_up: |-
-    # apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    # git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git;
-    cd jaseci-experiment;
-    cd jaseci_core; source install_live.sh;
-    cd ../jaseci_serv; source install_live.sh;
-    cd ../jaseci_ai_kit/jac_nlp; pip install -e .;
-    cd /;
+    apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
+    git clone https://github.com/Jaseci-Labs/jaseci.git
+    cd jaseci;
+    cd jaseci_core; source install.sh;
+    cd ../jaseci_serv; source install.sh;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -183,10 +181,10 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jac-nlp:1.4.0.11
+          image: python:3-slim
           resources:
             requests:
-              memory: "2Gi"
+              memory: "350Mi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
@@ -232,17 +230,11 @@ $j{env_vars}
           volumeMounts:
             - name: prod-script
               mountPath: /script
-            - name: host-mount
-              mountPath: /jaseci-experiment/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
-        - name: host-mount
-          hostPath:
-            path: /run/desktop/mnt/host/wsl/jaseci
-            type: Directory
 ---
 apiVersion: v1
 kind: Secret
