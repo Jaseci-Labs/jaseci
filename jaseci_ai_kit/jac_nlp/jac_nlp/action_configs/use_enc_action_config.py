@@ -58,7 +58,7 @@ USE_ENC_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "use-enc",
-                                "image": "jaseci/jac-nlp:latest",
+                                "image": "jaseci/jac-nlp:1.4.0.12",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
