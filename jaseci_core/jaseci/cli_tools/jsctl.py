@@ -15,6 +15,7 @@ from jaseci import __version__
 from jaseci.prim.super_master import SuperMaster
 from jaseci.utils.utils import copy_func
 from .book_tools import Book, modifiedBook
+from jaseci.utils.file_handler import FileHandler
 from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, find_first_api
 from jaseci.jsorc.jsorc import JsOrc
 
@@ -101,6 +102,12 @@ def remote_api_call(payload, api_name):
     )
     if ret.status_code > 205:
         ret = f"Status Code Error {ret.status_code}\n{ret.json()}"
+    elif ret.headers.get("Content-Type", None) == "application/octet-stream":
+        file_handler = FileHandler.fromRequest(
+            ret.content, ret.headers.get("Content-Disposition")
+        )
+        session["master"]._h.add_file_handler(file_handler)
+        ret = file_handler.info()
     else:
         ret = ret.json()
     return ret
@@ -137,12 +144,13 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         out = session["master"].public_interface_to_api(kwargs, api_name)
     else:
         out = session["master"].general_interface_to_api(kwargs, api_name)
-    if (
-        isinstance(out, dict)
-        and "report_custom" in out.keys()
-        and out["report_custom"] is not None
-    ):
-        out = out["report_custom"]
+
+    if isinstance(out, dict):
+        if "report_custom" in out.keys() and out["report_custom"] is not None:
+            out = out["report_custom"]
+        elif "report_file" in out.keys() and out["report_file"] is not None:
+            out = session["master"]._h.get_file_handler(out["report_file"]).info()
+
     if isinstance(out, dict) or isinstance(out, list):
         out = json.dumps(out, indent=2)
     click.echo(out)
