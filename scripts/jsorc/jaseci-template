@@ -138,6 +138,10 @@ kind: Service
 metadata:
   name: jaseci
   namespace: $j{namespace}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 spec:
   selector:
     pod: jaseci
@@ -145,6 +149,7 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
+  type: LoadBalancer
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -154,7 +159,6 @@ metadata:
 data:
   prod_up: |-
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    cd /jaseci/jaseci_ai_kit/jac_nlp; pip install -e .[all]
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -178,7 +182,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jac-nlp:latest
+          image: jaseci/jaseci:1.4.0.13
           resources:
             requests:
               memory: "350Mi"
@@ -229,8 +233,6 @@ $j{env_vars}
               mountPath: /script
             - name: jac-nlp-volume
               mountPath: /root/.jaseci/models/jac_nlp/
-            - name: host-mount
-              mountPath: /jaseci/
 
       volumes:
         - name: prod-script
@@ -239,10 +241,6 @@ $j{env_vars}
         - name: jac-nlp-volume
           persistentVolumeClaim:
             claimName: jac-nlp-pvc
-        - name: host-mount
-          hostPath:
-            path: /run/desktop/mnt/host/wsl/jaseci
-            type: Directory
 ---
 apiVersion: v1
 kind: Secret
@@ -265,3 +263,4 @@ spec:
       storage: 20Gi
   accessModes:
     - ReadWriteMany
+  storageClassName: efs-sc
