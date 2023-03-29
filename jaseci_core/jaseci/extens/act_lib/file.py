@@ -74,3 +74,88 @@ def delete(fn: str):
         return True
     else:
         return False
+
+
+@jaseci_action()
+def new(name: str, content_type: str = None, field: str = None, meta: dict = {}):
+    """temp"""
+    from jaseci.utils.file_handler import FileHandler
+
+    hook = meta["h"]
+    return hook.add_file_handler(
+        FileHandler(name=name, content_type=content_type, field=field)
+    )
+
+
+@jaseci_action()
+def update(
+    id: str,
+    name: str = None,
+    content_type: str = None,
+    field: str = None,
+    meta: dict = {},
+):
+    """temp"""
+    file_handler = meta["h"].get_file_handler(id)
+    if name:
+        file_handler.name = name
+
+    if content_type:
+        file_handler.content_type = content_type
+
+    if field:
+        file_handler.field = field
+
+
+@jaseci_action()
+def read(id: str, offset: int = None, meta: dict = {}):
+    """temp"""
+    return meta["h"].get_file_handler(id).read(offset)
+
+
+@jaseci_action()
+def seek(id: str, offset: int, whence: int = 0, meta: dict = {}):
+    """temp"""
+    return meta["h"].get_file_handler(id).seek(offset, whence)
+
+
+@jaseci_action()
+def open(id: str, mode: str = "r", encoding: str = "utf-8", meta: dict = {}, **kwargs):
+    """temp"""
+    meta["h"].get_file_handler(id).open(mode, encoding, False, **kwargs)
+
+
+@jaseci_action()
+def is_open(id: str, meta: dict = {}):
+    """temp"""
+    return meta["h"].get_file_handler(id).is_open()
+
+
+@jaseci_action()
+def write(id: str, content: str, meta: dict = {}):
+    """temp"""
+    meta["h"].get_file_handler(id).write(content)
+
+
+@jaseci_action()
+def flush(id: str, meta: dict = {}):
+    """temp"""
+    meta["h"].get_file_handler(id).flush()
+
+
+@jaseci_action()
+def close(id: str, meta: dict = {}):
+    """temp"""
+    meta["h"].get_file_handler(id).close()
+
+
+@jaseci_action()
+def delete(id: str, meta: dict = {}):
+    """temp"""
+    meta["h"].get_file_handler(id).delete()
+
+
+@jaseci_action()
+def to_base64(id: str, offset: int = None, meta: dict = {}):
+    """temp"""
+    return meta["h"].get_file_handler(id).base64(offset)

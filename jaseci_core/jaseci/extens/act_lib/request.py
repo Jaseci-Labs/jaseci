@@ -120,7 +120,7 @@ def options(url: str, data: dict, header: dict):
 
 
 @jaseci_action()
-def multipart_base64(url: str, files: list, header: dict):
+def multipart(url: str, files: list, header: dict, meta: dict):
     """
     Issue request
     Param 1 - url
@@ -132,6 +132,8 @@ def multipart_base64(url: str, files: list, header: dict):
     Return - response object
     """
 
+    hook = meta["h"]
+
     if not files:
         return {
             "status_code": 400,
@@ -142,12 +144,17 @@ def multipart_base64(url: str, files: list, header: dict):
 
     form_data = []
 
+    stream_to_be_close = []
+
     if files is not None:
         for f in files:
+            file_handler = hook.get_file_handler(f)
+            stream = file_handler.open("rb", None, True)
+            stream_to_be_close.append(stream)
             form_data.append(
                 (
-                    f["field"] if "field" in f else "file",
-                    (f["name"], BytesIO(b64decode(f["base64"]))),
+                    file_handler.field or "file",
+                    (file_handler.name, stream, file_handler.content_type),
                 )
             )
 
@@ -157,6 +164,10 @@ def multipart_base64(url: str, files: list, header: dict):
         ret["response"] = res.json()
     except Exception:
         ret["response"] = res.text
+
+    for stream in stream_to_be_close:
+        stream.close()
+
     return ret
 
 

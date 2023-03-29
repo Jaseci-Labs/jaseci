@@ -15,7 +15,7 @@ class WebhookApi:
     """
 
     @Interface.public_api(url_args=["provider"], allowed_methods=["post"])
-    def webhook(self, provider: str, _req_ctx: dict = {}, _raw_req_ctx: str = None):
+    def webhook(self, provider: str, _req_ctx: dict = {}):
         """Handle webhook logic"""
         req_body = _req_ctx["body"]
 
@@ -24,7 +24,9 @@ class WebhookApi:
             stripe = stripe_service.poke(_stripe)
 
             # to be updated
-            stripe_service.get_event(_raw_req_ctx, _req_ctx["headers"])
+            stripe_service.get_event(
+                self._h.get_file_handler(_req_ctx["raw"]), _req_ctx["headers"]
+            )
 
             payload_obj = req_body.get("data").get("object")
             customer_id = payload_obj.get("customer")

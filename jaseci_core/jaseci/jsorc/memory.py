@@ -1,5 +1,6 @@
 from json import dumps, loads
 import sys
+from jaseci.utils.file_handler import FileHandler
 from jaseci.utils.utils import find_class_and_import
 from jaseci.jsorc.jsorc import JsOrc
 
@@ -20,6 +21,7 @@ class MemoryHook:
         self._machine = None
         self.save_obj_list = set()
         self.save_glob_dict = {}
+        self.file_handlers = {}
 
     ####################################################
     #               COMMON GETTER/SETTER               #
@@ -231,3 +233,18 @@ class MemoryHook:
 
     def clear_cache(self):
         MemoryHook.__init__(self)
+
+    ####################################################
+    #                   FILE HANDLER                   #
+    ####################################################
+
+    def add_file_handler(self, file_handler: FileHandler) -> str:
+        self.file_handlers.update({file_handler.id: file_handler})
+        return file_handler.id
+
+    def get_file_handler(self, file_id: str):
+        return self.file_handlers.get(file_id, None)
+
+    def clean_file_handler(self):
+        for file_handler in self.file_handlers.values():
+            file_handler.delete()
