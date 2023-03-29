@@ -23,8 +23,8 @@ A committed contributor is one that is on the TOTC (*team of the committed*). A 
 ### Guidelines
 
 1. Come to the meetings or share in relevant Slack channel a note before, or we will worry insensently that something is terribly wrong
-2. For a given thing (e.g., task, todo, doc, note, comment, delegation, request for help, etc), it exists iff it is present in our system of Objective and Centralized Truth (OCT for short, aka Click-Up atm, links to other systems like github, and google docs are ok).
-3. For the days committed to work, if nothing is checked off, leave a little comment on how things went iff nothing gets checked off that day.
+2. For a given thing (e.g., task, todo, doc, note, comment, delegation, request for help, etc), it exists if it is present in our system of Objective and Centralized Truth (OCT for short, aka Click-Up atm, links to other systems like github, and google docs are ok).
+3. For the days committed to work, if nothing is checked off, leave a little comment on how things went if nothing gets checked off that day.
 4. And most importantly!! **Follow Below!**
 ```python
 from work import fun, you, open_prs
