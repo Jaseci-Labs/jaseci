@@ -1,43 +1,72 @@
-# **`HOW TO USE ELASTIC`**
+# Elastic Actions Library
+
+- [Elastic Actions Library](#elastic-actions-library)
+  - [Enable Elastic in Jaseci](#enable-elastic-in-jaseci)
+    - [**CONFIGURATION**](#configuration)
+      - [**`ATTRIBUTES`**](#attributes)
+    - [**`DEFAULT CONFIG`**](#default-config)
+    - [**`ENABLED CONFIG`**](#enabled-config)
+  - [Actions List](#actions-list)
+    - [Log Activity](#log-activity)
+    - [Base Post Request](#base-post-request)
+    - [Post request](#post-request)
+    - [Post request pointed to `activity_index`](#post-request-pointed-to-activity_index)
+    - [Base Get request](#base-get-request)
+    - [Get request](#get-request)
+    - [Get request pointed to `activity_index`](#get-request-pointed-to-activity_index)
+    - [Creation of log](#creation-of-log)
+    - [Creation of log with `doc_activity`](#creation-of-log-with-doc_activity)
+    - [Search](#search)
+    - [Search with search activity](#search-with-search-activity)
+    - [Mapping](#mapping)
+    - [Mapping with `mapping_activity`](#mapping-with-mapping_activity)
+    - [Refresh](#refresh)
+    - [Refresh wirh `refresh_activity`](#refresh-wirh-refresh_activity)
+    - [Aliases](#aliases)
+    - [Reindex](#reindex)
 
 ## Enable Elastic in Jaseci
-The Elastic service in Jaseci is managed by JSORC, which automatically creates an Elastic container in your kubernetes cluster and connects it with the Jaseci container.
 
-If your Jaseci cluster doesn't currently have an Elastic running, you will need to trigger a service refresh on JSORC.
+The Elastic service in Jaseci is managed by JSORC, which automatically creates an Elastic container in your kubernetes cluster and connects it with the Jaseci container. If your Jaseci cluster doesn't currently have an Elastic running, you will need to trigger a service refresh on JSORC.
 
-First, make sure Elastic is enabled by setting the `enabled` field in Elastic config to be True. 
-We first get the current config via the `config_get` endpoint. (We are going to use jsctl for the following examples but you can also use API requests)
+First, make sure Elastic is enabled by setting the `enabled` field in Elastic config to be True. We first get the current config via the `config_get` endpoint. (We are going to use jsctl for the following examples but you can also use API requests)
+
+Run the follwoing command in `jsctl` shell.
+
 ```bash
-$ jsctl
-Jaseci 1.4.0.13
-Starting Shell...
-jaseci > config get ELASTIC_CONFIG
+config get ELASTIC_CONFIG
 ```
-This will return a json of the current configuration for the Elastic Service.
-Check the field and make sure they are configured to your needs. (More details on the configuration attributes below.)
+
+This will return a json of the current configuration for the Elastic Service. Check the field and make sure they are configured to your needs. (More details on the configuration attributes below.)
 
 Update the `enabled` field to be True if it is not already.
 Then save it with `config_set`.
+
 ```bash
-jaseci > config set ELASTIC_CONFIG -value JSON_STRING_OF_THE_CONFIG
+config set ELASTIC_CONFIG -value JSON_STRING_OF_THE_CONFIG
 ```
 
 Final step to enable Elastic is to refresh the Elastic service for the updated configuration to take effect.
+
 ```bash
-jaseci > service refresh elastic
+service refresh elastic
 ```
+
 JSORC will then refresh the Elastic service and creates the neccessary kuberentes resources.
 
-# **CONFIGURATION**
-## **`ATTRIBUTES`**
+### **CONFIGURATION**
 
-| Attribute | Description |
-| ----------- | ----------- |
-| enabled | If service is enabled in config. The service can be available (upon building) but not enabled (from config) |
-| quiet | if error logs should be suppressed |
-| auth | Api key or token used as Authorization header |
-| common_index | default index where elastic log will be saved |
-| activity_index | dedicated elastic index for activity logs |
+#### **`ATTRIBUTES`**
+
+| Attribute      | Description                                                                                                 |
+| -------------- | ----------------------------------------------------------------------------------------------------------- |
+| enabled        | If service is enabled in config. The service can be available (upon building) but not enabled (from config) |
+| quiet          | if error logs should be suppressed                                                                          |
+| auth           | Api key or token used as Authorization header                                                               |
+| common_index   | default index where elastic log will be saved                                                               |
+| activity_index | dedicated elastic index for activity logs                                                                   |
+|                |
+
 ### **`DEFAULT CONFIG`**
 
 ```js
@@ -55,6 +84,7 @@ ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
 ```
 
 ### **`ENABLED CONFIG`**
+
 ```js
 ELASTIC_CONFIG = {
     "enabled": true,
@@ -68,9 +98,13 @@ ELASTIC_CONFIG = {
 // default manifest should be able to handle automatic spawning of pods for elastic
 ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
 ```
----
-# **ACTION LIST**
-# **std.`log_activity`**
+
+## Actions List
+
+### Log Activity
+
+`std.log_activity`
+
 - This will be used for standard logging for activity.
 - It will use base structure and can be overriden or add additional fields.
 - `misc` inside your created log will use dict's update approach
@@ -93,7 +127,8 @@ ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
         }
         ```
 
-### **`DEFAULT ACTIVITY LOG STRUCTURE`**
+**`DEFAULT ACTIVITY LOG STRUCTURE`**
+
 ```js
 // all of this fields can be overriden
 {
@@ -121,7 +156,9 @@ ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
     }
 }
 ```
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 std.log_activity(
     log = {... fields to be included/overriden in default structure ...},
@@ -131,11 +168,16 @@ std.log_activity(
 )
 ```
 
-# **elastic.`_post`**
+### Base Post Request
+
+`elastic._post`
+
 - This is the **`base`** post request trigger to elastic.
 - `url`: your complete url after elastic url. you may add query params
 - `json`: your request body
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic._post(
     url = "/your-index-or-without-index/_doc?pretty=true",
@@ -147,13 +189,18 @@ elastic._post(
 );
 ```
 
-# **elastic.`post`**
+### Post request
+
+`elastic.post`
+
 - This is the post request trigger to elastic.
 - `url`: your endpoint after elastic url and index. you may add query params
 - `body`: your request body
 - `index`: your custom index. defaults to config's common_index
 - `suffix`: use to add suffix on current index. usually used in per user index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.post(
     url = "/_doc?pretty=true",
@@ -166,18 +213,29 @@ elastic.post(
     suffix = "empty or anything here" // default to empty
 );
 ```
-# **elastic.`post_act`**
-- similar to elastic.post but always pointed to activity_index
-##### **`HOW TO TRIGGER`**
+
+### Post request pointed to `activity_index`
+
+`elastic.post_act`
+
+- similar to elastic.post but always pointed to activity_index.
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.post_act(url: str, body: dict, suffix: str = "");
 ```
 
-# **elastic.`_get`**
+### Base Get request
+
+`elastic._get`
+
 - This is the **`base`** get request trigger to elastic.
 - `url`: your complete url after elastic url. you may add query params
 - `json`: your request body
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic._get(
     url = "/your-index-or-without-index/_search?pretty=true",
@@ -191,13 +249,18 @@ elastic._get(
 );
 ```
 
-# **elastic.`get`**
+### Get request
+
+`elastic.get`
+
 - This is the get request trigger to elastic.
 - `url`: your endpoint after elastic url and index. you may add query params
 - `body`: your request body
 - `index`: your custom index. defaults to config's common_index
 - `suffix`: use to add suffix on current index. usually used in per user index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.get(
     url = "/_search?pretty=true",
@@ -212,21 +275,31 @@ elastic.get(
     suffix = "empty or anything here" // default to empty
 );
 ```
-# **elastic.`get_act`**
+
+### Get request pointed to `activity_index`
+
+`elastic.get_act`
+
 - similar to elastic.get but always pointed to activity_index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.get_act(url: str, body: dict, suffix: str = "");
 ```
+### Creation of log
 
-# **elastic.`doc`**
+`elastic.doc`
+
 - this action will be used for creation of log
 - `url` will always be pointed to **`/_doc`** endpoint.
 - `log`: your request log
 - `query`: your additional query params
 - `index`: your custom index. defaults to config's common_index
 - `suffix`: use to add suffix on current index. usually used in per user index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.doc(
     log = {
@@ -240,21 +313,31 @@ elastic.doc(
 );
 ```
 
-# **elastic.`doc_activity`**
+### Creation of log with `doc_activity`
+
+`elastic.doc_activity`
+
 - similar to elastic.doc but always pointed to activity_index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.doc_activity(log: dict, query: str = "", suffix: str = "");
 ```
 
-# **elastic.`search`**
+### Search
+
+`elastic.search`
+
 - this action will be used for retrieval of logs
 - `url` will always be pointed to **`/_search`** endpoint.
 - `body`: your request body. Mostly for filtering
 - `query`: your additional query params
 - `index`: your custom index. defaults to config's common_index
 - `suffix`: use to add suffix on current index. usually used in per user index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.search(
     body = {
@@ -269,20 +352,31 @@ elastic.search(
     suffix = "empty or anything here" // default to empty
 );
 ```
-# **elastic.`search_activity`**
+
+### Search with search activity
+
+`elastic.search_activity`
+
 - similar to elastic.search but always pointed to activity_index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.search_activity(body: dict, query: str = "", suffix: str = "");
 ```
 
-# **elastic.`mapping`**
+### Mapping
+
+`elastic.mapping`
+
 - this action will be used for getting mapping of specified index
 - `url` will always be pointed to **`/_mapping`** endpoint.
 - `query`: your additional query params
 - `index`: your custom index. defaults to config's common_index
 - `suffix`: use to add suffix on current index. usually used in per user index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.mapping(
     query = "additional url query the elastic supports ex: filter_path=aggregations.**.key" // default to empty
@@ -291,19 +385,29 @@ elastic.mapping(
 );
 ```
 
-# **elastic.`mapping_activity`**
+### Mapping with `mapping_activity`
+
+`elastic.mapping_activity`
+
 - similar to elastic.mapping but always pointed to activity_index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.mapping_activity(query: str = "", suffix: str = "");
 ```
 
-# **elastic.`refresh`**
+### Refresh
+
+`elastic.refresh`
+
 - this action will be used for manual refresh
 - `url` will always be pointed to **`/_refresh`** endpoint.
 - `index`: your custom index. defaults to config's common_index
 - `suffix`: use to add suffix on current index. usually used in per user index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.refresh(
     index = "jaseci-elastic-log", // default to common_index
@@ -311,28 +415,42 @@ elastic.refresh(
 );
 ```
 
-# **elastic.`refresh_activity`**
+### Refresh wirh `refresh_activity`
+
+`elastic.refresh_activity`
+
 - similar to elastic.refresh but always pointed to activity_index
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.refresh_activity(suffix: str = "");
 ```
 
-# **elastic.`aliases`**
+### Aliases
+
+`elastic.aliases`
+
 - this action will used for getting aliases
 - `url` will always be pointed to **`/_aliases`** endpoint.
 - `query`: your additional query params
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.aliases(query = "pretty=true");
 ```
 
-# **elastic.`reindex`**
+### Reindex
+
+`elastic.reindex`
 - this action will used for reindexing logs
 - `url` will always be pointed to **`/_reindex`** endpoint.
 - `body`: your request body
 - `query`: your additional query params
-##### **`HOW TO TRIGGER`**
+
+**`HOW TO TRIGGER`**
+
 ```js
 elastic.reindex(
     body: {
@@ -346,4 +464,4 @@ elastic.reindex(
     },
     query: "additional url query the elastic supports ex: filter_path=aggregations.**.key" // default to empty
 )
-```
+```s
