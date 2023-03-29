@@ -107,7 +107,7 @@ def remote_api_call(payload, api_name):
             ret.content, ret.headers.get("Content-Disposition")
         )
         session["master"]._h.add_file_handler(file_handler)
-        ret = file_handler.info()
+        ret = file_handler.attr()
     else:
         ret = ret.json()
     return ret
@@ -149,7 +149,7 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         if "report_custom" in out.keys() and out["report_custom"] is not None:
             out = out["report_custom"]
         elif "report_file" in out.keys() and out["report_file"] is not None:
-            out = session["master"]._h.get_file_handler(out["report_file"]).info()
+            out = session["master"]._h.get_file_handler(out["report_file"]).attr()
 
     if isinstance(out, dict) or isinstance(out, list):
         out = json.dumps(out, indent=2)
