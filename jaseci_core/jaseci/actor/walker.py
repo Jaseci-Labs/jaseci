@@ -187,6 +187,9 @@ class Walker(Element, WalkerInterp, Anchored):
             report_ret["status_code"] = self.report_status
         if self.report_custom:
             report_ret["report_custom"] = self.report_custom
+        if self.report_file:
+            report_ret["report_file"] = self.report_file
+
         if len(self.runtime_errors):
             report_ret["errors"] = self.runtime_errors
             report_ret["success"] = False

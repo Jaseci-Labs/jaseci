@@ -1,8 +1,10 @@
 """Built in actions for Jaseci"""
-from jaseci.actions.live_actions import jaseci_action
 import os
 import json
 import base64
+import mimetypes
+
+from jaseci.actions.live_actions import jaseci_action
 
 
 @jaseci_action()
@@ -77,14 +79,25 @@ def delete(fn: str):
 
 
 @jaseci_action()
-def new(name: str, content_type: str = None, field: str = None, meta: dict = {}):
+def new(
+    name: str,
+    content_type: str = None,
+    field: str = None,
+    persist: bool = False,
+    meta: dict = {},
+):
     """temp"""
     from jaseci.utils.file_handler import FileHandler
 
-    hook = meta["h"]
-    return hook.add_file_handler(
-        FileHandler(name=name, content_type=content_type, field=field)
+    return meta["h"].add_file_handler(
+        FileHandler(name=name, content_type=content_type, field=field, persist=persist)
     )
+
+
+@jaseci_action
+def guess_type(filename: str) -> tuple:
+    """temp"""
+    return mimetypes.guess_type(filename)
 
 
 @jaseci_action()
@@ -93,18 +106,28 @@ def update(
     name: str = None,
     content_type: str = None,
     field: str = None,
+    persist: bool = None,
     meta: dict = {},
 ):
     """temp"""
-    file_handler = meta["h"].get_file_handler(id)
+    from jaseci.utils.file_handler import FileHandler
+
+    file_handler: FileHandler = meta["h"].get_file_handler(id)
     if name:
         file_handler.name = name
+        if not content_type:
+            file_handler.content_type = mimetypes.guess_type(name)[0]
 
     if content_type:
         file_handler.content_type = content_type
 
     if field:
         file_handler.field = field
+
+    if persist != None:
+        file_handler.persist = persist
+
+    return file_handler.info()
 
 
 @jaseci_action()
@@ -152,10 +175,16 @@ def close(id: str, meta: dict = {}):
 @jaseci_action()
 def delete(id: str, meta: dict = {}):
     """temp"""
-    meta["h"].get_file_handler(id).delete()
+    meta["h"].pop_file_handler(id).delete()
 
 
 @jaseci_action()
 def to_base64(id: str, offset: int = None, meta: dict = {}):
     """temp"""
     return meta["h"].get_file_handler(id).base64(offset)
+
+
+@jaseci_action()
+def info(id: str, meta: dict = {}):
+    """temp"""
+    return meta["h"].get_file_handler(id).info()

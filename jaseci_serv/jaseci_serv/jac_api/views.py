@@ -1,9 +1,9 @@
 import json
-from base64 import b64encode
 from io import BytesIO
 from tempfile import _TemporaryFileWrapper
 from time import time
 
+from django.http import FileResponse
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -27,6 +27,23 @@ class JResponse(Response):
     def close(self):
         super(JResponse, self).close()
         # Commit db changes after response to user
+        self.hook.clean_file_handler()
+        self.hook.commit(True)
+
+
+class JFileResponse(FileResponse):
+    def __init__(self, hook, file_id: str) -> None:
+        file_handler: FileHandler = hook.get_file_handler(file_id)
+        file_handler.close()
+        file_handler.open(mode="rb", encoding=None)
+
+        super().__init__(file_handler.buffer, filename=file_handler.name)
+
+        self.hook = hook
+        self.hook.commit_all_cache_sync()
+
+    def close(self) -> None:
+        super().close()
         self.hook.clean_file_handler()
         self.hook.commit(True)
 
@@ -193,12 +210,20 @@ class AbstractJacAPIView(APIView):
         # for i in self.caller._h.save_obj_list:
         #     self.caller._h.commit_obj_to_redis(i)
         status = self.pluck_status_code(api_result)
-        if (
-            isinstance(api_result, dict)
-            and "report_custom" in api_result.keys()
-            and api_result["report_custom"] is not None
-        ):
-            api_result = api_result["report_custom"]
+        if isinstance(api_result, dict):
+            if (
+                "report_custom" in api_result.keys()
+                and api_result["report_custom"] is not None
+            ):
+                return JResponse(
+                    self.caller, api_result["report_custom"], status=status
+                )
+            elif (
+                "report_file" in api_result.keys()
+                and api_result["report_file"] is not None
+            ):
+                return JFileResponse(self.caller._h, api_result["report_file"])
+
         return JResponse(self.caller, api_result, status=status)
 
 

@@ -1,25 +1,34 @@
-from os import unlink, fsync
+import mimetypes
+from os import unlink
 from io import BytesIO
 from uuid import uuid4
 from base64 import b64encode
 from tempfile import _TemporaryFileWrapper
+import re
+
+filename_from_disposition = re.compile(r"filename=(['\"])(.*?)\1")
 
 
 class FileHandler:
-
     ###################################################
     #                     BUILDER                     #
     ###################################################
 
-    def __init__(self, name: str = None, content_type: str = None, field: str = None):
+    def __init__(
+        self,
+        name: str = None,
+        content_type: str = None,
+        field: str = None,
+        persist: bool = False,
+    ):
         self.id = str(uuid4())
         self.name = name
-        self.content_type = content_type or "text/plain"
+        self.content_type = content_type or mimetypes.guess_type(name)[0]
         self.field = field
         self.absolute_name = f"{self.id}-{name}"
         self.absolute_path = self.absolute_name
+        self.persist = persist
         self.buffer = None
-        self.field = None
 
     @classmethod
     def fromTemporaryFileWrapper(
@@ -46,6 +55,20 @@ class FileHandler:
         with open(file_handler.absolute_path, "wb") as f:
             f.write(file.getbuffer())
         file.close()
+
+        return file_handler
+
+    @classmethod
+    def fromRequest(cls, content: bytes, content_disposition: str):
+        name = "tmp"
+        searcher = filename_from_disposition.search(content_disposition)
+        if len(searcher.groups()):
+            name = searcher.group(2)
+
+        file_handler = cls(name)
+
+        with open(file_handler.absolute_path, "wb") as f:
+            f.write(content)
 
         return file_handler
 
@@ -103,3 +126,14 @@ class FileHandler:
 
     def is_open(self) -> bool:
         return self.buffer != None
+
+    def info(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "content_type": self.content_type,
+            "field": self.field,
+            "absolute_name": self.absolute_name,
+            "absolute_path": self.absolute_path,
+            "persist": self.persist,
+        }
