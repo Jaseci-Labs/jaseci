@@ -155,7 +155,7 @@ data:
   prod_up: |-
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
     git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git;
-    cd jaseci;
+    cd jaseci-experiment;
     cd jaseci_core; source install.sh;
     cd ../jaseci_serv; source install.sh;
     jsserv wait_for_db && jsserv makemigrations base &&
