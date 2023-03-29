@@ -1,10 +1,13 @@
+import re
 import mimetypes
 from os import unlink
 from io import BytesIO
 from uuid import uuid4
 from base64 import b64encode
 from tempfile import _TemporaryFileWrapper
-import re
+from os.path import basename, exists
+from json import load, dump
+
 
 filename_from_disposition = re.compile(r"filename=(['\"])(.*?)\1")
 
@@ -72,6 +75,16 @@ class FileHandler:
 
         return file_handler
 
+    @classmethod
+    def fromPath(cls, path: str):
+        name = basename(path)
+
+        file_handler = cls(name, persist=True)
+        file_handler.absolute_name = name
+        file_handler.absolute_path = path
+
+        return file_handler
+
     ###################################################
     #                     CONTROL                     #
     ###################################################
@@ -121,13 +134,13 @@ class FileHandler:
         except Exception:
             pass
 
-    def base64(self, offset: int = None):
-        return b64encode(self.read(offset).encode()).decode()
-
     def is_open(self) -> bool:
         return self.buffer != None
 
-    def info(self) -> dict:
+    def exists(self) -> bool:
+        return exists(self.absolute_path)
+
+    def attr(self) -> dict:
         return {
             "id": self.id,
             "name": self.name,
@@ -137,3 +150,22 @@ class FileHandler:
             "absolute_path": self.absolute_path,
             "persist": self.persist,
         }
+
+    ###################################################
+    #                     UTILITY                     #
+    ###################################################
+
+    def to_bytes(self):
+        with self.open("rb", None, True) as buffer:
+            return buffer.read()
+
+    def to_base64(self):
+        return b64encode(self.to_bytes()).decode()
+
+    def to_json(self):
+        with self.open(detached=True) as buffer:
+            return load(buffer)
+
+    def dump_json(self, json, indent: int = None):
+        with self.open("w", detached=True) as buffer:
+            dump(json, buffer, indent=indent)

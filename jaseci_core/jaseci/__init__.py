@@ -17,6 +17,7 @@ def load_standard():
     import jaseci.extens.act_lib.request  # noqa
     import jaseci.extens.act_lib.std  # noqa
     import jaseci.extens.act_lib.file  # noqa
+    import jaseci.extens.act_lib.file2  # noqa
     import jaseci.extens.act_lib.vector  # noqa
     import jaseci.extens.act_lib.date  # noqa
     import jaseci.extens.act_lib.jaseci  # noqa
