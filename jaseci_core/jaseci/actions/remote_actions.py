@@ -62,7 +62,7 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
     # Need to get pydatic model for func signature for fastAPI post
     model = validate_arguments(func).model
 
-    # Keep only feilds present in param list in base model
+    # Keep only fields present in param list in base model
     keep_fields = {}
     for i in model.__fields__.keys():
         if i in varnames:
@@ -71,7 +71,7 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
 
     # Create duplicate funtion for api endpoint and inject in call site globals
     @app.post(f"/{func.__name__}/")
-    def new_func(params: model = model()):
+    def new_func(params: model = model.construct()):
         pl_peek = str(dict(params.__dict__))[:128]
         logger.info(str(f"Incoming call to {func.__name__} with {pl_peek}"))
         start_time = time()
