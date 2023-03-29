@@ -98,23 +98,15 @@
 
 - [Jaseci AI Kit Overview](jaseci_ai_kit/README.md)
   - [Jaseci NLP features](jaseci_ai_kit/jac_nlp/README.md)
-  - [Summerization Models]
     - [CL Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/cl_summer/README.md)
     - [Bart Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/bart_sum/README.md)
     - [T5 Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/t5_sum/README.md)
-  - [Encoder Models]
     - [Bi-Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/bi_enc/README.md)
     - [USE Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/use_enc/README.md)
-
-  - [Nammed Entity Recognition Models]
     - [FLair NER](jaseci_ai_kit/jac_nlp/jac_nlp/ent_ext/README.md)
     - [Transformer NER](jaseci_ai_kit/jac_nlp/jac_nlp/tfm_ner/README.md)
-
-  - [CLassifiers]
     - [Fasttext Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/fast_enc/README.md)
     - [Text Segmenter](jaseci_ai_kit/jac_nlp/jac_nlp/text_seg/README.md)
-
-
     - [USE QA](jaseci_ai_kit/jac_nlp/jac_nlp/use_qa/README.md)
     - [ZS Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/zs_classifier/README.md)
     - [Topic Extraction](jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext/README.md)
@@ -125,7 +117,6 @@
     - [Paraphraser Model](jaseci_ai_kit/jac_nlp/jac_nlp/paraphraser/README.md)
 
   - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
-
     - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
     - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/vc_tts/README.md)
 
