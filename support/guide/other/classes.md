@@ -652,6 +652,12 @@ No documentation yet.
  <div class ='actionsArgs'> namespace: str (), exclude_prom: bool (False), timestamp: int (0), duration: int (0)</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
+<div class='actionHeading'>prometheus node info</div>
+
+ <div class='actionName'> cli: prometheus node info | api: prometheus_node_info | auth: admin </div> 
+ <div class ='actionsArgs'> namespace: str (), exclude_prom: bool (False), timestamp: int (0), duration: int (0)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
  # APIs for queue
 
 APIs used for celery configuration and monitoring

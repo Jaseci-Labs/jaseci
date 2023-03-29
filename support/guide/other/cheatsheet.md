@@ -731,6 +731,14 @@
 </ul> 
  </td> 
  </tr><tr> 
+ <td>prometheus node info</td><td> 
+ <ul><li>namespace: str ()</li>
+<li> exclude_prom: bool (False)</li>
+<li> timestamp: int (0)</li>
+<li> duration: int (0)</li>
+</ul> 
+ </td> 
+ </tr><tr> 
  <td>jac build (cli only)</td><td> 
  <ul><li>file: str (*req)</li>
 <li> out: str ()</li>
