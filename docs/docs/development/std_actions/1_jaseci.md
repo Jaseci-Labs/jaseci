@@ -1,5 +1,4 @@
 # Jaseci Basic Actions Library
-Alias provides names  for long string like UUIDs.
 
 - [Jaseci Basic Actions Library](#jaseci-basic-actions-library)
   - [Alias](#alias)
@@ -60,7 +59,7 @@ Alias provides names  for long string like UUIDs.
     - [Create Master](#create-master)
     - [Get Master Content](#get-master-content)
     - [List Masters](#list-masters)
-      - [Set Default Master](#set-default-master)
+    - [Set Default Master](#set-default-master)
     - [Unset Default Master](#unset-default-master)
     - [Get Default Master](#get-default-master)
     - [Get Master Object](#get-master-object)
@@ -93,10 +92,10 @@ Alias provides names  for long string like UUIDs.
     - [Cancel Customer Subscription](#cancel-customer-subscription)
     - [Get Customer Subscription](#get-customer-subscription)
     - [Invoice List](#invoice-list)
-  - [Load actions](#load-actions)
-  - [Load modules locally](#load-modules-locally)
-    - [Load modules remote](#load-modules-remote)
-    - [Load modules local](#load-modules-local)
+  - [actions](#actions)
+  - [Load actions module locally](#load-actions-module-locally)
+    - [Load actions module remote](#load-actions-module-remote)
+    - [Load actions module local](#load-actions-module-local)
     - [List actions](#list-actions)
   - [Configurations APIs](#configurations-apis)
     - [Get config](#get-config)
@@ -628,7 +627,7 @@ Provide complete list of all master objects (list of root node objects)
 masters  = jaseci.master_list(detailed);
 ```
 
-#### Set Default Master
+### Set Default Master
 
 Sets the default sentinel  master should use.
 
@@ -897,9 +896,9 @@ Retrieve customer list of invoices.
 invoices = jaseci.stripe_invoice_list(customerId,subscriptionId,limit,lastitem);
 ```
 
-## Load actions
+## actions
 
-## Load modules locally
+## Load actions module locally
 
 Hot load a python module and assimlate any jaseci action
 `file` : `string` - module to be loaded
@@ -908,7 +907,7 @@ Hot load a python module and assimlate any jaseci action
 success_message  = jaseci.actions_load_local(file);
 ```
 
-### Load modules remote
+### Load actions module remote
 
 Hot load an actions set from live pod at URL
 `url` : `string` - link to module to be loaded
@@ -916,7 +915,7 @@ Hot load an actions set from live pod at URL
 ```jac
 success_message = jaseci.actions_load_remote(url);
 ```
-### Load modules local
+### Load actions module local
 
 `mod` : `string` - name of module to be loaded
 

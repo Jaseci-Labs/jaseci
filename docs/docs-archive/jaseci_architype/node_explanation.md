@@ -3,6 +3,7 @@
 In Jaseci, nodes are a crucial concept. There are two types of nodes:
 - Root node: It is the starting point of the graph and is a built-in node type. Each graph can have only one root node.
 - Generic node: It is a built-in node type that can be used throughout the Jaseci application. You can customize the name and properties of this node type as well.
+
 Here's an example code snippet to create and spawn a node:
 
 ```jac
