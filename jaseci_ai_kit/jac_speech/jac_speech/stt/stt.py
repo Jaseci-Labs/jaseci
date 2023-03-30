@@ -38,7 +38,11 @@ def transcribe(
             raise Exception(
                 "Model is not multilingual. Setup with a multilingual model."
             )
-        options = whisper.DecodingOptions(task="transcribe", without_timestamps=True)
+        options = whisper.DecodingOptions(
+            task="transcribe",
+            without_timestamps=True,
+            fp16=True if DEVICE == "cuda" else False,
+        )
         mel, audio_length = get_mel_spectrogram(audio_file)
         if mel is None and audio_length >= 30:
             result = model.transcribe(audio_file, task="transcribe")
@@ -81,7 +85,9 @@ def translate(
             raise Exception(
                 "Model is not multilingual. Setup with a multilingual model. Translation is not supported for English-only models."
             )
-        options = whisper.DecodingOptions(task="translate")
+        options = whisper.DecodingOptions(
+            task="translate", fp16=True if DEVICE == "cuda" else False
+        )
         mel, audio_length = get_mel_spectrogram(audio_file)
         if mel is None and audio_length >= 30:
             result = model.transcribe(audio_file, task="translate")
