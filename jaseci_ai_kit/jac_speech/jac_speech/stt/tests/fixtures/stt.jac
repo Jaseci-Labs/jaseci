@@ -1,6 +1,6 @@
 walker test_transcribe_file {
     can stt.transcribe;
-    report stt.transcribe(audio_file="jac_speech/jac_speech/stt/tests/test.mp3");
+    report stt.transcribe(audio_file="jac_speech/stt/tests/test.mp3");
 }
 
 walker test_transcribe_url {
