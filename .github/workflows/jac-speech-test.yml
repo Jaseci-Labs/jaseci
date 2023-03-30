@@ -1,14 +1,14 @@
-name: jaseci_ai_kit Tests
+name: Jac_speech Tests
 
 on:
   push:
     branches: [ main ]
     paths:
-      - jaseci_ai_kit/**
+      - jaseci_ai_kit/jac_speech/**
   pull_request:
     branches: [ main ]
     paths:
-      - jaseci_ai_kit/**
+      - jaseci_ai_kit/jac_speech/**
 
 jobs:
   tests:
@@ -21,11 +21,18 @@ jobs:
         swap-size-gb: 5
 
     - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
         python-version: "3.10"
+
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -37,18 +44,16 @@ jobs:
       run: |
         pip3 install jaseci_core/
 
-    - name: Install jaseci_ai_kit
+    - name: Install jac_speech
       run: |
-        cd jaseci_ai_kit/
-        bash install.sh all
+        cd jaseci_ai_kit/jac_speech
+        pip install -e .[all]
 
-    - name: Verify jaseci_ai_kit installation
+    - name: Verify jac_speech installation
       run: |
-        python -c "import jac_nlp"
-        python -c "import jac_misc"
         python -c "import jac_speech"
 
     - name: Run tests
       run: |
-        cd jaseci_ai_kit/
-        source test.sh
+        cd jaseci_ai_kit/jac_speech
+        source ../test.sh
