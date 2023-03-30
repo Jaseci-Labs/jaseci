@@ -2,17 +2,17 @@
 The `jac_misc` package contains a collection of miscellaneous models that can be used to perform various tasks such as translation, pdf extraction, personalized head etc. following is a list of all the models available in the `jac_misc` package.
 
 - [Jaseci Misc Package `(jac_misc)`](#jaseci-misc-package-jac_misc)
-  - [Clustering](#clustering)
+  - [Clustering Modules](#clustering-modules)
     - [Actions](#actions)
     - [Example Jac Usage](#example-jac-usage)
-  - [Translator Module](#translator-module)
+  - [Translator Modules](#translator-modules)
     - [Actions](#actions-1)
     - [Example Jac Usage:](#example-jac-usage-1)
-  - [PDF Extractor Module](#pdf-extractor-module)
+  - [PDF Extractor Modules](#pdf-extractor-modules)
     - [Actions](#actions-2)
     - [Example Jac Usage](#example-jac-usage-2)
 
-## Clustering
+## Clustering Modules
 
 Module `cluster` implemented for clustering text document into similar clusters. This is a example program to cluster documents with jaseci `cluster` module. We will use input as list of raw text documents and will produce cluster labels for each text documents.
 
@@ -60,7 +60,7 @@ Module `cluster` implemented for clustering text document into similar clusters.
     "countries currently support"]
 ```
 
-```
+```jac
 walker text_cluster_example{
     can file.load_json;
     can use.encode;
@@ -78,7 +78,10 @@ walker text_cluster_example{
 
 }
 ```
-## Translator Module
+
+For a complete example visit [here](jac_misc/cluster/README.md)
+
+## Translator Modules
 
 Module `translator` uses the `mbart-large-50-many-to-many` to perform multilingual translation. It can translate from 50 languages to 50 languages.
 
@@ -110,8 +113,9 @@ walker test_translate_eng_german {
     report translator.translate("Hello, how are you?", "en_XX", "de_DE"); # Returns ["Hallo, wie geht es dir?"]
 }
 ```
+For a complete example visit [here](jac_misc/translator/README.md)
 
-## PDF Extractor Module
+## PDF Extractor Modules
 
 `pdf_ext` module implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
 
@@ -138,3 +142,5 @@ walker pdf_ext_example {
     std.out(resp_data);
 }
 ```
+
+For a complete example visit [here](jac_misc/pdf_ext/README.md)
