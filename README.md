@@ -138,7 +138,9 @@
   - [Dictionary](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#dictionaries)
   - [List](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#list)
   - [String](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#strings)
--
+- [Loops and Conditions](docs/docs/jac_language_guide/3_loops_and_conditions.md)
+  - [Control Flow](docs/docs/jac_language_guide/3_loops_and_conditions.md#control-flow)
+  - [Looping](docs/docs/jac_language_guide/3_loops_and_conditions.md#looping)
 
 # Testing and Debugging
 
