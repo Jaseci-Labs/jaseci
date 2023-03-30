@@ -70,3 +70,11 @@ class JacActionsTests(TestCaseHelper, TestCase):
         _, kwargs = mock_post.call_args
 
         assert kwargs["json"] == payload
+
+    def test_setup_decorated_as_startup(self):
+        @jla.jaseci_action(act_group=["ex"], allow_remote=True)
+        def setup(param: str = ""):
+            pass
+
+        app = jra.serv_actions()
+        assert len(app.__dict__["router"].__dict__["on_startup"]) == 1
