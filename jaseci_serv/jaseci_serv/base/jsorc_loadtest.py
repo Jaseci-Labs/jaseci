@@ -151,19 +151,21 @@ class JsorcLoadTest:
         """
         Run synthetic application
         Available applications are in jaseci_serv/base/example_jac
+        
         """
         results = {}
         node_mem = [int(mem) * 1024]
         apps = [experiment]
         policies = [policy]
         app_to_actions = {
-            "zeroshot_faq_bot": ["text_seg", "use_qa"],
-            "sentence_pairing": ["use_enc", "bi_enc"],
-            "discussion_analysis": ["bi_enc", "cl_summer"],
-            "flight_chatbot": ["use_qa", "ent_ext"],
-            "restaurant_chatbot": ["bi_enc", "tfm_ner"],
-            "virtual_assistant": ["text_seg", "bi_enc", "tfm_ner", "ent_ext", "use_qa"],
-            "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
+            "zeroshot_faq_bot": ["jac_nlp.text_seg", "jac_nlp.use_qa"],
+            "sentence_pairing": ["jac_nlp.use_enc", "jac_nlp.bi_enc"],
+            "discussion_analysis": ["jac_nlp.bi_enc", "jac_nlp.cl_summer"],
+            "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
+            "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
+            "virtual_assistant": ["jac_nlp.text_seg", "jac_nlp.bi_enc", "jac_nlp.tfm_ner", "jac_nlp.ent_ext", "jac_nlp.use_qa"],
+            "flow_analysis": ["jac_nlp.text_seg", "jac_nlp.tfm_ner", "jac_nlp.use_enc"],
+            "weather_and_time_assitance": ["jac_speech.vc_tts", "jac_speech.stt", "jac_nlp.bi_enc"]
         }
 
         for app in apps:

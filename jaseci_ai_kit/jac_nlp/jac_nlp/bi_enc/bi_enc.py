@@ -6,6 +6,7 @@ from transformers import AutoModel, AutoConfig, AutoTokenizer
 import traceback
 import numpy as np
 from jaseci.actions.live_actions import jaseci_action
+from jaseci.utils.utils import model_base_path
 import random
 import json
 import shutil
@@ -20,7 +21,7 @@ from .utils.train import train_model  # noqa
 # this is commented out because this causes issues with
 # unittest on machines with GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+BI_ENC_ROOT = model_base_path("jac_nlp/bi_enc")
 
 # funtion to set seed for the module
 def set_seed(seed):
@@ -43,9 +44,18 @@ def setup():
         model_config = json.load(jsonfile)
     with open(t_config_fname, "r") as jsonfile:
         train_config = json.load(jsonfile)
-
+    os.makedirs(BI_ENC_ROOT, exist_ok=True)
+    if all(
+        os.path.isfile(os.path.join(BI_ENC_ROOT, file))
+        for file in ["config.json", "pytorch_model.bin"]
+    ):
+        trf_config = AutoConfig.from_pretrained(BI_ENC_ROOT)
+    else:
+        trf_config = AutoConfig.from_pretrained(model_config["model_name"])
+        model = AutoModel.from_config(trf_config)
+        model.save_pretrained(BI_ENC_ROOT)
+        del model
     train_config.update({"device": device.type})
-    trf_config = AutoConfig.from_pretrained(model_config["model_name"])
     tokenizer = AutoTokenizer.from_pretrained(
         model_config["model_name"], do_lower_case=True, clean_text=False
     )
@@ -310,8 +320,9 @@ def save_model(model_path: str):
                 Invalid model name. Model Name can only have Alphanumeric
                  and '_' characters.""",
             )
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
+        if not os.path.isabs(model_path):
+            model_path = os.path.join(BI_ENC_ROOT, model_path)
+        os.makedirs(model_path, exist_ok=True)
         if model_config["shared"] is True:
             model.cont_bert.save_pretrained(model_path)
             tokenizer.save_vocabulary(model_path)
@@ -348,6 +359,8 @@ def load_model(model_path):
     loads the model from the provided model_path
     """
     global model, tokenizer
+    if not os.path.isabs(model_path):
+        model_path = os.path.join(BI_ENC_ROOT, model_path)
     if not os.path.exists(model_path):
         raise HTTPException(status_code=404, detail="Model path is not available")
     try:
