@@ -117,7 +117,7 @@ longform_pipeline = None
 
 
 @jaseci_action(act_group=["stt"], allow_remote=True)
-def setup(size: str = "small.en", longform: bool = True, chunk_length_s: int = 18):
+def setup(size: str = "small", longform: bool = False, chunk_length_s: int = 18):
     global model, processor
     if longform:
         if model is not None or processor is not None:

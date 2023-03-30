@@ -204,7 +204,7 @@
 
   - [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
   - [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
-  - [Stand Up an Jaseci Action Library Server](docs/docs-archive/canonicai/chapter9.md)
+  - [Stand Up a Jaseci Action Library Server](docs/docs-archive/canonicai/chapter9.md)
   - [Requests to APIs in Jac](docs/docs-archive/canonicai/chapter8.md)
   - [Testing CCAI Dialogues in Jac](docs/docs-archive/canonicai/chapter7.md)
   - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
@@ -234,7 +234,7 @@
 
 - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
 - [Guide on Contributing](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
-- [Being an Contributor](support/guide/other/contributor_policy.md)
+- [Being a Contributor](support/guide/other/contributor_policy.md)
 - [General Guide](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
 
