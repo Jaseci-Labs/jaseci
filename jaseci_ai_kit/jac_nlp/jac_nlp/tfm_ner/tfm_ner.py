@@ -1,7 +1,7 @@
 import traceback
 from fastapi import HTTPException
 from jaseci.actions.live_actions import jaseci_action
-from typing import Dict, List, Optional,Union
+from typing import Dict, List, Optional
 import os
 import json
 import warnings
@@ -15,9 +15,10 @@ from .train import (
 import shutil
 from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from jaseci.utils.utils import model_base_path
+
 
 warnings.filterwarnings("ignore")
-from jaseci.utils.utils import model_base_path
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)

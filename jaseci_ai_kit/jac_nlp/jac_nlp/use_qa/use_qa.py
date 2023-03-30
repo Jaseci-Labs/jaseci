@@ -6,7 +6,6 @@ from jaseci.actions.live_actions import jaseci_action
 from typing import Union
 from jaseci.utils.utils import model_base_path
 import os
-import traceback
 
 
 MODULE_URL = "https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/3"
@@ -20,12 +19,12 @@ def setup():
     """
     global module
     try:
-        module = tf.saved_model.load(os.path.join(USE_QA_ROOT,"saved_model.pb"))
+        module = tf.saved_model.load(os.path.join(USE_QA_ROOT, "saved_model.pb"))
     except OSError:
         os.makedirs(USE_QA_ROOT, exist_ok=True)
         module = hub.load(MODULE_URL)
         tf.saved_model.save(module, USE_QA_ROOT)
-        keras.backend.clear_session()
+        tf.keras.backend.clear_session()
 
 
 setup()

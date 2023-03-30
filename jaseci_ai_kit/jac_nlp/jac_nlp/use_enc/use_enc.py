@@ -19,7 +19,7 @@ def setup():
     """
     global module
     try:
-        module = tf.saved_model.load(os.path.join(USE_ENC_ROOT,"saved_model.pb"))
+        module = tf.saved_model.load(os.path.join(USE_ENC_ROOT, "saved_model.pb"))
     except OSError:
         os.makedirs(USE_ENC_ROOT, exist_ok=True)
         module = hub.load(MODULE_URL)

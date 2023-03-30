@@ -337,6 +337,7 @@ def find_first_api(api_name, **api_endpoints):
 
 cache_root = Path("/root/.jaseci/models")
 
+
 def model_base_path(cache_dir: Union[str, Path]) -> Path:
 
     cache_dir = Path(cache_dir)

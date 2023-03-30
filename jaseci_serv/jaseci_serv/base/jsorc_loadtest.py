@@ -151,7 +151,7 @@ class JsorcLoadTest:
         """
         Run synthetic application
         Available applications are in jaseci_serv/base/example_jac
-        
+
         """
         results = {}
         node_mem = [int(mem) * 1024]
@@ -163,9 +163,19 @@ class JsorcLoadTest:
             "discussion_analysis": ["jac_nlp.bi_enc", "jac_nlp.cl_summer"],
             "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
             "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
-            "virtual_assistant": ["jac_nlp.text_seg", "jac_nlp.bi_enc", "jac_nlp.tfm_ner", "jac_nlp.ent_ext", "jac_nlp.use_qa"],
+            "virtual_assistant": [
+                "jac_nlp.text_seg",
+                "jac_nlp.bi_enc",
+                "jac_nlp.tfm_ner",
+                "jac_nlp.ent_ext",
+                "jac_nlp.use_qa",
+            ],
             "flow_analysis": ["jac_nlp.text_seg", "jac_nlp.tfm_ner", "jac_nlp.use_enc"],
-            "weather_and_time_assitance": ["jac_speech.vc_tts", "jac_speech.stt", "jac_nlp.bi_enc"]
+            "weather_and_time_assitance": [
+                "jac_speech.vc_tts",
+                "jac_speech.stt",
+                "jac_nlp.bi_enc",
+            ],
         }
 
         for app in apps:
