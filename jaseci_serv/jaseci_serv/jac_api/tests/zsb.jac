@@ -275,28 +275,41 @@ async walker simple_async {
 }
 
 walker simple_with_file {
-    has fileTypeField;
+    has sample, fileTypeField;
 
     with entry {
-        report global.info['request_context']["body"]["ctx"]["fileTypeField"];
-        report fileTypeField;
+        report sample;
+
+        if fileTypeField and global.info['request_context']["body"]["ctx"]["fileTypeField"] {
+            report true;
+        }
+
+        report fileTypeField[0];
+        report file2.attr(fileTypeField[0]);
+        report file2.read(fileTypeField[0], 0);
+        report file2.to_json(fileTypeField[0]);
+        report file2.to_bytes(fileTypeField[0]).str;
+        report file2.to_base64(fileTypeField[0]);
     }
 }
 
 walker simple_custom_payload_with_file {
     has fileTypeField;
 
+    can file2.attr, file2.read, file2.to_json, file2.to_base64, file2.to_bytes;
+
     with entry {
-
-        if not(fileTypeField) {
+        if not fileTypeField and not global.info['request_context']["body"]["ctx"] {
             report true;
         }
 
-        if not(global.info['request_context']["body"]["ctx"]) {
-            report true;
-        }
-
-        report global.info['request_context']["body"]["fileTypeField"];
+        uuid = global.info['request_context']["body"]["fileTypeField"][0];
+        report uuid;
+        report file2.attr(uuid);
+        report file2.read(uuid, 0);
+        report file2.to_json(uuid);
+        report file2.to_bytes(uuid).str;
+        report file2.to_base64(uuid);
     }
 }
 
