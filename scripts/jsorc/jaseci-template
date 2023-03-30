@@ -230,11 +230,16 @@ $j{env_vars}
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: jac-nlp-volume
+              mountPath: /root/.jaseci/models/jac_nlp/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: jac-nlp-volume
+          persistentVolumeClaim:
+            claimName: jac-nlp-pvc
 ---
 apiVersion: v1
 kind: Secret
