@@ -124,6 +124,22 @@
 
 # JAC Language Syntax Reference
 
+- [Jac Language Basics](docs/docs/jac_language_guide/1_jac_lang_basics.md)
+  - [Data Types](docs/docs/jac_language_guide/1_jac_lang_basics.md#data-types)
+    - [Special Types](docs/docs/jac_language_guide/1_jac_lang_basics.md#special-types)
+    - [Typecasting](docs/docs/jac_language_guide/1_jac_lang_basics.md#typecasting)
+  - [Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#operators)
+    - [Arithmatic Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#arithmatic-operators)
+    - [Equality Operations](docs/docs/jac_language_guide/1_jac_lang_basics.md#equality-operations)
+    - [Logical Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#logical-operators)
+    - [Assigments Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
+  - [Precedence of Jaseci Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
+- [Data Structures in Jaseci](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md)
+  - [Dictionary](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#dictionaries)
+  - [List](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#list)
+  - [String](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#strings)
+-
+
 # Testing and Debugging
 
 # Deployment
@@ -135,14 +151,6 @@
 
 ## Language Basics
 
-  - [Data Types, Numbers, Arithmetic and Logic](docs/docs-archive/Language_basics/Num_ari_log.md)
-    - [Operators](docs/docs-archive/Developing_with_JAC/Language_Features/Operator.md)
-    - [Precedence](docs/docs-archive/Language_basics/precedence.md)
-    - [Data Types](docs/docs-archive/Developing_with_JAC/Language_Features/dataTypes.md)
-  - [Lists Strings and Dictionaries](docs/docs-archive/Language_basics/lists_dicts_dicts.md)
-    - [Library of String Operations](docs/docs-archive/Language_basics/strings.md)
-    - [Library of List Operations](docs/docs-archive/Language_basics/lists.md)
-    - [Library of Dictionary Operations](docs/docs-archive/Language_basics/dictionaries.md)
   - [Control Flow](docs/docs-archive/Developing_with_JAC/Language_Features/ControlFlow.md)
   - [Input/Output](docs/docs-archive/Developing_with_JAC/Language_Features/input_output.md)
   - [Imports](docs/docs-archive/Developing_with_JAC/Language_Features/imports.md)
@@ -172,34 +180,6 @@
 
 ## Jaseci AI Library Reference
 
-- [Jaseci AI Kit Overview](jaseci_ai_kit/README.md)
-  - [Jaseci NLP features](jaseci_ai_kit/jac_nlp/README.md)
-    - [CL Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/cl_summer/README.md)
-    - [Bart Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/bart_sum/README.md)
-    - [T5 Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/t5_sum/README.md)
-    - [Bi-Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/bi_enc/README.md)
-    - [USE Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/use_enc/README.md)
-    - [FLair NER](jaseci_ai_kit/jac_nlp/jac_nlp/ent_ext/README.md)
-    - [Transformer NER](jaseci_ai_kit/jac_nlp/jac_nlp/tfm_ner/README.md)
-    - [Fasttext Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/fast_enc/README.md)
-    - [Text Segmenter](jaseci_ai_kit/jac_nlp/jac_nlp/text_seg/README.md)
-    - [USE QA](jaseci_ai_kit/jac_nlp/jac_nlp/use_qa/README.md)
-    - [ZS Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/zs_classifier/README.md)
-    - [Topic Extraction](jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext/README.md)
-    - [BI Encoder for NER](jaseci_ai_kit/jac_nlp/jac_nlp/bi_ner/README.md)
-    - [SBERT Similarity](jaseci_ai_kit/jac_nlp/jac_nlp/sbert_sim/README.md)
-    - [GPT2](jaseci_ai_kit/jac_nlp/jac_nlp/gpt2/README.md)
-    - [Sentiment Analysis](jaseci_ai_kit/jac_nlp/jac_nlp/sentiment/README.md)
-    - [Paraphraser Model](jaseci_ai_kit/jac_nlp/jac_nlp/paraphraser/README.md)
-
-  - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
-    - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
-    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/vc_tts/README.md)
-
-  - [Jaseci miscellaneous AI features](jaseci_ai_kit/jac_misc/README.md)
-    - [Clustering](jaseci_ai_kit/jac_misc/jac_misc/cluster/README.md)
-    - [Personalized Head](jaseci_ai_kit/jac_misc/jac_misc/ph/README.md)
-    - [Translator](jaseci_ai_kit/jac_misc/jac_misc/translator/README.md)
 
 - [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
 - [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/README.md)
