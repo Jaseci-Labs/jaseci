@@ -158,10 +158,8 @@ data:
     # apt-get install -y libsndfile1 libsndfile-dev ffmpeg
     # pip install -U soundfile
     cd jaseci-experiment;
-    cd jaseci_core; source install_live.sh;
-    cd ../jaseci_serv; source install_live.sh;
-    cd ../jaseci_ai_kit/jac_nlp; pip install -e .;
-    cd /;
+    cd jaseci_core; source install.sh;
+    cd ../jaseci_serv; source install.sh;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -185,7 +183,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jac-nlp:1.4.0.11
+          image: jaseci/jac-nlp:1.4.0.12
           resources:
             requests:
               memory: "2Gi"
