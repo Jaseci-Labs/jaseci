@@ -89,6 +89,7 @@
   - [Stripe](docs/docs/development/std_actions/9_stripe.md)
   - [Vectors](docs/docs/development/std_actions/10_vectors.md)
   - [Elastic](docs/docs/development/std_actions/11_elastic.md)
+  - [File Handler](docs/docs/development/std_actions/12_file_handler.md)
   - [Jaseci Core](docs/docs/development/std_actions/1_jaseci.md)
     - [Alias](docs/docs/development/std_actions/1_jaseci.md#alias)
     - [Objects](docs/docs/development/std_actions/1_jaseci.md#objects)
