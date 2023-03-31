@@ -25,7 +25,7 @@ TFM_NER_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone -b jaseci_image https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[tfm_ner]; uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[tfm_ner]; uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
