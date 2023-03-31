@@ -1,26 +1,42 @@
----
-title : Control Flow
----
+# Loops and Conditions in Jaseci
+
+- [Loops and Conditions in Jaseci](#loops-and-conditions-in-jaseci)
+  - [Control FLow](#control-flow)
+    - [`if` statement](#if-statement)
+    - [`if-else` statement](#if-else-statement)
+    - [`elif` statement](#elif-statement)
+    - [Sample Snippets](#sample-snippets)
+  - [Looping](#looping)
+    - [`for` loop](#for-loop)
+    - [`while` loop](#while-loop)
+    - [Sample Snippets](#sample-snippets-1)
+
 ## Control FLow
-The If statement
+
+### `if` statement
+
+Simple IF statement.
 
 ```jac
-# Simple IF statement
 if(condition){
     #execute if condition is true
 }
 ```
 
-*If else*
-```jac
+### `if-else` statement
 
+If-Else statement.
+
+```jac
 if(condition){
     #execute code if condition is true
-} else {
+}
+else {
     # execute code if condition is not true.
 }
 ```
-*elif*
+### `elif` statement
+
 ```jac
 if(condition){
      #execute code if condition is true
@@ -35,7 +51,11 @@ else {
      #execute code if none of the conditions are true
 }
 ```
-## Sample Snippets
+
+### Sample Snippets
+
+Example
+
 ```jac
 walker init {
      a = 4; b = 5;
@@ -46,18 +66,42 @@ walker init {
      else: std.out("A is something else");
  }
 ```
+
 **Output**
 ```
 A is one less than B
 ```
 
+## Looping
+
+### `for` loop
+
+```jac
+for (initializing) to (condition) by (incrementing or substracting):
+        std.out("Hello", i, "times!");
+```
+
+### `while` loop
+
+```jac
+while(condition) {
+          # execute when the condition is true.
+     }
+```
+
+### Sample Snippets
+
+Example 1:
+
 ```jac
 walker init {
      for i=0 to i<10 by i+=1:
-     std.out("Hello", i, "times!");
+        std.out("Hello", i, "times!");
  }
 ```
-**Output**
+
+Output 1:
+
 ```
 Hello 0 times!
 Hello 1 times!
@@ -71,20 +115,26 @@ Hello 8 times!
 Hello 9 times!
 ```
 
+Example 2:
+
 ```jac
 walker init {
      my_list = [1, 'jon', 3.5, 4];
      for i in my_list:
-     std.out("Hello", i, "times!");
+        std.out("Hello", i, "times!");
  }
 ```
-**Output**
+
+Output 2:
+
 ```
 Hello 1 times!
 Hello jon times!
 Hello 3.5 times!
 Hello 4 times!
 ```
+
+Example 3:
 
 ```jac
 walker init {
@@ -95,7 +145,9 @@ walker init {
      }
  }
 ```
-**Output**
+
+Output 3:
+
 ```
 Hello 5 times!
 Hello 4 times!
@@ -104,6 +156,7 @@ Hello 2 times!
 Hello 1 times!
 ```
 
+Example 4:
 ```jac
 walker init {
      for i=0 to i<10 by i+=1 {
@@ -112,7 +165,9 @@ walker init {
      }
  }
 ```
-**Output**
+
+Output 4:
+
 ```
 Hello 0 times!
 Hello 1 times!
@@ -122,6 +177,8 @@ Hello 4 times!
 Hello 5 times!
 Hello 6 times!
 ```
+
+Example 5:
 
 ```jac
 walker init {
@@ -135,7 +192,9 @@ walker init {
      }
  }
 ```
-**Output**
+
+Output 5:
+
 ```
 Hello 5 times!
 Hello 4 times!

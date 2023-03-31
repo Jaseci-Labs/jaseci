@@ -2,14 +2,14 @@
 The `jac_speech` package contains a collection of state-of-the-art Speech models that can be used to perform various speech tasks such as speech to text, text to speech etc. following is a list of all the models available in the `jac_speech` package.
 
 - [Jaseci Speech Package `jac_speech`](#jaseci-speech-package-jac_speech)
-  - [Speech to Text](#speech-to-text)
+  - [Speech to Text Modules](#speech-to-text-modules)
     - [Actions](#actions)
     - [Example Jac Usage:](#example-jac-usage)
-  - [Text to Speech](#text-to-speech)
+  - [Text to Speech Modules](#text-to-speech-modules)
     - [Actions](#actions-1)
     - [Example Jac Usage](#example-jac-usage-1)
 
-## Speech to Text
+## Speech to Text Modules
 
 `stt` uses the `whisper-tiny` to get the transcription or translation of a give audio sequence.
 
@@ -63,7 +63,9 @@ walker translate {
 }
 ```
 
-## Text to Speech
+For a complete example visit [here](jac_speech/stt/README.md)
+
+## Text to Speech Modules
 
 Implementation of the `tts` module produces audio wavs from the input text sequence.
 
@@ -105,4 +107,4 @@ walker init{
 }
 ```
 
-
+For a complete example visit [here](jac_speech/vc_tts/README.md)

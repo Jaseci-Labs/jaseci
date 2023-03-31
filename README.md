@@ -103,35 +103,77 @@
     - [Stripe](docs/docs/development/std_actions/1_jaseci.md#stripe)
     - [Actions](docs/docs/development/std_actions/1_jaseci.md#actions)
     - [Configurations](docs/docs/development/std_actions/1_jaseci.md#configurations-apis)
+- [Jaseci AI kit Features](jaseci_ai_kit/README.md)
+  - [Jac NLP Modules](jaseci_ai_kit/jac_nlp/README.md)
+    - [Text Encoders](jaseci_ai_kit/jac_nlp/README.md#text-encoders)
+    - [Named Entity Recognition Models](jaseci_ai_kit/jac_nlp/README.md#named-entity-recognition-models)
+    - [Text Segmentation Modules](jaseci_ai_kit/jac_nlp/README.md#text-segmentation-modules)
+    - [Summarization Modules](jaseci_ai_kit/jac_nlp/README.md#summarization-modules)
+    - [Topic Modeling Modules](jaseci_ai_kit/jac_nlp/README.md#topic-modeling-modules)
+    - [Sentiment Analysis Modules](jaseci_ai_kit/jac_nlp/README.md#sentiment-analysis-modules)
+    - [Paraphraser Modules](jaseci_ai_kit/jac_nlp/README.md#paraphraser-modules)
+    - [Text Generation Modules](jaseci_ai_kit/jac_nlp/README.md#text-generation-modules)
+  - [Jac Speech Modules](jaseci_ai_kit/jac_speech/README.md)
+    - [Speech to Text Modules](jaseci_ai_kit/jac_speech/README.md#speech-to-text-modules)
+    - [Text to Speech Modules](jaseci_ai_kit/jac_speech/README.md#text-to-speech-modules)
+  - [Jac Vision Modules](jaseci_ai_kit/jac_vision/README.md)
+  - [Jac Miscellaneous Modules](jaseci_ai_kit/jac_misc/README.md)
+    - [Clustering Modules](jaseci_ai_kit/jac_misc/README.md#clustering-modules)
+    - [Translator Modules](jaseci_ai_kit/jac_misc/README.md#translator-modules)
+    - [PDF Extractor Modules](jaseci_ai_kit/jac_misc/README.md#pdf-extractor-modules)
+  - [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
+
 
 # JAC Language Syntax Reference
+
+- [Jac Language Basics](docs/docs/jac_language_guide/1_jac_lang_basics.md)
+  - [Data Types](docs/docs/jac_language_guide/1_jac_lang_basics.md#data-types)
+    - [Special Types](docs/docs/jac_language_guide/1_jac_lang_basics.md#special-types)
+    - [Typecasting](docs/docs/jac_language_guide/1_jac_lang_basics.md#typecasting)
+  - [Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#operators)
+    - [Arithmatic Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#arithmatic-operators)
+    - [Equality Operations](docs/docs/jac_language_guide/1_jac_lang_basics.md#equality-operations)
+    - [Logical Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#logical-operators)
+    - [Assigments Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
+  - [Precedence of Jaseci Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
+  - [Input and Output](docs/docs/jac_language_guide/1_jac_lang_basics.md#input-and-output-in-jaseci)
+  - [File Handling](docs/docs/jac_language_guide/1_jac_lang_basics.md#file-handling-in-jaseci)
+  - [Global Variables](docs/docs/jac_language_guide/1_jac_lang_basics.md#global-variables-in-jaseci)
+  - [Working with Imports](docs/docs/jac_language_guide/1_jac_lang_basics.md#working-with-imports)
+- [Data Structures in Jaseci](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md)
+  - [Dictionary](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#dictionaries)
+  - [List](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#list)
+  - [String](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#strings)
+- [Loops and Conditions](docs/docs/jac_language_guide/3_loops_and_conditions.md)
+  - [Control Flow](docs/docs/jac_language_guide/3_loops_and_conditions.md#control-flow)
+  - [Looping](docs/docs/jac_language_guide/3_loops_and_conditions.md#looping)
 
 # Testing and Debugging
 
 # Deployment
 
+# Contributing to Jaseci
+
 # Resources
+
+- [About this Release](CHANGELOG.md)
+- [Archived Notes](NOTES.md)
+- [Join our Community](https://forum.jaseci.org/)
+- [Online Documentation](https://docs.jaseci.org/)
+- [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)
+- [Our Website](https://jaseci.org/)
+  - [Learn more at the Dojo](https://jaseci.org/dojo)
+  - [Products Built with Jaseci](https://jaseci.org/products/)
+  - [Jaseci in the News](https://jaseci.org/blog/)
+  - [Contact Us](https://jaseci.org/contact-us/)
 
 
 # Appendix
 
 ## Language Basics
 
-  - [Data Types, Numbers, Arithmetic and Logic](docs/docs-archive/Language_basics/Num_ari_log.md)
-    - [Operators](docs/docs-archive/Developing_with_JAC/Language_Features/Operator.md)
-    - [Precedence](docs/docs-archive/Language_basics/precedence.md)
-    - [Data Types](docs/docs-archive/Developing_with_JAC/Language_Features/dataTypes.md)
-  - [Lists Strings and Dictionaries](docs/docs-archive/Language_basics/lists_dicts_dicts.md)
-    - [Library of String Operations](docs/docs-archive/Language_basics/strings.md)
-    - [Library of List Operations](docs/docs-archive/Language_basics/lists.md)
-    - [Library of Dictionary Operations](docs/docs-archive/Language_basics/dictionaries.md)
-  - [Control Flow](docs/docs-archive/Developing_with_JAC/Language_Features/ControlFlow.md)
-  - [Input/Output](docs/docs-archive/Developing_with_JAC/Language_Features/input_output.md)
-  - [Imports](docs/docs-archive/Developing_with_JAC/Language_Features/imports.md)
-  - [Globals](docs/docs-archive/Developing_with_JAC/Language_Features/globals.md)
   - [Functions](docs/docs-archive/Developing_with_JAC/Language_Features/function.md)
-  - [File Handling](docs/docs/development/std_actions/3_file.md)
-  - [Report Custom](docs/docs-archive/Developing_with_JAC/Language_Features/report_custom.md)
+
   - [Walker Callback](docs/docs-archive/Developing_with_JAC/Language_Features/walker_callback.md)
 
 
@@ -148,43 +190,6 @@
 
 <!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
 <!-- Second we must write the content for the coming soon sections -->
-
-## Jaseci Archetypes
-
-
-## Jaseci AI Library Reference
-
-- [Jaseci AI Kit Overview](jaseci_ai_kit/README.md)
-  - [Jaseci NLP features](jaseci_ai_kit/jac_nlp/README.md)
-    - [CL Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/cl_summer/README.md)
-    - [Bart Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/bart_sum/README.md)
-    - [T5 Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/t5_sum/README.md)
-    - [Bi-Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/bi_enc/README.md)
-    - [USE Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/use_enc/README.md)
-    - [FLair NER](jaseci_ai_kit/jac_nlp/jac_nlp/ent_ext/README.md)
-    - [Transformer NER](jaseci_ai_kit/jac_nlp/jac_nlp/tfm_ner/README.md)
-    - [Fasttext Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/fast_enc/README.md)
-    - [Text Segmenter](jaseci_ai_kit/jac_nlp/jac_nlp/text_seg/README.md)
-    - [USE QA](jaseci_ai_kit/jac_nlp/jac_nlp/use_qa/README.md)
-    - [ZS Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/zs_classifier/README.md)
-    - [Topic Extraction](jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext/README.md)
-    - [BI Encoder for NER](jaseci_ai_kit/jac_nlp/jac_nlp/bi_ner/README.md)
-    - [SBERT Similarity](jaseci_ai_kit/jac_nlp/jac_nlp/sbert_sim/README.md)
-    - [GPT2](jaseci_ai_kit/jac_nlp/jac_nlp/gpt2/README.md)
-    - [Sentiment Analysis](jaseci_ai_kit/jac_nlp/jac_nlp/sentiment/README.md)
-    - [Paraphraser Model](jaseci_ai_kit/jac_nlp/jac_nlp/paraphraser/README.md)
-
-  - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
-    - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
-    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/vc_tts/README.md)
-
-  - [Jaseci miscellaneous AI features](jaseci_ai_kit/jac_misc/README.md)
-    - [Clustering](jaseci_ai_kit/jac_misc/jac_misc/cluster/README.md)
-    - [Personalized Head](jaseci_ai_kit/jac_misc/jac_misc/ph/README.md)
-    - [Translator](jaseci_ai_kit/jac_misc/jac_misc/translator/README.md)
-
-- [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
-- [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/README.md)
 
 ## Jaseci Studio and UI Widget Library
 
@@ -225,8 +230,6 @@
 
 
 ## Best Practices
-  - [Walkers vs Abilities](docs/docs-archive/best_practices/best_practice_1.md)
-
 ## Error Handling and Solutions
   - [Error Handling in Jaseci](docs/docs-archive/error_handling/error_1.md)
 
@@ -237,16 +240,3 @@
 - [Being a Contributor](support/guide/other/contributor_policy.md)
 - [General Guide](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
-
-## Resources
-
-- [About this Release](CHANGELOG.md)
-- [Archived Notes](NOTES.md)
-- [Join our Community](https://forum.jaseci.org/)
-- [Online Documentation](https://docs.jaseci.org/)
-- [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)
-- [Our Website](https://jaseci.org/)
-  - [Learn more at the Dojo](https://jaseci.org/dojo)
-  - [Products Built with Jaseci](https://jaseci.org/products/)
-  - [Jaseci in the News](https://jaseci.org/blog/)
-  - [Contact Us](https://jaseci.org/contact-us/)

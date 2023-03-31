@@ -30,7 +30,7 @@ The `jac_nlp` package contains a collection of state-of-the-art NLP models that 
     - [Text Segmenter (`text_seg`)](#text-segmenter-text_seg)
       - [Actions](#actions-7)
       - [Example Jac Usage:](#example-jac-usage-7)
-  - [Summarization Models](#summarization-models)
+  - [Summarization Modules](#summarization-modules)
     - [Summarizer (`cl_summer`)](#summarizer-cl_summer)
       - [Actions](#actions-8)
       - [Example Jac Usage](#example-jac-usage-8)
@@ -40,18 +40,18 @@ The `jac_nlp` package contains a collection of state-of-the-art NLP models that 
     - [Bart Summarization (`bart_sum`)](#bart-summarization-bart_sum)
       - [Actions](#actions-10)
       - [Example Jac Usage:](#example-jac-usage-10)
-  - [Topic Modeling Models](#topic-modeling-models)
+  - [Topic Modeling Modules](#topic-modeling-modules)
     - [Topic Extraction](#topic-extraction)
       - [Actions](#actions-11)
-  - [Sentiment Analysis Models](#sentiment-analysis-models)
+  - [Sentiment Analysis Modules](#sentiment-analysis-modules)
     - [Sentiment Analysis](#sentiment-analysis)
       - [Actions](#actions-12)
       - [Example Jac Usage:](#example-jac-usage-11)
-  - [Paraphraser Models](#paraphraser-models)
+  - [Paraphraser Modules](#paraphraser-modules)
     - [Paraphraser](#paraphraser)
       - [Actions](#actions-13)
       - [Example Jac Usage:](#example-jac-usage-12)
-  - [Text Generation Models](#text-generation-models)
+  - [Text Generation Modules](#text-generation-modules)
     - [ChatGPT](#chatgpt)
       - [Actions](#actions-14)
       - [Example Jac Usage:](#example-jac-usage-13)
@@ -113,7 +113,7 @@ walker use_enc_example {
     predicted_cand = candidates[max_cand];
 }
 ```
-
+For a complete example visit [here](jac_nlp/use_enc/README.md)
 
 ###  USE QA (`use_qa`)
 
@@ -200,6 +200,8 @@ walker use_qa_example {
 }
 ```
 
+For a complete example visit [here](jac_nlp/use_qa/README.md)
+
 ### FastText Encoder (`fast_enc`)
 
 #### Actions
@@ -243,6 +245,7 @@ walker fast_enc_example {
     std.out(resp_data);
 }
 ```
+For a complete example visit [here](jac_nlp/fast_enc/README.md)
 
 ### BI-Encoder (`bi_enc`)
 `bi_enc`  module can be used for intent classification, it takes contexts and candidates, to predict the best suitable candidate for each context. You can train the module on custom data to behave accordingly.
@@ -394,6 +397,8 @@ walker bi_enc_example{
 }
 ```
 
+For a complete example visit [here](jac_nlp/bi_enc/README.md)
+
 ### Sbert Similarity (`sbert_sim`)
 `sbert_sim` is a implementation of SentenceBert for scoring similarity between sentence pairs, it uses bi-encoder in a saimese setup to encode the sentences followed by the cosine similarity to score the similarity.
 
@@ -481,6 +486,8 @@ walker sbert_sim_example{
     std.out(resp_data);
 }
 ```
+
+For a complete example visit [here](jac_nlp/sbert_sim/README.md)
 
 ## Named Entity Recognition Models
 
@@ -631,6 +638,8 @@ walker ent_ext_example {
 }
 ```
 
+For a complete example visit [here](jac_nlp/ent_ext/README.md)
+
 ### Entity Extraction Using Transformers (`tfm_ner`)
 
 `tfm_ner` module uses transformers to identify and extract entities. It uses TokenClassification method from Huggingface.
@@ -737,6 +746,8 @@ walker tfm_ner_example {
 }
 ```
 
+For a complete example visit [here](jac_nlp/tfm_ner/README.md)
+
 ## Text Segmentation Modules
 
 ### Text Segmenter (`text_seg`)
@@ -785,7 +796,9 @@ walker text_seg_example {
 }
 ```
 
-## Summarization Models
+For a complete example visit [here](jac_nlp/text_seg/README.md)
+
+## Summarization Modules
 
 ### Summarizer (`cl_summer`)
 
@@ -849,6 +862,8 @@ walker cl_summer_example {
 }
 ```
 
+For a complete example visit [here](jac_nlp/cl_summer/README.md)
+
 ###  T5 Summarization (`t5_sum`)
 `t5_sum` uses the T5 transformer model to perform abstractive summary on a body of text.
 
@@ -884,6 +899,8 @@ walker summarization {
     report summarized_text;
 }
 ```
+
+For a complete example visit [here](jac_nlp/t5_sum/README.md)
 
 ###  Bart Summarization (`bart_sum`)
 
@@ -934,7 +951,9 @@ walker test_summarize_url {
 }
 ```
 
-## Topic Modeling Models
+For a complete example visit [here](jac_nlp/bart_sum/README.md)
+
+## Topic Modeling Modules
 
 ### Topic Extraction
 
@@ -993,7 +1012,9 @@ walker init{
 }
 ```
 
-## Sentiment Analysis Models
+For a complete example visit [here](jac_nlp/topic_ext/README.md)
+
+## Sentiment Analysis Modules
 
 ### Sentiment Analysis
 
@@ -1014,7 +1035,9 @@ walker test_predict{
     report sentiment.predict(texts);
 }
 ```
-## Paraphraser Models
+For a complete example visit [here](jac_nlp/sentiment/README.md)
+
+## Paraphraser Modules
 
 ### Paraphraser
 
@@ -1036,7 +1059,9 @@ walker init{
 }
 ```
 
-## Text Generation Models
+For a complete example visit [here](jac_nlp/paraphraser/README.md)
+
+## Text Generation Modules
 
 ### ChatGPT
 
@@ -1079,5 +1104,5 @@ walker test_get_embeddings {
     report gpt2.get_embeddings(text= ["Hello, my name is GPT2", "GPT2 is an Text-to-Text Generation Model" ]);
 }
 ```
-
+For a complete example visit [here](jac_nlp/gpt2/README.md)
 
