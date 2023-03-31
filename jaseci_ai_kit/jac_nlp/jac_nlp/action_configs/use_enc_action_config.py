@@ -25,7 +25,7 @@ USE_ENC_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_nlp.use_enc:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "git clone -b jaseci_image https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[use_enc]; uvicorn jac_nlp.use_enc:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -69,7 +69,7 @@ USE_ENC_ACTION_CONFIG = {
                                     {"name": "prod-script", "mountPath": "/script"},
                                     {
                                         "name": "jac-nlp-volume",
-                                        "mountPath": "/root/.jaseci/models/jac_nlp/",
+                                        "mountPath": "/root/.jaseci/models/",
                                     },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",

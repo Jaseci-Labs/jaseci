@@ -25,7 +25,7 @@ ENT_EXT_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_nlp.ent_ext:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "git clone -b jaseci_image https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[ent_ext]; uvicorn jac_nlp.ent_ext:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -46,7 +46,11 @@ ENT_EXT_ACTION_CONFIG = {
                             {
                                 "name": "prod-script",
                                 "configMap": {"name": "ent-ext-up", "defaultMode": 420},
-                            }
+                            },
+                            {
+                                "name": "jac-nlp-volume",
+                                "persistentVolumeClaim": {"claimName": "jac-nlp-pvc"},
+                            },
                         ],
                         "containers": [
                             {
@@ -55,11 +59,15 @@ ENT_EXT_ACTION_CONFIG = {
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "3Gi"},
-                                    "requests": {"memory": "3Gi"},
+                                    "limits": {"memory": "4Gi"},
+                                    "requests": {"memory": "4Gi"},
                                 },
                                 "volumeMounts": [
-                                    {"name": "prod-script", "mountPath": "/script"}
+                                    {"name": "prod-script", "mountPath": "/script"},
+                                    {
+                                        "name": "jac-nlp-volume",
+                                        "mountPath": "/root/.jaseci/models/",
+                                    },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",

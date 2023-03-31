@@ -153,8 +153,10 @@ metadata:
   namespace: $j{namespace}
 data:
   prod_up: |-
-    apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git;
+    # apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
+    # git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git;
+    # apt-get install -y libsndfile1 libsndfile-dev ffmpeg
+    # pip install -U soundfile
     cd jaseci-experiment;
     cd jaseci_core; source install.sh;
     cd ../jaseci_serv; source install.sh;
@@ -231,7 +233,7 @@ $j{env_vars}
             - name: prod-script
               mountPath: /script
             - name: jac-nlp-volume
-              mountPath: /root/.jaseci/models/jac_nlp/
+              mountPath: /root/.jaseci/models/
 
       volumes:
         - name: prod-script
@@ -251,3 +253,16 @@ data:
   user: cG9zdGdyZXM=
   password: bGlmZWxvZ2lmeWphc2VjaQ==
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jac-nlp-pvc
+  namespace: $j{namespace}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+

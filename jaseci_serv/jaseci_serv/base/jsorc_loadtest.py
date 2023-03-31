@@ -53,7 +53,8 @@ class JsorcLoadTest:
     def load_action(self, name, mode, wait_for_ready=False):
         """
         Load action in corresponding mode.
-        If wait is True, this function will block until the action is fully loaded, including microserivice is up and connected etc.
+        If wait is True, this function will block until the action is fully loaded,
+        including microserivice is up and connected etc.
         """
         payload = {"op": "jsorc_actions_load", "name": name, "mode": mode}
         res = self.sauth_client.post(
@@ -157,13 +158,24 @@ class JsorcLoadTest:
         apps = [experiment]
         policies = [policy]
         app_to_actions = {
-            "zeroshot_faq_bot": ["text_seg", "use_qa"],
-            "sentence_pairing": ["use_enc", "bi_enc"],
-            "discussion_analysis": ["bi_enc", "cl_summer"],
-            "flight_chatbot": ["use_qa", "ent_ext"],
-            "restaurant_chatbot": ["bi_enc", "tfm_ner"],
-            "virtual_assistant": ["text_seg", "bi_enc", "tfm_ner", "ent_ext", "use_qa"],
-            "flow_analysis": ["text_seg", "tfm_ner", "use_enc"],
+            "zeroshot_faq_bot": ["jac_nlp.text_seg", "jac_nlp.use_qa"],
+            "sentence_pairing": ["jac_nlp.use_enc", "jac_nlp.bi_enc"],
+            "discussion_analysis": ["jac_nlp.bi_enc", "jac_nlp.cl_summer"],
+            "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
+            "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
+            "virtual_assistant": [
+                "jac_nlp.text_seg",
+                "jac_nlp.bi_enc",
+                "jac_nlp.tfm_ner",
+                "jac_nlp.ent_ext",
+                "jac_nlp.use_qa",
+            ],
+            "flow_analysis": ["jac_nlp.text_seg", "jac_nlp.tfm_ner", "jac_nlp.use_enc"],
+            "weather_and_time_assitance": [
+                "jac_speech.vc_tts",
+                "jac_speech.stt",
+                "jac_nlp.bi_enc",
+            ],
         }
 
         for app in apps:
@@ -180,17 +192,20 @@ class JsorcLoadTest:
                     if policy == "all_local":
                         jsorc_policy = "Default"
                         for module in action_modules:
+                            package, module = module.split(".")
                             self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "local", wait_for_ready=True)
                     elif policy == "all_remote":
                         jsorc_policy = "Default"
                         for module in action_modules:
+                            package, module = module.split(".")
                             self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     elif policy == "evaluation":
                         jsorc_policy = "Evaluation"
                         # For JSORC mode, we start as remote everything
                         for module in action_modules:
+                            package, module = module.split(".")
                             self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     else:
@@ -225,12 +240,15 @@ class JsorcLoadTest:
                     #
                     if policy == "all_local":
                         for module in action_modules:
+                            package, module = module.split(".")
                             self.unload_action(module, mode="local", retire_svc=True)
                     elif policy == "all_remote":
                         for module in action_modules:
+                            package, module = module.split(".")
                             self.unload_action(module, mode="remote", retire_svc=True)
                     else:
                         for module in action_modules:
+                            package, module = module.split(".")
                             self.unload_action(module, mode="auto", retire_svc=True)
                     sleep(10)
         return results

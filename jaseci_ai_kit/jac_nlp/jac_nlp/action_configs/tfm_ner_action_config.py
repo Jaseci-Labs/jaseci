@@ -5,12 +5,12 @@ TFM_NER_ACTION_CONFIG = {
         "Service": {
             "kind": "Service",
             "apiVersion": "v1",
-            "metadata": {"name": "bi-enc", "creationTimestamp": None},
+            "metadata": {"name": "tfm-ner", "creationTimestamp": None},
             "spec": {
                 "ports": [
                     {"name": "http", "protocol": "TCP", "port": 80, "targetPort": 80}
                 ],
-                "selector": {"pod": "bi-enc"},
+                "selector": {"pod": "tfm-ner"},
                 "type": "ClusterIP",
                 "sessionAffinity": "None",
                 "internalTrafficPolicy": "Cluster",
@@ -21,37 +21,41 @@ TFM_NER_ACTION_CONFIG = {
             "kind": "ConfigMap",
             "apiVersion": "v1",
             "metadata": {
-                "name": "bi-enc-up",
+                "name": "tfm-ner-up",
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "git clone -b jaseci_image https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[tfm_ner]; uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
             "kind": "Deployment",
             "apiVersion": "apps/v1",
-            "metadata": {"name": "bi-enc", "creationTimestamp": None},
+            "metadata": {"name": "tfm-ner", "creationTimestamp": None},
             "spec": {
                 "replicas": 1,
-                "selector": {"matchLabels": {"pod": "bi-enc"}},
+                "selector": {"matchLabels": {"pod": "tfm-ner"}},
                 "template": {
                     "metadata": {
-                        "name": "bi-enc",
+                        "name": "tfm-ner",
                         "creationTimestamp": None,
-                        "labels": {"pod": "bi-enc"},
+                        "labels": {"pod": "tfm-ner"},
                     },
                     "spec": {
                         "volumes": [
                             {
                                 "name": "prod-script",
-                                "configMap": {"name": "bi-enc-up", "defaultMode": 420},
-                            }
+                                "configMap": {"name": "tfm-ner-up", "defaultMode": 420},
+                            },
+                            {
+                                "name": "jac-nlp-volume",
+                                "persistentVolumeClaim": {"claimName": "jac-nlp-pvc"},
+                            },
                         ],
                         "containers": [
                             {
-                                "name": "bi-enc",
-                                "image": "jaseci/jac-nlp:latest",
+                                "name": "tfm-ner",
+                                "image": "jaseci/jac-nlp:1.4.0.12",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
@@ -59,7 +63,11 @@ TFM_NER_ACTION_CONFIG = {
                                     "requests": {"memory": "3Gi"},
                                 },
                                 "volumeMounts": [
-                                    {"name": "prod-script", "mountPath": "/script"}
+                                    {"name": "prod-script", "mountPath": "/script"},
+                                    {
+                                        "name": "jac-nlp-volume",
+                                        "mountPath": "/root/.jaseci/models/",
+                                    },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",
