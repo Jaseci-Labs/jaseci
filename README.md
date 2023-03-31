@@ -134,6 +134,10 @@
     - [Logical Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#logical-operators)
     - [Assigments Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
   - [Precedence of Jaseci Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
+  - [Input and Output](docs/docs/jac_language_guide/1_jac_lang_basics.md#input-and-output-in-jaseci)
+  - [File Handling](docs/docs/jac_language_guide/1_jac_lang_basics.md#file-handling-in-jaseci)
+  - [Global Variables](docs/docs/jac_language_guide/1_jac_lang_basics.md#global-variables-in-jaseci)
+  - [Working with Imports](docs/docs/jac_language_guide/1_jac_lang_basics.md#working-with-imports)
 - [Data Structures in Jaseci](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md)
   - [Dictionary](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#dictionaries)
   - [List](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#list)
@@ -141,6 +145,7 @@
 - [Loops and Conditions](docs/docs/jac_language_guide/3_loops_and_conditions.md)
   - [Control Flow](docs/docs/jac_language_guide/3_loops_and_conditions.md#control-flow)
   - [Looping](docs/docs/jac_language_guide/3_loops_and_conditions.md#looping)
+- []
 
 # Testing and Debugging
 
@@ -153,12 +158,12 @@
 
 ## Language Basics
 
-  - [Control Flow](docs/docs-archive/Developing_with_JAC/Language_Features/ControlFlow.md)
-  - [Input/Output](docs/docs-archive/Developing_with_JAC/Language_Features/input_output.md)
   - [Imports](docs/docs-archive/Developing_with_JAC/Language_Features/imports.md)
   - [Globals](docs/docs-archive/Developing_with_JAC/Language_Features/globals.md)
+
   - [Functions](docs/docs-archive/Developing_with_JAC/Language_Features/function.md)
   - [File Handling](docs/docs/development/std_actions/3_file.md)
+
   - [Report Custom](docs/docs-archive/Developing_with_JAC/Language_Features/report_custom.md)
   - [Walker Callback](docs/docs-archive/Developing_with_JAC/Language_Features/walker_callback.md)
 

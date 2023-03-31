@@ -9,6 +9,7 @@
   - [Ignore](#ignore)
   - [Destroy](#destroy)
   - [Report](#report)
+  - [**Usage**](#usage)
   - [Yield](#yield)
 
 
@@ -317,6 +318,19 @@ person {
 }
 ```
 A portion of the final result is shown in the sample above. As the number of nodes in the graphs grows, the output will lengthen.
+
+**Report Custom**
+Supports custom structure as response body.
+
+Example:
+
+```js
+    report:custom = `{{ any | {} | [] }}`
+```
+
+## **Usage**
+This can be combine with walker_callback as 3rd party service requires different json structure on response.
+It can also be used for different scenario that doesn't require ctx structure
 
 ## Yield
 
