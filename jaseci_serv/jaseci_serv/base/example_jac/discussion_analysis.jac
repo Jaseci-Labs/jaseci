@@ -1,5 +1,4 @@
 walker discussion_analysis {
-    can text_seg.get_segments;
     can bi_enc.get_context_emb;
     can bi_enc.get_candidate_emb;
     can bi_enc.dot_prod;

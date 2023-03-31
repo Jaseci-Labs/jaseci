@@ -43,7 +43,8 @@ class ActionsOptimizer:
         self.actions_calls = actions_calls
         self.policy_params = {}
         self.policy_state = {}
-        self.last_eval_configs=[]
+        self.last_eval_configs = []
+
     def kube_create(self, config):
         kube = JsOrc.svc("kube").poke(cast=KubeService)
         for kind, conf in config.items():
@@ -98,7 +99,8 @@ class ActionsOptimizer:
     def load_action_remote(self, name, unload_existing=False):
         """
         Load a remote action.
-        JSORC will get the URL of the remote microservice and stand up a microservice if there isn't currently one in the cluster.
+        JSORC will get the URL of the remote microservice
+        and stand up a microservice if there isn't currently one in the cluster.
         Return True if the remote action is loaded successfully,
         False otherwise
         """
@@ -299,12 +301,13 @@ class ActionsOptimizer:
     def _actionpolicy_evaluation(self):
         """
         A evaluation based policy.
-        JSORC cycle through possible action configurations and evaluate request performance and select the one with the best performance.
+        JSORC cycle through possible action configurations
+        and evaluate request performance and select the one with the best performance.
         Use the post_request_hook from JSORC to track request performance
         """
         logger.info("===Evaluation Policy===")
         policy_state = self.policy_state["Evaluation"]
-        
+
         if len(policy_state) == 0:
             # Initialize policy tracking state
             policy_state = {
@@ -383,11 +386,13 @@ class ActionsOptimizer:
                     if len(policy_state["remain_configs"]) == 0:
                         # best config is the one with the fastest walker latency during the evaluation period
                         logger.info(f"===Evaluation Policy=== Evaluation phase over. ")
-                        best_config = copy.deepcopy(min(
-                            policy_state["past_configs"],
-                            key=lambda x: x["avg_walker_lat"],
-                        ))                            
-                        prev_best_config=None
+                        best_config = copy.deepcopy(
+                            min(
+                                policy_state["past_configs"],
+                                key=lambda x: x["avg_walker_lat"],
+                            )
+                        )
+                        prev_best_config = None
                         for config in policy_state["past_configs"]:
                             if all(
                                 [
@@ -397,7 +402,7 @@ class ActionsOptimizer:
                                     if act in action_configs.keys()
                                 ]
                             ):
-                                prev_best_config=config
+                                prev_best_config = config
                         # caluculate the decrease in % for the new configuration
                         lat_decrease_pct = (
                             prev_best_config["avg_walker_lat"]
@@ -406,57 +411,79 @@ class ActionsOptimizer:
                         # Switch the system to the best config
                         del best_config["avg_walker_lat"]
                         self.actions_change = self._get_action_change(best_config)
-                        if len(self.last_eval_configs)==0:
-                            logger.info(f"best_config : {best_config}\nprev_best_config : {policy_state['prev_best_config']}")    
+                        if len(self.last_eval_configs) == 0:
+                            logger.info(
+                                f"best_config : {best_config}\nprev_best_config : {policy_state['prev_best_config']}"
+                            )
                             # ADAPTIVE: if the selected best config is the same config as the previous best one, double the performance period
                             if (
-                                    all(
-                                        [
-                                            best_config[act]
-                                            == policy_state["prev_best_config"][act]["mode"]
-                                            for act in best_config.keys()
-                                            if act in action_configs.keys()
-                                        ]
-                                    )
-                                    and lat_decrease_pct > THRESHOLD
-                                ):
-                                    
-                                    policy_state["perf_phase"] *= 2
-                                    logger.info(
-                                        f"===Evaluation Policy=== Best config is the same as previous one. Doubling performance phase to {policy_state['perf_phase']}"
-                                    )  
+                                all(
+                                    [
+                                        best_config[act]
+                                        == policy_state["prev_best_config"][act]["mode"]
+                                        for act in best_config.keys()
+                                        if act in action_configs.keys()
+                                    ]
+                                )
+                                and lat_decrease_pct > THRESHOLD
+                            ):
+
+                                policy_state["perf_phase"] *= 2
+                                logger.info(
+                                    f"===Evaluation Policy=== Best config is the same as previous one. Doubling performance phase to {policy_state['perf_phase']}"
+                                )
                         else:
-                            total_lat=0
-                            if len(self.last_eval_configs)==len(policy_state['past_configs']):
-                                for prev_config, curr_config in zip(self.last_eval_configs,policy_state['past_configs']):
-                                    prev_key={key: val for key,
-                                        val in prev_config.items() if key not in ['local_mem','avg_walker_lat'] }
-                                    curr_key={key: val for key,
-                                        val in curr_config.items() if key not in['local_mem','avg_walker_lat']}
-                                    if curr_key==prev_key and all(value == "local" for value in curr_key.values()):
+                            total_lat = 0
+                            if len(self.last_eval_configs) == len(
+                                policy_state["past_configs"]
+                            ):
+                                for prev_config, curr_config in zip(
+                                    self.last_eval_configs, policy_state["past_configs"]
+                                ):
+                                    prev_key = {
+                                        key: val
+                                        for key, val in prev_config.items()
+                                        if key not in ["local_mem", "avg_walker_lat"]
+                                    }
+                                    curr_key = {
+                                        key: val
+                                        for key, val in curr_config.items()
+                                        if key not in ["local_mem", "avg_walker_lat"]
+                                    }
+                                    if curr_key == prev_key and all(
+                                        value == "local" for value in curr_key.values()
+                                    ):
                                         logger.info("Skipping the local configs")
                                         continue
-                                    elif curr_key==prev_key:
-                                        total_lat+=(prev_config['avg_walker_lat'] - curr_config['avg_walker_lat'])/prev_config['avg_walker_lat']
-                                if abs(total_lat/(len(self.last_eval_configs)-1)) > THRESHOLD:
+                                    elif curr_key == prev_key:
+                                        total_lat += (
+                                            prev_config["avg_walker_lat"]
+                                            - curr_config["avg_walker_lat"]
+                                        ) / prev_config["avg_walker_lat"]
+                                if (
+                                    abs(total_lat / (len(self.last_eval_configs) - 1))
+                                    > THRESHOLD
+                                ):
                                     logger.info(
                                         f"===Evaluation Policy=== The latency has changed for current config w.r.t previous config, skipping for now"
-                                    ) 
+                                    )
                                 else:
                                     policy_state["perf_phase"] *= 2
                                     logger.info(
                                         f"===Evaluation Policy=== All current config has same latency as previous one. Doubling performance phase to {policy_state['perf_phase']} "
-                                    ) 
-                        self.last_eval_configs=copy.deepcopy(policy_state['past_configs'])
+                                    )
+                        self.last_eval_configs = copy.deepcopy(
+                            policy_state["past_configs"]
+                        )
                         policy_state["phase"] = "perf"
                         policy_state["cur_config"] = None
                         policy_state["past_configs"] = []
                         policy_state["cur_phase"] = 0
                         del best_config["local_mem"]
-                        temp_config={}
-                        for module,mode in best_config.items():
-                            temp_config[module]={"mode":mode}
-                        policy_state["prev_best_config"]=copy.deepcopy(temp_config)
+                        temp_config = {}
+                        for module, mode in best_config.items():
+                            temp_config[module] = {"mode": mode}
+                        policy_state["prev_best_config"] = copy.deepcopy(temp_config)
                         self.benchmark["requests"] = {}
                         self.benchmark["active"] = True
                         logger.info(

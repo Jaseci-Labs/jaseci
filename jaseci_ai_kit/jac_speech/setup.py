@@ -1,14 +1,12 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 from os.path import join
-import os
-from os import system
 from sys import executable as PYTHON_PATH
+from os import system
 from pkg_resources import require
 
-
 MODULES = ["stt", "vc_tts"]
-ORDEREDREQS = ["TTS==0.10.2"]
+ORDEREDREQS = ["TTS==0.12.0"]
 
 
 def requires(packages):
@@ -22,11 +20,6 @@ class OrderedInstall(install):
     def run(self):
         requires(ORDEREDREQS)
         install.run(self)
-
-
-def get_ver():
-    with open(os.path.join("./jac_speech", "VERSION")) as version_file:
-        return version_file.read().strip()
 
 
 def get_extras_requires():

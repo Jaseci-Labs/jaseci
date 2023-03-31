@@ -53,7 +53,8 @@ class JsorcLoadTest:
     def load_action(self, name, mode, wait_for_ready=False):
         """
         Load action in corresponding mode.
-        If wait is True, this function will block until the action is fully loaded, including microserivice is up and connected etc.
+        If wait is True, this function will block until the action is fully loaded,
+        including microserivice is up and connected etc.
         """
         payload = {"op": "jsorc_actions_load", "name": name, "mode": mode}
         res = self.sauth_client.post(
@@ -191,20 +192,20 @@ class JsorcLoadTest:
                     if policy == "all_local":
                         jsorc_policy = "Default"
                         for module in action_modules:
-                            package,module=module.split(".")
+                            package, module = module.split(".")
                             self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "local", wait_for_ready=True)
                     elif policy == "all_remote":
                         jsorc_policy = "Default"
                         for module in action_modules:
-                            package,module=module.split(".")
+                            package, module = module.split(".")
                             self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     elif policy == "evaluation":
                         jsorc_policy = "Evaluation"
                         # For JSORC mode, we start as remote everything
                         for module in action_modules:
-                            package,module=module.split(".")
+                            package, module = module.split(".")
                             self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     else:
@@ -239,15 +240,15 @@ class JsorcLoadTest:
                     #
                     if policy == "all_local":
                         for module in action_modules:
-                            package,module=module.split(".")
+                            package, module = module.split(".")
                             self.unload_action(module, mode="local", retire_svc=True)
                     elif policy == "all_remote":
                         for module in action_modules:
-                            package,module=module.split(".")
+                            package, module = module.split(".")
                             self.unload_action(module, mode="remote", retire_svc=True)
                     else:
                         for module in action_modules:
-                            package,module=module.split(".")
+                            package, module = module.split(".")
                             self.unload_action(module, mode="auto", retire_svc=True)
                     sleep(10)
         return results
