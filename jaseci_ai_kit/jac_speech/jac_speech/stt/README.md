@@ -30,81 +30,72 @@ Use the `setup` action call to configure the model.
 This step is optional.
 If no `setup` is called, the default parameters are used.
 ### Setup Parameters
-* `size` - Size of the model. Type: `str` Default: `tiny`
-* `longform` - Whether to use the longform model. Type: `bool` Default: `false`. Use this model when audio clip is longer than 30 seconds.
-* `chunk_length_s` - Length of the audio chunk in seconds. Type: `int` Default: `18`
+* `variant` - Model variant. Type: `str` Default: `small`. Possible values: `base`, `tiny`, `small`, `medium`, `large` (multilingual models), `small.en`, `medium.en` (Non multilingual models)
 
 ## **3. Transcribe**
 There are few ways to use `stt.trascribe` action.
-1. Given a audio sequence array, it will return the transcription of the audio.
-2. Given a audio file location, it will return the transcription of the audio.
-3. Given a web url to an audio file, it will return the transcription of the audio.
+1. Given a audio file location, it will return the transcription of the audio.
+2. Given a web url to an audio file, it will return the transcription of the audio.
 
 All the methods uses a single action `transcribe` to get the transcription. Following are the parameters of the action.
-* `language` - Spoken Language in the Audio. Type: Type: `str` Default: `en`
-* `array` - Audio Array (should be sampled at 16kHz). Type: `list[float]` (Optional)
 * `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
 * `url` - Web URL to a Audio file. Type: `str` (Optional)
+* `array` - Audio array. Type: `list` (Optional) (Should be sampled at 16KHz)
+* `language` - Spoken Language in the Audio. Type: Type: `str` Default: `en`
 * `timestamp` - Whether to return the timestamp of the transcription. Type: `bool` Default: `false`
 
 > **Note**
-> Timestamp works only in longform mode and longform mode only supports audio file or url and only support English.
+> Timestamp works only in audio files that have more than 30 seconds of audio.
 
-Return type of the action is `str`.
+Return type of the action is `dict`.
+example:
+```json
+{
+    "text": "hello world. Welcome to jaseci.",
+    "timestamp": [
+        {
+            "id": 0,
+            "start": 0.0,
+            "end": 1.0,
+            "text": "hello world"
+        },
+        {
+            "id": 1,
+            "start": 1.0,
+            "end": 2.0,
+            "text": "Welcome to jaseci"
+        }
+    ]
+}
+```
 
 ```jac
-walker transribe_array {
-    can stt.transcribe, stt.audio_to_array;
-    audio_array = stt.audio_to_array("test.mp3");
-    report stt.transcribe("en", audio_array);
+walker test_transribe_file {
+    can stt.transcribe;
+    report stt.transcribe(audio_file="jac_speech/jac_speech/stt/tests/test.mp3");
 }
 
-walker transribe_file {
+walker test_transribe_url {
     can stt.transcribe;
-    report stt.transcribe("en", null, "test.mp3");
-}
-
-walker transribe_url {
-    can stt.transcribe;
-    report stt.transcribe("fr", null, null, "https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3");
+    report stt.transcribe(url="https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3", timestamp=true);
 }
 ```
 
 ## **3. Translate**
-Similar to the `stt.traslate`, `stt.traslate` support all the three ways to get the english translation of a audio sequence. Currently only support `any` to `en` translation.
+Similar to the `stt.transcribe`, `stt.traslate` support two ways to get the english translation of a audio sequence. Currently only support `any` to `en` translation.
 
 Following are the parameters of the action.
-* `language` - Spoken Language in the Audio. Type: Type: `str` Default: `en`
-* `array` - Audio Array (should be sampled at 16kHz). Type: `list[float]` (Optional)
 * `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
 * `url` - Web URL to a Audio file. Type: `str` (Optional)
+* `array` - Audio array. Type: `list` (Optional) (Should be sampled at 16KHz)
+* `timestamp` - Whether to return the timestamp of the transcription. Type: `bool` Default: `false`
 
-Return type of the action is `str`.
+Return type of the action is `dict`.
 
 ```jac
-walker translate {
+walker test_translate {
     can stt.translate;
-    report stt.translate("fr", null, null, "https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3");
-}
-```
-
-## **4.Support Action**
-`stt` module comes with a `stt.audio_to_array` action to convert a audio file to an array. This action be used to convert a audio file to an array and then use the `stt.transcribe` action to get the transcription. This is useful when you want to get the transcription of a audio file when you are not in local mode. You can parse a base64 string of the `.wav` through `stt.audio_to_array` action and then use the returned array to get the transcription or translation.
-
-Following are the parameters of the action.
-* `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
-* `url` - Web URL to a Audio file. Type: `str` (Optional)
-* `base64_str` - Base64 string of the .wav audio file. Type: `str` (Optional)
-
-Return type of the action is `list[float]`.
-
-```jac
-walker transribe_array {
-    has audio_file_base_64;
-    can stt.transcribe, stt.audio_to_array;
-
-    audio_array = stt.audio_to_array(null, null, audio_file_base_64);
-    report stt.transcribe("en", audio_array);
+    report stt.translate(url="https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3");
 }
 ```
 # **References**
