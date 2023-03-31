@@ -235,7 +235,7 @@ $j{env_vars}
             - name: prod-script
               mountPath: /script
             - name: jac-nlp-volume
-              mountPath: /root/.jaseci/models/jac_nlp/
+              mountPath: /root/.jaseci/models/
 
       volumes:
         - name: prod-script

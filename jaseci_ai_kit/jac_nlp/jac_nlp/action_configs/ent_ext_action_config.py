@@ -66,7 +66,7 @@ ENT_EXT_ACTION_CONFIG = {
                                     {"name": "prod-script", "mountPath": "/script"},
                                     {
                                         "name": "jac-nlp-volume",
-                                        "mountPath": "/root/.jaseci/models/jac_nlp/",
+                                        "mountPath": "/root/.jaseci/models/",
                                     },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
