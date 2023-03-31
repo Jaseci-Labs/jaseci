@@ -151,7 +151,6 @@ class JsorcLoadTest:
         """
         Run synthetic application
         Available applications are in jaseci_serv/base/example_jac
-
         """
         results = {}
         node_mem = [int(mem) * 1024]
@@ -192,17 +191,20 @@ class JsorcLoadTest:
                     if policy == "all_local":
                         jsorc_policy = "Default"
                         for module in action_modules:
+                            package,module=module.split(".")
                             self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "local", wait_for_ready=True)
                     elif policy == "all_remote":
                         jsorc_policy = "Default"
                         for module in action_modules:
+                            package,module=module.split(".")
                             self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     elif policy == "evaluation":
                         jsorc_policy = "Evaluation"
                         # For JSORC mode, we start as remote everything
                         for module in action_modules:
+                            package,module=module.split(".")
                             self.load_action_config("jac_nlp.config", module)
                             self.load_action(module, "remote", wait_for_ready=True)
                     else:
@@ -237,12 +239,15 @@ class JsorcLoadTest:
                     #
                     if policy == "all_local":
                         for module in action_modules:
+                            package,module=module.split(".")
                             self.unload_action(module, mode="local", retire_svc=True)
                     elif policy == "all_remote":
                         for module in action_modules:
+                            package,module=module.split(".")
                             self.unload_action(module, mode="remote", retire_svc=True)
                     else:
                         for module in action_modules:
+                            package,module=module.split(".")
                             self.unload_action(module, mode="auto", retire_svc=True)
                     sleep(10)
         return results
