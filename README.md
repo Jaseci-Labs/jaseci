@@ -103,24 +103,24 @@
     - [Stripe](docs/docs/development/std_actions/1_jaseci.md#stripe)
     - [Actions](docs/docs/development/std_actions/1_jaseci.md#actions)
     - [Configurations](docs/docs/development/std_actions/1_jaseci.md#configurations-apis)
-- [Jaseci AI kit Features](/jaseci_ai_kit/README.md)
-  - [Jac NLP Modules](/jaseci_ai_kit/jac_nlp/README.md)
-    - [Text Encoders](/jaseci_ai_kit/jac_nlp/README.md#text-encoders)
-    - [Named Entity Recognition Models](/jaseci_ai_kit/jac_nlp/README.md#named-entity-recognition-models)
-    - [Text Segmentation Modules](/jaseci_ai_kit/jac_nlp/README.md#text-segmentation-modules)
-    - [Summarization Modules](/jaseci_ai_kit/jac_nlp/README.md#summarization-modules)
-    - [Topic Modeling Modules](/jaseci_ai_kit/jac_nlp/README.md#topic-modeling-modules)
-    - [Sentiment Analysis Modules](/jaseci_ai_kit/jac_nlp/README.md#sentiment-analysis-modules)
-    - [Paraphraser Modules](/jaseci_ai_kit/jac_nlp/README.md#paraphraser-modules)
-    - [Text Generation Modules](/jaseci_ai_kit/jac_nlp/README.md#text-generation-modules)
-  - [Jac Speech Modules](/jaseci_ai_kit/jac_speech/README.md)
-    - [Speech to Text Modules](/jaseci_ai_kit/jac_speech/README.md#speech-to-text-modules)
-    - [Text to Speech Modules](/jaseci_ai_kit/jac_speech/README.md#text-to-speech-modules)
-  - [Jac Vision Modules](/jaseci_ai_kit/jac_vision/README.md)
-  - [Jac Miscellaneous Modules](/jaseci_ai_kit/jac_misc/README.md)
-    - [Clustering Modules](/jaseci_ai_kit/jac_misc/README.md#clustering-modules)
-    - [Translator Modules](/jaseci_ai_kit/jac_misc/README.md#translator-modules)
-    - [PDF Extractor Modules](/jaseci_ai_kit/jac_misc/README.md#pdf-extractor-modules)
+- [Jaseci AI kit Features](jaseci_ai_kit/README.md)
+  - [Jac NLP Modules](jaseci_ai_kit/jac_nlp/README.md)
+    - [Text Encoders](jaseci_ai_kit/jac_nlp/README.md#text-encoders)
+    - [Named Entity Recognition Models](jaseci_ai_kit/jac_nlp/README.md#named-entity-recognition-models)
+    - [Text Segmentation Modules](jaseci_ai_kit/jac_nlp/README.md#text-segmentation-modules)
+    - [Summarization Modules](jaseci_ai_kit/jac_nlp/README.md#summarization-modules)
+    - [Topic Modeling Modules](jaseci_ai_kit/jac_nlp/README.md#topic-modeling-modules)
+    - [Sentiment Analysis Modules](jaseci_ai_kit/jac_nlp/README.md#sentiment-analysis-modules)
+    - [Paraphraser Modules](jaseci_ai_kit/jac_nlp/README.md#paraphraser-modules)
+    - [Text Generation Modules](jaseci_ai_kit/jac_nlp/README.md#text-generation-modules)
+  - [Jac Speech Modules](jaseci_ai_kit/jac_speech/README.md)
+    - [Speech to Text Modules](jaseci_ai_kit/jac_speech/README.md#speech-to-text-modules)
+    - [Text to Speech Modules](jaseci_ai_kit/jac_speech/README.md#text-to-speech-modules)
+  - [Jac Vision Modules](jaseci_ai_kit/jac_vision/README.md)
+  - [Jac Miscellaneous Modules](jaseci_ai_kit/jac_misc/README.md)
+    - [Clustering Modules](jaseci_ai_kit/jac_misc/README.md#clustering-modules)
+    - [Translator Modules](jaseci_ai_kit/jac_misc/README.md#translator-modules)
+    - [PDF Extractor Modules](jaseci_ai_kit/jac_misc/README.md#pdf-extractor-modules)
   - [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
 
 
@@ -230,8 +230,6 @@
 
 
 ## Best Practices
-  - [Walkers vs Abilities](docs/docs-archive/best_practices/best_practice_1.md)
-
 ## Error Handling and Solutions
   - [Error Handling in Jaseci](docs/docs-archive/error_handling/error_1.md)
 
