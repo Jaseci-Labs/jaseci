@@ -8,6 +8,16 @@ def elastic():
 
 
 @jaseci_action()
+def _post(url: str, json: dict = {}):
+    return elastic()._post(url, json)
+
+
+@jaseci_action()
+def _get(url: str, json: dict = None):
+    return elastic()._get(url, json)
+
+
+@jaseci_action()
 def post(url: str, body: dict, index: str = "", suffix: str = ""):
     return elastic().post(url, body, index, suffix)
 
@@ -55,6 +65,16 @@ def mapping(query: str = "", index: str = "", suffix: str = ""):
 @jaseci_action()
 def mapping_activity(query: str = "", suffix: str = ""):
     return elastic().mapping_activity(query, suffix)
+
+
+@jaseci_action()
+def refresh(index: str = "", suffix: str = ""):
+    return elastic().refresh(index, suffix)
+
+
+@jaseci_action()
+def refresh_activity(suffix: str = ""):
+    return elastic().refresh_activity(suffix)
 
 
 @jaseci_action()

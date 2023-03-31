@@ -38,6 +38,14 @@ No documentation yet.
 # elastic
 
 No documentation yet.
+ <div class='actionName'> elastic._post </div> 
+ <div class ='actionsArgs'> url: str (*req), json: dict ({})</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> elastic._get </div> 
+ <div class ='actionsArgs'> url: str (*req), json: dict (None)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
  <div class='actionName'> elastic.post </div> 
  <div class ='actionsArgs'> url: str (*req), body: dict (*req), index: str (), suffix: str ()</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
@@ -76,6 +84,14 @@ No documentation yet.
  
  <div class='actionName'> elastic.mapping_activity </div> 
  <div class ='actionsArgs'> query: str (), suffix: str ()</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> elastic.refresh </div> 
+ <div class ='actionsArgs'> index: str (), suffix: str ()</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> elastic.refresh_activity </div> 
+ <div class ='actionsArgs'> suffix: str ()</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
  <div class='actionName'> elastic.aliases </div> 
@@ -270,6 +286,50 @@ No documentation yet.
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
 
+# regex
+
+No documentation yet.
+ <div class='actionName'> regex.findall </div> 
+ <div class ='actionsArgs'> pattern: str (*req), string: str (*req), flags: _empty (0)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> regex.search </div> 
+ <div class ='actionsArgs'> pattern: str (*req), string: str (*req), flags: _empty (0)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> regex.match </div> 
+ <div class ='actionsArgs'> pattern: str (*req), string: str (*req), flags: _empty (0)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> regex.fullmatch </div> 
+ <div class ='actionsArgs'> pattern: str (*req), string: str (*req), flags: _empty (0)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> regex.split </div> 
+ <div class ='actionsArgs'> pattern: str (*req), string: str (*req), maxsplit: _empty (0), flags: _empty (0)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> regex.finditer </div> 
+ <div class ='actionsArgs'> pattern: str (*req), string: str (*req), flags: _empty (0)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> regex.sub </div> 
+ <div class ='actionsArgs'> pattern: str (*req), replace: str (*req), string: str (*req), count: _empty (0), flags: _empty (0)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> regex.subn </div> 
+ <div class ='actionsArgs'> pattern: str (*req), replace: str (*req), string: str (*req), count: _empty (0), flags: _empty (0)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> regex.escape </div> 
+ <div class ='actionsArgs'> pattern: str (*req)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+ <div class='actionName'> regex.purge </div> 
+ <div class ='actionsArgs'> n/a</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
+ 
+
 # request
 
 No documentation yet.
@@ -433,7 +493,7 @@ Return - Sorted list</div> </div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
  <div class='actionName'> std.log_activity </div> 
- <div class ='actionsArgs'> log: dict (*req), action: str (), query: str (), suffix: str ()</div>
+ <div class ='actionsArgs'> log: dict ({}), action: str (), query: str (), suffix: str ()</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
 

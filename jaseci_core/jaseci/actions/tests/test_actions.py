@@ -1,7 +1,9 @@
 from unittest import TestCase
+from unittest.mock import patch
 from jaseci.utils.utils import TestCaseHelper
 import jaseci.actions.live_actions as jla
 import jaseci.actions.remote_actions as jra
+from jaseci.actions.live_actions import gen_remote_func_hook
 
 
 class JacActionsTests(TestCaseHelper, TestCase):
@@ -52,3 +54,27 @@ class JacActionsTests(TestCaseHelper, TestCase):
 
     def test_live_action_globals(self):
         self.assertGreater(len(jla.live_actions), 25)
+
+    @patch("requests.post")
+    def test_remote_action_kwargs(self, mock_post):
+        remote_action = gen_remote_func_hook(
+            url="https://example.com/api/v1/endpoint",
+            act_name="example.action",
+            param_names=["param1", "param2"],
+        )
+        payload = {"param1": "value1"}
+        remote_action(**payload)
+
+        mock_post.assert_called_once()
+
+        _, kwargs = mock_post.call_args
+
+        assert kwargs["json"] == payload
+
+    def test_setup_decorated_as_startup(self):
+        @jla.jaseci_action(act_group=["ex"], allow_remote=True)
+        def setup(param: str = ""):
+            pass
+
+        app = jra.serv_actions()
+        assert len(app.__dict__["router"].__dict__["on_startup"]) == 1

@@ -1,3 +1,0 @@
-# Jaseci Actions
-
-Jaseci offers a wide range of actions including date, alias, net, requests, globals and many more. In this section, we'll provide a detailed explanation of each built-in action and how to use them in your Jaseci programs. By taking advantage of these actions, developers can add amazing features to their Jaseci programs. Our goal is to equip you with the knowledge and tools you need to become a Jaseci master. Let's dive in!
