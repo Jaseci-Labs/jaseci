@@ -121,6 +121,8 @@
     - [Clustering Modules](/jaseci_ai_kit/jac_misc/README.md#clustering-modules)
     - [Translator Modules](/jaseci_ai_kit/jac_misc/README.md#translator-modules)
     - [PDF Extractor Modules](/jaseci_ai_kit/jac_misc/README.md#pdf-extractor-modules)
+  - [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
+
 
 # JAC Language Syntax Reference
 
@@ -145,26 +147,33 @@
 - [Loops and Conditions](docs/docs/jac_language_guide/3_loops_and_conditions.md)
   - [Control Flow](docs/docs/jac_language_guide/3_loops_and_conditions.md#control-flow)
   - [Looping](docs/docs/jac_language_guide/3_loops_and_conditions.md#looping)
-- []
 
 # Testing and Debugging
 
 # Deployment
 
+# Contributing to Jaseci
+
 # Resources
+
+- [About this Release](CHANGELOG.md)
+- [Archived Notes](NOTES.md)
+- [Join our Community](https://forum.jaseci.org/)
+- [Online Documentation](https://docs.jaseci.org/)
+- [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)
+- [Our Website](https://jaseci.org/)
+  - [Learn more at the Dojo](https://jaseci.org/dojo)
+  - [Products Built with Jaseci](https://jaseci.org/products/)
+  - [Jaseci in the News](https://jaseci.org/blog/)
+  - [Contact Us](https://jaseci.org/contact-us/)
 
 
 # Appendix
 
 ## Language Basics
 
-  - [Imports](docs/docs-archive/Developing_with_JAC/Language_Features/imports.md)
-  - [Globals](docs/docs-archive/Developing_with_JAC/Language_Features/globals.md)
-
   - [Functions](docs/docs-archive/Developing_with_JAC/Language_Features/function.md)
-  - [File Handling](docs/docs/development/std_actions/3_file.md)
 
-  - [Report Custom](docs/docs-archive/Developing_with_JAC/Language_Features/report_custom.md)
   - [Walker Callback](docs/docs-archive/Developing_with_JAC/Language_Features/walker_callback.md)
 
 
@@ -181,15 +190,6 @@
 
 <!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
 <!-- Second we must write the content for the coming soon sections -->
-
-## Jaseci Archetypes
-
-
-## Jaseci AI Library Reference
-
-
-- [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
-- [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/README.md)
 
 ## Jaseci Studio and UI Widget Library
 
@@ -242,16 +242,3 @@
 - [Being a Contributor](support/guide/other/contributor_policy.md)
 - [General Guide](CONTRIBUTING.md)
 - [Contributors](CONTRIBUTORS.md)
-
-## Resources
-
-- [About this Release](CHANGELOG.md)
-- [Archived Notes](NOTES.md)
-- [Join our Community](https://forum.jaseci.org/)
-- [Online Documentation](https://docs.jaseci.org/)
-- [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)
-- [Our Website](https://jaseci.org/)
-  - [Learn more at the Dojo](https://jaseci.org/dojo)
-  - [Products Built with Jaseci](https://jaseci.org/products/)
-  - [Jaseci in the News](https://jaseci.org/blog/)
-  - [Contact Us](https://jaseci.org/contact-us/)
