@@ -427,7 +427,6 @@ class ActionsOptimizer:
                                 )
                                 and lat_decrease_pct > THRESHOLD
                             ):
-
                                 policy_state["perf_phase"] *= 2
                                 logger.info(
                                     f"===Evaluation Policy=== Best config is the same as previous one. Doubling performance phase to {policy_state['perf_phase']}"
