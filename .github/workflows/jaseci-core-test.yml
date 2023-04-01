@@ -20,7 +20,17 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
-
+      elasticsearch:
+        image: elasticsearch:8.6.2
+        options: >-
+          -e "discovery.type=single-node"
+          -e "ELASTIC_PASSWORD=changeme"
+          --health-cmd "curl --header \"Authorization: basic ZWxhc3RpYzpjaGFuZ2VtZQ==\" https://localhost:9200/_cluster/health -k"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 9200:9200
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.10
@@ -47,3 +57,6 @@ jobs:
         run: |
           cd jaseci_core/
           pytest -x
+        env:
+          ELASTIC_HOST: localhost
+          ELASTIC_AUTH: "basic ZWxhc3RpYzpjaGFuZ2VtZQ=="

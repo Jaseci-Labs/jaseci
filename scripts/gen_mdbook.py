@@ -106,6 +106,7 @@ def build_summary_file():
         "jaseci_core/svc/",
         "docs/docs/interfacing_jaseci/",
         "support/codelabs/",
+        "docs/docs/examples_and_tutorials/CanoniCAI/images",
     ]
     for images in imageFiles:
         files = get_images(os.path.join(root, images))

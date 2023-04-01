@@ -213,9 +213,9 @@ def clear_report(meta):
 
 @jaseci_action()
 def log_activity(
-    log: dict, action: str = "", query: str = "", suffix: str = "", meta: dict = {}
+    log: dict = {}, action: str = "", query: str = "", suffix: str = "", meta: dict = {}
 ):
     elastic = JsOrc.svc("elastic").poke(Elastic)
-    activity = elastic.generate_from_meta(meta, log)
+    activity = elastic.generate_from_meta(meta, log, action)
 
     return elastic.doc_activity(activity, query, suffix)

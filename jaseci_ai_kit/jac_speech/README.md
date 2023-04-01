@@ -1,25 +1,110 @@
-# Jaseci Speech Package `(jac_speech)`
+# Jaseci Speech Package `jac_speech`
 The `jac_speech` package contains a collection of state-of-the-art Speech models that can be used to perform various speech tasks such as speech to text, text to speech etc. following is a list of all the models available in the `jac_speech` package.
 
-## Installation
-Each module can be installed individually or all at once. To install all modules at once.
-```bash
-pip install jac_speech[all] # Installs all the modules present in the jac_speech package
-pip install jac_speech[stt] # Installs the  stt module present in the jac_speech package
-pip install jac_speech[stt,vc_tts] # Installs the stt and vc_tts module present in the jac_speech package
+- [Jaseci Speech Package `jac_speech`](#jaseci-speech-package-jac_speech)
+  - [Speech to Text Modules](#speech-to-text-modules)
+    - [Actions](#actions)
+    - [Example Jac Usage:](#example-jac-usage)
+  - [Text to Speech Modules](#text-to-speech-modules)
+    - [Actions](#actions-1)
+    - [Example Jac Usage](#example-jac-usage-1)
+
+## Speech to Text Modules
+
+`stt` uses the `whisper-tiny` to get the transcription or translation of a give audio sequence.
+
+### Actions
+
+* `transcribe` : To get the transcription. Following are the parameters of the action.
+  * Alternate name:
+  * Input:
+    * `language` - Spoken Language in the Audio. Type: Type: `str` Default: `en`
+    * `array` - Audio Array (should be sampled at 16kHz). Type: `list[float]` (Optional)
+    * `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
+    * `url` - Web URL to a Audio file. Type: `str` (Optional)
+  * Return: Return type of the action is `str`.
+
+* `translate` : To get the english translation of a audio sequence of different language. Following are the parameters of the action.
+  * Alternate name:
+  * Input:
+    * `language` - Spoken Language in the Audio. Type: Type: `str` Default: `en`
+    * `array` - Audio Array (should be sampled at 16kHz). Type: `list[float]` (Optional)
+    * `audio_file` - Location to a Audio file. Type: `str` (Optional) - Works only in local mode
+    * `url` - Web URL to a Audio file. Type: `str` (Optional)
+  * Return: Return type of the action is `str`.
+
+### Example Jac Usage:
+
+**Example 1:**
+
+```jac
+walker transribe_array {
+    can stt.transcribe, stt.audio_to_array;
+    audio_array = stt.audio_to_array("test.mp3");
+    report stt.transcribe("en", audio_array);
+}
+
+walker transribe_file {
+    can stt.transcribe;
+    report stt.transcribe("en", null, "test.mp3");
+}
+
+walker transribe_url {
+    can stt.transcribe;
+    report stt.transcribe("fr", null, null, "https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3");
+}
 ```
 
-## List of Models
-
-| Module   | Model Type     | Model Name | Docs                                | Type             | Status | Description                                            | Resources                                                                                                                                                   |
-| -------- | -------------- | ---------- | ----------------------------------- | ---------------- | ------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `stt`    | Speech to Text | Whisper    | [Link](jac_speech/stt/README.md)    | No Training req. | Ready  | transcription or translation of a give audio sequence. | [Robust Speech Recognition via Large-Scale Weak Supervision](https://cdn.openai.com/papers/whisper.pdf), [OpenAI Whisper](https://openai.com/blog/whisper/) |
-| `vc_tts` | Text to Speech | Coqui      | [Link](jac_speech/vc_tts/README.md) | No Training req. | Ready  | List of Amplitudes of the synthesized audio wav.       |                                                                                                                                                             |
-
-
-## Usage
-
-To load the `jac_speech.stt` package into jaseci in local environment, run the following command in the jsctl console.
-```bash
-jsctl > actions load module jac_speech.stt
+**Example 2:**
+```jac
+walker translate {
+    can stt.translate;
+    report stt.translate("fr", null, null, "https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3");
+}
 ```
+
+For a complete example visit [here](jac_speech/stt/README.md)
+
+## Text to Speech Modules
+
+Implementation of the `tts` module produces audio wavs from the input text sequence.
+
+### Actions
+
+* `synthesize`: Synthesize audio wavs for the input text sequence and will return the list of amlitude values of the audio wav. provide an option to save the audio wav in a prefered file location if the correct file path is passed as a parameter.
+  * Input
+    * `input_text` : (String) Input text sequence. This input text sequence will undergo with text preprocessing steps, such as expanding abrivations, converting numbers into ordinal format and removing unnessary white spaces.
+    * `speaker`: (String). Choose whether you need a male or female voice.
+    * `save_path` : (String) Set the path correctly if you need to save the audio in a prefered location. ignore if you don't wanna save.
+  * Return
+    * Dictionary
+
+* `clone_voice`: Synthesize audio wavs for by mimicing the given reference audio clip. the input text sequence and will return the list of amlitude values of the audio wav. provide an option to save the audio wav in a prefered file location if the correct file path is passed as a parameter.
+  * Input
+    * `input_text` : (String) Input text sequence. This input text sequence will undergo with text preprocessing steps, such as expanding abrivations, converting numbers into ordinal format and removing unnessary white spaces.
+    * `reference_audio` : (String) Path to the reference audio.
+    * `save_path` : (String) Set the path correctly if you need to save the audio in a prefered location. ignore if you don't wanna save.
+  * Return
+    * Dictionary
+
+### Example Jac Usage
+
+**Example 1:**
+
+```
+walker init{
+    has text_input = "Hello world!, This is a test run";
+    can tts.synthesize;
+    can tts.save_audio;
+    can tts.load_seq2seqmodel;
+    can tts.load_vocorder;
+
+    has seq2seq = tts.load_seq2seqmodel("tacotron2_v1");
+    has vocorder = tts.load_vocorder("hifigan");
+
+    has result = tts.synthesize(text = text_input);
+    report tts.save_audio(result.audio_wave , "./");
+}
+```
+
+For a complete example visit [here](jac_speech/vc_tts/README.md)

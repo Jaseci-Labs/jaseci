@@ -92,10 +92,16 @@ class Elastic:
         return self.search(body, query, self.activity_index, suffix)
 
     def mapping(self, query: str = "", index: str = "", suffix: str = ""):
-        return self.get(f"/_mapping?{query}", index, suffix)
+        return self.get(f"/_mapping?{query}", None, index, suffix)
 
     def mapping_activity(self, query: str = "", suffix: str = ""):
         return self.mapping(query, self.activity_index, suffix)
+
+    def refresh(self, index: str = "", suffix: str = ""):
+        return self.get(f"/_refresh", None, index, suffix)
+
+    def refresh_activity(self, suffix: str = ""):
+        return self.refresh(self.activity_index, suffix)
 
     def aliases(self, query: str = "pretty=true"):
         return self._get(f"/_aliases?{query}")
@@ -122,7 +128,7 @@ class Elastic:
 
         master = meta["h"].get_obj(meta["m_id"], meta["m_id"]).master_self(True)
 
-        headers = interp.request_context["headers"]
+        headers = interp.request_context.get("headers", {})
         if headers.get("Authorization"):
             del headers["Authorization"]
 
@@ -133,7 +139,7 @@ class Elastic:
             "activity_point": node.name,
             "walker_id": walker.jid,
             "node_id": node.jid,
-            "master_id": meta["m_id"],
+            "master_id": master["jid"],
             "user": master.get("__meta__") or {"email": master["name"]},
             "request_context": interp.request_context,
             "data": walker.context,
