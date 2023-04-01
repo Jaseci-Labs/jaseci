@@ -14,7 +14,7 @@ class MemoryHook:
     """
 
     def __init__(self):
-        from jaseci.actions.live_actions import get_global_actions
+        from jaseci.jsorc.live_actions import get_global_actions
 
         self.mem = {"global": {}}
         self._machine = None

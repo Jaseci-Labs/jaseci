@@ -1,7 +1,7 @@
 """Built in actions for Jaseci"""
 from datetime import datetime
 from datetime import timedelta
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 
 @jaseci_action()

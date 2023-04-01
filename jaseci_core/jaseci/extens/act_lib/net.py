@@ -7,7 +7,7 @@ accept lists that are exclusively composed of instances of defined
 architype node and/or edges. Keep in mind that a \\lstinline{jac_set}
 is simply a list that only contains such elements.
 """
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
 from jaseci.jac.jac_set import JacSet
 from jaseci.prim.node import Node

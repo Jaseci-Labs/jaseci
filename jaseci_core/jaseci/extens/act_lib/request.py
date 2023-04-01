@@ -1,6 +1,6 @@
 """Built in actions for Jaseci"""
 import requests
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from base64 import b64decode, b64encode
 from io import BytesIO
 

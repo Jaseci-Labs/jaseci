@@ -34,30 +34,30 @@ class StackTests(CoreTest):
 
     def test_action_module_list(self):
         ret = self.call(self.smast, ["actions_module_list", {}])
-        self.assertIn("jaseci.actions.standard.rand", ret)
-        self.assertIn("jaseci.actions.standard.std", ret)
-        self.assertIn("jaseci.actions.standard.file", ret)
+        self.assertIn("jaseci.extens.act_lib.rand", ret)
+        self.assertIn("jaseci.extens.act_lib.std", ret)
+        self.assertIn("jaseci.extens.act_lib.file", ret)
 
     def test_action_module_unload_reload(self):
         ret = self.call(self.smast, ["actions_module_list", {}])
         before = len(ret)
         ret = self.call(
             self.smast,
-            ["actions_unload_module", {"name": "jaseci.actions.standard.rand"}],
+            ["actions_unload_module", {"name": "jaseci.extens.act_lib.rand"}],
         )
         ret = self.call(
             self.smast,
-            ["actions_unload_module", {"name": "jaseci.actions.standard.file"}],
+            ["actions_unload_module", {"name": "jaseci.extens.act_lib.file"}],
         )
         ret = self.call(self.smast, ["actions_module_list", {}])
         self.assertEqual(len(ret), before - 2)
         ret = self.call(
             self.smast,
-            ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
+            ["actions_load_module", {"mod": "jaseci.extens.act_lib.rand"}],
         )
         ret = self.call(
             self.smast,
-            ["actions_load_module", {"mod": "jaseci.actions.standard.file"}],
+            ["actions_load_module", {"mod": "jaseci.extens.act_lib.file"}],
         )
         ret = self.call(self.smast, ["actions_module_list", {}])
         self.assertEqual(len(ret), before)
@@ -67,14 +67,14 @@ class StackTests(CoreTest):
         before = len(ret)
         ret = self.call(
             self.smast,
-            ["actions_unload_module", {"name": "jaseci.actions.standard.vector"}],
+            ["actions_unload_module", {"name": "jaseci.extens.act_lib.vector"}],
         )
         ret = self.call(self.smast, ["actions_module_list", {}])
         self.assertEqual(len(ret), before - 1)
         self.assertNotIn("vector.cos_sim", self.call(self.smast, ["actions_list", {}]))
         ret = self.call(
             self.smast,
-            ["actions_load_module", {"mod": "jaseci.actions.standard.vector"}],
+            ["actions_load_module", {"mod": "jaseci.extens.act_lib.vector"}],
         )
         ret = self.call(self.smast, ["actions_module_list", {}])
         self.assertEqual(len(ret), before)
@@ -89,7 +89,7 @@ class StackTests(CoreTest):
         self.assertEqual(len(ret), before - 1)
         ret = self.call(
             self.smast,
-            ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
+            ["actions_load_module", {"mod": "jaseci.extens.act_lib.rand"}],
         )
 
     def test_action_set_unload(self):
@@ -100,7 +100,7 @@ class StackTests(CoreTest):
         self.assertEqual(len(ret), before - 1)
         ret = self.call(
             self.smast,
-            ["actions_load_module", {"mod": "jaseci.actions.standard.rand"}],
+            ["actions_load_module", {"mod": "jaseci.extens.act_lib.rand"}],
         )
 
     def test_sentinel_missing_architype(self):

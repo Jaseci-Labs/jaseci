@@ -1,6 +1,6 @@
 """Built in actions for Jaseci"""
 from fastapi import HTTPException
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import metadata_parser
 
 

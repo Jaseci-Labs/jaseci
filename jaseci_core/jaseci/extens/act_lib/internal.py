@@ -1,5 +1,5 @@
 """Built in actions for Jaseci"""
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import perf_test_start, perf_test_stop
 
 perf_tests = {}

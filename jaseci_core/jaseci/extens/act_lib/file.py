@@ -1,5 +1,5 @@
 """Built in actions for Jaseci"""
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import os
 import json
 import base64

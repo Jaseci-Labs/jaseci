@@ -1,9 +1,9 @@
 from unittest import TestCase
 from unittest.mock import patch
 from jaseci.utils.utils import TestCaseHelper
-import jaseci.actions.live_actions as jla
-import jaseci.actions.remote_actions as jra
-from jaseci.actions.live_actions import gen_remote_func_hook
+import jaseci.jsorc.live_actions as jla
+import jaseci.jsorc.remote_actions as jra
+from jaseci.jsorc.live_actions import gen_remote_func_hook
 
 
 class JacActionsTests(TestCaseHelper, TestCase):

@@ -1,5 +1,5 @@
-from jaseci import JsOrc
-from jaseci.svc.elastic_svc import ElasticService
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.extens.svc.elastic_svc import ElasticService
 from jaseci.utils.test_core import CoreTest
 
 

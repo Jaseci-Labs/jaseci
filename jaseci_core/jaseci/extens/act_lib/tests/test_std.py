@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-import jaseci.actions.tests.std_test_code as stc
+import jaseci.extens.act_lib.tests.std_test_code as stc
 from jaseci.prim.sentinel import Sentinel
 from jaseci.prim.graph import Graph
 from jaseci.jsorc.jsorc import JsOrc

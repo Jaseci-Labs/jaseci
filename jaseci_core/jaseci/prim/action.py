@@ -4,7 +4,7 @@ Action class for Jaseci
 Each action has an id, name, timestamp and it's set of edges.
 """
 from .item import Item
-from jaseci.actions.live_actions import live_actions
+from jaseci.jsorc.live_actions import live_actions
 from jaseci.jac.jac_set import JacSet
 import inspect
 import time

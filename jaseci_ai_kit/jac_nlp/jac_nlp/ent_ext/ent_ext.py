@@ -10,7 +10,7 @@ from flair.trainers import ModelTrainer
 import pandas as pd
 from .entity_utils import create_data, create_data_new
 import configparser
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import torch
 import os
 from pathlib import Path
@@ -407,6 +407,6 @@ def set_config(ner_model: str = None, model_type: str = None):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

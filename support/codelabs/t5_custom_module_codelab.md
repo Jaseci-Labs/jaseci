@@ -7,7 +7,7 @@ In this section, we will be creating a T5 transformer based summarization module
 ### Imports
 ```py
 import torch
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from transformers import T5Tokenizer, T5ForConditionalGeneration  # , T5Config
 ```
 In this block:
@@ -79,7 +79,7 @@ In this block:
 ### Full Code
 ```py
 import torch
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from transformers import T5Tokenizer, T5ForConditionalGeneration  # , T5Config
 
 # from fastapi import HTTPException

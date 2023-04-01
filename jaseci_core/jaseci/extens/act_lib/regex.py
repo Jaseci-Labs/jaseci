@@ -1,6 +1,6 @@
 import re
 
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 
 def compile(pattern: str, flags=0):

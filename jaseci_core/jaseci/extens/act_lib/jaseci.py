@@ -1,5 +1,5 @@
 """Built in actions for Jaseci"""
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta, copy_func
 from jaseci.prim.super_master import SuperMaster
 import functools

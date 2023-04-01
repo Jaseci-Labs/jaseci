@@ -1,4 +1,4 @@
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.elastic_svc import ElasticService, Elastic
 

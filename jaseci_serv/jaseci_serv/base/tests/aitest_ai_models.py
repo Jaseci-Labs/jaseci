@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-import jaseci.actions.live_actions as lact
+import jaseci.jsorc.live_actions as lact
 import jaseci.tests.jac_test_code as jtc
 from jaseci.prim.sentinel import sentinel
 from jaseci.prim.graph import Graph

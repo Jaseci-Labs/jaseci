@@ -71,10 +71,10 @@ class Book:
         return clip
 
     def get_global_actions(self):
-        import jaseci.actions.standard as stdact
+        import jaseci.extens.act_lib as stdact
         import pkgutil
         from importlib.machinery import SourceFileLoader
-        from jaseci.actions.live_actions import live_actions
+        from jaseci.jsorc.live_actions import live_actions
 
         all_action_sets = []
         for importer, modname, ispkg in pkgutil.iter_modules(stdact.__path__):
@@ -301,10 +301,10 @@ class modifiedBook:
         return clip
 
     def get_global_actions(self):
-        import jaseci.actions.standard as stdact
+        import jaseci.extens.act_lib as stdact
         import pkgutil
         from importlib.machinery import SourceFileLoader
-        from jaseci.actions.live_actions import live_actions
+        from jaseci.jsorc.live_actions import live_actions
 
         all_action_sets = []
         for importer, modname, ispkg in pkgutil.iter_modules(stdact.__path__):

@@ -2,7 +2,7 @@
 Admin Global api functions as a mixin
 """
 from jaseci.extens.api.interface import Interface
-import jaseci.actions.live_actions as lact
+import jaseci.jsorc.live_actions as lact
 import json
 
 

@@ -3,8 +3,8 @@ General action base class with automation for hot loading
 """
 from importlib.util import spec_from_file_location, module_from_spec
 from jaseci.utils.utils import logger
-from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
-from jaseci.actions.remote_actions import serv_actions, mark_as_remote, mark_as_endpoint
+from jaseci.jsorc.remote_actions import ACTIONS_SPEC_LOC
+from jaseci.jsorc.remote_actions import serv_actions, mark_as_remote, mark_as_endpoint
 import requests
 import os
 import sys

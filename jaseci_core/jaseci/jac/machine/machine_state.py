@@ -6,7 +6,7 @@ referenced through self.
 """
 from copy import copy
 from jaseci.utils.utils import logger
-from jaseci.actions.live_actions import live_actions, load_preconfig_actions
+from jaseci.jsorc.live_actions import live_actions, load_preconfig_actions
 
 # from jaseci.actions.find_action import find_action
 from jaseci.prim.element import Element

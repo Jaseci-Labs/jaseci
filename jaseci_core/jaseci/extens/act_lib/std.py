@@ -3,7 +3,7 @@ from operator import itemgetter
 from jaseci.utils.utils import app_logger, json_out
 from datetime import datetime
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import master_from_meta
 from jaseci.prim.element import Element
 from jaseci.jsorc.jsorc import JsOrc

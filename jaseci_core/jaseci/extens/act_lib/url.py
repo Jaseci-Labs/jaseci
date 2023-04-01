@@ -1,5 +1,5 @@
 """Built in actions for Jaseci"""
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from fastapi import HTTPException
 import base64
 import requests

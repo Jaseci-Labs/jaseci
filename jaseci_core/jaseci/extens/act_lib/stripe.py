@@ -4,7 +4,7 @@ import stripe as s
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.stripe_svc import StripeService
 from datetime import datetime
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 
 def stripe() -> s:

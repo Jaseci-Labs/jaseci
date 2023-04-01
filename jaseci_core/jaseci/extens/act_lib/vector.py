@@ -3,7 +3,7 @@ import numpy as np
 from operator import itemgetter
 import pickle, base64
 
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 
 def check_nested_list(lst):

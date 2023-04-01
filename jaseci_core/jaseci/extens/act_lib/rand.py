@@ -4,7 +4,7 @@ import random
 # import faker
 from datetime import datetime
 from datetime import timedelta
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 lorem_words = (
     "adipisci aliquam amet consectetur dolor dolore dolorem eius "

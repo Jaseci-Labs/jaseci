@@ -595,7 +595,7 @@ class JacTests(TestCaseHelper, TestCase):
 
         with open("jaseci/tests/fixtures/non_existing_action.py", "w") as file:
             file.write(
-                "from jaseci.actions.live_actions import jaseci_action\n@jaseci_action(act_group=['sim1'])\ndef tester():\n\treturn 1"
+                "from jaseci.jsorc.live_actions import jaseci_action\n@jaseci_action(act_group=['sim1'])\ndef tester():\n\treturn 1"
             )
 
         mast.sentinel_register(name="test", code=jtp.async_module, auto_run="")

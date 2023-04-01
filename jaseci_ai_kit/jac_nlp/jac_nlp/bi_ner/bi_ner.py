@@ -10,7 +10,7 @@ from .model.base_encoder import BI_Enc_NER
 from .model.inference import Bi_NER_Infer
 from .datamodel.utils import invert, get_category_id_mapping
 from .model.tokenize_data import get_datasets
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
@@ -203,6 +203,6 @@ def load_model(model_path):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)
