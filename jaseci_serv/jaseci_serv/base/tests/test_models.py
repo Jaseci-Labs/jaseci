@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from jaseci.element import element
+from jaseci.prim import element
 from jaseci.prim.super_master import SuperMaster
 from jaseci.utils.utils import TestCaseHelper
 from jaseci_serv.base import models

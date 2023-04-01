@@ -6,8 +6,8 @@ from django.test import TestCase
 
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci_serv.base.models import JaseciObject
-from jaseci.graph import node
-from jaseci.graph import edge
+from jaseci.prim import node
+from jaseci.prim import edge
 from jaseci.prim.graph import Graph
 from jaseci.prim.sentinel import Sentinel
 import jaseci.tests.jac_test_code as jtc
