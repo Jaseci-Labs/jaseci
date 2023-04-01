@@ -3,7 +3,7 @@ import os
 import re
 import uuid
 
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from PyPDF2 import PdfFileReader
 from fastapi import HTTPException
 
@@ -95,6 +95,6 @@ def extract_pdf(url: str = None, path: str = None, metadata: bool = False):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

@@ -1,5 +1,5 @@
 import torch
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from transformers import T5Tokenizer, T5ForConditionalGeneration  # , T5Config
 
 # from fastapi import HTTPException
@@ -46,6 +46,6 @@ def classify_text(text: str, min_length: int = 30, max_length: int = 100):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

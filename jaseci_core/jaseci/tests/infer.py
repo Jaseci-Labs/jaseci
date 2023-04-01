@@ -1,6 +1,6 @@
 from jaseci.utils.utils import logger
-import jaseci.actions.standard.date as jsdate
-from jaseci.actions.live_actions import jaseci_action
+import jaseci.extens.act_lib.date as jsdate
+from jaseci.jsorc.live_actions import jaseci_action
 
 
 @jaseci_action()

@@ -4,12 +4,12 @@ from jaseci.utils.utils import TestCaseHelper
 from jaseci.utils.id_list import IdList
 from django.test import TestCase
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci_serv.base.models import JaseciObject
-from jaseci.graph import node
-from jaseci.graph import edge
-from jaseci.graph.graph import Graph
-from jaseci.actor.sentinel import Sentinel
+from jaseci.prim import node
+from jaseci.prim import edge
+from jaseci.prim.graph import Graph
+from jaseci.prim.sentinel import Sentinel
 import jaseci.tests.jac_test_code as jtc
 from jaseci_serv.utils.test_utils import skip_without_redis
 import uuid

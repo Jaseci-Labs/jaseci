@@ -1,4 +1,4 @@
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci_serv.jsx_oauth.models import PROVIDERS_MAPPING, SocialLoginProvider
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView

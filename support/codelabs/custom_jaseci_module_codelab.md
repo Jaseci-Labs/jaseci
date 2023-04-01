@@ -12,7 +12,7 @@ Let's start by creating a folder called `calculator` in your root directory of y
 After creating the file, open the file in a code editor and let's start coding our module.
 
 ```py
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 ```
 First, we will have to import jaseci_actions to the `calculator.py` file. We will be using jaseci actions to load the module into jaseci.
 

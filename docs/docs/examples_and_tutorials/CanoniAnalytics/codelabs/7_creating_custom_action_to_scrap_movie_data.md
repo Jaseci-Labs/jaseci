@@ -13,8 +13,8 @@ import re
 import json
 
 from fastapi import HTTPException
-from jaseci.actions.live_actions import jaseci_action
-from jaseci.actions.remote_actions import launch_server
+from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.jsorc.remote_actions import launch_server
 ```
 
 `BeautifulSoup` from the bs4 library to parse and extract data from HTML.

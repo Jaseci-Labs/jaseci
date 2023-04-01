@@ -6,7 +6,7 @@ import traceback
 from fastapi import HTTPException
 import logging
 
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 from .utils.util import read_yaml, deep_update, save_custom_python
 from .inference import InferenceList
@@ -154,6 +154,6 @@ def check_head(uuid: str) -> bool:
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

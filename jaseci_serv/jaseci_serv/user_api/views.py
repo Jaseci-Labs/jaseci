@@ -15,7 +15,7 @@ from datetime import timedelta
 from rest_framework.response import Response
 import base64
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 class CreateUserView(generics.CreateAPIView):

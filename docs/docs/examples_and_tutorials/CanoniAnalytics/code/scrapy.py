@@ -4,8 +4,8 @@ import re
 import json
 
 from fastapi import HTTPException
-from jaseci.actions.live_actions import jaseci_action
-from jaseci.actions.remote_actions import launch_server
+from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.jsorc.remote_actions import launch_server
 
 url_link = "https://imsdb.com/all-scripts.html"
 _whitespace_re = re.compile(r"\s+")

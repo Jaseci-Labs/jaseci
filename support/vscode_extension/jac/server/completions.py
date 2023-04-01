@@ -1,7 +1,7 @@
 from typing import Optional
 from pygls.server import LanguageServer
 import inspect
-from jaseci.actions.standard import (
+from jaseci.extens.act_lib import (
     file,
     std,
     date,
@@ -13,7 +13,7 @@ from jaseci.actions.standard import (
     rand,
     task,
     url,
-    zlib,
+    zip,
     webtool,
 )
 
@@ -142,7 +142,7 @@ zlib_actions = [
         "args": inspect.getfullargspec(func[1]).args,
         "doc": inspect.getdoc(func[1]),
     }
-    for func in inspect.getmembers(zlib, inspect.isfunction)
+    for func in inspect.getmembers(zip, inspect.isfunction)
     if "@jaseci_action" in inspect.getsource(func[1])
 ]
 
@@ -152,7 +152,7 @@ webtool_actions = [
         "args": inspect.getfullargspec(func[1]).args,
         "doc": inspect.getdoc(func[1]),
     }
-    for func in inspect.getmembers(zlib, inspect.isfunction)
+    for func in inspect.getmembers(zip, inspect.isfunction)
     if "@jaseci_action" in inspect.getsource(func[1])
 ]
 

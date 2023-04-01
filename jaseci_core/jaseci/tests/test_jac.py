@@ -3,13 +3,13 @@ from unittest import TestCase
 
 from antlr4 import CommonTokenStream, InputStream
 
-import jaseci.actions.live_actions as lact
+import jaseci.jsorc.live_actions as lact
 import jaseci.tests.jac_test_code as jtc
-from jaseci.actor.sentinel import Sentinel
-from jaseci.graph.graph import Graph
+from jaseci.prim.sentinel import Sentinel
+from jaseci.prim.graph import Graph
 from jaseci.jac.jac_parse.jacLexer import jacLexer
 from jaseci.jac.jac_parse.jacParser import jacParser
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.utils import TestCaseHelper
 
 

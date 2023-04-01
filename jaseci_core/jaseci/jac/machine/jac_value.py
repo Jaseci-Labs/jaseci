@@ -3,11 +3,11 @@ Variable manager for Jac
 
 Representations for all jac runtime variables
 """
-from jaseci.element.element import Element
-from jaseci.element.obj_mixins import Anchored
-from jaseci.graph.node import Node
-from jaseci.graph.edge import Edge
-from jaseci.graph.graph import Graph
+from jaseci.prim.element import Element
+from jaseci.prim.obj_mixins import Anchored
+from jaseci.prim.node import Node
+from jaseci.prim.edge import Edge
+from jaseci.prim.graph import Graph
 from jaseci.jac.jac_set import JacSet
 import uuid
 

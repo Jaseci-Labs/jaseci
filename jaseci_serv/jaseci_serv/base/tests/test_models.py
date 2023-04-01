@@ -1,12 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from jaseci.element import element
-from jaseci.element.super_master import SuperMaster
+from jaseci.prim import element
+from jaseci.prim.super_master import SuperMaster
 from jaseci.utils.utils import TestCaseHelper
 from jaseci_serv.base import models
 from jaseci_serv.obj_api.views import JaseciObjectSerializer
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 def sample_user(email="JSCITEST_user@jaseci.com", password="whatever"):
