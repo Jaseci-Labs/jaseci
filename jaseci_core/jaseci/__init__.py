@@ -23,7 +23,7 @@ def load_standard():
     import jaseci.extens.act_lib.mail  # noqa
     import jaseci.extens.act_lib.task  # noqa
     import jaseci.extens.act_lib.internal  # noqa
-    import jaseci.extens.act_lib.zlib  # noqa
+    import jaseci.extens.act_lib.zip  # noqa
     import jaseci.extens.act_lib.webtool  # noqa
     import jaseci.extens.act_lib.elastic  # noqa
     import jaseci.extens.act_lib.url  # noqa

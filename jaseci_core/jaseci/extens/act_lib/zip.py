@@ -1,5 +1,6 @@
 """Built in actions for Jaseci"""
 from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.utils.utils import print_stack_to_log
 from base64 import b64decode, b64encode
 import zlib
 

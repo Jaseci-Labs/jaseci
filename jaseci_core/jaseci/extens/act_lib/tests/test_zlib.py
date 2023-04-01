@@ -7,7 +7,7 @@ class ZlibTest(CoreTest):
     data_uncompressed = "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII="
     data_compressed = "eJzrDPBz5+WS4mJgYOD19HAJAtIcIMzIDCT/HdQ5AaTYAnxCXP///79///7FzmWWQBE+TxfHEI7ryT8YWv8IcDDoMTD/XZyZdxEow+Dp6ueyzimhCQDLCRkd"
 
-    @jac_testcase("zlib.jac", "compress_test")
+    @jac_testcase("zlib.jac", "compress_test", True)
     def test_compress(self, ret):
         print(ret["report"])
         self.assertEqual(

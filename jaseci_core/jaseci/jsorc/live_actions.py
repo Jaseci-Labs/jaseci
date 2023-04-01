@@ -231,7 +231,7 @@ def get_global_actions():
             or i.startswith("date.")
             or i.startswith("jaseci.")
             or i.startswith("internal.")
-            or i.startswith("zlib.")
+            or i.startswith("zip.")
             or i.startswith("webtool.")
             or i.startswith("url.")
             or i.startswith("regex.")
