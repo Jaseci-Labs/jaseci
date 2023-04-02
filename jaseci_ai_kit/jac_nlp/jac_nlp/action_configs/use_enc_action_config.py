@@ -25,7 +25,8 @@ USE_ENC_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[use_enc]; uvicorn jac_nlp.use_enc:serv_actions --host 0.0.0.0 --port 80"
+                # "prod_up": "git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[use_enc]; uvicorn jac_nlp.use_enc:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.use_enc:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -58,7 +59,7 @@ USE_ENC_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "use-enc",
-                                "image": "jaseci/jac-nlp:1.4.0.12",
+                                "image": "jaseci/jac-experiment:1.4.0.12",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
