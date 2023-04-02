@@ -260,9 +260,9 @@ metadata:
   namespace: $j{namespace}
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
+  storageClass: efs-sc
   resources:
     requests:
-      storage: 5Gi
+      storage: 20Gi
 ---
-
