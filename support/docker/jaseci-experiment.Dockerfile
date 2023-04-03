@@ -10,4 +10,5 @@ RUN pip install .
 # Install jac_nlp, action-configs only
 WORKDIR /jaseci/jaseci_ai_kit/jac_nlp
 RUN pip install .
+WORKDIR /
 CMD ["echo", "READY"]
