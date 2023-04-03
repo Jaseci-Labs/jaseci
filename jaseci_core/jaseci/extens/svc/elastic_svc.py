@@ -191,15 +191,15 @@ def add_elastic_log_handler(logger_instance, index):
         isinstance(h, logging.handlers.QueueHandler) for h in logger_instance.handlers
     )
     if not has_queue_handler:
-        log_queue = queue.Queue()
-        queue_handler = logging.handlers.QueueHandler(log_queue)
-        logger_instance.addHandler(queue_handler)
-
         try:
             elastic_svc = JsOrc.svc("elastic", ElasticService).poke(Elastic)
         except Exception:
             # Continue only when the elastic service is running
             return
+
+        log_queue = queue.Queue()
+        queue_handler = logging.handlers.QueueHandler(log_queue)
+        logger_instance.addHandler(queue_handler)
 
         def elastic_log_worker():
             while True:
