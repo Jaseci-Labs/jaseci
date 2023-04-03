@@ -1,3 +1,0 @@
-## Walkers vs Abilities
-
-In Jaseci, Walkers and Abilities are two powerful abstractions that allow us to create cutting-edge AI. However, sometimes we may inadvertently use them interchangeably. To make the most of Jaseci's abstractions and write clean code, it's important to understand the difference between the two. Walkers should be used exclusively for traversing the graph of your program and activating abilities, while Node Abilities should be used for computing. By distinguishing between when to use abilities and walkers, you can fully leverage Jaseci's abstractions and write more maintainable and efficient code. Thank you for your attention to this important distinction.

@@ -1,289 +1,155 @@
-from transformers import WhisperProcessor, WhisperForConditionalGeneration, pipeline
-import librosa
-from jaseci.actions.live_actions import jaseci_action
-import numpy as np
+from jaseci.jsorc.live_actions import jaseci_action
 from fastapi import HTTPException
 import traceback
-import requests
-import uuid
 import os
-import base64
-from typing import List
+import torch
+import whisper
+import numpy as np
+import librosa
 
-SUPPORTED_LANGUAGES = [
-    "en",
-    "zh",
-    "de",
-    "es",
-    "ru",
-    "ko",
-    "fr",
-    "ja",
-    "pt",
-    "tr",
-    "pl",
-    "ca",
-    "nl",
-    "ar",
-    "sv",
-    "it",
-    "id",
-    "hi",
-    "fi",
-    "vi",
-    "iw",
-    "uk",
-    "el",
-    "ms",
-    "cs",
-    "ro",
-    "da",
-    "hu",
-    "ta",
-    "no",
-    "th",
-    "ur",
-    "hr",
-    "bg",
-    "lt",
-    "la",
-    "mi",
-    "ml",
-    "cy",
-    "sk",
-    "te",
-    "fa",
-    "lv",
-    "bn",
-    "sr",
-    "az",
-    "sl",
-    "kn",
-    "et",
-    "mk",
-    "br",
-    "eu",
-    "is",
-    "hy",
-    "ne",
-    "mn",
-    "bs",
-    "kk",
-    "sq",
-    "sw",
-    "gl",
-    "mr",
-    "pa",
-    "si",
-    "km",
-    "sn",
-    "yo",
-    "so",
-    "af",
-    "oc",
-    "ka",
-    "be",
-    "tg",
-    "sd",
-    "gu",
-    "am",
-    "yi",
-    "lo",
-    "uz",
-    "fo",
-    "ht",
-    "ps",
-    "tk",
-    "nn",
-    "mt",
-    "sa",
-    "lb",
-    "my",
-    "bo",
-    "tl",
-    "mg",
-    "as",
-    "tt",
-    "haw",
-    "ln",
-    "ha",
-    "ba",
-    "jw",
-    "su",
-]
 
-model, processor = None, None
-longform_pipeline = None
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 @jaseci_action(act_group=["stt"], allow_remote=True)
-def setup(size: str = "small.en", longform: bool = True, chunk_length_s: int = 18):
-    global model, processor
-    if longform:
-        if model is not None or processor is not None:
-            del model, processor
-            model, processor = None, None
-        global longform_pipeline
-        longform_pipeline = pipeline(
-            "automatic-speech-recognition",
-            model=f"openai/whisper-{size}",
-            chunk_length_s=chunk_length_s,
-        )
-        return
-    if longform_pipeline is not None:
-        del longform_pipeline
-        longform_pipeline = None
-    model = WhisperForConditionalGeneration.from_pretrained(f"openai/whisper-{size}")
-    processor = WhisperProcessor.from_pretrained(f"openai/whisper-{size}")
-
-
-def get_array(audio_file: str = None) -> np.ndarray:
-    """Get numpy array from audio file"""
-    audio, _ = librosa.load(audio_file, sr=16000)
-    duration = librosa.get_duration(y=audio, sr=16000)
-    return audio
-
-
-def download(url: str = None) -> str:
-    """Download audio file from url"""
-    r = requests.get(url, allow_redirects=True)
-    filename = str(uuid.uuid4()) + ".wav"
-    open(filename, "wb").write(r.content)
-    return filename
+def setup(variant: str = "small"):
+    global model, options
+    model = whisper.load_model(variant, device=DEVICE)
+    print(
+        f"Model is {'multilingual' if model.is_multilingual else 'English-only'} "
+        f"and has {sum(np.prod(p.shape) for p in model.parameters()):,} parameters."
+    )
 
 
 @jaseci_action(act_group=["stt"], allow_remote=True)
 def transcribe(
-    language: str = "en",
-    array: List[float] = None,
     audio_file: str = None,
     url: str = None,
+    array: list = None,
+    language: str = "en",
     timestamp: bool = False,
-) -> str:
+):
     try:
-        global model, processor, longform_pipeline
-
-        if longform_pipeline is not None:
-            if audio_file is not None:
-                if timestamp:
-                    return longform_pipeline(audio_file, return_timestamps=True)[
-                        "chunks"
-                    ]
-                transcription = longform_pipeline(audio_file)["text"]
-                return transcription.strip()
-            elif url is not None:
-                downloaded_audio_file = download(url)
-                if timestamp:
-                    output = longform_pipeline(
-                        downloaded_audio_file, return_timestamps=True
-                    )["chunks"]
-                    os.remove(downloaded_audio_file)
-                    return output
-                transcription = longform_pipeline(downloaded_audio_file)["text"]
-                os.remove(downloaded_audio_file)
-                return transcription.strip()
-            else:
-                raise ValueError("Must provide audio_file or url")
-
-        if language not in SUPPORTED_LANGUAGES:
-            raise ValueError(f"Language {language} not supported")
-
-        if array is not None:
-            audio_array = np.array(array)
-        elif audio_file is not None:
-            audio_array = get_array(audio_file)
-        elif url is not None:
-            downloaded_audio_file = download(url)
-            audio_array = get_array(downloaded_audio_file)
-            os.remove(downloaded_audio_file)
-        else:
-            raise ValueError("Must provide array, audio_file, or url")
-
-        model.config.forced_decoder_ids = processor.get_decoder_prompt_ids(
-            language=language, task="transcribe"
+        if url:
+            audio_file = download_file(url)
+        elif array:
+            audio_file = array_to_file(array)
+        if language != "en" and not model.is_multilingual:
+            raise Exception(
+                "Model is not multilingual. Setup with a multilingual model."
+            )
+        options = whisper.DecodingOptions(
+            task="transcribe",
+            without_timestamps=True,
+            fp16=True if DEVICE == "cuda" else False,
         )
-        input_features = processor(
-            audio_array, sampling_rate=16000, return_tensors="pt"
-        ).input_features
-        generated_ids = model.generate(input_features)
-        transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[
-            0
-        ]
-        return transcription.strip()
+        mel, audio_length = get_mel_spectrogram(audio_file)
+        if mel is None and audio_length >= 30:
+            result = model.transcribe(audio_file, task="transcribe")
+            transcript = result["text"]
+            if timestamp:
+                timestamps = [
+                    {
+                        "id": t["id"],
+                        "start": t["start"],
+                        "end": t["end"],
+                        "text": t["text"],
+                    }
+                    for t in result["segments"]
+                ]
+                if url:
+                    os.remove(audio_file)
+                return {"text": transcript, "timestamps": timestamps}
+            if url:
+                os.remove(audio_file)
+            return {"text": transcript}
+        transcript = model.decode(mel, options).text
+        if url:
+            os.remove(audio_file)
+        return {"text": transcript}
     except Exception as e:
-        print(traceback.format_exc())
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["stt"], allow_remote=True)
 def translate(
-    language: str = "fr",
-    array: List[float] = None,
-    audio_file: str = None,
-    url: str = None,
-) -> str:
+    audio_file: str = None, url: str = None, array: list = None, timestamp: bool = False
+):
     try:
-        global model, processor
-
-        if language not in SUPPORTED_LANGUAGES:
-            raise ValueError(f"Language {language} not supported")
-
-        if array is not None:
-            audio_array = np.array(array)
-        elif audio_file is not None:
-            audio_array = get_array(audio_file)
-        elif url is not None:
-            downloaded_audio_file = download(url)
-            audio_array = get_array(downloaded_audio_file)
-            os.remove(downloaded_audio_file)
-        else:
-            raise ValueError("Must provide array, audio_file, or url")
-
-        forced_decoder_ids = processor.get_decoder_prompt_ids(
-            language=language, task="translate"
+        if url:
+            audio_file = download_file(url)
+        elif array:
+            audio_file = array_to_file(array)
+        if not model.is_multilingual:
+            raise Exception(
+                "Model is not multilingual. Setup with a multilingual model. Translation is not supported for English-only models."
+            )
+        options = whisper.DecodingOptions(
+            task="translate", fp16=True if DEVICE == "cuda" else False
         )
-        input_features = processor(
-            audio_array, sampling_rate=16000, return_tensors="pt"
-        ).input_features
-        generated_ids = model.generate(
-            input_features, forced_decoder_ids=forced_decoder_ids
-        )
-        transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[
-            0
-        ]
-        return transcription.strip()
+        mel, audio_length = get_mel_spectrogram(audio_file)
+        if mel is None and audio_length >= 30:
+            result = model.transcribe(audio_file, task="translate")
+            transcript = result["text"]
+            if timestamp:
+                timestamps = [
+                    {
+                        "id": t["id"],
+                        "start": t["start"],
+                        "end": t["end"],
+                        "text": t["text"],
+                    }
+                    for t in result["segments"]
+                ]
+                if url:
+                    os.remove(audio_file)
+                return {"text": transcript, "timestamps": timestamps}
+            if url:
+                os.remove(audio_file)
+            return {"text": transcript}
+        transcript = model.decode(mel, options).text
+        if url:
+            os.remove(audio_file)
+        return {"text": transcript}
     except Exception as e:
-        print(traceback.format_exc())
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@jaseci_action(act_group=["stt"], allow_remote=True)
-def audio_to_array(
-    audio_file: str = None, url: str = None, base64_str: str = None
-) -> List[float]:
-    try:
-        if audio_file is not None:
-            audio_array = get_array(audio_file)
-        elif url is not None:
-            downloaded_audio_file = download(url)
-            audio_array = get_array(downloaded_audio_file)
-            os.remove(downloaded_audio_file)
-        elif base64_str is not None:
-            # save the base64 string to a file
-            filename = str(uuid.uuid4()) + ".wav"
-            with open(filename, "wb") as fh:
-                fh.write(base64.b64decode(base64_str))
-            audio_array = get_array(filename)
-            os.remove(filename)
-        else:
-            raise ValueError("Must provide audio_file or url")
-        return audio_array.tolist()
-    except Exception as e:
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+def get_mel_spectrogram(audio_file: str):
+    audio, _ = librosa.load(audio_file, sr=16000)
+    audio_length = len(audio) / 16000
+    if audio_length >= 30:
+        return None, audio_length
+    audio = whisper.pad_or_trim(audio.flatten())
+    mel = whisper.log_mel_spectrogram(audio).to(DEVICE)
+    return mel, audio_length
+
+
+def array_to_file(array):
+    import tempfile
+    import soundfile as sf
+
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+    sf.write(temp_file.name, np.array(array), 16000)
+    return temp_file.name
+
+
+def download_file(url):
+    import requests
+    import tempfile
+
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        for chunk in r.iter_content(chunk_size=8192):
+            temp_file.write(chunk)
+
+    return temp_file.name
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

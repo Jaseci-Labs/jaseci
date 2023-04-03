@@ -4,9 +4,10 @@ import configparser
 import warnings
 
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-from jaseci.actions.live_actions import jaseci_action
-from jaseci.actions.remote_actions import launch_server
+from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.jsorc.remote_actions import launch_server
 from fastapi import HTTPException
+from traceback import print_exc
 
 warnings.filterwarnings("ignore")
 warnings.warn("ignore")
@@ -25,11 +26,10 @@ model = model.to(device)
 def setup(model_name: str = "T5-SMALL", tokenizer_name: str = "T5-SMALL"):
     global model, tokenizer
 
-    model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"][model_name])
-    tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"][model_name])
-
-
-setup()
+    model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"][model_name]).to(
+        device
+    )
+    tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"][tokenizer_name])
 
 
 @jaseci_action(act_group=["paraphraser"], allow_remote=True)
@@ -63,6 +63,7 @@ def paraphrase(text: str):
         return paraphrase_list
 
     except Exception as e:
+        print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

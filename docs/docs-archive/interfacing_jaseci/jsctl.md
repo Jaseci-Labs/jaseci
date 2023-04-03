@@ -50,6 +50,6 @@ from setuptools import setup, find_packages
     package_data={
         "": ["*.ini"],
     },
-    entry_points={"console_scripts": ["jsctl = jaseci.jsctl.jsctl:main"→ ]},
+    entry_points={"console_scripts": ["jsctl = jaseci.cli_tools.jsctl:main"→ ]},
  )
 ```

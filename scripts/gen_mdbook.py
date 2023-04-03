@@ -97,15 +97,15 @@ def build_summary_file():
 
     # list of all image folders . Add relative path here to include images in mdbook
     imageFiles = [
+        "docs/docs/examples_and_tutorials/CanoniAnalytics/images",
         "examples/CanoniCAI/images",
         "support/guide/assets",
-        "docs/static/img/studio-features/",
         "support/codelabs/canonicai/images",
         "examples/CanoniCAI/codelabs/lang_docs/images",
         "jaseci_ai_kit/jaseci_ai_kit/modules/ph/assets",
         "jaseci_core/svc/",
-        "docs/docs/interfacing_jaseci/",
         "support/codelabs/",
+        "docs/docs/examples_and_tutorials/CanoniCAI/images",
     ]
     for images in imageFiles:
         files = get_images(os.path.join(root, images))

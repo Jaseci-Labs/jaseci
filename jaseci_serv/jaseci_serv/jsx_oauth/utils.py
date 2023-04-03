@@ -1,4 +1,4 @@
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci_serv.jsx_oauth.models import PROVIDERS_MAPPING, SocialLoginProvider
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
@@ -15,7 +15,6 @@ from rest_framework.response import Response
 from rest_framework.exceptions import APIException
 from rest_framework import serializers
 from allauth.socialaccount.helpers import complete_social_login
-from allauth.account import app_settings as allauth_settings
 from requests.exceptions import HTTPError
 from enum import Enum
 
@@ -54,19 +53,9 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
         adapter = adapter_class(request)
         app = adapter.get_provider().get_app(request)
 
-        access_token = attrs.get("access_token")
         code = attrs.get("code")
-        # Case 1: We received the access_token
-        if access_token:
-            tokens_to_parse = {"access_token": access_token}
-            token = access_token
-            # For sign in with apple
-            id_token = attrs.get("id_token")
-            if id_token:
-                tokens_to_parse["id_token"] = id_token
 
-        # Case 2: We received the authorization code
-        elif code:
+        if code:
             self.set_callback_url(view=view, adapter_class=adapter_class)
             self.client_class = getattr(view, "client_class", None)
 
@@ -88,24 +77,16 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
                 headers=adapter.headers,
                 basic_auth=adapter.basic_auth,
             )
-            token = client.get_access_token(code)
-            access_token = token["access_token"]
-            tokens_to_parse = {"access_token": access_token}
+            attrs = client.get_access_token(code)
 
-            # If available we add additional data to the dictionary
-            for key in ["refresh_token", "id_token", adapter.expires_in_key]:
-                if key in token:
-                    tokens_to_parse[key] = token[key]
-        else:
-            raise serializers.ValidationError(
-                _("Incorrect input. access_token or code is required."),
-            )
+        if not attrs.get("access_token") and attrs.get("id_token"):
+            attrs["access_token"] = attrs["id_token"]
 
-        social_token = adapter.parse_token(tokens_to_parse)
+        social_token = adapter.parse_token(attrs)
         social_token.app = app
 
         try:
-            login = self.get_social_login(adapter, app, social_token, token)
+            login = self.get_social_login(adapter, app, social_token, attrs)
             complete_social_login(request, login)
         except HTTPError:
             raise serializers.ValidationError(_("Incorrect value"))

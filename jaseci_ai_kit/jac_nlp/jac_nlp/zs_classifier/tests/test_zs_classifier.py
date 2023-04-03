@@ -2,7 +2,7 @@ import shutil
 from os import path
 
 import pytest
-from jaseci.actions.live_actions import load_module_actions, unload_module
+from jaseci.jsorc.live_actions import load_module_actions, unload_module
 from jaseci.utils.test_core import CoreTest, jac_testcase
 
 

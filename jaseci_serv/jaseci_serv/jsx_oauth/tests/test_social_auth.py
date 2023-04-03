@@ -58,19 +58,13 @@ class SocialAuthTest(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
-    def test_social_auth_flow(self):
-        """Test social auth flow from 'with autorization code'"""
-
+    def request_social_sign_in(self, data):
         # no user yet
         self.assertEqual(0, User.objects.count())
 
         res = self.client.post(
             path="/auth/google/",
-            data={
-                "id_token": "",
-                "code": "4%2F0AWgavdcDFN1oZoRrqBlirNICcBprusdJpC0LPYnARjbWOgHGsxJAiw0hVD9zQL3y-rPwnA",
-                "access_token": "",
-            },
+            data=data,
         ).data
 
         # user should be created
@@ -102,13 +96,33 @@ class SocialAuthTest(TestCaseHelper, TestCase):
         # getting token again should create another user
         res = self.client.post(
             path="/auth/google/",
-            data={
-                "id_token": "",
-                "code": "4%2F0AWgavdcDFN1oZoRrqBlirNICcBprusdJpC0LPYnARjbWOgHGsxJAiw0hVD9zQL3y-rPwnA",
-                "access_token": "",
-            },
+            data=data,
         ).data
 
         # user count should still be the same
         self.assertEqual(1, User.objects.count())
         self.assertEqual(created_user, User.objects.first())
+
+        User.objects.all().delete()
+
+    def test_social_auth_flow_using_authorization_code(self):
+        """Test social auth flow from 'with autorization code'"""
+        self.request_social_sign_in(
+            {
+                "id_token": "",
+                "code": "4%2F0AWgavdcDFN1oZoRrqBlirNICcBprusdJpC0LPYnARjbWOgHGsxJAiw0hVD9zQL3y-rPwnA",
+                "access_token": "",
+            }
+        )
+
+    def test_social_auth_flow_using_id_token(self):
+        """Test social auth flow from 'with id token'"""
+        self.request_social_sign_in(
+            {
+                "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAyYTYxZWZkMmE0NGZjMjE1MTQ4ZDRlZmZjMzRkNmE3YjJhYzI2ZjAiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJhY2NvdW50cy5nb29nbGUuY29tIiwiYXpwIjoiMzg0NzUyNjExMTkwLWUwNGpiNDNpOGNuZnA5NTNyMW0xZjVtcTVhYmQ5MTlpLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwiYXVkIjoiMzg0NzUyNjExMTkwLWUwNGpiNDNpOGNuZnA5NTNyMW0xZjVtcTVhYmQ5MTlpLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwic3ViIjoiMTE2NjIwMzI4OTM4NjYyMjkwNDI3IiwiZW1haWwiOiJqYXNlY2kuZGV2QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJhdF9oYXNoIjoiWUd5d2tPZG1VVEo5dU1ma3ZxRGNPZyIsImlhdCI6MTY3MTcwMTQ0MiwiZXhwIjoxNjcxNzA1MDQyfQ.jR23tvfhJYjxHVzOZsdNphZ_2vJ4iPIraY_cbwM9NerfmdiBEhGxhhmksF8X2K5G4Yg607StTjhKNE0XStiWhhBzZu3w7ArujqPoL2NgT2AR8kyQ91cGZcl6REKwhZBQHc7oX9V-UmK6wo8bWfPgdZ0xq_D_YDFaJuabph9d7YutGy4dsEjMkgWN-E1IdVXlXPBciaBK6Djx06x4Wr_dlfeZl0KWHcxWTDXS1DV3rEFpyZlqSTYsTVdnP-nRJZqXbgN7IRNgJIehxBleNRoXCvmm5rD5D1NCI84OOplUEYlpH_dNF8iSdrh7GLgijKl6kbKGlbWyrrBYeJa07nnvJw",
+            }
+        )
+
+    def test_social_auth_flow_using_access_token(self):
+        """Test social auth flow from 'with access token'"""
+        self.request_social_sign_in(mocked_get_access_token())

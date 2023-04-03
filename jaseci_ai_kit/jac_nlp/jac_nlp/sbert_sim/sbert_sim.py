@@ -9,7 +9,7 @@ import math
 from datetime import datetime
 import numpy as np
 from fastapi import HTTPException
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 """
 Declaring the training config
@@ -197,6 +197,6 @@ def get_train_config():
 load_model()
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

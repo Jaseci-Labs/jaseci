@@ -2,13 +2,13 @@ import uuid
 from unittest import TestCase
 
 import jaseci.tests.jac_test_code as jtc
-from jaseci.actor.sentinel import Sentinel
-from jaseci.element.element import Element
-from jaseci.graph.graph import Graph
-from jaseci.graph.node import Node
-from jaseci import JsOrc
+from jaseci.prim.sentinel import Sentinel
+from jaseci.prim.element import Element
+from jaseci.prim.graph import Graph
+from jaseci.prim.node import Node
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.utils import TestCaseHelper, get_all_subclasses
-from jaseci.actor.architype import Architype
+from jaseci.prim.architype import Architype
 
 
 class ArchitypeTests(TestCaseHelper, TestCase):
@@ -98,13 +98,11 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         self.assertIsNone(bad)
 
     def test_id_list_smart_name_error(self):
-        self.logger_on()
         mast = JsOrc.master()
         sent = Sentinel(m_id=mast._m_id, h=mast._h)
         self.assertIn("arch_ids", sent.arch_ids.obj_for_id_not_exist_error(0))
 
     def test_dont_store_invalid_feilds_in_blob(self):
-        self.logger_on()
         mast = JsOrc.master()
         sent = Sentinel(m_id=mast._m_id, h=mast._h)
         sent.fake_data = 5

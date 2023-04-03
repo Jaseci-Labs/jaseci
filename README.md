@@ -1,7 +1,16 @@
+<div style="display: flex; justify-content: center; align-items: center;">
+  <img src="https://www.jaseci.org/wp-content/uploads/2022/02/jaseki-logo-inverted-rgb.svg" alt="Jaseci" width="50%" />
+</div>
+
+
 # Jaseci: Build the Next Generation of AI Products at Scale
 
 [![jaseci_core Unit Tests](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-core-test.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-core-test.yml) [![PyPi version](https://badgen.net/pypi/v/jaseci/)](https://pypi.org/project/jaseci)
 [![jaseci_serv Tests](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-serv-test.yml/badge.svg)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jaseci-serv-test.yml) [![PyPi version](https://badgen.net/pypi/v/jaseci-serv/)](https://pypi.org/project/jaseci-serv)
+[![Jac NLP](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jac-nlp-test.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jac-nlp-test.yml)  [![PyPi version](https://badgen.net/pypi/v/jac_nlp/)](https://pypi.org/project/jac-nlp)
+[![Jac Vision](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jac-vision-test.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jac-vision-test.yml)  [![PyPi version](https://badgen.net/pypi/v/jac_vision/)](https://pypi.org/project/jac-vision)
+[![Jac Speech](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jac-speech-test.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jac-speech-test.yml)  [![PyPi version](https://badgen.net/pypi/v/jac_speech/)](https://pypi.org/project/jac-speech)
+[![Jac Misc](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jac-misc-test.yml/badge.svg?branch=main)](https://github.com/Jaseci-Labs/jaseci/actions/workflows/jac-misc-test.yml)  [![PyPi version](https://badgen.net/pypi/v/jac_misc/)](https://pypi.org/project/jac-misc)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 # Introduction
@@ -19,7 +28,7 @@
     - [Install Jaseci on MacOS](docs/docs/getting_started/1_installation.md#install-jaseci-on-macos)
   - [Setting Up Your Editor](docs/docs/getting_started/2_setting_up_code_editor.md)
   - [Setting Up Jaseci Server](docs/docs/getting_started/3_setup_jaseci_serv.md)
-  - [Installing Jaseci Studios](jaseci_studio/README.md) <!-- Should update more information on this images,etc -->
+  - [Installing Jaseci Studio](jaseci_studio/README.md) <!-- Should update more information on this images,etc -->
   - [Write your first Jaseci Application](docs/docs/getting_started/5_write_your_first_app.md) <!-- Should update more explanation on this code -->
   - [Learn More](README.md#appendix)
 
@@ -47,6 +56,7 @@
 - [Personalized Head Example Use Case](docs/docs/examples_and_tutorials/ph_example/ph.md)
 
 # Architecture
+<!--Need to add content to this topic-->
 
 # Development
 - [Abstractions of Jaseci](docs/docs/development/1_abstractions.md)
@@ -68,10 +78,29 @@
     - [A Complete Example](docs/docs/development/1_abstractions.md#a-complete-example)
     - [Here and Visitor](docs/docs/development/1_abstractions.md#here-and-visitor)
   - [Actions](docs/docs/development/1_abstractions.md#actions)
+- [Jaseci Operations](docs/docs/development/2_operations.md)
+  - [Spawn](docs/docs/development/2_operations.md#spawn)
+  <!--Need to add more information on this topic-->
+  - [Info and Context](docs/docs/development/2_operations.md#info-and-context)
+  - [Take](docs/docs/development/2_operations.md#take)
+  - [Skip](docs/docs/development/2_operations.md#skip)
+  - [Disengage](docs/docs/development/2_operations.md#disengage)
+  - [Ignore](docs/docs/development/2_operations.md#ignore)
+  - [Destroy](docs/docs/development/2_operations.md#destroy)
+  - [Report](docs/docs/development/2_operations.md#report)
+  - [Yield](docs/docs/development/2_operations.md#yield)
 - [Jaseci Standard Actions Libraries](docs/docs/development/1_abstractions.md#jaseci-standard-actions)
+  <!--Should explain input parameters of these actions-->
   - [Date](docs/docs/development/std_actions/2_date.md)
   - [File](docs/docs/development/std_actions/3_file.md)
   - [Rand](docs/docs/development/std_actions/4_rand.md)
+  - [Net](docs/docs/development/std_actions/5_net.md)
+  - [Regex](docs/docs/development/std_actions/6_regex.md)
+  - [Request](docs/docs/development/std_actions/7_request.md)
+  - [Standard](docs/docs/development/std_actions/8_std.md)
+  - [Stripe](docs/docs/development/std_actions/9_stripe.md)
+  - [Vectors](docs/docs/development/std_actions/10_vectors.md)
+  - [Elastic](docs/docs/development/std_actions/11_elastic.md)
   - [Jaseci Core](docs/docs/development/std_actions/1_jaseci.md)
     - [Alias](docs/docs/development/std_actions/1_jaseci.md#alias)
     - [Objects](docs/docs/development/std_actions/1_jaseci.md#objects)
@@ -86,43 +115,101 @@
     - [Stripe](docs/docs/development/std_actions/1_jaseci.md#stripe)
     - [Actions](docs/docs/development/std_actions/1_jaseci.md#actions)
     - [Configurations](docs/docs/development/std_actions/1_jaseci.md#configurations-apis)
+- [Jaseci AI kit Features](jaseci_ai_kit/README.md)
+ <!--Should explain input parameters of these functions-->
+  - [Jac NLP Modules](jaseci_ai_kit/jac_nlp/README.md)
+    - [Text Encoders](jaseci_ai_kit/jac_nlp/README.md#text-encoders)
+    - [Named Entity Recognition Models](jaseci_ai_kit/jac_nlp/README.md#named-entity-recognition-models)
+    - [Text Segmentation Modules](jaseci_ai_kit/jac_nlp/README.md#text-segmentation-modules)
+    - [Summarization Modules](jaseci_ai_kit/jac_nlp/README.md#summarization-modules)
+    - [Topic Modeling Modules](jaseci_ai_kit/jac_nlp/README.md#topic-modeling-modules)
+    - [Sentiment Analysis Modules](jaseci_ai_kit/jac_nlp/README.md#sentiment-analysis-modules)
+    - [Paraphraser Modules](jaseci_ai_kit/jac_nlp/README.md#paraphraser-modules)
+    - [Text Generation Modules](jaseci_ai_kit/jac_nlp/README.md#text-generation-modules)
+  - [Jac Speech Modules](jaseci_ai_kit/jac_speech/README.md)
+    - [Speech to Text Modules](jaseci_ai_kit/jac_speech/README.md#speech-to-text-modules)
+    - [Text to Speech Modules](jaseci_ai_kit/jac_speech/README.md#text-to-speech-modules)
+  - [Jac Vision Modules](jaseci_ai_kit/jac_vision/README.md)
+  - [Jac Miscellaneous Modules](jaseci_ai_kit/jac_misc/README.md)
+    - [Clustering Modules](jaseci_ai_kit/jac_misc/README.md#clustering-modules)
+    - [Translator Modules](jaseci_ai_kit/jac_misc/README.md#translator-modules)
+    - [PDF Extractor Modules](jaseci_ai_kit/jac_misc/README.md#pdf-extractor-modules)
+  - [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
+  - [Guide to create Custom AI Module](docs/docs/comming_soon.md)
+<!--Explain how to add custom Jaseci AI module-->
+- [Jaseci UI Kit](ui_components/readme.md)
+  - [Introduction](ui_components/docs/what-is-jaseci-ui-kit.md)
+  - [Basic Concepts](ui_components/docs/basic-concepts.md)
+  - [Built-in Actions](ui_components/docs/built-in-actions.md)
+  - [Connecting an API](ui_components/docs/connecting-an-api.md)
+<!--this goes under development, content structure has to review - Assigned to Tharuka-->
+
 
 # JAC Language Syntax Reference
 
+- [Jac Language Basics](docs/docs/jac_language_guide/1_jac_lang_basics.md)
+  - [Data Types](docs/docs/jac_language_guide/1_jac_lang_basics.md#data-types)
+    - [Special Types](docs/docs/jac_language_guide/1_jac_lang_basics.md#special-types)
+    - [Typecasting](docs/docs/jac_language_guide/1_jac_lang_basics.md#typecasting)
+  - [Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#operators)
+    - [Arithmatic Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#arithmatic-operators)
+    - [Equality Operations](docs/docs/jac_language_guide/1_jac_lang_basics.md#equality-operations)
+    - [Logical Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#logical-operators)
+    - [Assigments Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
+  - [Precedence of Jaseci Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
+  - [Input and Output](docs/docs/jac_language_guide/1_jac_lang_basics.md#input-and-output-in-jaseci)
+  - [File Handling](docs/docs/jac_language_guide/1_jac_lang_basics.md#file-handling-in-jaseci)
+  - [Global Variables](docs/docs/jac_language_guide/1_jac_lang_basics.md#global-variables-in-jaseci)
+  - [Working with Imports](docs/docs/jac_language_guide/1_jac_lang_basics.md#working-with-imports)
+  - [Error Handling in Jaseci](docs/docs/comming_soon.md)
+  - [Logs in Jaseci](docs/docs/comming_soon.md)
+<!--Error Handling and Loggings Should come under this-->
+- [Data Structures in Jaseci](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md)
+  - [Dictionary](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#dictionaries)
+  - [List](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#list)
+  - [String](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#strings)
+- [Loops and Conditions](docs/docs/jac_language_guide/3_loops_and_conditions.md)
+  - [Control Flow](docs/docs/jac_language_guide/3_loops_and_conditions.md#control-flow)
+  - [Looping](docs/docs/jac_language_guide/3_loops_and_conditions.md#looping)
+
+
 # Testing and Debugging
+<!--Add content to this from CanoniCAI - Assigned Tharuka-->
 
 # Deployment
+<!-- More context about Jaseci Server-->
+<!-- More context about JSCTL-->
+
+# Contributing to Jaseci
+- [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
+- [Guide on Contributing](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
+- [Being a Contributor](support/guide/other/contributor_policy.md)
+- [General Guide](CONTRIBUTING.md)
+- [Contributors](CONTRIBUTORS.md)
+<!--Should review this section- Assigned to Tharuka-->
+
+<!-- Add coming soon sections-->
 
 # Resources
+
+- [About this Release](CHANGELOG.md)
+- [Archived Notes](NOTES.md)
+- [Join our Community](https://forum.jaseci.org/)
+- [Online Documentation](https://docs.jaseci.org/)
+- [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)
+- [Our Website](https://jaseci.org/)
+  - [Learn more at the Dojo](https://jaseci.org/dojo)
+  - [Products Built with Jaseci](https://jaseci.org/products/)
+  - [Jaseci in the News](https://jaseci.org/blog/)
+  - [Contact Us](https://jaseci.org/contact-us/)
 
 
 # Appendix
 
 ## Language Basics
 
-  - [Data Types, Numbers, Arithmetic and Logic](docs/docs-archive/Language_basics/Num_ari_log.md)
-    - [Operators](docs/docs-archive/Developing_with_JAC/Language_Features/Operator.md)
-    - [Precedence](docs/docs-archive/Language_basics/precedence.md)
-    - [Data Types](docs/docs-archive/Developing_with_JAC/Language_Features/dataTypes.md)
-  - [Lists Strings and Dictionaries](docs/docs-archive/Language_basics/lists_dicts_dicts.md)
-    - [Library of String Operations](docs/docs-archive/Language_basics/strings.md)
-    - [Library of List Operations](docs/docs-archive/Language_basics/lists.md)
-    - [Library of Dictionary Operations](docs/docs-archive/Language_basics/dictionaries.md)
-  - [Control Flow](docs/docs-archive/Developing_with_JAC/Language_Features/ControlFlow.md)
-  - [Input/Output](docs/docs-archive/Developing_with_JAC/Language_Features/input_output.md)
-  - [Imports](docs/docs-archive/Developing_with_JAC/Language_Features/imports.md)
-  - [Globals](docs/docs-archive/Developing_with_JAC/Language_Features/globals.md)
   - [Functions](docs/docs-archive/Developing_with_JAC/Language_Features/function.md)
-  - [File Handling](docs/docs/development/std_actions/3_file.md)
-    - [Jaseci Actions Library](docs/docs-archive/getting-started/content.md)
-      - [Net](docs/docs-archive/Developing_with_JAC/Language_Features/actions/net.md)
-      - [Request](docs/docs-archive/Developing_with_JAC/Language_Features/actions/request.md)
-      - [Std](docs/docs-archive/Developing_with_JAC/Language_Features/actions/std.md)
-      - [Vectors](docs/docs-archive/Developing_with_JAC/Language_Features/actions/vectors.md)
-      - [Elastic](docs/docs-archive/Developing_with_JAC/Language_Features/actions/elastic.md)
-      - [Regex](docs/docs-archive/Developing_with_JAC/Language_Features/actions/regex.md)
-  - [Multipart](docs/docs-archive/Developing_with_JAC/Language_Features/multipart.md)
-  - [Report Custom](docs/docs-archive/Developing_with_JAC/Language_Features/report_custom.md)
+
   - [Walker Callback](docs/docs-archive/Developing_with_JAC/Language_Features/walker_callback.md)
 
 
@@ -140,63 +227,23 @@
 <!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
 <!-- Second we must write the content for the coming soon sections -->
 
-## Jaseci Archetypes
-
-
-## Jaseci AI Library Reference
-
-- [Jaseci AI Kit Overview](jaseci_ai_kit/README.md)
-  - [Jaseci NLP features](jaseci_ai_kit/jac_nlp/README.md)
-    - [CL Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/cl_summer/README.md)
-    - [Bart Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/bart_sum/README.md)
-    - [T5 Summarization](jaseci_ai_kit/jac_nlp/jac_nlp/t5_sum/README.md)
-    - [Bi-Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/bi_enc/README.md)
-    - [FLair NER](jaseci_ai_kit/jac_nlp/jac_nlp/ent_ext/README.md)
-    - [Fasttext Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/fast_enc/README.md)
-    - [Text Segmenter](jaseci_ai_kit/jac_nlp/jac_nlp/text_seg/README.md)
-    - [Transformer NER](jaseci_ai_kit/jac_nlp/jac_nlp/tfm_ner/README.md)
-    - [USE Encoder](jaseci_ai_kit/jac_nlp/jac_nlp/use_enc/README.md)
-    - [USE QA](jaseci_ai_kit/jac_nlp/jac_nlp/use_qa/README.md)
-    - [ZS Classifier](jaseci_ai_kit/jac_nlp/jac_nlp/zs_classifier/README.md)
-    - [Topic Extraction](jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext/README.md)
-    - [BI Encoder for NER](jaseci_ai_kit/jac_nlp/jac_nlp/bi_ner/README.md)
-    - [SBERT Similarity](jaseci_ai_kit/jac_nlp/jac_nlp/sbert_sim/README.md)
-    - [GPT2](jaseci_ai_kit/jac_nlp/jac_nlp/gpt2/README.md)
-    - [Sentiment Analysis](jaseci_ai_kit/jac_nlp/jac_nlp/sentiment/README.md)
-    - [Paraphraser Model](jaseci_ai_kit/jac_nlp/jac_nlp/paraphraser/README.md)
-
-  - [Jaseci Speech Features](jaseci_ai_kit/jac_speech/README.md)
-
-    - [Speech2Text](jaseci_ai_kit/jac_speech/jac_speech/stt/README.md)
-    - [Text2Speech](jaseci_ai_kit/jac_speech/jac_speech/vc_tts/README.md)
-
-  - [Jaseci miscellaneous AI features](jaseci_ai_kit/jac_misc/README.md)
-    - [Clustering](jaseci_ai_kit/jac_misc/jac_misc/cluster/README.md)
-    - [Personalized Head](jaseci_ai_kit/jac_misc/jac_misc/ph/README.md)
-    - [Translator](jaseci_ai_kit/jac_misc/jac_misc/translator/README.md)
-
-- [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
-- [Guide to create Jaseci AI Kit Test Cases](jaseci_ai_kit/README.md)
-
 ## Jaseci Studio and UI Widget Library
 
+<!--this goues under testing-->
 - [Jaseci Studio Features](jaseci_studio/features.md)
   - [Login](jaseci_studio/login.md)
   - [Dashboard](jaseci_studio/dashboard.md)
   - [Graph Viewer](jaseci_studio/graphs.md)
   - [Logs Viewer](jaseci_studio/logs.md)
   - [Managing Architypes](jaseci_studio/architype.md)
-- [Jaseci UI Kit](ui_components/readme.md)
-  - [Introduction](ui_components/docs/what-is-jaseci-ui-kit.md)
-  - [Basic Concepts](ui_components/docs/basic-concepts.md)
-  - [Built-in Actions](ui_components/docs/built-in-actions.md)
-  - [Connecting an API](ui_components/docs/connecting-an-api.md)
+
+
 
 ## Advanced Topics
 
   - [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
   - [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
-  - [Stand Up an Jaseci Action Library Server](docs/docs-archive/canonicai/chapter9.md)
+  - [Stand Up a Jaseci Action Library Server](docs/docs-archive/canonicai/chapter9.md)
   - [Requests to APIs in Jac](docs/docs-archive/canonicai/chapter8.md)
   - [Testing CCAI Dialogues in Jac](docs/docs-archive/canonicai/chapter7.md)
   - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
@@ -204,11 +251,11 @@
   - [Jaseci X Features](docs/docs/advanced_topics/jaseci_features.md)
     - [Single Sign-on Social](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
   - [Jaseci Core Internals](docs/docs/advanced_topics/jaseci_core.md)
-    - [JsOrc](jaseci_core/jaseci/svc/docs/JSORC.md)
-      - [Development](jaseci_core/jaseci/svc/docs/jsorc_development.md)
-      - [Task](jaseci_core/jaseci/svc/docs/task_svc.md)
-      - [Mail](jaseci_core/jaseci/svc/docs/mail_svc.md)
-    - [JSORC Action Management Engine](jaseci_core/jaseci/svc/docs/JSORC.md)
+    - [JsOrc](jaseci_core/jaseci/extens/svc/docs/JSORC.md)
+      - [Development](jaseci_core/jaseci/extens/svc/docs/jsorc_development.md)
+      - [Task](jaseci_core/jaseci/extens/svc/docs/task_svc.md)
+      - [Mail](jaseci_core/jaseci/extens/svc/docs/mail_svc.md)
+    - [JSORC Action Management Engine](jaseci_core/jaseci/extens/svc/docs/JSORC.md)
   - [Misc DevOps Guides](docs/docs/advanced_topics/Misc_DevOps_Guides.md)
     - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
     - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
@@ -217,28 +264,8 @@
 
 
 ## Best Practices
-  - [Walkers vs Abilities](docs/docs-archive/best_practices/best_practice_1.md)
-
 ## Error Handling and Solutions
   - [Error Handling in Jaseci](docs/docs-archive/error_handling/error_1.md)
 
-## Contributing to Jaseci
 
-- [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
-- [Guide on Contributing](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
-- [Being an Contributor](support/guide/other/contributor_policy.md)
-- [General Guide](CONTRIBUTING.md)
-- [Contributors](CONTRIBUTORS.md)
 
-## Resources
-
-- [About this Release](CHANGELOG.md)
-- [Archived Notes](NOTES.md)
-- [Join our Community](https://forum.jaseci.org/)
-- [Online Documentation](https://docs.jaseci.org/)
-- [The Jaseci Bible](https://github.com/Jaseci-Labs/jaseci_bible/blob/main/pdf/jaseci_bible.pdf)
-- [Our Website](https://jaseci.org/)
-  - [Learn more at the Dojo](https://jaseci.org/dojo)
-  - [Products Built with Jaseci](https://jaseci.org/products/)
-  - [Jaseci in the News](https://jaseci.org/blog/)
-  - [Contact Us](https://jaseci.org/contact-us/)

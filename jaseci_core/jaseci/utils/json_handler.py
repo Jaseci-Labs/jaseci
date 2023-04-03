@@ -1,14 +1,14 @@
 import json
 from json import JSONDecoder, JSONEncoder
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 
 
 class JaseciJsonEncoder(JSONEncoder):
     def default(self, obj):
-        from jaseci.element.element import Element
+        from jaseci.prim.element import Element
 
         if isinstance(obj, Element):
             return {"__mem_id__": obj.jid}
