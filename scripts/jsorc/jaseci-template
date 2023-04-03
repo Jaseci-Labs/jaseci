@@ -183,7 +183,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jac-experiment:1.4.0.12
+          image: jaseci/jaseci-experiment:1.4.0.12
           resources:
             requests:
               memory: "2Gi"
