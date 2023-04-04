@@ -221,9 +221,9 @@ class JsorcLoadTest:
                         self.start_actions_tracking()
                         start_ts = time.time()
                         if policy == "all_local" or policy == "all_remote":
-                            experiment_duration = 1 * 60
+                            experiment_duration = 3 * 60
                         else:
-                            experiment_duration = 2 * 60
+                            experiment_duration = 5 * 60
                         while (time.time() - start_ts) < experiment_duration:
                             res = self.run_walker(app)
                         result = self.stop_benchmark()
