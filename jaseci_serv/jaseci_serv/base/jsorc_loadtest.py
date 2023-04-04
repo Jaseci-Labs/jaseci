@@ -2,7 +2,7 @@ import os
 import time
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-
+import json
 from rest_framework.test import APIClient
 
 from time import sleep
@@ -252,6 +252,8 @@ class JsorcLoadTest:
                                 package, module = module.split(".")
                                 self.unload_action(module, mode="auto", retire_svc=True)
                         sleep(10)
+            with open(f"/root/{app}.json","w") as fp:
+                json.dump(results,fp)
             return results
         except Exception as e:
             return f"Exception: {e}"
