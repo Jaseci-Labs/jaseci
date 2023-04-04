@@ -25,7 +25,8 @@ ENT_EXT_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[ent_ext]; uvicorn jac_nlp.ent_ext:serv_actions --host 0.0.0.0 --port 80"
+                #"prod_up": "git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[ent_ext]; uvicorn jac_nlp.ent_ext:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.ent_ext:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -55,7 +56,7 @@ ENT_EXT_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "ent-ext",
-                                "image": "jaseci/jac-nlp:latest",
+                                "image": "jaseci/jaseci-experiment:1.4.0.12",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
