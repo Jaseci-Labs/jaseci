@@ -60,7 +60,7 @@ TEXT_SEG_ACTION_CONFIG = {
                             {
                                 "name": "text-seg",
                                 "image": "jaseci/jaseci-experiment:1.4.0.12",
-                                "command": ["bash", "-c", "source script/prod_up"],
+                                "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
                                     "limits": {"memory": "3Gi"},

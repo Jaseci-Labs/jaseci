@@ -60,7 +60,7 @@ USE_ENC_ACTION_CONFIG = {
                             {
                                 "name": "use-enc",
                                 "image": "jaseci/jaseci-experiment:1.4.0.12",
-                                "command": ["bash", "-c", "source script/prod_up"],
+                                "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
                                     "limits": {"memory": "2Gi"},
