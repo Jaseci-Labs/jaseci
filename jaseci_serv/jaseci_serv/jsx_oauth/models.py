@@ -1,8 +1,7 @@
-from pyexpat import model
-from jaseci_serv.base.models import *
-from django.conf import settings
+from uuid import uuid4
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from allauth.socialaccount.models import SocialApp
 
 
 class SocialLoginProvider(models.TextChoices):
@@ -48,18 +47,11 @@ PROVIDERS_MAPPING = {
 }
 
 
-class SingletonModel(models.Model):
-    class Meta:
-        abstract = True
+class InternalClient(models.Model):
+    """
+    Add internal_client_id on social app model
+    """
 
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super(SingletonModel, self).save(*args, **kwargs)
-
-    def delete(self, *args, **kwargs):
-        pass
-
-    @classmethod
-    def load(cls):
-        obj, created = cls.objects.get_or_create(pk=1)
-        return obj
+    name = models.CharField(max_length=255)
+    client_id = models.UUIDField(default=uuid4, unique=True)
+    social_app = models.ForeignKey(SocialApp, on_delete=models.CASCADE)
