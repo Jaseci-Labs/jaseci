@@ -153,102 +153,105 @@ class JsorcLoadTest:
         Run synthetic application
         Available applications are in jaseci_serv/base/example_jac
         """
-        results = {}
-        node_mem = [int(mem) * 1024]
-        apps = [experiment]
-        policies = [policy]
-        app_to_actions = {
-            "zeroshot_faq_bot": ["jac_nlp.text_seg", "jac_nlp.use_qa"],
-            "sentence_pairing": ["jac_nlp.use_enc", "jac_nlp.bi_enc"],
-            "discussion_analysis": ["jac_nlp.bi_enc", "jac_nlp.cl_summer"],
-            "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
-            "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
-            "virtual_assistant": [
-                "jac_nlp.text_seg",
-                "jac_nlp.bi_enc",
-                "jac_nlp.tfm_ner",
-                "jac_nlp.ent_ext",
-                "jac_nlp.use_qa",
-            ],
-            "flow_analysis": ["jac_nlp.text_seg", "jac_nlp.tfm_ner", "jac_nlp.use_enc"],
-            "weather_and_time_assitance": [
-                "jac_speech.vc_tts",
-                "jac_speech.stt",
-                "jac_nlp.bi_enc",
-            ],
-        }
+        try:
+            results = {}
+            node_mem = [int(mem) * 1024]
+            apps = [experiment]
+            policies = [policy]
+            app_to_actions = {
+                "zeroshot_faq_bot": ["jac_nlp.text_seg", "jac_nlp.use_qa"],
+                "sentence_pairing": ["jac_nlp.use_enc", "jac_nlp.bi_enc"],
+                "discussion_analysis": ["jac_nlp.bi_enc", "jac_nlp.cl_summer"],
+                "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
+                "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
+                "virtual_assistant": [
+                    "jac_nlp.text_seg",
+                    "jac_nlp.bi_enc",
+                    "jac_nlp.tfm_ner",
+                    "jac_nlp.ent_ext",
+                    "jac_nlp.use_qa",
+                ],
+                "flow_analysis": ["jac_nlp.text_seg", "jac_nlp.tfm_ner", "jac_nlp.use_enc"],
+                "weather_and_time_assitance": [
+                    "jac_speech.vc_tts",
+                    "jac_speech.stt",
+                    "jac_nlp.bi_enc",
+                ],
+            }
 
-        for app in apps:
-            jac_file = os.path.join(APP_PATH, f"{app}.jac")
-            self.sentinel_register(jac_file)
-            action_modules = app_to_actions[app]
-            for policy in policies:
-                if policy == "all_local" or policy == "all_remote":
-                    policy_params = [{}]
-                else:
-                    policy_params = [{"node_mem": nm} for nm in node_mem]
-
-                for pparams in policy_params:
-                    if policy == "all_local":
-                        jsorc_policy = "Default"
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            self.load_action_config("jac_nlp.config", module)
-                            self.load_action(module, "local", wait_for_ready=True)
-                    elif policy == "all_remote":
-                        jsorc_policy = "Default"
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            self.load_action_config("jac_nlp.config", module)
-                            self.load_action(module, "remote", wait_for_ready=True)
-                    elif policy == "evaluation":
-                        jsorc_policy = "Evaluation"
-                        # For JSORC mode, we start as remote everything
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            self.load_action_config("jac_nlp.config", module)
-                            self.load_action(module, "remote", wait_for_ready=True)
-                    else:
-                        logger.error(f"Unrecognized policy {policy}")
-                        return
-
-                    self.set_jsorc_actionpolicy(jsorc_policy, policy_params=pparams)
-                    #
-                    # Experiment Start
-                    #
-                    self.start_benchmark()
-                    self.start_actions_tracking()
-                    start_ts = time.time()
+            for app in apps:
+                jac_file = os.path.join(APP_PATH, f"{app}.jac")
+                self.sentinel_register(jac_file)
+                action_modules = app_to_actions[app]
+                for policy in policies:
                     if policy == "all_local" or policy == "all_remote":
-                        experiment_duration = 3 * 60
+                        policy_params = [{}]
                     else:
-                        experiment_duration = 5 * 60
-                    while (time.time() - start_ts) < experiment_duration:
-                        res = self.run_walker(app)
-                    result = self.stop_benchmark()
-                    action_result = self.stop_actions_tracking()
-                    if policy == "all_local" or policy == "all_remote":
-                        policy_str = policy
-                    else:
-                        policy_str = f"{policy}-mem-{pparams['node_mem']}"
-                    results.setdefault(app, {})[policy_str] = {
-                        "walker_level": result,
-                        "action_level": action_result,
-                    }
-                    #
-                    # Experiment Ends. Unload actions. Reset the cluster
-                    #
-                    if policy == "all_local":
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            self.unload_action(module, mode="local", retire_svc=True)
-                    elif policy == "all_remote":
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            self.unload_action(module, mode="remote", retire_svc=True)
-                    else:
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            self.unload_action(module, mode="auto", retire_svc=True)
-                    sleep(10)
-        return results
+                        policy_params = [{"node_mem": nm} for nm in node_mem]
+
+                    for pparams in policy_params:
+                        if policy == "all_local":
+                            jsorc_policy = "Default"
+                            for module in action_modules:
+                                package, module = module.split(".")
+                                self.load_action_config("jac_nlp.config", module)
+                                self.load_action(module, "local", wait_for_ready=True)
+                        elif policy == "all_remote":
+                            jsorc_policy = "Default"
+                            for module in action_modules:
+                                package, module = module.split(".")
+                                self.load_action_config("jac_nlp.config", module)
+                                self.load_action(module, "remote", wait_for_ready=True)
+                        elif policy == "evaluation":
+                            jsorc_policy = "Evaluation"
+                            # For JSORC mode, we start as remote everything
+                            for module in action_modules:
+                                package, module = module.split(".")
+                                self.load_action_config("jac_nlp.config", module)
+                                self.load_action(module, "remote", wait_for_ready=True)
+                        else:
+                            logger.error(f"Unrecognized policy {policy}")
+                            return
+
+                        self.set_jsorc_actionpolicy(jsorc_policy, policy_params=pparams)
+                        #
+                        # Experiment Start
+                        #
+                        self.start_benchmark()
+                        self.start_actions_tracking()
+                        start_ts = time.time()
+                        if policy == "all_local" or policy == "all_remote":
+                            experiment_duration = 1 * 60
+                        else:
+                            experiment_duration = 2 * 60
+                        while (time.time() - start_ts) < experiment_duration:
+                            res = self.run_walker(app)
+                        result = self.stop_benchmark()
+                        action_result = self.stop_actions_tracking()
+                        if policy == "all_local" or policy == "all_remote":
+                            policy_str = policy
+                        else:
+                            policy_str = f"{policy}-mem-{pparams['node_mem']}"
+                        results.setdefault(app, {})[policy_str] = {
+                            "walker_level": result,
+                            "action_level": action_result,
+                        }
+                        #
+                        # Experiment Ends. Unload actions. Reset the cluster
+                        #
+                        if policy == "all_local":
+                            for module in action_modules:
+                                package, module = module.split(".")
+                                self.unload_action(module, mode="local", retire_svc=True)
+                        elif policy == "all_remote":
+                            for module in action_modules:
+                                package, module = module.split(".")
+                                self.unload_action(module, mode="remote", retire_svc=True)
+                        else:
+                            for module in action_modules:
+                                package, module = module.split(".")
+                                self.unload_action(module, mode="auto", retire_svc=True)
+                        sleep(10)
+            return results
+        except Exception as e:
+            return f"Exception: {e}"
