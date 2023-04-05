@@ -315,8 +315,8 @@ class ActionsOptimizer:
                 "cur_config": None,  # current active configuration
                 "remain_configs": [],  # remaining configurations that need to be evaluated
                 "past_configs": [],  # configurations already evaluated
-                "eval_phase": 10,  # how long is evaluatin period (in seconds)
-                "perf_phase": 100,  # how long is the performance period (in seconds)
+                "eval_phase": self.policy_params.get("eval_phase", 10),  # how long is evaluatin period (in seconds)
+                "perf_phase": self.policy_params.get("perf_phase", 100),  # how long is the performance period (in seconds)
                 "cur_phase": 0,  # how long the current period has been running
                 "prev_best_config": self.actions_state.get_all_state(),
             }

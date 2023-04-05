@@ -265,7 +265,11 @@ class JsOrcApi:
         self,
         test: str,
         experiment: str = "",
-        mem: int = 0
+        mem: int = 0,
+        policy: str = "all_local",
+        experiment_duration: int = 180,
+        eval_phase: int = 10,
+        perf_phase: int = 100,
     ):
         """
         load test API. overwritten in jaseci_serv

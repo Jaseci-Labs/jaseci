@@ -11,10 +11,14 @@ class JsOrcApi(CoreJsOrcApi):
         experiment: str = "",
         mem: int = 0,
         policy: str = "all_local",
-        experiment_duration: int = 180
+        experiment_duration: int = 180,
+        eval_phase: int = 10,
+        perf_phase: int = 100,
     ):
         """
         A jsorc loadtest
         """
         tester = JsorcLoadTest(test)
-        return tester.run_test(experiment, mem, policy, experiment_duration)
+        return tester.run_test(
+            experiment, mem, policy, experiment_duration, eval_phase, perf_phase
+        )

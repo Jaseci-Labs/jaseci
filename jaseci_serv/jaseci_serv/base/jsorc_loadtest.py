@@ -40,7 +40,9 @@ class JsorcLoadTest:
 
         self.test = test
 
-    def run_test(self, experiment, mem, policy, experiment_duration):
+    def run_test(
+        self, experiment, mem, policy, experiment_duration, eval_phase, perf_phase
+    ):
         """
         Run the corresponding jsorc test
         """
@@ -48,7 +50,9 @@ class JsorcLoadTest:
         if experiment == "":
             return test_func()
         else:
-            return test_func(experiment, mem, policy, experiment_duration)
+            return test_func(
+                experiment, mem, policy, experiment_duration, eval_phase, perf_phase
+            )
 
     def load_action(self, name, mode, wait_for_ready=False):
         """
@@ -148,7 +152,9 @@ class JsorcLoadTest:
         )
         return res.data
 
-    def synthetic_apps(self, experiment, mem, policy, experiment_duration):
+    def synthetic_apps(
+        self, experiment, mem, policy, experiment_duration, eval_phase, perf_phase
+    ):
         """
         Run synthetic application
         Available applications are in jaseci_serv/base/example_jac
@@ -192,7 +198,8 @@ class JsorcLoadTest:
                         policy_params = [{}]
                     else:
                         policy_params = [{"node_mem": nm} for nm in node_mem]
-
+                    policy_params["eval_phase"] = eval_phase
+                    policy_params["perf_phase"] = perf_phase
                     for pparams in policy_params:
                         if policy == "all_local":
                             jsorc_policy = "Default"
