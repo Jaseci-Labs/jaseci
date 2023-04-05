@@ -186,8 +186,6 @@ spec:
           resources:
             requests:
               memory: "350Mi"
-            limits:
-              memory: "350Mi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:
@@ -215,6 +213,9 @@ spec:
 
             - name: DBNAME
               value: postgres
+
+            - name: JSORC_DB_REGEN
+              value: "true"
 
             - name: REDIS_HOST
               value: jaseci-redis
