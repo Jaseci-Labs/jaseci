@@ -13,6 +13,7 @@ output_path = os.path.join(root, "mdbook")  # no trailing slash
 theme_source_path = os.path.join(root, "support/mdbook_theme")  # no trailing slash
 toc_path = os.path.join(root, "README.md")
 
+
 def extract_content_below_title(markdown_file, title, output_file):
     """
     Extracts all content below the given title in the Markdown file and writes it to the output file.
@@ -31,9 +32,6 @@ def extract_content_below_title(markdown_file, title, output_file):
 
     with open(output_file, "w") as f:
         f.writelines(lines[start_index:])
-
-
-
 
 
 def pluck_content_below_title(title, input_file, output_file):
@@ -112,22 +110,18 @@ def build_summary_file():
             new_file_name = line.split("#")[1]
             new_file_name = new_file_name.split(")")[0]
             new_file_name = new_file_name.replace("-", "_")
-            new_file_name = new_file_name+".md"
+            new_file_name = new_file_name + ".md"
             new_file_name = new_file_name.replace(" ", "")
             file_reference = new_file_name
-            new_file_name = os.path.join("./mdbook/src",new_file_name)
-            extract_content_below_title(
-                path, title, new_file_name
-            )
+            new_file_name = os.path.join("./mdbook/src", new_file_name)
+            extract_content_below_title(path, title, new_file_name)
             template_syntax = f"- [{title}]({file_reference})"
-            template_syntax = space+template_syntax
+            template_syntax = space + template_syntax
 
             with open(output_path + "/src/SUMMARY.md", "a") as summaryfile:
                 summaryfile.write(template_syntax + "\n")
 
-            pluck_content_below_title(
-                title, path, new_file_name
-            )
+            pluck_content_below_title(title, path, new_file_name)
 
             continue
 
