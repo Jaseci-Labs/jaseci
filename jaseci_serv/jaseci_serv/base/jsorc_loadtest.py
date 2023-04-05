@@ -198,9 +198,9 @@ class JsorcLoadTest:
                         policy_params = [{}]
                     else:
                         policy_params = [{"node_mem": nm} for nm in node_mem]
-                    policy_params.append({"eval_phase": eval_phase})
-                    policy_params.append({"perf_phase": perf_phase})
                     for pparams in policy_params:
+                        pparams["eval_phase"] = eval_phase
+                        pparams["perf_phase"] = perf_phase
                         if policy == "all_local":
                             jsorc_policy = "Default"
                             for module in action_modules:
