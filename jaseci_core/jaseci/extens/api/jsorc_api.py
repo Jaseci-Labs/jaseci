@@ -119,7 +119,7 @@ class JsOrcApi:
             if attr:
                 res = getattr(res, attr)
 
-            if callable:
+            if at.get("callable", False):
                 args = at.get("args", [])
                 kwargs = at.get("kwargs", {})
                 res = res(*args, **kwargs)
