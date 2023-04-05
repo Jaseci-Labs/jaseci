@@ -1,14 +1,18 @@
+#########################################################################################
+# -------- START OF https://download.elastic.co/downloads/eck/2.7.0/crds.yaml --------- #
+#########################################################################################
+
 # Source: eck-operator-crds/templates/all-crds.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: 'elastic-operator'
     app.kubernetes.io/name: 'eck-operator-crds'
-    app.kubernetes.io/version: '2.6.1'
+    app.kubernetes.io/version: '2.7.0'
   name: agents.agent.k8s.elastic.co
 spec:
   group: agent.k8s.elastic.co
@@ -461,12 +465,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: 'elastic-operator'
     app.kubernetes.io/name: 'eck-operator-crds'
-    app.kubernetes.io/version: '2.6.1'
+    app.kubernetes.io/version: '2.7.0'
   name: apmservers.apm.k8s.elastic.co
 spec:
   group: apm.k8s.elastic.co
@@ -1127,12 +1131,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: 'elastic-operator'
     app.kubernetes.io/name: 'eck-operator-crds'
-    app.kubernetes.io/version: '2.6.1'
+    app.kubernetes.io/version: '2.7.0'
   name: beats.beat.k8s.elastic.co
 spec:
   group: beat.k8s.elastic.co
@@ -1435,12 +1439,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: 'elastic-operator'
     app.kubernetes.io/name: 'eck-operator-crds'
-    app.kubernetes.io/version: '2.6.1'
+    app.kubernetes.io/version: '2.7.0'
   name: elasticmapsservers.maps.k8s.elastic.co
 spec:
   group: maps.k8s.elastic.co
@@ -1758,12 +1762,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: 'elastic-operator'
     app.kubernetes.io/name: 'eck-operator-crds'
-    app.kubernetes.io/version: '2.6.1'
+    app.kubernetes.io/version: '2.7.0'
   name: elasticsearchautoscalers.autoscaling.k8s.elastic.co
 spec:
   group: autoscaling.k8s.elastic.co
@@ -2057,12 +2061,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: 'elastic-operator'
     app.kubernetes.io/name: 'eck-operator-crds'
-    app.kubernetes.io/version: '2.6.1'
+    app.kubernetes.io/version: '2.7.0'
   name: elasticsearches.elasticsearch.k8s.elastic.co
 spec:
   group: elasticsearch.k8s.elastic.co
@@ -2428,7 +2432,7 @@ spec:
                                   type: string
                                 type: array
                               dataSource:
-                                description: 'dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. If the AnyVolumeDataSource feature gate is enabled, this field will always have the same contents as the DataSourceRef field.'
+                                description: 'dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.'
                                 properties:
                                   apiGroup:
                                     description: APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.
@@ -2445,7 +2449,7 @@ spec:
                                 type: object
                                 x-kubernetes-map-type: atomic
                               dataSourceRef:
-                                description: 'dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any local object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the DataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, both fields (DataSource and DataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. There are two important differences between DataSource and DataSourceRef: * While DataSource only allows two specific types of objects, DataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While DataSource ignores disallowed values (dropping them), DataSourceRef preserves all values, and generates an error if a disallowed value is specified. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.'
+                                description: 'dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn''t specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn''t set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.'
                                 properties:
                                   apiGroup:
                                     description: APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.
@@ -2456,14 +2460,31 @@ spec:
                                   name:
                                     description: Name is the name of resource being referenced
                                     type: string
+                                  namespace:
+                                    description: Namespace is the namespace of resource being referenced Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details. (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
+                                    type: string
                                 required:
                                 - kind
                                 - name
                                 type: object
-                                x-kubernetes-map-type: atomic
                               resources:
                                 description: 'resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements that are lower than previous value but must still be higher than capacity recorded in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                 properties:
+                                  claims:
+                                    description: "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. \n This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. \n This field is immutable."
+                                    items:
+                                      description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                                      properties:
+                                        name:
+                                          description: Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.
+                                          type: string
+                                      required:
+                                      - name
+                                      type: object
+                                    type: array
+                                    x-kubernetes-list-map-keys:
+                                    - name
+                                    x-kubernetes-list-type: map
                                   limits:
                                     additionalProperties:
                                       anyOf:
@@ -2662,6 +2683,9 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
+                      unhealthyPodEvictionPolicy:
+                        description: "UnhealthyPodEvictionPolicy defines the criteria for when unhealthy pods should be considered for eviction. Current implementation considers healthy pods, as pods that have status.conditions item with type=\"Ready\",status=\"True\". \n Valid policies are IfHealthyBudget and AlwaysAllow. If no policy is specified, the default behavior will be used, which corresponds to the IfHealthyBudget policy. \n IfHealthyBudget policy means that running pods (status.phase=\"Running\"), but not yet healthy can be evicted only if the guarded application is not disrupted (status.currentHealthy is at least equal to status.desiredHealthy). Healthy pods will be subject to the PDB for eviction. \n AlwaysAllow policy means that all running pods (status.phase=\"Running\"), but not yet healthy are considered disrupted and can be evicted regardless of whether the criteria in a PDB is met. This means perspective running pods of a disrupted application might not get a chance to become healthy. Healthy pods will be subject to the PDB for eviction. \n Additional policies may be added in the future. Clients making eviction decisions should disallow eviction of unhealthy pods if they encounter an unrecognized policy in this field. \n This field is alpha-level. The eviction API uses this field when the feature gate PDBUnhealthyPodEvictionPolicy is enabled (disabled by default)."
+                        type: string
                     type: object
                 type: object
               remoteClusters:
@@ -3346,7 +3370,7 @@ spec:
                                   type: string
                                 type: array
                               dataSource:
-                                description: 'dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. If the AnyVolumeDataSource feature gate is enabled, this field will always have the same contents as the DataSourceRef field.'
+                                description: 'dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.'
                                 properties:
                                   apiGroup:
                                     description: APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.
@@ -3363,7 +3387,7 @@ spec:
                                 type: object
                                 x-kubernetes-map-type: atomic
                               dataSourceRef:
-                                description: 'dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any local object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the DataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, both fields (DataSource and DataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. There are two important differences between DataSource and DataSourceRef: * While DataSource only allows two specific types of objects, DataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While DataSource ignores disallowed values (dropping them), DataSourceRef preserves all values, and generates an error if a disallowed value is specified. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.'
+                                description: 'dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn''t specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn''t set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.'
                                 properties:
                                   apiGroup:
                                     description: APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.
@@ -3374,14 +3398,31 @@ spec:
                                   name:
                                     description: Name is the name of resource being referenced
                                     type: string
+                                  namespace:
+                                    description: Namespace is the namespace of resource being referenced Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details. (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
+                                    type: string
                                 required:
                                 - kind
                                 - name
                                 type: object
-                                x-kubernetes-map-type: atomic
                               resources:
                                 description: 'resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements that are lower than previous value but must still be higher than capacity recorded in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                 properties:
+                                  claims:
+                                    description: "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. \n This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. \n This field is immutable."
+                                    items:
+                                      description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                                      properties:
+                                        name:
+                                          description: Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.
+                                          type: string
+                                      required:
+                                      - name
+                                      type: object
+                                    type: array
+                                    x-kubernetes-list-map-keys:
+                                    - name
+                                    x-kubernetes-list-type: map
                                   limits:
                                     additionalProperties:
                                       anyOf:
@@ -3581,6 +3622,9 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
+                      unhealthyPodEvictionPolicy:
+                        description: "UnhealthyPodEvictionPolicy defines the criteria for when unhealthy pods should be considered for eviction. Current implementation considers healthy pods, as pods that have status.conditions item with type=\"Ready\",status=\"True\". \n Valid policies are IfHealthyBudget and AlwaysAllow. If no policy is specified, the default behavior will be used, which corresponds to the IfHealthyBudget policy. \n IfHealthyBudget policy means that running pods (status.phase=\"Running\"), but not yet healthy can be evicted only if the guarded application is not disrupted (status.currentHealthy is at least equal to status.desiredHealthy). Healthy pods will be subject to the PDB for eviction. \n AlwaysAllow policy means that all running pods (status.phase=\"Running\"), but not yet healthy are considered disrupted and can be evicted regardless of whether the criteria in a PDB is met. This means perspective running pods of a disrupted application might not get a chance to become healthy. Healthy pods will be subject to the PDB for eviction. \n Additional policies may be added in the future. Clients making eviction decisions should disallow eviction of unhealthy pods if they encounter an unrecognized policy in this field. \n This field is alpha-level. The eviction API uses this field when the feature gate PDBUnhealthyPodEvictionPolicy is enabled (disabled by default)."
+                        type: string
                     type: object
                 type: object
               secureSettings:
@@ -3663,12 +3707,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: 'elastic-operator'
     app.kubernetes.io/name: 'eck-operator-crds'
-    app.kubernetes.io/version: '2.6.1'
+    app.kubernetes.io/version: '2.7.0'
   name: enterprisesearches.enterprisesearch.k8s.elastic.co
 spec:
   group: enterprisesearch.k8s.elastic.co
@@ -4273,12 +4317,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: 'elastic-operator'
     app.kubernetes.io/name: 'eck-operator-crds'
-    app.kubernetes.io/version: '2.6.1'
+    app.kubernetes.io/version: '2.7.0'
   name: kibanas.kibana.k8s.elastic.co
 spec:
   group: kibana.k8s.elastic.co
@@ -4986,12 +5030,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: 'elastic-operator'
     app.kubernetes.io/name: 'eck-operator-crds'
-    app.kubernetes.io/version: '2.6.1'
+    app.kubernetes.io/version: '2.7.0'
   name: stackconfigpolicies.stackconfigpolicy.k8s.elastic.co
 spec:
   group: stackconfigpolicy.k8s.elastic.co
@@ -5182,7 +5226,17 @@ spec:
     storage: true
     subresources:
       status: {}
+
+#########################################################################################
+# --------- END OF https://download.elastic.co/downloads/eck/2.7.0/crds.yaml ---------- #
+#########################################################################################
+
 ---
+
+#########################################################################################
+# ------ START OF https://download.elastic.co/downloads/eck/2.7.0/operator.yaml ------- #
+#########################################################################################
+
 # Source: eck-operator/templates/service-account.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -5191,7 +5245,7 @@ metadata:
   namespace: elastic
   labels:
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 ---
 # Source: eck-operator/templates/webhook.yaml
 apiVersion: v1
@@ -5201,7 +5255,7 @@ metadata:
   namespace: elastic
   labels:
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 ---
 # Source: eck-operator/templates/configmap.yaml
 apiVersion: v1
@@ -5211,7 +5265,7 @@ metadata:
   namespace: elastic
   labels:
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 data:
   eck.yaml: "log-verbosity: 0\nmetrics-port: 0\ncontainer-registry: docker.elastic.co\ncontainer-suffix: \nmax-concurrent-reconciles: 3\nca-cert-validity: 8760h\nca-cert-rotate-before: 24h\ncert-validity: 8760h\ncert-rotate-before: 24h\nexposed-node-labels: [topology.kubernetes.io/.*,failure-domain.beta.kubernetes.io/.*]\nset-default-security-context: auto-detect\nkube-client-timeout: 60s\nelasticsearch-client-timeout: 180s\ndisable-telemetry: false\ndistribution-channel: all-in-one\nvalidate-storage-class: true\nenable-webhook: true\nwebhook-name: elastic-webhook.k8s.elastic.co\nenable-leader-election: true\nelasticsearch-observation-interval: 10s"
 ---
@@ -5219,10 +5273,10 @@ data:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: elastic-operator
+  name: elastic-operator-$j{ServiceAccount["elastic-operator"].metadata.namespace}
   labels:
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 rules:
 - apiGroups:
   - "authorization.k8s.io"
@@ -5447,13 +5501,13 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: "elastic-operator-view"
+  name: elastic-operator-$j{ServiceAccount["elastic-operator"].metadata.namespace}-view
   labels:
     rbac.authorization.k8s.io/aggregate-to-view: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 rules:
 - apiGroups: ["elasticsearch.k8s.elastic.co"]
   resources: ["elasticsearches"]
@@ -5487,12 +5541,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: "elastic-operator-edit"
+  name: elastic-operator-$j{ServiceAccount["elastic-operator"].metadata.namespace}-edit
   labels:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 rules:
 - apiGroups: ["elasticsearch.k8s.elastic.co"]
   resources: ["elasticsearches"]
@@ -5526,14 +5580,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: elastic-operator
+  name: elastic-operator-$j{ServiceAccount["elastic-operator"].metadata.namespace}
   labels:
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: elastic-operator
+  name: elastic-operator-$j{ServiceAccount["elastic-operator"].metadata.namespace}
 subjects:
 - kind: ServiceAccount
   name: elastic-operator
@@ -5547,7 +5601,7 @@ metadata:
   namespace: elastic
   labels:
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 spec:
   ports:
   - name: https
@@ -5564,7 +5618,7 @@ metadata:
   namespace: elastic
   labels:
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 spec:
   selector:
     matchLabels:
@@ -5577,7 +5631,7 @@ spec:
         # Rename the fields "error" to "error.message" and "source" to "event.source"
         # This is to avoid a conflict with the ECS "error" and "source" documents.
         "co.elastic.logs/raw": "[{\"type\":\"container\",\"json.keys_under_root\":true,\"paths\":[\"/var/log/containers/*${data.kubernetes.container.id}.log\"],\"processors\":[{\"convert\":{\"mode\":\"rename\",\"ignore_missing\":true,\"fields\":[{\"from\":\"error\",\"to\":\"_error\"}]}},{\"convert\":{\"mode\":\"rename\",\"ignore_missing\":true,\"fields\":[{\"from\":\"_error\",\"to\":\"error.message\"}]}},{\"convert\":{\"mode\":\"rename\",\"ignore_missing\":true,\"fields\":[{\"from\":\"source\",\"to\":\"_source\"}]}},{\"convert\":{\"mode\":\"rename\",\"ignore_missing\":true,\"fields\":[{\"from\":\"_source\",\"to\":\"event.source\"}]}}]}]"
-        "checksum/config": 0167077654d0c8023b9201c09b02b9213c73d47b50aab990b1e2e8cd41653ca7
+        "checksum/config": e58cbb3b8467599c33d5c3a30c38d480d0c47cc783fd2fcbe33c08441312d93e
       labels:
         control-plane: elastic-operator
     spec:
@@ -5586,7 +5640,7 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-      - image: "docker.elastic.co/eck/eck-operator:2.6.1"
+      - image: "docker.elastic.co/eck/eck-operator:2.7.0"
         imagePullPolicy: IfNotPresent
         name: manager
         args:
@@ -5648,7 +5702,7 @@ metadata:
   name: elastic-webhook.k8s.elastic.co
   labels:
     control-plane: elastic-operator
-    app.kubernetes.io/version: "2.6.1"
+    app.kubernetes.io/version: "2.7.0"
 webhooks:
 - clientConfig:
     caBundle: Cg==
@@ -5659,7 +5713,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-agent-validation-v1alpha1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5680,7 +5734,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-apm-validation-v1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5701,7 +5755,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-apm-validation-v1beta1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5722,7 +5776,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-beat-validation-v1beta1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5743,7 +5797,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-ent-validation-v1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5764,7 +5818,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-ent-validation-v1beta1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5785,7 +5839,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-es-validation-v1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5806,7 +5860,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-es-validation-v1beta1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5823,11 +5877,32 @@ webhooks:
     service:
       name: elastic-webhook-server
       namespace: $j{Service["elastic-webhook-server"].metadata.namespace}
+      path: /validate-ems-k8s-elastic-co-v1alpha1-mapsservers
+  failurePolicy: Ignore
+  name: elastic-ems-validation-v1alpha1.k8s.elastic.co
+  matchPolicy: Exact
+  admissionReviewVersions: [v1, v1beta1]
+  sideEffects: None
+  rules:
+  - apiGroups:
+    - maps.k8s.elastic.co
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mapsservers
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: elastic-webhook-server
+      namespace: $j{Service["elastic-webhook-server"].metadata.namespace}
       path: /validate-kibana-k8s-elastic-co-v1-kibana
   failurePolicy: Ignore
   name: elastic-kb-validation-v1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5848,7 +5923,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-kb-validation-v1beta1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5869,7 +5944,7 @@ webhooks:
   failurePolicy: Ignore
   name: elastic-esa-validation-v1alpha1.k8s.elastic.co
   matchPolicy: Exact
-  admissionReviewVersions: [v1beta1]
+  admissionReviewVersions: [v1, v1beta1]
   sideEffects: None
   rules:
   - apiGroups:
@@ -5902,7 +5977,17 @@ webhooks:
     - UPDATE
     resources:
     - stackconfigpolicies
+
+#########################################################################################
+# ------- END OF https://download.elastic.co/downloads/eck/2.7.0/operator.yaml -------- #
+#########################################################################################
+
 ---
+
+#########################################################################################
+# ------------------------ START OF {{YOUR CUSTOM MANIFESTS}} ------------------------- #
+#########################################################################################
+
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
