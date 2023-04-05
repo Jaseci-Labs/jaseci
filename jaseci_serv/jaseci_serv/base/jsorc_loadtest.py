@@ -198,20 +198,20 @@ class JsorcLoadTest:
                             jsorc_policy = "Default"
                             for module in action_modules:
                                 package, module = module.split(".")
-                                self.load_action_config(package, module)
+                                self.load_action_config(f"{package}.config", module)
                                 self.load_action(module, "local", wait_for_ready=True)
                         elif policy == "all_remote":
                             jsorc_policy = "Default"
                             for module in action_modules:
                                 package, module = module.split(".")
-                                self.load_action_config(package, module)
+                                self.load_action_config(f"{package}.config", module)
                                 self.load_action(module, "remote", wait_for_ready=True)
                         elif policy == "evaluation":
                             jsorc_policy = "Evaluation"
                             # For JSORC mode, we start as remote everything
                             for module in action_modules:
                                 package, module = module.split(".")
-                                self.load_action_config(package, module)
+                                self.load_action_config(f"{package}.config", module)
                                 self.load_action(module, "remote", wait_for_ready=True)
                         else:
                             logger.error(f"Unrecognized policy {policy}")
