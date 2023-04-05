@@ -261,7 +261,13 @@ class JsOrcApi:
         return {"success": True, "policy": policy}
 
     @Interface.admin_api()
-    def jsorc_loadtest(self, test: str, experiment: str = "", mem: int = 0):
+    def jsorc_loadtest(
+        self,
+        test: str,
+        experiment: str = "",
+        mem: int = 0,
+        experiment_duration: int = 180,
+    ):
         """
         load test API. overwritten in jaseci_serv
         """

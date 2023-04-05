@@ -40,7 +40,7 @@ class JsorcLoadTest:
 
         self.test = test
 
-    def run_test(self, experiment, mem, policy):
+    def run_test(self, experiment, mem, policy, experiment_duration):
         """
         Run the corresponding jsorc test
         """
@@ -48,7 +48,7 @@ class JsorcLoadTest:
         if experiment == "":
             return test_func()
         else:
-            return test_func(experiment, mem, policy)
+            return test_func(experiment, mem, policy, experiment_duration)
 
     def load_action(self, name, mode, wait_for_ready=False):
         """
@@ -148,7 +148,7 @@ class JsorcLoadTest:
         )
         return res.data
 
-    def synthetic_apps(self, experiment, mem, policy):
+    def synthetic_apps(self, experiment, mem, policy, experiment_duration):
         """
         Run synthetic application
         Available applications are in jaseci_serv/base/example_jac
@@ -171,7 +171,11 @@ class JsorcLoadTest:
                     "jac_nlp.ent_ext",
                     "jac_nlp.use_qa",
                 ],
-                "flow_analysis": ["jac_nlp.text_seg", "jac_nlp.tfm_ner", "jac_nlp.use_enc"],
+                "flow_analysis": [
+                    "jac_nlp.text_seg",
+                    "jac_nlp.tfm_ner",
+                    "jac_nlp.use_enc",
+                ],
                 "weather_and_time_assitance": [
                     "jac_speech.vc_tts",
                     "jac_speech.stt",
@@ -194,20 +198,20 @@ class JsorcLoadTest:
                             jsorc_policy = "Default"
                             for module in action_modules:
                                 package, module = module.split(".")
-                                self.load_action_config("jac_nlp.config", module)
+                                self.load_action_config(package, module)
                                 self.load_action(module, "local", wait_for_ready=True)
                         elif policy == "all_remote":
                             jsorc_policy = "Default"
                             for module in action_modules:
                                 package, module = module.split(".")
-                                self.load_action_config("jac_nlp.config", module)
+                                self.load_action_config(package, module)
                                 self.load_action(module, "remote", wait_for_ready=True)
                         elif policy == "evaluation":
                             jsorc_policy = "Evaluation"
                             # For JSORC mode, we start as remote everything
                             for module in action_modules:
                                 package, module = module.split(".")
-                                self.load_action_config("jac_nlp.config", module)
+                                self.load_action_config(package, module)
                                 self.load_action(module, "remote", wait_for_ready=True)
                         else:
                             logger.error(f"Unrecognized policy {policy}")
@@ -242,18 +246,24 @@ class JsorcLoadTest:
                         if policy == "all_local":
                             for module in action_modules:
                                 package, module = module.split(".")
-                                self.unload_action(module, mode="local", retire_svc=True)
+                                self.unload_action(
+                                    module, mode="local", retire_svc=True
+                                )
                         elif policy == "all_remote":
                             for module in action_modules:
                                 package, module = module.split(".")
-                                self.unload_action(module, mode="remote", retire_svc=True)
+                                self.unload_action(
+                                    module, mode="remote", retire_svc=True
+                                )
                         else:
                             for module in action_modules:
                                 package, module = module.split(".")
                                 self.unload_action(module, mode="auto", retire_svc=True)
                         sleep(10)
-            with open(f"/root/{app}.json","w") as fp:
-                json.dump(results,fp)
+            path = "/root/.jaseci/exp_results/"
+            os.makedirs(path, exist_ok=True)
+            with open(f"{path}/{app}_{policy}.json", "w") as fp:
+                json.dump(results, fp)
             return results
         except Exception as e:
             return f"Exception: {e}"

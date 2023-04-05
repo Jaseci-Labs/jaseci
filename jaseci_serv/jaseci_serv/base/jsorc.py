@@ -6,10 +6,15 @@ from .jsorc_loadtest import JsorcLoadTest
 class JsOrcApi(CoreJsOrcApi):
     @Interface.admin_api()
     def jsorc_loadtest(
-        self, test: str, experiment: str = "", mem: int = 0, policy: str = "all_local"
+        self,
+        test: str,
+        experiment: str = "",
+        mem: int = 0,
+        policy: str = "all_local",
+        experiment_duration=3 * 60,
     ):
         """
         A jsorc loadtest
         """
         tester = JsorcLoadTest(test)
-        return tester.run_test(experiment, mem, policy)
+        return tester.run_test(experiment, mem, policy, experiment_duration)
