@@ -40,7 +40,7 @@ class JsorcLoadTest:
 
         self.test = test
 
-    def run_test(self, experiment, mem, policy, experiment_duration):
+    def run_test(self, experiment, mem, policy):
         """
         Run the corresponding jsorc test
         """
@@ -48,7 +48,7 @@ class JsorcLoadTest:
         if experiment == "":
             return test_func()
         else:
-            return test_func(experiment, mem, policy, experiment_duration)
+            return test_func(experiment, mem, policy)
 
     def load_action(self, name, mode, wait_for_ready=False):
         """
@@ -148,7 +148,7 @@ class JsorcLoadTest:
         )
         return res.data
 
-    def synthetic_apps(self, experiment, mem, policy, experiment_duration):
+    def synthetic_apps(self, experiment, mem, policy):
         """
         Run synthetic application
         Available applications are in jaseci_serv/base/example_jac
@@ -224,10 +224,10 @@ class JsorcLoadTest:
                         self.start_benchmark()
                         self.start_actions_tracking()
                         start_ts = time.time()
-                        # if policy == "all_local" or policy == "all_remote":
-                        #     experiment_duration = experiment_duration
-                        # else:
-                        #     experiment_duration = 5 * 60
+                        if policy == "all_local" or policy == "all_remote":
+                            experiment_duration = 3 * 60
+                        else:
+                            experiment_duration = 5 * 60
                         while (time.time() - start_ts) < experiment_duration:
                             res = self.run_walker(app)
                         result = self.stop_benchmark()

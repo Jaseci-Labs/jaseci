@@ -265,8 +265,7 @@ class JsOrcApi:
         self,
         test: str,
         experiment: str = "",
-        mem: int = 0,
-        experiment_duration: int = 180,
+        mem: int = 0
     ):
         """
         load test API. overwritten in jaseci_serv

@@ -10,8 +10,7 @@ class JsOrcApi(CoreJsOrcApi):
         test: str,
         experiment: str = "",
         mem: int = 0,
-        policy: str = "all_local",
-        experiment_duration=180,
+        policy: str = "all_local"
     ):
         """
         A jsorc loadtest
