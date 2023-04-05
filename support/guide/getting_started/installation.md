@@ -1,11 +1,11 @@
-# Install Jaseci
+## Installation for Contributors
 Jaseci is tested and supported on the following systems:
 * python 3.10 or higher
 * Ubuntu 18.04 or later
 * Windows WSL2
 * macOS* (see note below for compatibility with Apple silicon)
 
-## Pre-requiste
+### Pre-requiste
 Jaseci requires the following dependencies:
 * python3.10-dev
 * g++
@@ -21,7 +21,7 @@ apt-get install python3.10-dev python3-pip git g++ build-essential pkg-config cm
 >
 > For macOS, install the above dependencies using one of macOS package manager such as [Homebrew](https://brew.sh/) and [MacPorts](https://www.macports.org/).
 
-## Install via `pip`
+### Install via `pip`
 Install Jaseci with Python's `pip` package manager
 ```bash
 # Upgrade pip to the latest
@@ -46,7 +46,7 @@ The following output should show.
 }
 ```
 
-### Additional Pacakges for AI Modules
+#### Additional Pacakges for AI Modules
 `jaseci` and `jaseci-serv` packages provide the core of the Jaseci framework.
 To build jaseci program with AI modules, you need to install additional pacakges.
 ```bash
@@ -72,7 +72,7 @@ Details on which module is included in each package and how to install selective
 >
 > Alternatively, you can build `tensorflow-text` from source following solutions provided by the [community](https://github.com/Jaseci-Labs/jaseci.git).
 
-## Upgrade Versions
+### Upgrade Versions
 To upgrade installed version of Jaseci core packages to the latest version from Pypi
 ```bash
 pip install --upgrade jaseci jaseci_serv
@@ -90,7 +90,7 @@ To install specific version of Jaseci
 pip install jaseci==1.4.0.0
 ```
 
-## Build from Source
+### Build from Source
 If you wish to use the development version of Jaseci, you can download the source code from Github and build from source.
 ```bash
 git clone https://github.com/Jaseci-Labs/jaseci.git
@@ -99,7 +99,7 @@ cd jaseci/jaseci_serv && source install.sh
 cd jaseci/jaseci_ai_kit && source install.sh all
 ```
 
-## For Contributors
+### For Contributors
 If you'd like to make contribution to Jaseci Open Source, you should build from source.
 In addition, you should set up the following in your development environment to follow the Jaseci Open Source Code Standards.
 ```bash

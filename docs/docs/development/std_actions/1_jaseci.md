@@ -896,7 +896,7 @@ Retrieve customer list of invoices.
 invoices = jaseci.stripe_invoice_list(customerId,subscriptionId,limit,lastitem);
 ```
 
-## actions
+## Actions
 
 ## Load actions module locally
 

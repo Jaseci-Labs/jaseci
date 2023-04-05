@@ -21,3 +21,4 @@ yarn-error.log*
 package-lock.json
 yarn.lock
 /deprecatedDocs
+test.py

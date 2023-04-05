@@ -13,6 +13,43 @@ output_path = os.path.join(root, "mdbook")  # no trailing slash
 theme_source_path = os.path.join(root, "support/mdbook_theme")  # no trailing slash
 toc_path = os.path.join(root, "README.md")
 
+def extract_content_below_title(markdown_file, title, output_file):
+    """
+    Extracts all content below the given title in the Markdown file and writes it to the output file.
+    """
+    with open(markdown_file, "r") as f:
+        lines = f.readlines()
+
+    start_index = None
+    for i, line in enumerate(lines):
+        if line.strip() == f"## {title}":
+            start_index = i + 1
+            break
+
+    if start_index is None:
+        raise ValueError(f"Title '{title}' not found in file {markdown_file}")
+
+    with open(output_file, "w") as f:
+        f.writelines(lines[start_index:])
+
+
+
+
+
+def pluck_content_below_title(title, input_file, output_file):
+    with open(input_file, "r") as f:
+        lines = f.readlines()
+    found_title = False
+    with open(output_file, "w") as f:
+        for line in lines:
+            if found_title:
+                if line.startswith("##"):
+                    break
+                f.write(line)
+            elif line.startswith("## " + title):
+                found_title = True
+                f.write(line)
+
 
 def main():
     # ensure main TOC readme exists before continuing
@@ -66,6 +103,32 @@ def build_summary_file():
 
     for line in lines:
         if line.find(".md#") != -1:
+            space = line.split("-")[0]
+            title = line.split("#")[0]
+            title = title.split("[")[1]
+            title = title.split("]")[0]
+            path = line.split("#")[0]
+            path = path.split("(")[1]
+            new_file_name = line.split("#")[1]
+            new_file_name = new_file_name.split(")")[0]
+            new_file_name = new_file_name.replace("-", "_")
+            new_file_name = new_file_name+".md"
+            new_file_name = new_file_name.replace(" ", "")
+            file_reference = new_file_name
+            new_file_name = os.path.join("./mdbook/src",new_file_name)
+            extract_content_below_title(
+                path, title, new_file_name
+            )
+            template_syntax = f"- [{title}]({file_reference})"
+            template_syntax = space+template_syntax
+
+            with open(output_path + "/src/SUMMARY.md", "a") as summaryfile:
+                summaryfile.write(template_syntax + "\n")
+
+            pluck_content_below_title(
+                title, path, new_file_name
+            )
+
             continue
 
         if line.find("https") != -1:
@@ -186,8 +249,8 @@ def init_mdbook():
         book.write("[output.html]\n")
         book.write('default-theme = "light"\n')
         book.write('preferred-dark-theme = "coal"\n')
-        book.write('preferred-dark-theme = "coal"\n')
         book.write("[output.html.fold]\n")
+        book.write("enable = true\n")
         book.close()
 
 

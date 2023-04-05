@@ -69,7 +69,7 @@ JAC_TYPE.LIST - [5]
 JAC_TYPE.STR - 5
 JAC_TYPE.DICT - {"num": 5}
 ```
-### Special Types
+## Special Types
 ```jac
 walker init {
     a=null;
@@ -87,7 +87,7 @@ JAC_TYPE.TYPE - JAC_TYPE.STR
 JAC_TYPE.NULL
 JAC_TYPE.TYPE
 ```
-### Typecasting
+## Typecasting
 ```jac
 walker init {
     a=5.6;
@@ -112,7 +112,7 @@ Types comes back correct
 
 ## Operators
 
-### Arithmatic Operators
+## Arithmatic Operators
 
 ```jac
 // addition
@@ -135,7 +135,7 @@ a = 4 ^ 4;
 b = 9 % 5
 
 ```
-### Equality Operations
+## Equality Operations
 ```jac
 // equal
 a == b
@@ -156,7 +156,7 @@ a <= b
 a >= b
 ```
 
-### Logical Operators
+## Logical Operators
 ```jac
 // not
 !a,
@@ -173,7 +173,7 @@ a or b
 !a or b
 !(a and b)
 ```
-### Assigments Operators
+## Assigments Operators
 
 ```jac
 a = 4 + 4;

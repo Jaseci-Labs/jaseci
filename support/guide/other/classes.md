@@ -10,7 +10,7 @@ performance profiling.
 <div class='actionHeading'>actions load local</div>
 
  <div class='actionName'> cli: actions load local | api: actions_load_local | auth: admin </div> 
- <div class ='actionsArgs'> file: str (*req), ctx: dict ({})</div>
+ <div class ='actionsArgs'> file: str (*req)</div>
  <div class ='mainbody'> <div class ='actionsDescription'>This API will dynamically load a module based on a python file. The module
 is loaded directly into the running Jaseci python instance. This API also
 makes an attempt to auto detect and hot load any python package dependencies
@@ -25,7 +25,7 @@ file -- The python file with full to load actions from.
 <div class='actionHeading'>actions load remote</div>
 
  <div class='actionName'> cli: actions load remote | api: actions_load_remote | auth: admin </div> 
- <div class ='actionsArgs'> url: str (*req), ctx: dict ({})</div>
+ <div class ='actionsArgs'> url: str (*req)</div>
  <div class ='mainbody'> <div class ='actionsDescription'>This API will dynamically load a set of actions that are present on a remote
 server/micro-service. This server must be configured to interact with Jaseci
 properly. This is easily achieved using the same decorators used for local
@@ -40,7 +40,7 @@ url -- The url of the API server supporting Jaseci actions. <br>
 <div class='actionHeading'>actions load module</div>
 
  <div class='actionName'> cli: actions load module | api: actions_load_module | auth: admin </div> 
- <div class ='actionsArgs'> mod: str (*req), ctx: dict ({})</div>
+ <div class ='actionsArgs'> mod: str (*req)</div>
  <div class ='mainbody'> <div class ='actionsDescription'>This API will dynamically load a module using python's module import format.
 This is particularly useful for pip installed action libraries as the developer
 can directly reference the module using the same format as a regular python
@@ -85,12 +85,6 @@ actions. If left blank all actions from all loaded sets will be shown. <br>
 
  <div class='actionName'> cli: actions unload actionset | api: actions_unload_actionset | auth: admin </div> 
  <div class ='actionsArgs'> name: str (*req)</div>
- <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
- 
-<div class='actionHeading'>actions call</div>
-
- <div class='actionName'> cli: actions call | api: actions_call | auth: admin </div> 
- <div class ='actionsArgs'> name: str (*req), ctx: dict ({})</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
  # APIs for architype
@@ -652,12 +646,6 @@ No documentation yet.
  <div class ='actionsArgs'> namespace: str (), exclude_prom: bool (False), timestamp: int (0), duration: int (0)</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
-<div class='actionHeading'>prometheus node info</div>
-
- <div class='actionName'> cli: prometheus node info | api: prometheus_node_info | auth: admin </div> 
- <div class ='actionsArgs'> namespace: str (), exclude_prom: bool (False), timestamp: int (0), duration: int (0)</div>
- <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
- 
  # APIs for queue
 
 APIs used for celery configuration and monitoring
@@ -927,12 +915,6 @@ semantics.
 
  <div class='actionName'> cli: walker execute | api: walker_execute | auth: user </div> 
  <div class ='actionsArgs'> wlk: Walker (*req), prime: Node (None), ctx: dict ({}), _req_ctx: dict ({}), profiling: bool (False)</div>
- <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
- 
-<div class='actionHeading'>walker step</div>
-
- <div class='actionName'> cli: walker step | api: walker_step | auth: user </div> 
- <div class ='actionsArgs'> wlk: Walker (*req), detailed: bool (False)</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div> 
  
 <div class='actionHeading'>walker run</div>

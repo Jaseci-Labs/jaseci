@@ -23,14 +23,14 @@
 # Getting Started
 
   - [Installation](docs/docs/getting_started/1_installation.md)
-    - [Setting Up Windows](docs/docs/getting_started/1_installation.md#windows-setup)
+    - [Windows setup](docs/docs/getting_started/1_installation.md#windows-setup)
     - [Install Jaseci in Debian or WSL2](docs/docs/getting_started/1_installation.md#install-jaseci-in-debian-or-wsl2)
     - [Install Jaseci on MacOS](docs/docs/getting_started/1_installation.md#install-jaseci-on-macos)
   - [Setting Up Your Editor](docs/docs/getting_started/2_setting_up_code_editor.md)
   - [Setting Up Jaseci Server](docs/docs/getting_started/3_setup_jaseci_serv.md)
   - [Installing Jaseci Studio](jaseci_studio/README.md) <!-- Should update more information on this images,etc -->
   - [Write your first Jaseci Application](docs/docs/getting_started/5_write_your_first_app.md) <!-- Should update more explanation on this code -->
-  - [Learn More](README.md#appendix)
+  - [Appendix](README.md#appendix)
 
 # Examples and Tutorials
 
@@ -63,7 +63,7 @@
   - [Graphs](docs/docs/development/1_abstractions.md#graphs)
     - [Nodes](docs/docs/development/1_abstractions.md#nodes)
     - [Edges](docs/docs/development/1_abstractions.md#edges)
-    - [Operators for connecting nodes and edges](docs/docs/development/1_abstractions.md#operators-for-connecting-nodes-and-edges)
+    - [Operators for connecting nodes](docs/docs/development/1_abstractions.md#operators-for-connecting-nodes-and-edges)
     - [Creating Graphs Examples](docs/docs/development/1_abstractions.md#creating-graphs-examples)
     - [Referencing and Dereferencing Nodes and Edges](docs/docs/development/1_abstractions.md#referencing-and-dereferencing-nodes-and-edges)
     - [Plucking values from nodes and edges](docs/docs/development/1_abstractions.md#plucking-values-from-nodes-and-edges)
@@ -89,7 +89,7 @@
   - [Destroy](docs/docs/development/2_operations.md#destroy)
   - [Report](docs/docs/development/2_operations.md#report)
   - [Yield](docs/docs/development/2_operations.md#yield)
-- [Jaseci Standard Actions Libraries](docs/docs/development/1_abstractions.md#jaseci-standard-actions)
+- [Jaseci Standard Actions](docs/docs/development/1_abstractions.md#jaseci-standard-actions)
   <!--Should explain input parameters of these actions-->
   - [Date](docs/docs/development/std_actions/2_date.md)
   - [File](docs/docs/development/std_actions/3_file.md)
@@ -106,7 +106,7 @@
     - [Objects](docs/docs/development/std_actions/1_jaseci.md#objects)
     - [Graphs](docs/docs/development/std_actions/1_jaseci.md#graphs)
     - [Sentinels](docs/docs/development/std_actions/1_jaseci.md#sentinels)
-    - [Walkers](docs/docs/development/std_actions/1_jaseci.md#walker)
+    - [Walker](docs/docs/development/std_actions/1_jaseci.md#walker)
     - [Architypes](docs/docs/development/std_actions/1_jaseci.md#architypes)
     - [Masters](docs/docs/development/std_actions/1_jaseci.md#masters)
     - [Logger](docs/docs/development/std_actions/1_jaseci.md#logger)
@@ -114,7 +114,7 @@
     - [Super Master](docs/docs/development/std_actions/1_jaseci.md#super-master)
     - [Stripe](docs/docs/development/std_actions/1_jaseci.md#stripe)
     - [Actions](docs/docs/development/std_actions/1_jaseci.md#actions)
-    - [Configurations](docs/docs/development/std_actions/1_jaseci.md#configurations-apis)
+    - [Configurations APIs](docs/docs/development/std_actions/1_jaseci.md#configurations-apis)
 - [Jaseci AI kit Features](jaseci_ai_kit/README.md)
  <!--Should explain input parameters of these functions-->
   - [Jac NLP Modules](jaseci_ai_kit/jac_nlp/README.md)
@@ -157,19 +157,19 @@
     - [Logical Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#logical-operators)
     - [Assigments Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
   - [Precedence of Jaseci Operators](docs/docs/jac_language_guide/1_jac_lang_basics.md#assigments-operators)
-  - [Input and Output](docs/docs/jac_language_guide/1_jac_lang_basics.md#input-and-output-in-jaseci)
-  - [File Handling](docs/docs/jac_language_guide/1_jac_lang_basics.md#file-handling-in-jaseci)
-  - [Global Variables](docs/docs/jac_language_guide/1_jac_lang_basics.md#global-variables-in-jaseci)
+  - [Input and Output in Jaseci](docs/docs/jac_language_guide/1_jac_lang_basics.md#input-and-output-in-jaseci)
+  - [File Handling in Jaseci](docs/docs/jac_language_guide/1_jac_lang_basics.md#file-handling-in-jaseci)
+  - [Global Variables in Jaseci](docs/docs/jac_language_guide/1_jac_lang_basics.md#global-variables-in-jaseci)
   - [Working with Imports](docs/docs/jac_language_guide/1_jac_lang_basics.md#working-with-imports)
   - [Error Handling in Jaseci](docs/docs/comming_soon.md)
   - [Logs in Jaseci](docs/docs/comming_soon.md)
 <!--Error Handling and Loggings Should come under this-->
 - [Data Structures in Jaseci](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md)
-  - [Dictionary](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#dictionaries)
+  - [Dictionaries](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#dictionaries)
   - [List](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#list)
-  - [String](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#strings)
+  - [Strings](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md#strings)
 - [Loops and Conditions](docs/docs/jac_language_guide/3_loops_and_conditions.md)
-  - [Control Flow](docs/docs/jac_language_guide/3_loops_and_conditions.md#control-flow)
+  - [Control FLow](docs/docs/jac_language_guide/3_loops_and_conditions.md#control-flow)
   - [Looping](docs/docs/jac_language_guide/3_loops_and_conditions.md#looping)
 
 
@@ -204,7 +204,7 @@
   - [Contact Us](https://jaseci.org/contact-us/)
 
 
-# Appendix
+## Appendix
 
 ## Language Basics
 

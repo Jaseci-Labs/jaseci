@@ -44,7 +44,7 @@ contexts.
 
 Refer to [Wikipedia description of graphs](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)) to learn more about graphs.
 
-### Nodes
+## Nodes
 In Jaseci, nodes are a crucial concept. There are two types of nodes:
 
 - **Root node**: It is the starting point of the graph and is a built-in node type. Each graph can have only one root node.
@@ -58,7 +58,7 @@ node person{
 }
 ```
 
-### Edges
+## Edges
 
 In Jaseci, edges are an essential component of the graph structure, and they allow for more complex relationships between nodes. As stated above, just like nodes, you can define custom edge types with variables, allowing for more versatility in creating the structure of the graph.
 
@@ -76,7 +76,7 @@ edge relationship{
 }
 ```
 
-### Operators for connecting nodes
+## Operators for connecting nodes
 
 In Jaseci, specific operators are used to connect nodes and edges to form graphs;
 
@@ -89,7 +89,7 @@ In Jaseci, specific operators are used to connect nodes and edges to form graphs
 
 These operators allow you to create complex graphs with customized edge types that can hold specific values. By using these operators, you can create a network of nodes that can represent complex data structures, such as trees or graphs. The use of customized edge types also allows you to define specific behavior for different types of connections between nodes.
 
-### Creating Graphs Examples
+## Creating Graphs Examples
 
 Graphs can be created by connecting multiple nodes with edges. This is done using the connect operator `++>` `<++>`.
 
@@ -137,7 +137,7 @@ After that, the `spawn` keyword is used to begin the creation of nodes and edges
 The transition keyword is used to create an edge with a specific intent label. In the example above, the graph has three states: root_state, home_price_inquiry, and prob_of_approval, and a user node. These states and the user node are connected to each other through transitions with intent labels such as "home price inquiry" or "probability of loan approval".
 
 
-### Referencing and Dereferencing Nodes and Edges
+## Referencing and Dereferencing Nodes and Edges
 
 <!-- Is this is related to nodes and edges??? or is this only for edges or is this is for all of the objects in Jaseci, need clarifications -->
 
@@ -186,7 +186,7 @@ info: {
 
 When executed, the code will output the reference and information related to the node0 object. The obj output shows the UUID of the node0 object, while the info output shows the complete information related to the simple node, including its context, anchor, name, kind, and other attributes.
 
-### Plucking values from nodes and edges
+## Plucking values from nodes and edges
 
 In Jaseci, you can easily extract information from nodes and edges by using the pluck feature. Edges in Jaseci have a unique feature that allows you to pluck values from neighboring nodes and edges themselves. By using the syntax **`-->`**, you can extract the value of a specific variable from a neighboring node. This will return a list of the values of that variable from all connected nodes. If you want to filter the results and only extract information from specific nodes, you can specify the name of the edge connected to the node and further specify what value the edge has by using the syntax **`-[name_of_edge(variable = value)]->.name_of_variable_needed`**.
 
@@ -250,7 +250,7 @@ Walkers offer a different approach to programmatic execution, distinct from the 
 
 When solving problems with walkers, a developer can think of that walker as a little self-contained robot or agent that can retain context as it spatially moves about a graph, interacting with the context in nodes and edges of that graph.
 
-### Init Walker with Examples
+## Init Walker with Examples
 
 When we run a jac code, by default it's executing the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac run main.jac`
 
@@ -292,7 +292,7 @@ walker init{
 
 The statements from `second walker` and `init` are printed in the jac shell, and we may run just `second_walker` directly by using the command `jac run main.jac -walk second_walker`. Here, the `-walk` parameter instructs the `jsctl` to execute a certain walker.
 
-### Walkers Navigating Graphs Examples
+## Walkers Navigating Graphs Examples
 
 As mentioned earlier the walkers can traverse(walk) through the nodes of the graph in breadth first search (BFS) or depth first search(DFS) approaches.
 
@@ -359,7 +359,7 @@ In addition to the introduction of the `take` command to support new types of co
 
 <!-- Is it neccessary to have bfs,dfs traversals and skip, disengage traversals in the operators sections. I need feedback on this-->
 
-### Walker Spawning Examples
+## Walker Spawning Examples
 
 Jaseci walkers act like little robots traversing graphs, with a unique ability to spawn other walkers that can also walk the graph and return a value to the parent walker. This powerful feature is achieved by specifying the variable to receive the returned value using the **`has anchor some_variable`** syntax.
 
@@ -413,7 +413,7 @@ To see node abilities in advance let's define the following graph, which represe
 
 <div style="text-align:center"><img style="align:center" src="images/abilities_graph_example_1.png" /> <b>Example Graph</b></div>
 
-### Node Abilities Example
+## Node Abilities Example
 
 This is a very basic example of a node ability.
 
@@ -614,7 +614,7 @@ walker traveler{
 
 You might observe that while using a node's ability, the walkers' state remains unchanged.
 
-### Walker Abilities Example
+## Walker Abilities Example
 
 Let's call a walker ability from a node in the following example;
 
@@ -689,10 +689,10 @@ Traveler enters the city
 
 Observe that the print statement "Traveler enters the city" comes from the `walker traveler` and triggers to executed when enters to a `city` node.
 
-### Edge Abilities Example
+## Edge Abilities Example
 <!-- Have to add an example here-->
 
-### A Complete Example
+## A Complete Example
 
 Lets try adding following node ability inside city node;
 
@@ -724,7 +724,7 @@ When traveler leaves: 60 tourists are in the city c3
 ```
 `reset_tourists_1` executes when the `walker traveler` leaves the `city` node.
 
-### Here and Visitor
+## Here and Visitor
 
 At every execution point in a Jac/Jaseci program there are two scopes visible, that of the
 walker, and that of the node it is executing on. These contexts can be referenced with the
@@ -781,7 +781,7 @@ Actions share the semantics as traditional function calls with returns, however 
 >
 > This action interface is the abstraction that allows Jaseci to do it's sophisticated serverless inter-machine optimizations, auto-scaling, auto-componentization etc.
 
-### Jaseci Standard Actions
+## Jaseci Standard Actions
 
 Jaseci has set of inbuilt actions. Also you can load and unload actions in `jsctl` shell. to see the available actions in jaseci session try running `actions list`. Here is a basic example of jaseci `date` actions.
 
