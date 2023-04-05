@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from transformers import AutoModel, AutoConfig, AutoTokenizer
 import traceback
 import numpy as np
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import random
 import json
 import shutil
@@ -561,6 +561,6 @@ prod_model()
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

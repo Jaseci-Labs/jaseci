@@ -10,7 +10,7 @@ import math
 from datetime import datetime
 import numpy as np
 from fastapi.responses import JSONResponse
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 model_name = "bert-base-uncased"
 device = "cuda" if torch.cuda.is_available() else "cpu"

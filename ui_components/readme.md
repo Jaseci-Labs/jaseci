@@ -2,6 +2,16 @@
 
 # Stencil Component Starter
 
+- [Stencil Component Starter](#stencil-component-starter)
+  - [Setup \& Development](#setup--development)
+  - [Building](#building)
+  - [Testing](#testing)
+  - [Naming Components](#naming-components)
+  - [Using this component](#using-this-component)
+    - [Script tag](#script-tag)
+    - [Node Modules](#node-modules)
+    - [In a stencil-starter app](#in-a-stencil-starter-app)
+
 This is a starter project for building a standalone Web Component using Stencil.
 
 Stencil is also great for building entire apps. For that, use the [stencil-app-starter](https://github.com/ionic-team/stencil-app-starter) instead.

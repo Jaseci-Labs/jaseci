@@ -1,6 +1,8 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci.actions.live_actions import load_module_actions, unload_module
+from jaseci.jsorc.live_actions import load_module_actions, unload_module
 import pytest
+import shutil
+from os import path
 
 
 class BiEncTest(CoreTest):
@@ -75,3 +77,6 @@ class BiEncTest(CoreTest):
         super(BiEncTest, cls).tearDownClass()
         ret = unload_module("jac_nlp.bi_enc.bi_enc")
         assert ret is True
+        for temp_path in ["modeloutput", "logoutput"]:
+            if path.exists(temp_path) and path.isdir(temp_path):
+                shutil.rmtree(temp_path)

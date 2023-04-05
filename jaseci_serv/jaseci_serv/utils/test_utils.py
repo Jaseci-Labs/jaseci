@@ -1,7 +1,7 @@
 import unittest
 
-from jaseci import JsOrc
-from jaseci.svc.kube_svc import KubeService
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.extens.svc.kube_svc import KubeService
 
 
 def skip_without_redis(test):

@@ -1,6 +1,8 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci.actions.live_actions import load_module_actions, unload_module
+from jaseci.jsorc.live_actions import load_module_actions, unload_module
 import pytest
+import shutil
+from os import path
 
 
 class SbertSimTest(CoreTest):
@@ -53,3 +55,6 @@ class SbertSimTest(CoreTest):
         super(SbertSimTest, cls).tearDownClass()
         ret = unload_module("jac_nlp.sbert_sim.sbert_sim")
         assert ret is True
+        for temp_path in ["output"]:
+            if path.exists(temp_path) and path.isdir(temp_path):
+                shutil.rmtree(temp_path)

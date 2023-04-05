@@ -1,7 +1,7 @@
 import stripe
 from unittest.mock import Mock
 from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 class StripeTests(CoreTest):

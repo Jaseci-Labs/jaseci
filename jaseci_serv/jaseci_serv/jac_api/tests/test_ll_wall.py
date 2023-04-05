@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from rest_framework.test import APIClient
 from jaseci.utils.utils import TestCaseHelper
-import jaseci.actions.live_actions as lact
+import jaseci.jsorc.live_actions as lact
 from django.test import TestCase
 import uuid
 import base64

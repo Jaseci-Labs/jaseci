@@ -2,7 +2,7 @@ import os
 import sys
 
 import jaseci_serv.hook.orm  # noqa
-from jaseci import JsOrc, JsOrcSettings as jss
+from jaseci.jsorc.jsorc import JsOrc, JsOrcSettings as jss
 
 
 class JsOrcSettings(jss):

@@ -10,14 +10,14 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import OperationalError
 
 import jaseci as core_mod
-from jaseci.hook import RedisHook
+from jaseci.jsorc.redis import RedisHook
 from jaseci.utils import utils
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 from datetime import datetime
 import json
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 @JsOrc.repository(name="hook", priority=2)

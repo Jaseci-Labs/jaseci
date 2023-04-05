@@ -1,6 +1,6 @@
 import os
 import openai
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import traceback
 from fastapi import HTTPException
 
@@ -26,9 +26,6 @@ def setup(api_key: str):
         )
 
 
-setup(api_key=os.environ.get("OPENAI_API_KEY", None))
-
-
 @jaseci_action(act_group=["gpt3"], allow_remote=True)
 def generate(text: str, args: dict = DEFAULT_ARGS):
     try:
@@ -40,6 +37,6 @@ def generate(text: str, args: dict = DEFAULT_ARGS):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

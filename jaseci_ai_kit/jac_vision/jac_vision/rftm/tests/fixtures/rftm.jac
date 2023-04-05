@@ -4,7 +4,7 @@ walker test_predict_anomaly_b64 {
     can file.load_to_b64;
 
     for i=1 to i <= 16 by i+=1{
-        frames.list::append(file.load_to_b64("jac_vision/jac_vision/rftm/tests/data/frame_"+i.str+".jpg"));
+        frames.list::append(file.load_to_b64("jac_vision/rftm/tests/data/frame_"+i.str+".jpg"));
     }
     report rftm.predict(frames, true);
 }
@@ -14,7 +14,7 @@ walker test_predict_anomaly {
     can rftm.predict;
 
     for i=1 to i <= 16 by i+=1{
-        frames.list::append("jac_vision/jac_vision/rftm/tests/data/frame_"+i.str+".jpg");
+        frames.list::append("jac_vision/rftm/tests/data/frame_"+i.str+".jpg");
     }
     report rftm.predict(frames);
 }

@@ -4,13 +4,13 @@ Interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci import JsOrc
-from jaseci.svc.task_svc import TaskService
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.extens.svc.task_svc import TaskService
 from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
-from jaseci.element.element import Element
-from jaseci.graph.node import Node
-from jaseci.graph.edge import Edge
-from jaseci.attr.action import Action
+from jaseci.prim.element import Element
+from jaseci.prim.node import Node
+from jaseci.prim.edge import Edge
+from jaseci.prim.action import Action
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
 from jaseci.jac.machine.jac_scope import JacScope
@@ -619,7 +619,7 @@ class Interp(VirtualMachine):
 
     def run_cmp_op(self, jac_ast, val1, val2):
         """
-        cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin | SUB_OF | SUPER_OF | DISJOINT_OF;
+        cmp_op: EE | LT | GT | LTE | GTE | NE | KW_IN | nin;
         """
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "EE":
@@ -638,12 +638,6 @@ class Interp(VirtualMachine):
             self.push(JacValue(self, value=val1.value in val2.value))
         elif kid[0].name == "nin":
             self.push(JacValue(self, value=val1.value not in val2.value))
-        elif kid[0].name == "SUB_OF":
-            self.push(JacValue(self, value=set(val1.value).issubset(set(val2.value))))
-        elif kid[0].name == "SUPER_OF":
-            self.push(JacValue(self, value=set(val1.value).issuperset(set(val2.value))))
-        elif kid[0].name == "DISJOINT_OF":
-            self.push(JacValue(self, value=set(val1.value).isdisjoint(set(val2.value))))
 
     def run_arithmetic(self, jac_ast):
         """
@@ -1018,7 +1012,7 @@ class Interp(VirtualMachine):
         obj_built_in: KW_CONTEXT | KW_INFO | KW_DETAILS;
         """
         kid = self.set_cur_ast(jac_ast)
-        from jaseci.actor.walker import Walker
+        from jaseci.prim.walker import Walker
 
         if kid[0].name == "KW_CONTEXT":
             if self.rt_check_type(atom_res.value, [Node, Edge, Walker], kid[0]):

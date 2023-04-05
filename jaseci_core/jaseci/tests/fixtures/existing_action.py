@@ -1,4 +1,4 @@
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 
 @jaseci_action(act_group=["sim2"])

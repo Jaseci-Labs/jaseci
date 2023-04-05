@@ -96,6 +96,12 @@
 </ul> 
  </td> 
  </tr><tr> 
+ <td>walker step</td><td> 
+ <ul><li>wlk: Walker (*req)</li>
+<li> detailed: bool (False)</li>
+</ul> 
+ </td> 
+ </tr><tr> 
  <td>walker run</td><td> 
  <ul><li>name: str (*req)</li>
 <li> nd: Node (None)</li>
@@ -494,12 +500,13 @@
  </tr><tr> 
  <td>load yaml</td><td> 
  <ul><li>files: list (*req)</li>
-<li> namespace: str (default)</li>
+<li> manifest_type: str (DEDICATED)</li>
+<li> manual_namespace: str (default)</li>
 </ul> 
  </td> 
  </tr><tr> 
  <td>apply yaml</td><td> 
- <ul><li>name: str (*req)</li>
+ <ul><li>service: str (*req)</li>
 <li> file: list (*req)</li>
 <li> unsafe_paraphrase: str ()</li>
 </ul> 
@@ -658,16 +665,19 @@
  </tr><tr> 
  <td>actions load local</td><td> 
  <ul><li>file: str (*req)</li>
+<li> ctx: dict (\{\})</li>
 </ul> 
  </td> 
  </tr><tr> 
  <td>actions load remote</td><td> 
  <ul><li>url: str (*req)</li>
+<li> ctx: dict (\{\})</li>
 </ul> 
  </td> 
  </tr><tr> 
  <td>actions load module</td><td> 
  <ul><li>mod: str (*req)</li>
+<li> ctx: dict (\{\})</li>
 </ul> 
  </td> 
  </tr><tr> 
@@ -696,6 +706,12 @@
 </ul> 
  </td> 
  </tr><tr> 
+ <td>actions call</td><td> 
+ <ul><li>name: str (*req)</li>
+<li> ctx: dict (\{\})</li>
+</ul> 
+ </td> 
+ </tr><tr> 
  <td>prometheus metrics list</td><td> 
  <ul><li>n/a</li>
 </ul> 
@@ -708,6 +724,14 @@
  </td> 
  </tr><tr> 
  <td>prometheus pod info</td><td> 
+ <ul><li>namespace: str ()</li>
+<li> exclude_prom: bool (False)</li>
+<li> timestamp: int (0)</li>
+<li> duration: int (0)</li>
+</ul> 
+ </td> 
+ </tr><tr> 
+ <td>prometheus node info</td><td> 
  <ul><li>namespace: str ()</li>
 <li> exclude_prom: bool (False)</li>
 <li> timestamp: int (0)</li>

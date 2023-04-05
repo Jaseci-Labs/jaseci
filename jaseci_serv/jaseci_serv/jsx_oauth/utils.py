@@ -1,4 +1,4 @@
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci_serv.jsx_oauth.models import PROVIDERS_MAPPING, SocialLoginProvider
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
@@ -15,9 +15,10 @@ from rest_framework.response import Response
 from rest_framework.exceptions import APIException
 from rest_framework import serializers
 from allauth.socialaccount.helpers import complete_social_login
-from allauth.account import app_settings as allauth_settings
+from allauth.socialaccount.models import SocialApp
 from requests.exceptions import HTTPError
 from enum import Enum
+from .models import InternalClient
 
 
 class LoginType(Enum):
@@ -27,10 +28,10 @@ class LoginType(Enum):
     BINDING = "Existing account but just got binded with different login type"
 
 
-class RegistrationConflict(APIException):
-    status_code = 409
-    default_detail = "User is already registered with this e-mail address!"
-    default_code = "Registration failed!"
+class InternalClientFieldNotExists(APIException):
+    status_code = 400
+    default_detail = "internal_client_id is required!"
+    default_code = "Request failed!"
 
 
 class GetExampleUrlSerializer(serializers.Serializer):
@@ -38,6 +39,8 @@ class GetExampleUrlSerializer(serializers.Serializer):
 
 
 class JSXSocialLoginSerializer(SocialLoginSerializer):
+    internal_client_id = serializers.CharField(required=False, allow_blank=True)
+
     def validate(self, attrs):
         view = self.context.get("view")
         request = self._get_request()
@@ -52,21 +55,41 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
             raise serializers.ValidationError(_("Define adapter_class in view"))
 
         adapter = adapter_class(request)
-        app = adapter.get_provider().get_app(request)
 
-        access_token = attrs.get("access_token")
+        internal_client_id = attrs.get("internal_client_id")
+        if internal_client_id:
+            try:
+                internal_client = InternalClient.objects.get(
+                    client_id=internal_client_id
+                )
+                app = internal_client.social_app
+            except InternalClient.DoesNotExist:
+                raise serializers.ValidationError(
+                    _(f"internal_client_id is not yet associated on any Socail App!"),
+                )
+        else:
+            social_apps = SocialApp.objects.filter(provider=adapter.provider_id)
+            social_apps_count = len(social_apps)
+
+            if social_apps_count > 1:
+                raise serializers.ValidationError(
+                    _(
+                        f"You have multiple {adapter.provider_id} Social App. internal_client_id is required to associated it on one of those apps!"
+                    ),
+                )
+            elif social_apps_count < 1:
+                raise serializers.ValidationError(
+                    _(
+                        f"You don't have any Social App for this provider [{adapter.provider_id}]"
+                    ),
+                )
+            else:
+                # backward compatibility
+                app = social_apps[0]
+
         code = attrs.get("code")
-        # Case 1: We received the access_token
-        if access_token:
-            tokens_to_parse = {"access_token": access_token}
-            token = access_token
-            # For sign in with apple
-            id_token = attrs.get("id_token")
-            if id_token:
-                tokens_to_parse["id_token"] = id_token
 
-        # Case 2: We received the authorization code
-        elif code:
+        if code:
             self.set_callback_url(view=view, adapter_class=adapter_class)
             self.client_class = getattr(view, "client_class", None)
 
@@ -88,24 +111,16 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
                 headers=adapter.headers,
                 basic_auth=adapter.basic_auth,
             )
-            token = client.get_access_token(code)
-            access_token = token["access_token"]
-            tokens_to_parse = {"access_token": access_token}
+            attrs = client.get_access_token(code)
 
-            # If available we add additional data to the dictionary
-            for key in ["refresh_token", "id_token", adapter.expires_in_key]:
-                if key in token:
-                    tokens_to_parse[key] = token[key]
-        else:
-            raise serializers.ValidationError(
-                _("Incorrect input. access_token or code is required."),
-            )
+        if not attrs.get("access_token") and attrs.get("id_token"):
+            attrs["access_token"] = attrs["id_token"]
 
-        social_token = adapter.parse_token(tokens_to_parse)
+        social_token = adapter.parse_token(attrs)
         social_token.app = app
 
         try:
-            login = self.get_social_login(adapter, app, social_token, token)
+            login = self.get_social_login(adapter, app, social_token, attrs)
             complete_social_login(request, login)
         except HTTPError:
             raise serializers.ValidationError(_("Incorrect value"))

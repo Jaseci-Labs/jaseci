@@ -35,14 +35,16 @@ setup(
         "metadata_parser",
         "validators",
         "psycopg2-binary==2.9.5",
+        "pygls",
+        "mock",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
     },
     entry_points={
         "console_scripts": [
-            "jsctl = jaseci.jsctl.jsctl:jsctl",
-            "jac = jaseci.jsctl.jsctl:jac",
+            "jsctl = jaseci.cli_tools.jsctl:jsctl",
+            "jac = jaseci.cli_tools.jsctl:jac",
         ]
     },
     author="Jason Mars",
