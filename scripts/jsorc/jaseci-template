@@ -154,10 +154,11 @@ metadata:
 data:
   prod_up: |-
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone https://github.com/Jaseci-Labs/jaseci.git
+    git clone https://github.com/Jaseci-Labs/jaseci.git;
     cd jaseci;
     cd jaseci_core; source install.sh;
     cd ../jaseci_serv; source install.sh;
+    cd /;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -230,11 +231,28 @@ $j{env_vars}
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: jaseci-logs
+              mountPath: /.jaseci_logs/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: jaseci-logs
+          persistentVolumeClaim:
+            claimName: jaseci-logs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: $j{namespace}
+  name: jaseci-logs
+spec:
+  resources:
+    requests:
+      storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
 ---
 apiVersion: v1
 kind: Secret
