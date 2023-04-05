@@ -139,7 +139,6 @@ class ActionsOptimizer:
         """
         Load an action module
         """
-        logger.info(f"loading action module {name}")
         cur_state = self.actions_state.get_state(name)
         logger.info(cur_state)
         if cur_state is None:
@@ -151,20 +150,14 @@ class ActionsOptimizer:
             return
 
         if name not in action_configs:
-            logger.info("name not in action_configs")
-            load_module_actions(name, None)
             return
 
         module = action_configs[name]["module"]
         loaded_module = action_configs[name]["loaded_module"]
         if unload_existing:
-            logger.info("unloading existing")
             self.unload_action_remote(name)
-        try:
-            logger.info("try loading load module actions")
-            load_module_actions(module, loaded_module)
-        except Exception as e:
-            logger.error(f"Exception occured in load module : {e}")
+
+        load_module_actions(module, loaded_module)
         self.action_prep(name)
         self.actions_state.module_action_loaded(name, module, loaded_module)
 
@@ -268,8 +261,8 @@ class ActionsOptimizer:
             # Default policy does not manage action automatically
             return
         elif self.policy == "Evaluation":
-            if "jsorc_benchmark_start" not in self.benchmark["requests"]:
-                return
+            # if "jsorc_benchmark_start" not in self.benchmark["requests"]:
+            #     return
             self._actionpolicy_evaluation()
 
         if len(self.actions_change) > 0:
