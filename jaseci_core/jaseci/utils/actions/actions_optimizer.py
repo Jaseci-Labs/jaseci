@@ -498,8 +498,14 @@ class ActionsOptimizer:
             logger.info(f"==Actions Optimizer== Changing {name} {change_type}")
             if change_type == "to_local" or change_type == "to_module":
                 # Switching from no action loaded to local
+                logger.info("========================================================")
+                logger.info(f"actions_change before delete: {self.actions_change}")
+                logger.info("========================================================")
                 self.load_action_module(name)
                 del self.actions_change[name]
+                logger.info("========================================================")
+                logger.info(f"actions_change after delete: {self.actions_change}")
+                logger.info("========================================================")
             elif change_type == "to_remote":
                 loaded = self.load_action_remote(name)
                 if loaded:
