@@ -265,6 +265,13 @@ class ActionsOptimizer:
             #     return
             self._actionpolicy_evaluation()
 
+        logger.info("========================================================")
+        logger.info(f"benchmark_request: {self.benchmark["requests"]}")
+        logger.info("========================================================")
+        logger.info(f"actions_change: {self.actions_change}")
+        logger.info("========================================================")
+        logger.info(f"actions_state_get_active_actions: {self.actions_state.get_active_actions()}")
+        logger.info("========================================================")
         if len(self.actions_change) > 0:
             self.apply_actions_change()
 
