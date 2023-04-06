@@ -267,6 +267,7 @@ class JsorcLoadTest:
                                 package, module = module.split(".")
                                 self.unload_action(module, mode="auto", retire_svc=True)
                         sleep(10)
+            self.set_jsorc_actionpolicy("default", policy_params={})
             path = "/root/.jaseci/exp_results/"
             os.makedirs(path, exist_ok=True)
             with open(f"{path}/{app}_{policy}.json", "w") as fp:

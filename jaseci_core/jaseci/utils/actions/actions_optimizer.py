@@ -261,24 +261,9 @@ class ActionsOptimizer:
             # Default policy does not manage action automatically
             return
         elif self.policy == "Evaluation":
-            # if "jsorc_benchmark_start" not in self.benchmark["requests"]:
-            #     return
             self._actionpolicy_evaluation()
-
-        logger.info("========================================================")
-        logger.info(f"benchmark_request: {self.benchmark['requests']}")
-        logger.info("========================================================")
-        logger.info(f"actions_change: {self.actions_change}")
-        logger.info("========================================================")
-        logger.info(f"actions_state_get_active_actions: {self.actions_state.get_active_actions()}")
-        logger.info("========================================================")
         if len(self.actions_change) > 0:
             self.apply_actions_change()
-        else:
-            logger.info("========================================================")
-            logger.info(f"returning now")
-            logger.info("========================================================")
-            return
 
     def _init_evalution_policy(self, policy_state):
         # 999 is just really large memory size so everything can fits in local
@@ -346,9 +331,6 @@ class ActionsOptimizer:
                 if len(policy_state["remain_configs"]) == 0:
                     self._init_evalution_policy(policy_state)
         if policy_state["phase"] == "eval":
-            logger.info(
-                    f"===Evaluation Policy=== I'm Here in if"
-                    )
             # In evaluation phase
             if policy_state["cur_config"] is None:
                 self._init_evalution_policy(policy_state)
@@ -451,9 +433,6 @@ class ActionsOptimizer:
                         )
         elif policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
-            logger.info(
-                    f"===Evaluation Policy=== I'm Here in elif"
-                    )
             if len(self.actions_change) == 0:
                 # this means all actions change have been applied, start evaluation phase
                 logger.info(
@@ -463,11 +442,6 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
-        else:
-            logger.info(
-                    f"===Evaluation Policy=== I'm Here in else"
-                    )
-            self.actions_change={}
         self.policy_state["Evaluation"] = policy_state
 
     def _get_action_change(self, new_action_state):
@@ -501,14 +475,8 @@ class ActionsOptimizer:
             logger.info(f"==Actions Optimizer== Changing {name} {change_type}")
             if change_type in ["to_local","_to_local","_to_module","to_module"]:
                 # Switching from no action loaded to local
-                logger.info("========================================================")
-                logger.info(f"actions_change before delete: {self.actions_change}")
-                logger.info("========================================================")
                 self.load_action_module(name)
                 del self.actions_change[name]
-                logger.info("========================================================")
-                logger.info(f"actions_change after delete: {self.actions_change}")
-                logger.info("========================================================")
             elif change_type == "to_remote":
                 loaded = self.load_action_remote(name)
                 if loaded:
