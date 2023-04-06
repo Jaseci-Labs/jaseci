@@ -186,6 +186,8 @@ def init_mdbook():
         book.write("[output.html]\n")
         book.write('default-theme = "light"\n')
         book.write('preferred-dark-theme = "coal"\n')
+        book.write("[output.html.fold]\n")
+        book.write("enable = true\n")
         book.close()
 
 
