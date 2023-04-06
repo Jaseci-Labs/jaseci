@@ -452,7 +452,11 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
-
+        else:
+            logger.info(
+                    f"===Evaluation Policy=== I'm Here in else"
+                    )
+                self.actions_change={}
         self.policy_state["Evaluation"] = policy_state
 
     def _get_action_change(self, new_action_state):
