@@ -456,7 +456,7 @@ class ActionsOptimizer:
             logger.info(
                     f"===Evaluation Policy=== I'm Here in else"
                     )
-                self.actions_change={}
+            self.actions_change={}
         self.policy_state["Evaluation"] = policy_state
 
     def _get_action_change(self, new_action_state):
