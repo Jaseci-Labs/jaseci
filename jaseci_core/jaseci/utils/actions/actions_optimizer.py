@@ -275,6 +275,9 @@ class ActionsOptimizer:
         if len(self.actions_change) > 0:
             self.apply_actions_change()
         else:
+            logger.info("========================================================")
+            logger.info(f"returning now")
+            logger.info("========================================================")
             return
 
     def _init_evalution_policy(self, policy_state):
