@@ -206,7 +206,6 @@ class JsOrc:
 
     @classmethod
     def _svc(cls, service: str) -> cs:
-        print("in jsorc _svc")
         if service not in cls._services:
             raise Exception(f"Service {service} is not existing!")
 
@@ -235,8 +234,10 @@ class JsOrc:
 
         if instance.has_failed() and service not in cls._regeneration_queues:
             cls._regeneration_queues.append(service)
+            print(
+                f"Adding {service} to regeneration_queues --> {cls._regeneration_queues}"
+            )
 
-        print("added to regenration queue")
         return instance
 
     @classmethod
@@ -248,7 +249,7 @@ class JsOrc:
         service: name of the service to be reference
         cast: to cast the return and allow code hinting
         """
-        print("in jsorc svc", service)
+        print("Getting service {service}")
         if service not in cls._services:
             raise Exception(f"Service {service} is not existing!")
 
