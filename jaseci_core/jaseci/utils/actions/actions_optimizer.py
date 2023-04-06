@@ -496,7 +496,7 @@ class ActionsOptimizer:
         # But this might change down the line
         for name, change_type in actions_change.items():
             logger.info(f"==Actions Optimizer== Changing {name} {change_type}")
-            if change_type == "to_local" or change_type == "to_module":
+            if change_type in ["to_local","_to_local","_to_module","to_module"]:
                 # Switching from no action loaded to local
                 logger.info("========================================================")
                 logger.info(f"actions_change before delete: {self.actions_change}")
