@@ -266,7 +266,7 @@ class ActionsOptimizer:
             self._actionpolicy_evaluation()
 
         logger.info("========================================================")
-        logger.info(f"benchmark_request: {self.benchmark["requests"]}")
+        logger.info(f"benchmark_request: {self.benchmark['requests']}")
         logger.info("========================================================")
         logger.info(f"actions_change: {self.actions_change}")
         logger.info("========================================================")
