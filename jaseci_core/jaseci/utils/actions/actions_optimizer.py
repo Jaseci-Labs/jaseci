@@ -274,6 +274,8 @@ class ActionsOptimizer:
         logger.info("========================================================")
         if len(self.actions_change) > 0:
             self.apply_actions_change()
+        else:
+            return
 
     def _init_evalution_policy(self, policy_state):
         # 999 is just really large memory size so everything can fits in local
