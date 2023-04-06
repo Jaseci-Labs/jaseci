@@ -341,6 +341,9 @@ class ActionsOptimizer:
                 if len(policy_state["remain_configs"]) == 0:
                     self._init_evalution_policy(policy_state)
         if policy_state["phase"] == "eval":
+            logger.info(
+                    f"===Evaluation Policy=== I'm Here in if"
+                    )
             # In evaluation phase
             if policy_state["cur_config"] is None:
                 self._init_evalution_policy(policy_state)
@@ -443,6 +446,9 @@ class ActionsOptimizer:
                         )
         elif policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
+            logger.info(
+                    f"===Evaluation Policy=== I'm Here in elif"
+                    )
             if len(self.actions_change) == 0:
                 # this means all actions change have been applied, start evaluation phase
                 logger.info(
