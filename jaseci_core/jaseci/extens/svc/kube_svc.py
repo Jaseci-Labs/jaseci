@@ -54,6 +54,14 @@ class KubeService(JsOrc.CommonService):
         self.ping()
         self.defaults()
 
+    def update_client(self, name, mocked_client):
+        """Use for testing only"""
+        if name == "core":
+            self.core = mocked_client
+        elif name == "api_ext":
+            self.api_ext = mocked_client
+        self.defaults()
+
     def defaults(self):
         self.create_apis = {
             "Namespace": self.core.create_namespace,
@@ -285,6 +293,11 @@ class KubeService(JsOrc.CommonService):
                 f"{log_pref} Retrieving {kind} for `{name}` with namespace: `{namespace}`"
             )
             if kind in self._no_namespace:
+                # if kind == "Namespace":
+                #     return self.core.read_namespace(name=name)
+                # elif kind == "CustomResourceDefinition":
+                #     return self.api_ext.read_custom_resource_definition(name=name)
+                # else:
                 return self.read_apis[kind](name=name)
             else:
                 return self.read_apis[kind](name=name, namespace=namespace)

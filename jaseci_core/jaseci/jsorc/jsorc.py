@@ -249,7 +249,7 @@ class JsOrc:
         service: name of the service to be reference
         cast: to cast the return and allow code hinting
         """
-        print("Getting service {service}")
+        print(f"Getting service {service}")
         if service not in cls._services:
             raise Exception(f"Service {service} is not existing!")
 
@@ -427,6 +427,12 @@ class JsOrc:
     @classmethod
     def settings(cls, name: str, default: T = None) -> Union[T, Any]:
         return getattr(cls._settings, name, default)
+
+    @classmethod
+    def update_settings(cls, name: str, key: str, value):
+        cur = cls.settings(name)
+        cur[key] = value
+        setattr(cls._settings, name, cur)
 
     @classmethod
     def overrided_namespace(
