@@ -174,6 +174,9 @@
 
 
 # Testing and Debugging
+
+- [Testing](docs/docs/testing_and_debugging/1_testing.md)
+
 <!--Add content to this from CanoniCAI - Assigned Tharuka-->
 
 # Deployment
