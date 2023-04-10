@@ -161,7 +161,7 @@
   - [File Handling](docs/docs/jac_language_guide/1_jac_lang_basics.md#file-handling-in-jaseci)
   - [Global Variables](docs/docs/jac_language_guide/1_jac_lang_basics.md#global-variables-in-jaseci)
   - [Working with Imports](docs/docs/jac_language_guide/1_jac_lang_basics.md#working-with-imports)
-  - [Error Handling in Jaseci](docs/docs/comming_soon.md)
+  - [Error Handling in Jaseci](docs/docs/jac_language_guide/4_error_handling.md)
   - [Logs in Jaseci](docs/docs/comming_soon.md)
 <!--Error Handling and Loggings Should come under this-->
 - [Data Structures in Jaseci](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md)
