@@ -41,6 +41,40 @@ class ElasticService(JsOrc.CommonService):
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")
 
+    def post_run(self):
+        self.add_elastic_log_handler(logger, "core")
+        self.add_elastic_log_handler(app_logger, "app")
+
+    def add_elastic_log_handler(self, logger_instance, index):
+        has_queue_handler = any(
+            isinstance(h, logging.handlers.QueueHandler)
+            for h in logger_instance.handlers
+        )
+        if not has_queue_handler:
+            log_queue = queue.Queue()
+            queue_handler = logging.handlers.QueueHandler(log_queue)
+            logger_instance.addHandler(queue_handler)
+
+            def elastic_log_worker():
+                while True:
+                    try:
+                        record = log_queue.get()
+                        if record is None:
+                            break
+                        elastic_record = {
+                            "@timestamp": logging.Formatter().formatTime(
+                                record, "%Y-%m-%d %H:%M:%S"
+                            ),
+                            "message": record.getMessage(),
+                            "level": record.levelname,
+                        }
+                        self.app.doc(log=elastic_record, index=index)
+                    except Exception:
+                        pass
+
+            worker_thread = threading.Thread(target=elastic_log_worker, daemon=True)
+            worker_thread.start()
+
 
 class Elastic:
     def __init__(self, config: dict):
@@ -183,44 +217,3 @@ class Elastic:
     def health(self, query: str = ""):
         if self._get(f"/_cluster/health?{query}").get("timed_out", True):
             raise Exception("Cannot connect on elastic service!")
-
-
-# Add elastic logging handlers
-def add_elastic_log_handler(logger_instance, index):
-    has_queue_handler = any(
-        isinstance(h, logging.handlers.QueueHandler) for h in logger_instance.handlers
-    )
-    if not has_queue_handler:
-        try:
-            elastic_svc = JsOrc.svc("elastic", ElasticService).poke(Elastic)
-        except Exception:
-            # Continue only when the elastic service is running
-            return
-
-        log_queue = queue.Queue()
-        queue_handler = logging.handlers.QueueHandler(log_queue)
-        logger_instance.addHandler(queue_handler)
-
-        def elastic_log_worker():
-            while True:
-                try:
-                    record = log_queue.get()
-                    if record is None:
-                        break
-                    elastic_record = {
-                        "@timestamp": logging.Formatter().formatTime(
-                            record, "%Y-%m-%d %H:%M:%S"
-                        ),
-                        "message": record.getMessage(),
-                        "level": record.levelname,
-                    }
-                    elastic_svc.doc(log=elastic_record, index=index)
-                except Exception:
-                    pass
-
-        worker_thread = threading.Thread(target=elastic_log_worker, daemon=True)
-        worker_thread.start()
-
-
-add_elastic_log_handler(logger, "core")
-add_elastic_log_handler(app_logger, "app")

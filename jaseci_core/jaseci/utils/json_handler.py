@@ -56,7 +56,7 @@ def json_str_to_jsci_dict(input_str, parent_obj=None):
     """
 
     try:
-        obj_fields = json.loads(input_str)
+        obj_fields = json.loads(input_str, cls=JaseciJsonDecoder)
     except ValueError:
         logger.error(str(f"Invalid jsci_obj string {input_str} on {parent_obj.jid}"))
         obj_fields = {}
