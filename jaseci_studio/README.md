@@ -6,7 +6,7 @@
     - [Running the Dev Server](#running-the-dev-server)
     - [Building the Application](#building-the-application)
   - [Testing](#testing)
-  - [Features](#features)
+  - [Features Summery](#features-summery)
 
 Managing Your Jaseci Application with Jaseci Studio
 
@@ -75,16 +75,16 @@ sudo apt install libwebkit2gtk-4.0-dev \
 - Run `yarn test:unit` to run unit tests with [Vitest](https://vitest.dev/)
   - Component testing uses [react-testing-library](https://testing-library.com/docs/react-testing-library/intro)
 
-## Features
+## Features Summery
 
 1. Login
-   ![login view](/docs/static/img/studio-features/login.png)
+   ![login view](/docs/docs/testing_and_debugging/images/login.png)
 
 2. Summary View
    1. See number of distinct nodes, edges and walkers and graphs
    2. View version of jaseci instance
 
-   ![summary view](/docs/static/img/studio-features/summary_view.png)
+   ![summary view](/docs/docs/testing_and_debugging/images/summary_view.png)
 
 3. Graph Viewer
    1. View node and edge information (context, details, info)
@@ -97,16 +97,16 @@ sudo apt install libwebkit2gtk-4.0-dev \
    6. Hide groups of node and edges
    7. Expand node or view only connected nodes on click
 
-   ![graph viewer](/docs/static/img/studio-features/graph_viewer.png)
+   ![graph viewer](/docs/docs/testing_and_debugging/images/graph_viewer.png)
 
 4. Logs Viewer
    1. Filter logs
    2. Scroll to top / bottom / pause logs
    3. Filter by level
 
-  ![logs viewer](/docs/static/img/studio-features/logs_viewer.png)
+  ![logs viewer](/docs/docs/testing_and_debugging/images/logs_viewer.png)
 
-5. Managing Architypes
+1. Managing Architypes
    1. View architypes and remove architypes
    2. Write and register architypes
    3. View architype code

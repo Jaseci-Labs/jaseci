@@ -190,11 +190,11 @@
 
 # Contributing to Jaseci
 - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
-- [Guide on Contributing](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
-- [Being a Contributor](support/guide/other/contributor_policy.md)
-- [General Guide](CONTRIBUTING.md)
+- [Contributing to the Jaseci](CONTRIBUTING.md)
+  - [How to be a Jaseci Contributor](CONTRIBUTING.md#how-to-be-a-jaseci-contributor)
+  - [How to contribute code](CONTRIBUTING.md#how-to-contribute-code)
+  - [How to Update the Official Documentation](CONTRIBUTING.md#how-to-update-the-official-documentation)
 - [Contributors](CONTRIBUTORS.md)
-<!--Should review this section- Assigned to Tharuka-->
 
 <!-- Add coming soon sections-->
 
