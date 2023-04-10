@@ -176,8 +176,13 @@
 # Testing and Debugging
 
 - [Testing](docs/docs/testing_and_debugging/1_testing.md)
+- [Jaseci Studio](docs/docs/testing_and_debugging/2_jaseci_studio.md)
+  - [Login](docs/docs/testing_and_debugging/2_jaseci_studio.md#login)
+  - [Dashboard](docs/docs/testing_and_debugging/2_jaseci_studio.md#dashboard-summery-view)
+  - [Graph Viewer](docs/docs/testing_and_debugging/2_jaseci_studio.md#graph-viewer)
+  - [Logs Viewer](docs/docs/testing_and_debugging/2_jaseci_studio.md#logs-viewer)
+  - [Managing Architypes](docs/docs/testing_and_debugging/2_jaseci_studio.md#managing-architypes)
 
-<!--Add content to this from CanoniCAI - Assigned Tharuka-->
 
 # Deployment
 <!-- More context about Jaseci Server-->
@@ -209,10 +214,8 @@
 
 # Appendix
 
-## Language Basics
 
   - [Functions](docs/docs-archive/Developing_with_JAC/Language_Features/function.md)
-
   - [Walker Callback](docs/docs-archive/Developing_with_JAC/Language_Features/walker_callback.md)
 
 
@@ -229,18 +232,6 @@
 
 <!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
 <!-- Second we must write the content for the coming soon sections -->
-
-## Jaseci Studio and UI Widget Library
-
-<!--this goues under testing-->
-- [Jaseci Studio Features](jaseci_studio/features.md)
-  - [Login](jaseci_studio/login.md)
-  - [Dashboard](jaseci_studio/dashboard.md)
-  - [Graph Viewer](jaseci_studio/graphs.md)
-  - [Logs Viewer](jaseci_studio/logs.md)
-  - [Managing Architypes](jaseci_studio/architype.md)
-
-
 
 ## Advanced Topics
 
@@ -264,11 +255,3 @@
     - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
     - [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
     - [Locust Load Test for JASECI](support/locust/README.md)
-
-
-## Best Practices
-## Error Handling and Solutions
-  - [Error Handling in Jaseci](docs/docs-archive/error_handling/error_1.md)
-
-
-

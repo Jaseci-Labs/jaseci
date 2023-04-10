@@ -3,6 +3,8 @@
 - [Unit testing in Jaseci](#unit-testing-in-jaseci)
   - [Creating test cases](#creating-test-cases)
   - [Runing test cases](#runing-test-cases)
+  - [Using Yield](#using-yield)
+  - [Using Global `root_node`](#using-global-root_node)
 
 In unit testing, test cases are typically created by the developer or a dedicated testing team and executed automatically using specialized testing frameworks or tools. The tests are designed to be repeatable and should cover various scenarios, including normal inputs, edge cases, and error conditions.
 
@@ -59,9 +61,11 @@ Firstly, we will generate an example walker to demonstrate how to write the test
 walker calculator{
     has value1;
     has value2;
+    has interactive =  false;
 
     total = value1 + value2;
-    report total;
+    if (interactive): std.out(total);
+    else: yield report total;
 }
 ```
 
@@ -122,3 +126,27 @@ To run the test cases save test cases writen in a file with `.jac` extension and
 ```
 jac test test.jac
 ```
+
+## Using Yield
+
+**What is Yield**
+
+Yield is a way to temporarily suspend the walker and return/report to the user. When the same user calls the same walker, the walker context from previous call is retained and the walker will resume on the node it was going to go to next.
+
+**How to Utilize Yield**
+
+```
+if (interactive): std.out(total);
+else: yield report total;
+```
+
+Let's explain this bit of code. If interactive is true everytime you send a query it will print the response to terminal and if it's false it would temporarily suspend the walker and report to the user the response for the query.
+
+When interactive is true (this is in the terminal). If you exited out and return to the program it will lose context and will restart from the beginning.
+
+When interactive is false, yield comes into place. So if we had to pass another query it will remember the last state it was at and will act accordingly.
+
+## Using Global `root_node`
+
+Coming Soon
+
