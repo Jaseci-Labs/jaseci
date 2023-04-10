@@ -450,6 +450,7 @@ class JsOrc:
 
     @classmethod
     def regenerate(cls):
+        logger.info("In regenerating")
         if not cls._regenerating:
             cls._regenerating = True
 
@@ -462,15 +463,22 @@ class JsOrc:
 
     @classmethod
     def regenerate_service(cls):
+        logger.info("In regenerating service")
         from jaseci.extens.svc.kube_svc import KubeService
         from jaseci.utils.actions.actions_manager import ActionManager
 
         kube = cls.svc("kube", KubeService)
         while cls._regeneration_queues:
+
+            logger.info("In regenerating service queue loop")
             regeneration_queue = cls._regeneration_queues.pop(0)
+            logger.info(regeneration_queue)
             service = cls.svc(regeneration_queue)
             hook = cls.hook(use_proxy=service.source["proxy"])
             if not service.is_running() and service.enabled and service.automated:
+                logger.info("generating")
+                logger.info(kube.is_running())
+                logger.info(service.manifest)
                 if service.manifest and kube.is_running():
                     manifest = kube.resolve_manifest(
                         loads(hook.get_glob(service.source["manifest"])),
@@ -487,6 +495,7 @@ class JsOrc:
                     rmhist = deepcopy(_rmhist)
 
                     for kind, confs in manifest.items():
+                        logger.info(f"Applying {kind}")
                         for name, conf in confs.items():
                             namespace = conf["metadata"].get("namespace")
 
@@ -591,6 +600,7 @@ class JsOrc:
 
 
 def interval_check(signum, frame):
+    logger.info("=============in interval_check")
     JsOrc.regenerate()
 
     # wait interval_check to be finished before decrement
