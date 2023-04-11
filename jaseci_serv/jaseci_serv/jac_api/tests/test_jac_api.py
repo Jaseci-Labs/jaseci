@@ -3,7 +3,7 @@ import json
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from jaseci_serv.utils.test_utils import skip_without_redis
+from jaseci.utils.test_core import skip_without_redis
 
 from rest_framework.test import APIClient
 from rest_framework import status

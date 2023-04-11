@@ -34,7 +34,7 @@ class JsOrcSettings:
 
     KUBE_CONFIG = {
         "enabled": bool(os.getenv("KUBE_NAMESPACE")),
-        "quiet": True,
+        "quiet": False,
         "automated": False,
         "namespace": KUBE_NAMESPACE,
         "in_cluster": True,
@@ -47,7 +47,7 @@ class JsOrcSettings:
 
     REDIS_CONFIG = {
         "enabled": True,
-        "quiet": True,
+        "quiet": False,
         "automated": False,
         "host": os.getenv("REDIS_HOST", "localhost"),
         "port": os.getenv("REDIS_PORT", "6379"),
@@ -67,7 +67,7 @@ class JsOrcSettings:
 
     TASK_CONFIG = {
         "enabled": True,
-        "quiet": True,
+        "quiet": False,
         "automated": False,
         "broker_url": DEFAULT_REDIS_URL,
         "result_backend": DEFAULT_REDIS_URL,
@@ -82,7 +82,7 @@ class JsOrcSettings:
 
     MAIL_CONFIG = {
         "enabled": False,
-        "quiet": True,
+        "quiet": False,
         "automated": False,
         "version": 2,
         "tls": True,
@@ -126,7 +126,7 @@ class JsOrcSettings:
 
     PROME_CONFIG = {
         "enabled": bool(os.getenv("PROME_HOST")),
-        "quiet": True,
+        "quiet": False,
         "automated": True,
         "url": (
             f'http://{os.getenv("PROME_HOST", "localhost")}'
