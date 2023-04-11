@@ -24,10 +24,6 @@ class JacGeneralTests(TestCaseHelper, TestCase):
             "JSCITfdfdEST_test@jaseci.com", "password"
         )
         self.client.force_authenticate(self.user)
-        testfile = open(os.path.dirname(__file__) + "/general.jac").read()
-        self.quick_call(
-            self.client, {"op": "sentinel_register", "name": "test", "code": testfile}
-        )
 
     def tearDown(self):
         super().tearDown()
@@ -36,6 +32,11 @@ class JacGeneralTests(TestCaseHelper, TestCase):
         return bywho.post(reverse(f'jac_api:{ops["op"]}'), ops, format="json")
 
     def test_here_update_fix(self):
+        testfile = open(os.path.dirname(__file__) + "/general.jac").read()
+        self.quick_call(
+            self.client, {"op": "sentinel_register", "name": "test", "code": testfile}
+        )
+
         self.user._h.clear_cache()
         ret = self.quick_call(
             self.client, {"op": "walker_run", "name": "here_fix_create"}
@@ -55,3 +56,18 @@ class JacGeneralTests(TestCaseHelper, TestCase):
         )
         self.user._h.clear_cache()
         self.assertEqual(ret.data["report"], [{"value": "Test"}])
+
+    def test_object_bug(self):
+        testfile = open(os.path.dirname(__file__) + "/object_bug.jac").read()
+        self.quick_call(
+            self.client, {"op": "sentinel_register", "name": "test", "code": testfile}
+        )
+        self.user._h.clear_cache()
+        ret = self.quick_call(self.client, {"op": "walker_run", "name": "test_walk"})
+        self.assertEqual(ret.data["success"], True)
+        self.user._h.clear_cache()
+        ret = self.quick_call(self.client, {"op": "walker_run", "name": "test_walk"})
+        self.assertEqual(ret.data["success"], True)
+        self.user._h.clear_cache()
+        ret = self.quick_call(self.client, {"op": "walker_run", "name": "test_walk"})
+        self.assertEqual(ret.data["success"], True)
