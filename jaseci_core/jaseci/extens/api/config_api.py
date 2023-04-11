@@ -2,6 +2,7 @@
 Admin config api functions as a mixin
 """
 
+from typing import Optional
 from json import dumps, loads
 from jaseci.extens.api.interface import Interface
 
@@ -52,7 +53,18 @@ class ConfigApi:
 
     @Interface.admin_api(cli_args=["name"])
     def config_update(
-        self, name: str, field_key: str, field_value, do_check: bool = True
+        self,
+        name: str,
+        field_key: str,
+        field_value: str
+        or int
+        or float
+        or list
+        or dict
+        or bool
+        or tuple
+        or None,  # json serializable types
+        do_check: bool = True,
     ):
         """
         Update a key-value of a config

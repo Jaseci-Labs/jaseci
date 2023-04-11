@@ -42,7 +42,7 @@ class JsOrcTest(MockKubeTest):
     def setUp(self):
         super().setUp()
 
-    @skip_without_redis
+    # @skip_without_redis
     def test_jsorc_elastic_create(self):
         self.call(
             self.smast,
@@ -76,7 +76,7 @@ class JsOrcTest(MockKubeTest):
             # No resources should be patched
             assert not mock_patch.called
 
-    @skip_without_redis
+    # @skip_without_redis
     def test_jsorc_elastic_patch(self):
         self.call(
             self.smast,

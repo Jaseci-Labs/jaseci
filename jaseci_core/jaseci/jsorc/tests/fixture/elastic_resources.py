@@ -16,11 +16,13 @@ ELASTIC_RESOURCES = {
     "Secret": ["elastic-webhook-server-cert"],
     "ConfigMap": ["elastic-operator"],
     "ClusterRole": [
-        "elastic-operator",
-        "elastic-operator-view",
-        "elastic-operator-edit",
+        'elastic-operator-$j{ServiceAccount["elastic-operator"].metadata.namespace}',
+        'elastic-operator-$j{ServiceAccount["elastic-operator"].metadata.namespace}-view',
+        'elastic-operator-$j{ServiceAccount["elastic-operator"].metadata.namespace}-edit',
     ],
-    "ClusterRoleBinding": ["elastic-operator"],
+    "ClusterRoleBinding": [
+        'elastic-operator-$j{ServiceAccount["elastic-operator"].metadata.namespace}'
+    ],
     "Service": ["elastic-webhook-server"],
     "StatefulSet": ["elastic-operator"],
     "ValidatingWebhookConfiguration": ["elastic-webhook.k8s.elastic.co"],
