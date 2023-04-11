@@ -46,3 +46,16 @@ def jac_testcase(jac_file: str, test_name: str, log_out: bool = False):
         return wrapper
 
     return decorator
+
+
+def skip_without_redis(test):
+    """
+    Skip test if expected not to work without redis.
+    """
+
+    def skipper(*args, **kwargs):
+        if not JsOrc.svc("redis").is_running():
+            raise unittest.SkipTest("No Redis!")
+        test(*args, **kwargs)
+
+    return skipper

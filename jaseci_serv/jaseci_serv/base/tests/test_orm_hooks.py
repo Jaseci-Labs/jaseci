@@ -11,7 +11,7 @@ from jaseci.prim import edge
 from jaseci.prim.graph import Graph
 from jaseci.prim.sentinel import Sentinel
 import jaseci.tests.jac_test_code as jtc
-from jaseci_serv.utils.test_utils import skip_without_redis
+from jaseci.utils.test_core import skip_without_redis
 import uuid
 
 # Alias for create user

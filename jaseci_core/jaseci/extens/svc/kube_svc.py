@@ -246,6 +246,7 @@ class KubeService(JsOrc.CommonService):
         quiet: bool = False,
     ):
         try:
+            print(f"in create {kind} {name}")
             quiet or logger.info(
                 f"{log_pref} Creating {kind} for `{name}` with namespace: `{namespace}`"
             )
@@ -268,6 +269,7 @@ class KubeService(JsOrc.CommonService):
         quiet: bool = False,
     ):
         try:
+            print(f"in patch {kind} {name}")
             quiet or logger.info(
                 f"{log_pref} Patching {kind} for `{name}` with namespace: `{namespace}`"
             )
@@ -288,6 +290,7 @@ class KubeService(JsOrc.CommonService):
         log_pref: str = "",
         quiet: bool = False,
     ):
+        print(f"in read {kind} {name}")
         try:
             quiet or logger.info(
                 f"{log_pref} Retrieving {kind} for `{name}` with namespace: `{namespace}`"
@@ -316,6 +319,7 @@ class KubeService(JsOrc.CommonService):
         quiet: bool = False,
     ):
         try:
+            print(f"in delete {kind} {name}")
             quiet or logger.info(
                 f"{log_pref} Deleting {kind} for `{name}` with namespace: `{namespace}`"
             )

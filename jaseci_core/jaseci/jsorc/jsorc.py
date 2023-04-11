@@ -472,6 +472,7 @@ class JsOrc:
 
     @classmethod
     def regenerate_service(cls):
+        logger.info(f"in regenerate_service {cls._regeneration_queues}")
         from jaseci.extens.svc.kube_svc import KubeService
         from jaseci.utils.actions.actions_manager import ActionManager
 
@@ -503,8 +504,11 @@ class JsOrc:
                             if kind in rmhist and name in rmhist[kind]:
                                 rmhist[kind].pop(name, None)
 
+                            print(f"calling read {kind} {name} 1")
+
                             res = kube.read(kind, name, namespace)
                             if hasattr(res, "status") and res.status == 404:
+                                print(f"calling create {kind} {name} 1")
                                 kube.create(kind, name, conf, namespace)
                             elif not isinstance(res, ApiException):
                                 config_version = 1
@@ -524,11 +528,14 @@ class JsOrc:
                                 if config_version != conf.get("metadata").get(
                                     "labels", {}
                                 ).get("config_version", 1):
+                                    print(f"calling patch {kind} {name} 1")
                                     kube.patch(kind, name, conf, namespace)
 
                     for kind, confs in rmhist.items():
+                        print(f"in rmhist loop {kind}")
                         for name, conf in confs.items():
                             namespace = conf["metadata"].get("namespace")
+                            print(f"calling read {kind} {name} 2")
                             res = kube.read(kind, name, namespace, quiet=True)
                             if not isinstance(res, ApiException) and (
                                 (isinstance(res, dict) and res.get("metadata"))
@@ -539,6 +546,7 @@ class JsOrc:
                                 ) or service.manifest_unsafe_paraphrase == cls.settings(
                                     "UNSAFE_PARAPHRASE"
                                 ):
+                                    print(f"calling delete {kind} {name} 1")
                                     kube.delete(kind, name, namespace)
                                 else:
                                     logger.info(
