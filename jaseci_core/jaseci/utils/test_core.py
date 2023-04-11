@@ -1,4 +1,5 @@
 import os
+import unittest
 from unittest import TestCase
 
 from jaseci.jsorc.jsorc import JsOrc
