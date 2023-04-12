@@ -17,17 +17,16 @@ const sidebars = {
   Started: {
 
     'Introduction': [
-      'getting-started/getting-to-know-jaseci',
-      'getting-started/installation',
-      'getting-started/set-up-editor',
-      'getting-started/first-app',
+      'getting_started/1_installation',
+      'getting_started/2_setting_up_code_editor',
+      'getting_started/3_setup_jaseci_serv',
+      'getting_started/4_setting_up_jaseci_studio',
+      'getting_started/5_write_your_first_app',
       {
         type: 'category',
         label: 'JAC Language Overview',
         items: ['getting-started/JAC-Language-Overview/how', 'getting-started/JAC-Language-Overview/controlflow', 'getting-started/JAC-Language-Overview/ModelStructures', 'getting-started/JAC-Language-Overview/ModelBehaivour', 'getting-started/JAC-Language-Overview/operatingContext', 'getting-started/JAC-Language-Overview/passingArguments', 'getting-started/JAC-Language-Overview/report', 'getting-started/JAC-Language-Overview/nodeCommuniation', 'getting-started/JAC-Language-Overview/take']
       }
-
-
     ]
   },
 
@@ -115,8 +114,5 @@ const sidebars = {
     ]
 
   }
-
-
-
 };
 module.exports = sidebars;
