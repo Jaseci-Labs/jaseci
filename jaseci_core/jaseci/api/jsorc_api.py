@@ -9,6 +9,7 @@ from base64 import b64decode
 from jaseci import JsOrc
 from jaseci.jsorc_utils import convert_yaml_manifest, ManifestType
 from jaseci.utils.utils import logger
+from jaseci.utils.file_handler import FileHandler
 from jaseci.svc.kube_svc import KubeService
 from jaseci.utils.actions.actions_manager import ActionManager
 
@@ -36,8 +37,11 @@ class JsOrcApi:
 
             res = {}
             for file in files:
+                file: FileHandler = self._h.get_file_handler(file)
+                file.open()
+
                 for kind, confs in kube.resolve_manifest(
-                    convert_yaml_manifest(b64decode(file["base64"])),
+                    convert_yaml_manifest(file.buffer),
                     ManifestType[manifest_type],
                     manual_namespace,
                 ).items():
@@ -52,6 +56,8 @@ class JsOrcApi:
                         if not res.get(kind):
                             res[kind] = {}
                         res[kind].update({name: conf})
+
+                file.close()
             return res
         except Exception:
             logger.exception("Error loading yaml!")
@@ -68,7 +74,10 @@ class JsOrcApi:
 
         config_version = str(time())
 
-        for kind, confs in convert_yaml_manifest(b64decode(file[0]["base64"])).items():
+        file: FileHandler = self._h.get_file_handler(file[0])
+        file.open()
+
+        for kind, confs in convert_yaml_manifest(file.buffer).items():
             for name, conf in confs.items():
                 metadata = conf["metadata"]
                 labels: dict = metadata.get("labels", {})
@@ -80,6 +89,8 @@ class JsOrcApi:
                     new_config[kind] = {}
                 new_config[kind].update({name: conf})
 
+        file.close()
+
         if unsafe_paraphrase == JsOrc.settings("UNSAFE_PARAPHRASE"):
             new_config["__UNSAFE_PARAPHRASE__"] = unsafe_paraphrase
 
@@ -87,6 +98,24 @@ class JsOrcApi:
         JsOrc.add_regeneration_queue(service)
 
         return new_config
+
+    @Interface.admin_api(cli_args=["name"])
+    def service_info(self, name: str):
+        """
+        getting service's info.
+        """
+
+        # will throw exception if not existing
+        svc = JsOrc.svc(name)
+
+        return {
+            "enabled": svc.enabled,
+            "automated": svc.automated,
+            "quiet": svc.quiet,
+            "state": svc.state.name,
+            "config": svc.config,
+            "error": str(svc.error) if svc.error else None,
+        }
 
     @Interface.admin_api(cli_args=["name"])
     def service_refresh(self, name: str):
