@@ -473,7 +473,9 @@ class JsOrc:
             if not service.is_running() and service.enabled and service.automated:
                 if service.manifest and kube.is_running():
                     manifest = kube.resolve_manifest(
-                        loads(hook.get_glob(service.source["manifest"])),
+                        hook.get_or_create_glob(
+                            service.source["manifest"], service.manifest
+                        ),
                         *cls.overrided_namespace(
                             regeneration_queue, service.manifest_type
                         ),
