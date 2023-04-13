@@ -1,5 +1,4 @@
 import json
-import logging
 from base64 import b64encode
 from io import BytesIO
 from tempfile import _TemporaryFileWrapper
