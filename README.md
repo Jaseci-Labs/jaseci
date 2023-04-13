@@ -200,7 +200,7 @@
   - [Extension Services](docs/docs/deployment/extension_services.md)
       - [Task](jaseci_core/jaseci/extens/svc/docs/task_svc.md)
       - [Mail](jaseci_core/jaseci/extens/svc/docs/mail_svc.md)
-  - [Automatic Deployment and Scaling via JsOrc]((jaseci_core/jaseci/extens/svc/docs/JSORC.md))
+  - [Automatic Deployment and Scaling via JsOrc](jaseci_core/jaseci/extens/svc/docs/JSORC.md))
       - [Development](jaseci_core/jaseci/extens/svc/docs/jsorc_development.md)
   - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
   - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
