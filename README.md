@@ -124,7 +124,6 @@
     - [Actions](docs/docs/development/std_actions/1_jaseci.md#actions)
     - [Configurations](docs/docs/development/std_actions/1_jaseci.md#configurations-apis)
 - [Jaseci AI kit Features](jaseci_ai_kit/README.md)
- <!--Should explain input parameters of these functions-->
   - [Jac NLP Modules](jaseci_ai_kit/jac_nlp/README.md)
     - [Text Encoders](jaseci_ai_kit/jac_nlp/README.md#text-encoders)
     - [Named Entity Recognition Models](jaseci_ai_kit/jac_nlp/README.md#named-entity-recognition-models)
@@ -143,8 +142,9 @@
     - [Translator Modules](jaseci_ai_kit/jac_misc/README.md#translator-modules)
     - [PDF Extractor Modules](jaseci_ai_kit/jac_misc/README.md#pdf-extractor-modules)
   - [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
-  - [Guide to create Custom AI Module](docs/docs/comming_soon.md)
-<!--Explain how to add custom Jaseci AI module-->
+- [Running Jaseci Action as a Service](docs/docs/development/action_microservice.md)
+- [Custom Jaseci Actions](docs/docs/development/custom_actions/custom_jaseci_module_codelab.md)
+  - [Example: Custom Action Using T5](docs/docs/development/custom_actions/t5_custom_module_codelab.md)
 - [Jaseci UI Kit](ui_components/readme.md)
   - [Introduction](ui_components/docs/what-is-jaseci-ui-kit.md)
   - [Basic Concepts](ui_components/docs/basic-concepts.md)
@@ -193,6 +193,17 @@
 
 
 # Deployment
+  - [Package up Your Jac Program and Jaseci Server for Deployment](docs/docs/deployment/how_to_package.md)
+  - [Single Sign-on Social](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
+  - [Extension Services](docs/docs/deployment/extension_services.md)
+      - [Task](jaseci_core/jaseci/extens/svc/docs/task_svc.md)
+      - [Mail](jaseci_core/jaseci/extens/svc/docs/mail_svc.md)
+  - [Automatic Deployment and Scaling via JsOrc]((jaseci_core/jaseci/extens/svc/docs/JSORC.md))
+      - [Development](jaseci_core/jaseci/extens/svc/docs/jsorc_development.md)
+  - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
+  - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
+  - [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
+
 <!-- More context about Jaseci Server-->
 <!-- More context about JSCTL-->
 
@@ -221,26 +232,3 @@
 
 <!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
 <!-- Second we must write the content for the coming soon sections -->
-
-# Advanced
-
-  - [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
-  - [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
-  - [Stand Up a Jaseci Action Library Server](docs/docs-archive/canonicai/chapter9.md)
-  - [Requests to APIs in Jac](docs/docs-archive/canonicai/chapter8.md)
-  - [Testing CCAI Dialogues in Jac](docs/docs-archive/canonicai/chapter7.md)
-  - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
-  - [Enhancing User Experience with Personalized Content using PH](examples/CanoniCAI/codelabs/ph.md)
-  - [Jaseci X Features](docs/docs/advanced_topics/jaseci_features.md)
-    - [Single Sign-on Social](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
-  - [Jaseci Core Internals](docs/docs/advanced_topics/jaseci_core.md)
-    - [JsOrc](jaseci_core/jaseci/extens/svc/docs/JSORC.md)
-      - [Development](jaseci_core/jaseci/extens/svc/docs/jsorc_development.md)
-      - [Task](jaseci_core/jaseci/extens/svc/docs/task_svc.md)
-      - [Mail](jaseci_core/jaseci/extens/svc/docs/mail_svc.md)
-    - [JSORC Action Management Engine](jaseci_core/jaseci/extens/svc/docs/JSORC.md)
-  - [Misc DevOps Guides](docs/docs/advanced_topics/Misc_DevOps_Guides.md)
-    - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
-    - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
-    - [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
-    - [Locust Load Test for JASECI](support/locust/README.md)
