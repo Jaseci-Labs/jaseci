@@ -1,4 +1,5 @@
 import json
+import logging
 from base64 import b64encode
 from io import BytesIO
 from tempfile import _TemporaryFileWrapper
@@ -73,18 +74,18 @@ class AbstractJacAPIView(APIView):
             db_touches = self.caller._h.db_touch_count
             red_touches = self.caller._h.red_touch_count
             touch_kb = self.caller._h.mem_size()
-        logger.info(
-            str(
-                f"API call to {Cc.TG}{type(self).__name__}{Cc.EC}"
-                f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
-                f" touched {Cc.TY}{touch_count}{Cc.EC} mem /"
-                f" {Cc.TY}{red_touches}{Cc.EC} redis /"
-                f" {Cc.TY}{db_touches}{Cc.EC} db "
-                f" ({Cc.TY}{touch_kb:.1f}kb{Cc.EC}) and"
-                f" saving {Cc.TY}{save_count}{Cc.EC} objects."
-            )
-        )
 
+        log_str = str(
+            f"API call to {Cc.TG}{type(self).__name__}{Cc.EC}"
+            f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+            f" touched {Cc.TY}{touch_count}{Cc.EC} mem /"
+            f" {Cc.TY}{red_touches}{Cc.EC} redis /"
+            f" {Cc.TY}{db_touches}{Cc.EC} db "
+            f" ({Cc.TY}{touch_kb:.1f}kb{Cc.EC}) and"
+            f" saving {Cc.TY}{save_count}{Cc.EC} objects."
+            f" From {self.caller.name}:{self.caller.jid}."
+        )
+        logger.info(log_str)
         JsOrc.get("action_manager", ActionManager).post_request_hook(
             type(self).__name__, request, tot_time
         )
@@ -146,7 +147,12 @@ class AbstractJacAPIView(APIView):
         """Parse request to field set"""
         raw_req_data = request.body
         pl_peek = str(dict(request.data))[:256]
-        logger.info(str(f"Incoming call to {type(self).__name__} with {pl_peek}"))
+        self.set_caller(request)
+        logger.info(
+            str(
+                f"Incoming call to {type(self).__name__} with {pl_peek} from {self.caller.name}:{self.caller.jid}"
+            )
+        )
         self.start_time = time()
 
         req_data = (
@@ -160,7 +166,6 @@ class AbstractJacAPIView(APIView):
         req_data.update(kwargs)
 
         self.cmd = req_data
-        self.set_caller(request)
         self.res = "Not valid interaction!"
 
     def set_caller(self, request):
