@@ -1,6 +1,5 @@
----
-title : Multiple Inheritance
----
+# Node and Edge Inheritance
+
 JAC allows for nodes and edges  to inherit attributes and functions of the same type .
 
 ### Node Inheritance
