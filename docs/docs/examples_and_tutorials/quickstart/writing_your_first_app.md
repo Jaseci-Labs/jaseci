@@ -107,7 +107,7 @@ spawn {
     # this create an edge from prices_12 back to prices.
      prices_12 +[transition(intent="more prices")] +> prices;
 
-  }  
+  }
 }
 ```
 `spawn` is used to create to create child nodes, which is used to design flow of the conversational experience.
