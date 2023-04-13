@@ -34,6 +34,9 @@
 
 # Examples and Tutorials
 
+- [Quickstart](docs/docs/examples_and_tutorials/quickstart/quickstart.md)
+  - [Understanding Jac Application](docs/docs/examples_and_tutorials/quickstart/understanding_jac_programs.md)
+  - [Write your First Jac Application](docs/docs/examples_and_tutorials/quickstart/writing_your_first_app.md)
 - [Building a Conversational AI](docs/docs/examples_and_tutorials/CanoniCAI/CCAI_codelab.md)
   - [Preparation and Background](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/1_preparation.md)
   - [Automated FAQ Answering Chatbot](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/2_faq.md)
@@ -56,7 +59,11 @@
 - [Personalized Head Example Use Case](docs/docs/examples_and_tutorials/ph_example/ph.md)
 
 # Architecture
-<!--Need to add content to this topic-->
+  - [Interfacing A Jaseci Machine](docs/docs/architecture/interfacing_jaseci/interaction_modes.md)
+    - [Local JSCTL Mode](docs/docs/architecture/interfacing_jaseci/jsctl.md)
+      - [CLI vs Shell-mode, and Session Files](docs/docs/architecture/interfacing_jaseci/basics.md)
+    - [Remote JSCTL Mode](docs/docs/architecture/interfacing_jaseci/remote_jsctl.md)
+    - [Application Mode: Jac Api Collection](support/guide/other/classes.md)
 
 # Development
 - [Abstractions of Jaseci](docs/docs/development/1_abstractions.md)
@@ -71,6 +78,7 @@
     - [Init Walker with Examples](docs/docs/development/1_abstractions.md#init-walker-with-examples)
     - [Walkers Navigating Graphs Examples](docs/docs/development/1_abstractions.md#walkers-navigating-graphs-examples)
     - [Walker Spawning Examples](docs/docs/development/1_abstractions.md#walker-spawning-examples)
+    - [Walker Callback](docs/docs/development/1_abstractions.md#walker-callback)
   - [Abilities](docs/docs/development/1_abstractions.md#abilities)
     - [Node Abilities Example](docs/docs/development/1_abstractions.md#node-abilities-example)
     - [Walker Abilities Example](docs/docs/development/1_abstractions.md#walker-abilities-example)
@@ -211,29 +219,10 @@
   - [Jaseci in the News](https://jaseci.org/blog/)
   - [Contact Us](https://jaseci.org/contact-us/)
 
-
-# Appendix
-
-
-  - [Functions](docs/docs-archive/Developing_with_JAC/Language_Features/function.md)
-  - [Walker Callback](docs/docs-archive/Developing_with_JAC/Language_Features/walker_callback.md)
-
-
-  - [Interfacing A Jaseci Machine](docs/docs-archive/getting-started/interfacing.md)
-    - [Three modes of Interacting with Jaseci](docs/docs-archive/interfacing_jaseci/interaction_modes.md)
-    - [Local JSCTL Mode](docs/docs-archive/interfacing_jaseci/jsctl.md)
-      - [CLI vs Shell-mode, and Session Files](docs/docs-archive/interfacing_jaseci/basics.md)
-    - [Remote JSCTL Mode](docs/docs-archive/interfacing_jaseci/remote_jsctl.md)
-    - [Application Mode: Jac Api Collection](support/guide/other/classes.md)
-
-  - [Taking Jac for a Test Drive](docs/docs-archive/getting-started/testdrive.md)
-  - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
-  - [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md)
-
 <!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
 <!-- Second we must write the content for the coming soon sections -->
 
-## Advanced Topics
+# Advanced
 
   - [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
   - [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
