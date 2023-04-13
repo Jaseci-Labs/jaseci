@@ -15,10 +15,9 @@
 
 # Introduction
 
-- [What and Why Jaseci?](docs/docs-archive/Introduction/What_and_why_jaseci.md)
-- [Architecture of Jaseci and Jac](docs/docs-archive/Introduction/Architecture_of_jaseci.md)
-- [Abstraction of Jaseci](docs/docs-archive/Introduction/abstraction_of_jaseci.md)
-<!-- Information is needed for the above sections to be complete -->
+- [What and Why Jaseci?](docs/docs/introduction/What_and_why_jaseci.md)
+- [Architecture of Jaseci and Jac](docs/docs/introduction/Architecture_of_jaseci.md)
+- [Abstraction of Jaseci](docs/docs/introduction/abstraction_of_jaseci.md)
 
 # Getting Started
 
@@ -97,6 +96,9 @@
   - [Destroy](docs/docs/development/2_operations.md#destroy)
   - [Report](docs/docs/development/2_operations.md#report)
   - [Yield](docs/docs/development/2_operations.md#yield)
+- [Upload files using Multi-part](docs/docs/development/multipart.md)
+- [Inheritance](docs/docs/development/inheritance.md)
+- [Custom Report](docs/docs/development/report_custom.md)
 - [Jaseci Standard Actions Libraries](docs/docs/development/1_abstractions.md#jaseci-standard-actions)
   <!--Should explain input parameters of these actions-->
   - [Date](docs/docs/development/std_actions/2_date.md)

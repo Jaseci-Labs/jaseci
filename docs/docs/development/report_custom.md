@@ -1,4 +1,4 @@
-# **Report Custom**
+# Custom Report
 Supports custom structure as response body.
 
 ## **Syntax**

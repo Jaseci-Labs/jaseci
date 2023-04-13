@@ -1,4 +1,4 @@
-# **How to upload file**
+# Upload files via Multi-part
 
 ## **Old approach:** (still supported)
 
