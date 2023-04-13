@@ -16,6 +16,10 @@ from jaseci.utils.actions.actions_manager import ActionManager
 from jaseci_serv.base.models import Master as ServMaster
 from jaseci_serv.user_api import serializers as user_slzr
 
+# The limit for logging an object (request payload and response): 5MB
+# Will truncate in the logs if the object exceeds this limit
+OBJECT_LOG_LIMIT = 5 * 1024 * 1024
+
 
 class JResponse(Response):
     def __init__(self, master, *args, **kwargs):
@@ -46,7 +50,7 @@ class AbstractJacAPIView(APIView):
         """
         self.proc_request(request, **kwargs)
         api_result = self.caller.general_interface_to_api(self.cmd, type(self).__name__)
-        self.log_request_stats(request)
+        self.log_request_stats(request, api_result)
         return self.issue_response(api_result)
 
     def post(self, request, **kwargs):
@@ -57,10 +61,10 @@ class AbstractJacAPIView(APIView):
         """
         self.proc_request(request, **kwargs)
         api_result = self.caller.general_interface_to_api(self.cmd, type(self).__name__)
-        self.log_request_stats(request)
+        self.log_request_stats(request, api_result)
         return self.issue_response(api_result)
 
-    def log_request_stats(self, request):
+    def log_request_stats(self, request, api_result):
         """Api call preamble"""
         tot_time = time() - self.start_time
         save_count = 0
@@ -74,6 +78,7 @@ class AbstractJacAPIView(APIView):
             red_touches = self.caller._h.red_touch_count
             touch_kb = self.caller._h.mem_size()
 
+        res_peek = str(api_result)[:256]
         log_str = str(
             f"API call to {Cc.TG}{type(self).__name__}{Cc.EC}"
             f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
@@ -83,8 +88,29 @@ class AbstractJacAPIView(APIView):
             f" ({Cc.TY}{touch_kb:.1f}kb{Cc.EC}) and"
             f" saving {Cc.TY}{save_count}{Cc.EC} objects."
             f" From {self.caller.name}:{self.caller.jid}."
+            f" Response: {res_peek}."
         )
-        logger.info(log_str)
+
+        log_dict = {
+            "api_name": type(self).__name__,
+            "request_latency": tot_time,
+            "objects_touched": touch_count,
+            "redis_touches": red_touches,
+            "db_touches": db_touches,
+            "objects_touched_size": touch_kb,
+            "objects_saved": save_count,
+            "caller_name": self.caller.name,
+            "caller_jid": self.caller.jid,
+        }
+        try:
+            api_result_str = json.dumps(api_result)[:OBJECT_LOG_LIMIT]
+        except TypeError:
+            api_result_str = str(api_result)[:OBJECT_LOG_LIMIT]
+        log_dict["api_response"] = api_result_str
+
+        log_dict["extra_fields"] = list(log_dict.keys())
+
+        logger.info(log_str, extra=log_dict)
         JsOrc.get("action_manager", ActionManager).post_request_hook(
             type(self).__name__, request, tot_time
         )
@@ -147,11 +173,23 @@ class AbstractJacAPIView(APIView):
         raw_req_data = request.body
         pl_peek = str(dict(request.data))[:256]
         self.set_caller(request)
-        logger.info(
-            str(
-                f"Incoming call to {type(self).__name__} with {pl_peek} from {self.caller.name}:{self.caller.jid}"
-            )
+        log_str = str(
+            f"Incoming call to {type(self).__name__} with {pl_peek} from {self.caller.name}:{self.caller.jid}"
         )
+        log_dict = {
+            "api_name": type(self).__name__,
+            "caller_name": self.caller.name,
+            "caller_jid": self.caller.jid,
+        }
+        try:
+            request_payload_str = json.dumps(dict(request.data))[:OBJECT_LOG_LIMIT]
+        except TypeError:
+            request_payload_str = str(dict(request.data))[:OBJECT_LOG_LIMIT]
+        log_dict["request_payload"] = request_payload_str
+        log_dict["extra_fields"] = list(log_dict.keys())
+
+        logger.info(log_str, extra=log_dict)
+
         self.start_time = time()
 
         req_data = (
@@ -220,7 +258,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
         self.proc_request(request, **kwargs)
 
         api_result = self.caller.public_interface_to_api(self.cmd, type(self).__name__)
-        self.log_request_stats(request)
+        self.log_request_stats(request, api_result)
         return self.issue_response(api_result)
 
     def post(self, request, **kwargs):
@@ -232,7 +270,7 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
         self.proc_request(request, **kwargs)
 
         api_result = self.caller.public_interface_to_api(self.cmd, type(self).__name__)
-        self.log_request_stats(request)
+        self.log_request_stats(request, api_result)
         return self.issue_response(api_result)
 
     def set_caller(self, request):

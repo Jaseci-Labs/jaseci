@@ -68,6 +68,10 @@ class ElasticService(JsOrc.CommonService):
                             "message": record.getMessage(),
                             "level": record.levelname,
                         }
+                        extra_fields = record.__dict__.get("extra_fields", [])
+                        elastic_record.update(
+                            dict([(k, record.__dict__[k]) for k in extra_fields])
+                        )
                         self.app.doc(log=elastic_record, index=index)
                     except Exception:
                         pass
