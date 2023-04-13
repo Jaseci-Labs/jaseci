@@ -172,14 +172,16 @@ class AbstractJacAPIView(APIView):
         """Parse request to field set"""
         raw_req_data = request.body
         pl_peek = str(dict(request.data))[:256]
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
         self.set_caller(request)
         log_str = str(
-            f"Incoming call to {type(self).__name__} with {pl_peek} from {self.caller.name}:{self.caller.jid}"
+            f"Incoming call to {type(self).__name__} with {pl_peek} from {self.caller.name}:{self.caller.jid} with {user_agent}"
         )
         log_dict = {
             "api_name": type(self).__name__,
             "caller_name": self.caller.name,
             "caller_jid": self.caller.jid,
+            "request_user_agent": user_agent,
         }
         try:
             request_payload_str = json.dumps(dict(request.data))[:OBJECT_LOG_LIMIT]
