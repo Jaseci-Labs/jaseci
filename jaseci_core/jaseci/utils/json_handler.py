@@ -1,14 +1,14 @@
 import json
 from json import JSONDecoder, JSONEncoder
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.id_list import IdList
 from jaseci.utils.utils import logger
 
 
 class JaseciJsonEncoder(JSONEncoder):
     def default(self, obj):
-        from jaseci.element.element import Element
+        from jaseci.prim.element import Element
 
         if isinstance(obj, Element):
             return {"__mem_id__": obj.jid}
@@ -56,7 +56,7 @@ def json_str_to_jsci_dict(input_str, parent_obj=None):
     """
 
     try:
-        obj_fields = json.loads(input_str)
+        obj_fields = json.loads(input_str, cls=JaseciJsonDecoder)
     except ValueError:
         logger.error(str(f"Invalid jsci_obj string {input_str} on {parent_obj.jid}"))
         obj_fields = {}

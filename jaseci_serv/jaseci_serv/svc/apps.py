@@ -1,7 +1,7 @@
 import os
 from django.apps import AppConfig
 
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 class CoreApiConfig(AppConfig):

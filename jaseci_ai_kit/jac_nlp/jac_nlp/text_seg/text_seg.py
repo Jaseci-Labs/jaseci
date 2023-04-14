@@ -2,7 +2,7 @@ import spacy
 from fastapi import HTTPException
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 # loading segmentation model from hugging face
 tokenizer = AutoTokenizer.from_pretrained("dennlinger/roberta-cls-consec")
@@ -86,7 +86,7 @@ def seg_load_model(model_name: str):  # modelname could be ("wiki", "legal")
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     print("Text Segmentor up and running")
     launch_server(port=8000)

@@ -6,17 +6,17 @@ referenced through self.
 """
 from copy import copy
 from jaseci.utils.utils import logger
-from jaseci.actions.live_actions import live_actions, load_preconfig_actions
+from jaseci.jsorc.live_actions import live_actions, load_preconfig_actions
 
 # from jaseci.actions.find_action import find_action
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.utils.id_list import IdList
 from jaseci.jac.ir.ast import Ast
-from jaseci.graph.edge import Edge
-from jaseci.graph.node import Node
+from jaseci.prim.edge import Edge
+from jaseci.prim.node import Node
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.jsci_vm.op_codes import JsCmp
 

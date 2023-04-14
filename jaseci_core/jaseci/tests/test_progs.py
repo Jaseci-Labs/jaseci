@@ -3,12 +3,12 @@ import pytest
 from unittest import TestCase
 
 import jaseci.tests.jac_test_progs as jtp
-from jaseci.actor.sentinel import Sentinel
-from jaseci.graph.graph import Graph
-from jaseci.graph.node import Node
+from jaseci.prim.sentinel import Sentinel
+from jaseci.prim.graph import Graph
+from jaseci.prim.node import Node
 from jaseci.utils.utils import TestCaseHelper
-from jaseci import JsOrc
-from jaseci.jsorc_utils import State
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.jsorc.jsorc_utils import State
 
 
 class JacTests(TestCaseHelper, TestCase):
@@ -595,7 +595,7 @@ class JacTests(TestCaseHelper, TestCase):
 
         with open("jaseci/tests/fixtures/non_existing_action.py", "w") as file:
             file.write(
-                "from jaseci.actions.live_actions import jaseci_action\n@jaseci_action(act_group=['sim1'])\ndef tester():\n\treturn 1"
+                "from jaseci.jsorc.live_actions import jaseci_action\n@jaseci_action(act_group=['sim1'])\ndef tester():\n\treturn 1"
             )
 
         mast.sentinel_register(name="test", code=jtp.async_module, auto_run="")

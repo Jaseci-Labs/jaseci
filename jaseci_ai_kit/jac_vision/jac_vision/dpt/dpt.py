@@ -1,6 +1,6 @@
 from .model import DPTLarge
 import torch
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import traceback
 from fastapi import HTTPException
 from PIL import Image
@@ -52,6 +52,6 @@ def estimate_batch(images: list, b64: bool = False) -> list:
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

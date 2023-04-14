@@ -2,21 +2,47 @@
 
 - [Operators of Jaseci](#operators-of-jaseci)
   - [Spawn](#spawn)
+  - [Info and Context](#info-and-context)
   - [Take](#take)
   - [Skip](#skip)
   - [Disengage](#disengage)
   - [Ignore](#ignore)
   - [Destroy](#destroy)
   - [Report](#report)
+  - [**Usage**](#usage)
   - [Yield](#yield)
 
 
 ## Spawn
 
+<!--need to add more context on this topic-->
+
+## Info and Context
+
+In Jac, you can use the `info` and `context` commands to view the content of a node or edge. Although the following example demonstrates the use of these commands on nodes, the same principles can be applied to edges as well. Take a look at the example below to see how to use the `info` and `context` commands.
+
+**Example:**
+```jac
+node example{
+    has name = "Testing Info and Context commands";
+    has result = "Success";
+    has favourite_quote = "How you do anything is how you do everything therefore excellence auth to be an habit not an act";
+}
+
+walker init{
+    example = spawn here node::example;
+    context = example.context;
+    info = example.info;
+    std.out("This is the context result:", context);
+    std.out("This is the info result:", info);
+}
+```
+
+After executing the command above, you will observe that the `context` command displays variables such as name, result, and favourite quote, while the `info` command displays all the information related to the node.
+
 ## Take
 
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. You may notice by default, a walker travers with `take` command using the breadth first search approach (refer to the example [here](1_abstractions.md#walkers-navigating-graphs-example)). But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example;
-
 
 **Example:**
 ```jac
@@ -292,6 +318,19 @@ person {
 }
 ```
 A portion of the final result is shown in the sample above. As the number of nodes in the graphs grows, the output will lengthen.
+
+**Report Custom**
+Supports custom structure as response body.
+
+Example:
+
+```js
+    report:custom = `{{ any | {} | [] }}`
+```
+
+## **Usage**
+This can be combine with walker_callback as 3rd party service requires different json structure on response.
+It can also be used for different scenario that doesn't require ctx structure
 
 ## Yield
 

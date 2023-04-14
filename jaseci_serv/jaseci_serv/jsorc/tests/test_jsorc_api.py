@@ -7,7 +7,7 @@ from rest_framework import status
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
 
-from jaseci_serv.utils.test_utils import skip_without_redis
+from jaseci.utils.test_core import skip_without_redis
 
 
 class JsorcAPITests(TestCaseHelper, TestCase):

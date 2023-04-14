@@ -1,7 +1,7 @@
 import warnings
 
-from jaseci.actions.live_actions import jaseci_action
-from jaseci.actions.remote_actions import launch_server
+from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.jsorc.remote_actions import launch_server
 from fastapi import HTTPException
 
 from transformers import pipeline

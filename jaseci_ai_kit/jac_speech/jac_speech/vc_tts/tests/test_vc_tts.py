@@ -1,7 +1,7 @@
 import pytest
 
 from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci.actions.live_actions import load_module_actions, unload_module
+from jaseci.jsorc.live_actions import load_module_actions, unload_module
 
 
 class TestTTSModule(CoreTest):
@@ -13,19 +13,16 @@ class TestTTSModule(CoreTest):
         ret = load_module_actions("jac_speech.vc_tts")
         assert ret == True
 
-    @pytest.mark.skip(reason="Temporary skipping while vc_tts dependency issue persist")
     @pytest.mark.order(1)
     @jac_testcase("vc_tts.jac", "test_synthesize_female")
     def test_synthesize_female(self, ret):
         self.assertEqual(ret["success"], True)
 
-    @pytest.mark.skip(reason="Temporary skipping while vc_tts dependency issue persist")
     @pytest.mark.order(2)
     @jac_testcase("vc_tts.jac", "test_synthesize_male")
     def test_synthesize_male(self, ret):
         self.assertEqual(ret["success"], True)
 
-    @pytest.mark.skip(reason="Temporary skipping while vc_tts dependency issue persist")
     @pytest.mark.order(3)
     @jac_testcase("vc_tts.jac", "test_clone_voice")
     def test_clone_voice(self, ret):

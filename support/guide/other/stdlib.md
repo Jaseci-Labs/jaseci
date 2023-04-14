@@ -38,6 +38,14 @@ No documentation yet.
 # elastic
 
 No documentation yet.
+ <div class='actionName'> elastic._post </div>
+ <div class ='actionsArgs'> url: str (*req), json: dict ({})</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div>
+
+ <div class='actionName'> elastic._get </div>
+ <div class ='actionsArgs'> url: str (*req), json: dict (None)</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div>
+
  <div class='actionName'> elastic.post </div>
  <div class ='actionsArgs'> url: str (*req), body: dict (*req), index: str (), suffix: str ()</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div>
@@ -76,6 +84,14 @@ No documentation yet.
 
  <div class='actionName'> elastic.mapping_activity </div>
  <div class ='actionsArgs'> query: str (), suffix: str ()</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div>
+
+ <div class='actionName'> elastic.refresh </div>
+ <div class ='actionsArgs'> index: str (), suffix: str ()</div>
+ <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div>
+
+ <div class='actionName'> elastic.refresh_activity </div>
+ <div class ='actionsArgs'> suffix: str ()</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div>
 
  <div class='actionName'> elastic.aliases </div>
@@ -477,7 +493,7 @@ Return - Sorted list</div> </div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div>
 
  <div class='actionName'> std.log_activity </div>
- <div class ='actionsArgs'> log: dict (*req), action: str (), query: str (), suffix: str ()</div>
+ <div class ='actionsArgs'> log: dict ({}), action: str (), query: str (), suffix: str ()</div>
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div>
 
 
@@ -678,16 +694,16 @@ No documentation yet.
  <div class ='mainbody'> <div class ='actionsDescription'>No documentation yet.</div> </div>
 
 
-# zlib
+# zip
 
 No documentation yet.
- <div class='actionName'> zlib.compress </div>
+ <div class='actionName'> zip.compress </div>
  <div class ='actionsArgs'> data_b64: str ()</div>
  <div class ='mainbody'> <div class ='actionsDescription'>Param 1 - data in base64
 
 Return - compressed data in base64</div> </div>
 
- <div class='actionName'> zlib.decompress </div>
+ <div class='actionName'> zip.decompress </div>
  <div class ='actionsArgs'> data_b64: str ()</div>
  <div class ='mainbody'> <div class ='actionsDescription'>Param 1 - data in base64
 

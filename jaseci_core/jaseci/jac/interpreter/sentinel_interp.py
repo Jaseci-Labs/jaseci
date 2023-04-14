@@ -4,7 +4,7 @@ Sentinel interpreter for jac code in AST form
 This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
-from jaseci.actor.architype import Architype
+from jaseci.prim.architype import Architype
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.utils.utils import parse_str_token
 from jaseci.jac.ir.jac_code import jac_ast_to_ir

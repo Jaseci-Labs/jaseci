@@ -262,7 +262,7 @@ walker init{
     has text = file.load_json("text_data.json");
 
     can use.encode;
-    has encode = use.encode(visitor.text);
+    has encode = use.encode(text);
 
     can cluster.get_umap;
     final_features = cluster.get_umap(encode,2);
@@ -270,7 +270,7 @@ walker init{
     can cluster.get_cluster_labels;
     labels = cluster.get_cluster_labels(final_features,"hbdscan",2,2);
 
-    can topic_ext.topic_extraction;
+    can topic_ext.headline_generation;
     topic_dict = topic_ext.headline_generation(texts=text,classes=labels);
 }
 ```

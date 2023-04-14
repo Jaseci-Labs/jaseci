@@ -6,7 +6,7 @@ from flair.data import Corpus, Sentence
 from flair.datasets import FlairDatapointDataset
 from flair.models import TARSClassifier
 from flair.trainers import ModelTrainer
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 
 
 @jaseci_action(act_group=["zs_classifier"], allow_remote=True)
@@ -125,6 +125,6 @@ def get_embeddings(texts: Union[str, List[str]]):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

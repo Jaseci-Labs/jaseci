@@ -1,6 +1,4 @@
 from os.path import dirname, join
-from .jsorc_settings import JsOrcSettings
-from .jsorc import JsOrc
 
 
 def get_ver():
@@ -9,29 +7,28 @@ def get_ver():
 
 
 __version__ = get_ver()
-__creator__ = "Jason Mars and friends"
+__creator__ = "Jason Mars and contributors"
 __url__ = "https://jaseci.org"
-__all__ = ["JsOrc", "JsOrcSettings"]
 
 
 def load_standard():
-    import jaseci.actions.standard.net  # noqa
-    import jaseci.actions.standard.rand  # noqa
-    import jaseci.actions.standard.request  # noqa
-    import jaseci.actions.standard.std  # noqa
-    import jaseci.actions.standard.file  # noqa
-    import jaseci.actions.standard.vector  # noqa
-    import jaseci.actions.standard.date  # noqa
-    import jaseci.actions.standard.jaseci  # noqa
-    import jaseci.actions.standard.mail  # noqa
-    import jaseci.actions.standard.task  # noqa
-    import jaseci.actions.standard.internal  # noqa
-    import jaseci.actions.standard.zlib  # noqa
-    import jaseci.actions.standard.webtool  # noqa
-    import jaseci.actions.standard.elastic  # noqa
-    import jaseci.actions.standard.url  # noqa
-    import jaseci.actions.standard.stripe  # noqa
-    import jaseci.actions.standard.regex  # noqa
+    import jaseci.extens.act_lib.net  # noqa
+    import jaseci.extens.act_lib.rand  # noqa
+    import jaseci.extens.act_lib.request  # noqa
+    import jaseci.extens.act_lib.std  # noqa
+    import jaseci.extens.act_lib.file  # noqa
+    import jaseci.extens.act_lib.vector  # noqa
+    import jaseci.extens.act_lib.date  # noqa
+    import jaseci.extens.act_lib.jaseci  # noqa
+    import jaseci.extens.act_lib.mail  # noqa
+    import jaseci.extens.act_lib.task  # noqa
+    import jaseci.extens.act_lib.internal  # noqa
+    import jaseci.extens.act_lib.zip  # noqa
+    import jaseci.extens.act_lib.webtool  # noqa
+    import jaseci.extens.act_lib.elastic  # noqa
+    import jaseci.extens.act_lib.url  # noqa
+    import jaseci.extens.act_lib.stripe  # noqa
+    import jaseci.extens.act_lib.regex  # noqa
 
 
 load_standard()

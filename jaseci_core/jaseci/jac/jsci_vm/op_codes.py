@@ -1,6 +1,6 @@
 from enum import IntEnum, auto
-from jaseci.graph.edge import Edge
-from jaseci.graph.node import Node
+from jaseci.prim.edge import Edge
+from jaseci.prim.node import Node
 
 
 class JsOp(IntEnum):

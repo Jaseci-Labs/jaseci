@@ -4,8 +4,8 @@ import time
 from TTS.api import TTS
 
 from fastapi import HTTPException
-from jaseci.actions.live_actions import jaseci_action
-from jaseci.actions.remote_actions import launch_server
+from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.jsorc.remote_actions import launch_server
 
 from .action_utils import synthesizer
 from .text import clean_text

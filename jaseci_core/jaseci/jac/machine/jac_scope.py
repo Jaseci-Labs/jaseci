@@ -5,7 +5,7 @@ Utility for all runtime interaction with variables in different scopes
 """
 from jaseci.utils.id_list import IdList
 from jaseci.jac.machine.jac_value import JacValue
-from jaseci.actions.live_actions import get_global_actions
+from jaseci.jsorc.live_actions import get_global_actions
 
 global_action_sets = None
 
