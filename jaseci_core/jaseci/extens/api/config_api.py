@@ -2,7 +2,8 @@
 Admin config api functions as a mixin
 """
 
-from json import dumps
+from typing import Optional
+from json import dumps, loads
 from jaseci.extens.api.interface import Interface
 
 
@@ -49,6 +50,44 @@ class ConfigApi:
 
         self._h.save_glob(name, value)
         return [f"Config of '{name}' to '{value}' set!"]
+
+    @Interface.admin_api(cli_args=["name"])
+    def config_update(
+        self,
+        name: str,
+        field_key: str,
+        field_value: str
+        or int
+        or float
+        or list
+        or dict
+        or bool
+        or tuple
+        or None,  # json serializable types
+        do_check: bool = True,
+    ):
+        """
+        Update a key-value of a config
+        """
+        if do_check and not self.name_check(name):
+            return self.name_error(name)
+
+        conf = self._h.get_glob(name)
+        try:
+            conf = loads(conf)
+        except Exception:
+            return [
+                f"Config {name} is not a dictionary. Uses config_set to set the value for this config."
+            ]
+        if field_key not in conf:
+            return [f"Field {field_key} does not exist in config {name}"]
+
+        conf[field_key] = field_value
+        conf = dumps(conf)
+        self._h.save_glob(name, conf)
+        return [
+            f"Config of '{name}' is updated with {field_key}:{field_value}. Current config value: {conf}"
+        ]
 
     @Interface.admin_api()
     def config_list(self):
