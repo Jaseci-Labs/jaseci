@@ -55,6 +55,7 @@ class LoggingTests(TestCaseHelper, TestCase):
         JsOrcSettings.KUBE_CONFIG["enabled"] = False
         JsOrcSettings.ELASTIC_CONFIG["enabled"] = False
         JsOrc.svc_reset("elastic")
+        JsOrc.svc_reset("kube")
         self.logger_off()
 
     def test_elastic_logging_objects(self):
