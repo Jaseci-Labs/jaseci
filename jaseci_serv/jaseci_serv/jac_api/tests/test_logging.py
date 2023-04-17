@@ -52,9 +52,7 @@ class LoggingTests(TestCaseHelper, TestCase):
 
     def tearDown(self):
         super().tearDown()
-
-        JsOrcSettings.KUBE_CONFIG["enabled"] = False
-        JsOrcSettings.ELASTIC_CONFIG["enabled"] = False
+        self.logger_off()
 
     @pytest.mark.skip
     def test_elastic_logging_objects(self):
@@ -107,3 +105,4 @@ class LoggingTests(TestCaseHelper, TestCase):
                     ]
                 ),
             )
+            self.logger_off()
