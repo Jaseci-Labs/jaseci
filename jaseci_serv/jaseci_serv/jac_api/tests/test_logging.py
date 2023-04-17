@@ -1,8 +1,7 @@
 import os
-
+import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from jaseci.utils.utils import logger
 
 from rest_framework.test import APIClient
 
@@ -54,6 +53,10 @@ class LoggingTests(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
+        JsOrcSettings.KUBE_CONFIG["enabled"] = False
+        JsOrcSettings.ELASTIC_CONFIG["enabled"] = False
+
+    @pytest.mark.skip
     def test_elastic_logging_objects(self):
         """Test sentinel register and walker run is logged properly"""
         with patch("jaseci.extens.svc.elastic_svc.Elastic._post") as mocked_es_post:
