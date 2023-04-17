@@ -23,21 +23,34 @@ class ElasticService(JsOrc.CommonService):
     ###################################################
 
     def run(self):
-        if not self.config.get("auth"):
-            kube = JsOrc.svc("kube", KubeService)
+        kube = JsOrc.svc("kube", KubeService)
+        if kube.is_running():
             elasticsearches = kube.resolve_manifest(
                 self.manifest, *JsOrc.overrided_namespace("elastic", self.manifest_type)
             ).get("Elasticsearch", [])
+
             if elasticsearches:
                 metadata: dict = elasticsearches["jaseci"]["metadata"]
-                auth = kube.get_secret(
-                    f'{metadata.get("name")}-es-elastic-user',
-                    "elastic",
+
+                cert = kube.get_secret(
+                    f'{metadata.get("name")}-es-http-certs-internal',
+                    "ca.crt",
                     metadata.get("namespace"),
                 )
-                self.config[
-                    "auth"
-                ] = f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
+
+                if cert:
+                    with open("elastic-certificate.crt", "w") as cert_file:
+                        cert_file.write(cert)
+
+                if not self.config.get("auth"):
+                    auth = kube.get_secret(
+                        f'{metadata.get("name")}-es-elastic-user',
+                        "elastic",
+                        metadata.get("namespace"),
+                    )
+                    self.config[
+                        "auth"
+                    ] = f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
 
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")
@@ -106,12 +119,18 @@ class Elastic:
 
     def _get(self, url: str, json: dict = None):
         return get(
-            f"{self.url}{url}", json=json, headers=self.headers, verify=False
+            f"{self.url}{url}",
+            json=json,
+            headers=self.headers,
+            verify="elastic-certificate.crt",
         ).json()
 
     def _post(self, url: str, json: dict = None):
         return post(
-            f"{self.url}{url}", json=json, headers=self.headers, verify=False
+            f"{self.url}{url}",
+            json=json,
+            headers=self.headers,
+            verify="elastic-certificate.crt",
         ).json()
 
     def post(self, url: str, body: dict, index: str = "", suffix: str = ""):
