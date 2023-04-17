@@ -15,10 +15,9 @@
 
 # Introduction
 
-- [What and Why Jaseci?](docs/docs-archive/Introduction/What_and_why_jaseci.md)
-- [Architecture of Jaseci and Jac](docs/docs-archive/Introduction/Architecture_of_jaseci.md)
-- [Abstraction of Jaseci](docs/docs-archive/Introduction/abstraction_of_jaseci.md)
-<!-- Information is needed for the above sections to be complete -->
+- [What and Why Jaseci?](docs/docs/introduction/What_and_why_jaseci.md)
+- [Architecture of Jaseci and Jac](docs/docs/introduction/Architecture_of_jaseci.md)
+- [Abstraction of Jaseci](docs/docs/introduction/abstraction_of_jaseci.md)
 
 # Getting Started
 
@@ -34,6 +33,9 @@
 
 # Examples and Tutorials
 
+- [Quickstart](docs/docs/examples_and_tutorials/quickstart/quickstart.md)
+  - [Understanding Jac Application](docs/docs/examples_and_tutorials/quickstart/understanding_jac_programs.md)
+  - [Write your First Jac Application](docs/docs/examples_and_tutorials/quickstart/writing_your_first_app.md)
 - [Building a Conversational AI](docs/docs/examples_and_tutorials/CanoniCAI/CCAI_codelab.md)
   - [Preparation and Background](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/1_preparation.md)
   - [Automated FAQ Answering Chatbot](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/2_faq.md)
@@ -56,7 +58,11 @@
 - [Personalized Head Example Use Case](docs/docs/examples_and_tutorials/ph_example/ph.md)
 
 # Architecture
-<!--Need to add content to this topic-->
+  - [Interfacing A Jaseci Machine](docs/docs/architecture/interfacing_jaseci/interaction_modes.md)
+    - [Local JSCTL Mode](docs/docs/architecture/interfacing_jaseci/jsctl.md)
+      - [CLI vs Shell-mode, and Session Files](docs/docs/architecture/interfacing_jaseci/basics.md)
+    - [Remote JSCTL Mode](docs/docs/architecture/interfacing_jaseci/remote_jsctl.md)
+    - [Application Mode: Jac Api Collection](support/guide/other/classes.md)
 
 # Development
 - [Abstractions of Jaseci](docs/docs/development/1_abstractions.md)
@@ -71,6 +77,7 @@
     - [Init Walker with Examples](docs/docs/development/1_abstractions.md#init-walker-with-examples)
     - [Walkers Navigating Graphs Examples](docs/docs/development/1_abstractions.md#walkers-navigating-graphs-examples)
     - [Walker Spawning Examples](docs/docs/development/1_abstractions.md#walker-spawning-examples)
+    - [Walker Callback](docs/docs/development/1_abstractions.md#walker-callback)
   - [Abilities](docs/docs/development/1_abstractions.md#abilities)
     - [Node Abilities Example](docs/docs/development/1_abstractions.md#node-abilities-example)
     - [Walker Abilities Example](docs/docs/development/1_abstractions.md#walker-abilities-example)
@@ -89,6 +96,9 @@
   - [Destroy](docs/docs/development/2_operations.md#destroy)
   - [Report](docs/docs/development/2_operations.md#report)
   - [Yield](docs/docs/development/2_operations.md#yield)
+- [Upload files using Multi-part](docs/docs/development/multipart.md)
+- [Inheritance](docs/docs/development/inheritance.md)
+- [Custom Report](docs/docs/development/report_custom.md)
 - [Jaseci Standard Actions Libraries](docs/docs/development/1_abstractions.md#jaseci-standard-actions)
   <!--Should explain input parameters of these actions-->
   - [Date](docs/docs/development/std_actions/2_date.md)
@@ -116,7 +126,6 @@
     - [Actions](docs/docs/development/std_actions/1_jaseci.md#actions)
     - [Configurations](docs/docs/development/std_actions/1_jaseci.md#configurations-apis)
 - [Jaseci AI kit Features](jaseci_ai_kit/README.md)
- <!--Should explain input parameters of these functions-->
   - [Jac NLP Modules](jaseci_ai_kit/jac_nlp/README.md)
     - [Text Encoders](jaseci_ai_kit/jac_nlp/README.md#text-encoders)
     - [Named Entity Recognition Models](jaseci_ai_kit/jac_nlp/README.md#named-entity-recognition-models)
@@ -135,8 +144,9 @@
     - [Translator Modules](jaseci_ai_kit/jac_misc/README.md#translator-modules)
     - [PDF Extractor Modules](jaseci_ai_kit/jac_misc/README.md#pdf-extractor-modules)
   - [Guide to use Jaseci AI Kit](jaseci_ai_kit/support/guide-to-use-ai-kit.md)
-  - [Guide to create Custom AI Module](docs/docs/comming_soon.md)
-<!--Explain how to add custom Jaseci AI module-->
+- [Running Jaseci Action as a Service](docs/docs/development/action_microservice.md)
+- [Custom Jaseci Actions](docs/docs/development/custom_actions/custom_jaseci_module_codelab.md)
+  - [Example: Custom Action Using T5](docs/docs/development/custom_actions/t5_custom_module_codelab.md)
 - [Jaseci UI Kit](ui_components/readme.md)
   - [Introduction](ui_components/docs/what-is-jaseci-ui-kit.md)
   - [Basic Concepts](ui_components/docs/basic-concepts.md)
@@ -161,7 +171,7 @@
   - [File Handling](docs/docs/jac_language_guide/1_jac_lang_basics.md#file-handling-in-jaseci)
   - [Global Variables](docs/docs/jac_language_guide/1_jac_lang_basics.md#global-variables-in-jaseci)
   - [Working with Imports](docs/docs/jac_language_guide/1_jac_lang_basics.md#working-with-imports)
-  - [Error Handling in Jaseci](docs/docs/comming_soon.md)
+  - [Error Handling in Jaseci](docs/docs/jac_language_guide/4_error_handling.md)
   - [Logs in Jaseci](docs/docs/comming_soon.md)
 <!--Error Handling and Loggings Should come under this-->
 - [Data Structures in Jaseci](docs/docs/jac_language_guide/2_jac_data_types_and_ops.md)
@@ -174,19 +184,38 @@
 
 
 # Testing and Debugging
-<!--Add content to this from CanoniCAI - Assigned Tharuka-->
+
+- [Testing](docs/docs/testing_and_debugging/1_testing.md)
+- [Jaseci Studio](docs/docs/testing_and_debugging/2_jaseci_studio.md)
+  - [Login](docs/docs/testing_and_debugging/2_jaseci_studio.md#login)
+  - [Dashboard](docs/docs/testing_and_debugging/2_jaseci_studio.md#dashboard-summery-view)
+  - [Graph Viewer](docs/docs/testing_and_debugging/2_jaseci_studio.md#graph-viewer)
+  - [Logs Viewer](docs/docs/testing_and_debugging/2_jaseci_studio.md#logs-viewer)
+  - [Managing Architypes](docs/docs/testing_and_debugging/2_jaseci_studio.md#managing-architypes)
+
 
 # Deployment
+  - [Package up Your Jac Program and Jaseci Server for Deployment](docs/docs/deployment/how_to_package.md)
+  - [Single Sign-on Social](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
+  - [Extension Services](docs/docs/deployment/extension_services.md)
+      - [Task](jaseci_core/jaseci/extens/svc/docs/task_svc.md)
+      - [Mail](jaseci_core/jaseci/extens/svc/docs/mail_svc.md)
+  - [Automatic Deployment and Scaling via JsOrc](jaseci_core/jaseci/extens/svc/docs/JSORC.md))
+      - [Development](jaseci_core/jaseci/extens/svc/docs/jsorc_development.md)
+  - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
+  - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
+  - [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
+
 <!-- More context about Jaseci Server-->
 <!-- More context about JSCTL-->
 
 # Contributing to Jaseci
 - [Installation for Contributors](support/guide/getting_started/installation.md#installation-for-contributors-of-jaseci)
-- [Guide on Contributing](examples/CanoniCAI/codelabs/8.contributing_to_jaseci.md)
-- [Being a Contributor](support/guide/other/contributor_policy.md)
-- [General Guide](CONTRIBUTING.md)
+- [Contributing to the Jaseci](CONTRIBUTING.md)
+  - [How to be a Jaseci Contributor](CONTRIBUTING.md#how-to-be-a-jaseci-contributor)
+  - [How to contribute code](CONTRIBUTING.md#how-to-contribute-code)
+  - [How to Update the Official Documentation](CONTRIBUTING.md#how-to-update-the-official-documentation)
 - [Contributors](CONTRIBUTORS.md)
-<!--Should review this section- Assigned to Tharuka-->
 
 <!-- Add coming soon sections-->
 
@@ -203,69 +232,5 @@
   - [Jaseci in the News](https://jaseci.org/blog/)
   - [Contact Us](https://jaseci.org/contact-us/)
 
-
-# Appendix
-
-## Language Basics
-
-  - [Functions](docs/docs-archive/Developing_with_JAC/Language_Features/function.md)
-
-  - [Walker Callback](docs/docs-archive/Developing_with_JAC/Language_Features/walker_callback.md)
-
-
-  - [Interfacing A Jaseci Machine](docs/docs-archive/getting-started/interfacing.md)
-    - [Three modes of Interacting with Jaseci](docs/docs-archive/interfacing_jaseci/interaction_modes.md)
-    - [Local JSCTL Mode](docs/docs-archive/interfacing_jaseci/jsctl.md)
-      - [CLI vs Shell-mode, and Session Files](docs/docs-archive/interfacing_jaseci/basics.md)
-    - [Remote JSCTL Mode](docs/docs-archive/interfacing_jaseci/remote_jsctl.md)
-    - [Application Mode: Jac Api Collection](support/guide/other/classes.md)
-
-  - [Taking Jac for a Test Drive](docs/docs-archive/getting-started/testdrive.md)
-  - [Jaseci Quickstart](support/guide/getting_started/quickstart.md)
-  - [Understanding JAC Programs](support/guide/getting_started/understanding_jac_programs.md)
-
 <!-- For this section to be complete we must first rewrite some of the content so it assumes that the user followed the installation guide -->
 <!-- Second we must write the content for the coming soon sections -->
-
-## Jaseci Studio and UI Widget Library
-
-<!--this goues under testing-->
-- [Jaseci Studio Features](jaseci_studio/features.md)
-  - [Login](jaseci_studio/login.md)
-  - [Dashboard](jaseci_studio/dashboard.md)
-  - [Graph Viewer](jaseci_studio/graphs.md)
-  - [Logs Viewer](jaseci_studio/logs.md)
-  - [Managing Architypes](jaseci_studio/architype.md)
-
-
-
-## Advanced Topics
-
-  - [Build a Custom Jaseci Action Module](support/codelabs/custom_jaseci_module_codelab.md)
-  - [Creating a Custom Jaseci Action Module using T5](support/codelabs/t5_custom_module_codelab.md)
-  - [Stand Up a Jaseci Action Library Server](docs/docs-archive/canonicai/chapter9.md)
-  - [Requests to APIs in Jac](docs/docs-archive/canonicai/chapter8.md)
-  - [Testing CCAI Dialogues in Jac](docs/docs-archive/canonicai/chapter7.md)
-  - [Package up Your Jac Program and Jaseci Server for Deployment](support/docker/how_to_package.md)
-  - [Enhancing User Experience with Personalized Content using PH](examples/CanoniCAI/codelabs/ph.md)
-  - [Jaseci X Features](docs/docs/advanced_topics/jaseci_features.md)
-    - [Single Sign-on Social](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
-  - [Jaseci Core Internals](docs/docs/advanced_topics/jaseci_core.md)
-    - [JsOrc](jaseci_core/jaseci/extens/svc/docs/JSORC.md)
-      - [Development](jaseci_core/jaseci/extens/svc/docs/jsorc_development.md)
-      - [Task](jaseci_core/jaseci/extens/svc/docs/task_svc.md)
-      - [Mail](jaseci_core/jaseci/extens/svc/docs/mail_svc.md)
-    - [JSORC Action Management Engine](jaseci_core/jaseci/extens/svc/docs/JSORC.md)
-  - [Misc DevOps Guides](docs/docs/advanced_topics/Misc_DevOps_Guides.md)
-    - [Install Jaseci using Helm](support/helmcharts/jaseci/README.md)
-    - [Create AWS EKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/aws/README.md)
-    - [Create Azure AKS Infrastructure for Jaseci using Terraform](support/infrastructure/terraform/azure/README.md)
-    - [Locust Load Test for JASECI](support/locust/README.md)
-
-
-## Best Practices
-## Error Handling and Solutions
-  - [Error Handling in Jaseci](docs/docs-archive/error_handling/error_1.md)
-
-
-

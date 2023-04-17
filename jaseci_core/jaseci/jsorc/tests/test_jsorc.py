@@ -33,6 +33,7 @@ class MockKubeTest(CoreTest):
     def setUp(self, mock_config, mock_call_api):
         super().setUp()
         JsOrcSettings.KUBE_CONFIG["enabled"] = True
+        JsOrcSettings.ELASTIC_CONFIG["enabled"] = True
         self.kube = JsOrc.svc("kube")
 
 
@@ -42,7 +43,6 @@ class JsOrcTest(MockKubeTest):
     def setUp(self):
         super().setUp()
 
-    @skip_without_redis
     def test_jsorc_elastic_create(self):
         self.call(
             self.smast,
@@ -76,7 +76,6 @@ class JsOrcTest(MockKubeTest):
             # No resources should be patched
             assert not mock_patch.called
 
-    @skip_without_redis
     def test_jsorc_elastic_patch(self):
         self.call(
             self.smast,
