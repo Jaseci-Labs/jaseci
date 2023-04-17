@@ -80,14 +80,14 @@ class AbstractJacAPIView(APIView):
 
         res_peek = str(api_result)[:256]
         log_str = str(
-            f"API call to {Cc.TG}{type(self).__name__}{Cc.EC}"
+            f"API call from {Cc.TG}{self.caller.name}{Cc.EC}:{self.caller.jid}"
+            f" to {Cc.TG}{type(self).__name__}{Cc.EC}"
             f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
             f" touched {Cc.TY}{touch_count}{Cc.EC} mem /"
             f" {Cc.TY}{red_touches}{Cc.EC} redis /"
             f" {Cc.TY}{db_touches}{Cc.EC} db "
             f" ({Cc.TY}{touch_kb:.1f}kb{Cc.EC}) and"
             f" saving {Cc.TY}{save_count}{Cc.EC} objects."
-            f" From {self.caller.name}:{self.caller.jid}."
             f" Response: {res_peek}."
         )
 
@@ -175,7 +175,7 @@ class AbstractJacAPIView(APIView):
         user_agent = request.META.get("HTTP_USER_AGENT", "")
         self.set_caller(request)
         log_str = str(
-            f"Incoming call to {type(self).__name__} with {pl_peek} from {self.caller.name}:{self.caller.jid} with {user_agent}"
+            f"Incoming call from {Cc.TG}{self.caller.name}{Cc.EC}:{self.caller.jid} to {Cc.TG}{type(self).__name__}{Cc.EC} with {pl_peek} via {user_agent}"
         )
         log_dict = {
             "api_name": type(self).__name__,
