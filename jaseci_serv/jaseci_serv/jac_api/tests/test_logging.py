@@ -53,13 +53,11 @@ class LoggingTests(TestCaseHelper, TestCase):
 
     def tearDown(self):
         super().tearDown()
-        logger.disabled = True
 
     def test_elastic_logging_objects(self):
         """Test sentinel register and walker run is logged properly"""
         with patch("jaseci.extens.svc.elastic_svc.Elastic._post") as mocked_es_post:
-
-            logger.disabled = False
+            self.logger_on()
             zsb_file = open(os.path.dirname(__file__) + "/general.jac").read()
             payload = {"op": "sentinel_register", "name": "general", "code": zsb_file}
             self.auth_client.post(
