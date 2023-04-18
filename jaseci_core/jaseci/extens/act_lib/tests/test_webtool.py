@@ -9,19 +9,20 @@ class WebtoolTest(CoreTest):
     @jac_testcase("webtool.jac", "get_meta_valid")
     def test_get_meta_valid(self, ret):
         self.assertTrue(ret["success"])
-        self.assertTrue("og" in ret["report"][0])
-        self.assertTrue("meta" in ret["report"][0])
-        self.assertTrue("dc" in ret["report"][0])
-        self.assertTrue("page" in ret["report"][0])
+        expected_tags = set(["og:image", "og:type", "og:title"])
+        tags = set(
+            [
+                meta["property"] if "property" in meta else ""
+                for meta in ret["report"][0]
+            ]
+        )
+        self.assertTrue(tags.issuperset(expected_tags))
 
-    @jac_testcase("webtool.jac", "get_meta_403_response")
-    def test_get_meta_403_response(self, ret):
+    @jac_testcase("webtool.jac", "get_meta_need_auth")
+    def test_get_meta_need_auth(self, ret):
         self.assertTrue(ret["success"])
-        self.assertTrue("og" in ret["report"][0])
-        self.assertTrue("meta" in ret["report"][0])
-        self.assertTrue("dc" in ret["report"][0])
-        self.assertTrue("page" in ret["report"][0])
+        self.assertTrue(len(ret["report"][0]) > 0)
 
     @jac_testcase("webtool.jac", "get_meta_invalid")
     def test_get_meta_invalid(self, ret):
-        self.assertFalse(ret["success"])
+        self.assertTrue("Failed at getting metadata" in ret["report"][0])

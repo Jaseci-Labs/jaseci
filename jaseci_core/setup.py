@@ -32,11 +32,11 @@ setup(
         "pytest-xdist",
         "pytest-cov",
         "gprof2dot",
-        "metadata_parser",
         "validators",
         "psycopg2-binary==2.9.5",
         "pygls",
         "mock",
+        "beautifulsoup4>=4.12.2, <4.13.0",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
