@@ -37,6 +37,7 @@ setup(
         "pygls",
         "mock",
         "beautifulsoup4>=4.12.2, <4.13.0",
+        "lxml>=4.9.2, <4.10.0",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
