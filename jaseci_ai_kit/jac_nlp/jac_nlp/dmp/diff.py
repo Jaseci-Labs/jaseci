@@ -26,7 +26,7 @@ def semantic_clean(diff: list):
     Return - human-readable diff array
     """
     dmp = dmp_module.diff_match_patch()
-    diff = dmp.diff_cleanupSemantic(diff)
+    dmp.diff_cleanupSemantic(diff)
     return diff
 
 @jaseci_action(act_group=["diff"], allow_remote=True)
@@ -40,7 +40,7 @@ def efficient_clean(diff: list, cost: int = 4):
     """
     dmp = dmp_module.diff_match_patch()
     dmp.Diff_Edit_Cost = cost
-    diff = dmp.diff_cleanupEfficiency(diff)
+    dmp.diff_cleanupEfficiency(diff)
     return diff
 
 @jaseci_action(act_group=["diff"], allow_remote=True)
