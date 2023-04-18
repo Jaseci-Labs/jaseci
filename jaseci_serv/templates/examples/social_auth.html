@@ -101,7 +101,7 @@ let getUser = (data) => {
 }
 
 var request = $.ajax({
-    type: "POST", url: "/auth/" + provider + "/",
+    type: "POST", url: "/auth/" + provider + "/?expires_in=0",
     data: {
         id_token: "",
         code: "{{code}}",
