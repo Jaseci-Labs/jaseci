@@ -4,6 +4,7 @@ from jaseci.actions.live_actions import jaseci_action
 from typing import overload
 
 
+@overload
 @jaseci_action(act_group=["patch"], allow_remote=True)
 def get_patch(text1: str, text2: str):
     """
@@ -69,7 +70,7 @@ def text_to_patch(text: str):
 
 
 @jaseci_action(act_group=["patch"], allow_remote=True)
-def apply(patch: list, text1: str, threshold: 0.5):
+def apply(patch: list, text1: str, threshold: int = 0.5):
     """
     Apply a patch list to a text
     Param 1 - Patch array
