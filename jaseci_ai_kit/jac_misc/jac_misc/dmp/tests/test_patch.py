@@ -4,7 +4,7 @@ import diff_match_patch as dmp_module
 
 
 class PatchTest(CoreTest):
-    """ UnitTest for Match Module """
+    """UnitTest for Match Module"""
 
     fixture_src = __file__
 

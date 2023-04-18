@@ -3,7 +3,7 @@ from jaseci.actions.live_actions import load_module_actions, unload_module
 
 
 class DiffTest(CoreTest):
-    """ UnitTest for Diff Module """
+    """UnitTest for Diff Module"""
 
     fixture_src = __file__
 
