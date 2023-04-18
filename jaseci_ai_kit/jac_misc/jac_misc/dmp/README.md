@@ -25,7 +25,11 @@ The full description and documentation of this library can be found [here](https
         Finding the differences between too files
 
     Notes:
-        The "timeout" argument allows the user to specify how long the diff's exploration phase is allowed to take (in seconds). Setting this value to 0 allows the diff to run indefinitely and to conclusion, producing the most optimal diff. If the operation times out, a valid diff list will still be produced. The first element of each tuple in the list specifies if it is an insertion (1), a deletion (-1) or an equality (0). The second element specifies the affected text.
+        The "timeout" argument allows the user to specify how long the diff's exploration phase is allowed 
+        to take (in seconds). Setting this value to 0 allows the diff to run indefinitely and to conclusion, 
+        producing the most optimal diff. If the operation times out, a valid diff list will still be produced. 
+        The first element of each tuple in the list specifies if it is an insertion (1), a deletion (-1) or 
+        an equality (0). The second element specifies the affected text.
 
 ### `semantic_clean`
     Arguments:
@@ -35,7 +39,8 @@ The full description and documentation of this library can be found [here](https
         human-readable diff: list
 
     Usage:
-        Making a human-readable list of differences between two files, removing coincidental differences that clutter the report.
+        Making a human-readable list of differences between two files, removing coincidental differences that 
+        clutter the report.
 
 ### `efficient_clean`
     Arguments:
@@ -49,7 +54,9 @@ The full description and documentation of this library can be found [here](https
         Making a list of differences that can be read in a machine-efficient manner.
 
     Notes:
-        The "cost" argument is set to determine the cost of adding extra characters to a diff. If the cost is 4, this means that if expanding the length of a diff by 3 characters can remove one edit, then that optimization will reduce the total cost
+        The "cost" argument is set to determine the cost of adding extra characters to a diff. If the cost is 4, 
+        this means that if expanding the length of a diff by 3 characters can remove one edit, then that 
+        optimization will reduce the total cost
 
 ### `get_lvsht`
     Arguments:
@@ -59,7 +66,8 @@ The full description and documentation of this library can be found [here](https
         Levenshtein distance: int
 
     Usage:
-        Used to calculate the levenshtein distance of a diff report - the number of inserted, deleted, or substituted characters
+        Used to calculate the levenshtein distance of a diff report - the number of inserted, deleted, or 
+        substituted characters
 
 ### `get_html`
     Arguments:
@@ -84,10 +92,14 @@ The full description and documentation of this library can be found [here](https
         Location of best match (int)
 
     Usage:
-        Searches the input string for the best match of pattern given a starting location, search distance, and accuracy threshold.
+        Searches the input string for the best match of pattern given a starting location, search distance, 
+        and accuracy threshold.
 
     Notes:
-        The loc argument specifies a "best guess" of where in the full text the pattern will appear whereas the dist argument specifies how far to search from the starting position for a match and the threshold argument specifies how accurate the match has to be (within distance*threshold). The threshold must be a float between 0 and 1. The get_match function will return -1 if no valid match is found.
+        The loc argument specifies a "best guess" of where in the full text the pattern will appear whereas 
+        the dist argument specifies how far to search from the starting position for a match and the threshold 
+        argument specifies how accurate the match has to be (within distance*threshold). The threshold must 
+        be a float between 0 and 1. The get_match function will return -1 if no valid match is found.
 
     Examples:
         get_match(text="abc123abc", pattern="abc", loc=6)
@@ -100,13 +112,16 @@ The full description and documentation of this library can be found [here](https
         Would return 0 as a match of "abc" because the pattern starting at character index 0 is closest.
 
         get_match(text="abc123abc", pattern="abc", loc=5, dist=1)
-        Would return -1 as there is no match of the pattern "abc" within 1*0.5 (dist*threshold) = 0.5 characters of location 5.
+        Would return -1 as there is no match of the pattern "abc" within 1*0.5 (dist*threshold) = 0.5 characters 
+        of location 5.
 
         get_match(text="abc123abc", pattern="abc", loc=4, dist=4)
-        Would return 6 as the second occurence of the pattern starting at index 6 is with 4*0.5 = 2 characters of the starting location.
+        Would return 6 as the second occurence of the pattern starting at index 6 is with 4*0.5 = 2 characters 
+        of the starting location.
 
         get_match(text="abc123abc", pattern="abc", loc=4, dist=1000, threshold=0)
-        Would return -1 because a threshold of 0 will always require the pattern to be found exactly at the starting location.
+        Would return -1 because a threshold of 0 will always require the pattern to be found exactly at the 
+        starting location.
 
 ## Patch
 ### `get_patch`
@@ -152,7 +167,8 @@ The full description and documentation of this library can be found [here](https
         Patch text (str)
 
     Usage:
-        Used to convert a list of patches to a single block of text that looks very similar to GNU diff/patch format
+        Used to convert a list of patches to a single block of text that looks very similar to GNU diff/patch 
+        format
 
 ### `text_toPatch`
     Arguments:
@@ -177,7 +193,10 @@ The full description and documentation of this library can be found [here](https
         Used to apply a patch list to a specific text
 
     Notes:
-        The returned results value is a boolean array that determines which patches were successfully applied. Similar to the match threshold, the patch threshold determines how closely text for a major delete must match. The threshold must be a float between 0 (exact match) and 1 (eveything matches). The suggested value is the same as that for the match function.
+        The returned results value is a boolean array that determines which patches were successfully applied. 
+        Similar to the match threshold, the patch threshold determines how closely text for a major delete 
+        must match. The threshold must be a float between 0 (exact match) and 1 (eveything matches). The 
+        suggested value is the same as that for the match function.
 
 
 
