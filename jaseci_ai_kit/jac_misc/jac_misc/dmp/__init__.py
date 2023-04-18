@@ -1,3 +1,3 @@
-from .diff import * # noqa
-from .match import * # noqa
-from .patch import * # noqa
+from .diff import *  # noqa
+from .match import *  # noqa
+from .patch import *  # noqa
