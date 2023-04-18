@@ -2,6 +2,7 @@
 import diff_match_patch as dmp_module
 from jaseci.actions.live_actions import jaseci_action
 
+
 @jaseci_action(act_group=["diff"], allow_remote=True)
 def get_diff(text1: str, text2: str, timeout: float = 1.0):
     """
@@ -17,6 +18,7 @@ def get_diff(text1: str, text2: str, timeout: float = 1.0):
     diff = dmp.diff_main(text1, text2)
     return diff
 
+
 @jaseci_action(act_group=["diff"], allow_remote=True)
 def semantic_clean(diff: list):
     """
@@ -28,6 +30,7 @@ def semantic_clean(diff: list):
     dmp = dmp_module.diff_match_patch()
     dmp.diff_cleanupSemantic(diff)
     return diff
+
 
 @jaseci_action(act_group=["diff"], allow_remote=True)
 def efficient_clean(diff: list, cost: int = 4):
@@ -43,6 +46,7 @@ def efficient_clean(diff: list, cost: int = 4):
     dmp.diff_cleanupEfficiency(diff)
     return diff
 
+
 @jaseci_action(act_group=["diff"], allow_remote=True)
 def get_lvsht(diff: list):
     """
@@ -54,6 +58,7 @@ def get_lvsht(diff: list):
     dmp = dmp_module.diff_match_patch()
     cost = dmp.diff_levenshtein(diff)
     return cost
+
 
 @jaseci_action(act_group=["diff"], allow_remote=True)
 def get_html(diff: list):
@@ -67,10 +72,8 @@ def get_html(diff: list):
     html = dmp.diff_prettyHtml(diff)
     return html
 
+
 if __name__ == "__main__":
     from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)
-
-
-    

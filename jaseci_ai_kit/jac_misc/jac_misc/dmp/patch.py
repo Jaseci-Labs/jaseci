@@ -1,6 +1,8 @@
 """Built in actions for Jaseci"""
 import diff_match_patch as dmp_module
 from jaseci.actions.live_actions import jaseci_action
+from typing import overload
+
 
 @jaseci_action(act_group=["patch"], allow_remote=True)
 def get_patch(text1: str, text2: str):
@@ -14,6 +16,8 @@ def get_patch(text1: str, text2: str):
     dmp = dmp_module.diff_match_patch()
     return dmp.patch_make(text1, text2)
 
+
+@overload
 @jaseci_action(act_group=["patch"], allow_remote=True)
 def get_patch(diff: list):
     """
@@ -25,6 +29,8 @@ def get_patch(diff: list):
     dmp = dmp_module.diff_match_patch()
     return dmp.patch_make(diff)
 
+
+@overload
 @jaseci_action(act_group=["patch"], allow_remote=True)
 def get_patch(text1: str, diff: list):
     """
@@ -37,6 +43,7 @@ def get_patch(text1: str, diff: list):
     dmp = dmp_module.diff_match_patch()
     return dmp.patch_make(text1, diff)
 
+
 @jaseci_action(act_group=["patch"], allow_remote=True)
 def get_text(patch: list):
     """
@@ -48,8 +55,9 @@ def get_text(patch: list):
     dmp = dmp_module.diff_match_patch()
     return dmp.patch_toText(patch)
 
+
 @jaseci_action(act_group=["patch"], allow_remote=True)
-def text_toPatch(text: str):
+def text_to_patch(text: str):
     """
     Convert a block of text to a patch
     Param 1 - String
@@ -58,6 +66,7 @@ def text_toPatch(text: str):
     """
     dmp = dmp_module.diff_match_patch()
     return dmp.patch_fromText(text)
+
 
 @jaseci_action(act_group=["patch"], allow_remote=True)
 def apply(patch: list, text1: str, threshold: 0.5):

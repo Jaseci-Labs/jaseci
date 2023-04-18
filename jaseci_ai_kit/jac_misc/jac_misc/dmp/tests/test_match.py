@@ -1,6 +1,7 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
 from jaseci.actions.live_actions import load_module_actions, unload_module
 
+
 class MatchTest(CoreTest):
     """ UnitTest for Match Module """
 
@@ -10,7 +11,7 @@ class MatchTest(CoreTest):
     def setUpClass(cls):
         super(MatchTest, cls).setUpClass()
         ret = load_module_actions("jac_nlp.match")
-        assert ret == True
+        assert ret
 
     @jac_testcase("match.jac", "get_match_test")
     def test_get_match(self, ret):
@@ -24,4 +25,4 @@ class MatchTest(CoreTest):
     def tearDownClass(cls):
         super(MatchTest, cls).tearDownClass()
         ret = unload_module("jac_nlp.match.match")
-        assert ret == True
+        assert ret

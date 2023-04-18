@@ -2,8 +2,10 @@
 import diff_match_patch as dmp_module
 from jaseci.actions.live_actions import jaseci_action
 
+
 @jaseci_action(act_group=["match"], allow_remote=True)
-def get_match(text: str, pattern: str, loc: int, dist: int = 1000, threshold: float = 0.5):
+def get_match(text: str, pattern: str, loc: int, dist: int = 1000,
+              threshold: float = 0.5):
     """
     Finds occurences in text near loc that match pattern
     Param 1 - Input text

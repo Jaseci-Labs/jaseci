@@ -170,7 +170,7 @@ The full description and documentation of this library can be found [here](https
         Used to convert a list of patches to a single block of text that looks very similar to GNU diff/patch 
         format
 
-### `text_toPatch`
+### `text_to_patch`
     Arguments:
         text: str
 

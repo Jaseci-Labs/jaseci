@@ -2,6 +2,7 @@ from jaseci.utils.test_core import CoreTest, jac_testcase
 from jaseci.actions.live_actions import load_module_actions, unload_module
 import diff_match_patch as dmp_module
 
+
 class PatchTest(CoreTest):
     """ UnitTest for Match Module """
 
@@ -11,7 +12,7 @@ class PatchTest(CoreTest):
     def setUpClass(cls):
         super(PatchTest, cls).setUpClass()
         ret = load_module_actions("jac_nlp.patch")
-        assert ret == True
+        assert ret
 
     @jac_testcase("patch.jac", "get_text_test")
     def test_get_text(self, ret):
@@ -42,4 +43,4 @@ class PatchTest(CoreTest):
     def tearDownClass(cls):
         super(PatchTest, cls).tearDownClass()
         ret = unload_module("jac_nlp.patch.patch")
-        assert ret == True
+        assert ret
