@@ -1,5 +1,5 @@
 from jaseci.jsorc.jsorc import JsOrc
-from jaseci.utils.test_core import CoreTest, skip_without_redis
+from jaseci.utils.test_core import CoreTest
 from unittest.mock import patch, Mock
 from kubernetes import config as kubernetes_config, client
 from jaseci.jsorc.jsorc_settings import JsOrcSettings

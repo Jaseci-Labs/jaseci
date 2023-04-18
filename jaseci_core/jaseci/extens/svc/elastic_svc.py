@@ -1,3 +1,4 @@
+import re
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.kube_svc import KubeService
 from jaseci.utils.utils import logger, app_logger
@@ -61,13 +62,21 @@ class ElasticService(JsOrc.CommonService):
                         record = log_queue.get()
                         if record is None:
                             break
+                        # Strip out color code from message before sending to elastic
+                        msg = record.getMessage()
+                        msg = re.sub(r"\033\[[0-9]*m", "", msg)
+
                         elastic_record = {
                             "@timestamp": logging.Formatter().formatTime(
                                 record, "%Y-%m-%d %H:%M:%S"
                             ),
-                            "message": record.getMessage(),
+                            "message": msg,
                             "level": record.levelname,
                         }
+                        extra_fields = record.__dict__.get("extra_fields", [])
+                        elastic_record.update(
+                            dict([(k, record.__dict__[k]) for k in extra_fields])
+                        )
                         self.app.doc(log=elastic_record, index=index)
                     except Exception:
                         pass
