@@ -4,7 +4,7 @@ Jaseci offers three distinct modes of interacting with your code - Local, Remote
 
 In this section, we will explore these modes in greater detail and explain the benefits of each.
 
-![Three jaseci interaction modes](./interaction_modes.png)
+![Three jaseci interaction modes](./img/interaction_modes.png)
 
 Notes:
 * `sentinel` and `walker run` should be used for remote JSCTL mode and application model.
