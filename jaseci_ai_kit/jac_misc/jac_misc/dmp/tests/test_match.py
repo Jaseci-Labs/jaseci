@@ -10,7 +10,7 @@ class MatchTest(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(MatchTest, cls).setUpClass()
-        ret = load_module_actions("jac_nlp.match")
+        ret = load_module_actions("jac_misc.match")
         assert ret
 
     @jac_testcase("match.jac", "get_match_test")
@@ -24,5 +24,5 @@ class MatchTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(MatchTest, cls).tearDownClass()
-        ret = unload_module("jac_nlp.match.match")
+        ret = unload_module("jac_misc.match.match")
         assert ret

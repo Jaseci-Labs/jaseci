@@ -10,7 +10,7 @@ class DiffTest(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(DiffTest, cls).setUpClass()
-        ret = load_module_actions("jac_nlp.diff")
+        ret = load_module_actions("jac_misc.diff")
         assert ret
 
     @jac_testcase("diff.jac", "get_diff_test")
@@ -32,5 +32,5 @@ class DiffTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(DiffTest, cls).tearDownClass()
-        ret = unload_module("jac_nlp.diff.diff")
+        ret = unload_module("jac_misc.diff.diff")
         assert ret
