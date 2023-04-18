@@ -11,7 +11,7 @@ class PatchTest(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(PatchTest, cls).setUpClass()
-        ret = load_module_actions("jac_misc.patch")
+        ret = load_module_actions("jac_misc.dmp")
         assert ret
 
     @jac_testcase("patch.jac", "get_text_test")
@@ -42,5 +42,5 @@ class PatchTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(PatchTest, cls).tearDownClass()
-        ret = unload_module("jac_misc.patch.patch")
+        ret = unload_module("jac_misc.dmp.dmp")
         assert ret
