@@ -2,7 +2,7 @@
 In this section, we will be creating a T5 transformer based summarization module for jaseci.
 > **Note**
 >
-> If this is your first time creating a Jaseci action, we recommend going through [this guide](support/codelabs/custom_jaseci_module_codelab.md) first, which covers the basics of creating and loading a custom Jaseci action.
+> If this is your first time creating a Jaseci action, we recommend going through [this guide](custom_jaseci_module_codelab.md) first, which covers the basics of creating and loading a custom Jaseci action.
 
 ### Imports
 ```py

@@ -40,11 +40,6 @@ const config = {
           editUrl:
             'https://github.com/Jaseci-Labs/jaseci',
         },
-        blog: {
-          showReadingTime: true,
-          editUrl:
-            'https://github.com/Jaseci-Labs/jaseci',
-        },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
@@ -69,7 +64,6 @@ const config = {
             position: 'left',
             label: 'Docs',
           },
-          { to: '/blog', label: 'Blog', position: 'left' },
           {
             href: 'https://github.com/Jaseci-Labs/jaseci',
             label: 'GitHub',
@@ -81,15 +75,6 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Docs',
-                to: '/docs/intro',
-              },
-            ],
-          },
-          {
             title: 'Community',
             items: [
               {
@@ -99,19 +84,6 @@ const config = {
               {
                 label: 'Twitter',
                 href: 'https://twitter.com/jaseci',
-              },
-            ],
-          },
-          {
-            title: 'More',
-            items: [
-              {
-                label: 'Blog',
-                to: '/blog',
-              },
-              {
-                label: 'GitHub',
-                href: 'https://github.com/Jaseci-Labs/jaseci',
               },
             ],
           },

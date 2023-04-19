@@ -17,7 +17,7 @@ We provide a set of base docker images, hosted on [docker hub](https://hub.docke
     * `jaseci/jac-speech` contains the speech modules in the `jac-speech` group.
     * `jaseci/jac-misc` contains the modules in the `jac-misc` group.
 
-Check out [this table](jaseci_ai_kit/README.md) for a table of the modules included in each of the group.
+Check out docs for jaseci ai kit for a table of the modules included in each of the group.
 Select the base images that contain the modules your Jac application needs.
 A quick way to do that is to look at all the `can` statements in your jac code.
 In the case where your application needs modules from two or more groups, (e.g. `use_enc` from `jac_nlp` and `cluster` from `jac_misc`), we recommend you select the base image that covers the most of the modules you need and then install the other neccessary modules in the Dockerfile shown below.
