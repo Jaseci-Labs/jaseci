@@ -187,7 +187,7 @@ spec:
           image: jaseci/jaseci-experiment:1.4.0.12
           resources:
             requests:
-              memory: "2Gi"
+              memory: "3255Mi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source /script/prod_up"]
           ports:

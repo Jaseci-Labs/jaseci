@@ -231,10 +231,6 @@ class JsorcLoadTest:
                         self.start_benchmark()
                         self.start_actions_tracking()
                         start_ts = time.time()
-                        # if policy == "all_local" or policy == "all_remote":
-                        #     experiment_duration = 3 * 60
-                        # else:
-                        #     experiment_duration = 5 * 60
                         while (time.time() - start_ts) < experiment_duration:
                             res = self.run_walker(app)
                         result = self.stop_benchmark()
@@ -268,7 +264,7 @@ class JsorcLoadTest:
                                 self.unload_action(module, mode="auto", retire_svc=True)
                         sleep(10)
             self.set_jsorc_actionpolicy("Default", policy_params={})
-            path = "/root/.jaseci/exp_results/"
+            path = "/root/.jaseci/models/exp_results/"
             os.makedirs(path, exist_ok=True)
             with open(f"{path}/{app}_{policy}.json", "w") as fp:
                 json.dump(results, fp)

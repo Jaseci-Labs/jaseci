@@ -1,6 +1,7 @@
 BI_ENC_ACTION_CONFIG = {
     "module": "jac_nlp.bi_enc",
     "loaded_module": "jac_nlp.bi_enc.bi_enc",
+    "local_mem_requirement": 333.92,
     "remote": {
         "Service": {
             "kind": "Service",
