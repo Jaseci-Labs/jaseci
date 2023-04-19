@@ -1,11 +1,5 @@
 # Preparation
 
-- [Preparation](#preparation)
-    - [**1. Installing Jaseci**](#1-installing-jaseci)
-    - [**1. Installing Jaseci Server**](#1-installing-jaseci-server)
-    - [**2. Installing Jaseci Studio**](#2-installing-jaseci-studio)
-    - [**3. Collecting data for codelab**](#3-collecting-data-for-codelab)
-
 ### **1. Installing Jaseci**
 Before getting started you have to install Jaseci latest version. Jaseci requeres python 3.10 or later version. We prefer you to create a fresh python environment using conda or any other virtual environment packaging to try out codes in this codelab. A complete Jaseci installation guide is
 [here](../../../docs/docs/getting-started/installation.md)

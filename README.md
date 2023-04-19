@@ -15,9 +15,9 @@
 
 # Introduction
 
-- [What and Why Jaseci?](docs/docs/introduction/What_and_why_jaseci.md)
-- [Architecture of Jaseci and Jac](docs/docs/introduction/Architecture_of_jaseci.md)
-- [Abstraction of Jaseci](docs/docs/introduction/abstraction_of_jaseci.md)
+- [What and Why Jaseci?](docs/docs/introduction.md)
+
+<!-- Abstractions of Jaseci / Architecture of Jaseci in separate sections, So removing this?-->
 
 # Getting Started
 

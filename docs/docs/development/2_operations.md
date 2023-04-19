@@ -1,18 +1,5 @@
 # Operators of Jaseci
 
-- [Operators of Jaseci](#operators-of-jaseci)
-  - [Spawn](#spawn)
-  - [Info and Context](#info-and-context)
-  - [Take](#take)
-  - [Skip](#skip)
-  - [Disengage](#disengage)
-  - [Ignore](#ignore)
-  - [Destroy](#destroy)
-  - [Report](#report)
-  - [**Usage**](#usage)
-  - [Yield](#yield)
-
-
 ## Spawn
 
 <!--need to add more context on this topic-->

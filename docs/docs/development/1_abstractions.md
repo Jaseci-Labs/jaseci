@@ -1,28 +1,10 @@
+---
+sidebar_position: 1
+---
+
 # Abstractions of Jaseci
 
 There are a number of abstractions and concepts in Jac that is distinct from most (all?) other languages. These would be a good place to begin understanding for a seasoned / semi-seasoned programmer.
-
-- [Abstractions of Jaseci](#abstractions-of-jaseci)
-  - [Graphs](#graphs)
-    - [Nodes](#nodes)
-    - [Edges](#edges)
-    - [Operators for connecting nodes and edges](#operators-for-connecting-nodes-and-edges)
-    - [Creating Graphs Examples](#creating-graphs-examples)
-    - [Referencing and Dereferencing Nodes and Edges](#referencing-and-dereferencing-nodes-and-edges)
-    - [Plucking values from nodes and edges](#plucking-values-from-nodes-and-edges)
-  - [Walkers](#walkers)
-    - [Init Walker with Examples](#init-walker-with-examples)
-    - [Walkers Navigating Graphs Examples](#walkers-navigating-graphs-examples)
-    - [Walker Spawning Examples](#walker-spawning-examples)
-    - [Walker Callback](#walker-callback)
-  - [Abilities](#abilities)
-    - [Node Abilities Example](#node-abilities-example)
-    - [Walker Abilities Example](#walker-abilities-example)
-    - [Edge Abilities Example](#edge-abilities-example)
-    - [A Complete Example](#a-complete-example)
-    - [Here and Visitor](#here-and-visitor)
-  - [Actions](#actions)
-    - [Jaseci Standard Actions](#jaseci-standard-actions)
 
 ## Graphs
 

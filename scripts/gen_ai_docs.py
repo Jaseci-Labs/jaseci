@@ -3,7 +3,6 @@ import shutil
 from os import walk
 import os
 from os.path import exists
-import subprocess
 
 
 root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

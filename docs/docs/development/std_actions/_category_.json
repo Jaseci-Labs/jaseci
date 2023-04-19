@@ -1,0 +1,8 @@
+{
+    "label": "Jaseci Standard Actions",
+    "position": 2,
+    "link": {
+        "type": "generated-index",
+        "description": "A guide to start development with Jaseci"
+    }
+}

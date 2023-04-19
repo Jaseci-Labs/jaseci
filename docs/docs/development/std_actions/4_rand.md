@@ -1,15 +1,5 @@
 # Rand Actions Library
 
-- [Rand Actions Library](#rand-actions-library)
-    - [Seeds random number generator](#seeds-random-number-generator)
-    - [Generate random generator](#generate-random-generator)
-    - [Random Selection](#random-selection)
-    - [Generate Random Word](#generate-random-word)
-    - [Generate Random Sentence](#generate-random-sentence)
-    - [Generate Random Paragraph](#generate-random-paragraph)
-    - [Generate Random Text](#generate-random-text)
-    - [Generate time](#generate-time)
-
 ### Seeds random number generator
 
 Seeds random num generator.

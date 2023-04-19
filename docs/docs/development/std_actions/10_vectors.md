@@ -1,13 +1,5 @@
 # Vectors Actions Library
 
-- [Vectors Actions Library](#vectors-actions-library)
-  - [Cosine Similarity](#cosine-similarity)
-  - [Dot Product](#dot-product)
-  - [Centroid](#centroid)
-  - [Softmax](#softmax)
-  - [Dimensionality Reduction](#dimensionality-reduction)
-  - [Vector Sort by Key](#vector-sort-by-key)
-
 ## Cosine Similarity
 
 Calculate the Cosine similarity score between 2 vectors.
