@@ -1,6 +1,6 @@
 CL_SUMMER_ACTION_CONFIG = {
     "module": "jac_nlp.cl_summer",
-    "loaded_module": "jac_nlp.cl_summer.cl_summer",,
+    "loaded_module": "jac_nlp.cl_summer.cl_summer",
     "local_mem_requirement": 151.55,
     "remote": {
         "Service": {
