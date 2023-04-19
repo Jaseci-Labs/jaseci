@@ -1,6 +1,7 @@
 USE_QA_ACTION_CONFIG = {
     "module": "jac_nlp.use_qa",
     "loaded_module": "jac_nlp.use_qa.use_qa",
+    "local_mem_requirement": 2157.23,
     "remote": {
         "Service": {
             "kind": "Service",

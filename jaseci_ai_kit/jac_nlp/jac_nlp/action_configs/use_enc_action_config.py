@@ -1,6 +1,7 @@
 USE_ENC_ACTION_CONFIG = {
     "module": "jac_nlp.use_enc",
     "loaded_module": "jac_nlp.use_enc.use_enc",
+    "local_mem_requirement": 3998.24,
     "remote": {
         "Service": {
             "kind": "Service",

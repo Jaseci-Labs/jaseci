@@ -1,6 +1,7 @@
 TEXT_SEG_ACTION_CONFIG = {
     "module": "jac_nlp.text_seg",
     "loaded_module": "jac_nlp.text_seg.text_seg",
+    "local_mem_requirement": 1706.43,
     "remote": {
         "Service": {
             "kind": "Service",

@@ -1,6 +1,7 @@
 ENT_EXT_ACTION_CONFIG = {
     "module": "jac_nlp.ent_ext",
     "loaded_module": "jac_nlp.ent_ext.ent_ext",
+    "local_mem_requirement": 4247.61,
     "remote": {
         "Service": {
             "kind": "Service",

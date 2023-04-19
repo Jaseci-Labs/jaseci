@@ -1,6 +1,7 @@
 TFM_NER_ACTION_CONFIG = {
     "module": "jac_nlp.tfm_ner",
     "loaded_module": "jac_nlp.tfm_ner.tfm_ner",
+    "local_mem_requirement": 1014.12,
     "remote": {
         "Service": {
             "kind": "Service",
