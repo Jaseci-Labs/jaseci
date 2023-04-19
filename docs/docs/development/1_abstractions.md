@@ -285,10 +285,7 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 
 We are creating the following graph to demonstrate traversing of walkers in the coming sections;
 
- <div style="text-align:center"><img style="align:center" src="images/traverse_graph_example.PNG" /> <b>Example Graph - Navigating </b></div>
-
-<p>
-</p>
+ ![Example Graph - Navigating](images/traverse_graph_example.PNG)
 
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example;
 
@@ -487,7 +484,7 @@ compute operations.
 
 To see node abilities in advance let's define the following graph, which represent cities and the connection between them.
 
-<div style="text-align:center"><img style="align:center" src="images/abilities_graph_example_1.png" /> <b>Example Graph</b></div>
+![Abilities Graph Example](images/abilities_graph_example_1.png)
 
 ### Node Abilities Example
 
