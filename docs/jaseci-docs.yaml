@@ -18,7 +18,7 @@ metadata:
 data:
    prod_up: |-
      apk update; apk add git openssh;
-     git clone https://github.com/Jaseci-Labs/jaseci.git /jaseci;
+     git clone -b main https://github.com/Jaseci-Labs/jaseci.git /jaseci;
      mkdir /docusaurus/jaseci-docs;
      cp -r /jaseci/docs/* /docusaurus/jaseci-docs/;
      crontab /jaseci/docs/cronjob;
@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
         - name: docusaurus
-          image: awesometic/docusaurus
+          image: awesometic/docusaurus:latest
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source /script/prod_up"]
           resources:
