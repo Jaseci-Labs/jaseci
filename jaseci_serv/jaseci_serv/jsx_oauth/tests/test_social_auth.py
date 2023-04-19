@@ -1,8 +1,11 @@
 import jwt
 from time import time
+from datetime import datetime
 from rest_framework.test import APIClient
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
+from knox.models import AuthToken
+from knox.settings import CONSTANTS
 from allauth.socialaccount.models import SocialApp
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from jaseci_serv.base.models import User
@@ -78,6 +81,25 @@ class SocialAuthTest(TestCaseHelper, TestCase):
 
         return google_app
 
+    def request_social_sign_in_with_expires_in(self, expires_in_query=""):
+        now = datetime.now()
+
+        token = self.client.post(
+            path=f"/auth/google/?{expires_in_query}",
+            data={"code": mocked_code},
+        ).data["token"]
+
+        auth_token = AuthToken.objects.get(
+            token_key=token[: CONSTANTS.TOKEN_KEY_LENGTH]
+        )
+
+        # convert to hour count if available
+        return (
+            int((auth_token.expiry - now).total_seconds() / 60 / 60)
+            if auth_token.expiry
+            else None
+        )
+
     def request_social_sign_in_with_multiple_provider(self, data):
         res = self.client.post(
             path="/auth/google/",
@@ -129,7 +151,7 @@ class SocialAuthTest(TestCaseHelper, TestCase):
         self.assertEqual(created_user.is_activated, res["is_activated"])
         self.assertIsNotNone(created_user.get_master())
 
-        # getting token again should create another user
+        # getting token again should not create another user
         res = self.client.post(
             path="/auth/google/",
             data=data,
@@ -202,3 +224,17 @@ class SocialAuthTest(TestCaseHelper, TestCase):
         data = mocked_get_access_token()
         data["internal_client_id"] = internal_client.client_id
         self.request_social_sign_in(data)
+
+    def test_social_auth_flow_with_expires_in_param(self):
+        # no expires_in_param: defaults to 12 hrs
+        self.assertEqual(12, self.request_social_sign_in_with_expires_in())
+
+        # expires_in: 24 hrs
+        self.assertEqual(
+            24, self.request_social_sign_in_with_expires_in("expires_in=24")
+        )
+
+        # no expiry
+        self.assertEqual(
+            None, self.request_social_sign_in_with_expires_in("expires_in=0")
+        )
