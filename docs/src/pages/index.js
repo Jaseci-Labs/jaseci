@@ -14,9 +14,6 @@ function HomepageHeader() {
       <div className="container">
         <h1 className="hero__title">{siteConfig.title}</h1>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
-        <div className={styles.buttons}>
-          Getting Started -  5 mins ⏱️
-        </div>
       </div>
     </header>
   );
