@@ -15,9 +15,7 @@
 
 # Introduction
 
-- [What and Why Jaseci?](docs/docs/introduction/What_and_why_jaseci.md)
-- [Architecture of Jaseci and Jac](docs/docs/introduction/Architecture_of_jaseci.md)
-- [Abstraction of Jaseci](docs/docs/introduction/abstraction_of_jaseci.md)
+- [What and Why Jaseci?](docs/docs/introduction.md)
 
 # Getting Started
 
@@ -33,35 +31,35 @@
 
 # Examples and Tutorials
 
-- [Quickstart](docs/docs/examples_and_tutorials/quickstart/quickstart.md)
-  - [Understanding Jac Application](docs/docs/examples_and_tutorials/quickstart/understanding_jac_programs.md)
-  - [Write your First Jac Application](docs/docs/examples_and_tutorials/quickstart/writing_your_first_app.md)
-- [Building a Conversational AI](docs/docs/examples_and_tutorials/CanoniCAI/CCAI_codelab.md)
-  - [Preparation and Background](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/1_preparation.md)
-  - [Automated FAQ Answering Chatbot](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/2_faq.md)
-  - [Multi-turn Dialogue System](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/3_dialogue_system.md)
-  - [Unify the Dialogue and FAQ Systems](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/4_unify_system.md)
-  - [Bring Your Application to Production](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/5_production.md)
+- [Quickstart](docs/examples_and_tutorials/quickstart/quickstart.md)
+  - [Understanding Jac Application](docs/examples_and_tutorials/quickstart/understanding_jac_programs.md)
+  - [Write your First Jac Application](docs/examples_and_tutorials/quickstart/writing_your_first_app.md)
+- [Building a Conversational AI](docs/examples_and_tutorials/CanoniCAI/CCAI_codelab.md)
+  - [Preparation and Background](docs/examples_and_tutorials/CanoniCAI/codelabs/1_preparation.md)
+  - [Automated FAQ Answering Chatbot](docs/examples_and_tutorials/CanoniCAI/codelabs/2_faq.md)
+  - [Multi-turn Dialogue System](docs/examples_and_tutorials/CanoniCAI/codelabs/3_dialogue_system.md)
+  - [Unify the Dialogue and FAQ Systems](docs/examples_and_tutorials/CanoniCAI/codelabs/4_unify_system.md)
+  - [Bring Your Application to Production](docs/examples_and_tutorials/CanoniCAI/codelabs/5_production.md)
 
-- [Text Analytics Engine](docs/docs/examples_and_tutorials/CanoniAnalytics/README.md)
-  - [Preparation and Background](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/1_preparation.md)
-  - [Map the script into a graph](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
-  - [Get the summery of scene descriptions](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)
-  - [Find semantically similar sentences](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/4_find_semantically_similar_sentences.md)
-  - [Clustering documents](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/5_clustering_documents.md)
-  - [Sentiment analysis of dialogues](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
-  - [Creating custom action to scrap movie data](docs/docs/examples_and_tutorials/CanoniAnalytics/codelabs/7_creating_custom_action_to_scrap_movie_data.md)
+- [Text Analytics Engine](docs/examples_and_tutorials/CanoniAnalytics/README.md)
+  - [Preparation and Background](docs/examples_and_tutorials/CanoniAnalytics/codelabs/1_preparation.md)
+  - [Map the script into a graph](docs/examples_and_tutorials/CanoniAnalytics/codelabs/2_map_the_data_to_graph.md)
+  - [Get the summery of scene descriptions](docs/examples_and_tutorials/CanoniAnalytics/codelabs/3_getting_summery_and_keywords_of_pharagraphs.md)
+  - [Find semantically similar sentences](docs/examples_and_tutorials/CanoniAnalytics/codelabs/4_find_semantically_similar_sentences.md)
+  - [Clustering documents](docs/examples_and_tutorials/CanoniAnalytics/codelabs/5_clustering_documents.md)
+  - [Sentiment analysis of dialogues](docs/examples_and_tutorials/CanoniAnalytics/codelabs/6_sentiment_analysis.md)
+  - [Creating custom action to scrap movie data](docs/examples_and_tutorials/CanoniAnalytics/codelabs/7_creating_custom_action_to_scrap_movie_data.md)
 
-- [Guide to Use speech to text and text to speech modules](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
-- [Collect Training Data via Crowdsource](docs/docs/examples_and_tutorials/CanoniCAI/codelabs/7_crowdsource.md)
-- [Named Entity Recognition Module Example](docs/docs/examples_and_tutorials/ner_examples/README.md)
-- [Personalized Head Example Use Case](docs/docs/examples_and_tutorials/ph_example/ph.md)
+- [Guide to Use speech to text and text to speech modules](docs/examples_and_tutorials/CanoniCAI/codelabs/6_speech2text_and_text2speech.md)
+- [Collect Training Data via Crowdsource](docs/examples_and_tutorials/CanoniCAI/codelabs/7_crowdsource.md)
+- [Named Entity Recognition Module Example](docs/examples_and_tutorials/ner_examples/README.md)
+- [Personalized Head Example Use Case](docs/examples_and_tutorials/ph_example/ph.md)
 
 # Architecture
-  - [Interfacing A Jaseci Machine](docs/docs/architecture/interfacing_jaseci/interaction_modes.md)
+  - [Interfacing A Jaseci Machine](docs/docs/architecture/interfacing.md)
     - [Local JSCTL Mode](docs/docs/architecture/interfacing_jaseci/jsctl.md)
       - [CLI vs Shell-mode, and Session Files](docs/docs/architecture/interfacing_jaseci/basics.md)
-    - [Remote JSCTL Mode](docs/docs/architecture/interfacing_jaseci/remote_jsctl.md)
+    - [Remote JSCTL Mode](docs/docs/comming_soon.md)
     - [Application Mode: Jac Api Collection](support/guide/other/classes.md)
 
 # Development
@@ -98,7 +96,6 @@
   - [Yield](docs/docs/development/2_operations.md#yield)
 - [Upload files using Multi-part](docs/docs/development/multipart.md)
 - [Inheritance](docs/docs/development/inheritance.md)
-- [Custom Report](docs/docs/development/report_custom.md)
 - [Jaseci Standard Actions Libraries](docs/docs/development/1_abstractions.md#jaseci-standard-actions)
   <!--Should explain input parameters of these actions-->
   - [Date](docs/docs/development/std_actions/2_date.md)
@@ -197,7 +194,7 @@
 # Deployment
   - [Package up Your Jac Program and Jaseci Server for Deployment](docs/docs/deployment/how_to_package.md)
   - [Single Sign-on Social](jaseci_serv/jaseci_serv/jsx_oauth/README.md)
-  - [Extension Services](docs/docs/deployment/extension_services.md)
+  - [Extension Services](docs/docs/comming_soon.md)
       - [Task](jaseci_core/jaseci/extens/svc/docs/task_svc.md)
       - [Mail](jaseci_core/jaseci/extens/svc/docs/mail_svc.md)
   - [Automatic Deployment and Scaling via JsOrc](jaseci_core/jaseci/extens/svc/docs/JSORC.md))

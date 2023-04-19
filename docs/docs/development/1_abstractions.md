@@ -1,28 +1,10 @@
+---
+sidebar_position: 1
+---
+
 # Abstractions of Jaseci
 
 There are a number of abstractions and concepts in Jac that is distinct from most (all?) other languages. These would be a good place to begin understanding for a seasoned / semi-seasoned programmer.
-
-- [Abstractions of Jaseci](#abstractions-of-jaseci)
-  - [Graphs](#graphs)
-    - [Nodes](#nodes)
-    - [Edges](#edges)
-    - [Operators for connecting nodes and edges](#operators-for-connecting-nodes-and-edges)
-    - [Creating Graphs Examples](#creating-graphs-examples)
-    - [Referencing and Dereferencing Nodes and Edges](#referencing-and-dereferencing-nodes-and-edges)
-    - [Plucking values from nodes and edges](#plucking-values-from-nodes-and-edges)
-  - [Walkers](#walkers)
-    - [Init Walker with Examples](#init-walker-with-examples)
-    - [Walkers Navigating Graphs Examples](#walkers-navigating-graphs-examples)
-    - [Walker Spawning Examples](#walker-spawning-examples)
-    - [Walker Callback](#walker-callback)
-  - [Abilities](#abilities)
-    - [Node Abilities Example](#node-abilities-example)
-    - [Walker Abilities Example](#walker-abilities-example)
-    - [Edge Abilities Example](#edge-abilities-example)
-    - [A Complete Example](#a-complete-example)
-    - [Here and Visitor](#here-and-visitor)
-  - [Actions](#actions)
-    - [Jaseci Standard Actions](#jaseci-standard-actions)
 
 ## Graphs
 
@@ -303,10 +285,7 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 
 We are creating the following graph to demonstrate traversing of walkers in the coming sections;
 
- <div style="text-align:center"><img style="align:center" src="images/traverse_graph_example.PNG" /> <b>Example Graph - Navigating </b></div>
-
-<p>
-</p>
+ ![Example Graph - Navigating](images/traverse_graph_example.PNG)
 
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example;
 
@@ -505,7 +484,7 @@ compute operations.
 
 To see node abilities in advance let's define the following graph, which represent cities and the connection between them.
 
-<div style="text-align:center"><img style="align:center" src="images/abilities_graph_example_1.png" /> <b>Example Graph</b></div>
+![Abilities Graph Example](images/abilities_graph_example_1.png)
 
 ### Node Abilities Example
 

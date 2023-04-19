@@ -1,17 +1,5 @@
 #  Regex Actions Library
 
-- [Regex Actions Library](#regex-actions-library)
-  - [Search for pattern in String](#search-for-pattern-in-string)
-  - [Match begining of the string](#match-begining-of-the-string)
-  - [Match full string.](#match-full-string)
-  - [Split string](#split-string)
-  - [Find all occurances of the pattern](#find-all-occurances-of-the-pattern)
-  - [Search regex matches iteratively](#search-regex-matches-iteratively)
-  - [Find and replace](#find-and-replace)
-  - [Find and Replace, returns the number of replacements](#find-and-replace-returns-the-number-of-replacements)
-  - [Escape special characters in pattern.](#escape-special-characters-in-pattern)
-  - [Clear the regular expression cache](#clear-the-regular-expression-cache)
-
 ## Search for pattern in String
 
 Searching for the first occurrence of a specific pattern or sequence of characters within a string.

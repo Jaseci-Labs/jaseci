@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Setting up Jaseci Server
 
 Jaseci Serv allows for the development of APIs to interact with your JAC Program.

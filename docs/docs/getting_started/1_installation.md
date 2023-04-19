@@ -1,9 +1,8 @@
-# Jaseci Installation Guide
+---
+sidebar_position: 1
+---
 
-- [Jaseci Installation Guide](#jaseci-installation-guide)
-  - [Windows setup](#windows-setup)
-  - [Install Jaseci in Debian or WSL2](#install-jaseci-in-debian-or-wsl2)
-  - [Install Jaseci on MacOS](#install-jaseci-on-macos)
+# Jaseci Installation Guide
 
 Welcome to the Jaseci installation guide! We are excited that you have decided to explore the world of Jaseci, and we are here to assist you in the installation process.
 

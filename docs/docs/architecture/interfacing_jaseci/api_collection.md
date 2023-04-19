@@ -1,6 +1,5 @@
 # Jac API Collections
 
-
 ## APIs for actions
 
 This set action APIs enable the manual management of Jaseci actions and action libraries/sets. Action libraries can be loaded locally into the running instance of the python program, or as a remote container linked action library. In this mode, action libraries operate as micro-services. Jaseci will be able to dynamically and automatically make this decision for the user based on online monitoring and performance profiling.

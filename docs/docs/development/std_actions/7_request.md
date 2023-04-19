@@ -1,16 +1,5 @@
 # Request Actions Library
 
-- [Request Actions Library](#request-actions-library)
-    - [Get Request](#get-request)
-    - [Post Request](#post-request)
-    - [Put Request](#put-request)
-    - [Delete Request](#delete-request)
-    - [Head Request](#head-request)
-    - [Option Request](#option-request)
-    - [File upload](#file-upload)
-    - [Download File](#download-file)
-    - [An Example Jac Application](#an-example-jac-application-using-the-requests-library)
-
 Jaseci allows for in-code use of common  request methods.
 
 ### Get Request
