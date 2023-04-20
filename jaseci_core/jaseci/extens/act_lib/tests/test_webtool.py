@@ -26,3 +26,19 @@ class WebtoolTest(CoreTest):
     @jac_testcase("webtool.jac", "get_meta_invalid")
     def test_get_meta_invalid(self, ret):
         self.assertTrue("Failed at getting metadata" in ret["report"][0])
+
+    @jac_testcase("webtool.jac", "get_meta_timeout")
+    def test_get_meta_timeout(self, ret):
+        self.assertTrue("Failed at getting metadata" in ret["report"][0])
+
+    @jac_testcase("webtool.jac", "get_meta_need_header")
+    def test_get_meta_need_header(self, ret):
+        self.assertTrue(ret["success"])
+        expected_tags = set(["og:image", "og:type", "og:title"])
+        tags = set(
+            [
+                meta["property"] if "property" in meta else ""
+                for meta in ret["report"][0]
+            ]
+        )
+        self.assertTrue(tags.issuperset(expected_tags))
