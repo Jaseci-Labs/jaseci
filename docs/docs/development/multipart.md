@@ -1,6 +1,6 @@
-# Upload files via Multi-part
+# Upload Files via Multi-Part
 
-## **Old approach:** (still supported)
+## Old approach: (still supported)
 
 Most of the requests uses json as request body. This will have some limitations if you want to include file thru json.
 
@@ -21,21 +21,21 @@ Most of the requests uses json as request body. This will have some limitations 
 }
 ```
 
-## **Note**:
-
-`anyFieldNameForYourFile` structure is based on jaseci action `request.multipart_base64`.
-You can use different structure. However, you will still need to request it as base64. You will also need to reconstruct it to `request.multipart_base64`'s files structure if you want to pass it on different service (internal or 3rd party) using `multipart/form-data`
-
-```json
-// request.multipart_base64's files parameter structure
-[
-    {
-        "field": "anyFieldName", // Optional: Default is "file"
-        "name": "sample.txt",
-        "base64": "MAo="
-    }
-]
-```
+> Note
+>
+> `anyFieldNameForYourFile` structure is based on jaseci action `request.multipart_base64`. You can use different structure. However, you will still need to request it as base64. You will also need to reconstruct it to `request.multipart_base64`'s files structure if you want to pass it on different service (internal or 3rd party) using `multipart/form-data`
+>
+>```json
+>// request.multipart_base64's files parameter structure
+>[
+>    {
+>        "field": "anyFieldName", // Optional: Default is "file"
+>        "name": "sample.txt",
+>       "base64": "MAo="
+>   }
+>]
+>```
+>
 
 ## **Limitation**
 

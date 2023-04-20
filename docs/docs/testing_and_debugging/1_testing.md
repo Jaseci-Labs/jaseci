@@ -1,11 +1,5 @@
 # Unit testing in Jaseci
 
-- [Unit testing in Jaseci](#unit-testing-in-jaseci)
-  - [Creating test cases](#creating-test-cases)
-  - [Runing test cases](#runing-test-cases)
-  - [Using Yield](#using-yield)
-  - [Using Global `root_node`](#using-global-root_node)
-
 In unit testing, test cases are typically created by the developer or a dedicated testing team and executed automatically using specialized testing frameworks or tools. The tests are designed to be repeatable and should cover various scenarios, including normal inputs, edge cases, and error conditions.
 
 Unit testing can help identify errors and bugs early in the development process, which reduces the time and cost of fixing them later. It also allows developers to make changes to the code with confidence, knowing that any new changes or modifications have not introduced any new errors or issues. Overall, unit testing is an essential component of modern software development, providing a reliable way to ensure the quality and correctness of code.

@@ -1,16 +1,5 @@
 # Jaseci Studio and Features
 
-- [Jaseci Studio and Features](#jaseci-studio-and-features)
-  - [Login](#login)
-  - [Dashboard (Summery View)](#dashboard-summery-view)
-  - [Graph Viewer](#graph-viewer)
-  - [Logs Viewer](#logs-viewer)
-  - [Managing Architypes](#managing-architypes)
-    - [Archetype Viewing](#archetype-viewing)
-    - [Editor](#editor)
-    - [Register Archetype](#register-archetype)
-    - [Run Walker](#run-walker)
-
 ## Login
 
 Jaseci Studio login provides an easy way for developers to interact with their Jaseci application, offering a variety of amazing features. Unlike traditional applications that require you to create an account to login, Jaseci Studio allows you to login to any live instance of a Jaseci application worldwide using your super user credentials. It is important to note that you should never share your superuser credentials publicly on GitHub or other platforms.
