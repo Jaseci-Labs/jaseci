@@ -16,3 +16,15 @@ walker get_meta_invalid {
     can webtool.get_page_meta;
     report webtool.get_page_meta(url);
 }
+
+walker get_meta_timeout {
+    has url = "https://httpstat.us/504?sleep=60000";
+    can webtool.get_page_meta;
+    report webtool.get_page_meta(url);
+}
+
+walker get_meta_need_header {
+    has url = "https://www.invaluable.com/blog/what-is-a-mandala/";
+    can webtool.get_page_meta;
+    report webtool.get_page_meta(url);
+}
