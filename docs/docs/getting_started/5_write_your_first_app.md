@@ -2,7 +2,7 @@
 sidebar_position: 5
 ---
 
-# Writing your first app
+# Writing Your First App
 
 Let's create a simple conversational Agent using Jaseci and Jaseci Kit. We're gonna create a Chatbot for students to sign up for Jaseci Dojo !
 

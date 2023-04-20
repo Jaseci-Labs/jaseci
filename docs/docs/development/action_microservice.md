@@ -1,3 +1,7 @@
+---
+sidebar_position: 4
+---
+
 # Running Action Library as a Service
 
 In this tutorial, we will discuss how to use `uvicorn` to stand up a Jaseci action library as an independent server.
