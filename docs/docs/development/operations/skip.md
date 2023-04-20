@@ -10,7 +10,7 @@ The idea behind the abstraction of `skip` in the context of a walkers code block
 >
 > Node/edge abilities also support the usage of the skip directive. The skip merely decides not to use the remaining steps of that `ability` itself in this context.
 
-Lets change the `init` walker of [example](1_abstractions.md#walkers-navigating-graphs-example) to demostrate how the `skip` command works;
+Lets change the `init` walker of [example](../abstractions/walkers.md#walkers-navigating-graphs-example) to demonstrate how the `skip` command works;
 
 **Example:**
 

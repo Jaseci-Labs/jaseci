@@ -6,7 +6,7 @@ sidebar_position: 5
 
 The command `disengage` tells the walker to stop all execution and "disengage" from the graph (i.e., stop visiting nodes anymore from here) and can only be used inside the code body of a walker.
 
-To demonstrate how the `disengage` command functions, let's once more utilize the `init` walker from [example](1_abstractions.md#walkers-navigating-graphs-example);
+To demonstrate how the `disengage` command functions, let's once more utilize the `init` walker from [example](../abstractions/walkers.md#walkers-navigating-graphs-example);
 
 **Example:**
 

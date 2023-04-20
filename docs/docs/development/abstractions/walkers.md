@@ -119,9 +119,9 @@ walker init {
 6
 7
 ```
-`take` command lets the walker traverse through graph nodes. You may notice by default, a walker traverse with `take` command using the breadth first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example; More information about `take` command and keywords to operate walkers can be found [here](2_operations.md#take)
+`take` command lets the walker traverse through graph nodes. You may notice by default, a walker traverse with `take` command using the breadth first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example; More information about `take` command and keywords to operate walkers can be found [here](../operations/take.md)
 
-In addition to the introduction of the `take` command to support new types of control flow for node-bound iterations. The keywords and semantics of `disengage`, `skip`, and `ignore` are also introduced. These instruct walkers to stop walking the graph, skip over a node for execution, and ignore certain paths of the graph. More information about these can be found in [here](2_operations.md#skip)
+In addition to the introduction of the `take` command to support new types of control flow for node-bound iterations. The keywords and semantics of `disengage`, `skip`, and `ignore` are also introduced. These instruct walkers to stop walking the graph, skip over a node for execution, and ignore certain paths of the graph. More information about these can be found in [here](../operations/skip.md)
 
 <!-- Is it neccessary to have bfs,dfs traversals and skip, disengage traversals in the operators sections. I need feedback on this-->
 
