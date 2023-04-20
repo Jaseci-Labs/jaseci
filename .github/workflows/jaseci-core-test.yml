@@ -51,7 +51,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          directory: ./jaseci_core/coverage/reports
+          directory: jaseci_core/
 
   elastic-action-tests:
     runs-on: ubuntu-latest
