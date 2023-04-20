@@ -1,8 +1,5 @@
 # Error Handling in Jaseci
 
-- [Error Handling in Jaseci](#error-handling-in-jaseci)
-  - [Error Handling Examples](#error-handling-examples)
-
 Error handling is an essential part of software development as it helps developers to identify and resolve issues that might arise during the execution of their code. In Jaseci, error handling is crucial to ensure that our code is robust and reliable.
 
 The error handling section of our documentation covers two main topics: bugs and errors. While the terms "**bugs**" and "**errors**" are often used interchangeably, they have distinct meanings in the context of software development.

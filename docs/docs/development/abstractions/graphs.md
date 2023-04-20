@@ -4,17 +4,6 @@ sidebar_position: 1
 
 # Graphs
 
-- [Graphs](#graphs)
-  - [Nodes](#nodes)
-  - [Edges](#edges)
-  - [Operators for connecting nodes](#operators-for-connecting-nodes)
-  - [Creating Graphs Examples](#creating-graphs-examples)
-  - [Referencing and Dereferencing Nodes and Edges](#referencing-and-dereferencing-nodes-and-edges)
-  - [Plucking values from nodes and edges](#plucking-values-from-nodes-and-edges)
-  - [Node and Edge Inheritance](#node-and-edge-inheritance)
-    - [Node Inheritance](#node-inheritance)
-    - [Edge Inheritance](#edge-inheritance)
-
 It is strange to see how our programming languages have evolved over the years, and yet, one fundamental data structure has been left behind. **Almost every data structure used by programmers to solve problems can be represented as a graph or a special case of a graph, except for hash tables**. This means that structures such as stacks, lists, queues, trees, heaps, and even graphs can be modeled with graphs. But, despite this, no programming language uses graph semantics as its first order data abstraction.
 
 The graph semantic is incredibly rich and intuitive for humans to understand and is particularly well suited for conceptualizing and solving computational problems, especially in the field of AI. However, some may argue that there are graph libraries available in their preferred language and that a language forcing the concept is not necessary. To this, I argue that core design languages are based on their inherent abstractions, and with graphs not being one of them, the language is not optimized to allow programmers to easily utilize the rich semantics that graphs offer.

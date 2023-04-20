@@ -1,16 +1,5 @@
 # Loops and Conditions in Jaseci
 
-- [Loops and Conditions in Jaseci](#loops-and-conditions-in-jaseci)
-  - [Control FLow](#control-flow)
-    - [`if` statement](#if-statement)
-    - [`if-else` statement](#if-else-statement)
-    - [`elif` statement](#elif-statement)
-    - [Sample Snippets](#sample-snippets)
-  - [Looping](#looping)
-    - [`for` loop](#for-loop)
-    - [`while` loop](#while-loop)
-    - [Sample Snippets](#sample-snippets-1)
-
 ## Control FLow
 
 ### `if` statement

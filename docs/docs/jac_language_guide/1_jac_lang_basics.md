@@ -1,29 +1,10 @@
+---
+sidebar_position: 1
+---
+
 # Jaseci Language Basics
 
 Welcome to the exploration of the basic features of Jaseci. As a versatile programming language, Jaseci offers a wide range of capabilities that are found in other programming languages. In this section, we will delve into the core features of Jaseci, including input and output, a variety of data types, arithmetic and logical operators, comparison operators, and assignment operators. So, let's get started and uncover the full potential of Jaseci!
-
-- [Jaseci Language Basics](#jaseci-language-basics)
-  - [Data Types](#data-types)
-    - [Special Types](#special-types)
-    - [Typecasting](#typecasting)
-  - [Operators](#operators)
-    - [Arithmatic Operators](#arithmatic-operators)
-    - [Equality Operations](#equality-operations)
-    - [Logical Operators](#logical-operators)
-    - [Assigments Operators](#assigments-operators)
-  - [Precedence of Jaseci Operators](#precedence-of-jaseci-operators)
-  - [Input and Output in Jaseci](#input-and-output-in-jaseci)
-  - [File Handling in Jaseci](#file-handling-in-jaseci)
-  - [Global Variables in Jaseci](#global-variables-in-jaseci)
-    - [Declaring a Global Variable](#declaring-a-global-variable)
-    - [Accessing a Global Variable](#accessing-a-global-variable)
-    - [Global Reference Syntax (to be improve)](#global-reference-syntax-to-be-improve)
-      - [Context](#context)
-      - [Info](#info)
-      - [Usage:](#usage)
-  - [Working with Imports](#working-with-imports)
-    - [Importing Files](#importing-files)
-    - [Importing Specific Parts of a File](#importing-specific-parts-of-a-file)
 
 ## Data Types
 
