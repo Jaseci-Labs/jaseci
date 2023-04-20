@@ -1,16 +1,6 @@
 # Date Actions Library
 Jaseci has it's own set of built-in Date Functions
 
-- [Date Actions Library](#date-actions-library)
-  - [Quantize to Year](#quantize-to-year)
-  - [Quantize to Month](#quantize-to-month)
-  - [Quantive to Week](#quantive-to-week)
-  - [Quantize to day](#quantize-to-day)
-  - [Date Difference](#date-difference)
-  - [Date and Time Now](#date-and-time-now)
-  - [Date Now](#date-now)
-  - [Date Timestamp Now](#date-timestamp-now)
-
 ## Quantize to Year
 
 Take a standard python datetime string and extract the year out of it accordingly.

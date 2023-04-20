@@ -1,27 +1,10 @@
+---
+sidebar_position: 1
+---
+
 # Abstractions of Jaseci
 
 There are a number of abstractions and concepts in Jac that is distinct from most (all?) other languages. These would be a good place to begin understanding for a seasoned / semi-seasoned programmer.
-
-- [Abstractions of Jaseci](#abstractions-of-jaseci)
-  - [Graphs](#graphs)
-    - [Nodes](#nodes)
-    - [Edges](#edges)
-    - [Operators for connecting nodes and edges](#operators-for-connecting-nodes-and-edges)
-    - [Creating Graphs Examples](#creating-graphs-examples)
-    - [Referencing and Dereferencing Nodes and Edges](#referencing-and-dereferencing-nodes-and-edges)
-    - [Plucking values from nodes and edges](#plucking-values-from-nodes-and-edges)
-  - [Walkers](#walkers)
-    - [Init Walker with Examples](#init-walker-with-examples)
-    - [Walkers Navigating Graphs Examples](#walkers-navigating-graphs-examples)
-    - [Walker Spawning Examples](#walker-spawning-examples)
-  - [Abilities](#abilities)
-    - [Node Abilities Example](#node-abilities-example)
-    - [Walker Abilities Example](#walker-abilities-example)
-    - [Edge Abilities Example](#edge-abilities-example)
-    - [A Complete Example](#a-complete-example)
-    - [Here and Visitor](#here-and-visitor)
-  - [Actions](#actions)
-    - [Jaseci Standard Actions](#jaseci-standard-actions)
 
 ## Graphs
 
@@ -302,10 +285,7 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 
 We are creating the following graph to demonstrate traversing of walkers in the coming sections;
 
- <div style="text-align:center"><img style="align:center" src="images/traverse_graph_example.PNG" /> <b>Example Graph - Navigating </b></div>
-
-<p>
-</p>
+ ![Example Graph - Navigating](images/traverse_graph_example.PNG)
 
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example;
 
@@ -386,6 +366,99 @@ In this example, the parent walker spawns the child walker and sets the return_v
 
 With this feature, you can easily create dynamic traversal patterns that adapt to changing data and requirements, making Jaseci a powerful tool for developing complex applications.
 
+### Walker Callback
+Walker callback is used for running a walker to a specific node using `public key` instead of authorization token.
+
+#### Use Case
+Generating public URL that can be used as callback API for 3rd party Webhook API.
+You may also use this as a public endpoint just to run a specific walker to a specific node.
+
+#### Structure
+
+**POST** /js_public/walker_callback/`{node uuid}`/`{spawned walker uuid}`?key=`{public key}`
+
+#### **Steps to Generate**
+
+**1. Jac Code**
+
+```js
+walker sample_walker: anyone {
+    has fieldOne;
+    with entry {
+        report 1;
+    }
+}
+```
+
+**2. Register Sentinel**
+
+```bash
+curl --request POST \
+  --url http://localhost:8000/js/sentinel_register \
+  --header 'Authorization: token {yourToken}' \
+  --header 'Content-Type: application/json' \
+  --data '{ "name": "sentinel1", "code": "walker sample_walker: anyone {\r\n\thas fieldOne;\r\n\twith entry {\r\n\t\treport 1;\r\n\t}\r\n}" }'
+```
+```json
+// RESPONSE
+[
+	{
+		"version": "3.5.7",
+		"name": "zsb",
+		"kind": "generic",
+		"jid": "urn:uuid:b4786c7a-cf24-49a4-8c2c-755c75a35043",
+		"j_timestamp": "2022-05-11T05:57:07.849673",
+		"j_type": "sentinel"
+	}
+]
+```
+
+**3. Spawn Public Walker** (sample_walker)
+
+```bash
+curl --request POST \
+  --url http://localhost:8000/js/walker_spawn_create \
+  --header 'Authorization: token {yourToken}' \
+  --header 'Content-Type: application/json' \
+  --data '{ "name": "sample_walker", "snt":"active:sentinel" }'
+```
+```json
+// RESPONSE
+{
+	"context": {},
+	"anchor": null,
+	"name": "sample_walker",
+	"kind": "walker",
+	// this is the spawned walker uuid to be used
+	"jid": "urn:uuid:2cf6d0dc-e7eb-4fc8-8564-1bbdb48baad3",
+	"j_timestamp": "2022-06-07T09:45:22.101017",
+	"j_type": "walker"
+}
+```
+
+**4. Getting Public Key**
+
+```bash
+curl --request POST \
+  --url http://localhost:8000/js/walker_get \
+  --header 'Authorization: token {yourToken}' \
+  --header 'Content-Type: application/json' \
+  --data '{ "mode": "keys", "wlk": "spawned:walker:sample_walker", "detailed": false }'
+```
+```json
+// RESPONSE
+{
+	// this is the public key used for walker callback
+	"anyone": "97ca941e6bf1f43c3a4e531e40b2ad5a"
+}
+```
+
+**5. Construct the URL**
+*Assuming there's a node with uuid of `aa1bb26e-238b-40a0-8e39-333ec363ace7`*
+*this endpoint can now be accessible by anyone*
+
+>**POST** /js_public/walker_callback/`aa1bb26e-238b-40a0-8e39-333ec363ace7`/`2cf6d0dc-e7eb-4fc8-8564-1bbdb48baad3`?key=`97ca941e6bf1f43c3a4e531e40b2ad5a`
+
 ## Abilities
 
 Nodes, edges, and walkers can have **abilities**. The body of an ability is specified with an
@@ -411,7 +484,7 @@ compute operations.
 
 To see node abilities in advance let's define the following graph, which represent cities and the connection between them.
 
-<div style="text-align:center"><img style="align:center" src="images/abilities_graph_example_1.png" /> <b>Example Graph</b></div>
+![Abilities Graph Example](images/abilities_graph_example_1.png)
 
 ### Node Abilities Example
 

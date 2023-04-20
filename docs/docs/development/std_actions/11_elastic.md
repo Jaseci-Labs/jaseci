@@ -1,30 +1,5 @@
 # Elastic Actions Library
 
-- [Elastic Actions Library](#elastic-actions-library)
-  - [Enable Elastic in Jaseci](#enable-elastic-in-jaseci)
-    - [**CONFIGURATION**](#configuration)
-      - [**`ATTRIBUTES`**](#attributes)
-    - [**`DEFAULT CONFIG`**](#default-config)
-    - [**`ENABLED CONFIG`**](#enabled-config)
-  - [Actions List](#actions-list)
-    - [Log Activity](#log-activity)
-    - [Base Post Request](#base-post-request)
-    - [Post request](#post-request)
-    - [Post request pointed to `activity_index`](#post-request-pointed-to-activity_index)
-    - [Base Get request](#base-get-request)
-    - [Get request](#get-request)
-    - [Get request pointed to `activity_index`](#get-request-pointed-to-activity_index)
-    - [Creation of log](#creation-of-log)
-    - [Creation of log with `doc_activity`](#creation-of-log-with-doc_activity)
-    - [Search](#search)
-    - [Search with search activity](#search-with-search-activity)
-    - [Mapping](#mapping)
-    - [Mapping with `mapping_activity`](#mapping-with-mapping_activity)
-    - [Refresh](#refresh)
-    - [Refresh wirh `refresh_activity`](#refresh-wirh-refresh_activity)
-    - [Aliases](#aliases)
-    - [Reindex](#reindex)
-
 ## Enable Elastic in Jaseci
 
 The Elastic service in Jaseci is managed by JSORC, which automatically creates an Elastic container in your kubernetes cluster and connects it with the Jaseci container. If your Jaseci cluster doesn't currently have an Elastic running, you will need to trigger a service refresh on JSORC.

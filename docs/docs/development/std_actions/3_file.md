@@ -1,15 +1,5 @@
 # File Actions Library
 
-- [File Actions Library](#file-actions-library)
-  - [Load file to string](#load-file-to-string)
-  - [Load Json file to dictionary](#load-json-file-to-dictionary)
-  - [String to file](#string-to-file)
-  - [Append string to a file](#append-string-to-a-file)
-  - [Create Json File](#create-json-file)
-  - [Delete file](#delete-file)
-  - [Complete Example](#complete-example)
-
-
 ## Load file to string
 
 Converts file to string , max_chars is set to none by default

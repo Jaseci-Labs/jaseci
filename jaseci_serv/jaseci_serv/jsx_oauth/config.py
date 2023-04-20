@@ -19,7 +19,7 @@ OAUTH_APPS = [
 AUTH_PROVIDERS = {"facebook": "facebook", "google": "google", "email": "email"}
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 
-KNOX_TOKEN_EXPIRY = 24
+KNOX_TOKEN_EXPIRY = 12
 
 REST_AUTH_TOKEN_MODEL = None
 

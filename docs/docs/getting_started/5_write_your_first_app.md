@@ -1,8 +1,12 @@
+---
+sidebar_position: 5
+---
+
 # Writing your first app
 
 Let's create a simple conversational Agent using Jaseci and Jaseci Kit. We're gonna create a Chatbot for students to sign up for Jaseci Dojo !
 
-Before we begin ensure you have Jaseci and Jaseci Kit installed. If not, see the Installation [here]('/installation')
+Before we begin ensure you have Jaseci and Jaseci Kit installed. If not, see the [Installation Guide](1_installation.md).
 
 Create a file called graph.jac. Here we are going to create the conversational flow for the chatbot .
 

@@ -1,25 +1,22 @@
 """Built in actions for Jaseci"""
-from fastapi import HTTPException
+import requests
 from jaseci.jsorc.live_actions import jaseci_action
-import metadata_parser
+from bs4 import BeautifulSoup
 
 
 @jaseci_action()
-def get_page_meta(url: str = ""):
+def get_page_meta(url: str):
     """
     Util to parse metadata out of urls and html documents
     """
-
-    if url == "":
-        raise HTTPException(status_code=400, detail=str("No url provided"))
-
     try:
-        page = metadata_parser.MetadataParser(
-            url=url,
-            url_headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0",
-            },
-        )
-        return page.metadata
+        webpage = requests.get(url)
+        soup = BeautifulSoup(webpage.content, features="lxml")
+        meta = soup.find_all("meta")
+        meta_list = []
+        for tag in meta:
+            meta_list.append(dict(tag.attrs))
+        return meta_list
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print("Failed")
+        return f"Failed at getting metadata for {url}: {str(e)}"
