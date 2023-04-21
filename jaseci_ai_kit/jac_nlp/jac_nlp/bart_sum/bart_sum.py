@@ -6,9 +6,11 @@ import traceback
 from fastapi import HTTPException
 import requests
 from bs4 import BeautifulSoup
-
+from jaseci.utils.utils import model_base_path
+import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+BART_SUM_ROOT = model_base_path("jac_nlp/bart_sum")
 
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
@@ -16,8 +18,21 @@ def setup(
     tokenizer: str = "facebook/bart-large-cnn", model: str = "facebook/bart-large-cnn"
 ):
     global bart_tokenizer, bart_model
-    bart_tokenizer = BartTokenizer.from_pretrained(tokenizer)
-    bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
+    os.makedirs(BART_SUM_ROOT, exist_ok=True)
+    if all(
+        os.path.isfile(os.path.join(BART_SUM_ROOT, f_name))
+        for f_name in ["vocab.json", "pytorch_model.bin", "config.json"]
+    ):
+        bart_tokenizer = BartTokenizer.from_pretrained(tokenizer, local_files_only=True)
+        bart_model = BartForConditionalGeneration.from_pretrained(
+            model, local_files_only=True
+        ).to(device)
+    else:
+        bart_tokenizer = BartTokenizer.from_pretrained(tokenizer)
+        bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
+        bart_model.save_pretrained(BART_SUM_ROOT)
+        bart_tokenizer.save_vocabulary(BART_SUM_ROOT)
+        del bart_model, bart_tokenizer
 
 
 setup(tokenizer="facebook/bart-large-cnn", model="facebook/bart-large-cnn")
@@ -65,3 +80,9 @@ def summarize(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    from jaseci.actions.remote_actions import launch_server
+
+    launch_server(port=8000)

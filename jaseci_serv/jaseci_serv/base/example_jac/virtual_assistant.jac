@@ -2,7 +2,7 @@ walker virtual_assistant {
     can text_seg.get_segments;
     can bi_enc.infer;
     can tfm_ner.extract_entity;
-    can ent_ext.entity_detection;
+    can bart_sum.summarize;
     can use.qa_classify;
     has threshold=0.9;
     # has a article
@@ -24,6 +24,8 @@ walker virtual_assistant {
         "time range"
         ];
     responses=[];
+    # uses summarizer
+    summary = bart_sum.summarize(text=article, min_length=0.3, max_length=0.8);
     # uses text_seg get_segments to get segments from article returns list of text sent
     segments=text_seg.get_segments(article,threshold);
 
@@ -33,8 +35,8 @@ walker virtual_assistant {
         std.out(pred_intent[0]["predicted"]["label"]);
         # uses tfm_ner extract_entity to find general predifined entities from each segment
         fallback_ents=tfm_ner.extract_entity(segment);
-        # uses ent_ext entity_detection to get fallback entities
-        pred_ents=ent_ext.entity_detection(segment,entities);
+        // # uses ent_ext entity_detection to get fallback entities
+        // pred_ents=ent_ext.entity_detection(segment,entities);
         # uses use qa_classify to classify the intents for fallback
         fallback_intent=use.qa_classify(segment,intents);
         resp={

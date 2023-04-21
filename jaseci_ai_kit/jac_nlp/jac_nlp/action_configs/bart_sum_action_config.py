@@ -1,6 +1,7 @@
 BART_SUM_ACTION_CONFIG = {
-    "module": "jac_misc.bart_sum",
-    "loaded_module": "jac_misc.bart_sum.bart_sum",
+    "module": "jac_nlp.bart_sum",
+    "loaded_module": "jac_nlp.bart_sum.bart_sum",
+    "local_mem_requirement": 2100,
     "remote": {
         "Service": {
             "kind": "Service",
@@ -25,7 +26,7 @@ BART_SUM_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_misc.bart_sum:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.bart_sum:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -49,20 +50,28 @@ BART_SUM_ACTION_CONFIG = {
                                     "name": "bart-sum-up",
                                     "defaultMode": 420,
                                 },
-                            }
+                            },
+                            {
+                                "name": "jac-nlp-volume",
+                                "persistentVolumeClaim": {"claimName": "jac-nlp-pvc"},
+                            },
                         ],
                         "containers": [
                             {
                                 "name": "bart-sum",
-                                "image": "jaseci/jac-nlp:latest",
-                                "command": ["bash", "-c", "source script/prod_up"],
+                                "image": "jaseci/jaseci-experiment:1.4.0.12",
+                                "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
                                     "limits": {"memory": "3Gi"},
                                     "requests": {"memory": "3Gi"},
                                 },
                                 "volumeMounts": [
-                                    {"name": "prod-script", "mountPath": "/script"}
+                                    {"name": "prod-script", "mountPath": "/script"},
+                                    {
+                                        "name": "jac-nlp-volume",
+                                        "mountPath": "/root/.jaseci/models/",
+                                    },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",
