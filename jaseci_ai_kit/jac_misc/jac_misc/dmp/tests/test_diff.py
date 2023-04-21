@@ -1,5 +1,5 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci.jsorc.live_actions import load_module_actions, unload_module
+from jaseci.actions.live_actions import load_module_actions, unload_module
 
 
 class DiffTest(CoreTest):
@@ -11,7 +11,7 @@ class DiffTest(CoreTest):
     def setUpClass(cls):
         super(DiffTest, cls).setUpClass()
         ret = load_module_actions("jac_misc.dmp")
-        assert ret
+        assert ret is True
 
     @jac_testcase("diff.jac", "get_diff_test")
     def test_get_diff(self, ret):
@@ -32,5 +32,5 @@ class DiffTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(DiffTest, cls).tearDownClass()
-        ret = unload_module("jac_misc.dmp.dmp")
-        assert ret
+        ret = unload_module("jac_misc.dmp.diff")
+        assert ret is True

@@ -1,5 +1,5 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci.jsorc.live_actions import load_module_actions, unload_module
+from jaseci.actions.live_actions import load_module_actions, unload_module
 import diff_match_patch as dmp_module
 
 
@@ -12,10 +12,10 @@ class PatchTest(CoreTest):
     def setUpClass(cls):
         super(PatchTest, cls).setUpClass()
         ret = load_module_actions("jac_misc.dmp")
-        assert ret
+        assert ret is True
     
-    #@jac_testcase("patch.jac", "get_diff_test")
-    #def test_get_diff(self, ret):
+    # @jac_testcase("patch.jac", "get_diff_test")
+    # def test_get_diff(self, ret):
     #    dmp = dmp_module.diff_match_patch()
     #    actual = dmp.patch_toText(dmp.patch_make("patching file: file 123", "diffing file: file 124"))
     #    self.assertEqual(ret["report"][0], actual)
@@ -23,7 +23,9 @@ class PatchTest(CoreTest):
     @jac_testcase("patch.jac", "get_both_test")
     def test_get_both(self, ret):
         dmp = dmp_module.diff_match_patch()
-        actual = dmp.patch_toText(dmp.patch_make("patching file: file 123", "diffing file: file 124"))
+        actual = dmp.patch_toText(
+            dmp.patch_make("patching file: file 123", "diffing file: file 124")
+        )
         self.assertEqual(ret["report"][0], actual)
 
     @jac_testcase("patch.jac", "apply_test")
@@ -36,5 +38,5 @@ class PatchTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(PatchTest, cls).tearDownClass()
-        ret = unload_module("jac_misc.dmp.dmp")
-        assert ret
+        ret = unload_module("jac_misc.dmp.patch")
+        assert ret is True

@@ -1,6 +1,6 @@
 """Built in actions for Jaseci"""
 import diff_match_patch as dmp_module
-from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.actions.live_actions import jaseci_action
 
 
 @jaseci_action(act_group=["patch"], allow_remote=True)
@@ -11,7 +11,7 @@ def get_patch(*args):
     Param 2 - Second text
     OR
     Param 1 - Diff array
-    OR 
+    OR
     Param 1 - First text
     Param 2 - Diff array
 
@@ -20,8 +20,10 @@ def get_patch(*args):
     if len(args) == 1:
         dmp = dmp_module.diff_match_patch()
         return dmp.patch_make(args[0])
-    elif len(args) == 2 and ((isinstance(args[0], str) and isinstance(args[1], str)) 
-                             or (isinstance(args[0], str) and isinstance(args[1], list))):
+    elif len(args) == 2 and (
+        (isinstance(args[0], str) and isinstance(args[1], str)) 
+        or (isinstance(args[0], str) and isinstance(args[1], list))
+    ):
         dmp = dmp_module.diff_match_patch()
         return dmp.patch_make(args[0], args[1])
     else:
