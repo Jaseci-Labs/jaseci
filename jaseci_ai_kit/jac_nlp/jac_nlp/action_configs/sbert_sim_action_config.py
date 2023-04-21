@@ -1,6 +1,7 @@
-SBERT_SIM_ACTION_CONFIG = {
+sbert_sim_ACTION_CONFIG = {
     "module": "jac_nlp.sbert_sim",
     "loaded_module": "jac_nlp.sbert_sim.sbert_sim",
+    "local_mem_requirement": 1209.34,
     "remote": {
         "Service": {
             "kind": "Service",
@@ -49,20 +50,28 @@ SBERT_SIM_ACTION_CONFIG = {
                                     "name": "sbert-sim-up",
                                     "defaultMode": 420,
                                 },
-                            }
+                            },
+                            {
+                                "name": "jac-nlp-volume",
+                                "persistentVolumeClaim": {"claimName": "jac-nlp-pvc"},
+                            },
                         ],
                         "containers": [
                             {
                                 "name": "sbert-sim",
-                                "image": "jaseci/jac-nlp:latest",
-                                "command": ["bash", "-c", "source script/prod_up"],
+                                "image": "jaseci/jaseci-experiment:1.4.0.12",
+                                "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "3Gi"},
-                                    "requests": {"memory": "3Gi"},
+                                    "limits": {"memory": "4Gi"},
+                                    "requests": {"memory": "4Gi"},
                                 },
                                 "volumeMounts": [
-                                    {"name": "prod-script", "mountPath": "/script"}
+                                    {"name": "prod-script", "mountPath": "/script"},
+                                    {
+                                        "name": "jac-nlp-volume",
+                                        "mountPath": "/root/.jaseci/models/",
+                                    },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",
