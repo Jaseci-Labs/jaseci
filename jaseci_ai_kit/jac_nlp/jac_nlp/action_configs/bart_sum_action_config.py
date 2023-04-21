@@ -63,8 +63,8 @@ BART_SUM_ACTION_CONFIG = {
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "3Gi"},
-                                    "requests": {"memory": "3Gi"},
+                                    "limits": {"memory": "4Gi"},
+                                    "requests": {"memory": "4Gi"},
                                 },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"},
