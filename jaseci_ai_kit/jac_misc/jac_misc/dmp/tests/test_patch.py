@@ -1,5 +1,5 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci.actions.live_actions import load_module_actions, unload_module
+from jaseci.jsorc.live_actions import load_module_actions, unload_module
 import diff_match_patch as dmp_module
 
 
@@ -13,7 +13,7 @@ class PatchTest(CoreTest):
         super(PatchTest, cls).setUpClass()
         ret = load_module_actions("jac_misc.dmp")
         assert ret is True
-    
+
     # @jac_testcase("patch.jac", "get_diff_test")
     # def test_get_diff(self, ret):
     #    dmp = dmp_module.diff_match_patch()

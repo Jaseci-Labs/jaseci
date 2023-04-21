@@ -1,5 +1,5 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
-from jaseci.actions.live_actions import load_module_actions, unload_module
+from jaseci.jsorc.live_actions import load_module_actions, unload_module
 
 
 class MatchTest(CoreTest):
@@ -12,6 +12,7 @@ class MatchTest(CoreTest):
         super(MatchTest, cls).setUpClass()
         ret = load_module_actions("jac_misc.dmp")
         assert ret is True
+
     @jac_testcase("match.jac", "get_match_test")
     def test_get_match(self, ret):
         self.assertEqual(ret["report"][0], 0)
