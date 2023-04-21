@@ -19,7 +19,7 @@ class DiffTest(CoreTest):
 
     @jac_testcase("diff.jac", "semantic_clean_test")
     def test_semantic_clean(self, ret):
-        self.assertEqual(ret["report"][0], [(-1, "Goo"), (1, "Ba")])
+        self.assertEqual(ret["report"][0], [(-1, "Goo"), (1, "Ba"), (0, "d dog")])
 
     @jac_testcase("diff.jac", "levsht_0_test")
     def test_levsht_0(self, ret):

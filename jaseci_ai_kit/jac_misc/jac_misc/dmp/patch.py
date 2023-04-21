@@ -1,48 +1,31 @@
 """Built in actions for Jaseci"""
 import diff_match_patch as dmp_module
 from jaseci.jsorc.live_actions import jaseci_action
-from typing import overload
 
 
-@overload
 @jaseci_action(act_group=["patch"], allow_remote=True)
-def get_patch(text1: str, text2: str):
+def get_patch(*args):
     """
     Create an array of patch objects
     Param 1 - First text
     Param 2 - Second text
-
-    Return - Array of patches
-    """
-    dmp = dmp_module.diff_match_patch()
-    return dmp.patch_make(text1, text2)
-
-
-@overload
-@jaseci_action(act_group=["patch"], allow_remote=True)
-def get_patch(diff: list):
-    """
-    Create an array of patch objects
+    OR
     Param 1 - Diff array
-
-    Return - Array of patches
-    """
-    dmp = dmp_module.diff_match_patch()
-    return dmp.patch_make(diff)
-
-
-@overload
-@jaseci_action(act_group=["patch"], allow_remote=True)
-def get_patch(text1: str, diff: list):
-    """
-    Create an array of patch objects
+    OR 
     Param 1 - First text
     Param 2 - Diff array
 
     Return - Array of patches
     """
-    dmp = dmp_module.diff_match_patch()
-    return dmp.patch_make(text1, diff)
+    if len(args) == 1:
+        dmp = dmp_module.diff_match_patch()
+        return dmp.patch_make(args[0])
+    elif len(args) == 2 and ((isinstance(args[0], str) and isinstance(args[1], str)) 
+                             or (isinstance(args[0], str) and isinstance(args[1], list))):
+        dmp = dmp_module.diff_match_patch()
+        return dmp.patch_make(args[0], args[1])
+    else:
+        raise TypeError("Invalid argument types, please check the documentation")
 
 
 @jaseci_action(act_group=["patch"], allow_remote=True)
