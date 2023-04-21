@@ -174,7 +174,7 @@ class JsorcLoadTest:
                     "jac_nlp.text_seg",
                     "jac_nlp.bi_enc",
                     "jac_nlp.tfm_ner",
-                    "jac_nlp.ent_ext",
+                    "jac_nlp.bart_sum",
                     "jac_nlp.use_qa",
                 ],
                 "flow_analysis": [
