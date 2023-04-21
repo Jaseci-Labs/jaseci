@@ -223,7 +223,7 @@ spec:
               value: jaseci-prometheus-server
 
             - name: ELASTIC_HOST
-              value: jaseci-es-internal-http
+              value: jaseci-es-http
 
             # - name: PROME_NAMESPACE
             #   value: testing
