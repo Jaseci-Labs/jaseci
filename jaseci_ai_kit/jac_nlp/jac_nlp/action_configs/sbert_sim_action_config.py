@@ -1,4 +1,4 @@
-sbert_sim_ACTION_CONFIG = {
+SBERT_SIM_ACTION_CONFIG = {
     "module": "jac_nlp.sbert_sim",
     "loaded_module": "jac_nlp.sbert_sim.sbert_sim",
     "local_mem_requirement": 1209.34,
