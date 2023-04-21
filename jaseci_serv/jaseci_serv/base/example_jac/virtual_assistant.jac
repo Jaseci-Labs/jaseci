@@ -38,7 +38,7 @@ walker virtual_assistant {
         # uses use qa_classify to classify the intents for fallback
         fallback_intent=use.qa_classify(segment,intents);
         resp={
-            pred_intent[0]["predicted"]["label"]:pred_ents["entities"],
+            pred_intent[0]["predicted"]["label"]:fallback_ents,
             fallback_intent["match"]:fallback_ents
         };
         responses.l::append(resp);

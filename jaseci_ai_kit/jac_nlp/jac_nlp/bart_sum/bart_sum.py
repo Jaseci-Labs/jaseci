@@ -32,7 +32,6 @@ def setup(
         bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
         bart_model.save_pretrained(BART_SUM_ROOT)
         bart_tokenizer.save_vocabulary(BART_SUM_ROOT)
-        del bart_model, bart_tokenizer
 
 
 setup(tokenizer="facebook/bart-large-cnn", model="facebook/bart-large-cnn")
