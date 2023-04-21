@@ -1,11 +1,5 @@
 # Rand Actions Library
 
-- [Rand Actions Library](#rand-actions-library)
-    - [Max Anchor Value](#max-anchor-value)
-    - [Minimum Anchor Value](#minimum-anchor-value)
-    - [Get Node Root](#get-node-root)
-    - [Net Pack](#net-pack)
-    - [Net Unpack](#net-unpack)
 
 This collection of actions provides standard operations that can be performed on graph elements such as nodes and edges. Several of these actions accept lists that exclusively consist of defined archetype nodes and/or edges. It's essential to note that a **jac_set** is simply a list that only contains such elements.
 

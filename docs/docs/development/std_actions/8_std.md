@@ -1,26 +1,5 @@
 # Standard Actions Library
 
-- [Standard Actions Library](#standard-actions-library)
-    - [Logging output](#logging-output)
-    - [Output](#output)
-    - [Input](#input)
-    - [Js Input](#js-input)
-    - [Standar Error](#standar-error)
-    - [Sort Columns](#sort-columns)
-    - [UTC time](#utc-time)
-    - [Set Global Variable](#set-global-variable)
-    - [Get Global Variable](#get-global-variable)
-    - [Load local actions to Jaseci](#load-local-actions-to-jaseci)
-    - [Load remote actions to Jaseci](#load-remote-actions-to-jaseci)
-    - [Load module actions to Jaseci](#load-module-actions-to-jaseci)
-    - [Destroy Global](#destroy-global)
-    - [Set object Permission](#set-object-permission)
-    - [Get object Permission](#get-object-permission)
-    - [Grant object Permission](#grant-object-permission)
-    - [Revoke Permission](#revoke-permission)
-    - [Get Report](#get-report)
-
-
 ### Logging output
 
 Printing output to log.

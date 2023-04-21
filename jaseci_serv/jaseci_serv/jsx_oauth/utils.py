@@ -191,12 +191,18 @@ class JSXSocialLoginView(SocialLoginView):
         auth_token = AuthToken.objects.filter(user_id=self.user.id)
         if auth_token:
             AuthToken.objects.filter(user_id=self.user.id).delete()
-        instance, token = AuthToken.objects.create(
-            self.user,
+
+        expiry = (
             knox_settings.TOKEN_TTL
             if knox_settings.TOKEN_TTL
-            else timedelta(hours=settings.KNOX_TOKEN_EXPIRY),
+            else timedelta(hours=settings.KNOX_TOKEN_EXPIRY)
         )
+        expires_in: str = self.request.query_params.get("expires_in")
+
+        if expires_in and expires_in.isnumeric():
+            expiry = None if expires_in == "0" else timedelta(hours=int(expires_in))
+
+        instance, token = AuthToken.objects.create(self.user, expiry)
 
         auth_user = authenticate(
             request=self.request, username=self.user.email, password=self.user.password

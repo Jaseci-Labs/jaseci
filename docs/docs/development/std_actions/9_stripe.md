@@ -1,29 +1,5 @@
 # Stripe Actions Library
 
-- [Stripe Actions Library](#stripe-actions-library)
-  - [Create stripe product](#create-stripe-product)
-  - [Create stripe product price](#create-stripe-product-price)
-  - [Retrieve stripe product list](#retrieve-stripe-product-list)
-  - [Create stripe customer](#create-stripe-customer)
-  - [Retrieve stripe customer](#retrieve-stripe-customer)
-  - [Attach a payment method to a customer](#attach-a-payment-method-to-a-customer)
-  - [Detaches a payment method object from a Customer](#detaches-a-payment-method-object-from-a-customer)
-  - [Retrieve a list of PaymentMethods for a given Customer](#retrieve-a-list-of-paymentmethods-for-a-given-customer)
-  - [Update customer default payment method](#update-customer-default-payment-method)
-  - [Create invoice](#create-invoice)
-  - [Retrieve customer list of invoice](#retrieve-customer-list-of-invoice)
-  - [Retrieve customer list of payment intents](#retrieve-customer-list-of-payment-intents)
-  - [Create customer payment intents](#create-customer-payment-intents)
-  - [Retrieve customer list of subscriptions](#retrieve-customer-list-of-subscriptions)
-  - [Create payment method](#create-payment-method)
-  - [Create trial subscription](#create-trial-subscription)
-  - [Create subscription](#create-subscription)
-  - [Cancel customer subscription](#cancel-customer-subscription)
-  - [Retrive customer subscription](#retrive-customer-subscription)
-  - [Update customer subscription](#update-customer-subscription)
-  - [Retrieve invoice details](#retrieve-invoice-details)
-  - [Create usage report](#create-usage-report)
-  - [Create checkout session](#create-checkout-session)
 ## Create stripe product
 
 **Return**:
