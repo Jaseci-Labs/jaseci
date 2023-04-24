@@ -33,7 +33,7 @@ from jac_misc.ph.utils.base import BaseInference
 # replace <base_model> with the desired model to get base model embeddings
 from jac_nlp.<base_model> import <base_model>
 ```
-3. Define your `CustomLoss` class</br>
+3. Define your `CustomLoss` class
 This class extends the `torch.nn.Module` class provided by the pytorch. It overrides the forward method to apply the personalized loss function to the model's logits.
 ```python
 class CustomLoss(torch.nn.Module):
@@ -44,7 +44,7 @@ class CustomLoss(torch.nn.Module):
         # Define your loss function logic here
         return loss_value
 ```
-4. Define your `CustomDataset` class</br>
+4. Define your `CustomDataset` class
 This class would contain the logic for manipulating train data to tokenized input as expected by base model
 ```python
 class CustomDataset(torch.utils.data.Dataset):
@@ -58,7 +58,7 @@ class CustomDataset(torch.utils.data.Dataset):
         return self.dataset[idx]
 ```
 
-5. Define your `CustomInference` class</br>
+5. Define your `CustomInference` class.
 This class extends the `BaseInference` class provided by the `PH` module. It overrides the `predict` method to generate personalized output based on the data.
 ```python
 class CustomInference(BaseInference):
@@ -68,7 +68,7 @@ class CustomInference(BaseInference):
         return output
 
 ```
-6. Define your `CustomModel` class</br>
+6. Define your `CustomModel` class.
 This class extends the CustomModel class provided by the PH module. It takes the base model as an argument and overrides the forward method to apply the personalized head to the model's logits.
 ```python
 class CustomModel(torch.nn.Module):
@@ -88,7 +88,7 @@ class CustomModel(torch.nn.Module):
         personalized_logits =  self.ph_layer(base_outputs)
         return personalized_logits
 ```
-7. Define additional methods as required:</br>
+7. Define additional methods as required:
 This function would contain the logic for how the samples from CustomDataset should be batched together. You can implement a custom collate function to control how the samples are batched and preprocessed for the model.
 
 ```python

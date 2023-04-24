@@ -2,7 +2,7 @@
 
 ### **1. Installing Jaseci**
 Before getting started you have to install Jaseci latest version. Jaseci requeres python 3.10 or later version. We prefer you to create a fresh python environment using conda or any other virtual environment packaging to try out codes in this codelab. A complete Jaseci installation guide is
-[here](../../../docs/docs/getting-started/installation.md)
+[here](../../docs/getting_started/installation)
 
 After successfull installation of Jaseci run the help command,
 
@@ -133,4 +133,4 @@ Sample of the `movie_data.json` file is as follows;
 }
 ```
 
-7. If you are interested to know more details about custom Jaseci actions and scrapping data. You can read it [here](../codelabs/7_creating_custom_action_to_scrap_movie_data.md).
+7. If you are interested to know more details about custom Jaseci actions and scrapping data. You can read it [here](/creating_custom_action_to_scrap_movie_data).

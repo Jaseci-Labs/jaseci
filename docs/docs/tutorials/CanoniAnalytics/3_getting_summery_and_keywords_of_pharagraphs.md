@@ -4,7 +4,7 @@ We created a graph from the movie script data in the previous part. You may have
 
 ## Retriving Summery of Text
 
-For this section we are using jaseci NLP features. To get summaries Jaseci has several modules already implemented, but here for demostration purpose we will be using the `jac_nlp.bart_sum` the **BART summarizer**. For all other available Jaseci summarization modules refer to [here](../../../README.md)
+For this section we are using jaseci NLP features. To get summaries Jaseci has several modules already implemented, but here for demostration purpose we will be using the `jac_nlp.bart_sum` the **BART summarizer**. For all other available Jaseci summarization modules refer to [here](../../category/summerization-models)
 
 ### 1. Installing Jac NLP summarization module
 
@@ -30,7 +30,7 @@ node scene{
 }
 ```
 
-Also we have added Jaseci `ability` here. to know more about jaseci abilities go to [here](../canoniCAI/codelab/lang_dogs/../../../../CanoniCAI/codelabs/lang_docs/abilities.md) and for examples about abilities [here](../canoniCAI/codelabs/../../../CanoniCAI/codelabs/lang_docs/abilities_by_example.md).
+Also we have added Jaseci `ability` here. to know more about jaseci abilities go to [here](../../docs/development/abstractions/abilities)..
 
 
 ### 3. Creating the summarizer walker.
@@ -84,7 +84,7 @@ walker init{
 - `spawn here walker::build_graph` spawining the graph from the root node.
 - `take-->` travers starts from the root node.
 - `spawn here walker::summarizer(text=here.description);` This line is the most important part in this code. This creates the summary using the summarize walker. `here.description` is to get the description from the current `scene` node.
-- `take -->node::scene;` thie take keyworrd command walkers to travers around the graph. here the speciallity is this command says walkers to travers only in `scene` nodes. For more details about traversings of walkers please refer to [here](../canoniCAI/codelabs/lang_docs/../../../../CanoniCAI/codelabs/lang_docs/walkers_by_example.md).
+- `take -->node::scene;` thie take keyworrd command walkers to travers around the graph. here the speciallity is this command says walkers to travers only in `scene` nodes. For more details about traversings of walkers please refer to [here](../../docs/development/abstractions/walkers).
 
 
 Save all these changes and load the `bart_sum` module before run the code in `jsctl` terminal.

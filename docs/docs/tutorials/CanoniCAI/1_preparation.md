@@ -32,30 +32,28 @@ After forking the repository, the files can be found in `examples/CanoniCAI/code
 
 ## Key Concepts
 
-Please refer to [Key Abstractions and Concepts](lang_docs/key_concepts.md) for the key new concepts in a nutshell. These will make more sense as you go through this guide.
+Please refer to [Key Abstractions and Concepts](../../category/abstractions-of-jaseci) for the key new concepts in a nutshell. These will make more sense as you go through this guide.
 
 ### Graph, nodes, edges
 
-Refer to [Graphs](lang_docs/graphs.md) for more.
+Refer to [Graphs](../../docs/development/abstractions/graphs) for more.
 
 ### Walkers
 
 Refer to relevant sections. These will make more sense as you go through this guide.
 
-- [Walkers](lang_docs/walkers.md)
-- [Walkers By Example](lang_docs/walkers_by_example.md)
+- [Walkers](../../docs/development/abstractions/walkers)
+
 
 ### Abilities
 
 Refer to relevant sections. These will make more sense as you go through this guide.
 
-- [Abilities](lang_docs/abilities.md)
-    - [`here` and `visitor`](lang_docs/here_visitor.md)
-- [Abilities By Example](lang_docs/abilities_by_example.md)
+- [Abilities](../../docs/development/abstractions/abilities)
+    - [`here` and `visitor`](../../docs/development/abstractions/abilities#here-and-visitor)
 
 ### Actions
 
 Refer to relevant sections. These will make more sense as you go through this guide.
 
-- [Actions](lang_docs/actions.md)
-- [Actions By Example](lang_docs/actions_by_example.md)
+- [Actions](../../docs/development/abstractions/actions)
