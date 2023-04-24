@@ -71,7 +71,7 @@ As mentioned earlier the walkers can traverse(walk) through the nodes of the gra
 
 We are creating the following graph to demonstrate traversing of walkers in the coming sections;
 
- ![Example Graph - Navigating](img/traverse_graph_example.PNG)
+ ![Example Graph - Navigating](img/traverse_graph_example.png)
 
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example;
 

@@ -260,7 +260,7 @@ jaseci > sentinel set -snt urn:uuid:f710c843-f284-4782-9bfe-c50710d4907f -mode i
   "success": true
 }
 ```
-From this point you'll have to setup Jaseci Server, and Jaseci Studio Up and running. If you not installed them yet. Go to [this section](/preparation) and install it before going to next steps.
+From this point you'll have to setup Jaseci Server, and Jaseci Studio Up and running. If you not installed them yet. Go to the preparation section and install it before going to next steps.
 
 Now you have to log in the Jaseci Server from `jsctl` terminal with the credentials you have created while you creating super user. run the following in `jsctl` terminal.
 
@@ -287,7 +287,7 @@ While logged into the jsserv instance, you can register a sentinel on it with se
 sentinel register movie.jir -set_active true -mode ir
 ```
 
-Now open the Jaseci Studio and logging with the credentials as instructed [here](preparation)
+Now open the Jaseci Studio and logging with the credentials as instructed in the previous section.
 
 Goto the graph tab in the left side bar and select the `uuid` from the Select Graph drop down. You will see a beautifull output like this.
 
