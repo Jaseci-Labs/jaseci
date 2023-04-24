@@ -71,11 +71,11 @@ Click connect once you have verified that all is good.
 
 ### **3. Collecting data for codelab**
 
-Movie scripts data is the textual data that we use in this coding lab. Here we are going to scrap movie scrip data from [Imbdsm](https://imsdb.com/) website. We have given you the python script [here](../code/scrapy.py) which we can be run as a Jaseci action.
+Movie scripts data is the textual data that we use in this coding lab. Here we are going to scrap movie scrip data from [Imbdsm](https://imsdb.com/) website. We have given you the python script [here](https://github.com/Jaseci-Labs/jaseci/blob/main/docs/examples_and_tutorials/CanoniAnalytics/code/scrapy.py) which we can be run as a Jaseci action.
 
 Steps to run Jaseci custom action to scrape data.
 
-1. Get the `scrapy.py` python from [here](../code/scrapy.py).
+1. Get the `scrapy.py` python from [here](https://github.com/Jaseci-Labs/jaseci/blob/main/docs/examples_and_tutorials/CanoniAnalytics/code/scrapy.py).
 2. Open the `jsctl` shell session.
 3. Load the custom action in local with following command.
    ```
@@ -133,4 +133,4 @@ Sample of the `movie_data.json` file is as follows;
 }
 ```
 
-7. If you are interested to know more details about custom Jaseci actions and scrapping data. You can read it [here](/creating_custom_action_to_scrap_movie_data).
+7. If you are interested to know more details about custom Jaseci actions and scrapping data. You can read it [here](creating_custom_action_to_scrap_movie_data).

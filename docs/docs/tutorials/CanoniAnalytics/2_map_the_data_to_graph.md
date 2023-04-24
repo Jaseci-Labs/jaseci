@@ -287,7 +287,7 @@ While logged into the jsserv instance, you can register a sentinel on it with se
 sentinel register movie.jir -set_active true -mode ir
 ```
 
-Now open the Jaseci Studio and logging with the credentials as instructed [here](/preparation)
+Now open the Jaseci Studio and logging with the credentials as instructed [here](preparation)
 
 Goto the graph tab in the left side bar and select the `uuid` from the Select Graph drop down. You will see a beautifull output like this.
 
