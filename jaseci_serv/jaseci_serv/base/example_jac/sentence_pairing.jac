@@ -1,6 +1,6 @@
 walker sentence_pairing {
     can bi_enc.infer;
-    can use.cos_sim_score;
+    can sbert_sim.get_cos_score;
 
     has text_in = "i have a question about ordering tesla cars";
     has anchor responses = [];
