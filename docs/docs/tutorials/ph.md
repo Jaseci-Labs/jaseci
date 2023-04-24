@@ -1,14 +1,12 @@
+---
+sidebar_position: 5
+---
+
 # Enhancing User Experience with Personalized Content using PH
 
 In today's world, users have come to expect personalized experiences across all digital platforms, including natural language processing tasks. Personalized content can help engage users, increase brand loyalty, and ultimately lead to a better user experience. In this tutorial, we will show you how to create personalized content using PH (Personalized Head) with the help of Python and Jac, and how it can be used to enhance user experience.
 
 We will guide you through the steps to set up your environment, create your Jac program, and run it to generate personalized content. By the end of this tutorial, you will have the necessary tools to create personalized content for your users, and improve their overall experience with your digital platform. So let's dive in and get started!
-
-## Table of Contents
-1. [Introduction](#1-introduction)
-2. [Setting up a PH](#2-setting-up-a-ph)
-3. [Creating Jac Progam](#3-creating-jac-progam)
-4. [Running the Jac Code](#4-running-the-jac-code)
 
 ## 1. Introduction
 Personalization has become a buzzword in the world of technology. From e-commerce websites to social media platforms, companies are using personalization to improve the user experience and drive engagement. Personalized content is more likely to be consumed and shared, leading to higher conversion rates and increased customer loyalty.

@@ -41,7 +41,7 @@ The `has` keyword defines a node's variables. In this case, each `faq_state` has
 
 For this FAQ chatbot, we will build a graph as illustrated here:
 
-![Architecture of FAQ Bot](../images/faq_1.png)
+![Architecture of FAQ Bot](img/faq_1.png)
 
 The idea here is that we will decide which FAQ entry is the most relevant to the incoming question at the `faq_root` node and then we will traverse to that node to fetch the corresponding answer.
 
@@ -164,7 +164,7 @@ This command runs the `init` walker of the `faq.jac` program and prints the stat
 
 The output should look something like this
 
-![Dot output for Faq graph](../images/dot_1.png)
+![Dot output for Faq graph](img/dot_1.png)
 
 ```dot
 strict digraph root {
@@ -393,7 +393,7 @@ jaseci > jac run faq.jac
 
 # Next up!
 
-![Full architecture of Tesla AI](../images/arch.png)
+![Full architecture of Tesla AI](img/arch.png)
 
 Here is a preview on what's next to come in this journey!
 

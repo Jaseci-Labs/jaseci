@@ -63,7 +63,7 @@ You can find the Jaseci Studio Binery that is relevant to your operating system 
 
 Once we have the application installed and launch it, you'll see a login screen similar to this.
 
-![Jaseci Studio Login]("./../../images/jaseci_studio_login.png)
+![Jaseci Studio Login]("img/../../../docs/getting_started/img/login.png)
 
 There you have to enter the server endpoint in the host and port fields. And also enter the login credentials which you created with jaseci server setup. To verify the information click on the "Test Connection". If there is an error, check that your server is still running and ensure that there is no typo in any of the fields.
 

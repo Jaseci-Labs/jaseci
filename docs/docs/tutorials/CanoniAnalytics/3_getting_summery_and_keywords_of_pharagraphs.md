@@ -2,20 +2,6 @@
 
 We created a graph from the movie script data in the previous part. You may have noticed that some movie scene descriptions are rather lengthy and take a while to read. How simple it would be if we could summarize that lengthy phaseges and extract keywords from each text phrases. Yes, that is what we will accomplish in this section.
 
-- [Advance information extraction from Scene Descriptions](#advance-information-extraction-from-scene-descriptions)
-  - [Retriving Summery of Text](#retriving-summery-of-text)
-    - [1. Installing Jac NLP summarization module](#1-installing-jac-nlp-summarization-module)
-    - [2. Updating the scene node to set summary of descriptions](#2-updating-the-scene-node-to-set-summary-of-descriptions)
-    - [3. Creating the summarizer walker.](#3-creating-the-summarizer-walker)
-    - [4. Wrapping things up with the init walker](#4-wrapping-things-up-with-the-init-walker)
-    - [5. Viewing the Graph in Jaseci Studio](#5-viewing-the-graph-in-jaseci-studio)
-  - [Extracting Keywords from Text.](#extracting-keywords-from-text)
-    - [1. Installing Jac NLP Topic Modeling module](#1-installing-jac-nlp-topic-modeling-module)
-    - [2. Updating the scene node to set keywords](#2-updating-the-scene-node-to-set-keywords)
-    - [3. Creating the keyword generation walker.](#3-creating-the-keyword-generation-walker)
-    - [4. Updating the init](#4-updating-the-init)
-    - [5. Viewing the Graph in Jaseci Studio](#5-viewing-the-graph-in-jaseci-studio-1)
-
 ## Retriving Summery of Text
 
 For this section we are using jaseci NLP features. To get summaries Jaseci has several modules already implemented, but here for demostration purpose we will be using the `jac_nlp.bart_sum` the **BART summarizer**. For all other available Jaseci summarization modules refer to [here](../../../README.md)
@@ -164,7 +150,7 @@ sentinel register summarization.jir -set_active true -mode ir
 
 **Step 5:** Start the Jaseci Studio and view the graph
 
-![Jaseci Studio Summarizer Example]("./../../images/summerizer_example.png)
+![Jaseci Studio Summarizer Example]("./../img/summerizer_example.png)
 
 ## Extracting Keywords from Text.
 
@@ -242,4 +228,4 @@ walker init{
 
 Now refresh the graph in Jaseci Studio.
 
-![Jaseci Studio Keyword Extraction Example]("./../../images/keyword_example.png)
+![Jaseci Studio Keyword Extraction Example]("./../img/keyword_example.png)

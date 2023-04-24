@@ -1,6 +1,13 @@
-# Command for running ner examples
+---
+sidebar_position: 4
+title: NER Example
+---
+
+# NER Example
 
 ### Compile jac program
+
+The Jac program using in this example can be found [here](https://github.com/Jaseci-Labs/jaseci/blob/main/examples/ner_examples/main.jac).
 
 ```.jac
 jac build main.jac

@@ -3,11 +3,6 @@
 Semantic similarity of two sentences is a measure of how closely related their meanings are. It involves comparing the underlying semantic representations of the sentences to determine the degree of overlap or similarity between them. This is typically done using techniques from natural language processing (NLP), such as word embeddings or semantic networks. The resulting similarity score can be used in various applications, such as text classification, question answering, or information retrieval, to identify relevant and related content. A high semantic similarity score suggests that the two sentences convey similar ideas, while a low score indicates that they are dissimilar.
 
 
-- [Find Semantically Similar Sentences](#find-semantically-similar-sentences)
-  - [Creating a walker to detect semantically two similar phrases](#creating-a-walker-to-detect-semantically-two-similar-phrases)
-  - [Wrapping things together with init walker](#wrapping-things-together-with-init-walker)
-  - [Executing the code](#executing-the-code)
-
 ## Creating a walker to detect semantically two similar phrases
 
 In this section also we will be using the movie script graph which we build for previouse sections. So create a new jac file and import the `build_graph.jac` into it.

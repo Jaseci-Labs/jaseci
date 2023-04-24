@@ -2,12 +2,6 @@
 
 Text clustering, also known as text grouping or document clustering, is a technique used in natural language processing (NLP) and machine learning to categorize large sets of unstructured textual data into meaningful groups or clusters. The goal of text clustering is to identify patterns and relationships within the text that can be used to group similar documents together based on their content, topics, or other features. This can help researchers, businesses, and organizations to better understand the underlying structure of their textual data and to identify important insights or trends that may be hidden within it. Text clustering is often used in applications such as document organization, information retrieval, and text summarization.
 
-
-- [Find Similar clusters in a set of documents](#find-similar-clusters-in-a-set-of-documents)
-  - [Loading the data](#loading-the-data)
-  - [Clustering the dialogue data](#clustering-the-dialogue-data)
-  - [Topic modeling from clustered data.](#topic-modeling-from-clustered-data)
-
 ## Loading the data
 
 In this section, we will retrieve the dialogues from the raw `JSON` file. This approach is more efficient than traversing a graph to gather the data because here we need to gather all the dialogues in a scene into a single list.
@@ -180,7 +174,7 @@ Thw output should be something like this;
         .
         .
         .
-        .
+        .]
 ```
 
 

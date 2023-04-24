@@ -291,13 +291,13 @@ Now open the Jaseci Studio and logging with the credentials as instructed [here]
 
 Goto the graph tab in the left side bar and select the `uuid` from the Select Graph drop down. You will see a beautifull output like this.
 
-![Jaseci Studio Movie Graph]("./../../images/initial_view_movie_graph.png)
+![Jaseci Studio Movie Graph]("./../img/initial_view_movie_graph.png)
 
 Click on the yellow color nodes and see ho actors and scene are connected.
 
 The image below shows one instance of a scene node.
 
-![Jaseci Studio Movie Graph]("./../../images/example_scene_node.png)
+![Jaseci Studio Movie Graph]("./../img/example_scene_node.png)
 
 ## 5. Ading Advance Features to the Graph
 
@@ -407,10 +407,10 @@ Login to the Jaseci Studio and view the refreshed graph. If everything is fine y
 
 This is how the initial view of the graph;
 
-![Jaseci Studio Movie Graph]("./../../images/initial_view_movie_graph_2.png)
+![Jaseci Studio Movie Graph]("./../img/initial_view_movie_graph_2.png)
 
 Example of location node;
 
-![Jaseci Studio Movie Graph]("./../../images/example_location_node_view.png)
+![Jaseci Studio Movie Graph]("./../img/example_location_node_view.png)
 
 

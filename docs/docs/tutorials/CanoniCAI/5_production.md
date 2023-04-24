@@ -369,18 +369,18 @@ With a jaseci web server (i.e., `jsserv`), we also get access to the full suite 
 You can go to `http://localhost:8000/docs/` to checkout the list of available APIs and their documentation and request and response payload format.
 The documentation looks like this
 
-![](../images/api_docs.png)
+![](img/api_docs.png)
 Every `jsctl` command has a corresponding API endpoint.
 Click on the triangle to the right of the endpoint to see details on its request and response format.
 The command line argument to the `jsctl` command becomes the fields in the request payload of the API endpoint.
 `jsctl` is great for rapid development and testing but for deploying a jaseci application to production, a set of RESTful API endpoints is the industry standard.
 Here are the most commonly used endpoints that you should pick up and get familarized first.
 * `/user/create` to create a new user
-![](../images/api_docs_user_create.png)
+![](img/api_docs_user_create.png)
 * `/js/sentinel_register` to register a sentinel
-![](../images/api_docs_sentinel_register.png)
+![](img/api_docs_sentinel_register.png)
 * `/js/walker_run` to run a walker
-![](../images/api_docs_walker_run.png)
+![](img/api_docs_walker_run.png)
 
 ## Integration with a Webapp
 We are now going to show an example of how to integrate with a frontend to our tesla chatbot.
@@ -389,7 +389,7 @@ This is a simple chatbot frontend that supports both voice and text input.
 It also coverts the response text to speech and speak it back.
 
 Here is a screenshot of the UI. You can click on the microphone button to talk to it or use the textbox below for a text input.
-![](../images/web_ui.png)
+![](img/web_ui.png)
 
 The web frontend communciates with the Jaseci backend via HTTP requests.
 Here is the relevant code where the frontend makes a POST request to the `/js/walker_run` API to run the `talk` walker to ask a question.
