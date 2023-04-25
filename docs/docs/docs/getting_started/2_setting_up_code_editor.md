@@ -1,5 +1,6 @@
 ---
 sidebar_position: 2
+description: A guide to setting up code editor.
 ---
 
 # Setting up Code Editor

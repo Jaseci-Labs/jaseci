@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: USE QA
+description: Text encoding with USE QA
 ---
 #  USE QA (`use_qa`)
 
@@ -87,4 +88,4 @@ walker use_qa_example {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/use_qa)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/use_qa)

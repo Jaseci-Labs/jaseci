@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: ChatGPT
+description: Text Generation with ChatGPT
 ---
 
 Module `gp2` uses the OpenAI's `GPT-2-medium` to perform text genreation on a given text.
@@ -42,5 +43,5 @@ walker test_get_embeddings {
     report gpt2.get_embeddings(text= ["Hello, my name is GPT2", "GPT2 is an Text-to-Text Generation Model" ]);
 }
 ```
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/gpt2)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/gpt2)
 

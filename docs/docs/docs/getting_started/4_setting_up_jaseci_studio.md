@@ -1,5 +1,6 @@
 ---
 sidebar_position: 4
+description: A guide to setup Jaseci Studio.
 ---
 
 # Setting up Jaseci Studio

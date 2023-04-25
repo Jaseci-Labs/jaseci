@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Topic Extraction Model
+description: Topic Modeling with Jaseci
 ---
 
 # Topic Extraction Model
@@ -60,4 +61,4 @@ walker init{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/topic_ext)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/topic_ext)

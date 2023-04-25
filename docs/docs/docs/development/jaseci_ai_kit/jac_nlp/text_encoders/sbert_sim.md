@@ -1,6 +1,7 @@
 ---
 sidebar_position: 5
 title: Sbert Similarity
+description: Text Encoding with Sbert
 ---
 
 # Sbert Similarity (`sbert_sim`)
@@ -92,4 +93,4 @@ walker sbert_sim_example{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/sbert_sim)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/sbert_sim)

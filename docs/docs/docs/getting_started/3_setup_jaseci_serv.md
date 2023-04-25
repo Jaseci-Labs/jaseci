@@ -1,5 +1,6 @@
 ---
 sidebar_position: 3
+description: A guide to setup Jaseci Server.
 ---
 
 # Setting up Jaseci Server

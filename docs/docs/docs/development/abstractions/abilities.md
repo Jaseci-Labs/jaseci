@@ -1,5 +1,6 @@
 ---
 sidebar_position: 3
+description: An Overview of Abilities and Examples.
 ---
 
 # Abilities

@@ -1,3 +1,9 @@
+---
+sidebar_position: 1
+title: Basic Concepts
+description: Basic Guide for Jaseci UI Components.
+---
+
 # Basic Concepts
 
 ### Creating a Component

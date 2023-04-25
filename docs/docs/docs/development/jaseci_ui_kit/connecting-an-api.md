@@ -1,3 +1,9 @@
+---
+sidebar_position: 3
+title: Connecting an API
+description: Connecting an API in Jaseci UI Kit.
+---
+
 # Connecting an API
 
 ## Creating an API Endpoint

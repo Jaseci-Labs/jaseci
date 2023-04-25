@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: FastText Encoder
+description: Text Encoding with FastText Encoder
 ---
 
 # FastText Encoder (`fast_enc`)
@@ -46,4 +47,4 @@ walker fast_enc_example {
     std.out(resp_data);
 }
 ```
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/fast_enc)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/fast_enc)

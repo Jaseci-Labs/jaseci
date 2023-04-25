@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Transformers NER
+description: NER with Transformer NER
 ---
 
 # Entity Extraction Using Transformers (`tfm_ner`)
@@ -109,4 +110,4 @@ walker tfm_ner_example {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/tfm_ner).
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/tfm_ner).

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 4
 title: BI-Encoder
+description: Text Encoding with Bi-Encoder
 ---
 
 # BI-Encoder (`bi_enc`)
@@ -154,4 +155,4 @@ walker bi_enc_example{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/bi_enc)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/bi_enc)

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Translator Module
+description: Text Translating with Jaseci.
 ---
 
 # Translator Module
@@ -35,4 +36,4 @@ walker test_translate_eng_german {
     report translator.translate("Hello, how are you?", "en_XX", "de_DE"); # Returns ["Hallo, wie geht es dir?"]
 }
 ```
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_misc/jac_misc/translator)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/translator)

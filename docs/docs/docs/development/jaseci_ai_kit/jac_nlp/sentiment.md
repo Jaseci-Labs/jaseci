@@ -1,6 +1,7 @@
 ---
 sidebar_position: 7
 title: Sentiment Analysis Model
+description: Sentiment Analysis with Jaseci
 ---
 
 # Sentiment Analysis Model (`sentiment`)
@@ -23,4 +24,4 @@ walker test_predict{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/sentiment)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/sentiment)
