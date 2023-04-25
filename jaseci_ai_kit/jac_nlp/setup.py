@@ -3,14 +3,11 @@ from os.path import join
 import subprocess
 import sys
 
-subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "pybind11"])
-
-
 MODULES = [
     "bart_sum",
     "cl_summer",
     "ent_ext",
-    "fast_enc",
+    # "fast_enc",
     "sbert_sim",
     "t5_sum",
     "text_seg",
