@@ -6,7 +6,9 @@ from transformers import AutoModel, AutoConfig, AutoTokenizer
 import traceback
 import numpy as np
 from jaseci.jsorc.live_actions import jaseci_action
-from jaseci.utils.utils import model_base_path
+from pathlib import Path
+
+# from jaseci.utils.utils import model_base_path
 import random
 import json
 import shutil
@@ -14,6 +16,19 @@ import shutil
 from .utils.evaluate import get_embeddings  # noqa
 from .utils.models import BiEncoder  # noqa
 from .utils.train import train_model  # noqa
+
+
+cache_root = Path(Path.home(), ".jaseci/models")
+
+
+def model_base_path(cache_dir: Union[str, Path]) -> Path:
+    cache_dir = Path(cache_dir)
+
+    if not os.path.isabs(cache_dir):
+        model_cache = cache_root / cache_dir
+    else:
+        model_cache = cache_dir
+    return model_cache
 
 
 # device = torch.device("cpu")
