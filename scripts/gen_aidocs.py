@@ -75,10 +75,9 @@ def copy_mds(origin, destination):
                 img_dest = destination + "/img"
                 if not os.path.exists(img_dest):
                     os.makedirs(img_dest)
-                shutil.copy(
-                    os.path.join(root, file),
-                    os.path.join(img_dest, file),
-                )
+                origin_file = os.path.join(root, file)
+                dest_file = os.path.join(img_dest, file)
+                shutil.copy(origin_file, dest_file)
 
 
 main()
