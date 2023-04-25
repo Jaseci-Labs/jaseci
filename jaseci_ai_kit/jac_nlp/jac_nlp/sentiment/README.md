@@ -1,3 +1,7 @@
+---
+title: Sentiment Analysis
+---
+
 # Sentiment Analysis Model (sentiment)
 
 Sentiment analysis is a technique used in natural language processing and machine learning to automatically identify and extract subjective information from text, such as opinions, emotions, and attitudes. It involves analyzing large volumes of text data to determine whether the overall sentiment expressed is positive, negative, or neutral.

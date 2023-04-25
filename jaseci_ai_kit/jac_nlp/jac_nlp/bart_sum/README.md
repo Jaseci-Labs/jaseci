@@ -1,3 +1,7 @@
+---
+title: Text Summerization with BART
+---
+
 # **Bart Summarizer (`bart_sum`)**
 
 Module `bart_sum` uses the `bart-large-cnn` to get the abstractive summary of a text.

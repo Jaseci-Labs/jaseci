@@ -1,3 +1,7 @@
+---
+title: Nammed Entity Extraction with Transformers
+---
+
 #  Entity Extraction Using Transformers (`tfm_ner`)
 
 **What is NER:** named entity recognition (NER) — sometimes referred to as entity chunking, extraction, or identification — is the task of identifying and categorizing key information (entities) in text. An entity can be any word or series of words that consistently refers to the same thing. Every detected entity is classified into a predetermined category.

@@ -1,3 +1,7 @@
+---
+title: Topic Extraction
+---
+
 # Topic Extraction Model (topic_ext)
 
 Module `topic_ext` implemented for extracting topics from set of documents. This module accepts as input a set of documents and their associated class labels. You may use Jaseci `cluster` module to cluster document list to similar groups. This is an example code to demostrate `topic_ext` module.

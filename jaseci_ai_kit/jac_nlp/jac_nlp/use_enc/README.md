@@ -1,3 +1,7 @@
+---
+title: Text Encoding with USE Encoder
+---
+
 # **USE Encoder (`use_enc`)**
 
 Module **`use_enc`** uses the universal sentence encoder to generate sentence level embeddings. The sentence level embeddings can then be used to calculate the similarity between two given text via cosine similarity and/or dot product.
