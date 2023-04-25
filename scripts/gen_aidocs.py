@@ -15,9 +15,6 @@ toc_path = os.path.join(root, "README.md")
 
 def main():
 
-    if not os.path.exists(toc_path):
-        sys.exit()
-
     # remove output directory if it exists
     if os.path.exists(output_path):
         shutil.rmtree(output_path)
