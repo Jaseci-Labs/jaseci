@@ -36,14 +36,12 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsndfile1 ffmpeg
-        sudo apt-get install -y espeak-ng
         python -m pip install --upgrade pip
 
     - name: Install jac_nlp
       run: |
         cd jaseci_ai_kit/jac_nlp
-        python -m pip install pybind11
+        pip install pybind11
         pip install -e .[all]
         cd ..
 
