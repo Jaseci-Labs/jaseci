@@ -6,11 +6,7 @@ from os.path import exists
 
 root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ai_kit_root = root + "/jaseci_ai_kit/"
-output_path = os.path.join(
-    root, "docs/docs/tutorials/jaseci_ai_kit"
-)  # no trailing slash
-
-toc_path = os.path.join(root, "README.md")
+output_path = os.path.join(root, "docs/docs/tutorials/jaseci_ai_kit")
 
 
 def main():
