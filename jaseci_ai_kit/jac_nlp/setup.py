@@ -5,7 +5,7 @@ MODULES = [
     "bart_sum",
     "cl_summer",
     "ent_ext",
-    # "fast_enc",
+    "fast_enc",
     "sbert_sim",
     "t5_sum",
     "text_seg",
@@ -41,6 +41,7 @@ setup(
     name="jac_nlp",
     version=get_ver(),
     packages=find_packages(include=["jac_nlp", "jac_nlp.*"]),
+    setup_requires=["pybind11"],
     install_requires=["jaseci", "pytest>=7.0.1,<7.1", "pytest-order>=1.0.1,<1.1"],
     extras_require=get_extras_requires(),
     package_data={

@@ -3,10 +3,8 @@ from jaseci.jsorc.live_actions import load_module_actions, unload_module
 import pytest
 import shutil
 from os import path
-import unittest
 
 
-@unittest.skip("temporary disable")
 class FastEncTest(CoreTest):
     fixture_src = __file__
     """
