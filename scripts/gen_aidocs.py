@@ -10,42 +10,20 @@ output_path = os.path.join(root, "docs/docs/tutorials/jaseci_ai_kit")
 
 def main():
     # remove output directory if it exists
-    if os.path.exists(output_path):
-        shutil.rmtree(output_path)
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
 
     # generate output directory (if it doesn't exist)
-    os.makedirs(output_path)
-    shutil.copy(
-        os.path.join(ai_kit_root, "_category_.json"),
-        os.path.join(output_path, "_category_.json"),
-    )
-
-    os.makedirs(output_path + "/jac_nlp")
-    shutil.copy(
-        os.path.join(ai_kit_root + "/jac_nlp", "_category_.json"),
-        os.path.join(output_path + "/jac_nlp/" + "_category_.json"),
-    )
+    # os.makedirs(output_path + "/jac_nlp")
     copy_mds(ai_kit_root + "/jac_nlp", output_path + "/jac_nlp")
 
-    os.makedirs(output_path + "/jac_misc")
-    shutil.copy(
-        os.path.join(ai_kit_root + "/jac_misc", "_category_.json"),
-        os.path.join(output_path + "/jac_misc/" + "_category_.json"),
-    )
+    # os.makedirs(output_path + "/jac_misc")
     copy_mds(ai_kit_root + "/jac_misc", output_path + "/jac_misc")
 
-    os.makedirs(output_path + "/jac_speech")
-    shutil.copy(
-        os.path.join(ai_kit_root + "/jac_speech", "_category_.json"),
-        os.path.join(output_path + "/jac_speech/" + "_category_.json"),
-    )
+    # os.makedirs(output_path + "/jac_speech")
     copy_mds(ai_kit_root + "/jac_speech", output_path + "/jac_speech")
 
-    os.makedirs(output_path + "/jac_vision")
-    shutil.copy(
-        os.path.join(ai_kit_root + "/jac_vision", "_category_.json"),
-        os.path.join(output_path + "/jac_vision/" + "_category_.json"),
-    )
+    # os.makedirs(output_path + "/jac_vision")
     copy_mds(ai_kit_root + "/jac_vision", output_path + "/jac_vision")
 
     print("Copied ai_kit_docs directories")
