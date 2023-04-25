@@ -3,14 +3,12 @@ import shutil
 import os
 from os.path import exists
 
-
 root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ai_kit_root = root + "/jaseci_ai_kit/"
 output_path = os.path.join(root, "docs/docs/tutorials/jaseci_ai_kit")
 
 
 def main():
-
     # remove output directory if it exists
     if os.path.exists(output_path):
         shutil.rmtree(output_path)
