@@ -1,5 +1,7 @@
 from setuptools import setup, find_packages
 from os.path import join
+import subprocess
+import sys
 
 MODULES = [
     "bart_sum",
@@ -23,6 +25,28 @@ MODULES = [
 ]
 
 
+class get_pybind_include(object):
+    """Helper class to determine the pybind11 include path
+
+    The purpose of this class is to postpone importing pybind11
+    until it is actually installed, so that the ``get_include()``
+    method can be invoked."""
+
+    def __init__(self, user=False):
+        try:
+            import pybind11
+        except ImportError:
+            if subprocess.call([sys.executable, "-m", "pip", "install", "pybind11"]):
+                raise RuntimeError("pybind11 install failed.")
+
+        self.user = user
+
+    def __str__(self):
+        import pybind11
+
+        return pybind11.get_include(self.user)
+
+
 def get_ver():
     with open(join("./jac_nlp", "VERSION")) as version_file:
         return version_file.read().strip()
@@ -42,7 +66,6 @@ setup(
     version=get_ver(),
     packages=find_packages(include=["jac_nlp", "jac_nlp.*"]),
     install_requires=[
-        "pybind11",
         "jaseci",
         "pytest>=7.0.1,<7.1",
         "pytest-order>=1.0.1,<1.1",
