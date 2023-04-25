@@ -3,7 +3,9 @@ from os.path import join
 import subprocess
 import sys
 
-subprocess.check_call([sys.executable, "-m", "pip", "install", "pybind11"])
+subprocess.check_call(
+    [sys.executable, "-m", "pip", "install", "--user", "pybind11==2.10.3"]
+)
 
 
 MODULES = [
