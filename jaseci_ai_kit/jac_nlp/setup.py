@@ -3,6 +3,13 @@ from os.path import join
 import subprocess
 import sys
 
+try:
+    import pybind11
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pybind11"])
+    import pybind11
+
+
 MODULES = [
     "bart_sum",
     "cl_summer",
