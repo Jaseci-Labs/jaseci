@@ -3,7 +3,7 @@ sidebar_position: 3
 title: FastText Encoder
 ---
 
-# FastText Encoder (`fast_enc`)
+# FastText Encoder (`fast_enc`) - `Status`: `Inactive`
 
 ## Actions
 
