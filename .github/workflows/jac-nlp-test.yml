@@ -41,7 +41,7 @@ jobs:
     - name: Install jac_nlp
       run: |
         cd jaseci_ai_kit/jac_nlp
-        pip install pybind11
+        pip install fasttext
         pip install -e .[all]
         cd ..
 
