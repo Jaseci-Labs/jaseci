@@ -11,9 +11,7 @@ urlpatterns = [
                 path("google/", GoogleLogin.as_view(), name="google_login"),
                 path("facebook/", FaceBookLogin.as_view(), name="facebook_login"),
                 path("github/", GitHubLogin.as_view(), name="github_login"),
-                path("microsoft/", MicrosoftLogin.as_view(), name="microsoft_login"),
-                path("okta/", OktaLogin.as_view(), name="okta_login"),
-                # path("openid/", OpenIdLogin.as_view(), name="openid_login"), #
+                path("apple/", AppleLogin.as_view(), name="apple_login"),
                 path(
                     "examples/<str:provider>/",
                     ExampleLiveView.as_view(),
