@@ -1,1 +1,2 @@
-
+openai>=0.27.4
+soundfile>=0.12.1

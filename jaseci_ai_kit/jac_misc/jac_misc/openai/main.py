@@ -162,7 +162,7 @@ def transcribe(audio_file:str = None, audio_url:str = None, audio_array:list = N
     language: str, optional
         The language of the audio being transcribed, specified as a BCP-47 language code.
     translate: bool, optional (default=False)
-        If True, the transcribed text will be translated to English using Google Translate.
+        If True, the transcribed text will be translated to English.
 
     Returns:
     --------
