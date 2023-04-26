@@ -18,7 +18,7 @@ jobs:
     - name: Set swap space
       uses: pierotofy/set-swap-space@master
       with:
-        swap-size-gb: 6
+        swap-size-gb: 7
 
     - uses: actions/checkout@v2
     - uses: actions/cache@v2
