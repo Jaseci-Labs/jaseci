@@ -48,7 +48,7 @@ jobs:
       run: |
         cd jaseci_ai_kit/jac_speech
         pip install -e .[all]
-
+        pip install -U TTS
     - name: Verify jac_speech installation
       run: |
         python -c "import jac_speech"
