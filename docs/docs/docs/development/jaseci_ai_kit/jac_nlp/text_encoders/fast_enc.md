@@ -4,7 +4,7 @@ title: FastText Encoder
 description: Text Encoding with FastText Encoder
 ---
 
-# FastText Encoder (`fast_enc`)
+# FastText Encoder (`fast_enc`) - `Status`: `Inactive`
 
 ## Actions
 
