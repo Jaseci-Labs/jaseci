@@ -43,7 +43,7 @@ jobs:
     - name: Install jaseci_core
       run: |
         cd jaseci_core
-        pip install . -e
+        pip install -e .
         cd ..
 
     - name: Install jac_nlp
