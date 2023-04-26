@@ -10,6 +10,9 @@ from datetime import datetime
 import numpy as np
 from fastapi import HTTPException
 from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.utils.utils import model_base_path
+import os
+
 
 """
 Declaring the training config
@@ -22,6 +25,21 @@ training_config: Dict = {
     ),
     "model_name": "bert-base-uncased",
 }
+MODEL_BASE_PATH = str(model_base_path("jac_nlp/sbert_sim"))
+
+
+@jaseci_action(act_group=["sbert_sim"], allow_remote=True)
+def setup(model_name="all-mpnet-base-v2"):
+    global model
+    os.makedirs(MODEL_BASE_PATH, exist_ok=True)
+    if all(
+        os.path.isfile(os.path.join(MODEL_BASE_PATH, f_name))
+        for f_name in ["pytorch_model.bin"]
+    ):
+        model = SentenceTransformer(MODEL_BASE_PATH)
+    else:
+        model = SentenceTransformer(model_name)
+        model.save(MODEL_BASE_PATH)
 
 
 def create_model(model_name="bert-base-uncased", max_seq_length=256):
@@ -193,8 +211,6 @@ def get_train_config():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-load_model()
 
 if __name__ == "__main__":
     from jaseci.jsorc.remote_actions import launch_server
