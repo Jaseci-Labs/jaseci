@@ -20,7 +20,7 @@ MODULES = [
     "gpt3",
     "sentiment",
     "paraphraser",
-    "dolly"
+    "dolly",
 ]
 
 
