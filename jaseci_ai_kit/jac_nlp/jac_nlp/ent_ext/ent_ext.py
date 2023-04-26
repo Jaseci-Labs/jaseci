@@ -5,6 +5,7 @@ from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 from flair.models import TARSTagger, SequenceTagger
 from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
+from flair.file_utils import cached_path
 from flair.data import Sentence
 from flair.trainers import ModelTrainer
 import pandas as pd
@@ -16,12 +17,15 @@ import os
 from pathlib import Path
 from datetime import datetime
 import warnings
+from jaseci.utils.utils import model_base_path
 
 warnings.filterwarnings("ignore")
 
 config = configparser.ConfigParser()
-
-
+MODEL_BASE_PATH = model_base_path("jac_nlp/ent_ext")
+TARS_NER_PATH = (
+    "https://nlp.informatik.hu-berlin.de/resources/models/tars-ner/tars-ner.pt"
+)
 # 1. initialize each embedding for LSTM
 embedding_types = [
     # GloVe embeddings
@@ -51,9 +55,9 @@ def setup(reload=False):
     if MODEL_TYPE.lower() == "trfmodel" and NER_MODEL_NAME.lower() != "none":
         tagger = TARSTagger(embeddings=NER_MODEL_NAME)
     elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in ["lstm", "gru"]:
-        tagger = SequenceTagger.load(NER_MODEL_NAME)
+        tagger = SequenceTagger.load(cached_path(NER_MODEL_NAME, MODEL_BASE_PATH))
     elif MODEL_TYPE.lower() in "tars" and NER_MODEL_NAME.lower() != "none":
-        tagger = TARSTagger.load(NER_MODEL_NAME)
+        tagger = TARSTagger.load(cached_path(TARS_NER_PATH, MODEL_BASE_PATH))
     print(f"loaded mode : [{NER_MODEL_NAME}]")
 
 

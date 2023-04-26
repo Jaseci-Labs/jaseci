@@ -195,6 +195,7 @@ def load_custom_model(model_path, train_dm=None):
         num_labels=len(train_dm.unique_entities),
         id2label=train_dm.id2label,
         label2id=train_dm.label2id,
+        local_files_only=True,
     )
     model.to(device)
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)

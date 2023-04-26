@@ -13,16 +13,21 @@ from .train import (
     train_model,
 )
 import shutil
+from pathlib import Path
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from jaseci.utils.utils import model_base_path
+
 
 warnings.filterwarnings("ignore")
 
 
-def config_setup():
+@jaseci_action(act_group=["tfm_ner"], allow_remote=True)
+def setup():
     """
     Loading configurations from config and
     initialize tokenizer and model
     """
-    global train_config, model_config, curr_model_path
+    global train_config, model_config, MODEL_BASE_PATH
     global t_config_fname, m_config_fname
     dirname = os.path.dirname(__file__)
     m_config_fname = os.path.join(dirname, "utils/model_config.json")
@@ -32,11 +37,17 @@ def config_setup():
         train_config = json.load(jsonfile)
     with open(m_config_fname, "r") as jsonfile:
         model_config = json.load(jsonfile)
+    MODEL_BASE_PATH = str(model_base_path("jac_nlp/tfm_ner"))
+    os.makedirs(MODEL_BASE_PATH, exist_ok=True)
+    if not os.listdir(MODEL_BASE_PATH):
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_config["model_name"]
+        )
+        tokenizer = AutoTokenizer.from_pretrained(model_config["model_name"])
+        tokenizer.save_vocabulary(MODEL_BASE_PATH)
+        model.save_pretrained(MODEL_BASE_PATH)
+        del model, tokenizer
 
-    curr_model_path = model_config["model_name"]
-
-
-config_setup()
 
 enum = {"default": 1, "append": 2, "incremental": 3}
 
@@ -56,8 +67,8 @@ def extract_entity(text: str = None):
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def train(
-    mode: str = train_config["MODE"],
-    epochs: int = train_config["EPOCHS"],
+    mode: str = "default",
+    epochs: int = 20,
     train_data: List = [],
     val_data: Optional[List] = [],
 ):
@@ -94,7 +105,7 @@ def train(
 
     try:
         train_dm = NERDataMaker(train_data)
-        load_custom_model(curr_model_path, train_dm)
+        load_custom_model(MODEL_BASE_PATH, train_dm)
         train_model(train_data=train_data, val_data=val_data, train_config=train_config)
         print("model training Completed")
         return {"status": "model Training Successful!"}
@@ -109,8 +120,10 @@ def train(
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def load_model(model_path: str = "default", local_file: bool = True):
-    global curr_model_path
-    curr_model_path = model_path
+    global MODEL_BASE_PATH
+    if not os.path.isabs(model_path):
+        model_path = str(MODEL_BASE_PATH / Path(model_path))
+    MODEL_BASE_PATH = model_path
     train_file_path = os.path.join(model_path, "train.json")
     if local_file is True and not os.path.exists(model_path):
         return "Model path is not available"
@@ -120,7 +133,7 @@ def load_model(model_path: str = "default", local_file: bool = True):
             with open(train_file_path, "r") as fp:
                 train_data = json.load(fp)
             train_dm = NERDataMaker(train_data)
-            load_custom_model(curr_model_path, train_dm)
+            load_custom_model(MODEL_BASE_PATH, train_dm)
             print("model successfully load to memory!")
             return {"status": "model Loaded Successfull!"}
         else:
@@ -133,6 +146,8 @@ def load_model(model_path: str = "default", local_file: bool = True):
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
 def save_model(model_path: str = "mymodel"):
     try:
+        if not os.path.isabs(model_path):
+            model_path = str(MODEL_BASE_PATH / Path(model_path))
         save_custom_model(model_path)
         print(f"current model {model_path} saved to disk.")
         shutil.copy("train/train.json", model_path)
@@ -188,7 +203,7 @@ def set_model_config(model_parameters: Dict = None):
         with open(m_config_fname, "w+") as jsonfile:
             json.dump(model_config, jsonfile, indent=4)
 
-        config_setup()
+        setup()
         return "Config setup is complete."
     except Exception as e:
         print(traceback.format_exc())
