@@ -17,8 +17,9 @@ import traceback
 import inspect
 import unittest
 from time import time
-
+from pathlib import Path
 from pprint import pformat
+from typing import Union
 
 from jaseci.utils.log_utils import LimitedSlidingBuffer
 
@@ -331,3 +332,16 @@ def find_first_api(api_name, **api_endpoints):
         if api:
             return path, api
     raise InvalidApiException(f"api {api_name} is not existing!")
+
+
+cache_root = Path(Path.home(), ".jaseci/models")
+
+
+def model_base_path(cache_dir: Union[str, Path]) -> Path:
+    cache_dir = Path(cache_dir)
+
+    if not os.path.isabs(cache_dir):
+        model_cache = cache_root / cache_dir
+    else:
+        model_cache = cache_dir
+    return model_cache

@@ -224,7 +224,7 @@ spec:
               value: jaseci-prometheus-server
 
             - name: ELASTIC_HOST
-              value: jaseci-es-internal-http
+              value: jaseci-es-http
 
 $j{env_vars}
 

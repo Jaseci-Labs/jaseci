@@ -60,9 +60,15 @@ const config = {
         items: [
           {
             type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
+            sidebarId: 'docsSidebar',
             position: 'left',
             label: 'Docs',
+          },
+          {
+            type: 'docSidebar',
+            sidebarId: 'tutorialsSidebar',
+            position: 'left',
+            label: 'Tutorials',
           },
           {
             href: 'https://github.com/Jaseci-Labs/jaseci',
