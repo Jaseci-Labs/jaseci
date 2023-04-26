@@ -47,8 +47,7 @@ jobs:
     - name: Install jac_speech
       run: |
         cd jaseci_ai_kit/jac_speech
-        pip install .[stt]
-        pip install .[vc_tts]
+        pip install .[all]
 
     - name: Verify jac_speech installation
       run: |
