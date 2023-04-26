@@ -5,7 +5,7 @@ Databricks’ dolly-v2, an instruction-following large language model trained on
 The `generate` action allows you to generate text based on the input text you provide.
 
 Inputs:
-- text: input text, string
+- prompt: input text, string
 
 Output
 - generated text, string
@@ -14,7 +14,7 @@ Output
 ```jac
 walker test_generate {
     can dolly.generate;
-    report dolly.generate(text= "Hello, my name is");
+    report dolly.generate(prompt= "Hello, my name is");
 }
 ```
 

@@ -1,6 +1,6 @@
 from jaseci.jsorc.live_actions import jaseci_action
 import torch
-from instruct_pipeline import InstructionTextGenerationPipeline
+from .instruct_pipeline import InstructionTextGenerationPipeline
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 def setup(model:str = 'dolly-v2-3b'):
