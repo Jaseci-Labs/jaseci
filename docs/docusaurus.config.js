@@ -86,15 +86,11 @@ const config = {
               {
                 label: 'Stack Overflow',
                 href: 'https://stackoverflow.com/questions/tagged/jaseci',
-              },
-              {
-                label: 'Twitter',
-                href: 'https://twitter.com/jaseci',
-              },
+              }
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Jaseci Labs, Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Jaseci Labs.`,
       },
       prism: {
         theme: lightCodeTheme,

@@ -12,7 +12,7 @@ const FeatureList = [
     href: 'docs/introduction',
     description: (
       <>
-        Developing AI models with Jaseci is way faster. Its requires 60% less effort when building with Jaseci. Get started  <a href="/docs/introduction">Here</a>
+        Developing AI models with Jaseci is way faster. Its requires 60% less effort when building with Jaseci.
       </>
     ),
   },
@@ -23,7 +23,7 @@ const FeatureList = [
 
     description: (
       <>
-        Jaseci uses the <a>JAC</a> Programming language which is used for interacting with the Jaseci Engine, giving developers control over Jaseci when building AI powered Apps. Get started  <a href="/docs/Developing_with_JAC/Overview">Here</a>
+        Jaseci uses the <a>JAC</a> Programming language which is used for interacting with the Jaseci Engine, giving developers control over Jaseci when building AI powered Apps.
       </>
     ),
   },
