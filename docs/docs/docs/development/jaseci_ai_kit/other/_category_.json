@@ -1,0 +1,8 @@
+{
+    "label": "Other AI Modules",
+    "position": 4,
+    "link": {
+        "type": "generated-index",
+        "description": "The `jac_misc` package contains a collection of miscellaneous models that can be used to perform various tasks such as translation, pdf extraction, personalized head etc. following is a list of all the models available in the `jac_misc` package."
+    }
+}
