@@ -44,9 +44,15 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework.authtoken",
     "knox",
     "django_rest_passwordreset",
     "drf_yasg",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
     "jaseci_serv.base",
     "jaseci_serv.user_api",
     "jaseci_serv.obj_api",
@@ -57,7 +63,7 @@ INSTALLED_APPS = [
     "jaseci_serv.jsx_oauth",
     # this MUST always be the last app
     "jaseci_serv.svc",
-]
+] + OAUTH_APPS
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -77,7 +83,7 @@ ROOT_URLCONF = "jaseci_serv.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [TEMPLATE_DIR],
+        "DIRS": [TEMPLATE_DIR, os.path.join(BASE_DIR, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -213,14 +219,3 @@ JASECI_CONFIGS = [
 
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-
-
-#################################################
-#                    ADDONS                     #
-#################################################
-
-# ------------------- OAUTH ------------------- #
-
-INSTALLED_APPS += OAUTH_APPS
-JSX_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATES[0]["DIRS"] += [os.path.join(JSX_DIR, "templates")]

@@ -15,10 +15,10 @@ from rest_framework.response import Response
 from rest_framework.exceptions import APIException
 from rest_framework import serializers
 from allauth.socialaccount.helpers import complete_social_login
-from allauth.socialaccount.models import SocialApp
 from requests.exceptions import HTTPError
 from enum import Enum
-from .models import InternalClient
+
+from .models import SocialApp
 
 
 class LoginType(Enum):
@@ -28,9 +28,9 @@ class LoginType(Enum):
     BINDING = "Existing account but just got binded with different login type"
 
 
-class InternalClientFieldNotExists(APIException):
+class AppIdFieldNotExists(APIException):
     status_code = 400
-    default_detail = "internal_client_id is required!"
+    default_detail = "app_id is required!"
     default_code = "Request failed!"
 
 
@@ -39,6 +39,9 @@ class GetExampleUrlSerializer(serializers.Serializer):
 
 
 class JSXSocialLoginSerializer(SocialLoginSerializer):
+    app_id = serializers.CharField(required=False, allow_blank=True)
+
+    # deprecated
     internal_client_id = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs):
@@ -56,16 +59,15 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
 
         adapter = adapter_class(request)
 
-        internal_client_id = attrs.get("internal_client_id")
-        if internal_client_id:
+        # internal_client_id is deprecated
+        app_id = attrs.get("app_id") or attrs.get("internal_client_id")
+
+        if app_id:
             try:
-                internal_client = InternalClient.objects.get(
-                    client_id=internal_client_id
-                )
-                app = internal_client.social_app
-            except InternalClient.DoesNotExist:
+                app = SocialApp.objects.get(id=app_id).legacy()
+            except SocialApp.DoesNotExist:
                 raise serializers.ValidationError(
-                    _(f"internal_client_id is not yet associated on any Socail App!"),
+                    _(f"app_id is not yet associated on any Social App!"),
                 )
         else:
             social_apps = SocialApp.objects.filter(provider=adapter.provider_id)
@@ -74,7 +76,7 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
             if social_apps_count > 1:
                 raise serializers.ValidationError(
                     _(
-                        f"You have multiple {adapter.provider_id} Social App. internal_client_id is required to associated it on one of those apps!"
+                        f"You have multiple {adapter.provider_id} Social App. app_id is required to associated it on one of those apps!"
                     ),
                 )
             elif social_apps_count < 1:
@@ -85,8 +87,9 @@ class JSXSocialLoginSerializer(SocialLoginSerializer):
                 )
             else:
                 # backward compatibility
-                app = social_apps[0]
+                app = social_apps[0].legacy()
 
+        request.app = app
         code = attrs.get("code")
 
         if code:
