@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+description: An Overview of Graphs and Examples.
 ---
 
 # Graphs

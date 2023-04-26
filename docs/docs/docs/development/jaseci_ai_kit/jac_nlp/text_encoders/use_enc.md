@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: USE Encoder
+description: Text encoding with USE Encoder
 ---
 
 #  USE Encoder (`use_enc`)
@@ -61,4 +62,4 @@ walker use_enc_example {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/use_enc).
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/use_enc).

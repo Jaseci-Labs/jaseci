@@ -1,3 +1,9 @@
+---
+sidebar_position: 2
+title: Built in Actions
+description: Built in Actions in Jaseci UI Kit.
+---
+
 # Built in Actions
 
 ## Update

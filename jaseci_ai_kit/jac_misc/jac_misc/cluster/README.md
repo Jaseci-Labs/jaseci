@@ -1,3 +1,7 @@
+---
+title: Text Clustering
+---
+
 # Text Cluster (cluster)
 
 Module `cluster` implemented for clustering text document into similar clusters. This is a example program to cluster documents with jaseci `cluster` module. We will use input as list of raw text documents and will produce cluster labels for each text documents.

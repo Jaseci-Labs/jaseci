@@ -1,6 +1,7 @@
 ---
 sidebar_position: 6
 title: Text Segmentation Model
+description: Text Segmentation with Jaseci
 ---
 
 # Text Segmenter (`text_seg`)
@@ -49,4 +50,4 @@ walker text_seg_example {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/text_seg)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/text_seg)

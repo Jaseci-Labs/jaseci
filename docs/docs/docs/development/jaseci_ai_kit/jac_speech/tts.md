@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Text to Speech Module
+description: Synthesizing Speeches with Jaseci.
 ---
 
 # Text to Speech Module
@@ -45,4 +46,4 @@ walker init{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_speech/jac_speech/vc_tts)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/tts)

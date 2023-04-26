@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: CLustering Module
+description: Text Clustering with Jaseci.
 ---
 
 # Clustering Module
@@ -70,4 +71,4 @@ walker text_cluster_example{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_misc/jac_misc/cluster)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/cluster)

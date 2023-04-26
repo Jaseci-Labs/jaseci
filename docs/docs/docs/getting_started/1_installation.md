@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+description: A step by step guide to installation.
 ---
 
 # Jaseci Installation Guide

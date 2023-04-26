@@ -1,3 +1,7 @@
+---
+title: Nammed Entity Recognition with Bi-NER
+---
+
 #  **Bi-NER (`bi_ner`)**
 **`bi_ner`** is a arrangement of two encoder modules from BERT, it represents context and candidate separately using twin-structured encoders. You can train the module on custom data to behave accordingly. Let's take a deep dive into the training culture.
 
@@ -78,9 +82,9 @@ For this tutorial, we are going to `train and Predict` the `bi-ner` for `Named E
         > sentinel set -snt active:sentinel -mode ir bi_ner.jir
 
     6. Calling walker `train` with `default parameter` for training `bi_ner` module by cmd
-        > walker run train </br>
+        > walker run train
     7. Calling walker `predict` with `default parameter`  to get evalution
-        > walker run predict </br>
+        > walker run predict
 
 
     **Sample Input Data for Training**

@@ -1,3 +1,7 @@
+---
+title: Nammed Entity Recognition with FLAIR
+---
+
 ### Entity Extraction Using `FLAIR NER(ent_ext)`
 
 ### **FLAIR NER**`(ent_ext)` module uses flair named entity recognition architecture. It can either be used `zero-shot` or `few-shot` entity recognition.

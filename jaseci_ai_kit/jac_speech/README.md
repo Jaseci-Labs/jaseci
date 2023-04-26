@@ -1,13 +1,9 @@
+---
+title: Jaseci Speech Package
+---
+
 # Jaseci Speech Package `jac_speech`
 The `jac_speech` package contains a collection of state-of-the-art Speech models that can be used to perform various speech tasks such as speech to text, text to speech etc. following is a list of all the models available in the `jac_speech` package.
-
-- [Jaseci Speech Package `jac_speech`](#jaseci-speech-package-jac_speech)
-  - [Speech to Text Modules](#speech-to-text-modules)
-    - [Actions](#actions)
-    - [Example Jac Usage:](#example-jac-usage)
-  - [Text to Speech Modules](#text-to-speech-modules)
-    - [Actions](#actions-1)
-    - [Example Jac Usage](#example-jac-usage-1)
 
 ## Speech to Text Modules
 

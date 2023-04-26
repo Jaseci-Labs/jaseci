@@ -1,8 +1,12 @@
-# **Text to Speech with Voice Cloning (`vc_tts`)**
+---
+title: Text to Speech with Voice Cloning
+---
 
-| :warning: WARNING          |
-|:---------------------------|
-| This module requires strict dependencies. As a result, if you intend to use this with other modules, make sure to install it first. Otherwise, other modules will fail.|
+# Text to Speech with Voice Cloning (`vc_tts`)
+
+| :warning: WARNING                                                                                                                                                       |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| This module requires strict dependencies. As a result, if you intend to use this with other modules, make sure to install it first. Otherwise, other modules will fail. |
 
 Before loading the module install `espeak-ng` using the command `sudo apt-get install -y espeak-ng`.
 

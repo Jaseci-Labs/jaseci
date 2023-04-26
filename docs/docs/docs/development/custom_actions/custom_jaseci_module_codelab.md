@@ -1,3 +1,9 @@
+---
+sidebar_position: 1
+title: Build a Custom Jaseci Action Module
+description: Build a Jaseci Action Module with Python
+---
+
 # Build a Custom Jaseci Action Module
 
 In this tutorial, you are going to learn how to build a custom jaseci module with python. In this application I will teach you how to create a basic calculator module for jaseci.
@@ -79,12 +85,12 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 
 Go to http://localhost:8000/docs and you should see a documentation page that looks like this
 
-![](swagger_docs_example.png)
+![](img/swagger_docs_example.png)
 This is an automatically generated documentation page for the custom module you have just created.
 It lists all custom actions, e.g. the `add` one we created just now.
 You can also use this docs page to do quick testing of each action by expanding on that action and then click on `Try it out` in the top-right corner.
 
-![](swagger_docs_try_it_out.png)
+![](img/swagger_docs_try_it_out.png)
 
 ## Use the custom module in a Jac program
 Now we have the actions loaded, let's create a simple jac program to utilize it.

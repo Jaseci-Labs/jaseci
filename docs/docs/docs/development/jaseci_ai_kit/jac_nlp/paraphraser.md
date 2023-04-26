@@ -1,6 +1,7 @@
 ---
 sidebar_position: 9
 title: Paraphraser Model
+description: Text Paraphrasing with Jaseci
 ---
 
 # Paraphraser Model (`paraphraser`)
@@ -25,4 +26,4 @@ walker init{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/paraphraser)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/paraphraser)

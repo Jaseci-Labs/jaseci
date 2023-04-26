@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: T5 Summarizer
+description: Text Summerization with T5 Summerizer
 ---
 
 #  T5 Summarizer (`t5_sum`)
@@ -40,4 +41,4 @@ walker summarization {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/t5_sum)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/t5_sum)

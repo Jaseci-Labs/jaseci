@@ -1,3 +1,9 @@
+---
+sidebar_position: 1
+title: Build a Custom Jaseci Action Using Transformers
+description: Transformer based summarization module for Jaseci.
+---
+
 # Creating a Custom Jaseci Action using T5
 
 In this section, we will be creating a T5 transformer based summarization module for jaseci.

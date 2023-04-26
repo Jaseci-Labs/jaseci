@@ -28,6 +28,7 @@ cli: actions load module | api: actions_load_module | auth: admin
 mod: str (*req)
 ```
 This API will dynamically load a module using python's module import format. This is particularly useful for pip installed action libraries as the developer can directly reference the module using the same format as a regular python import. As with load local, the module will be loaded directly into the running Jaseci python instance.
+
 #### Params
 Params mod -- The import style module to load actions from. (i.e., jaseci_ai_kit.bi_enc)
 
@@ -56,6 +57,7 @@ No documentation yet.
 ```
 
 ### Actions Unload Action
+
 ```
 cli: actions unload action | api: actions_unload_action | auth: admin
 name: str (*req)
@@ -63,6 +65,7 @@ No documentation yet.
 ```
 
 ### Actions Unload Actionset
+
 ```
 cli: actions unload actionset | api: actions_unload_actionset | auth: admin
 name: str (*req)
@@ -74,6 +77,7 @@ No documentation yet.
 The architype set of APIs allow for the addition and removing of architypes. Given a Jac implementation of an architype these APIs are designed for creating, compiling, and managing architypes that can be used by Jaseci. There are two ways to add an architype to Jaseci, either through the management of sentinels using the sentinel API, or by registering independent architypes with these architype APIs. These APIs are also used for inspecting and managing existing arichtypes that a Jaseci instance is aware of.
 
 ### Architype Register
+
 ```
 cli: architype register | api: architype_register | auth: user
 code: str (*req), encoded: bool (False), snt: Sentinel (None)

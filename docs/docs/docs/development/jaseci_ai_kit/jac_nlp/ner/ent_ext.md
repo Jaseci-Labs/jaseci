@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Flair NER
+description: NER with Flair NER
 ---
 
 # Entity Extraction (`ent_ext` and `lstm_ner`)
@@ -150,4 +151,4 @@ walker ent_ext_example {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/ent_ext)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/ent_ext)

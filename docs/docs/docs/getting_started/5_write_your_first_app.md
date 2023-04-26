@@ -1,5 +1,6 @@
 ---
 sidebar_position: 5
+description: A step by step guide to write a Jaseci App.
 ---
 
 # Writing Your First App

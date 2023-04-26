@@ -1,3 +1,7 @@
+---
+title: Text Similarity with Sentence BERT Model
+---
+
 #  **SBert Similarity (`sbert_sim`)**
 **`sbert_sim`** is a implementation of SentenceBert for scoring similarity among sentences, it uses bi-encoder in a saimese setup to encode the sentence followed by the cosine similarity to score the similarity.
 

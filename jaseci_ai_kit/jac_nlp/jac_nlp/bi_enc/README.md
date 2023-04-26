@@ -1,3 +1,7 @@
+---
+title: Text Encoding with Bi-Encoder
+---
+
 #  **Bi-Encoder (`bi_enc`)**
 **`bi_enc`** is a arrangement of two encoder modules from BERT, it represents context and candidate separately using twin-structured encoders, it takes contexts and candidates, to predict the best suitable candidate for each context. You can train the module on custom data to behave accordingly. Let's take a deep dive into the trainning culture.
 
@@ -300,11 +304,11 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             }
         }
         ```
-        **Default parameter for train and test biencoder** </br>
-        `train_file` : local path of **train_bi.json** file </br>
-        `from_scratch` : **true** </br>
-        `num_train_epochs` : **20** </br>
-        `test_file` : local path of **test_bi.json** file </br>
+        **Default parameter for train and test biencoder**
+        `train_file` : local path of **train_bi.json** file
+        `from_scratch` : **true**
+        `num_train_epochs` : **20**
+        `test_file` : local path of **test_bi.json** file
 
     9. Declaring walker for `predicting intents` on new text
         ```
@@ -465,9 +469,9 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
         > sentinel register -set_active true -mode ir bi_encoder.jir
     3. Calling walker `train_bi_enc` with `default parameter` for training `bi_enc` module by cmd
-        > walker run train_bi_enc </br>
+        > walker run train_bi_enc
 
-    After `3rd step` running logging will shown on console </br>
+    After `3rd step` running logging will shown on console
     **`training logs`**
     ```
     jaseci > walker run train_bi_enc
@@ -601,8 +605,8 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
     ]
     ```
 
-### **5. Use the trained model to make predictions** </br>
-* Create new input data for prdiction stored in `test_dataset.json` file (can take any name) </br>
+### **5. Use the trained model to make predictions**
+* Create new input data for prdiction stored in `test_dataset.json` file (can take any name)
 
     **Input data**
 

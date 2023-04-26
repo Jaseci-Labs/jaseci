@@ -1,3 +1,7 @@
+---
+title: Text Generation with Chat GPT3
+---
+
 # **OpenAI's GPT3 (`gpt3`)**
 
 Module `gp3` uses the OpenAI's `GPT-3` api to perform text genreation on a given text.

@@ -1,13 +1,15 @@
-# How-to create a Docker image and a release/deployment package for your jac program
+# How to create a Docker image and a release/deployment package for your jac program
 
 In this guide, we will walk through our recommended way of packaging up everything required to deploy your jac program in one package.
 The package should include:
-* a docker image for the jaseci server (w/ pre-trained AI models built-in if applicable)
-* a jsctl script to intialize your server
-* a README with instructions on how to use the docker image and jsctl script
+* A docker image for the jaseci server (w/ pre-trained AI models built-in if applicable)
+* A jsctl script to intialize your server
+* A README with instructions on how to use the docker image and jsctl script
 
 ## Docker image
+
 ### Select the right base image
+
 Before building our custom docker image, we first need to select a base docker image.
 We provide a set of base docker images, hosted on [docker hub](https://hub.docker.com/u/jaseci).
 * `jaseci/jaseci` conatins only `jaseci_core` and `jaseci_serv`. It does not contain any modules from `jaseci_ai_kit`. So if your jac program does not require any modules from AI kit, you can use this base image.
@@ -24,6 +26,7 @@ In the case where your application needs modules from two or more groups, (e.g. 
 
 
 ### Create dockerfile for our custom image
+
 Now that we have selected the right base image (we will use `jaseci/jac-nlp` for this guide), we will now create a custom dockerfile for our custom image.
 
 Here is a template dockerfile to start with:

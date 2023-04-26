@@ -1,4 +1,8 @@
-# **Text Segmenter (text_seg)**
+---
+title: Text Segmentation
+---
+
+# Text Segmenter (text_seg)
 
 Module `text_seg` implemented for the Topical Change Detection in Documents via Embeddings of Long Sequences.
 

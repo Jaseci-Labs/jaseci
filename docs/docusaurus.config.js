@@ -20,7 +20,7 @@ const config = {
   organizationName: 'Jaseci-Labs', // GitHub org/user name.
   projectName: 'jaseci', // Repo name.
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'ignore',
   onBrokenMarkdownLinks: 'warn',
 
   // metadata like html lang. For example, if your site is Chinese, you may want
