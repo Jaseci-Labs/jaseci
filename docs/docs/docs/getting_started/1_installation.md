@@ -31,7 +31,7 @@ Check if WSL is installed by running the following the Windows powershell termin
 
 **Step 2:**
 
-If no version is specified open windows powershell in  adminstrator mode and install WSL by running :
+If no version is specified open windows powershell in  administrator mode and install WSL by running :
 
 ```
 wsl --install

@@ -11,7 +11,7 @@ In Jac, you can use the `info` and `context` commands to view the content of a n
 node example{
     has name = "Testing Info and Context commands";
     has result = "Success";
-    has favourite_quote = "How you do anything is how you do everything therefore excellence auth to be an habit not an act";
+    has favorite_quote = "How you do anything is how you do everything therefore excellence auth to be an habit not an act";
 }
 
 walker init{
@@ -23,4 +23,4 @@ walker init{
 }
 ```
 
-After executing the command above, you will observe that the `context` command displays variables such as name, result, and favourite quote, while the `info` command displays all the information related to the node.
+After executing the command above, you will observe that the `context` command displays variables such as name, result, and favorite quote, while the `info` command displays all the information related to the node.

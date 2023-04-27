@@ -73,4 +73,4 @@ It's crucial to keep in mind that there is an in-memory mode that can be activat
 
 ## CLI Mode
 
-It's crucial to acknowledge that with CLI mode, jaseci administrators have the option to execute commands without retaining a session file or utilising the in-memory mode.
+It's crucial to acknowledge that with CLI mode, jaseci administrators have the option to execute commands without retaining a session file or utilizing the in-memory mode.

@@ -92,7 +92,7 @@ description: NER with Flair NER
             "LR": 0.01
         }
         ```
-* `entity_detection`: detects all availabe entities from the provided context
+* `entity_detection`: detects all available entities from the provided context
     * Input:
         * `text` (string): context to detect entities.
         * `ner_labels`(list of strings): List of entities, e.g. ["LOC","PER"]
@@ -107,9 +107,9 @@ description: NER with Flair NER
     * Returns: "[loaded model from] : <model_path>" if model successfully loaded
 * `set_config`:
     * Input
-        * `ner_model`: pretrained or basic model to be loaded, provide the exact name of the model, available options are:
+        * `ner_model`: pre-trained or basic model to be loaded, provide the exact name of the model, available options are:
             * `Pre-trained LSTM / GRU` : ["ner", "ner-fast","ner-large"]
-            * `Huggingface model` : all available models that can be intialized with AutoModel
+            * `Huggingface model` : all available models that can be initialized with AutoModel
             * `None` : for load a RNN model from scratch
         * `model_type`: type of model to be loaded, available options are :
             * `TRFMODEL` : for huggingface models

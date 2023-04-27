@@ -9,15 +9,15 @@ description: Text Encoding with Sbert
 
 ## Actions
 
-* `get_dot_score` : Caculate the dot product of two given vectors
+* `get_dot_score` : Calculate the dot product of two given vectors
     * Input:
-        * `vec_a` (list of float): first embeded text
-        * `vec_b` (list of float): second embeded text
+        * `vec_a` (list of float): first embedded text
+        * `vec_b` (list of float): second embedded text
     * Return: dot product score
-* `get_cos_score` : Caculate the cosine similarity score of two given vectors
+* `get_cos_score` : Calculate the cosine similarity score of two given vectors
     * Input:
-        * `vec_a` (list of float): first embeded text
-        * `vec_b` (list of float): second embeded text
+        * `vec_a` (list of float): first embedded text
+        * `vec_b` (list of float): second embedded text
     * Return: cosine similarity score
 * `get_text_sim`: gets the similarity score between `query` with all the sentences in `corpus` and return the top_k similar sentences with `sim_score`
     * Input:
@@ -50,7 +50,7 @@ description: Text Encoding with Sbert
     * Input
         * `model_type` (string): can be `default` or `tfm_model`
           * `default` : loads model from the [sbert](https://www.sbert.net/docs/pretrained_models.html) model zoo
-          * `tfm_model` : load tranformer model from the [huggingface hub](https://huggingface.co/models)
+          * `tfm_model` : load transformer model from the [huggingface hub](https://huggingface.co/models)
         * `model_name` (string): this is name of the model to be loaded
       *  ```
           {
@@ -67,7 +67,7 @@ description: Text Encoding with Sbert
 ## Example Jac Usage:
 
 ```jac
-## Train and evalute a sbert model for senetence similarity
+## Train and evaluate a sbert model for sentence similarity
 walker sbert_sim_example{
     has train_file = "train_sbert.json";
     has num_epochs = 2;
@@ -87,7 +87,7 @@ walker sbert_sim_example{
         }
     );
 
-    # returns the top_k of simlar test in the corpus
+    # returns the top_k of similar test in the corpus
     resp_data = sbert_sim.get_text_sim(query=query,corpus=corpus,top_k=top_k);
     std.out(resp_data);
 }

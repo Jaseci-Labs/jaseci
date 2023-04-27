@@ -1,14 +1,14 @@
 # A Multi-turn Action-oriented Dialogue System
 ## Introduction
-In the previous section, we built a FAQ chabot.
+In the previous section, we built a FAQ chat-bot.
 It can search in a knowledge base of answers and find the most relevant one to a user's question.
 While ths covers many diverse topics, certain user request can not be satisfied by a single answer.
-For example, you might be looking to open a new bank account which requires mulitple different pieces of information about you.
+For example, you might be looking to open a new bank account which requires multiple different pieces of information about you.
 Or, you might be making a reservation at a restaurant which requires information such as date, time and size of your group.
 We refer to these as action-oriented conversational AI requests, as they often lead to a certain action or objective.
 
 When interacting with a real human agent to accomplish this type of action-oriented requests, the interaction can get messy and unscripted and it also varies from person to person.
-Again, use the restaurant reservation as an example, one might prefer to follow the guidance of the agent and provide one piece of information at a time, while others might prefer to provide all the neccessary information in one sentence at the beginning of the interaction.
+Again, use the restaurant reservation as an example, one might prefer to follow the guidance of the agent and provide one piece of information at a time, while others might prefer to provide all the necessary information in one sentence at the beginning of the interaction.
 
 Therefore, in order to build a robust and flexible conversational AI to mimic a real human agent to support these types of messy action-oriented requests, we are going to need an architecture that is different than the single-turn FAQ.
 
@@ -187,7 +187,7 @@ A Bi-encoder model has two transformer-based encoders that each encodes the inpu
 
 > **Note**
 >
-> If you don't fully understand the Bi-encoder model yet, do not worry! We will provide the neccessary code and tooling for you to wield this model as a black box. But, if you are interested, here is a paper for you to read up on it https://arxiv.org/pdf/1908.10084.pdf!
+> If you don't fully understand the Bi-encoder model yet, do not worry! We will provide the necessary code and tooling for you to wield this model as a black box. But, if you are interested, here is a paper for you to read up on it https://arxiv.org/pdf/1908.10084.pdf!
 
 Now let's train the model.
 We have created a jac program and sample training data for this.
@@ -238,7 +238,7 @@ jaseci > jac run bi_enc.jac -walk infer -ctx "{\"labels\": [\"test drive\", \"or
 ```
 
 Similar to training, we are using `jac run` to specifically invoke the `infer` walker and provide it with custom parameters.
-The custom paremeter is the list of candidate intent labels, which are `test drive` and `order a tesla` in this case, as these were the intents the model was trained on.
+The custom parameter is the list of candidate intent labels, which are `test drive` and `order a tesla` in this case, as these were the intents the model was trained on.
 
 ```bash
 jaseci > jac run bi_enc.jac -walk infer -ctx "{\"labels\": [\"test drive\", \"order a tesla\"]}"
@@ -271,7 +271,7 @@ Always remember to save your trained models!
 
 > **Warning**
 >
-> `save_model` works with relative path. When a relative model path is specified, it will save the model at the location relative to **location of where you run jsctl**. Note that until the model is saved, the trained weights will stay in memory, which means that it will not persisit between `jsctl` session. So once you have a trained model you like, make sure to save them so you can load them back in the next jsctl session.
+> `save_model` works with relative path. When a relative model path is specified, it will save the model at the location relative to **location of where you run jsctl**. Note that until the model is saved, the trained weights will stay in memory, which means that it will not persist between `jsctl` session. So once you have a trained model you like, make sure to save them so you can load them back in the next jsctl session.
 
 ## Integrate the Intent Classifier
 Now let's update our walker to use the trained intent classifier.
@@ -316,7 +316,7 @@ You can order a Tesla through our design studio.
 
 ## Making Our Dialogue System Multi-turn
 Dialogues in real life have many turn of interaction.
-Our dialogue system should also support that to provide a human-like conversational experinece.
+Our dialogue system should also support that to provide a human-like conversational experience.
 In this section, we are going to take the dialogue system to the next level and create a multi-turn dialogue experience.
 
 Before we do that we need to introduce two new concepts in Jac: node abilities and inheritance.
@@ -431,9 +431,9 @@ node dialogue_root:dialogue_state {
 There are many interesting things going on in these ~30 lines of code so let's break it down!
 * The `dialogue_state` node is the parent node and it is similar to a virtual class in OOP. It defines the variables and abilities of the nodes but the details of the abilities will be specified in the inheriting children nodes.
 * In this case, `dialogue_state` has 4 node abilities:
-    * `can nlu`: NLU stands for Natural Language Understanding. This ability will analyze user's incoming requset and apply AI models.
+    * `can nlu`: NLU stands for Natural Language Understanding. This ability will analyze user's incoming request and apply AI models.
     * `can process`: This ability uses the NLU results and figure out the next dialogue state the walker should go to.
-    * `can nlg`: NLG stands for Natural Language Generation. This abilitiy will compose response to the user, often based on the results from `nlu`.
+    * `can nlg`: NLG stands for Natural Language Generation. This ability will compose response to the user, often based on the results from `nlu`.
     * `can classify_intent`: an ability to handle intent classification. This is the same intent classification logic that has been copied over from the walker.
     * `can extract_entities`: a new ability with a new AI model -- entity extraction. We will cover that just in a little bit (read on!).
 * Between these four node abilities, `classify_intent` and `extract_entities` have concrete logic defined while `nlu` and `nlg` are "virtual node abilities", which will be specified in each of the inheriting children.
@@ -528,7 +528,7 @@ node td_canceled:dialogue_state {
     * `test_drive_confirmed`: This is the state after the user has confirmed.
     * `test_drive_canceled`: User has decided, in the middle of the dialogue, to cancel their request to schedule a test drive.
 * The `process` ability contains the logic that defines the conversational flow of the dialogue system. It uses the data in `wlk_ctx` and assign a `next_state` which will be used by the walker in a `take` statement, as you will see in a just a little bit.
-* **New Syntax**: The code in `test_drive_state`'s ability demonstrates jac support for list and dictionary. To access the list and dictionary-specific functions, first cast the variable with `.l`/`.list` for list and `.d`/`.dict` for dictionaries, then proceed with `:` to access the built-in functions for list and dictioinaries. For more on jac's built-in types, refer to the relevant sections of the Jaseci Bible.
+* **New Syntax**: The code in `test_drive_state`'s ability demonstrates jac support for list and dictionary. To access the list and dictionary-specific functions, first cast the variable with `.l`/`.list` for list and `.d`/`.dict` for dictionaries, then proceed with `:` to access the built-in functions for list and dictionaries. For more on jac's built-in types, refer to the relevant sections of the Jaseci Bible.
     * Specifically in this case, we are comparing the list of entities of the `entity_transition` edge with the list of entities that have been extracted by the walker and the AI model (stored in `wlk_ctx["entities]`). Since there can be multiple entities required and they can be extracted in arbitrary order, we are sorting and then comparing here.
 
 * **New Syntax**: `-[entity_transition]->.edge` shows how to access the edge variable. Consider `-[entity_transition]->` as a filter. It returns all valid nodes that are connected to the implicit `here` via an `entity_transition`. On its own, it will return all the qualified nodes. When followed by `.edge`, it will return the set of edges that are connected to the qualified nodes.
@@ -637,7 +637,7 @@ walker talk {
 
 The walker logic looks very different now. Let's break it down!
 * First off, because the intent classification logic is now a node ability, the walker logic has become simpler and, more importantly, more focused on graph traversal logic without the detailed (and occasionally convoluted) logic required to process to interact with an AI model.
-* **New Syntax**: `here::nlu` and `here::nlg` invokes the node abilities. `here` can be subtitied with any node variables, not just the one the walker is currently on.
+* **New Syntax**: `here::nlu` and `here::nlg` invokes the node abilities. `here` can be subtitled with any node variables, not just the one the walker is currently on.
 
 Now that we have explained some of the new language syntax here, let's go over the overall logic of this walker.
 For a new question from the user, the walker will
@@ -675,7 +675,7 @@ At turn #2,
 
 > **Note**
 >
-> Turn #3 works similiarly as turn #1. See if you can figure out how the walker reacts at turn #3 yourself!
+> Turn #3 works similarly as turn #1. See if you can figure out how the walker reacts at turn #3 yourself!
 
 ## Train an Entity Extraction Model
 Let's now train an entity extraction model!
@@ -703,7 +703,7 @@ Let's quickly go over the training data format.
 ]
 ```
 The training data is a json list of strings, each of which is a training example.
-`[]` indicate the entitiy text while the `()` following it defines the entity type.
+`[]` indicate the entity text while the `()` following it defines the entity type.
 So in the example above, we have two entities, `name:tony stark` and `address: 10880 malibu point california`.
 
 
@@ -721,7 +721,7 @@ jaseci > jac run tfm_ner.jac -walk infer
 Enter input text (Ctrl-C to exit)> my name is jason
 [{"entity_text": "jason", "entity_value": "name", "conf_score": 0.5514775514602661, "start_pos": 11, "end_pos": 16}]
 ```
-The output of this model is a list of dictionaries, each of which is one detected entitiy.
+The output of this model is a list of dictionaries, each of which is one detected entity.
 For each detected entity, `entity_value` is the type of entity, so in this case either `name` or `address`;
 and `entity_text` is the detected text from the input for this entity, so in this case the user's name or their address.
 

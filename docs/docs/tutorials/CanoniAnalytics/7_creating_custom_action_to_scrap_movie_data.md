@@ -44,7 +44,7 @@ def get_script(film_url):
 
     Return:
     -------------
-    html_content : bs4.element.ResultSet. The bs4 resultset object, This contains the uncleaned moview script with html tags.
+    html_content : bs4.element.ResultSet. The bs4 resultset object, This contains the uncleaned movie script with html tags.
     """
     html_doc = requests.get(film_url).text
     soup = BeautifulSoup(html_doc, "html.parser")
@@ -62,7 +62,7 @@ def get_scenes(movie_script):
 
     Parameters:
     ------------
-    movie_script : bs4.element.ResultSet. The bs4 resultset object, This contains the uncleaned moview script with html tags.
+    movie_script : bs4.element.ResultSet. The bs4 result set object, This contains the uncleaned movie script with html tags.
 
     Return:
     ------------

@@ -4,7 +4,7 @@ These two systems serve different use cases and can be combined to a single syst
 In this section, we are going to unify these two systems into one coherent conversational AI system.
 
 While these two systems rely on different AI models, they share many of the same logic flow.
-They both follow the general steps of first analyizing user's question with NLU AI models, make decision on the next conversational state to be and then construct and return a response to the user.
+They both follow the general steps of first analyzing user's question with NLU AI models, make decision on the next conversational state to be and then construct and return a response to the user.
 Leveraging this shared pattern, we will first unify the node architecture of the two systems with a single parent node type, `cai_state` (`cai` is short of conversational AI).
 
 ```jac
@@ -51,10 +51,10 @@ Before we move on, we will take a quick detour to introduce multi-file jac progr
 Jac's support for multi-file is quite simple.
 You can import object definitions from one jac file to another with the `import` keyword.
 With `import {*} with "./code.jac"`, everything from `code.jac` will be imported, which can include nodes, edges, graph and walker definition.
-Alternaitvely, you can import specific objects with `import {node::state} with "./code.jac"`.
+Alternatively, you can import specific objects with `import {node::state} with "./code.jac"`.
 
 To compile a multi-file Jac program, you will need one jac file that serves as the entry point of the program.
-This file need to import all the neccessary components of the program.
+This file need to import all the necessary components of the program.
 Chained importing is supported.
 
 Once you have the main jac file (let's call it `main.jac`), you will need to compile it and its imports into a single `.jir` file.
@@ -188,7 +188,7 @@ To compile the program,
 ```jac
 jaseci > jac build tesla_ai.jac
 ```
-As mentioned before, if the compiliation succeedd, a `tesla_ai.jir` will be generated.
+As mentioned before, if the compilation succeeded, a `tesla_ai.jir` will be generated.
 
 > **Note**
 >
@@ -203,8 +203,8 @@ One last step, since we introduce a new intent `i have a questions`, we need to 
 This time, use the `clf_train_3.json` example training data.
 
 > **Note**
-> Make sure so save your model again so you can return to it in a new seesion!
+> Make sure so save your model again so you can return to it in a new session!
 
-The model is trained? Great! Now run the jir and try questions like "I have some tesla related questions" then following with FAQ questioins!
+The model is trained? Great! Now run the jir and try questions like "I have some tesla related questions" then following with FAQ questions!
 
 Congratulations! You have created a single conversational AI system that is capable of answering FAQs and perform complex multi-step actions.

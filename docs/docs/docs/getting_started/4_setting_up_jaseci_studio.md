@@ -103,7 +103,7 @@ sudo apt install libwebkit2gtk-4.0-dev \
 
   ![logs viewer](img/logs_viewer.png)
 
-1. Managing Architypes
-   1. View architypes and remove architypes
-   2. Write and register architypes
-   3. View architype code
+1. Managing Archetypes
+   1. View archetypes and remove archetypes
+   2. Write and register archetypes
+   3. View archetype code

@@ -1,5 +1,5 @@
 ---
-title: Text Summerization with BART
+title: Text Summarization with BART
 ---
 
 # **Bart Summarizer (`bart_sum`)**

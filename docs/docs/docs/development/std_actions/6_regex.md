@@ -115,7 +115,7 @@ Expected Example
   ],
 ```
 
-## Find all occurances of the pattern
+## Find all occurrences of the pattern
 
 Finding all non-overlapping occurrences of a given pattern in a string.
 
@@ -149,7 +149,7 @@ Expected Output
 
 ## Search regex matches iteratively
 
-Iteratevely search for non-overlapping match of the regular expression pattern in the string.
+Iteratively search for non-overlapping match of the regular expression pattern in the string.
 
 Jac Example
 
@@ -211,7 +211,7 @@ Expected Output
 
 ## Find and Replace, returns the number of replacements
 
-Find non-overlapping occurrences of the regular expression pattern in the string, and replace each instance with the given substring. Also returns the number of occurances of the pattern in the string.
+Find non-overlapping occurrences of the regular expression pattern in the string, and replace each instance with the given substring. Also returns the number of occurrences of the pattern in the string.
 
 Jac Example
 

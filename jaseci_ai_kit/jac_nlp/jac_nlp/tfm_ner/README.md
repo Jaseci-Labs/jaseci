@@ -1,5 +1,5 @@
 ---
-title: Nammed Entity Extraction with Transformers
+title: Entity Extraction with Transformers
 ---
 
 #  Entity Extraction Using Transformers (`tfm_ner`)

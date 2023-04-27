@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: T5 Summarizer
-description: Text Summerization with T5 Summerizer
+description: Text Summarization with T5 Summarizer
 ---
 
 #  T5 Summarizer (`t5_sum`)

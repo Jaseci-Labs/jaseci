@@ -3,7 +3,7 @@ title: Text Encoding with Bi-Encoder
 ---
 
 #  **Bi-Encoder (`bi_enc`)**
-**`bi_enc`** is a arrangement of two encoder modules from BERT, it represents context and candidate separately using twin-structured encoders, it takes contexts and candidates, to predict the best suitable candidate for each context. You can train the module on custom data to behave accordingly. Let's take a deep dive into the trainning culture.
+**`bi_enc`** is a arrangement of two encoder modules from BERT, it represents context and candidate separately using twin-structured encoders, it takes contexts and candidates, to predict the best suitable candidate for each context. You can train the module on custom data to behave accordingly. Let's take a deep dive into the training culture.
 
 
 This tutorial shows you how to train a Bi-Encoder with a custom training loop to categorize contexts by candidates. In this you use jaseci(jac) and python.
@@ -19,9 +19,9 @@ This tutorial shows you how to train a Bi-Encoder with a custom training loop to
 ## **Walk through**
 
 ### **1. Praparing dataset**
-For this tutorial, we are going to leverage the biencoder for intent classification, which is categorizing an incoming text into a one of predefined intents. for demonstration purpose, we are going to use the SNIPS dataset as an example here. [snips dataset](https://huggingface.co/datasets/snips_built_in_intents).
+For this tutorial, we are going to leverage the bi-encoder for intent classification, which is categorizing an incoming text into a one of predefined intents. for demonstration purpose, we are going to use the SNIPS dataset as an example here. [snips dataset](https://huggingface.co/datasets/snips_built_in_intents).
 
-SNIPS is a popular intent classificawtion datasets that covers intents such as `
+SNIPS is a popular intent classification datasets that covers intents such as `
 [
     "BookRestaurant",
     "ComparePlaces",
@@ -35,7 +35,7 @@ SNIPS is a popular intent classificawtion datasets that covers intents such as `
     "ShareETA"
 ]
     `
-We need to do a little data format conversion to create a version of SNIPS that work with our biencoder implemenation.
+We need to do a little data format conversion to create a version of SNIPS that work with our bi-encoder implemenation.
 For this part, we are going to use Python. First,
 
 1. `Import the dataset` from huggingface [dataset library](https://huggingface.co/datasets/snips_built_in_intents).
@@ -46,10 +46,10 @@ For this part, we are going to use Python. First,
     dataset = load_dataset("snips_built_in_intents")
     print(dataset["train"][:2])
     ```
-    If imported successsfuly, you should see the data format to be something like this in output
+    If imported successfully, you should see the data format to be something like this in output
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
 
-2. `Converting the format` from the SNIPS out of the box to the format that can be ingested by biencoder.
+2. `Converting the format` from the SNIPS out of the box to the format that can be ingested by bi-encoder.
     ```python
     import pandas as pd
     from sklearn.model_selection import train_test_split
@@ -247,11 +247,11 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         **Parameter details**
         * `train`: will be used to train the Bi-Encoder on custom data
             * Input:
-                * `dataset` (Dict): dictionary of candidates and suportting contexts for each candidate
+                * `dataset` (Dict): dictionary of candidates and supporting contexts for each candidate
                 * `from_scratch` (bool): if set to true train the model from scratch otherwise trains incrementally
                 * `training_parameters` (Dict): dictionary of training parameters
             * Returns: text when model training is completed
-        * `infer`: will be used to predits the most suitable candidate for a provided context, takes text or embedding
+        * `infer`: will be used to predicts the most suitable candidate for a provided context, takes text or embedding
             * Input:
                 * `contexts` (string or list of strings): context which needs to be classified
                 * `candidates` (string or list of strings): list of candidates for the context
@@ -325,7 +325,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
         ```
 
         **Final bi_encoder.jac** program
-        we are conmbining all steps from **2 to 8** inside **bi_encoder.jac**
+        we are combining all steps from **2 to 8** inside **bi_encoder.jac**
         ```python
         node model_dir;
         node bi_encoder{
@@ -460,10 +460,10 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
             }
         }
         ```
-    **Steps for running `bi_encoder.jac` programm**
+    **Steps for running `bi_encoder.jac` program**
     1. Build `bi_encoder.jac` by run cmd
         > jac build bi_encoder.jac
-    2. Activate sentinal by run cmd
+    2. Activate sentinel by run cmd
         > sentinel set -snt active:sentinel -mode ir bi_encoder.jir
 
         **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
@@ -606,7 +606,7 @@ For this tutorial, we are going to `train and infer` the `biencoder` for `intent
     ```
 
 ### **5. Use the trained model to make predictions**
-* Create new input data for prdiction stored in `test_dataset.json` file (can take any name)
+* Create new input data for prediction stored in `test_dataset.json` file (can take any name)
 
     **Input data**
 

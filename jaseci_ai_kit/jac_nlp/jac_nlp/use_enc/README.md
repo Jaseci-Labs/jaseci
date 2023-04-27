@@ -16,10 +16,10 @@ For this tutorial we are going to leverage the `Use encoder` for **Zero-shot tex
 
 # **Walk through**
 
-## **1. Praparing dataset**
+## **1. Preparing dataset**
 For this tutorial, we are going to leverage the `use_encoder` for text classification, which is categorizing an incoming text into a one of predefined class. for demonstration purpose, we are going to use the SNIPS dataset as an example here. [snips dataset](https://huggingface.co/datasets/snips_built_in_intents).
 
-SNIPS is a popular intent classificawtion datasets that covers intents such as `
+SNIPS is a popular intent classification datasets that covers intents such as `
 [
     "BookRestaurant",
     "ComparePlaces",
@@ -33,7 +33,7 @@ SNIPS is a popular intent classificawtion datasets that covers intents such as `
     "ShareETA"
 ]
     `
-We need to do a little data format conversion to create a version of SNIPS that work with our `use_encoder` implemenation.
+We need to do a little data format conversion to create a version of SNIPS that work with our `use_encoder` implementation.
 For this part, we are going to use Python. First,
 
 1. `Import the dataset` from huggingface [dataset library](https://huggingface.co/datasets/snips_built_in_intents).
@@ -44,7 +44,7 @@ For this part, we are going to use Python. First,
     dataset = load_dataset("snips_built_in_intents")
     print(dataset["train"][:2])
     ```
-    If imported successsfuly, you should see the data format to be something like this in output
+    If imported successfuly, you should see the data format to be something like this in output
 
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
 

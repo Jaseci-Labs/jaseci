@@ -12,7 +12,7 @@ There are different approaches to sentiment analysis, ranging from rule-based me
 
 Despite its potential benefits, sentiment analysis is not always accurate, as it can be influenced by factors such as sarcasm, irony, and cultural differences. Therefore, it is important to carefully evaluate the results and incorporate human judgment in the analysis process.
 
-Module `sentiment` implemented for analysing the sentiment in a given list of text. This module accepts as input a set of sentences. This is an example program using Jaseci `sentiment` module.
+Module `sentiment` implemented for analyzing the sentiment in a given list of text. This module accepts as input a set of sentences. This is an example program using Jaseci `sentiment` module.
 
 # **Walk through**
 

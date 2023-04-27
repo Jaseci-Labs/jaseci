@@ -94,7 +94,7 @@ walker build_graph{
     #loading the movie data to the movie variable.
     has movie = file.load_json("movie_data.json");
 
-    #looping through movie dictionery.
+    #looping through movie dictionary.
     for movie_scene in movie {
         scene_name = movie_scene;
         content = movie[movie_scene];
@@ -121,11 +121,11 @@ walker build_graph{
 In the above block;
 
 - `file.load_json` action is using to load the `json` file from the local directory. here the name of the `json` file is `movie_data.json`.
-- In the line starts with `has movie`, asigns the movie data to the `movie` variable.
+- In the line starts with `has movie`, assigns the movie data to the `movie` variable.
 - Here, the `movie_data` is a dictionary object that includes details on the movie scenes in each entry.
 - I won't go into great detail on "for" and "if" syntax in Jaseci because it just like other programming languages do.
 - `scene = spawn here ++> node::scene(name=scene_name, description=description);` line is to spawn the scene node from the root node. In this code the `here` key word refers to the node we are currently in, in this case we are currently in the root node. And while spawning the scene nodes we are setting variables `name` and `description`.
-- `spawn scene ++>node::actor(name=name, dialogue=dialogue);` line is o spawn the actor nodes from scene code. Similar to above this node also asigning values to variables `name` and `dialogue`.
+- `spawn scene ++>node::actor(name=name, dialogue=dialogue);` line is o spawn the actor nodes from scene code. Similar to above this node also assigning values to variables `name` and `dialogue`.
 
 Now lets setup init walker to wrap these lines of code together.
 
@@ -160,7 +160,7 @@ To view the graph structure in terminal you can run
 ```
 jac dot movie.jac
 ```
-Since the graph is more complecated and huge you won't be able to illustrate the final look of the graph in the terminal. So, We are going to open the graph in Jaseci Studio in next steps.
+Since the graph is more complicated and huge you won't be able to illustrate the final look of the graph in the terminal. So, We are going to open the graph in Jaseci Studio in next steps.
 
 ## 4. Bringing the graph into Jaseci Studio
 
@@ -177,7 +177,7 @@ Let's register our jac program with Sentinel with following command.
 ```
 sentinel register movie.jir -set_active true -mode ir
 ```
-You will see the following output if the registering is successfull.
+You will see the following output if the registering is successful.
 
 ```
 jaseci > sentinel register movie.jir -set_active true -mode ir
@@ -204,11 +204,11 @@ jaseci > sentinel register movie.jir -set_active true -mode ir
 
 
 > **Note**
-> Sentinel is the overseer of walkers, nodes and edges. It is the abstraction Jaseci uses to encapsulate compiled walkers and architype nodes and edges. The key operation with respesct to sentinel is "register" a sentinel. You can think of registering a sentinel as a compiling your jac program. The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph.
+> Sentinel is the overseer of walkers, nodes and edges. It is the abstraction Jaseci uses to encapsulate compiled walkers and archetype nodes and edges. The key operation with respect to sentinel is "register" a sentinel. You can think of registering a sentinel as a compiling your jac program. The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph.
 >
 > Three things are happening with above sentinel command:
 >
-> 1.  We registered the jir we compiled earlier to new sentinel. This means this new sentinel now has access to all of our walkers, nodes and edges. -mode ir option speciifes a jir program is registered instead of a jac program.
+> 1.  We registered the jir we compiled earlier to new sentinel. This means this new sentinel now has access to all of our walkers, nodes and edges. -mode ir option specifies a jir program is registered instead of a jac program.
 >
 > 2. With -set_active true we set this new sentinel to be the active sentinel. In other words, this sentinel is the default one to be used when requests hit the Jac APIs, if no specific sentinels are specified.
 >
@@ -231,7 +231,7 @@ The output will look something like this.
 jaseci > sentinel get
 {
   "version": null,
-  "name": "summerization.jir",
+  "name": "summarization.jir",
   "kind": "generic",
   "jid": "urn:uuid:f710c843-f284-4782-9bfe-c50710d4907f",
   "j_timestamp": "2023-02-09T08:38:48.319842",
@@ -256,7 +256,7 @@ If it success, you'll get a output that looks like this:
 ```
 jaseci > sentinel set -snt urn:uuid:f710c843-f284-4782-9bfe-c50710d4907f -mode ir movie.jir
 {
-  "response": "sentinel:generic:summerization.jir:urn:uuid:f710c843-f284-4782-9bfe-c50710d4907f registered and active!",
+  "response": "sentinel:generic:summarization.jir:urn:uuid:f710c843-f284-4782-9bfe-c50710d4907f registered and active!",
   "success": true
 }
 ```
@@ -289,7 +289,7 @@ sentinel register movie.jir -set_active true -mode ir
 
 Now open the Jaseci Studio and logging with the credentials as instructed in the previous section.
 
-Goto the graph tab in the left side bar and select the `uuid` from the Select Graph drop down. You will see a beautifull output like this.
+Goto the graph tab in the left side bar and select the `uuid` from the Select Graph drop down. You will see a beautiful output like this.
 
 ![Jaseci Studio Movie Graph]("./../img/initial_view_movie_graph.png)
 

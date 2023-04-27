@@ -26,7 +26,7 @@ Module `topic_ext` implemented for producing most relevant and possible set of t
     "still waiting card",
     "countries supporting",
     "card still arrived weeks",
-    "countries accounts suppor",
+    "countries accounts support",
     "provide support countries",
     "waiting week card still coming",
     "track card process delivery",

@@ -6,7 +6,7 @@ Jaseci Studio login provides an easy way for developers to interact with their J
 
 To login, you must first provide the host where your application or live instance is running, for example, https://localhost, and then input the port where the live instance is running, for example, 9000. Next, enter your superuser email and password. Before clicking "OK," we highly recommend testing your connection to your specified endpoint using the "Test Connection" feature. This ensures that your endpoint is properly connected before attempting to login.
 
-Now you can try to connect to your jaseci live instace, if the connection fails, it may be due to invalid superuser credentials, so please double-check and try again. However, if the connection is successful, you now have access to all the Jaseci Studio features for your application.
+Now you can try to connect to your jaseci live instance, if the connection fails, it may be due to invalid superuser credentials, so please double-check and try again. However, if the connection is successful, you now have access to all the Jaseci Studio features for your application.
 
 ![login view](images/login.png)
 
@@ -22,7 +22,7 @@ Next, we will explore the graph view and its unique features in more detail. Let
 
 ## Graph Viewer
 
-Jaseci Studios offers a powerful graph viewer that enables programmers to easily visualise and analyse their code. By providing detailed information about nodes in their Jaseci application graph, this feature enhances the experience of Jaseci hackers and enables quick debugging of code.
+Jaseci Studios offers a powerful graph viewer that enables programmers to easily visualize and analyze their code. By providing detailed information about nodes in their Jaseci application graph, this feature enhances the experience of Jaseci hackers and enables quick debugging of code.
 
 Here are some of the amazing capabilities of the graph viewer:
 
@@ -32,7 +32,7 @@ The graph viewer allows programmers to easily access all the information about a
 
 - Running walker on Node
 
-With the graph viewer, programmers can run a walker on any node in the graph. This facilitates quick debugging of code and testing, which ultimately enhances the coding experience of the programmer utilising Jaseci.
+With the graph viewer, programmers can run a walker on any node in the graph. This facilitates quick debugging of code and testing, which ultimately enhances the coding experience of the programmer utilizing Jaseci.
 
 - Node interaction
 

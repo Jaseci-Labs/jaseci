@@ -273,7 +273,7 @@ pip install "jac_nlp[all]" # This will install all the models in jac_nlp, again 
 
 > **Note**
 >
-> We recently implemented a new organizational structure to `jaseci_ai_kit` to accomodate more and larger models being introduced to the suite. If you started this guide prior to January 24th, 2023, you might have installed the python package `jaseci_ai_kit`. This has been replaced with four separate packages, `jac_nlp`, `jac_speech`, `jac_vision` and `jac_misc`. You can continue to use the `jaseci_ai_kit` you have installed as it will still function and work with your existing code. Just replace `jac_nlp` with `jaseci_ai_kit` throughout this guide. They will be noted as well. If you are just starting this guide, we recommend instaling the new packages (i.e. `jac_nlp`).
+> We recently implemented a new organizational structure to `jaseci_ai_kit` to accommodate more and larger models being introduced to the suite. If you started this guide prior to January 24th, 2023, you might have installed the python package `jaseci_ai_kit`. This has been replaced with four separate packages, `jac_nlp`, `jac_speech`, `jac_vision` and `jac_misc`. You can continue to use the `jaseci_ai_kit` you have installed as it will still function and work with your existing code. Just replace `jac_nlp` with `jaseci_ai_kit` throughout this guide. They will be noted as well. If you are just starting this guide, we recommend installing the new packages (i.e. `jac_nlp`).
 
 Now we load the action we need into our jaseci environment
 
@@ -374,7 +374,7 @@ walker init {
 What we are doing here is
 
 - Spawning a `faq_root` node
-- Running the `ingest_faq` walker to create the neccessary `faq_state` nodes based on the question-answer entries in the `tesla_faq.json` file.
+- Running the `ingest_faq` walker to create the necessary `faq_state` nodes based on the question-answer entries in the `tesla_faq.json` file.
 - Launching the `ask` walker
 
 Let's run the program one more time and test it out!

@@ -127,7 +127,7 @@ Example
 walker clone_voice {
     can vc_tts.clone_voice;
     has input_text = "
-    "Hello, I'm Papal Christian and I'm going to tell you all the things I did. I did two years of calculations. I said, we did a little. it's the coursetle. it's the course of the multipurpose. I did after a year of foot. And after that, at that time I was going to do the gymnasticconsists of several degs. The gymnastics that consists of several degrees. And it's there, but I'm going to do it."
+    "Hello, I'm Papal Christian and I'm going to tell you all the things I did. I did two years of calculations. I said, we did a little. it's the course of the multipurpose. I did after a year of foot. And after that, at that time I was going to do the gymnastic consists of several degs. The gymnastics that consists of several degrees. And it's there, but I'm going to do it."
 
     report vc_tts.clone_voice(input_text = input_text, reference_audio= "./test_ref_audio.wav", save_path="./");
 }

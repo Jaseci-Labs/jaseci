@@ -59,7 +59,7 @@ example using the standard actions rand.integer to get a random integer between 
 jaseci > actions call rand.integer -ctx '{"start":0, "end":10}'
 ```
 
-You can perform this command on your local actions, rmeote actions or even actions you loaded from a python file.
+You can perform this command on your local actions, remote actions or even actions you loaded from a python file.
 This is especially useful when you want to change the model of a particular jaseci ai kit module to something else. You can refer the parameters of the setup actions of the module in the docs and then call the setup action with the new parameters.
 
 ### Actions Load with context

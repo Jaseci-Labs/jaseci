@@ -22,7 +22,7 @@ walker init {
         take-->;
         }
     plain {
-        ## Stoping execution from the node number equals to 5
+        ## Stopping execution from the node number equals to 5
         if(here.number==5): disengage;
         std.out(here.number);
         take-->;
@@ -36,7 +36,7 @@ walker init {
 1
 2
 ```
-The `init` walker in this example is nearly identical to the code in example 5, but we added the condition `if(here.numer == 5): disengage;`. This caused the walker to halt execution and finish its walk, thus truncating the output array.
+The `init` walker in this example is nearly identical to the code in example 5, but we added the condition `if(here.number == 5): disengage;`. This caused the walker to halt execution and finish its walk, thus truncating the output array.
 
 >**Note**
 >
