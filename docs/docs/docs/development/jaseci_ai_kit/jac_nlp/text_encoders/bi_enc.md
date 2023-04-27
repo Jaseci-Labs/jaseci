@@ -11,15 +11,15 @@ description: Text Encoding with Bi-Encoder
 
 * `dot_prod`:
     * Input:
-        * `vec_a` (list of float): first embeded text
-        * `vec_b` (list of float): second embeded text
+        * `vec_a` (list of float): first embedded text
+        * `vec_b` (list of float): second embedded text
     * Return: dot product score
 * `cos_sim_score`:
     * Input:
-        * `vec_a` (list of float): first embeded text
-        * `vec_b` (list of float): second embeded text
+        * `vec_a` (list of float): first embedded text
+        * `vec_b` (list of float): second embedded text
     * Return: cosine similarity score
-* `infer`: predits the most suitable candidate for a provided context, takes text or embedding
+* `infer`: predicts the most suitable candidate for a provided context, takes text or embedding
     * Input:
         * `contexts` (string or list of strings): context which needs to be classified
         * `candidates` (string or list of strings): list of candidates for the context
@@ -28,7 +28,7 @@ description: Text Encoding with Bi-Encoder
     * Return: a dictionary of similarity score for each candidate and context
 * `train`: used to train the Bi-Encoder for custom input
     * Input:
-        * `dataset` (Dict): dictionary of candidates and suportting contexts for each candidate
+        * `dataset` (Dict): dictionary of candidates and supporting contexts for each candidate
         * `from_scratch` (bool): if set to true train the model from scratch otherwise trains incrementally
         * `training_parameters` (Dict): dictionary of training parameters
     * Returns: text when model training is completed

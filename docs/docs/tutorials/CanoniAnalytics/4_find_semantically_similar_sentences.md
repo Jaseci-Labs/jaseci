@@ -5,7 +5,7 @@ Semantic similarity of two sentences is a measure of how closely related their m
 
 ## Creating a walker to detect semantically two similar phrases
 
-In this section also we will be using the movie script graph which we build for previouse sections. So create a new jac file and import the `build_graph.jac` into it.
+In this section also we will be using the movie script graph which we build for previous sections. So create a new jac file and import the `build_graph.jac` into it.
 
 ```jac
 import {*} with './build_graph.jac';
@@ -76,11 +76,11 @@ walker init{
     }
 
     scene{
-        childrens = -->node::actor;
+        children = -->node::actor;
 
-        if childrens.length > 1:
+        if children.length > 1:
         {
-            _list = childrens.dialogue;
+            _list = children.dialogue;
             pairslist = _list.list::pairwise;
             for item in pairslist:
                 spawn here walker::find_similar_sentences(dialogue_1=item[0], dialogue_2=item[1]);
@@ -91,8 +91,8 @@ walker init{
 ```
 The attributes of actor nodes that are linked to scene nodes are dialogues.
 
-- `childrens = -->node::actor` is to get all actor nodes attached to each scene node.
-- `_list = childrens.dialogue` retrieving only the dialogue attribute from the actor nodes.
+- `children = -->node::actor` is to get all actor nodes attached to each scene node.
+- `_list = children.dialogue` retrieving only the dialogue attribute from the actor nodes.
 - `pairslist = _list.list::pairwise` we are making successive overlapping pairs taken from the dialogue list.
 - `for item in pairslist:` this for loop calls the `find_similar_sentences` calls for the each pair in the list.
 

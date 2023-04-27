@@ -1,10 +1,10 @@
 # Preparation
 
 ### **1. Installing Jaseci**
-Before getting started you have to install Jaseci latest version. Jaseci requeres python 3.10 or later version. We prefer you to create a fresh python environment using conda or any other virtual environment packaging to try out codes in this codelab. A complete Jaseci installation guide is
+Before getting started you have to install Jaseci latest version. Jaseci requires python 3.10 or later version. We prefer you to create a fresh python environment using conda or any other virtual environment packaging to try out codes in this codelab. A complete Jaseci installation guide is
 [here](../../docs/getting_started/installation)
 
-After successfull installation of Jaseci run the help command,
+After successful installation of Jaseci run the help command,
 
 ```
 jsctl --help
@@ -33,7 +33,7 @@ The above commands essentially initializes the database schemas. We will also ne
 jsserv createsuperuser
 ```
 
-And follow the command line prompts to create a super user. For the purpose of this demostration, we are going to use the following credentials:
+And follow the command line prompts to create a super user. For the purpose of this demonstration, we are going to use the following credentials:
 
 ```
 Email: admin@jaseci.org

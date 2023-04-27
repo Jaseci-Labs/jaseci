@@ -39,21 +39,21 @@ walker features{
 
 ### **2. Create embeddings and reduce features**
 
-In this section we are using use.encode jaseci module to encode raw text. The `use.encode` will return size of 512 vectors for each text document. We are reducing the dimention of vectors using `cluster.get_umap` action.
+In this section we are using use.encode jaseci module to encode raw text. The `use.encode` will return size of 512 vectors for each text document. We are reducing the dimension of vectors using `cluster.get_umap` action.
 
-UMAP (Uniform Manifold Approximation and Projection) is a dimensionality reduction algorithm used for visualizing and exploring high-dimensional data. It aims to preserve both global and local structure of the data by representing it as a low-dimensional embedding while minimizing distortion. It has been shown to be highly effective in preserving non-linear structure and identifying clusters in high-dimensional datasets. UMAP has applications in various fields including machine learning, image processing, and bioinformatics.
+UMAP (Uniform Manifold Approximation and Projection) is a dimensionality reduction algorithm used for visualizing and exploring high-dimensional data. It aims to preserve both global and local structure of the data by representing it as a low-dimensional embedding while minimizing distortion. It has been shown to be highly effective in preserving non-linear structure and identifying clusters in high-dimensional datasets. UMAP has applications in various fields including machine learning, image processing, and bio-informatics.
 
 ** Parameters of `cluster.get_umap`**
 
-- `text_embeddings`: list -  This is a mandotory field. list of text embeddings should pass here.
+- `text_embeddings`: list -  This is a mandatory field. list of text embeddings should pass here.
 
-- `n_neighbors`: int - By defauld this value is `15`. This is not a manodoty field, but if you want to get better out of this you have to set a value for this based on your input data. This parameter balances local versus global structure in the data. Low values will focus on local data points (will make an impact on the big picture), higher values will focus on the global data points (overall structure of the data)  (will lose fine details in the structure).
+- `n_neighbors`: int - By default this value is `15`. This is not a mandatory field, but if you want to get better out of this you have to set a value for this based on your input data. This parameter balances local versus global structure in the data. Low values will focus on local data points (will make an impact on the big picture), higher values will focus on the global data points (overall structure of the data)  (will lose fine details in the structure).
 
-- `min_dist`: float - By default this value is 0.1. This is also not a mandotory field. This parameter controls how tightly `cluster.get_umap` is allowed to pack points together. Set this to low value when trying for clustering.
+- `min_dist`: float - By default this value is 0.1. This is also not a mandatory field. This parameter controls how tightly `cluster.get_umap` is allowed to pack points together. Set this to low value when trying for clustering.
 
-- `n_components`: int - The default value for this is 2, however it is not mandtory field. This represents the dimensionality of the reduced data. This is not limited 2 or 3 can try further like pca.
+- `n_components`: int - The default value for this is 2, however it is not mandatory field. This represents the dimensionality of the reduced data. This is not limited 2 or 3 can try further like pca.
 
-- `random_state`: int - By default this is 42. This represent the preproducability of the algorithm.
+- `random_state`: int - By default this is 42. This represent the reproducibility of the algorithm.
 
 ```jac
 node feature_embedd{
@@ -70,29 +70,29 @@ node feature_embedd{
 
 ## **3. Get cluster labels**
 
-We will obtain cluster labels for each text document in this section. The output from the previous section is the input here. To get cluster lables we are using `cluster.get_cluster_labels`  action.
+We will obtain cluster labels for each text document in this section. The output from the previous section is the input here. To get cluster labels we are using `cluster.get_cluster_labels`  action.
 
 For clustering with Jaseci there are two algorithms are available. **HBDSCAN** algorithm and the **Kmeans** Algorithm.
 
 ### **HBDSCAN clustering Algorithm**
 
-HDBSCAN (Hierarchical Density-Based Spatial Clustering of Applications with Noise) is a density-based clustering algorithm that seeks to identify clusters of varying densities in a dataset. It constructs a hierarchy of clusters by recursively partitioning data points based on their local density and connectivity. The algorithm automatically determines the number of clusters and identifies noise points as well. HDBSCAN has been shown to be effective in identifying clusters of varying shapes and sizes in high-dimensional datasets. It has applications in various fields including image processing, social network analysis, and bioinformatics.
+HDBSCAN (Hierarchical Density-Based Spatial Clustering of Applications with Noise) is a density-based clustering algorithm that seeks to identify clusters of varying densities in a dataset. It constructs a hierarchy of clusters by recursively partitioning data points based on their local density and connectivity. The algorithm automatically determines the number of clusters and identifies noise points as well. HDBSCAN has been shown to be effective in identifying clusters of varying shapes and sizes in high-dimensional datasets. It has applications in various fields including image processing, social network analysis, and bio-informatics.
 
 
 ### **Kmeans clustering algorithm**
 
-K-means is a popular clustering algorithm used for partitioning a dataset into k clusters, where k is a pre-defined number. It works by iteratively assigning each data point to the nearest centroid (mean) and then re-calculating the centroids based on the new cluster assignments. The algorithm stops when the cluster assignments no longer change significantly or after a maximum number of iterations. K-means is widely used due to its simplicity, scalability, and efficiency in handling large datasets. It has applications in various fields including customer segmentation, image processing, and bioinformatics. However, it assumes that the clusters are spherical and have equal variance, which may not always be the case in real-world scenarios.
+K-means is a popular clustering algorithm used for partitioning a dataset into k clusters, where k is a pre-defined number. It works by iteratively assigning each data point to the nearest centroid (mean) and then re-calculating the centroids based on the new cluster assignments. The algorithm stops when the cluster assignments no longer change significantly or after a maximum number of iterations. K-means is widely used due to its simplicity, scalability, and efficiency in handling large datasets. It has applications in various fields including customer segmentation, image processing, and bio-informatics. However, it assumes that the clusters are spherical and have equal variance, which may not always be the case in real-world scenarios.
 
 **Parameters of `cluster.get_cluster_labels`**
 
-- embeddings: list - This accept list of embedded text features, this is a mandotory field.
+- embeddings: list - This accept list of embedded text features, this is a mandatory field.
 
-- algorithm: str - By default the value of this is "hbdscan". So far jaseci only support `hbdscan` and `kmeans` algorithms for clutering.
+- algorithm: str - By default the value of this is "hbdscan". So far jaseci only support `hbdscan` and `kmeans` algorithms for clustering.
 
-- min_samples: int - This is a mandotory field if only you are using `hbdscan` algorithm. The minimum number of data points in a cluster is represented here. Increasing this will reduces number of clusters.
+- min_samples: int - This is a mandatory field if only you are using `hbdscan` algorithm. The minimum number of data points in a cluster is represented here. Increasing this will reduces number of clusters.
 
-- min_cluster_size: int - This is a mandotory field if only you are using `hbdscan` algorithm. This represents how conservative you want your clustering should be. Larger values more data points will be considered as noise
-- n_clusters: int - This is also a mandotory field if only you are using `kmeans` algorithm. This defines how many number of clusters you need.
+- min_cluster_size: int - This is a mandatory field if only you are using `hbdscan` algorithm. This represents how conservative you want your clustering should be. Larger values more data points will be considered as noise
+- n_clusters: int - This is also a mandatory field if only you are using `kmeans` algorithm. This defines how many number of clusters you need.
 
 ```jac
 can cluster.get_cluster_labels;
@@ -100,13 +100,13 @@ has labels;
 
 has final_features;
 
-can set_lables{
+can set_labels{
     labels = cluster.get_cluster_labels(embeddings=final_features,algorithm="hbdscan",min_samples=2,min_cluster_size=2);
     report labels;
     }
 ```
 
-If you are going to use `kmeans` algorithm, the `set_lables` ability should be as follows;
+If you are going to use `kmeans` algorithm, the `set_labels` ability should be as follows;
 
 ```
 can set_lables{
@@ -157,7 +157,7 @@ walker features{
 walker init{
     has final_features;
 
-    can set_lables{
+    can set_labels{
     labels = cluster.get_cluster_labels(embeddings=final_features,algorithm="hbdscan",min_samples=2,min_cluster_size=2);
     report labels;
     }
@@ -174,7 +174,7 @@ walker init{
     }
 
     cluster_labels{
-        ::set_lables;
+        ::set_labels;
     }
 }
 
@@ -187,7 +187,7 @@ Save the above code in a file with name `cluster.jac` and save the following tex
     "still waiting card",
     "countries supporting",
     "card still arrived weeks",
-    "countries accounts suppor",
+    "countries accounts support",
     "provide support countries",
     "waiting week card still coming",
     "track card process delivery",

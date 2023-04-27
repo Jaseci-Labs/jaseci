@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 title: CL Summarizer
-description: Text Summerization with CL Summerizer
+description: Text Summarization with CL Summarizer
 ---
 
 # CL Summarizer (`cl_summer`)

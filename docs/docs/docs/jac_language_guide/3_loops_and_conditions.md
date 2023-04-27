@@ -66,7 +66,7 @@ A is one less than B
 ### `for` loop
 
 ```jac
-for (initializing) to (condition) by (incrementing or substracting):
+for (initializing) to (condition) by (incrementing or subtracting):
         std.out("Hello", i, "times!");
 ```
 

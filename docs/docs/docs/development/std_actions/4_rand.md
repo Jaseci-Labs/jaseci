@@ -35,7 +35,7 @@ Generate a random word.
 
 Generates a random sentence.
 
-`min_lenght` - (`int`) optional , minimum amount of words defaut is 4
+`min_lenght` - (`int`) optional , minimum amount of words default is 4
 `max_lenght` - (`int`) ptional ,  maximum amount of words default is 10
 `sen` - optional
 
@@ -45,7 +45,7 @@ senetence  = rand.sentence();
 ### Generate Random Paragraph
 
 Generates a random paragraph
-`min_lenght` - (`int`) optional , minimum amount of setences defaut is 4
+`min_lenght` - (`int`) optional , minimum amount of sentences default is 4
 `max_lenght` - (`int`) optional ,  maximum amount of sentences default is 8
 `sen` - optional
 
@@ -55,7 +55,7 @@ paragraph = rand.paragraph();
 ### Generate Random Text
 
 Generates a random text
-`min_lenght` - (`int`) optional , minimum amount of paragraph ,defaut is 3
+`min_lenght` - (`int`) optional , minimum amount of paragraph ,default is 3
 `max_lenght` - (`int`) optional ,  maximum amount of paragraph default is 6
 `sen` - optional
 

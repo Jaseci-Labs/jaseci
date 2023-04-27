@@ -154,7 +154,7 @@ a or b
 !a or b
 !(a and b)
 ```
-### Assigments Operators
+### Assignment Operators
 
 ```jac
 a = 4 + 4;
@@ -170,7 +170,7 @@ a /= 4 - 6;
 | ---- | -------------------------------- | ---------------------------------------------- |
 | 1    | ( ), [ ], ., ::, spawn           | Parenthetical/grouping, node/edge manipulation |
 | 2    | ^, []                            | Exponent, Index                                |
-| 3    | *, /, %                          | Multiplication, division, modulos              |
+| 3    | *, /, %                          | Multiplication, division, modulo               |
 | 4    | +, -                             | Addition, subtraction                          |
 | 5    | ==, !=, >=, <=, >, <, in, not in | Comparison                                     |
 | 6    | &&,                              |                                                | , and, or | Logical |

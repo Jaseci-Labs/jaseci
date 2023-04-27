@@ -6,7 +6,7 @@ The Elastic service in Jaseci is managed by JSORC, which automatically creates a
 
 First, make sure Elastic is enabled by setting the `enabled` field in Elastic config to be True. We first get the current config via the `config_get` endpoint. (We are going to use jsctl for the following examples but you can also use API requests)
 
-Run the follwoing command in `jsctl` shell.
+Run the following command in `jsctl` shell.
 
 ```bash
 config get ELASTIC_CONFIG
@@ -27,7 +27,7 @@ Final step to enable Elastic is to refresh the Elastic service for the updated c
 service refresh elastic
 ```
 
-JSORC will then refresh the Elastic service and creates the neccessary kuberentes resources.
+JSORC will then refresh the Elastic service and creates the necessary kuberentes resources.
 
 ### **CONFIGURATION**
 
@@ -81,7 +81,7 @@ ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
 `std.log_activity`
 
 - This will be used for standard logging for activity.
-- It will use base structure and can be overriden or add additional fields.
+- It will use base structure and can be overridden  or add additional fields.
 - `misc` inside your created log will use dict's update approach
     -   ```js
         log: {
@@ -95,7 +95,7 @@ ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
         {
             ...
             "misc": {
-                "report": 1, // overriden
+                "report": 1, // overridden
                 "node": "current node's info",
                 "var1": 2 // added
             }
@@ -105,7 +105,7 @@ ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
 **`DEFAULT ACTIVITY LOG STRUCTURE`**
 
 ```js
-// all of this fields can be overriden
+// all of this fields can be overridden
 {
     "datetime": date_now,
     "activity_action": "your custom name" or "walker's name using underscore instead of space",
@@ -136,7 +136,7 @@ ELASTIC_MANIFEST = {/* KUBE MANIFEST */}
 
 ```js
 std.log_activity(
-    log = {... fields to be included/overriden in default structure ...},
+    log = {... fields to be included/overridden in default structure ...},
     action = "testing_activity", //your custom name for activity_action
     query = "", // additional url query the elastic supports
     suffix = here.jid //"optional suffix of index. ex: -{{user's jid}}"

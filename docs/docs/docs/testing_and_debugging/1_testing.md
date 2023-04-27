@@ -58,7 +58,7 @@ walker calculator{
 }
 ```
 
-We will be using the walker from the above example to demostrate a test cases for a single entry.
+We will be using the walker from the above example to demonstrate a test cases for a single entry.
 
 **Test Case**
 
@@ -73,7 +73,7 @@ with graph::calc by walker::calculator(value1 = 2, value2 = 3 )
 
 ## Runing test cases
 
-To run the test cases save test cases writen in a file with `.jac` extension and run as following example in `jsctl` shell.
+To run the test cases save test cases written in a file with `.jac` extension and run as following example in `jsctl` shell.
 
 ```
 jac test test.jac

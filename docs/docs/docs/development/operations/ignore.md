@@ -4,7 +4,7 @@ sidebar_position: 6
 
 # Ignore
 
-The quite handy command `ignore` from Juseci allows you to skip(ignore) visiting nodes or edges when traversing.
+The quite handy command `ignore` from Jaseci allows you to skip(ignore) visiting nodes or edges when traversing.
 
 **Example:**
 

@@ -15,7 +15,7 @@ file and a python file.
 ![PH Jaseci Actions](img/ph_actions.png "PH Jaseci Actions")
 
 **How Inferecing Works:**
-![How Inferecing Works](img/inferencing.png "How Inferecing Works")
+![How Inferecing Works](img/inferencing.png "How Inference Works")
 
 **Recommended way of Using PH Head in your App:**
 ![Recommended Usage of PH](img/recommended_usage.png "Recommended Usage of PH")
@@ -37,7 +37,7 @@ walker identify_intent{
   can ph.create_head_list, ph.create_head, ph.predict, ph.train_head;
 
   root {
-      # This creates a headlist. you can pass a deafault config override here.
+      # This creates a head list. you can pass a default config override here.
       ph.create_head_list({
           "Model":{
               "args":{
@@ -111,7 +111,7 @@ You can use the personalized head as a full custom model other than being a tran
 
 ### **2.1. Creating Custom Python Model**
 
-Python File contains the torch.nn.Module class which is the model. You can use any model you want. and a torch.utils.data.Dataset class which is the dataset. You can use any dataset you want. and Preprocessor and Postprocessor classes which are used in inferencing. You can use any preprocessor and postprocessor you want but with the same method format. follow it to create your custom python model.
+Python File contains the torch.nn.Module class which is the model. You can use any model you want. and a torch.utils.data.Dataset class which is the dataset. You can use any dataset you want. and Preprocessor and Post processor classes which are used in inference. You can use any preprocessor and post-processor you want but with the same method format. follow it to create your custom python model.
 
 ```python
 # Path: ./custom.py

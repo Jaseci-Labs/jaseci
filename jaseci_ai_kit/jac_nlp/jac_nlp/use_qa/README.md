@@ -14,10 +14,10 @@ For this tutorial we are going to leverage the `USE QA` for **text classificatio
 
 # **Walk through**
 
-## **1. Praparing dataset**
+## **1. Preparing dataset**
 For this tutorial, we are going to leverage the `use_qa` for text classification, which is categorizing an incoming text into a one of predefined class. for demonstration purpose, we are going to use the SNIPS dataset as an example here. [snips dataset](https://huggingface.co/datasets/snips_built_in_intents).
 
-SNIPS is a popular intent classificawtion datasets that covers intents such as `
+SNIPS is a popular intent classification datasets that covers intents such as `
 [
     "BookRestaurant",
     "ComparePlaces",
@@ -31,7 +31,7 @@ SNIPS is a popular intent classificawtion datasets that covers intents such as `
     "ShareETA"
 ]
     `
-We need to do a little data format conversion to create a version of SNIPS that work with our `use_qa` implemenation.
+We need to do a little data format conversion to create a version of SNIPS that work with our `use_qa` implementation.
 For this part, we are going to use Python. First,
 
 1. `Import the dataset` from huggingface [dataset library](https://huggingface.co/datasets/snips_built_in_intents).
@@ -42,7 +42,7 @@ For this part, we are going to use Python. First,
     dataset = load_dataset("snips_built_in_intents")
     print(dataset["train"][:2])
     ```
-    If imported successsfuly, you should see the data format to be something like this
+    If imported successfuly, you should see the data format to be something like this
     > {"text": ["Share my location with Hillary's sister", "Send my current location to my father"], "label": [5, 5]}
 
 2. `Converting the format` from the SNIPS out of the box to the format that can be ingested by use_encoder.

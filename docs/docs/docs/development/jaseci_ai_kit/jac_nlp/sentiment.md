@@ -8,7 +8,7 @@ description: Sentiment Analysis with Jaseci
 
 ## Actions
 
-Module `sentiment` implemented for analysing the sentiment in a given list of text. This module accepts as input a set of sentences.
+Module `sentiment` implemented for analyzing the sentiment in a given list of text. This module accepts as input a set of sentences.
 
 - `texts` - (list of strings) list of input text documents.
 

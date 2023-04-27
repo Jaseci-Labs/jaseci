@@ -23,7 +23,7 @@ node state {
 ```
 Nodes can be thought of as the representation of an entity.
 Nodes are the fundamental unit of  a graph. These can be considered to be the steps in which the Walker can take.
-* Nodes are composed of Context and excutable actions.
+* Nodes are composed of Context and executable actions.
 * Nodes execute a set of actions upon entry and exit.
  Here we are creating a `node` of name "state"
 The <strong>has</strong> keyword is used to declare a variable for the node.
@@ -105,7 +105,7 @@ spawn {
     # this creates a node from the prices node to here.
      prices_12 = spawn prices +[transition(intent="12 and younger")] +> node::state(
            title = "prices<12",
-           message = "Childer under 12 pay $100 per month",
+           message = "Children under 12 pay $100 per month",
            prompts = ["more prices", "quit"]
     );
 
@@ -116,7 +116,7 @@ spawn {
 }
 ```
 `spawn` is used to create to create child nodes, which is used to design flow of the conversational experience.
-We are able to create additional edges to connnect nodes which which do not share a parent -child relationship. This is shown in the last line.
+We are able to create additional edges to connect nodes which which do not share a parent -child relationship. This is shown in the last line.
 
 ```jac
 node state {
@@ -149,14 +149,14 @@ graph main_graph {
 
     prices_12 = spawn prices +[transition(intent="12 and younger")] +> node::state(
         title = "prices<12",
-        message = "Childer under 12 pay $100 per month",
+        message = "Children under 12 pay $100 per month",
         prompts = ["more prices", "quit"]
     );
      prices_12 +[transition(intent="more prices")] +> prices;
 
      prices_18 = spawn prices +[transition(intent="18 and younger")] +> node::state(
         title = "prices<18",
-        message = "Childer under 18 pay $110 per month",
+        message = "Children under 18 pay $110 per month",
         prompts = ["more prices", "quit"]
     );
 

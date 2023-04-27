@@ -6,8 +6,8 @@ Jaseci allows for in-code use of common  request methods.
 
 Make get request
 `url` : `string`  - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converetd to json.
-`header` : `dicionary` -  header data
+`data` : `dictionary` - data being sent that will be converted to json.
+`header` : `dictionary` -  header data
 
 ```jac
 response = request.get(url ,data , headers);
@@ -18,8 +18,8 @@ response = request.get(url ,data , headers);
 Make post request.
 
 `url` : `string` - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converetd to json.
-`header` : `dicionary` -  header data
+`data` : `dictionary` - data being sent that will be converted to json.
+`header` : `dictionary` -  header data
 
 ```jac
 response = request.post(url ,data , headers);
@@ -28,8 +28,8 @@ response = request.post(url ,data , headers);
 
 Make put request
 `url` : `string`  - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converetd to json.
-`header` : `dicionary` -  header data
+`data` : `dictionary` - data being sent that will be converted to json.
+`header` : `dictionary` -  header data
 
 ```jac
 response = request.put(url ,data , headers);
@@ -40,8 +40,8 @@ response = request.put(url ,data , headers);
 Make delete request.
 
 `url` : `string`  - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converetd to json.
-`header` : `dicionary` -  header data
+`data` : `dictionary` - data being sent that will be converted to json.
+`header` : `dictionary` -  header data
 
 ```jac
 response = request.delete(url ,data , headers);
@@ -51,8 +51,8 @@ response = request.delete(url ,data , headers);
 
 Make head request , returns header of  a get request alone.
 `url` : `string`  - url to where the request will be made.
-`data` : `dictionary` - data being sent that will be converetd to json.
-`header` : `dicionary` -  header data.
+`data` : `dictionary` - data being sent that will be converted to json.
+`header` : `dictionary` -  header data.
 
 ```jac
 response = request.head(url ,data , headers);
@@ -60,11 +60,11 @@ response = request.head(url ,data , headers);
 
 ### Option Request
 
-Make options request , requests permitted communications options fror a given url or server.
+Make options request , requests permitted communications options from a given url or server.
 
 `url` : `string`  - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converetd to json.
-`header` : `dicionary` -  header data
+`data` : `dictionary` - data being sent that will be converted to json.
+`header` : `dictionary` -  header data
 
 ```jac
 response = request.get(url ,data , headers);
@@ -76,7 +76,7 @@ Used to upload a file or files
 `url` : `string`  - url to where the request will be made
 `file` : `single` base64 encoded file
 `files` : `list` of base64 encode files.
-`header` : `dicionary` -  header data
+`header` : `dictionary` -  header data
 
 ```jac
 response = request.multipart_base64(url ,file , headers);
@@ -85,7 +85,7 @@ response = request.multipart_base64(url ,file , headers);
 ### Download File
 
 `url` : `string`  - url to where the request will be made
-`header` : `dicionary` -  header data
+`header` : `dictionary` -  header data
 `encoding` : `string` - file format , default is utf-8
 
 ```jac

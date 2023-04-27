@@ -30,24 +30,24 @@ device = torch.device("cpu")
 ```
 
 In this block:
-- we will be using the t5-small pretrained model because these models can be very big.
+- we will be using the t5-small pre-trained model because these models can be very big.
 
 ### Generating summary based on text
 
 ```py
 def t5_generate_sum(text, min_length, max_length):
 ```
-Here, we will be creating a function that generates a summary, we will be intaking parameters such as text (which will be the body of data you want to summarize), min_length (this will be the minimum of words you would like the summarization model to spit out), max_length (which will be the maximum of being returned from the summarization model). So let's get to the next line.
+Here, we will be creating a function that generates a summary, we will be accepting parameters such as text (which will be the body of data you want to summarize), min_length (this will be the minimum of words you would like the summarization model to spit out), max_length (which will be the maximum of being returned from the summarization model). So let's get to the next line.
 
 ```py
 preprocess_text = text.strip().replace("\n", "")
 ```
-This will help us remove new line from any body of text that the user might have inputed to the model. This can mess up the model and return a ugly comprehensive data of the text.
+This will help us remove new line from any body of text that the user might have input to the model. This can mess up the model and return a ugly comprehensive data of the text.
 
 ```py
 t5_prepared_Text = "summarize: " + preprocess_text
 ```
-The T5 summarization model requires that you append `summarize` infront the body of text used to summarize.
+The T5 summarization model requires that you append `summarize` in front of the body of text used to summarize.
 
 ```py
 tokenized_text = tokenizer.encode(t5_prepared_Text, return_tensors="pt").to(device)
@@ -64,7 +64,7 @@ summary_ids = model.generate(
         early_stopping=True,
     )
 ```
-Using the T5 model this will generate the summary based on the paramater we passed in min_length, max_length, tokenized_text and etc.
+Using the T5 model this will generate the summary based on the parameter we passed in min_length, max_length, tokenized_text and etc.
 
 ```py
 output = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
@@ -89,7 +89,7 @@ import torch
 from jaseci.jsorc.live_actions import jaseci_action
 from transformers import T5Tokenizer, T5ForConditionalGeneration  # , T5Config
 
-# from fastapi import HTTPException
+# from fast-api import HTTPException
 
 model = T5ForConditionalGeneration.from_pretrained("t5-small")
 tokenizer = T5Tokenizer.from_pretrained("t5-small")

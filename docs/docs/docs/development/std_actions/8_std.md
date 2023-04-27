@@ -14,7 +14,7 @@ result  = std.log(data);
 ```
 ### Output
 
-Print on to the termnial.
+Print on to the terminal.
 
 ```jac
 data = {
@@ -40,7 +40,7 @@ Any string passed will be printed on to the screen
 ```jac
 std.js_input("> ");
 ```
-### Standar Error
+### Standard Error
 
 Printing to standard error.
 
@@ -70,7 +70,7 @@ time  = std.time_now();
 
 Set global varibale visible to all walker
 `name` : `string`
-`value` : value (must be json seriaziable)
+`value` : value (must be json serializable)
 
 ```jac
 global_variable = std.set_global(name,value);

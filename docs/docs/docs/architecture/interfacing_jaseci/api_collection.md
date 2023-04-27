@@ -83,20 +83,20 @@ cli: architype register | api: architype_register | auth: user
 code: str (*req), encoded: bool (False), snt: Sentinel (None)
 ```
 
-This register API allows for the creation or replacement/update of an architype that can then be used by walkers in their interactions of graphs. The code argument takes Jac source code for the single architype. To load multiple architypes and walkers at the same time, use sentinel register API.
+This register API allows for the creation or replacement/update of an architype that can then be used by walkers in their interactions of graphs. The code argument takes Jac source code for the single architype. To load multiple archetypes and walkers at the same time, use sentinel register API.
 
 #### Params
-Params code -- The text (or filename) for an architypes Jac code
+Params code -- The text (or filename) for an archetypes Jac code
 encoded -- True/False flag as to whether code is encode in base64
 snt -- The UUID of the sentinel to be the owner of this architype
 
 #### Returns
-Returns - Fields include 'architype': Architype object if created otherwise null 'success': True/False whether register was successful 'errors': List of errors if register failed 'response': Message on outcome of register call
+Returns - Fields include 'architype': Archetype object if created otherwise null 'success': True/False whether register was successful 'errors': List of errors if register failed 'response': Message on outcome of register call
 
 ### Architype Get
 ```
 cli: architype get | api: architype_get | auth: user
-arch: Architype (*req), mode: str (default), detailed: bool (False)
+arch: Archetype (*req), mode: str (default), detailed: bool (False)
 No documentation yet.
 ```
 
@@ -106,24 +106,24 @@ mode -- Valid modes: {default, code, ir, }
 detailed -- Flag to give summary or complete set of fields
 
 #### Returns
-Returns - Fields include (depends on mode) 'code': Formal source code for architype 'ir': Intermediate representation of architype 'architype': Architype object print
+Returns - Fields include (depends on mode) 'code': Formal source code for architype 'ir': Intermediate representation of architype 'architype': Archetype object print
 
-### Architype Set
+### Archetype Set
 ```
 cli: architype set | api: architype_set | auth: user
-arch: Architype (*req), code: str (*req), mode: str (default)
+arch: Archetype (*req), code: str (*req), mode: str (default)
 No documentation yet.
 ```
 
 #### Params
 Params arch -- The architype being set
-code -- The text (or filename) for an architypes Jac code/ir
+code -- The text (or filename) for an archetypes Jac code/ir
 mode -- Valid modes: {default, code, ir, }
 
 #### Returns
 Returns - Fields include (depends on mode) 'success': True/False whether set was successful 'errors': List of errors if set failed 'response': Message on outcome of set call
 
-### Architype List
+### Archetype List
 ```
 cli: architype list | api: architype_list | auth: user
 snt: Sentinel (None), kind: str (None), detailed: bool (False)
@@ -131,14 +131,14 @@ No documentation yet.
 ```
 
 #### Params
-Params snt -- The sentinel for which to list its architypes
+Params snt -- The sentinel for which to list its archetypes
 detailed -- Flag to give summary or complete set of fields
-kind -- Architype kind used to narrow the result set
+kind -- Archetype kind used to narrow the result set
 
 #### Returns
 Returns - List of architype objects
 
-### Architype Count
+### Archetype Count
 ```
 cli: architype count | api: architype_count | auth: user
 snt: Sentinel (None), kind: str (None)
@@ -146,23 +146,23 @@ No documentation yet.
 ```
 
 #### Params
-Params snt -- The sentinel for which to list its architypes
+Params snt -- The sentinel for which to list its archetypes
 detailed -- Flag to give summary or complete set of fields
-kind -- Architype kind used to narrow the result set from which the count is evaluated
+kind -- Archetype kind used to narrow the result set from which the count is evaluated
 
 #### Returns
 Returns - Count of architype objects
 
-### Architype Delete
+### Archetype Delete
 ```
 cli: architype delete | api: architype_delete | auth: user
-arch: Architype (*req), snt: Sentinel (None)
+arch: Archetype (*req), snt: Sentinel (None)
 No documentation yet.
 ```
 
 #### Params
 Params arch -- The architype being set
-snt -- The sentinel for which to list its architypes
+snt -- The sentinel for which to list its archetypes
 
 #### Returns
 Returns - Fields include (depends on mode) 'success': True/False whether command was successful 'response': Message on outcome of command
@@ -538,7 +538,7 @@ No documentation yet.
 ```
 cli: master create | api: master_create | auth: user
 name: str (*req), password: str (), global_init: str (), global_init_ctx: dict ({}), other_fields: dict ({})
-other fields used for additional feilds for overloaded interfaces (i.e., Dango interface)
+other fields used for additional fields for overloaded interfaces (i.e., Dango interface)
 ```
 
 ### Master Get
@@ -559,7 +559,7 @@ No documentation yet.
 ```
 cli: master active set | api: master_active_set | auth: user
 name: str (*req)
-NOTE: Specail handler included in general interface to api
+NOTE: Special handler included in general interface to api
 ```
 
 ### Master Active Unset
@@ -780,14 +780,14 @@ No documentation yet.
 ```
 cli: master createsuper | api: master_createsuper | auth: admin
 name: str (*req), password: str (), global_init: str (), global_init_ctx: dict ({}), other_fields: dict ({})
-other fields used for additional feilds for overloaded interfaces (i.e., Dango interface)
+other fields used for additional fields for overloaded interfaces (i.e., Dango interface)
 ```
 
 ### Master Allusers
 ```
 cli: master allusers | api: master_allusers | auth: admin
 limit: int (0), offset: int (0), asc: bool (False), search: str (None)
-return and offset specfies where to start NOTE: Abstract interface to be overridden
+return and offset specifies where to start NOTE: Abstract interface to be overridden
 ```
 
 ### Master Become

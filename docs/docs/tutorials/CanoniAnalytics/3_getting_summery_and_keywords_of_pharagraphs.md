@@ -4,7 +4,7 @@ We created a graph from the movie script data in the previous part. You may have
 
 ## Retriving Summery of Text
 
-For this section we are using jaseci NLP features. To get summaries Jaseci has several modules already implemented, but here for demostration purpose we will be using the `jac_nlp.bart_sum` the **BART summarizer**. For all other available Jaseci summarization modules refer to [here](../../category/summerization-models)
+For this section we are using jaseci NLP features. To get summaries Jaseci has several modules already implemented, but here for demonstration purpose we will be using the `jac_nlp.bart_sum` the **BART summarizer**. For all other available Jaseci summarization modules refer to [here](../../category/summerization-models)
 
 ### 1. Installing Jac NLP summarization module
 
@@ -48,7 +48,7 @@ walker summarizer {
 ```
 
 - `can bart_sum.summarize` this is the action we are using to summarize text features.
--  in `summery = bart_sum.summarize(text, 20)` line we are calling the jaseci bart_sum.summerze action. the `text` variable has declared by yet not assigned a value to. We are going to get that value from the `scene node`.
+-  in `summery = bart_sum.summarize(text, 20)` line we are calling the jaseci `bart_sum.summerize` action. the `text` variable has declared by yet not assigned a value to. We are going to get that value from the `scene node`.
 
 
 ### 4. Wrapping things up with the init walker
@@ -81,10 +81,10 @@ walker init{
 
 ```
 
-- `spawn here walker::build_graph` spawining the graph from the root node.
-- `take-->` travers starts from the root node.
+- `spawn here walker::build_graph` spawning the graph from the root node.
+- `take-->` traverse starts from the root node.
 - `spawn here walker::summarizer(text=here.description);` This line is the most important part in this code. This creates the summary using the summarize walker. `here.description` is to get the description from the current `scene` node.
-- `take -->node::scene;` thie take keyworrd command walkers to travers around the graph. here the speciallity is this command says walkers to travers only in `scene` nodes. For more details about traversings of walkers please refer to [here](../../docs/development/abstractions/walkers).
+- `take -->node::scene;` this take keyword command walkers to traverse around the graph. here the speciality is this command says walkers to traverse only in `scene` nodes. For more details about traversing of walkers please refer to [here](../../docs/development/abstractions/walkers).
 
 
 Save all these changes and load the `bart_sum` module before run the code in `jsctl` terminal.
@@ -166,7 +166,7 @@ pip install jac_nlp[topic_ext]
 
 ### 2. Updating the scene node to set keywords
 
-Similar to the previouse one, here we are updating the scene node to store and set keywords.
+Similar to the previous one, here we are updating the scene node to store and set keywords.
 
 
 ```jac

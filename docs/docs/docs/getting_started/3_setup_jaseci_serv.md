@@ -63,7 +63,7 @@ Login to Jaseci Shell
 ```
 login http://localhost:8000
 ```
-login with the credientals used to create the super user earlier.
+login with the credentials used to create the super user earlier.
 
 In new terminal 1 :
 
@@ -99,7 +99,7 @@ Open up Postman
 ```
 {
 "email" : "email@gmail",
-"password" : "passsowrd"
+"password" : "password"
 }
 ```
 

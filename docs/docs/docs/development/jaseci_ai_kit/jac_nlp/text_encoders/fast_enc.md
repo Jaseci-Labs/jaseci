@@ -12,7 +12,7 @@ description: Text Encoding with FastText Encoder
 
 * `train`: used to train the Bi-Encoder for custom input
     * Input:
-        * `traindata` (Dict): dictionary of candidates and suportting contexts for each candidate
+        * `traindata` (Dict): dictionary of candidates and supporting contexts for each candidate
         * `train_with_existing` (bool): if set to true train the model from scratch otherwise trains incrementally
 * `predict`: predits the most suitable candidate for a provided context, takes text or embedding
     * Input:

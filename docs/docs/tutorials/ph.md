@@ -105,7 +105,7 @@ def collate_fn(samples):
     return batch
 ```
 
-## 3. Creating Jac Progam
+## 3. Creating Jac Program
 In the Jac program, we are defining a walker named `run_ph` which has the following capabilities: `ph.create_head_list`, `ph.create_head`, `ph.predict`, `ph.train_head`, and `file.load_str`.
 
 First, we are loading the contents of the custom.py file into a variable python_file using the file.load_str capability of the `run_ph` walker.

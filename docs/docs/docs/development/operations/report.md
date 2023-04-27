@@ -4,7 +4,7 @@ sidebar_position: 8
 
 # Report
 
-The `report` command in jac resembles a conventional programming logging function in certain ways. The state of each node the walker visits while trarsing will continue to be recorded in this way.
+The `report` command in jac resembles a conventional programming logging function in certain ways. The state of each node the walker visits while traversing continue to be recorded in this way.
 
 **Example:**
 ```jac

@@ -4,7 +4,7 @@ title: ChatGPT
 description: Text Generation with ChatGPT
 ---
 
-Module `gp2` uses the OpenAI's `GPT-2-medium` to perform text genreation on a given text.
+Module `gp2` uses the OpenAI's `GPT-2-medium` to perform text generation on a given text.
 
 ## Actions
 

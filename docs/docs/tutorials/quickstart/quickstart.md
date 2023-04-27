@@ -31,7 +31,7 @@ When you use the `run` command on a .jac file, the program is sent to Jaseci to 
 
 To ensure that our Jac programs runs fast, it's recommended that you build programs first using the `jac build` command and then run them.
 
-To build the `hello.jac` program from the **Quickstart** section, run the following command:
+To build the `hello.jac` program from the **Quick start** section, run the following command:
 
 `jsctl jac build hello.jac`
 
@@ -155,7 +155,7 @@ walker create_fam {
 
 Don't worry if that looks confusing. As you learn the Jac language, this will become clearer.
 
-2. Let's "register" a sentinel based on our Jac program. A sentinel is the abstraction Jaseci uses to encapsulate compiled walkers and architype nodes and edges. You can think of registering a sentinel as compiling your jac program. The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph. Let's register `fam.jac`
+2. Let's "register" a sentinel based on our Jac program. A sentinel is the abstraction Jaseci uses to encapsulate compiled walkers and archetype nodes and edges. You can think of registering a sentinel as compiling your jac program. The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph. Let's register `fam.jac`
 
 3. Open the jaseci shell by typing `jsctl`
 4. Run the following command to register a sentinel:
@@ -190,7 +190,7 @@ jaseci > sentinel register -name fam -code fam.jac -set_active true
 
 This output shows that the sentinel was created. Note that we've also made this the "active" sentinel that will be used as the default setting for any calls to the Jaseci Core APIs that require a sentinel be specified.
 
-At this point, Jasei has registered our code and we are ready to run walkers!
+At this point, Jaseci has registered our code and we are ready to run walkers!
 
 4. Now let's run our walker on the root node of the graph we created and see what happens!
 
