@@ -58,6 +58,7 @@ const config = {
           src: 'img/favicon.png',
         },
         items: [
+
           {
             type: 'docSidebar',
             sidebarId: 'docsSidebar',
@@ -70,6 +71,7 @@ const config = {
             position: 'left',
             label: 'Tutorials',
           },
+          { to: 'https://api.jaseci.org/docs/', label: 'API', position: 'left' },
           {
             href: 'https://github.com/Jaseci-Labs/jaseci',
             label: 'GitHub',
