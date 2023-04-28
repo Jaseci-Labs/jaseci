@@ -20,6 +20,7 @@ walker test_generate {
 
 ### Setup Parameters
 - `model`: model name, string (default: "dolly-v2-3b")
+- `instructions`: instructions, string (default: "Below is an instruction that describes a task. Write a response that appropriately completes the request.")
 
 ## **References**
 - [Databricks](https://databricks.com/)

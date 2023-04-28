@@ -12,21 +12,6 @@ RESPONSE_KEY = "### Response:"
 END_KEY = "### End"
 INTRO_BLURB = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
 
-# This is the prompt that is used for generating responses using an already trained model.  It ends with the response
-# key, where the job of the model is to provide the completion that follows it (i.e. the response itself).
-PROMPT_FOR_GENERATION_FORMAT = """{intro}
-
-{instruction_key}
-{instruction}
-
-{response_key}
-""".format(
-    intro=INTRO_BLURB,
-    instruction_key=INSTRUCTION_KEY,
-    instruction="{instruction}",
-    response_key=RESPONSE_KEY,
-)
-
 
 def get_special_token_id(tokenizer: PreTrainedTokenizer, key: str) -> int:
     """Gets the token ID for a given string that has been added to the tokenizer as a special token.
@@ -60,6 +45,7 @@ class InstructionTextGenerationPipeline(Pipeline):
         max_new_tokens: int = 256,
         top_p: float = 0.92,
         top_k: int = 0,
+        instruction:str = INTRO_BLURB,
         **kwargs,
     ):
         """Initialize the pipeline
@@ -72,6 +58,21 @@ class InstructionTextGenerationPipeline(Pipeline):
             top_k (int, optional): The number of highest probability vocabulary tokens to keep for top-k-filtering.
                 Defaults to 0.
         """
+        
+
+        self.PROMPT_FOR_GENERATION_FORMAT = """{intro}
+
+        {instruction_key}
+        {instruction}
+
+        {response_key}
+        """.format(
+            intro=instruction,
+            instruction_key=INSTRUCTION_KEY,
+            instruction="{instruction}",
+            response_key=RESPONSE_KEY,
+        )
+
         super().__init__(
             *args,
             do_sample=do_sample,
@@ -121,7 +122,7 @@ class InstructionTextGenerationPipeline(Pipeline):
         return preprocess_params, forward_params, postprocess_params
 
     def preprocess(self, instruction_text, **generate_kwargs):
-        prompt_text = PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction_text)
+        prompt_text = self.PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction_text)
         inputs = self.tokenizer(
             prompt_text,
             return_tensors="pt",
