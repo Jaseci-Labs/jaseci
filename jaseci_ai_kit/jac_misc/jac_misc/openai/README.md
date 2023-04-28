@@ -168,7 +168,7 @@ Generates n variations of an image using the DALL-E 2 Image Variation API.
 - `image_file`: (Optional) Path to the image file to use. If not provided, `image_b64` must be provided instead. Type: `str`
 - `image_b64`: (Optional) Base64-encoded image data. If not provided, `image_file` must be provided instead. Type: `str`
 - `n`: (Optional) Number of variations to generate. Default is 1. Type: `int`
-- `size`: (Optional) Size of the output images in the format "<width>x<height>". Default is "512x512". Type: `str`
+- `size`: (Optional) Size of the output images in the format "x". Default is "512x512". Type: `str`
 - `response_format`: (Optional) Format of the response data. Can be "url" or "b64_json". Default is "url". Type: `str`
 
 #### Returns:
