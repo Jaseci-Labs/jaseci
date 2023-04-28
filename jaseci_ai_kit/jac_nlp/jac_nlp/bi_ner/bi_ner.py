@@ -1,40 +1,64 @@
 from functools import partial
 from transformers import Trainer, TrainingArguments
 import json
-from typing import Dict, List
+from typing import Dict, List, Optional
 import os
 import traceback
 from fastapi import HTTPException
 
+from jaseci.utils.utils import model_base_path
 from .model.base_encoder import BI_Enc_NER
 from .model.inference import Bi_NER_Infer
 from .datamodel.utils import invert, get_category_id_mapping
 from .model.tokenize_data import get_datasets
 from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.utils.model_manager import ModelManager
+
+
+MODEL_BASE_PATH = model_base_path("jac_nlp/bi_ner")
 
 
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
 def setup(category_name: List[str] = None):
-    global model, example_encoder, category_id_mapping, device
-    global model_args, m_config_fname, train_args, t_config_fname
-
-    dirname = os.path.dirname(__file__)
-    m_config_fname = os.path.join(dirname, "config/m_config.json")
+    global model, example_encoder, category_id_mapping, device, latest_model_path
+    global model_args, m_config_fname, train_args, t_config_fname, model_manager
+    model_manager = ModelManager(MODEL_BASE_PATH)
+    print(f"get_latest_version: {model_manager.get_latest_version()}")
+    if model_manager.get_latest_version():
+        latest_model_path = MODEL_BASE_PATH / model_manager.get_latest_version()
+    else:
+        latest_model_path = os.path.dirname(__file__)
+    print(latest_model_path)
+    m_config_fname = os.path.join(latest_model_path, "config/m_config.json")
     with open(m_config_fname, "r") as jsonfile:
         model_args = json.load(jsonfile)
-    t_config_fname = os.path.join(dirname, "config/t_config.json")
+    t_config_fname = os.path.join(latest_model_path, "config/t_config.json")
     with open(t_config_fname, "r") as jsonfile:
         train_args = json.load(jsonfile)
     if category_name is None:
         category_name = ["PER", "ORG", "LOC", "MISC"]
     category_id_mapping = get_category_id_mapping(model_args, category_name)
     model_args["descriptions"] = category_name
-    model = BI_Enc_NER(model_args)
-    example_encoder = partial(
-        model.prepare_inputs,
-        category_mapping=invert(category_id_mapping),
-        no_entity_category=model_args["unk_category"],
-    )
+    model_args["m_config_path"] = m_config_fname
+    model_args["t_config_path"] = t_config_fname
+    try:
+        model = BI_Enc_NER(model_args)
+        example_encoder = partial(
+            model.prepare_inputs,
+            category_mapping=invert(category_id_mapping),
+            no_entity_category=model_args["unk_category"],
+        )
+    except HTTPException:
+        if model_args.get("context_bert_model"):
+            model_args["candidate_bert_model"] = model_args["context_bert_model"]
+        else:
+            model_args["context_bert_model"] = model_args["candidate_bert_model"]
+        model = BI_Enc_NER(model_args)
+        example_encoder = partial(
+            model.prepare_inputs,
+            category_mapping=invert(category_id_mapping),
+            no_entity_category=model_args["unk_category"],
+        )
     device = model.device
 
 
@@ -63,7 +87,9 @@ def infer(contexts: List[str]):
             predicted_candidates.append(entity_data)
         return predicted_candidates
     except Exception as e:
-        print("Exeptions : ", e)
+        if type(e).__name__ == "NameError":
+            raise HTTPException(500, "Please Train the model before using Inference")
+        print(f"Exeptions : {e}")
         traceback.print_exc()
 
 
@@ -104,7 +130,8 @@ def train(dataset: Dict = None, from_scratch=True, training_parameters: Dict = N
         train_dataset=train_dataset,
         eval_dataset=train_dataset,
     )
-    train_resp = trainer.train()
+    trainer.train()
+
     inference_model = Bi_NER_Infer(
         model,
         category_mapping=invert(category_id_mapping),
@@ -114,7 +141,7 @@ def train(dataset: Dict = None, from_scratch=True, training_parameters: Dict = N
         model_args=model_args,
     )
     inference_model.to(device)
-    return train_resp
+    return save_model()
 
 
 # API for setting the training and model parameters
@@ -152,41 +179,66 @@ def get_model_config():
 
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
 def set_model_config(model_parameters: Dict = None):
-    global model_args
+    global model_args, latest_model_path
     try:
-        model.save(train_args["logpath"])
+        # model.save(str(latest_model_path))
+        latest_model_path = os.path.dirname(__file__)
+        m_config_fname = os.path.join(latest_model_path, "config/m_config.json")
+        print(m_config_fname)
         with open(m_config_fname, "w+") as jsonfile:
             model_args.update(model_parameters)
             json.dump(model_args, jsonfile, indent=4)
-
+        model_manager.set_latest_version()
         setup()
         return "Config setup is complete."
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def save_model(model_path: str):
+def save_model(version_id: Optional[str] = None):
     """
     saves the model to the provided model_path
     """
+    global train_args, model_args, latest_model_path, m_config_fname, t_config_fname
     try:
-        return model.save(model_path)
+        save_path = str(model_manager.get_save_path(version_id))
+        latest_model_path = model.save(save_path)
+        m_config_fname = os.path.join(latest_model_path, "config/m_config.json")
+        with open(m_config_fname, "r") as jsonfile:
+            model_args = json.load(jsonfile)
+        t_config_fname = os.path.join(latest_model_path, "config/t_config.json")
+        with open(t_config_fname, "r") as jsonfile:
+            train_args = json.load(jsonfile)
+        return f"[saved model with version id]: {latest_model_path.split('/')[-1]}"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @jaseci_action(act_group=["bi_ner"], allow_remote=True)
-def load_model(model_path):
+def load_model(version_id: Optional[str] = None):
     """
     loads the model from the provided model_path
     """
-    global model, inference_model
-    if not os.path.exists(model_path):
-        raise HTTPException(status_code=404, detail="Model path is not available")
+    global model, inference_model, model_args, m_config_fname, train_arg
+    global t_config_fname, latest_model_path, train_args
+    if model_manager.get_version_ids().keys():
+        latest_model_path = str(model_manager.get_load_path(version_id))
+    else:
+        raise HTTPException(status_code=500, detail=f"{version_id} doesn't exist.")
     try:
-        model.load(model_path)
+        model.load(latest_model_path)
         model.to(device)
+        m_config_fname = os.path.join(latest_model_path, "config/m_config.json")
+        with open(m_config_fname, "r") as jsonfile:
+            model_args = json.load(jsonfile)
+        t_config_fname = os.path.join(latest_model_path, "config/t_config.json")
+        with open(t_config_fname, "r") as jsonfile:
+            train_args = json.load(jsonfile)
+        category_id_mapping = get_category_id_mapping(
+            model_args, model_args["descriptions"]
+        )
         inference_model = Bi_NER_Infer(
             model,
             category_mapping=invert(category_id_mapping),
@@ -196,9 +248,31 @@ def load_model(model_path):
             model_args=model_args,
         )
         inference_model.to(device)
-        return f"[loaded model from] : {model_path}"
+        return f"[loaded model with version id]: {latest_model_path.split('/')[-1]}"
     except Exception as e:
         traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def get_version_ids():
+    """
+    saves the model to the provided model_path
+    """
+    try:
+        return model_manager.get_version_ids()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["bi_ner"], allow_remote=True)
+def get_latest_version():
+    """
+    saves the model to the provided model_path
+    """
+    try:
+        return model_manager.get_latest_version()
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
