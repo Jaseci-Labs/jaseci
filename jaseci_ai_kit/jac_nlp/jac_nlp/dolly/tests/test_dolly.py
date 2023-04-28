@@ -11,8 +11,12 @@ class DollyTests(CoreTest):
         ret = load_module_actions("jac_nlp.dolly")
         assert ret == True
 
-    @jac_testcase("dolly.jac", "test_generate")
-    def test_generate(self, ret):
+    @jac_testcase("dolly.jac", "test_generate_without_context")
+    def test_generate_without_context(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @jac_testcase("dolly.jac", "test_generate_with_context")
+    def test_generate_with_context(self, ret):
         self.assertEqual(ret["success"], True)
 
     @classmethod

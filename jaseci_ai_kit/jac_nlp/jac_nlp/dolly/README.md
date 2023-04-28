@@ -29,10 +29,10 @@ With context. Dolly will use the context you provide to generate a response.
 ```jac
 walker test_generate_with_context {
     can dolly.generate;
-    context = "George Washington (February 22, 1732[b] – December 14, 1799) was an American military officer, statesman,
+    subject = "George Washington (February 22, 1732[b] – December 14, 1799) was an American military officer, statesman,
             and Founding Father who served as the first president of the United States from 1789 to 1797.";
 
-    report dolly.generate(prompt="When was George Washington president?", context=context);
+    report dolly.generate(prompt="When was George Washington president?", subject=subject);
 }
 ```
 
