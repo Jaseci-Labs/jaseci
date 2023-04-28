@@ -45,7 +45,7 @@ class InstructionTextGenerationPipeline(Pipeline):
         max_new_tokens: int = 256,
         top_p: float = 0.92,
         top_k: int = 0,
-        instruction:str = INTRO_BLURB,
+        instruction: str = INTRO_BLURB,
         **kwargs,
     ):
         """Initialize the pipeline
@@ -58,7 +58,6 @@ class InstructionTextGenerationPipeline(Pipeline):
             top_k (int, optional): The number of highest probability vocabulary tokens to keep for top-k-filtering.
                 Defaults to 0.
         """
-        
 
         self.PROMPT_FOR_GENERATION_FORMAT = """{intro}
 
@@ -122,7 +121,9 @@ class InstructionTextGenerationPipeline(Pipeline):
         return preprocess_params, forward_params, postprocess_params
 
     def preprocess(self, instruction_text, **generate_kwargs):
-        prompt_text = self.PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction_text)
+        prompt_text = self.PROMPT_FOR_GENERATION_FORMAT.format(
+            instruction=instruction_text
+        )
         inputs = self.tokenizer(
             prompt_text,
             return_tensors="pt",
