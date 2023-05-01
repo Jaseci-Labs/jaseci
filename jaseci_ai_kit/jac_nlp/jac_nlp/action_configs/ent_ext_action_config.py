@@ -1,6 +1,7 @@
 ENT_EXT_ACTION_CONFIG = {
     "module": "jac_nlp.ent_ext",
     "loaded_module": "jac_nlp.ent_ext.ent_ext",
+    "local_mem_requirement": 4247.61,
     "remote": {
         "Service": {
             "kind": "Service",
@@ -46,20 +47,28 @@ ENT_EXT_ACTION_CONFIG = {
                             {
                                 "name": "prod-script",
                                 "configMap": {"name": "ent-ext-up", "defaultMode": 420},
-                            }
+                            },
+                            {
+                                "name": "jac-nlp-volume",
+                                "persistentVolumeClaim": {"claimName": "jac-nlp-pvc"},
+                            },
                         ],
                         "containers": [
                             {
                                 "name": "ent-ext",
-                                "image": "jaseci/jac-nlp:latest",
-                                "command": ["bash", "-c", "source script/prod_up"],
+                                "image": "jaseci/jac-nlp:1.4.0.18",
+                                "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "3Gi"},
-                                    "requests": {"memory": "3Gi"},
+                                    "limits": {"memory": "4Gi"},
+                                    "requests": {"memory": "4Gi"},
                                 },
                                 "volumeMounts": [
-                                    {"name": "prod-script", "mountPath": "/script"}
+                                    {"name": "prod-script", "mountPath": "/script"},
+                                    {
+                                        "name": "jac-nlp-volume",
+                                        "mountPath": "/root/.jaseci/models/",
+                                    },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",
