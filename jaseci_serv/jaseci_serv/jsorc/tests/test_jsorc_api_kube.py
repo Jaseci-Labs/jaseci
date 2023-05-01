@@ -4,8 +4,8 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from jaseci import JsOrc
-from jaseci.svc.kube_svc import KubeService
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.extens.svc.kube_svc import KubeService
 from jaseci.utils.utils import TestCaseHelper
 from jaseci_serv.utils.test_utils import skip_without_kube
 from django.test import TestCase

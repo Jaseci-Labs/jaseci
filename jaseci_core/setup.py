@@ -32,17 +32,21 @@ setup(
         "pytest-xdist",
         "pytest-cov",
         "gprof2dot",
-        "metadata_parser",
         "validators",
         "psycopg2-binary==2.9.5",
+        "pygls",
+        "mock",
+        "beautifulsoup4>=4.12.2, <4.13.0",
+        "lxml>=4.9.2, <4.10.0",
+        "html5lib>=1.1, <1.2",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
     },
     entry_points={
         "console_scripts": [
-            "jsctl = jaseci.jsctl.jsctl:jsctl",
-            "jac = jaseci.jsctl.jsctl:jac",
+            "jsctl = jaseci.cli_tools.jsctl:jsctl",
+            "jac = jaseci.cli_tools.jsctl:jac",
         ]
     },
     author="Jason Mars",

@@ -1,6 +1,6 @@
 from jaseci.utils.utils import logger
-import jaseci.actions.standard.date as jsdate
-from jaseci.actions.live_actions import jaseci_action
+import jaseci.extens.act_lib.date as jsdate
+from jaseci.jsorc.live_actions import jaseci_action
 
 
 @jaseci_action()
@@ -31,3 +31,9 @@ def day_from_date(date: str):
 def date_day_diff(start_date: str, end_date: str):
     logger.warning("Deprecated! Use date...")
     return jsdate.date_day_diff(start_date, end_date)
+
+
+@jaseci_action()
+def date_now():
+    logger.warning("Deprecated! Use date...")
+    return jsdate.date_now()

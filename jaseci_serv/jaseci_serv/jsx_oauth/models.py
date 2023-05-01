@@ -1,8 +1,8 @@
-from pyexpat import model
-from jaseci_serv.base.models import *
-from django.conf import settings
+from uuid import uuid4
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from allauth.socialaccount.models import SocialApp as LegacySocialApp
+from allauth.socialaccount import providers
 
 
 class SocialLoginProvider(models.TextChoices):
@@ -12,6 +12,7 @@ class SocialLoginProvider(models.TextChoices):
     GITHUB = "GITHUB", _("GitHub")
     OKTA = "OKTA", _("Okta")
     OPENID = "OPENID", _("OpenID")
+    APPLE = "APPLE", _("Apple")
 
 
 PROVIDERS_MAPPING = {
@@ -40,26 +41,53 @@ PROVIDERS_MAPPING = {
         "LOGIN_URL": "",
         "DEFAULT_REDIRECT_URI": "/auth/examples/okta/",
     },
-    SocialLoginProvider.OPENID: {
-        "URL_KEY": SocialLoginProvider.OPENID + "_REDIRECT_URI",
+    SocialLoginProvider.APPLE: {
+        "URL_KEY": SocialLoginProvider.APPLE + "_REDIRECT_URI",
         "LOGIN_URL": "",
-        "DEFAULT_REDIRECT_URI": "/auth/examples/openid/",
+        "DEFAULT_REDIRECT_URI": "/auth/examples/apple/",
     },
 }
 
 
-class SingletonModel(models.Model):
+class SocialApp(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    name = models.CharField(verbose_name=_("name"), max_length=40)
+    provider = models.CharField(
+        verbose_name=_("provider"),
+        max_length=30,
+        choices=providers.registry.as_choices(),
+    )
+    client_id = models.CharField(
+        verbose_name=_("client id"),
+        max_length=191,
+        help_text=_("App ID, or consumer key"),
+    )
+    secret = models.CharField(
+        verbose_name=_("secret key"),
+        max_length=191,
+        blank=True,
+        help_text=_("API secret, client secret, or consumer secret"),
+    )
+    key = models.CharField(
+        verbose_name=_("key"), max_length=191, blank=True, help_text=_("Key")
+    )
+
+    certificate_key = models.TextField(verbose_name=_("certificate key"), blank=True)
+
     class Meta:
-        abstract = True
+        verbose_name = _("social application")
+        verbose_name_plural = _("social applications")
 
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super(SingletonModel, self).save(*args, **kwargs)
+    def __str__(self):
+        return self.name
 
-    def delete(self, *args, **kwargs):
-        pass
-
-    @classmethod
-    def load(cls):
-        obj, created = cls.objects.get_or_create(pk=1)
-        return obj
+    def legacy(self):
+        app = LegacySocialApp(
+            provider=self.provider,
+            name=self.name,
+            client_id=self.client_id,
+            secret=self.secret,
+            key=self.key,
+        )
+        app.certificate_key = self.certificate_key
+        return app

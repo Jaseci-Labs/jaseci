@@ -1,5 +1,5 @@
 import torch
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from transformers import T5Tokenizer, T5ForConditionalGeneration  # , T5Config
 
 # from fastapi import HTTPException
@@ -14,9 +14,6 @@ def setup(model_name: str = "t5-small", tokenizer_name: str = "t5-small"):
     global model, tokenizer
     model = T5ForConditionalGeneration.from_pretrained(model_name)
     tokenizer = T5Tokenizer.from_pretrained(tokenizer_name)
-
-
-setup()
 
 
 # generates summary based on text
@@ -49,6 +46,6 @@ def classify_text(text: str, min_length: int = 30, max_length: int = 100):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

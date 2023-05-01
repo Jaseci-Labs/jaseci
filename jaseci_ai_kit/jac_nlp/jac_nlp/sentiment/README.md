@@ -1,3 +1,7 @@
+---
+title: Sentiment Analysis
+---
+
 # Sentiment Analysis Model (sentiment)
 
 Sentiment analysis is a technique used in natural language processing and machine learning to automatically identify and extract subjective information from text, such as opinions, emotions, and attitudes. It involves analyzing large volumes of text data to determine whether the overall sentiment expressed is positive, negative, or neutral.
@@ -8,7 +12,7 @@ There are different approaches to sentiment analysis, ranging from rule-based me
 
 Despite its potential benefits, sentiment analysis is not always accurate, as it can be influenced by factors such as sarcasm, irony, and cultural differences. Therefore, it is important to carefully evaluate the results and incorporate human judgment in the analysis process.
 
-Module `sentiment` implemented for analysing the sentiment in a given list of text. This module accepts as input a set of sentences. This is an example program using Jaseci `sentiment` module.
+Module `sentiment` implemented for analyzing the sentiment in a given list of text. This module accepts as input a set of sentences. This is an example program using Jaseci `sentiment` module.
 
 # **Walk through**
 

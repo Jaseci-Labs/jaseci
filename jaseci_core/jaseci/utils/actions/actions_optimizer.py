@@ -1,11 +1,11 @@
 """
 Module that manage and optimizes the actions configuration of Jaseci
 """
-from jaseci import JsOrc
-from jaseci.svc.kube_svc import KubeService
-from jaseci.actions.remote_actions import ACTIONS_SPEC_LOC
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.extens.svc.kube_svc import KubeService
+from jaseci.jsorc.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.utils.utils import logger
-from jaseci.actions.live_actions import (
+from jaseci.jsorc.live_actions import (
     load_module_actions,
     unload_module,
     unload_remote_actions,

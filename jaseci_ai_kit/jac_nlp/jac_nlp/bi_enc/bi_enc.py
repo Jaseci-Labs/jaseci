@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from transformers import AutoModel, AutoConfig, AutoTokenizer
 import traceback
 import numpy as np
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import model_base_path
 import random
 import json
@@ -16,12 +16,8 @@ from .utils.models import BiEncoder  # noqa
 from .utils.train import train_model  # noqa
 
 
-# device = torch.device("cpu")
-# uncomment this if you wish to use GPU to train
-# this is commented out because this causes issues with
-# unittest on machines with GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BI_ENC_ROOT = model_base_path("jac_nlp/bi_enc")
+MODEL_BASE_PATH = model_base_path("jac_nlp/bi_enc")
 
 
 # funtion to set seed for the module
@@ -45,16 +41,16 @@ def setup():
         model_config = json.load(jsonfile)
     with open(t_config_fname, "r") as jsonfile:
         train_config = json.load(jsonfile)
-    os.makedirs(BI_ENC_ROOT, exist_ok=True)
+    os.makedirs(MODEL_BASE_PATH, exist_ok=True)
     if all(
-        os.path.isfile(os.path.join(BI_ENC_ROOT, file))
+        os.path.isfile(os.path.join(MODEL_BASE_PATH, file))
         for file in ["config.json", "pytorch_model.bin"]
     ):
-        trf_config = AutoConfig.from_pretrained(BI_ENC_ROOT)
+        trf_config = AutoConfig.from_pretrained(MODEL_BASE_PATH)
     else:
         trf_config = AutoConfig.from_pretrained(model_config["model_name"])
         model = AutoModel.from_config(trf_config)
-        model.save_pretrained(BI_ENC_ROOT)
+        model.save_pretrained(MODEL_BASE_PATH)
         del model
     train_config.update({"device": device.type})
     tokenizer = AutoTokenizer.from_pretrained(
@@ -79,9 +75,6 @@ def setup():
 
     model.to(train_config["device"])
     set_seed(train_config["seed"])
-
-
-setup()
 
 
 # API for getting the cosine similarity
@@ -322,7 +315,7 @@ def save_model(model_path: str):
                  and '_' characters.""",
             )
         if not os.path.isabs(model_path):
-            model_path = os.path.join(BI_ENC_ROOT, model_path)
+            model_path = os.path.join(MODEL_BASE_PATH, model_path)
         os.makedirs(model_path, exist_ok=True)
         if model_config["shared"] is True:
             model.cont_bert.save_pretrained(model_path)
@@ -361,7 +354,7 @@ def load_model(model_path):
     """
     global model, tokenizer
     if not os.path.isabs(model_path):
-        model_path = os.path.join(BI_ENC_ROOT, model_path)
+        model_path = os.path.join(MODEL_BASE_PATH, model_path)
     if not os.path.exists(model_path):
         raise HTTPException(status_code=404, detail="Model path is not available")
     try:
@@ -403,6 +396,6 @@ def load_model(model_path):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

@@ -10,11 +10,11 @@ from django.contrib.auth.models import (
 from django.db import models
 from django.db.models import Q
 
-from jaseci.api.interface import Interface
-from jaseci.element.master import Master as CoreMaster
-from jaseci.element.super_master import SuperMaster as CoreSuper
+from jaseci.extens.api.interface import Interface
+from jaseci.prim.master import Master as CoreMaster
+from jaseci.prim.super_master import SuperMaster as CoreSuper
 from jaseci_serv.settings import JASECI_CONFIGS
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 from jaseci_serv.base.jsorc import JsOrcApi
 
 

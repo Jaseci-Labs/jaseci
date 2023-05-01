@@ -1,0 +1,8 @@
+{
+    "label": "NER Models",
+    "position": 2,
+    "link": {
+        "type": "generated-index",
+        "description": "Named Entity Recognition (NER) is a subtask of natural language processing (NLP) that involves identifying and classifying named entities in unstructured text. Named entities are words or phrases that refer to specific people, places, organizations, products, and other entities. The goal of NER is to identify and classify these entities into predefined categories such as person, location, organization, date, time, and others. NER is a crucial step in many NLP applications such as information retrieval, sentiment analysis, and question answering systems. NER can be achieved using various machine learning approaches such as rule-based systems, statistical models, and deep learning models. Deep learning models such as recurrent neural networks (RNNs) and transformers have achieved state-of-the-art performance in NER tasks. Jaseci offers pre-built NER models that can be utilized immediately without any need for training."
+    }
+}

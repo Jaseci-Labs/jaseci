@@ -11,7 +11,7 @@ from django.test import TestCase
 from unittest.mock import MagicMock, Mock
 
 from jaseci_serv.svc.mail_svc import MailService
-from jaseci import JsOrc
+from jaseci.jsorc.jsorc import JsOrc
 
 
 # Consts for url

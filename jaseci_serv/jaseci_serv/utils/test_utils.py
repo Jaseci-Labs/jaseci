@@ -1,20 +1,7 @@
 import unittest
 
-from jaseci import JsOrc
-from jaseci.svc.kube_svc import KubeService
-
-
-def skip_without_redis(test):
-    """
-    Skip test if expected not to work without redis.
-    """
-
-    def skipper(*args, **kwargs):
-        if not JsOrc.svc("redis").is_running():
-            raise unittest.SkipTest("No Redis!")
-        test(*args, **kwargs)
-
-    return skipper
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.extens.svc.kube_svc import KubeService
 
 
 def skip_without_kube(test):

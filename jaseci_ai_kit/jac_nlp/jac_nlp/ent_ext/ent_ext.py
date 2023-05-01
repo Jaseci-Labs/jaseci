@@ -7,12 +7,13 @@ from flair.models import TARSTagger, SequenceTagger
 
 # from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
 from flair.file_utils import cached_path
+from flair.file_utils import cached_path
 from flair.data import Sentence
 from flair.trainers import ModelTrainer
 import pandas as pd
 from .entity_utils import create_data, create_data_new
 import configparser
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import torch
 import os
 from pathlib import Path
@@ -20,26 +21,27 @@ from datetime import datetime
 import warnings
 from jaseci.utils.utils import model_base_path
 
+from jaseci.utils.utils import model_base_path
 
 warnings.filterwarnings("ignore")
 
 config = configparser.ConfigParser()
-MODEL_PATH = model_base_path("jac_nlp/ent_ext")
+MODEL_BASE_PATH = model_base_path("jac_nlp/ent_ext")
 TARS_NER_PATH = (
     "https://nlp.informatik.hu-berlin.de/resources/models/tars-ner/tars-ner.pt"
 )
-# # 1. initialize each embedding for LSTM
-# embedding_types = [
-#     # GloVe embeddings
-#     WordEmbeddings("glove"),
-#     # contextual string embeddings, forward
-#     FlairEmbeddings("news-forward"),
-#     # contextual string embeddings, backward
-#     FlairEmbeddings("news-backward"),
-# ]
+# 1. initialize each embedding for LSTM
+embedding_types = [
+    # GloVe embeddings
+    WordEmbeddings("glove"),
+    # contextual string embeddings, forward
+    FlairEmbeddings("news-forward"),
+    # contextual string embeddings, backward
+    FlairEmbeddings("news-backward"),
+]
 
-# # embedding stack consists of Flair and GloVe embeddings
-# embeddings = StackedEmbeddings(embeddings=embedding_types)
+# embedding stack consists of Flair and GloVe embeddings
+embeddings = StackedEmbeddings(embeddings=embedding_types)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -57,14 +59,10 @@ def setup(reload=False):
     if MODEL_TYPE.lower() == "trfmodel" and NER_MODEL_NAME.lower() != "none":
         tagger = TARSTagger(embeddings=NER_MODEL_NAME)
     elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in ["lstm", "gru"]:
-        tagger = SequenceTagger.load(cached_path(NER_MODEL_NAME, MODEL_PATH))
+        tagger = SequenceTagger.load(cached_path(NER_MODEL_NAME, MODEL_BASE_PATH))
     elif MODEL_TYPE.lower() in "tars" and NER_MODEL_NAME.lower() != "none":
-        tagger = TARSTagger.load(cached_path(TARS_NER_PATH, MODEL_PATH))
+        tagger = TARSTagger.load(cached_path(TARS_NER_PATH, MODEL_BASE_PATH))
     print(f"loaded mode : [{NER_MODEL_NAME}]")
-
-
-# initialize the tagger
-setup()
 
 
 def train_entity(train_params: dict):
@@ -417,6 +415,6 @@ def set_config(ner_model: str = None, model_type: str = None):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

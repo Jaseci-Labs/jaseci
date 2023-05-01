@@ -1,8 +1,12 @@
+---
+title: Entity Recognition with FLAIR
+---
+
 ### Entity Extraction Using `FLAIR NER(ent_ext)`
 
 ### **FLAIR NER**`(ent_ext)` module uses flair named entity recognition architecture. It can either be used `zero-shot` or `few-shot` entity recognition.
 
-For this tutorial we are going to leaverage the flair ner `Zero-shot classification` and `Few-shot classification` Use Case
+For this tutorial we are going to leverage the flair ner `Zero-shot classification` and `Few-shot classification` Use Case
 
 
 ### Load the Model by `set_config` actions for Zeroshot
@@ -54,7 +58,7 @@ Different models can be loaded as per the requirement on the basis of size and
 2. Import [flair ner(ent_ext)](#2-import-flair-nerent_ext-module-in-jac) module
 3. [Few-shot classification](#3-few-shot-classification-train-test-and-validate-model)
 
-**[Eperiment and methodology](#experiment-and-methodology)**
+**[Experiment and methodology](#experiment-and-methodology)**
 
 # **Walk through**
 ## **USE CASE I** : `Zero-Shot entity detection` Classify entity without training `NER Data`:
@@ -78,7 +82,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         node model_dir;
         node flair_ner {};
         ```
-    3. Initializing node flair_ner and adding abilty `set_config` and `entity_detection`
+    3. Initializing node flair_ner and adding ability `set_config` and `entity_detection`
         ```
         node flair_ner{
             # set model configuration and infer entity
@@ -241,7 +245,7 @@ For this tutorial we are going to classify entity text with `flair ner(ent_ext)`
         ```
         **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
         > sentinel register -set_active true -mode ir zero_shot_ner.jir
-    3. Module `entity_detection`: detects all availabe entities from the provided context
+    3. Module `entity_detection`: detects all available entities from the provided context
         * ### Input Data:
             * `model_name`: name of model which we are using for zero-shot entity detection e.g. `tars-ner`
             * `model_type` : type of model using in entity detection e.g. `tars`
@@ -391,7 +395,7 @@ For this tutorial we are going to train the model on train dataset and validate 
         node model_dir;
         node flair_ner {};
         ```
-    3. Initializing node flair_ner and adding abilty `set_config` and `entity_detection`
+    3. Initializing node flair_ner and adding ability `set_config` and `entity_detection`
         ```
         node flair_ner{
             # set ability model configuration and train model

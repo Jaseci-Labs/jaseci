@@ -11,7 +11,7 @@ type UserInfo = {
 
 function useUserInfo() {
   return useQuery(["userInfo"], async () => {
-    const response = await client.get<UserInfo>("/user/manage");
+    const response = await client.get<UserInfo>("/user/manage/");
     return response.data;
   });
 }

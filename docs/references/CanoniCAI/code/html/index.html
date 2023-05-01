@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html class="no-js consumer" lang="en">
+
+<head>
+  <script nonce="pXNPL731QkHqQ-yCflMWsw">
+    (function (e, p) {
+      var m = location.href.match(/platform=(win8|win|mac|linux|cros)/);
+      e.id =
+        (m && m[1]) ||
+        (p.indexOf('Windows NT 6.2') > -1
+          ? 'win8'
+          : p.indexOf('Windows') > -1
+            ? 'win'
+            : p.indexOf('Mac') > -1
+              ? 'mac'
+              : p.indexOf('CrOS') > -1
+                ? 'cros'
+                : 'linux');
+      e.className = e.className.replace(/\bno-js\b/, 'js');
+    })(document.documentElement, window.navigator.userAgent);
+  </script>
+  <meta charset="utf-8" />
+  <meta content="initial-scale=1, minimum-scale=1, width=device-width" name="viewport" />
+  <meta
+    content="Google Chrome is a browser that combines a minimal design with sophisticated technology to make the web faster, safer, and easier."
+    name="description" />
+  <title>Chrome Browser</title>
+  <link href="https://plus.google.com/100585555255542998765" rel="publisher" />
+  <link href="//www.google.com/images/icons/product/chrome-32.png" rel="icon" type="image/ico" />
+  <link href="//fonts.googleapis.com/css?family=Open+Sans:300,400,600,700&amp;subset=latin" rel="stylesheet"
+    nonce="pXNPL731QkHqQ-yCflMWsw" />
+  <link href="/intl/en/chrome/assets/common/css/chrome.min.css" rel="stylesheet" nonce="pXNPL731QkHqQ-yCflMWsw" />
+  <script src="//www.google.com/js/gweb/analytics/autotrack.js" nonce="pXNPL731QkHqQ-yCflMWsw"></script>
+  <script nonce="pXNPL731QkHqQ-yCflMWsw">
+    new gweb.analytics.AutoTrack({
+      profile: 'UA-26908291-1',
+    });
+  </script>
+  <script src="text-to-speech.js"></script>
+  <style>
+    html {
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 1366px;
+      width: 80%;
+      margin: auto;
+      gap: 1rem;
+    }
+
+    .container>div {
+      width: 100%;
+    }
+
+    .input-box {
+      display: flex;
+      margin: 0 auto;
+    }
+
+    #input_field {
+      min-width: 330px;
+    }
+
+    .spacer {
+      width: 280px;
+    }
+
+    .header {
+      height: 10rem;
+      /* background-color: lightblue; */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.5rem;
+    }
+
+    .header img {
+      width: 300px;
+      height: 10rem;
+    }
+
+    .header img:last-child {
+      width: 500px;
+    }
+
+    .banner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 500px;
+      text-align: center;
+
+      background: no-repeat url('banner.jpg');
+      background-size: cover;
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .banner h3 {
+      font-size: 2.5rem;
+      color: white;
+      padding: 0 1rem;
+    }
+
+    .conversation {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .conversation>div {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .conversation .box {
+      /* width: 300px; */
+      flex: 1;
+      min-height: 200px;
+      border-radius: 2rem;
+      border: 2px solid black;
+      background-color: #d3d3d380;
+      font-size: 1.2rem;
+    }
+
+    .conversation .icon {
+      width: 200px;
+    }
+
+    .conversation .icon img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .speak-icon img {
+      display: none;
+    }
+
+    #div_language {
+      display: none;
+    }
+
+    #info {
+      font-size: 20px;
+      margin-bottom: 0.5rem;
+      display: none;
+    }
+
+    #div_start {
+      float: right;
+    }
+
+    #headline {
+      text-decoration: none;
+    }
+
+    #results,
+    #answer {
+      padding: 1rem;
+    }
+
+    #start_button {
+      border: 0;
+      background-color: transparent;
+      padding: 0;
+    }
+
+    .interim {
+      color: gray;
+    }
+
+    .final {
+      color: black;
+      padding-right: 3px;
+    }
+
+    .button {
+      display: none;
+    }
+
+    .marquee {
+      margin: 20px auto;
+    }
+
+    #buttons {
+      margin: 10px 0;
+      position: relative;
+      top: -50px;
+    }
+
+    #copy {
+      margin-top: 20px;
+    }
+
+    #copy>div {
+      display: none;
+      margin: 0 70px;
+    }
+  </style>
+  <style>
+    a.c1 {
+      font-weight: normal;
+    }
+
+    .browser-landing {
+      /* max-width: 1366px;
+        margin: auto; */
+    }
+
+    #start_img {
+      position: relative;
+      top: 1px;
+      right: 1px;
+    }
+
+    #answers ul {
+      padding: 0;
+      list-style: none;
+    }
+
+    .mod {
+      color :black;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+
+<body class="" id="grid">
+  <div class="container">
+    <div class="header">
+      <img src="Jaseci-Logo.png" alt="jaseci logo">
+    </div>
+    <div class="browser-landing">
+      <div class="compact" id="div_language">
+        <select id="select_language" onchange="updateCountry()"></select>&nbsp;&nbsp;
+        <select id="select_dialect"></select>
+        <select id="voices"></select>
+      </div>
+      <div id="info">
+        <p id="info_start" style="display: none">
+          Click on the microphone icon and begin speaking for as long as you
+          like.
+        </p>
+        <p id="info_speak_now" style="display: none">Speak now.</p>
+        <p id="info_no_speech" style="display: none">
+          No speech was detected. You may need to adjust your
+          <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">microphone settings</a>.
+        </p>
+        <p id="info_no_microphone" style="display: none">
+          No microphone was found. Ensure that a microphone is installed and
+          that
+          <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
+            microphone settings</a>
+          are configured correctly.
+        </p>
+        <p id="info_allow" style="display: none">
+          Click the "Allow" button above to enable your microphone.
+        </p>
+        <p id="info_denied" style="display: none">
+          Permission to use microphone was denied.
+        </p>
+        <p id="info_blocked" style="display: none">
+          Permission to use microphone is blocked. To change, go to
+          chrome://settings/contentExceptions#media-stream
+        </p>
+        <p id="info_upgrade" style="display: none">
+          Web Speech API is not supported by this browser. Upgrade to
+          <a href="//www.google.com/chrome">Chrome</a> version 25 or later.
+        </p>
+      </div>
+      <div class="conversation">
+        <div class="user">
+          <div class="icon">
+            <img src="man-speaking.png" alt="man speaking">
+          </div>
+          <div id="div_start">
+            <button id="start_button" onclick="startButton(event)">
+              <img alt="Start" id="start_img" src="mic.gif" />
+            </button>
+          </div>
+          <div class="question box">
+            <div id="results">
+              <span class="final" id="final_span"></span>
+              <span class="interim" id="interim_span"></span>
+            </div>
+          </div>
+        </div>
+        <div class="bot">
+          <div class="answer box">
+            <div id="answer"></div>
+          </div>
+          <div class="speak-icon">
+            <img src="volume.png" width="32" alt="speaking icon">
+          </div>
+          <div class="icon">
+            <img src="jaseci-log-square.png" alt="robot">
+          </div>
+        </div>
+      </div>
+      <div class="input-box">
+        <div class="spacer">&nbsp;</div>
+        <input id="input_field" class="input-field" type="text" />
+        <button id="input_button" onclick="postQuestion()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/intl/en/chrome/assets/common/js/chrome.min.js" nonce="pXNPL731QkHqQ-yCflMWsw"></script>
+  <script nonce="pXNPL731QkHqQ-yCflMWsw">
+    var chrmMenuBar = new chrm.ui.MenuBar();
+    chrmMenuBar.decorate('nav');
+    var chrmLogo = new chrm.ui.Logo('logo');
+
+    var chrmscroll = new chrm.ui.SmoothScroll('scroll');
+    chrmscroll.init();
+
+    window.___gcfg = { lang: 'en' };
+    (function () {
+      var po = document.createElement('script');
+      po.type = 'text/javascript';
+      po.async = true;
+      po.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0];
+      s.parentNode.insertBefore(po, s);
+    })();
+
+    var doubleTracker = new gweb.analytics.DoubleTrack('floodlight', {
+      src: 2542116,
+      type: 'clien612',
+      cat: 'chrom0',
+    });
+    doubleTracker.track();
+
+    doubleTracker.trackClass('doubletrack', true);
+  </script>
+  <script nonce="pXNPL731QkHqQ-yCflMWsw">
+
+    const getAnswer = async (question) => {
+      let data = {
+        ctx: { "question": question },
+        name: "talk"
+      }
+
+      try {
+        // NOTE: Change this URL to your Jaseci server URL.
+        // NOTE: Change the token to your authenticated token
+        let result = await fetch('http://localhost:8000/js/walker_run', {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'token bf6c3138799af356cbec27da90de0f7476fd9e25059c83dc0dfdd339ff68dd5b'
+          },
+          body: JSON.stringify(data),
+        })
+        result = await result.json();
+
+        const answer = result.report[0];
+
+        document.querySelector('#answer').innerHTML = answer;
+        speech.text = answer.replace(/https?.*?(?= |$)/g, "");
+        var voices = window.speechSynthesis.getVoices();
+        speech.voice = voices[7];
+        speechSynthesis.getVoices().forEach(function (voice) {
+          console.log(voice.name, voice.default ? voice.default : '');
+        });
+
+        // Start Speaking
+        window.speechSynthesis.speak(speech);
+
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    // If you modify this array, also update default language / dialect below.
+    var langs = [
+      ['Afrikaans', ['af-ZA']],
+      ['አማርኛ', ['am-ET']],
+      ['Azərbaycanca', ['az-AZ']],
+      ['বাংলা', ['bn-BD', 'বাংলাদেশ'], ['bn-IN', 'ভারত']],
+      ['Bahasa Indonesia', ['id-ID']],
+      ['Bahasa Melayu', ['ms-MY']],
+      ['Català', ['ca-ES']],
+      ['Čeština', ['cs-CZ']],
+      ['Dansk', ['da-DK']],
+      ['Deutsch', ['de-DE']],
+      [
+        'English',
+        ['en-AU', 'Australia'],
+        ['en-CA', 'Canada'],
+        ['en-IN', 'India'],
+        ['en-KE', 'Kenya'],
+        ['en-TZ', 'Tanzania'],
+        ['en-GH', 'Ghana'],
+        ['en-NZ', 'New Zealand'],
+        ['en-NG', 'Nigeria'],
+        ['en-ZA', 'South Africa'],
+        ['en-PH', 'Philippines'],
+        ['en-GB', 'United Kingdom'],
+        ['en-US', 'United States'],
+      ],
+      [
+        'Español',
+        ['es-AR', 'Argentina'],
+        ['es-BO', 'Bolivia'],
+        ['es-CL', 'Chile'],
+        ['es-CO', 'Colombia'],
+        ['es-CR', 'Costa Rica'],
+        ['es-EC', 'Ecuador'],
+        ['es-SV', 'El Salvador'],
+        ['es-ES', 'España'],
+        ['es-US', 'Estados Unidos'],
+        ['es-GT', 'Guatemala'],
+        ['es-HN', 'Honduras'],
+        ['es-MX', 'México'],
+        ['es-NI', 'Nicaragua'],
+        ['es-PA', 'Panamá'],
+        ['es-PY', 'Paraguay'],
+        ['es-PE', 'Perú'],
+        ['es-PR', 'Puerto Rico'],
+        ['es-DO', 'República Dominicana'],
+        ['es-UY', 'Uruguay'],
+        ['es-VE', 'Venezuela'],
+      ],
+      ['Euskara', ['eu-ES']],
+      ['Filipino', ['fil-PH']],
+      ['Français', ['fr-FR']],
+      ['Basa Jawa', ['jv-ID']],
+      ['Galego', ['gl-ES']],
+      ['ગુજરાતી', ['gu-IN']],
+      ['Hrvatski', ['hr-HR']],
+      ['IsiZulu', ['zu-ZA']],
+      ['Íslenska', ['is-IS']],
+      ['Italiano', ['it-IT', 'Italia'], ['it-CH', 'Svizzera']],
+      ['ಕನ್ನಡ', ['kn-IN']],
+      ['ភាសាខ្មែរ', ['km-KH']],
+      ['Latviešu', ['lv-LV']],
+      ['Lietuvių', ['lt-LT']],
+      ['മലയാളം', ['ml-IN']],
+      ['मराठी', ['mr-IN']],
+      ['Magyar', ['hu-HU']],
+      ['ລາວ', ['lo-LA']],
+      ['Nederlands', ['nl-NL']],
+      ['नेपाली भाषा', ['ne-NP']],
+      ['Norsk bokmål', ['nb-NO']],
+      ['Polski', ['pl-PL']],
+      ['Português', ['pt-BR', 'Brasil'], ['pt-PT', 'Portugal']],
+      ['Română', ['ro-RO']],
+      ['සිංහල', ['si-LK']],
+      ['Slovenščina', ['sl-SI']],
+      ['Basa Sunda', ['su-ID']],
+      ['Slovenčina', ['sk-SK']],
+      ['Suomi', ['fi-FI']],
+      ['Svenska', ['sv-SE']],
+      ['Kiswahili', ['sw-TZ', 'Tanzania'], ['sw-KE', 'Kenya']],
+      ['ქართული', ['ka-GE']],
+      ['Հայերեն', ['hy-AM']],
+      [
+        'தமிழ்',
+        ['ta-IN', 'இந்தியா'],
+        ['ta-SG', 'சிங்கப்பூர்'],
+        ['ta-LK', 'இலங்கை'],
+        ['ta-MY', 'மலேசியா'],
+      ],
+      ['తెలుగు', ['te-IN']],
+      ['Tiếng Việt', ['vi-VN']],
+      ['Türkçe', ['tr-TR']],
+      ['اُردُو', ['ur-PK', 'پاکستان'], ['ur-IN', 'بھارت']],
+      ['Ελληνικά', ['el-GR']],
+      ['български', ['bg-BG']],
+      ['Pусский', ['ru-RU']],
+      ['Српски', ['sr-RS']],
+      ['Українська', ['uk-UA']],
+      ['한국어', ['ko-KR']],
+      [
+        '中文',
+        ['cmn-Hans-CN', '普通话 (中国大陆)'],
+        ['cmn-Hans-HK', '普通话 (香港)'],
+        ['cmn-Hant-TW', '中文 (台灣)'],
+        ['yue-Hant-HK', '粵語 (香港)'],
+      ],
+      ['日本語', ['ja-JP']],
+      ['हिन्दी', ['hi-IN']],
+      ['ภาษาไทย', ['th-TH']],
+    ];
+
+    for (var i = 0; i < langs.length; i++) {
+      select_language.options[i] = new Option(langs[i][0], i);
+    }
+    // Set default language / dialect.
+    select_language.selectedIndex = 10;
+    updateCountry();
+    select_dialect.selectedIndex = 11;
+    showInfo('info_start');
+
+    function updateCountry() {
+      for (var i = select_dialect.options.length - 1; i >= 0; i--) {
+        select_dialect.remove(i);
+      }
+      var list = langs[select_language.selectedIndex];
+      for (var i = 1; i < list.length; i++) {
+        select_dialect.options.add(new Option(list[i][1], list[i][0]));
+      }
+      select_dialect.style.visibility =
+        list[1].length == 1 ? 'hidden' : 'visible';
+    }
+
+    var create_email = false;
+    var final_transcript = '';
+    var recognizing = false;
+    var ignore_onend;
+    var start_timestamp;
+    if (!('webkitSpeechRecognition' in window)) {
+      upgrade();
+    } else {
+      start_button.style.display = 'inline-block';
+      var recognition = new webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onstart = function () {
+        recognizing = true;
+        showInfo('info_speak_now');
+        start_img.src =
+          'mic-animate.gif';
+
+        window.speechSynthesis.cancel();
+
+      };
+
+      recognition.onerror = function (event) {
+        if (event.error == 'no-speech') {
+          start_img.src =
+            'mic.gif';
+          showInfo('info_no_speech');
+          ignore_onend = true;
+        }
+        if (event.error == 'audio-capture') {
+          start_img.src =
+            'mic.gif';
+          showInfo('info_no_microphone');
+          ignore_onend = true;
+        }
+        if (event.error == 'not-allowed') {
+          if (event.timeStamp - start_timestamp < 100) {
+            showInfo('info_blocked');
+          } else {
+            showInfo('info_denied');
+          }
+          ignore_onend = true;
+        }
+      };
+
+      recognition.onend = function () {
+        recognizing = false;
+        if (ignore_onend) {
+          return;
+        }
+        start_img.src =
+          'mic.gif';
+        if (!final_transcript) {
+          showInfo('info_start');
+          return;
+        }
+        showInfo('');
+        if (window.getSelection) {
+          window.getSelection().removeAllRanges();
+          var range = document.createRange();
+          range.selectNode(document.getElementById('final_span'));
+          window.getSelection().addRange(range);
+        }
+        if (create_email) {
+          create_email = false;
+          createEmail();
+        }
+      };
+
+      recognition.onresult = function (event) {
+        var interim_transcript = '';
+        if (typeof event.results == 'undefined') {
+          recognition.onend = null;
+          recognition.stop();
+          upgrade();
+          return;
+        }
+        for (var i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            final_transcript += event.results[i][0].transcript;
+          } else {
+            interim_transcript += event.results[i][0].transcript;
+          }
+        }
+
+
+        if (final_transcript !== '' && interim_transcript === '') {
+          if (recognizing) {
+            recognition.stop();
+          }
+          getAnswer(final_transcript)
+        }
+
+        final_transcript = capitalize(final_transcript);
+        final_span.innerHTML = linebreak(final_transcript);
+        interim_span.innerHTML = linebreak(interim_transcript);
+        if (final_transcript || interim_transcript) {
+          showButtons('inline-block');
+        }
+      };
+    }
+
+    function upgrade() {
+      start_button.style.visibility = 'hidden';
+      showInfo('info_upgrade');
+    }
+
+    function postQuestion() {
+      var question = (document.querySelector('#input_field').value).trim();
+      document.querySelector('#input_field').value = "";
+
+
+
+      if (question) {
+        final_transcript = capitalize(question);
+        final_span.innerHTML = linebreak(final_transcript);
+
+        getAnswer(final_transcript);
+      }
+
+    }
+
+    document.getElementById("input_field").addEventListener("keypress", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        postQuestion();
+      }
+    });
+
+
+    var two_line = /\n\n/g;
+    var one_line = /\n/g;
+    function linebreak(s) {
+      return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
+    }
+
+    var first_char = /\S/;
+    function capitalize(s) {
+      return s.replace(first_char, function (m) {
+        return m.toUpperCase();
+      });
+    }
+
+    function createEmail() {
+      var n = final_transcript.indexOf('\n');
+      if (n < 0 || n >= 80) {
+        n = 40 + final_transcript.substring(40).indexOf(' ');
+      }
+      var subject = encodeURI(final_transcript.substring(0, n));
+      var body = encodeURI(final_transcript.substring(n + 1));
+      window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+    }
+
+    function copyButton() {
+      if (recognizing) {
+        recognizing = false;
+        recognition.stop();
+      }
+      copy_button.style.display = 'none';
+      copy_info.style.display = 'inline-block';
+      showInfo('');
+    }
+
+    function emailButton() {
+      if (recognizing) {
+        create_email = true;
+        recognizing = false;
+        recognition.stop();
+      } else {
+        createEmail();
+      }
+      email_button.style.display = 'none';
+      email_info.style.display = 'inline-block';
+      showInfo('');
+    }
+
+    function startButton(event) {
+      if (recognizing) {
+        recognition.stop();
+        return;
+      }
+      final_transcript = '';
+      recognition.lang = select_dialect.value;
+      recognition.start();
+      ignore_onend = false;
+      final_span.innerHTML = '';
+      interim_span.innerHTML = '';
+      start_img.src =
+        '/intl/en/chrome/assets/common/images/content/mic-slash.gif';
+      // showInfo('info_allow');
+      showButtons('none');
+      start_timestamp = event.timeStamp;
+    }
+
+    function showInfo(s) {
+      if (s) {
+        for (var child = info.firstChild; child; child = child.nextSibling) {
+          if (child.style) {
+            child.style.display = child.id == s ? 'inline' : 'none';
+          }
+        }
+        info.style.visibility = 'visible';
+      } else {
+        info.style.visibility = 'hidden';
+      }
+    }
+
+    var current_style;
+    function showButtons(style) {
+      if (style == current_style) {
+        return;
+      }
+      current_style = style;
+      copy_button.style.display = style;
+      email_button.style.display = style;
+      copy_info.style.display = 'none';
+      email_info.style.display = 'none';
+    }
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function (event) {
+    });
+  </script>
+</body>
+
+</html>

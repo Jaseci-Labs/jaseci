@@ -1,3 +1,7 @@
+---
+title: Text Summerization with Sumy Summarizer
+---
+
 # **Summarizer (`cl_summer`)**
 
 Module `cl_summer` uses the `sumy summarizer` to extract summary from text.

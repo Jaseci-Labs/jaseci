@@ -1,3 +1,7 @@
+---
+title: Custom Models with Personalized Head
+---
+
 # Personalized Head (PH) Module
 
 **What is Personalized Head:**
@@ -5,16 +9,16 @@ Using the Personalized Head module, you can create a custom model head which you
 You can use your own custom models and datasets to create a personalized head with just using a configuration
 file and a python file.
 
-![Personalized Head Architecture](assets/architecture.png "Personalized Head Architecture")
+![Personalized Head Architecture](img/architecture.png "Personalized Head Architecture")
 
 **PH Actions:**
-![PH Jaseci Actions](assets/ph_actions.png "PH Jaseci Actions")
+![PH Jaseci Actions](img/ph_actions.png "PH Jaseci Actions")
 
 **How Inferecing Works:**
-![How Inferecing Works](assets/inferencing.png "How Inferecing Works")
+![How Inferecing Works](img/inferencing.png "How Inference Works")
 
 **Recommended way of Using PH Head in your App:**
-![Recommended Usage of PH](assets/recommended_usage.png "Recommended Usage of PH")
+![Recommended Usage of PH](img/recommended_usage.png "Recommended Usage of PH")
 
 ## **How to Use**
 
@@ -33,7 +37,7 @@ walker identify_intent{
   can ph.create_head_list, ph.create_head, ph.predict, ph.train_head;
 
   root {
-      # This creates a headlist. you can pass a deafault config override here.
+      # This creates a head list. you can pass a default config override here.
       ph.create_head_list({
           "Model":{
               "args":{
@@ -80,7 +84,7 @@ walker init {
 ```
 
 and ```Viola!``` you have created a personalized head.
-Refer this [Link](../../../../examples/ph_example/tfm_head) for the example of the above code.
+Refer this [Link](https://github.com/Jaseci-Labs/jaseci/tree/main/examples/ph_example/tfm_head) for the example of the above code.
 
 ### **1.2. Running your JAC Program**
 
@@ -107,7 +111,7 @@ You can use the personalized head as a full custom model other than being a tran
 
 ### **2.1. Creating Custom Python Model**
 
-Python File contains the torch.nn.Module class which is the model. You can use any model you want. and a torch.utils.data.Dataset class which is the dataset. You can use any dataset you want. and Preprocessor and Postprocessor classes which are used in inferencing. You can use any preprocessor and postprocessor you want but with the same method format. follow it to create your custom python model.
+Python File contains the torch.nn.Module class which is the model. You can use any model you want. and a torch.utils.data.Dataset class which is the dataset. You can use any dataset you want. and Preprocessor and Post processor classes which are used in inference. You can use any preprocessor and post-processor you want but with the same method format. follow it to create your custom python model.
 
 ```python
 # Path: ./custom.py
@@ -247,7 +251,7 @@ walker init {
   }
 }
 ```
-Refer this [Link](../../../../examples/ph_example/custom_model) for the example of the above code.
+Refer this [Link](https://github.com/Jaseci-Labs/jaseci/tree/main/examples/ph_example/custom_model) for the example of the above code.
 ### **1.3. Running your JAC Program**
 
 - Open the terminal and run Jaseci Command Line Tool using the command below.

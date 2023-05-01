@@ -1,4 +1,8 @@
-# **Translator (`translator`)**
+---
+title: Text Translation
+---
+
+# Translator (`translator`)
 
 Module `translator` uses the `mbart-large-50-many-to-many` to perform multilingual translation. It can translate from 50 languages to 50 languages.
 

@@ -5,7 +5,7 @@ Adds relevant operators to id_list for operations on sets of nodes and edges
 """
 # from jaseci.utils.id_list import id_list
 from jaseci.utils.utils import logger
-from jaseci.element.element import Element
+from jaseci.prim.element import Element
 
 
 class JacSet(list):

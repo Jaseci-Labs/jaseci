@@ -2,21 +2,23 @@ import spacy
 from fastapi import HTTPException
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import os
 from jaseci.utils.utils import model_base_path
 
+
 """
 1. Get the path to the home directory
-2. Download the model to the jaseci/models directory 
+2. Download the model to the jaseci/models directory
 """
+
 
 TFM_MODEL_NAME = "dennlinger/roberta-cls-consec"
 SPACY_MODEL_NAME = "en_core_web_sm"
-TEXT_SEG_ROOT = model_base_path("jac_nlp/text_seg")
-os.makedirs(TEXT_SEG_ROOT, exist_ok=True)
-TFM_MODEL_PATH = os.path.join(TEXT_SEG_ROOT, TFM_MODEL_NAME)
-SPACY_MODEL_PATH = os.path.join(TEXT_SEG_ROOT, SPACY_MODEL_NAME)
+MODEL_BASE_PATH = model_base_path("jac_nlp/text_seg")
+os.makedirs(MODEL_BASE_PATH, exist_ok=True)
+TFM_MODEL_PATH = os.path.join(MODEL_BASE_PATH, TFM_MODEL_NAME)
+SPACY_MODEL_PATH = os.path.join(MODEL_BASE_PATH, SPACY_MODEL_NAME)
 
 
 @jaseci_action(act_group=["text_seg"], allow_remote=True)
@@ -49,9 +51,6 @@ def setup():
         model = AutoModelForSequenceClassification.from_pretrained(
             TFM_MODEL_NAME, cache_dir=TFM_MODEL_PATH
         )
-
-
-setup()
 
 
 def segmentation(text, threshold=0.85):
@@ -125,7 +124,7 @@ def seg_load_model(model_name: str):  # modelname could be ("wiki", "legal")
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     print("Text Segmentor up and running")
     launch_server(port=8000)

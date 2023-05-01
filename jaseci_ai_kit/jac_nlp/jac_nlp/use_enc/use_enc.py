@@ -2,14 +2,14 @@ import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
 import tensorflow_text  # noqa
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from typing import Union
 import os
 from jaseci.utils.utils import model_base_path
 
 
 MODULE_URL = "https://tfhub.dev/google/universal-sentence-encoder/4"
-USE_ENC_ROOT = model_base_path("jac_nlp/use_enc")
+MODEL_BASE_PATH = model_base_path("jac_nlp/use_enc")
 
 
 @jaseci_action(act_group=["use"], allow_remote=True)
@@ -19,15 +19,12 @@ def setup():
     """
     global module
     try:
-        module = tf.saved_model.load(os.path.join(USE_ENC_ROOT, "saved_model.pb"))
+        module = tf.saved_model.load(os.path.join(MODEL_BASE_PATH, "saved_model.pb"))
     except OSError:
-        os.makedirs(USE_ENC_ROOT, exist_ok=True)
+        os.makedirs(MODEL_BASE_PATH, exist_ok=True)
         module = hub.load(MODULE_URL)
-        tf.saved_model.save(module, USE_ENC_ROOT)
+        tf.saved_model.save(module, MODEL_BASE_PATH)
         tf.keras.backend.clear_session()
-
-
-setup()
 
 
 @jaseci_action(act_group=["use"], aliases=["get_embedding"], allow_remote=True)
@@ -67,6 +64,6 @@ def text_classify(text: str, classes: list):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

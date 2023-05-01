@@ -1,5 +1,5 @@
 from transformers import MBartForConditionalGeneration, MBart50TokenizerFast
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from typing import Union, List
 from fastapi import HTTPException
 import traceback

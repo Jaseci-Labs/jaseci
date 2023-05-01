@@ -3,11 +3,11 @@ Variable manager for Jac
 
 Representations for all jac runtime variables
 """
-from jaseci.element.element import Element
-from jaseci.element.obj_mixins import Anchored
-from jaseci.graph.node import Node
-from jaseci.graph.edge import Edge
-from jaseci.graph.graph import Graph
+from jaseci.prim.element import Element
+from jaseci.prim.obj_mixins import Anchored
+from jaseci.prim.node import Node
+from jaseci.prim.edge import Edge
+from jaseci.prim.graph import Graph
 from jaseci.jac.jac_set import JacSet
 import uuid
 
@@ -160,7 +160,14 @@ class JacValue:
                 return self.ctx[self.name : self.end]
             elif type(self.name) == int or self.name in self.ctx.keys():
                 return self.ctx[self.name]
-            elif not self.parent._assign_mode and not create_mode:
+            elif (
+                not self.parent._assign_mode
+                and not create_mode
+                and (
+                    not self.is_element
+                    or self.name not in self.is_element.get_architype().has_vars
+                )
+            ):
                 self.parent.rt_error(f"Key {self.name} not found in object/dict.")
         else:
             return None

@@ -5,7 +5,7 @@ MODULES = [
     "bart_sum",
     "cl_summer",
     "ent_ext",
-    "fast_enc",
+    # "fast_enc",
     "sbert_sim",
     "t5_sum",
     "text_seg",
@@ -19,6 +19,7 @@ MODULES = [
     "bi_ner",
     "gpt3",
     "sentiment",
+    "paraphraser",
 ]
 
 

@@ -2,8 +2,8 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APIClient
 from jaseci.utils.utils import TestCaseHelper
-import jaseci.actions.live_actions as lact
-from jaseci.graph.edge import Edge
+import jaseci.jsorc.live_actions as lact
+from jaseci.prim.edge import Edge
 from django.test import TestCase
 import uuid
 import base64

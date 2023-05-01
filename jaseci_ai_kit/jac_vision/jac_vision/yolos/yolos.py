@@ -1,6 +1,6 @@
 from .model import YolosDetector
 import torch
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import traceback
 from fastapi import HTTPException
 import base64
@@ -16,9 +16,6 @@ def setup(device: str = None):
     else:
         _device = torch.device(device)
     detector = YolosDetector(device=_device)
-
-
-setup(device=None)
 
 
 @jaseci_action(act_group=["yolos"], allow_remote=True)
@@ -59,6 +56,6 @@ def get_labels() -> list:
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)
