@@ -1,9 +1,16 @@
 from unittest import TestCase
-from unittest.mock import patch
 from jaseci.utils.utils import TestCaseHelper
+from unittest.mock import patch
 import jaseci.jsorc.live_actions as jla
 import jaseci.jsorc.remote_actions as jra
-from jaseci.jsorc.live_actions import gen_remote_func_hook
+from jaseci.jsorc.live_actions import (
+    gen_remote_func_hook,
+    load_module_actions,
+    live_actions,
+)
+from jaseci.utils.test_core import CoreTest
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci.prim.sentinel import Sentinel
 
 
 class JacActionsTests(TestCaseHelper, TestCase):
@@ -78,3 +85,26 @@ class JacActionsTests(TestCaseHelper, TestCase):
 
         app = jra.serv_actions()
         assert len(app.__dict__["router"].__dict__["on_startup"]) == 1
+
+    def test_load_action_module(self):
+        jac_code = """
+            walker test_summarize {
+                can cl_summer.summarize;
+                report cl_summer.summarize("Today is a beautiful day.");
+            }
+        """
+        load_module_actions("jac_nlp.cl_summer")
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
+        sent.register_code(jac_code)
+        root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
+        test_walker = sent.run_architype("test_summarize")
+        test_walker.prime(root_node)
+        test_walker.run()
+        self.assertEqual(test_walker.report[0][0], "Today is a beautiful day.")
+        # self.call(
+        #     self.mast,
+        #     ["sentinel_register", {"code": self.load_jac("fixture/test_action.jac")}],
+        # )
+
+        # ret = self.call(self.mast, ["walker_run", {"name": "test_summarize"}])
+        # print(ret)

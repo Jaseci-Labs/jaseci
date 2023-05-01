@@ -6,6 +6,7 @@ from jaseci.utils.utils import logger
 from jaseci.jsorc.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.jsorc.remote_actions import serv_actions, mark_as_remote, mark_as_endpoint
 import requests
+import multiprocessing
 import os
 import sys
 import inspect
@@ -15,6 +16,8 @@ import gc
 live_actions = {}  # {"act.func": func_obj, ...}
 live_action_modules = {}  # {__module__: ["act.func1", "act.func2", ...], ...}
 action_configs = {}  # {"module_name": {}, ...}
+
+act_procs = {}
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
@@ -101,37 +104,93 @@ def load_local_actions(file: str, ctx: dict = {}):
         return False
 
 
-def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
-    """Load all jaseci actions from python module"""
+def action_handler(mod, ctx, in_q, out_q):
+    loaded_mod = importlib.import_module(mod)
     try:
-        if mod in sys.modules:
-            del sys.modules[mod]
-        if loaded_module and loaded_module in sys.modules:
-            del sys.modules[loaded_module]
-        if mod in live_action_modules:
-            for i in live_action_modules[mod]:
-                if i in live_actions:
-                    del live_actions[i]
-        if loaded_module in live_action_modules:
-            for i in live_action_modules[loaded_module]:
-                if i in live_actions:
-                    del live_actions[i]
-
-        mod = importlib.import_module(mod)
-        try:
-            if hasattr(mod, "setup"):
-                mod.setup(**ctx)
-        except Exception as e:
-            logger.error(
-                f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
-            )
-            logger.error(e)
-        if mod:
-            return True
+        if hasattr(loaded_mod, "setup"):
+            loaded_mod.setup(**ctx)
     except Exception as e:
-        logger.error(f"Cannot hot load module actions from {mod}: {e}")
+        logger.error(
+            f"Cannot run set up for module {mod}.",
+            " This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided.",
+        )
+        logger.error(e)
+    out_q.put(list(live_actions.keys()))
 
-    return False
+    while True:
+        action, args, kwargs = in_q.get()
+        func = live_actions[action]
+        result = func(*args, **kwargs)
+        out_q.put((action, result))
+
+
+def action_handler_wrapper(*args, **kwargs):
+    # module = action.split(".")[0]
+    # name = action.split(".")[1]
+    module = "jac_nlp.cl_summer"
+    name = "cl_summer.summarize"
+
+    act_procs[module]["in_q"].put((name, args, kwargs))
+
+    # TODO: Handle concurrent calls?
+    return act_procs[module]["out_q"].get()[1]
+
+
+def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
+    if mod in act_procs:
+        logger.info(f"Action module {mod} already loaded.")
+
+    # Create subprocess and message queues for this action module
+
+    act_procs[mod] = {
+        "in_q": multiprocessing.Queue(),
+        "out_q": multiprocessing.Queue(),
+    }
+    act_procs[mod]["proc"] = multiprocessing.Process(
+        target=action_handler,
+        args=(mod, ctx, act_procs[mod]["in_q"], act_procs[mod]["out_q"]),
+    )
+    act_procs[mod]["proc"].start()
+
+    # get the list of action back
+    actions_list = act_procs[mod]["out_q"].get()
+    for act in actions_list:
+        live_actions[act] = action_handler_wrapper
+
+    return True
+
+
+# def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
+#     """Load all jaseci actions from python module"""
+#     try:
+#         if mod in sys.modules:
+#             del sys.modules[mod]
+#         if loaded_module and loaded_module in sys.modules:
+#             del sys.modules[loaded_module]
+#         if mod in live_action_modules:
+#             for i in live_action_modules[mod]:
+#                 if i in live_actions:
+#                     del live_actions[i]
+#         if loaded_module in live_action_modules:
+#             for i in live_action_modules[loaded_module]:
+#                 if i in live_actions:
+#                     del live_actions[i]
+#
+#         mod = importlib.import_module(mod)
+#         try:
+#             if hasattr(mod, "setup"):
+#                 mod.setup(**ctx)
+#         except Exception as e:
+#             logger.error(
+#                 f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+#             )
+#             logger.error(e)
+#         if mod:
+#             return True
+#     except Exception as e:
+#         logger.error(f"Cannot hot load module actions from {mod}: {e}")
+#
+#     return False
 
 
 def load_action_config(config, module_name):

@@ -57,8 +57,8 @@ class Action(Item):
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, param_list)
         args = args[0] + args[4]
-        hook = scope.parent._h
 
+        hook = scope.parent._h
         action_manager = JsOrc.get("action_manager", ActionManager)
         action_manager.pre_action_call_hook()
 
