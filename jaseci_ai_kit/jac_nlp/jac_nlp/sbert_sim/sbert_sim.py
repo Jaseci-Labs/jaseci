@@ -40,6 +40,7 @@ def setup(model_name="all-mpnet-base-v2"):
         model = SentenceTransformer(model_name)
         model.save(MODEL_BASE_PATH)
 
+
 SBERT_SIM_ROOT = str(model_base_path("jac_nlp/sbert_sim"))
 
 

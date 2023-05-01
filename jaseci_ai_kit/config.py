@@ -19,5 +19,5 @@ ACTION_CONFIGS = {
     "tfm_ner": TFM_NER_ACTION_CONFIG,
     "use_enc": USE_ENC_ACTION_CONFIG,
     "use_qa": USE_QA_ACTION_CONFIG,
-    "bart_sum": BART_SUM_ACTION_CONFIG
+    "bart_sum": BART_SUM_ACTION_CONFIG,
 }

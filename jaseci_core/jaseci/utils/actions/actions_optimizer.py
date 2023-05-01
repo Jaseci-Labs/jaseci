@@ -281,12 +281,16 @@ class ActionsOptimizer:
                     c = copy.deepcopy(con)
                     c[act] = m
                     if m == "local":
-                        local_mem_requirement=action_configs[act]['local_mem_requirement']
+                        local_mem_requirement = action_configs[act][
+                            "local_mem_requirement"
+                        ]
                         c["local_mem"] = c["local_mem"] + local_mem_requirement
                         if c["local_mem"] < (node_mem * NODE_MEM_THRESHOLD):
                             new_configs.append(dict(c))
                         else:
-                            logger.info(f"config dropped for memory constraint: {c},\n\tcurrent node memory: {node_mem}\n\tavailable memory: {(node_mem * NODE_MEM_THRESHOLD)-c['local_mem'] }")
+                            logger.info(
+                                f"config dropped for memory constraint: {c},\n\tcurrent node memory: {node_mem}\n\tavailable memory: {(node_mem * NODE_MEM_THRESHOLD)-c['local_mem'] }"
+                            )
                     else:
                         new_configs.append(dict(c))
             all_configs = list(new_configs)
@@ -477,7 +481,7 @@ class ActionsOptimizer:
         # But this might change down the line
         for name, change_type in actions_change.items():
             logger.info(f"==Actions Optimizer== Changing {name} {change_type}")
-            if change_type in ["to_local","_to_local","_to_module","to_module"]:
+            if change_type in ["to_local", "_to_local", "_to_module", "to_module"]:
                 # Switching from no action loaded to local
                 self.load_action_module(name)
                 del self.actions_change[name]
