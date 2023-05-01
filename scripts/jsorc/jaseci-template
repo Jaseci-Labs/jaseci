@@ -231,8 +231,6 @@ $j{env_vars}
           volumeMounts:
             - name: prod-script
               mountPath: /script
-            - name: jac-nlp-volume
-              mountPath: /root/.jaseci/models/
             - name: jaseci-logs
               mountPath: /.jaseci_logs/
 
@@ -240,9 +238,6 @@ $j{env_vars}
         - name: prod-script
           configMap:
             name: jaseci-up
-        - name: jaseci-logs
-          persistentVolumeClaim:
-            claimName: jac-nlp-pvc
         - name: jaseci-logs
           persistentVolumeClaim:
             claimName: jaseci-logs
