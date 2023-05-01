@@ -203,8 +203,8 @@ def save_model(version_id: Optional[str] = None):
     """
     global train_args, model_args, latest_model_path, m_config_fname, t_config_fname
     try:
-        save_path = str(model_manager.get_save_path(version_id))
-        latest_model_path = model.save(save_path)
+        version_path = str(model_manager.create_version_path(version_id))
+        latest_model_path = model.save(version_path)
         m_config_fname = os.path.join(latest_model_path, "config/m_config.json")
         with open(m_config_fname, "r") as jsonfile:
             model_args = json.load(jsonfile)
@@ -224,7 +224,7 @@ def load_model(version_id: Optional[str] = None):
     global model, inference_model, model_args, m_config_fname, train_arg
     global t_config_fname, latest_model_path, train_args
     if model_manager.get_version_ids().keys():
-        latest_model_path = str(model_manager.get_load_path(version_id))
+        latest_model_path = str(model_manager.get_version_path(version_id))
     else:
         raise HTTPException(status_code=500, detail=f"{version_id} doesn't exist.")
     try:
