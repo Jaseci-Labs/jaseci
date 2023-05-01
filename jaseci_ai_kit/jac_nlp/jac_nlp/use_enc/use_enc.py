@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
 import tensorflow_text  # noqa
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from typing import Union
 import os
 from jaseci.utils.utils import model_base_path
@@ -25,9 +25,6 @@ def setup():
         module = hub.load(MODULE_URL)
         tf.saved_model.save(module, USE_ENC_ROOT)
         tf.keras.backend.clear_session()
-
-
-setup()
 
 
 @jaseci_action(act_group=["use"], aliases=["get_embedding"], allow_remote=True)
@@ -67,6 +64,6 @@ def text_classify(text: str, classes: list):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

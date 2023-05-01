@@ -4,14 +4,14 @@ from sumy.summarizers.lsa import LsaSummarizer
 from sumy.summarizers.luhn import LuhnSummarizer
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.parsers.plaintext import PlaintextParser
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from sumy.parsers.html import HtmlParser
 from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
 import nltk
 
-nltk.download("punkt", quiet=True)
-nltk.download("stopwords", quiet=True)
+nltk.download("punkt")
+nltk.download("stopwords")
 
 # summarizes the text / url passed to the endpoint and
 # returns summary based on the sentences.
@@ -74,6 +74,6 @@ def summarize(
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

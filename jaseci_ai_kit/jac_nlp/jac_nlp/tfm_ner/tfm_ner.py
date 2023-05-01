@@ -1,6 +1,6 @@
 import traceback
 from fastapi import HTTPException
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from typing import Dict, List, Optional
 import os
 import json
@@ -48,8 +48,6 @@ def setup():
         model.save_pretrained(TFM_NER_ROOT)
         del model, tokenizer
 
-
-setup()
 
 enum = {"default": 1, "append": 2, "incremental": 3}
 
@@ -213,6 +211,6 @@ def set_model_config(model_parameters: Dict = None):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

@@ -59,12 +59,12 @@ BART_SUM_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "bart-sum",
-                                "image": "jaseci/jaseci-experiment:1.4.0.12",
+                                "image": "jaseci/jac-nlp:1.4.0.18",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "4Gi"},
-                                    "requests": {"memory": "4Gi"},
+                                    "limits": {"memory": "3Gi"},
+                                    "requests": {"memory": "3Gi"},
                                 },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"},

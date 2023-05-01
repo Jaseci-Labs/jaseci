@@ -2,7 +2,7 @@ import spacy
 from fastapi import HTTPException
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import os
 from jaseci.utils.utils import model_base_path
 
@@ -49,9 +49,6 @@ def setup():
         model = AutoModelForSequenceClassification.from_pretrained(
             TFM_MODEL_NAME, cache_dir=TFM_MODEL_PATH
         )
-
-
-setup()
 
 
 def segmentation(text, threshold=0.85):
@@ -125,7 +122,7 @@ def seg_load_model(model_name: str):  # modelname could be ("wiki", "legal")
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     print("Text Segmentor up and running")
     launch_server(port=8000)

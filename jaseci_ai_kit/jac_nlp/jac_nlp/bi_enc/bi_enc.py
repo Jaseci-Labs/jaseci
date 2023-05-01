@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from transformers import AutoModel, AutoConfig, AutoTokenizer
 import traceback
 import numpy as np
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import model_base_path
 import random
 import json
@@ -16,10 +16,6 @@ from .utils.models import BiEncoder  # noqa
 from .utils.train import train_model  # noqa
 
 
-# device = torch.device("cpu")
-# uncomment this if you wish to use GPU to train
-# this is commented out because this causes issues with
-# unittest on machines with GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BI_ENC_ROOT = model_base_path("jac_nlp/bi_enc")
 
@@ -79,9 +75,6 @@ def setup():
 
     model.to(train_config["device"])
     set_seed(train_config["seed"])
-
-
-setup()
 
 
 # API for getting the cosine similarity
@@ -403,6 +396,6 @@ def load_model(model_path):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

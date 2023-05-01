@@ -333,9 +333,7 @@ def find_first_api(api_name, **api_endpoints):
     raise InvalidApiException(f"api {api_name} is not existing!")
 
 
-# cache_root = Path(Path.home(), ".jaseci/models")
-
-cache_root = Path("/root/.jaseci/models")
+cache_root = Path(Path.home(), ".jaseci/models")
 
 
 def model_base_path(cache_dir: Union[str, Path]) -> Path:

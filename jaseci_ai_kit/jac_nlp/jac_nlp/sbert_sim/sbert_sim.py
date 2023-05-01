@@ -9,7 +9,7 @@ import math
 from datetime import datetime
 import numpy as np
 from fastapi import HTTPException
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import model_base_path
 import os
 
@@ -25,7 +25,8 @@ training_config: Dict = {
     "model_name": "bert-base-uncased",
 }
 
-SBERT_SIM_ROOT=str(model_base_path("jac_nlp/sbert_sim"))
+SBERT_SIM_ROOT = str(model_base_path("jac_nlp/sbert_sim"))
+
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
 def setup(model_name="all-mpnet-base-v2"):
@@ -39,9 +40,6 @@ def setup(model_name="all-mpnet-base-v2"):
     else:
         model = SentenceTransformer(model_name)
         model.save(SBERT_SIM_ROOT)
-
-
-setup()
 
 
 def create_model(model_name="bert-base-uncased", max_seq_length=256):
@@ -214,8 +212,7 @@ def get_train_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

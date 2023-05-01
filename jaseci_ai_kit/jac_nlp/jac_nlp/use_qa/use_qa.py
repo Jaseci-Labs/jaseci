@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow_hub as hub
 import tensorflow as tf
 import tensorflow_text  # noqa
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 from typing import Union
 from jaseci.utils.utils import model_base_path
 import os
@@ -25,9 +25,6 @@ def setup():
         module = hub.load(MODULE_URL)
         tf.saved_model.save(module, USE_QA_ROOT)
         tf.keras.backend.clear_session()
-
-
-setup()
 
 
 @jaseci_action(act_group=["use"], aliases=["enc_question"], allow_remote=True)
@@ -146,6 +143,6 @@ def qa_classify(text: str, classes: list):
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

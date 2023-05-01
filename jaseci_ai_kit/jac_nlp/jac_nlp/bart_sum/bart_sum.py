@@ -1,7 +1,7 @@
 from transformers import BartTokenizer, BartForConditionalGeneration
 import torch
 from typing import List, Union
-from jaseci.actions.live_actions import jaseci_action
+from jaseci.jsorc.live_actions import jaseci_action
 import traceback
 from fastapi import HTTPException
 import requests
@@ -32,9 +32,6 @@ def setup(
         bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
         bart_model.save_pretrained(BART_SUM_ROOT)
         bart_tokenizer.save_vocabulary(BART_SUM_ROOT)
-
-
-setup(tokenizer="facebook/bart-large-cnn", model="facebook/bart-large-cnn")
 
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
@@ -82,6 +79,6 @@ def summarize(
 
 
 if __name__ == "__main__":
-    from jaseci.actions.remote_actions import launch_server
+    from jaseci.jsorc.remote_actions import launch_server
 
     launch_server(port=8000)

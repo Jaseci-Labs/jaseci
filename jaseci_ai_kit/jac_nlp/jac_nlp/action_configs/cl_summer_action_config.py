@@ -55,7 +55,7 @@ CL_SUMMER_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "cl-summer",
-                                "image": "jaseci/jaseci-experiment:1.4.0.12",
+                                "image": "jaseci/jac-nlp:1.4.0.18",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

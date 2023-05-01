@@ -26,7 +26,6 @@ BI_ENC_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                # "prod_up": "git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[bi_enc]; uvicorn jac_nlp.bi_enc:serv_actions --host 0.0.0.0 --port 80"
                 "prod_up": "uvicorn jac_nlp.bi_enc:serv_actions --host 0.0.0.0 --port 80"
             },
         },
@@ -57,7 +56,7 @@ BI_ENC_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "bi-enc",
-                                "image": "jaseci/jaseci-experiment:1.4.0.12",
+                                "image": "jaseci/jac-nlp:1.4.0.18",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
