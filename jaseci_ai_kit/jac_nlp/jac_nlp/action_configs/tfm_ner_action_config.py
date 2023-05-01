@@ -1,6 +1,7 @@
 TFM_NER_ACTION_CONFIG = {
     "module": "jac_nlp.tfm_ner",
     "loaded_module": "jac_nlp.tfm_ner.tfm_ner",
+    "local_mem_requirement": 1014.12,
     "remote": {
         "Service": {
             "kind": "Service",
@@ -25,7 +26,6 @@ TFM_NER_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                # "prod_up": "git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[tfm_ner]; uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
                 "prod_up": "uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
             },
         },
@@ -56,12 +56,12 @@ TFM_NER_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "tfm-ner",
-                                "image": "jaseci/jaseci-experiment:1.4.0.12",
+                                "image": "jaseci/jac-nlp:1.4.0.18",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "3Gi"},
-                                    "requests": {"memory": "3Gi"},
+                                    "limits": {"memory": "2Gi"},
+                                    "requests": {"memory": "2Gi"},
                                 },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"},

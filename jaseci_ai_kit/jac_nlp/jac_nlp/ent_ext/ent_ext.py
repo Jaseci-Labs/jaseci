@@ -5,7 +5,7 @@ from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 from flair.models import TARSTagger, SequenceTagger
 
-# from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
+from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
 from flair.file_utils import cached_path
 from flair.file_utils import cached_path
 from flair.data import Sentence

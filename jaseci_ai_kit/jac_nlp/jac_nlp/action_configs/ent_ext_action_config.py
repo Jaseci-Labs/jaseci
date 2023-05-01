@@ -1,6 +1,7 @@
 ENT_EXT_ACTION_CONFIG = {
     "module": "jac_nlp.ent_ext",
     "loaded_module": "jac_nlp.ent_ext.ent_ext",
+    "local_mem_requirement": 4247.61,
     "remote": {
         "Service": {
             "kind": "Service",
@@ -55,7 +56,7 @@ ENT_EXT_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "ent-ext",
-                                "image": "jaseci/jaseci-experiment:1.4.0.12",
+                                "image": "jaseci/jac-nlp:1.4.0.18",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

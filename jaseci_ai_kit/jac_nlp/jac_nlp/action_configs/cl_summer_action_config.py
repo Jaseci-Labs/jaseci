@@ -1,6 +1,7 @@
 CL_SUMMER_ACTION_CONFIG = {
     "module": "jac_nlp.cl_summer",
     "loaded_module": "jac_nlp.cl_summer.cl_summer",
+    "local_mem_requirement": 151.55,
     "remote": {
         "Service": {
             "kind": "Service",
@@ -54,7 +55,7 @@ CL_SUMMER_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "cl-summer",
-                                "image": "jaseci/jaseci-experiment:1.4.0.12",
+                                "image": "jaseci/jac-nlp:1.4.0.18",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

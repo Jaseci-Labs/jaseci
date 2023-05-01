@@ -166,7 +166,7 @@ class JsorcLoadTest:
             policies = [policy]
             app_to_actions = {
                 "zeroshot_faq_bot": ["jac_nlp.text_seg", "jac_nlp.use_qa"],
-                "sentence_pairing": ["jac_nlp.use_enc", "jac_nlp.bi_enc"],
+                "sentence_pairing": ["jac_nlp.sbert_sim", "jac_nlp.bi_enc"],
                 "discussion_analysis": ["jac_nlp.bi_enc", "jac_nlp.cl_summer"],
                 "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
                 "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
@@ -174,7 +174,7 @@ class JsorcLoadTest:
                     "jac_nlp.text_seg",
                     "jac_nlp.bi_enc",
                     "jac_nlp.tfm_ner",
-                    "jac_nlp.ent_ext",
+                    "jac_nlp.sbert_sim",
                     "jac_nlp.use_qa",
                 ],
                 "flow_analysis": [
@@ -231,10 +231,6 @@ class JsorcLoadTest:
                         self.start_benchmark()
                         self.start_actions_tracking()
                         start_ts = time.time()
-                        # if policy == "all_local" or policy == "all_remote":
-                        #     experiment_duration = 3 * 60
-                        # else:
-                        #     experiment_duration = 5 * 60
                         while (time.time() - start_ts) < experiment_duration:
                             res = self.run_walker(app)
                         result = self.stop_benchmark()
@@ -268,7 +264,7 @@ class JsorcLoadTest:
                                 self.unload_action(module, mode="auto", retire_svc=True)
                         sleep(10)
             self.set_jsorc_actionpolicy("Default", policy_params={})
-            path = "/root/.jaseci/exp_results/"
+            path = "/root/.jaseci/models/exp_results/"
             os.makedirs(path, exist_ok=True)
             with open(f"{path}/{app}_{policy}.json", "w") as fp:
                 json.dump(results, fp)

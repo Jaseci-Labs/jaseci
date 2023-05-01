@@ -139,6 +139,7 @@ metadata:
   name: jaseci
   namespace: $j{namespace}
 spec:
+  type: LoadBalancer
   selector:
     pod: jaseci
   ports:
@@ -153,12 +154,13 @@ metadata:
   namespace: $j{namespace}
 data:
   prod_up: |-
+    cd /;
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone https://github.com/Jaseci-Labs/jaseci.git;
-    cd jaseci;
+    git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git;
+    cd jaseci-experiment;
     cd jaseci_core; source install.sh;
     cd ../jaseci_serv; source install.sh;
-    cd /;
+    cd ../jaseci_ai_kit/jac_nlp; pip install .;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -182,12 +184,12 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: python:3-slim
+          image: jaseci/jaseci-experiment:1.4.0.12
           resources:
             requests:
-              memory: "350Mi"
+              memory: "3096Mi"
           imagePullPolicy: IfNotPresent
-          command: [bash, -c, "source script/prod_up"]
+          command: [bash, -c, "source /script/prod_up"]
           ports:
             - containerPort: 80
           env:
@@ -224,7 +226,7 @@ spec:
               value: jaseci-prometheus-server
 
             - name: ELASTIC_HOST
-              value: jaseci-es-http
+              value: jaseci-es-internal-http
 
 $j{env_vars}
 
@@ -233,31 +235,14 @@ $j{env_vars}
               mountPath: /script
             - name: jac-nlp-volume
               mountPath: /root/.jaseci/models/
-            - name: jaseci-logs
-              mountPath: /.jaseci_logs/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
-        - name: jaseci-logs
+        - name: jac-nlp-volume
           persistentVolumeClaim:
             claimName: jac-nlp-pvc
-        - name: jaseci-logs
-          persistentVolumeClaim:
-            claimName: jaseci-logs
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  namespace: $j{namespace}
-  name: jaseci-logs
-spec:
-  resources:
-    requests:
-      storage: 2Gi
-  accessModes:
-    - ReadWriteOnce
 ---
 apiVersion: v1
 kind: Secret
@@ -268,4 +253,17 @@ type: Opaque
 data:
   user: cG9zdGdyZXM=
   password: bGlmZWxvZ2lmeWphc2VjaQ==
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jac-nlp-pvc
+  namespace: $j{namespace}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 20Gi
 ---

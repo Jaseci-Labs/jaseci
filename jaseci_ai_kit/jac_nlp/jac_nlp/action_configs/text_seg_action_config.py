@@ -1,6 +1,7 @@
 TEXT_SEG_ACTION_CONFIG = {
     "module": "jac_nlp.text_seg",
     "loaded_module": "jac_nlp.text_seg.text_seg",
+    "local_mem_requirement": 1706.43,
     "remote": {
         "Service": {
             "kind": "Service",
@@ -25,7 +26,6 @@ TEXT_SEG_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                # "prod_up": "git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git; cd jaseci-experiment; cd jaseci_core; source install_live.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[text_seg]; uvicorn jac_nlp.text_seg:serv_actions --host 0.0.0.0 --port 80"
                 "prod_up": "uvicorn jac_nlp.text_seg:serv_actions --host 0.0.0.0 --port 80"
             },
         },
@@ -59,7 +59,7 @@ TEXT_SEG_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "text-seg",
-                                "image": "jaseci/jaseci-experiment:1.4.0.12",
+                                "image": "jaseci/jac-nlp:1.4.0.18",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

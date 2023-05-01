@@ -22,6 +22,7 @@ from .actions_state import ActionsState
 
 POLICIES = ["Default", "Evaluation"]
 THRESHOLD = 0.2
+NODE_MEM_THRESHOLD = 0.8
 
 
 class ActionsOptimizer:
@@ -280,9 +281,12 @@ class ActionsOptimizer:
                     c = copy.deepcopy(con)
                     c[act] = m
                     if m == "local":
-                        c["local_mem"] += action_configs[act].get("remote_memory", 0)
-                        if c["local_mem"] < node_mem:
+                        local_mem_requirement=action_configs[act]['local_mem_requirement']
+                        c["local_mem"] = c["local_mem"] + local_mem_requirement
+                        if c["local_mem"] < (node_mem * NODE_MEM_THRESHOLD):
                             new_configs.append(dict(c))
+                        else:
+                            logger.info(f"config dropped for memory constraint: {c},\n\tcurrent node memory: {node_mem}\n\tavailable memory: {(node_mem * NODE_MEM_THRESHOLD)-c['local_mem'] }")
                     else:
                         new_configs.append(dict(c))
             all_configs = list(new_configs)
