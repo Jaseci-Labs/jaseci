@@ -40,13 +40,8 @@ node product {
 }
 ```
 
--  ```
-    can check with inventory entry {
-        visitor.products[here.name] = here.stock;
-    }
-    ``` 
-    this code snippet defines an ability of the product node. Which gives an ability to return current stock of the product node.
-- `can check with inventory entry` This ability executes only when inventory walker enters into product node.
+-  `check` is an ability of the product node. Which gives an ability to return current stock of the product node.
+- `can check with inventory entry` This lines defines `check` ability to executes only when inventory walker enters into product node.
 - `visitor.products[here.name] = here.stock;` Here the `here.name` represents the name of the current node and `here.stock` represents the stock of the current node. To get more context of the `here` keyword go to [here]. 
 
 Copy the updated `product` node and the `inventory` walker into `shop.jac` program and execute it to see the following output.
