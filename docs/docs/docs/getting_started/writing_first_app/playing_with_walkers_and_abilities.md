@@ -122,9 +122,75 @@ node product {
 - `here.stock += visitor.purchase_amount;` This will increase the stock by `purchase` amount. In this line `here` represents the current node while `visitor` represents the walker which is visiting the node at the moment.
 - `std.log("Stock for " + here.name + " up to " + (here.stock).str);` This is a log statement. Logging in Jaseci can be done with `std.log`.
 
-Now let's update the `shop.jac` program with above two code snippets and run the `shop.jac` with `` command. If everything is fine you'll see following output.
+Now let's update the `shop.jac` program with above two code snippets. At this step before we run the walker we have to use `sentinel register` command. This will create a graph if there is graph not already created. Run the following command in `jsctl` shell.
+
+
+```bash
+jaseci> sentinel register -mode code shop.jac
+[
+  {
+    "version": null,
+    "name": "shop.jac",
+    "kind": "generic",
+    "jid": "urn:uuid:59266be7-d44a-4641-b2c9-0a304a289346",
+    "j_timestamp": "2023-05-03T17:41:52.750294",
+    "j_type": "sentinel",
+    "code_sig": "edcbb1abaf45cb2d5c04146e65e7bde7"
+  },
+  {
+    "name": "root",
+    "kind": "node",
+    "jid": "urn:uuid:28c78e89-4ed6-4936-b933-6c65c5b50c7a",
+    "j_timestamp": "2023-05-03T17:41:52.764209",
+    "j_type": "graph",
+    "context": {}
+  }
+]
+```
+
+Now you can run the `purchase` walker with the following command;
+
+```bash
+jaseci> walker run purchase -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"purchase_amount\": 2"}
+```
+
+Here we introduce a new bash command to run a specific walker.
+
+- `walker run purchase` This will execute the `purchase` walker.
+- `-ctx` This assigns the parameters defined inside the walker with `has` keywords. The parameters accepts in jac as a dictionary.
+
+When you execute the above command you may see the following output.
+
+```bash
+jaseci > walker run purchase -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"purchase_amount\": 2"}    
+2023-05-03 23:12:18,571 - INFO - log: Stock for apple up to 4
+{
+  "success": true,
+  "report": [],
+  "final_node": "urn:uuid:5a4af2d4-428c-4fab-8936-1f0de9625344",
+  "yielded": false
+}
+```
 
 Now you can check the inventory again to see if the stock has been updated with the purchase operations.
+
+```bash
+jaseci > walker run inventory
+{
+  "success": true,
+  "report": [
+    {
+      "apple": 2,
+      "banana": 0,
+      "notebook": 0
+    }
+  ],
+  "final_node": "urn:uuid:198fa33e-ece8-4642-9800-8c902acdb081",
+  "yielded": false
+}
+```
+
+Run the `purchase` walker with different parameter values and observe the inventory.
 
 ## Sell products
 
@@ -184,7 +250,8 @@ node product {
 
 - `if(here.stock >= visitor.sell_amount)` this if statement execute if the current product stock is grater that the `sell_amount` of the `sell` walker visiting the product node.
  
+You can execute the `sell` walker and play with the Shop inventory management application which we just built.
 
 ```bash
-jaseci> walker run sell -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"sell_amount\": 2"
+jaseci> walker run sell -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"sell_amount\": 2"}
 ```
