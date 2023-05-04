@@ -97,10 +97,10 @@ node city{
 
 walker build_example{
     node1 = spawn here ++> node::city(name="c1");
-    node2 = spawn node1 --> node::city(name="c2");
-    node3 = spawn node2 --> node::city(name="c3");
-    here --> node2;
-    node1 --> node3;
+    node2 = spawn node1 ++> node::city(name="c2");
+    node3 = spawn node2 ++> node::city(name="c3");
+    here ++> node2;
+    node1 ++> node3;
 }
 
 walker init{
@@ -171,10 +171,10 @@ node city{
 
 walker build_example{
     node1 = spawn here ++> node::city(name="c1");
-    node2 = spawn node1 --> node::city(name="c2");
-    node3 = spawn node2 --> node::city(name="c3");
-    here --> node2;
-    here --> node3;
+    node2 = spawn node1 ++> node::city(name="c2");
+    node3 = spawn node2 ++> node::city(name="c3");
+    here ++> node2;
+    here ++> node3;
 }
 
 walker init{
@@ -255,10 +255,10 @@ node city{
 
 walker build_example{
     node1 = spawn here ++> node::city(name="c1");
-    node2 = spawn node1 --> node::city(name="c2");
-    node3 = spawn node2 --> node::city(name="c3");
-    here --> node2;
-    here --> node3;
+    node2 = spawn node1 ++> node::city(name="c2");
+    node3 = spawn node2 ++> node::city(name="c3");
+    here ++> node2;
+    here ++> node3;
 }
 
 walker init{

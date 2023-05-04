@@ -85,10 +85,10 @@ graph example {
             n.l::append(spawn node::plain(number=i+1));
         }
 
-        n[0] --> n[1] --> n[2];
-        n[1] --> n[3];
-        n[0] --> n[4] --> n[5];
-        n[4] --> n[6];
+        n[0] ++> n[1] ++> n[2];
+        n[1] ++> n[3];
+        n[0] ++> n[4] ++> n[5];
+        n[4] ++> n[6];
         head=n[0];
         }
     }
@@ -117,6 +117,7 @@ Expected Output:
 6
 7
 ```
+
 `take` command lets the walker traverse through graph nodes. You may notice by default, a walker traverse with `take` command using the breadth first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example; More information about `take` command and keywords to operate walkers can be found [here](../operations/take.md)
 
 In addition to the introduction of the `take` command to support new types of control flow for node-bound iterations. The keywords and semantics of `disengage`, `skip`, and `ignore` are also introduced. These instruct walkers to stop walking the graph, skip over a node for execution, and ignore certain paths of the graph. More information about these can be found in [here](../operations/skip.md)
@@ -150,6 +151,7 @@ In this example, the parent walker spawns the child walker and sets the return_v
 With this feature, you can easily create dynamic traversal patterns that adapt to changing data and requirements, making Jaseci a powerful tool for developing complex applications.
 
 ## Walker Callback
+
 Walker callback is used for running a walker to a specific node using `public key` instead of authorization token.
 
 ### Use Case

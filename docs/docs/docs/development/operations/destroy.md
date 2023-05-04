@@ -6,7 +6,6 @@ sidebar_position: 7
 
 To remove nodes or edges from the graph, Jaseci also offers the very useful command "destroy." Run the example that follows using the 'dot' command in the Jac shell. i.e. `jac dot main.jac`.
 
-**Example:**
 
 ```jac
 node person: has name;
@@ -33,6 +32,7 @@ person {
 }
 }
 ```
+
 The majic line in the above code is the `for i in -[friend]->: destroy i;` it instruct walker to remove all the nodes connected by friend edges. try playing with the code by removing and adding `destroy` command.
 
 
