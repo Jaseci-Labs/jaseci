@@ -3,7 +3,7 @@ Action class for Jaseci
 
 Each action has an id, name, timestamp and it's set of edges.
 """
-from .item import Item
+from jaseci.prim.element import Element
 from jaseci.jsorc.live_actions import live_actions
 from jaseci.jac.jac_set import JacSet
 import inspect
@@ -15,7 +15,7 @@ from jaseci.utils.actions.actions_manager import ActionManager
 # ACTION_PACKAGE = 'jaseci.actions.'
 
 
-class Action(Item):
+class Action(Element):
     """
     Action class for Jaseci
 
@@ -26,10 +26,11 @@ class Action(Item):
     access_list is used by walker to decide what to trigger
     """
 
-    def __init__(self, preset_in_out=None, access_list=None, **kwargs):
+    def __init__(self, value=None, preset_in_out=None, access_list=None, **kwargs):
+        self.value = value
         self.preset_in_out = preset_in_out  # Not using _ids convention
         self.access_list = access_list
-        Item.__init__(self, **kwargs)
+        Element.__init__(self, persist=True, **kwargs)
 
     def do_auto_conversions(self, args, params):
         """

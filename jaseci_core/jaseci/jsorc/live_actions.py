@@ -243,7 +243,6 @@ def get_global_actions():
                     mode="public",
                     name=i,
                     value=i,
-                    persist=False,
                 )
             )
     return global_action_list
