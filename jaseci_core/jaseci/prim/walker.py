@@ -193,6 +193,12 @@ class Walker(Element, WalkerInterp, Anchored):
         if profiling:
             self.profile["perf"] = perf_test_stop(pr)
             self.profile["graph"] = perf_test_to_b64(pr)
+            self.profile["save_obj_distrib"] = self._h.get_object_distribution(
+                save_list=True
+            )
+            self.profile["mem_obj_distrib"] = self._h.get_object_distribution(
+                save_list=False
+            )
             report_ret["profile"] = self.profile
 
         if self.for_queue():

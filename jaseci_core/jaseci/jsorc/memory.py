@@ -204,10 +204,11 @@ class MemoryHook:
     # ------------------ UTILITIES ------------------- #
     ####################################################
 
-    def get_object_distribution(self):
+    def get_object_distribution(self, save_list=False):
         dist = {}
-        for i in self.mem.keys():
-            t = type(self.mem[i])
+        obj_list = self.save_obj_list if save_list else (list(self.mem.values()))
+        for i in obj_list:
+            t = str(type(i))
             if t in dist.keys():
                 dist[t] += 1
             else:
