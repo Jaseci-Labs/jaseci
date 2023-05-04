@@ -225,7 +225,7 @@ def perf_test_start():
     return perf_prof
 
 
-def perf_test_stop(perf_prof, save_to_file=False):
+def perf_test_stop(perf_prof, save_to_file=True):
     perf_prof.disable()
     if save_to_file:
         perf_prof.dump_stats(f"{id(perf_prof)}.prof")

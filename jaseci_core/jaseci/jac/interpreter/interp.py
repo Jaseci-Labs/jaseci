@@ -1684,6 +1684,7 @@ class Interp(VirtualMachine):
             ret.append(tr.value)
             self.inherit_runtime_state(walk)
             walk.register_yield_or_destroy(self.yielded_walkers_ids)
+
         return JacValue(self, value=ret[0] if len(ret) == 1 else ret)
 
     def run_type_spawn(self, jac_ast):

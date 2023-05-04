@@ -197,6 +197,10 @@ class Walker(Element, WalkerInterp, Anchored):
 
         if self.for_queue():
             return {"is_queued": False, "result": report_ret}
+        # print("========================================")
+        # print(self._h.get_object_distribution())
+        # print(self._h.save_obj_list)
+        # print("========================================")
 
         return report_ret
 

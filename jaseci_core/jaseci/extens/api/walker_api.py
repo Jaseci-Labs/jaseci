@@ -210,7 +210,19 @@ class WalkerApi:
             wlk=wlk, prime=nd, ctx=ctx, _req_ctx=_req_ctx, profiling=profiling
         )
         wlk.register_yield_or_destroy(self.yielded_walkers_ids)
-        return res
+
+        import pprint
+
+        pprint.pprint("====================save obj list====================")
+        pprint.pprint(self._h.get_object_distribution(True))
+        pprint.pprint("====================save obj list====================")
+        pprint.pprint("====================without save_obj_list====================")
+        pprint.pprint(self._h.get_object_distribution(False))
+        pprint.pprint("====================without save_obj_list====================")
+        self._h.save_obj_list = set()
+
+        # return res
+        return ""
 
     @Interface.private_api(cli_args=["name"], url_args=["name"])
     def wapi(
