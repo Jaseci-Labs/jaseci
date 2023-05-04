@@ -589,6 +589,7 @@ class JacTests(TestCaseHelper, TestCase):
 
     @pytest.mark.order(1)
     def test_module_on_async(self):
+        self.logger_on()
         mast = JsOrc.super_master()
         if not JsOrc.svc("task").is_running():
             self.skip_test("Celery not running")

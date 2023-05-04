@@ -30,7 +30,7 @@ class Action(Element):
         self.value = value
         self.preset_in_out = preset_in_out  # Not using _ids convention
         self.access_list = access_list
-        Element.__init__(self, persist=True, **kwargs)
+        Element.__init__(self, persist=False, **kwargs)
 
     def do_auto_conversions(self, args, params):
         """
