@@ -24,22 +24,19 @@ When solving problems with walkers, a developer can think of that walker as a li
 
 When we run a jac code, by default it's executing the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac run main.jac`
 
-**Example 1:**
 ```jac
 walker init{
     std.out("This is from init walker \n");
 }
 ```
 
-**Output 1:**
+Expected Output:
 
 ```
     This is from init walker
 ```
 As you can see, this code has executed the `init` walker. Now let's create another walker;
 
-
-**Example 2:**
 ```jac
 walker second_walker{
     std.out("This is from second walker \n");
@@ -54,7 +51,7 @@ walker init{
 
 ```
 
-**Output 2:**
+Expected Output:
 ```
     This is from init walker
     This is from second walker
@@ -76,7 +73,6 @@ We are creating the following graph to demonstrate traversing of walkers in the 
 
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example;
 
-**Example 1:**
 ```jac
 node plain: has number;
 
@@ -110,7 +106,8 @@ walker init {
 }
 ```
 
-**Output 1:**
+Expected Output:
+
 ```
 1
 2
@@ -132,7 +129,6 @@ Jaseci walkers act like little robots traversing graphs, with a unique ability t
 
 Here's a simple example of how to use walker spawning in Jaseci:
 
-**Example 1**
 ```jac
 walker parent {
     has result;
