@@ -41,7 +41,6 @@ def query(
         )
         return
 
-
     HEADERS = {"Authorization": f"Bearer {os.environ['HUGGINGFACE_API_KEY']}"}
 
     API_URL = API_ENDPOINTS[task][model]["API_URL"] if not api_url else api_url
@@ -58,5 +57,7 @@ def query(
             data = f.read()
         response = requests.post(API_URL, headers=HEADERS, data=data)
     elif API_TYPE == "input":
-        response = requests.post(API_URL, headers=HEADERS, json={"inputs": kwargs["inputs"]})
+        response = requests.post(
+            API_URL, headers=HEADERS, json={"inputs": kwargs["inputs"]}
+        )
     return response.json()
