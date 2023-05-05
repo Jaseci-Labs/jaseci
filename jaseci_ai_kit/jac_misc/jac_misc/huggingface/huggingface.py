@@ -58,5 +58,5 @@ def query(
             data = f.read()
         response = requests.post(API_URL, headers=HEADERS, data=data)
     elif API_TYPE == "input":
-        response = requests.post(API_URL, headers=HEADERS, json={"inputs": kwargs})
+        response = requests.post(API_URL, headers=HEADERS, json={"inputs": kwargs["inputs"]})
     return response.json()

@@ -52,11 +52,43 @@ walker get_embedding {
     report hf.query(task="feature-extraction", model="conv-bert-base", inputs="Hello World!");
 }
 ```
+Using your custom HF Inference Endpoint:
+```jac
+walker get_embedding {
+    can hf.query;
+    report hf.query(api_url="https://my-custom-hf-endpoint.com", api_type="inputs", inputs="Hello World!" );
+}
+```
 
 ## Models
 The following tasks are supported by the `query` action. The required parameters for each task are listed in the table below. The default model for each task is also listed in the table. You can find the available models for each task [here](https://huggingface.co/models).
 
-| Task | Model | Required Parameters | example input |
-| --- | --- | --- | --- |
-| feature-extraction | `bart-large (default)` | `inputs` | |
-| feature-extraction | `unsup-simcse-roberta-base` | `inputs` | |
+| Task                 | Model                | Required Parameters | Example code                                                                                          |
+| -------------------- | -------------------- | ------------------- | ----------------------------------------------------------------------------------------------------- |
+| feature-extraction   | bart-large (default) | `inputs`            | `hf.query(task="feature-extraction", inputs="Today is a sunny day and I'll get some ice cream.")`     |
+|                      | `unsup-simcse-roberta-base` | `inputs` | `hf.query(task="feature-extraction", model="unsup-simcse-roberta-base", inputs="Today is a sunny day and I'll get some ice cream.")`|
+|                      | `conv-bert-base` | `inputs` | `hf.query(task="feature-extraction", model="conv-bert-base", inputs="Today is a sunny day and I'll get some ice cream.")`|
+|                      | `codebert-base` | `inputs` | `hf.query(task="feature-extraction", model="codebert-base", inputs="Today is a sunny day and I'll get some ice cream.")`|
+|                      | `specter` | `inputs` | `hf.query(task="feature-extraction", model="specter", inputs="Today is a sunny day and I'll get some ice cream.")`|
+| text-to-image        | stable-diffusion-v1-5 (default) | `inputs` | `hf.query(task="text-to-image", inputs="Today is a sunny day and I'll get some ice cream.")`         |
+|                      | `stable-diffusion-v1-4` | `inputs` | `hf.query(task="text-to-image", model="stable-diffusion-v1-4", inputs="Today is a sunny day and I'll get some ice cream.")`|
+|                      | `stable-diffusion-v2-1` | `inputs` | `hf.query(task="text-to-image", model="stable-diffusion-v2-1", inputs="Today is a sunny day and I'll get some ice cream.")`|
+| image-classification | resnet-50 (default) | `file` | `hf.query(task="image-classification", file="path/to/image.jpg")`                                     |
+|                      | `resnet-18`         | `file`              | `hf.query(task="image-classification", model="resnet-18", file="path/to/image.jpg")`                 |
+|                      | `convnext-large-224`| `file`              | `hf.query(task="image-classification", model="convnext-large-224", file="path/to/image.jpg")`        |
+|                      | `vit-base-patch16-224`| `file`            | `hf.query(task="image-classification", model="vit-base-patch16-224", file="path/to/image.jpg")`      |
+| object-detection     | yolos-tiny (default)     | `file`              | `hf.query(task="object-detection", file="path/to/image.jpg")`                                         |
+|                      | `detr-resnet-50`   | `file`              | `hf.query(task="object-detection", model="detr-resnet-50", file="path/to/image.jpg")`                |
+|                      | `detr-resnet-101`   | `file`              | `hf.query(task="object-detection", model="detr-resnet-101", file="path/to/image.jpg")`                |
+|                      | `yolos-small`      | `file`              | `hf.query(task="object-detection", model="yolos-small", file="path/to/image.jpg")`                   |
+| image-segmentation   | segformer-b0-finetuned-ade-512-512 (default) | `file`              | `hf.query(task="image-segmentation", file="path/to/image.jpg")`                                       |
+|                      | `upernet-convnext-small` | `file`              | `hf.query(task="image-segmentation", model="upernet-convnext-small", file="path/to/image.jpg")`      |
+|                      | `detr-resnet-50-panoptic` | `file`              | `hf.query(task="image-segmentation", model="detr-resnet-50-panoptic", file="path/to/image.jpg")`      |
+|                      | `segformer-b5-finetuned-ade-640-640` | `file`              | `hf.query(task="image-segmentation", model="segformer-b5-finetuned-ade-640-640", file="path/to/image.jpg")`      |
+| sentiment-analysis   | distilbert-base-uncased-finetuned-sst-2-english (default) | `inputs` | `hf.query(task="sentiment-analysis", inputs="Today is a sunny day and I'll get some ice cream.")`   |
+|                      | `twitter-roberta-base-sentiment` | `inputs` | `hf.query(task="sentiment-analysis", model="twitter-roberta-base-sentiment", inputs="Today is a sunny day and I'll get some ice cream.")`   |
+|                      | `twitter-xlm-roberta-base-sentiment` | `inputs` | `hf.query(task="sentiment-analysis", model="twitter-xlm-roberta-base-sentiment", inputs="Today is a sunny day and I'll get some ice cream.")`   |
+| named-entity-recognition   | distilbert-base-multilingual-cased-ner-hrl (default) | `inputs`            | `hf.query(task="named-entity-recognition", inputs="Today is a sunny day and I'll get some ice cream.")`   |
+|                      | `bert-base-NER`     | `inputs`            | `hf.query(task="named-entity-recognition", model="bert-base-NER", inputs="Today is a sunny day and I'll get some ice cream.")`   |
+|                      | `ner-english-fast`  | `inputs`            | `hf.query(task="named-entity-recognition", model="ner-english-fast", inputs="Today is a sunny day and I'll get some ice cream.")`   |
+| fill-mask           | bert-base-uncased (default) | `inputs`            | `hf.query(task="fill-mask", inputs="Today is a sunny day and I'll get some ice cream.")`   |
