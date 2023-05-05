@@ -4,7 +4,9 @@ from fastapi import HTTPException
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 from flair.models import TARSTagger, SequenceTagger
+
 from flair.embeddings import WordEmbeddings, StackedEmbeddings, FlairEmbeddings
+from flair.file_utils import cached_path
 from flair.file_utils import cached_path
 from flair.data import Sentence
 from flair.trainers import ModelTrainer
@@ -21,6 +23,8 @@ from jaseci.utils.utils import model_base_path
 from jaseci.utils.model_manager import ModelManager
 import shutil
 import traceback
+
+from jaseci.utils.utils import model_base_path
 
 warnings.filterwarnings("ignore")
 

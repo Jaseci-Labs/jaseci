@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: boyong
+  name: $j{namespace}
   labels:
     name: jaseci
 ---
@@ -9,12 +9,12 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: jaseci-account
-  namespace: boyong
+  namespace: $j{namespace}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  namespace: boyong
+  namespace: $j{namespace}
   name: jaseci-orc
 rules:
   - apiGroups: [
@@ -123,11 +123,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: jaseci-orc-rolebinding
-  namespace: boyong
+  namespace: $j{namespace}
 subjects:
   - kind: ServiceAccount
     name: jaseci-account
-    namespace: boyong
+    namespace: $j{namespace}
 roleRef:
   kind: ClusterRole
   name: jaseci-orc
@@ -137,8 +137,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jaseci
-  namespace: boyong
+  namespace: $j{namespace}
 spec:
+  type: LoadBalancer
   selector:
     pod: jaseci
   ports:
@@ -150,14 +151,16 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: jaseci-up
-  namespace: boyong
+  namespace: $j{namespace}
 data:
   prod_up: |-
+    cd /;
     apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone -b elastic/manifest-update https://github.com/amadolid/jaseci.git
-    cd jaseci;
+    git clone -b asplos https://github.com/Jaseci-Labs/jaseci-experiment.git;
+    cd jaseci-experiment;
     cd jaseci_core; source install.sh;
     cd ../jaseci_serv; source install.sh;
+    cd ../jaseci_ai_kit/jac_nlp; pip install .;
     jsserv wait_for_db && jsserv makemigrations base &&
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
@@ -166,7 +169,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jaseci
-  namespace: boyong
+  namespace: $j{namespace}
 spec:
   replicas: 1
   selector:
@@ -181,12 +184,12 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: python:3-slim
+          image: jaseci/jaseci-experiment:1.4.0.12
           resources:
             requests:
-              memory: "350Mi"
+              memory: "3096Mi"
           imagePullPolicy: IfNotPresent
-          command: [bash, -c, "source script/prod_up"]
+          command: [bash, -c, "source /script/prod_up"]
           ports:
             - containerPort: 80
           env:
@@ -225,32 +228,42 @@ spec:
             - name: ELASTIC_HOST
               value: jaseci-es-internal-http
 
-
-            - name: ELASTIC_NAMESPACE
-              value: SOURCE
-            - name: ELASTIC_HOST
-              value: jaseci-es-internal-http.elastic.svc.cluster.local
-            - name: PROME_NAMESPACE
-              value: yow
-            - name: PROME_HOST
-              value: jaseci-prometheus-server.yow.svc.cluster.local
+$j{env_vars}
 
           volumeMounts:
             - name: prod-script
               mountPath: /script
+            - name: jac-nlp-volume
+              mountPath: /root/.jaseci/models/
 
       volumes:
         - name: prod-script
           configMap:
             name: jaseci-up
+        - name: jac-nlp-volume
+          persistentVolumeClaim:
+            claimName: jac-nlp-pvc
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: jaseci-db-credentials
-  namespace: boyong
+  namespace: $j{namespace}
 type: Opaque
 data:
   user: cG9zdGdyZXM=
   password: bGlmZWxvZ2lmeWphc2VjaQ==
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jac-nlp-pvc
+  namespace: $j{namespace}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 20Gi
 ---
