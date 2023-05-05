@@ -27,12 +27,12 @@ training_config: Dict = {
     "model_name": "bert-base-uncased",
 }
 MODEL_BASE_PATH = str(model_base_path("jac_nlp/sbert_sim"))
+model_manager = ModelManager(MODEL_BASE_PATH)
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
 def setup(model_name="all-mpnet-base-v2"):
-    global model, model_manager, active_model_path
-    model_manager = ModelManager(MODEL_BASE_PATH)
+    global model, active_model_path
     if model_manager.get_latest_version():
         active_model_path = model_manager.get_version_path()
         model = SentenceTransformer(model_name)
