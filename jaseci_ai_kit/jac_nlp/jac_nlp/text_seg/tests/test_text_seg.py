@@ -1,6 +1,8 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
 from jaseci.jsorc.live_actions import load_module_actions, unload_module
 import pytest
+from pathlib import Path
+import shutil
 
 
 class TextSegModule(CoreTest):
@@ -27,3 +29,4 @@ class TextSegModule(CoreTest):
         super(TextSegModule, cls).tearDownClass()
         ret = unload_module("jac_nlp.text_seg.text_seg")
         assert ret == True
+        shutil.rmtree(Path(Path.home(), ".jaseci/models/jac_nlp/text_seg"))

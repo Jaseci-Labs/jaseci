@@ -1,7 +1,8 @@
 import pytest
-
+import shutil
 from jaseci.utils.test_core import CoreTest, jac_testcase
 from jaseci.jsorc.live_actions import load_module_actions, unload_module
+from pathlib import Path
 
 
 class TextParaphraserModule(CoreTest):
@@ -23,3 +24,4 @@ class TextParaphraserModule(CoreTest):
         super(TextParaphraserModule, cls).tearDownClass()
         ret = unload_module("jac_nlp.paraphraser.paraphraser")
         assert ret == True
+        shutil.rmtree(Path(Path.home(), ".jaseci/models/jac_nlp/paraphraser"))

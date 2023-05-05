@@ -1,5 +1,7 @@
 from jaseci.utils.test_core import CoreTest, jac_testcase
 from jaseci.jsorc.live_actions import load_module_actions, unload_module
+from pathlib import Path
+import shutil
 
 
 class BartSumTests(CoreTest):
@@ -32,3 +34,4 @@ class BartSumTests(CoreTest):
         super(BartSumTests, cls).tearDownClass()
         ret = unload_module("jac_nlp.bart_sum.bart_sum")
         assert ret == True
+        shutil.rmtree(Path(Path.home(), ".jaseci/models/jac_nlp/bart_sum"))

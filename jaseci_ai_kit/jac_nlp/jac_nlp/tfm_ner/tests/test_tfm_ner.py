@@ -4,6 +4,7 @@ import pytest
 import os
 import shutil
 from os import path
+from pathlib import Path
 
 
 class TfmNerTest(CoreTest):
@@ -67,3 +68,4 @@ class TfmNerTest(CoreTest):
         for temp_path in ["results", "modeloutput", "train", "test"]:
             if path.exists(temp_path) and path.isdir(temp_path):
                 shutil.rmtree(temp_path)
+        shutil.rmtree(Path(Path.home(), ".jaseci/models/jac_nlp/tfm_ner"))

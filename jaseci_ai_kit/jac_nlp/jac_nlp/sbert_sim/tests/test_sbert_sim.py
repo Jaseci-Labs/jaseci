@@ -3,6 +3,7 @@ from jaseci.jsorc.live_actions import load_module_actions, unload_module
 import pytest
 import shutil
 from os import path
+from pathlib import Path
 
 
 class SbertSimTest(CoreTest):
@@ -58,3 +59,4 @@ class SbertSimTest(CoreTest):
         for temp_path in ["output"]:
             if path.exists(temp_path) and path.isdir(temp_path):
                 shutil.rmtree(temp_path)
+        shutil.rmtree(Path(Path.home(), ".jaseci/models/jac_nlp/sbert_sim"))
