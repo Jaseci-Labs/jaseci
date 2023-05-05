@@ -1,8 +1,0 @@
-{
-    "label": "Jaseci AI Kit",
-    "position": 8,
-    "link": {
-        "type": "generated-index",
-        "description": "Jaseci AI Kit is a collection of state-of-the-art machine learning models from different domains (NLP, Computer Vision, Speech etc.) that are readily available to load into jaseci. Jaseci AI Kit consist of 4 Main Python Packages."
-    }
-}
