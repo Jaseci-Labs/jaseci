@@ -18,10 +18,7 @@ class Architype(Element, JacCode, ArchitypeInterp):
         self.anchor_var = None
         self.private_vars = []
         self.has_vars = []
-        self.entry_action_ids = IdList(self)
-        self.activity_action_ids = IdList(self)
-        self.exit_action_ids = IdList(self)
-
+        self.can = {"entry": [], "activity": [], "exit": []}
         # async handling for walker
         self.is_async = is_async
 

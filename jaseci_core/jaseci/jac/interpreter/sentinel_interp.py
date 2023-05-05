@@ -83,21 +83,23 @@ class SentinelInterp(Interp):
             parent=self,
         )
 
+        # parse super classes
         if len(kid) > 2 and kid[2].name == "COLON":
             for i in kid[2:]:
                 if i.name == "NAME":
                     arch.super_archs.append(i.token_text())
+
         if self.arch_ids.has_obj_by_name(arch.name, kind=arch.kind):
             self.arch_ids.destroy_obj_by_name(arch.name, kind=arch.kind)
         self.arch_ids.add_obj(arch)
         self.arch_has_preproc(kid[-1], arch)
-        self.arch_can_compile(kid[-1], arch)
+        # self.arch_can_compile(kid[-1], arch)
         return arch
 
     # Note: Sentinels only registers the attr_stmts
 
     def arch_has_preproc(self, jac_ast, arch):
-        """Helper function to statically compile can stmts for arch"""
+        """Helper function to statically compile has stmts for arch"""
         kid = self.set_cur_ast(jac_ast)
         if jac_ast.name in ["attr_block", "walker_block"]:
             for i in kid:
@@ -121,19 +123,19 @@ class SentinelInterp(Interp):
                             arch.has_vars.append(var_name)
         arch.save()
 
-    def arch_can_compile(self, jac_ast, arch):
-        """Helper function to statically compile can stmts for arch"""
-        kid = self.set_cur_ast(jac_ast)
-        self.push_scope(JacScope(parent=self, has_obj=self, action_sets=[]))
-        if jac_ast.name in ["attr_block", "walker_block"]:
-            for i in kid:
-                if i.name == "attr_stmt" and i.kid[0].name == "can_stmt":
-                    self.run_can_stmt(i.kid[0], arch)
-        elif kid[0].name == "graph_block_spawn":
-            kid = kid[0].kid[2].kid
-            for i in kid:
-                self.run_can_stmt(i, arch)
-        self.pop_scope()
+    # def arch_can_compile(self, jac_ast, arch):
+    #     """Helper function to statically compile can stmts for arch"""
+    #     kid = self.set_cur_ast(jac_ast)
+    #     self.push_scope(JacScope(parent=self, has_obj=self, action_sets=[]))
+    #     if jac_ast.name in ["attr_block", "walker_block"]:
+    #         for i in kid:
+    #             if i.name == "attr_stmt" and i.kid[0].name == "can_stmt":
+    #                 self.run_can_stmt(i.kid[0], arch)
+    #     elif kid[0].name == "graph_block_spawn":
+    #         kid = kid[0].kid[2].kid
+    #         for i in kid:
+    #             self.run_can_stmt(i, arch)
+    #     self.pop_scope()
 
     def load_test(self, jac_ast):
         """

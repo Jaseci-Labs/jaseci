@@ -72,6 +72,7 @@ struct_block: LBRACE (has_stmt)* RBRACE | COLON has_stmt | SEMI;
 
 can_block: (can_stmt)*;
 
+//FIXME: Redundant
 graph_block: graph_block_spawn;
 
 graph_block_spawn:

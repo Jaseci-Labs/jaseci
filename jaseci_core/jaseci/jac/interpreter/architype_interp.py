@@ -9,6 +9,7 @@ from jaseci.prim.edge import Edge
 from jaseci.prim.walker import Walker
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
+from jaseci.jac.machine.jac_value import JacValue
 
 
 class ArchitypeInterp(Interp):
@@ -78,6 +79,7 @@ class ArchitypeInterp(Interp):
             )
             if kid[2].name == "namespaces":
                 item.namespaces = self.run_namespaces(jac_ast.kid[2])
+            self.build_object_with_supers(item, kid[-1])
         elif jac_ast.name == "graph_block":  # usedi n jac tests
             item = self.run_graph_block(jac_ast)
         self.pop_scope()
@@ -126,7 +128,20 @@ class ArchitypeInterp(Interp):
         graph_block: graph_block_spawn;
         """
         kid = self.set_cur_ast(jac_ast)
-        return getattr(self, f"run_{kid[0].name}")(kid[0])
+        return self.run_graph_block_spawn(kid[0])
+
+    def run_walker_block(self, jac_ast, obj):
+        """
+        walker_block:
+            LBRACE attr_stmt* walk_entry_block? (
+                statement
+                | walk_activity_block
+            )* walk_exit_block? RBRACE;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        for i in kid:
+            if i.name == "attr_stmt":
+                self.run_attr_stmt(jac_ast=i, obj=obj)
 
     def run_graph_block_spawn(self, jac_ast):
         """
@@ -163,6 +178,98 @@ class ArchitypeInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         return kid[2].token_text()
 
+    def run_attr_stmt(self, jac_ast, obj):
+        """
+        attr_stmt: has_stmt | can_stmt;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        if kid[0].name == "has_stmt":
+            self.run_has_stmt(kid[0], obj)
+        #  Can statements in architype handled in architype load
+
+    def run_has_stmt(self, jac_ast, obj):
+        """
+        has_stmt: KW_HAS has_assign (COMMA has_assign)* SEMI;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        for i in kid:
+            if i.name == "has_assign":
+                self.run_has_assign(i, obj)
+
+    def run_has_assign(self, jac_ast, obj):
+        """
+        has_assign: KW_PRIVATE? KW_ANCHOR? (NAME | NAME EQ expression);
+        """
+        kid = self.set_cur_ast(jac_ast)
+        while kid[0].name in ["KW_PRIVATE", "KW_ANCHOR"]:
+            kid = kid[1:]
+        var_name = kid[0].token_text()
+        var_val = None  # jac's null
+        if len(kid) > 1:
+            self.run_expression(kid[2])
+            var_val = self.pop().value
+        if isinstance(obj, dict):
+            obj[var_name] = var_val
+        # Runs only once for walkers
+        elif var_name not in obj.context.keys() or obj.j_type != "walker":
+            JacValue(
+                self, ctx=obj, name=var_name, value=var_val, create_mode=True
+            ).write(kid[0], force=True)
+
+    def run_can_stmt(self, jac_ast, obj):
+        """
+        can_stmt:
+            KW_CAN dotted_name (preset_in_out event_clause)? (
+                COMMA dotted_name (preset_in_out event_clause)?
+            )* SEMI
+            | KW_CAN NAME event_clause? code_block;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        kid = kid[1:]
+        while True:
+            action_type = "activity"
+            access_list = None
+            preset_in_out = None
+            if kid[0].name == "NAME":
+                action_name = kid[0].token_text()
+            else:
+                action_name = self.run_dotted_name(kid[0])
+            kid = kid[1:]
+            if len(kid) > 0 and kid[0].name == "preset_in_out":
+                preset_in_out = jac_ast_to_ir(kid[0])
+                kid = kid[1:]
+            if len(kid) > 0 and kid[0].name == "event_clause":
+                action_type, access_list = self.run_event_clause(kid[0])
+                kid = kid[1:]
+            if kid[0].name == "code_block":
+                obj.abilities[action_type][action_name] = {
+                    "code": jac_ast_to_ir(kid[0]),
+                    "access": access_list,
+                }
+                break
+            else:
+                self.check_builtin_action(action_name, jac_ast)
+                action_name = action_name.split(".")
+                obj.actions[action_type][action_name[0]] = {
+                    "name": action_name[1],
+                    "access": access_list,
+                }
+            if not len(kid) or kid[0].name != "COMMA":
+                break
+            else:
+                kid = kid[1:]
+
+    def run_event_clause(self, jac_ast):
+        """
+        event_clause:
+                KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
+        """
+        kid = self.set_cur_ast(jac_ast)
+        nl = []
+        if kid[1].name == "name_list":
+            nl = self.run_name_list(kid[1])
+        return kid[-1].token_text(), nl
+
     # Helper Functions ##################
 
     def build_object_with_supers(self, item, jac_ast):
@@ -173,5 +280,9 @@ class ArchitypeInterp(Interp):
                 .get_jac_ast()
                 .kid[-1]
             )
-            self.run_attr_block(super_jac_ast, item)
-        self.run_attr_block(jac_ast, item)
+            self.run_attr_block(super_jac_ast, item) if not isinstance(
+                item, Walker
+            ) else self.run_walker_block(super_jac_ast, item)
+        self.run_attr_block(jac_ast, item) if not isinstance(
+            item, Walker
+        ) else self.run_walker_block(jac_ast, item)

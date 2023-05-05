@@ -36,14 +36,10 @@ class WalkerInterp(Interp):
             )* walk_exit_block? RBRACE;
         """
         kid = self.set_cur_ast(jac_ast)
-        if self.current_step == 0:
-            for i in kid:
-                if i.name == "attr_stmt":
-                    self.run_attr_stmt(jac_ast=i, obj=self)
         archs = self.current_node.get_architype().arch_with_supers()
-        act_list = IdList(self)
+        act_list = []
         for i in archs:
-            act_list += i.entry_action_ids
+            act_list.append(i.action["entry"])
         self.auto_trigger_node_actions(nd=self.current_node, act_list=act_list)
 
         for i in kid:

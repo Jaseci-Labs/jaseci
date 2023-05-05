@@ -210,44 +210,6 @@ def load_preconfig_actions(hook):
             pass
 
 
-def get_global_actions():
-    """
-    Loads all global action hooks for use by Jac programs
-    Attaches globals to mem_hook
-    """
-    from jaseci.prim.action import Action
-    from jaseci.jsorc.memory import MemoryHook
-
-    global_action_list = []
-    hook = MemoryHook()
-    for i in live_actions.keys():
-        if (
-            i.startswith("std.")
-            or i.startswith("file.")
-            or i.startswith("net.")
-            or i.startswith("rand.")
-            or i.startswith("vector.")
-            or i.startswith("request.")
-            or i.startswith("date.")
-            or i.startswith("jaseci.")
-            or i.startswith("internal.")
-            or i.startswith("zip.")
-            or i.startswith("webtool.")
-            or i.startswith("url.")
-            or i.startswith("regex.")
-        ):
-            global_action_list.append(
-                Action(
-                    m_id=0,
-                    h=hook,
-                    mode="public",
-                    name=i,
-                    value=i,
-                )
-            )
-    return global_action_list
-
-
 def unload_remote_actions(url):
     """
     Get the list of actions from the given URL and then unload them.
