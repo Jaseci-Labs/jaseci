@@ -18,8 +18,11 @@ from pathlib import Path
 from datetime import datetime
 import warnings
 from jaseci.utils.utils import model_base_path
+from jaseci.utils.model_manager import ModelManager
+import shutil
 
 warnings.filterwarnings("ignore")
+
 
 config = configparser.ConfigParser()
 MODEL_BASE_PATH = model_base_path("jac_nlp/ent_ext")
@@ -47,25 +50,44 @@ def setup(reload=False):
     """create a tagger as per the model provided through config"""
 
     global tagger, NER_MODEL_NAME, NER_LABEL_TYPE, MODEL_TYPE, config
-    if reload is False:
-        config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
-    NER_MODEL_NAME = config["TAGGER_MODEL"]["NER_MODEL"]
-    NER_LABEL_TYPE = config["LABEL_TYPE"]["NER"]
-    MODEL_TYPE = config["TAGGER_MODEL"]["MODEL_TYPE"]
-    if MODEL_TYPE.lower() == "trfmodel" and NER_MODEL_NAME.lower() != "none":
-        tagger = TARSTagger(embeddings=NER_MODEL_NAME)
-    elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in ["lstm", "gru"]:
-        tagger = SequenceTagger.load(cached_path(NER_MODEL_NAME, MODEL_BASE_PATH))
-    elif MODEL_TYPE.lower() in "tars" and NER_MODEL_NAME.lower() != "none":
-        tagger = TARSTagger.load(cached_path(TARS_NER_PATH, MODEL_BASE_PATH))
-    print(f"loaded mode : [{NER_MODEL_NAME}]")
+    global model_manager, active_model_path
+    model_manager = ModelManager(MODEL_BASE_PATH)
+    if model_manager.get_latest_version():
+        active_model_path = model_manager.get_version_path()
+
+        if (active_model_path / "final-model.pt").exists():
+            tagger = TARSTagger.load(f"{active_model_path}/final-model.pt")
+        else:
+            tagger = TARSTagger.load(f"{active_model_path}/tars-ner.pt")
+        config.read(active_model_path / "config.cfg")
+        NER_MODEL_NAME = config["TAGGER_MODEL"]["NER_MODEL"]
+        NER_LABEL_TYPE = config["LABEL_TYPE"]["NER"]
+        MODEL_TYPE = config["TAGGER_MODEL"]["MODEL_TYPE"]
+    else:
+        active_model_path = model_manager.create_version_path()
+        if reload is False:
+            config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
+        NER_MODEL_NAME = config["TAGGER_MODEL"]["NER_MODEL"]
+        NER_LABEL_TYPE = config["LABEL_TYPE"]["NER"]
+        MODEL_TYPE = config["TAGGER_MODEL"]["MODEL_TYPE"]
+        if MODEL_TYPE.lower() == "trfmodel" and NER_MODEL_NAME.lower() != "none":
+            tagger = TARSTagger(embeddings=NER_MODEL_NAME)
+        elif NER_MODEL_NAME.lower() != "none" and MODEL_TYPE.lower() in ["lstm", "gru"]:
+            tagger = SequenceTagger.load(cached_path(NER_MODEL_NAME, active_model_path))
+        elif MODEL_TYPE.lower() in "tars" and NER_MODEL_NAME.lower() != "none":
+            tagger = TARSTagger.load(cached_path(TARS_NER_PATH, active_model_path))
+        shutil.copyfile(
+            os.path.join(os.path.dirname(__file__), "config.cfg"),
+            os.path.join(active_model_path, "config.cfg"),
+        )
+        print(f"loaded mode : [{NER_MODEL_NAME}]")
 
 
 def train_entity(train_params: dict):
     """
     funtion for training the model
     """
-    global tagger, NER_MODEL_NAME, MODEL_TYPE
+    global tagger, NER_MODEL_NAME, MODEL_TYPE, active_model_path
     # define columns
     columns = {0: "text", 1: "ner"}
     # directory where the data resides
@@ -98,9 +120,10 @@ def train_entity(train_params: dict):
         raise HTTPException(status_code=404, detail=str(f"Model load error : {e}"))
     #  initialize the Sequence trainer with your corpus
     trainer = ModelTrainer(tagger, corpus)
+    active_model_path = str(model_manager.create_version_path())
     # train model
     trainer.train(
-        base_path=f"train/{NER_MODEL_NAME}",  # path to store model
+        base_path=active_model_path,  # path to store model
         learning_rate=train_params["LR"],
         mini_batch_size=train_params["batch_size"],
         max_epochs=train_params["num_epoch"],
@@ -108,9 +131,9 @@ def train_entity(train_params: dict):
         train_with_dev=True,
     )
     #  Load trained Sequence Tagger model
-    tagger = tagger.load(f"train/{NER_MODEL_NAME}/final-model.pt")
+    tagger = tagger.load(f"{active_model_path}/final-model.pt")
     torch.cuda.empty_cache()
-    print("model training and loading completed")
+    print(f"model training and loading completed from {active_model_path.name}")
 
 
 # creating train val and test dataset
@@ -146,20 +169,23 @@ def create_train_data(dataset, fname):
 
 def train_and_val_entity(train_params: dict):
     """
-    funtion for training the model
+    function for training the model
     """
-    global tagger, NER_MODEL_NAME, MODEL_TYPE
-    train_with_test = False
-    train_with_dev = False
-    # define columns
-    columns = {0: "text", 1: "ner"}
-    # directory where the data resides
+    global tagger, NER_MODEL_NAME, MODEL_TYPE, active_model_path
+
+    # Define constants
     data_folder = "train"
-    # initializing the corpus
-    if (
-        os.path.isfile("train/val.txt")
-        and os.path.isfile("train/test.txt")
-        and os.path.isfile("train/train.txt")
+    checkpoint_file_path = Path(f"{active_model_path}/checkpoint.pt")
+    # Define columns
+    columns = {0: "text", 1: "ner"}
+
+    # Check if the necessary training files exist
+    if not os.path.isfile(f"{data_folder}/train.txt"):
+        raise FileNotFoundError(f"Cannot find the training file in {data_folder}")
+
+    # Initialize the corpus
+    if os.path.isfile(f"{data_folder}/val.txt") and os.path.isfile(
+        f"{data_folder}/test.txt"
     ):
         corpus: Corpus = ColumnCorpus(
             data_folder,
@@ -168,40 +194,27 @@ def train_and_val_entity(train_params: dict):
             dev_file="val.txt",
             test_file="test.txt",
         )
-        train_with_test = False
-        train_with_dev = False
-    elif os.path.isfile("train/test.txt") and os.path.isfile("train/train.txt"):
+    elif os.path.isfile(f"{data_folder}/test.txt"):
         corpus: Corpus = ColumnCorpus(
             data_folder,
             columns,
             train_file="train.txt",
             test_file="test.txt",
         )
-        train_with_test = False
-        train_with_dev = True
-    elif os.path.isfile("train/val.txt") and os.path.isfile("train/train.txt"):
+    elif os.path.isfile(f"{data_folder}/val.txt"):
         corpus: Corpus = ColumnCorpus(
             data_folder,
             columns,
             train_file="train.txt",
             dev_file="val.txt",
         )
-        train_with_test = True
-        train_with_dev = False
-    elif os.path.isfile("train/train.txt"):
-        corpus: Corpus = ColumnCorpus(data_folder, columns, train_file="train.txt")
-        train_with_test = True
-        train_with_dev = True
     else:
-        print("cannot find the training file ")
-        return
-    cp_path = Path("train/tars-ner/checkpoint.pt")
-    if (cp_path).exists():
-        print("in exists : ", cp_path)
-        tagger = TARSTagger.load(cp_path)
-        # make tag dictionary from the corpus
+        corpus: Corpus = ColumnCorpus(data_folder, columns, train_file="train.txt")
+
+    # Load the model from checkpoint if it exists
+    if checkpoint_file_path.exists():
+        tagger = TARSTagger.load(checkpoint_file_path)
         tag_dictionary = corpus.make_label_dictionary(label_type=NER_LABEL_TYPE)
-        # initialize sequence tagger
         try:
             tagger.add_and_switch_to_new_task(
                 "ner_train_nerd",
@@ -209,22 +222,19 @@ def train_and_val_entity(train_params: dict):
                 label_type=NER_LABEL_TYPE,
             )
         except Exception as e:
-            raise HTTPException(status_code=404, detail=str(f"Model load error : {e}"))
-        #  initialize the Sequence trainer with your corpus
+            raise HTTPException(status_code=404, detail=f"Model load error: {e}")
         trainer = ModelTrainer(tagger, corpus)
-        # train model
         trainer.resume(
-            model=tagger,  # path to store model
+            model=tagger,
             learning_rate=train_params["LR"],
             mini_batch_size=train_params["batch_size"],
             max_epochs=train_params["num_epoch"],
-            train_with_test=train_with_test,
-            train_with_dev=train_with_dev,
+            train_with_test=True,
+            train_with_dev=True,
             embeddings_storage_mode="cuda",
             checkpoint=True,
         )
     else:
-        # make tag dictionary from the corpus
         tag_dictionary = corpus.make_label_dictionary(label_type=NER_LABEL_TYPE)
         try:
             tagger.add_and_switch_to_new_task(
@@ -233,23 +243,26 @@ def train_and_val_entity(train_params: dict):
                 label_type=NER_LABEL_TYPE,
             )
         except Exception as e:
-            raise HTTPException(status_code=404, detail=str(f"Model load error : {e}"))
-        #  initialize the Sequence trainer with your corpus
+            raise HTTPException(status_code=404, detail=f"Model load error: {e}")
         trainer = ModelTrainer(tagger, corpus)
-        # train model
+        active_model_path = str(model_manager.create_version_path())
         trainer.train(
-            base_path=f"train/{NER_MODEL_NAME}",  # path to store model
+            base_path=active_model_path,
             learning_rate=train_params["LR"],
             mini_batch_size=train_params["batch_size"],
             max_epochs=train_params["num_epoch"],
-            train_with_test=train_with_dev,
-            train_with_dev=train_with_dev,
+            train_with_test=True,
+            train_with_dev=True,
             checkpoint=True,
         )
-    #  Load trained Sequence Tagger model
-    tagger = tagger.load(f"train/{NER_MODEL_NAME}/final-model.pt")
+
+    # Load trained Sequence Tagger model
+    tagger = tagger.load(f"{active_model_path}/final-model.pt")
     torch.cuda.empty_cache()
-    print("model training and loading completed")
+    with open(f"{active_model_path}/config.cfg", "w") as configfile:
+        config.write(configfile)
+    print("Model training and loading completed.")
+    return active_model_path.name
 
 
 # defining the api for entity detection
@@ -322,10 +335,10 @@ def train(
     if len(train_data) != 0:
         completed = create_train_data(train_data, "train")
         if completed is True:
-            train_and_val_entity(train_params)
+            version_id = train_and_val_entity(train_params)
             total_time = datetime.now() - time1
             print(f"total time taken to complete Training : {total_time}")
-            return "Model Training is Completed"
+            return f"Model Training is Completed, VersionId: {version_id}"
         else:
             raise HTTPException(
                 status_code=500,
@@ -338,22 +351,18 @@ def train(
 
 
 @jaseci_action(act_group=["ent_ext"], allow_remote=True)
-def save_model(model_path: str):
+def save_model(version_id: Optional[str] = None):
     """
     saves the model to the provided model_path
     """
-    global tagger
+    global tagger, active_model_path
     if tagger is not None:
         try:
-            if not model_path.isalnum():
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid model name,Only alphanumeric chars allowed",
-                )
-            if type(model_path) is str:
-                model_path = Path(model_path)
-            model_path.mkdir(exist_ok=True, parents=True)
-            tagger.save(model_path / "final-model.pt", checkpoint=False)
+            active_model_path = model_manager.create_version_path(version_id)
+            tagger.save(active_model_path / "final-model.pt", checkpoint=False)
+            with open(f"{active_model_path}/config.cfg", "w") as configfile:
+                config.write(configfile)
+            return f"Saved model to : {active_model_path.name}"
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     else:
@@ -363,23 +372,23 @@ def save_model(model_path: str):
 
 
 @jaseci_action(act_group=["ent_ext"], allow_remote=True)
-def load_model(model_path="default_path", default=False):
+def load_model(version_id=None, default=False):
     """
     loads the model from the provided model_path
     """
-    global tagger
+    global tagger, active_model_path
     try:
         if default is True:
+            model_manager.set_latest_version()
             setup()
-            return f"[deafaul model loaded model from] : {config['TAGGER_MODEL']['NER_MODEL']}"  # noqa
-        if type(model_path) is str:
-            model_path = Path(model_path)
-        if (model_path / "final-model.pt").exists():
+            return f"[default model loaded model from] : {config['TAGGER_MODEL']['NER_MODEL']}"  # noqa
+        active_model_path = model_manager.get_version_path(version_id)
+        if (active_model_path / "final-model.pt").exists():
             tagger.load_state_dict(
-                tagger.load(model_path / "final-model.pt").state_dict()
+                tagger.load(active_model_path / "final-model.pt").state_dict()
             )
-        tagger.to(device)
-        return f"[loaded model from] : {model_path}"
+            tagger.to(device)
+            return f"[loaded model from] : {active_model_path.name}"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -395,13 +404,11 @@ def set_config(ner_model: str = None, model_type: str = None):
     1. "TRFMODEL" : for huggingface models
     2. "LSTM" or "GRU" : RNN models
     """
-    global config
-    config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
-
+    global config, active_model_path
     if ner_model or model_type:
         config["TAGGER_MODEL"]["NER_MODEL"] = ner_model
         config["TAGGER_MODEL"]["MODEL_TYPE"] = model_type
-    with open("config.cfg", "w") as configfile:
+    with open(f"{active_model_path}/config.cfg", "w") as configfile:
         config.write(configfile)
     try:
         setup(reload=True)

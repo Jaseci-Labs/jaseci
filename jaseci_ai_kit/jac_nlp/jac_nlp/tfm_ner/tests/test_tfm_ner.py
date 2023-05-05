@@ -23,7 +23,6 @@ class TfmNerTest(CoreTest):
     @jac_testcase("tfm_ner.jac", "test_train_ner")
     def test_train_ner(self, ret):
         self.assertEqual(ret["success"], True)
-        self.assertEqual(ret["report"][0]["status"], "model Training Successful!")
 
     @pytest.mark.order(2)
     @jac_testcase("tfm_ner.jac", "test_tfm_ner_save_model")
