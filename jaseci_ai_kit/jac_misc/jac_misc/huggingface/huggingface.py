@@ -35,6 +35,12 @@ def query(
             f"Task {task} or model {model} not found. Please check the documentation for a list of available tasks and models."
         )
         return
+    if not task and not api_type and not api_url:
+        logger.error(
+            "Please pass either a task and model or an api_type and api_url. Please check the documentation for a list of available tasks and models."
+        )
+        return
+
 
     HEADERS = {"Authorization": f"Bearer {os.environ['HUGGINGFACE_API_KEY']}"}
 

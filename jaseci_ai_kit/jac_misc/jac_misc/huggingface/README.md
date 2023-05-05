@@ -30,12 +30,16 @@ You can use the `query` action to query the HuggingFace API. The `query` action 
 
 #### Parameters:
 
-- `task`: str, required
+- `task`: str, optional (default=`None`)
     The task to query the API for. The available tasks are listed [here](#Models).
 - `model`: str, optional (default=`default`)
     The name of the model to use for the task. If not provided, the default model for the task will be used. Check [here](#Models) for the default models for each task and the available models for each task.
+- `api_url`: str, optional (default=`None`)
+    The URL of the HuggingFace API or Custom HF Inference Endpoint.
+- `api_type`: str, optional (default=`None`)
+    The type of the HuggingFace API. The available types are `inputs` and `file`.
 - `other parameters`: required for each task
-    The parameters required for each task are listed [here](#Models).
+    The parameters required for each task are listed [here](#example).
 
 #### Returns:
 The `query` action returns the response from the HuggingFace API as a JSON output.
