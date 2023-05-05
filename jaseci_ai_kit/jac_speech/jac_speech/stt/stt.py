@@ -6,15 +6,28 @@ import torch
 import whisper
 import numpy as np
 import librosa
+from jaseci.utils.model_manager import ModelManager
+from jaseci.utils.utils import model_base_path
 
 
+MODEL_BASE_PATH = model_base_path("jac_speech/stt")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 @jaseci_action(act_group=["stt"], allow_remote=True)
 def setup(variant: str = "small"):
     global model, options
-    model = whisper.load_model(variant, device=DEVICE)
+    model_manager = ModelManager(MODEL_BASE_PATH)
+    if model_manager.get_latest_version():
+        active_model_path = model_manager.get_version_path()
+        model = whisper.load_model(
+            variant, download_root=active_model_path, device=DEVICE
+        )
+    else:
+        active_model_path = model_manager.create_version_path()
+        model = whisper.load_model(
+            variant, download_root=active_model_path, device=DEVICE
+        )
     print(
         f"Model is {'multilingual' if model.is_multilingual else 'English-only'} "
         f"and has {sum(np.prod(p.shape) for p in model.parameters()):,} parameters."

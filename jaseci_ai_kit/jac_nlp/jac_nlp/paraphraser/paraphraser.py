@@ -8,28 +8,40 @@ from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.jsorc.remote_actions import launch_server
 from fastapi import HTTPException
 from traceback import print_exc
+from jaseci.utils.model_manager import ModelManager
+from jaseci.utils.utils import model_base_path
 
+
+MODEL_BASE_PATH = model_base_path("jac_nlp/paraphraser")
 warnings.filterwarnings("ignore")
 warnings.warn("ignore")
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.cfg"))
 
-model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"]["T5-SMALL"])
-tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"]["T5-SMALL"])
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = model.to(device)
 
 
-@jaseci_action(act_group=["setup"], allow_remote=True)
+@jaseci_action(act_group=["paraphraser"], allow_remote=True)
 def setup(model_name: str = "T5-SMALL", tokenizer_name: str = "T5-SMALL"):
     global model, tokenizer
-
-    model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"][model_name]).to(
-        device
-    )
-    tokenizer = AutoTokenizer.from_pretrained(config["TOKENIZER"][tokenizer_name])
+    model_manager = ModelManager(MODEL_BASE_PATH)
+    if model_manager.get_latest_version():
+        active_model_path = model_manager.get_version_path()
+        tokenizer = AutoTokenizer.from_pretrained(
+            active_model_path, local_files_only=True
+        )
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            active_model_path, local_files_only=True
+        )
+    else:
+        active_model_path = model_manager.create_version_path()
+        tokenizer = AutoTokenizer.from_pretrained(config["MODEL"][tokenizer_name])
+        model = AutoModelForSeq2SeqLM.from_pretrained(config["MODEL"][model_name])
+        model.save_pretrained(active_model_path)
+        tokenizer.save_vocabulary(active_model_path)
+    model.to(device)
 
 
 @jaseci_action(act_group=["paraphraser"], allow_remote=True)

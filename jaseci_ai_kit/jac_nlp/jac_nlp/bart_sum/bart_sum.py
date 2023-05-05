@@ -7,24 +7,35 @@ from fastapi import HTTPException
 import requests
 from bs4 import BeautifulSoup
 from jaseci.utils.utils import logger
+from jaseci.utils.model_manager import ModelManager
+from jaseci.utils.utils import model_base_path
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+MODEL_BASE_PATH = model_base_path("jac_nlp/bart_sum")
 
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
 def setup(
-    tokenizer: str = "facebook/bart-large-cnn",
-    model: str = "philschmid/bart-large-cnn-samsum",
+    tokenizer: str = "facebook/bart-large-cnn", model: str = "facebook/bart-large-cnn"
 ):
     global bart_tokenizer, bart_model
-    try:
-        bart_tokenizer = BartTokenizer.from_pretrained(tokenizer)
-        bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
-        logger.info(f"{model} - model loaded successfully")
-    except Exception as e:
-        logger.error(
-            f"unable to load model: {model} and tokenize: {tokenizer}\nException: {e}"
+    model_manager = ModelManager(MODEL_BASE_PATH)
+    if model_manager.get_latest_version():
+        active_model_path = model_manager.get_version_path()
+        bart_tokenizer = BartTokenizer.from_pretrained(
+            active_model_path, local_files_only=True
         )
+        bart_model = BartForConditionalGeneration.from_pretrained(
+            active_model_path, local_files_only=True
+        )
+    else:
+        active_model_path = model_manager.create_version_path()
+        bart_tokenizer = BartTokenizer.from_pretrained(tokenizer)
+        bart_model = BartForConditionalGeneration.from_pretrained(model)
+        bart_model.save_pretrained(active_model_path)
+        bart_tokenizer.save_vocabulary(active_model_path)
+    bart_model.to(device)
 
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
