@@ -20,6 +20,7 @@ import warnings
 from jaseci.utils.utils import model_base_path
 from jaseci.utils.model_manager import ModelManager
 import shutil
+import traceback
 
 warnings.filterwarnings("ignore")
 
@@ -262,7 +263,7 @@ def train_and_val_entity(train_params: dict):
     with open(f"{active_model_path}/config.cfg", "w") as configfile:
         config.write(configfile)
     print("Model training and loading completed.")
-    return active_model_path.name
+    return active_model_path.split("/")[-1]
 
 
 # defining the api for entity detection
@@ -325,29 +326,33 @@ def train(
     """
     API for training the model
     """
-    time1 = datetime.now()
-    if len(val_data) != 0:
-        create_train_data(val_data, "val")
+    try:
+        time1 = datetime.now()
+        if len(val_data) != 0:
+            create_train_data(val_data, "val")
 
-    if len(test_data) != 0:
-        create_train_data(test_data, "test")
+        if len(test_data) != 0:
+            create_train_data(test_data, "test")
 
-    if len(train_data) != 0:
-        completed = create_train_data(train_data, "train")
-        if completed is True:
-            version_id = train_and_val_entity(train_params)
-            total_time = datetime.now() - time1
-            print(f"total time taken to complete Training : {total_time}")
-            return f"Model Training is Completed, VersionId: {version_id}"
+        if len(train_data) != 0:
+            completed = create_train_data(train_data, "train")
+            if completed is True:
+                version_id = train_and_val_entity(train_params)
+                total_time = datetime.now() - time1
+                print(f"total time taken to complete Training : {total_time}")
+                return f"Model Training is Completed, VersionId: {version_id}"
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail=str("Issue encountered during train data creation"),
+                )
         else:
             raise HTTPException(
-                status_code=500,
-                detail=str("Issue encountered during train data creation"),
+                status_code=404, detail=str("Need Data for Text and Entity")
             )
-    else:
-        raise HTTPException(
-            status_code=404, detail=str("Need Data for Text and Entity")
-        )
+    except Exception as e:
+        traceback.print_exc()
+        return str(e)
 
 
 @jaseci_action(act_group=["ent_ext"], allow_remote=True)
