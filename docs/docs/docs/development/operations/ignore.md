@@ -38,3 +38,5 @@ Expected Output:
 Joe
 Susan
 ```
+
+You can see in the above example; the nodes connected with `family` type edges is ignored while visiting nodes. The magic is happening because of the `ignore -[family]->;` line. Change the edge type and play with the code.

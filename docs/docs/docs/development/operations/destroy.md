@@ -34,7 +34,7 @@ person {
 }
 ```
 
-The majic line in the above code is the `for i in -[friend]->: destroy i;` it instruct walker to remove all the nodes connected by friend edges. try playing with the code by removing and adding `destroy` command.
+The majic line in the above code is the `for i in -[friend]->: destroy i;` it instruct walker to remove all the nodes connected by friend edges. Try playing with the code by removing and adding `destroy` command.
 
 
 |                Graph before `destroy` command                |                 Graph after `destroy` command                 |
