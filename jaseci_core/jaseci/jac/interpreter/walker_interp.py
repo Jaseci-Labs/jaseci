@@ -205,7 +205,7 @@ class WalkerInterp(Interp):
         m.push_scope(
             JacScope(parent=self, has_obj=obj, action_sets=[arch.activity_action_ids])
         )
-        m._jac_scope.set_agent_refs(cur_node=self.current_node, cur_walker=self)
+        m._jac_scope.set_refs(here=self.current_node, visitor=self)
 
         if kid[1].name == "param_list":
             param_list = m.run_param_list(kid[1]).value
@@ -254,7 +254,7 @@ class WalkerInterp(Interp):
                 ],
             )
         )
-        self._jac_scope.set_agent_refs(cur_node=self.current_node, cur_walker=self)
+        self._jac_scope.set_refs(here=self.current_node, visitor=self)
 
         run_func(jac_ast)
         self.pop_scope()

@@ -11,7 +11,12 @@ global_action_sets = None
 
 
 class JacScope:
-    def __init__(self, parent, has_obj, action_sets):
+    def __init__(
+        self,
+        parent,
+        has_obj,
+        action_sets,
+    ):
         self.parent = parent
         self.local_scope = {}
         self.has_obj = has_obj if has_obj else self
@@ -53,19 +58,21 @@ class JacScope:
                 action_sets[group] = act
         return action_sets
 
-    def set_agent_refs(self, cur_node, cur_walker):
-        self.local_scope["here"] = cur_node
-        self.local_scope["visitor"] = cur_walker
+    def set_refs(self, here, visitor):
+        self.local_scope["here"] = here
+        self.local_scope["visitor"] = visitor
 
-    def inherit_agent_refs(self, src_scope, src_node):  # used for calls of abilities
-        self.local_scope["here"] = src_node
-        self.local_scope["visitor"] = src_scope.local_scope["visitor"]
-
-    def get_aganet_refs(self):
+    def get_refs(self):
         return {
             "here": self.local_scope["here"],
             "visitor": self.local_scope["visitor"],
         }
+
+    def here(self):
+        return self.local_scope["here"]
+
+    def visitor(self):
+        return self.local_scope["visitor"]
 
     def find_live_attr(self, name, allow_read_only=True):
         """Finds binding for variable if not in standard scope"""
