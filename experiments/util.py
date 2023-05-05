@@ -13,6 +13,6 @@ def authenticate():
 
 # Port forward, useful for local experiment
 def port_fowrward():
-    cmd = "kubectl port-forward svc/jaseci 8000:80"
+    cmd = f"kubectl port-forward --namespace {config.namespace} svc/jaseci 8000:80"
     proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
     subprocess.run(["sleep", "1"])

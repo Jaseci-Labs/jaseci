@@ -14,7 +14,6 @@ from jaseci.utils.utils import model_base_path
 from jaseci.utils.model_manager import ModelManager
 import os
 
-
 """
 Declaring the training config
 """
@@ -40,6 +39,23 @@ def setup(model_name="all-mpnet-base-v2"):
         active_model_path = str(model_manager.create_version_path())
         model = SentenceTransformer(model_name)
         model.save(active_model_path)
+
+
+SBERT_SIM_ROOT = str(model_base_path("jac_nlp/sbert_sim"))
+
+
+@jaseci_action(act_group=["sbert_sim"], allow_remote=True)
+def setup(model_name="all-mpnet-base-v2"):
+    global model
+    os.makedirs(SBERT_SIM_ROOT, exist_ok=True)
+    if all(
+        os.path.isfile(os.path.join(SBERT_SIM_ROOT, f_name))
+        for f_name in ["pytorch_model.bin"]
+    ):
+        model = SentenceTransformer(SBERT_SIM_ROOT)
+    else:
+        model = SentenceTransformer(model_name)
+        model.save(SBERT_SIM_ROOT)
 
 
 def create_model(model_name="bert-base-uncased", max_seq_length=256):

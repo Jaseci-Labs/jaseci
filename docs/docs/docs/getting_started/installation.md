@@ -5,7 +5,7 @@ description: A step by step guide to installation.
 
 # Jaseci Installation Guide
 
-Welcome to the Jaseci installation guide! We are excited that you have decided to explore the world of Jaseci, and we are here to assist you in the installation process.
+Welcome to the Jaseci! We are excited that you have decided to explore the world of Jaseci, and we are here to assist you in the installation process.
 
 Jaseci offers a range of packages that can enhance the production of bleeding edge AI, including the Jaseci NLP library, Jaseci Speech library, Jaseci Miscellaneous library, and JAC Vision. Additionally, the Jaseci VS Code Extension provides syntax highlighting and auto-complete features, while Jaseci Studio allows Jaseci hackers to develop programs and visualize the graph output seamlessly. Furthermore, Jaseci Studio includes features that enable you to test and develop JAC programs, which we will cover in later sections.
 
@@ -16,7 +16,7 @@ Jaseci is tested and supported on the following systems:
 * Windows WSL2
 * macOS* (see note below for compatibility with Apple silicon)
 
-## Windows setup
+## Windows Setup
 
 To run commands for Jaseci we need a terminal that accepts bash arguments. We recommend using the Ubuntu terminal that comes as the default with WSL.
 
@@ -27,6 +27,7 @@ Check if WSL is installed by running the following the Windows powershell termin
  ```python
  wsl -l -v
  ```
+
  This will return  the flavour of the distribution used for WSL. The version column will show the version of WSL.
 
 **Step 2:**
@@ -43,7 +44,7 @@ Restart your Computer
 
 **Step 4:**
 
-Open the Ubuntu terminal. for more information on installation see [here.](https://docs.microsoft.com/en-us/windows/wsl/install)
+Open the Ubuntu terminal. For more information on installation see [here.](https://docs.microsoft.com/en-us/windows/wsl/install)
 
 
 ## Install Jaseci in Debian or WSL2
@@ -67,7 +68,7 @@ apt-get install python3.10-dev python3-pip git g++ build-essential pkg-config cm
 
 **Step 2:**
 
-Install `pip` python paackage manager
+Install `pip` python package manager
 
 ```bash
 # Upgrade pip to the latest
@@ -76,7 +77,7 @@ pip install --upgrade pip
 
 **Step 3:**
 
-Once all the dependencies are installed. Now to install Jaseci
+Once all the dependencies are installed. Now lets install Jaseci.
 
 ```bash
 pip install jaseci
@@ -84,16 +85,38 @@ pip install jaseci
 
 **Step 4:**
 
-To ensure our installation is working run :
+To ensure our installation is working run;
 
 ```
-jsctl
+jsctl --help
 ```
 
-Once it shows a list of options and commands, you're installation is complete.
+Once it shows a list of options and commands as follows, you're installation is complete.
+
+```
+  The Jaseci Command Line Interface
+
+Options:
+  -f, --filename TEXT  Specify filename for session state.
+  -m, --mem-only       Set true to not save file for session.
+  --help               Show this message and exit.
+
+Commands:
+  actions     Group of `actions` commands
+  alias       Group of `alias` commands
+  apply       Group of `apply` commands
+  architype   Group of `architype` commands
+  booktool    Internal book generation tools
+  clear       Clear terminal
+  config      Group of `config` commands
+  edit        Edit a file
+  .
+  .
+  .
+  .
+```
 
 ## Install Jaseci on MacOS
-
 
 **Step 1:**
 
@@ -113,13 +136,36 @@ pip install jaseci
 ```
 
 **Step 3:**
-To ensure our installation is working run :
+To ensure our installation is working run;
 
 ```
-jsctl
+jsctl --help
 ```
 
-Once it shows a list of options and commands, you're installation is complete.
+Once it shows a list of options and commands as follows, you're installation is complete.
+
+```
+  The Jaseci Command Line Interface
+
+Options:
+  -f, --filename TEXT  Specify filename for session state.
+  -m, --mem-only       Set true to not save file for session.
+  --help               Show this message and exit.
+
+Commands:
+  actions     Group of `actions` commands
+  alias       Group of `alias` commands
+  apply       Group of `apply` commands
+  architype   Group of `architype` commands
+  booktool    Internal book generation tools
+  clear       Clear terminal
+  config      Group of `config` commands
+  edit        Edit a file
+  .
+  .
+  .
+  .
+```
 
 >
 > **Note**

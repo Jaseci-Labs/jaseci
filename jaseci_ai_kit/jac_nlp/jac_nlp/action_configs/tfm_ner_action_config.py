@@ -1,16 +1,17 @@
 TFM_NER_ACTION_CONFIG = {
     "module": "jac_nlp.tfm_ner",
     "loaded_module": "jac_nlp.tfm_ner.tfm_ner",
+    "local_mem_requirement": 1014.12,
     "remote": {
         "Service": {
             "kind": "Service",
             "apiVersion": "v1",
-            "metadata": {"name": "bi-enc", "creationTimestamp": None},
+            "metadata": {"name": "tfm-ner", "creationTimestamp": None},
             "spec": {
                 "ports": [
                     {"name": "http", "protocol": "TCP", "port": 80, "targetPort": 80}
                 ],
-                "selector": {"pod": "bi-enc"},
+                "selector": {"pod": "tfm-ner"},
                 "type": "ClusterIP",
                 "sessionAffinity": "None",
                 "internalTrafficPolicy": "Cluster",
@@ -21,7 +22,7 @@ TFM_NER_ACTION_CONFIG = {
             "kind": "ConfigMap",
             "apiVersion": "v1",
             "metadata": {
-                "name": "bi-enc-up",
+                "name": "tfm-ner-up",
                 "creationTimestamp": None,
             },
             "data": {
@@ -31,35 +32,43 @@ TFM_NER_ACTION_CONFIG = {
         "Deployment": {
             "kind": "Deployment",
             "apiVersion": "apps/v1",
-            "metadata": {"name": "bi-enc", "creationTimestamp": None},
+            "metadata": {"name": "tfm-ner", "creationTimestamp": None},
             "spec": {
                 "replicas": 1,
-                "selector": {"matchLabels": {"pod": "bi-enc"}},
+                "selector": {"matchLabels": {"pod": "tfm-ner"}},
                 "template": {
                     "metadata": {
-                        "name": "bi-enc",
+                        "name": "tfm-ner",
                         "creationTimestamp": None,
-                        "labels": {"pod": "bi-enc"},
+                        "labels": {"pod": "tfm-ner"},
                     },
                     "spec": {
                         "volumes": [
                             {
                                 "name": "prod-script",
-                                "configMap": {"name": "bi-enc-up", "defaultMode": 420},
-                            }
+                                "configMap": {"name": "tfm-ner-up", "defaultMode": 420},
+                            },
+                            {
+                                "name": "jac-nlp-volume",
+                                "persistentVolumeClaim": {"claimName": "jac-nlp-pvc"},
+                            },
                         ],
                         "containers": [
                             {
-                                "name": "bi-enc",
-                                "image": "jaseci/jac-nlp:latest",
-                                "command": ["bash", "-c", "source script/prod_up"],
+                                "name": "tfm-ner",
+                                "image": "jaseci/jac-nlp:1.4.0.18",
+                                "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "3Gi"},
-                                    "requests": {"memory": "3Gi"},
+                                    "limits": {"memory": "2Gi"},
+                                    "requests": {"memory": "2Gi"},
                                 },
                                 "volumeMounts": [
-                                    {"name": "prod-script", "mountPath": "/script"}
+                                    {"name": "prod-script", "mountPath": "/script"},
+                                    {
+                                        "name": "jac-nlp-volume",
+                                        "mountPath": "/root/.jaseci/models/",
+                                    },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",
