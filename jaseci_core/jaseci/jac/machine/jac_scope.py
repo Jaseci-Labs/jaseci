@@ -3,7 +3,6 @@ Variable scope manager for Jac
 
 Utility for all runtime interaction with variables in different scopes
 """
-from jaseci.utils.id_list import IdList
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jsorc.live_actions import get_global_actions
 
@@ -23,7 +22,7 @@ class JacScope:
     def setup_actions(self):
         global global_action_sets
         if global_action_sets is None:
-            global_action_sets = self.group_actions(get_global_actions())
+            global_action_sets = get_global_actions()
         allactions = []
         for i in self.action_sets:
             allactions += i.obj_list()
@@ -40,19 +39,6 @@ class JacScope:
             self.action_sets[group][action] = act
         else:
             self.action_sets[group] = act
-
-    def group_actions(self, act_list):
-        action_sets = {}
-        for act in act_list:
-            group = act.name.split(".")[0]
-            if "." in act.name:
-                if group not in action_sets.keys():
-                    action_sets[group] = {}
-                action = act.name.split(".")[1]
-                action_sets[group][action] = act
-            else:
-                action_sets[group] = act
-        return action_sets
 
     def set_refs(self, here, visitor):
         self.local_scope["here"] = here
