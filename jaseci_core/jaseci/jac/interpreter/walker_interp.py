@@ -40,10 +40,7 @@ class WalkerInterp(Interp):
             for i in kid:
                 if i.name == "attr_stmt":
                     self.run_attr_stmt(jac_ast=i, obj=self)
-        archs = self.current_node.get_architype().arch_with_supers()
-        act_list = IdList(self)
-        for i in archs:
-            act_list += i.entry_action_ids
+        act_list = self.current_node.get_architype().get_entry_actions()
         self.auto_trigger_node_actions(act_list=act_list)
 
         for i in kid:
@@ -54,11 +51,7 @@ class WalkerInterp(Interp):
             if i.name == "walk_activity_block":
                 self.run_walk_activity_block(i)
 
-        # self.trigger_activity_actions()
-        archs = self.current_node.get_architype().arch_with_supers()
-        act_list = IdList(self)
-        for i in archs:
-            act_list += i.exit_action_ids
+        act_list = self.current_node.get_architype().get_exit_actions()
         self.auto_trigger_node_actions(act_list=act_list)
 
         if not self.yielded and kid[-2].name == "walk_exit_block":
