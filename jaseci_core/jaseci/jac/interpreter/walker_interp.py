@@ -246,8 +246,6 @@ class WalkerInterp(Interp):
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
-        node_arch = self.current_node.get_architype()
-        walk_arch = self.get_architype()
         self.push_scope(
             JacScope(parent=self, has_obj=self, here=self.current_node, visitor=self)
         )
