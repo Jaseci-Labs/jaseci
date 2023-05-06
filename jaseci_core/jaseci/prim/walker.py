@@ -120,8 +120,6 @@ class Walker(Element, WalkerInterp, Anchored):
 
     def prime(self, start_node, prime_ctx=None, request_ctx=None):
         """Place walker on node and get ready to step step"""
-        if not self.yielded:
-            self.clear_state()
         if not self.yielded or not len(self.next_node_ids):  # modus ponens
             self.next_node_ids.add_obj(start_node, push_front=True)
         if prime_ctx:

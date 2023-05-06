@@ -72,9 +72,7 @@ struct_block: LBRACE (has_stmt)* RBRACE | COLON has_stmt | SEMI;
 
 can_block: (can_stmt)*;
 
-graph_block: graph_block_spawn;
-
-graph_block_spawn:
+graph_block:
 	LBRACE has_root can_block KW_SPAWN code_block RBRACE
 	| COLON has_root can_block KW_SPAWN code_block SEMI;
 

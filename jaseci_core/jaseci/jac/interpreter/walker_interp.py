@@ -9,7 +9,6 @@ from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.jac.ir.jac_code import jac_ir_to_ast
-from jaseci.utils.id_list import IdList
 
 
 class WalkerInterp(Interp):
@@ -36,10 +35,6 @@ class WalkerInterp(Interp):
             )* walk_exit_block? RBRACE;
         """
         kid = self.set_cur_ast(jac_ast)
-        if self.current_step == 0:
-            for i in kid:
-                if i.name == "attr_stmt":
-                    self.run_attr_stmt(jac_ast=i, obj=self)
         act_list = self.current_node.get_architype().get_entry_actions()
         self.auto_trigger_node_actions(act_list=act_list)
 

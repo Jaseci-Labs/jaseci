@@ -69,6 +69,9 @@ class Architype(Element, JacCode, ArchitypeInterp):
             names += i.super_archs + [i.name]
         return names
 
+    def get_architype(self):
+        return self
+
     def is_instance(self, name):
         return name in self.derived_types()
 
