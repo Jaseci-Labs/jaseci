@@ -1818,9 +1818,14 @@ class Interp(VirtualMachine):
         m.current_node = nd
         arch = nd.get_architype()
         m.push_scope(
-            JacScope(parent=self, has_obj=nd, action_sets=[arch.get_all_actions()])
+            JacScope(
+                parent=self,
+                has_obj=nd,
+                action_sets=[arch.get_all_actions()],
+                here=nd,
+                visitor=self._jac_scope.visitor(),
+            )
         )
-        m._jac_scope.set_refs(nd, self._jac_scope.visitor())
         try:
             m.run_code_block(jac_ir_to_ast(act_list.get_obj_by_name(name).value))
         except Exception as e:

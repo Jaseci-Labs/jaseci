@@ -11,17 +11,13 @@ global_action_sets = None
 
 
 class JacScope:
-    def __init__(
-        self,
-        parent,
-        has_obj,
-        action_sets,
-    ):
+    def __init__(self, parent, has_obj, action_sets, here=None, visitor=None):
         self.parent = parent
         self.local_scope = {}
         self.has_obj = has_obj if has_obj else self
         self.context = {}
-        self.action_sets = action_sets
+        self.action_sets = []
+        self.set_refs(here, visitor)
         self.setup_actions()
 
     def setup_actions(self):
@@ -61,6 +57,11 @@ class JacScope:
     def set_refs(self, here, visitor):
         self.local_scope["here"] = here
         self.local_scope["visitor"] = visitor
+        if here and visitor:
+            self.action_sets = [
+                visitor.get_architype().get_all_actions(),
+                here.get_architype().get_all_actions(),
+            ]
 
     def get_refs(self):
         return {
