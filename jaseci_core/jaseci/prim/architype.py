@@ -42,16 +42,16 @@ class Architype(Element, JacCode, ArchitypeInterp):
                 actions += getattr(i, j)
         return actions
 
-    def get_entry_actions(self):
+    def get_entry_abilities(self):
         return self.get_actions(["entry_ability_ids"])
 
-    def get_activity_actions(self):
+    def get_activity_abilities(self):
         return self.get_actions(["activity_ability_ids"])
 
-    def get_exit_actions(self):
+    def get_exit_abilities(self):
         return self.get_actions(["exit_ability_ids"])
 
-    def get_all_actions(self):
+    def get_all_abilities(self):
         return self.get_actions(
             ["entry_ability_ids", "activity_ability_ids", "exit_ability_ids"]
         )

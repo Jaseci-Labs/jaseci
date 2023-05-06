@@ -778,7 +778,7 @@ class Interp(VirtualMachine):
             self.call_ability(
                 nd=atom_res.value,
                 name=kid[1].token_text(),
-                act_list=arch.get_all_actions(),
+                act_list=arch.get_all_abilities(),
             )
             return atom_res
 
