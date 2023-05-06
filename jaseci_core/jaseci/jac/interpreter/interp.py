@@ -749,27 +749,31 @@ class Interp(VirtualMachine):
                 if not self.rt_check_type(atom_res.value, [list, str, dict], kid[0]):
                     return atom_res
                 return self.run_index_slice(kid[0], atom_res)
-            elif kid[0].name == "LPAREN":
-                param_list = {"args": [], "kwargs": {}}
-                if kid[1].name == "param_list":
-                    param_list = self.run_param_list(kid[1]).value
-                if isinstance(atom_res.value, Ability):
-                    ret = atom_res.value.trigger(param_list, self._jac_scope, self)
-                    return JacValue(self, value=ret)
-                else:
-                    self.rt_error("Unable to execute ability", kid[0])
-            elif kid[0].name == "ability_op":
-                arch = self.run_ability_op(kid[0], atom_res)
-                if len(kid) > 2:
-                    self.run_spawn_ctx(kid[2], atom_res.value)
-                self.call_ability(
-                    nd=atom_res.value,
-                    name=kid[1].token_text(),
-                    act_list=arch.get_all_actions(),
-                )
-                return atom_res
+            else:
+                return self.run_ability(kid, atom_res)
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
+
+    def run_ability(self, kid, atom_res):
+        if kid[0].name == "LPAREN":
+            param_list = {"args": [], "kwargs": {}}
+            if kid[1].name == "param_list":
+                param_list = self.run_param_list(kid[1]).value
+            if isinstance(atom_res.value, Ability):
+                ret = atom_res.value.trigger(param_list, self._jac_scope, self)
+                return JacValue(self, value=ret)
+            else:
+                self.rt_error("Unable to execute ability", kid[0])
+        elif kid[0].name == "ability_op":
+            arch = self.run_ability_op(kid[0], atom_res)
+            if len(kid) > 2:
+                self.run_spawn_ctx(kid[2], atom_res.value)
+            self.call_ability(
+                nd=atom_res.value,
+                name=kid[1].token_text(),
+                act_list=arch.get_all_actions(),
+            )
+            return atom_res
 
     def run_ability_op(self, jac_ast, atom_res):
         """
