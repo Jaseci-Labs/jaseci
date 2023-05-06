@@ -6,8 +6,6 @@ Utility for all runtime interaction with variables in different scopes
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jsorc.live_actions import get_global_actions
 
-global_action_sets = None
-
 
 class JacScope:
     def __init__(self, parent, has_obj=None, here=None, visitor=None):
@@ -20,13 +18,10 @@ class JacScope:
         self.setup_actions()
 
     def setup_actions(self):
-        global global_action_sets
-        if global_action_sets is None:
-            global_action_sets = get_global_actions()
         allactions = []
         for i in self.action_sets:
             allactions += i.obj_list()
-        self.action_sets = global_action_sets
+        self.action_sets = get_global_actions()
         for i in allactions:
             self.add_action(i)
 

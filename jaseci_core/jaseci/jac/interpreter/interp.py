@@ -93,11 +93,6 @@ class Interp(VirtualMachine):
             if len(kid) > 0 and kid[0].name == "event_clause":
                 action_type, access_list = self.run_event_clause(kid[0])
                 kid = kid[1:]
-            # if (not isinstance(obj, node) and action_type != 'activity'):
-            #     self.rt_warn(
-            #         "Only nodes has on entry/exit, treating as activity",
-            #         kid[0])
-            #     action_type = 'activity'
             if kid[0].name == "code_block":
                 act = Action(
                     m_id=self._m_id,
@@ -108,7 +103,6 @@ class Interp(VirtualMachine):
                     access_list=access_list,
                 )
                 getattr(obj, f"{action_type}_action_ids").add_obj(act)
-                self._jac_scope.add_action(act)
                 break
             else:
                 self.check_builtin_action(action_name, jac_ast)
@@ -121,7 +115,6 @@ class Interp(VirtualMachine):
                     access_list=access_list,
                 )
                 getattr(obj, f"{action_type}_action_ids").add_obj(act)
-                self._jac_scope.add_action(act)
             if not len(kid) or kid[0].name != "COMMA":
                 break
             else:
@@ -1816,7 +1809,6 @@ class Interp(VirtualMachine):
     def call_ability(self, nd, name, act_list):
         m = Interp(parent_override=self.parent(), caller=self)
         m.current_node = nd
-        arch = nd.get_architype()
         m.push_scope(
             JacScope(
                 parent=self, has_obj=nd, here=nd, visitor=self._jac_scope.visitor()
