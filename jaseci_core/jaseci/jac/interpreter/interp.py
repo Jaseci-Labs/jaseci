@@ -844,7 +844,7 @@ class Interp(VirtualMachine):
                 return JacValue(
                     self,
                     value=self.obj_set_to_jac_set(
-                        self.current_node.attached_edges(atom_res.value)
+                        self.here().attached_edges(atom_res.value)
                     ),
                 )
             elif isinstance(atom_res.value, Edge):
@@ -1278,7 +1278,7 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if not location:
-            location = self.current_node
+            location = self.here()
         result = JacSet()
         for i in location.outbound_edges() + location.bidirected_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
@@ -1298,7 +1298,7 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if not location:
-            location = self.current_node
+            location = self.here()
         result = JacSet()
         for i in location.inbound_edges() + location.bidirected_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
@@ -1319,7 +1319,7 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if not location:
-            location = self.current_node
+            location = self.here()
         result = JacSet()
         for i in location.attached_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
@@ -1715,7 +1715,7 @@ class Interp(VirtualMachine):
         """Returns all nodes that shouldnt be ignored"""
         ret = JacSet()
         if node_set is None:
-            node_set = self.current_node.attached_nodes()
+            node_set = self.here().attached_nodes()
         for i in node_set:
             if i not in self.ignore_node_ids.obj_list():
                 ret.add_obj(i)

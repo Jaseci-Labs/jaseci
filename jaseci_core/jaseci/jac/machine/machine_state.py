@@ -76,6 +76,12 @@ class MachineState:
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
 
+    def here(self):
+        return self._scope_stack[-1].here()
+
+    def visitor(self):
+        return self._scope_stack[-1].visitor()
+
     def set_cur_ast(self, jac_ast):
         self._cur_jac_ast = jac_ast
         return jac_ast.kid
