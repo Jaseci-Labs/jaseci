@@ -203,13 +203,7 @@ class WalkerInterp(Interp):
         m = Interp(parent_override=self.parent(), caller=self)
         arch = obj.get_architype()
         m.push_scope(
-            JacScope(
-                parent=self,
-                has_obj=obj,
-                action_sets=[arch.activity_action_ids],
-                here=self.current_node,
-                visitor=self,
-            )
+            JacScope(parent=self, has_obj=obj, here=self.current_node, visitor=self)
         )
 
         if kid[1].name == "param_list":
@@ -250,16 +244,7 @@ class WalkerInterp(Interp):
         node_arch = self.current_node.get_architype()
         walk_arch = self.get_architype()
         self.push_scope(
-            JacScope(
-                parent=self,
-                has_obj=self,
-                action_sets=[
-                    walk_arch.activity_action_ids,
-                    node_arch.activity_action_ids,
-                ],
-                here=self.current_node,
-                visitor=self,
-            )
+            JacScope(parent=self, has_obj=self, here=self.current_node, visitor=self)
         )
 
         run_func(jac_ast)

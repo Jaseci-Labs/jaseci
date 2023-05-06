@@ -1819,11 +1819,7 @@ class Interp(VirtualMachine):
         arch = nd.get_architype()
         m.push_scope(
             JacScope(
-                parent=self,
-                has_obj=nd,
-                action_sets=[arch.get_all_actions()],
-                here=nd,
-                visitor=self._jac_scope.visitor(),
+                parent=self, has_obj=nd, here=nd, visitor=self._jac_scope.visitor()
             )
         )
         try:

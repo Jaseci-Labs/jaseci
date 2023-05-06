@@ -11,7 +11,7 @@ global_action_sets = None
 
 
 class JacScope:
-    def __init__(self, parent, has_obj, action_sets, here=None, visitor=None):
+    def __init__(self, parent, has_obj, here=None, visitor=None):
         self.parent = parent
         self.local_scope = {}
         self.has_obj = has_obj if has_obj else self
