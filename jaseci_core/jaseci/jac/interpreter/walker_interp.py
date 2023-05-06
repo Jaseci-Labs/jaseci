@@ -242,6 +242,5 @@ class WalkerInterp(Interp):
         self.push_scope(
             JacScope(parent=self, has_obj=self, here=self.current_node, visitor=self)
         )
-
         run_func(jac_ast)
         self.pop_scope()

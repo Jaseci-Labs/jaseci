@@ -952,14 +952,6 @@ class Interp(VirtualMachine):
                 return atom_res
             elif isinstance(atom_res.value, JacSet):
                 return JacValue(self, value=self._relevant_edges)
-                # res = jac_set()
-                # for i in atom_res.value.obj_list():
-                #     if(isinstance(i, edge)):
-                #         res.add_obj(i)
-                #     elif(isinstance(i, node)):
-                #         res += self.obj_set_to_jac_set(
-                #             self.current_node.attached_edges(i))
-                # return jac_value(self, value=res)
             else:
                 self.rt_error(
                     f"Cannot get edges from {atom_res.value}. "
