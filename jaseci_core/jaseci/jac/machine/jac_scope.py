@@ -38,11 +38,11 @@ class JacScope:
     def set_refs(self, here, visitor):
         self.local_scope["here"] = here
         self.local_scope["visitor"] = visitor
-        if here and visitor:
-            self.action_sets = [
-                visitor.get_architype().get_all_actions(),
-                here.get_architype().get_all_actions(),
-            ]
+        self.action_sets = []
+        if here:
+            self.action_sets += [here.get_architype().get_all_actions()]
+        if visitor:
+            self.action_sets += [visitor.get_architype().get_all_actions()]
 
     def get_refs(self):
         return {

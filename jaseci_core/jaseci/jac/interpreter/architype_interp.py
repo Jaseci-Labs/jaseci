@@ -174,8 +174,7 @@ class ArchitypeInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         root_name = self.run_has_root(kid[1])
         m = Interp(parent_override=self.parent(), caller=self)
-        # Below is messy, too many uses of self, but it works
-        m.push_scope(JacScope(parent=self, has_obj=self, here=self, visitor=self))
+        m.push_scope(JacScope(parent=self, here=self))
         try:
             m.run_code_block(kid[4])
         except Exception as e:
