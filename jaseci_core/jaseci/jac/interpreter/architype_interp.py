@@ -43,7 +43,7 @@ class ArchitypeInterp(Interp):
 
         kid = self.set_cur_ast(jac_ast)
 
-        self.push_scope(JacScope(parent=self, has_obj=self))
+        self.push_scope(JacScope(parent=self))
         if kid[0].name == "KW_NODE":
             item = Node(
                 m_id=self._m_id,
@@ -138,7 +138,7 @@ class ArchitypeInterp(Interp):
         root_name = self.run_has_root(kid[1])
         self.run_can_block(kid[2])
         m = Interp(parent_override=self.parent(), caller=self)
-        m.push_scope(JacScope(parent=self, has_obj=None))
+        m.push_scope(JacScope(parent=self))
         try:
             m.run_code_block(kid[4])
         except Exception as e:
