@@ -78,6 +78,7 @@ class ArchitypeInterp(Interp):
             )
             if kid[2].name == "namespaces":
                 item.namespaces = self.run_namespaces(jac_ast.kid[2])
+            self.build_object_with_supers(item, kid[-1])
         elif jac_ast.name == "graph_block":  # usedi n jac tests
             item = self.run_graph_block(jac_ast)
         self.pop_scope()
@@ -88,6 +89,19 @@ class ArchitypeInterp(Interp):
         namespaces: COLON name_list;
         """
         return self.run_name_list(jac_ast.kid[1])
+
+    def run_walker_block(self, jac_ast, obj):
+        """
+        walker_block:
+            LBRACE attr_stmt* walk_entry_block? (
+                statement
+                | walk_activity_block
+            )* walk_exit_block? RBRACE;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        for i in kid:
+            if i.name == "attr_stmt":
+                self.run_attr_stmt(jac_ast=i, obj=obj)
 
     def run_attr_block(self, jac_ast, obj):
         """
@@ -126,7 +140,7 @@ class ArchitypeInterp(Interp):
         graph_block: graph_block_spawn;
         """
         kid = self.set_cur_ast(jac_ast)
-        return getattr(self, f"run_{kid[0].name}")(kid[0])
+        return self.run_graph_block_spawn(kid[0])
 
     def run_graph_block_spawn(self, jac_ast):
         """
@@ -171,5 +185,9 @@ class ArchitypeInterp(Interp):
                 .get_jac_ast()
                 .kid[-1]
             )
-            self.run_attr_block(super_jac_ast, item)
-        self.run_attr_block(jac_ast, item)
+            self.run_attr_block(super_jac_ast, item) if not isinstance(
+                item, Walker
+            ) else self.run_walker_block(super_jac_ast, item)
+        self.run_attr_block(jac_ast, item) if not isinstance(
+            item, Walker
+        ) else self.run_walker_block(jac_ast, item)
