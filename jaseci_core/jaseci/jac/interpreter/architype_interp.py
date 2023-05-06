@@ -9,6 +9,7 @@ from jaseci.prim.edge import Edge
 from jaseci.prim.walker import Walker
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
+from jaseci.jac.machine.jac_value import JacValue
 
 
 class ArchitypeInterp(Interp):
@@ -114,6 +115,44 @@ class ArchitypeInterp(Interp):
         for i in kid:
             if i.name == "attr_stmt":
                 self.run_attr_stmt(i, obj)
+
+    def run_attr_stmt(self, jac_ast, obj):
+        """
+        attr_stmt: has_stmt | can_stmt;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        if kid[0].name == "has_stmt":
+            self.run_has_stmt(kid[0], obj)
+        #  Can statements in architype handled in architype load
+
+    def run_has_stmt(self, jac_ast, obj):
+        """
+        has_stmt: KW_HAS has_assign (COMMA has_assign)* SEMI;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        for i in kid:
+            if i.name == "has_assign":
+                self.run_has_assign(i, obj)
+
+    def run_has_assign(self, jac_ast, obj):
+        """
+        has_assign: KW_PRIVATE? KW_ANCHOR? (NAME | NAME EQ expression);
+        """
+        kid = self.set_cur_ast(jac_ast)
+        while kid[0].name in ["KW_PRIVATE", "KW_ANCHOR"]:
+            kid = kid[1:]
+        var_name = kid[0].token_text()
+        var_val = None  # jac's null
+        if len(kid) > 1:
+            self.run_expression(kid[2])
+            var_val = self.pop().value
+        if isinstance(obj, dict):
+            obj[var_name] = var_val
+        # Runs only once for walkers
+        elif var_name not in obj.context.keys() or obj.j_type != "walker":
+            JacValue(
+                self, ctx=obj, name=var_name, value=var_val, create_mode=True
+            ).write(kid[0], force=True)
 
     def run_struct_block(self, jac_ast):
         """
