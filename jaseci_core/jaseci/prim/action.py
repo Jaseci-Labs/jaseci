@@ -36,7 +36,6 @@ class Action(Element):
         """
         Automatically make conversions for jac to internal, e.g., list to jac_set
         """
-
         for i in args.annotations.keys():
             if args.annotations[i] == JacSet:
                 idx = args.args.index(i)
@@ -91,7 +90,5 @@ class Action(Element):
                 )
                 raise
         t = time.time() - ts
-
         action_manager.post_action_call_hook(self.value, t)
-
         return result
