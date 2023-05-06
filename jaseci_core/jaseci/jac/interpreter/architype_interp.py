@@ -165,15 +165,6 @@ class ArchitypeInterp(Interp):
                 self.run_has_stmt(i, ret)
         return ret
 
-    def run_can_block(self, jac_ast):
-        """
-        can_block: (can_stmt)*;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        for i in kid:
-            if i.name == "can_stmt":
-                self.run_can_stmt(i, self)
-
     def run_graph_block(self, jac_ast):
         """
         graph_block:
@@ -182,9 +173,9 @@ class ArchitypeInterp(Interp):
         """
         kid = self.set_cur_ast(jac_ast)
         root_name = self.run_has_root(kid[1])
-        self.run_can_block(kid[2])
         m = Interp(parent_override=self.parent(), caller=self)
-        m.push_scope(JacScope(parent=self))
+        # Below is messy, too many uses of self, but it works
+        m.push_scope(JacScope(parent=self, has_obj=self, here=self, visitor=self))
         try:
             m.run_code_block(kid[4])
         except Exception as e:

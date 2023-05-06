@@ -30,58 +30,6 @@ from jaseci.jac.jsci_vm.op_codes import JsCmp
 class Interp(VirtualMachine):
     """Shared interpreter class across both sentinels and walkers"""
 
-    def run_can_stmt(self, jac_ast, obj):
-        """
-        can_stmt:
-            KW_CAN dotted_name (preset_in_out event_clause)? (
-                COMMA dotted_name (preset_in_out event_clause)?
-            )* SEMI
-            | KW_CAN NAME event_clause? code_block;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        kid = kid[1:]
-        while True:
-            action_type = "activity"
-            access_list = None
-            preset_in_out = None
-            if kid[0].name == "NAME":
-                action_name = kid[0].token_text()
-            else:
-                action_name = self.run_dotted_name(kid[0])
-            kid = kid[1:]
-            if len(kid) > 0 and kid[0].name == "preset_in_out":
-                preset_in_out = jac_ast_to_ir(kid[0])
-                kid = kid[1:]
-            if len(kid) > 0 and kid[0].name == "event_clause":
-                action_type, access_list = self.run_event_clause(kid[0])
-                kid = kid[1:]
-            if kid[0].name == "code_block":
-                act = Action(
-                    m_id=self._m_id,
-                    h=self._h,
-                    name=action_name,
-                    value=jac_ast_to_ir(kid[0]),
-                    preset_in_out=preset_in_out,
-                    access_list=access_list,
-                )
-                getattr(obj, f"{action_type}_action_ids").add_obj(act)
-                break
-            else:
-                self.check_builtin_action(action_name, jac_ast)
-                act = Action(
-                    m_id=self._m_id,
-                    h=self._h,
-                    name=action_name,
-                    value=action_name,
-                    preset_in_out=preset_in_out,
-                    access_list=access_list,
-                )
-                getattr(obj, f"{action_type}_action_ids").add_obj(act)
-            if not len(kid) or kid[0].name != "COMMA":
-                break
-            else:
-                kid = kid[1:]
-
     def run_event_clause(self, jac_ast):
         """
         event_clause:

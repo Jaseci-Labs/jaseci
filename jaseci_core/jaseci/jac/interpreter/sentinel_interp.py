@@ -9,6 +9,7 @@ from jaseci.jac.interpreter.interp import Interp
 from jaseci.utils.utils import parse_str_token
 from jaseci.jac.ir.jac_code import jac_ast_to_ir
 from jaseci.jac.machine.jac_scope import JacScope
+from jaseci.prim.action import Action
 
 
 class SentinelInterp(Interp):
@@ -130,10 +131,69 @@ class SentinelInterp(Interp):
                 if i.name == "attr_stmt" and i.kid[0].name == "can_stmt":
                     self.run_can_stmt(i.kid[0], arch)
         elif jac_ast.name == "graph_block":
-            kid = jac_ast.kid[2].kid
-            for i in kid:
-                self.run_can_stmt(i, arch)
+            self.run_can_block(jac_ast.kid[2], arch)
         self.pop_scope()
+
+    def run_can_block(self, jac_ast, arch):
+        """
+        can_block: (can_stmt)*;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        for i in kid:
+            if i.name == "can_stmt":
+                self.run_can_stmt(i, arch)
+
+    def run_can_stmt(self, jac_ast, obj):
+        """
+        can_stmt:
+            KW_CAN dotted_name (preset_in_out event_clause)? (
+                COMMA dotted_name (preset_in_out event_clause)?
+            )* SEMI
+            | KW_CAN NAME event_clause? code_block;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        kid = kid[1:]
+        while True:
+            action_type = "activity"
+            access_list = None
+            preset_in_out = None
+            if kid[0].name == "NAME":
+                action_name = kid[0].token_text()
+            else:
+                action_name = self.run_dotted_name(kid[0])
+            kid = kid[1:]
+            if len(kid) > 0 and kid[0].name == "preset_in_out":
+                preset_in_out = jac_ast_to_ir(kid[0])
+                kid = kid[1:]
+            if len(kid) > 0 and kid[0].name == "event_clause":
+                action_type, access_list = self.run_event_clause(kid[0])
+                kid = kid[1:]
+            if kid[0].name == "code_block":
+                act = Action(
+                    m_id=self._m_id,
+                    h=self._h,
+                    name=action_name,
+                    value=jac_ast_to_ir(kid[0]),
+                    preset_in_out=preset_in_out,
+                    access_list=access_list,
+                )
+                getattr(obj, f"{action_type}_action_ids").add_obj(act)
+                break
+            else:
+                self.check_builtin_action(action_name, jac_ast)
+                act = Action(
+                    m_id=self._m_id,
+                    h=self._h,
+                    name=action_name,
+                    value=action_name,
+                    preset_in_out=preset_in_out,
+                    access_list=access_list,
+                )
+                getattr(obj, f"{action_type}_action_ids").add_obj(act)
+            if not len(kid) or kid[0].name != "COMMA":
+                break
+            else:
+                kid = kid[1:]
 
     def load_test(self, jac_ast):
         """
