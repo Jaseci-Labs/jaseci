@@ -195,6 +195,17 @@ class SentinelInterp(Interp):
             else:
                 kid = kid[1:]
 
+    def run_event_clause(self, jac_ast):
+        """
+        event_clause:
+                KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
+        """
+        kid = self.set_cur_ast(jac_ast)
+        nl = []
+        if kid[1].name == "name_list":
+            nl = self.run_name_list(kid[1])
+        return kid[-1].token_text(), nl
+
     def load_test(self, jac_ast):
         """
         test:
