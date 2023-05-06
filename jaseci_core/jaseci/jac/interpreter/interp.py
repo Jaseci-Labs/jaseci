@@ -10,7 +10,6 @@ from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.prim.element import Element
 from jaseci.prim.node import Node
 from jaseci.prim.edge import Edge
-from jaseci.prim.ability import Ability
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
 from jaseci.jac.machine.jac_scope import JacScope
@@ -761,13 +760,15 @@ class Interp(VirtualMachine):
             LPAREN param_list? RPAREN
             | ability_op NAME spawn_ctx?;
         """
+        from jaseci.prim.ability import Ability
+
         kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "LPAREN":
             param_list = {"args": [], "kwargs": {}}
             if kid[1].name == "param_list":
                 param_list = self.run_param_list(kid[1]).value
             if isinstance(atom_res.value, Ability):
-                ret = atom_res.value.trigger(param_list, self._jac_scope, self)
+                ret = atom_res.value.run_action(param_list, self._jac_scope, self)
                 return JacValue(self, value=ret)
             else:
                 self.rt_error("Unable to execute ability", kid[0])
@@ -1709,18 +1710,12 @@ class Interp(VirtualMachine):
         return False
 
     def call_ability(self, nd, name, act_list):
-        m = Interp(parent_override=self.parent(), caller=self)
-        m.current_node = nd
-        m.push_scope(
-            JacScope(
-                parent=self, has_obj=nd, here=nd, visitor=self._jac_scope.visitor()
-            )
-        )
+        ability = act_list.get_obj_by_name(name)
         try:
-            m.run_code_block(jac_ir_to_ast(act_list.get_obj_by_name(name).value))
+            ability.run_ability(here=nd, visitor=self._jac_scope.visitor())
         except Exception as e:
-            self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
-        self.inherit_runtime_state(m)
+            self.rt_error(f"Internal Exception: {e}", ability._cur_jac_ast)
+        self.inherit_runtime_state(ability)
 
     def visibility_prune(self, node_set=None):
         """Returns all nodes that shouldnt be ignored"""

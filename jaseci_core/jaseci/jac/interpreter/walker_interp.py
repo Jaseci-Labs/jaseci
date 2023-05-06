@@ -201,7 +201,7 @@ class WalkerInterp(Interp):
         if kid[1].name == "param_list":
             param_list = m.run_param_list(kid[1]).value
         try:
-            result = act.trigger(param_list, self._jac_scope, self)
+            result = act.run_action(param_list, self._jac_scope, self)
         except Exception as e:
             self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
             result = None

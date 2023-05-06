@@ -12,49 +12,44 @@ import time
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.actions.actions_manager import ActionManager
 from jaseci.jac.ir.jac_code import JacCode
+from jaseci.jac.interpreter.interp import Interp
+from jaseci.jac.machine.jac_scope import JacScope
 
-# ACTION_PACKAGE = 'jaseci.actions.'
 
-
-class Ability(Element, JacCode):
+class Ability(Element, JacCode, Interp):
     """
-    Action class for Jaseci
-
-    preset_in_out holds a set of parameters in the form of lists of context
-    objects that are to be used from whereever those contexts are attached
-    e.g., (nodes, edges, walkers, etc). This is used by Jac's runtime
-    engine to support preset actions in nodes
-    access_list is used by walker to decide what to trigger
+    Abilities class for Jaseci
     """
 
-    def __init__(self, value=None, preset_in_out=None, access_list=None, **kwargs):
-        self.value = value
+    def __init__(
+        self, code_ir=None, preset_in_out=None, access_list=None, *args, **kwargs
+    ):
         self.preset_in_out = preset_in_out  # Not using _ids convention
         self.access_list = access_list
-        Element.__init__(self, **kwargs)
+        Element.__init__(self, *args, **kwargs)
+        JacCode.__init__(self, code_ir)
+        Interp.__init__(self)
 
-    def do_auto_conversions(self, args, params):
+    def run_ability(self, here, visitor):
         """
-        Automatically make conversions for jac to internal, e.g., list to jac_set
+        Run ability
         """
-        for i in args.annotations.keys():
-            if args.annotations[i] == JacSet:
-                idx = args.args.index(i)
-                if idx < len(params["args"]):
-                    params["args"][idx] = JacSet(in_list=params["args"][idx])
-                if i in params["kwargs"]:
-                    params["kwargs"][i] = JacSet(in_list=params["kwargs"][i])
+        self.push_scope(JacScope(parent=self, has_obj=here, here=here, visitor=visitor))
+        self.run_code_block(self.get_jac_ast())
+        self.pop_scope()
+        Interp.__init__(self)
 
-    def trigger(self, param_list, scope, interp):
+    def run_action(self, param_list, scope, interp):
         """
         param_list should be passed as list of values to lib functions
         Also note that Jac stores preset_in_out as input/output list of hex
         ids since preset_in_out doesn't use _ids convention
         """
-        if not interp.check_builtin_action(self.value):
-            interp.rt_error(f"Cannot execute {self.value} - Not Found")
+        action_name = self.name
+        if not interp.check_builtin_action(action_name):
+            interp.rt_error(f"Cannot execute {action_name} - Not Found")
             return None
-        func = live_actions[self.value]
+        func = live_actions[action_name]
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, param_list)
         args = args[0] + args[4]
@@ -91,5 +86,17 @@ class Ability(Element, JacCode):
                 )
                 raise
         t = time.time() - ts
-        action_manager.post_action_call_hook(self.value, t)
+        action_manager.post_action_call_hook(action_name, t)
         return result
+
+    def do_auto_conversions(self, args, params):
+        """
+        Automatically make conversions for jac to internal, e.g., list to jac_set
+        """
+        for i in args.annotations.keys():
+            if args.annotations[i] == JacSet:
+                idx = args.args.index(i)
+                if idx < len(params["args"]):
+                    params["args"][idx] = JacSet(in_list=params["args"][idx])
+                if i in params["kwargs"]:
+                    params["kwargs"][i] = JacSet(in_list=params["kwargs"][i])

@@ -153,6 +153,7 @@ class SentinelInterp(Interp):
         """
         kid = self.set_cur_ast(jac_ast)
         kid = kid[1:]
+        ir = None
         while True:
             action_type = "activity"
             access_list = None
@@ -168,28 +169,22 @@ class SentinelInterp(Interp):
             if len(kid) > 0 and kid[0].name == "event_clause":
                 action_type, access_list = self.run_event_clause(kid[0])
                 kid = kid[1:]
-            if kid[0].name == "code_block":
-                act = Ability(
-                    m_id=self._m_id,
-                    h=self._h,
-                    name=action_name,
-                    value=jac_ast_to_ir(kid[0]),
-                    preset_in_out=preset_in_out,
-                    access_list=access_list,
-                )
-                getattr(obj, f"{action_type}_ability_ids").add_obj(act)
-                break
-            else:
+            if kid[0].name != "code_block":
                 self.check_builtin_action(action_name, jac_ast)
-                act = Ability(
+            else:
+                ir = kid[0]
+            getattr(obj, f"{action_type}_ability_ids").add_obj(
+                Ability(
                     m_id=self._m_id,
                     h=self._h,
                     name=action_name,
-                    value=action_name,
+                    code_ir=ir,
                     preset_in_out=preset_in_out,
                     access_list=access_list,
+                    # parent_override=self.parent(),  # NOTE: Check HERE AND REFACTOR Whoel FUnc
+                    # caller=self,
                 )
-                getattr(obj, f"{action_type}_ability_ids").add_obj(act)
+            )
             if not len(kid) or kid[0].name != "COMMA":
                 break
             else:
