@@ -10,7 +10,7 @@ from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.prim.element import Element
 from jaseci.prim.node import Node
 from jaseci.prim.edge import Edge
-from jaseci.prim.action import Action
+from jaseci.prim.ability import Ability
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
 from jaseci.jac.machine.jac_scope import JacScope
@@ -753,7 +753,7 @@ class Interp(VirtualMachine):
                 param_list = {"args": [], "kwargs": {}}
                 if kid[1].name == "param_list":
                     param_list = self.run_param_list(kid[1]).value
-                if isinstance(atom_res.value, Action):
+                if isinstance(atom_res.value, Ability):
                     ret = atom_res.value.trigger(param_list, self._jac_scope, self)
                     return JacValue(self, value=ret)
                 else:

@@ -11,11 +11,12 @@ import time
 
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.actions.actions_manager import ActionManager
+from jaseci.jac.ir.jac_code import JacCode
 
 # ACTION_PACKAGE = 'jaseci.actions.'
 
 
-class Action(Element):
+class Ability(Element, JacCode):
     """
     Action class for Jaseci
 

@@ -218,7 +218,7 @@ def get_global_actions():
     Loads all global action hooks for use by Jac programs
     Attaches globals to mem_hook
     """
-    from jaseci.prim.action import Action
+    from jaseci.prim.ability import Ability
     from jaseci.jsorc.memory import MemoryHook
 
     if not glob_act_group:
@@ -242,7 +242,7 @@ def get_global_actions():
             ]:
                 if name[0] not in glob_act_group:
                     glob_act_group[name[0]] = {}
-                glob_act_group[name[0]][name[1]] = Action(
+                glob_act_group[name[0]][name[1]] = Ability(
                     m_id=0,
                     h=glob_act_hook,
                     mode="public",
