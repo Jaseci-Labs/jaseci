@@ -9,7 +9,6 @@ from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.jac.ir.jac_code import jac_ir_to_ast
-from jaseci.utils.id_list import IdList
 
 
 class WalkerInterp(Interp):
