@@ -653,7 +653,7 @@ class Interp(VirtualMachine):
             | dict_val
             | LPAREN expression RPAREN
             | ability_op NAME spawn_ctx?
-            | atom atom_trailer+
+            | atom atom_trailer
             | KW_SYNC atom
             | spawn
             | ref
@@ -679,7 +679,11 @@ class Interp(VirtualMachine):
             elif kid[0].name == "LPAREN":
                 self.run_expression(kid[1])
             elif kid[0].name == "ability_op":
-                self.push(self.run_atom_trailer(jac_ast, None))
+                self.push(
+                    self.run_ability_call(
+                        jac_ast, JacValue(self, value=self._jac_scope.has_obj)
+                    )
+                )
             elif kid[0].name == "atom":
                 self.run_atom(kid[0])
                 ret = self.pop()
@@ -711,13 +715,10 @@ class Interp(VirtualMachine):
             DOT built_in
             | DOT NAME
             | index_slice
-            | LPAREN param_list? RPAREN
-            | ability_op NAME spawn_ctx?;
+            | ability_call;
         """
         try:
             kid = self.set_cur_ast(jac_ast)
-            if atom_res is None:
-                atom_res = JacValue(self, value=self._jac_scope.has_obj)
             if isinstance(atom_res.value, Element):
                 self._write_candidate = atom_res.value
             if kid[0].name == "DOT":
@@ -749,12 +750,18 @@ class Interp(VirtualMachine):
                 if not self.rt_check_type(atom_res.value, [list, str, dict], kid[0]):
                     return atom_res
                 return self.run_index_slice(kid[0], atom_res)
-            else:
-                return self.run_ability(kid, atom_res)
+            elif kid[0].name == "ability_call":
+                return self.run_ability_call(kid[0], atom_res)
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
 
-    def run_ability(self, kid, atom_res):
+    def run_ability_call(self, jac_ast, atom_res):
+        """
+        ability_call:
+            LPAREN param_list? RPAREN
+            | ability_op NAME spawn_ctx?;
+        """
+        kid = self.set_cur_ast(jac_ast)
         if kid[0].name == "LPAREN":
             param_list = {"args": [], "kwargs": {}}
             if kid[1].name == "param_list":
