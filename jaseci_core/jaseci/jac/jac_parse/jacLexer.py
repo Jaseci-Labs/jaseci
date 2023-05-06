@@ -354,7 +354,6 @@ def serializedATN():
 
 
 class jacLexer(Lexer):
-
     atn = ATNDeserializer().deserialize(serializedATN())
 
     decisionsToDFA = [DFA(ds, i) for i, ds in enumerate(atn.decisionToState)]

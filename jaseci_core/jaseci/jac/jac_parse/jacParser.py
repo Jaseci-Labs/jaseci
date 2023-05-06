@@ -601,7 +601,6 @@ def serializedATN():
 
 
 class jacParser(Parser):
-
     grammarFileName = "jac.g4"
 
     atn = ATNDeserializer().deserialize(serializedATN())
@@ -1212,7 +1211,6 @@ class jacParser(Parser):
                 listener.exitStart(self)
 
     def start(self):
-
         localctx = jacParser.StartContext(self, self._ctx, self.state)
         self.enterRule(localctx, 0, self.RULE_start)
         self._la = 0  # Token type
@@ -1300,7 +1298,6 @@ class jacParser(Parser):
                 listener.exitVer_label(self)
 
     def ver_label(self):
-
         localctx = jacParser.Ver_labelContext(self, self._ctx, self.state)
         self.enterRule(localctx, 2, self.RULE_ver_label)
         self._la = 0  # Token type
@@ -1372,7 +1369,6 @@ class jacParser(Parser):
                 listener.exitImport_module(self)
 
     def import_module(self):
-
         localctx = jacParser.Import_moduleContext(self, self._ctx, self.state)
         self.enterRule(localctx, 4, self.RULE_import_module)
         try:
@@ -1472,7 +1468,6 @@ class jacParser(Parser):
                 listener.exitImport_items(self)
 
     def import_items(self):
-
         localctx = jacParser.Import_itemsContext(self, self._ctx, self.state)
         self.enterRule(localctx, 6, self.RULE_import_items)
         self._la = 0  # Token type
@@ -1694,7 +1689,6 @@ class jacParser(Parser):
                 listener.exitImport_names(self)
 
     def import_names(self):
-
         localctx = jacParser.Import_namesContext(self, self._ctx, self.state)
         self.enterRule(localctx, 8, self.RULE_import_names)
         try:
@@ -1756,7 +1750,6 @@ class jacParser(Parser):
                 listener.exitElement(self)
 
     def element(self):
-
         localctx = jacParser.ElementContext(self, self._ctx, self.state)
         self.enterRule(localctx, 10, self.RULE_element)
         try:
@@ -1847,7 +1840,6 @@ class jacParser(Parser):
                 listener.exitGlobal_var(self)
 
     def global_var(self):
-
         localctx = jacParser.Global_varContext(self, self._ctx, self.state)
         self.enterRule(localctx, 12, self.RULE_global_var)
         self._la = 0  # Token type
@@ -1953,7 +1945,6 @@ class jacParser(Parser):
                 listener.exitArchitype(self)
 
     def architype(self):
-
         localctx = jacParser.ArchitypeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 14, self.RULE_architype)
         self._la = 0  # Token type
@@ -2108,7 +2099,6 @@ class jacParser(Parser):
                 listener.exitWalker_block(self)
 
     def walker_block(self):
-
         localctx = jacParser.Walker_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 16, self.RULE_walker_block)
         self._la = 0  # Token type
@@ -2284,7 +2274,6 @@ class jacParser(Parser):
                 listener.exitTest(self)
 
     def test(self):
-
         localctx = jacParser.TestContext(self, self._ctx, self.state)
         self.enterRule(localctx, 18, self.RULE_test)
         self._la = 0  # Token type
@@ -2393,7 +2382,6 @@ class jacParser(Parser):
                 listener.exitNamespaces(self)
 
     def namespaces(self):
-
         localctx = jacParser.NamespacesContext(self, self._ctx, self.state)
         self.enterRule(localctx, 20, self.RULE_namespaces)
         try:
@@ -2440,7 +2428,6 @@ class jacParser(Parser):
                 listener.exitWalk_entry_block(self)
 
     def walk_entry_block(self):
-
         localctx = jacParser.Walk_entry_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 22, self.RULE_walk_entry_block)
         try:
@@ -2489,7 +2476,6 @@ class jacParser(Parser):
                 listener.exitWalk_exit_block(self)
 
     def walk_exit_block(self):
-
         localctx = jacParser.Walk_exit_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 24, self.RULE_walk_exit_block)
         try:
@@ -2538,7 +2524,6 @@ class jacParser(Parser):
                 listener.exitWalk_activity_block(self)
 
     def walk_activity_block(self):
-
         localctx = jacParser.Walk_activity_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 26, self.RULE_walk_activity_block)
         try:
@@ -2596,7 +2581,6 @@ class jacParser(Parser):
                 listener.exitAttr_block(self)
 
     def attr_block(self):
-
         localctx = jacParser.Attr_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 28, self.RULE_attr_block)
         self._la = 0  # Token type
@@ -2671,7 +2655,6 @@ class jacParser(Parser):
                 listener.exitAttr_stmt(self)
 
     def attr_stmt(self):
-
         localctx = jacParser.Attr_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 30, self.RULE_attr_stmt)
         try:
@@ -2738,7 +2721,6 @@ class jacParser(Parser):
                 listener.exitStruct_block(self)
 
     def struct_block(self):
-
         localctx = jacParser.Struct_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 32, self.RULE_struct_block)
         self._la = 0  # Token type
@@ -2813,7 +2795,6 @@ class jacParser(Parser):
                 listener.exitCan_block(self)
 
     def can_block(self):
-
         localctx = jacParser.Can_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 34, self.RULE_can_block)
         self._la = 0  # Token type
@@ -2882,7 +2863,6 @@ class jacParser(Parser):
                 listener.exitGraph_block(self)
 
     def graph_block(self):
-
         localctx = jacParser.Graph_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 36, self.RULE_graph_block)
         try:
@@ -2963,7 +2943,6 @@ class jacParser(Parser):
                 listener.exitHas_root(self)
 
     def has_root(self):
-
         localctx = jacParser.Has_rootContext(self, self._ctx, self.state)
         self.enterRule(localctx, 38, self.RULE_has_root)
         try:
@@ -3023,7 +3002,6 @@ class jacParser(Parser):
                 listener.exitHas_stmt(self)
 
     def has_stmt(self):
-
         localctx = jacParser.Has_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 40, self.RULE_has_stmt)
         self._la = 0  # Token type
@@ -3091,7 +3069,6 @@ class jacParser(Parser):
                 listener.exitHas_assign(self)
 
     def has_assign(self):
-
         localctx = jacParser.Has_assignContext(self, self._ctx, self.state)
         self.enterRule(localctx, 42, self.RULE_has_assign)
         self._la = 0  # Token type
@@ -3193,7 +3170,6 @@ class jacParser(Parser):
                 listener.exitCan_stmt(self)
 
     def can_stmt(self):
-
         localctx = jacParser.Can_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 44, self.RULE_can_stmt)
         self._la = 0  # Token type
@@ -3302,7 +3278,6 @@ class jacParser(Parser):
                 listener.exitEvent_clause(self)
 
     def event_clause(self):
-
         localctx = jacParser.Event_clauseContext(self, self._ctx, self.state)
         self.enterRule(localctx, 46, self.RULE_event_clause)
         self._la = 0  # Token type
@@ -3381,7 +3356,6 @@ class jacParser(Parser):
                 listener.exitPreset_in_out(self)
 
     def preset_in_out(self):
-
         localctx = jacParser.Preset_in_outContext(self, self._ctx, self.state)
         self.enterRule(localctx, 48, self.RULE_preset_in_out)
         try:
@@ -3449,7 +3423,6 @@ class jacParser(Parser):
                 listener.exitDotted_name(self)
 
     def dotted_name(self):
-
         localctx = jacParser.Dotted_nameContext(self, self._ctx, self.state)
         self.enterRule(localctx, 50, self.RULE_dotted_name)
         try:
@@ -3501,7 +3474,6 @@ class jacParser(Parser):
                 listener.exitName_list(self)
 
     def name_list(self):
-
         localctx = jacParser.Name_listContext(self, self._ctx, self.state)
         self.enterRule(localctx, 52, self.RULE_name_list)
         self._la = 0  # Token type
@@ -3559,7 +3531,6 @@ class jacParser(Parser):
                 listener.exitParam_list(self)
 
     def param_list(self):
-
         localctx = jacParser.Param_listContext(self, self._ctx, self.state)
         self.enterRule(localctx, 54, self.RULE_param_list)
         try:
@@ -3629,7 +3600,6 @@ class jacParser(Parser):
                 listener.exitExpr_list(self)
 
     def expr_list(self):
-
         localctx = jacParser.Expr_listContext(self, self._ctx, self.state)
         self.enterRule(localctx, 56, self.RULE_expr_list)
         try:
@@ -3702,7 +3672,6 @@ class jacParser(Parser):
                 listener.exitKw_expr_list(self)
 
     def kw_expr_list(self):
-
         localctx = jacParser.Kw_expr_listContext(self, self._ctx, self.state)
         self.enterRule(localctx, 58, self.RULE_kw_expr_list)
         self._la = 0  # Token type
@@ -3774,7 +3743,6 @@ class jacParser(Parser):
                 listener.exitCode_block(self)
 
     def code_block(self):
-
         localctx = jacParser.Code_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 60, self.RULE_code_block)
         self._la = 0  # Token type
@@ -3907,7 +3875,6 @@ class jacParser(Parser):
                 listener.exitNode_ctx_block(self)
 
     def node_ctx_block(self):
-
         localctx = jacParser.Node_ctx_blockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 62, self.RULE_node_ctx_block)
         try:
@@ -3984,7 +3951,6 @@ class jacParser(Parser):
                 listener.exitStatement(self)
 
     def statement(self):
-
         localctx = jacParser.StatementContext(self, self._ctx, self.state)
         self.enterRule(localctx, 64, self.RULE_statement)
         try:
@@ -4116,7 +4082,6 @@ class jacParser(Parser):
                 listener.exitIf_stmt(self)
 
     def if_stmt(self):
-
         localctx = jacParser.If_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 66, self.RULE_if_stmt)
         try:
@@ -4183,7 +4148,6 @@ class jacParser(Parser):
                 listener.exitTry_stmt(self)
 
     def try_stmt(self):
-
         localctx = jacParser.Try_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 68, self.RULE_try_stmt)
         try:
@@ -4246,7 +4210,6 @@ class jacParser(Parser):
                 listener.exitElse_from_try(self)
 
     def else_from_try(self):
-
         localctx = jacParser.Else_from_tryContext(self, self._ctx, self.state)
         self.enterRule(localctx, 70, self.RULE_else_from_try)
         self._la = 0  # Token type
@@ -4328,7 +4291,6 @@ class jacParser(Parser):
                 listener.exitElif_stmt(self)
 
     def elif_stmt(self):
-
         localctx = jacParser.Elif_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 72, self.RULE_elif_stmt)
         try:
@@ -4374,7 +4336,6 @@ class jacParser(Parser):
                 listener.exitElse_stmt(self)
 
     def else_stmt(self):
-
         localctx = jacParser.Else_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 74, self.RULE_else_stmt)
         try:
@@ -4442,7 +4403,6 @@ class jacParser(Parser):
                 listener.exitFor_stmt(self)
 
     def for_stmt(self):
-
         localctx = jacParser.For_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 76, self.RULE_for_stmt)
         self._la = 0  # Token type
@@ -4529,7 +4489,6 @@ class jacParser(Parser):
                 listener.exitWhile_stmt(self)
 
     def while_stmt(self):
-
         localctx = jacParser.While_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 78, self.RULE_while_stmt)
         try:
@@ -4578,7 +4537,6 @@ class jacParser(Parser):
                 listener.exitCtrl_stmt(self)
 
     def ctrl_stmt(self):
-
         localctx = jacParser.Ctrl_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 80, self.RULE_ctrl_stmt)
         self._la = 0  # Token type
@@ -4639,7 +4597,6 @@ class jacParser(Parser):
                 listener.exitAssert_stmt(self)
 
     def assert_stmt(self):
-
         localctx = jacParser.Assert_stmtContext(self, self._ctx, self.state)
         self.enterRule(localctx, 82, self.RULE_assert_stmt)
         try:
@@ -4686,7 +4643,6 @@ class jacParser(Parser):
                 listener.exitDestroy_action(self)
 
     def destroy_action(self):
-
         localctx = jacParser.Destroy_actionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 84, self.RULE_destroy_action)
         try:
@@ -4744,7 +4700,6 @@ class jacParser(Parser):
                 listener.exitReport_action(self)
 
     def report_action(self):
-
         localctx = jacParser.Report_actionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 86, self.RULE_report_action)
         try:
@@ -4818,7 +4773,6 @@ class jacParser(Parser):
                 listener.exitWalker_action(self)
 
     def walker_action(self):
-
         localctx = jacParser.Walker_actionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 88, self.RULE_walker_action)
         try:
@@ -4886,7 +4840,6 @@ class jacParser(Parser):
                 listener.exitIgnore_action(self)
 
     def ignore_action(self):
-
         localctx = jacParser.Ignore_actionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 90, self.RULE_ignore_action)
         try:
@@ -4944,7 +4897,6 @@ class jacParser(Parser):
                 listener.exitTake_action(self)
 
     def take_action(self):
-
         localctx = jacParser.Take_actionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 92, self.RULE_take_action)
         self._la = 0  # Token type
@@ -5015,7 +4967,6 @@ class jacParser(Parser):
                 listener.exitDisengage_action(self)
 
     def disengage_action(self):
-
         localctx = jacParser.Disengage_actionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 94, self.RULE_disengage_action)
         try:
@@ -5080,7 +5031,6 @@ class jacParser(Parser):
                 listener.exitYield_action(self)
 
     def yield_action(self):
-
         localctx = jacParser.Yield_actionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 96, self.RULE_yield_action)
         try:
@@ -5150,7 +5100,6 @@ class jacParser(Parser):
                 listener.exitExpression(self)
 
     def expression(self):
-
         localctx = jacParser.ExpressionContext(self, self._ctx, self.state)
         self.enterRule(localctx, 98, self.RULE_expression)
         try:
@@ -5207,7 +5156,6 @@ class jacParser(Parser):
                 listener.exitAssignment(self)
 
     def assignment(self):
-
         localctx = jacParser.AssignmentContext(self, self._ctx, self.state)
         self.enterRule(localctx, 100, self.RULE_assignment)
         try:
@@ -5251,7 +5199,6 @@ class jacParser(Parser):
                 listener.exitCopy_assign(self)
 
     def copy_assign(self):
-
         localctx = jacParser.Copy_assignContext(self, self._ctx, self.state)
         self.enterRule(localctx, 102, self.RULE_copy_assign)
         try:
@@ -5304,7 +5251,6 @@ class jacParser(Parser):
                 listener.exitInc_assign(self)
 
     def inc_assign(self):
-
         localctx = jacParser.Inc_assignContext(self, self._ctx, self.state)
         self.enterRule(localctx, 104, self.RULE_inc_assign)
         self._la = 0  # Token type
@@ -5377,7 +5323,6 @@ class jacParser(Parser):
                 listener.exitConnect(self)
 
     def connect(self):
-
         localctx = jacParser.ConnectContext(self, self._ctx, self.state)
         self.enterRule(localctx, 106, self.RULE_connect)
         try:
@@ -5460,7 +5405,6 @@ class jacParser(Parser):
                 listener.exitLogical(self)
 
     def logical(self):
-
         localctx = jacParser.LogicalContext(self, self._ctx, self.state)
         self.enterRule(localctx, 108, self.RULE_logical)
         self._la = 0  # Token type
@@ -5532,7 +5476,6 @@ class jacParser(Parser):
                 listener.exitCompare(self)
 
     def compare(self):
-
         localctx = jacParser.CompareContext(self, self._ctx, self.state)
         self.enterRule(localctx, 110, self.RULE_compare)
         try:
@@ -5652,7 +5595,6 @@ class jacParser(Parser):
                 listener.exitCmp_op(self)
 
     def cmp_op(self):
-
         localctx = jacParser.Cmp_opContext(self, self._ctx, self.state)
         self.enterRule(localctx, 112, self.RULE_cmp_op)
         try:
@@ -5737,7 +5679,6 @@ class jacParser(Parser):
                 listener.exitNin(self)
 
     def nin(self):
-
         localctx = jacParser.NinContext(self, self._ctx, self.state)
         self.enterRule(localctx, 114, self.RULE_nin)
         try:
@@ -5793,7 +5734,6 @@ class jacParser(Parser):
                 listener.exitArithmetic(self)
 
     def arithmetic(self):
-
         localctx = jacParser.ArithmeticContext(self, self._ctx, self.state)
         self.enterRule(localctx, 116, self.RULE_arithmetic)
         self._la = 0  # Token type
@@ -5872,7 +5812,6 @@ class jacParser(Parser):
                 listener.exitTerm(self)
 
     def term(self):
-
         localctx = jacParser.TermContext(self, self._ctx, self.state)
         self.enterRule(localctx, 118, self.RULE_term)
         self._la = 0  # Token type
@@ -5958,7 +5897,6 @@ class jacParser(Parser):
                 listener.exitFactor(self)
 
     def factor(self):
-
         localctx = jacParser.FactorContext(self, self._ctx, self.state)
         self.enterRule(localctx, 120, self.RULE_factor)
         self._la = 0  # Token type
@@ -6029,7 +5967,6 @@ class jacParser(Parser):
                 listener.exitPower(self)
 
     def power(self):
-
         localctx = jacParser.PowerContext(self, self._ctx, self.state)
         self.enterRule(localctx, 122, self.RULE_power)
         try:
@@ -6090,7 +6027,6 @@ class jacParser(Parser):
                 listener.exitGlobal_ref(self)
 
     def global_ref(self):
-
         localctx = jacParser.Global_refContext(self, self._ctx, self.state)
         self.enterRule(localctx, 124, self.RULE_global_ref)
         try:
@@ -6402,7 +6338,6 @@ class jacParser(Parser):
                 listener.exitAtom_trailer(self)
 
     def atom_trailer(self):
-
         localctx = jacParser.Atom_trailerContext(self, self._ctx, self.state)
         self.enterRule(localctx, 128, self.RULE_atom_trailer)
         self._la = 0  # Token type
@@ -6548,7 +6483,6 @@ class jacParser(Parser):
                 listener.exitAbility_op(self)
 
     def ability_op(self):
-
         localctx = jacParser.Ability_opContext(self, self._ctx, self.state)
         self.enterRule(localctx, 130, self.RULE_ability_op)
         try:
@@ -6606,7 +6540,6 @@ class jacParser(Parser):
                 listener.exitRef(self)
 
     def ref(self):
-
         localctx = jacParser.RefContext(self, self._ctx, self.state)
         self.enterRule(localctx, 132, self.RULE_ref)
         try:
@@ -6650,7 +6583,6 @@ class jacParser(Parser):
                 listener.exitDeref(self)
 
     def deref(self):
-
         localctx = jacParser.DerefContext(self, self._ctx, self.state)
         self.enterRule(localctx, 134, self.RULE_deref)
         try:
@@ -6703,7 +6635,6 @@ class jacParser(Parser):
                 listener.exitBuilt_in(self)
 
     def built_in(self):
-
         localctx = jacParser.Built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 136, self.RULE_built_in)
         try:
@@ -6777,7 +6708,6 @@ class jacParser(Parser):
                 listener.exitCast_built_in(self)
 
     def cast_built_in(self):
-
         localctx = jacParser.Cast_built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 138, self.RULE_cast_built_in)
         try:
@@ -6822,7 +6752,6 @@ class jacParser(Parser):
                 listener.exitObj_built_in(self)
 
     def obj_built_in(self):
-
         localctx = jacParser.Obj_built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 140, self.RULE_obj_built_in)
         self._la = 0  # Token type
@@ -6910,7 +6839,6 @@ class jacParser(Parser):
                 listener.exitDict_built_in(self)
 
     def dict_built_in(self):
-
         localctx = jacParser.Dict_built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 142, self.RULE_dict_built_in)
         self._la = 0  # Token type
@@ -7025,7 +6953,6 @@ class jacParser(Parser):
                 listener.exitList_built_in(self)
 
     def list_built_in(self):
-
         localctx = jacParser.List_built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 144, self.RULE_list_built_in)
         try:
@@ -7122,7 +7049,6 @@ class jacParser(Parser):
                 listener.exitString_built_in(self)
 
     def string_built_in(self):
-
         localctx = jacParser.String_built_inContext(self, self._ctx, self.state)
         self.enterRule(localctx, 146, self.RULE_string_built_in)
         try:
@@ -7197,7 +7123,6 @@ class jacParser(Parser):
                 listener.exitNode_edge_ref(self)
 
     def node_edge_ref(self):
-
         localctx = jacParser.Node_edge_refContext(self, self._ctx, self.state)
         self.enterRule(localctx, 148, self.RULE_node_edge_ref)
         try:
@@ -7279,7 +7204,6 @@ class jacParser(Parser):
                 listener.exitNode_ref(self)
 
     def node_ref(self):
-
         localctx = jacParser.Node_refContext(self, self._ctx, self.state)
         self.enterRule(localctx, 150, self.RULE_node_ref)
         try:
@@ -7323,7 +7247,6 @@ class jacParser(Parser):
                 listener.exitWalker_ref(self)
 
     def walker_ref(self):
-
         localctx = jacParser.Walker_refContext(self, self._ctx, self.state)
         self.enterRule(localctx, 152, self.RULE_walker_ref)
         try:
@@ -7367,7 +7290,6 @@ class jacParser(Parser):
                 listener.exitGraph_ref(self)
 
     def graph_ref(self):
-
         localctx = jacParser.Graph_refContext(self, self._ctx, self.state)
         self.enterRule(localctx, 154, self.RULE_graph_ref)
         try:
@@ -7411,7 +7333,6 @@ class jacParser(Parser):
                 listener.exitType_ref(self)
 
     def type_ref(self):
-
         localctx = jacParser.Type_refContext(self, self._ctx, self.state)
         self.enterRule(localctx, 156, self.RULE_type_ref)
         try:
@@ -7458,7 +7379,6 @@ class jacParser(Parser):
                 listener.exitEdge_ref(self)
 
     def edge_ref(self):
-
         localctx = jacParser.Edge_refContext(self, self._ctx, self.state)
         self.enterRule(localctx, 158, self.RULE_edge_ref)
         try:
@@ -7527,7 +7447,6 @@ class jacParser(Parser):
                 listener.exitEdge_to(self)
 
     def edge_to(self):
-
         localctx = jacParser.Edge_toContext(self, self._ctx, self.state)
         self.enterRule(localctx, 160, self.RULE_edge_to)
         self._la = 0  # Token type
@@ -7612,7 +7531,6 @@ class jacParser(Parser):
                 listener.exitEdge_from(self)
 
     def edge_from(self):
-
         localctx = jacParser.Edge_fromContext(self, self._ctx, self.state)
         self.enterRule(localctx, 162, self.RULE_edge_from)
         self._la = 0  # Token type
@@ -7694,7 +7612,6 @@ class jacParser(Parser):
                 listener.exitEdge_any(self)
 
     def edge_any(self):
-
         localctx = jacParser.Edge_anyContext(self, self._ctx, self.state)
         self.enterRule(localctx, 164, self.RULE_edge_any)
         self._la = 0  # Token type
@@ -7773,7 +7690,6 @@ class jacParser(Parser):
                 listener.exitConnect_op(self)
 
     def connect_op(self):
-
         localctx = jacParser.Connect_opContext(self, self._ctx, self.state)
         self.enterRule(localctx, 166, self.RULE_connect_op)
         try:
@@ -7842,7 +7758,6 @@ class jacParser(Parser):
                 listener.exitConnect_to(self)
 
     def connect_to(self):
-
         localctx = jacParser.Connect_toContext(self, self._ctx, self.state)
         self.enterRule(localctx, 168, self.RULE_connect_to)
         self._la = 0  # Token type
@@ -7927,7 +7842,6 @@ class jacParser(Parser):
                 listener.exitConnect_from(self)
 
     def connect_from(self):
-
         localctx = jacParser.Connect_fromContext(self, self._ctx, self.state)
         self.enterRule(localctx, 170, self.RULE_connect_from)
         self._la = 0  # Token type
@@ -8009,7 +7923,6 @@ class jacParser(Parser):
                 listener.exitConnect_any(self)
 
     def connect_any(self):
-
         localctx = jacParser.Connect_anyContext(self, self._ctx, self.state)
         self.enterRule(localctx, 172, self.RULE_connect_any)
         self._la = 0  # Token type
@@ -8088,7 +8001,6 @@ class jacParser(Parser):
                 listener.exitList_val(self)
 
     def list_val(self):
-
         localctx = jacParser.List_valContext(self, self._ctx, self.state)
         self.enterRule(localctx, 174, self.RULE_list_val)
         self._la = 0  # Token type
@@ -8197,7 +8109,6 @@ class jacParser(Parser):
                 listener.exitIndex_slice(self)
 
     def index_slice(self):
-
         localctx = jacParser.Index_sliceContext(self, self._ctx, self.state)
         self.enterRule(localctx, 176, self.RULE_index_slice)
         try:
@@ -8275,7 +8186,6 @@ class jacParser(Parser):
                 listener.exitDict_val(self)
 
     def dict_val(self):
-
         localctx = jacParser.Dict_valContext(self, self._ctx, self.state)
         self.enterRule(localctx, 178, self.RULE_dict_val)
         self._la = 0  # Token type
@@ -8389,7 +8299,6 @@ class jacParser(Parser):
                 listener.exitKv_pair(self)
 
     def kv_pair(self):
-
         localctx = jacParser.Kv_pairContext(self, self._ctx, self.state)
         self.enterRule(localctx, 180, self.RULE_kv_pair)
         try:
@@ -8435,7 +8344,6 @@ class jacParser(Parser):
                 listener.exitSpawn(self)
 
     def spawn(self):
-
         localctx = jacParser.SpawnContext(self, self._ctx, self.state)
         self.enterRule(localctx, 182, self.RULE_spawn)
         try:
@@ -8485,7 +8393,6 @@ class jacParser(Parser):
                 listener.exitSpawn_object(self)
 
     def spawn_object(self):
-
         localctx = jacParser.Spawn_objectContext(self, self._ctx, self.state)
         self.enterRule(localctx, 184, self.RULE_spawn_object)
         try:
@@ -8551,7 +8458,6 @@ class jacParser(Parser):
                 listener.exitSpawn_edge(self)
 
     def spawn_edge(self):
-
         localctx = jacParser.Spawn_edgeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 186, self.RULE_spawn_edge)
         try:
@@ -8598,7 +8504,6 @@ class jacParser(Parser):
                 listener.exitNode_spawn(self)
 
     def node_spawn(self):
-
         localctx = jacParser.Node_spawnContext(self, self._ctx, self.state)
         self.enterRule(localctx, 188, self.RULE_node_spawn)
         try:
@@ -8654,7 +8559,6 @@ class jacParser(Parser):
                 listener.exitGraph_spawn(self)
 
     def graph_spawn(self):
-
         localctx = jacParser.Graph_spawnContext(self, self._ctx, self.state)
         self.enterRule(localctx, 190, self.RULE_graph_spawn)
         self._la = 0  # Token type
@@ -8758,7 +8662,6 @@ class jacParser(Parser):
                 listener.exitWalker_spawn(self)
 
     def walker_spawn(self):
-
         localctx = jacParser.Walker_spawnContext(self, self._ctx, self.state)
         self.enterRule(localctx, 192, self.RULE_walker_spawn)
         self._la = 0  # Token type
@@ -8817,7 +8720,6 @@ class jacParser(Parser):
                 listener.exitType_spawn(self)
 
     def type_spawn(self):
-
         localctx = jacParser.Type_spawnContext(self, self._ctx, self.state)
         self.enterRule(localctx, 194, self.RULE_type_spawn)
         try:
@@ -8878,7 +8780,6 @@ class jacParser(Parser):
                 listener.exitSpawn_ctx(self)
 
     def spawn_ctx(self):
-
         localctx = jacParser.Spawn_ctxContext(self, self._ctx, self.state)
         self.enterRule(localctx, 196, self.RULE_spawn_ctx)
         self._la = 0  # Token type
@@ -8953,7 +8854,6 @@ class jacParser(Parser):
                 listener.exitFilter_ctx(self)
 
     def filter_ctx(self):
-
         localctx = jacParser.Filter_ctxContext(self, self._ctx, self.state)
         self.enterRule(localctx, 198, self.RULE_filter_ctx)
         self._la = 0  # Token type
@@ -9019,7 +8919,6 @@ class jacParser(Parser):
                 listener.exitSpawn_assign(self)
 
     def spawn_assign(self):
-
         localctx = jacParser.Spawn_assignContext(self, self._ctx, self.state)
         self.enterRule(localctx, 200, self.RULE_spawn_assign)
         try:
@@ -9068,7 +8967,6 @@ class jacParser(Parser):
                 listener.exitFilter_compare(self)
 
     def filter_compare(self):
-
         localctx = jacParser.Filter_compareContext(self, self._ctx, self.state)
         self.enterRule(localctx, 202, self.RULE_filter_compare)
         try:
@@ -9135,7 +9033,6 @@ class jacParser(Parser):
                 listener.exitAny_type(self)
 
     def any_type(self):
-
         localctx = jacParser.Any_typeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 204, self.RULE_any_type)
         self._la = 0  # Token type
@@ -9202,7 +9099,6 @@ class jacParser(Parser):
                 listener.exitMultistring(self)
 
     def multistring(self):
-
         localctx = jacParser.MultistringContext(self, self._ctx, self.state)
         self.enterRule(localctx, 206, self.RULE_multistring)
         try:

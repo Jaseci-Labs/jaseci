@@ -6,9 +6,9 @@ if __name__ is not None and "." in __name__:
 else:
     from jacParser import jacParser
 
+
 # This class defines a complete listener for a parse tree produced by jacParser.
 class jacListener(ParseTreeListener):
-
     # Enter a parse tree produced by jacParser#start.
     def enterStart(self, ctx: jacParser.StartContext):
         pass
