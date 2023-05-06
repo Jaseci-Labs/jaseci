@@ -129,8 +129,8 @@ class SentinelInterp(Interp):
             for i in kid:
                 if i.name == "attr_stmt" and i.kid[0].name == "can_stmt":
                     self.run_can_stmt(i.kid[0], arch)
-        elif kid[0].name == "graph_block_spawn":
-            kid = kid[0].kid[2].kid
+        elif jac_ast.name == "graph_block":
+            kid = jac_ast.kid[2].kid
             for i in kid:
                 self.run_can_stmt(i, arch)
         self.pop_scope()

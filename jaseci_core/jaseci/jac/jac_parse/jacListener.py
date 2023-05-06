@@ -6,9 +6,9 @@ if __name__ is not None and "." in __name__:
 else:
     from jacParser import jacParser
 
-
 # This class defines a complete listener for a parse tree produced by jacParser.
 class jacListener(ParseTreeListener):
+
     # Enter a parse tree produced by jacParser#start.
     def enterStart(self, ctx: jacParser.StartContext):
         pass
@@ -159,14 +159,6 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#graph_block.
     def exitGraph_block(self, ctx: jacParser.Graph_blockContext):
-        pass
-
-    # Enter a parse tree produced by jacParser#graph_block_spawn.
-    def enterGraph_block_spawn(self, ctx: jacParser.Graph_block_spawnContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#graph_block_spawn.
-    def exitGraph_block_spawn(self, ctx: jacParser.Graph_block_spawnContext):
         pass
 
     # Enter a parse tree produced by jacParser#has_root.

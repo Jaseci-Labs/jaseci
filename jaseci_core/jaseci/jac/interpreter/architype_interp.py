@@ -176,14 +176,7 @@ class ArchitypeInterp(Interp):
 
     def run_graph_block(self, jac_ast):
         """
-        graph_block: graph_block_spawn;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        return self.run_graph_block_spawn(kid[0])
-
-    def run_graph_block_spawn(self, jac_ast):
-        """
-        graph_block_spawn:
+        graph_block:
             LBRACE has_root can_block KW_SPAWN code_block RBRACE
             | COLON has_root can_block KW_SPAWN code_block SEMI;
         """
