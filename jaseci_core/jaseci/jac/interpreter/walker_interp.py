@@ -40,11 +40,8 @@ class WalkerInterp(Interp):
             for i in kid:
                 if i.name == "attr_stmt":
                     self.run_attr_stmt(jac_ast=i, obj=self)
-        archs = self.current_node.get_architype().arch_with_supers()
-        act_list = IdList(self)
-        for i in archs:
-            act_list += i.entry_action_ids
-        self.auto_trigger_node_actions(nd=self.current_node, act_list=act_list)
+        act_list = self.current_node.get_architype().get_entry_actions()
+        self.auto_trigger_node_actions(act_list=act_list)
 
         for i in kid:
             if i.name == "walk_entry_block":
@@ -54,12 +51,8 @@ class WalkerInterp(Interp):
             if i.name == "walk_activity_block":
                 self.run_walk_activity_block(i)
 
-        # self.trigger_activity_actions()
-        archs = self.current_node.get_architype().arch_with_supers()
-        act_list = IdList(self)
-        for i in archs:
-            act_list += i.exit_action_ids
-        self.auto_trigger_node_actions(nd=self.current_node, act_list=act_list)
+        act_list = self.current_node.get_architype().get_exit_actions()
+        self.auto_trigger_node_actions(act_list=act_list)
 
         if not self.yielded and kid[-2].name == "walk_exit_block":
             self.run_walk_exit_block(kid[-2])
@@ -190,7 +183,7 @@ class WalkerInterp(Interp):
             expr_func(kid[1])
         self.yield_walk()
 
-    def run_preset_in_out(self, jac_ast, obj, act):
+    def run_preset_in_out(self, jac_ast, act):
         """
         preset_in_out:
             DBL_COLON param_list? (DBL_COLON | COLON_OUT expression);
@@ -201,11 +194,14 @@ class WalkerInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         param_list = {"args": [], "kwargs": []}
         m = Interp(parent_override=self.parent(), caller=self)
-        arch = obj.get_architype()
         m.push_scope(
-            JacScope(parent=self, has_obj=obj, action_sets=[arch.activity_action_ids])
+            JacScope(
+                parent=self,
+                has_obj=self.current_node,
+                here=self.current_node,
+                visitor=self,
+            )
         )
-        m._jac_scope.set_agent_refs(cur_node=self.current_node, cur_walker=self)
 
         if kid[1].name == "param_list":
             param_list = m.run_param_list(kid[1]).value
@@ -221,8 +217,9 @@ class WalkerInterp(Interp):
             dest.write(kid[-1])
 
     # Helper Functions ##################
-    def auto_trigger_node_actions(self, nd, act_list):
+    def auto_trigger_node_actions(self, act_list):
         already_executed = []  # handles inhereted duplicates, (overriding)
+        nd = self.current_node
         for i in act_list.obj_list():
             if (
                 i.access_list
@@ -231,7 +228,7 @@ class WalkerInterp(Interp):
             ):
                 continue
             if i.preset_in_out:
-                self.run_preset_in_out(jac_ir_to_ast(i.preset_in_out), nd, i)
+                self.run_preset_in_out(jac_ir_to_ast(i.preset_in_out), i)
             else:
                 self.call_ability(nd=nd, name=i.name, act_list=act_list)
             if not i.preset_in_out:  # All preset in and outs get executed
@@ -242,19 +239,8 @@ class WalkerInterp(Interp):
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
-        node_arch = self.current_node.get_architype()
-        walk_arch = self.get_architype()
         self.push_scope(
-            JacScope(
-                parent=self,
-                has_obj=self,
-                action_sets=[
-                    walk_arch.activity_action_ids,
-                    node_arch.activity_action_ids,
-                ],
-            )
+            JacScope(parent=self, has_obj=self, here=self.current_node, visitor=self)
         )
-        self._jac_scope.set_agent_refs(cur_node=self.current_node, cur_walker=self)
-
         run_func(jac_ast)
         self.pop_scope()

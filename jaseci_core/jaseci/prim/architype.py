@@ -35,11 +35,26 @@ class Architype(Element, JacCode, ArchitypeInterp):
         """
         return self.run_architype(jac_ast=self.get_jac_ast())
 
-    def get_all_actions(self):
+    def get_actions(self, action_types: list):
         actions = IdList(self, auto_save=False)
         for i in self.arch_with_supers():
-            actions += i.entry_action_ids + i.activity_action_ids + i.exit_action_ids
+            for j in action_types:
+                actions += getattr(i, j)
         return actions
+
+    def get_entry_actions(self):
+        return self.get_actions(["entry_action_ids"])
+
+    def get_activity_actions(self):
+        return self.get_actions(["activity_action_ids"])
+
+    def get_exit_actions(self):
+        return self.get_actions(["exit_action_ids"])
+
+    def get_all_actions(self):
+        return self.get_actions(
+            ["entry_action_ids", "activity_action_ids", "exit_action_ids"]
+        )
 
     def arch_with_supers(self):
         archs = [self]
