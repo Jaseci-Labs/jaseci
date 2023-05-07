@@ -77,10 +77,10 @@ class MachineState:
         self._jac_scope = self._scope_stack[-1]
 
     def here(self):
-        return self._scope_stack[-1].here()
+        return self._scope_stack[-1].here() if self._scope_stack[-1] else None
 
     def visitor(self):
-        return self._scope_stack[-1].visitor()
+        return self._scope_stack[-1].visitor() if self._scope_stack[-1] else None
 
     def set_cur_ast(self, jac_ast):
         self._cur_jac_ast = jac_ast

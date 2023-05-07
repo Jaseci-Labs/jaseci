@@ -35,7 +35,7 @@ class WalkerInterp(Interp):
             )* walk_exit_block? RBRACE;
         """
         kid = self.set_cur_ast(jac_ast)
-        act_list = self.current_node.get_architype().get_entry_actions()
+        act_list = self.here().get_architype().get_entry_actions()
         self.auto_trigger_node_actions(act_list=act_list)
 
         for i in kid:
@@ -46,7 +46,7 @@ class WalkerInterp(Interp):
             if i.name == "walk_activity_block":
                 self.run_walk_activity_block(i)
 
-        act_list = self.current_node.get_architype().get_exit_actions()
+        act_list = self.here().get_architype().get_exit_actions()
         self.auto_trigger_node_actions(act_list=act_list)
 
         if not self.yielded and kid[-2].name == "walk_exit_block":
@@ -58,7 +58,7 @@ class WalkerInterp(Interp):
         """
         kid = self.set_cur_ast(jac_ast)
         for i in self.run_name_list(kid[0]):
-            if self.current_node.get_architype().is_instance(i):
+            if self.here().get_architype().is_instance(i):
                 self.run_code_block(kid[1])
                 return
 
@@ -192,8 +192,8 @@ class WalkerInterp(Interp):
         m.push_scope(
             JacScope(
                 parent=self,
-                has_obj=self.current_node,
-                here=self.current_node,
+                has_obj=self.here(),
+                here=self.here(),
                 visitor=self,
             )
         )
