@@ -76,6 +76,12 @@ class MachineState:
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
 
+    def here(self):
+        return self._scope_stack[-1].here() if self._scope_stack[-1] else None
+
+    def visitor(self):
+        return self._scope_stack[-1].visitor() if self._scope_stack[-1] else None
+
     def set_cur_ast(self, jac_ast):
         self._cur_jac_ast = jac_ast
         return jac_ast.kid
@@ -164,7 +170,7 @@ class MachineState:
         """
         ret = JacSet()
         if not location:
-            location = self.current_node
+            location = self.here()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(location))
         return ret
