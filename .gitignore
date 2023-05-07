@@ -12,6 +12,7 @@ venv
 *.egg-info/
 *.egg
 *.prof
+*.prof.*
 
 # Others #
 .coverage
