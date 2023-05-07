@@ -680,7 +680,7 @@ class Interp(VirtualMachine):
             elif kid[0].name == "ability_op":
                 self.push(
                     self.run_ability_call(
-                        jac_ast, JacValue(self, value=self._jac_scope.has_obj)
+                        jac_ast, atom_res=JacValue(self, value=self._jac_scope.has_obj)
                     )
                 )
             elif kid[0].name == "atom":

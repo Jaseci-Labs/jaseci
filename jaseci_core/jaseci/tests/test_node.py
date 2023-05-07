@@ -52,11 +52,8 @@ class NodeTests(TestCaseHelper, TestCase):
     def test_add_entry_action_to_node_and_destroy(self):
         """Test connecting and disconnecting etc of nodes"""
         node1 = Architype(m_id=0, h=JsOrc.hook())
-        act = ability.Ability(m_id=0, h=node1._h, name="yeah dude", value="SUP")
+        act = ability.Ability(m_id=0, h=node1._h, name="yeah dude")
         node1.entry_ability_ids.add_obj(act)
-        self.assertEqual(
-            node1.entry_ability_ids.get_obj_by_name("yeah dude").value, "SUP"
-        )
         self.assertEqual(len(node1.entry_ability_ids), 1)
         self.assertTrue(node1.entry_ability_ids.has_obj_by_name("yeah dude"))
         self.assertFalse(node1.entry_ability_ids.has_obj_by_name("yeah  dude"))

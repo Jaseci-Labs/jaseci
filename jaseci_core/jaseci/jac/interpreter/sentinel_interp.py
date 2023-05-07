@@ -181,8 +181,7 @@ class SentinelInterp(Interp):
                     code_ir=ir,
                     preset_in_out=preset_in_out,
                     access_list=access_list,
-                    # parent_override=self.parent(),  # NOTE: Check HERE AND REFACTOR Whoel FUnc
-                    # caller=self,
+                    parent=self,
                 )
             )
             if not len(kid) or kid[0].name != "COMMA":
