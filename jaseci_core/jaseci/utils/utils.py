@@ -236,7 +236,7 @@ def perf_test_stop(perf_prof, save_to_file=True):
                 "pstats",
                 f"{id(perf_prof)}.prof",
                 "-o",
-                f"{id(perf_prof)}.dot",
+                f"{id(perf_prof)}.prof.dot",
             ]
         )
     s = io.StringIO()
