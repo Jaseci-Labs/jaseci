@@ -21,6 +21,7 @@ from pathlib import Path
 from pprint import pformat
 from typing import Union
 from jaseci.utils.log_utils import LimitedSlidingBuffer
+import gprof2dot
 
 LOGS_DIR = ".jaseci_logs/"
 
@@ -229,6 +230,15 @@ def perf_test_stop(perf_prof, save_to_file=True):
     perf_prof.disable()
     if save_to_file:
         perf_prof.dump_stats(f"{id(perf_prof)}.prof")
+        gprof2dot.main(
+            argv=[
+                "-f",
+                "pstats",
+                f"{id(perf_prof)}.prof",
+                "-o",
+                f"{id(perf_prof)}.dot",
+            ]
+        )
     s = io.StringIO()
     sortby = pstats.SortKey.CUMULATIVE
     ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)

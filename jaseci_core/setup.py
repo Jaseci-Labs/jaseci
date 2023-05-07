@@ -39,6 +39,7 @@ setup(
         "beautifulsoup4>=4.12.2, <4.13.0",
         "lxml>=4.9.2, <4.10.0",
         "html5lib>=1.1, <1.2",
+        "gprof2dot",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
