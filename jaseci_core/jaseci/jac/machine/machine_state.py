@@ -170,7 +170,7 @@ class MachineState:
         """
         ret = JacSet()
         if not location:
-            location = self.current_node
+            location = self.here()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(location))
         return ret
