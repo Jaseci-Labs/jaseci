@@ -35,7 +35,7 @@ class WalkerInterp(Interp):
             )* walk_exit_block? RBRACE;
         """
         kid = self.set_cur_ast(jac_ast)
-        act_list = self.current_node.get_architype().get_entry_actions()
+        act_list = self.current_node.get_architype().get_entry_abilities()
         self.auto_trigger_node_actions(act_list=act_list)
 
         for i in kid:
@@ -46,7 +46,7 @@ class WalkerInterp(Interp):
             if i.name == "walk_activity_block":
                 self.run_walk_activity_block(i)
 
-        act_list = self.current_node.get_architype().get_exit_actions()
+        act_list = self.current_node.get_architype().get_exit_abilities()
         self.auto_trigger_node_actions(act_list=act_list)
 
         if not self.yielded and kid[-2].name == "walk_exit_block":
@@ -201,7 +201,7 @@ class WalkerInterp(Interp):
         if kid[1].name == "param_list":
             param_list = m.run_param_list(kid[1]).value
         try:
-            result = act.trigger(param_list, self._jac_scope, self)
+            result = act.run_action(param_list, self._jac_scope, self)
         except Exception as e:
             self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
             result = None

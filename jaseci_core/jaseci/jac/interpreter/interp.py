@@ -10,7 +10,6 @@ from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.prim.element import Element
 from jaseci.prim.node import Node
 from jaseci.prim.edge import Edge
-from jaseci.prim.action import Action
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
 from jaseci.jac.machine.jac_scope import JacScope
@@ -653,7 +652,7 @@ class Interp(VirtualMachine):
             | dict_val
             | LPAREN expression RPAREN
             | ability_op NAME spawn_ctx?
-            | atom atom_trailer+
+            | atom atom_trailer
             | KW_SYNC atom
             | spawn
             | ref
@@ -679,7 +678,11 @@ class Interp(VirtualMachine):
             elif kid[0].name == "LPAREN":
                 self.run_expression(kid[1])
             elif kid[0].name == "ability_op":
-                self.push(self.run_atom_trailer(jac_ast, None))
+                self.push(
+                    self.run_ability_call(
+                        jac_ast, atom_res=JacValue(self, value=self._jac_scope.has_obj)
+                    )
+                )
             elif kid[0].name == "atom":
                 self.run_atom(kid[0])
                 ret = self.pop()
@@ -711,13 +714,10 @@ class Interp(VirtualMachine):
             DOT built_in
             | DOT NAME
             | index_slice
-            | LPAREN param_list? RPAREN
-            | ability_op NAME spawn_ctx?;
+            | ability_call;
         """
         try:
             kid = self.set_cur_ast(jac_ast)
-            if atom_res is None:
-                atom_res = JacValue(self, value=self._jac_scope.has_obj)
             if isinstance(atom_res.value, Element):
                 self._write_candidate = atom_res.value
             if kid[0].name == "DOT":
@@ -749,27 +749,39 @@ class Interp(VirtualMachine):
                 if not self.rt_check_type(atom_res.value, [list, str, dict], kid[0]):
                     return atom_res
                 return self.run_index_slice(kid[0], atom_res)
-            elif kid[0].name == "LPAREN":
-                param_list = {"args": [], "kwargs": {}}
-                if kid[1].name == "param_list":
-                    param_list = self.run_param_list(kid[1]).value
-                if isinstance(atom_res.value, Action):
-                    ret = atom_res.value.trigger(param_list, self._jac_scope, self)
-                    return JacValue(self, value=ret)
-                else:
-                    self.rt_error("Unable to execute ability", kid[0])
-            elif kid[0].name == "ability_op":
-                arch = self.run_ability_op(kid[0], atom_res)
-                if len(kid) > 2:
-                    self.run_spawn_ctx(kid[2], atom_res.value)
-                self.call_ability(
-                    nd=atom_res.value,
-                    name=kid[1].token_text(),
-                    act_list=arch.get_all_actions(),
-                )
-                return atom_res
+            elif kid[0].name == "ability_call":
+                return self.run_ability_call(kid[0], atom_res)
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
+
+    def run_ability_call(self, jac_ast, atom_res):
+        """
+        ability_call:
+            LPAREN param_list? RPAREN
+            | ability_op NAME spawn_ctx?;
+        """
+        from jaseci.prim.ability import Ability
+
+        kid = self.set_cur_ast(jac_ast)
+        if kid[0].name == "LPAREN":
+            param_list = {"args": [], "kwargs": {}}
+            if kid[1].name == "param_list":
+                param_list = self.run_param_list(kid[1]).value
+            if isinstance(atom_res.value, Ability):
+                ret = atom_res.value.run_action(param_list, self._jac_scope, self)
+                return JacValue(self, value=ret)
+            else:
+                self.rt_error("Unable to execute ability", kid[0])
+        elif kid[0].name == "ability_op":
+            arch = self.run_ability_op(kid[0], atom_res)
+            if len(kid) > 2:
+                self.run_spawn_ctx(kid[2], atom_res.value)
+            self.call_ability(
+                nd=atom_res.value,
+                name=kid[1].token_text(),
+                act_list=arch.get_all_abilities(),
+            )
+            return atom_res
 
     def run_ability_op(self, jac_ast, atom_res):
         """
@@ -1698,18 +1710,12 @@ class Interp(VirtualMachine):
         return False
 
     def call_ability(self, nd, name, act_list):
-        m = Interp(parent_override=self.parent(), caller=self)
-        m.current_node = nd
-        m.push_scope(
-            JacScope(
-                parent=self, has_obj=nd, here=nd, visitor=self._jac_scope.visitor()
-            )
-        )
+        ability = act_list.get_obj_by_name(name)
         try:
-            m.run_code_block(jac_ir_to_ast(act_list.get_obj_by_name(name).value))
+            ability.run_ability(here=nd, visitor=self._jac_scope.visitor())
         except Exception as e:
-            self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
-        self.inherit_runtime_state(m)
+            self.rt_error(f"Internal Exception: {e}", ability._cur_jac_ast)
+        self.inherit_runtime_state(ability)
 
     def visibility_prune(self, node_set=None):
         """Returns all nodes that shouldnt be ignored"""

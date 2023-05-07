@@ -226,7 +226,10 @@ atom_trailer:
 	DOT built_in
 	| DOT NAME
 	| index_slice
-	| LPAREN param_list? RPAREN
+	| ability_call;
+
+ability_call:
+	LPAREN param_list? RPAREN
 	| ability_op NAME spawn_ctx?;
 
 ability_op: DBL_COLON | DBL_COLON NAME COLON;
