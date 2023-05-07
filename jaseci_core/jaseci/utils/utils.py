@@ -256,7 +256,20 @@ def perf_test_to_b64(perf_prof, do_delete=True):
         with open(fn, "rb") as image_file:
             s = base64.b64encode(image_file.read()).decode()
         if do_delete:
-            os.remove(fn)
+            os.remove(f"{id(perf_prof)}.prof")
+            os.remove(f"{id(perf_prof)}.prof.dot")
+    return s
+
+
+def perf_test_to_dot(perf_prof, do_delete=True):
+    s = ""
+    fn = f"{id(perf_prof)}.prof.dot"
+    if os.path.exists(fn):
+        with open(fn, "r") as image_file:
+            s = image_file.read()
+        if do_delete:
+            os.remove(f"{id(perf_prof)}.prof")
+            os.remove(f"{id(perf_prof)}.prof.dot")
     return s
 
 

@@ -196,3 +196,13 @@ class StackTests(CoreTest):
         ret = self.call(self.smast, ["walker_run", {"name": "deep_except"}])
         self.assertTrue(ret["success"])
         self.assertIn("xxxx.xxxx", ret["report"][2]["msg"])
+
+    def test_dot_profiling_in_walker(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("simple.jac")}],
+        )
+        ret = self.call(self.mast, ["walker_run", {"name": "init", "profiling": True}])
+        self.assertIn("digraph", ret["profile"]["graph"])
+        self.assertIn("jaseci", ret["profile"]["graph"])
+        self.assertGreater(len(ret["profile"]["graph"]), 1000)
