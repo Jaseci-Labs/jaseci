@@ -102,6 +102,7 @@ class JacActionsTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("test_summarize")
         test_walker.prime(root_node)
         test_walker.run()
+        print(test_walker.report)
         self.assertEqual(test_walker.report[0][0], "Today is a beautiful day.")
         # self.call(
         #     self.mast,

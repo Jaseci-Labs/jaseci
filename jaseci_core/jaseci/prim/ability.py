@@ -76,7 +76,7 @@ class Ability(Element, JacCode, Interp):
                     result = func(*param_list["args"], **param_list["kwargs"])
                 else:
                     result = func(
-                        self.value, *param_list["args"], **param_list["kwargs"]
+                        self.name, *param_list["args"], **param_list["kwargs"]
                     )
             except TypeError as e:
                 params = str(inspect.signature(func))
