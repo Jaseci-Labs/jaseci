@@ -208,24 +208,32 @@ def load_action_config(config, module_name):
 
 
 def unload_module(mod):
-    """Unload actions module and all relevant function"""
-    if mod in sys.modules.keys() and mod in live_action_modules.keys():
-        for i in live_action_modules[mod]:
-            if i in live_actions:
-                del live_actions[i]
+    act_procs[mod]["proc"].kill()
+    act_procs[mod]["proc"].close()
+    del act_procs[mod]["in_q"]
+    del act_procs[mod]["out_q"]
+    del act_procs[mod]
 
-        # Iterate through the objects in the module __dict__ to manually delete them
-        loaded_mod = sys.modules[mod]
-        mod_content_len = len(loaded_mod.__dict__)
-        for _ in range(mod_content_len):
-            mod_obj = loaded_mod.__dict__.pop(list(loaded_mod.__dict__.keys())[0])
-            del mod_obj
-        del loaded_mod
-        del sys.modules[mod]
-        del live_action_modules[mod]
-        gc.collect()
-        return True
-    return False
+
+# def unload_module(mod):
+#     """Unload actions module and all relevant function"""
+#     if mod in sys.modules.keys() and mod in live_action_modules.keys():
+#         for i in live_action_modules[mod]:
+#             if i in live_actions:
+#                 del live_actions[i]
+#
+#         # Iterate through the objects in the module __dict__ to manually delete them
+#         loaded_mod = sys.modules[mod]
+#         mod_content_len = len(loaded_mod.__dict__)
+#         for _ in range(mod_content_len):
+#             mod_obj = loaded_mod.__dict__.pop(list(loaded_mod.__dict__.keys())[0])
+#             del mod_obj
+#         del loaded_mod
+#         del sys.modules[mod]
+#         del live_action_modules[mod]
+#         gc.collect()
+#         return True
+#     return False
 
 
 def unload_action(name):

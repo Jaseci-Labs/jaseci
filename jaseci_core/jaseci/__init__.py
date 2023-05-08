@@ -31,4 +31,4 @@ def load_standard():
     import jaseci.extens.act_lib.regex  # noqa
 
 
-# load_standard()
+load_standard()
