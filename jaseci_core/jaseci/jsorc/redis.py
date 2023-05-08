@@ -48,8 +48,9 @@ class RedisHook(MemoryHook):
                 ret_obj.json_load(loaded_obj)
 
                 super().commit_obj_to_cache(ret_obj)
-                return ret_obj
-
+                obj = ret_obj
+        if obj:
+            obj._persist = True
         return obj
 
     def has_obj_in_store(self, item_id):

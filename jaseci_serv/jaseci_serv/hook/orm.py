@@ -64,7 +64,9 @@ class OrmHook(RedisHook):
             # Unwind jsci_payload for fields beyond element object
             ret_obj.json_load(loaded_obj.jsci_obj)
             self.commit_obj_to_cache(ret_obj, all_caches=True)
-            return ret_obj
+            loaded_obj = ret_obj
+        if loaded_obj:
+            loaded_obj._persist = True
         return loaded_obj
 
     def has_obj_in_store(self, item_id):
