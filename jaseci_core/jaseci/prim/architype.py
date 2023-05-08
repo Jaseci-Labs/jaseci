@@ -18,9 +18,9 @@ class Architype(Element, JacCode, ArchitypeInterp):
         self.anchor_var = None
         self.private_vars = []
         self.has_vars = []
-        self.entry_action_ids = IdList(self)
-        self.activity_action_ids = IdList(self)
-        self.exit_action_ids = IdList(self)
+        self.entry_ability_ids = IdList(self)
+        self.activity_ability_ids = IdList(self)
+        self.exit_ability_ids = IdList(self)
 
         # async handling for walker
         self.is_async = is_async
@@ -35,11 +35,26 @@ class Architype(Element, JacCode, ArchitypeInterp):
         """
         return self.run_architype(jac_ast=self.get_jac_ast())
 
-    def get_all_actions(self):
+    def get_actions(self, action_types: list):
         actions = IdList(self, auto_save=False)
         for i in self.arch_with_supers():
-            actions += i.entry_action_ids + i.activity_action_ids + i.exit_action_ids
+            for j in action_types:
+                actions += getattr(i, j)
         return actions
+
+    def get_entry_abilities(self):
+        return self.get_actions(["entry_ability_ids"])
+
+    def get_activity_abilities(self):
+        return self.get_actions(["activity_ability_ids"])
+
+    def get_exit_abilities(self):
+        return self.get_actions(["exit_ability_ids"])
+
+    def get_all_abilities(self):
+        return self.get_actions(
+            ["entry_ability_ids", "activity_ability_ids", "exit_ability_ids"]
+        )
 
     def arch_with_supers(self):
         archs = [self]
@@ -54,6 +69,9 @@ class Architype(Element, JacCode, ArchitypeInterp):
             names += i.super_archs + [i.name]
         return names
 
+    def get_architype(self):
+        return self
+
     def is_instance(self, name):
         return name in self.derived_types()
 
@@ -62,9 +80,9 @@ class Architype(Element, JacCode, ArchitypeInterp):
         Destroys self from memory and persistent storage
         """
         des = (
-            self.activity_action_ids.obj_list()
-            + self.entry_action_ids.obj_list()
-            + self.exit_action_ids.obj_list()
+            self.activity_ability_ids.obj_list()
+            + self.entry_ability_ids.obj_list()
+            + self.exit_ability_ids.obj_list()
         )
         for i in des:
             i.destroy()

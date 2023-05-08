@@ -10,7 +10,6 @@ from jaseci.utils.utils import is_jsonable, parse_str_token, uuid_re
 from jaseci.prim.element import Element
 from jaseci.prim.node import Node
 from jaseci.prim.edge import Edge
-from jaseci.prim.action import Action
 from jaseci.jac.jac_set import JacSet
 from jaseci.jac.ir.jac_code import jac_ast_to_ir, jac_ir_to_ast
 from jaseci.jac.machine.jac_scope import JacScope
@@ -29,114 +28,6 @@ from jaseci.jac.jsci_vm.op_codes import JsCmp
 
 class Interp(VirtualMachine):
     """Shared interpreter class across both sentinels and walkers"""
-
-    def run_attr_stmt(self, jac_ast, obj):
-        """
-        attr_stmt: has_stmt | can_stmt;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        if kid[0].name == "has_stmt":
-            self.run_has_stmt(kid[0], obj)
-        #  Can statements in architype handled in architype load
-
-    def run_has_stmt(self, jac_ast, obj):
-        """
-        has_stmt: KW_HAS has_assign (COMMA has_assign)* SEMI;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        for i in kid:
-            if i.name == "has_assign":
-                self.run_has_assign(i, obj)
-
-    def run_has_assign(self, jac_ast, obj):
-        """
-        has_assign: KW_PRIVATE? KW_ANCHOR? (NAME | NAME EQ expression);
-        """
-        kid = self.set_cur_ast(jac_ast)
-        while kid[0].name in ["KW_PRIVATE", "KW_ANCHOR"]:
-            kid = kid[1:]
-        var_name = kid[0].token_text()
-        var_val = None  # jac's null
-        if len(kid) > 1:
-            self.run_expression(kid[2])
-            var_val = self.pop().value
-        if isinstance(obj, dict):
-            obj[var_name] = var_val
-        # Runs only once for walkers
-        elif var_name not in obj.context.keys() or obj.j_type != "walker":
-            JacValue(
-                self, ctx=obj, name=var_name, value=var_val, create_mode=True
-            ).write(kid[0], force=True)
-
-    def run_can_stmt(self, jac_ast, obj):
-        """
-        can_stmt:
-            KW_CAN dotted_name (preset_in_out event_clause)? (
-                COMMA dotted_name (preset_in_out event_clause)?
-            )* SEMI
-            | KW_CAN NAME event_clause? code_block;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        kid = kid[1:]
-        while True:
-            action_type = "activity"
-            access_list = None
-            preset_in_out = None
-            if kid[0].name == "NAME":
-                action_name = kid[0].token_text()
-            else:
-                action_name = self.run_dotted_name(kid[0])
-            kid = kid[1:]
-            if len(kid) > 0 and kid[0].name == "preset_in_out":
-                preset_in_out = jac_ast_to_ir(kid[0])
-                kid = kid[1:]
-            if len(kid) > 0 and kid[0].name == "event_clause":
-                action_type, access_list = self.run_event_clause(kid[0])
-                kid = kid[1:]
-            # if (not isinstance(obj, node) and action_type != 'activity'):
-            #     self.rt_warn(
-            #         "Only nodes has on entry/exit, treating as activity",
-            #         kid[0])
-            #     action_type = 'activity'
-            if kid[0].name == "code_block":
-                act = Action(
-                    m_id=self._m_id,
-                    h=self._h,
-                    name=action_name,
-                    value=jac_ast_to_ir(kid[0]),
-                    preset_in_out=preset_in_out,
-                    access_list=access_list,
-                )
-                getattr(obj, f"{action_type}_action_ids").add_obj(act)
-                self._jac_scope.add_action(act)
-                break
-            else:
-                self.check_builtin_action(action_name, jac_ast)
-                act = Action(
-                    m_id=self._m_id,
-                    h=self._h,
-                    name=action_name,
-                    value=action_name,
-                    preset_in_out=preset_in_out,
-                    access_list=access_list,
-                )
-                getattr(obj, f"{action_type}_action_ids").add_obj(act)
-                self._jac_scope.add_action(act)
-            if not len(kid) or kid[0].name != "COMMA":
-                break
-            else:
-                kid = kid[1:]
-
-    def run_event_clause(self, jac_ast):
-        """
-        event_clause:
-                KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
-        """
-        kid = self.set_cur_ast(jac_ast)
-        nl = []
-        if kid[1].name == "name_list":
-            nl = self.run_name_list(kid[1])
-        return kid[-1].token_text(), nl
 
     def run_dotted_name(self, jac_ast):
         """
@@ -761,7 +652,7 @@ class Interp(VirtualMachine):
             | dict_val
             | LPAREN expression RPAREN
             | ability_op NAME spawn_ctx?
-            | atom atom_trailer+
+            | atom atom_trailer
             | KW_SYNC atom
             | spawn
             | ref
@@ -787,7 +678,11 @@ class Interp(VirtualMachine):
             elif kid[0].name == "LPAREN":
                 self.run_expression(kid[1])
             elif kid[0].name == "ability_op":
-                self.push(self.run_atom_trailer(jac_ast, None))
+                self.push(
+                    self.run_ability_call(
+                        jac_ast, atom_res=JacValue(self, value=self._jac_scope.has_obj)
+                    )
+                )
             elif kid[0].name == "atom":
                 self.run_atom(kid[0])
                 ret = self.pop()
@@ -819,13 +714,10 @@ class Interp(VirtualMachine):
             DOT built_in
             | DOT NAME
             | index_slice
-            | LPAREN param_list? RPAREN
-            | ability_op NAME spawn_ctx?;
+            | ability_call;
         """
         try:
             kid = self.set_cur_ast(jac_ast)
-            if atom_res is None:
-                atom_res = JacValue(self, value=self._jac_scope.has_obj)
             if isinstance(atom_res.value, Element):
                 self._write_candidate = atom_res.value
             if kid[0].name == "DOT":
@@ -857,27 +749,39 @@ class Interp(VirtualMachine):
                 if not self.rt_check_type(atom_res.value, [list, str, dict], kid[0]):
                     return atom_res
                 return self.run_index_slice(kid[0], atom_res)
-            elif kid[0].name == "LPAREN":
-                param_list = {"args": [], "kwargs": {}}
-                if kid[1].name == "param_list":
-                    param_list = self.run_param_list(kid[1]).value
-                if isinstance(atom_res.value, Action):
-                    ret = atom_res.value.trigger(param_list, self._jac_scope, self)
-                    return JacValue(self, value=ret)
-                else:
-                    self.rt_error("Unable to execute ability", kid[0])
-            elif kid[0].name == "ability_op":
-                arch = self.run_ability_op(kid[0], atom_res)
-                if len(kid) > 2:
-                    self.run_spawn_ctx(kid[2], atom_res.value)
-                self.call_ability(
-                    nd=atom_res.value,
-                    name=kid[1].token_text(),
-                    act_list=arch.get_all_actions(),
-                )
-                return atom_res
+            elif kid[0].name == "ability_call":
+                return self.run_ability_call(kid[0], atom_res)
         except Exception as e:
             self.jac_try_exception(e, jac_ast)
+
+    def run_ability_call(self, jac_ast, atom_res):
+        """
+        ability_call:
+            LPAREN param_list? RPAREN
+            | ability_op NAME spawn_ctx?;
+        """
+        from jaseci.prim.ability import Ability
+
+        kid = self.set_cur_ast(jac_ast)
+        if kid[0].name == "LPAREN":
+            param_list = {"args": [], "kwargs": {}}
+            if kid[1].name == "param_list":
+                param_list = self.run_param_list(kid[1]).value
+            if isinstance(atom_res.value, Ability):
+                ret = atom_res.value.run_action(param_list, self._jac_scope, self)
+                return JacValue(self, value=ret)
+            else:
+                self.rt_error("Unable to execute ability", kid[0])
+        elif kid[0].name == "ability_op":
+            arch = self.run_ability_op(kid[0], atom_res)
+            if len(kid) > 2:
+                self.run_spawn_ctx(kid[2], atom_res.value)
+            self.call_ability(
+                nd=atom_res.value,
+                name=kid[1].token_text(),
+                act_list=arch.get_all_abilities(),
+            )
+            return atom_res
 
     def run_ability_op(self, jac_ast, atom_res):
         """
@@ -952,21 +856,13 @@ class Interp(VirtualMachine):
                 return JacValue(
                     self,
                     value=self.obj_set_to_jac_set(
-                        self.current_node.attached_edges(atom_res.value)
+                        self.here().attached_edges(atom_res.value)
                     ),
                 )
             elif isinstance(atom_res.value, Edge):
                 return atom_res
             elif isinstance(atom_res.value, JacSet):
                 return JacValue(self, value=self._relevant_edges)
-                # res = jac_set()
-                # for i in atom_res.value.obj_list():
-                #     if(isinstance(i, edge)):
-                #         res.add_obj(i)
-                #     elif(isinstance(i, node)):
-                #         res += self.obj_set_to_jac_set(
-                #             self.current_node.attached_edges(i))
-                # return jac_value(self, value=res)
             else:
                 self.rt_error(
                     f"Cannot get edges from {atom_res.value}. "
@@ -1394,7 +1290,7 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if not location:
-            location = self.current_node
+            location = self.here()
         result = JacSet()
         for i in location.outbound_edges() + location.bidirected_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
@@ -1414,7 +1310,7 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if not location:
-            location = self.current_node
+            location = self.here()
         result = JacSet()
         for i in location.inbound_edges() + location.bidirected_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
@@ -1435,7 +1331,7 @@ class Interp(VirtualMachine):
         """
         kid = self.set_cur_ast(jac_ast)
         if not location:
-            location = self.current_node
+            location = self.here()
         result = JacSet()
         for i in location.attached_edges():
             if len(kid) > 2 and not i.get_architype().is_instance(kid[2].token_text()):
@@ -1814,24 +1710,18 @@ class Interp(VirtualMachine):
         return False
 
     def call_ability(self, nd, name, act_list):
-        m = Interp(parent_override=self.parent(), caller=self)
-        m.current_node = nd
-        arch = nd.get_architype()
-        m.push_scope(
-            JacScope(parent=self, has_obj=nd, action_sets=[arch.get_all_actions()])
-        )
-        m._jac_scope.inherit_agent_refs(self._jac_scope, nd)
+        ability = act_list.get_obj_by_name(name)
         try:
-            m.run_code_block(jac_ir_to_ast(act_list.get_obj_by_name(name).value))
+            ability.run_ability(here=nd, visitor=self._jac_scope.visitor())
         except Exception as e:
-            self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
-        self.inherit_runtime_state(m)
+            self.rt_error(f"Internal Exception: {e}", ability._cur_jac_ast)
+        self.inherit_runtime_state(ability)
 
     def visibility_prune(self, node_set=None):
         """Returns all nodes that shouldnt be ignored"""
         ret = JacSet()
         if node_set is None:
-            node_set = self.current_node.attached_nodes()
+            node_set = self.here().attached_nodes()
         for i in node_set:
             if i not in self.ignore_node_ids.obj_list():
                 ret.add_obj(i)

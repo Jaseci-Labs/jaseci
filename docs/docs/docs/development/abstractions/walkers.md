@@ -5,10 +5,9 @@ description: An Overview of Walkers and Examples.
 
 # Walkers
 
-One of other major innovations in Jaseci is the concept of walkers. This abstraction has never been seen in any programming language before and offers a new perspective on programmatic execution.
-
-In a nutshell, a walker is a unit of execution that retains state (its local scope) as it travels
-over a graphs. Walkers *walk* from node to node in the graph and executing its body.
+The concept of a walker is one of the new programming language abstractions introduced by Jaseci and the
+Jack Language. In a nutshell, a walker is a unit of execution that retains state (its context scope, i.e.,
+has variables) as it travels over a graphs. Walkers *walk* from node to node in the graph and executing its body.
 The walker’s body is specified with an opening and closing braces ( `{` `}` ) and is executed to
 completion on each node it lands on. In this sense a walker iterates while spooling through a
 sequence of nodes that it ‘takes’ using the take keyword. We call each of these iterations
@@ -16,7 +15,12 @@ node-bound iterations.
 
 Variables in a walker's body are divided into two categories: context variables, which retain their values as the walker moves through the graph, and local variables, which are reinitialized for each node-bound iteration.
 
-Walkers offer a different approach to programmatic execution, distinct from the common function-based model used in other languages. Instead of a function's scope being temporarily pushed onto a growing stack as functions call other functions, scopes in Jaseci can be laid out spatially on a graph and walkers can traverse the graph, carrying their scope with them. This new model introduces data-spatial problem solving, where walkers can access any scope at any time in a modular manner, unlike in the function-based model where scopes become inaccessible after a function is called until it returns.
+> **Note**
+>
+> Walkers are initialized with default context variables on creation. Has variables only clear on destruction
+and can be overwritten with calls to `walker_prime`. The intuition here is walkers simply keep state until they are destroyed.
+
+Walkers offer a different approach to programmatic execution, distinct from the common function-based model used in other languages. Instead of a function's scope being temporarily pushed onto a growing stack as functions call other functions, scopes in Jaseci can be laid out spatially on the graph and walkers can traverse the graph, carrying their scope with them. This new model introduces data-spatial problem solving, where walkers can access any scope at any time in a modular manner, unlike in the function-based model where scopes become inaccessible after a function is called until it returns.
 
 When solving problems with walkers, a developer can think of that walker as a little self-contained robot or agent that can retain context as it spatially moves about a graph, interacting with the context in nodes and edges of that graph.
 

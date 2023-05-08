@@ -127,7 +127,9 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["groups"],
+    "has_vars": [
+      "groups"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -158,7 +160,10 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["group", "status"],
+    "has_vars": [
+      "group",
+      "status"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -189,7 +194,9 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["id"],
+    "has_vars": [
+      "id"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -251,7 +258,9 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["ref"],
+    "has_vars": [
+      "ref"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -282,7 +291,9 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["ref"],
+    "has_vars": [
+      "ref"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -313,7 +324,9 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["id"],
+    "has_vars": [
+      "id"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -344,7 +357,9 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["groups"],
+    "has_vars": [
+      "groups"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -375,7 +390,11 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["group", "subject", "body"],
+    "has_vars": [
+      "group",
+      "subject",
+      "body"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -406,7 +425,10 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["id", "group"],
+    "has_vars": [
+      "id",
+      "group"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -468,7 +490,11 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["name", "description", "threshold"],
+    "has_vars": [
+      "name",
+      "description",
+      "threshold"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -499,7 +525,9 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["id"],
+    "has_vars": [
+      "id"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -560,7 +588,10 @@
   {
     "super_archs": [],
     "anchor_var": null,
-    "private_vars": ["selected_expression", "encoding"],
+    "private_vars": [
+      "selected_expression",
+      "encoding"
+    ],
     "has_vars": [
       "published",
       "prompts",
@@ -569,7 +600,9 @@
       "encoding"
     ],
     "entry_action_ids": [],
-    "activity_action_ids": ["urn:uuid:41be8a1b-f55d-462d-9fb5-9df82b27b88d"],
+    "activity_action_ids": [
+      "urn:uuid:41be8a1b-f55d-462d-9fb5-9df82b27b88d"
+    ],
     "exit_action_ids": [],
     "is_async": false,
     "name": "imprint",
@@ -598,7 +631,10 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["id", "group"],
+    "has_vars": [
+      "id",
+      "group"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -628,8 +664,14 @@
   {
     "super_archs": [],
     "anchor_var": null,
-    "private_vars": ["encoding"],
-    "has_vars": ["text", "sequence", "encoding"],
+    "private_vars": [
+      "encoding"
+    ],
+    "has_vars": [
+      "text",
+      "sequence",
+      "encoding"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -752,10 +794,18 @@
   {
     "super_archs": [],
     "anchor_var": "encoding",
-    "private_vars": ["pretext"],
-    "has_vars": ["deleted_expression", "pretext", "encoding"],
+    "private_vars": [
+      "pretext"
+    ],
+    "has_vars": [
+      "deleted_expression",
+      "pretext",
+      "encoding"
+    ],
     "entry_action_ids": [],
-    "activity_action_ids": ["urn:uuid:57afa4dc-dcb9-41fc-81be-730713bf6534"],
+    "activity_action_ids": [
+      "urn:uuid:57afa4dc-dcb9-41fc-81be-730713bf6534"
+    ],
     "exit_action_ids": [],
     "is_async": false,
     "name": "generate_imprint_encoding",
@@ -784,9 +834,14 @@
     "super_archs": [],
     "anchor_var": "result",
     "private_vars": [],
-    "has_vars": ["utterance_encoding", "result"],
+    "has_vars": [
+      "utterance_encoding",
+      "result"
+    ],
     "entry_action_ids": [],
-    "activity_action_ids": ["urn:uuid:ced16a32-6e39-4a56-bb17-0f1dd89127cc"],
+    "activity_action_ids": [
+      "urn:uuid:ced16a32-6e39-4a56-bb17-0f1dd89127cc"
+    ],
     "exit_action_ids": [],
     "is_async": false,
     "name": "pick_most_relevant_expression",
@@ -814,7 +869,9 @@
   {
     "super_archs": [],
     "anchor_var": null,
-    "private_vars": ["selph_default_data"],
+    "private_vars": [
+      "selph_default_data"
+    ],
     "has_vars": [
       "name",
       "description",
@@ -855,7 +912,11 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["name", "description", "threshold"],
+    "has_vars": [
+      "name",
+      "description",
+      "threshold"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -948,7 +1009,11 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["paginated", "limit", "offset"],
+    "has_vars": [
+      "paginated",
+      "limit",
+      "offset"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -979,9 +1044,16 @@
     "super_archs": [],
     "anchor_var": "imprint",
     "private_vars": [],
-    "has_vars": ["imprint", "published", "prompts", "group"],
+    "has_vars": [
+      "imprint",
+      "published",
+      "prompts",
+      "group"
+    ],
     "entry_action_ids": [],
-    "activity_action_ids": ["urn:uuid:9341c7c3-c766-43dc-9dbd-6dbf778e3f6c"],
+    "activity_action_ids": [
+      "urn:uuid:9341c7c3-c766-43dc-9dbd-6dbf778e3f6c"
+    ],
     "exit_action_ids": [],
     "is_async": false,
     "name": "create_imprint",
@@ -1010,7 +1082,11 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["published", "prompts", "group"],
+    "has_vars": [
+      "published",
+      "prompts",
+      "group"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -1103,7 +1179,11 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["paginated", "limit", "offset"],
+    "has_vars": [
+      "paginated",
+      "limit",
+      "offset"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -1134,9 +1214,14 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["text", "sequence"],
+    "has_vars": [
+      "text",
+      "sequence"
+    ],
     "entry_action_ids": [],
-    "activity_action_ids": ["urn:uuid:d5946657-a71a-4887-aaee-e50f25edd40e"],
+    "activity_action_ids": [
+      "urn:uuid:d5946657-a71a-4887-aaee-e50f25edd40e"
+    ],
     "exit_action_ids": [],
     "is_async": false,
     "name": "create_expression",
@@ -1165,7 +1250,10 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["text", "sequence"],
+    "has_vars": [
+      "text",
+      "sequence"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -1258,7 +1346,11 @@
     "super_archs": [],
     "anchor_var": null,
     "private_vars": [],
-    "has_vars": ["paginated", "limit", "offset"],
+    "has_vars": [
+      "paginated",
+      "limit",
+      "offset"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [],
     "exit_action_ids": [],
@@ -1536,8 +1628,13 @@
   {
     "super_archs": [],
     "anchor_var": null,
-    "private_vars": ["utterance_encoding"],
-    "has_vars": ["utterance", "utterance_encoding"],
+    "private_vars": [
+      "utterance_encoding"
+    ],
+    "has_vars": [
+      "utterance",
+      "utterance_encoding"
+    ],
     "entry_action_ids": [],
     "activity_action_ids": [
       "urn:uuid:d82b6e04-a61b-42ba-b7b4-51ad54518363",

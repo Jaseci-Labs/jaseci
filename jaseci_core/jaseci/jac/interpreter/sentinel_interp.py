@@ -9,6 +9,7 @@ from jaseci.jac.interpreter.interp import Interp
 from jaseci.utils.utils import parse_str_token
 from jaseci.jac.ir.jac_code import jac_ast_to_ir
 from jaseci.jac.machine.jac_scope import JacScope
+from jaseci.prim.ability import Ability
 
 
 class SentinelInterp(Interp):
@@ -124,16 +125,80 @@ class SentinelInterp(Interp):
     def arch_can_compile(self, jac_ast, arch):
         """Helper function to statically compile can stmts for arch"""
         kid = self.set_cur_ast(jac_ast)
-        self.push_scope(JacScope(parent=self, has_obj=self, action_sets=[]))
+        self.push_scope(JacScope(parent=self, has_obj=None))
         if jac_ast.name in ["attr_block", "walker_block"]:
             for i in kid:
                 if i.name == "attr_stmt" and i.kid[0].name == "can_stmt":
                     self.run_can_stmt(i.kid[0], arch)
-        elif kid[0].name == "graph_block_spawn":
-            kid = kid[0].kid[2].kid
-            for i in kid:
-                self.run_can_stmt(i, arch)
+        elif jac_ast.name == "graph_block":
+            self.run_can_block(jac_ast.kid[2], arch)
         self.pop_scope()
+
+    def run_can_block(self, jac_ast, arch):
+        """
+        can_block: (can_stmt)*;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        for i in kid:
+            if i.name == "can_stmt":
+                self.run_can_stmt(i, arch)
+
+    def run_can_stmt(self, jac_ast, obj):
+        """
+        can_stmt:
+            KW_CAN dotted_name (preset_in_out event_clause)? (
+                COMMA dotted_name (preset_in_out event_clause)?
+            )* SEMI
+            | KW_CAN NAME event_clause? code_block;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        kid = kid[1:]
+        ir = None
+        while True:
+            action_type = "activity"
+            access_list = None
+            preset_in_out = None
+            if kid[0].name == "NAME":
+                action_name = kid[0].token_text()
+            else:
+                action_name = self.run_dotted_name(kid[0])
+            kid = kid[1:]
+            if len(kid) > 0 and kid[0].name == "preset_in_out":
+                preset_in_out = jac_ast_to_ir(kid[0])
+                kid = kid[1:]
+            if len(kid) > 0 and kid[0].name == "event_clause":
+                action_type, access_list = self.run_event_clause(kid[0])
+                kid = kid[1:]
+            if kid[0].name != "code_block":
+                self.check_builtin_action(action_name, jac_ast)
+            else:
+                ir = kid[0]
+            getattr(obj, f"{action_type}_ability_ids").add_obj(
+                Ability(
+                    m_id=self._m_id,
+                    h=self._h,
+                    name=action_name,
+                    code_ir=ir,
+                    preset_in_out=preset_in_out,
+                    access_list=access_list,
+                    parent=self,
+                )
+            )
+            if not len(kid) or kid[0].name != "COMMA":
+                break
+            else:
+                kid = kid[1:]
+
+    def run_event_clause(self, jac_ast):
+        """
+        event_clause:
+                KW_WITH name_list? (KW_ENTRY | KW_EXIT | KW_ACTIVITY);
+        """
+        kid = self.set_cur_ast(jac_ast)
+        nl = []
+        if kid[1].name == "name_list":
+            nl = self.run_name_list(kid[1])
+        return kid[-1].token_text(), nl
 
     def load_test(self, jac_ast):
         """

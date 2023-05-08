@@ -325,7 +325,7 @@ Returns current runtime error list.
 
 ```json
 [
-"sentinel1:sample_walker - line 100, col 0 - rule walker - Internal Exception: 'NoneType' object has no attribute 'activity_action_ids'"
+"sentinel1:sample_walker - line 100, col 0 - rule walker - Internal Exception: 'NoneType' object has no attribute 'activity_ability_ids'"
 ]
 ```
 

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 3
 description: A guide to setup Jaseci Studio.
 ---
 
@@ -11,26 +11,31 @@ Jaseci Studio provides a user-friendly interface for managing and visualizing ch
 
 While we will delve into the details of Jaseci Studio in a later section, it is worth noting that installing Jaseci Studio is a crucial step towards mastering Jaseci. If you are curious about the features of Jaseci Studio and how to develop applications with it, feel free to skip ahead to that section. However, for the purposes of this section, we will be developing in VS Code.
 
-For a comprehensive list of Jaseci Studio's features, [click here](https://github.com/Jaseci-Labs/jaseci/blob/main/jaseci_studio/features.md).
+For a comprehensive list of Jaseci Studio's features, [click here](#features-summery).
 
 ## Installing For Developers
 
 ### Setup
 
 - Install [rust](https://www.rust-lang.org/learn/get-started)
+
 ```bash
 curl https://sh.rustup.rs -sSf | sh
 ```
+
 - Install nodejs
+
 ```
 curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash
 sudo apt-get install -y nodejs
 node -v
 ```
+
 - Install [yarn](https://classic.yarnpkg.com/lang/en/docs/install/)
 ```
 sudo npm install --global yarn
 ```
+
 - Run `yarn install`
 - Run `yarn setup:ui`
 

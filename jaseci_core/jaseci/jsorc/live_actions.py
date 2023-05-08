@@ -18,6 +18,8 @@ live_action_modules = {}  # {__module__: ["act.func1", "act.func2", ...], ...}
 action_configs = {}  # {"module_name": {}, ...}
 
 act_procs = {}
+glob_act_group = {}  # {"group_name": {"act_name": action, ...}, ...}
+glob_act_hook = None
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
@@ -283,38 +285,39 @@ def get_global_actions():
     Loads all global action hooks for use by Jac programs
     Attaches globals to mem_hook
     """
-    from jaseci.prim.action import Action
+    from jaseci.prim.ability import Ability
     from jaseci.jsorc.memory import MemoryHook
 
-    global_action_list = []
-    hook = MemoryHook()
-    for i in live_actions.keys():
-        if (
-            i.startswith("std.")
-            or i.startswith("file.")
-            or i.startswith("net.")
-            or i.startswith("rand.")
-            or i.startswith("vector.")
-            or i.startswith("request.")
-            or i.startswith("date.")
-            or i.startswith("jaseci.")
-            or i.startswith("internal.")
-            or i.startswith("zip.")
-            or i.startswith("webtool.")
-            or i.startswith("url.")
-            or i.startswith("regex.")
-        ):
-            global_action_list.append(
-                Action(
+    if not glob_act_group:
+        glob_act_hook = MemoryHook()
+        for i in live_actions.keys():
+            name = i.split(".")
+            if name[0] in [
+                "std",
+                "file",
+                "net",
+                "rand",
+                "vector",
+                "request",
+                "date",
+                "jaseci",
+                "internal",
+                "zip",
+                "webtool",
+                "url",
+                "regex",
+            ]:
+                if name[0] not in glob_act_group:
+                    glob_act_group[name[0]] = {}
+                glob_act_group[name[0]][name[1]] = Ability(
                     m_id=0,
-                    h=hook,
+                    h=glob_act_hook,
                     mode="public",
                     name=i,
                     value=i,
                     persist=False,
                 )
-            )
-    return global_action_list
+    return glob_act_group
 
 
 def unload_remote_actions(url):

@@ -1,5 +1,4 @@
 import requests
-import json
 import config
 from util import port_fowrward, authenticate
 
@@ -12,12 +11,16 @@ token = authenticate()
 # Run experiment
 payload = {
     "test": "synthetic_apps",
-    "experiment": "discussion_analysis",
+    "experiment": "restaurant_chatbot",
     "mem": 4,
-    "policy": "all_remote",
+    "policy": "evaluation",
+    "experiment_duration": 3 * 60,
 }
 headers = {"content-type": "application/json", "Authorization": f"Token {token}"}
 res = requests.post(
-    url=config.url + "/js_admin/jsorc_loadtest", headers=headers, json=payload
+    url=config.url + "/js_admin/jsorc_loadtest",
+    headers=headers,
+    json=payload,
+    timeout=None,
 )
 print(res.json())

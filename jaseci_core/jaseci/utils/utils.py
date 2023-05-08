@@ -20,8 +20,8 @@ from time import time
 from pathlib import Path
 from pprint import pformat
 from typing import Union
-
 from jaseci.utils.log_utils import LimitedSlidingBuffer
+import gprof2dot
 
 LOGS_DIR = ".jaseci_logs/"
 
@@ -226,10 +226,19 @@ def perf_test_start():
     return perf_prof
 
 
-def perf_test_stop(perf_prof, save_to_file=False):
+def perf_test_stop(perf_prof, save_to_file=True):
     perf_prof.disable()
     if save_to_file:
         perf_prof.dump_stats(f"{id(perf_prof)}.prof")
+        gprof2dot.main(
+            argv=[
+                "-f",
+                "pstats",
+                f"{id(perf_prof)}.prof",
+                "-o",
+                f"{id(perf_prof)}.prof.dot",
+            ]
+        )
     s = io.StringIO()
     sortby = pstats.SortKey.CUMULATIVE
     ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
@@ -247,7 +256,20 @@ def perf_test_to_b64(perf_prof, do_delete=True):
         with open(fn, "rb") as image_file:
             s = base64.b64encode(image_file.read()).decode()
         if do_delete:
-            os.remove(fn)
+            os.remove(f"{id(perf_prof)}.prof")
+            os.remove(f"{id(perf_prof)}.prof.dot")
+    return s
+
+
+def perf_test_to_dot(perf_prof, do_delete=True):
+    s = ""
+    fn = f"{id(perf_prof)}.prof.dot"
+    if os.path.exists(fn):
+        with open(fn, "r") as image_file:
+            s = image_file.read()
+        if do_delete:
+            os.remove(f"{id(perf_prof)}.prof")
+            os.remove(f"{id(perf_prof)}.prof.dot")
     return s
 
 

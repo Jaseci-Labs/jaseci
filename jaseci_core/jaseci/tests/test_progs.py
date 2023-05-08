@@ -11,7 +11,7 @@ from jaseci.jsorc.jsorc import JsOrc
 from jaseci.jsorc.jsorc_utils import State
 
 
-class JacTests(TestCaseHelper, TestCase):
+class ProgTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):

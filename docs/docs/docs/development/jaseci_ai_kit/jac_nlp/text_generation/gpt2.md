@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
-title: ChatGPT
-description: Text Generation with ChatGPT
+title: GPT2
+description: Text Generation with GPT2
 ---
 
 Module `gp2` uses the OpenAI's `GPT-2-medium` to perform text generation on a given text.

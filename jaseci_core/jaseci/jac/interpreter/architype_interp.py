@@ -9,6 +9,7 @@ from jaseci.prim.edge import Edge
 from jaseci.prim.walker import Walker
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
+from jaseci.jac.machine.jac_value import JacValue
 
 
 class ArchitypeInterp(Interp):
@@ -43,7 +44,7 @@ class ArchitypeInterp(Interp):
 
         kid = self.set_cur_ast(jac_ast)
 
-        self.push_scope(JacScope(parent=self, has_obj=self, action_sets=[]))
+        self.push_scope(JacScope(parent=self))
         if kid[0].name == "KW_NODE":
             item = Node(
                 m_id=self._m_id,
@@ -78,6 +79,7 @@ class ArchitypeInterp(Interp):
             )
             if kid[2].name == "namespaces":
                 item.namespaces = self.run_namespaces(jac_ast.kid[2])
+            self.build_object_with_supers(item, kid[-1])
         elif jac_ast.name == "graph_block":  # usedi n jac tests
             item = self.run_graph_block(jac_ast)
         self.pop_scope()
@@ -88,6 +90,19 @@ class ArchitypeInterp(Interp):
         namespaces: COLON name_list;
         """
         return self.run_name_list(jac_ast.kid[1])
+
+    def run_walker_block(self, jac_ast, obj):
+        """
+        walker_block:
+            LBRACE attr_stmt* walk_entry_block? (
+                statement
+                | walk_activity_block
+            )* walk_exit_block? RBRACE;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        for i in kid:
+            if i.name == "attr_stmt":
+                self.run_attr_stmt(jac_ast=i, obj=obj)
 
     def run_attr_block(self, jac_ast, obj):
         """
@@ -101,6 +116,44 @@ class ArchitypeInterp(Interp):
             if i.name == "attr_stmt":
                 self.run_attr_stmt(i, obj)
 
+    def run_attr_stmt(self, jac_ast, obj):
+        """
+        attr_stmt: has_stmt | can_stmt;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        if kid[0].name == "has_stmt":
+            self.run_has_stmt(kid[0], obj)
+        #  Can statements in architype handled in architype load
+
+    def run_has_stmt(self, jac_ast, obj):
+        """
+        has_stmt: KW_HAS has_assign (COMMA has_assign)* SEMI;
+        """
+        kid = self.set_cur_ast(jac_ast)
+        for i in kid:
+            if i.name == "has_assign":
+                self.run_has_assign(i, obj)
+
+    def run_has_assign(self, jac_ast, obj):
+        """
+        has_assign: KW_PRIVATE? KW_ANCHOR? (NAME | NAME EQ expression);
+        """
+        kid = self.set_cur_ast(jac_ast)
+        while kid[0].name in ["KW_PRIVATE", "KW_ANCHOR"]:
+            kid = kid[1:]
+        var_name = kid[0].token_text()
+        var_val = None  # jac's null
+        if len(kid) > 1:
+            self.run_expression(kid[2])
+            var_val = self.pop().value
+        if isinstance(obj, dict):
+            obj[var_name] = var_val
+        # Runs only once for walkers
+        elif var_name not in obj.context.keys() or obj.j_type != "walker":
+            JacValue(
+                self, ctx=obj, name=var_name, value=var_val, create_mode=True
+            ).write(kid[0], force=True)
+
     def run_struct_block(self, jac_ast):
         """
         struct_block: LBRACE (has_stmt)* RBRACE | COLON has_stmt | SEMI;
@@ -112,35 +165,16 @@ class ArchitypeInterp(Interp):
                 self.run_has_stmt(i, ret)
         return ret
 
-    def run_can_block(self, jac_ast):
-        """
-        can_block: (can_stmt)*;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        for i in kid:
-            if i.name == "can_stmt":
-                self.run_can_stmt(i, self)
-
     def run_graph_block(self, jac_ast):
         """
-        graph_block: graph_block_spawn;
-        """
-        kid = self.set_cur_ast(jac_ast)
-        return getattr(self, f"run_{kid[0].name}")(kid[0])
-
-    def run_graph_block_spawn(self, jac_ast):
-        """
-        graph_block_spawn:
+        graph_block:
             LBRACE has_root can_block KW_SPAWN code_block RBRACE
             | COLON has_root can_block KW_SPAWN code_block SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
         root_name = self.run_has_root(kid[1])
-        self.run_can_block(kid[2])
         m = Interp(parent_override=self.parent(), caller=self)
-        m.push_scope(
-            JacScope(parent=self, has_obj=None, action_sets=[self.activity_action_ids])
-        )
+        m.push_scope(JacScope(parent=self, here=self))
         try:
             m.run_code_block(kid[4])
         except Exception as e:
@@ -173,5 +207,9 @@ class ArchitypeInterp(Interp):
                 .get_jac_ast()
                 .kid[-1]
             )
-            self.run_attr_block(super_jac_ast, item)
-        self.run_attr_block(jac_ast, item)
+            self.run_attr_block(super_jac_ast, item) if not isinstance(
+                item, Walker
+            ) else self.run_walker_block(super_jac_ast, item)
+        self.run_attr_block(jac_ast, item) if not isinstance(
+            item, Walker
+        ) else self.run_walker_block(jac_ast, item)

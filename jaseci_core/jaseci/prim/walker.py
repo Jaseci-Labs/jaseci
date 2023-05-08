@@ -10,7 +10,7 @@ from jaseci.utils.utils import (
     logger,
     perf_test_start,
     perf_test_stop,
-    perf_test_to_b64,
+    perf_test_to_dot,
     exc_stack_as_str_list,
 )
 from jaseci.prim.element import Element
@@ -120,8 +120,6 @@ class Walker(Element, WalkerInterp, Anchored):
 
     def prime(self, start_node, prime_ctx=None, request_ctx=None):
         """Place walker on node and get ready to step step"""
-        if not self.yielded:
-            self.clear_state()
         if not self.yielded or not len(self.next_node_ids):  # modus ponens
             self.next_node_ids.add_obj(start_node, push_front=True)
         if prime_ctx:
@@ -192,7 +190,7 @@ class Walker(Element, WalkerInterp, Anchored):
             report_ret["success"] = False
         if profiling:
             self.profile["perf"] = perf_test_stop(pr)
-            self.profile["graph"] = perf_test_to_b64(pr)
+            self.profile["graph"] = perf_test_to_dot(pr)
             report_ret["profile"] = self.profile
 
         if self.for_queue():

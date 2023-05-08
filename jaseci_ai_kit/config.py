@@ -7,6 +7,7 @@ from .jac_nlp.jac_nlp.text_seg.action_config import TEXT_SEG_ACTION_CONFIG
 from .jac_nlp.jac_nlp.tfm_ner.action_config import TFM_NER_ACTION_CONFIG
 from .jac_nlp.jac_nlp.use_enc.action_config import USE_ENC_ACTION_CONFIG
 from .jac_nlp.jac_nlp.use_qa.action_config import USE_QA_ACTION_CONFIG
+from .jac_nlp.jac_nlp.bart_sum.action_config import BART_SUM_ACTION_CONFIG
 
 ACTION_CONFIGS = {
     "cl_summer": CL_SUMMER_ACTION_CONFIG,
@@ -18,4 +19,5 @@ ACTION_CONFIGS = {
     "tfm_ner": TFM_NER_ACTION_CONFIG,
     "use_enc": USE_ENC_ACTION_CONFIG,
     "use_qa": USE_QA_ACTION_CONFIG,
+    "bart_sum": BART_SUM_ACTION_CONFIG,
 }

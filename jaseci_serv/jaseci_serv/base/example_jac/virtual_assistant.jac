@@ -2,7 +2,7 @@ walker virtual_assistant {
     can text_seg.get_segments;
     can bi_enc.infer;
     can tfm_ner.extract_entity;
-    can ent_ext.entity_detection;
+    can sbert_sim.get_text_sim;
     can use.qa_classify;
     has threshold=0.9;
     # has a article
@@ -30,15 +30,15 @@ walker virtual_assistant {
     for segment in segments:
         # uses bi_enc infer each segments intent for for each sent
         pred_intent=bi_enc.infer(segment, intents, "text", "text");
-        std.out(pred_intent[0]["predicted"]["label"]);
+        pred_sbert=sbert_sim.get_text_sim([segment], intents, 1);
         # uses tfm_ner extract_entity to find general predifined entities from each segment
         fallback_ents=tfm_ner.extract_entity(segment);
-        # uses ent_ext entity_detection to get fallback entities
-        pred_ents=ent_ext.entity_detection(segment,entities);
+        // # uses ent_ext entity_detection to get fallback entities
+        // pred_ents=ent_ext.entity_detection(segment,entities);
         # uses use qa_classify to classify the intents for fallback
         fallback_intent=use.qa_classify(segment,intents);
         resp={
-            pred_intent[0]["predicted"]["label"]:pred_ents["entities"],
+            pred_intent[0]["predicted"]["label"]:fallback_ents,
             fallback_intent["match"]:fallback_ents
         };
         responses.l::append(resp);
