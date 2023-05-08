@@ -112,7 +112,7 @@ const config = {
         // Public API key: it is safe to commit it
         apiKey: '735d15bf10dc6d2ebb51f24e06e4635e',
 
-        indexName: 'YOUR_INDEX_NAME',
+        indexName: 'jaseci',
 
         // Optional: see doc section below
         contextualSearch: true,
