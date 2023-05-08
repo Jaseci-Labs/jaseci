@@ -80,10 +80,13 @@ walker init {
     if(a.str.type == str and !(a.int.type == str) and a.int.type == int):
         std.out("Types comes back correct");
 
-    std.out({"test": 1}.str); # can cast a dictionary to json string
-    std.out('{"test2": 2}'.dict); # can cast json string to dictionary
-    std.out(({"test": 1}.str).type);
-    std.out(('{"test2": 2}'.dict).type);
+    # can cast a dictionary to json string
+    val={"test": 1}.str;
+    std.out(val, val.type);
+
+    # can cast json string to dictionary
+    val='{"test2": 2}'.dict;
+    std.out(val, val.type);
 }
 ```
 **Output**
@@ -94,10 +97,8 @@ walker init {
 true
 7.0
 Types comes back correct
-{"test": 1}
-{"test2": 2}
-JAC_TYPE.STR
-JAC_TYPE.DICT
+{"test": 1} JAC_TYPE.STR
+{"test2": 2} JAC_TYPE.DICT
 ```
 
 ## Operators
