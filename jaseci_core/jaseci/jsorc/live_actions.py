@@ -124,11 +124,12 @@ def action_handler(mod, ctx, in_q, out_q):
         out_q.put((action, result))
 
 
-def action_handler_wrapper(*args, **kwargs):
+def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
-    module = "jac_nlp.cl_summer"
-    name = "cl_summer.summarize"
+    module = name.split(".")[0]
+    act_name = name.split(".")[1]
+    module = f"jac_nlp.{module}"
 
     act_procs[module]["in_q"].put((name, args, kwargs))
 

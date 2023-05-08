@@ -7,6 +7,7 @@ from jaseci.jsorc.live_actions import (
     gen_remote_func_hook,
     load_module_actions,
     live_actions,
+    load_remote_actions,
 )
 from jaseci.utils.test_core import CoreTest
 from jaseci.jsorc.jsorc import JsOrc
@@ -93,6 +94,7 @@ class JacActionsTests(TestCaseHelper, TestCase):
                 report cl_summer.summarize("Today is a beautiful day.");
             }
         """
+        # load_remote_actions("http://localhost:8000")
         load_module_actions("jac_nlp.cl_summer")
         sent = Sentinel(m_id=0, h=JsOrc.hook())
         sent.register_code(jac_code)

@@ -76,7 +76,12 @@ class Action(Item):
             )
         else:
             try:
-                result = func(*param_list["args"], **param_list["kwargs"])
+                if func.__module__ == "js_remote_hook":
+                    result = func(*param_list["args"], **param_list["kwargs"])
+                else:
+                    result = func(
+                        self.value, *param_list["args"], **param_list["kwargs"]
+                    )
             except TypeError as e:
                 params = str(inspect.signature(func))
                 interp.rt_error(
@@ -86,7 +91,7 @@ class Action(Item):
                 raise
             except Exception as e:
                 interp.rt_error(
-                    f"Execption within action call {self.name}! {e}",
+                    f"Exception within action call {self.name}! {e}",
                     interp._cur_jac_ast,
                 )
                 raise
