@@ -64,6 +64,7 @@ class WalkerApi:
         Creates new instance of walker and returns new walker object
         """
         wlk = snt.run_architype(name=name, kind="walker", caller=self, is_async=False)
+        wlk.make_persistent()
         if wlk:
             if self.spawned_walker_ids.has_obj_by_name(name):
                 self.spawned_walker_ids.destroy_obj_by_name(name)
