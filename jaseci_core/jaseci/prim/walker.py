@@ -40,6 +40,8 @@ class Walker(Element, WalkerInterp, Anchored):
         self.step_limit = 10000
         self.is_async = is_async
         self._to_await = False
+        if "persist" not in kwargs:  # Default walker persistence to is_async
+            kwargs["persist"] = is_async
         Element.__init__(self, **kwargs)
         WalkerInterp.__init__(self)
         Anchored.__init__(self)
