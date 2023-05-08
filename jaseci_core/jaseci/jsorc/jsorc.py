@@ -3,7 +3,7 @@ import psycopg2
 
 from time import sleep
 from copy import deepcopy
-from json import dumps, loads
+from json import dumps
 from datetime import datetime
 from typing import TypeVar, Any, Union
 
