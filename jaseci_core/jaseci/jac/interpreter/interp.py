@@ -19,6 +19,7 @@ from jaseci.jac.machine.machine_state import TryException
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.machine.jac_value import jac_elem_unwrap as jeu
 from jaseci.jac.machine.jac_value import jac_wrap_value as jwv
+from json import dumps, loads
 from copy import copy, deepcopy
 from base64 import b64decode
 from itertools import pairwise
@@ -892,7 +893,12 @@ class Interp(VirtualMachine):
                 )
         else:
             try:
-                atom_res.value = typ.value(atom_res.value)
+                if isinstance(atom_res.value, str) and typ.value == dict:
+                    atom_res.value = loads(atom_res.value)
+                elif isinstance(atom_res.value, dict) and typ.value == str:
+                    atom_res.value = dumps(atom_res.value)
+                else:
+                    atom_res.value = typ.value(atom_res.value)
             except Exception as e:
                 self.rt_error(
                     f"Invalid cast of {atom_res.jac_type()} "

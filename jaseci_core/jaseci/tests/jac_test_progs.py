@@ -746,3 +746,12 @@ walker a {
     }
 }
 """
+
+json_casting = """
+walker json_casting {
+    with entry {
+        report {"test": 1}.str;
+        report '{"test2": 2}'.dict;
+    }
+}
+"""
