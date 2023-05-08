@@ -123,7 +123,7 @@ class RedisHook(MemoryHook):
     def decommit_obj_from_cache(self, item):
         super().decommit_obj_from_cache(item)
 
-        if self.redis.is_running():
+        if item._persist and self.redis.is_running():
             self.redis.delete(item.jid)
 
     ###################################################
