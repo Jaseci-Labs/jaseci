@@ -5,7 +5,7 @@ core engine.
 import json
 
 import jaseci as core_mod
-from jaseci.utils.json_handler import JaseciJsonDecoder
+from jaseci.utils.json_handler import JaseciJsonDecoder, jsci_dict_normalize
 from jaseci.jsorc.memory import MemoryHook
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.redis_svc import RedisService
@@ -45,7 +45,8 @@ class RedisHook(MemoryHook):
                 j_master = jdict["j_master"]
                 class_for_type = self.find_class_and_import(j_type, core_mod)
                 ret_obj = class_for_type(h=self, m_id=j_master, auto_save=False)
-                ret_obj.json_load(loaded_obj)
+                jsci_dict_normalize(jdict, parent_obj=ret_obj)
+                ret_obj.dict_load(jdict)
 
                 super().commit_obj_to_cache(ret_obj)
                 obj = ret_obj
