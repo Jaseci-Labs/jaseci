@@ -18,3 +18,15 @@ walker deep_except {
         report error;
     }
 }
+
+walker complex {
+    for i = 0 to i < 1000 by i+=1 {
+        spawn here walker::creater;
+    }
+}
+
+walker creater {
+    root {
+        new_node = spawn here ++> node::simple;
+    }
+}

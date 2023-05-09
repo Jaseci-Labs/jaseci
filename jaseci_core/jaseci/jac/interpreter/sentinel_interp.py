@@ -178,6 +178,7 @@ class SentinelInterp(Interp):
                     m_id=self._m_id,
                     h=self._h,
                     name=action_name,
+                    kind="ability",
                     code_ir=ir,
                     preset_in_out=preset_in_out,
                     access_list=access_list,
