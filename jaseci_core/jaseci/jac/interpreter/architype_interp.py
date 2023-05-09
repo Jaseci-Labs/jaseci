@@ -44,7 +44,7 @@ class ArchitypeInterp(Interp):
 
         kid = self.set_cur_ast(jac_ast)
 
-        self.push_scope(JacScope(parent=self, name=f"spawn:{jac_ast.loc[0]}"))
+        self.push_scope(JacScope(parent=self, name=f"spawn:{jac_ast.loc_str()}"))
         if kid[0].name == "KW_NODE":
             item = Node(
                 m_id=self._m_id,

@@ -80,7 +80,7 @@ class MachineState:
 
     def profile_out(self):
         if self._mast and self._mast._profiling:
-            name = f"{self.kind}::{self.name}:{self._jac_scope.name}"
+            name = f"{self._jac_scope.name}:{self.kind}::{self.name}"
             if name not in self._mast._jac_profile:
                 self._mast._jac_profile[name] = {
                     "calls": 1,

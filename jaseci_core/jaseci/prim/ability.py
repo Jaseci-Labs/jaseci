@@ -38,7 +38,7 @@ class Ability(Element, JacCode, Interp):
         self.push_scope(
             JacScope(
                 parent=self,
-                name=f"a_run:{self.get_jac_ast().loc[0]}",
+                name=f"a_run:{self.get_jac_ast().loc_str()}",
                 has_obj=here,
                 here=here,
                 visitor=visitor,

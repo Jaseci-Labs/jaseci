@@ -126,7 +126,7 @@ class SentinelInterp(Interp):
         """Helper function to statically compile can stmts for arch"""
         kid = self.set_cur_ast(jac_ast)
         self.push_scope(
-            JacScope(parent=self, name=f"a_cgen:{jac_ast.loc[0]}", has_obj=None)
+            JacScope(parent=self, name=f"a_cgen:{jac_ast.loc_str()}", has_obj=None)
         )
         if jac_ast.name in ["attr_block", "walker_block"]:
             for i in kid:

@@ -42,6 +42,9 @@ class Ast:
         if self.is_terminal():
             return self.token()["symbol"]
 
+    def loc_str(self):
+        return f"{self.loc[2]}:{self.loc[0]}"
+
     def __str__(self):
         res = f"{self.name}:{self.loc[2]}:{self.loc[0]}:{self.loc[1]}:"
         if self.is_terminal():
