@@ -188,8 +188,7 @@ class WalkerInterp(Interp):
         """
         kid = self.set_cur_ast(jac_ast)
         param_list = {"args": [], "kwargs": []}
-        m = Interp(parent_override=self.parent(), caller=self)
-        m.push_scope(
+        self.push_scope(
             JacScope(
                 parent=self,
                 has_obj=self.current_node,
@@ -199,17 +198,18 @@ class WalkerInterp(Interp):
         )
 
         if kid[1].name == "param_list":
-            param_list = m.run_param_list(kid[1]).value
+            param_list = self.run_param_list(kid[1]).value
         try:
             result = act.run_action(param_list, self._jac_scope, self)
         except Exception as e:
-            self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
+            self.rt_error(f"Internal Exception: {e}", self._cur_jac_ast)
             result = None
         if kid[-1].name == "expression":
-            m.run_expression(kid[-1])
-            dest = m.pop()
+            self.run_expression(kid[-1])
+            dest = self.pop()
             dest.value = result
             dest.write(kid[-1])
+        self.pop_scope()
 
     # Helper Functions ##################
     def auto_trigger_node_actions(self, act_list):

@@ -19,23 +19,22 @@ from jaseci.prim.edge import Edge
 from jaseci.prim.node import Node
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.jsci_vm.op_codes import JsCmp
+import time
 
 
 class MachineState:
     """Shared interpreter class across both sentinels and walkers"""
 
-    def __init__(self, parent_override=None, caller=None):
+    def __init__(self):
         self.report = []
         self.report_status = None
         self.report_custom = None
         self.request_context = None
         self.runtime_errors = []
+        self.jac_profile = []
+        self._start_time = None
         self.yielded_walkers_ids = IdList(self)
         self.ignore_node_ids = IdList(self)
-        self._parent_override = parent_override
-        if not isinstance(self, Element) and caller:
-            self._m_id = caller._m_id
-            self._h = caller._h
         self._scope_stack = [None]
         self._jac_scope = None
         self._relevant_edges = []
@@ -53,10 +52,7 @@ class MachineState:
             self._h._machine = self
 
     def parent(self):  # parent here is always a sentinel
-        if self._parent_override:
-            return self._parent_override
-        else:
-            return Element.parent(self)
+        return Element.parent(self)
 
     def reset(self):
         self.report = []
@@ -75,6 +71,12 @@ class MachineState:
     def pop_scope(self):
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
+
+    def profile_in(self):
+        self._start_time = time.time()
+
+    def profile_out(self):
+        self.jac_profile.append((self.name, time.time() - self._start_time))
 
     def here(self):
         return self._scope_stack[-1].here() if self._scope_stack[-1] else None
