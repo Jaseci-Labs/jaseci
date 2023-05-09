@@ -216,5 +216,5 @@ class StackTests(CoreTest):
             self.mast, ["walker_run", {"name": "complex", "profiling": True}]
         )
         self.log(ret)
-        self.assertIn("cdum_time", ret["profile"]["jac"])
+        self.assertIn("cum_time", ret["profile"]["jac"])
         self.assertIn("init", ret["profile"]["graph"])
