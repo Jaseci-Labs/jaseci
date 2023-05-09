@@ -19,14 +19,24 @@ walker deep_except {
     }
 }
 
+node cnode {
+    has a=4,b=5,c=3;
+    can jump with complex entry {
+        a=b+c;
+        b=a+c;
+        c=a+b;
+    }
+}
+
 walker complex {
-    for i = 0 to i < 1000 by i+=1 {
+    for i = 0 to i < 40 by i+=1 {
         spawn here walker::creater;
     }
+    take -->;
 }
 
 walker creater {
     root {
-        new_node = spawn here ++> node::simple;
+        new_node = spawn here ++> node::cnode;
     }
 }

@@ -384,7 +384,7 @@ def script(filename, profile, output):
         with open(output, "w") as f:
             f.write("Multi Command Script Output:\n")
     for i in cmds:
-        res = CliRunner(mix_stderr=False).invoke(jsctl, i.split())
+        res = CliRunner(mix_stderr=False).invoke(jsctl, i)
         click.echo(res.stdout)
         if output:
             with open(output, "a") as f:

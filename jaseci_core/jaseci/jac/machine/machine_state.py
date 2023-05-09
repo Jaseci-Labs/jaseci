@@ -44,6 +44,7 @@ class MachineState:
         self._cur_jac_ast = Ast("none")
         self._write_candidate = None
         self._mast = self.get_master()
+
         self.inform_hook()
 
     def inform_hook(self):
@@ -75,19 +76,22 @@ class MachineState:
     def profile_in(self):
         if self._mast and self._mast._profiling:
             self._jac_scope._start_time = time.time()
+            self._jac_scope._per_call_start = time.time()
 
     def profile_out(self):
         if self._mast and self._mast._profiling:
-            name = f"{self.kind}::{self.name}:{self._jac_scope.name}"
+            name = f"{self._jac_scope.name}:{self.kind}::{self.name}"
             if name not in self._mast._jac_profile:
                 self._mast._jac_profile[name] = {
                     "calls": 1,
                     "time": self._jac_scope._total_time
                     + (time.time() - self._jac_scope._start_time),
+                    "per_call": time.time() - self._jac_scope._per_call_start,
                 }
             else:
                 c = self._mast._jac_profile[name]["calls"]
                 t = self._mast._jac_profile[name]["time"]
+                p = self._mast._jac_profile[name]["per_call"]
                 self._mast._jac_profile[name]["calls"] = c + 1
                 self._mast._jac_profile[name]["time"] = (
                     t * c
@@ -96,6 +100,9 @@ class MachineState:
                         + (time.time() - self._jac_scope._start_time)
                     )
                 ) / (c + 1)
+                self._mast._jac_profile[name]["per_call"] = (
+                    p * t + time.time() - self._jac_scope._per_call_start
+                )
 
     def profile_pause(self):
         if self._mast and self._mast._profiling and self._jac_scope:

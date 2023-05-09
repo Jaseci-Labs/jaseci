@@ -215,6 +215,6 @@ class StackTests(CoreTest):
         ret = self.call(
             self.mast, ["walker_run", {"name": "complex", "profiling": True}]
         )
-        self.log(ret)
+        print(ret["profile"]["jac"])
         self.assertIn("cum_time", ret["profile"]["jac"])
         self.assertIn("init", ret["profile"]["graph"])

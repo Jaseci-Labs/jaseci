@@ -279,13 +279,15 @@ def format_jac_profile(jac_profile, sort_by="cum_time"):
     for k in jac_profile.keys():
         c = jac_profile[k]["calls"]
         t = jac_profile[k]["time"]
-        jac_profile[k]["cum_time"] = c * t
+        p = jac_profile[k]["per_call"]
+        jac_profile[k]["tot_time"] = t * c
+        jac_profile[k]["cum_time"] = p * c
         jac_profile[k]["name"] = k
         entries.append(jac_profile[k])
     sorted_entries = sorted(entries, key=lambda x: x[sort_by], reverse=True)
-    csv = "name,calls,time,cum_time\n"
+    csv = "name,calls,time,per_call,tot_time,cum_time\n"
     for e in sorted_entries:
-        csv += f"{e['name']},{e['calls']},{e['time']},{e['cum_time']}\n"
+        csv += f"{e['name']},{e['calls']},{e['time']},{e['per_call']},{e['tot_time']},{e['cum_time']}\n"
     return csv
 
 
