@@ -80,7 +80,7 @@ class MachineState:
 
     def profile_out(self):
         if self._mast and self._mast._profiling:
-            name = f"{self._jac_scope.name}:{self.kind}::{self.name}"
+            name = f"{self.kind}::{self.name}:{self._jac_scope.name}"
             if name not in self._mast._jac_profile:
                 self._mast._jac_profile[name] = {
                     "calls": 1,
@@ -101,8 +101,8 @@ class MachineState:
                     )
                 ) / (c + 1)
                 self._mast._jac_profile[name]["per_call"] = (
-                    p * t + time.time() - self._jac_scope._per_call_start
-                )
+                    p * c + time.time() - self._jac_scope._per_call_start
+                ) / (c + 1)
 
     def profile_pause(self):
         if self._mast and self._mast._profiling and self._jac_scope:

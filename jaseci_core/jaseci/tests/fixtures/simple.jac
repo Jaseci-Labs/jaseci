@@ -29,10 +29,19 @@ node cnode {
 }
 
 walker complex {
-    for i = 0 to i < 40 by i+=1 {
-        spawn here walker::creater;
+    has limit = 130;
+    root {
+            spawn here walker::creater;
     }
-    take -->;
+    cnode {
+        a = spawn here ++> node::cnode;
+        spawn a walker::other;
+    }
+    if limit {take -->; limit-=1;}
+}
+
+walker other{
+    take <--;
 }
 
 walker creater {
