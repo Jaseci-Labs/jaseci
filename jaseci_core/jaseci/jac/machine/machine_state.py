@@ -43,8 +43,7 @@ class MachineState:
         self._loop_limit = 10000
         self._cur_jac_ast = Ast("none")
         self._write_candidate = None
-        self._jac_profile = {}
-        self._start_time = None
+        self._mast = self.get_master()
         self.inform_hook()
 
     def inform_hook(self):
@@ -62,34 +61,32 @@ class MachineState:
         self._stopped = None
 
     def push_scope(self, scope: JacScope):
-        mast = self.get_master()
-        if mast and mast._profiling:
-            self.profile_in()
         self._scope_stack.append(scope)
         self._jac_scope = scope
+        if self._mast and self._mast._profiling:
+            self.profile_in()
 
     def pop_scope(self):
+        if self._mast and self._mast._profiling:
+            self.profile_out()
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
-        mast = self.get_master()
-        if mast and mast._profiling:
-            self.profile_out()
 
     def profile_in(self):
-        self._start_time = time.time()
+        self._jac_scope._start_time = time.time()
 
     def profile_out(self):
         name = f"{self.kind}::{self.name}"
-        if name not in self._jac_profile:
-            self._jac_profile[name] = {
+        if name not in self._mast._jac_profile:
+            self._mast._jac_profile[name] = {
                 "calls": 1,
-                "time": time.time() - self._start_time,
+                "time": time.time() - self._jac_scope._start_time,
             }
         else:
-            c = self._jac_profile[name]["calls"]
-            t = self._jac_profile[name]["time"]
-            self._jac_profile[name]["calls"] = c + 1
-            self._jac_profile[name]["time"] = (
+            c = self._mast._jac_profile[name]["calls"]
+            t = self._mast._jac_profile[name]["time"]
+            self._mast._jac_profile[name]["calls"] = c + 1
+            self._mast._jac_profile[name]["time"] = (
                 t * c + (time.time() - self._start_time)
             ) / (c + 1)
 
@@ -171,19 +168,6 @@ class MachineState:
         if mach.report_custom:
             self.report_custom = mach.report_custom
         self.runtime_errors += mach.runtime_errors
-        for key, value in mach._jac_profile.items():
-            if key not in self._jac_profile:
-                self._jac_profile[key] = {
-                    "calls": value["calls"],
-                    "time": value["time"],
-                }
-            else:
-                sum1 = self._jac_profile[key]["calls"] * self._jac_profile[key]["time"]
-                sum2 = value["calls"] * value["time"]
-                self._jac_profile[key]["calls"] += value["calls"]
-                self._jac_profile[key]["time"] = (sum1 + sum2) / self._jac_profile[key][
-                    "calls"
-                ]
 
     def obj_set_to_jac_set(self, obj_set):
         """

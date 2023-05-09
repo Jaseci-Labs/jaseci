@@ -27,7 +27,7 @@ class Ability(Element, JacCode, Interp):
         self.preset_in_out = preset_in_out  # Not using _ids convention
         self.access_list = access_list
         Element.__init__(self, *args, **kwargs)
-        JacCode.__init__(self, code_ir)
+        JacCode.__init__(self, code_ir=code_ir)
         Interp.__init__(self)
 
     def run_ability(self, here, visitor):

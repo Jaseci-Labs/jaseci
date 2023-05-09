@@ -173,13 +173,11 @@ class ArchitypeInterp(Interp):
         """
         kid = self.set_cur_ast(jac_ast)
         root_name = self.run_has_root(kid[1])
-        self.push_scope(JacScope(parent=self, here=self))
         try:
             self.run_code_block(kid[4])
         except Exception as e:
             self.rt_error(f"Internal Exception: {e}", self._cur_jac_ast)
         local_state = self._jac_scope.local_scope
-        self.pop_scope()
         if root_name in local_state.keys():
             obj = local_state[root_name]
             if not isinstance(obj, Node):
