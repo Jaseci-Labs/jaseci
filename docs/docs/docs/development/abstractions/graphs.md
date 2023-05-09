@@ -30,13 +30,16 @@ In Jaseci, nodes are a crucial concept. There are two types of nodes:
 - **Root node**: It is the starting point of the graph and is a built-in node type. Each graph can have only one root node.
 - **Generic node**: It is a built-in node type that can be used throughout the Jaseci application. You can customize the name and properties of this node type as well.
 
-Here's an example code snippet to create and spawn a node:
+Here's an example code snippet to create a node:
 
 ```jac
 node person{
     has name, age, birthday, profession;
 }
 ```
+In a Jac programming language, we can define variables in a person node using the `has` keyword. For instance, in the above example `name`, `age`, `birthday`, and `profession` are defined as variables. Unlike many other programming languages, we do not have to explicitly declare the variable type. Instead, Jac will automatically detect the type based on the assigned value, such as `String` or `int`.
+
+Moreover, we can set default values for variables. For instance, we could set `profession` to have a default value of `developer` with `has profession = developer` .
 
 ## Edges
 
@@ -56,16 +59,105 @@ edge relationship{
 }
 ```
 
+Like nodes, edges also can have variables. Similarly variables inside edges also treated as variables inside nodes.
+
 ## Operators for connecting nodes
 
 In Jaseci, specific operators are used to connect nodes and edges to form graphs;
 
--  **`++>`** : This operator is used to connect two nodes in a forward direction. For example, **`node1 ++> node2`** will connect node1 to node2.
-- **`<++>`** : This operator is used to connect two nodes in a backward direction. For example, **`node2 <++> node1`** will connect node2 to node1.
-- **`<+[name_of_edge]+>`** : This operator is used to connect two nodes in a backward direction with a custom edge type. For example, **`node2 <+[custom_edge]+> node1`** will connect node2 to node1 with a custom edge type named custom_edge.
-- **`+[name_of_edge]+>`** : This operator is used to connect two nodes in a forward direction with a custom edge type. For example, **`node1 +[custom_edge]+> node2`** will connect node1 to node2 with a custom edge type named custom_edge.
-- **`<+[name_of_edge(variable_declared = some_value)]+>`** : This operator is used to connect two nodes in a backward direction with a custom edge type that has a variable declared with a specific value. For example, **`node2 <+[custom_edge(my_var = 42)]+> node1`** will connect node2 to node1 with a custom edge type named custom_edge and a variable my_var declared with the value 42.
-- **`+[name_of_edge(variable_declared = some_value)]+>`** : This operator is used to connect two nodes in a forward direction with a custom edge type that has a variable declared with a specific value. For example, **`node1 +[custom_edge(my_var = "hello")]+> node2`** will connect node1 to node2 with a custom edge type named custom_edge and a variable my_var declared with the value "hello".
+**`++>`**
+
+This operator is used to connect two nodes in a forward direction. For example, `root ++> node1` will connect root to node1. See the code snippet and the expected graph in the following example.
+
+```jac
+walker init {
+    node1 = spawn here ++> node::person(name = "Josh", age = 32);
+    node2 = spawn here ++> node::person(name = "Jane", age = 30);
+}
+```
+Expected Graph:
+
+  ![Example Graph 1](img/graph_ex1.png "Example Graph")
+
+**`<++>`**
+
+This operator is used to connect two nodes in a backward direction. For example, `node2 <++> node1` will connect node2 to node1 with a bidirectional edge.
+
+```jac
+walker init {
+    node1 = spawn here ++> node::person(name = "Josh", age = 32);
+    node2 = spawn here ++> node::person(name = "Jane", age = 30);
+    node1 <++> node2;
+}
+```
+
+**Expected Graph:**
+
+  ![Example Graph 1](img/graph_ex2.png "Example Graph")
+
+**`<+[name_of_edge]+>`**
+
+This operator is used to connect two nodes in a backward direction with a custom edge type. For example, `node2 <+[custom_edge]+> node1` will connect node2 to node1 with a custom edge type named custom_edge.
+
+```jac
+walker init {
+    node1 = spawn here ++> node::person(name = "Josh", age = 32);
+    node2 = spawn here ++> node::person(name = "Jane", age = 30);
+    node1 <+[relationship]+> node2;
+}
+```
+Expected Graph:
+
+  ![Example Graph 1](img/graph_ex3.png "Example Graph")
+
+
+**`+[name_of_edge]+>`**
+
+This operator is used to connect two nodes in a forward direction with a custom edge type. For example, `node1 +[custom_edge]+> node2` will connect node1 to node2 with a custom edge type named custom_edge.
+
+```jac
+walker init {
+    node1 = spawn here ++> node::person(name = "Josh", age = 32);
+    node2 = spawn here ++> node::person(name = "Jane", age = 30);
+    node1 +[relationship]+> node2;
+}
+```
+
+Expected Graph:
+
+  ![Example Graph 1](img/graph_ex4.png "Example Graph")
+
+
+**`<+[name_of_edge(variable_declared = some_value)]+>`**
+
+This operator is used to connect two nodes in a backward direction with a custom edge type that has a variable declared with a specific value. For example, `node2 <+[custom_edge(my_var = 42)]+> node1` will connect node2 to node1 with a custom edge type named custom_edge and a variable my_var declared with the value 42.
+
+```jac
+walker init {
+    node1 = spawn here ++> node::person(name = "Josh", age = 32);
+    node2 = spawn here ++> node::person(name = "Jane", age = 30);
+    node1 <+[relationship(relationship_type="Siblings")]+> node2;
+}
+```
+Expected Graph:
+
+![Example Graph 1](img/graph_ex5.png "Example Graph")
+
+**`+[name_of_edge(variable_declared = some_value)]+>`**
+
+This operator is used to connect two nodes in a forward direction with a custom edge type that has a variable declared with a specific value. For example, `node1 +[custom_edge(my_var = "hello")]+> node2` will connect node1 to node2 with a custom edge type named custom_edge and a variable my_var declared with the value "hello".
+
+```jac
+walker init {
+    node1 = spawn here ++> node::person(name = "Josh", age = 32);
+    node2 = spawn here ++> node::person(name = "Jane", age = 30);
+    node1 +[relationship(relationship_type="Siblings")]+> node2;
+}
+```
+
+Expected Graph:
+
+![Example Graph 1](img/graph_ex6.png "Example Graph")
 
 These operators allow you to create complex graphs with customized edge types that can hold specific values. By using these operators, you can create a network of nodes that can represent complex data structures, such as trees or graphs. The use of customized edge types also allows you to define specific behavior for different types of connections between nodes.
 
@@ -75,13 +167,16 @@ Graphs can be created by connecting multiple nodes with edges. This is done usin
 
 ```jac
 walker init {
-    node1 = spawn here node::person(name = "Josh", age = 32);
-    node2 = spawn here node::person(name = "Jane", age = 30);
+    node1 = spawn here ++> node::person(name = "Josh", age = 32);
+    node2 = spawn here ++> node::person(name = "Jane", age = 30);
+    node3 = spawn node2 <++ node::person(name="Tina", age = 29);
     node1 <++> node2;
-    here ++> node1;
-    node2 <++ here
 }
 ```
+
+Expected Graph:
+
+![Example Graph 1](img/graph_ex7.png "Example Graph")
 
 The code shown above generates a graph. You can visualize this graph using Jaseci Studios or the Graphviz graph viewer.
 <!-- Need to add links to Jaseci Studio docs and Graphviz docs -->
@@ -90,9 +185,11 @@ The code shown above generates a graph. You can visualize this graph using Jasec
 
 Statically creating graphs means creating a graph that is already fixed and doesn't change. The code below shows an example of how to do that in Jaseci.
 
+Let's recreate the above graph statistically;
+
 ```jac
-graph assistant_graph {
- has anchor graph_root;
+graph family {
+ has anchor family_root;
     spawn {
         graph_root = spawn node::state(name="root_state");
         user_node = spawn node::user;
@@ -208,6 +305,36 @@ walker init{
     }
 }
  ```
+Expected output with Jac Run:
+
+```json
+{
+  "success": true,
+    {
+      "Plucking location from edges": []
+    },
+    {
+      "Plucking people from edge": [
+        "non",
+        "est",
+        "adipisci",
+        "eius",
+        "quia"
+      ]
+    },
+    {
+      "Plucking location from edges": [
+        "est",
+        "eius",
+        "ipsum",
+        "aliquam",
+        "adipisci"
+      ]
+    },
+  "final_node": "urn:uuid:9abb0dc4-538a-4ccb-8d90-fc9d46d845a1",
+  "yielded": false
+}
+```
 
  In this example, we create a graph called people_in_society that contains nodes representing people and an edge called society that connects the nodes. The society edge has a location variable. The print_names walker plucks the names of the people and their locations from the society edge and reports them.
 
@@ -218,6 +345,9 @@ The pluck feature in Jaseci allows for easy extraction of information from nodes
 JAC allows for nodes and edges  to inherit attributes and functions of the same type .
 
 ### Node Inheritance
+
+See the examples below which demonstrate the node inheritance. The `input_state` and `output_state` nodes are inherited from the `state` node.
+
 ```jac
 node state {
     has title;
@@ -235,6 +365,8 @@ node output_state :input:state{
 ```
 
 ### Edge Inheritance
+
+In the following example the `transition_back` edge was inherited from the `transition` node.
 
 ```jac
 edge transition {
