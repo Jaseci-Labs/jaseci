@@ -24,6 +24,7 @@ class WalkerInterp(Interp):
         self.scope_and_run(
             jac_ast if jac_ast.name == "walker_block" else kid[-1],
             self.run_walker_block,
+            scope_name=f"w_run{jac_ast.loc[0]}",
         )
 
     def run_walker_block(self, jac_ast):
@@ -191,6 +192,7 @@ class WalkerInterp(Interp):
         self.push_scope(
             JacScope(
                 parent=self,
+                name=f"p_in_out:{jac_ast.loc[0]}",
                 has_obj=self.current_node,
                 here=self.current_node,
                 visitor=self,
@@ -229,13 +231,19 @@ class WalkerInterp(Interp):
             if not i.preset_in_out:  # All preset in and outs get executed
                 already_executed.append(i.name)
 
-    def scope_and_run(self, jac_ast, run_func):
+    def scope_and_run(self, jac_ast, run_func, scope_name):
         """
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
         self.push_scope(
-            JacScope(parent=self, has_obj=self, here=self.current_node, visitor=self)
+            JacScope(
+                parent=self,
+                name=scope_name,
+                has_obj=self,
+                here=self.current_node,
+                visitor=self,
+            )
         )
         run_func(jac_ast)
         self.pop_scope()

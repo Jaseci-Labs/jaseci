@@ -61,34 +61,50 @@ class MachineState:
         self._stopped = None
 
     def push_scope(self, scope: JacScope):
+        self.profile_pause()
         self._scope_stack.append(scope)
         self._jac_scope = scope
-        if self._mast and self._mast._profiling:
-            self.profile_in()
+        self.profile_in()
 
     def pop_scope(self):
-        if self._mast and self._mast._profiling:
-            self.profile_out()
+        self.profile_out()
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
+        self.profile_unpause()
 
     def profile_in(self):
-        self._jac_scope._start_time = time.time()
+        if self._mast and self._mast._profiling:
+            self._jac_scope._start_time = time.time()
 
     def profile_out(self):
-        name = f"{self.kind}::{self.name}"
-        if name not in self._mast._jac_profile:
-            self._mast._jac_profile[name] = {
-                "calls": 1,
-                "time": time.time() - self._jac_scope._start_time,
-            }
-        else:
-            c = self._mast._jac_profile[name]["calls"]
-            t = self._mast._jac_profile[name]["time"]
-            self._mast._jac_profile[name]["calls"] = c + 1
-            self._mast._jac_profile[name]["time"] = (
-                t * c + (time.time() - self._jac_scope._start_time)
-            ) / (c + 1)
+        if self._mast and self._mast._profiling:
+            name = f"{self.kind}::{self.name}"
+            if name not in self._mast._jac_profile:
+                self._mast._jac_profile[name] = {
+                    "calls": 1,
+                    "time": self._jac_scope._total_time
+                    + (time.time() - self._jac_scope._start_time),
+                }
+            else:
+                c = self._mast._jac_profile[name]["calls"]
+                t = self._mast._jac_profile[name]["time"]
+                self._mast._jac_profile[name]["calls"] = c + 1
+                self._mast._jac_profile[name]["time"] = (
+                    t * c
+                    + (
+                        self._jac_scope._total_time
+                        + (time.time() - self._jac_scope._start_time)
+                    )
+                ) / (c + 1)
+
+    def profile_pause(self):
+        if self._mast and self._mast._profiling and self._jac_scope:
+            self._jac_scope._total_time += time.time() - self._jac_scope._start_time
+            self._jac_scope._start_time = None
+
+    def profile_unpause(self):
+        if self._mast and self._mast._profiling and self._jac_scope:
+            self._jac_scope._start_time = time.time()
 
     def here(self):
         return self._scope_stack[-1].here() if self._scope_stack[-1] else None

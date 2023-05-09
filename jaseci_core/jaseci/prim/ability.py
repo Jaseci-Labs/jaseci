@@ -35,7 +35,15 @@ class Ability(Element, JacCode, Interp):
         Run ability
         """
         Interp.__init__(self)  # Reset before as result need to be absorbed after
-        self.push_scope(JacScope(parent=self, has_obj=here, here=here, visitor=visitor))
+        self.push_scope(
+            JacScope(
+                parent=self,
+                name=f"a_run:{self.get_jac_ast().loc[0]}",
+                has_obj=here,
+                here=here,
+                visitor=visitor,
+            )
+        )
         self.run_code_block(self.get_jac_ast())
         self.pop_scope()
 
