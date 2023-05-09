@@ -87,7 +87,7 @@ class MachineState:
             t = self._mast._jac_profile[name]["time"]
             self._mast._jac_profile[name]["calls"] = c + 1
             self._mast._jac_profile[name]["time"] = (
-                t * c + (time.time() - self._start_time)
+                t * c + (time.time() - self._jac_scope._start_time)
             ) / (c + 1)
 
     def here(self):
