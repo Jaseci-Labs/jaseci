@@ -273,6 +273,24 @@ def perf_test_to_dot(perf_prof, do_delete=True):
     return s
 
 
+def format_jac_profile(jac_profile, sort_by="cum_time"):
+    """Format a JAC profile to a csv string"""
+    entries = []
+    for k in jac_profile.keys():
+        c = jac_profile[k]["calls"]
+        t = jac_profile[k]["time"]
+        p = jac_profile[k]["per_call"]
+        jac_profile[k]["tot_time"] = t * c
+        jac_profile[k]["cum_time"] = p * c
+        jac_profile[k]["name"] = k
+        entries.append(jac_profile[k])
+    sorted_entries = sorted(entries, key=lambda x: x[sort_by], reverse=True)
+    csv = "name,calls,time,per_call,tot_time,cum_time\n"
+    for e in sorted_entries:
+        csv += f"{e['name']},{e['calls']},{e['time']},{e['per_call']},{e['tot_time']},{e['cum_time']}\n"
+    return csv
+
+
 class TestCaseHelper:
     """Helper to pretty print test results"""
 

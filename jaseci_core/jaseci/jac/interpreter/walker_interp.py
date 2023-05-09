@@ -24,6 +24,7 @@ class WalkerInterp(Interp):
         self.scope_and_run(
             jac_ast if jac_ast.name == "walker_block" else kid[-1],
             self.run_walker_block,
+            scope_name=f"w_run:{jac_ast.loc_str()}",
         )
 
     def run_walker_block(self, jac_ast):
@@ -188,10 +189,10 @@ class WalkerInterp(Interp):
         """
         kid = self.set_cur_ast(jac_ast)
         param_list = {"args": [], "kwargs": []}
-        m = Interp(parent_override=self.parent(), caller=self)
-        m.push_scope(
+        self.push_scope(
             JacScope(
                 parent=self,
+                name=f"p_in_out:{jac_ast.loc_str()}",
                 has_obj=self.current_node,
                 here=self.current_node,
                 visitor=self,
@@ -199,17 +200,18 @@ class WalkerInterp(Interp):
         )
 
         if kid[1].name == "param_list":
-            param_list = m.run_param_list(kid[1]).value
+            param_list = self.run_param_list(kid[1]).value
         try:
             result = act.run_action(param_list, self._jac_scope, self)
         except Exception as e:
-            self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
+            self.rt_error(f"Internal Exception: {e}", self._cur_jac_ast)
             result = None
         if kid[-1].name == "expression":
-            m.run_expression(kid[-1])
-            dest = m.pop()
+            self.run_expression(kid[-1])
+            dest = self.pop()
             dest.value = result
             dest.write(kid[-1])
+        self.pop_scope()
 
     # Helper Functions ##################
     def auto_trigger_node_actions(self, act_list):
@@ -229,13 +231,19 @@ class WalkerInterp(Interp):
             if not i.preset_in_out:  # All preset in and outs get executed
                 already_executed.append(i.name)
 
-    def scope_and_run(self, jac_ast, run_func):
+    def scope_and_run(self, jac_ast, run_func, scope_name):
         """
         Helper to run ast elements with execution scope added
         (Useful for running arbitrary code blocks as one-offs)
         """
         self.push_scope(
-            JacScope(parent=self, has_obj=self, here=self.current_node, visitor=self)
+            JacScope(
+                parent=self,
+                name=scope_name,
+                has_obj=self,
+                here=self.current_node,
+                visitor=self,
+            )
         )
         run_func(jac_ast)
         self.pop_scope()

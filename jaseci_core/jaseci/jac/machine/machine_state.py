@@ -19,12 +19,13 @@ from jaseci.prim.edge import Edge
 from jaseci.prim.node import Node
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.jsci_vm.op_codes import JsCmp
+import time
 
 
 class MachineState:
     """Shared interpreter class across both sentinels and walkers"""
 
-    def __init__(self, parent_override=None, caller=None):
+    def __init__(self):
         self.report = []
         self.report_status = None
         self.report_custom = None
@@ -32,10 +33,6 @@ class MachineState:
         self.runtime_errors = []
         self.yielded_walkers_ids = IdList(self)
         self.ignore_node_ids = IdList(self)
-        self._parent_override = parent_override
-        if not isinstance(self, Element) and caller:
-            self._m_id = caller._m_id
-            self._h = caller._h
         self._scope_stack = [None]
         self._jac_scope = None
         self._relevant_edges = []
@@ -46,17 +43,13 @@ class MachineState:
         self._loop_limit = 10000
         self._cur_jac_ast = Ast("none")
         self._write_candidate = None
+        self._mast = self.get_master()
+
         self.inform_hook()
 
     def inform_hook(self):
         if hasattr(self, "_h"):
             self._h._machine = self
-
-    def parent(self):  # parent here is always a sentinel
-        if self._parent_override:
-            return self._parent_override
-        else:
-            return Element.parent(self)
 
     def reset(self):
         self.report = []
@@ -69,12 +62,56 @@ class MachineState:
         self._stopped = None
 
     def push_scope(self, scope: JacScope):
+        self.profile_pause()
         self._scope_stack.append(scope)
         self._jac_scope = scope
+        self.profile_in()
 
     def pop_scope(self):
+        self.profile_out()
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
+        self.profile_unpause()
+
+    def profile_in(self):
+        if self._mast and self._mast._profiling:
+            self._jac_scope._start_time = time.time()
+            self._jac_scope._per_call_start = time.time()
+
+    def profile_out(self):
+        if self._mast and self._mast._profiling:
+            name = f"{self.kind}::{self.name}:{self._jac_scope.name}"
+            if name not in self._mast._jac_profile:
+                self._mast._jac_profile[name] = {
+                    "calls": 1,
+                    "time": self._jac_scope._total_time
+                    + (time.time() - self._jac_scope._start_time),
+                    "per_call": time.time() - self._jac_scope._per_call_start,
+                }
+            else:
+                c = self._mast._jac_profile[name]["calls"]
+                t = self._mast._jac_profile[name]["time"]
+                p = self._mast._jac_profile[name]["per_call"]
+                self._mast._jac_profile[name]["calls"] = c + 1
+                self._mast._jac_profile[name]["time"] = (
+                    t * c
+                    + (
+                        self._jac_scope._total_time
+                        + (time.time() - self._jac_scope._start_time)
+                    )
+                ) / (c + 1)
+                self._mast._jac_profile[name]["per_call"] = (
+                    p * c + time.time() - self._jac_scope._per_call_start
+                ) / (c + 1)
+
+    def profile_pause(self):
+        if self._mast and self._mast._profiling and self._jac_scope:
+            self._jac_scope._total_time += time.time() - self._jac_scope._start_time
+            self._jac_scope._start_time = None
+
+    def profile_unpause(self):
+        if self._mast and self._mast._profiling and self._jac_scope:
+            self._jac_scope._start_time = time.time()
 
     def here(self):
         return self._scope_stack[-1].here() if self._scope_stack[-1] else None

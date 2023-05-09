@@ -206,3 +206,15 @@ class StackTests(CoreTest):
         self.assertIn("digraph", ret["profile"]["graph"])
         self.assertIn("jaseci", ret["profile"]["graph"])
         self.assertGreater(len(ret["profile"]["graph"]), 1000)
+
+    def test_jac_profiling_in_walker(self):
+        ret = self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("simple.jac")}],
+        )
+        ret = self.call(
+            self.mast, ["walker_run", {"name": "complex", "profiling": True}]
+        )
+        print(ret["profile"]["jac"])
+        self.assertIn("cum_time", ret["profile"]["jac"])
+        self.assertIn("init", ret["profile"]["graph"])

@@ -247,6 +247,7 @@ def get_global_actions():
                     h=glob_act_hook,
                     mode="public",
                     name=i,
+                    kind="ability",
                     value=i,
                     persist=False,
                 )
