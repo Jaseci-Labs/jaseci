@@ -192,7 +192,7 @@ class Walker(Element, WalkerInterp, Anchored):
             report_ret["errors"] = self.runtime_errors
             report_ret["success"] = False
         if profiling:
-            self.profile["jac"] = format_jac_profile(self._jac_profile)
+            self.profile["jac"] = format_jac_profile(self.get_master()._jac_profile)
             self.profile["perf"] = perf_test_stop(pr)
             self.profile["graph"] = perf_test_to_dot(pr)
             report_ret["profile"] = self.profile

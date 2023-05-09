@@ -14,6 +14,7 @@ class JacScope:
         self.has_obj = has_obj if has_obj else self
         self.context = {}
         self.action_sets = []
+        self._start_time = None
         self.set_refs(here, visitor)
         self.setup_actions()
 

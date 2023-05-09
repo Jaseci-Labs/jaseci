@@ -23,6 +23,7 @@ class WalkerApi:
         self.spawned_walker_ids = IdList(self)
         self.yielded_walkers_ids = IdList(self)
         self._profiling = False
+        self._jac_profile = {}
 
     @Interface.private_api(cli_args=["wlk"])
     def walker_get(self, wlk: Walker, mode: str = "default", detailed: bool = False):
