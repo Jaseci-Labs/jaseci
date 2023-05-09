@@ -212,7 +212,9 @@ class StackTests(CoreTest):
             self.mast,
             ["sentinel_register", {"code": self.load_jac("simple.jac")}],
         )
-        ret = self.call(self.mast, ["walker_run", {"name": "init", "profiling": True}])
+        ret = self.call(
+            self.mast, ["walker_run", {"name": "complex", "profiling": True}]
+        )
         self.log(ret)
-        self.assertIn("cum_time", ret["profile"]["jac"])
+        self.assertIn("cdum_time", ret["profile"]["jac"])
         self.assertIn("init", ret["profile"]["graph"])

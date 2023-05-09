@@ -81,15 +81,17 @@ class MachineState:
     def profile_out(self):
         name = f"{self.kind}::{self.name}"
         if name not in self._jac_profile:
-            self._jac_profile[name] = {"calls": 0, "time": 0}
-        c = self._jac_profile[name]["calls"]
-        t = self._jac_profile[name]["time"]
-        self._jac_profile[name]["calls"] = c + 1
-        self._jac_profile[name]["time"] = (
-            (t * c + (time.time() - self._start_time)) / (c + 1)
-            if c
-            else (time.time() - self._start_time)
-        )
+            self._jac_profile[name] = {
+                "calls": 1,
+                "time": time.time() - self._start_time,
+            }
+        else:
+            c = self._jac_profile[name]["calls"]
+            t = self._jac_profile[name]["time"]
+            self._jac_profile[name]["calls"] = c + 1
+            self._jac_profile[name]["time"] = (
+                t * c + (time.time() - self._start_time)
+            ) / (c + 1)
 
     def here(self):
         return self._scope_stack[-1].here() if self._scope_stack[-1] else None
@@ -171,14 +173,17 @@ class MachineState:
         self.runtime_errors += mach.runtime_errors
         for key, value in mach._jac_profile.items():
             if key not in self._jac_profile:
-                self._jac_profile[key] = value
+                self._jac_profile[key] = {
+                    "calls": value["calls"],
+                    "time": value["time"],
+                }
             else:
                 sum1 = self._jac_profile[key]["calls"] * self._jac_profile[key]["time"]
                 sum2 = value["calls"] * value["time"]
                 self._jac_profile[key]["calls"] += value["calls"]
-                self._jac_profile[key]["time"] += (sum1 + sum2) / self._jac_profile[
-                    key
-                ]["calls"]
+                self._jac_profile[key]["time"] = (sum1 + sum2) / self._jac_profile[key][
+                    "calls"
+                ]
 
     def obj_set_to_jac_set(self, obj_set):
         """
