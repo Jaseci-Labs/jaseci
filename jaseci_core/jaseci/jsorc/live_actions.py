@@ -210,7 +210,7 @@ def load_action_config(config, module_name):
 
 
 def unload_module(mod):
-    act_procs[mod]["proc"].kill()
+    act_procs[mod]["proc"].terminate()
     act_procs[mod]["proc"].close()
     del act_procs[mod]["in_q"]
     del act_procs[mod]["out_q"]
