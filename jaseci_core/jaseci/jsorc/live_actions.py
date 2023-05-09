@@ -215,6 +215,7 @@ def unload_module(mod):
     del act_procs[mod]["in_q"]
     del act_procs[mod]["out_q"]
     del act_procs[mod]
+    return True
 
 
 # def unload_module(mod):
