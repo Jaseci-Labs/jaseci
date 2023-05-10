@@ -391,13 +391,15 @@ def script(filename, profile, output):
                 f.write(f"Output for {i}:\n")
                 f.write(res.stdout)
     if profile:
-        perf = perf_test_stop(prof)
+        perf, graph = perf_test_stop(prof)
         click.echo(perf)
+        click.echo(graph)
     if output:
         with open(output, "a") as f:
             if profile:
                 f.write(f"\nProfile:\n")
                 f.write(perf)
+                f.write(graph)
         click.echo(f"[saved to {output}]")
 
 

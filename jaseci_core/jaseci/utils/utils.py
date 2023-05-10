@@ -238,35 +238,26 @@ def perf_test_start():
     return perf_prof
 
 
-def perf_test_stop(perf_prof, save_to_file=True):
+def perf_test_stop(perf_prof):
     perf_prof.disable()
-    if save_to_file:
-        stats = pstats.Stats(perf_prof)
-        profile = MyPstatsParser(stats).parse()
-        profile.prune(
-            node_thres=0.01, edge_thres=0.002, paths="", color_nodes_by_selftime=False
-        )
-        dot = DotWriter(open(f"{id(perf_prof)}.prof.dot", "w"))
-        dot.graph(profile, TEMPERATURE_COLORMAP)
-    s = io.StringIO()
+    stats = pstats.Stats(perf_prof)
+    profile = MyPstatsParser(stats).parse()
+    profile.prune(
+        node_thres=0.01, edge_thres=0.002, paths="", color_nodes_by_selftime=False
+    )
+    graph_str = io.StringIO()
+    dot = DotWriter(graph_str)
+    dot.graph(profile, TEMPERATURE_COLORMAP)
+    calls_str = io.StringIO()
     sortby = pstats.SortKey.CUMULATIVE
-    ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
+    ps = pstats.Stats(perf_prof, stream=calls_str).sort_stats(sortby)
     ps.print_stats()
-    s = s.getvalue()
-    s = "ncalls" + s.split("ncalls")[-1]
-    s = "\n".join([",".join(line.rstrip().split(None, 5)) for line in s.split("\n")])
-    return s
-
-
-def perf_test_to_dot(perf_prof, do_delete=True):
-    s = ""
-    fn = f"{id(perf_prof)}.prof.dot"
-    if os.path.exists(fn):
-        with open(fn, "r") as image_file:
-            s = image_file.read()
-        if do_delete:
-            os.remove(f"{id(perf_prof)}.prof.dot")
-    return s
+    calls_str = calls_str.getvalue()
+    calls_str = "ncalls" + calls_str.split("ncalls")[-1]
+    calls_str = "\n".join(
+        [",".join(line.rstrip().split(None, 5)) for line in calls_str.split("\n")]
+    )
+    return calls_str, graph_str.getvalue()
 
 
 def format_jac_profile(jac_profile, sort_by="cum_time"):
