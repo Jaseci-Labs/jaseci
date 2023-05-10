@@ -17,6 +17,7 @@ from jaseci.utils.utils import copy_func
 from .book_tools import Book, modifiedBook
 from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, find_first_api
 from jaseci.jsorc.jsorc import JsOrc
+from prettytable import PrettyTable
 
 session = None
 
@@ -112,6 +113,38 @@ def resolve_none_type(kwargs):
             kwargs[i] = None
 
 
+def has_profile(output):
+    if isinstance(output, dict):
+        if "profile" in output.keys():
+            if "jac" in output["profile"].keys() and "perf" in output["profile"].keys():
+                return True
+    return False
+
+
+def gen_pretty_table(csv_str):
+    rows = csv_str.split("\n")
+    row_width = len(rows[0].split(","))
+    first_row = rows[0].split(",")
+    first_row[2] = "percall_tot"
+    try:
+        table = PrettyTable(first_row)
+        for i in rows[1:]:
+            row = i.split(",")
+            if len(row) != row_width:
+                continue
+            table.add_row(row)
+        return table
+    except Exception as e:
+        click.echo(f"Something went wrong pretty printing profile: {e}")
+
+
+def pretty_profile(output):
+    click.echo("Jac Code Profile:")
+    click.echo(gen_pretty_table(output["profile"]["jac"]))
+    click.echo("\nInternal Jaseci Profile:")
+    click.echo(gen_pretty_table(output["profile"]["perf"]))
+
+
 def interface_api(api_name, is_public, is_cli_only, **kwargs):
     """
     Interfaces Master apis after processing arguments/parameters
@@ -137,6 +170,7 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         out = session["master"].public_interface_to_api(kwargs, api_name)
     else:
         out = session["master"].general_interface_to_api(kwargs, api_name)
+    d_out = out
     if (
         isinstance(out, dict)
         and "report_custom" in out.keys()
@@ -153,6 +187,8 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
     if not session["mem-only"]:
         with open(session["filename"], "wb") as f:
             pickle.dump(session, f)
+    if has_profile(d_out):
+        pretty_profile(d_out)
 
 
 def extract_api_tree():

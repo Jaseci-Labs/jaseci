@@ -506,6 +506,17 @@ class JsctlTest(TestCaseHelper, TestCase):
             ],
         )
 
+    def test_jsctl_pretty_profiles(self):
+        self.call(f"actions load local {self.infer_loc}")
+        r = self.call(
+            f"sentinel register "
+            f"{os.path.dirname(__file__)}/graph_can.jac -name gc -set_active true"
+        )
+        r = self.call("walker run go -profiling true")
+        self.assertIn("walker::go", r)
+        self.assertIn("cumtime", r)
+        self.assertIn("cum_time", r)
+
 
 class JsctlTestWithSession(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
