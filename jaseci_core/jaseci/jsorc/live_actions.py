@@ -12,6 +12,8 @@ import sys
 import inspect
 import importlib
 import gc
+import time
+
 
 live_actions = {}  # {"act.func": func_obj, ...}
 live_action_modules = {}  # {__module__: ["act.func1", "act.func2", ...], ...}
@@ -222,7 +224,9 @@ def load_action_config(config, module_name):
 
 
 def unload_module(mod):
+    act_procs[mod]["proc"].kill()
     act_procs[mod]["proc"].terminate()
+    time.sleep(1)
     act_procs[mod]["proc"].close()
     del act_procs[mod]["in_q"]
     del act_procs[mod]["out_q"]
