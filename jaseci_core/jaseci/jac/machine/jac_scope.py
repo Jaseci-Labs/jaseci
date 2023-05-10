@@ -15,7 +15,7 @@ class JacScope:
         self.has_obj = has_obj if has_obj else self
         self.context = {}
         self.action_sets = []
-        self._start_time = None  # For profiling
+        self._start_time = 0  # For profiling
         self._total_time = 0  # For profiling
         self._cum_start_time = None
         self.set_refs(here, visitor)

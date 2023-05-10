@@ -203,6 +203,7 @@ class StackTests(CoreTest):
             ["sentinel_register", {"code": self.load_jac("simple.jac")}],
         )
         ret = self.call(self.mast, ["walker_run", {"name": "init", "profiling": True}])
+        self.log(ret)
         self.assertIn("digraph", ret["profile"]["graph"])
         self.assertIn("jaseci", ret["profile"]["graph"])
         self.assertGreater(len(ret["profile"]["graph"]), 1000)

@@ -127,7 +127,7 @@ class MachineState:
         _jac_scope = MachineState.profile_stack[-1]  # refactor and clean
         if self._mast and self._mast._profiling and _jac_scope:
             _jac_scope._total_time += time.time() - _jac_scope._start_time
-            _jac_scope._start_time = None
+            _jac_scope._start_time = 0
 
     def profile_unpause(self):
         _jac_scope = MachineState.profile_stack[-1]  # refactor and clean

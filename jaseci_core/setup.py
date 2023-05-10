@@ -38,7 +38,7 @@ setup(
         "beautifulsoup4>=4.12.2, <4.13.0",
         "lxml>=4.9.2, <4.10.0",
         "html5lib>=1.1, <1.2",
-        "prettytables",
+        "prettytable>=3.7.0, <3.8.0",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],
