@@ -1,4 +1,4 @@
-<center> <h1>Jaseci: Build the Next Generation of AI Products at Scale</h1> </center>
+# Jaseci: Build the Next Generation of AI Products at Scale
 
 <div style="display: flex; justify-content: center; align-items: center;">
   <img src="https://www.jaseci.org/wp-content/uploads/2022/02/jaseki-logo-inverted-rgb.svg" alt="Jaseci" width="50%" />
