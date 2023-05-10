@@ -29,7 +29,7 @@ node cnode {
 }
 
 walker complex {
-    has limit = 130;
+    has limit = 30;
     root {
             spawn here walker::creater;
     }
