@@ -142,7 +142,7 @@ def action_handler_wrapper(name, *args, **kwargs):
         "text_classify",
     ]:
         module = "use_enc"
-    else:
+    elif module == "use":
         module = "use_qa"
 
     module = f"jac_nlp.{module}"
