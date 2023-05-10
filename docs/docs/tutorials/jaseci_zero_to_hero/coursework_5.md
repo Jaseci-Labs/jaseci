@@ -12,3 +12,4 @@ In this video, I will introduce you to the Jaseci AI Kit and walk you through th
 <!-- Embed a youtube video -->
 <iframe width="100%" src="https://www.youtube.com/embed/9QZqX0v7nqI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
+Slides can be downloaded from [here](https://github.com/Jaseci-Labs/jaseci/blob/main/examples/coursework-series-uom/3_jaseci_ai_kit/slides.pdf)

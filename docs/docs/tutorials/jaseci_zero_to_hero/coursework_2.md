@@ -16,3 +16,6 @@ To put our new knowledge into practice, we'll walk through the process of creati
 <!-- Embed a youtube video -->
 <iframe width="100%" src="https://www.youtube.com/embed/9QZqX0v7nqI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
+Slides can be downloaded from [here](https://github.com/Jaseci-Labs/jaseci/blob/main/examples/coursework-series-uom/2_jaseci_quickstart/2.1/slides.pdf)
+
+Visit this [link](../../../../examples/coursework-series-uom/2_jaseci_quickstart/2.1/end) for the final code.
