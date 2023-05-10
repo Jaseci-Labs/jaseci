@@ -91,7 +91,9 @@ class MachineState:
                     "u_calls": 0 if name in MachineState.recur_detect_set else 1,
                     "time": self._jac_scope._total_time
                     + (time.time() - self._jac_scope._start_time),
-                    "per_call": time.time() - self._jac_scope._per_call_start,
+                    "per_call": 0
+                    if name in MachineState.recur_detect_set
+                    else time.time() - self._jac_scope._per_call_start,
                 }
             else:
                 c = self._mast._jac_profile[name]["calls"]
@@ -102,16 +104,15 @@ class MachineState:
                 self._mast._jac_profile[name]["u_calls"] = (
                     u if name in MachineState.recur_detect_set else u + 1
                 )
-                self._mast._jac_profile[name]["time"] = (
-                    t * c
-                    + (
-                        self._jac_scope._total_time
-                        + (time.time() - self._jac_scope._start_time)
-                    )
-                ) / (c + 1)
+                self._mast._jac_profile[name]["time"] += self._jac_scope._total_time + (
+                    time.time() - self._jac_scope._start_time
+                )
+
                 self._mast._jac_profile[name]["per_call"] = (
-                    p * c + time.time() - self._jac_scope._per_call_start
-                ) / (c + 1)
+                    p
+                    if name in MachineState.recur_detect_set
+                    else (p + time.time() - self._jac_scope._per_call_start)
+                )
 
     def call_name(self):
         return f"{self.kind}::{self.name}:{self._jac_scope.name}"

@@ -29,8 +29,9 @@ node cnode {
 }
 
 walker complex {
+    std.sleep(1);
     root {
-        for i=0 to i<100 by i+=1 {
+        for i=0 to i<2 by i+=1 {
             spawn here walker::creater;
         }
         spawn --> walker::complex;
