@@ -135,7 +135,6 @@ def action_handler_wrapper(name, *args, **kwargs):
     act_name = name.split(".")[1]
     # TODO: temporary hack
     if module == "use" and act_name in [
-        "get_embedding",
         "encode",
         "cos_sim_score",
         "text_similarity",

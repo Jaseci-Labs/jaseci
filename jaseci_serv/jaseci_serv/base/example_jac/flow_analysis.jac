@@ -1,7 +1,7 @@
 walker flow_analysis{
     can text_seg.get_segments;
     can tfm_ner.extract_entity;
-    can use.get_embedding;
+    can use.encode;
     can use.cos_sim_score;
     has threshold=0.9;
     # has a article
@@ -9,7 +9,7 @@ walker flow_analysis{
     responses=[];
     # uses text_seg get_segments to get segments from article returns list of text sent
     segments=text_seg.get_segments(article,threshold);
-    segment_embs=use.get_embedding(segments);
+    segment_embs=use.encode(segments);
     first_seg=segment_embs[0];
     responses=[];
     for i=1 to i<segment_embs.length-1 by i+=1{
