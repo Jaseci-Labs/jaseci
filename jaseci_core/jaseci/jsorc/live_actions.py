@@ -131,6 +131,18 @@ def action_handler_wrapper(name, *args, **kwargs):
     # name = action.split(".")[1]
     module = name.split(".")[0]
     act_name = name.split(".")[1]
+    # TODO: temporary hack
+    if module == "use" and act_name in [
+        "get_embedding",
+        "encode",
+        "cos_sim_score",
+        "text_similarity",
+        "text_classify",
+    ]:
+        module = "use_enc"
+    else:
+        module = "use_qa"
+
     module = f"jac_nlp.{module}"
 
     act_procs[module]["in_q"].put((name, args, kwargs))
