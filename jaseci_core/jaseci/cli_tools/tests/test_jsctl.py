@@ -513,7 +513,9 @@ class JsctlTest(TestCaseHelper, TestCase):
             f"{os.path.dirname(__file__)}/graph_can.jac -name gc -set_active true"
         )
         r = self.call("walker run go -profiling true")
-        self.assertEqual(r.split()[0], "2020-01-01T00:00:00")
+        self.assertIn("walker::go", r)
+        self.assertIn("cumtime", r)
+        self.assertIn("cum_time", r)
 
 
 class JsctlTestWithSession(TestCaseHelper, TestCase):
