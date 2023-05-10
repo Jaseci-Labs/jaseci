@@ -125,7 +125,8 @@ def gen_pretty_table(csv_str):
     rows = csv_str.split("\n")
     row_width = len(rows[0].split(","))
     first_row = rows[0].split(",")
-    first_row[2] = "percall_tot"
+    if first_row[2] == "percall":
+        first_row[2] = "percall_tot"
     try:
         table = PrettyTable(first_row)
         for i in rows[1:]:

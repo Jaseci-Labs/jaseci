@@ -217,4 +217,4 @@ class StackTests(CoreTest):
         )
         print(ret["profile"]["jac"])
         self.assertIn("cum_time", ret["profile"]["jac"])
-        self.assertIn("init", ret["profile"]["graph"])
+        self.assertIn("run_walker", ret["profile"]["graph"])

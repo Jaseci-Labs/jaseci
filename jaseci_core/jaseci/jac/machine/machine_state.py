@@ -25,6 +25,8 @@ import time
 class MachineState:
     """Shared interpreter class across both sentinels and walkers"""
 
+    recur_detect_set = []
+
     def __init__(self):
         self.report = []
         self.report_status = None
@@ -65,9 +67,11 @@ class MachineState:
         self.profile_pause()
         self._scope_stack.append(scope)
         self._jac_scope = scope
+        MachineState.recur_detect_set.append(self.call_name())
         self.profile_in()
 
     def pop_scope(self):
+        MachineState.recur_detect_set.remove(self.call_name())
         self.profile_out()
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
@@ -80,19 +84,24 @@ class MachineState:
 
     def profile_out(self):
         if self._mast and self._mast._profiling:
-            name = f"{self.kind}::{self.name}:{self._jac_scope.name}"
+            name = self.call_name()
             if name not in self._mast._jac_profile:
                 self._mast._jac_profile[name] = {
                     "calls": 1,
+                    "u_calls": 0 if name in MachineState.recur_detect_set else 1,
                     "time": self._jac_scope._total_time
                     + (time.time() - self._jac_scope._start_time),
                     "per_call": time.time() - self._jac_scope._per_call_start,
                 }
             else:
                 c = self._mast._jac_profile[name]["calls"]
+                u = self._mast._jac_profile[name]["u_calls"]
                 t = self._mast._jac_profile[name]["time"]
                 p = self._mast._jac_profile[name]["per_call"]
                 self._mast._jac_profile[name]["calls"] = c + 1
+                self._mast._jac_profile[name]["u_calls"] = (
+                    u if name in MachineState.recur_detect_set else u + 1
+                )
                 self._mast._jac_profile[name]["time"] = (
                     t * c
                     + (
@@ -103,6 +112,9 @@ class MachineState:
                 self._mast._jac_profile[name]["per_call"] = (
                     p * c + time.time() - self._jac_scope._per_call_start
                 ) / (c + 1)
+
+    def call_name(self):
+        return f"{self.kind}::{self.name}:{self._jac_scope.name}"
 
     def profile_pause(self):
         if self._mast and self._mast._profiling and self._jac_scope:
