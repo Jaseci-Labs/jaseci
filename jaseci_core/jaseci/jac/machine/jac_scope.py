@@ -17,7 +17,7 @@ class JacScope:
         self.action_sets = []
         self._start_time = None  # For profiling
         self._total_time = 0  # For profiling
-        self._per_call_start = None
+        self._cum_start_time = None
         self.set_refs(here, visitor)
         self.setup_actions()
 

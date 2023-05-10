@@ -30,7 +30,7 @@ node cnode {
 
 walker complex {
     root {
-        for i=0 to i<100 by i+=1 {
+        for i=0 to i<150 by i+=1 {
             spawn here walker::creater;
         }
         spawn --> walker::complex;
