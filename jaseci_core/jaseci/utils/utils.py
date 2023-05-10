@@ -266,18 +266,18 @@ def format_jac_profile(jac_profile, sort_by="cum_time"):
     for k in jac_profile.keys():
         c = jac_profile[k]["calls"]
         u = jac_profile[k]["u_calls"]
-        t = jac_profile[k]["time"]
-        p = jac_profile[k]["per_call"]
-        jac_profile[k]["tot_time"] = t * u
-        jac_profile[k]["cum_time"] = p * u
+        t = jac_profile[k]["tot_time"]
+        p = jac_profile[k]["cum_time"]
+        jac_profile[k]["avg_time"] = t / c
+        jac_profile[k]["per_call"] = p / c
         jac_profile[k]["name"] = k
         entries.append(jac_profile[k])
     sorted_entries = sorted(entries, key=lambda x: x[sort_by], reverse=True)
-    csv = "name,calls,u_calls,time,per_call,tot_time,cum_time\n"
+    csv = "name,calls,u_calls,avg_time,per_call,tot_time,cum_time\n"
     for e in sorted_entries:
         csv += (
-            f"{e['name']},{e['calls']},{e['u_calls']},{e['time']},"
-            + f"{e['per_call']},{e['tot_time']},{e['cum_time']}\n"
+            f"{e['name']},{e['calls']},{e['u_calls']},"
+            + f"{e['avg_time']},{e['per_call']},{e['tot_time']},{e['cum_time']}\n"
         )
     return csv
 
