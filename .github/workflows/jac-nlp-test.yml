@@ -40,14 +40,16 @@ jobs:
         sudo apt-get install -y espeak-ng
         python -m pip install --upgrade pip
 
-    - name: Install jaseci_core
-      run: |
-        pip3 install jaseci_core/
-
     - name: Install jac_nlp
       run: |
         cd jaseci_ai_kit/jac_nlp
         pip install -e .[all]
+
+    - name: Install jaseci_core
+      run: |
+        cd jaseci_core
+        pip install -e .
+        cd ..
 
     - name: Verify jac_nlp installation
       run: |

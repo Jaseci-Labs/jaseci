@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: USE QA
+description: Text encoding with USE QA
 ---
 #  USE QA (`use_qa`)
 
@@ -22,16 +23,16 @@ The sentence level embeddings can then be used to calculate best match between q
     * Return: Encoded embeddings
 * `cos_sim_score`:
     * Input:
-        * `q_emb` (string or list of strings): first embeded text
-        * `a_emb` (string or list of strings): second embeded text
+        * `q_emb` (string or list of strings): first embedded text
+        * `a_emb` (string or list of strings): second embedded text
     * Return: cosine similarity score
 
 * `dist_score`:
     * Input:
-        * `q_emb` (string or list of strings): first embeded text
-        * `a_emb` (string or list of strings): second embeded text
+        * `q_emb` (string or list of strings): first embedded text
+        * `a_emb` (string or list of strings): second embedded text
     * Return: inner product score
-* `question_similarity`: calculate the simlarity score between given questions
+* `question_similarity`: calculate the similarity score between given questions
     * Input:
         * `text1` (string): first text
         * `text2` (string): second text
@@ -40,7 +41,7 @@ The sentence level embeddings can then be used to calculate best match between q
     * Input:
         * `text` (string): text to classify
         * `classes` (list of strings): candidate classification classes
-* `answer_similarity`: calculate the simlarity score between given answer
+* `answer_similarity`: calculate the similarity score between given answer
     * Input:
         * `text1` (string): first text
         * `text2` (string): second text
@@ -49,7 +50,7 @@ The sentence level embeddings can then be used to calculate best match between q
     * Input:
         * `text` (string): text to classify
         * `classes` (list of strings): candidate classification classes
-* `qa_similarity`: calculate the simlarity score between question and answer
+* `qa_similarity`: calculate the similarity score between question and answer
     * Input:
         * `text1` (string): first text
         * `text2` (string): second text
@@ -87,4 +88,4 @@ walker use_qa_example {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/use_qa)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/use_qa)

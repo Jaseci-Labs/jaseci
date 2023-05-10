@@ -4,9 +4,8 @@ sidebar_position: 3
 
 # Take
 
-Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. You may notice by default, a walker travers with `take` command using the breadth first search approach (refer to the example [here](../abstractions/walkers.md#walkers-navigating-graphs-example)). But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example;
+Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. You may notice by default, a walker traverse with `take` command using the breadth first search approach (refer to the example [here](../abstractions/walkers.md#walkers-navigating-graphs-example)). But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example;
 
-**Example:**
 ```jac
 node plain: has name;
 
@@ -18,10 +17,10 @@ graph example {
         for i=0 to i<7 by i+=1 {
         n.l::append(spawn node::plain(name=i+1));
         }
-        n[0] --> n[1] --> n[2];
-        n[1] --> n[3];
-        n[0] --> n[4] --> n[5];
-        n[4] --> n[6];
+        n[0] ++> n[1] ++> n[2];
+        n[1] ++> n[3];
+        n[0] ++> n[4] ++> n[5];
+        n[4] ++> n[6];
         head=n[0];
         }
     }
@@ -47,7 +46,7 @@ walker init {
     }
 ```
 
-**Output:**
+Expected Output:
 
 ```
 Walk with Breadth: [1, 2, 5, 3, 4, 6, 7]

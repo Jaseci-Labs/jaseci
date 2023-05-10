@@ -207,6 +207,11 @@ class Hookable(Sharable):
             )
         return target._h == self._h
 
+    def make_persistent(self):
+        """Make element persistent"""
+        self._persist = True
+        self.save()
+
     def save(self):
         """
         Write self through hook to persistent storage

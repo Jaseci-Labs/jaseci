@@ -3,7 +3,7 @@ import psycopg2
 
 from time import sleep
 from copy import deepcopy
-from json import dumps, loads
+from json import dumps
 from datetime import datetime
 from typing import TypeVar, Any, Union
 
@@ -47,6 +47,7 @@ class JsOrc:
 
     # ------------------ COMMONS ------------------ #
 
+    _config = None
     _backoff_interval = 10
     _running_interval = 0
     __running__ = False
@@ -69,15 +70,22 @@ class JsOrc:
             )
 
     @classmethod
+    def configure(cls):
+        config: dict = cls.settings("JSORC_CONFIG")
+
+        if cls.db_check():
+            hook = cls.hook()
+            config = hook.get_or_create_glob("JSORC_CONFIG", config)
+
+        cls._config = config
+        cls._backoff_interval = max(5, config.get("backoff_interval", 10))
+        cls._regeneration_queues = config.get("pre_loaded_services", [])
+
+    @classmethod
     def run(cls):
         if not cls.__running__:
             cls.__running__ == True
-            config: dict = cls.settings("JSORC_CONFIG")
-            if cls.db_check():
-                hook = cls.hook()
-                config = hook.get_or_create_glob("JSORC_CONFIG", config)
-            cls._backoff_interval = max(5, config.get("backoff_interval", 10))
-            cls._regeneration_queues = config.get("pre_loaded_services", [])
+            cls.configure()
             cls.push_interval(1)
 
     @classmethod
@@ -466,87 +474,92 @@ class JsOrc:
         from jaseci.utils.actions.actions_manager import ActionManager
 
         kube = cls.svc("kube", KubeService)
-        while cls._regeneration_queues:
-            regeneration_queue = cls._regeneration_queues.pop(0)
+        regeneration_queues = cls._regeneration_queues.copy()
+        cls._regeneration_queues.clear()
+        while regeneration_queues:
+            regeneration_queue = regeneration_queues.pop(0)
             service = cls.svc(regeneration_queue)
             hook = cls.hook(use_proxy=service.source["proxy"])
             if not service.is_running() and service.enabled and service.automated:
                 if service.manifest and kube.is_running():
-                    manifest = kube.resolve_manifest(
-                        hook.get_or_create_glob(
-                            service.source["manifest"], service.manifest
-                        ),
-                        *cls.overrided_namespace(
-                            regeneration_queue, service.manifest_type
-                        ),
-                    )
+                    try:
+                        manifest = kube.resolve_manifest(
+                            hook.get_or_create_glob(
+                                service.source["manifest"], service.manifest
+                            ),
+                            *cls.overrided_namespace(
+                                regeneration_queue, service.manifest_type
+                            ),
+                        )
 
-                    rmhists: dict = hook.get_or_create_glob(
-                        "RESOLVED_MANIFEST_HISTORY", {}
-                    )
+                        rmhists: dict = hook.get_or_create_glob(
+                            "RESOLVED_MANIFEST_HISTORY", {}
+                        )
 
-                    _rmhist = rmhists.get(service.source["manifest"], [{}])[0]
-                    rmhist = deepcopy(_rmhist)
+                        _rmhist = rmhists.get(service.source["manifest"], [{}])[0]
+                        rmhist = deepcopy(_rmhist)
 
-                    for kind, confs in manifest.items():
-                        for name, conf in confs.items():
-                            namespace = conf["metadata"].get("namespace")
+                        for kind, confs in manifest.items():
+                            for name, conf in confs.items():
+                                namespace = conf["metadata"].get("namespace")
 
-                            if kind in rmhist and name in rmhist[kind]:
-                                rmhist[kind].pop(name, None)
+                                if kind in rmhist and name in rmhist[kind]:
+                                    rmhist[kind].pop(name, None)
 
-                            res = kube.read(kind, name, namespace)
-                            if hasattr(res, "status") and res.status == 404:
-                                kube.create(kind, name, conf, namespace)
-                            elif not isinstance(res, ApiException):
-                                config_version = 1
+                                res = kube.read(kind, name, namespace)
+                                if hasattr(res, "status") and res.status == 404:
+                                    kube.create(kind, name, conf, namespace)
+                                elif not isinstance(res, ApiException):
+                                    config_version = 1
 
-                                if isinstance(res, dict):
-                                    if "labels" in res["metadata"]:
-                                        config_version = (
-                                            res["metadata"]
-                                            .get("labels", {})
-                                            .get("config_version", 1)
+                                    if isinstance(res, dict):
+                                        if "labels" in res["metadata"]:
+                                            config_version = (
+                                                res["metadata"]
+                                                .get("labels", {})
+                                                .get("config_version", 1)
+                                            )
+                                    elif res.metadata.labels:
+                                        config_version = res.metadata.labels.get(
+                                            "config_version", 1
                                         )
-                                elif res.metadata.labels:
-                                    config_version = res.metadata.labels.get(
-                                        "config_version", 1
-                                    )
 
-                                if config_version != conf.get("metadata").get(
-                                    "labels", {}
-                                ).get("config_version", 1):
-                                    kube.patch(kind, name, conf, namespace)
+                                    if config_version != conf.get("metadata").get(
+                                        "labels", {}
+                                    ).get("config_version", 1):
+                                        kube.patch(kind, name, conf, namespace)
 
-                    for kind, confs in rmhist.items():
-                        for name, conf in confs.items():
-                            namespace = conf["metadata"].get("namespace")
-                            res = kube.read(kind, name, namespace, quiet=True)
-                            if not isinstance(res, ApiException) and (
-                                (isinstance(res, dict) and res.get("metadata"))
-                                or res.metadata
-                            ):
-                                if kind not in cls.settings(
-                                    "UNSAFE_KINDS"
-                                ) or service.manifest_unsafe_paraphrase == cls.settings(
-                                    "UNSAFE_PARAPHRASE"
+                        for kind, confs in rmhist.items():
+                            for name, conf in confs.items():
+                                namespace = conf["metadata"].get("namespace")
+                                res = kube.read(kind, name, namespace, quiet=True)
+                                if not isinstance(res, ApiException) and (
+                                    (isinstance(res, dict) and res.get("metadata"))
+                                    or res.metadata
                                 ):
-                                    kube.delete(kind, name, namespace)
-                                else:
-                                    logger.info(
-                                        f"You don't have permission to delete `{kind}` for `{name}` with namespace `{namespace}`!"
-                                    )
+                                    if kind not in cls.settings(
+                                        "UNSAFE_KINDS"
+                                    ) or service.manifest_unsafe_paraphrase == cls.settings(
+                                        "UNSAFE_PARAPHRASE"
+                                    ):
+                                        kube.delete(kind, name, namespace)
+                                    else:
+                                        logger.info(
+                                            f"You don't have permission to delete `{kind}` for `{name}` with namespace `{namespace}`!"
+                                        )
 
-                    if _rmhist != manifest:
-                        if service.source["manifest"] not in rmhists:
-                            rmhists[service.source["manifest"]] = [manifest]
-                        else:
-                            rmhists[service.source["manifest"]].insert(0, manifest)
-                        hook.save_glob("RESOLVED_MANIFEST_HISTORY", dumps(rmhists))
-                        hook.commit()
+                        if _rmhist != manifest:
+                            if service.source["manifest"] not in rmhists:
+                                rmhists[service.source["manifest"]] = [manifest]
+                            else:
+                                rmhists[service.source["manifest"]].insert(0, manifest)
+                            hook.save_glob("RESOLVED_MANIFEST_HISTORY", dumps(rmhists))
+                            hook.commit()
+
+                    except Exception as e:
+                        logger.error(f"Unhandled exception: {e}")
 
                 cls.svc_reset(regeneration_queue)
-            sleep(1)
 
         action_manager = cls.get("action_manager", ActionManager)
         action_manager.optimize(jsorc_interval=cls._backoff_interval)

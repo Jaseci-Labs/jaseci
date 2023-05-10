@@ -22,6 +22,11 @@ class WalkerApi:
     def __init__(self):
         self.spawned_walker_ids = IdList(self)
         self.yielded_walkers_ids = IdList(self)
+        self.reset_profiling(False)
+
+    def reset_profiling(self, profiling):
+        self._profiling = profiling
+        self._jac_profile = {}
 
     @Interface.private_api(cli_args=["wlk"])
     def walker_get(self, wlk: Walker, mode: str = "default", detailed: bool = False):
@@ -64,6 +69,7 @@ class WalkerApi:
         Creates new instance of walker and returns new walker object
         """
         wlk = snt.run_architype(name=name, kind="walker", caller=self, is_async=False)
+        wlk.make_persistent()
         if wlk:
             if self.spawned_walker_ids.has_obj_by_name(name):
                 self.spawned_walker_ids.destroy_obj_by_name(name)
@@ -165,6 +171,7 @@ class WalkerApi:
         """
         Executes walker (assumes walker is primed)
         """
+        self.reset_profiling(profiling)
         return wlk.run(
             start_node=prime, prime_ctx=ctx, request_ctx=_req_ctx, profiling=profiling
         )
@@ -199,6 +206,7 @@ class WalkerApi:
         Creates walker instance, primes walker on node, executes walker,
         reports results, and cleans up walker instance.
         """
+        self.reset_profiling(profiling)
         wlk = self.yielded_walkers_ids.get_obj_by_name(name, silent=True)
         if wlk is None:
             wlk = snt.run_architype(
@@ -225,6 +233,7 @@ class WalkerApi:
         """
         Walker individual APIs
         """
+        self.reset_profiling(profiling)
         return self.walker_run(name, nd, ctx, _req_ctx, snt, profiling)
 
     @Interface.public_api(cli_args=["wlk"])

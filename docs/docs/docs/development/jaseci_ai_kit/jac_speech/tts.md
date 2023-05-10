@@ -1,27 +1,28 @@
 ---
 sidebar_position: 2
 title: Text to Speech Module
+description: Synthesizing Speeches with Jaseci.
 ---
 
 # Text to Speech Module
 
-Implementation of the `tts` module produces audio wavs from the input text sequence.
+Implementation of the `tts` module produces audio waves from the input text sequence.
 
 ## Actions
 
-* `synthesize`: Synthesize audio wavs for the input text sequence and will return the list of amlitude values of the audio wav. provide an option to save the audio wav in a prefered file location if the correct file path is passed as a parameter.
+* `synthesize`: Synthesize audio waves for the input text sequence and will return the list of amplitude values of the audio wav. provide an option to save the audio wav in a preferred file location if the correct file path is passed as a parameter.
   * Input
-    * `input_text` : (String) Input text sequence. This input text sequence will undergo with text preprocessing steps, such as expanding abrivations, converting numbers into ordinal format and removing unnessary white spaces.
+    * `input_text` : (String) Input text sequence. This input text sequence will undergo with text preprocessing steps, such as expanding abbreviation, converting numbers into ordinal format and removing unnecessary white spaces.
     * `speaker`: (String). Choose whether you need a male or female voice.
-    * `save_path` : (String) Set the path correctly if you need to save the audio in a prefered location. ignore if you don't wanna save.
+    * `save_path` : (String) Set the path correctly if you need to save the audio in a preferred location. ignore if you don't wanna save.
   * Return
     * Dictionary
 
-* `clone_voice`: Synthesize audio wavs for by mimicing the given reference audio clip. the input text sequence and will return the list of amlitude values of the audio wav. provide an option to save the audio wav in a prefered file location if the correct file path is passed as a parameter.
+* `clone_voice`: Synthesize audio waves for by mimicking the given reference audio clip. the input text sequence and will return the list of amplitude values of the audio wav. provide an option to save the audio wav in a preferred file location if the correct file path is passed as a parameter.
   * Input
-    * `input_text` : (String) Input text sequence. This input text sequence will undergo with text preprocessing steps, such as expanding abrivations, converting numbers into ordinal format and removing unnessary white spaces.
+    * `input_text` : (String) Input text sequence. This input text sequence will undergo with text preprocessing steps, such as expanding abbreviation, converting numbers into ordinal format and removing unnecessary white spaces.
     * `reference_audio` : (String) Path to the reference audio.
-    * `save_path` : (String) Set the path correctly if you need to save the audio in a prefered location. ignore if you don't wanna save.
+    * `save_path` : (String) Set the path correctly if you need to save the audio in a preferred location. ignore if you don't wanna save.
   * Return
     * Dictionary
 
@@ -45,4 +46,4 @@ walker init{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_speech/jac_speech/vc_tts)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/tts)

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
-title: T5 Summarizer
+title: BART Summarizer
+description: Text Summerization with BART Summerizer
 ---
 
 # Bart Summarization (`bart_sum`)
@@ -52,4 +53,4 @@ walker test_summarize_url {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/bart_sum)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/bart_sum)

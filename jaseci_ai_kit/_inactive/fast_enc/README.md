@@ -1,3 +1,7 @@
+---
+title: Text Classification with Fasttext
+---
+
 # **Fasttext Classifier**
 
 `fast_enc` module uses the facebook's fasttext -- efficient learning of word representations and sentence classification.
@@ -249,10 +253,10 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
             }
         }
         ```
-        **Default parameter for train and test fasttext** </br>
-        `train_file` : local path of **train.json** file </br>
-        `train_with_existing` : **false** </br>
-        `test_file` : local path of **test.json** file </br>
+        **Default parameter for train and test fasttext**
+        `train_file` : local path of **train.json** file
+        `train_with_existing` : **false**
+        `test_file` : local path of **test.json** file
 
     9. Declaring walker for `predicting intents` on new text
 
@@ -371,7 +375,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         **Note**: If getting error **`ValueError: badly formed hexadecimal UUID string`** execute only once
         > sentinel register -set_active true -mode ir fasttext.jir
     3. Run the following command to execute  walker `train_and_test_fasttext` with `default parameter` for training `fast_enc` module.
-        > walker run train_and_test_fasttext </br>
+        > walker run train_and_test_fasttext
 
     4. You'll find the following logs on console
 
@@ -407,7 +411,7 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
         ]
         }
         ```
-### **4. Evaluation of the model effectiveness** </br>
+### **4. Evaluation of the model effectiveness**
 * Performing model effectiveness on `test.json` dataset
 
     ```
@@ -468,8 +472,8 @@ For this tutorial, we are going to `train and test` the `fast_enc` for `intent c
     }
     ```
 
-### **5. Use the trained model to make predictions** </br>
-* Create new input data for prdiction stored in a file for example - `test_dataset.json`</br>
+### **5. Use the trained model to make predictions**
+* Create new input data for prdiction stored in a file for example - `test_dataset.json`
 **Input data**
     ```
     {

@@ -19,12 +19,16 @@ from jaseci.prim.edge import Edge
 from jaseci.prim.node import Node
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.jsci_vm.op_codes import JsCmp
+import time
 
 
 class MachineState:
     """Shared interpreter class across both sentinels and walkers"""
 
-    def __init__(self, parent_override=None, caller=None):
+    recur_detect_set = []
+    profile_stack = [None]
+
+    def __init__(self):
         self.report = []
         self.report_status = None
         self.report_custom = None
@@ -32,10 +36,6 @@ class MachineState:
         self.runtime_errors = []
         self.yielded_walkers_ids = IdList(self)
         self.ignore_node_ids = IdList(self)
-        self._parent_override = parent_override
-        if not isinstance(self, Element) and caller:
-            self._m_id = caller._m_id
-            self._h = caller._h
         self._scope_stack = [None]
         self._jac_scope = None
         self._relevant_edges = []
@@ -46,17 +46,13 @@ class MachineState:
         self._loop_limit = 10000
         self._cur_jac_ast = Ast("none")
         self._write_candidate = None
+        self._mast = self.get_master()
+
         self.inform_hook()
 
     def inform_hook(self):
         if hasattr(self, "_h"):
             self._h._machine = self
-
-    def parent(self):  # parent here is always a sentinel
-        if self._parent_override:
-            return self._parent_override
-        else:
-            return Element.parent(self)
 
     def reset(self):
         self.report = []
@@ -69,12 +65,80 @@ class MachineState:
         self._stopped = None
 
     def push_scope(self, scope: JacScope):
+        self.profile_pause()
         self._scope_stack.append(scope)
         self._jac_scope = scope
+        MachineState.profile_stack.append(self._jac_scope)
+        self.profile_in()
+        MachineState.recur_detect_set.append(self.call_name())
 
     def pop_scope(self):
+        MachineState.recur_detect_set.remove(self.call_name())
+        self.profile_out()
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
+        MachineState.profile_stack.pop()
+        self.profile_unpause()
+
+    def profile_in(self):
+        if self._mast and self._mast._profiling:
+            self._jac_scope._start_time = time.time()
+            self._jac_scope._cum_start_time = time.time()
+
+    def profile_out(self):
+        # profile_jac_scope = MachineState.profile_stack[-1]  # refactor and clean
+        if self._mast and self._mast._profiling:
+            name = self.call_name()
+            if name not in self._mast._jac_profile:
+                self._mast._jac_profile[name] = {
+                    "calls": 1,
+                    "u_calls": 0 if name in MachineState.recur_detect_set else 1,
+                    "tot_time": self._jac_scope._total_time
+                    + (time.time() - self._jac_scope._start_time),
+                    "cum_time": 0
+                    if name in MachineState.recur_detect_set
+                    else time.time() - self._jac_scope._cum_start_time,
+                }
+            else:
+                c = self._mast._jac_profile[name]["calls"]
+                u = self._mast._jac_profile[name]["u_calls"]
+                t = self._mast._jac_profile[name]["tot_time"]
+                p = self._mast._jac_profile[name]["cum_time"]
+                self._mast._jac_profile[name]["calls"] = c + 1
+                self._mast._jac_profile[name]["u_calls"] = (
+                    u if name in MachineState.recur_detect_set else u + 1
+                )
+                self._mast._jac_profile[name][
+                    "tot_time"
+                ] += self._jac_scope._total_time + (
+                    time.time() - self._jac_scope._start_time
+                )
+
+                self._mast._jac_profile[name]["cum_time"] = (
+                    p
+                    if name in MachineState.recur_detect_set
+                    else (p + time.time() - self._jac_scope._cum_start_time)
+                )
+
+    def call_name(self):
+        return f"{self.kind}::{self.name}:{self._jac_scope.name}"
+
+    def profile_pause(self):
+        _jac_scope = MachineState.profile_stack[-1]  # refactor and clean
+        if self._mast and self._mast._profiling and _jac_scope:
+            _jac_scope._total_time += time.time() - _jac_scope._start_time
+            _jac_scope._start_time = 0
+
+    def profile_unpause(self):
+        _jac_scope = MachineState.profile_stack[-1]  # refactor and clean
+        if self._mast and self._mast._profiling and _jac_scope:
+            _jac_scope._start_time = time.time()
+
+    def here(self):
+        return self._scope_stack[-1].here() if self._scope_stack[-1] else None
+
+    def visitor(self):
+        return self._scope_stack[-1].visitor() if self._scope_stack[-1] else None
 
     def set_cur_ast(self, jac_ast):
         self._cur_jac_ast = jac_ast
@@ -164,7 +228,7 @@ class MachineState:
         """
         ret = JacSet()
         if not location:
-            location = self.current_node
+            location = self.here()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(location))
         return ret

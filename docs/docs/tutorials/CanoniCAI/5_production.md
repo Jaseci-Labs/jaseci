@@ -54,11 +54,11 @@ walker talk {
 ```
 Two new syntax here:
 * `report` returns variable from walker to its caller. When calling a walker via its REST API, the content of the API response payload will be what is reported.
-* `yield report` is a shorthand for yielding and reporting at the same time. This is equivalane to `yield; report response;`.
+* `yield report` is a shorthand for yielding and reporting at the same time. This is equivalent to `yield; report response;`.
 
 ## Preparing the `init` walker for production
 Up until this point, we have been running our code with just `jac run`.
-`jac run` executes the `init` walker of your progarm (analogues to the `__main__` function of python).
+`jac run` executes the `init` walker of your program (analogues to the `__main__` function of python).
 Here is what the current `init` walker looks like
 ```jac
 walker init {
@@ -83,8 +83,8 @@ walker init {
 
 ## Introduce `sentinel`
 `sentinel` is the overseer of walkers, nodes and edges.
-It is the abstraction Jaseci uses to encapsulate compiled walkers and architype nodes and edges.
-The key operation with respesct to `sentinel` is "register" a sentinel.
+It is the abstraction Jaseci uses to encapsulate compiled walkers and archetype nodes and edges.
+The key operation with respect to `sentinel` is "register" a sentinel.
 You can think of registering a `sentinel` as a compiling your jac program.
 The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph.
 
@@ -94,7 +94,7 @@ jaseci > sentinel register tesla_ai.jir -set_active true -mode ir
 ```
 
 Three things are happening here:
-* First, we registered the `jir` we compiled earlier to new sentinel. This means this new sentinel now has access to all of our walkers, nodes and edges. `-mode ir` option speciifes a `jir` program is registered instead of a `jac` program.
+* First, we registered the `jir` we compiled earlier to new sentinel. This means this new sentinel now has access to all of our walkers, nodes and edges. `-mode ir` option specifies a `jir` program is registered instead of a `jac` program.
 * Second, with `-set_active true` we set this new sentinel to be the active sentinel. In other words, this sentinel is the default one to be used when requests hit the Jac APIs, if no specific sentinels are specified.
 * Third, `sentinel register` has automatically creates a new `graph` (if no currently active graph) and run the `init` walker on that graph. This behavior can be customized with the options `-auto_run` and `-auto_create_graph`.
 
@@ -156,13 +156,13 @@ Let's break this down.
 * `test "testing the tesla conv AI system"` names the test.
 * `with graph::tesla_ai` specify the graph to be used as the text fixture.
 * `by walker::talk` specify the walker to test. It will be spawned on the anchor node of the graph.
-* `std.get_report()` let you access the report content of the walker so that you can set up any assertion neccessary with `assert`.
+* `std.get_report()` let you access the report content of the walker so that you can set up any assertion necessary with `assert`.
 
-To run jac tests, save the test case(s) in a file (say `tests.jac`) and import the neccessary walkers and graphs. Then run
+To run jac tests, save the test case(s) in a file (say `tests.jac`) and import the necessary walkers and graphs. Then run
 ```bash
 jaseci > jac test tests.jac
 ```
-This will execute all the test cases in `tests.jac` squentially and report success or any assertion failures.
+This will execute all the test cases in `tests.jac` sequentially and report success or any assertion failures.
 
 ## Running Jaseci as a Service
 So far, we have been interacting jaseci through `jsctl`.

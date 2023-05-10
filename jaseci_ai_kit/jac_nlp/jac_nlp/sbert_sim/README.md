@@ -1,3 +1,7 @@
+---
+title: Text Similarity with Sentence BERT Model
+---
+
 #  **SBert Similarity (`sbert_sim`)**
 **`sbert_sim`** is a implementation of SentenceBert for scoring similarity among sentences, it uses bi-encoder in a saimese setup to encode the sentence followed by the cosine similarity to score the similarity.
 
@@ -48,10 +52,10 @@ For this tutorial, we would walk you though the process to `train` and use the `
         **Parameter details**
         * `train`: will be used to train the Sbert Similarity on custom data
             * Input:
-                * `dataset` (Dict): dictionary of candidates and suportting contexts for each candidate
+                * `dataset` (Dict): dictionary of candidates and supporting contexts for each candidate
                 * `training_parameters` (Dict): dictionary of training parameters
             * Returns: text when model training is completed
-        * `get_sim_score`: will be used to predits the most suitable candidate from corpus for a provided query, takes text or embedding
+        * `get_sim_score`: will be used to predicts the most suitable candidate from corpus for a provided query, takes text or embedding
             * Input:
                 * `query` (string or list of strings): contains a list of queries that is scored against the list of corpus
                 * `corpus` (string or list of strings): contain a list of entries that is evaluated with each query
@@ -59,7 +63,7 @@ For this tutorial, we would walk you though the process to `train` and use the `
             * Return: a dictionary of similarity score for each candidate and context
 
 
-    **Steps for running `sbert_sim.jac` programm**
+    **Steps for running `sbert_sim.jac` program**
     1. Build `sbert_sim.jac` by run cmd
         > jac build sbert_sim.jac
     2. Activate sentinal by run cmd

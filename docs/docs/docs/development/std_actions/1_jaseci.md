@@ -115,8 +115,8 @@ jaseci.graph_create()
 Return the content of the graph with mode.
 Valid modes: {default, dot, }.
 
-`gph` :graph - graph whose conten you need.
-`mode` : string - "deafult" or "dot" , "default" by default.
+`gph` :graph - graph whose content you need.
+`mode` : string - "default" or "dot" , "default" by default.
 
 ```jac
 Contents = jaseci.graph_get(gph);
@@ -163,7 +163,7 @@ Permantely  delete graph
 `grph` : `graph` - Graph to be deleted.
 
 ```jac
-message = jaseci.graph_delete(grph);
+message = jaseci.graph_delete(graph);
 ```
 
 ### Return Node Value
@@ -201,7 +201,7 @@ Create blank or code loaded sentinel and return object.
 `set_active`: `bool` = True
 
 ```jac
-sentel = jaseci.sentinel_regsiter(name,encoded,auto_run,ctx,set_active);
+sentel = jaseci.sentinel_register(name,encoded,auto_run,ctx,set_active);
 ```
 
 ### Global Sentinel
@@ -384,7 +384,7 @@ List walkers spawned by master
 `detailed` : `boolean` - return details of walkers
 
 ```jac
-walkers  = jaseci.walker_spawn_list(deatailed);
+walkers  = jaseci.walker_spawn_list(detailed);
 ```
 
 ### Assign walker to node
@@ -393,7 +393,7 @@ Assigns walker to a graph node and primes walker for execution
 
 `wlk` : `walker`  - walker to be assigned
 `nd` : `node` - node walker will be assigned too
-`ctx` : `dicionary`  - context for node
+`ctx` : `dictionary`  - context for node
 
 ```jac
 message   = jaseci.walker_prime(wlk,nd,ctx);
@@ -437,55 +437,55 @@ response = jaseci.wapi(name,nd,ctx);
 
 ## Architypes
 
-### Create Architype
+### Create Archetype
 
-`code` : `string` : the test or filename  for an architype jac code
+`code` : `string` : the test or filename  for an archetype jac code
 `encoded` : `boolean` : if code is encoded or not
-`snt (uuid)` : the uuid of the sentinel to be the owner of this architype
+`snt (uuid)` : the uuid of the sentinel to be the owner of this archetype
 
 ```jac
-architype_response  = jaseci.architype_register(code,encoded,snt);
+archetype_response  = jaseci.archetype_register(code,encoded,snt);
 ```
 
-### Get Architype
+### Get Archetype
 
-Get an architype rendered with specific mode.
+Get an archetype rendered with specific mode.
 
-`arch` : `architype` - the architype being accessed
+`arch` : `archetype` - the archetype being accessed
 `mode` : `string` - valid modes {default, code, ir}
 `detailed` : `boolean` - return detailed info also
 
 ```jac
-architpe_serialized   = jaseci.architype_get(arch,mode,detailed);
+archetype_serialized   = jaseci.archetype_get(arch,mode,detailed);
 ```
 
-### Set Architype code or ir
+### Set Archetype code or ir
 
-`arch (uuid)` : The architype being set
-`code (str)` : The text (or filename) for an architypes Jac code/ir
+`arch (uuid)` : The archetype being set
+`code (str)` : The text (or filename) for an archetypes Jac code/ir
 `mode (str)` : Valid modes: {default, code, ir, }
 
 ```jac
-response  = jaseci.architype_set(arch,code,mode);
+response  = jaseci.archetype_set(arch,code,mode);
 ```
-### List Architype
+### List Archetype
 
-List architypes know to sentinel
-`snt (uuid)` : The sentinel for which to list its architypes
+List archetypes know to sentinel
+`snt (uuid)` : The sentinel for which to list its archetypes
 `detailed (bool)` : Flag to give summary or complete set of fields
 
 ```jac
-archs = jaseci.architype_list(snt,detailled);
+archs = jaseci.archetype_list(snt,detailed);
 ```
 
-### Delete Architype
+### Delete Archetype
 
 Permanently delete sentinel with given id.
-`arch (uuid)` : The architype being set.
-`snt (uuid)` : The sentinel for which to list its architypes
+`arch (uuid)` : The archetype being set.
+`snt (uuid)` : The sentinel for which to list its archetypes
 
 ```jac
-response = jaseci.architype_delete(arch,snt);
+response = jaseci.archetype_delete(arch,snt);
 ```
 
 
@@ -493,11 +493,11 @@ response = jaseci.architype_delete(arch,snt);
 
 ### Create Master
 
-Create a master instance and retrun root node master object.
+Create a master instance and return root node master object.
 
 `name`  : `str` - name of master
 `active` : `boolean`
-`ctx` : `dictionary` - additional feilds for overloaded interfaces
+`ctx` : `dictionary` - additional fields for overloaded interfaces
 
 ```jac
 master_object  = jaseci.master_create(name,active,ctx);
@@ -534,7 +534,7 @@ response  = jaseci.master_active_set(name);
 
 ### Unset Default Master
 
-Unsets the default sentinel mastershould use.
+Unsets the default sentinel master should use.
 
 ```jac
 response  = jaseci.master_active_unset();
@@ -620,7 +620,7 @@ response = jaseci.global_sentinel_set(snt);
 ### Unset Global Sentinel
 
 Unset globally accessible variable.
-`snt` : `sentinel` - sentinel to be removed as globally acccessible.
+`snt` : `sentinel` - sentinel to be removed as globally accessible.
 
 ```jac
 response  = jaseci.sentinel_unset(snt);
@@ -633,7 +633,7 @@ response  = jaseci.sentinel_unset(snt);
 Create a super instance and return root node super object
 `name` : `string` - name of master
 `set_active` : `boolean` - set master to active
-`other_fields` : `dictionary` - used for additional feilds for overloaded interfaces (i.e., Dango interface)
+`other_fields` : `dictionary` - used for additional fields for overloaded interfaces (i.e., Dango interface)
 
 ```jac
 master_object  = jaseci.master_createsuper(name,set_active,other_fields);
@@ -643,7 +643,7 @@ master_object  = jaseci.master_createsuper(name,set_active,other_fields);
 
 Returns info on a set of users.
 `num` : `int` -  specifies the number of users to return.
-`start_idx` : `int` -  specfies where to start.
+`start_idx` : `int` -  specifies where to start.
 
 ```jac
 # in development
@@ -676,7 +676,7 @@ Set of APIs to expose Stripe Management
 `description` : `string` - default " Plan description"
 
 ```jac
-message = jaseci.stripe_product_create(name,desciption);
+message = jaseci.stripe_product_create(name,description);
 ```
 
 ### Modify Product Price
@@ -748,7 +748,7 @@ payment_methods = jaseci.stripe_customer_payment_get(customerId);
 `customerId`  : `string` - id to uniquely identify customer
 
 ```jac
-message = jaseci.stripe_customer_payment_default(customeId,paymentMethodId);
+message = jaseci.stripe_customer_payment_default(customerId,paymentMethodId);
 ```
 
 ### Create Customer Subscription
@@ -764,7 +764,7 @@ message = jaseci.stripe_subscription_create(paymentId,priceId,customerId);
 
 ### Cancel Customer Subscription
 
-`subscriptionId` : `string` - id to uniquley identify subscription
+`subscriptionId` : `string` - id to uniquely identify subscription
 
 ```jac
 message  = jaseci.stripe_subscription_delete(subscriptionId);
@@ -783,7 +783,7 @@ customer_subscription = jaseci.stripe_subscription_get(customerId);
 
 Retrieve customer list of invoices.
 `customerId` : `string` - id to uniquely identify customer`.
-`subscriptionId` : `string` - id to uniquley identify subscription.
+`subscriptionId` : `string` - id to uniquely identify subscription.
 `limit` : `int` - max amount of invoices to return.
 `lastitem` : `string` - id of item from where the return should start default is " ".
 
@@ -795,7 +795,7 @@ invoices = jaseci.stripe_invoice_list(customerId,subscriptionId,limit,lastitem);
 
 ## Load actions module locally
 
-Hot load a python module and assimlate any jaseci action
+Hot load a python module and assimilate any jaseci action
 `file` : `string` - module to be loaded
 
 ```jac
@@ -830,7 +830,7 @@ actions = jaseci.actions_list();
 
 Get a Connfig
 `name` : `string` - name of configurations.
-`do_check` : `boolean` - deafult is True
+`do_check` : `boolean` - default is True
 
 ```jac
 confid_details = jaseci.config_get(name,do_check);
@@ -840,7 +840,7 @@ confid_details = jaseci.config_get(name,do_check);
 
 `name` : `string` - name of configuration
 `value` : `string` - value to set
-`do_check` : `boolean` - deafult is True
+`do_check` : `boolean` - default is True
 
 ```jac
 config_details = jaseci.config_set(name,value,do_check);
@@ -867,7 +867,7 @@ config_exist = jaseci.config_exists(name);
 ### Delete Configurations
 
 `name` : `string`
-`do_check` : `boolean` - deafult is True
+`do_check` : `boolean` - default is True
 s
 ```jac
 message = jaseci.config_delete(name,do_check);

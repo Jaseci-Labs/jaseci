@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: FastText Encoder
+description: Text Encoding with FastText Encoder
 ---
 
 # FastText Encoder (`fast_enc`) - `Status`: `Inactive`
@@ -11,7 +12,7 @@ title: FastText Encoder
 
 * `train`: used to train the Bi-Encoder for custom input
     * Input:
-        * `traindata` (Dict): dictionary of candidates and suportting contexts for each candidate
+        * `traindata` (Dict): dictionary of candidates and supporting contexts for each candidate
         * `train_with_existing` (bool): if set to true train the model from scratch otherwise trains incrementally
 * `predict`: predits the most suitable candidate for a provided context, takes text or embedding
     * Input:
@@ -46,4 +47,4 @@ walker fast_enc_example {
     std.out(resp_data);
 }
 ```
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/fast_enc)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/fast_enc)

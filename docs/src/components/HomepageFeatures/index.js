@@ -9,28 +9,28 @@ const FeatureList = [
   {
     title: 'Introduction to Jaseci',
     imgUrl: 'img/tutorial/landingpage/introduction_to_jaseci.png',
-    href: 'docs/introduction',
+    href: 'docs/docs/introduction',
     description: (
       <>
-        Developing AI models with Jaseci is way faster. Its requires 60% less effort when building with Jaseci. Get started  <a href="/docs/introduction">Here</a>
+        Developing AI models with Jaseci is way faster. Its requires 60% less effort when building with Jaseci.
       </>
     ),
   },
   {
     title: 'Developing with Jaseci',
     imgUrl: 'img/tutorial/landingpage/developing_with_jaseci.png',
-    href: '/docs/development',
+    href: 'docs/category/development',
 
     description: (
       <>
-        Jaseci uses the <a>JAC</a> Programming language which is used for interacting with the Jaseci Engine, giving developers control over Jaseci when building AI powered Apps. Get started  <a href="/docs/Developing_with_JAC/Overview">Here</a>
+        Jaseci uses the <a>JAC</a> Programming language which is used for interacting with the Jaseci Engine, giving developers control over Jaseci when building AI powered Apps.
       </>
     ),
   },
   {
     title: 'Tools and Features',
     imgUrl: 'img/tutorial/landingpage/tools_and_features.png',
-    href: '/docs/Tools_and_Features/Overview',
+    href: 'docs/docs/getting_started/setting_up_jaseci_studio',
 
     description: (
       <>

@@ -21,6 +21,8 @@ import time
 from .actions_state import ActionsState
 
 POLICIES = ["Default", "Evaluation"]
+THRESHOLD = 0.2
+NODE_MEM_THRESHOLD = 0.8
 
 
 class ActionsOptimizer:
@@ -42,6 +44,7 @@ class ActionsOptimizer:
         self.actions_calls = actions_calls
         self.policy_params = {}
         self.policy_state = {}
+        self.last_eval_configs = []
 
     def kube_create(self, config):
         kube = JsOrc.svc("kube").poke(cast=KubeService)
@@ -97,7 +100,8 @@ class ActionsOptimizer:
     def load_action_remote(self, name, unload_existing=False):
         """
         Load a remote action.
-        JSORC will get the URL of the remote microservice and stand up a microservice if there isn't currently one in the cluster.
+        JSORC will get the URL of the remote microservice
+        and stand up a microservice if there isn't currently one in the cluster.
         Return True if the remote action is loaded successfully,
         False otherwise
         """
@@ -137,10 +141,12 @@ class ActionsOptimizer:
         Load an action module
         """
         cur_state = self.actions_state.get_state(name)
+        logger.info(cur_state)
         if cur_state is None:
             cur_state = self.actions_state.init_state(name)
 
         if cur_state["mode"] == "module":
+            logger.info("ALREADY A MODULE LOADED")
             # Check if there is already a local action loaded
             return
 
@@ -257,7 +263,6 @@ class ActionsOptimizer:
             return
         elif self.policy == "Evaluation":
             self._actionpolicy_evaluation()
-
         if len(self.actions_change) > 0:
             self.apply_actions_change()
 
@@ -276,9 +281,16 @@ class ActionsOptimizer:
                     c = copy.deepcopy(con)
                     c[act] = m
                     if m == "local":
-                        c["local_mem"] += action_configs[act].get("remote_memory", 0)
-                        if c["local_mem"] < node_mem:
+                        local_mem_requirement = action_configs[act][
+                            "local_mem_requirement"
+                        ]
+                        c["local_mem"] = c["local_mem"] + local_mem_requirement
+                        if c["local_mem"] < (node_mem * NODE_MEM_THRESHOLD):
                             new_configs.append(dict(c))
+                        else:
+                            logger.info(
+                                f"config dropped for memory constraint: {c},\n\tcurrent node memory: {node_mem}\n\tavailable memory: {(node_mem * NODE_MEM_THRESHOLD)-c['local_mem'] }"
+                            )
                     else:
                         new_configs.append(dict(c))
             all_configs = list(new_configs)
@@ -300,8 +312,12 @@ class ActionsOptimizer:
                 "cur_config": None,  # current active configuration
                 "remain_configs": [],  # remaining configurations that need to be evaluated
                 "past_configs": [],  # configurations already evaluated
-                "eval_phase": 10,  # how long is evaluatin period (in seconds)
-                "perf_phase": 100,  # how long is the performance period (in seconds)
+                "eval_phase": self.policy_params.get(
+                    "eval_phase", 10
+                ),  # how long is evaluatin period (in seconds)
+                "perf_phase": self.policy_params.get(
+                    "perf_phase", 100
+                ),  # how long is the performance period (in seconds)
                 "cur_phase": 0,  # how long the current period has been running
                 "prev_best_config": self.actions_state.get_all_state(),
             }
@@ -434,7 +450,6 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
-
         self.policy_state["Evaluation"] = policy_state
 
     def _get_action_change(self, new_action_state):
@@ -466,7 +481,7 @@ class ActionsOptimizer:
         # But this might change down the line
         for name, change_type in actions_change.items():
             logger.info(f"==Actions Optimizer== Changing {name} {change_type}")
-            if change_type == "to_local" or change_type == "to_module":
+            if change_type in ["to_local", "_to_local", "_to_module", "to_module"]:
                 # Switching from no action loaded to local
                 self.load_action_module(name)
                 del self.actions_change[name]

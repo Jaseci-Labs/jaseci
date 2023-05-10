@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: CL Summarizer
+description: Text Summarization with CL Summarizer
 ---
 
 # CL Summarizer (`cl_summer`)
@@ -65,4 +66,4 @@ walker cl_summer_example {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/cl_summer)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/cl_summer)

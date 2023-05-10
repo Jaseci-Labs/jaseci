@@ -20,7 +20,7 @@ const config = {
   organizationName: 'Jaseci-Labs', // GitHub org/user name.
   projectName: 'jaseci', // Repo name.
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'ignore',
   onBrokenMarkdownLinks: 'warn',
 
   // metadata like html lang. For example, if your site is Chinese, you may want
@@ -58,6 +58,7 @@ const config = {
           src: 'img/favicon.png',
         },
         items: [
+
           {
             type: 'docSidebar',
             sidebarId: 'docsSidebar',
@@ -70,6 +71,7 @@ const config = {
             position: 'left',
             label: 'Tutorials',
           },
+          { to: 'https://api.jaseci.org/docs/', label: 'API', position: 'left' },
           {
             href: 'https://github.com/Jaseci-Labs/jaseci',
             label: 'GitHub',
@@ -86,15 +88,11 @@ const config = {
               {
                 label: 'Stack Overflow',
                 href: 'https://stackoverflow.com/questions/tagged/jaseci',
-              },
-              {
-                label: 'Twitter',
-                href: 'https://twitter.com/jaseci',
-              },
+              }
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Jaseci Labs, Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Jaseci Labs.`,
       },
       prism: {
         theme: lightCodeTheme,

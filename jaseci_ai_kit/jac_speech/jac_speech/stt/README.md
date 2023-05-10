@@ -1,3 +1,7 @@
+---
+title: Converting Speech in to Text
+---
+
 # **Speech2Text (`stt`)**
 
 Module `stt` uses the `whisper` to get the transcription or translation of a give audio sequence.

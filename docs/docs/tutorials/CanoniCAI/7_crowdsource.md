@@ -5,7 +5,7 @@ The performance of an AI model depends heavily on the training data.
 Collecting and curating training data is a crucial step in improving the performance of your AI models.
 In this section, we will walk through how to crowdsource training data via Amazon Mechanical Turk (mturk for short).
 
-#### Step 1: Register as a Amazon Mechnical Turk requester
+#### Step 1: Register as a Amazon Mechanical Turk requester
 You will need to apply to be a requester to crowdsource data via mturk.
 You can use existing AWS account or create a new account for mturk at [here](https://requester.mturk.com/signin_options).
 The requester application process can take a couple of days to be approved so plan ahead.
@@ -16,7 +16,7 @@ When you sign into the requester account for amazon. Click on `New Project`.
 ![Alt text](img/mturk/new_project.png?raw=true)
 
 #### Step 3: Selecting Templates
-You will need to select a customizable template to start a new project. In our case scenerio, we will choose the option to `collect utterance`. It will be highlighted in yellow in the image below, after you click on `collect utterance`, then proceed to click `Create Project`.
+You will need to select a customizable template to start a new project. In our case scenario, we will choose the option to `collect utterance`. It will be highlighted in yellow in the image below, after you click on `collect utterance`, then proceed to click `Create Project`.
 
 ![Alt text](img/mturk/collect_utterance.png?raw=true)
 
@@ -43,7 +43,7 @@ Here is how the form will look like.
 
 * **Number of assignments per task**: How much utterances you would like at the end to get out of this task. We usually set the default to 100 utterances because we would like to assess whether or not the utterances that came out is great to see if we can make changes in the future.
 
-* **Time allotted per assignment**: Maximum time a Worker has to work on a single task. Be generous so that Workers are not rushed. The defaul 1 hour generally works well here.
+* **Time allotted per assignment**: Maximum time a Worker has to work on a single task. Be generous so that Workers are not rushed. The default 1 hour generally works well here.
 
 * **Task expires in**: Maximum time your task will be available to Workers on Mechanical Turk. The default 7 days usually works well here.
 

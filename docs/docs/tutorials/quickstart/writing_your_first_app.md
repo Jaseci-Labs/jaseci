@@ -18,7 +18,7 @@ node state {
 ```
 Nodes can be thought of as the representation of an entity.
 Nodes are the fundamental unit of  a graph. These can be considered to be the steps in which the Walker can take.
-* Nodes are composed of Context and excutable actions.
+* Nodes are composed of Context and executable actions.
 * Nodes execute a set of actions upon entry and exit.
  Here we are creating a `node` of name "state"
 The <strong>has</strong> keyword is used to declare a variable for the node.
@@ -111,7 +111,7 @@ spawn {
 }
 ```
 `spawn` is used to create to create child nodes, which is used to design flow of the conversational experience.
-We are able to create additional edges to connnect nodes which which do not share a parent -child relationship. This is shown in the last line.
+We are able to create additional edges to connect nodes which which do not share a parent -child relationship. This is shown in the last line.
 
 ```jac
 node state {
@@ -144,14 +144,14 @@ graph main_graph {
 
     prices_12 = spawn prices +[transition(intent="12 and younger")] +> node::state(
         title = "prices<12",
-        message = "Childer under 12 pay $100 per month",
+        message = "Children under 12 pay $100 per month",
         prompts = ["more prices", "quit"]
     );
      prices_12 +[transition(intent="more prices")] +> prices;
 
      prices_18 = spawn prices +[transition(intent="18 and younger")] +> node::state(
         title = "prices<18",
-        message = "Childer under 18 pay $110 per month",
+        message = "Children under 18 pay $110 per month",
         prompts = ["more prices", "quit"]
     );
 
@@ -184,7 +184,7 @@ graph main_graph {
 
     other_time = spawn time +[transition(intent="other times")]+> node::state(
         title = "Other times",
-        message ="The clases are at 4 pm to 5 pm but you need at least 4 other students to start",
+        message ="The classes are at 4 pm to 5 pm but you need at least 4 other students to start",
         prompts = ['days',"quit"]
     );
 
@@ -204,13 +204,13 @@ graph main_graph {
     }
 }
 ```
-This last code block we created several nodes and connected them together. To move from node to node we use the intent to sepcify which route to take.
+This last code block we created several nodes and connected them together. To move from node to node we use the intent to specify which route to take.
 
 ## Walker
 * Walkers traverse the nodes of the graph triggering execution at the node level.
 
 Now lets create a file called walker.jac
-Here is where we will create  the method for traveral of the graph.
+Here is where we will create  the method for traversal of the graph.
 
 ```jac
 
@@ -239,8 +239,8 @@ walker talker {
 
 ```
 
-The Walker will start from the main root and from the utterance intered it will determine which node to go to next.
-It should be noted the utterance must match the prompts chosen or the walker will not move from the graph. In a future code through we will use an AI model  from Jaseci Kit that can understand our intent by analayzing our various inputs.
+The Walker will start from the main root and from the utterance entered it will determine which node to go to next.
+It should be noted the utterance must match the prompts chosen or the walker will not move from the graph. In a future code through we will use an AI model  from Jaseci Kit that can understand our intent by analyzing our various inputs.
 
 ## Main
 
@@ -251,7 +251,7 @@ Create a file named main.jac .
 import {*} with "./graph.jac";
 import {*} with "./walker.jac";
 
-# this walker is reponsible for starting the program.
+# this walker is responsible for starting the program.
 walker init {
 
     root {

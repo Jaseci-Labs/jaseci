@@ -6,19 +6,52 @@ from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.microsoft.views import MicrosoftGraphOAuth2Adapter
 from allauth.socialaccount.providers.okta.views import OktaOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.apple.views import (
+    AppleOAuth2Adapter as LegacyAppleOAuth2Adapter,
+    AppleOAuth2Client,
+)
+from allauth.socialaccount.adapter import DefaultSocialAccountAdapter, get_adapter
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from jaseci_serv.jsx_oauth.utils import GetExampleUrlSerializer
-from django.conf import settings
 from django.views import View
 from django.shortcuts import render
 from django.utils.translation import gettext_lazy as _
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from jaseci_serv.jsx_oauth.models import SocialLoginProvider, PROVIDERS_MAPPING
-from allauth.socialaccount.models import SocialApp
+from jaseci_serv.jsx_oauth.models import (
+    SocialLoginProvider,
+    PROVIDERS_MAPPING,
+    SocialApp,
+)
 from jaseci_serv.jsx_oauth.utils import JSXSocialLoginView
+
+#################################################
+#     OVERRIDING DEFAULTS FOR APPLE SIGN IN     #
+#################################################
+
+main_get_app = DefaultSocialAccountAdapter.get_app
+
+
+def custom_get_app(self, request, provider, config=None):
+    if hasattr(request, "app") and request.app:
+        return request.app
+    return main_get_app(self, request, provider, config)
+
+
+DefaultSocialAccountAdapter.get_app = custom_get_app
+
+
+class AppleOAuth2Adapter(LegacyAppleOAuth2Adapter):
+    def get_client_id(self, provider):
+        app = get_adapter().get_app(self.request, provider)
+        return [aud.strip() for aud in app.client_id.split(",")]
+
+
+# --------------------------------------------- #
 
 
 def generate_state():
@@ -94,6 +127,13 @@ class OpenIdLogin(JSXSocialLoginView):
     client_class = OAuth2Client
 
 
+class AppleLogin(JSXSocialLoginView):
+    adapter_class = AppleOAuth2Adapter
+    provider = SocialLoginProvider.APPLE
+    client_class = AppleOAuth2Client
+
+
+@method_decorator(csrf_exempt, name="dispatch")
 class ExampleLiveView(View):
     template_name = "examples/social_auth.html"
 
@@ -108,5 +148,17 @@ class ExampleLiveView(View):
                 "code": code,
                 "client_id": social_app.client_id,
                 "state": generate_state(),
+            },
+        )
+
+    def post(self, request, provider):
+        data = request.POST.dict()
+        return render(
+            request,
+            self.template_name,
+            {
+                "provider": provider,
+                "id_token": data["id_token"],
+                "state": data["state"],
             },
         )

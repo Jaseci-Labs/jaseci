@@ -1,5 +1,6 @@
 ---
 sidebar_position: 3
+description: An Overview of Abilities and Examples.
 ---
 
 # Abilities
@@ -33,7 +34,6 @@ To see node abilities in advance let's define the following graph, which represe
 
 This is a very basic example of a node ability.
 
-**Example 1:**
 ```jac
 node city{
     has name;
@@ -61,14 +61,14 @@ walker init{
 
 `set_name` is the ability defined inside the `city` node. This ability will set a name to the city node. `here::set_name` is the syntax of triggering the node ability from the `walker init`.
 
-**Output 1:**
+Expected output:
+
 ```
 Setting city name: {"name": "c1"}
 c1
 ```
 
-
-The code defines a node called city which has a property called name and an ability called set_name. set_name sets the name property to "c1" and prints a message to the console using std.out().
+The code defines a node called city which has a property called name and an ability called set_name. set_name sets the name property to "c1" and prints a message to the console using `std.out()`.
 
 The code also defines a walker called build_example which spawns a new city node.
 
@@ -84,8 +84,6 @@ The output of this code is "Setting city name: {"name": "c1"} c1", which indicat
 
 The following jac program extends the above example to set tourists in each city nodes.
 
-**Example 2:**
-
 ```jac
 node city{
     has name;
@@ -99,10 +97,10 @@ node city{
 
 walker build_example{
     node1 = spawn here ++> node::city(name="c1");
-    node2 = spawn node1 --> node::city(name="c2");
-    node3 = spawn node2 --> node::city(name="c3");
-    here --> node2;
-    node1 --> node3;
+    node2 = spawn node1 ++> node::city(name="c2");
+    node3 = spawn node2 ++> node::city(name="c3");
+    here ++> node2;
+    node1 ++> node3;
 }
 
 walker init{
@@ -123,7 +121,8 @@ walker init{
 
 Run the example 2 code to obtain following output.
 
-**Output 2:**
+Expected output:
+
 ```
 Setting number of tourists in c1 city to 47
 Setting number of tourists in c2 city to 15
@@ -132,7 +131,7 @@ Setting number of tourists in c3 city to 89
 Setting number of tourists in c3 city to 51
 Setting number of tourists in c3 city to 44
 ```
-The `init` walker visits `c2` and `c3` edges multiple times as you can observe in the graph visualization `c2` and `c3` has multiple paths. to avoid resetting the number of tourists in each visit let's replace the `set_tourists` ability with following code snippet;
+The `init` walker visits `c2` and `c3` edges multiple times as you can observe in the graph visualization `c2` and `c3` has multiple paths. to avoid resetting the number of tourists in each visit let's replace the `set_tourists` ability in the above example with following code snippet;
 
 ```jac
 can set_tourists{ #also can use "with activity"
@@ -148,9 +147,8 @@ In the following example adds another walker named `traveler`. To collect the va
 > **Note**
 > `here` refers to the current node scope pertinent to the program's execution point and `visitor` refers to the pertinent walker scope pertinent to that particular point of execution. All variables, built-in characteristics, and operations of the linked object instance are fully accessible through these references. More information about here and visitor can be found in [here](#here-and-visitor)
 
-A more advance example of node ability is discussed in example 3;
+A more advance example of node ability is discussed the below example;
 
-**Example 3:**
 
 ```jac
 node city{
@@ -173,10 +171,10 @@ node city{
 
 walker build_example{
     node1 = spawn here ++> node::city(name="c1");
-    node2 = spawn node1 --> node::city(name="c2");
-    node3 = spawn node2 --> node::city(name="c3");
-    here --> node2;
-    here --> node3;
+    node2 = spawn node1 ++> node::city(name="c2");
+    node3 = spawn node2 ++> node::city(name="c3");
+    here ++> node2;
+    here ++> node3;
 }
 
 walker init{
@@ -197,7 +195,8 @@ walker traveler{
     has tours = 1;
 }
 ```
-**Output 3:**
+
+Expected output:
 
 ```
 Setting number of tourists in c1 city to 84
@@ -234,7 +233,6 @@ You might observe that while using a node's ability, the walkers' state remains 
 
 Let's call a walker ability from a node in the following example;
 
-**Example 4:**
 
 ```jac
 node city{
@@ -257,10 +255,10 @@ node city{
 
 walker build_example{
     node1 = spawn here ++> node::city(name="c1");
-    node2 = spawn node1 --> node::city(name="c2");
-    node3 = spawn node2 --> node::city(name="c3");
-    here --> node2;
-    here --> node3;
+    node2 = spawn node1 ++> node::city(name="c2");
+    node3 = spawn node2 ++> node::city(name="c3");
+    here ++> node2;
+    here ++> node3;
 }
 
 walker init{
@@ -284,7 +282,8 @@ walker traveler{
 }
 ```
 
-**Output 4:**
+Expected output:
+
 ```
 Setting number of tourists in c1 city to 33
 When traveler visits: 34  tourists are in the city c1
@@ -312,7 +311,6 @@ Observe that the print statement "Traveler enters the city" comes from the `walk
 
 Lets try adding following node ability inside city node;
 
-**Example 5**
 
 ```jac
 can reset_tourists_1 with traveler exit{
@@ -320,7 +318,9 @@ can reset_tourists_1 with traveler exit{
     std.out("When traveler leaves:",here.tourists, "tourists are in the city", here.context.name);
 }
 ```
-**Output 5**
+
+Expected output:
+
 ```
 Setting number of tourists in c1 city to 76
 When traveler visits: 77  tourists are in the city c1
@@ -349,7 +349,6 @@ the node it is currently executing on, and abilities can use `visitor` to refer 
 the current walker executing. Think of these are special `this` references.
 
 
-**Example:**
 ```
 node person {
     has name;
@@ -382,7 +381,8 @@ walker setter {
     }
 ```
 
-**Output:**
+Expected output:
+
 ```
 1995-01-01T00:00:00  from  {"name": "setter", "kind": "walker", "jid": "urn:uuid:a3e5f4b6-aeda-4cd0-9552-506cb3b7c693", "j_timestamp": "2022-11-09T09:10:05.134836", "j_type": "walker", "context": {"year": "1995-01-01"}}
 1995-01-01T00:00:00  from  {"name": "init", "kind": "walker", "jid": "urn:uuid:47f1e467-a0e6-4772-a06a-204f6a1b69c3", "j_timestamp": "2022-11-09T09:10:05.129720", "j_type": "walker", "context": {"year": "2022-11-09T09:10:05.131397"}}

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: PDF Extractor Module
+description: Detect topical changes in Documents.
 ---
 
 # PDF Extractor Module
@@ -31,4 +32,4 @@ walker pdf_ext_example {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_misc/jac_misc/pdf_ext)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/pdf_ext)

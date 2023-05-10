@@ -88,6 +88,37 @@ class JsOrcApi:
 
         return new_config
 
+    @Interface.admin_api()
+    def jsorc_refresh(self):
+        """
+        refreshing jsorc's config.
+        """
+
+        JsOrc.configure()
+
+        return {
+            "running_interval": JsOrc._running_interval,
+            "config": JsOrc._config,
+        }
+
+    @Interface.admin_api(cli_args=["name"])
+    def service_info(self, name: str):
+        """
+        getting service's info.
+        """
+
+        # will throw exception if not existing
+        svc = JsOrc.svc(name)
+
+        return {
+            "enabled": svc.enabled,
+            "automated": svc.automated,
+            "quiet": svc.quiet,
+            "state": svc.state.name,
+            "config": svc.config,
+            "error": str(svc.error) if svc.error else None,
+        }
+
     @Interface.admin_api(cli_args=["name"])
     def service_refresh(self, name: str):
         """
@@ -261,7 +292,16 @@ class JsOrcApi:
         return {"success": True, "policy": policy}
 
     @Interface.admin_api()
-    def jsorc_loadtest(self, test: str, experiment: str = "", mem: int = 0):
+    def jsorc_loadtest(
+        self,
+        test: str,
+        experiment: str = "",
+        mem: int = 0,
+        policy: str = "all_local",
+        experiment_duration: int = 180,
+        eval_phase: int = 10,
+        perf_phase: int = 100,
+    ):
         """
         load test API. overwritten in jaseci_serv
         """

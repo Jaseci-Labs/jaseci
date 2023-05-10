@@ -1,13 +1,14 @@
 ---
 sidebar_position: 7
 title: Sentiment Analysis Model
+description: Sentiment Analysis with Jaseci
 ---
 
 # Sentiment Analysis Model (`sentiment`)
 
 ## Actions
 
-Module `sentiment` implemented for analysing the sentiment in a given list of text. This module accepts as input a set of sentences.
+Module `sentiment` implemented for analyzing the sentiment in a given list of text. This module accepts as input a set of sentences.
 
 - `texts` - (list of strings) list of input text documents.
 
@@ -23,4 +24,4 @@ walker test_predict{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/sentiment)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/sentiment)

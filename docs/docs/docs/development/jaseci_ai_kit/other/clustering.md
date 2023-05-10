@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: CLustering Module
+description: Text Clustering with Jaseci.
 ---
 
 # Clustering Module
@@ -9,15 +10,15 @@ Module `cluster` implemented for clustering text document into similar clusters.
 
 ## Actions
 
-* `get_umap`: Redusing the dimention of data while preseving the relationship beween data points to identify clusters easier.
+* `get_umap`: Reducing the dimension of data while preserving the relationship between data points to identify clusters easier.
     * Input
         * `text_embeddings` (list): list of text embeddings should pass here.
         * `n_neighbors` (int): number of neighbors to consider.
         * `min_dist` (float): minimum distance between clusters.
         * `n_components` (int): the dimensionality of the reduced data.
-        * `random_state`(int): preproducability of the algorithm.
+        * `random_state`(int): pre-producibility of the algorithm.
 
-    * Returns: multidimentional array of reduced features.
+    * Returns: multi-dimensional array of reduced features.
 
 * `get_cluster_labels`: To get list of possible cluster labels
     * Input
@@ -37,7 +38,7 @@ Module `cluster` implemented for clustering text document into similar clusters.
     "still waiting card",
     "countries supporting",
     "card still arrived weeks",
-    "countries accounts suppor",
+    "countries accounts support",
     "provide support countries",
     "waiting week card still coming",
     "track card process delivery",
@@ -70,4 +71,4 @@ walker text_cluster_example{
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_misc/jac_misc/cluster)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/cluster)

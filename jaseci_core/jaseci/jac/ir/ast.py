@@ -16,7 +16,12 @@ class Ast:
     ):
         self.name = "unparsed"
         self.kid = []
-        self.loc = [0, 0, mod_name if mod_name is not None else "@default", {}]
+        self.loc = [
+            0,
+            0,
+            mod_name if mod_name is not None else "@default",
+            {},
+        ]  # line, col, module, tokens
 
     def is_terminal(self):
         """Returns true if node is a terminal"""
@@ -36,6 +41,9 @@ class Ast:
     def token_symbol(self):
         if self.is_terminal():
             return self.token()["symbol"]
+
+    def loc_str(self):
+        return f"{self.loc[2]}:{self.loc[0]}"
 
     def __str__(self):
         res = f"{self.name}:{self.loc[2]}:{self.loc[0]}:{self.loc[1]}:"

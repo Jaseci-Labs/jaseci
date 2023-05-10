@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Speech to Text Module
+description: Converting Speech to Text with Jaseci.
 ---
 
 # Speech to Text Module
@@ -57,4 +58,4 @@ walker translate {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_speech/jac_speech/stt)
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/stt)

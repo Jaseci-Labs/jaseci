@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: USE Encoder
+description: Text encoding with USE Encoder
 ---
 
 #  USE Encoder (`use_enc`)
@@ -17,10 +18,10 @@ The sentence level embeddings can then be used to calculate the similarity betwe
     * Return: Encoded embeddings
 * `cos_sim_score`:
     * Input:
-        * `q_emb` (string or list of strings): first text to be embeded
+        * `q_emb` (string or list of strings): first text to be embedded
         * `a_emb` (string or list of strings): second text to be embedded
     * Return: cosine similarity score
-* `text_simliarity`: calculate the simlarity score between given texts
+* `text_simliarity`: calculate the similarity score between given texts
     * Input:
         * `text1` (string): first text
         * `text2` (string): second text
@@ -61,4 +62,4 @@ walker use_enc_example {
 }
 ```
 
-For a complete example visit [here](https://github.com/Jaseci-Labs/jaseci/tree/main/jaseci_ai_kit/jac_nlp/jac_nlp/use_enc).
+For a complete example visit [here](../../../../../tutorials/jaseci_ai_kit/jac_nlp/use_enc).

@@ -70,7 +70,7 @@ walker get_dialog_clusters{
 - `final_features = cluster.get_umap(encode,3);` the encoded data is in 512 dimension, which is very unefficient and difficult to handle by machine learning algorithms. so we are reducing the dimension of data to three dimensions.
 - `cluster_lables = cluster.get_cluster_labels(embeddings=final_features,algorithm="hbdscan",min_samples=10,min_cluster_size=5);` clusteing documents with HBDSCAN algorithm.
 
-Save all the codes in a one file and run to see the output. You have to load `sber_sim` from `jac_nlp` package and `cluster` from `jac_misc` package befor running the code.
+Save all the codes in a one file and run to see the output. You have to load `sber_sim` from `jac_nlp` package and `cluster` from `jac_misc` package before running the code.
 
 ```bash
 actions load module jac_nlp.sbert_sim
