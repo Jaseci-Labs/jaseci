@@ -1,7 +1,7 @@
 walker discussion_analysis {
-    can bi_enc.get_context_emb;
-    can bi_enc.get_candidate_emb;
-    can bi_enc.dot_prod;
+    // can bi_enc.get_context_emb;
+    // can bi_enc.get_candidate_emb;
+    // can bi_enc.dot_prod;
     can cl_summer.summarize;
 
     has text_in = "Hey i have a few questions about Tesla. First of all, how do I order a tesla? and if I already have a reservation, how do I configure my order? also, I would like to request a test drive and can you help me schedule that. Obviously that should happen before I put in any order. Oh one last thing, is there an easy way I can see all the options and design choices for the car?";
@@ -35,24 +35,24 @@ walker discussion_analysis {
         all_text += tran;
     }
     summaries = cl_summer.summarize(text=all_text, url="none", sent_count=3, summarizer_type="LsaSummarizer");
+    report summaries
+    // # get embeddings
+    // context_embs = bi_enc.get_context_emb(transcripts);
 
-    # get embeddings
-    context_embs = bi_enc.get_context_emb(transcripts);
+    // candidate_embs = bi_enc.get_candidate_emb(summaries);
 
-    candidate_embs = bi_enc.get_candidate_emb(summaries);
-
-    # cosine similarity
-    for c in context_embs {
-        max_sum = "";
-        max_score = 0;
-        for i=0 to i<summaries.length by i+=1 {
-            score = bi_enc.dot_prod(c, candidate_embs[i]);
-            if score > max_score {
-                max_score = score;
-                max_sum = summaries[i];
-            }
-        }
-        responses.l::append(max_sum);
-    }
-    report responses;
+    // # cosine similarity
+    // for c in context_embs {
+    //     max_sum = "";
+    //     max_score = 0;
+    //     for i=0 to i<summaries.length by i+=1 {
+    //         score = bi_enc.dot_prod(c, candidate_embs[i]);
+    //         if score > max_score {
+    //             max_score = score;
+    //             max_sum = summaries[i];
+    //         }
+    //     }
+    //     responses.l::append(max_sum);
+    // }
+    // report responses;
 }

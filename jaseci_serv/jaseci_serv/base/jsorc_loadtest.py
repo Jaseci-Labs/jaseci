@@ -167,7 +167,7 @@ class JsorcLoadTest:
             app_to_actions = {
                 "zeroshot_faq_bot": ["jac_nlp.text_seg", "jac_nlp.use_qa"],
                 "sentence_pairing": ["jac_nlp.sbert_sim", "jac_nlp.bi_enc"],
-                "discussion_analysis": ["jac_nlp.bi_enc", "jac_nlp.cl_summer"],
+                "discussion_analysis": ["jac_nlp.cl_summer"],
                 "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
                 "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
                 "virtual_assistant": [
