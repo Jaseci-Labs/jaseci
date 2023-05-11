@@ -26,7 +26,7 @@ TEXT_SEG_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "pip install -U jaseci; uvicorn jac_nlp.text_seg:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.text_seg:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -59,7 +59,7 @@ TEXT_SEG_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "text-seg",
-                                "image": "jaseci/jac-nlp:1.4.0.20",
+                                "image": "jaseci/jac-nlp:1.4.0.18",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
