@@ -360,6 +360,8 @@ class ActionsOptimizer:
                     self.benchmark["active"] = False
             else:
                 if policy_state["cur_phase"] >= policy_state["eval_phase"]:
+                    logger.info("====================in else========================")
+                    logger.info(f"benchmark: {self.benchmark['requests']}")
                     # The eval phase for the current configuration is complete
                     # Get performance
                     if "walker_run" not in self.benchmark["requests"]:
