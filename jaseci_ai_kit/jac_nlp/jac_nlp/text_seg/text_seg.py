@@ -14,7 +14,7 @@ from jaseci.utils.utils import model_base_path
 
 
 TFM_MODEL_NAME = "dennlinger/roberta-cls-consec"
-SPACY_MODEL_NAME = "en_core_web_sm/"
+SPACY_MODEL_NAME = "en_core_web_sm"
 MODEL_BASE_PATH = model_base_path("jac_nlp/text_seg")
 os.makedirs(MODEL_BASE_PATH, exist_ok=True)
 TFM_MODEL_PATH = os.path.join(MODEL_BASE_PATH, TFM_MODEL_NAME)
