@@ -232,7 +232,13 @@ class JsorcLoadTest:
                         self.start_actions_tracking()
                         start_ts = time.time()
                         while (time.time() - start_ts) < experiment_duration:
+                            logger.info(
+                                "=================Request Sent===================="
+                            )
                             res = self.run_walker(app)
+                        logger.info(
+                            "=================Loop Completed===================="
+                        )
                         result = self.stop_benchmark()
                         action_result = self.stop_actions_tracking()
                         if policy == "all_local" or policy == "all_remote":
