@@ -26,7 +26,7 @@ TEXT_SEG_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "pip install jaseci; uvicorn jac_nlp.text_seg:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "pip install -U jaseci; uvicorn jac_nlp.text_seg:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
