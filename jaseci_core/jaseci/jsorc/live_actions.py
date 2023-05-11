@@ -149,15 +149,19 @@ def action_handler_wrapper(name, *args, **kwargs):
 
     module = f"jac_nlp.{module}"
 
+    act_procs[module]["reqs"] += 1
     act_procs[module]["in_q"].put((name, args, kwargs))
 
     # TODO: Handle concurrent calls?
-    return act_procs[module]["out_q"].get()[1]
+    res = act_procs[module]["out_q"].get()[1]
+    act_procs[module]["reqs"] -= 1
+    cnt = act_procs[module]["reqs"]
+
+    return res
 
 
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     if mod in act_procs and not act_procs[mod]["terminate_event"].is_set():
-        logger.info(f"Action module {mod} already loaded.")
         return True
     if mod in act_procs and act_procs[mod]["terminate_event"].is_set():
         del act_procs[mod]["in_q"]
@@ -170,6 +174,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         "in_q": multiprocessing.Queue(),
         "out_q": multiprocessing.Queue(),
         "terminate_event": multiprocessing.Event(),
+        "reqs": 0,
     }
     act_procs[mod]["proc"] = multiprocessing.Process(
         target=action_handler,
@@ -228,7 +233,6 @@ def load_action_config(config, module_name):
     """
     Load the action config of a jaseci action module
     """
-
     loaded_configs = importlib.import_module(config).ACTION_CONFIGS
     if module_name and module_name in loaded_configs:
         action_configs[module_name] = loaded_configs[module_name]
@@ -241,7 +245,7 @@ def unload_module(mod):
     if mod in act_procs:
         # act_procs[mod]["proc"].kill()
         # act_procs[mod]["proc"].terminate()
-        if not act_procs[mod]["in_q"].empty():
+        if act_procs[mod]["reqs"] > 0:
             act_procs[mod]["terminate_event"].set()
             act_procs[mod]["proc"].join()
             # time.sleep(1)

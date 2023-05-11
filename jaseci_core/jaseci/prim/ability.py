@@ -46,10 +46,7 @@ class Ability(Element, JacCode, Interp):
         Also note that Jac stores preset_in_out as input/output list of hex
         ids since preset_in_out doesn't use _ids convention
         """
-        # logger.info("In run_action")
-        # logger.info(live_actions)
         action_name = self.name
-        # logger.info(action_name)
         if not interp.check_builtin_action(action_name):
             interp.rt_error(f"Cannot execute {action_name} - Not Found")
             return None

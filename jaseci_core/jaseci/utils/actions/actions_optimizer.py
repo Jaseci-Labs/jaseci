@@ -111,6 +111,7 @@ class ActionsOptimizer:
 
         if cur_state["mode"] == "remote" and cur_state["remote"]["status"] == "READY":
             # Check if there is already a remote action loaded
+            logger.info("Already load as remote")
             return True
 
         url = self.actions_state.get_remote_url(name)
@@ -127,11 +128,11 @@ class ActionsOptimizer:
                 cur_state = self.actions_state.get_state(name)
 
         if cur_state["remote"]["status"] == "READY":
-            if unload_existing:
-                self.unload_action_module(name)
             load_remote_actions(url)
             self.action_prep(name)
             self.actions_state.remote_action_loaded(name)
+            if unload_existing:
+                self.unload_action_module(name)
             return True
 
         return False
@@ -141,7 +142,6 @@ class ActionsOptimizer:
         Load an action module
         """
         cur_state = self.actions_state.get_state(name)
-        logger.info(cur_state)
         if cur_state is None:
             cur_state = self.actions_state.init_state(name)
 
@@ -155,12 +155,11 @@ class ActionsOptimizer:
 
         module = action_configs[name]["module"]
         loaded_module = action_configs[name]["loaded_module"]
-        if unload_existing:
-            self.unload_action_remote(name)
-
         load_module_actions(module, loaded_module)
         self.action_prep(name)
         self.actions_state.module_action_loaded(name, module, loaded_module)
+        if unload_existing:
+            self.unload_action_remote(name)
 
     def unload_action_auto(self, name):
         """
@@ -360,12 +359,12 @@ class ActionsOptimizer:
                     self.benchmark["active"] = False
             else:
                 if policy_state["cur_phase"] >= policy_state["eval_phase"]:
-                    logger.info("====================in else========================")
-                    logger.info(f"benchmark: {self.benchmark['requests']}")
-                    logger.info(
-                        f"cur_phase: {policy_state['cur_phase']}\eval_phase: {policy_state['eval_phase']}"
-                    )
-                    logger.info(f"policy_state: {policy_state}")
+                    # logger.info("====================in else========================")
+                    # logger.info(f"benchmark: {self.benchmark['requests']}")
+                    # logger.info(
+                    #     f"cur_phase: {policy_state['cur_phase']}\eval_phase: {policy_state['eval_phase']}"
+                    # )
+                    # logger.info(f"policy_state: {policy_state}")
                     # The eval phase for the current configuration is complete
                     # Get performance
                     if "walker_run" not in self.benchmark["requests"]:
@@ -394,7 +393,7 @@ class ActionsOptimizer:
                     # check if all configs have been evaluated
                     if len(policy_state["remain_configs"]) == 0:
                         # best config is the one with the fastest walker latency during the evaluation period
-                        logger.info(f"===Evaluation Policy=== Evaluation phase over. ")
+                        logger.info(f"===Evaluation Policy=== Evaluation phase over.")
                         best_config = min(
                             policy_state["past_configs"],
                             key=lambda x: x["avg_walker_lat"],
