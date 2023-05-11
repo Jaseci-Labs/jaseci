@@ -13,6 +13,7 @@ import inspect
 import importlib
 import gc
 import time
+import signal
 
 
 live_actions = {}  # {"act.func": func_obj, ...}
@@ -108,7 +109,7 @@ def load_local_actions(file: str, ctx: dict = {}):
         return False
 
 
-def action_handler(mod, ctx, in_q, out_q):
+def action_handler(mod, ctx, in_q, out_q, terminate_event):
     # Clearing the live actions in subprocess
     live_actions.clear()
     loaded_mod = importlib.import_module(mod)
@@ -123,7 +124,7 @@ def action_handler(mod, ctx, in_q, out_q):
         logger.error(e)
     out_q.put(list(live_actions.keys()))
 
-    while True:
+    while not terminate_event.is_set():
         action, args, kwargs = in_q.get()
         func = live_actions[action]
         result = func(*args, **kwargs)
@@ -155,18 +156,30 @@ def action_handler_wrapper(name, *args, **kwargs):
 
 
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
-    if mod in act_procs:
+    if mod in act_procs and not act_procs[mod]["terminate_event"].is_set():
         logger.info(f"Action module {mod} already loaded.")
         return True
+    if mod in act_procs and act_procs[mod]["terminate_event"].is_set():
+        del act_procs[mod]["in_q"]
+        del act_procs[mod]["out_q"]
+        del act_procs[mod]["proc"]
+        del act_procs[mod]
 
     # Create subprocess and message queues for this action module
     act_procs[mod] = {
         "in_q": multiprocessing.Queue(),
         "out_q": multiprocessing.Queue(),
+        "terminate_event": multiprocessing.Event(),
     }
     act_procs[mod]["proc"] = multiprocessing.Process(
         target=action_handler,
-        args=(mod, ctx, act_procs[mod]["in_q"], act_procs[mod]["out_q"]),
+        args=(
+            mod,
+            ctx,
+            act_procs[mod]["in_q"],
+            act_procs[mod]["out_q"],
+            act_procs[mod]["terminate_event"],
+        ),
     )
     act_procs[mod]["proc"].start()
 
@@ -226,14 +239,23 @@ def load_action_config(config, module_name):
 
 def unload_module(mod):
     if mod in act_procs:
-        act_procs[mod]["proc"].kill()
-        act_procs[mod]["proc"].terminate()
-        time.sleep(1)
-        act_procs[mod]["proc"].close()
-        del act_procs[mod]["in_q"]
-        del act_procs[mod]["out_q"]
-        del act_procs[mod]
-        return True
+        # act_procs[mod]["proc"].kill()
+        # act_procs[mod]["proc"].terminate()
+        if not act_procs[mod]["in_q"].empty():
+            act_procs[mod]["terminate_event"].set()
+            act_procs[mod]["proc"].join()
+            # time.sleep(1)
+            act_procs[mod]["proc"].close()
+            # del act_procs[mod]["in_q"]
+            # del act_procs[mod]["out_q"]
+            # del act_procs[mod]
+            return True
+        else:
+            act_procs[mod]["proc"].kill()
+            act_procs[mod]["proc"].join()
+            # act_procs[mod]["proc"].terminate()
+            act_procs[mod]["proc"].close()
+            return True
     else:
         return False
 

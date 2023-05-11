@@ -8,6 +8,7 @@ from jaseci.jsorc.live_actions import (
     load_module_actions,
     live_actions,
     load_remote_actions,
+    unload_module,
 )
 from jaseci.utils.test_core import CoreTest
 from jaseci.jsorc.jsorc import JsOrc
@@ -119,3 +120,7 @@ class JacActionsTests(TestCaseHelper, TestCase):
 
         # ret = self.call(self.mast, ["walker_run", {"name": "test_summarize"}])
         # print(ret)
+
+    def test_unload_action_module(self):
+        load_module_actions("jac_nlp.cl_summer")
+        unload_module("jac_nlp.cl_summer")
