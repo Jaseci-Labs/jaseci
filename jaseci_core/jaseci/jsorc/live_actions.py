@@ -109,6 +109,8 @@ def load_local_actions(file: str, ctx: dict = {}):
 
 
 def action_handler(mod, ctx, in_q, out_q):
+    # Clearing the live actions in subprocess
+    live_actions.clear()
     loaded_mod = importlib.import_module(mod)
     try:
         if hasattr(loaded_mod, "setup"):
@@ -155,9 +157,9 @@ def action_handler_wrapper(name, *args, **kwargs):
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     if mod in act_procs:
         logger.info(f"Action module {mod} already loaded.")
+        return True
 
     # Create subprocess and message queues for this action module
-
     act_procs[mod] = {
         "in_q": multiprocessing.Queue(),
         "out_q": multiprocessing.Queue(),
@@ -223,14 +225,17 @@ def load_action_config(config, module_name):
 
 
 def unload_module(mod):
-    act_procs[mod]["proc"].kill()
-    act_procs[mod]["proc"].terminate()
-    time.sleep(1)
-    act_procs[mod]["proc"].close()
-    del act_procs[mod]["in_q"]
-    del act_procs[mod]["out_q"]
-    del act_procs[mod]
-    return True
+    if mod in act_procs:
+        act_procs[mod]["proc"].kill()
+        act_procs[mod]["proc"].terminate()
+        time.sleep(1)
+        act_procs[mod]["proc"].close()
+        del act_procs[mod]["in_q"]
+        del act_procs[mod]["out_q"]
+        del act_procs[mod]
+        return True
+    else:
+        return False
 
 
 # def unload_module(mod):

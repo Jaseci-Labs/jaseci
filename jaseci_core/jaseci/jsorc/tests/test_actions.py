@@ -94,19 +94,20 @@ class JacActionsTests(TestCaseHelper, TestCase):
                 report cl_summer.summarize("Today is a beautiful day.");
             }
         """
-        use_qa_jac_code = """
+        use_enc_jac_code = """
             walker test_use_enc {
                 can use.get_embedding;
                 report use.get_embedding("Today is a beautiful day.");
             }
         """
-        # load_remote_actions("http://localhost:8000")
+        load_remote_actions("http://localhost:8001")
         # load_module_actions("jac_nlp.cl_summer")
-        load_module_actions("jac_nlp.use_enc")
+        load_module_actions("jac_nlp.cl_summer")
         sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(use_qa_jac_code)
+        # sent.register_code(use_enc_jac_code)
+        sent.register_code(summarize_jac_code)
         root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_use_enc")
+        test_walker = sent.run_architype("test_summarize")
         test_walker.prime(root_node)
         test_walker.run()
         print(test_walker.report)
