@@ -124,7 +124,7 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
         logger.error(e)
     out_q.put(list(live_actions.keys()))
 
-    while not terminate_event.is_set():
+    while not terminate_event.is_set() or not in_q.empty():
         action, args, kwargs = in_q.get()
         func = live_actions[action]
         result = func(*args, **kwargs)
@@ -251,6 +251,7 @@ def unload_module(mod):
             # del act_procs[mod]
             return True
         else:
+            act_procs[mod]["terminate_event"].set()
             act_procs[mod]["proc"].kill()
             act_procs[mod]["proc"].join()
             # act_procs[mod]["proc"].terminate()
