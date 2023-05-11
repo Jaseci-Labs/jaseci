@@ -146,7 +146,7 @@ class ActionsOptimizer:
             cur_state = self.actions_state.init_state(name)
 
         if cur_state["mode"] == "module":
-            logger.info("ALREADY A MODULE LOADED")
+            logger.info(f"{name} already loaded as module.")
             # Check if there is already a local action loaded
             return
 
@@ -490,13 +490,11 @@ class ActionsOptimizer:
                 if loaded:
                     del self.actions_change[name]
             elif change_type == "local_to_remote" or change_type == "module_to_remote":
-                # loaded = self.load_action_remote(name, unload_existing=True)
-                loaded = self.load_action_remote(name)
+                loaded = self.load_action_remote(name, unload_existing=True)
                 if loaded:
                     del self.actions_change[name]
             elif change_type == "remote_to_local" or change_type == "remote_to_module":
-                # self.load_action_module(name, unload_existing=True)
-                self.load_action_module(name)
+                self.load_action_module(name, unload_existing=False)
                 del self.actions_change[name]
 
         if len(actions_change) > 0 and self.actions_history["active"]:
