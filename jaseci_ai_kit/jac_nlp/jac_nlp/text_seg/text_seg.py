@@ -14,7 +14,7 @@ from jaseci.utils.utils import model_base_path
 
 
 TFM_MODEL_NAME = "dennlinger/roberta-cls-consec"
-SPACY_MODEL_NAME = "en_core_web_sm"
+SPACY_MODEL_NAME = "en_core_web_sm/"
 MODEL_BASE_PATH = model_base_path("jac_nlp/text_seg")
 os.makedirs(MODEL_BASE_PATH, exist_ok=True)
 TFM_MODEL_PATH = os.path.join(MODEL_BASE_PATH, TFM_MODEL_NAME)
@@ -37,7 +37,7 @@ def setup():
 
     if all(
         os.path.isfile(os.path.join(TFM_MODEL_PATH, file))
-        for file in ["config.json", "pytorch_model.bin"]
+        for file in ["vocab.txt", "pytorch_model.bin"]
     ):
         tokenizer = AutoTokenizer.from_pretrained(TFM_MODEL_PATH, local_files_only=True)
         model = AutoModelForSequenceClassification.from_pretrained(
@@ -45,12 +45,10 @@ def setup():
         )
     else:
         os.makedirs(TFM_MODEL_PATH, exist_ok=True)
-        tokenizer = AutoTokenizer.from_pretrained(
-            TFM_MODEL_NAME, cache_dir=TFM_MODEL_PATH
-        )
-        model = AutoModelForSequenceClassification.from_pretrained(
-            TFM_MODEL_NAME, cache_dir=TFM_MODEL_PATH
-        )
+        tokenizer = AutoTokenizer.from_pretrained(TFM_MODEL_NAME)
+        model = AutoModelForSequenceClassification.from_pretrained(TFM_MODEL_NAME)
+        tokenizer.save_vocabulary(TFM_MODEL_PATH)
+        model.save_pretrained(TFM_MODEL_PATH)
 
 
 def segmentation(text, threshold=0.85):
