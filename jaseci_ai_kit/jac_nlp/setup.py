@@ -35,7 +35,6 @@ def get_extras_requires():
         with open(join("./jac_nlp", module, "requirements.txt")) as req_file:
             extras_requires[module] = req_file.read().splitlines()
             extras_requires["all"].extend(extras_requires[module])
-            print(extras_requires[module])
     return extras_requires
 
 
