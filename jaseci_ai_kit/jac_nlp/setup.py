@@ -32,9 +32,12 @@ def get_ver():
 def get_extras_requires():
     extras_requires = {"all": []}
     for module in MODULES:
+        print("==============")
+        print(module)
         with open(join("./jac_nlp", module, "requirements.txt")) as req_file:
             extras_requires[module] = req_file.read().splitlines()
             extras_requires["all"].extend(extras_requires[module])
+            print(extras_requires[module])
     return extras_requires
 
 
@@ -42,7 +45,11 @@ setup(
     name="jac_nlp",
     version=get_ver(),
     packages=find_packages(include=["jac_nlp", "jac_nlp.*"]),
-    install_requires=["jaseci", "pytest>=7.0.1,<7.1", "pytest-order>=1.0.1,<1.1"],
+    install_requires=[
+        f"jaseci=={get_ver()}",
+        "pytest>=7.0.1,<7.1",
+        "pytest-order>=1.0.1,<1.1",
+    ],
     extras_require=get_extras_requires(),
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml", "requirements.txt", "*.jac"],
