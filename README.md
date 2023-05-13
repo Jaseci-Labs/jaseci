@@ -16,16 +16,18 @@
 
 # Jaseci: Build the Next Generation of AI Products at Scale
 
-The [Jaseci](https://www.jaseci.org/) platform, which holds a MIT license, is an open-source technology stack composed of three distinct packages: **Jaseci Core**, the fundamental execution engine, **Jaseci Serv**, a cloud-scale runtime engine with diffuse capabilities, and **Jaseci AI Kit**, a collection of AI engines contributed by the Jaseci community. Additionally, **Jaseci Studio**, an experimental toolkit aimed at providing visual programming and debugging tools for developers working with Jaseci, is currently under development.
+The [Jaseci](https://www.jaseci.org/) ecosystem, is an open-source technology stack composed of three components: 
+**Jaseci Core**, the fundamental execution engine, 
+**Jaseci Serv**, a cloud-scale runtime engine with diffuse capabilities, 
+and **Jaseci AI Kit**, a collection of state-of-the-art AI engines and pre-trained models contributed by the Jaseci team and the open source community. Additionally, **Jaseci Studio**, is a comprehensive IDE for programming and debugging Jaseci programs.
 
-Jaseci presents a groundbreaking computational model that aims to simplify the process of developing AI applications. Through its exclusive data-spacial programming approach and diffuse execution environment, Jaseci has accomplished remarkable feats, such as decreasing development time by tenfold and almost completely removing standard backend code. Jaseci became open-source in 2021, and it is currently operational in four commercial products, including [Myca](https://www.myca.ai/), [HomeLendingPal](https://www.homelendingpal.com/), [ZeroShotBot](https://www.zeroshotbot.com/), and [TrueSelph](https://www.trueselph.com/), establishing itself as a pioneer in AI advancement.
+Jaseci presents a groundbreaking computational model that aims to simplify the process of developing AI applications. Through its exclusive data-spacial programming approach and diffuse execution environment, Jaseci has accomplished remarkable feats, such as decreasing development time by tenfold and almost completely removing standard backend code. Jaseci is invented by professors and researchers from the University of Michigan and has been open-source since 2021. Jaseci has been used by dozens of developers to create commercial products in various domains serving tens of thousands requests per day.
 
-
-# Getting Started Guide Lines
+# Getting Started
 
 To install Jaseci and all its packages, refer to the comprehensive Jaseci [Installation Guide](https://docs.jaseci.org/docs/docs/getting_started/installation).
 
-To install Jaseci latest version in any linux based environment with `pip` use following command;
+For a quick start, install the `jaseci` python package via `pip`:
 
 ```bash
 pip install jaseci
@@ -34,19 +36,25 @@ pip install jaseci
 To set up a Jaseci server, please follow the steps outlined in the [Jaseci Server Setup guide](https://docs.jaseci.org/docs/docs/getting_started/setup_jaseci_serv).
 To set up Jaseci Studio, please follow the instructions outlined in the [following guide](https://docs.jaseci.org/docs/docs/getting_started/setting_up_jaseci_studio).
 
-# Write Your First Jaseci Application
-
+A quick hello world example:
 ```jac
 walker init{
   std.out("Hello World");
 }
 ```
 
-To run the hello world program, save the code in a `jac` file and run with `jac run` command in `jsctl` shell;
+To run this example, save the code in a file named `main.jac` file and run with `jac run` command in `jsctl` shell;
+
+```bash
+jsctl
+```
+This will execute the Jaseci command line environment `jsctl`.
 
 ```bash
 jaseci> jac run hello.jac
 ```
+
+# Write Your First Jaseci Application
 Follow these links to access more tutorials:
 
 - [(Optional) VSCode Extension](https://docs.jaseci.org/docs/docs/getting_started/writing_first_app/setting_up_code_editor)
