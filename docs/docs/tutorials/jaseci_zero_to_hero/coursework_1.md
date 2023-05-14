@@ -8,7 +8,7 @@ description: Introduction to Jaseci and installation
 Hello and welcome to this video where we'll be exploring Jaseci, a powerful tool for automating complex tasks in the cybersecurity field. We'll be taking a closer look at what Jaseci is, what problems it can solve, and how to install it on your machine.
 
 
-<div style="text-align: center">
+<div>
     <iframe src="https://drive.google.com/file/d/1JrlVcLzcg1gQ-_F7uO8zhmw4JVw8rk5C/preview" width="100%" height="480" frameborder="0"></iframe>
     <p>Introduction to Jaseci and installation</p>
 </div>

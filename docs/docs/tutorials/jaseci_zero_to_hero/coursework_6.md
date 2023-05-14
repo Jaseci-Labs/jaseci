@@ -6,12 +6,12 @@ description: Creating a custom AI module using Jaseci, Python, and Hugging Face 
 
 # Day 6 - **Building a Jaseci AI Application from Scratch**
 
-<div style="text-align: center">
+<div>
     <iframe src="https://drive.google.com/file/d/1_sBVHI-IJbVeLTzAdbV9qzCjJ43dGXly/preview" width="100%" height="480" frameborder="0"></iframe>
     <p>Part 1:  Building a Jaseci AI Application from Scratch</p>
 </div>
 
-<div style="text-align: center">
+<div>
     <iframe src="https://drive.google.com/file/d/1q5rKeFNJmnZQ4LvYXky6gdz5AAWuCQty/preview" width="100%" height="480" frameborder="0"></iframe>
     <p>Part 2:  Building a Jaseci AI Application from Scratch</p>
 </div>

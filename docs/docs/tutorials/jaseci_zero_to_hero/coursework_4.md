@@ -10,7 +10,7 @@ description: Jaseci in production, including setting up a Sentinel Register and 
 
 In this video, you will learn how to use Jaseci in production by exploring the Sentinel Register and Jaseci Server, which are essential components of the Jaseci ecosystem.
 
-<div style="text-align: center">
+<div>
     <iframe src="https://drive.google.com/file/d/1ZmIL0ir5E3Zu4yxSGumwKXLFxg8kr_Wh/preview" width="100%" height="480" frameborder="0"></iframe>
     <p>Part 3:  Getting Started (Sentinel Register, Jaseci Server)</p>
 </div>

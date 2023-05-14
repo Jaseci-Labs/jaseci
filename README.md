@@ -16,9 +16,9 @@
 
 # Jaseci: Build the Next Generation of AI Products at Scale
 
-The [Jaseci](https://www.jaseci.org/) ecosystem, is an open-source technology stack composed of three components: 
-**Jaseci Core**, the fundamental execution engine, 
-**Jaseci Serv**, a cloud-scale runtime engine with diffuse capabilities, 
+The [Jaseci](https://www.jaseci.org/) ecosystem, is an open-source technology stack composed of three components:
+**Jaseci Core**, the fundamental execution engine,
+**Jaseci Serv**, a cloud-scale runtime engine with diffuse capabilities,
 and **Jaseci AI Kit**, a collection of state-of-the-art AI engines and pre-trained models contributed by the Jaseci team and the open source community. Additionally, **Jaseci Studio**, is a comprehensive IDE for programming and debugging Jaseci programs.
 
 Jaseci presents a groundbreaking computational model that aims to simplify the process of developing AI applications. Through its exclusive data-spacial programming approach and diffuse execution environment, Jaseci has accomplished remarkable feats, such as decreasing development time by tenfold and almost completely removing standard backend code. Jaseci is invented by professors and researchers from the University of Michigan and has been open-source since 2021. Jaseci has been used by dozens of developers to create commercial products in various domains serving tens of thousands requests per day.
