@@ -74,6 +74,7 @@ class Ability(Element, JacCode, Interp):
         else:
             try:
                 if func.__module__ == "js_remote_hook":
+                    # logger.info(f"remote action called for {action_name}")
                     result = func(*param_list["args"], **param_list["kwargs"])
                 else:
                     result = func(

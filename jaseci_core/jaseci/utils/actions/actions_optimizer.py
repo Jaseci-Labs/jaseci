@@ -132,7 +132,8 @@ class ActionsOptimizer:
             self.action_prep(name)
             self.actions_state.remote_action_loaded(name)
             if unload_existing:
-                self.unload_action_module(name)
+                res = self.unload_action_module(name)
+                logger.info(f"Unload action module {name} {res}")
             return True
 
         return False
@@ -148,18 +149,21 @@ class ActionsOptimizer:
         if cur_state["mode"] == "module":
             logger.info(f"{name} already loaded as module.")
             # Check if there is already a local action loaded
-            return
+            return True
 
         if name not in action_configs:
-            return
+            return False
 
         module = action_configs[name]["module"]
         loaded_module = action_configs[name]["loaded_module"]
-        load_module_actions(module, loaded_module)
+        res = load_module_actions(module, loaded_module)
+        if not res:
+            return False
         self.action_prep(name)
         self.actions_state.module_action_loaded(name, module, loaded_module)
         if unload_existing:
             self.unload_action_remote(name)
+        return True
 
     def unload_action_auto(self, name):
         """
@@ -182,8 +186,8 @@ class ActionsOptimizer:
         if cur_state is None:
             return False, "Action is not loaded."
 
-        if cur_state["mode"] != "module":
-            return False, "Action is not loaded as module."
+        # if cur_state["mode"] != "module":
+        #     return False, "Action is not loaded as module."
 
         module_name = cur_state["module"]["name"]
         loaded_module = cur_state["module"]["loaded_module"]
@@ -262,8 +266,8 @@ class ActionsOptimizer:
             return
         elif self.policy == "Evaluation":
             self._actionpolicy_evaluation()
-        if len(self.actions_change) > 0:
-            self.apply_actions_change()
+        # if len(self.actions_change) > 0:
+        #     self.apply_actions_change()
 
     def _init_evalution_policy(self, policy_state):
         # 999 is just really large memory size so everything can fits in local
@@ -357,14 +361,9 @@ class ActionsOptimizer:
                     )
                     policy_state["phase"] = "eval_switching"
                     self.benchmark["active"] = False
+                    self.apply_actions_change()
             else:
                 if policy_state["cur_phase"] >= policy_state["eval_phase"]:
-                    # logger.info("====================in else========================")
-                    # logger.info(f"benchmark: {self.benchmark['requests']}")
-                    # logger.info(
-                    #     f"cur_phase: {policy_state['cur_phase']}\eval_phase: {policy_state['eval_phase']}"
-                    # )
-                    # logger.info(f"policy_state: {policy_state}")
                     # The eval phase for the current configuration is complete
                     # Get performance
                     if "walker_run" not in self.benchmark["requests"]:
@@ -425,6 +424,7 @@ class ActionsOptimizer:
                         logger.info(
                             f"===Evaluation Policy=== Evaluation phase over. Selected best config as {best_config}"
                         )
+                        self.apply_actions_change()
                     else:
                         next_config = policy_state["remain_configs"][0]
                         del policy_state["remain_configs"][0]
@@ -438,13 +438,9 @@ class ActionsOptimizer:
                             )
                             policy_state["phase"] = "eval_switching"
                             self.benchmark["active"] = False
-                        else:
-                            policy_state["phase"] = "eval"
-                            self.benchmark["active"] = True
-                        logger.info(
-                            f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"
-                        )
-        elif policy_state["phase"] == "eval_switching":
+                            self.apply_actions_change()
+
+        if policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
                 # this means all actions change have been applied, start evaluation phase
@@ -486,21 +482,25 @@ class ActionsOptimizer:
         # But this might change down the line
         for name, change_type in actions_change.items():
             logger.info(f"==Actions Optimizer== Changing {name} {change_type}")
+            loaded = False
             if change_type in ["to_local", "_to_local", "_to_module", "to_module"]:
                 # Switching from no action loaded to local
-                self.load_action_module(name)
-                del self.actions_change[name]
+                loaded = self.load_action_module(name)
             elif change_type == "to_remote":
                 loaded = self.load_action_remote(name)
-                if loaded:
-                    del self.actions_change[name]
             elif change_type == "local_to_remote" or change_type == "module_to_remote":
                 loaded = self.load_action_remote(name, unload_existing=True)
-                if loaded:
-                    del self.actions_change[name]
             elif change_type == "remote_to_local" or change_type == "remote_to_module":
-                self.load_action_module(name, unload_existing=False)
+                loaded = self.load_action_module(name, unload_existing=False)
+            if loaded:
+                logger.info(
+                    f"==Actions Optimizer== Changing {name} {change_type} success"
+                )
                 del self.actions_change[name]
+            else:
+                logger.info(
+                    f"==Actions Optimizer== Changing {name} {change_type} failure"
+                )
 
         if len(actions_change) > 0 and self.actions_history["active"]:
             # Summarize action stats during this period and add to previous state

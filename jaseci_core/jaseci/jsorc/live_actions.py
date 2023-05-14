@@ -134,6 +134,7 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
+    # logger.info(f"local action called for {name}")
     module = name.split(".")[0]
     act_name = name.split(".")[1]
     # TODO: temporary hack
@@ -150,20 +151,38 @@ def action_handler_wrapper(name, *args, **kwargs):
     module = f"jac_nlp.{module}"
 
     act_procs[module]["reqs"] += 1
+    # cnt = act_procs[module]["reqs"]
+    # logger.info(f"{module} reqs: {cnt}")
     act_procs[module]["in_q"].put((name, args, kwargs))
 
     # TODO: Handle concurrent calls?
     res = act_procs[module]["out_q"].get()[1]
     act_procs[module]["reqs"] -= 1
     cnt = act_procs[module]["reqs"]
+    # logger.info(f"{module} reqs: {cnt}")
 
     return res
 
 
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
-    if mod in act_procs and not act_procs[mod]["terminate_event"].is_set():
+    # If the module status is intialization, return False
+    if mod in act_procs and act_procs[mod]["status"] == "INITIALIZATION":
+        return False
+
+    # If the module is already loaded and not set as terminate, return True
+    if (
+        mod in act_procs
+        and act_procs[mod]["status"] == "READY"
+        and not act_procs[mod]["terminate_event"].is_set()
+    ):
         return True
-    if mod in act_procs and act_procs[mod]["terminate_event"].is_set():
+
+    # If module termination set to be True and no outstanding requests, we delete previously allocated queues and process
+    if (
+        mod in act_procs
+        and act_procs[mod]["terminate_event"].is_set()
+        and act_procs[mod]["reqs"] == 0
+    ):
         del act_procs[mod]["in_q"]
         del act_procs[mod]["out_q"]
         del act_procs[mod]["proc"]
@@ -175,6 +194,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         "out_q": multiprocessing.Queue(),
         "terminate_event": multiprocessing.Event(),
         "reqs": 0,
+        "status": "INITIALIZATION",
     }
     act_procs[mod]["proc"] = multiprocessing.Process(
         target=action_handler,
@@ -192,6 +212,9 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     actions_list = act_procs[mod]["out_q"].get()
     for act in actions_list:
         live_actions[act] = action_handler_wrapper
+
+    # module intialization completes, set process status as ready
+    act_procs[mod]["status"] = "READY"
 
     return True
 
@@ -242,24 +265,29 @@ def load_action_config(config, module_name):
 
 
 def unload_module(mod):
+    # logger.info(f"Unloading {mod}")
     if mod in act_procs:
         # act_procs[mod]["proc"].kill()
         # act_procs[mod]["proc"].terminate()
         if act_procs[mod]["reqs"] > 0:
+            # logger.info("Oustanding requests. Gracefully kill.")
             act_procs[mod]["terminate_event"].set()
             act_procs[mod]["proc"].join()
             # time.sleep(1)
             act_procs[mod]["proc"].close()
+            # logger.info("Process closed")
             # del act_procs[mod]["in_q"]
             # del act_procs[mod]["out_q"]
             # del act_procs[mod]
             return True
         else:
+            # logger.info("No outstanding requests. Kill now.")
             act_procs[mod]["terminate_event"].set()
             act_procs[mod]["proc"].kill()
             act_procs[mod]["proc"].join()
             # act_procs[mod]["proc"].terminate()
             act_procs[mod]["proc"].close()
+            # logger.info("Process closed")
             return True
     else:
         return False
