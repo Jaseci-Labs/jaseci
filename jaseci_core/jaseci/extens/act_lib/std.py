@@ -11,6 +11,7 @@ from jaseci.extens.svc.elastic_svc import Elastic
 
 import sys
 import json
+import time
 
 
 @jaseci_action()
@@ -47,6 +48,12 @@ def err(*args):
     """Standard built in for printing to stderr"""
     args = [json_out(jwv(x)) for x in args]
     print(*args, file=sys.stderr)
+
+
+@jaseci_action()
+def sleep(secs: float):
+    """Standard built in for sleep"""
+    return time.sleep(secs)
 
 
 @jaseci_action()

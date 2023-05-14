@@ -11,7 +11,7 @@ from jaseci.jsorc.jsorc import JsOrc
 from jaseci.jsorc.jsorc_utils import State
 
 
-class JacTests(TestCaseHelper, TestCase):
+class ProgTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
@@ -654,3 +654,18 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertTrue(res["success"])
         self.assertTrue(res["report"], [None, None])
         self.assertIsNone(res.get("errors"))
+
+    def test_json_casting(self):
+        mast = JsOrc.master()
+        mast.sentinel_register(name="test", code=jtp.json_casting, auto_run="")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "json_casting", "ctx": {}},
+        )
+
+        self.assertTrue(res["success"])
+        self.assertEqual(
+            res["report"],
+            ['{"test": 1}', {"test2": 2}],
+        )

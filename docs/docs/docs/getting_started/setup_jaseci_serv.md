@@ -78,8 +78,53 @@ Login to Jaseci Shell
 jaseci> login http://localhost:8000
 ```
 
-login with the credentials used to create the super user earlier.
+login with the credentials used to create the super user earlier. After successfully logging in, you will see a token that you will require later.
 
+```
+Token: 65eb08dfa3e31c770a203a87e37f047db81b3cf0123458b9062d2ed099193d7d
+Login successful!
+```
+To get the token via postman; open up Postman
+
+* Grab a token from Jaseci that represents an active session of the super user. Make a Post request to user/token
+* Body of the request is as follows:
+
+```
+{
+"email" : "email@gmail.com",
+"password" : "password"
+}
+```
+If everything goes well the post request will return with the following response;
+
+```json
+{
+  "expiry": null,
+  "token": "0877c50e1f2cb284609b8ee2b5cd6c35c615e8d3791cacca820a1ed0af3d3806"
+}
+```
+
+Copy token returned from the response and save it somewhere.
+
+* Grab a token from Jaseci that represents an active session of the super user. Make a Post request to user/token
+* Body of the request is as follows:
+
+```
+{
+"email" : "email@gmail.com",
+"password" : "password"
+}
+```
+If everything goes well the post request will return with the following response;
+
+```json
+{
+  "expiry": null,
+  "token": "0877c50e1f2cb284609b8ee2b5cd6c35c615e8d3791cacca820a1ed0af3d3806"
+}
+```
+
+Copy token returned from the response and save it somewhere.
 
 ## Step 6: Running a Jac Program in the Server
 
@@ -150,26 +195,3 @@ You will see output similar to this;
 
 Copy the sentinel active sentinel ID , we will need it later.
 
-## Step 6.2: Getting the Token
-
-Open up Postman
-
-* Grab a token from Jaseci that represents an active session of the super user. Make a Post request to user/token
-* Body of the request is as follows:
-
-```
-{
-"email" : "email@gmail.com",
-"password" : "password"
-}
-```
-If everything goes well the post request will return with the following response;
-
-```json
-{
-  "expiry": null,
-  "token": "0877c50e1f2cb284609b8ee2b5cd6c35c615e8d3791cacca820a1ed0af3d3806"
-}
-```
-
-Copy token returned from the response and save it somewhere.

@@ -25,11 +25,13 @@ node product {
 
 node product_catalog;
 ```
+To get more information about nodes you can go [here](../../development/abstractions/graphs#nodes)
 
 ### Edges
 
 Edges are the link between nodes. They walker will use these edges to determine the next node to traverse to.
-The has key word is used to declare the variable "intent". This "intent" is what the Walker will use to to determine which node to go to next.
+The has key word is used to declare the variable "intent". This "intent" is what the Walker will use to to determine which node to go to next. To get more information about edges you can go [here](../../development/abstractions/graphs#edges)
+
 
 The shop graph has one type of edges named `category`. We can define that as follows;
 
@@ -76,7 +78,7 @@ walker init {
 
 ## Walker
 
-Walkers traverse the nodes of the graph triggering execution at the node level.
+Walkers traverse the nodes of the graph triggering execution at the node level. To get more information about walkers you can go [here](../../development/abstractions/walkers)
 
 The `init` walker works as the main method of the Jac program. Let's create the `init` walker to `spawn` the graph.
 

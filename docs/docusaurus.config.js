@@ -102,6 +102,30 @@ const config = {
         defaultMode: 'dark',
         disableSwitch: false,
         respectPrefersColorScheme: false,
+      },
+
+      algolia: {
+
+        // The application ID provided by Algolia
+        appId: 'HUG2QGQRE1',
+
+        // Public API key: it is safe to commit it
+        apiKey: '735d15bf10dc6d2ebb51f24e06e4635e',
+
+        indexName: 'jaseci',
+
+        // Optional: see doc section below
+        contextualSearch: true,
+
+        // Optional: path for search page that enabled by default (`false` to disable it)
+        searchPagePath: 'search',
+
+        replaceSearchResultPathname: {
+          from: '/docs/', // or as RegExp: /\/docs\//
+          to: '/docs/docs/',
+        },
+
+
       }
     }),
 };
