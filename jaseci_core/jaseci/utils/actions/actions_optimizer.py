@@ -497,17 +497,19 @@ class ActionsOptimizer:
                     f"==Actions Optimizer== Changing {name} {change_type} success"
                 )
                 del self.actions_change[name]
+                if len(actions_change) > 0 and self.actions_history["active"]:
+                    # Summarize action stats during this period and add to previous state
+                    self.summarize_action_calls()
+                    self.actions_history["history"].append(
+                        {
+                            "ts": time.time(),
+                            "actions_state": self.actions_state.get_all_state(),
+                        }
+                    )
             else:
                 logger.info(
                     f"==Actions Optimizer== Changing {name} {change_type} failure"
                 )
-
-        if len(actions_change) > 0 and self.actions_history["active"]:
-            # Summarize action stats during this period and add to previous state
-            self.summarize_action_calls()
-            self.actions_history["history"].append(
-                {"ts": time.time(), "actions_state": self.actions_state.get_all_state()}
-            )
 
     def summarize_action_calls(self):
         actions_summary = {}
