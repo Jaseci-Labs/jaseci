@@ -13,8 +13,11 @@ We'll then dive into the core concepts of Jaseci, including graphs, nodes, and e
 To put our new knowledge into practice, we'll walk through the process of creating a small non-AI application with Jaseci, step by step. By the end of this video, you'll have a solid understanding of Jaseci's capabilities and be ready to start building your own systems and automating tasks with ease.
 
 
-<!-- Embed a youtube video -->
-<iframe width="100%" src="https://www.youtube.com/embed/9QZqX0v7nqI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<div style="text-align: center">
+    <iframe src="https://drive.google.com/file/d/1yVCsT_6FSSDBOf9DjhGNeA40OeHUEPEQ/preview" width="100%" height="480" frameborder="0"></iframe>
+    <p>Part 1:  Getting Started (graphs, nodes, edges, walkers, actions)</p>
+</div>
+
 
 Slides can be downloaded from [here](https://github.com/Jaseci-Labs/jaseci/blob/main/examples/coursework-series-uom/2_jaseci_quickstart/2.1/slides.pdf)
 
