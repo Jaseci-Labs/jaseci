@@ -26,7 +26,7 @@ walker inventory {
 - `product_catalog: take --> node::product` This line says walker to traverse through `product` nodes;
 - `with exit {report products;}` This reports(returns) the return value from product nodes when exists from the product node.
 
-To return the inventory from the product node we have to modify the product node which we already has in our jac program. 
+To return the inventory from the product node we have to modify the product node which we already has in our jac program.
 
 ```jac
 node product {
@@ -42,11 +42,11 @@ node product {
 
 -  `check` is an ability of the product node. Which gives an ability to return current stock of the product node.
 - `can check with inventory entry` This lines defines `check` ability to executes only when inventory walker enters into product node.
-- `visitor.products[here.name] = here.stock;` Here the `here.name` represents the name of the current node and `here.stock` represents the stock of the current node. To get more context of the `here` keyword go to [here]. 
+- `visitor.products[here.name] = here.stock;` Here the `here.name` represents the name of the current node and `here.stock` represents the stock of the current node. To get more context of the `here` keyword go to [here].
 
 Copy the updated `product` node and the `inventory` walker into `shop.jac` program and execute it to see the following output.
 
-Here we are running a specific walker. So use following command in the `jsctl` shell to run the `inventory` walker. 
+Here we are running a specific walker. So use following command in the `jsctl` shell to run the `inventory` walker.
 
 ```
 jaseci > jac run shop.jac -walk inventory
@@ -157,7 +157,7 @@ Here we introduce a new bash command to run a specific walker.
 When you execute the above command you may see the following output.
 
 ```bash
-jaseci > walker run purchase -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"purchase_amount\": 2"}    
+jaseci > walker run purchase -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"purchase_amount\": 2"}
 2023-05-03 23:12:18,571 - INFO - log: Stock for apple up to 4
 {
   "success": true,
@@ -209,7 +209,7 @@ walker sell {
 
 - `has product_category, product_name, sell_amount;` This line defines 3 variable for `sell` walker named `product_category`, `product_name` and `sell_amount`.
 - `root: take --> node::product_catalog;` This makes `sell` walker to traverse from root node to `product_catalog` node.
-- Rest of the code snippet is to reduce the number of product items from `product_catalog` if the product is available and log a statement if product is not available. 
+- Rest of the code snippet is to reduce the number of product items from `product_catalog` if the product is available and log a statement if product is not available.
 
 ### Node ability to reduce inventory with item sell
 
@@ -241,10 +241,10 @@ node product {
 
 }
 ```
-`stock_down` node ability executes with `sell` walker entry. 
+`stock_down` node ability executes with `sell` walker entry.
 
 - `if(here.stock >= visitor.sell_amount)` this if statement execute if the current product stock is grater that the `sell_amount` of the `sell` walker visiting the product node.
- 
+
 You can execute the `sell` walker and play with the Shop inventory management application which we just built.
 
 ```bash

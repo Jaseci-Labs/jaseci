@@ -54,7 +54,7 @@ class CustomDataset(torch.utils.data.Dataset):
         super(CustomDataset, self).__init__()
         # Define your dataset initialization logic here
         self.dataset=train_args["train_file"]
-    
+
     def __getitem__(self, index):
         # Define your dataset manipulation logic here
         return self.dataset[idx]
@@ -97,13 +97,13 @@ This function would contain the logic for how the samples from CustomDataset sho
 def collate_fn(samples):
     # Apply custom preprocessing to each sample
     preprocessed_samples = [custom_preprocess(sample) for sample in samples]
-    
+
     # Use the default collate function to batch the samples together
     batch = torch.utils.data.dataloader.default_collate(preprocessed_samples)
-    
+
     # Apply any additional custom postprocessing to the batch
     batch = custom_postprocess(batch)
-    
+
     return batch
 ```
 
@@ -136,7 +136,7 @@ walker run_ph {
         "Model": {
                 "args": {
                     "model_args": {
-                        # arguments that is needed for CustomModel initialization 
+                        # arguments that is needed for CustomModel initialization
                     }
                 },
                 "type": "CustomModel",
@@ -159,7 +159,7 @@ walker run_ph {
                         "dataloader": {
                             "args": {
                                 "train_args": {
-                                    # arguments that is needed for CustomDataloader initialization 
+                                    # arguments that is needed for CustomDataloader initialization
                                 }
                             },
                             "type": "CustomDataLoader",
@@ -177,7 +177,7 @@ walker run_ph {
                             # arguments that needs to be consumed by predict function
                         },
                         "dataset": [
-                            "this is a sample data for evaluation"                 
+                            "this is a sample data for evaluation"
                         ],
                     });
     report pred;
@@ -201,9 +201,9 @@ Save your Jac code to a file named `run_ph.jac` in your project directory.
 #### Step 2: Run the Jac code
 To run the Jac code, open a terminal window and navigate to your project directory. Then run the following command:
 
-> jsctl -m jac run_ph.jac 
+> jsctl -m jac run_ph.jac
 
 
 
-### Congratulations! 
+### Congratulations!
 You have now implemented PH using Python and Jac. By following the steps outlined in this tutorial, you can easily set up your environment, create your Jac program, and run it to generate personalized content based on user preferences for a variety of natural language processing tasks.
