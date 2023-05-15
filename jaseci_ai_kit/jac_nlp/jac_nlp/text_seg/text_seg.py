@@ -43,7 +43,7 @@ def setup():
 
     if all(
         os.path.isfile(os.path.join(TFM_MODEL_PATH, file))
-        for file in ["vocab.txt", "pytorch_model.bin"]
+        for file in ["vocab.json", "pytorch_model.bin"]
     ):
         print(f"Model found in jaseci cache location {TFM_MODEL_PATH}, loading now..")
         tokenizer = AutoTokenizer.from_pretrained(TFM_MODEL_PATH, local_files_only=True)
