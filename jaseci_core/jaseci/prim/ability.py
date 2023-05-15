@@ -90,6 +90,9 @@ class Ability(Element, JacCode, Interp):
             except Exception as e:
                 # Checking for race condition between walker running abilities and JSORC unloading modules
                 if func != live_actions[action_name]:
+                    logger.info(
+                        "Action function pointer changed during execution. Retrying..."
+                    )
                     return self.run_action(param_list, scope, interp)
 
                 interp.rt_error(

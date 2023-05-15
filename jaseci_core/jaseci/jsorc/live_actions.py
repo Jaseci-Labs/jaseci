@@ -114,14 +114,14 @@ def load_local_actions(file: str, ctx: dict = {}):
 
 def action_handler(mod, ctx, in_q, out_q, terminate_event):
     # Clearing the live actions in subprocess
-    logger.info(f"clearing live_actions")
+    # logger.info(f"clearing live_actions")
     live_actions.clear()
-    logger.info(f"import_module on {mod}")
+    # logger.info(f"import_module on {mod}")
     loaded_mod = importlib.import_module(mod)
-    logger.info(f"{mod} loaded")
+    # logger.info(f"{mod} loaded")
     try:
         if hasattr(loaded_mod, "setup"):
-            logger.info(f"call setup")
+            # logger.info(f"call setup")
             loaded_mod.setup(**ctx)
     except Exception as e:
         logger.error(
@@ -129,7 +129,7 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
             " This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided.",
         )
         logger.error(e)
-    logger.info(f"return list of actions")
+    # logger.info(f"return list of actions")
     out_q.put(list(live_actions.keys()))
 
     while not terminate_event.is_set() or not in_q.empty():
@@ -158,11 +158,11 @@ def action_handler_wrapper(name, *args, **kwargs):
 
     module = f"jac_nlp.{module}"
 
-    logger.info("put in_q")
+    # logger.info("put in_q")
     act_procs[module]["reqs"] += 1
     # cnt = act_procs[module]["reqs"]
     # logger.info(f"{module} reqs: {cnt}")
-    logger.info("put in_q")
+    # logger.info("put in_q")
     act_procs[module]["in_q"].put((name, args, kwargs))
 
     # TODO: Handle concurrent calls?
@@ -175,7 +175,7 @@ def action_handler_wrapper(name, *args, **kwargs):
 
 
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
-    logger.info(f"load module actions {mod}")
+    # logger.info(f"load module actions {mod}")
     # If the module status is intialization, return False
     if mod in act_procs and act_procs[mod]["status"] == "INITIALIZATION":
         return False
@@ -186,7 +186,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         and act_procs[mod]["status"] == "READY"
         and not act_procs[mod]["terminate_event"].is_set()
     ):
-        logger.info(f"already loaded and ready")
+        # logger.info(f"already loaded and ready")
         return True
 
     # If module termination set to be True and no outstanding requests, we delete previously allocated queues and process
@@ -195,7 +195,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         and act_procs[mod]["terminate_event"].is_set()
         and act_procs[mod]["reqs"] == 0
     ):
-        logger.info(f"clearing existing queues etc.")
+        # logger.info(f"clearing existing queues etc.")
         del act_procs[mod]["in_q"]
         del act_procs[mod]["out_q"]
         del act_procs[mod]["proc"]
@@ -209,7 +209,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         "reqs": 0,
         "status": "INITIALIZATION",
     }
-    logger.info(f"init the process")
+    # logger.info(f"init the process")
     act_procs[mod]["proc"] = multiprocessing.Process(
         target=action_handler,
         args=(
@@ -220,11 +220,11 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
             act_procs[mod]["terminate_event"],
         ),
     )
-    logger.info(f"start the process")
+    # logger.info(f"start the process")
     act_procs[mod]["proc"].start()
 
     # get the list of action back
-    logger.info(f"waiting on list of actions")
+    # logger.info(f"waiting on list of actions")
     actions_list = act_procs[mod]["out_q"].get()
     for act in actions_list:
         live_actions[act] = action_handler_wrapper
@@ -281,20 +281,20 @@ def load_action_config(config, module_name):
 
 
 def unload_module(mod):
-    logger.info(f"Unloading {mod}")
+    # logger.info(f"Unloading {mod}")
     if mod in act_procs:
         # act_procs[mod]["proc"].kill()
         # act_procs[mod]["proc"].terminate()
         if act_procs[mod]["reqs"] > 0:
             # logger.info("Oustanding requests. Gracefully kill.")
-            logger.info("set event")
+            # logger.info("set event")
             act_procs[mod]["terminate_event"].set()
-            logger.info("joining")
+            # logger.info("joining")
             act_procs[mod]["proc"].join()
             # time.sleep(1)
-            logger.info("closing")
+            # logger.info("closing")
             act_procs[mod]["proc"].close()
-            logger.info("closed")
+            # logger.info("closed")
             # logger.info("Process closed")
             del act_procs[mod]["in_q"]
             del act_procs[mod]["out_q"]
@@ -302,16 +302,16 @@ def unload_module(mod):
             return True
         else:
             # logger.info("No outstanding requests. Kill now.")
-            logger.info("set event")
+            # logger.info("set event")
             act_procs[mod]["terminate_event"].set()
-            logger.info("kill")
+            # logger.info("kill")
             act_procs[mod]["proc"].kill()
-            logger.info("joining")
+            # logger.info("joining")
             act_procs[mod]["proc"].join()
             # act_procs[mod]["proc"].terminate()
-            logger.info("closing")
+            # logger.info("closing")
             act_procs[mod]["proc"].close()
-            logger.info("closed")
+            # logger.info("closed")
             del act_procs[mod]["in_q"]
             del act_procs[mod]["out_q"]
             del act_procs[mod]
