@@ -11,9 +11,12 @@ import os
 import sys
 import inspect
 import importlib
+import threading
 import gc
 import time
 import signal
+
+mutex = threading.Lock()
 
 
 live_actions = {}  # {"act.func": func_obj, ...}
@@ -111,10 +114,14 @@ def load_local_actions(file: str, ctx: dict = {}):
 
 def action_handler(mod, ctx, in_q, out_q, terminate_event):
     # Clearing the live actions in subprocess
+    logger.info(f"clearing live_actions")
     live_actions.clear()
+    logger.info(f"import_module on {mod}")
     loaded_mod = importlib.import_module(mod)
+    logger.info(f"{mod} loaded")
     try:
         if hasattr(loaded_mod, "setup"):
+            logger.info(f"call setup")
             loaded_mod.setup(**ctx)
     except Exception as e:
         logger.error(
@@ -122,6 +129,7 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
             " This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided.",
         )
         logger.error(e)
+    logger.info(f"return list of actions")
     out_q.put(list(live_actions.keys()))
 
     while not terminate_event.is_set() or not in_q.empty():
@@ -134,36 +142,67 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
-    module = name.split(".")[0]
-    act_name = name.split(".")[1]
-    # TODO: temporary hack
-    if module == "use" and act_name in [
-        "encode",
-        "cos_sim_score",
-        "text_similarity",
-        "text_classify",
-    ]:
-        module = "use_enc"
-    elif module == "use":
-        module = "use_qa"
+    logger.info(f"acquiring the mutex")
+    mutex.acquire()
+    try:
+        logger.info(f"local action called for {name}")
+        module = name.split(".")[0]
+        act_name = name.split(".")[1]
+        # TODO: temporary hack
+        if module == "use" and act_name in [
+            "encode",
+            "cos_sim_score",
+            "text_similarity",
+            "text_classify",
+        ]:
+            module = "use_enc"
+        elif module == "use":
+            module = "use_qa"
 
-    module = f"jac_nlp.{module}"
+        module = f"jac_nlp.{module}"
 
-    act_procs[module]["reqs"] += 1
-    act_procs[module]["in_q"].put((name, args, kwargs))
+        logger.info("put in_q")
+        act_procs[module]["reqs"] += 1
+        # cnt = act_procs[module]["reqs"]
+        # logger.info(f"{module} reqs: {cnt}")
+        logger.info("put in_q")
+        act_procs[module]["in_q"].put((name, args, kwargs))
+    finally:
+        logger.info("Releasing the mutex")
+        mutex.release()
+        logger.info("Released mutex")
 
     # TODO: Handle concurrent calls?
     res = act_procs[module]["out_q"].get()[1]
     act_procs[module]["reqs"] -= 1
     cnt = act_procs[module]["reqs"]
+    # logger.info(f"{module} reqs: {cnt}")
 
     return res
 
 
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
-    if mod in act_procs and not act_procs[mod]["terminate_event"].is_set():
+    logger.info(f"load module actions {mod}")
+    # If the module status is intialization, return False
+    if mod in act_procs and act_procs[mod]["status"] == "INITIALIZATION":
+        return False
+
+    # If the module is already loaded and not set as terminate, return True
+    if (
+        mod in act_procs
+        and act_procs[mod]["status"] == "READY"
+        and not act_procs[mod]["terminate_event"].is_set()
+    ):
+        logger.info(f"already loaded and ready")
         return True
-    if mod in act_procs and act_procs[mod]["terminate_event"].is_set():
+
+    # If module termination set to be True and no outstanding requests, we delete previously allocated queues and process
+    if (
+        mod in act_procs
+        and act_procs[mod]["terminate_event"].is_set()
+        and act_procs[mod]["reqs"] == 0
+    ):
+        logger.info(f"clearing existing queues etc.")
         del act_procs[mod]["in_q"]
         del act_procs[mod]["out_q"]
         del act_procs[mod]["proc"]
@@ -175,7 +214,9 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         "out_q": multiprocessing.Queue(),
         "terminate_event": multiprocessing.Event(),
         "reqs": 0,
+        "status": "INITIALIZATION",
     }
+    logger.info(f"init the process")
     act_procs[mod]["proc"] = multiprocessing.Process(
         target=action_handler,
         args=(
@@ -186,12 +227,17 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
             act_procs[mod]["terminate_event"],
         ),
     )
+    logger.info(f"start the process")
     act_procs[mod]["proc"].start()
 
     # get the list of action back
+    logger.info(f"waiting on list of actions")
     actions_list = act_procs[mod]["out_q"].get()
     for act in actions_list:
         live_actions[act] = action_handler_wrapper
+
+    # module intialization completes, set process status as ready
+    act_procs[mod]["status"] = "READY"
 
     return True
 
@@ -242,25 +288,47 @@ def load_action_config(config, module_name):
 
 
 def unload_module(mod):
+    logger.info(f"Unloading {mod}")
     if mod in act_procs:
-        # act_procs[mod]["proc"].kill()
-        # act_procs[mod]["proc"].terminate()
-        if act_procs[mod]["reqs"] > 0:
-            act_procs[mod]["terminate_event"].set()
-            act_procs[mod]["proc"].join()
-            # time.sleep(1)
-            act_procs[mod]["proc"].close()
-            # del act_procs[mod]["in_q"]
-            # del act_procs[mod]["out_q"]
-            # del act_procs[mod]
-            return True
-        else:
-            act_procs[mod]["terminate_event"].set()
-            act_procs[mod]["proc"].kill()
-            act_procs[mod]["proc"].join()
+        logger.info("Trying to acquire mutex")
+        mutex.acquire()
+        try:
+            logger.info("Trying to acquire mutex")
+            # act_procs[mod]["proc"].kill()
             # act_procs[mod]["proc"].terminate()
-            act_procs[mod]["proc"].close()
-            return True
+            if act_procs[mod]["reqs"] > 0:
+                # logger.info("Oustanding requests. Gracefully kill.")
+                logger.info("set event")
+                act_procs[mod]["terminate_event"].set()
+                logger.info("joining")
+                act_procs[mod]["proc"].join()
+                # time.sleep(1)
+                logger.info("closing")
+                act_procs[mod]["proc"].close()
+                logger.info("closed")
+                # logger.info("Process closed")
+                # del act_procs[mod]["in_q"]
+                # del act_procs[mod]["out_q"]
+                # del act_procs[mod]
+                return True
+            else:
+                # logger.info("No outstanding requests. Kill now.")
+                logger.info("set event")
+                act_procs[mod]["terminate_event"].set()
+                logger.info("kill")
+                act_procs[mod]["proc"].kill()
+                logger.info("joining")
+                act_procs[mod]["proc"].join()
+                # act_procs[mod]["proc"].terminate()
+                logger.info("closing")
+                act_procs[mod]["proc"].close()
+                logger.info("closed")
+                # logger.info("Process closed")
+                return True
+        finally:
+            logger.info("Releasing the mutex")
+            mutex.release()
+            logger.info("Released mutex")
     else:
         return False
 

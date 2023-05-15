@@ -52,11 +52,12 @@ class ActionsState:
         self.state[name]["module"]["loaded_module"] = loaded
 
     def module_action_unloaded(self, name):
-        self.state[name]["mode"] = None
-        self.state[name]["module"]["name"] = None
+        if self.state[name]["mode"] == "module":
+            self.state[name]["module"]["mode"] = None
 
     def remote_action_unloaded(self, name):
-        self.state[name]["mode"] = None
+        if self.state[name]["mode"] == "remote":
+            self.state[name]["mode"] = None
 
     def remove_remote(self, name):
         self.state[name]["remote"] = {"url": None, "status": None}
