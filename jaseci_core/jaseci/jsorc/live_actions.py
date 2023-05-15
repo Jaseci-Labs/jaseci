@@ -114,10 +114,14 @@ def load_local_actions(file: str, ctx: dict = {}):
 
 def action_handler(mod, ctx, in_q, out_q, terminate_event):
     # Clearing the live actions in subprocess
+    logger.info(f"clearing live_actions")
     live_actions.clear()
+    logger.info(f"import_module on {mod}")
     loaded_mod = importlib.import_module(mod)
+    logger.info(f"{mod} loaded")
     try:
         if hasattr(loaded_mod, "setup"):
+            logger.info(f"call setup")
             loaded_mod.setup(**ctx)
     except Exception as e:
         logger.error(
@@ -125,6 +129,7 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
             " This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided.",
         )
         logger.error(e)
+    logger.info(f"return list of actions")
     out_q.put(list(live_actions.keys()))
 
     while not terminate_event.is_set() or not in_q.empty():
@@ -177,6 +182,7 @@ def action_handler_wrapper(name, *args, **kwargs):
 
 
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
+    logger.info(f"load module actions {mod}")
     # If the module status is intialization, return False
     if mod in act_procs and act_procs[mod]["status"] == "INITIALIZATION":
         return False
@@ -187,6 +193,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         and act_procs[mod]["status"] == "READY"
         and not act_procs[mod]["terminate_event"].is_set()
     ):
+        logger.info(f"already loaded and ready")
         return True
 
     # If module termination set to be True and no outstanding requests, we delete previously allocated queues and process
@@ -195,6 +202,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         and act_procs[mod]["terminate_event"].is_set()
         and act_procs[mod]["reqs"] == 0
     ):
+        logger.info(f"clearing existing queues etc.")
         del act_procs[mod]["in_q"]
         del act_procs[mod]["out_q"]
         del act_procs[mod]["proc"]
@@ -208,6 +216,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         "reqs": 0,
         "status": "INITIALIZATION",
     }
+    logger.info(f"init the process")
     act_procs[mod]["proc"] = multiprocessing.Process(
         target=action_handler,
         args=(
@@ -218,9 +227,11 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
             act_procs[mod]["terminate_event"],
         ),
     )
+    logger.info(f"start the process")
     act_procs[mod]["proc"].start()
 
     # get the list of action back
+    logger.info(f"waiting on list of actions")
     actions_list = act_procs[mod]["out_q"].get()
     for act in actions_list:
         live_actions[act] = action_handler_wrapper
