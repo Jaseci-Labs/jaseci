@@ -142,35 +142,28 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
-    logger.info(f"acquiring the mutex")
-    mutex.acquire()
-    try:
-        logger.info(f"local action called for {name}")
-        module = name.split(".")[0]
-        act_name = name.split(".")[1]
-        # TODO: temporary hack
-        if module == "use" and act_name in [
-            "encode",
-            "cos_sim_score",
-            "text_similarity",
-            "text_classify",
-        ]:
-            module = "use_enc"
-        elif module == "use":
-            module = "use_qa"
+    logger.info(f"local action called for {name}")
+    module = name.split(".")[0]
+    act_name = name.split(".")[1]
+    # TODO: temporary hack
+    if module == "use" and act_name in [
+        "encode",
+        "cos_sim_score",
+        "text_similarity",
+        "text_classify",
+    ]:
+        module = "use_enc"
+    elif module == "use":
+        module = "use_qa"
 
-        module = f"jac_nlp.{module}"
+    module = f"jac_nlp.{module}"
 
-        logger.info("put in_q")
-        act_procs[module]["reqs"] += 1
-        # cnt = act_procs[module]["reqs"]
-        # logger.info(f"{module} reqs: {cnt}")
-        logger.info("put in_q")
-        act_procs[module]["in_q"].put((name, args, kwargs))
-    finally:
-        logger.info("Releasing the mutex")
-        mutex.release()
-        logger.info("Released mutex")
+    logger.info("put in_q")
+    act_procs[module]["reqs"] += 1
+    # cnt = act_procs[module]["reqs"]
+    # logger.info(f"{module} reqs: {cnt}")
+    logger.info("put in_q")
+    act_procs[module]["in_q"].put((name, args, kwargs))
 
     # TODO: Handle concurrent calls?
     res = act_procs[module]["out_q"].get()[1]
@@ -290,45 +283,40 @@ def load_action_config(config, module_name):
 def unload_module(mod):
     logger.info(f"Unloading {mod}")
     if mod in act_procs:
-        logger.info("Trying to acquire mutex")
-        mutex.acquire()
-        try:
-            logger.info("Trying to acquire mutex")
-            # act_procs[mod]["proc"].kill()
+        # act_procs[mod]["proc"].kill()
+        # act_procs[mod]["proc"].terminate()
+        if act_procs[mod]["reqs"] > 0:
+            # logger.info("Oustanding requests. Gracefully kill.")
+            logger.info("set event")
+            act_procs[mod]["terminate_event"].set()
+            logger.info("joining")
+            act_procs[mod]["proc"].join()
+            # time.sleep(1)
+            logger.info("closing")
+            act_procs[mod]["proc"].close()
+            logger.info("closed")
+            # logger.info("Process closed")
+            del act_procs[mod]["in_q"]
+            del act_procs[mod]["out_q"]
+            del act_procs[mod]
+            return True
+        else:
+            # logger.info("No outstanding requests. Kill now.")
+            logger.info("set event")
+            act_procs[mod]["terminate_event"].set()
+            logger.info("kill")
+            act_procs[mod]["proc"].kill()
+            logger.info("joining")
+            act_procs[mod]["proc"].join()
             # act_procs[mod]["proc"].terminate()
-            if act_procs[mod]["reqs"] > 0:
-                # logger.info("Oustanding requests. Gracefully kill.")
-                logger.info("set event")
-                act_procs[mod]["terminate_event"].set()
-                logger.info("joining")
-                act_procs[mod]["proc"].join()
-                # time.sleep(1)
-                logger.info("closing")
-                act_procs[mod]["proc"].close()
-                logger.info("closed")
-                # logger.info("Process closed")
-                # del act_procs[mod]["in_q"]
-                # del act_procs[mod]["out_q"]
-                # del act_procs[mod]
-                return True
-            else:
-                # logger.info("No outstanding requests. Kill now.")
-                logger.info("set event")
-                act_procs[mod]["terminate_event"].set()
-                logger.info("kill")
-                act_procs[mod]["proc"].kill()
-                logger.info("joining")
-                act_procs[mod]["proc"].join()
-                # act_procs[mod]["proc"].terminate()
-                logger.info("closing")
-                act_procs[mod]["proc"].close()
-                logger.info("closed")
-                # logger.info("Process closed")
-                return True
-        finally:
-            logger.info("Releasing the mutex")
-            mutex.release()
-            logger.info("Released mutex")
+            logger.info("closing")
+            act_procs[mod]["proc"].close()
+            logger.info("closed")
+            del act_procs[mod]["in_q"]
+            del act_procs[mod]["out_q"]
+            del act_procs[mod]
+            # logger.info("Process closed")
+            return True
     else:
         return False
 

@@ -88,6 +88,10 @@ class Ability(Element, JacCode, Interp):
                 )
                 raise
             except Exception as e:
+                # Checking for race condition between walker running abilities and JSORC unloading modules
+                if func != live_actions[action_name]:
+                    return self.run_action(param_list, scope, interp)
+
                 interp.rt_error(
                     f"Exception within action call {self.name}! {e}",
                     interp._cur_jac_ast,
