@@ -4,7 +4,7 @@ Action class for Jaseci
 Each action has an id, name, timestamp and it's set of edges.
 """
 from jaseci.prim.element import Element
-from jaseci.jsorc.live_actions import live_actions
+from jaseci.jsorc.live_actions import live_actions, live_actions_lock
 from jaseci.jac.jac_set import JacSet
 import inspect
 import time
@@ -50,6 +50,7 @@ class Ability(Element, JacCode, Interp):
         if not interp.check_builtin_action(action_name):
             interp.rt_error(f"Cannot execute {action_name} - Not Found")
             return None
+        live_actions_lock.reader_acquire()
         func = live_actions[action_name]
         args = inspect.getfullargspec(func)
         self.do_auto_conversions(args, param_list)
@@ -74,7 +75,7 @@ class Ability(Element, JacCode, Interp):
         else:
             try:
                 if func.__module__ == "js_remote_hook":
-                    logger.info(f"remote action called for {action_name}")
+                    # logger.info(f"remote action called for {action_name}")
                     result = func(*param_list["args"], **param_list["kwargs"])
                 else:
                     result = func(
@@ -89,17 +90,18 @@ class Ability(Element, JacCode, Interp):
                 raise
             except Exception as e:
                 # Checking for race condition between walker running abilities and JSORC unloading modules
-                if func != live_actions[action_name]:
-                    logger.info(
-                        "Action function pointer changed during execution. Retrying..."
-                    )
-                    return self.run_action(param_list, scope, interp)
+                # if func != live_actions[action_name]:
+                #     logger.info(
+                #         "Action function pointer changed during execution. Retrying..."
+                #     )
+                #     return self.run_action(param_list, scope, interp)
 
                 interp.rt_error(
                     f"Exception within action call {self.name}! {e}",
                     interp._cur_jac_ast,
                 )
                 raise
+        live_actions_lock.reader_release()
         t = time.time() - ts
         action_manager.post_action_call_hook(action_name, t)
         return result

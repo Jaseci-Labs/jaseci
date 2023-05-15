@@ -22,6 +22,7 @@ from pprint import pformat
 from typing import Union
 from jaseci.utils.log_utils import LimitedSlidingBuffer
 import gprof2dot
+from multiprocessing import Lock, Condition
 
 LOGS_DIR = ".jaseci_logs/"
 
@@ -367,3 +368,35 @@ def model_base_path(cache_dir: Union[str, Path]) -> Path:
     else:
         model_cache = cache_dir
     return model_cache
+
+
+class RXW1Lock:
+    def __init__(self):
+        self.readers_count = 0
+        self.resource_lock = Lock()
+        self.readers_condition = Condition(self.resource_lock)
+        self.writer_condition = Condition(self.resource_lock)
+
+    def reader_acquire(self):
+        with self.resource_lock:
+            while self.readers_count == -1:
+                self.readers_condition.wait()
+            self.readers_count += 1
+
+    def reader_release(self):
+        with self.resource_lock:
+            self.readers_count -= 1
+            if self.readers_count == 0:
+                self.writer_condition.notify()
+
+    def writer_acquire(self):
+        with self.resource_lock:
+            while self.readers_count != 0:
+                self.writer_condition.wait()
+            self.readers_count = -1
+
+    def writer_release(self):
+        with self.resource_lock:
+            self.readers_count = 0
+            self.readers_condition.notify_all()
+            self.writer_condition.notify()

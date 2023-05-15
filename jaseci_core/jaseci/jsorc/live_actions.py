@@ -2,11 +2,12 @@
 General action base class with automation for hot loading
 """
 from importlib.util import spec_from_file_location, module_from_spec
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import logger, RXW1Lock
 from jaseci.jsorc.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.jsorc.remote_actions import serv_actions, mark_as_remote, mark_as_endpoint
 import requests
 import multiprocessing
+from multiprocessing import Semaphore, Lock
 import os
 import sys
 import inspect
@@ -16,9 +17,11 @@ import gc
 import time
 import signal
 
-mutex = threading.Lock()
+# mutex = threading.Lock()
+# max_workers = 100
+# actions_sem = Semaphore(max_workers + 1)
 
-
+live_actions_lock = RXW1Lock()
 live_actions = {}  # {"act.func": func_obj, ...}
 live_action_modules = {}  # {__module__: ["act.func1", "act.func2", ...], ...}
 action_configs = {}  # {"module_name": {}, ...}
@@ -132,8 +135,8 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
     # logger.info(f"return list of actions")
     out_q.put(list(live_actions.keys()))
 
-    # while not terminate_event.is_set() or not in_q.empty():
-    while True:
+    while not terminate_event.is_set() or not in_q.empty():
+        # while True:
         action, args, kwargs = in_q.get()
         func = live_actions[action]
         result = func(*args, **kwargs)
@@ -143,7 +146,7 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
-    logger.info(f"local action called for {name}")
+    # logger.info(f"local action called for {name}")
     module = name.split(".")[0]
     act_name = name.split(".")[1]
     # TODO: temporary hack
@@ -227,8 +230,11 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     # get the list of action back
     # logger.info(f"waiting on list of actions")
     actions_list = act_procs[mod]["out_q"].get()
+
+    live_actions_lock.writer_acquire()
     for act in actions_list:
         live_actions[act] = action_handler_wrapper
+    live_actions_lock.writer_release()
 
     # module intialization completes, set process status as ready
     act_procs[mod]["status"] = "READY"
@@ -286,36 +292,36 @@ def unload_module(mod):
     if mod in act_procs:
         # act_procs[mod]["proc"].kill()
         # act_procs[mod]["proc"].terminate()
-        # if act_procs[mod]["reqs"] > 0:
-        #     # logger.info("Oustanding requests. Gracefully kill.")
-        #     # logger.info("set event")
-        #     act_procs[mod]["terminate_event"].set()
-        #     # logger.info("joining")
-        #     act_procs[mod]["proc"].join()
-        #     # time.sleep(1)
-        #     # logger.info("closing")
-        #     act_procs[mod]["proc"].close()
-        #     # logger.info("closed")
-        #     del act_procs[mod]["in_q"]
-        #     del act_procs[mod]["out_q"]
-        #     del act_procs[mod]
-        #     return True
-        # else:
-        # logger.info("No outstanding requests. Kill now.")
-        # logger.info("set event")
-        # act_procs[mod]["terminate_event"].set()
-        # logger.info("kill")
-        act_procs[mod]["proc"].kill()
-        # logger.info("joining")
-        act_procs[mod]["proc"].join()
-        # act_procs[mod]["proc"].terminate()
-        # logger.info("closing")
-        act_procs[mod]["proc"].close()
-        # logger.info("closed")
-        del act_procs[mod]["in_q"]
-        del act_procs[mod]["out_q"]
-        del act_procs[mod]
-        # logger.info("Process closed")
+        if act_procs[mod]["reqs"] > 0:
+            # logger.info("Oustanding requests. Gracefully kill.")
+            # logger.info("set event")
+            act_procs[mod]["terminate_event"].set()
+            # logger.info("joining")
+            act_procs[mod]["proc"].join()
+            # time.sleep(1)
+            # logger.info("closing")
+            act_procs[mod]["proc"].close()
+            # logger.info("closed")
+            del act_procs[mod]["in_q"]
+            del act_procs[mod]["out_q"]
+            del act_procs[mod]
+            return True
+        else:
+            # logger.info("No outstanding requests. Kill now.")
+            # logger.info("set event")
+            # act_procs[mod]["terminate_event"].set()
+            # logger.info("kill")
+            act_procs[mod]["proc"].kill()
+            # logger.info("joining")
+            act_procs[mod]["proc"].join()
+            # act_procs[mod]["proc"].terminate()
+            # logger.info("closing")
+            act_procs[mod]["proc"].close()
+            # logger.info("closed")
+            del act_procs[mod]["in_q"]
+            del act_procs[mod]["out_q"]
+            del act_procs[mod]
+            # logger.info("Process closed")
         return True
     else:
         return False
@@ -445,6 +451,7 @@ def load_remote_actions(url, ctx: dict = {}):
     try:
         spec = requests.get(url.rstrip("/") + ACTIONS_SPEC_LOC, headers=headers)
         spec = spec.json()
+        live_actions_lock.writer_acquire()
         for i in spec.keys():
             live_actions[i] = gen_remote_func_hook(url, i, spec[i])
             if i.endswith(".setup") and ctx:
@@ -455,6 +462,7 @@ def load_remote_actions(url, ctx: dict = {}):
                         f"Cannot run set up for remote action {i}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
                     )
                     logger.error(e)
+        live_actions_lock.writer_release()
         return True
 
     except Exception as e:
