@@ -1,14 +1,14 @@
 
-# Create AWS EKS Infrastructure for Jaseci using Terraform
+# Create Azure AKS Infrastructure for Jaseci using Terraform
 
-## Preparation #
+## Preparation
 
-1) Make sure you have a valid AWS Account
-2) Create Access Key and Secret with EKS, Ec2 , VPC , IAm permissions
-3) Connect your local computer to aws using AWS CLI (using AWS Configure)
-4) Install terraform CLI from https://www.terraform.io/downloads
-4) Update the config.tf file with respective key values as described
-5) Update environment.auto.tfvars file with your AWS Account Id and related configuiration of cluster as needed.
+1. Make sure you have a valid Azure Account.
+2. Create a service principal from https://learn.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal
+3. Connect your local computer to azure using your service principal credentials "az login --service-principal -u < appID > -p < PASSWORD > --tenant < tenantID >"
+4. Install terraform CLI from https://www.terraform.io/downloads
+5. Update the config.tf file with respective key values as described and related configuration of cluster as needed
+6. Update environment.auto.tfvars file with your Azure Service Principal details.
 
 ## Initilaize ##
 
@@ -52,4 +52,3 @@ or you can select when you want to run updates on any environmnet using
 ```bash
 terraform workspace select <environment-Name>
 ```
-
