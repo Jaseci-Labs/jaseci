@@ -132,7 +132,8 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
     # logger.info(f"return list of actions")
     out_q.put(list(live_actions.keys()))
 
-    while not terminate_event.is_set() or not in_q.empty():
+    # while not terminate_event.is_set() or not in_q.empty():
+    while True:
         action, args, kwargs = in_q.get()
         func = live_actions[action]
         result = func(*args, **kwargs)
@@ -285,37 +286,37 @@ def unload_module(mod):
     if mod in act_procs:
         # act_procs[mod]["proc"].kill()
         # act_procs[mod]["proc"].terminate()
-        if act_procs[mod]["reqs"] > 0:
-            # logger.info("Oustanding requests. Gracefully kill.")
-            # logger.info("set event")
-            act_procs[mod]["terminate_event"].set()
-            # logger.info("joining")
-            act_procs[mod]["proc"].join()
-            # time.sleep(1)
-            # logger.info("closing")
-            act_procs[mod]["proc"].close()
-            # logger.info("closed")
-            del act_procs[mod]["in_q"]
-            del act_procs[mod]["out_q"]
-            del act_procs[mod]
-            return True
-        else:
-            # logger.info("No outstanding requests. Kill now.")
-            # logger.info("set event")
-            act_procs[mod]["terminate_event"].set()
-            # logger.info("kill")
-            act_procs[mod]["proc"].kill()
-            # logger.info("joining")
-            act_procs[mod]["proc"].join()
-            # act_procs[mod]["proc"].terminate()
-            # logger.info("closing")
-            act_procs[mod]["proc"].close()
-            # logger.info("closed")
-            del act_procs[mod]["in_q"]
-            del act_procs[mod]["out_q"]
-            del act_procs[mod]
-            # logger.info("Process closed")
-            return True
+        # if act_procs[mod]["reqs"] > 0:
+        #     # logger.info("Oustanding requests. Gracefully kill.")
+        #     # logger.info("set event")
+        #     act_procs[mod]["terminate_event"].set()
+        #     # logger.info("joining")
+        #     act_procs[mod]["proc"].join()
+        #     # time.sleep(1)
+        #     # logger.info("closing")
+        #     act_procs[mod]["proc"].close()
+        #     # logger.info("closed")
+        #     del act_procs[mod]["in_q"]
+        #     del act_procs[mod]["out_q"]
+        #     del act_procs[mod]
+        #     return True
+        # else:
+        # logger.info("No outstanding requests. Kill now.")
+        # logger.info("set event")
+        # act_procs[mod]["terminate_event"].set()
+        # logger.info("kill")
+        act_procs[mod]["proc"].kill()
+        # logger.info("joining")
+        act_procs[mod]["proc"].join()
+        # act_procs[mod]["proc"].terminate()
+        # logger.info("closing")
+        act_procs[mod]["proc"].close()
+        # logger.info("closed")
+        del act_procs[mod]["in_q"]
+        del act_procs[mod]["out_q"]
+        del act_procs[mod]
+        # logger.info("Process closed")
+        return True
     else:
         return False
 
