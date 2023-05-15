@@ -137,6 +137,7 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
+    logger.info(f"acquiring the mutex")
     mutex.acquire()
     try:
         logger.info(f"local action called for {name}")
@@ -155,12 +156,16 @@ def action_handler_wrapper(name, *args, **kwargs):
 
         module = f"jac_nlp.{module}"
 
+        logger.info("put in_q")
         act_procs[module]["reqs"] += 1
         # cnt = act_procs[module]["reqs"]
         # logger.info(f"{module} reqs: {cnt}")
+        logger.info("put in_q")
         act_procs[module]["in_q"].put((name, args, kwargs))
     finally:
+        logger.info("Releasing the mutex")
         mutex.release()
+        logger.info("Released mutex")
 
     # TODO: Handle concurrent calls?
     res = act_procs[module]["out_q"].get()[1]
@@ -274,8 +279,10 @@ def load_action_config(config, module_name):
 def unload_module(mod):
     # logger.info(f"Unloading {mod}")
     if mod in act_procs:
+        logger.info("Trying to acquire mutex")
         mutex.acquire()
         try:
+            logger.info("Trying to acquire mutex")
             # act_procs[mod]["proc"].kill()
             # act_procs[mod]["proc"].terminate()
             if act_procs[mod]["reqs"] > 0:
@@ -299,7 +306,9 @@ def unload_module(mod):
                 # logger.info("Process closed")
                 return True
         finally:
+            logger.info("Releasing the mutex")
             mutex.release()
+            logger.info("Released mutex")
     else:
         return False
 
