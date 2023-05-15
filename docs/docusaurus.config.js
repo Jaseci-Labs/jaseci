@@ -123,16 +123,6 @@ const config = {
 
         // Optional: path for search page that enabled by default (`false` to disable it)
         searchPagePath: 'search',
-<<<<<<< HEAD
-=======
-
-        replaceSearchResultPathname: {
-          from: '/docs/', // or as RegExp: /\/docs\//
-          to: '/docs/docs/',
-        },
-
-
->>>>>>> 1ab56ac949675339fc3f61e0f7c8ad45ec714870
       }
 
     }),
