@@ -281,39 +281,40 @@ def load_action_config(config, module_name):
 
 
 def unload_module(mod):
-    logger.info(f"Unloading {mod}")
+    # logger.info(f"Unloading {mod}")
     if mod in act_procs:
         # act_procs[mod]["proc"].kill()
         # act_procs[mod]["proc"].terminate()
         if act_procs[mod]["reqs"] > 0:
-            logger.info("Oustanding requests. Gracefully kill.")
-            logger.info("set event")
+            # logger.info("Oustanding requests. Gracefully kill.")
+            # logger.info("set event")
             act_procs[mod]["terminate_event"].set()
-            logger.info("joining")
+            # logger.info("joining")
             act_procs[mod]["proc"].join()
             # time.sleep(1)
-            logger.info("closing")
+            # logger.info("closing")
             act_procs[mod]["proc"].close()
-            logger.info("closed")
+            # logger.info("closed")
             del act_procs[mod]["in_q"]
             del act_procs[mod]["out_q"]
             del act_procs[mod]
             return True
         else:
-            logger.info("No outstanding requests. Kill now.")
-            logger.info("set event")
+            # logger.info("No outstanding requests. Kill now.")
+            # logger.info("set event")
             act_procs[mod]["terminate_event"].set()
-            logger.info("kill")
+            # logger.info("kill")
             act_procs[mod]["proc"].kill()
-            logger.info("joining")
+            # logger.info("joining")
             act_procs[mod]["proc"].join()
             # act_procs[mod]["proc"].terminate()
-            logger.info("closing")
+            # logger.info("closing")
             act_procs[mod]["proc"].close()
-            logger.info("closed")
+            # logger.info("closed")
             del act_procs[mod]["in_q"]
             del act_procs[mod]["out_q"]
             del act_procs[mod]
+            # logger.info("Process closed")
             return True
     else:
         return False
