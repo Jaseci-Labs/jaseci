@@ -44,7 +44,7 @@ c1
 
 To see node abilities in advance let's define the following graph, which represent cities and the connection between them.
 
- 
+
 The code defines a node called city which has a property called name and an ability called set_name. set_name sets the name property to "c1" and prints a message to the console using std.out().
 
 The code also defines a walker called build_example which spawns a new city node.

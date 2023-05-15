@@ -112,13 +112,27 @@ const config = {
         // Public API key: it is safe to commit it
         apiKey: '735d15bf10dc6d2ebb51f24e06e4635e',
 
+<<<<<<< HEAD
         indexName: 'jaseci_jaseci_docs',
+=======
+        indexName: 'jaseci',
+>>>>>>> 1ab56ac949675339fc3f61e0f7c8ad45ec714870
 
         // Optional: see doc section below
         contextualSearch: true,
 
         // Optional: path for search page that enabled by default (`false` to disable it)
         searchPagePath: 'search',
+<<<<<<< HEAD
+=======
+
+        replaceSearchResultPathname: {
+          from: '/docs/', // or as RegExp: /\/docs\//
+          to: '/docs/docs/',
+        },
+
+
+>>>>>>> 1ab56ac949675339fc3f61e0f7c8ad45ec714870
       }
 
     }),
