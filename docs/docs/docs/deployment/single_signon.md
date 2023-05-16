@@ -1,6 +1,5 @@
-
 ---
-title: Setting up Google OAuth credentials
+title: Setting up Google OAuth Credentials
 ---
 
 For setting up Google Credentials You need to follow few steps:

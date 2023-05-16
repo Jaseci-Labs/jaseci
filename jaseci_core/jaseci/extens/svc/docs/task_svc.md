@@ -1,3 +1,7 @@
+---
+title: Task
+---
+
 # **HOW TO TRIGGER TASK**
 
 Any walker that can be called with `is_async` field

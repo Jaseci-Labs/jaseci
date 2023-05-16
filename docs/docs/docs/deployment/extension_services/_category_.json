@@ -1,6 +1,6 @@
 {
-    "label": "Deployment",
-    "position": 5,
+    "label": "Extension Services",
+    "position": 3,
     "link": {
         "type": "generated-index",
         "description": "Jac Language Basics"
