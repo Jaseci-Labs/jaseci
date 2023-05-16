@@ -179,9 +179,9 @@ class JsorcLoadTest:
                     "jac_nlp.use_qa",
                 ],
                 "flow_analysis": [
-                    "jac_nlp.text_seg",
+                    "jac_nlp.sbert_sim",
                     "jac_nlp.tfm_ner",
-                    "jac_nlp.use_enc",
+                    "jac_nlp.use_qa",
                 ],
                 "weather_and_time_assitance": [
                     "jac_speech.vc_tts",

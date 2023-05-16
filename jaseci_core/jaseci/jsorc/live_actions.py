@@ -152,7 +152,6 @@ def action_handler_wrapper(name, *args, **kwargs):
     # TODO: temporary hack
     if module == "use" and act_name in [
         "encode",
-        "cos_sim_score",
         "text_similarity",
         "text_classify",
     ]:
