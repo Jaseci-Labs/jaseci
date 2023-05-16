@@ -32,6 +32,7 @@ class MachineState:
         self.report = []
         self.report_status = None
         self.report_custom = None
+        self.report_file = None
         self.request_context = None
         self.runtime_errors = []
         self.yielded_walkers_ids = IdList(self)
@@ -58,6 +59,7 @@ class MachineState:
         self.report = []
         self.report_status = None
         self.report_custom = None
+        self.report_file = None
         self.runtime_errors = []
         self._scope_stack = [None]
         self._jac_scope = None
@@ -211,6 +213,8 @@ class MachineState:
             self.report_status = mach.report_status
         if mach.report_custom:
             self.report_custom = mach.report_custom
+        if mach.report_file:
+            self.report_file = mach.report_file
         self.runtime_errors += mach.runtime_errors
 
     def obj_set_to_jac_set(self, obj_set):
@@ -327,6 +331,7 @@ class MachineState:
             "report": copy(self.report),
             "report_status": self.report_status,
             "report_custom": self.report_custom,
+            "report_file": self.report_file,
             "request_context": self.request_context,
             "runtime_errors": self.runtime_errors,
         }

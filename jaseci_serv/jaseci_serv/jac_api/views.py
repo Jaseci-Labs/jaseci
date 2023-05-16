@@ -1,9 +1,9 @@
 import json
-from base64 import b64encode
 from io import BytesIO
 from tempfile import _TemporaryFileWrapper
 from time import time
 
+from django.http import FileResponse
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.prim.element import Element
+from jaseci.utils.file_handler import FileHandler
 from jaseci.utils.utils import logger, ColCodes as Cc
 from jaseci.utils.actions.actions_manager import ActionManager
 from jaseci_serv.base.models import Master as ServMaster
@@ -30,6 +31,24 @@ class JResponse(Response):
     def close(self):
         super(JResponse, self).close()
         # Commit db changes after response to user
+        self.hook.clean_file_handler()
+        self.hook.commit(True)
+
+
+class JFileResponse(FileResponse):
+    def __init__(self, hook, file_id: str) -> None:
+        file_handler: FileHandler = hook.get_file_handler(file_id)
+        file_handler.close()
+        file_handler.open(mode="rb", encoding=None)
+
+        super().__init__(file_handler.buffer, filename=file_handler.name)
+
+        self.hook = hook
+        self.hook.commit_all_cache_sync()
+
+    def close(self) -> None:
+        super().close()
+        self.hook.clean_file_handler()
         self.hook.commit(True)
 
 
@@ -131,6 +150,7 @@ class AbstractJacAPIView(APIView):
             logger.error("Invalid ctx format! Ignoring ctx parsing!")
 
     def proc_file_ctx(self, request, req_data):
+        hook = self.caller._h
         for key in request.FILES:
             req_data.pop(key)
             file_ref = (
@@ -143,21 +163,25 @@ class AbstractJacAPIView(APIView):
             for file in request.FILES.getlist(key):
                 file_type = type(file.file)
                 if file_type is BytesIO:
-                    file_base64 = b64encode(file.file.getvalue()).decode("utf-8")
-                elif file_type is _TemporaryFileWrapper:
-                    file_base64 = b64encode(file.file.read()).decode("utf-8")
-
-                if "file_base64" in vars():
                     file_ref[key].append(
-                        {
-                            "name": file.name,
-                            "base64": file_base64,
-                            "content-type": file.content_type,
-                        }
+                        hook.add_file_handler(
+                            FileHandler.fromBytesIO(
+                                file.file, file.name, file.content_type, key
+                            )
+                        )
+                    )
+                elif file_type is _TemporaryFileWrapper:
+                    file_ref[key].append(
+                        hook.add_file_handler(
+                            FileHandler.fromTemporaryFileWrapper(
+                                file.file, file.name, file.content_type, key
+                            )
+                        )
                     )
 
     def proc_request_ctx(self, request, req_data, raw_req_data):
         user_slzr.requests_for_emails = request
+        hook = self.caller._h
         req_query = request.GET.dict()
         req_data.update(
             {
@@ -166,8 +190,12 @@ class AbstractJacAPIView(APIView):
                     "headers": dict(request.headers),
                     "query": req_query,
                     "body": req_data.copy(),
-                },
-                "_raw_req_ctx": raw_req_data.decode("utf-8"),
+                    "raw": hook.add_file_handler(
+                        FileHandler.fromBytesIO(
+                            BytesIO(raw_req_data), "raw_request", None
+                        )
+                    ),
+                }
             }
         )
         req_data.update(req_query)
@@ -205,6 +233,8 @@ class AbstractJacAPIView(APIView):
             request.data.dict() if type(request.data) is not dict else request.data
         )
 
+        self.set_caller(request)
+
         self.proc_prime_ctx(request, req_data)
         self.proc_file_ctx(request, req_data)
         self.proc_request_ctx(request, req_data, raw_req_data)
@@ -232,12 +262,20 @@ class AbstractJacAPIView(APIView):
         # for i in self.caller._h.save_obj_list:
         #     self.caller._h.commit_obj_to_redis(i)
         status = self.pluck_status_code(api_result)
-        if (
-            isinstance(api_result, dict)
-            and "report_custom" in api_result.keys()
-            and api_result["report_custom"] is not None
-        ):
-            api_result = api_result["report_custom"]
+        if isinstance(api_result, dict):
+            if (
+                "report_custom" in api_result.keys()
+                and api_result["report_custom"] is not None
+            ):
+                return JResponse(
+                    self.caller, api_result["report_custom"], status=status
+                )
+            elif (
+                "report_file" in api_result.keys()
+                and api_result["report_file"] is not None
+            ):
+                return JFileResponse(self.caller._h, api_result["report_file"])
+
         return JResponse(self.caller, api_result, status=status)
 
 

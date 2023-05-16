@@ -350,6 +350,8 @@ class Interp(VirtualMachine):
                 self.report_status = self.pop().value
             elif kid[2].token_text() == "custom":
                 self.report_custom = jwv(self.pop().value, serialize_mode=True)
+            elif kid[2].token_text() == "file":
+                self.report_file = self.pop().value
             elif kid[2].token_text() == "error":
                 err = self.pop().value
                 if isinstance(err, str):
