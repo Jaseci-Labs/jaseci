@@ -27,21 +27,20 @@ walker virtual_assistant {
     # uses text_seg get_segments to get segments from article returns list of text sent
     // segments=text_seg.get_segments(article,threshold);
     segments=article.str::split('.');
-    for segment in segments:
+    for i=0 to i<segments.length-1 by i+=1{
         # uses bi_enc infer each segments intent for for each sent
-        pred_intent=bi_enc.infer(segment, intents, "text", "text");
-        pred_sbert=sbert_sim.get_text_sim([segment], intents, 1);
+        pred_intent=bi_enc.infer([segments[i]], intents, "text", "text");
+        pred_sbert=sbert_sim.get_text_sim([segments[i]], intents, 1);
         # uses tfm_ner extract_entity to find general predifined entities from each segment
-        fallback_ents=tfm_ner.extract_entity(segment);
-        // # uses ent_ext entity_detection to get fallback entities
-        // pred_ents=ent_ext.entity_detection(segment,entities);
+        fallback_ents=tfm_ner.extract_entity(segments[i]);
         # uses use qa_classify to classify the intents for fallback
-        fallback_intent=use.qa_classify(segment,intents);
+        fallback_intent=use.qa_classify(segments[i],intents);
         resp={
             pred_intent[0]["predicted"]["label"]:fallback_ents,
             fallback_intent["match"]:fallback_ents
         };
         responses.l::append(resp);
+    }
     report responses;
 
 }
