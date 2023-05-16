@@ -1726,17 +1726,28 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             }
             res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
-        default_file = [
-            {
-                "name": "test.json",
-                "base64": "eyJzYW1wbGUiOiJzYW1wbGUifQ==",
-                "content-type": "application/json",
-            }
-        ]
-
         self.assertTrue(res["success"])
-        self.assertEqual(default_file, res["report"][0])
-        self.assertEqual(default_file, res["report"][1])
+        self.assertEqual("sample", res["report"][0])
+        self.assertTrue(res["report"][1])
+
+        uuid = res["report"][2]
+
+        self.assertEqual(
+            {
+                "id": f"{uuid}",
+                "name": "test.json",
+                "content_type": "application/json",
+                "field": "fileTypeField",
+                "absolute_name": f"{uuid}-test.json",
+                "absolute_path": f"{uuid}-test.json",
+                "persist": False,
+            },
+            res["report"][3],
+        )
+        self.assertEqual('{"sample":"sample"}', res["report"][4])
+        self.assertEqual({"sample": "sample"}, res["report"][5])
+        self.assertEqual('b\'{"sample":"sample"}\'', res["report"][6])
+        self.assertEqual("eyJzYW1wbGUiOiJzYW1wbGUifQ==", res["report"][7])
 
     def test_multipart_custom_payload_with_additional_file(self):
         """Test multipart custom payload (non ctx format) with additional file"""
@@ -1753,16 +1764,27 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             }
             res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
-        default_file = [
-            {
-                "name": "test.json",
-                "base64": "eyJzYW1wbGUiOiJzYW1wbGUifQ==",
-                "content-type": "application/json",
-            }
-        ]
-
         self.assertTrue(res["success"])
-        self.assertEqual(default_file, res["report"][2])
+        self.assertTrue(res["report"][0])
+
+        uuid = res["report"][1]
+
+        self.assertEqual(
+            {
+                "id": f"{uuid}",
+                "name": "test.json",
+                "content_type": "application/json",
+                "field": "fileTypeField",
+                "absolute_name": f"{uuid}-test.json",
+                "absolute_path": f"{uuid}-test.json",
+                "persist": False,
+            },
+            res["report"][2],
+        )
+        self.assertEqual('{"sample":"sample"}', res["report"][3])
+        self.assertEqual({"sample": "sample"}, res["report"][4])
+        self.assertEqual('b\'{"sample":"sample"}\'', res["report"][5])
+        self.assertEqual("eyJzYW1wbGUiOiJzYW1wbGUifQ==", res["report"][6])
 
     def test_try_catch(self):
         """Test try catch triggers"""

@@ -12,7 +12,7 @@ class JsOrcSettings(jss):
 
     JSORC_CONFIG = {
         "backoff_interval": 10,
-        "pre_loaded_services": ["redis", "prome", "mail", "task", "elastic"],
+        "pre_loaded_services": ["redis", "prome", "mail", "task", "elastic", "store"],
     }
 
     ###############################################################################################################

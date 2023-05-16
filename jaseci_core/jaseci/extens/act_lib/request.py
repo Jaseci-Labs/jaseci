@@ -1,8 +1,6 @@
 """Built in actions for Jaseci"""
 import requests
 from jaseci.jsorc.live_actions import jaseci_action
-from base64 import b64decode, b64encode
-from io import BytesIO
 
 
 @jaseci_action()
@@ -120,7 +118,7 @@ def options(url: str, data: dict, header: dict):
 
 
 @jaseci_action()
-def multipart_base64(url: str, files: list, header: dict):
+def multipart(url: str, files: list, header: dict, meta: dict):
     """
     Issue request
     Param 1 - url
@@ -132,6 +130,8 @@ def multipart_base64(url: str, files: list, header: dict):
     Return - response object
     """
 
+    hook = meta["h"]
+
     if not files:
         return {
             "status_code": 400,
@@ -142,12 +142,17 @@ def multipart_base64(url: str, files: list, header: dict):
 
     form_data = []
 
+    stream_to_be_close = []
+
     if files is not None:
         for f in files:
+            file_handler = hook.get_file_handler(f)
+            stream = file_handler.open("rb", None, True)
+            stream_to_be_close.append(stream)
             form_data.append(
                 (
-                    f["field"] if "field" in f else "file",
-                    (f["name"], BytesIO(b64decode(f["base64"]))),
+                    file_handler.field or "file",
+                    (file_handler.name, stream, file_handler.content_type),
                 )
             )
 
@@ -157,16 +162,8 @@ def multipart_base64(url: str, files: list, header: dict):
         ret["response"] = res.json()
     except Exception:
         ret["response"] = res.text
+
+    for stream in stream_to_be_close:
+        stream.close()
+
     return ret
-
-
-@jaseci_action()
-def file_download_base64(url: str, header: dict, encoding: str = "utf-8"):
-    """Standard built in for download file from url"""
-    with requests.get(url, stream=True, headers=header) as res:
-        res.raise_for_status()
-        with BytesIO() as buffer:
-            for chunk in res.iter_content(chunk_size=8192):
-                buffer.write(chunk)
-            ret = buffer.getvalue()
-    return b64encode(ret).decode(encoding)
