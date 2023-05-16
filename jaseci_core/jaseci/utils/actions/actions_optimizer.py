@@ -297,6 +297,7 @@ class ActionsOptimizer:
                     else:
                         new_configs.append(dict(c))
             all_configs = list(new_configs)
+        logger.info(f"config selected for evaluation: {all_configs}")
         policy_state["remain_configs"] = all_configs
 
     def _actionpolicy_evaluation(self):
