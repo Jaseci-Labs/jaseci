@@ -11,13 +11,17 @@ Requires OpenAI API Key
 
 from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import logger
-import os
 import openai
 from typing import Union
 
 
 @jaseci_action(act_group=["openai"], allow_remote=True)
-def setup(api_key=os.environ.get("OPENAI_API_KEY", None)):
+def setup(
+    api_key=openai.api_key,
+    api_type=openai.api_type,
+    api_base=openai.api_base,
+    api_version=openai.api_version,
+):
     """
     Sets up OpenAI API Key
 
@@ -33,6 +37,9 @@ def setup(api_key=os.environ.get("OPENAI_API_KEY", None)):
         return False
     else:
         openai.api_key = api_key
+        openai.api_type = api_type
+        openai.api_base = api_base
+        openai.api_version = api_version
         return True
 
 
