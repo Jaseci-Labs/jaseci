@@ -11,8 +11,8 @@ In this video, we will learn how to add tests to the Jaseci AI application we bu
 ## Congratulations!
 Now that you have completed the course, you can continue to learn more about Jaseci by reading the [documentation](https://jaseci.com/docs/).
 
-You can also join our [Discord](https://discord.gg/aWbsabhX) community to ask questions and get help from other Jaseci users. Click on the badge below to join our Discord server.
+You can also join our [Discord](https://discord.gg/r5CRtxnPU7) community to ask questions and get help from other Jaseci users. Click on the badge below to join our Discord server.
 
-[![Discord Banner 2](https://discordapp.com/api/guilds/1105093583750574120/widget.png?style=banner2)](https://discord.gg/aWbsabhX)
+[![Discord Banner 2](https://discordapp.com/api/guilds/1105093583750574120/widget.png?style=banner2)](https://discord.gg/r5CRtxnPU7)
 
 We hope you enjoyed this course and found it useful. If you have any feedback or suggestions for future courses, please let us know in the comments below. Thank you for watching!
