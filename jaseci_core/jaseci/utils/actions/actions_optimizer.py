@@ -308,11 +308,11 @@ class ActionsOptimizer:
         # Sort the configurations based on the minimum changes between each configuration
         sorted_configurations = [all_configs[0]]  # Start with the first configuration
 
-        while len(sorted_configurations) < len(configurations):
+        while len(sorted_configurations) < len(all_configs):
             min_distance = float("inf")
             min_config = None
 
-            for config in configurations:
+            for config in all_configs:
                 if config not in sorted_configurations:
                     distance = min(
                         get_config_distance(config, sorted_config)
