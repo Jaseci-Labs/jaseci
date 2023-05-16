@@ -47,6 +47,7 @@ def setup():
         tokenizer.save_vocabulary(MODEL_BASE_PATH)
         model.save_pretrained(MODEL_BASE_PATH)
         del model, tokenizer
+    load_custom_model(MODEL_BASE_PATH)
 
 
 enum = {"default": 1, "append": 2, "incremental": 3}
