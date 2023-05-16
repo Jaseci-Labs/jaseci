@@ -172,7 +172,7 @@ class JsorcLoadTest:
                 "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
                 "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
                 "virtual_assistant": [
-                    "jac_nlp.text_seg",
+                    # "jac_nlp.text_seg",
                     "jac_nlp.bi_enc",
                     "jac_nlp.tfm_ner",
                     "jac_nlp.sbert_sim",
