@@ -20,7 +20,8 @@ description: Creating a custom AI module using Jaseci, Python, and Hugging Face 
 
 In this web application, you can enter a web url and the jaseci backend will grab the information from the url and use the AI model to generate a summary of the article. The summary will be displayed on the frontend. and then the summary will be used to generate an image using Huggingface Jaseci API you built. The image will be displayed on the frontend.
 
-<img src="assets/demo.gif" alt="demo" width="100%"/>
+<img src="img/demo.gif" alt="demo" width="100%"/>
+
 ### Code
 
 You can find the code for this demo in the following github repo: [chandralegend/website-to-summary-to-image](https://github.com/chandralegend/website-to-summary-to-image). Clone the repo and follow the instructions in the README to run the application.
