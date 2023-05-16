@@ -13,7 +13,6 @@ walker flow_analysis{
 
     first_seg=segment_embs[0];
     responses=[];
-    std.out(segment_embs.length);
     for i=1 to i<segment_embs.length-1 by i+=1{
         other_seg_emb = segment_embs[i];
         use_sim_score = use.cos_sim_score(first_seg, other_seg_emb);
