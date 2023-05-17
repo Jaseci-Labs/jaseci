@@ -138,16 +138,21 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 
     while not terminate_event.is_set() or not in_q.empty():
         # while True:
+        logger.info("waiting on input")
         action, args, kwargs = in_q.get()
+        logger.info("Got input")
         func = live_actions[action]
+        logger.info(f"got func {func}")
         result = func(*args, **kwargs)
+        logger.info(f"got result")
         out_q.put((action, result))
+        logger.info(f"put in out_q")
 
 
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
-    # logger.info(f"local action called for {name}")
+    logger.info(f"local action called for {name}")
     module = name.split(".")[0]
     act_name = name.split(".")[1]
     # TODO: temporary hack
@@ -166,9 +171,10 @@ def action_handler_wrapper(name, *args, **kwargs):
     act_procs[module]["reqs"] += 1
     # cnt = act_procs[module]["reqs"]
     # logger.info(f"{module} reqs: {cnt}")
-    # logger.info("put in_q")
+    logger.info("put in_q")
     act_procs[module]["in_q"].put((name, args, kwargs))
 
+    logger.info("waiting on out_q")
     # TODO: Handle concurrent calls?
     res = act_procs[module]["out_q"].get()[1]
     act_procs[module]["reqs"] -= 1
