@@ -17,6 +17,8 @@ from jaseci.jsorc.live_actions import (
 import requests
 import copy
 import time
+from collections import OrderedDict
+from functools import cmp_to_key
 
 from .actions_state import ActionsState
 
@@ -483,7 +485,19 @@ class ActionsOptimizer:
     def _get_action_change(self, new_action_state):
         """
         Given a new desired action state and the current action_state tracking, return the change set
+        Prioritize any module to remote switch first to avoid situation where linux OOM kill the subprocess first
         """
+
+        def change_to_remote_first(item1, item2):
+            if "to_remote" in item1[1] and "to_remote" in item2[1]:
+                return 0
+            elif "to_remote" in item1[1]:
+                return 1
+            elif "to_remote" in item2[1]:
+                return -1
+            else:
+                return 0
+
         change_state = {}
         for name, new_state in new_action_state.items():
             if name not in action_configs.keys():
@@ -498,13 +512,17 @@ class ActionsOptimizer:
                     f"{cur['mode'] if cur['mode'] is not None else ''}_to_{new_state}"
                 )
                 change_state[name] = change_str
-        return change_state
+        sorted_change_state = OrderedDict(
+            sorted(change_state.items(), key=cmp_to_key(change_to_remote_first))
+        )
+
+        return sorted_change_state
 
     def apply_actions_change(self):
         """
         Apply any action configuration changes
         """
-        actions_change = dict(self.actions_change)
+        actions_change = copy.deepcopy(self.actions_change)
         # For now, to_* and *_to_* are the same logic
         # But this might change down the line
         for name, change_type in actions_change.items():
