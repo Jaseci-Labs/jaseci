@@ -51,57 +51,64 @@ class Ability(Element, JacCode, Interp):
             interp.rt_error(f"Cannot execute {action_name} - Not Found")
             return None
         live_actions_lock.reader_acquire()
-        func = live_actions[action_name]
-        args = inspect.getfullargspec(func)
-        self.do_auto_conversions(args, param_list)
-        args = args[0] + args[4]
+        try:
+            func = live_actions[action_name]
+            logger.info(f"got func {func}")
+            args = inspect.getfullargspec(func)
+            self.do_auto_conversions(args, param_list)
+            args = args[0] + args[4]
 
-        hook = scope.parent._h
-        action_manager = JsOrc.get("action_manager", ActionManager)
-        action_manager.pre_action_call_hook()
+            hook = scope.parent._h
+            action_manager = JsOrc.get("action_manager", ActionManager)
+            action_manager.pre_action_call_hook()
 
-        ts = time.time()
-        if "meta" in args:
-            result = func(
-                *param_list["args"],
-                **param_list["kwargs"],
-                meta={
-                    "m_id": scope.parent._m_id,
-                    "h": scope.parent._h,
-                    "scope": scope,
-                    "interp": interp,
-                },
-            )
-        else:
-            try:
-                if func.__module__ == "js_remote_hook":
-                    # logger.info(f"remote action called for {action_name}")
-                    result = func(*param_list["args"], **param_list["kwargs"])
-                else:
-                    result = func(
-                        self.name, *param_list["args"], **param_list["kwargs"]
+            logger.info(f"after preaction callhook")
+            ts = time.time()
+            if "meta" in args:
+                logger.info("in meta call")
+                result = func(
+                    *param_list["args"],
+                    **param_list["kwargs"],
+                    meta={
+                        "m_id": scope.parent._m_id,
+                        "h": scope.parent._h,
+                        "scope": scope,
+                        "interp": interp,
+                    },
+                )
+            else:
+                try:
+                    if func.__module__ == "js_remote_hook":
+                        # logger.info(f"remote action called for {action_name}")
+                        result = func(*param_list["args"], **param_list["kwargs"])
+                    else:
+                        result = func(
+                            self.name, *param_list["args"], **param_list["kwargs"]
+                        )
+                except TypeError as e:
+                    params = str(inspect.signature(func))
+                    interp.rt_error(
+                        f"Invalid arguments {param_list} to action call {self.name}! Valid paramters are {params}.",
+                        interp._cur_jac_ast,
                     )
-            except TypeError as e:
-                params = str(inspect.signature(func))
-                interp.rt_error(
-                    f"Invalid arguments {param_list} to action call {self.name}! Valid paramters are {params}.",
-                    interp._cur_jac_ast,
-                )
-                raise
-            except Exception as e:
-                # Checking for race condition between walker running abilities and JSORC unloading modules
-                # if func != live_actions[action_name]:
-                #     logger.info(
-                #         "Action function pointer changed during execution. Retrying..."
-                #     )
-                #     return self.run_action(param_list, scope, interp)
+                    logger.info("failing 1")
+                    raise
+                except Exception as e:
+                    # Checking for race condition between walker running abilities and JSORC unloading modules
+                    # if func != live_actions[action_name]:
+                    #     logger.info(
+                    #         "Action function pointer changed during execution. Retrying..."
+                    #     )
+                    #     return self.run_action(param_list, scope, interp)
 
-                interp.rt_error(
-                    f"Exception within action call {self.name}! {e}",
-                    interp._cur_jac_ast,
-                )
-                raise
-        live_actions_lock.reader_release()
+                    interp.rt_error(
+                        f"Exception within action call {self.name}! {e}",
+                        interp._cur_jac_ast,
+                    )
+                    logger.info("failing 2")
+                    raise
+        finally:
+            live_actions_lock.reader_release()
         t = time.time() - ts
         action_manager.post_action_call_hook(action_name, t)
         return result

@@ -7,7 +7,6 @@ from jaseci.jsorc.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.jsorc.remote_actions import serv_actions, mark_as_remote, mark_as_endpoint
 import requests
 import multiprocessing
-from multiprocessing import Semaphore, Lock
 import os
 import sys
 import inspect
@@ -17,9 +16,11 @@ import gc
 import time
 import signal
 
+# a = 1
 # mutex = threading.Lock()
-# max_workers = 100
-# actions_sem = Semaphore(max_workers + 1)
+# MAX_WORKERS = 100
+# actions_sem = Semaphore(MAX_WORKERS + 1)
+
 
 live_actions_lock = RXW1Lock()
 live_actions = {}  # {"act.func": func_obj, ...}
@@ -117,14 +118,14 @@ def load_local_actions(file: str, ctx: dict = {}):
 
 def action_handler(mod, ctx, in_q, out_q, terminate_event):
     # Clearing the live actions in subprocess
-    # logger.info(f"clearing live_actions")
+    logger.info(f"clearing live_actions")
     live_actions.clear()
-    # logger.info(f"import_module on {mod}")
+    logger.info(f"import_module on {mod}")
     loaded_mod = importlib.import_module(mod)
-    # logger.info(f"{mod} loaded")
+    logger.info(f"{mod} loaded")
     try:
         if hasattr(loaded_mod, "setup"):
-            # logger.info(f"call setup")
+            logger.info(f"call setup")
             loaded_mod.setup(**ctx)
     except Exception as e:
         logger.error(
@@ -205,15 +206,16 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         del act_procs[mod]
 
     # Create subprocess and message queues for this action module
+    mp_ctx = multiprocessing.get_context("spawn")
     act_procs[mod] = {
-        "in_q": multiprocessing.Queue(),
-        "out_q": multiprocessing.Queue(),
-        "terminate_event": multiprocessing.Event(),
+        "in_q": mp_ctx.Queue(),
+        "out_q": mp_ctx.Queue(),
+        "terminate_event": mp_ctx.Event(),
         "reqs": 0,
         "status": "INITIALIZATION",
     }
     # logger.info(f"init the process")
-    act_procs[mod]["proc"] = multiprocessing.Process(
+    act_procs[mod]["proc"] = mp_ctx.Process(
         target=action_handler,
         args=(
             mod,
@@ -227,13 +229,22 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     act_procs[mod]["proc"].start()
 
     # get the list of action back
-    # logger.info(f"waiting on list of actions")
+    logger.info(f"waiting on list of actions")
     actions_list = act_procs[mod]["out_q"].get()
 
+    # while actions_sem.acquire():
+    #     # Only keep the semaphore if there are no other outstanding worker
+    #     if actions_sem._value != MAX_WORKERS:
+    #         actions_sem.release()
+    #         continue
+    #     else:
+    #         break
     live_actions_lock.writer_acquire()
-    for act in actions_list:
-        live_actions[act] = action_handler_wrapper
-    live_actions_lock.writer_release()
+    try:
+        for act in actions_list:
+            live_actions[act] = action_handler_wrapper
+    finally:
+        live_actions_lock.writer_release()
 
     # module intialization completes, set process status as ready
     act_procs[mod]["status"] = "READY"
@@ -451,17 +462,19 @@ def load_remote_actions(url, ctx: dict = {}):
         spec = requests.get(url.rstrip("/") + ACTIONS_SPEC_LOC, headers=headers)
         spec = spec.json()
         live_actions_lock.writer_acquire()
-        for i in spec.keys():
-            live_actions[i] = gen_remote_func_hook(url, i, spec[i])
-            if i.endswith(".setup") and ctx:
-                try:
-                    live_actions[i](**ctx)
-                except Exception as e:
-                    logger.error(
-                        f"Cannot run set up for remote action {i}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
-                    )
-                    logger.error(e)
-        live_actions_lock.writer_release()
+        try:
+            for i in spec.keys():
+                live_actions[i] = gen_remote_func_hook(url, i, spec[i])
+                if i.endswith(".setup") and ctx:
+                    try:
+                        live_actions[i](**ctx)
+                    except Exception as e:
+                        logger.error(
+                            f"Cannot run set up for remote action {i}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+                        )
+                        logger.error(e)
+        finally:
+            live_actions_lock.writer_release()
         return True
 
     except Exception as e:
