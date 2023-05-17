@@ -21,6 +21,7 @@ import signal
 # MAX_WORKERS = 100
 # actions_sem = Semaphore(MAX_WORKERS + 1)
 
+ACTION_SUBPROC_TIMEOUT = 3  # 3 seconds
 
 live_actions_lock = RXW1Lock()
 live_actions = {}  # {"act.func": func_obj, ...}
@@ -181,7 +182,12 @@ def action_handler_wrapper(name, *args, **kwargs):
 
     logger.info(f"{os.getpid()}waiting on out_q")
     # TODO: Handle concurrent calls?
-    res = act_procs[module]["out_q"].get()[1]
+    try:
+        res = act_procs[module]["out_q"].get(timeout=ACTION_SUBPROC_TIMEOUT)[1]
+    except Exception as e:
+        logger.info(f"action subprocess out_q timeout {e}")
+        res = str(e)
+
     act_procs[module]["reqs"] -= 1
     cnt = act_procs[module]["reqs"]
     # logger.info(f"{module} reqs: {cnt}")
