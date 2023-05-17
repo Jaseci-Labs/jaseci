@@ -297,8 +297,34 @@ class ActionsOptimizer:
                     else:
                         new_configs.append(dict(c))
             all_configs = list(new_configs)
-        logger.info(f"config selected for evaluation: {all_configs}")
-        policy_state["remain_configs"] = all_configs
+
+        def get_config_distance(config1, config2):
+            num_changes = 0
+            for key in config1.keys():
+                if config1[key] != config2[key]:
+                    num_changes += 1
+            return num_changes
+
+        # Sort the configurations based on the minimum changes between each configuration
+        sorted_configurations = [all_configs[0]]  # Start with the first configuration
+
+        while len(sorted_configurations) < len(all_configs):
+            min_distance = float("inf")
+            min_config = None
+
+            for config in all_configs:
+                if config not in sorted_configurations:
+                    distance = min(
+                        get_config_distance(config, sorted_config)
+                        for sorted_config in sorted_configurations
+                    )
+                    if distance < min_distance:
+                        min_distance = distance
+                        min_config = config
+
+            sorted_configurations.append(min_config)
+        logger.info(f"config selected for evaluation: {sorted_configurations}")
+        policy_state["remain_configs"] = sorted_configurations
 
     def _actionpolicy_evaluation(self):
         """
