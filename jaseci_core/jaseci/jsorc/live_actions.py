@@ -140,11 +140,16 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
         # while True:
         logger.info("waiting on input")
         action, args, kwargs = in_q.get()
-        logger.info("Got input")
-        func = live_actions[action]
-        logger.info(f"got func {func}")
-        result = func(*args, **kwargs)
-        logger.info(f"got result")
+        try:
+            logger.info("Got input")
+            func = live_actions[action]
+            logger.info(f"got func {func}")
+            result = func(*args, **kwargs)
+            logger.info(f"got result")
+        except Exception as e:
+            logger.info(f"Exception: {str(e)}")
+            result = str(e)
+
         out_q.put((action, result))
         logger.info(f"put in out_q")
 
