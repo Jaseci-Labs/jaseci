@@ -368,6 +368,12 @@ class Interp(VirtualMachine):
                 self.rt_error(f"Report {report} not Json serializable", kid[0])
             self.report.append(copy(report))
 
+    def run_sub_name(self, jac_ast):
+        """
+        sub_name: COLON NAME;
+        """
+        return jac_ast.kid[1].token_text()
+
     def run_expression(self, jac_ast):
         """
         expression: connect (assignment | copy_assign | inc_assign)?;

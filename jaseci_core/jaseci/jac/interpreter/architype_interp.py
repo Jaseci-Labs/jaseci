@@ -18,8 +18,8 @@ class ArchitypeInterp(Interp):
     def run_architype(self, jac_ast):
         """
         architype:
-            KW_NODE NAME (COLON NAME)* attr_block
-            | KW_EDGE NAME (COLON NAME)* attr_block
+            KW_NODE NAME sub_name* attr_block
+            | KW_EDGE NAME sub_name* attr_block
             | KW_TYPE NAME struct_block
             | KW_GRAPH NAME graph_block
             | KW_ASYNC? KW_WALKER NAME namespaces? walker_block;

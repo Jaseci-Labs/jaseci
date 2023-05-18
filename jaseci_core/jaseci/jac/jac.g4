@@ -35,8 +35,8 @@ global_var:
 	KW_GLOBAL NAME EQ expression (COMMA NAME EQ expression)* SEMI;
 
 architype:
-	KW_NODE NAME (COLON NAME)* attr_block
-	| KW_EDGE NAME (COLON NAME)* attr_block
+	KW_NODE NAME sub_name* attr_block
+	| KW_EDGE NAME sub_name* attr_block
 	| KW_TYPE NAME struct_block
 	| KW_GRAPH NAME graph_block
 	| KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
@@ -80,7 +80,10 @@ has_root: KW_HAS KW_ANCHOR NAME SEMI;
 
 has_stmt: KW_HAS has_assign (COMMA has_assign)* SEMI;
 
-has_assign: KW_PRIVATE? KW_ANCHOR? (NAME | NAME EQ expression);
+has_assign:
+	KW_PRIVATE? KW_ANCHOR? NAME type_hint? (EQ expression)?;
+
+type_hint: COLON any_type;
 
 can_stmt:
 	KW_CAN dotted_name (preset_in_out event_clause)? (
@@ -149,9 +152,9 @@ assert_stmt: KW_ASSERT expression;
 
 destroy_action: KW_DESTROY expression SEMI;
 
-report_action:
-	KW_REPORT expression SEMI
-	| KW_REPORT COLON NAME EQ expression SEMI;
+report_action: KW_REPORT (sub_name EQ)? expression SEMI;
+
+sub_name: COLON NAME;
 
 walker_action:
 	ignore_action
@@ -161,8 +164,7 @@ walker_action:
 
 ignore_action: KW_IGNORE expression SEMI;
 
-take_action:
-	KW_TAKE (COLON NAME)? expression (SEMI | else_stmt);
+take_action: KW_TAKE sub_name? expression (SEMI | else_stmt);
 
 disengage_action: KW_DISENGAGE (report_action | SEMI);
 
@@ -334,6 +336,7 @@ filter_compare: NAME cmp_op expression;
 
 any_type:
 	TYP_STRING
+	| TYP_BYTES
 	| TYP_INT
 	| TYP_FLOAT
 	| TYP_LIST
@@ -347,6 +350,7 @@ multistring: STRING+;
 
 /* Lexer rules */
 TYP_STRING: 'str';
+TYP_BYTES: 'bytes';
 TYP_INT: 'int';
 TYP_FLOAT: 'float';
 TYP_LIST: 'list';
