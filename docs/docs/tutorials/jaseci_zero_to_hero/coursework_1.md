@@ -20,7 +20,7 @@ Jaseci is a production-grade system architecture and Jac is a corresponding prog
 
 Slides can be downloaded from [here](https://github.com/Jaseci-Labs/jaseci/blob/main/examples/coursework-series-uom/1_introduction_and_installation/slides.pdf)
 
-Visit this [link](../../../../examples/coursework-series-uom/1_introduction_and_installation/chatbot_example_0) for chatbot example 0.
+Visit this [link](https://github.com/Jaseci-Labs/jaseci/tree/main/examples/coursework-series-uom/1_introduction_and_installation/chatbot_example_0) for chatbot example 0.
 
-Visit this [link](../../../../examples/coursework-series-uom/1_introduction_and_installation/chatbot_example_1) for chatbot example 1.
+Visit this [link](https://github.com/Jaseci-Labs/jaseci/tree/main/examples/coursework-series-uom/1_introduction_and_installation/chatbot_example_1) for chatbot example 1.
 

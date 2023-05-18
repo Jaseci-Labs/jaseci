@@ -17,4 +17,4 @@ In this video, you will learn how to use Jaseci in production by exploring the S
 
 Slides can be downloaded from [here](https://github.com/Jaseci-Labs/jaseci/blob/main/examples/coursework-series-uom/2_jaseci_quickstart/2.3/slides.pdf)
 
-Visit this [link](../../../../examples/coursework-series-uom/2_jaseci_quickstart/2.3/end) for the final source code.
+Visit this [link](https://github.com/Jaseci-Labs/jaseci/tree/main/coursework-series-uom/2_jaseci_quickstart/2.3/end) for the final source code.
