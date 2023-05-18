@@ -179,6 +179,20 @@ jaseci > walker run purchase -ctx "{\"product_category\": \"fruit\", \"product_n
 }
 ```
 
+You can perform a similar step in Jaseci Studio as in the previous example. Rebuild and re-register the sentinel with the updated program, then log back into Jaseci Studio. You may noticed already when we run the purchase walker we have to list of parameters. In Jaseci Studio we can pass those parameters as a `json` object. Copy the following `json` into the "Enter PayLoad" box and select the `product` node and `purchase` walker and hit the "Run Now" button.
+
+```json
+{
+    "product_category": "fruit",
+    "product_name": "apple",
+    "purchase_amount":2
+}
+```
+
+![Purchase walker](img/purchase_node.png)
+
+You will see the output in the result box as in the above image.
+
 Now you can check the inventory again to see if the stock has been updated with the purchase operations.
 
 ```bash
@@ -262,3 +276,14 @@ You can execute the `sell` walker and play with the Shop inventory management ap
 ```bash
 jaseci> walker run sell -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"sell_amount\": 2"}
 ```
+
+Similar to above purchase example you can tryout the sell walker in Jaseci Studio, here is an example snapshot.
+
+```json
+{
+  "product_category": "fruit",
+  "product_name": "apple",
+  "sell_amount": 2
+}
+```
+![Sell Walker](img/sell_walker.png)
