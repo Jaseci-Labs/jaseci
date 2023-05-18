@@ -236,3 +236,8 @@ Double click on the yellow color product catalog node to view all attached produ
 ![Jaseci Studio Shop Graph](./img/shop_root_detailed.png)
 
 Now you have created a shop graph in Jaseci Studio, in next sections we will do basic operations like checking the inventory, purchasing and selling items from product catalogue.
+
+
+You can access all the archetypes you created in the jac program through the Archetype tab in the left sidebar of Jaseci Studio as in below image.
+
+![Jaseci Studio Archetype](./img/studio_architype.png)

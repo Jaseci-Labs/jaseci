@@ -67,6 +67,18 @@ The `walk` defines which walker to run. When we leave this parameter empty the `
 
 - `report` represents the return value from the walker, but here you will see an empty dictionary as the output because we haven't add any stocks yet.
 
+You can tryout this newly created walker in the Jaseci Studio as well, for that repeat the same steps to build the jac program and register with sentinel in the previous section. Now open and log into the Jaseci Studio, click on the archetype tab;
+
+![Jaseci Studio Archetype](img/studio_architype.png)
+
+You can choose the `product` node from the node archetypes. You will see the code of the product node which you were creating with the `shop.jac` program.
+
+![Jaseci Studio Archetype Nodes](img/node_archtypes.png)
+
+Next click on the "run walker" and select inventory walker from the drop down list. Then click on "Run Now". Then the inventory walker will run on the product node and will return the output in the result box as follows;.
+
+![Jaseci Studio Archetype Inventory walker](img/inventory_walker.png)
+
 ## Purchasing items
 
 Now to add items into the stocks we have to purchase items. In this section we are going to add that part into our Jac program.
