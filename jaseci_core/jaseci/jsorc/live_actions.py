@@ -21,6 +21,7 @@ import signal
 # MAX_WORKERS = 100
 # actions_sem = Semaphore(MAX_WORKERS + 1)
 
+ACTION_SUBPROC_TIMEOUT = 3  # 3 seconds
 
 live_actions_lock = RXW1Lock()
 live_actions = {}  # {"act.func": func_obj, ...}
@@ -138,16 +139,26 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 
     while not terminate_event.is_set() or not in_q.empty():
         # while True:
+        logger.info(f"{os.getpid()} waiting on input")
         action, args, kwargs = in_q.get()
-        func = live_actions[action]
-        result = func(*args, **kwargs)
+        try:
+            logger.info(f"{os.getpid()} Got input")
+            func = live_actions[action]
+            logger.info(f"{os.getpid()}got func {func}")
+            result = func(*args, **kwargs)
+            logger.info(f"{os.getpid()}got result")
+        except Exception as e:
+            logger.info(f"{os.getpid()}Exception: {str(e)}")
+            result = str(e)
+
         out_q.put((action, result))
+        logger.info(f"{os.getpid()}put in out_q")
 
 
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
-    # logger.info(f"local action called for {name}")
+    logger.info(f"{os.getpid()}local action called for {name}")
     module = name.split(".")[0]
     act_name = name.split(".")[1]
     # TODO: temporary hack
@@ -166,11 +177,17 @@ def action_handler_wrapper(name, *args, **kwargs):
     act_procs[module]["reqs"] += 1
     # cnt = act_procs[module]["reqs"]
     # logger.info(f"{module} reqs: {cnt}")
-    # logger.info("put in_q")
+    logger.info(f"{os.getpid()}put in_q")
     act_procs[module]["in_q"].put((name, args, kwargs))
 
+    logger.info(f"{os.getpid()}waiting on out_q")
     # TODO: Handle concurrent calls?
-    res = act_procs[module]["out_q"].get()[1]
+    try:
+        res = act_procs[module]["out_q"].get(timeout=ACTION_SUBPROC_TIMEOUT)[1]
+    except Exception as e:
+        logger.info(f"action subprocess out_q timeout {e}")
+        res = str(e)
+
     act_procs[module]["reqs"] -= 1
     cnt = act_procs[module]["reqs"]
     # logger.info(f"{module} reqs: {cnt}")
@@ -298,7 +315,7 @@ def load_action_config(config, module_name):
 
 
 def unload_module(mod):
-    # logger.info(f"Unloading {mod}")
+    logger.info(f"{os.getpid()} Unloading {mod}")
     if mod in act_procs:
         # act_procs[mod]["proc"].kill()
         # act_procs[mod]["proc"].terminate()
