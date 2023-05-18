@@ -11,3 +11,21 @@ walker multistring {
         "is"
         " a multistring";
 }
+
+// # int, float, list, string, dict, bool, bytes
+
+// walker simple {
+//     has filename;
+
+//     has anchor test_anchor: str = "test";
+//     has:f myfile: bytes;
+//     has nextthing: int;
+//     has nextblob: bytes;
+
+//     # Jac, needs to support binary types
+//     # walker run -ctx {"test_anchor": "test", "myfile": "test.txt"}0
+//     # walker run -ctx {"test_anchor": [0, "test"], "myfile": [1, "test.txt"]}
+//     with entry {
+//         report global.info['request_context']["body"];
+//     }
+// }
