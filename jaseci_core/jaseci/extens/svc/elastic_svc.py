@@ -2,7 +2,7 @@ import re
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.kube_svc import KubeService
 from jaseci.utils.utils import logger, app_logger
-from requests import get, post
+from requests import get, post, put
 from datetime import datetime
 from copy import copy
 from base64 import b64encode
@@ -56,8 +56,34 @@ class ElasticService(JsOrc.CommonService):
         self.app.health("timeout=1s")
 
     def post_run(self):
+        self.configure_elastic()
         self.add_elastic_log_handler(logger, "core")
         self.add_elastic_log_handler(app_logger, "app")
+
+    def configure_elastic(self):
+        """
+        Configure elastic logging with desired configuration
+        - Data stream for core* and app* index pattern
+        - Index template with the data-streams-mappings component mapping rules
+            - @timestamp is converted to date field type
+            - text fields are coverted as keywords for search
+        - An index lifecycle management (ILM) policy
+            - hot index for 7 days or 5GB max size
+            - delete indices older than 30 days
+        """
+        # Create the ILM policy
+        self.app.create_ilm_policy(
+            policy_name=self.config.get("ilm_policy_name"),
+            policy_config=self.config.get("ilm_policy"),
+            overwrite=False,
+        )
+
+        # Create index template and attach ILM policy
+        self.app.create_index_template(
+            template_name=self.config.get("index_template_name"),
+            template_config=self.config.get("index_template"),
+            overwrite=False,
+        )
 
     def add_elastic_log_handler(self, logger_instance, index):
         has_queue_handler = any(
@@ -81,7 +107,7 @@ class ElasticService(JsOrc.CommonService):
 
                         elastic_record = {
                             "@timestamp": logging.Formatter().formatTime(
-                                record, "%Y-%m-%d %H:%M:%S"
+                                record, "%Y-%m-%dT%H:%M:%S"
                             ),
                             "message": msg,
                             "level": record.levelname,
@@ -174,6 +200,52 @@ class Elastic:
 
     def reindex(self, body: dict, query: str = "pretty"):
         return self._post(f"/_reindex?{query}", body)
+
+    def create_ilm_policy(
+        self, policy_name: str, policy_config: dict, overwrite: bool = False
+    ):
+        if not overwrite:
+            res = get(
+                f"{self.url}/_ilm/policy/{policy_name}",
+                headers=self.headers,
+                verify="elastic-certificate.crt",
+            )
+            if res.status_code == 200 and policy_name in res.json():
+                # policy already exists
+                return False
+        res = put(
+            f"{self.url}/_ilm/policy/{policy_name}",
+            headers=self.headers,
+            json=policy_config,
+            verify="elastic-certificate.crt",
+        )
+        if res.status_code == 200:
+            return res.json()
+        else:
+            return False
+
+    def create_index_template(
+        self, template_name: str, template_config: dict, overwrite: bool = False
+    ):
+        if not overwrite:
+            res = get(
+                f"{self.url}/_index_template/{template_name}",
+                headers=self.headers,
+                verify="elastic-certificate.crt",
+            )
+            if res.status_code == 200 and template_name in res.json():
+                # policy already exists
+                return False
+        res = put(
+            f"{self.url}/_index_template/{template_name}",
+            headers=self.headers,
+            json=template_config,
+            verify="elastic-certificate.crt",
+        )
+        if res.status_code == 200:
+            return res.json()
+        else:
+            return False
 
     # standard methods
     def generate_from_meta(self, meta: dict, override: dict, action: str = None):
