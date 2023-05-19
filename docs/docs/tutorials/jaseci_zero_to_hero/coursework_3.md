@@ -17,5 +17,5 @@ In this Jaseci tutorial video, we will continue our journey to get started with 
 
 Slides can be downloaded from [here](https://github.com/Jaseci-Labs/jaseci/blob/main/examples/coursework-series-uom/2_jaseci_quickstart/2.2/slides.pdf)
 
-Visit this [link](../../../../examples/coursework-series-uom/2_jaseci_quickstart/2.2/end) for the final code.
+Visit this [link](https://github.com/Jaseci-Labs/jaseci/tree/main/examples/coursework-series-uom/2_jaseci_quickstart/2.2/end) for the final code.
 

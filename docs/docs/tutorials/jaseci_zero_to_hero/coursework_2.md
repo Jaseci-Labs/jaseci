@@ -21,4 +21,4 @@ To put our new knowledge into practice, we'll walk through the process of creati
 
 Slides can be downloaded from [here](https://github.com/Jaseci-Labs/jaseci/blob/main/examples/coursework-series-uom/2_jaseci_quickstart/2.1/slides.pdf)
 
-Visit this [link](../../../../examples/coursework-series-uom/2_jaseci_quickstart/2.1/end) for the final code.
+Visit this [link](https://github.com/Jaseci-Labs/jaseci/tree/main/examples/coursework-series-uom/2_jaseci_quickstart/2.1/end) for the final code.
