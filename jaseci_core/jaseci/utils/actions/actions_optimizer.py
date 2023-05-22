@@ -392,6 +392,11 @@ class ActionsOptimizer:
                     self.benchmark["active"] = False
                     self.apply_actions_change()
             else:
+                logger.info("================ CURRENT POLICY ====================")
+                logger.info(
+                    f"policy_state: {policy_state}\ncur_config: {policy_state['cur_config']}\nremain_configs:{policy_state['remain_configs']}"
+                )
+                logger.info("====================================================")
                 if policy_state["cur_phase"] >= policy_state["eval_phase"]:
                     # The eval phase for the current configuration is complete
                     # Get performance
