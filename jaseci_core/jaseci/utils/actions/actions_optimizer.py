@@ -360,6 +360,11 @@ class ActionsOptimizer:
             policy_state["phase"] == "perf"
             and policy_state["cur_phase"] >= policy_state["perf_phase"]
         ):
+            logger.info("================ PERFORMANC# PERIOD ====================")
+            logger.info(
+                f"policy_state: {policy_state}\nbenchmark: {self.benchmark['requests']}"
+            )
+            logger.info("====================================================")
             # if no enough walker were execueted in this period, keep in perf phase
             if "walker_run" not in self.benchmark["requests"]:
                 policy_state["cur_phase"] = 0
