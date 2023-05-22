@@ -4,7 +4,7 @@ title: Building a Graph
 description: Building the Shop Graph with Product and Features.
 ---
 
-As the first step of the jac program let's build a graph to the shop.
+As the first step of the JAC program, let's build a graph for the shop. Throughout the entire process of building this app, we will be using Jac Language, Jaseci Server and Jaseci Studio. Therefore, make sure to set up them and ensure everything is up running before starting this tutorial.
 
 ### Nodes
 
@@ -15,16 +15,27 @@ Nodes are the fundamental unit of  a graph. These can be considered to be the s
 * Nodes execute a set of actions upon entry and exit.
 
 
-The shop graph will have nodes named `product`, `product_catalog`. Let's define them. The has keyword is used to declare a variable for the node. The `product` node has two variables named `name` and `stock`. The default value of `stock` is 0 where the `product_catalog` doesn't have any variables defined yet.
+The shop graph will have nodes named `product`, `product_catalog`. Let's define them. The `has` keyword is used to declare a variable for the node. The `product` node has two variables named `name` and `stock`. The default value of `stock` is 0. Open the Jaseci Studio and go to archetype section. Copy the following content into editor and click on the register archetype button. Then you will see an `node` named product has created in the list of archetype.
 
 ```jac
 node product {
     has name;
     has stock = 0;
 }
+```
 
+![Jaseci Studio Product Node](img/product_node.png)
+
+The `product_catalog` doesn't have any variables defined yet.
+
+```jac
 node product_catalog;
 ```
+Register archetype for `product_catalog` as we have done for the `product` node.
+
+
+![Jaseci Studio Product Catalog Node](img/product_catelog_node.png)
+
 To get more information about nodes you can go [here](../../development/abstractions/graphs#nodes)
 
 ### Edges
@@ -40,6 +51,8 @@ edge category {
     has name;
 }
 ```
+
+Similarly as we did for `product` and `product_catalog` nodes, register archetype for `category` edge in the Jaseci Studio.
 
 ### Connecting nodes and edges to create a graph
 
@@ -68,25 +81,42 @@ graph shop {
         catalog +[category(name="supplies")]+> notebook;
     }
 }
-
-walker init {
-    root: spawn here ++> graph::shop;
-}
 ```
+Copy the graph code snippet to the editor in the Jaseci Studio and register the graph archetype.
 
 ## Walker
 
 Walkers traverse the nodes of the graph triggering execution at the node level. To get more information about walkers you can go [here](../../development/abstractions/walkers)
 
-The `init` walker works as the main method of the Jac program. Let's create the `init` walker to `spawn` the graph.
+The `init` walker works as the main method of the Jac program. Let's create the `init` walker to `spawn` the graph. Now all you need is to create a walker to initiate the graph. Let's can do that in a similar way. Use following code to create the walker archetype in Jaseci Studio.
 
-```
+```jac
 walker init {
     root: spawn here ++> graph::shop;
 }
 ```
 
-## Executing a `jac` Program
+## Executing Graph with Jaseci Studio
+
+You can execute `walker` in Jaseci Studio with just few clicks. Goto "Run Walker" tab (Next to the "Editor" tab). select the init walker from the drop down list and hit the "Run Now" button. After execution of init walker you will see following result in the results window.
+
+![Jaseci Studio Init Execution](img/init_walker_execution.png)
+
+Goto the graph tab in the left side bar and select the `uuid` from the Select Graph drop down. You will see a graph like this.
+
+![Jaseci Studio Shop Graph](./img/shop_root.png)
+
+Double click on the yellow color product catalog node to view all attached product nodes.
+
+![Jaseci Studio Shop Graph](./img/shop_root_detailed.png)
+
+Now you have created a shop graph in Jaseci Studio, in next sections we will do basic operations like checking the inventory, purchasing and selling items from product catalogue.
+
+You can access all the archetypes you created in the jac program through the Archetype tab in the left sidebar of Jaseci Studio as in below image.
+
+![Jaseci Studio Archetype](./img/studio_architype.png)
+
+## Executing a `jac` Program in Terminal
 
 Save the above codes in a file called `shop.jac`. `.jac` is the file extension for jac program. Jac program can execute in a `jsctl` shell with `jac run` command.
 
@@ -131,113 +161,3 @@ You can view the graphical view of the graph structure here at [Graphviz](https:
 
 ![Shop Graph](img/shop_graph.png)
 
-## View Graph with Jaseci Studio
-
-Jaseci Studio is a useful tool in the Jaseci ecosystem for viewing and executing graphs. In this section, we will explore how to use Jaseci Studio to view the shop graph. We assume that you have already set up the Jaseci server and installed the latest version of Jaseci Studio.
-
-First let's build the jac program we created with following command.
-
-```bash
-jaseci > jac build shop.jac
-Build of shop.jir complete!
-```
-
-If the build succeeds, a file called `shop.jir` will be created in your current working directory. Register the built jac program with Sentinel using the following command.
-
-```bash
-jaseci > sentinel register shop.jir -set_active true -mode ir
-[
-  {
-    "version": null,
-    "name": "shop.jir",
-    "kind": "generic",
-    "jid": "urn:uuid:936dec51-c6b1-45c7-ae5e-176301d5f124",
-    "j_timestamp": "2023-05-17T13:05:55.622831",
-    "j_type": "sentinel",
-    "code_sig": "887752e8b6d2a763166cd94306110aaf"
-  }
-]
-```
-
-Sentinel is the overseer of walkers, nodes and edges. It is the abstraction Jaseci uses to encapsulate compiled walkers and archetype nodes and edges. The key operation with respect to sentinel is "register" a sentinel. You can think of registering a sentinel as a compiling your jac program. The walkers of a given sentinel can then be invoked and run on arbitrary nodes of any graph.
-
-Three things are happening with above sentinel command:
-
-1. We registered the `jir` we compiled earlier to new sentinel. This means this new sentinel now has access to all of our walkers, nodes and edges. `-mode ir` option specifies a `ji`r program is registered instead of a jac program.
-
-2. With `-set_active true` we set this new sentinel to be the active sentinel. In other words, this sentinel is the default one to be used when requests hit the Jac APIs, if no specific sentinels are specified.
-
-3. Sentinel register has automatically creates a new graph (if no currently active graph) and run the init walker on that graph. This behavior can be customized with the options `-auto_run` and `-auto_create_graph`.
-
-After registering the sentinel you can see the `jid` in the output or run following command to get the sentinel ID.
-
-```bash
-jaseci > sentinel get
-{
-  "version": null,
-  "name": "shop.jir",
-  "kind": "generic",
-  "jid": "urn:uuid:936dec51-c6b1-45c7-ae5e-176301d5f124",
-  "j_timestamp": "2023-05-17T13:05:55.622831",
-  "j_type": "sentinel",
-  "code_sig": "887752e8b6d2a763166cd94306110aaf"
-}
-```
-
-The `jid` field is the ID for the sentinel. (`jid` stands for jaseci ID). So, now you got the Jaseci ID, and sentinel got registered now you can update it's jac program with following command.
-
-```bash
-sentinel set -snt JID -mode ir movie.jir
-```
-
-If successful, the output will resemble the following;
-
-```bash
-jaseci > sentinel set -snt urn:uuid:f710c843-f284-4782-9bfe-c50710d4907f -mode ir movie.jir
-{
-  "response": "sentinel:generic:summarization.jir:urn:uuid:f710c843-f284-4782-9bfe-c50710d4907f registered and active!",
-  "success": true
-}
-```
-Now you have to log in the Jaseci Server from jsctl terminal with the credentials you have created while you creating super user with the following command in jsctl terminal.
-
-```bash
-login http://localhost:8000/
-```
-
-It will ask you for your username and password. You will see the following after a successful login.
-
-```bash
-jaseci > login http://localhost:8000/
-Username: email@gmail.com
-Password: password
-Login successful!
-```
-
-> **Note**
->
-> Notice the @ symbol in front of the @jaseci > command line prompt. This indicates that your jsctl session is now logged into a jsserv instance, while jaseci > indicates it is in a local session.
->
-
-While logged into the jsserv instance, you can register a sentinel on it with sentinel register command, just like how you were running it before in the local jsctl session
-
-```
-sentinel register movie.jir -set_active true -mode ir
-```
-
-Now open the Jaseci Studio and logging with the credentials of the super user.
-
-Goto the graph tab in the left side bar and select the `uuid` from the Select Graph drop down. You will see a graph like this.
-
-![Jaseci Studio Shop Graph](./img/shop_root.png)
-
-Double click on the yellow color product catalog node to view all attached product nodes.
-
-![Jaseci Studio Shop Graph](./img/shop_root_detailed.png)
-
-Now you have created a shop graph in Jaseci Studio, in next sections we will do basic operations like checking the inventory, purchasing and selling items from product catalogue.
-
-
-You can access all the archetypes you created in the jac program through the Archetype tab in the left sidebar of Jaseci Studio as in below image.
-
-![Jaseci Studio Archetype](./img/studio_architype.png)
