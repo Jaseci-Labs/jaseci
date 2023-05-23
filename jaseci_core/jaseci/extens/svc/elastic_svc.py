@@ -66,7 +66,7 @@ class ElasticService(JsOrc.CommonService):
         - Data stream for core* and app* index pattern
         - Index template with the data-streams-mappings component mapping rules
             - @timestamp is converted to date field type
-            - text fields are coverted as keywords for search
+            - text fields are converted as keywords for search
         - An index lifecycle management (ILM) policy
             - hot index for 7 days or 5GB max size
             - delete indices older than 30 days
@@ -104,11 +104,13 @@ class ElasticService(JsOrc.CommonService):
                         # Strip out color code from message before sending to elastic
                         msg = record.getMessage()
                         msg = re.sub(r"\033\[[0-9]*m", "", msg)
+                        ts = "%s.%03d" % (
+                            logging.Formatter().formatTime(record, "%Y-%m-%dT%H:%M:%S"),
+                            record.msecs,
+                        )
 
                         elastic_record = {
-                            "@timestamp": logging.Formatter().formatTime(
-                                record, "%Y-%m-%dT%H:%M:%S"
-                            ),
+                            "@timestamp": ts,
                             "message": msg,
                             "level": record.levelname,
                         }
