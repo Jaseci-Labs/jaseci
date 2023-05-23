@@ -29,8 +29,6 @@ walker discussion_analysis {
         "I think what's interesting from the conversation is that the more sustainably idea encompasses a whole wide spread of different approaches and encompass everything from plastics to plant based foods.",
         "I think you're right about that sustainable food would mean adding something like plant based materials to um"
     ];
-    std.log("I AM IN HERE");
-    std.log("APP LOGS");
     # summarization
     all_text = "";
     for tran in transcripts {
