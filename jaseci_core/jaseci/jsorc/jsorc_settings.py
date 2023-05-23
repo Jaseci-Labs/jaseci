@@ -157,6 +157,7 @@ class JsOrcSettings:
         "index_patterns": ["core*", "app*"],
         "data_stream": {},
         "composed_of": ["data-streams-mappings"],
+        "priority": 500,
         "template": {"settings": {"index.lifecycle.name": ELASTIC_ILM_POLICY_NAME}},
     }
 
