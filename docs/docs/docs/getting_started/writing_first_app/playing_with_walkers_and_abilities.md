@@ -8,7 +8,7 @@ description: Purchasing and Selling items in Shop.
 
 ## Checks the inventory
 
-Walkers works as methods in traditional programming languages. Here is an example walker to get the current inventory of items in the shop.
+Walkers are "robots" that can traverse the graph and process data stored in the graph. Here is an example walker to get the current inventory of items in the shop.
 
 In this step, we will introduce a new `walker` archetype named `inventory` and execute it to check the inventory. Simply copy and paste the following code into the code editor in the archetype tab, and then click on the "Register Archetype" button. Then you can observe that a new archetype has been created under walker tab as in the image.
 
@@ -47,11 +47,12 @@ node product {
 
 ![Product node archetype update example](img/product_node_archetype.png)
 
+Breaking down the walker code:
 -  `check` is an ability of the product node. Which gives an ability to return current stock of the product node.
-- `can check with inventory entry` This lines defines `check` ability to executes only when inventory walker enters into product node.
+- `can check with inventory entry` This lines define `check` ability to executes only when inventory walker enters into product node.
 - `visitor.products[here.name] = here.stock;` Here the `here.name` represents the name of the current node and `here.stock` represents the stock of the current node. To get more context of the `here` keyword go to [here].
 
-To tryout this newly created walker in the Jaseci Studio click on the "run walker" and select inventory walker from the drop down list. Then click on "Run Now". Then the inventory walker will run on the product node and will return the output in the result box as follows;.
+To execute this newly created walker in the Jaseci Studio click on the "run walker" and select inventory walker from the drop down list. Then click on "Run Now". Then the inventory walker will run on the product node and will return the output in the result box as follows;.
 
 ![Jaseci Studio Archetype Inventory walker](img/inventory_walker.png)
 
@@ -107,6 +108,8 @@ node product {
 - `here.stock += visitor.purchase_amount;` This will increase the stock by `purchase` amount. In this line `here` represents the current node while `visitor` represents the walker which is visiting the node at the moment.
 - `std.log("Stock for " + here.name + " up to " + (here.stock).str);` This is a log statement. Logging in Jaseci can be done with `std.log`.
 
+Update the product node architype by replacing the current code for that node in studio and use `Register Architype`.
+
 To execute the purchase walker, we need to perform a few additional steps. The purchase walker requires a list of parameters. In Jaseci Studio, we can provide these parameters as a json object. Follow these instructions:
 
 1. Click on the "run walker" tab.
@@ -126,7 +129,7 @@ To execute the purchase walker, we need to perform a few additional steps. The p
 
 You will see the output in the result box as in the above image.
 
-Now you can check the inventory again to see if the stock has been updated with the purchase operations.
+
 
 ![Check inventory after purchase](img/check_inventory_after_purchase.png)
 
@@ -145,6 +148,7 @@ Now you can check the inventory again to see if the stock has been updated with 
   "yielded": false
 }
 ```
+Alternatively, you can go to the graph viewer, select the corresponding product node and use the `Run Walker` section on the right side to spawn the walker on that node.
 
 Now run the `purchase` walker with different parameter values and observe the inventory.
 
@@ -176,6 +180,7 @@ walker sell {
 
 As in above all examples here we have to add a node ability to the `product` node. Here is the updated node with `stock_down` node ability.
 
+We need to update the node architype one more time via `Register Architype`.
 ```jac
 node product {
     has name;

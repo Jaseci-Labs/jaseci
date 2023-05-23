@@ -182,7 +182,7 @@ sentinel register shop.jir -set_active true -mode ir
 
 Now open the Jaseci Studio and logging with the credentials of the super user which you just created.
 
-Goto the graph tab in the left side bar and select the `uuid` from the Select Graph drop down. You will see a graph like this.
+Go to the graph tab in the left side bar and select the `uuid` from the Select Graph drop down. You will see a graph like this.
 
 ![Jaseci Studio Shop Graph](./img/shop_root.png)
 
