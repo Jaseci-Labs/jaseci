@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.schedules import crontab
 from celery.app.trace import build_tracer
 from celery.app.control import Inspect
 from celery.backends.base import DisabledBackend
@@ -107,6 +108,28 @@ class TaskService(JsOrc.CommonService):
         return self.queue.delay(wlk.jid, nd.jid, args).task_id
 
     ###################################################
+    #                SCHEDULED QUEUING                #
+    ###################################################
+
+    def add_scheduled_queue(
+        self, queue_type: object, name: str, schedule: dict, body: dict
+    ):
+        return None
+
+    def get_scheduled_queues(
+        self,
+        limit: int = 10,
+        offset: int = 0,
+        asc: bool = True,
+        name: str = None,
+        master=False,
+    ):
+        return []
+
+    def delete_scheduled_queue(self, scheduled_queue_id: int, master):
+        return None
+
+    ###################################################
     #                     CLEANER                     #
     ###################################################
 
@@ -118,3 +141,15 @@ class TaskService(JsOrc.CommonService):
 
     def on_delete(self):
         self.terminate_daemon("worker", "scheduler")
+
+    ###################################################
+    #                      UTILS                      #
+    ###################################################
+
+    def get_task_name(self, task):
+        cls = type(task)
+        module = cls.__module__
+        name = cls.__qualname__
+        if module is not None and module != "__builtin__":
+            name = module + "." + name
+        return name
