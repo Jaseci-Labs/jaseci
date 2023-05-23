@@ -11,7 +11,7 @@ DEFAULT_MSG = "Skipping scheduled walker!"
 
 
 class Queue(Task):
-    def run(self, wlk, nd, args):
+    def run(self, wlk: str, nd: str, args):
         hook = JsOrc.hook()
 
         wlk = hook.get_obj_from_store(wlk)
@@ -34,7 +34,7 @@ class ScheduledWalker(Task):
     def get_obj(self, jid):
         return self.hook.get_obj_from_store(jid)
 
-    def run(self, mst, wlk, ctx, nd=None, snt=None):
+    def run(self, mst, wlk="init", ctx: dict = {}, nd: str = None, snt: str = None):
         self.hook = JsOrc.hook()
 
         if mst:
