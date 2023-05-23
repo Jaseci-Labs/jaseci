@@ -10,6 +10,8 @@ description: Purchasing and Selling items in Shop.
 
 Walkers works as methods in traditional programming languages. Here is an example walker to get the current inventory of items in the shop.
 
+In this step, we will introduce a new `walker` archetype named `inventory` and execute it to check the inventory. Simply copy and paste the following code into the code editor in the archetype tab, and then click on the "Register Archetype" button. Then you can observe that a new archetype has been created under walker tab as in the image.
+
 ```jac
 walker inventory {
     has products = {};
@@ -21,12 +23,15 @@ walker inventory {
     }
 }
 ```
+
+![Inventory archetype creation example](img/inventory_archetype.png)
+
 - `has products = {}` This defines empty variable for products. This is a dictionary.
 - `root: take --> node::product_catalog` This line says walker to traverse through `product_catalog` nodes.
 - `product_catalog: take --> node::product` This line says walker to traverse through `product` nodes;
 - `with exit {report products;}` This reports(returns) the return value from product nodes when exists from the product node.
 
-To return the inventory from the product node we have to modify the product node which we already has in our jac program.
+In order to retrieve the inventory from the product node, we need to modify the existing product node archetype in our Jac program. To perform this, click on the "view code" icon of the product node archetype and replace the existing code with the following code snippet. Once done, click on the "register archetype" button again to save the changes.
 
 ```jac
 node product {
@@ -40,44 +45,17 @@ node product {
 }
 ```
 
+![Product node archetype update example](img/product_node_archetype.png)
+
 -  `check` is an ability of the product node. Which gives an ability to return current stock of the product node.
 - `can check with inventory entry` This lines defines `check` ability to executes only when inventory walker enters into product node.
 - `visitor.products[here.name] = here.stock;` Here the `here.name` represents the name of the current node and `here.stock` represents the stock of the current node. To get more context of the `here` keyword go to [here].
 
-Copy the updated `product` node and the `inventory` walker into `shop.jac` program and execute it to see the following output.
-
-Here we are running a specific walker. So use following command in the `jsctl` shell to run the `inventory` walker.
-
-```
-jaseci > jac run shop.jac -walk inventory
-```
-
-The `walk` defines which walker to run. When we leave this parameter empty the `init` walker will run buy default. You can get more context on walkers [here](../../development/abstractions/walkers)
-
-```json
-{
-  "success": true,
-  "report": [
-    {}
-  ],
-  "final_node": "urn:uuid:31c5607a-074c-4524-82bc-63dbc3d31b91",
-  "yielded": false
-}
-```
-
-- `report` represents the return value from the walker, but here you will see an empty dictionary as the output because we haven't add any stocks yet.
-
-You can tryout this newly created walker in the Jaseci Studio as well, for that repeat the same steps to build the jac program and register with sentinel in the previous section. Now open and log into the Jaseci Studio, click on the archetype tab;
-
-![Jaseci Studio Archetype](img/studio_architype.png)
-
-You can choose the `product` node from the node archetypes. You will see the code of the product node which you were creating with the `shop.jac` program.
-
-![Jaseci Studio Archetype Nodes](img/node_archtypes.png)
-
-Next click on the "run walker" and select inventory walker from the drop down list. Then click on "Run Now". Then the inventory walker will run on the product node and will return the output in the result box as follows;.
+To tryout this newly created walker in the Jaseci Studio click on the "run walker" and select inventory walker from the drop down list. Then click on "Run Now". Then the inventory walker will run on the product node and will return the output in the result box as follows;.
 
 ![Jaseci Studio Archetype Inventory walker](img/inventory_walker.png)
+
+- `report` represents the return value from the walker, but here you will see an empty dictionary as the output because we haven't add any stocks yet.
 
 ## Purchasing items
 
@@ -85,7 +63,7 @@ Now to add items into the stocks we have to purchase items. In this section we a
 
 ### Walker to Purchase items
 
-To purchase items to stock we will define another walker named `purchase`;
+To purchase items to stock we will define another walker named `purchase`; As in the previous step register the `purchase` walker archetype in Jaseci studio.
 
 ```jac
 walker purchase {
@@ -129,57 +107,12 @@ node product {
 - `here.stock += visitor.purchase_amount;` This will increase the stock by `purchase` amount. In this line `here` represents the current node while `visitor` represents the walker which is visiting the node at the moment.
 - `std.log("Stock for " + here.name + " up to " + (here.stock).str);` This is a log statement. Logging in Jaseci can be done with `std.log`.
 
-Now let's update the `shop.jac` program with above two code snippets. At this step before we run the walker we have to use `sentinel register` command. This will create a graph if there is graph not already created. Run the following command in `jsctl` shell.
+To execute the purchase walker, we need to perform a few additional steps. The purchase walker requires a list of parameters. In Jaseci Studio, we can provide these parameters as a json object. Follow these instructions:
 
-
-```bash
-jaseci> sentinel register -mode code shop.jac
-[
-  {
-    "version": null,
-    "name": "shop.jac",
-    "kind": "generic",
-    "jid": "urn:uuid:59266be7-d44a-4641-b2c9-0a304a289346",
-    "j_timestamp": "2023-05-03T17:41:52.750294",
-    "j_type": "sentinel",
-    "code_sig": "edcbb1abaf45cb2d5c04146e65e7bde7"
-  },
-  {
-    "name": "root",
-    "kind": "node",
-    "jid": "urn:uuid:28c78e89-4ed6-4936-b933-6c65c5b50c7a",
-    "j_timestamp": "2023-05-03T17:41:52.764209",
-    "j_type": "graph",
-    "context": {}
-  }
-]
-```
-
-Now you can run the `purchase` walker with the following command;
-
-```bash
-jaseci> walker run purchase -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"purchase_amount\": 2"}
-```
-
-Here we introduce a new bash command to run a specific walker.
-
-- `walker run purchase` This will execute the `purchase` walker.
-- `-ctx` This assigns the parameters defined inside the walker with `has` keywords. The parameters accepts in jac as a dictionary.
-
-When you execute the above command you may see the following output.
-
-```bash
-jaseci > walker run purchase -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"purchase_amount\": 2"}
-2023-05-03 23:12:18,571 - INFO - log: Stock for apple up to 4
-{
-  "success": true,
-  "report": [],
-  "final_node": "urn:uuid:5a4af2d4-428c-4fab-8936-1f0de9625344",
-  "yielded": false
-}
-```
-
-You can perform a similar step in Jaseci Studio as in the previous example. Rebuild and re-register the sentinel with the updated program, then log back into Jaseci Studio. You may noticed already when we run the purchase walker we have to list of parameters. In Jaseci Studio we can pass those parameters as a `json` object. Copy the following `json` into the "Enter PayLoad" box and select the `product` node and `purchase` walker and hit the "Run Now" button.
+1. Click on the "run walker" tab.
+2. Copy the following json into the "Enter Payload" box.
+3. Select the product node and the purchase walker.
+4. Click the "Run Now" button to initiate the execution.
 
 ```json
 {
@@ -211,7 +144,7 @@ jaseci > walker run inventory
 }
 ```
 
-Run the `purchase` walker with different parameter values and observe the inventory.
+Now run the `purchase` walker with different parameter values and observe the inventory.
 
 ## Sell products
 
@@ -272,11 +205,6 @@ node product {
 - `if(here.stock >= visitor.sell_amount)` this if statement execute if the current product stock is grater that the `sell_amount` of the `sell` walker visiting the product node.
 
 You can execute the `sell` walker and play with the Shop inventory management application which we just built.
-
-```bash
-jaseci> walker run sell -ctx "{\"product_category\": \"fruit\", \"product_name\": \"apple\", \"sell_amount\": 2"}
-```
-
 Similar to above purchase example you can tryout the sell walker in Jaseci Studio, here is an example snapshot.
 
 ```json

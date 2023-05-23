@@ -4,7 +4,7 @@ title: Building a Graph
 description: Building the Shop Graph with Product and Features.
 ---
 
-Welcome to this tutorial, where we will guide you through the creation of a simple inventory management system for a shop. Throughout this tutorial, we will utilize the Jac language, along with the Jaseci server and Jaseci studio. To begin, let's take the first step in our Jac program by constructing an initial version graph for the shop.
+Welcome to Jaseci First App tutorial, where we will guide you through the creation of a simple inventory management system for a shop. Throughout this tutorial, we will utilize the Jac language, along with the Jaseci server and Jaseci studio. To begin, let's take the first step in our Jac program by constructing an initial version graph for the shop.
 
 ### Nodes
 
@@ -25,12 +25,12 @@ node product {
 
 node product_catalog;
 ```
-To get more information about nodes you can go [here](../../development/abstractions/graphs#nodes)
+You can get more information about nodes [here](../../development/abstractions/graphs#nodes).
 
 ### Edges
 
 Edges are the link between nodes. They walker will use these edges to determine the next node to traverse to.
-The has key word is used to declare the variable "intent". This "intent" is what the Walker will use to to determine which node to go to next. To get more information about edges you can go [here](../../development/abstractions/graphs#edges)
+The has key word is used to declare the variable "intent". This "intent" is what the Walker will use to to determine which node to go to next. More information about edges can be found [here](../../development/abstractions/graphs#edges)
 
 
 The shop graph has one type of edges named `category`. We can define that as follows;
