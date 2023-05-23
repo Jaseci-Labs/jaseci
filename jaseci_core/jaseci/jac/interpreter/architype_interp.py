@@ -77,7 +77,7 @@ class ArchitypeInterp(Interp):
                 parent=self.parent(),
                 is_async=self.is_async,
             )
-            if kid[2].name == "namespaces":
+            if "namespaces" in [kid[2].name, kid[3].name]:
                 item.namespaces = self.run_namespaces(jac_ast.kid[2])
             self.build_object_with_supers(item, kid[-1])
         elif jac_ast.name == "graph_block":  # usedi n jac tests

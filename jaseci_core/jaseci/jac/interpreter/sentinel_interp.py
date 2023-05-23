@@ -63,8 +63,9 @@ class SentinelInterp(Interp):
     def load_architype(self, jac_ast):
         """
         architype:
-            KW_NODE NAME (COLON NAME)* (COLON INT)? attr_block
-            | KW_EDGE NAME (COLON NAME)* attr_block
+            KW_NODE NAME sub_name* attr_block
+            | KW_EDGE NAME sub_name* attr_block
+            | KW_TYPE NAME struct_block
             | KW_GRAPH NAME graph_block
             | KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
         """
@@ -84,10 +85,10 @@ class SentinelInterp(Interp):
             parent=self,
         )
 
-        if len(kid) > 2 and kid[2].name == "COLON":
+        if len(kid) > 2 and kid[2].name == "sub_name":
             for i in kid[2:]:
-                if i.name == "NAME":
-                    arch.super_archs.append(i.token_text())
+                if i.name == "sub_name":
+                    arch.super_archs.append(self.run_sub_name(i))
         if self.arch_ids.has_obj_by_name(arch.name, kind=arch.kind):
             self.arch_ids.destroy_obj_by_name(arch.name, kind=arch.kind)
         self.arch_ids.add_obj(arch)
