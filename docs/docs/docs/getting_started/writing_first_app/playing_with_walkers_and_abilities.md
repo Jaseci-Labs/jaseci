@@ -128,8 +128,10 @@ You will see the output in the result box as in the above image.
 
 Now you can check the inventory again to see if the stock has been updated with the purchase operations.
 
-```bash
-jaseci > walker run inventory
+![Check inventory after purchase](img/check_inventory_after_purchase.png)
+
+
+```json
 {
   "success": true,
   "report": [
