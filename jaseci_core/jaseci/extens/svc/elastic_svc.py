@@ -6,8 +6,7 @@ from requests import get, post, put
 from datetime import datetime
 from copy import copy
 from base64 import b64encode
-import threading
-import queue
+import multiprocessing
 import logging.handlers
 
 
@@ -91,11 +90,11 @@ class ElasticService(JsOrc.CommonService):
             for h in logger_instance.handlers
         )
         if not has_queue_handler:
-            log_queue = queue.Queue()
+            log_queue = multiprocessing.Queue()
             queue_handler = logging.handlers.QueueHandler(log_queue)
             logger_instance.addHandler(queue_handler)
 
-            def elastic_log_worker():
+            def elastic_log_worker(elastic_index):
                 while True:
                     try:
                         record = log_queue.get()
@@ -118,12 +117,14 @@ class ElasticService(JsOrc.CommonService):
                         elastic_record.update(
                             dict([(k, record.__dict__[k]) for k in extra_fields])
                         )
-                        self.app.doc(log=elastic_record, index=index)
+                        self.app.doc(log=elastic_record, index=elastic_index)
                     except Exception:
                         pass
 
-            worker_thread = threading.Thread(target=elastic_log_worker, daemon=True)
-            worker_thread.start()
+            worker_proc = multiprocessing.Process(
+                target=elastic_log_worker, args=(index,)
+            )
+            worker_proc.start()
 
 
 class Elastic:
