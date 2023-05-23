@@ -56,7 +56,7 @@ jaseci> jac run hello.jac
 Follow these links to access more tutorials:
 
 - [(Optional) VSCode Extension](https://docs.jaseci.org/docs/docs/getting_started/writing_first_app/setting_up_code_editor)
-- [Building a Graph](https://docs.jaseci.org/docs/docs/getting_started/writing_first_app/buidling_graph)
+- [Building a Graph](https://docs.jaseci.org/docs/docs/getting_started/writing_first_app/building_graph)
 - [Develop Walkers and Abilities](https://docs.jaseci.org/docs/docs/getting_started/writing_first_app/playing_with_walkers_and_abilities)
 
 # Advanced Tutorials
