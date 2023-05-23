@@ -145,8 +145,8 @@ class JsOrcSettings:
     ELASTIC_ILM_POLICY = {
         "policy": {
             "phases": {
-                "hot": {"actions": {"rollover": {"max_size": "5gb", "max_age": "7d"}}},
-                "delete": {"min_age": "30d", "actions": {"delete": {}}},
+                "hot": {"actions": {"rollover": {"max_size": "1gb", "max_age": "7d"}}},
+                "delete": {"min_age": "14d", "actions": {"delete": {}}},
             }
         }
     }
