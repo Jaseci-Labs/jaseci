@@ -339,18 +339,17 @@ class Interp(VirtualMachine):
 
     def run_report_action(self, jac_ast):
         """
-        report_action:
-            KW_REPORT expression SEMI
-                | KW_REPORT COLON NAME EQ expression SEMI;
+        report_action: KW_REPORT (sub_name EQ)? expression SEMI;
         """
         kid = self.set_cur_ast(jac_ast)
-        if kid[1].name == "COLON":
-            self.run_expression(kid[4])
-            if kid[2].token_text() in ["status", "status_code"]:
+        val = self.run_expression(kid[-2])
+        if kid[1].name == "sub_name":
+            name = self.run_sub_name(kid[1])
+            if name in ["status", "status_code"]:
                 self.report_status = self.pop().value
-            elif kid[2].token_text() == "custom":
+            elif name == "custom":
                 self.report_custom = jwv(self.pop().value, serialize_mode=True)
-            elif kid[2].token_text() == "error":
+            elif name == "error":
                 err = self.pop().value
                 if isinstance(err, str):
                     self.runtime_errors.append(err)
@@ -362,7 +361,6 @@ class Interp(VirtualMachine):
             else:
                 self.rt_error("Invalid report attribute to set", kid[2])
         else:
-            self.run_expression(kid[1])
             report = jwv(self.pop().value, serialize_mode=True)
             if not is_jsonable(report):
                 self.rt_error(f"Report {report} not Json serializable", kid[0])
