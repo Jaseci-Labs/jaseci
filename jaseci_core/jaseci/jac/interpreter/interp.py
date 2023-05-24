@@ -1258,7 +1258,8 @@ class Interp(VirtualMachine):
             wlk = self.parent().run_architype(name=name, kind="walker", caller=self)
         if wlk is None:
             self.rt_error(f"No walker {name} exists!", kid[-1])
-        wlk._to_await = to_await
+        else:
+            wlk._to_await = to_await
         return wlk
 
     def run_graph_ref(self, jac_ast):
