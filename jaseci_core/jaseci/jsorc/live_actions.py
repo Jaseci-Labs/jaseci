@@ -256,13 +256,15 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     #         continue
     #     else:
     #         break
+    before_lock = time.time()
     live_actions_lock.writer_acquire()
+    logger.info(f"live_actions_lock writer acquire in {time.time()-before_lock}")
     try:
         for act in actions_list:
             live_actions[act] = action_handler_wrapper
     finally:
         live_actions_lock.writer_release()
-
+    logger.info(f"live_actions_lock writer release in {time.time()-before_lock}")
     # module intialization completes, set process status as ready
     act_procs[mod]["status"] = "READY"
 
@@ -478,7 +480,11 @@ def load_remote_actions(url, ctx: dict = {}):
     try:
         spec = requests.get(url.rstrip("/") + ACTIONS_SPEC_LOC, headers=headers)
         spec = spec.json()
+        before_lock = time.time()
         live_actions_lock.writer_acquire()
+        logger.info(
+            f"live_actions_lock writer acquire in {time.time()-before_lock} Sec"
+        )
         try:
             for i in spec.keys():
                 live_actions[i] = gen_remote_func_hook(url, i, spec[i])
@@ -492,6 +498,9 @@ def load_remote_actions(url, ctx: dict = {}):
                         logger.error(e)
         finally:
             live_actions_lock.writer_release()
+        logger.info(
+            f"live_actions_lock writer release in {time.time()-before_lock} Sec"
+        )
         return True
 
     except Exception as e:
