@@ -106,6 +106,9 @@ class AbstractJacAPIView(APIView):
             api_result_str = json.dumps(api_result)[:OBJECT_LOG_LIMIT]
         except TypeError:
             api_result_str = str(api_result)[:OBJECT_LOG_LIMIT]
+        logger.info("=================++++++++++++++++=======================")
+        logger.info("result value: ", api_result_str)
+        logger.info("==============++++++++++++++++========================")
         log_dict["api_response"] = api_result_str
 
         log_dict["extra_fields"] = list(log_dict.keys())
