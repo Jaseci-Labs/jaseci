@@ -115,7 +115,7 @@ class AbstractJacAPIView(APIView):
                     type(self).__name__, request, tot_time
                 )
         except Exception as e:
-            logger.error("Exception: {e}")
+            logger.error(f"Exception: {e}")
 
     def proc_prime_ctx(self, request, req_data):
         try:
