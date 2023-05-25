@@ -107,7 +107,8 @@ class AbstractJacAPIView(APIView):
         except TypeError:
             api_result_str = str(api_result)[:OBJECT_LOG_LIMIT]
         try:
-            if eval(api_result_str)["success"] is True:
+            valid_data = json.loads(api_result_str)
+            if valid_data["success"] is True:
                 log_dict["api_response"] = api_result_str
                 log_dict["extra_fields"] = list(log_dict.keys())
                 logger.info(log_str, extra=log_dict)
@@ -115,9 +116,7 @@ class AbstractJacAPIView(APIView):
                     type(self).__name__, request, tot_time
                 )
         except Exception as e:
-            logger.error(
-                f"Exception: {e}\n{type(eval(api_result_str))}\n{eval(api_result_str)}"
-            )
+            logger.error(f"Exception: {e}\n{type(valid_data)}\n{valid_data}")
 
     def proc_prime_ctx(self, request, req_data):
         try:
