@@ -3,7 +3,7 @@ from base64 import b64encode
 from io import BytesIO
 from tempfile import _TemporaryFileWrapper
 from time import time
-
+import ast
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -107,7 +107,7 @@ class AbstractJacAPIView(APIView):
         except TypeError:
             api_result_str = str(api_result)[:OBJECT_LOG_LIMIT]
         try:
-            if api_result_str["success"] is True:
+            if ast.literal_eval(api_result_str)["success"] is True:
                 log_dict["api_response"] = api_result_str
                 log_dict["extra_fields"] = list(log_dict.keys())
                 logger.info(log_str, extra=log_dict)
@@ -115,7 +115,9 @@ class AbstractJacAPIView(APIView):
                     type(self).__name__, request, tot_time
                 )
         except Exception as e:
-            logger.error(f"Exception: {e}\n{type(api_result_str)}\n{api_result_str}")
+            logger.error(
+                f"Exception: {e}\n{type((ast.literal_eval))}\n{api_result_str}"
+            )
 
     def proc_prime_ctx(self, request, req_data):
         try:
