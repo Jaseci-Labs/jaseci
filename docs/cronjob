@@ -1,0 +1,1 @@
+* * * * * cd /jaseci2/ && git pull && cp -r /jaseci2/docs/* /docusaurus/jaseci-docs/
