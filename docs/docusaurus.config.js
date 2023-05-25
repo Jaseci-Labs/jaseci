@@ -39,7 +39,7 @@ const config = {
           routeBasePath: '/',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl:
-            'https://github.com/Jaseci-Labs/jaseci',
+            'https://github.com/Jaseci-Labs/jaseci2/tree/main/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -62,12 +62,18 @@ const config = {
 
           {
             type: 'docSidebar',
+            sidebarId: 'internalsSidebar',
+            position: 'left',
+            label: 'Internals',
+          },
+          {
+            type: 'docSidebar',
             sidebarId: 'docsSidebar',
             position: 'left',
             label: 'Docs',
           },
           {
-            href: 'https://github.com/Jaseci-Labs/jaseci',
+            href: 'https://github.com/Jaseci-Labs/jaseci2',
             label: 'GitHub',
             position: 'right',
           },
