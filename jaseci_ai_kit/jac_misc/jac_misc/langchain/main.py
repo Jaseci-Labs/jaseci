@@ -23,6 +23,9 @@ def setup(flow_type: str = "json", **kwargs):
     elif flow_type == "qa-flow":
         chat_flows[uid] = QuestionAnsweringFlow(**kwargs, uid=uid)
         return
+    elif flow_type == "document-chat-flow":
+        chat_flows[uid] = DocumentChatFlow(**kwargs, uid=uid)
+        return
     logger.error("Flow type not found. Please use either 'json' or 'qa-flow'.")
 
 
@@ -86,4 +89,53 @@ class QuestionAnsweringFlow:
         output = self.chain(
             {"input_documents": docs, "question": query}, return_only_outputs=True
         )
-        return output["output_text"].strip()
+        return {"output": output["output_text"].strip()}
+
+
+class DocumentChatFlow:
+    def __init__(
+        self,
+        text: str,
+        uid: str,
+        prefix: str = DEFAULT_PREFIX,
+        openai_api_key=os.environ.get("OPENAI_API_KEY"),
+        **kwargs,
+    ):
+        from langchain.embeddings.openai import OpenAIEmbeddings
+        from langchain.vectorstores import Chroma
+        from langchain.text_splitter import CharacterTextSplitter
+        from langchain.llms import OpenAI
+        from langchain.chains import ConversationalRetrievalChain
+        from langchain.document_loaders import TextLoader
+
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+        if not (os.path.isfile(text) and text.endswith(".txt")):
+            import tempfile
+
+            file = tempfile.NamedTemporaryFile(mode="w", delete=False)
+            file.write(text)
+            file.close()
+            text = file.name
+        loader = TextLoader(text)
+        documents = loader.load()
+        text_splitter = CharacterTextSplitter(
+            chunk_size=kwargs.get("chunk_size", 1000),
+            chunk_overlap=kwargs.get("chunk_overlap", 0),
+        )
+        documents = text_splitter.split_documents(documents)
+        embeddings = OpenAIEmbeddings(
+            openai_api_key=openai_api_key, **kwargs.get("embeddings_kwargs", {})
+        )
+        vectorstore = Chroma.from_documents(documents, embeddings)
+
+        from langchain.llms import OpenAI
+
+        llm = OpenAI(openai_api_key=openai_api_key, **kwargs.get("llm_kwargs", {}))
+
+        self.chain = ConversationalRetrievalChain.from_llm(
+            llm, vectorstore.as_retriever()
+        )
+
+    def __call__(self, query: str, chat_history: list = []):
+        result = self.chain({"question": query, "chat_history": chat_history})
+        return {"answer": result["answer"].strip()}
