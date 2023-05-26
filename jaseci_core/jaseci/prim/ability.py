@@ -50,7 +50,9 @@ class Ability(Element, JacCode, Interp):
         if not interp.check_builtin_action(action_name):
             interp.rt_error(f"Cannot execute {action_name} - Not Found")
             return None
+        before_lock = time.time()
         live_actions_lock.reader_acquire()
+        logger.info(f"run_action reader acquire in {time.time()-before_lock}")
         try:
             func = live_actions[action_name]
             logger.info(f"got func {func}")
@@ -109,6 +111,7 @@ class Ability(Element, JacCode, Interp):
                     raise
         finally:
             live_actions_lock.reader_release()
+        logger.info(f"run_action reader release in {time.time()-before_lock}")
         t = time.time() - ts
         action_manager.post_action_call_hook(action_name, t)
         return result
