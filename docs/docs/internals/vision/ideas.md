@@ -13,9 +13,9 @@ This document represents our Jaseci Enhancement Proposals system (JSEP).
 ### JSEP 1 - JSEP Purpose and Guidelines
 ---
 #### Details
-| Author      | Type | Title | 
+| Author      | Type | Quick Description | 
 | ----------- | ------ | ------ |
-| Jason Mars  | Process | JSEP 1 - JSEP Purpose and Guidelines |
+| Jason Mars  | Process | Specifying the Jaseci enhancement proposal process and guidelines |
 
 #### Description
 This process is inspired by python's pep system but much simplified. 
