@@ -25,4 +25,6 @@ Every PR that is a new feature and/or bug fix must have documentation updates to
 
 No exceptions to these rules. If a PR sneaks in that doesn't follow this protocol, it is subject to reversion. 
 
-## How to Inject Ideas on Language Improvement/Suggestions  
+## How to Inject Ideas on Language Improvement/Suggestions
+
+Visit our [Ideas (JSEPs) page](./ideas.md) and follow the process. Everyone is welcome to propose ideas!! 
