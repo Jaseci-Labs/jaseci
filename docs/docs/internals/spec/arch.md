@@ -34,7 +34,7 @@ To enable data-spatial programming, Jaseci and Jac introduce four key abstractio
 
 We submit, it is a lot stranger to think of passing rooms and locations to a fixed cleaning function and returning the cleaned room/location back to a caller. 
 
-By combining these abstractions, Jaseci and Jac empower programmers to implement data-spatial programming effectively and leverage the inherent spatial and intuitive thinking processes for problem-solving. It's also important to note, there is a theoretical equivalence in programming expressivity of data-spacial programming to OOP or any other model. 
+By combining these abstractions, Jaseci and Jac empower programmers to implement data-spatial programming effectively and leverage the inherent spatial and intuitive thinking processes for problem-solving. It's also important to note, there is a theoretical equivalence in programming expressivity of data-spatial programming to OOP or any other model. 
 
 > **Important**
 > 
