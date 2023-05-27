@@ -1,0 +1,25 @@
+# Django #
+*.log
+*.pot
+*.pyc
+__pycache__
+db.sqlite3
+media
+migrations
+venv
+
+# General #
+*.egg-info/
+*.egg
+
+# Others #
+.coverage
+.session
+.DS_Store
+build
+.vscode
+*Zone.Identifier
+.DS_Store
+
+*.rdb
+node_modules
