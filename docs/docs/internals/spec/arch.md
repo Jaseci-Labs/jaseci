@@ -20,7 +20,7 @@ Jaseci 2 is the next version of the computational runtime stack, designed to sup
 #### Multi User Assumption
 #### Cross Execution Persistance Model
 #### Late Binding of Calls
-#### Live Element Replacement
+#### Code-Spatial Modularity and Live Replacement
 #### Language Level Compute Scale Agnosticism
 ## Data-Spatial Programming Model and Abstractions
 ### Motivation and Case For
