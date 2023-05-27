@@ -70,8 +70,7 @@ pip install flake8 flake8-import-order flake8-docstrings flake8-comprehensions f
 2. Create a `.flake8` configuration file in the root directory of your project with the following contents:
 ```ini
 [flake8]
-ignore = E203, E266, E501, W503, F401
+ignore = E501
 exclude = .git, __pycache__, .venv
-
 plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations, pep8-naming
 ```
