@@ -28,3 +28,50 @@ pre-commit install
 > Note
 >
 > You'll need to add `--max-line-length=88 --extend-ignore=E203` arguments to `flake8` for linting. We recommend setting it up in your preferred code editor or IDE, e.g. VSCode.
+
+
+## Linting Policy
+
+The linting process for Jaseci ensures code quality, consistency, and readability. We utilize Flake8 as the primary linter, along with the following plugins: flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations, and pep8-naming. These plugins enhance code quality and adherence to best practices.
+
+Flake8 is a popular Python linter that combines multiple individual tools to analyze Python code. It checks for style violations, potential bugs, and adheres to the Python Enhancement Proposals (PEP) guidelines.
+
+### Plugin Rationale
+
+#### flake8_import_order
+The flake8_import_order plugin enforces a consistent import order within Python modules, aiding readability and maintainability. It ensures that imports are organized in a standardized manner, making it easier to locate and understand module dependencies.
+
+#### flake8_docstrings
+The flake8_docstrings plugin enforces consistent and descriptive documentation strings (docstrings) for Python functions, classes, and modules. Well-documented code improves readability, facilitates understanding, and promotes code reuse. This plugin ensures adherence to standard docstring conventions, making the codebase more maintainable and accessible.
+
+#### flake8_comprehensions
+The flake8_comprehensions plugin enforces best practices when using list comprehensions, dictionary comprehensions, and generator expressions in Python. It promotes readable and concise code while avoiding unnecessary complexity. By adhering to the plugin's suggestions, developers can write efficient and understandable code.
+
+#### flake8_bugbear
+The flake8_bugbear plugin extends the capabilities of Flake8 by providing additional checks for common programming errors and code smells. It detects potential bugs and suggests improvements based on common pitfalls. The plugin helps catch subtle mistakes that could lead to runtime errors or suboptimal code.
+
+#### flake8_annotations
+The flake8_annotations plugin encourages consistent and appropriate usage of type annotations in Python code. It ensures that functions, variables, and parameters are properly annotated, improving code clarity and reducing the chances of type-related errors. Enforcing type annotations contributes to maintainable and robust codebases.
+
+#### pep8-naming
+The pep8-naming plugin enforces naming conventions specified in PEP8 for variables, functions, classes, and modules. It maintains consistency and readability across the codebase. By adhering to standard naming conventions, the code becomes more intuitive, allowing future contributors to quickly understand and navigate the project.
+
+### Configuration and Integration
+
+#### Installation
+To apply the linting policy with the specified plugins, follow these steps:
+
+1. Install Flake8 and the additional plugins using the following command:
+```shell
+pip install flake8 flake8-import-order flake8-docstrings flake8-comprehensions flake8-bugbear flake8-annotations pep8-naming
+```
+
+#### Configuration File
+2. Create a `.flake8` configuration file in the root directory of your project with the following contents:
+```ini
+[flake8]
+ignore = E203, E266, E501, W503, F401
+exclude = .git, __pycache__, .venv
+
+plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations, pep8-naming
+```
