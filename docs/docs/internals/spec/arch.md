@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
-description: Jaseci 2.0 Architecture
-title: Architecture of Jaseci
+description: Full Specification of Jaseci 2
+title: Jaseci 2 Full Spec
 ---
 
 # Jaseci 2 Design Specifications
@@ -10,8 +10,20 @@ title: Architecture of Jaseci
 
 Jaseci 2 is the next version of the computational runtime stack, designed to support data-spatial programming and provide a seamless integration with CPython. This document outlines the key features and changes in Jaseci 2, including the retention of novel data-spatial abstractions, full CPython interoperability, introduction of a new neural network abstraction, and the reorganization of existing abstractions for enhanced orthogonality and modularity.
 
+## Application Level Semantics
+
+### Motivation and Case For
+
+### Abstraction Details
+
+#### Arbitrary Computational Entry Point
+#### Multi User Assumption
+#### Cross Execution Persistance Model
+#### Late Binding of Calls
+#### Live Element Replacement
+#### Language Level Compute Scale Agnosticism
 ## Data-Spatial Programming Model and Abstractions
-### Overview
+### Motivation and Case For
 
 One of Jaseci's key contribution is in the support of a new programming model called data-spatial programming. This paradigm has the potential to revolutionize the way problems are approached and solved by visualizing code execution in close proximity to data. It encourages programmers to send code to data instead of the traditional approach of passing data temporally to fixed code blocks. The associated programming language, Jac, has been developed to facilitate the implementation of data-spatial programming concepts.
 
@@ -40,11 +52,18 @@ By combining these abstractions, Jaseci and Jac empower programmers to implement
 > 
 > This data-spatial programming model is implemented to superset OOP, similar to how OOP is introduced to superset functional/procedural paradigm in C++/Python/Java etc. 
 
-#### Conclusion
-
 Data-spatial programming, as supported by Jaseci and its associated programming language Jac, introduces a novel paradigm that shifts the traditional temporal approach to code execution. By encouraging programmers to visualize code moving through data and sending code to data, data-spatial programming taps into our natural human intuition. The key abstractions of walkers, nodes, edges, and abilities form the foundation of this paradigm, enabling dynamic and context-aware interactions with data. With Jaseci and Jac, programmers can unlock new possibilities and explore problem-solving from a fresh perspective.
 
-Jaseci 2 will retain its key novel data-spatial abstractions, namely nodes, edges, walkers, and abilities. These abstractions enable a shift in the programmer's mindset towards in-situ compute, where code and data are tightly coupled. By expressing all computations through near-data operations on a graph, code can move through the graph spatially, resulting in efficient and intuitive programming. The preservation of these abstractions ensures continuity with the previous version and maintains the core principles of data-spatial programming.
+### Abstraction Details
+
+#### Walkers
+#### Nodes
+#### Edges
+#### Abilities
+#### `here` and `visitor` Refs
+#### Spawn Operator
+#### Take Operator
+#### Report Operator
 
 ## Full CPython Interoperability
 
