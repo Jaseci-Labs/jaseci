@@ -14,5 +14,4 @@ repos:
     rev: 6.0.0
     hooks:
       - id: flake8
-        additional_dependencies: [pep8-naming]
-        exclude: ^tests/
+        additional_dependencies: [pep8-naming, flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations]

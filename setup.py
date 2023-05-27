@@ -1,4 +1,6 @@
-from setuptools import setup, find_packages
+"""Jaseci setup file."""
+
+from setuptools import find_packages, setup
 
 VERSION = "2.0.0"
 
