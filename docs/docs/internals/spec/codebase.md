@@ -74,3 +74,17 @@ ignore = E501
 exclude = .git, __pycache__, .venv
 plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations, pep8-naming
 ```
+
+## Codebase Organization
+
+### Folder structure
+| Folder                   | Description                                     |
+|--------------------------|-------------------------------------------------|
+| `/`                      | Base directory for project, organized with `setup.py` to create Jaseci pip package. |
+| `/docs`                  | Docusaurus documentation for Jaseci.            |
+| `/scripts`               | General utility scripts.                        |
+| `/jaseci`                | Source code for the project.                     |
+| `/jaseci/core`           | Core primitives for realizing Jaseci abstractions. |
+| `/jaseci/jac`            | Language transpilation tools.                   |
+
+
