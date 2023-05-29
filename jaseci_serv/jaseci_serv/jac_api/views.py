@@ -115,6 +115,9 @@ class AbstractJacAPIView(APIView):
                 JsOrc.get("action_manager", ActionManager).post_request_hook(
                     type(self).__name__, request, tot_time
                 )
+            else:
+                logger.info("+++++++++++++++++++++else++++++++++++++++++")
+                logger.info(f"false result is: {api_result_str}")
         except Exception as e:
             logger.error(f"Exception: {e}\n{success}")
 
