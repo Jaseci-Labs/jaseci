@@ -8,7 +8,7 @@ class JsOrcApi(CoreJsOrcApi):
     def jsorc_loadtest(
         self,
         test: str,
-        experiment: str = "",
+        experiment: list = [],
         mem: int = 0,
         policy: str = "all_local",
         experiment_duration: int = 180,
