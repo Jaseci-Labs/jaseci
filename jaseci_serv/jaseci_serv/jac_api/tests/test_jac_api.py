@@ -1446,6 +1446,59 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         )
         self.assertEqual(user_gph_id, res.data[0]["jid"])
 
+    def test_master_become_unbecome(self):
+        """Test that admin retains its privilege after become and unbecome a non-admin user"""
+
+        # check admin privilege
+        payload = {"op": "master_allusers"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertTrue("data" in res.json())
+
+        # become a non-admin user
+        payload = {
+            "op": "user_create",
+            "name": "yo@gmail.com",
+            "other_fields": {
+                "password": "yoyoyoyoyoyo",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        public_client = APIClient()
+        res = public_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        print(res.json())
+        non_admin_user_id = res.json()["user"]["jid"]
+        payload = {"op": "master_become", "mast": non_admin_user_id}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        print(res.json())
+
+        # check no admin privilege
+        payload = {"op": "master_allusers"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertFalse(res.json()["success"])
+
+        # unbecome
+        payload = {"op": "master_unbecome"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        # check admin privilege is back
+        payload = {"op": "master_allusers"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        print(res.json())
+        self.assertTrue("data" in res.json())
+
     def test_jac_report_custom(self):
         """Test API for running a walker"""
         payload = {"op": "graph_create"}
