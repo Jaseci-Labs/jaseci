@@ -6,17 +6,17 @@ edge dad;
 edge married;
 
 walker create_fam {
-    root {
+    can init with root entry {
         spawn here ++> node::man;
         spawn here ++> node::woman;
         --> node::man +<-[married]-> --> node::woman;
         take -->;
     }
-    woman {
+    can live with woman entry {
         son = spawn here <+[mom]+ node::man;
         son +-[dad]-> <-[married]->;
     }
-    man {
+    can chill with man entry {
         std.out("I didn't do any of the hard work.");
     }
 }

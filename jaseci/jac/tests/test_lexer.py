@@ -7,14 +7,6 @@ from jaseci.utils.test import TestCase
 class TestLexer(TestCase):
     """Test Jac lexer."""
 
-    def setUp(self: "TestLexer") -> None:
-        """Set up test case."""
-        return super().setUp()
-
-    def tearDown(self: "TestLexer") -> None:
-        """Tear down test case."""
-        return super().tearDown()
-
     def test_lexer(self: "TestLexer") -> None:
         """Basic test for lexer."""
         lexer = JacLexer()
@@ -29,7 +21,7 @@ class TestLexer(TestCase):
                 tokens[0].index,
                 tokens[0].end,
             ],
-            ["NAME", "node", 1, 0, 4],
+            ["KW_NODE", "node", 1, 0, 4],
         )
         self.assertEqual(
             [

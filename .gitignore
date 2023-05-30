@@ -20,6 +20,7 @@ build
 .vscode
 *Zone.Identifier
 .DS_Store
+parser.out
 
 *.rdb
 node_modules

@@ -19,6 +19,7 @@ class JacLexer(Lexer):
         "TYP_LIST",
         "TYP_DICT",
         "TYP_BOOL",
+        "TYP_BYTES",
         "KW_TYPE",
         "KW_GRAPH",
         "KW_NODE",
@@ -28,12 +29,9 @@ class JacLexer(Lexer):
         "KW_WITH",
         "KW_ENTRY",
         "KW_EXIT",
-        "KW_LENGTH",
-        "KW_KEYS",
         "KW_CONTEXT",
         "KW_INFO",
         "KW_DETAILS",
-        "KW_ACTIVITY",
         "KW_IMPORT",
         "KW_EDGE",
         "KW_WALKER",
@@ -47,10 +45,10 @@ class JacLexer(Lexer):
         "RBRACE",
         "SEMI",
         "EQ",
-        "PEQ",
-        "MEQ",
-        "TEQ",
-        "DEQ",
+        "ADD_EQ",
+        "SUB_EQ",
+        "MUL_EQ",
+        "DIV_EQ",
         "CPY_EQ",
         "KW_AND",
         "KW_OR",
@@ -67,7 +65,7 @@ class JacLexer(Lexer):
         "KW_YIELD",
         "KW_SKIP",
         "KW_REPORT",
-        "KW_DESTROY",
+        "KW_DELETE",
         "KW_TRY",
         "KW_REF",
         "DOT",
@@ -82,7 +80,7 @@ class JacLexer(Lexer):
         "KW_ANCHOR",
         "KW_HAS",
         "KW_GLOBAL",
-        "KW_PRIVATE",
+        "KW_HIDDEN",
         "COMMA",
         "KW_CAN",
         "PLUS",
@@ -95,6 +93,20 @@ class JacLexer(Lexer):
         "RPAREN",
         "LSQUARE",
         "RSQUARE",
+        "ARROW_L",
+        "ARROW_R",
+        "ARROW_BI",
+        "ARROW_L_p1",
+        "ARROW_L_p2",
+        "ARROW_R_p1",
+        "ARROW_R_p2",
+        "CARROW_L",
+        "CARROW_R",
+        "CARROW_BI",
+        "CARROW_L_p1",
+        "CARROW_L_p2",
+        "CARROW_R_p1",
+        "CARROW_R_p2",
     }
 
     # Ignored patterns
@@ -112,79 +124,98 @@ class JacLexer(Lexer):
     NULL = r"None"
     NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
 
+    # Keywords
+    NAME["str"] = "TYP_STRING"
+    NAME["int"] = "TYP_INT"
+    NAME["float"] = "TYP_FLOAT"
+    NAME["list"] = "TYP_LIST"
+    NAME["dict"] = "TYP_DICT"
+    NAME["bool"] = "TYP_BOOL"
+    NAME["bytes"] = "TYP_BYTES"
+    NAME["type"] = "KW_TYPE"
+    NAME["graph"] = "KW_GRAPH"
+    NAME["node"] = "KW_NODE"
+    NAME["ignore"] = "KW_IGNORE"
+    NAME["take"] = "KW_TAKE"
+    NAME["spawn"] = "KW_SPAWN"
+    NAME["with"] = "KW_WITH"
+    NAME["entry"] = "KW_ENTRY"
+    NAME["exit"] = "KW_EXIT"
+    NAME["context"] = "KW_CONTEXT"
+    NAME["info"] = "KW_INFO"
+    NAME["details"] = "KW_DETAILS"
+    NAME["import"] = "KW_IMPORT"
+    NAME["edge"] = "KW_EDGE"
+    NAME["walker"] = "KW_WALKER"
+    NAME["async"] = "KW_ASYNC"
+    NAME["sync"] = "KW_SYNC"
+    NAME["test"] = "KW_TEST"
+    NAME["assert"] = "KW_ASSERT"
+    NAME["and"] = "KW_AND"
+    NAME["or"] = "KW_OR"
+    NAME["if"] = "KW_IF"
+    NAME["elif"] = "KW_ELIF"
+    NAME["else"] = "KW_ELSE"
+    NAME["for"] = "KW_FOR"
+    NAME["to"] = "KW_TO"
+    NAME["by"] = "KW_BY"
+    NAME["while"] = "KW_WHILE"
+    NAME["continue"] = "KW_CONTINUE"
+    NAME["break"] = "KW_BREAK"
+    NAME["disengage"] = "KW_DISENGAGE"
+    NAME["yield"] = "KW_YIELD"
+    NAME["skip"] = "KW_SKIP"
+    NAME["report"] = "KW_REPORT"
+    NAME["del"] = "KW_DELETE"
+    NAME["try"] = "KW_TRY"
+    NAME["in"] = "KW_IN"
+    NAME["not"] = "NOT"
+    NAME["anchor"] = "KW_ANCHOR"
+    NAME["has"] = "KW_HAS"
+    NAME["global"] = "KW_GLOBAL"
+    NAME["hidden"] = "KW_HIDDEN"
+    NAME["can"] = "KW_CAN"
+
+    # Special Arrow Tokens
+    ARROW_L = r"<--"
+    ARROW_R = r"-->"
+    ARROW_BI = r"<-->"
+    ARROW_L_p1 = r"<-\["
+    ARROW_L_p2 = r"]-"
+    ARROW_R_p1 = r"-\["
+    ARROW_R_p2 = r"]->"
+    CARROW_L = r"<\+\+"
+    CARROW_R = r"\+\+>"
+    CARROW_BI = r"<\+\+>"
+    CARROW_L_p1 = r"<\+\["
+    CARROW_L_p2 = r"]\+"
+    CARROW_R_p1 = r"\+\["
+    CARROW_R_p2 = r"]\+>"
+
     # Token rules
-    TYP_STRING = r"str"
-    TYP_INT = r"int"
-    TYP_FLOAT = r"float"
-    TYP_LIST = r"list"
-    TYP_DICT = r"dict"
-    TYP_BOOL = r"bool"
-    KW_TYPE = r"type"
-    KW_GRAPH = r"graph"
-    KW_NODE = r"node"
-    KW_IGNORE = r"ignore"
-    KW_TAKE = r"take"
-    KW_SPAWN = r"spawn"
-    KW_WITH = r"with"
-    KW_ENTRY = r"entry"
-    KW_EXIT = r"exit"
-    KW_LENGTH = r"length"
-    KW_KEYS = r"keys"
-    KW_CONTEXT = r"context"
-    KW_INFO = r"info"
-    KW_DETAILS = r"details"
-    KW_ACTIVITY = r"activity"
-    KW_IMPORT = r"import"
-    KW_EDGE = r"edge"
-    KW_WALKER = r"walker"
-    KW_ASYNC = r"async"
-    KW_SYNC = r"sync"
-    KW_TEST = r"test"
-    KW_ASSERT = r"assert"
-    COLON = r":"
+    KW_AND = r"&&"
+    KW_OR = r"\|\|"
+    NOT = r"!"
     DBL_COLON = r"::"
+    COLON = r":"
     LBRACE = r"{"
     RBRACE = r"}"
     SEMI = r";"
     EQ = r"="
-    PEQ = r"\+="
-    MEQ = r"-="
-    TEQ = r"\*="
-    DEQ = r"/="
+    ADD_EQ = r"\+="
+    SUB_EQ = r"-="
+    MUL_EQ = r"\*="
+    DIV_EQ = r"/="
     CPY_EQ = r":="
-    KW_AND = r"and|&&"
-    KW_OR = r"or|\|\|"
-    KW_IF = r"if"
-    KW_ELIF = r"elif"
-    KW_ELSE = r"else"
-    KW_FOR = r"for"
-    KW_TO = r"to"
-    KW_BY = r"by"
-    KW_WHILE = r"while"
-    KW_CONTINUE = r"continue"
-    KW_BREAK = r"break"
-    KW_DISENGAGE = r"disengage"
-    KW_YIELD = r"yield"
-    KW_SKIP = r"skip"
-    KW_REPORT = r"report"
-    KW_DESTROY = r"destroy"
-    KW_TRY = r"try"
     KW_REF = r"&"
     DOT = r"\."
-    NOT = r"!|not"
     EE = r"=="
     LT = r"<"
     GT = r">"
     LTE = r"<="
     GTE = r">="
     NE = r"!="
-    KW_IN = r"in"
-    KW_ANCHOR = r"anchor"
-    KW_HAS = r"has"
-    KW_GLOBAL = r"global"
-    KW_PRIVATE = r"private"
     COMMA = r","
-    KW_CAN = r"can"
     PLUS = r"\+"
     MINUS = r"-"
     STAR_MUL = r"\*"
