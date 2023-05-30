@@ -1283,12 +1283,41 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertTrue(res.data["success"])
 
     def test_jac_admin_master_allusers(self):
-        """Test API for creating a graph"""
+        """Test API for getting all users information"""
         payload = {}
         res = self.sclient.post(
             reverse("jac_api:master_allusers"), payload, format="json"
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_jac_admin_master_allusers_last_login(self):
+        """Test API for getting user information include last login time"""
+        payload = {
+            "op": "master_create",
+            "name": "test@gmail.com",
+            "other_fields": {
+                "password": "abcd1234@#$%",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        login_client = APIClient()
+        payload = {"email": "test@gmail.com", "password": "abcd1234@#$%"}
+        res = login_client.post(reverse("user_api:token"), payload)
+
+        res = self.sclient.post(
+            reverse("jac_api:master_allusers"), payload, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        for i in res.json()["data"]:
+            if i["user"] == "test@gmail.com":
+                self.assertIsNotNone(i["last_login"])
+                return
+            self.fail("Test user does not exist in master_allusers response.")
 
     def test_jac_admin_master_allusers_search(self):
         """Test API for searching users"""
