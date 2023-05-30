@@ -1,5 +1,6 @@
 import re
 from jaseci.jsorc.jsorc import JsOrc
+from jaseci.jsorc.jsorc_settings import JsOrcSettings
 from jaseci.extens.svc.kube_svc import KubeService
 from jaseci.utils.utils import logger, app_logger
 from requests import get, post, put
@@ -8,6 +9,27 @@ from copy import copy
 from base64 import b64encode
 import multiprocessing
 import logging.handlers
+
+LOG_QUEUES = {}
+
+
+def format_elastic_record(record):
+    # Strip out color code from message before sending to elastic
+    msg = record.getMessage()
+    msg = re.sub(r"\033\[[0-9]*m", "", msg)
+    ts = "%s.%03d" % (
+        logging.Formatter().formatTime(record, "%Y-%m-%dT%H:%M:%S"),
+        record.msecs,
+    )
+
+    elastic_record = {
+        "@timestamp": ts,
+        "message": msg,
+        "level": record.levelname,
+    }
+    extra_fields = record.__dict__.get("extra_fields", [])
+    elastic_record.update(dict([(k, record.__dict__[k]) for k in extra_fields]))
+    return elastic_record
 
 
 #################################################
@@ -55,9 +77,11 @@ class ElasticService(JsOrc.CommonService):
         self.app.health("timeout=1s")
 
     def post_run(self):
-        self.configure_elastic()
-        self.add_elastic_log_handler(logger, "core")
-        self.add_elastic_log_handler(app_logger, "app")
+        under_test = self.config.get("under_test", False)
+        if not under_test:
+            self.configure_elastic()
+        LOG_QUEUES["core"] = self.add_elastic_log_handler(logger, "core", under_test)
+        LOG_QUEUES["app"] = self.add_elastic_log_handler(app_logger, "app", under_test)
 
     def configure_elastic(self):
         """
@@ -72,19 +96,27 @@ class ElasticService(JsOrc.CommonService):
         """
         # Create the ILM policy
         self.app.create_ilm_policy(
-            policy_name=self.config.get("ilm_policy_name"),
-            policy_config=self.config.get("ilm_policy"),
+            policy_name=self.config.get(
+                "ilm_policy_name", JsOrcSettings.ELASTIC_ILM_POLICY_NAME
+            ),
+            policy_config=self.config.get(
+                "ilm_policy", JsOrcSettings.ELASTIC_ILM_POLICY
+            ),
             overwrite=False,
         )
 
         # Create index template and attach ILM policy
         self.app.create_index_template(
-            template_name=self.config.get("index_template_name"),
-            template_config=self.config.get("index_template"),
+            template_name=self.config.get(
+                "index_template_name", JsOrcSettings.ELASTIC_INDEX_TEMPLATE_NAME
+            ),
+            template_config=self.config.get(
+                "index_template", JsOrcSettings.ELASTIC_INDEX_TEMPLATE
+            ),
             overwrite=False,
         )
 
-    def add_elastic_log_handler(self, logger_instance, index):
+    def add_elastic_log_handler(self, logger_instance, index, under_test=False):
         has_queue_handler = any(
             isinstance(h, logging.handlers.QueueHandler)
             for h in logger_instance.handlers
@@ -100,31 +132,21 @@ class ElasticService(JsOrc.CommonService):
                         record = log_queue.get()
                         if record is None:
                             break
-                        # Strip out color code from message before sending to elastic
-                        msg = record.getMessage()
-                        msg = re.sub(r"\033\[[0-9]*m", "", msg)
-                        ts = "%s.%03d" % (
-                            logging.Formatter().formatTime(record, "%Y-%m-%dT%H:%M:%S"),
-                            record.msecs,
-                        )
-
-                        elastic_record = {
-                            "@timestamp": ts,
-                            "message": msg,
-                            "level": record.levelname,
-                        }
-                        extra_fields = record.__dict__.get("extra_fields", [])
-                        elastic_record.update(
-                            dict([(k, record.__dict__[k]) for k in extra_fields])
-                        )
+                        elastic_record = format_elastic_record(record)
                         self.app.doc(log=elastic_record, index=elastic_index)
                     except Exception:
                         pass
 
-            worker_proc = multiprocessing.Process(
-                target=elastic_log_worker, args=(index,)
-            )
-            worker_proc.start()
+            # if under test, don't spawn the log worker process. Tests will validate two things:
+            # 1. logs are added to the log queue
+            # 2. format_elastic_record process the log properly and create the record for elastic
+            if not under_test:
+                worker_proc = multiprocessing.Process(
+                    target=elastic_log_worker, args=(index,)
+                )
+                worker_proc.start()
+
+            return log_queue
 
 
 class Elastic:
