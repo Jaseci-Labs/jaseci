@@ -165,8 +165,6 @@ class JsorcLoadTest:
             threads = []
 
             for app, freq in experiment:
-                jac_file = os.path.join(APP_PATH, f"{app}.jac")
-                self.sentinel_register(jac_file)
                 t = threading.Thread(
                     target=self.run_application,
                     args=(
@@ -229,6 +227,8 @@ class JsorcLoadTest:
             ],
         }
         try:
+            jac_file = os.path.join(APP_PATH, f"{app}.jac")
+            self.sentinel_register(jac_file)
             # Calculate the time interval between requests based on the requested frequency
             interval = 1 / freq
 
