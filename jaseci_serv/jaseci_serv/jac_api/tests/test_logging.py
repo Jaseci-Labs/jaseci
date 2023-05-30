@@ -36,9 +36,6 @@ class LoggingTests(TestCaseHelper, TestCase):
         )
         self.sauth_client = APIClient()
         self.sauth_client.force_authenticate(self.suser)
-        self.mocked_es_post = patch(
-            "jaseci.extens.svc.elastic_svc.Elastic._post"
-        ).start()
 
         JsOrcSettings.KUBE_CONFIG["enabled"] = True
         JsOrcSettings.ELASTIC_CONFIG["enabled"] = True
