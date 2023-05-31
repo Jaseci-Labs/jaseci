@@ -529,14 +529,13 @@ class JacParser(Parser):
         "NAME",
         "list_val",
         "dict_val",
-        "LPAREN expression RPAREN",
+        "LPAREN connect RPAREN",
         "ability_op",
         "atom atom_trailer",
         "builtin_type",
         "global_ref",
-        # "spawn",
-        # "node_edge_ref",
-        # "global_ref",
+        "atom node_edge_ref",
+        "spawn",
     )
     def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom rule."""
@@ -641,58 +640,64 @@ class JacParser(Parser):
         """Global reference rule."""
         return p
 
+    @_(
+        "node_ref filter_ctx",
+        "edge_op_ref",
+    )
+    def node_edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Node/edge reference rule."""
+        return p
+
     # Spawn rules
     # -----------
-    # @_("KW_SPAWN spawn_object")
-    # def spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Spawn rule."""
-    #     return p
+    @_("KW_SPAWN spawn_arch")
+    def spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Spawn rule."""
+        return p
 
-    # @_(
-    #     "node_spawn",
-    #     "walker_spawn",
-    #     "graph_spawn",
-    #     "type_spawn",
-    # )
-    # def spawn_object(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Spawn object rule."""
-    #     return p
+    @_(
+        "node_spawn spawn_ctx",  # captures edge and node spawns
+        "walker_spawn spawn_ctx",
+        "graph_spawn spawn_ctx",
+        "object_spawn spawn_ctx",
+    )
+    def spawn_arch(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Spawn object rule."""
+        return p
 
-    # @_("expression connect_op")
-    # def spawn_edge(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Spawn edge rule."""
-    #     return p
+    @_("logical connect_op")
+    def spawn_edge(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Spawn edge rule."""
+        return p
 
-    # @_(
-    #     "node_ref",
-    #     "spawn_edge node_ref",
-    #     "node_ref spawn_ctx",
-    #     "spawn_edge node_ref spawn_ctx",
-    # )
-    # def node_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Node spawn rule."""
-    #     return p
+    @_(
+        "node_ref",
+        "spawn_edge node_ref",
+    )
+    def node_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Node spawn rule."""
+        return p
 
-    # @_(
-    #     "graph_ref",
-    #     "spawn_edge graph_ref",
-    # )
-    # def graph_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Graph spawn rule."""
-    #     return p
+    @_(
+        "graph_ref",
+        "spawn_edge graph_ref",
+    )
+    def graph_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Graph spawn rule."""
+        return p
 
-    # @_(
-    #     "expression walker_ref spawn_ctx",
-    #     "expression KW_SYNC walker_ref spawn_ctx",
-    # )
-    # def walker_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Walker spawn rule."""
-    #     return p
+    @_(
+        "connect walker_ref",
+        "walker_ref",
+    )
+    def walker_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Walker spawn rule."""
+        return p
 
-    # @_("obj_ref spawn_ctx")
-    # def type_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Type spawn rule."""
-    #     return p
+    @_("obj_ref")
+    def object_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Type spawn rule."""
+        return p
 
     # Built-in function rules
     # -----------------------
@@ -851,60 +856,3 @@ class JacParser(Parser):
     def filter_compare_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Filter comparison list rule."""
         return p
-
-    # @_(
-    #     "sub_name",
-    #     "sub_name_list sub_name",
-    # )
-    # def sub_name_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Sub name list rule."""
-    #     return p
-
-    # @_("COLON NAME")
-    # def sub_name(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Sub name rule."""
-    #     return p
-
-    # @_("KW_REF atom")
-    # def ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Production for reference rule."""
-    #     return p
-
-    # @_("STAR_MUL atom")
-    # def deref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Dereference rule."""
-    #     return p
-
-    # @_(
-    #     "string_built_in",
-    #     "dict_built_in",
-    #     "list_built_in",
-    #     "obj_built_in",
-    #     "cast_built_in",
-    # )
-    # def built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Built-in rule."""
-    #     return p
-
-    # @_(
-    #     "node_ref filter_ctx",
-    #     "edge_op_ref",
-    #     "node_ref filter_ctx node_edge_ref",
-    #     "edge_op_ref node_edge_ref",
-    # )
-    # def node_edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Node/edge reference rule."""
-    #     return p
-
-    # @_("LPAREN spawn_assign_list RPAREN")
-    # def spawn_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Spawn context rule."""
-    #     return p
-
-    # @_(
-    #     "LPAREN filter_compare_list RPAREN",
-    #     # "",
-    # )
-    # def filter_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Filter context rule."""
-    #     return p
