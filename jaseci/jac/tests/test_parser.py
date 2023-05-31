@@ -16,3 +16,4 @@ class TestParser(TestCase):
         for i in lexer.tokenize(self.load_fixture("fam.jac")):
             tokens.append(i)
         print(parser.parse(lexer.tokenize(self.load_fixture("fam.jac"))))
+        print(parser.log.error)

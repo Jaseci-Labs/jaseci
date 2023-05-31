@@ -57,6 +57,7 @@ class JacParser(Parser):
     @_(
         "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref code_block",
         "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref spawn_ctx code_block",
+        "KW_TEST NAME multistring KW_WITH attr_block KW_BY attr_block spawn_ctx code_block",
     )
     def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Test rule."""
@@ -502,6 +503,7 @@ class JacParser(Parser):
         "atom POW factor",
         "ref",
         "deref",
+        "KW_SYNC atom",
     )
     def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Power rule."""
@@ -686,6 +688,7 @@ class JacParser(Parser):
         return p
 
     @_(
+        "KW_ASYNC connect walker_ref",
         "connect walker_ref",
         "walker_ref",
     )
