@@ -32,13 +32,36 @@ class JacParser(Parser):
     # -------------
     @_(
         "DOC_STRING",
+        # "global_var",
+        # "test",
         "import_stmt",
         "architype",
-        # "test",
     )
     def element(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Element rule."""
         return p
+
+    # @_("KW_GLOBAL NAME global_var_tail SEMI")
+    # def global_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Global variable rule."""
+    #     return p
+
+    # @_(
+    #     "EQ expression global_var_tail",
+    #     "COMMA NAME EQ expression global_var_tail",
+    #     "",
+    # )
+    # def global_var_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Global variable tail rule."""
+    #     return p
+
+    # @_(
+    #     "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref code_block",
+    #     "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref spawn_ctx code_block",
+    # )
+    # def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Test rule."""
+    #     return p
 
     # Import Statements
     # -----------------
@@ -491,7 +514,7 @@ class JacParser(Parser):
         "BOOL",
         "NULL",
         "NAME",
-        # "node_edge_ref",
+        # "global_ref",
         # "list_val",
         # "dict_val",
         # "LPAREN expression RPAREN",
@@ -502,6 +525,7 @@ class JacParser(Parser):
         # "ref",
         # "deref",
         # "builtin_type",
+        # "node_edge_ref",
     )
     def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom rule."""
@@ -516,6 +540,47 @@ class JacParser(Parser):
     def multistring(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Multistring rule."""
         return p
+
+    # @_(
+    #     "LSQUARE RSQUARE",
+    #     "LSQUARE expr_list RSQUARE",
+    # )
+    # def list_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """List value rule."""
+    #     return p
+
+    # @_(
+    #     "connect COMMA expr_list",
+    #     "connect",
+    # )
+    # def expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Expression list rule."""
+    #     return p
+
+    # @_(
+    #     "LBRACE RBRACE",
+    #     "LBRACE kv_pairs RBRACE",
+    # )
+    # def dict_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Production for dictionary value rule."""
+    #     return p
+
+    # @_(
+    #     "expression COLON expression",
+    #     "expression COLON expression COMMA kv_pairs",
+    # )
+    # def kv_pairs(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Key/value pairs rule."""
+    #     return p
+
+    # @_(
+    #     "expr_list",
+    #     "kw_expr_list",
+    #     "expr_list COMMA kw_expr_list",
+    # )
+    # def param_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Parameter list rule."""
+    #     return p
 
     # Node / Edge reference and connection rules
     # ------------------------------------------
@@ -615,45 +680,6 @@ class JacParser(Parser):
     def filter_compare_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Filter comparison list rule."""
         return p
-
-    # @_("KW_GLOBAL NAME global_var_tail SEMI")
-    # def global_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Global variable rule."""
-    #     return p
-
-    # @_(
-    #     "EQ expression global_var_tail",
-    #     "COMMA NAME EQ expression global_var_tail",
-    #     "",
-    # )
-    # def global_var_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Global variable tail rule."""
-    #     return p
-
-    # @_(
-    #     "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref code_block",
-    #     "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref spawn_ctx code_block",
-    # )
-    # def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Test rule."""
-    #     return p
-
-    # @_(
-    #     "expr_list",
-    #     "kw_expr_list",
-    #     "expr_list COMMA kw_expr_list",
-    # )
-    # def param_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Parameter list rule."""
-    #     return p
-
-    # @_(
-    #     "connect COMMA expr_list",
-    #     "connect",
-    # )
-    # def expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Expression list rule."""
-    #     return p
 
     # @_(
     #     "NAME EQ connect COMMA kw_expr_list",
@@ -801,35 +827,11 @@ class JacParser(Parser):
     #     return p
 
     # @_(
-    #     "LSQUARE RSQUARE",
-    #     "LSQUARE expr_list RSQUARE",
-    # )
-    # def list_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """List value rule."""
-    #     return p
-
-    # @_(
     #     "LSQUARE expression RSQUARE",
     #     "LSQUARE expression COLON expression RSQUARE",
     # )
     # def index_slice(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Index/slice rule."""
-    #     return p
-
-    # @_(
-    #     "LBRACE RBRACE",
-    #     "LBRACE kv_pairs RBRACE",
-    # )
-    # def dict_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Production for dictionary value rule."""
-    #     return p
-
-    # @_(
-    #     "expression COLON expression",
-    #     "expression COLON expression COMMA kv_pairs",
-    # )
-    # def kv_pairs(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Key/value pairs rule."""
     #     return p
 
     # @_("KW_SPAWN spawn_object")
