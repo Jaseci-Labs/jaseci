@@ -306,38 +306,49 @@ class JacParser(Parser):
         return p
 
     @_(
-        "STRING"
-        # "atom",
-        # "atom POW factor",
+        "atom",
+        "atom POW factor",
     )
     def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Power rule."""
         return p
 
-    # @_(
-    #     "INT",
-    #     "FLOAT",
-    #     "multistring",
-    #     "BOOL",
-    #     "NULL",
-    #     "NAME",
-    #     "global_ref",
-    #     "node_edge_ref",
-    #     "list_val",
-    #     "dict_val",
-    #     "LPAREN expression RPAREN",
-    #     "ability_op",
-    #     "atom atom_trailer",
-    #     "KW_SYNC atom",
-    #     "spawn",
-    #     "ref",
-    #     "deref",
-    #     "builtin_type",
-    # )
-    # def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Atom rule."""
-    #     return p
+    @_(
+        # "INT",
+        # "FLOAT",
+        "multistring",
+        # "BOOL",
+        # "NULL",
+        # "NAME",
+        # "global_ref",
+        # "node_edge_ref",
+        # "list_val",
+        # "dict_val",
+        # "LPAREN expression RPAREN",
+        # "ability_op",
+        # "atom atom_trailer",
+        # "KW_SYNC atom",
+        # "spawn",
+        # "ref",
+        # "deref",
+        # "builtin_type",
+    )
+    def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom rule."""
+        return p
 
+    # Atom / Literal rules
+    # --------------------
+    @_(
+        "STRING multistring",
+        "STRING",
+    )
+    def multistring(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Multistring rule."""
+        return p
+
+    # Node / Edge reference and connection rules
+    # ------------------------------------------
     @_(
         "edge_to",
         "edge_from",
@@ -896,12 +907,4 @@ class JacParser(Parser):
     # )
     # def builtin_type(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Any type rule."""
-    #     return p
-
-    # @_(
-    #     "STRING multistring",
-    #     "STRING",
-    # )
-    # def multistring(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Multistring rule."""
     #     return p
