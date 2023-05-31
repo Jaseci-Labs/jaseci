@@ -32,8 +32,8 @@ class JacParser(Parser):
     # -------------
     @_(
         "DOC_STRING",
-        # "global_var",
-        # "test",
+        "global_var",
+        "test",
         "import_stmt",
         "architype",
     )
@@ -41,27 +41,26 @@ class JacParser(Parser):
         """Element rule."""
         return p
 
-    # @_("KW_GLOBAL NAME global_var_tail SEMI")
-    # def global_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Global variable rule."""
-    #     return p
+    @_("KW_GLOBAL global_var_clause SEMI")
+    def global_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Global variable rule."""
+        return p
 
-    # @_(
-    #     "EQ expression global_var_tail",
-    #     "COMMA NAME EQ expression global_var_tail",
-    #     "",
-    # )
-    # def global_var_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Global variable tail rule."""
-    #     return p
+    @_(
+        "NAME EQ connect",
+        "global_var_clause COMMA NAME EQ connect",
+    )
+    def global_var_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Global variable tail rule."""
+        return p
 
-    # @_(
-    #     "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref code_block",
-    #     "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref spawn_ctx code_block",
-    # )
-    # def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Test rule."""
-    #     return p
+    @_(
+        "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref code_block",
+        "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref spawn_ctx code_block",
+    )
+    def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Test rule."""
+        return p
 
     # Import Statements
     # -----------------

@@ -39,8 +39,8 @@ class JacLexer(Lexer):
         "KW_AS",
         "KW_EDGE",
         "KW_WALKER",
-        "KW_ASYNC",
-        "KW_SYNC",
+        # "KW_ASYNC",
+        # "KW_SYNC",
         "KW_TEST",
         "KW_ASSERT",
         "COLON",
@@ -158,8 +158,8 @@ class JacLexer(Lexer):
     NAME["as"] = "KW_AS"
     NAME["edge"] = "KW_EDGE"
     NAME["walker"] = "KW_WALKER"
-    NAME["async"] = "KW_ASYNC"
-    NAME["sync"] = "KW_SYNC"
+    # NAME["async"] = "KW_ASYNC"
+    # NAME["sync"] = "KW_SYNC"
     NAME["test"] = "KW_TEST"
     NAME["assert"] = "KW_ASSERT"
     NAME["and"] = "KW_AND"

@@ -18,20 +18,20 @@ node location {
     can record with tourist entry {
         visited+=1;
         for i in activities {
-        //     i.duration = visitor.duration;
-        //     if here.name not in visitor.passport {
-        //         visitor.passport.append(here.name);
-        //        }
+            i.duration = visitor.duration;
+            if here.name not in visitor.passport {
+                visitor.passport.append(here.name);
+               }
         }
     }
 }
 
 walker tourist {
-    // has int duration;
-    // has int budget;
-    // has passport: list[str];
+    has duration: int;
+    has budget: int;
+    has passport: list[str];
 
-    // can visit with location exit {
-    //     report here.activities;
-    // }
+    can visit with location exit {
+        report here.activities;
+    }
 }
