@@ -21,6 +21,7 @@ class JacLexer(Lexer):
         "TYP_DICT",
         "TYP_BOOL",
         "TYP_BYTES",
+        "KW_OBJECT",
         "KW_TYPE",
         "KW_GRAPH",
         "KW_NODE",
@@ -44,6 +45,7 @@ class JacLexer(Lexer):
         "KW_ASSERT",
         "COLON",
         "DBL_COLON",
+        "PIPE_FWD",
         "LBRACE",
         "RBRACE",
         "SEMI",
@@ -138,6 +140,7 @@ class JacLexer(Lexer):
     NAME["dict"] = "TYP_DICT"
     NAME["bool"] = "TYP_BOOL"
     NAME["bytes"] = "TYP_BYTES"
+    NAME["object"] = "KW_OBJECT"
     NAME["type"] = "KW_TYPE"
     NAME["graph"] = "KW_GRAPH"
     NAME["node"] = "KW_NODE"
@@ -205,6 +208,7 @@ class JacLexer(Lexer):
     KW_OR = r"\|\|"
     NOT = r"!"
     DBL_COLON = r"::"
+    PIPE_FWD = r"\|>"
     COLON = r":"
     LBRACE = r"{"
     RBRACE = r"}"

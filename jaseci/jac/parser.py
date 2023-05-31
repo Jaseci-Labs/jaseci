@@ -112,7 +112,7 @@ class JacParser(Parser):
     @_(
         "KW_NODE NAME arch_decl_tail",
         "KW_EDGE NAME arch_decl_tail",
-        "KW_TYPE NAME arch_decl_tail",
+        "KW_OBJECT NAME arch_decl_tail",
         "KW_GRAPH NAME arch_decl_tail",
         "KW_WALKER NAME arch_decl_tail",
     )
@@ -277,7 +277,6 @@ class JacParser(Parser):
         return p
 
     @_(
-        "code_block",
         "expression SEMI",
         "if_stmt",
         "try_stmt",
@@ -432,7 +431,7 @@ class JacParser(Parser):
 
     @_(
         "logical",
-        "logical NOT edge_ref connect",
+        "logical NOT edge_op_ref connect",
         "logical connect_op connect",
     )
     def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -514,18 +513,18 @@ class JacParser(Parser):
         "BOOL",
         "NULL",
         "NAME",
-        # "global_ref",
-        # "list_val",
-        # "dict_val",
-        # "LPAREN expression RPAREN",
-        # "ability_op",
-        # "atom atom_trailer",
+        "list_val",
+        "dict_val",
+        "LPAREN expression RPAREN",
+        "ability_op",
+        "atom atom_trailer",
         # "KW_SYNC atom",
         # "spawn",
         # "ref",
         # "deref",
         # "builtin_type",
         # "node_edge_ref",
+        # "global_ref",
     )
     def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom rule."""
@@ -541,46 +540,147 @@ class JacParser(Parser):
         """Multistring rule."""
         return p
 
-    # @_(
-    #     "LSQUARE RSQUARE",
-    #     "LSQUARE expr_list RSQUARE",
-    # )
-    # def list_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """List value rule."""
-    #     return p
+    @_(
+        "LSQUARE RSQUARE",
+        "LSQUARE expr_list RSQUARE",
+    )
+    def list_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """List value rule."""
+        return p
 
-    # @_(
-    #     "connect COMMA expr_list",
-    #     "connect",
-    # )
-    # def expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Expression list rule."""
-    #     return p
+    @_(
+        "connect",
+        "expr_list COMMA connect",
+    )
+    def expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Expression list rule."""
+        return p
 
-    # @_(
-    #     "LBRACE RBRACE",
-    #     "LBRACE kv_pairs RBRACE",
-    # )
-    # def dict_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Production for dictionary value rule."""
-    #     return p
+    @_(
+        "LBRACE RBRACE",
+        "LBRACE kv_pairs RBRACE",
+    )
+    def dict_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Production for dictionary value rule."""
+        return p
 
-    # @_(
-    #     "expression COLON expression",
-    #     "expression COLON expression COMMA kv_pairs",
-    # )
-    # def kv_pairs(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Key/value pairs rule."""
-    #     return p
+    @_(
+        "connect COLON connect",
+        "connect COLON connect COMMA kv_pairs",
+    )
+    def kv_pairs(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Key/value pairs rule."""
+        return p
 
-    # @_(
-    #     "expr_list",
-    #     "kw_expr_list",
-    #     "expr_list COMMA kw_expr_list",
-    # )
-    # def param_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Parameter list rule."""
-    #     return p
+    @_(
+        "DBL_COLON NAME",
+    )
+    def ability_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability operator rule."""
+        return p
+
+    @_(
+        "DOT NAME",
+        "index_slice",
+        "ability_call",
+        "PIPE_FWD built_in",
+    )
+    def atom_trailer(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom trailer rule."""
+        return p
+
+    @_(
+        "LPAREN RPAREN",
+        "LPAREN param_list RPAREN",
+        "ability_op",
+    )
+    def ability_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability call rule."""
+        return p
+
+    @_(
+        "expr_list",
+        "kw_expr_list",
+        "expr_list COMMA kw_expr_list",
+    )
+    def param_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Parameter list rule."""
+        return p
+
+    @_(
+        "NAME EQ connect",
+        "NAME EQ connect COMMA kw_expr_list",
+    )
+    def kw_expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Keyword expression list rule."""
+        return p
+
+    @_(
+        "LSQUARE expression RSQUARE",
+        "LSQUARE expression COLON expression RSQUARE",
+    )
+    def index_slice(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Index/slice rule."""
+        return p
+
+    # Built-in function rules
+    # -----------------------
+    @_(
+        "obj_built_in",
+        "cast_built_in",
+    )
+    def built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Built-in rule."""
+        return p
+
+    @_(
+        "KW_CONTEXT",
+        "KW_INFO",
+        "KW_DETAILS",
+    )
+    def obj_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Object built-in rule."""
+        return p
+
+    @_(
+        "builtin_type",
+        "arch_ref",
+    )
+    def cast_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Cast built-in rule."""
+        return p
+
+    # Architype reference rules
+    # -------------------------
+    @_("node_ref", "edge_ref", "walker_ref", "graph_ref", "obj_ref")
+    def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Architype reference rule."""
+        return p
+
+    @_("KW_NODE DBL_COLON NAME")
+    def node_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Node reference rule."""
+        return p
+
+    @_("KW_EDGE DBL_COLON NAME")
+    def edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Node reference rule."""
+        return p
+
+    @_("KW_WALKER DBL_COLON NAME")
+    def walker_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Walker reference rule."""
+        return p
+
+    @_("KW_GRAPH DBL_COLON NAME")
+    def graph_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Graph reference rule."""
+        return p
+
+    @_("KW_OBJECT DBL_COLON NAME")
+    def obj_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Type reference rule."""
+        return p
 
     # Node / Edge reference and connection rules
     # ------------------------------------------
@@ -589,7 +689,7 @@ class JacParser(Parser):
         "edge_from",
         "edge_any",
     )
-    def edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def edge_op_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge reference rule."""
         return p
 
@@ -682,14 +782,6 @@ class JacParser(Parser):
         return p
 
     # @_(
-    #     "NAME EQ connect COMMA kw_expr_list",
-    #     "NAME EQ connect",
-    # )
-    # def kw_expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Keyword expression list rule."""
-    #     return p
-
-    # @_(
     #     "sub_name",
     #     "sub_name_list sub_name",
     # )
@@ -708,33 +800,6 @@ class JacParser(Parser):
     # )
     # def global_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Global reference rule."""
-    #     return p
-
-    # @_(
-    #     "DOT built_in",
-    #     "DOT NAME",
-    #     "index_slice",
-    #     "ability_call",
-    # )
-    # def atom_trailer(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Atom trailer rule."""
-    #     return p
-
-    # @_(
-    #     "LPAREN RPAREN",
-    #     "LPAREN param_list RPAREN",
-    #     "ability_op",
-    # )
-    # def ability_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Ability call rule."""
-    #     return p
-
-    # @_(
-    #     "DBL_COLON NAME",
-    #     "DBL_COLON NAME COLON NAME",
-    # )
-    # def ability_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Ability operator rule."""
     #     return p
 
     # @_("KW_REF atom")
@@ -758,80 +823,14 @@ class JacParser(Parser):
     #     """Built-in rule."""
     #     return p
 
-    # @_("builtin_type")
-    # def cast_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Cast built-in rule."""
-    #     return p
-
-    # @_(
-    #     "KW_CONTEXT",
-    #     "KW_INFO",
-    #     "KW_DETAILS",
-    # )
-    # def obj_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Object built-in rule."""
-    #     return p
-
-    # @_(
-    #     "TYP_DICT DBL_COLON NAME",
-    #     "TYP_DICT DBL_COLON NAME LPAREN expr_list RPAREN",
-    # )
-    # def dict_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Production for dictionary built-in rule."""
-    #     return p
-
-    # @_(
-    #     "TYP_LIST DBL_COLON NAME",
-    #     "TYP_LIST DBL_COLON NAME LPAREN expr_list RPAREN",
-    # )
-    # def list_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """List built-in rule."""
-    #     return p
-
-    # @_(
-    #     "TYP_STRING DBL_COLON NAME",
-    #     "TYP_STRING DBL_COLON NAME LPAREN expr_list RPAREN",
-    # )
-    # def string_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Production for string built-in rule."""
-    #     return p
-
     # @_(
     #     "node_ref filter_ctx",
-    #     "edge_ref",
+    #     "edge_op_ref",
     #     "node_ref filter_ctx node_edge_ref",
-    #     "edge_ref node_edge_ref",
+    #     "edge_op_ref node_edge_ref",
     # )
     # def node_edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Node/edge reference rule."""
-    #     return p
-
-    # @_("KW_NODE DBL_COLON NAME")
-    # def node_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Node reference rule."""
-    #     return p
-
-    # @_("KW_WALKER DBL_COLON NAME")
-    # def walker_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Walker reference rule."""
-    #     return p
-
-    # @_("KW_GRAPH DBL_COLON NAME")
-    # def graph_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Graph reference rule."""
-    #     return p
-
-    # @_("KW_TYPE DBL_COLON NAME")
-    # def type_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Type reference rule."""
-    #     return p
-
-    # @_(
-    #     "LSQUARE expression RSQUARE",
-    #     "LSQUARE expression COLON expression RSQUARE",
-    # )
-    # def index_slice(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Index/slice rule."""
     #     return p
 
     # @_("KW_SPAWN spawn_object")
@@ -880,7 +879,7 @@ class JacParser(Parser):
     #     """Walker spawn rule."""
     #     return p
 
-    # @_("type_ref spawn_ctx")
+    # @_("obj_ref spawn_ctx")
     # def type_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Type spawn rule."""
     #     return p
