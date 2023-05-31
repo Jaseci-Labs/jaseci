@@ -12,18 +12,18 @@ node location {
     has x: int, y:int, name:str;
     has anchor activities: list[Activity];
     has hidden intro: str = "Welcome";
-    // has int visited = 0;
-    //
+    has visited: int = 0;
 
-    // can record with tourist entry {
-    //     visited+=1;
-    //     for i in activities {
-    //         i.duration = visitor.duration;
-    //         if here.name not in visitor.passport {
-    //             visitor.passport.append(here.name);
-    //            }
-    //     }
-    // }
+
+    can record with tourist entry {
+        //visited+=1;
+        // for i in activities {
+        //     i.duration = visitor.duration;
+        //     if here.name not in visitor.passport {
+        //         visitor.passport.append(here.name);
+        //        }
+        // }
+    }
 }
 
 walker tourist {
