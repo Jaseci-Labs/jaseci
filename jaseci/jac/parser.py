@@ -237,8 +237,7 @@ class JacParser(Parser):
 
     @_(
         "LBRACE RBRACE",
-        # "LBRACE statement_list RBRACE",
-        # "COLON statement",
+        "LBRACE statement_list RBRACE",
     )
     def code_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Code block rule."""
@@ -246,108 +245,144 @@ class JacParser(Parser):
 
     # Codeblock statements
     # --------------------
-    # @_(
-    #     "statement statement_list",
-    #     "statement",
-    # )
-    # def statement_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Statement list rule."""
-    #     return p
+    @_(
+        "statement statement_list",
+        "statement",
+    )
+    def statement_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Statement list rule."""
+        return p
 
-    # @_(
-    #     "code_block",
-    #     "expression SEMI",
-    #     "if_stmt",
-    #     "try_stmt",
-    #     "for_stmt",
-    #     "while_stmt",
-    #     "assert_stmt SEMI",
-    #     "ctrl_stmt SEMI",
-    #     "delete_stmt SEMI",
-    #     "report_stmt SEMI",
-    #     "walker_stmt",
-    # )
-    # def statement(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Statement rule."""
-    #     return p
+    @_(
+        "code_block",
+        "expression SEMI",
+        "if_stmt",
+        "try_stmt",
+        "for_stmt",
+        "while_stmt",
+        "assert_stmt SEMI",
+        "ctrl_stmt SEMI",
+        "delete_stmt SEMI",
+        "report_stmt SEMI",
+        "walker_stmt",
+    )
+    def statement(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Statement rule."""
+        return p
 
-    # @_(
-    #     "KW_IF expression code_block elif_stmt_list else_stmt",
-    #     "KW_IF expression code_block elif_stmt_list",
-    # )
-    # def if_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """If statement rule."""
-    #     return p
+    @_(
+        "KW_IF expression code_block",
+        "KW_IF expression code_block else_stmt",
+        "KW_IF expression code_block elif_stmt_list else_stmt",
+    )
+    def if_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """If statement rule."""
+        return p
 
-    # @_(
-    #     "KW_TRY code_block else_from_try",
-    #     "KW_TRY code_block",
-    # )
-    # def try_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Try statement rule."""
-    #     return p
+    @_(
+        "KW_ELIF expression code_block",
+        "KW_ELIF expression code_block elif_stmt_list",
+    )
+    def elif_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Else if statement list rule."""
+        return p
 
-    # @_(
-    #     "KW_ELSE KW_WITH NAME code_block",
-    #     "KW_ELSE code_block",
-    # )
-    # def else_from_try(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Else from try rule."""
-    #     return p
+    @_("KW_ELSE code_block")
+    def else_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Else statement rule."""
+        return p
 
-    # @_(
-    #     "KW_ELIF expression code_block",
-    #     "KW_ELIF expression code_block elif_stmt_list",
-    # )
-    # def elif_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Else if statement list rule."""
-    #     return p
+    @_(
+        "KW_TRY code_block",
+        "KW_TRY code_block else_from_try",
+    )
+    def try_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Try statement rule."""
+        return p
 
-    # @_("KW_ELSE code_block")
-    # def else_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Else statement rule."""
-    #     return p
+    @_(
+        "KW_ELSE KW_WITH NAME code_block",
+        "KW_ELSE code_block",
+    )
+    def else_from_try(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Else from try rule."""
+        return p
 
-    # @_(
-    #     "KW_FOR expression KW_TO expression KW_BY expression code_block",
-    #     "KW_FOR NAME KW_IN expression code_block",
-    #     "KW_FOR NAME COMMA NAME KW_IN expression code_block",
-    # )
-    # def for_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """For statement rule."""
-    #     return p
+    @_(
+        "KW_FOR atom EQ expression KW_TO expression KW_BY expression code_block",
+        "KW_FOR atom KW_IN expression code_block",
+        "KW_FOR atom COMMA atom KW_IN expression code_block",
+    )
+    def for_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """For statement rule."""
+        return p
 
-    # @_("KW_WHILE expression code_block")
-    # def while_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """While statement rule."""
-    #     return p
+    @_("KW_WHILE expression code_block")
+    def while_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """While statement rule."""
+        return p
 
-    # @_(
-    #     "KW_CONTINUE",
-    #     "KW_BREAK",
-    #     "KW_SKIP",
-    # )
-    # def ctrl_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Control statement rule."""
-    #     return p
+    @_("KW_ASSERT expression")
+    def assert_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Assert statement rule."""
+        return p
 
-    # @_("KW_ASSERT expression")
-    # def assert_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Assert statement rule."""
-    #     return p
+    @_(
+        "KW_CONTINUE",
+        "KW_BREAK",
+        "KW_SKIP",
+    )
+    def ctrl_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Control statement rule."""
+        return p
 
-    # @_("KW_DELETE expression")
-    # def delete_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Delete statement rule."""
-    #     return p
+    @_("KW_DELETE expression")
+    def delete_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Delete statement rule."""
+        return p
 
-    # @_(
-    #     "KW_REPORT expression",
-    #     "KW_REPORT sub_name EQ expression",
-    # )
-    # def report_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Report statement rule."""
-    #     return p
+    @_(
+        "KW_REPORT expression",
+        "KW_REPORT sub_name EQ expression",
+    )
+    def report_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Report statement rule."""
+        return p
+
+    @_(
+        "ignore_stmt",
+        "take_stmt",
+        "disengage_stmt",
+        "yield_stmt",
+    )
+    def walker_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Walker statement rule."""
+        return p
+
+    @_("KW_IGNORE expression SEMI")
+    def ignore_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ignore statement rule."""
+        return p
+
+    @_(
+        "KW_TAKE expression SEMI",
+        "KW_TAKE sub_name expression SEMI",
+        "KW_TAKE expression else_stmt",
+        "KW_TAKE sub_name expression else_stmt",
+    )
+    def take_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Take statement rule."""
+        return p
+
+    @_("KW_DISENGAGE SEMI")
+    def disengage_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Disengage statement rule."""
+        return p
+
+    @_("KW_YIELD SEMI")
+    def yield_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Yield statement rule."""
+        return p
 
     # Expression rules
     # ----------------
@@ -639,41 +674,6 @@ class JacParser(Parser):
     # @_("COLON NAME")
     # def sub_name(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Sub name rule."""
-    #     return p
-
-    # @_(
-    #     "ignore_stmt",
-    #     "take_stmt",
-    #     "disengage_stmt",
-    #     "yield_stmt",
-    # )
-    # def walker_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Walker statement rule."""
-    #     return p
-
-    # @_("KW_IGNORE expression SEMI")
-    # def ignore_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Ignore statement rule."""
-    #     return p
-
-    # @_(
-    #     "KW_TAKE expression SEMI",
-    #     "KW_TAKE sub_name expression SEMI",
-    #     "KW_TAKE expression else_stmt",
-    #     "KW_TAKE sub_name expression else_stmt",
-    # )
-    # def take_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Take statement rule."""
-    #     return p
-
-    # @_("KW_DISENGAGE SEMI")
-    # def disengage_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Disengage statement rule."""
-    #     return p
-
-    # @_("KW_YIELD SEMI")
-    # def yield_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Yield statement rule."""
     #     return p
 
     # @_(

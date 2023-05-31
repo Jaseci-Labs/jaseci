@@ -16,13 +16,13 @@ node location {
 
 
     can record with tourist entry {
-        //visited+=1;
-        // for i in activities {
+        visited+=1;
+        for i in activities {
         //     i.duration = visitor.duration;
         //     if here.name not in visitor.passport {
         //         visitor.passport.append(here.name);
         //        }
-        // }
+        }
     }
 }
 
