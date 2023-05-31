@@ -9,6 +9,7 @@ class JacLexer(Lexer):
     tokens = {
         "FLOAT",
         "STRING",
+        "DOC_STRING",
         "BOOL",
         "INT",
         "NULL",
@@ -33,6 +34,8 @@ class JacLexer(Lexer):
         "KW_INFO",
         "KW_DETAILS",
         "KW_IMPORT",
+        "KW_FROM",
+        "KW_AS",
         "KW_EDGE",
         "KW_WALKER",
         "KW_ASYNC",
@@ -118,6 +121,7 @@ class JacLexer(Lexer):
 
     # Regular expression rules for tokens
     FLOAT = r"(\d+)?\.\d+"
+    DOC_STRING = r'"""[^"]*"""|\'\'\'[^\']*\'\'\''
     STRING = r'"[^"\r\n]*"|\'[^\'\r\n]*\''
     BOOL = r"True|False"
     INT = r"\d+"
@@ -145,6 +149,8 @@ class JacLexer(Lexer):
     NAME["info"] = "KW_INFO"
     NAME["details"] = "KW_DETAILS"
     NAME["import"] = "KW_IMPORT"
+    NAME["from"] = "KW_FROM"
+    NAME["as"] = "KW_AS"
     NAME["edge"] = "KW_EDGE"
     NAME["walker"] = "KW_WALKER"
     NAME["async"] = "KW_ASYNC"
@@ -201,6 +207,7 @@ class JacLexer(Lexer):
     LBRACE = r"{"
     RBRACE = r"}"
     SEMI = r";"
+    EE = r"=="
     EQ = r"="
     ADD_EQ = r"\+="
     SUB_EQ = r"-="
@@ -209,7 +216,6 @@ class JacLexer(Lexer):
     CPY_EQ = r":="
     KW_REF = r"&"
     DOT = r"\."
-    EE = r"=="
     LT = r"<"
     GT = r">"
     LTE = r"<="
@@ -230,6 +236,12 @@ class JacLexer(Lexer):
     def ignore_newline(self: "JacLexer", t: Token) -> Token:
         """Increment line number."""
         self.lineno += len(t.value)
+        return t
+
+    def DOC_STRING(self: "JacLexer", t: Token) -> Token:  # noqa: N802
+        """Add docstring to lexer."""
+        self.lineno += t.value.count("\n")
+        self.lineno += t.value.count("\r")
         return t
 
     # Error handling rule

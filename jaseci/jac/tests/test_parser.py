@@ -15,5 +15,4 @@ class TestParser(TestCase):
         tokens = []
         for i in lexer.tokenize(self.load_fixture("fam.jac")):
             tokens.append(i)
-            print(i)
         print(parser.parse(lexer.tokenize(self.load_fixture("fam.jac"))))

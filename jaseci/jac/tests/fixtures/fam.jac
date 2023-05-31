@@ -1,22 +1,31 @@
-node man;
-node woman;
+# This is a comment
+// This is also a commment
+"""
+These are doc strings and can be used as comments
+Use them to document your code
+"""
 
-edge mom;
-edge dad;
-edge married;
+import:jac .stuff;
+import:py from .activity, Activity as Actvy;
 
-walker create_fam {
-    can init with root entry {
-        spawn here ++> node::man;
-        spawn here ++> node::woman;
-        --> node::man +<-[married]-> --> node::woman;
-        take -->;
-    }
-    can live with woman entry {
-        son = spawn here <+[mom]+ node::man;
-        son +-[dad]-> <-[married]->;
-    }
-    can chill with man entry {
-        std.out("I didn't do any of the hard work.");
-    }
+node location { d
+    // has int x, int y, str name;
+    // has int visited = 0;
+    // has list[Activity] activities;
+
+    // can record with tourist entry {
+    //     visited+=1;
+    //     for i in activities {
+    //         i.duration = visitor.duration;
+    //     }
+    // }
+}
+
+walker tourist {
+    // has int duration;
+    // has int budget;
+
+    // can visit with location exit {
+    //     report here.activities;
+    // }
 }
