@@ -217,101 +217,102 @@ class JacParser(Parser):
     # ----------------
 
     @_(
-        "STRING",
-        # "connect",
-        # "connect assignment",
+        "connect",
+        "connect assignment_op expression",
     )
     def expression(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Expression rule."""
         return p
 
-    # # @_(
-    # #     "EQ expression",
-    # #     "CPY_EQ expression",
-    # #     "ADD_EQ expression",
-    # #     "SUB_EQ expression",
-    # #     "MUL_EQ expression",
-    # #     "DIV_EQ expression",
-    # # )
-    # # def assignment(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    # #     """Production Assignment rule."""
-    # #     return p
+    @_(
+        "EQ",
+        "CPY_EQ",
+        "ADD_EQ",
+        "SUB_EQ",
+        "MUL_EQ",
+        "DIV_EQ",
+    )
+    def assignment_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Production Assignment rule."""
+        return p
 
-    # @_(
-    #     "logical",
-    #     "logical NOT edge_ref expression",
-    #     "logical connect_op expression",
-    # )
-    # def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Connect rule."""
-    #     return p
+    @_(
+        "logical",
+        "logical NOT edge_ref connect",
+        "logical connect_op connect",
+    )
+    def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Connect rule."""
+        return p
 
-    # @_(
-    #     "compare",
-    #     "compare KW_AND logical",
-    #     "compare KW_OR logical",
-    # )
-    # def logical(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Logical rule."""
-    #     return p
+    @_(
+        "compare",
+        "compare KW_AND logical",
+        "compare KW_OR logical",
+    )
+    def logical(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Logical rule."""
+        return p
 
-    # @_(
-    #     "NOT arithmetic",
-    #     "compare cmp_op arithmetic",
-    # )
-    # def compare(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Compare rule."""
-    #     return p
+    @_(
+        "arithmetic",
+        "NOT compare",
+        "arithmetic cmp_op compare",
+    )
+    def compare(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Compare rule."""
+        return p
 
-    # @_(
-    #     "EE",
-    #     "LT",
-    #     "GT",
-    #     "LTE",
-    #     "GTE",
-    #     "NE",
-    #     "KW_IN",
-    #     "NOT KW_IN",
-    # )
-    # def cmp_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Compare operator rule."""
-    #     return p
+    @_(
+        "EE",
+        "LT",
+        "GT",
+        "LTE",
+        "GTE",
+        "NE",
+        "KW_IN",
+        "KW_NIN",
+    )
+    def cmp_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Compare operator rule."""
+        return p
 
-    # @_(
-    #     "term",
-    #     "term PLUS arithmetic",
-    #     "term MINUS arithmetic",
-    # )
-    # def arithmetic(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Arithmetic rule."""
-    #     return p
+    @_(
+        "term",
+        "term PLUS arithmetic",
+        "term MINUS arithmetic",
+    )
+    def arithmetic(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Arithmetic rule."""
+        return p
 
-    # @_(
-    #     "factor",
-    #     "factor STAR_MUL term",
-    #     "factor DIV term",
-    #     "factor MOD term",
-    # )
-    # def term(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Term rule."""
-    #     return p
+    @_(
+        "factor",
+        "factor STAR_MUL term",
+        "factor DIV term",
+        "factor MOD term",
+    )
+    def term(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Term rule."""
+        return p
 
-    # @_(
-    #     "PLUS factor",
-    #     "MINUS factor",
-    #     "power",
-    # )
-    # def factor(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Factor rule."""
-    #     return p
+    @_(
+        "PLUS factor",
+        "MINUS factor",
+        "power",
+    )
+    def factor(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Factor rule."""
+        return p
 
-    # @_(
-    #     "atom",
-    #     "atom POW factor",
-    # )
-    # def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Power rule."""
-    #     return p
+    @_(
+        "STRING"
+        # "atom",
+        # "atom POW factor",
+    )
+    def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Power rule."""
+        return p
 
     # @_(
     #     "INT",
@@ -336,6 +337,103 @@ class JacParser(Parser):
     # def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Atom rule."""
     #     return p
+
+    @_(
+        "edge_to",
+        "edge_from",
+        "edge_any",
+    )
+    def edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Edge reference rule."""
+        return p
+
+    @_(
+        "ARROW_R",
+        "ARROW_R_p1 NAME filter_ctx ARROW_R_p2",
+    )
+    def edge_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Edge to rule."""
+        return p
+
+    @_(
+        "ARROW_L",
+        "ARROW_L_p1 NAME filter_ctx ARROW_L_p2",
+    )
+    def edge_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Edge from rule."""
+        return p
+
+    @_(
+        "ARROW_BI",
+        "ARROW_L_p1 NAME filter_ctx ARROW_R_p2",
+    )
+    def edge_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Edge any rule."""
+        return p
+
+    @_(
+        "connect_to",
+        "connect_from",
+        "connect_any",
+    )
+    def connect_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Connect operator rule."""
+        return p
+
+    @_(
+        "CARROW_R",
+        "CARROW_R_p1 NAME spawn_ctx CARROW_R_p2",
+    )
+    def connect_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Connect to rule."""
+        return p
+
+    @_(
+        "CARROW_L",
+        "CARROW_L_p1 NAME spawn_ctx CARROW_L_p2",
+    )
+    def connect_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Connect from rule."""
+        return p
+
+    @_(
+        "CARROW_BI",
+        "CARROW_L_p1 NAME spawn_ctx CARROW_R_p2",
+    )
+    def connect_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Connect any rule."""
+        return p
+
+    @_(
+        "LPAREN filter_compare_list RPAREN",
+        # "",
+    )
+    def filter_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Filter context rule."""
+        return p
+
+    @_("LPAREN spawn_assign_list RPAREN")
+    def spawn_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Spawn context rule."""
+        return p
+
+    @_(
+        "NAME EQ expression",
+        "NAME EQ expression COMMA spawn_assign_list",
+        # "",
+    )
+    def spawn_assign_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Spawn assignment list rule."""
+        return p
+
+    @_(
+        "NAME cmp_op expression",
+        "NAME cmp_op expression COMMA filter_compare_list",
+        # "",
+    )
+    def filter_compare_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Filter comparison list rule."""
+        return p
 
     # @_("KW_GLOBAL NAME global_var_tail SEMI")
     # def global_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -691,72 +789,6 @@ class JacParser(Parser):
     #     return p
 
     # @_(
-    #     "edge_to",
-    #     "edge_from",
-    #     "edge_any",
-    # )
-    # def edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Edge reference rule."""
-    #     return p
-
-    # @_(
-    #     "ARROW_R",
-    #     "ARROW_R_p1 NAME filter_ctx ARROW_R_p2",
-    # )
-    # def edge_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Edge to rule."""
-    #     return p
-
-    # @_(
-    #     "ARROW_L",
-    #     "ARROW_L_p1 NAME filter_ctx ARROW_L_p2",
-    # )
-    # def edge_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Edge from rule."""
-    #     return p
-
-    # @_(
-    #     "ARROW_BI",
-    #     "ARROW_L_p1 NAME filter_ctx ARROW_R_p2",
-    # )
-    # def edge_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Edge any rule."""
-    #     return p
-
-    # @_(
-    #     "connect_to",
-    #     "connect_from",
-    #     "connect_any",
-    # )
-    # def connect_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Connect operator rule."""
-    #     return p
-
-    # @_(
-    #     "CARROW_R",
-    #     "CARROW_R_p1 NAME filter_ctx CARROW_R_p2",
-    # )
-    # def connect_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Connect to rule."""
-    #     return p
-
-    # @_(
-    #     "CARROW_L",
-    #     "CARROW_L_p1 NAME filter_ctx CARROW_L_p2",
-    # )
-    # def connect_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Connect from rule."""
-    #     return p
-
-    # @_(
-    #     "CARROW_BI",
-    #     "CARROW_L_p1 NAME filter_ctx CARROW_R_p2",
-    # )
-    # def connect_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Connect any rule."""
-    #     return p
-
-    # @_(
     #     "LSQUARE RSQUARE",
     #     "LSQUARE expr_list RSQUARE",
     # )
@@ -850,24 +882,6 @@ class JacParser(Parser):
     # )
     # def filter_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Filter context rule."""
-    #     return p
-
-    # @_(
-    #     "NAME EQ expression",
-    #     "NAME EQ expression COMMA spawn_assign_list",
-    #     # "",
-    # )
-    # def spawn_assign_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Spawn assignment list rule."""
-    #     return p
-
-    # @_(
-    #     "NAME cmp_op expression",
-    #     "NAME cmp_op expression COMMA filter_compare_list",
-    #     # "",
-    # )
-    # def filter_compare_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Filter comparison list rule."""
     #     return p
 
     # @_(

@@ -19,6 +19,9 @@ node location {
     //     visited+=1;
     //     for i in activities {
     //         i.duration = visitor.duration;
+    //         if here.name not in visitor.passport {
+    //             visitor.passport.append(here.name);
+    //            }
     //     }
     // }
 }
@@ -26,6 +29,7 @@ node location {
 walker tourist {
     // has int duration;
     // has int budget;
+    // has passport: list[str];
 
     // can visit with location exit {
     //     report here.activities;

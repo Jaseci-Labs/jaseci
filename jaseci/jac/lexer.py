@@ -80,6 +80,7 @@ class JacLexer(Lexer):
         "GTE",
         "NE",
         "KW_IN",
+        "KW_NIN",
         "KW_ANCHOR",
         "KW_HAS",
         "KW_GLOBAL",
@@ -124,6 +125,7 @@ class JacLexer(Lexer):
     DOC_STRING = r'"""[^"]*"""|\'\'\'[^\']*\'\'\''
     STRING = r'"[^"\r\n]*"|\'[^\'\r\n]*\''
     BOOL = r"True|False"
+    KW_NIN = r"not in"
     INT = r"\d+"
     NULL = r"None"
     NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
