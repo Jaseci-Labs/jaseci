@@ -2,6 +2,7 @@
 
 from jaseci.jac.lexer import JacLexer
 from jaseci.jac.parser import JacParser
+from jaseci.jac.tests.fixtures import treedump
 from jaseci.utils.test import TestCase
 
 
@@ -15,5 +16,5 @@ class TestParser(TestCase):
         tokens = []
         for i in lexer.tokenize(self.load_fixture("fam.jac")):
             tokens.append(i)
-        print(parser.parse(lexer.tokenize(self.load_fixture("fam.jac"))))
-        print(parser.log.error)
+        output = parser.parse(lexer.tokenize(self.load_fixture("fam.jac")))
+        self.assertEqual(output, treedump.tree)
