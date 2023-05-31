@@ -8,6 +8,9 @@ chat_flows = {}
 
 @jaseci_action(act_group=["langchain"], allow_remote=True)
 def setup(flow_type: str = "json", **kwargs):
+    """
+    Setup a flow for use in the generate action.
+    """
     uid = kwargs.pop("uid", "default")
     if flow_type == "json":
         from langflow import load_flow_from_json
@@ -31,6 +34,9 @@ def setup(flow_type: str = "json", **kwargs):
 
 @jaseci_action(act_group=["langchain"], allow_remote=True)
 def generate(input: dict, flow: str = "default") -> str:
+    """
+    Generate text using a flow that was setup using the setup action.
+    """
     if not flow in chat_flows:
         logger.error("Flow not found. Please setup a flow using the setup action.")
         return
@@ -38,6 +44,10 @@ def generate(input: dict, flow: str = "default") -> str:
 
 
 class QuestionAnsweringFlow:
+    """
+    A flow that can be used to answer questions based on a given text.
+    """
+
     def __init__(
         self,
         text: str,
@@ -93,11 +103,14 @@ class QuestionAnsweringFlow:
 
 
 class DocumentChatFlow:
+    """
+    A flow that can be used to chat with a chatbot based on a given text.
+    """
+
     def __init__(
         self,
         text: str,
         uid: str,
-        prefix: str = DEFAULT_PREFIX,
         openai_api_key=os.environ.get("OPENAI_API_KEY"),
         **kwargs,
     ):
