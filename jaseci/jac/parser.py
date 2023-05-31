@@ -21,8 +21,8 @@ class JacParser(Parser):
     # Jac program structured as a list of elements
     # --------------------------------------------
     @_(
-        "element_list element",
         "element",
+        "element_list element",
     )
     def element_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Element list rule."""
@@ -70,7 +70,7 @@ class JacParser(Parser):
 
     @_(
         "DOT NAME",
-        "DOT NAME import_path_tail",
+        "import_path_tail DOT NAME",
     )
     def import_path_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Import path tail rule."""
@@ -78,7 +78,7 @@ class JacParser(Parser):
 
     @_(
         "NAME KW_AS NAME",
-        "NAME KW_AS NAME COMMA name_as_list",
+        "name_as_list COMMA NAME KW_AS NAME",
     )
     def name_as_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Name as list rule."""
@@ -122,28 +122,219 @@ class JacParser(Parser):
     # ----------------
     @_(
         "LBRACE RBRACE",
-        # "LBRACE attr_stmt_list RBRACE",
-        # "COLON attr_stmt",
-        # "SEMI",
+        "LBRACE attr_stmt_list RBRACE",
+        "COLON attr_stmt",
+        "SEMI",
     )
     def attr_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute block rule."""
         return p
 
+    @_(
+        "attr_stmt",
+        "attr_stmt_list attr_stmt",
+    )
+    def attr_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Attribute statement list rule."""
+        return p
+
+    @_(
+        "has_stmt",
+        # "can_stmt",
+    )
+    def attr_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Attribute statement rule."""
+        return p
+
+    # Has statements
+    # --------------
+    @_("KW_HAS has_assign_list SEMI")
+    def has_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Has statement rule."""
+        return p
+
+    @_(
+        "has_assign",
+        "has_assign_list COMMA has_assign",
+    )
+    def has_assign_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Has assign list rule."""
+        return p
+
+    @_(
+        "has_tag NAME type_spec",
+        "has_tag NAME type_spec EQ expression",
+        "NAME type_spec",
+        "NAME type_spec EQ expression",
+    )
+    def has_assign(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Has assign rule."""
+        return p
+
+    @_(
+        "has_tag KW_HIDDEN",
+        "has_tag KW_ANCHOR",
+        "KW_HIDDEN",
+        "KW_ANCHOR",
+    )
+    def has_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Has tag rule."""
+        return p
+
+    @_("COLON type_name")
+    def type_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Type hint rule."""
+        return p
+
+    @_(
+        "builtin_type",
+        "NAME",
+        "TYP_LIST LSQUARE type_name RSQUARE",
+        "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
+    )
+    def type_name(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Type hint rule."""
+        return p
+
+    @_(
+        "TYP_STRING",
+        "TYP_BYTES",
+        "TYP_INT",
+        "TYP_FLOAT",
+        "TYP_LIST",
+        "TYP_DICT",
+        "TYP_BOOL",
+        "KW_TYPE",
+    )
+    def builtin_type(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Any type rule."""
+        return p
+
+    # Can statements
+    # --------------
+
+    # Expression rules
+    # ----------------
+
+    @_(
+        "STRING",
+        # "connect",
+        # "connect assignment",
+    )
+    def expression(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Expression rule."""
+        return p
+
+    # # @_(
+    # #     "EQ expression",
+    # #     "CPY_EQ expression",
+    # #     "ADD_EQ expression",
+    # #     "SUB_EQ expression",
+    # #     "MUL_EQ expression",
+    # #     "DIV_EQ expression",
+    # # )
+    # # def assignment(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    # #     """Production Assignment rule."""
+    # #     return p
+
     # @_(
-    #     "attr_stmt",
-    #     "attr_stmt_list attr_stmt",
+    #     "logical",
+    #     "logical NOT edge_ref expression",
+    #     "logical connect_op expression",
     # )
-    # def attr_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Attribute statement list rule."""
+    # def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Connect rule."""
     #     return p
 
     # @_(
-    #     "has_stmt",
-    #     "can_stmt",
+    #     "compare",
+    #     "compare KW_AND logical",
+    #     "compare KW_OR logical",
     # )
-    # def attr_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Attribute statement rule."""
+    # def logical(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Logical rule."""
+    #     return p
+
+    # @_(
+    #     "NOT arithmetic",
+    #     "compare cmp_op arithmetic",
+    # )
+    # def compare(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Compare rule."""
+    #     return p
+
+    # @_(
+    #     "EE",
+    #     "LT",
+    #     "GT",
+    #     "LTE",
+    #     "GTE",
+    #     "NE",
+    #     "KW_IN",
+    #     "NOT KW_IN",
+    # )
+    # def cmp_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Compare operator rule."""
+    #     return p
+
+    # @_(
+    #     "term",
+    #     "term PLUS arithmetic",
+    #     "term MINUS arithmetic",
+    # )
+    # def arithmetic(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Arithmetic rule."""
+    #     return p
+
+    # @_(
+    #     "factor",
+    #     "factor STAR_MUL term",
+    #     "factor DIV term",
+    #     "factor MOD term",
+    # )
+    # def term(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Term rule."""
+    #     return p
+
+    # @_(
+    #     "PLUS factor",
+    #     "MINUS factor",
+    #     "power",
+    # )
+    # def factor(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Factor rule."""
+    #     return p
+
+    # @_(
+    #     "atom",
+    #     "atom POW factor",
+    # )
+    # def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Power rule."""
+    #     return p
+
+    # @_(
+    #     "INT",
+    #     "FLOAT",
+    #     "multistring",
+    #     "BOOL",
+    #     "NULL",
+    #     "NAME",
+    #     "global_ref",
+    #     "node_edge_ref",
+    #     "list_val",
+    #     "dict_val",
+    #     "LPAREN expression RPAREN",
+    #     "ability_op",
+    #     "atom atom_trailer",
+    #     "KW_SYNC atom",
+    #     "spawn",
+    #     "ref",
+    #     "deref",
+    #     "builtin_type",
+    # )
+    # def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Atom rule."""
     #     return p
 
     # @_("KW_GLOBAL NAME global_var_tail SEMI")
@@ -166,44 +357,6 @@ class JacParser(Parser):
     # )
     # def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Test rule."""
-    #     return p
-
-    # @_("KW_HAS has_assign_list SEMI")
-    # def has_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Has statement rule."""
-    #     return p
-
-    # @_(
-    #     "has_assign",
-    #     "has_assign COMMA has_assign_list",
-    # )
-    # def has_assign_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Has assign list rule."""
-    #     return p
-
-    # @_(
-    #     "has_tag NAME type_hint",
-    #     "has_tag NAME type_hint EQ expression",
-    #     "NAME type_hint",
-    #     "NAME type_hint EQ expression",
-    # )
-    # def has_assign(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Has assign rule."""
-    #     return p
-
-    # @_(
-    #     "has_tag KW_HIDDEN",
-    #     "has_tag KW_ANCHOR",
-    #     "KW_HIDDEN",
-    #     "KW_ANCHOR",
-    # )
-    # def has_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Has tag rule."""
-    #     return p
-
-    # @_("COLON any_type")
-    # def type_hint(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Type hint rule."""
     #     return p
 
     # @_("KW_CAN NAME event_clause code_block")
@@ -414,126 +567,6 @@ class JacParser(Parser):
     #     return p
 
     # @_(
-    #     "connect",
-    #     # "connect assignment",
-    # )
-    # def expression(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Expression rule."""
-    #     return p
-
-    # # @_(
-    # #     "EQ expression",
-    # #     "CPY_EQ expression",
-    # #     "ADD_EQ expression",
-    # #     "SUB_EQ expression",
-    # #     "MUL_EQ expression",
-    # #     "DIV_EQ expression",
-    # # )
-    # # def assignment(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    # #     """Production Assignment rule."""
-    # #     return p
-
-    # @_(
-    #     "logical",
-    #     "logical NOT edge_ref expression",
-    #     "logical connect_op expression",
-    # )
-    # def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Connect rule."""
-    #     return p
-
-    # @_(
-    #     "compare",
-    #     "compare KW_AND logical",
-    #     "compare KW_OR logical",
-    # )
-    # def logical(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Logical rule."""
-    #     return p
-
-    # @_(
-    #     "NOT arithmetic",
-    #     "compare cmp_op arithmetic",
-    # )
-    # def compare(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Compare rule."""
-    #     return p
-
-    # @_(
-    #     "EE",
-    #     "LT",
-    #     "GT",
-    #     "LTE",
-    #     "GTE",
-    #     "NE",
-    #     "KW_IN",
-    #     "NOT KW_IN",
-    # )
-    # def cmp_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Compare operator rule."""
-    #     return p
-
-    # @_(
-    #     "term",
-    #     "term PLUS arithmetic",
-    #     "term MINUS arithmetic",
-    # )
-    # def arithmetic(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Arithmetic rule."""
-    #     return p
-
-    # @_(
-    #     "factor",
-    #     "factor STAR_MUL term",
-    #     "factor DIV term",
-    #     "factor MOD term",
-    # )
-    # def term(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Term rule."""
-    #     return p
-
-    # @_(
-    #     "PLUS factor",
-    #     "MINUS factor",
-    #     "power",
-    # )
-    # def factor(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Factor rule."""
-    #     return p
-
-    # @_(
-    #     "atom",
-    #     "atom POW factor",
-    # )
-    # def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Power rule."""
-    #     return p
-
-    # @_(
-    #     "INT",
-    #     "FLOAT",
-    #     "multistring",
-    #     "BOOL",
-    #     "NULL",
-    #     "NAME",
-    #     "global_ref",
-    #     "node_edge_ref",
-    #     "list_val",
-    #     "dict_val",
-    #     "LPAREN expression RPAREN",
-    #     "ability_op",
-    #     "atom atom_trailer",
-    #     "KW_SYNC atom",
-    #     "spawn",
-    #     "ref",
-    #     "deref",
-    #     "any_type",
-    # )
-    # def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
-    #     """Atom rule."""
-    #     return p
-
-    # @_(
     #     "KW_GLOBAL DOT obj_built_in",
     #     "KW_GLOBAL DOT NAME",
     # )
@@ -589,7 +622,7 @@ class JacParser(Parser):
     #     """Built-in rule."""
     #     return p
 
-    # @_("any_type")
+    # @_("builtin_type")
     # def cast_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Cast built-in rule."""
     #     return p
@@ -847,7 +880,7 @@ class JacParser(Parser):
     #     "TYP_BOOL",
     #     "KW_TYPE",
     # )
-    # def any_type(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    # def builtin_type(self: "JacParser", p: YaccProduction) -> YaccProduction:
     #     """Any type rule."""
     #     return p
 

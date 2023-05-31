@@ -8,10 +8,12 @@ Use them to document your code
 import:jac .stuff;
 import:py from .activity, Activity as Actvy;
 
-node location { d
-    // has int x, int y, str name;
+node location {
+    has x: int, y:int, name:str;
+    has anchor activities: list[Activity];
+    has hidden intro: str = "Welcome";
     // has int visited = 0;
-    // has list[Activity] activities;
+    //
 
     // can record with tourist entry {
     //     visited+=1;
