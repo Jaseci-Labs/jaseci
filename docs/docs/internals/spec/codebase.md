@@ -106,3 +106,4 @@ plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_
 - Element serves as an abstract class to everything in jaseci and makes it all persistable
 - Objects have a context and Node, Edge, and Walker inherit it
 - Protobufs is used to automatically serialize and deserialzie jaseci objects
+- transpile rules should always have a 1 to 1 mapping to parser rules

@@ -16,7 +16,6 @@ class JacParser(Parser):
     @_("element_list")
     def start(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Start rule."""
-        self.tree = p._stack[-1].value
         return p
 
     # Jac program structured as a list of elements
