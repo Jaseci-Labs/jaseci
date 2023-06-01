@@ -204,27 +204,7 @@ spec:
                 secretKeyRef:
                   name: jaseci-db-credentials
                   key: password
-
-            - name: POSTGRES_HOST
-              value: jaseci-db
-
-            - name: DBNAME
-              value: postgres
-
-            - name: JSORC_DB_REGEN
-              value: "true"
-
-            - name: REDIS_HOST
-              value: jaseci-redis
-
-            - name: PROME_HOST
-              value: jaseci-prometheus-server
-
-            - name: ELASTIC_HOST
-              value: jaseci-es-internal-http
-
 $j{env_vars}
-
           volumeMounts:
             - name: prod-script
               mountPath: /script

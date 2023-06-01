@@ -10,7 +10,6 @@ from jaseci.utils.utils import (
     logger,
     perf_test_start,
     perf_test_stop,
-    perf_test_to_dot,
     exc_stack_as_str_list,
 )
 from jaseci.prim.element import Element
@@ -22,6 +21,7 @@ import hashlib
 
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.task_svc import TaskService
+from jaseci.utils.utils import format_jac_profile
 
 
 class Walker(Element, WalkerInterp, Anchored):
@@ -40,6 +40,8 @@ class Walker(Element, WalkerInterp, Anchored):
         self.step_limit = 10000
         self.is_async = is_async
         self._to_await = False
+        if "persist" not in kwargs:  # Default walker persistence to is_async
+            kwargs["persist"] = is_async
         Element.__init__(self, **kwargs)
         WalkerInterp.__init__(self)
         Anchored.__init__(self)
@@ -189,8 +191,10 @@ class Walker(Element, WalkerInterp, Anchored):
             report_ret["errors"] = self.runtime_errors
             report_ret["success"] = False
         if profiling:
-            self.profile["perf"] = perf_test_stop(pr)
-            self.profile["graph"] = perf_test_to_dot(pr)
+            self.profile["jac"] = format_jac_profile(self.get_master()._jac_profile)
+            calls, graph = perf_test_stop(pr)
+            self.profile["perf"] = calls
+            self.profile["graph"] = graph
             report_ret["profile"] = self.profile
 
         if self.for_queue():

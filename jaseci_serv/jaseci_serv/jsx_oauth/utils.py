@@ -191,9 +191,6 @@ class JSXSocialLoginView(SocialLoginView):
         self.serializer.is_valid(raise_exception=True)
         data = self.serializer.validated_data
         self.user = data.get("user")
-        auth_token = AuthToken.objects.filter(user_id=self.user.id)
-        if auth_token:
-            AuthToken.objects.filter(user_id=self.user.id).delete()
 
         expiry = (
             knox_settings.TOKEN_TTL

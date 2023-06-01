@@ -34,7 +34,7 @@ class ScheduledWalker(Task):
     def get_obj(self, jid):
         return self.hook.get_obj_from_store(jid)
 
-    def run(self, name, ctx, nd=None, snt=None, mst=None):
+    def run(self, mst, wlk, ctx, nd=None, snt=None):
         self.hook = JsOrc.hook()
 
         if mst:
@@ -71,7 +71,7 @@ class ScheduledWalker(Task):
             if not nd:
                 return f"{DEFAULT_MSG} Invalid Node!"
 
-            return mst.walker_run(name, nd, ctx, ctx, snt, False, False)
+            return mst.walker_run(wlk, nd, ctx, ctx, snt, False, False)
         except Exception as e:
             return f"{DEFAULT_MSG} Error occured: {e}"
 
@@ -205,7 +205,7 @@ class ScheduledSequence(Task):
 
         return getattr(caller, f"{trigger_type}_interface_to_api")(body, api)
 
-    def run(self, *args, **kwargs):
+    def run(self, **kwargs):
         requests = kwargs.get("requests")
         persistence = kwargs.get("persistence", {})
         container = kwargs.get("container", {"current": persistence})

@@ -165,7 +165,7 @@ class JacTests(TestCaseHelper, TestCase):
         """Test preset function loading"""
         from jaseci.jac.machine.jac_scope import JacScope
 
-        JacScope(None)
+        JacScope(None, None)
         from jaseci.jac.machine.jac_scope import get_global_actions
 
         self.assertGreater(len(get_global_actions()), 5)

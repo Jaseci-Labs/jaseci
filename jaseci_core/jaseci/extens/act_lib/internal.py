@@ -14,4 +14,5 @@ def start_perf_test(name: str = "default"):
 def stop_perf_test(name: str = "default"):
     if name not in perf_tests.keys():
         return
-    return perf_test_stop(perf_tests[name])
+    calls, graph = perf_test_stop(perf_tests[name])
+    return {"calls": calls, "graph": graph}

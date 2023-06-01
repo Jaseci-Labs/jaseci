@@ -22,7 +22,7 @@ export default {
     result = await result.json();
 
     const answer = result.report[0];
-      
+
     return answer
     },
   }

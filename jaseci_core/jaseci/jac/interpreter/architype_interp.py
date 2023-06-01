@@ -44,7 +44,7 @@ class ArchitypeInterp(Interp):
 
         kid = self.set_cur_ast(jac_ast)
 
-        self.push_scope(JacScope(parent=self))
+        self.push_scope(JacScope(parent=self, name=f"spawn:{jac_ast.loc_str()}"))
         if kid[0].name == "KW_NODE":
             item = Node(
                 m_id=self._m_id,
@@ -173,14 +173,11 @@ class ArchitypeInterp(Interp):
         """
         kid = self.set_cur_ast(jac_ast)
         root_name = self.run_has_root(kid[1])
-        m = Interp(parent_override=self.parent(), caller=self)
-        m.push_scope(JacScope(parent=self, here=self))
         try:
-            m.run_code_block(kid[4])
+            self.run_code_block(kid[4])
         except Exception as e:
-            self.rt_error(f"Internal Exception: {e}", m._cur_jac_ast)
-        local_state = m._jac_scope.local_scope
-        self.report = self.report + m.report
+            self.rt_error(f"Internal Exception: {e}", self._cur_jac_ast)
+        local_state = self._jac_scope.local_scope
         if root_name in local_state.keys():
             obj = local_state[root_name]
             if not isinstance(obj, Node):

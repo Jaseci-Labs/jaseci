@@ -6,7 +6,6 @@ sidebar_position: 2
 
 In Jac, you can use the `info` and `context` commands to view the content of a node or edge. Although the following example demonstrates the use of these commands on nodes, the same principles can be applied to edges as well. Take a look at the example below to see how to use the `info` and `context` commands.
 
-**Example:**
 ```jac
 node example{
     has name = "Testing Info and Context commands";

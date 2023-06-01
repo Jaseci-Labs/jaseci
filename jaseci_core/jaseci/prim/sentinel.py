@@ -219,7 +219,9 @@ class Sentinel(Element, JacCode, SentinelInterp):
                 if i["assert_block"]:
                     wlk._loop_ctrl = None
                     wlk.scope_and_run(
-                        jac_ir_to_ast(i["assert_block"]), run_func=wlk.run_code_block
+                        jac_ir_to_ast(i["assert_block"]),
+                        run_func=wlk.run_code_block,
+                        scope_name="assert_block",
                     )
                 i["passed"] = True
                 if not silent:

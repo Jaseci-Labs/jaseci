@@ -102,6 +102,10 @@ class AbstractJacAPIView(APIView):
             "caller_name": self.caller.name,
             "caller_jid": self.caller.jid,
         }
+        # Add custom fields depending on the type of API
+        if log_dict["api_name"] == "walker_run":
+            log_dict["walker_name"] = self.cmd.get("name", "")
+            log_dict["success"] = (api_result.get("success", True),)
         try:
             api_result_str = json.dumps(api_result)[:OBJECT_LOG_LIMIT]
         except TypeError:
@@ -189,6 +193,9 @@ class AbstractJacAPIView(APIView):
             "caller_jid": self.caller.jid,
             "request_user_agent": user_agent,
         }
+        # Add custom field based on type of API
+        if log_dict["api_name"] == "walker_run":
+            log_dict["walker_name"] = request.data.get("name", "")
         try:
             request_payload_str = json.dumps(dict(request.data))[:OBJECT_LOG_LIMIT]
         except TypeError:

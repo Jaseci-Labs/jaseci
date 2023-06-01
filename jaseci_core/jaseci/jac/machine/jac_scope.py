@@ -8,12 +8,16 @@ from jaseci.jsorc.live_actions import get_global_actions
 
 
 class JacScope:
-    def __init__(self, parent, has_obj=None, here=None, visitor=None):
+    def __init__(self, parent, name, has_obj=None, here=None, visitor=None):
         self.parent = parent
+        self.name = name
         self.local_scope = {}
         self.has_obj = has_obj if has_obj else self
         self.context = {}
         self.action_sets = []
+        self._start_time = 0  # For profiling
+        self._total_time = 0  # For profiling
+        self._cum_start_time = None
         self.set_refs(here, visitor)
         self.setup_actions()
 

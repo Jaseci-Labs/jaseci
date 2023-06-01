@@ -28,22 +28,19 @@ When solving problems with walkers, a developer can think of that walker as a li
 
 When we run a jac code, by default it's executing the `init` walker. Basically the `walker init` works as the main method in other programming language. save following code as `main.jac` and run the code in `jsctl` shell with `jac run main.jac`
 
-**Example 1:**
 ```jac
 walker init{
     std.out("This is from init walker \n");
 }
 ```
 
-**Output 1:**
+Expected Output:
 
 ```
     This is from init walker
 ```
 As you can see, this code has executed the `init` walker. Now let's create another walker;
 
-
-**Example 2:**
 ```jac
 walker second_walker{
     std.out("This is from second walker \n");
@@ -58,7 +55,7 @@ walker init{
 
 ```
 
-**Output 2:**
+Expected Output:
 ```
     This is from init walker
     This is from second walker
@@ -80,7 +77,6 @@ We are creating the following graph to demonstrate traversing of walkers in the 
 
 Jaseci introduces the handy command called "take" to instruct walker to navigate through nodes. See how that works in following example;
 
-**Example 1:**
 ```jac
 node plain: has number;
 
@@ -93,10 +89,10 @@ graph example {
             n.l::append(spawn node::plain(number=i+1));
         }
 
-        n[0] --> n[1] --> n[2];
-        n[1] --> n[3];
-        n[0] --> n[4] --> n[5];
-        n[4] --> n[6];
+        n[0] ++> n[1] ++> n[2];
+        n[1] ++> n[3];
+        n[0] ++> n[4] ++> n[5];
+        n[4] ++> n[6];
         head=n[0];
         }
     }
@@ -114,7 +110,8 @@ walker init {
 }
 ```
 
-**Output 1:**
+Expected Output:
+
 ```
 1
 2
@@ -124,6 +121,7 @@ walker init {
 6
 7
 ```
+
 `take` command lets the walker traverse through graph nodes. You may notice by default, a walker traverse with `take` command using the breadth first search approach. But the `take` command is flexible hence you can indicate whether the take command should use a depth first or a breadth first traversal to navigate. Look at the following example; More information about `take` command and keywords to operate walkers can be found [here](../operations/take.md)
 
 In addition to the introduction of the `take` command to support new types of control flow for node-bound iterations. The keywords and semantics of `disengage`, `skip`, and `ignore` are also introduced. These instruct walkers to stop walking the graph, skip over a node for execution, and ignore certain paths of the graph. More information about these can be found in [here](../operations/skip.md)
@@ -136,7 +134,6 @@ Jaseci walkers act like little robots traversing graphs, with a unique ability t
 
 Here's a simple example of how to use walker spawning in Jaseci:
 
-**Example 1**
 ```jac
 walker parent {
     has result;
@@ -158,6 +155,7 @@ In this example, the parent walker spawns the child walker and sets the return_v
 With this feature, you can easily create dynamic traversal patterns that adapt to changing data and requirements, making Jaseci a powerful tool for developing complex applications.
 
 ## Walker Callback
+
 Walker callback is used for running a walker to a specific node using `public key` instead of authorization token.
 
 ### Use Case

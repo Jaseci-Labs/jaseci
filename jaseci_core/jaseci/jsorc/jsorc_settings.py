@@ -140,6 +140,27 @@ class JsOrcSettings:
     # ------------------------------------------------ ELASTIC -------------------------------------------------- #
     ###############################################################################################################
 
+    ELASTIC_ILM_POLICY_NAME = "jaseci-logs-ilm-policy"
+
+    ELASTIC_ILM_POLICY = {
+        "policy": {
+            "phases": {
+                "hot": {"actions": {"rollover": {"max_size": "1gb", "max_age": "7d"}}},
+                "delete": {"min_age": "14d", "actions": {"delete": {}}},
+            }
+        }
+    }
+
+    ELASTIC_INDEX_TEMPLATE_NAME = "jaseci-logs-index-template"
+
+    ELASTIC_INDEX_TEMPLATE = {
+        "index_patterns": ["core*", "app*"],
+        "data_stream": {},
+        "composed_of": ["data-streams-mappings"],
+        "priority": 500,
+        "template": {"settings": {"index.lifecycle.name": ELASTIC_ILM_POLICY_NAME}},
+    }
+
     ELASTIC_CONFIG = {
         "enabled": bool(os.getenv("ELASTIC_HOST")),
         "quiet": False,
@@ -151,6 +172,10 @@ class JsOrcSettings:
         "auth": os.getenv("ELASTIC_AUTH"),
         "common_index": f"{KUBE_NAMESPACE}-common",
         "activity_index": f"{KUBE_NAMESPACE}-activity",
+        "ilm_policy_name": ELASTIC_ILM_POLICY_NAME,
+        "ilm_policy": ELASTIC_ILM_POLICY,
+        "index_template_name": ELASTIC_INDEX_TEMPLATE_NAME,
+        "index_template": ELASTIC_INDEX_TEMPLATE,
     }
 
     ELASTIC_MANIFEST = load_default_yaml("elastic")
