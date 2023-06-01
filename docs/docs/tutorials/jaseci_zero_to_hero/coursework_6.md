@@ -20,7 +20,7 @@ description: Creating a custom AI module using Jaseci, Python, and Hugging Face 
 
 In this web application, you can enter a web url and the jaseci backend will grab the information from the url and use the AI model to generate a summary of the article. The summary will be displayed on the frontend. and then the summary will be used to generate an image using Huggingface Jaseci API you built. The image will be displayed on the frontend.
 
-<img src="https://i.ibb.co/M7LfbWr/Kapture-2023-05-10-at-20-40-24-50.gif" alt="Demo" border="0" width="100%">
+<img src="https://i.ibb.co/M7LfbWr/Kapture-2023-05-10-at-20-40-24-50.gif" alt="Demo" border="0" width="100%"/>
 
 ### Code
 

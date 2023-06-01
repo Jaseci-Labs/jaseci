@@ -12,6 +12,7 @@ from jaseci.jsorc.jsorc import JsOrc
 from kubernetes import config as kubernetes_config, client
 from unittest.mock import patch, Mock
 from jaseci.jsorc.jsorc_settings import JsOrcSettings
+from jaseci.extens.svc.elastic_svc import LOG_QUEUES, format_elastic_record
 
 
 class LoggingTests(TestCaseHelper, TestCase):
@@ -38,6 +39,7 @@ class LoggingTests(TestCaseHelper, TestCase):
 
         JsOrcSettings.KUBE_CONFIG["enabled"] = True
         JsOrcSettings.ELASTIC_CONFIG["enabled"] = True
+        JsOrcSettings.ELASTIC_CONFIG["under_test"] = True
         self.kube = JsOrc.svc("kube")
         with patch.object(self.kube, "read") as mock_read, patch.object(
             self.kube, "patch"
@@ -54,58 +56,126 @@ class LoggingTests(TestCaseHelper, TestCase):
         super().tearDown()
         JsOrcSettings.KUBE_CONFIG["enabled"] = False
         JsOrcSettings.ELASTIC_CONFIG["enabled"] = False
+        JsOrcSettings.ELASTIC_CONFIG["under_test"] = False
         JsOrc.svc_reset("elastic")
         JsOrc.svc_reset("kube")
         self.logger_off()
 
     def test_elastic_logging_objects(self):
         """Test sentinel register and walker run is logged properly"""
-        with patch("jaseci.extens.svc.elastic_svc.Elastic._post") as mocked_es_post:
-            self.logger_on()
-            zsb_file = open(os.path.dirname(__file__) + "/general.jac").read()
-            payload = {"op": "sentinel_register", "name": "general", "code": zsb_file}
-            self.auth_client.post(
-                reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-            )
-            self.assertEqual(mocked_es_post.call_count, 2)
-            pre_request_args, _ = mocked_es_post.call_args_list[0]
-            self.assertEqual(pre_request_args[0], "/core/_doc?")
-            self.assertEqual(
-                set(pre_request_args[1].keys()),
-                set(
-                    [
-                        "@timestamp",
-                        "message",
-                        "level",
-                        "api_name",
-                        "caller_name",
-                        "caller_jid",
-                        "request_user_agent",
-                        "request_payload",
-                    ]
-                ),
-            )
+        self.logger_on()
+        jac_file = open(os.path.dirname(__file__) + "/general.jac").read()
+        payload = {"op": "sentinel_register", "name": "general", "code": jac_file}
+        self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
 
-            post_request_args, _ = mocked_es_post.call_args_list[1]
-            self.assertEqual(post_request_args[0], "/core/_doc?")
-            self.assertEqual(
-                set(post_request_args[1].keys()),
-                set(
-                    [
-                        "@timestamp",
-                        "message",
-                        "level",
-                        "api_name",
-                        "request_latency",
-                        "objects_touched",
-                        "redis_touches",
-                        "db_touches",
-                        "objects_touched_size",
-                        "objects_saved",
-                        "caller_name",
-                        "caller_jid",
-                        "api_response",
-                    ]
-                ),
-            )
-            self.logger_off()
+        # There should be two entries in the log queue
+        log_queue = LOG_QUEUES["core"]
+        self.assertEqual(log_queue.qsize(), 2)
+
+        # Validate the first entry
+        record = log_queue.get_nowait()
+        elastic_record = format_elastic_record(record)
+
+        self.assertEqual(
+            set(elastic_record.keys()),
+            set(
+                [
+                    "@timestamp",
+                    "message",
+                    "level",
+                    "api_name",
+                    "caller_name",
+                    "caller_jid",
+                    "request_user_agent",
+                    "request_payload",
+                ]
+            ),
+        )
+
+        # Validate the second entry
+        record = log_queue.get_nowait()
+        elastic_record = format_elastic_record(record)
+
+        self.assertEqual(
+            set(elastic_record.keys()),
+            set(
+                [
+                    "@timestamp",
+                    "message",
+                    "level",
+                    "api_name",
+                    "request_latency",
+                    "objects_touched",
+                    "redis_touches",
+                    "db_touches",
+                    "objects_touched_size",
+                    "objects_saved",
+                    "caller_name",
+                    "caller_jid",
+                    "api_response",
+                ]
+            ),
+        )
+
+        # Validate walker run
+        # Walker run will have walker_name and success in the log record
+        payload = {"op": "walker_run", "name": "here_fix_create"}
+        self.auth_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        # There should be two entries in the log queue
+        log_queue = LOG_QUEUES["core"]
+        self.assertEqual(log_queue.qsize(), 2)
+
+        # Validate the first entry
+        record = log_queue.get_nowait()
+        elastic_record = format_elastic_record(record)
+
+        self.assertEqual(
+            set(elastic_record.keys()),
+            set(
+                [
+                    "@timestamp",
+                    "message",
+                    "level",
+                    "api_name",
+                    "caller_name",
+                    "caller_jid",
+                    "request_user_agent",
+                    "request_payload",
+                    "walker_name",
+                ]
+            ),
+        )
+
+        # Validate the second entry
+        record = log_queue.get_nowait()
+        elastic_record = format_elastic_record(record)
+
+        self.assertEqual(
+            set(elastic_record.keys()),
+            set(
+                [
+                    "@timestamp",
+                    "message",
+                    "level",
+                    "api_name",
+                    "request_latency",
+                    "objects_touched",
+                    "redis_touches",
+                    "db_touches",
+                    "objects_touched_size",
+                    "objects_saved",
+                    "caller_name",
+                    "caller_jid",
+                    "api_response",
+                    "walker_name",
+                    "success",
+                ]
+            ),
+        )
+
+        self.logger_off()

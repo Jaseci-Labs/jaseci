@@ -134,6 +134,9 @@ class SuperMaster(Master, JsOrcApi, CoreSuper):
                     "created_date": i.time_created.isoformat(),
                     "is_activated": i.is_activated,
                     "is_superuser": i.is_superuser,
+                    "last_login": i.last_login.isoformat()
+                    if i.last_login is not None
+                    else "",
                 }
             )
         ret = {"total": total, "data": filtered_users}

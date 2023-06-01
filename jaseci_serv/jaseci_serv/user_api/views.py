@@ -16,6 +16,7 @@ from rest_framework.response import Response
 import base64
 
 from jaseci.jsorc.jsorc import JsOrc
+from jaseci.utils.utils import logger, ColCodes as Cc
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -65,8 +66,28 @@ class CreateTokenView(KnoxLoginView):
         )
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
+        log_str = f"Login request from {Cc.TG}{user}{Cc.EC} via {user_agent}"
+        log_dict = {
+            "api_name": "login",
+            "caller_name": str(user),
+            "request_user_agent": user_agent,
+        }
+        log_dict["extra_fields"] = list(log_dict.keys())
+        logger.info(log_str, extra=log_dict)
+
         login(request, user)
-        return super(CreateTokenView, self).post(request, format=None)
+        res = super(CreateTokenView, self).post(request, format=None)
+
+        log_str = f"Login success for {Cc.TG}{user}{Cc.EC} via {user_agent}"
+        log_dict = {
+            "api_name": "login",
+            "caller_name": str(user),
+            "request_user_agent": user_agent,
+        }
+        log_dict["extra_fields"] = list(log_dict.keys())
+        logger.info(log_str, extra=log_dict)
+        return res
 
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
