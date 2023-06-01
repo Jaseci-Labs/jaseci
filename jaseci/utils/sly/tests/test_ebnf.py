@@ -1,3 +1,4 @@
+# flake8: noqa
 import pytest
 from jaseci.utils.sly import Lexer, Parser
 

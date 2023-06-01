@@ -1,6 +1,5 @@
 """Parser for Jac."""
 from jaseci.jac.lexer import JacLexer
-
 from jaseci.utils.sly.yacc import Parser, YaccProduction
 
 _ = None  # For flake8 linting
@@ -18,7 +17,6 @@ class JacParser(Parser):
     def start(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Start rule."""
         self.tree = p._stack[-1].value
-        print(self.tree)
         return p
 
     # Jac program structured as a list of elements

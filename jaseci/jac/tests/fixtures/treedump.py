@@ -1,59 +1,49 @@
+# flake8: noqa
 """Dump of parse tree for testing."""
 
-# flake8: noqa
 tree = (
-    "start",
+    "element_list",
+    3,
     (
         "element_list",
+        3,
         (
             "element_list",
+            3,
             (
                 "element_list",
+                3,
                 (
                     "element_list",
-                    (
-                        "element_list",
-                        (
-                            "element",
-                            (
-                                "doc_string_lit",
-                                '"""\nThese are doc strings and can be used as comments\nUse them to document your code\n"""',
-                            ),
-                        ),
-                    ),
+                    3,
                     (
                         "element",
+                        3,
                         (
-                            "import_stmt",
-                            "import",
-                            ":",
-                            ("name_lit", "jac"),
-                            (
-                                "import_path",
-                                ("import_path_prefix", ".", ("name_lit", "stuff")),
-                            ),
-                            ";",
+                            "doc_string_literal",
+                            3,
+                            '"""\nThese are doc strings and can be used as comments\nUse them to document your code\n"""',
                         ),
                     ),
                 ),
                 (
                     "element",
+                    8,
                     (
                         "import_stmt",
+                        8,
                         "import",
                         ":",
-                        ("name_lit", "py"),
-                        "from",
+                        ("name_literal", 8, "jac"),
                         (
                             "import_path",
-                            ("import_path_prefix", ".", ("name_lit", "activity")),
-                        ),
-                        ",",
-                        (
-                            "name_as_list",
-                            ("name_lit", "Activity"),
-                            "as",
-                            ("name_lit", "Actvy"),
+                            8,
+                            (
+                                "import_path_prefix",
+                                8,
+                                ".",
+                                ("name_literal", 8, "stuff"),
+                            ),
                         ),
                         ";",
                     ),
@@ -61,66 +51,95 @@ tree = (
             ),
             (
                 "element",
+                9,
                 (
-                    "architype",
-                    "node",
-                    ("name_lit", "location"),
+                    "import_stmt",
+                    9,
+                    "import",
+                    ":",
+                    ("name_literal", 9, "py"),
+                    "from",
                     (
-                        "arch_decl_tail",
+                        "import_path",
+                        9,
+                        ("import_path_prefix", 9, ".", ("name_literal", 9, "activity")),
+                    ),
+                    ",",
+                    (
+                        "name_as_list",
+                        9,
+                        ("name_literal", 9, "Activity"),
+                        "as",
+                        ("name_literal", 9, "Actvy"),
+                    ),
+                    ";",
+                ),
+            ),
+        ),
+        (
+            "element",
+            11,
+            (
+                "architype",
+                11,
+                "node",
+                ("name_literal", 11, "location"),
+                (
+                    "arch_decl_tail",
+                    11,
+                    (
+                        "attr_block",
+                        11,
+                        "{",
                         (
-                            "attr_block",
-                            "{",
+                            "attr_stmt_list",
+                            12,
                             (
                                 "attr_stmt_list",
+                                12,
                                 (
                                     "attr_stmt_list",
+                                    12,
                                     (
                                         "attr_stmt_list",
+                                        12,
                                         (
                                             "attr_stmt_list",
+                                            12,
                                             (
-                                                "attr_stmt_list",
+                                                "attr_stmt",
+                                                12,
                                                 (
-                                                    "attr_stmt",
+                                                    "has_stmt",
+                                                    12,
+                                                    "has",
                                                     (
-                                                        "has_stmt",
-                                                        "has",
+                                                        "has_assign_clause",
+                                                        12,
                                                         (
                                                             "has_assign_clause",
+                                                            12,
                                                             (
                                                                 "has_assign_clause",
-                                                                (
-                                                                    "has_assign_clause",
-                                                                    (
-                                                                        "has_assign",
-                                                                        (
-                                                                            "name_lit",
-                                                                            "x",
-                                                                        ),
-                                                                        (
-                                                                            "type_spec",
-                                                                            ":",
-                                                                            (
-                                                                                "type_name",
-                                                                                (
-                                                                                    "builtin_type",
-                                                                                    "int",
-                                                                                ),
-                                                                            ),
-                                                                        ),
-                                                                    ),
-                                                                ),
-                                                                ",",
+                                                                12,
                                                                 (
                                                                     "has_assign",
-                                                                    ("name_lit", "y"),
+                                                                    12,
+                                                                    (
+                                                                        "name_literal",
+                                                                        12,
+                                                                        "x",
+                                                                    ),
                                                                     (
                                                                         "type_spec",
+                                                                        12,
                                                                         ":",
                                                                         (
                                                                             "type_name",
+                                                                            12,
                                                                             (
                                                                                 "builtin_type",
+                                                                                12,
                                                                                 "int",
                                                                             ),
                                                                         ),
@@ -130,50 +149,49 @@ tree = (
                                                             ",",
                                                             (
                                                                 "has_assign",
-                                                                ("name_lit", "name"),
+                                                                12,
+                                                                (
+                                                                    "name_literal",
+                                                                    12,
+                                                                    "y",
+                                                                ),
                                                                 (
                                                                     "type_spec",
+                                                                    12,
                                                                     ":",
                                                                     (
                                                                         "type_name",
+                                                                        12,
                                                                         (
                                                                             "builtin_type",
-                                                                            "str",
+                                                                            12,
+                                                                            "int",
                                                                         ),
                                                                     ),
                                                                 ),
                                                             ),
                                                         ),
-                                                        ";",
-                                                    ),
-                                                ),
-                                            ),
-                                            (
-                                                "attr_stmt",
-                                                (
-                                                    "has_stmt",
-                                                    "has",
-                                                    (
-                                                        "has_assign_clause",
+                                                        ",",
                                                         (
                                                             "has_assign",
-                                                            ("has_tag", "anchor"),
-                                                            ("name_lit", "activities"),
+                                                            12,
+                                                            (
+                                                                "name_literal",
+                                                                12,
+                                                                "name",
+                                                            ),
                                                             (
                                                                 "type_spec",
+                                                                12,
                                                                 ":",
                                                                 (
                                                                     "type_name",
-                                                                    "list",
-                                                                    "[",
+                                                                    12,
                                                                     (
-                                                                        "type_name",
-                                                                        (
-                                                                            "name_lit",
-                                                                            "Activity",
-                                                                        ),
+                                                                        "builtin_type",
+                                                                        12,
+                                                                        "str",
                                                                     ),
-                                                                    "]",
                                                                 ),
                                                             ),
                                                         ),
@@ -184,56 +202,42 @@ tree = (
                                         ),
                                         (
                                             "attr_stmt",
+                                            13,
                                             (
                                                 "has_stmt",
+                                                13,
                                                 "has",
                                                 (
                                                     "has_assign_clause",
+                                                    13,
                                                     (
                                                         "has_assign",
-                                                        ("has_tag", "hidden"),
-                                                        ("name_lit", "intro"),
+                                                        13,
+                                                        ("has_tag", 13, "anchor"),
+                                                        (
+                                                            "name_literal",
+                                                            13,
+                                                            "activities",
+                                                        ),
                                                         (
                                                             "type_spec",
+                                                            13,
                                                             ":",
                                                             (
                                                                 "type_name",
-                                                                ("builtin_type", "str"),
-                                                            ),
-                                                        ),
-                                                        "=",
-                                                        (
-                                                            "expression",
-                                                            (
-                                                                "connect",
+                                                                13,
+                                                                "list",
+                                                                "[",
                                                                 (
-                                                                    "logical",
+                                                                    "type_name",
+                                                                    13,
                                                                     (
-                                                                        "compare",
-                                                                        (
-                                                                            "arithmetic",
-                                                                            (
-                                                                                "term",
-                                                                                (
-                                                                                    "factor",
-                                                                                    (
-                                                                                        "power",
-                                                                                        (
-                                                                                            "atom",
-                                                                                            (
-                                                                                                "multistring",
-                                                                                                (
-                                                                                                    "string_lit",
-                                                                                                    '"Welcome"',
-                                                                                                ),
-                                                                                            ),
-                                                                                        ),
-                                                                                    ),
-                                                                                ),
-                                                                            ),
-                                                                        ),
+                                                                        "name_literal",
+                                                                        13,
+                                                                        "Activity",
                                                                     ),
                                                                 ),
+                                                                "]",
                                                             ),
                                                         ),
                                                     ),
@@ -244,44 +248,65 @@ tree = (
                                     ),
                                     (
                                         "attr_stmt",
+                                        14,
                                         (
                                             "has_stmt",
+                                            14,
                                             "has",
                                             (
                                                 "has_assign_clause",
+                                                14,
                                                 (
                                                     "has_assign",
-                                                    ("name_lit", "visited"),
+                                                    14,
+                                                    ("has_tag", 14, "hidden"),
+                                                    ("name_literal", 14, "intro"),
                                                     (
                                                         "type_spec",
+                                                        14,
                                                         ":",
                                                         (
                                                             "type_name",
-                                                            ("builtin_type", "int"),
+                                                            14,
+                                                            ("builtin_type", 14, "str"),
                                                         ),
                                                     ),
                                                     "=",
                                                     (
                                                         "expression",
+                                                        14,
                                                         (
                                                             "connect",
+                                                            14,
                                                             (
                                                                 "logical",
+                                                                14,
                                                                 (
                                                                     "compare",
+                                                                    14,
                                                                     (
                                                                         "arithmetic",
+                                                                        14,
                                                                         (
                                                                             "term",
+                                                                            14,
                                                                             (
                                                                                 "factor",
+                                                                                14,
                                                                                 (
                                                                                     "power",
+                                                                                    14,
                                                                                     (
                                                                                         "atom",
+                                                                                        14,
                                                                                         (
-                                                                                            "int_lit",
-                                                                                            "0",
+                                                                                            "multistring",
+                                                                                            14,
+                                                                                            (
+                                                                                                "string_literal",
+                                                                                                14,
+                                                                                                '"Welcome"',
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                                 ),
@@ -300,542 +325,68 @@ tree = (
                                 ),
                                 (
                                     "attr_stmt",
-                                    (
-                                        "can_stmt",
-                                        "can",
-                                        ("name_lit", "record"),
-                                        (
-                                            "event_clause",
-                                            "with",
-                                            ("name_list", ("name_lit", "tourist")),
-                                            "entry",
-                                        ),
-                                        (
-                                            "code_block",
-                                            "{",
-                                            (
-                                                "statement_list",
-                                                (
-                                                    "statement",
-                                                    (
-                                                        "expression",
-                                                        (
-                                                            "connect",
-                                                            (
-                                                                "logical",
-                                                                (
-                                                                    "compare",
-                                                                    (
-                                                                        "arithmetic",
-                                                                        (
-                                                                            "term",
-                                                                            (
-                                                                                "factor",
-                                                                                (
-                                                                                    "power",
-                                                                                    (
-                                                                                        "atom",
-                                                                                        (
-                                                                                            "name_lit",
-                                                                                            "visited",
-                                                                                        ),
-                                                                                    ),
-                                                                                ),
-                                                                            ),
-                                                                        ),
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                        ),
-                                                        ("assignment_op", "+="),
-                                                        (
-                                                            "expression",
-                                                            (
-                                                                "connect",
-                                                                (
-                                                                    "logical",
-                                                                    (
-                                                                        "compare",
-                                                                        (
-                                                                            "arithmetic",
-                                                                            (
-                                                                                "term",
-                                                                                (
-                                                                                    "factor",
-                                                                                    (
-                                                                                        "power",
-                                                                                        (
-                                                                                            "atom",
-                                                                                            (
-                                                                                                "int_lit",
-                                                                                                "1",
-                                                                                            ),
-                                                                                        ),
-                                                                                    ),
-                                                                                ),
-                                                                            ),
-                                                                        ),
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                        ),
-                                                    ),
-                                                    ";",
-                                                ),
-                                                (
-                                                    "statement_list",
-                                                    (
-                                                        "statement",
-                                                        (
-                                                            "for_stmt",
-                                                            "for",
-                                                            ("atom", ("name_lit", "i")),
-                                                            "in",
-                                                            (
-                                                                "expression",
-                                                                (
-                                                                    "connect",
-                                                                    (
-                                                                        "logical",
-                                                                        (
-                                                                            "compare",
-                                                                            (
-                                                                                "arithmetic",
-                                                                                (
-                                                                                    "term",
-                                                                                    (
-                                                                                        "factor",
-                                                                                        (
-                                                                                            "power",
-                                                                                            (
-                                                                                                "atom",
-                                                                                                (
-                                                                                                    "name_lit",
-                                                                                                    "activities",
-                                                                                                ),
-                                                                                            ),
-                                                                                        ),
-                                                                                    ),
-                                                                                ),
-                                                                            ),
-                                                                        ),
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            (
-                                                                "code_block",
-                                                                "{",
-                                                                (
-                                                                    "statement_list",
-                                                                    (
-                                                                        "statement",
-                                                                        (
-                                                                            "expression",
-                                                                            (
-                                                                                "connect",
-                                                                                (
-                                                                                    "logical",
-                                                                                    (
-                                                                                        "compare",
-                                                                                        (
-                                                                                            "arithmetic",
-                                                                                            (
-                                                                                                "term",
-                                                                                                (
-                                                                                                    "factor",
-                                                                                                    (
-                                                                                                        "power",
-                                                                                                        (
-                                                                                                            "atom",
-                                                                                                            (
-                                                                                                                "atom",
-                                                                                                                (
-                                                                                                                    "name_lit",
-                                                                                                                    "i",
-                                                                                                                ),
-                                                                                                            ),
-                                                                                                            (
-                                                                                                                "atom_trailer",
-                                                                                                                ".",
-                                                                                                                (
-                                                                                                                    "name_lit",
-                                                                                                                    "duration",
-                                                                                                                ),
-                                                                                                            ),
-                                                                                                        ),
-                                                                                                    ),
-                                                                                                ),
-                                                                                            ),
-                                                                                        ),
-                                                                                    ),
-                                                                                ),
-                                                                            ),
-                                                                            (
-                                                                                "assignment_op",
-                                                                                "=",
-                                                                            ),
-                                                                            (
-                                                                                "expression",
-                                                                                (
-                                                                                    "connect",
-                                                                                    (
-                                                                                        "logical",
-                                                                                        (
-                                                                                            "compare",
-                                                                                            (
-                                                                                                "arithmetic",
-                                                                                                (
-                                                                                                    "term",
-                                                                                                    (
-                                                                                                        "factor",
-                                                                                                        (
-                                                                                                            "power",
-                                                                                                            (
-                                                                                                                "atom",
-                                                                                                                (
-                                                                                                                    "atom",
-                                                                                                                    (
-                                                                                                                        "name_lit",
-                                                                                                                        "visitor",
-                                                                                                                    ),
-                                                                                                                ),
-                                                                                                                (
-                                                                                                                    "atom_trailer",
-                                                                                                                    ".",
-                                                                                                                    (
-                                                                                                                        "name_lit",
-                                                                                                                        "duration",
-                                                                                                                    ),
-                                                                                                                ),
-                                                                                                            ),
-                                                                                                        ),
-                                                                                                    ),
-                                                                                                ),
-                                                                                            ),
-                                                                                        ),
-                                                                                    ),
-                                                                                ),
-                                                                            ),
-                                                                        ),
-                                                                        ";",
-                                                                    ),
-                                                                    (
-                                                                        "statement_list",
-                                                                        (
-                                                                            "statement",
-                                                                            (
-                                                                                "if_stmt",
-                                                                                "if",
-                                                                                (
-                                                                                    "expression",
-                                                                                    (
-                                                                                        "connect",
-                                                                                        (
-                                                                                            "logical",
-                                                                                            (
-                                                                                                "compare",
-                                                                                                (
-                                                                                                    "arithmetic",
-                                                                                                    (
-                                                                                                        "term",
-                                                                                                        (
-                                                                                                            "factor",
-                                                                                                            (
-                                                                                                                "power",
-                                                                                                                (
-                                                                                                                    "atom",
-                                                                                                                    (
-                                                                                                                        "atom",
-                                                                                                                        (
-                                                                                                                            "name_lit",
-                                                                                                                            "here",
-                                                                                                                        ),
-                                                                                                                    ),
-                                                                                                                    (
-                                                                                                                        "atom_trailer",
-                                                                                                                        ".",
-                                                                                                                        (
-                                                                                                                            "name_lit",
-                                                                                                                            "name",
-                                                                                                                        ),
-                                                                                                                    ),
-                                                                                                                ),
-                                                                                                            ),
-                                                                                                        ),
-                                                                                                    ),
-                                                                                                ),
-                                                                                                (
-                                                                                                    "cmp_op",
-                                                                                                    "not in",
-                                                                                                ),
-                                                                                                (
-                                                                                                    "compare",
-                                                                                                    (
-                                                                                                        "arithmetic",
-                                                                                                        (
-                                                                                                            "term",
-                                                                                                            (
-                                                                                                                "factor",
-                                                                                                                (
-                                                                                                                    "power",
-                                                                                                                    (
-                                                                                                                        "atom",
-                                                                                                                        (
-                                                                                                                            "atom",
-                                                                                                                            (
-                                                                                                                                "name_lit",
-                                                                                                                                "visitor",
-                                                                                                                            ),
-                                                                                                                        ),
-                                                                                                                        (
-                                                                                                                            "atom_trailer",
-                                                                                                                            ".",
-                                                                                                                            (
-                                                                                                                                "name_lit",
-                                                                                                                                "passport",
-                                                                                                                            ),
-                                                                                                                        ),
-                                                                                                                    ),
-                                                                                                                ),
-                                                                                                            ),
-                                                                                                        ),
-                                                                                                    ),
-                                                                                                ),
-                                                                                            ),
-                                                                                        ),
-                                                                                    ),
-                                                                                ),
-                                                                                (
-                                                                                    "code_block",
-                                                                                    "{",
-                                                                                    (
-                                                                                        "statement_list",
-                                                                                        (
-                                                                                            "statement",
-                                                                                            (
-                                                                                                "expression",
-                                                                                                (
-                                                                                                    "connect",
-                                                                                                    (
-                                                                                                        "logical",
-                                                                                                        (
-                                                                                                            "compare",
-                                                                                                            (
-                                                                                                                "arithmetic",
-                                                                                                                (
-                                                                                                                    "term",
-                                                                                                                    (
-                                                                                                                        "factor",
-                                                                                                                        (
-                                                                                                                            "power",
-                                                                                                                            (
-                                                                                                                                "atom",
-                                                                                                                                (
-                                                                                                                                    "atom",
-                                                                                                                                    (
-                                                                                                                                        "atom",
-                                                                                                                                        (
-                                                                                                                                            "atom",
-                                                                                                                                            (
-                                                                                                                                                "name_lit",
-                                                                                                                                                "visitor",
-                                                                                                                                            ),
-                                                                                                                                        ),
-                                                                                                                                        (
-                                                                                                                                            "atom_trailer",
-                                                                                                                                            ".",
-                                                                                                                                            (
-                                                                                                                                                "name_lit",
-                                                                                                                                                "passport",
-                                                                                                                                            ),
-                                                                                                                                        ),
-                                                                                                                                    ),
-                                                                                                                                    (
-                                                                                                                                        "atom_trailer",
-                                                                                                                                        ".",
-                                                                                                                                        (
-                                                                                                                                            "name_lit",
-                                                                                                                                            "append",
-                                                                                                                                        ),
-                                                                                                                                    ),
-                                                                                                                                ),
-                                                                                                                                (
-                                                                                                                                    "atom_trailer",
-                                                                                                                                    (
-                                                                                                                                        "ability_call",
-                                                                                                                                        "(",
-                                                                                                                                        (
-                                                                                                                                            "param_list",
-                                                                                                                                            (
-                                                                                                                                                "expr_list",
-                                                                                                                                                (
-                                                                                                                                                    "connect",
-                                                                                                                                                    (
-                                                                                                                                                        "logical",
-                                                                                                                                                        (
-                                                                                                                                                            "compare",
-                                                                                                                                                            (
-                                                                                                                                                                "arithmetic",
-                                                                                                                                                                (
-                                                                                                                                                                    "term",
-                                                                                                                                                                    (
-                                                                                                                                                                        "factor",
-                                                                                                                                                                        (
-                                                                                                                                                                            "power",
-                                                                                                                                                                            (
-                                                                                                                                                                                "atom",
-                                                                                                                                                                                (
-                                                                                                                                                                                    "atom",
-                                                                                                                                                                                    (
-                                                                                                                                                                                        "name_lit",
-                                                                                                                                                                                        "here",
-                                                                                                                                                                                    ),
-                                                                                                                                                                                ),
-                                                                                                                                                                                (
-                                                                                                                                                                                    "atom_trailer",
-                                                                                                                                                                                    ".",
-                                                                                                                                                                                    (
-                                                                                                                                                                                        "name_lit",
-                                                                                                                                                                                        "name",
-                                                                                                                                                                                    ),
-                                                                                                                                                                                ),
-                                                                                                                                                                            ),
-                                                                                                                                                                        ),
-                                                                                                                                                                    ),
-                                                                                                                                                                ),
-                                                                                                                                                            ),
-                                                                                                                                                        ),
-                                                                                                                                                    ),
-                                                                                                                                                ),
-                                                                                                                                            ),
-                                                                                                                                        ),
-                                                                                                                                        ")",
-                                                                                                                                    ),
-                                                                                                                                ),
-                                                                                                                            ),
-                                                                                                                        ),
-                                                                                                                    ),
-                                                                                                                ),
-                                                                                                            ),
-                                                                                                        ),
-                                                                                                    ),
-                                                                                                ),
-                                                                                            ),
-                                                                                            ";",
-                                                                                        ),
-                                                                                    ),
-                                                                                    "}",
-                                                                                ),
-                                                                            ),
-                                                                        ),
-                                                                    ),
-                                                                ),
-                                                                "}",
-                                                            ),
-                                                        ),
-                                                    ),
-                                                ),
-                                            ),
-                                            "}",
-                                        ),
-                                    ),
-                                ),
-                            ),
-                            "}",
-                        ),
-                    ),
-                ),
-            ),
-        ),
-        (
-            "element",
-            (
-                "architype",
-                "walker",
-                ("name_lit", "tourist"),
-                (
-                    "arch_decl_tail",
-                    (
-                        "attr_block",
-                        "{",
-                        (
-                            "attr_stmt_list",
-                            (
-                                "attr_stmt_list",
-                                (
-                                    "attr_stmt_list",
-                                    (
-                                        "attr_stmt_list",
-                                        (
-                                            "attr_stmt",
-                                            (
-                                                "has_stmt",
-                                                "has",
-                                                (
-                                                    "has_assign_clause",
-                                                    (
-                                                        "has_assign",
-                                                        ("name_lit", "duration"),
-                                                        (
-                                                            "type_spec",
-                                                            ":",
-                                                            (
-                                                                "type_name",
-                                                                ("builtin_type", "int"),
-                                                            ),
-                                                        ),
-                                                    ),
-                                                ),
-                                                ";",
-                                            ),
-                                        ),
-                                    ),
-                                    (
-                                        "attr_stmt",
-                                        (
-                                            "has_stmt",
-                                            "has",
-                                            (
-                                                "has_assign_clause",
-                                                (
-                                                    "has_assign",
-                                                    ("name_lit", "budget"),
-                                                    (
-                                                        "type_spec",
-                                                        ":",
-                                                        (
-                                                            "type_name",
-                                                            ("builtin_type", "int"),
-                                                        ),
-                                                    ),
-                                                ),
-                                            ),
-                                            ";",
-                                        ),
-                                    ),
-                                ),
-                                (
-                                    "attr_stmt",
+                                    15,
                                     (
                                         "has_stmt",
+                                        15,
                                         "has",
                                         (
                                             "has_assign_clause",
+                                            15,
                                             (
                                                 "has_assign",
-                                                ("name_lit", "passport"),
+                                                15,
+                                                ("name_literal", 15, "visited"),
                                                 (
                                                     "type_spec",
+                                                    15,
                                                     ":",
                                                     (
                                                         "type_name",
-                                                        "list",
-                                                        "[",
+                                                        15,
+                                                        ("builtin_type", 15, "int"),
+                                                    ),
+                                                ),
+                                                "=",
+                                                (
+                                                    "expression",
+                                                    15,
+                                                    (
+                                                        "connect",
+                                                        15,
                                                         (
-                                                            "type_name",
-                                                            ("builtin_type", "str"),
+                                                            "logical",
+                                                            15,
+                                                            (
+                                                                "compare",
+                                                                15,
+                                                                (
+                                                                    "arithmetic",
+                                                                    15,
+                                                                    (
+                                                                        "term",
+                                                                        15,
+                                                                        (
+                                                                            "factor",
+                                                                            15,
+                                                                            (
+                                                                                "power",
+                                                                                15,
+                                                                                (
+                                                                                    "atom",
+                                                                                    15,
+                                                                                    (
+                                                                                        "int_literal",
+                                                                                        15,
+                                                                                        "0",
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                ),
+                                                            ),
                                                         ),
-                                                        "]",
                                                     ),
                                                 ),
                                             ),
@@ -846,56 +397,164 @@ tree = (
                             ),
                             (
                                 "attr_stmt",
+                                18,
                                 (
                                     "can_stmt",
+                                    18,
                                     "can",
-                                    ("name_lit", "visit"),
+                                    ("name_literal", 18, "record"),
                                     (
                                         "event_clause",
+                                        18,
                                         "with",
-                                        ("name_list", ("name_lit", "location")),
-                                        "exit",
+                                        (
+                                            "name_list",
+                                            18,
+                                            ("name_literal", 18, "tourist"),
+                                        ),
+                                        "entry",
                                     ),
                                     (
                                         "code_block",
+                                        18,
                                         "{",
                                         (
                                             "statement_list",
+                                            19,
                                             (
                                                 "statement",
+                                                19,
                                                 (
-                                                    "report_stmt",
-                                                    "report",
+                                                    "expression",
+                                                    19,
+                                                    (
+                                                        "connect",
+                                                        19,
+                                                        (
+                                                            "logical",
+                                                            19,
+                                                            (
+                                                                "compare",
+                                                                19,
+                                                                (
+                                                                    "arithmetic",
+                                                                    19,
+                                                                    (
+                                                                        "term",
+                                                                        19,
+                                                                        (
+                                                                            "factor",
+                                                                            19,
+                                                                            (
+                                                                                "power",
+                                                                                19,
+                                                                                (
+                                                                                    "atom",
+                                                                                    19,
+                                                                                    (
+                                                                                        "name_literal",
+                                                                                        19,
+                                                                                        "visited",
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                    ("assignment_op", 19, "+="),
                                                     (
                                                         "expression",
+                                                        19,
                                                         (
                                                             "connect",
+                                                            19,
                                                             (
                                                                 "logical",
+                                                                19,
                                                                 (
                                                                     "compare",
+                                                                    19,
                                                                     (
                                                                         "arithmetic",
+                                                                        19,
                                                                         (
                                                                             "term",
+                                                                            19,
                                                                             (
                                                                                 "factor",
+                                                                                19,
                                                                                 (
                                                                                     "power",
+                                                                                    19,
                                                                                     (
                                                                                         "atom",
+                                                                                        19,
+                                                                                        (
+                                                                                            "int_literal",
+                                                                                            19,
+                                                                                            "1",
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                                ";",
+                                            ),
+                                            (
+                                                "statement_list",
+                                                20,
+                                                (
+                                                    "statement",
+                                                    20,
+                                                    (
+                                                        "for_stmt",
+                                                        20,
+                                                        "for",
+                                                        (
+                                                            "atom",
+                                                            20,
+                                                            ("name_literal", 20, "i"),
+                                                        ),
+                                                        "in",
+                                                        (
+                                                            "expression",
+                                                            20,
+                                                            (
+                                                                "connect",
+                                                                20,
+                                                                (
+                                                                    "logical",
+                                                                    20,
+                                                                    (
+                                                                        "compare",
+                                                                        20,
+                                                                        (
+                                                                            "arithmetic",
+                                                                            20,
+                                                                            (
+                                                                                "term",
+                                                                                20,
+                                                                                (
+                                                                                    "factor",
+                                                                                    20,
+                                                                                    (
+                                                                                        "power",
+                                                                                        20,
                                                                                         (
                                                                                             "atom",
+                                                                                            20,
                                                                                             (
-                                                                                                "name_lit",
-                                                                                                "here",
-                                                                                            ),
-                                                                                        ),
-                                                                                        (
-                                                                                            "atom_trailer",
-                                                                                            ".",
-                                                                                            (
-                                                                                                "name_lit",
+                                                                                                "name_literal",
+                                                                                                20,
                                                                                                 "activities",
                                                                                             ),
                                                                                         ),
@@ -907,9 +566,411 @@ tree = (
                                                                 ),
                                                             ),
                                                         ),
+                                                        (
+                                                            "code_block",
+                                                            20,
+                                                            "{",
+                                                            (
+                                                                "statement_list",
+                                                                21,
+                                                                (
+                                                                    "statement",
+                                                                    21,
+                                                                    (
+                                                                        "expression",
+                                                                        21,
+                                                                        (
+                                                                            "connect",
+                                                                            21,
+                                                                            (
+                                                                                "logical",
+                                                                                21,
+                                                                                (
+                                                                                    "compare",
+                                                                                    21,
+                                                                                    (
+                                                                                        "arithmetic",
+                                                                                        21,
+                                                                                        (
+                                                                                            "term",
+                                                                                            21,
+                                                                                            (
+                                                                                                "factor",
+                                                                                                21,
+                                                                                                (
+                                                                                                    "power",
+                                                                                                    21,
+                                                                                                    (
+                                                                                                        "atom",
+                                                                                                        21,
+                                                                                                        (
+                                                                                                            "atom",
+                                                                                                            21,
+                                                                                                            (
+                                                                                                                "name_literal",
+                                                                                                                21,
+                                                                                                                "i",
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        (
+                                                                                                            "atom_trailer",
+                                                                                                            21,
+                                                                                                            ".",
+                                                                                                            (
+                                                                                                                "name_literal",
+                                                                                                                21,
+                                                                                                                "duration",
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                ),
+                                                                                            ),
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ),
+                                                                        (
+                                                                            "assignment_op",
+                                                                            21,
+                                                                            "=",
+                                                                        ),
+                                                                        (
+                                                                            "expression",
+                                                                            21,
+                                                                            (
+                                                                                "connect",
+                                                                                21,
+                                                                                (
+                                                                                    "logical",
+                                                                                    21,
+                                                                                    (
+                                                                                        "compare",
+                                                                                        21,
+                                                                                        (
+                                                                                            "arithmetic",
+                                                                                            21,
+                                                                                            (
+                                                                                                "term",
+                                                                                                21,
+                                                                                                (
+                                                                                                    "factor",
+                                                                                                    21,
+                                                                                                    (
+                                                                                                        "power",
+                                                                                                        21,
+                                                                                                        (
+                                                                                                            "atom",
+                                                                                                            21,
+                                                                                                            (
+                                                                                                                "atom",
+                                                                                                                21,
+                                                                                                                (
+                                                                                                                    "name_literal",
+                                                                                                                    21,
+                                                                                                                    "visitor",
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                            (
+                                                                                                                "atom_trailer",
+                                                                                                                21,
+                                                                                                                ".",
+                                                                                                                (
+                                                                                                                    "name_literal",
+                                                                                                                    21,
+                                                                                                                    "duration",
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                ),
+                                                                                            ),
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                    ";",
+                                                                ),
+                                                                (
+                                                                    "statement_list",
+                                                                    22,
+                                                                    (
+                                                                        "statement",
+                                                                        22,
+                                                                        (
+                                                                            "if_stmt",
+                                                                            22,
+                                                                            "if",
+                                                                            (
+                                                                                "expression",
+                                                                                22,
+                                                                                (
+                                                                                    "connect",
+                                                                                    22,
+                                                                                    (
+                                                                                        "logical",
+                                                                                        22,
+                                                                                        (
+                                                                                            "compare",
+                                                                                            22,
+                                                                                            (
+                                                                                                "arithmetic",
+                                                                                                22,
+                                                                                                (
+                                                                                                    "term",
+                                                                                                    22,
+                                                                                                    (
+                                                                                                        "factor",
+                                                                                                        22,
+                                                                                                        (
+                                                                                                            "power",
+                                                                                                            22,
+                                                                                                            (
+                                                                                                                "atom",
+                                                                                                                22,
+                                                                                                                (
+                                                                                                                    "atom",
+                                                                                                                    22,
+                                                                                                                    (
+                                                                                                                        "name_literal",
+                                                                                                                        22,
+                                                                                                                        "here",
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                                (
+                                                                                                                    "atom_trailer",
+                                                                                                                    22,
+                                                                                                                    ".",
+                                                                                                                    (
+                                                                                                                        "name_literal",
+                                                                                                                        22,
+                                                                                                                        "name",
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                ),
+                                                                                            ),
+                                                                                            (
+                                                                                                "cmp_op",
+                                                                                                22,
+                                                                                                "not in",
+                                                                                            ),
+                                                                                            (
+                                                                                                "compare",
+                                                                                                22,
+                                                                                                (
+                                                                                                    "arithmetic",
+                                                                                                    22,
+                                                                                                    (
+                                                                                                        "term",
+                                                                                                        22,
+                                                                                                        (
+                                                                                                            "factor",
+                                                                                                            22,
+                                                                                                            (
+                                                                                                                "power",
+                                                                                                                22,
+                                                                                                                (
+                                                                                                                    "atom",
+                                                                                                                    22,
+                                                                                                                    (
+                                                                                                                        "atom",
+                                                                                                                        22,
+                                                                                                                        (
+                                                                                                                            "name_literal",
+                                                                                                                            22,
+                                                                                                                            "visitor",
+                                                                                                                        ),
+                                                                                                                    ),
+                                                                                                                    (
+                                                                                                                        "atom_trailer",
+                                                                                                                        22,
+                                                                                                                        ".",
+                                                                                                                        (
+                                                                                                                            "name_literal",
+                                                                                                                            22,
+                                                                                                                            "passport",
+                                                                                                                        ),
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                ),
+                                                                                            ),
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            (
+                                                                                "code_block",
+                                                                                22,
+                                                                                "{",
+                                                                                (
+                                                                                    "statement_list",
+                                                                                    23,
+                                                                                    (
+                                                                                        "statement",
+                                                                                        23,
+                                                                                        (
+                                                                                            "expression",
+                                                                                            23,
+                                                                                            (
+                                                                                                "connect",
+                                                                                                23,
+                                                                                                (
+                                                                                                    "logical",
+                                                                                                    23,
+                                                                                                    (
+                                                                                                        "compare",
+                                                                                                        23,
+                                                                                                        (
+                                                                                                            "arithmetic",
+                                                                                                            23,
+                                                                                                            (
+                                                                                                                "term",
+                                                                                                                23,
+                                                                                                                (
+                                                                                                                    "factor",
+                                                                                                                    23,
+                                                                                                                    (
+                                                                                                                        "power",
+                                                                                                                        23,
+                                                                                                                        (
+                                                                                                                            "atom",
+                                                                                                                            23,
+                                                                                                                            (
+                                                                                                                                "atom",
+                                                                                                                                23,
+                                                                                                                                (
+                                                                                                                                    "atom",
+                                                                                                                                    23,
+                                                                                                                                    (
+                                                                                                                                        "atom",
+                                                                                                                                        23,
+                                                                                                                                        (
+                                                                                                                                            "name_literal",
+                                                                                                                                            23,
+                                                                                                                                            "visitor",
+                                                                                                                                        ),
+                                                                                                                                    ),
+                                                                                                                                    (
+                                                                                                                                        "atom_trailer",
+                                                                                                                                        23,
+                                                                                                                                        ".",
+                                                                                                                                        (
+                                                                                                                                            "name_literal",
+                                                                                                                                            23,
+                                                                                                                                            "passport",
+                                                                                                                                        ),
+                                                                                                                                    ),
+                                                                                                                                ),
+                                                                                                                                (
+                                                                                                                                    "atom_trailer",
+                                                                                                                                    23,
+                                                                                                                                    ".",
+                                                                                                                                    (
+                                                                                                                                        "name_literal",
+                                                                                                                                        23,
+                                                                                                                                        "append",
+                                                                                                                                    ),
+                                                                                                                                ),
+                                                                                                                            ),
+                                                                                                                            (
+                                                                                                                                "atom_trailer",
+                                                                                                                                23,
+                                                                                                                                (
+                                                                                                                                    "ability_call",
+                                                                                                                                    23,
+                                                                                                                                    "(",
+                                                                                                                                    (
+                                                                                                                                        "param_list",
+                                                                                                                                        23,
+                                                                                                                                        (
+                                                                                                                                            "expr_list",
+                                                                                                                                            23,
+                                                                                                                                            (
+                                                                                                                                                "connect",
+                                                                                                                                                23,
+                                                                                                                                                (
+                                                                                                                                                    "logical",
+                                                                                                                                                    23,
+                                                                                                                                                    (
+                                                                                                                                                        "compare",
+                                                                                                                                                        23,
+                                                                                                                                                        (
+                                                                                                                                                            "arithmetic",
+                                                                                                                                                            23,
+                                                                                                                                                            (
+                                                                                                                                                                "term",
+                                                                                                                                                                23,
+                                                                                                                                                                (
+                                                                                                                                                                    "factor",
+                                                                                                                                                                    23,
+                                                                                                                                                                    (
+                                                                                                                                                                        "power",
+                                                                                                                                                                        23,
+                                                                                                                                                                        (
+                                                                                                                                                                            "atom",
+                                                                                                                                                                            23,
+                                                                                                                                                                            (
+                                                                                                                                                                                "atom",
+                                                                                                                                                                                23,
+                                                                                                                                                                                (
+                                                                                                                                                                                    "name_literal",
+                                                                                                                                                                                    23,
+                                                                                                                                                                                    "here",
+                                                                                                                                                                                ),
+                                                                                                                                                                            ),
+                                                                                                                                                                            (
+                                                                                                                                                                                "atom_trailer",
+                                                                                                                                                                                23,
+                                                                                                                                                                                ".",
+                                                                                                                                                                                (
+                                                                                                                                                                                    "name_literal",
+                                                                                                                                                                                    23,
+                                                                                                                                                                                    "name",
+                                                                                                                                                                                ),
+                                                                                                                                                                            ),
+                                                                                                                                                                        ),
+                                                                                                                                                                    ),
+                                                                                                                                                                ),
+                                                                                                                                                            ),
+                                                                                                                                                        ),
+                                                                                                                                                    ),
+                                                                                                                                                ),
+                                                                                                                                            ),
+                                                                                                                                        ),
+                                                                                                                                    ),
+                                                                                                                                    ")",
+                                                                                                                                ),
+                                                                                                                            ),
+                                                                                                                        ),
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                ),
+                                                                                            ),
+                                                                                        ),
+                                                                                        ";",
+                                                                                    ),
+                                                                                ),
+                                                                                "}",
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                            "}",
+                                                        ),
                                                     ),
                                                 ),
-                                                ";",
                                             ),
                                         ),
                                         "}",
@@ -919,6 +980,228 @@ tree = (
                         ),
                         "}",
                     ),
+                ),
+            ),
+        ),
+    ),
+    (
+        "element",
+        29,
+        (
+            "architype",
+            29,
+            "walker",
+            ("name_literal", 29, "tourist"),
+            (
+                "arch_decl_tail",
+                29,
+                (
+                    "attr_block",
+                    29,
+                    "{",
+                    (
+                        "attr_stmt_list",
+                        30,
+                        (
+                            "attr_stmt_list",
+                            30,
+                            (
+                                "attr_stmt_list",
+                                30,
+                                (
+                                    "attr_stmt_list",
+                                    30,
+                                    (
+                                        "attr_stmt",
+                                        30,
+                                        (
+                                            "has_stmt",
+                                            30,
+                                            "has",
+                                            (
+                                                "has_assign_clause",
+                                                30,
+                                                (
+                                                    "has_assign",
+                                                    30,
+                                                    ("name_literal", 30, "duration"),
+                                                    (
+                                                        "type_spec",
+                                                        30,
+                                                        ":",
+                                                        (
+                                                            "type_name",
+                                                            30,
+                                                            ("builtin_type", 30, "int"),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                            ";",
+                                        ),
+                                    ),
+                                ),
+                                (
+                                    "attr_stmt",
+                                    31,
+                                    (
+                                        "has_stmt",
+                                        31,
+                                        "has",
+                                        (
+                                            "has_assign_clause",
+                                            31,
+                                            (
+                                                "has_assign",
+                                                31,
+                                                ("name_literal", 31, "budget"),
+                                                (
+                                                    "type_spec",
+                                                    31,
+                                                    ":",
+                                                    (
+                                                        "type_name",
+                                                        31,
+                                                        ("builtin_type", 31, "int"),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        ";",
+                                    ),
+                                ),
+                            ),
+                            (
+                                "attr_stmt",
+                                32,
+                                (
+                                    "has_stmt",
+                                    32,
+                                    "has",
+                                    (
+                                        "has_assign_clause",
+                                        32,
+                                        (
+                                            "has_assign",
+                                            32,
+                                            ("name_literal", 32, "passport"),
+                                            (
+                                                "type_spec",
+                                                32,
+                                                ":",
+                                                (
+                                                    "type_name",
+                                                    32,
+                                                    "list",
+                                                    "[",
+                                                    (
+                                                        "type_name",
+                                                        32,
+                                                        ("builtin_type", 32, "str"),
+                                                    ),
+                                                    "]",
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                    ";",
+                                ),
+                            ),
+                        ),
+                        (
+                            "attr_stmt",
+                            34,
+                            (
+                                "can_stmt",
+                                34,
+                                "can",
+                                ("name_literal", 34, "visit"),
+                                (
+                                    "event_clause",
+                                    34,
+                                    "with",
+                                    ("name_list", 34, ("name_literal", 34, "location")),
+                                    "exit",
+                                ),
+                                (
+                                    "code_block",
+                                    34,
+                                    "{",
+                                    (
+                                        "statement_list",
+                                        35,
+                                        (
+                                            "statement",
+                                            35,
+                                            (
+                                                "report_stmt",
+                                                35,
+                                                "report",
+                                                (
+                                                    "expression",
+                                                    35,
+                                                    (
+                                                        "connect",
+                                                        35,
+                                                        (
+                                                            "logical",
+                                                            35,
+                                                            (
+                                                                "compare",
+                                                                35,
+                                                                (
+                                                                    "arithmetic",
+                                                                    35,
+                                                                    (
+                                                                        "term",
+                                                                        35,
+                                                                        (
+                                                                            "factor",
+                                                                            35,
+                                                                            (
+                                                                                "power",
+                                                                                35,
+                                                                                (
+                                                                                    "atom",
+                                                                                    35,
+                                                                                    (
+                                                                                        "atom",
+                                                                                        35,
+                                                                                        (
+                                                                                            "name_literal",
+                                                                                            35,
+                                                                                            "here",
+                                                                                        ),
+                                                                                    ),
+                                                                                    (
+                                                                                        "atom_trailer",
+                                                                                        35,
+                                                                                        ".",
+                                                                                        (
+                                                                                            "name_literal",
+                                                                                            35,
+                                                                                            "activities",
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                            ";",
+                                        ),
+                                    ),
+                                    "}",
+                                ),
+                            ),
+                        ),
+                    ),
+                    "}",
                 ),
             ),
         ),
