@@ -15,7 +15,6 @@ class JacParser(Parser):
     @_("element_list")
     def start(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Start rule."""
-        print(type(p))
         return p
 
     # Jac program structured as a list of elements
@@ -171,16 +170,16 @@ class JacParser(Parser):
 
     # Has statements
     # --------------
-    @_("KW_HAS has_assign_list SEMI")
+    @_("KW_HAS has_assign_clause SEMI")
     def has_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has statement rule."""
         return p
 
     @_(
         "has_assign",
-        "has_assign_list COMMA has_assign",
+        "has_assign_clause COMMA has_assign",
     )
-    def has_assign_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def has_assign_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has assign list rule."""
         return p
 

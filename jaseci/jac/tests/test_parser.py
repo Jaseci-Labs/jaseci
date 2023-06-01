@@ -13,8 +13,5 @@ class TestParser(TestCase):
         """Basic test for lexer."""
         lexer = JacLexer()
         parser = JacParser()
-        tokens = []
-        for i in lexer.tokenize(self.load_fixture("fam.jac")):
-            tokens.append(i)
         output = parser.parse(lexer.tokenize(self.load_fixture("fam.jac")))
         self.assertEqual(output, treedump.tree)

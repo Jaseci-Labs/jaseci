@@ -77,11 +77,11 @@ tree = (
                                                         "has_stmt",
                                                         "has",
                                                         (
-                                                            "has_assign_list",
+                                                            "has_assign_clause",
                                                             (
-                                                                "has_assign_list",
+                                                                "has_assign_clause",
                                                                 (
-                                                                    "has_assign_list",
+                                                                    "has_assign_clause",
                                                                     (
                                                                         "has_assign",
                                                                         "x",
@@ -142,7 +142,7 @@ tree = (
                                                     "has_stmt",
                                                     "has",
                                                     (
-                                                        "has_assign_list",
+                                                        "has_assign_clause",
                                                         (
                                                             "has_assign",
                                                             (
@@ -176,7 +176,7 @@ tree = (
                                                 "has_stmt",
                                                 "has",
                                                 (
-                                                    "has_assign_list",
+                                                    "has_assign_clause",
                                                     (
                                                         "has_assign",
                                                         (
@@ -239,7 +239,7 @@ tree = (
                                             "has_stmt",
                                             "has",
                                             (
-                                                "has_assign_list",
+                                                "has_assign_clause",
                                                 (
                                                     "has_assign",
                                                     "visited",
@@ -718,7 +718,7 @@ tree = (
                                                 "has_stmt",
                                                 "has",
                                                 (
-                                                    "has_assign_list",
+                                                    "has_assign_clause",
                                                     (
                                                         "has_assign",
                                                         "duration",
@@ -745,7 +745,7 @@ tree = (
                                             "has_stmt",
                                             "has",
                                             (
-                                                "has_assign_list",
+                                                "has_assign_clause",
                                                 (
                                                     "has_assign",
                                                     "budget",
@@ -772,7 +772,7 @@ tree = (
                                         "has_stmt",
                                         "has",
                                         (
-                                            "has_assign_list",
+                                            "has_assign_clause",
                                             (
                                                 "has_assign",
                                                 "passport",
