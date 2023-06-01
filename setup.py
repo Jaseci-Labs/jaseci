@@ -9,18 +9,6 @@ setup(
     version=VERSION,
     packages=find_packages(include=["jaseci", "jaseci.*"]),
     install_requires=[
-        # For development
-        "flake8",
-        "flake8_import_order",
-        "flake8_docstrings",
-        "flake8_comprehensions",
-        "flake8_bugbear",
-        "flake8_annotations",
-        "pep8-naming",
-        "pytest",
-        "pytest-xdist",
-        "pytest-cov",
-        # For runtime
         "sly",
     ],
     package_data={

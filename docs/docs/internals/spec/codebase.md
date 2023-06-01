@@ -13,7 +13,7 @@ The Jaseci codebase enforces the black code formatting using the black tool. It 
 To install:
 ```bash
 # Install black
-pip install black
+pip3 install black
 ```
 
 Our repo uses pre-commit, an open-source tool used for managing and enforcing pre-commit checks in Git repositories. Pre-commit allows us to automate the execution of code checks, ensuring code quality and reducing the likelihood of introducing bugs. It enforces consistent coding standards and style guidelines across the project, fostering better collaboration and maintainability. By catching issues before they are committed, it saves time and effort in the long run by preventing the need for manual bug fixing and code cleanup.
@@ -21,14 +21,25 @@ Our repo uses pre-commit, an open-source tool used for managing and enforcing pr
 Once you checked out the repo, you should run
 ```bash
 # Install pre-commit
-pip install pre-commit
+pip3 install pre-commit
 pre-commit install
 ```
 
 > Note
 >
-> You'll need to add `--max-line-length=88 --extend-ignore=E203` arguments to `flake8` for linting. We recommend setting it up in your preferred code editor or IDE, e.g. VSCode.
+> You'll need to add `--max-line-length=120 --extend-ignore=E203` arguments to `flake8` for linting. We recommend setting it up in your preferred code editor or IDE, e.g. VSCode.
 
+Be sure to install the pytest framework and run a test to make sure everything is good to go!
+
+First install pytest with
+```shell
+pip3 install pytest pytest-xdist pytest-cov
+```
+
+Then run the tests!
+```shell
+pytest
+```
 
 ## Linting Policy
 
@@ -63,7 +74,7 @@ To apply the linting policy with the specified plugins, follow these steps:
 
 1. Install Flake8 and the additional plugins using the following command:
 ```shell
-pip install flake8 flake8-import-order flake8-docstrings flake8-comprehensions flake8-bugbear flake8-annotations pep8-naming
+pip3 install flake8 flake8-import-order flake8-docstrings flake8-comprehensions flake8-bugbear flake8-annotations pep8-naming
 ```
 
 #### Configuration File
@@ -80,7 +91,7 @@ plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_
 ### Folder structure
 | Folder                   | Description                                     |
 |--------------------------|-------------------------------------------------|
-| `/`                      | Base directory for project, organized with `setup.py` to create Jaseci pip package. |
+| `/`                      | Base directory for project, organized with `setup.py` to create Jaseci pip3 package. |
 | `/docs`                  | Docusaurus documentation for Jaseci.            |
 | `/scripts`               | General utility scripts.                        |
 | `/jaseci`                | Source code for the project.                     |
