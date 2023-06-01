@@ -1,2 +1,4 @@
 test.ipynb
-openai_ner.py
+.chroma
+.jaseci
+data.txt

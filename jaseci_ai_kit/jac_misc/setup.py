@@ -1,7 +1,15 @@
 from setuptools import setup, find_packages
 from os.path import join
 
-MODULES = ["pdf_ext", "translator", "cluster", "ph", "openai", "huggingface"]
+MODULES = [
+    "pdf_ext",
+    "translator",
+    "cluster",
+    "ph",
+    "openai",
+    "huggingface",
+    "langchain",
+]
 
 
 def get_ver():

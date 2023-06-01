@@ -94,7 +94,7 @@ jaseci> actions call langchain.setup -ctx '{"flow_type":"qa-flow", "text": "The 
 ```
 #### Output Format of `generate` Action:
 ```json
-{"output": "New Delhi"}
+{"answer": "The capital of India is New Delhi."}
 ```
 
 ### **`document-chat-flow`** - Document Retrieval Chat Flow
@@ -125,3 +125,11 @@ jaseci> actions call langchain.setup -ctx '{"flow_type":"document-chat-flow", "t
 ```json
 {"query": "What is the capital of India?", "chat_history"=[["Hello", "Hi"]]}
 ```
+```bash
+jaseci > actions call langchain.generate -ctx '{"input":{"query": "What is the capital of India?"}}'
+```
+#### Output Format of `generate` Action:
+```json
+{"answer": "New Delhi"}
+```
+

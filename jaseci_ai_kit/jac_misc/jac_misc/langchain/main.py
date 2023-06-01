@@ -150,5 +150,6 @@ class DocumentChatFlow:
         )
 
     def __call__(self, query: str, chat_history: list = []):
+        chat_history = [tuple(i) for i in chat_history]
         result = self.chain({"question": query, "chat_history": chat_history})
         return {"answer": result["answer"].strip()}
