@@ -23,7 +23,6 @@ class JacLexer(Lexer):
         "TYP_BYTES",
         "KW_OBJECT",
         "KW_TYPE",
-        "KW_GRAPH",
         "KW_NODE",
         "KW_IGNORE",
         "KW_TAKE",
@@ -142,7 +141,6 @@ class JacLexer(Lexer):
     NAME["bytes"] = "TYP_BYTES"
     NAME["object"] = "KW_OBJECT"
     NAME["type"] = "KW_TYPE"
-    NAME["graph"] = "KW_GRAPH"
     NAME["node"] = "KW_NODE"
     NAME["ignore"] = "KW_IGNORE"
     NAME["take"] = "KW_TAKE"

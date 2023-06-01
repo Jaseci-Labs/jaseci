@@ -13,16 +13,7 @@ class TestLexer(TestCase):
         tokens = []
         for t in lexer.tokenize(self.load_fixture("fam.jac")):
             tokens.append(t)
-        self.assertEqual(
-            [
-                tokens[0].type,
-                tokens[0].value,
-                tokens[0].lineno,
-                tokens[0].index,
-                tokens[0].end,
-            ],
-            ["KW_NODE", "node", 1, 0, 4],
-        )
+        self.assertEqual(tokens[0].type, "DOC_STRING")
         self.assertEqual(
             [
                 tokens[10].type,
@@ -31,7 +22,7 @@ class TestLexer(TestCase):
                 tokens[10].index,
                 tokens[10].end,
             ],
-            ["NAME", "dad", 5, 38, 41],
+            ["KW_FROM", "from", 9, 166, 170],
         )
         self.assertEqual(
             [
@@ -41,5 +32,5 @@ class TestLexer(TestCase):
                 tokens[-1].index,
                 tokens[-1].end,
             ],
-            ["RBRACE", "}", 22, 407, 408],
+            ["RBRACE", "}", 37, 795, 796],
         )

@@ -12,6 +12,8 @@ class JacParser(Parser):
     tokens = JacLexer.tokens
     debugfile = "parser.out"
 
+    # All mighty start rule
+    # ---------------------
     @_("element_list")
     def start(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Start rule."""
@@ -54,9 +56,10 @@ class JacParser(Parser):
         return p
 
     @_(
-        "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref code_block",
-        "KW_TEST NAME multistring KW_WITH graph_ref KW_BY walker_ref spawn_ctx code_block",
-        "KW_TEST NAME multistring KW_WITH attr_block KW_BY attr_block spawn_ctx code_block",
+        "KW_TEST NAME multistring KW_WITH walker_ref code_block",
+        "KW_TEST NAME multistring KW_WITH walker_ref spawn_ctx code_block",
+        "KW_TEST NAME multistring KW_WITH attr_block code_block",
+        "KW_TEST NAME multistring KW_WITH attr_block spawn_ctx code_block",
     )
     def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Test rule."""
@@ -112,7 +115,6 @@ class JacParser(Parser):
         "KW_NODE NAME arch_decl_tail",
         "KW_EDGE NAME arch_decl_tail",
         "KW_OBJECT NAME arch_decl_tail",
-        "KW_GRAPH NAME arch_decl_tail",
         "KW_WALKER NAME arch_decl_tail",
     )
     def architype(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -407,7 +409,6 @@ class JacParser(Parser):
 
     # Expression rules
     # ----------------
-
     @_(
         "connect",
         "connect assignment_op expression",
@@ -658,7 +659,6 @@ class JacParser(Parser):
     @_(
         "node_spawn spawn_ctx",  # captures edge and node spawns
         "walker_spawn spawn_ctx",
-        "graph_spawn spawn_ctx",
         "object_spawn spawn_ctx",
     )
     def spawn_arch(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -676,14 +676,6 @@ class JacParser(Parser):
     )
     def node_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Node spawn rule."""
-        return p
-
-    @_(
-        "graph_ref",
-        "spawn_edge graph_ref",
-    )
-    def graph_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Graph spawn rule."""
         return p
 
     @_(
@@ -729,7 +721,7 @@ class JacParser(Parser):
 
     # Architype reference rules
     # -------------------------
-    @_("node_ref", "edge_ref", "walker_ref", "graph_ref", "obj_ref")
+    @_("node_ref", "edge_ref", "walker_ref", "obj_ref")
     def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
         return p
@@ -747,11 +739,6 @@ class JacParser(Parser):
     @_("KW_WALKER DBL_COLON NAME")
     def walker_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Walker reference rule."""
-        return p
-
-    @_("KW_GRAPH DBL_COLON NAME")
-    def graph_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Graph reference rule."""
         return p
 
     @_("KW_OBJECT DBL_COLON NAME")
