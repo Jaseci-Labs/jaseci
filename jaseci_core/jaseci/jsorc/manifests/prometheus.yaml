@@ -708,8 +708,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/instance: jaseci-prometheus
     app.kubernetes.io/version: "2.5.0"
-  name: jaseci-prometheus-kube-state-metrics
-  namespace: prometheus
+  name: jaseci-prometheus-kube-state-metrics-$j{ServiceAccount["jaseci-prometheus-kube-state-metrics"].metadata.namespace}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -729,8 +728,7 @@ metadata:
     release: jaseci-prometheus
     chart: prometheus-15.10.5
     heritage: Helm
-  name: jaseci-prometheus-alertmanager
-  namespace: prometheus
+  name: jaseci-prometheus-alertmanager-$j{ServiceAccount["jaseci-prometheus-alertmanager"].metadata.namespace}
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-alertmanager
@@ -750,8 +748,7 @@ metadata:
     release: jaseci-prometheus
     chart: prometheus-15.10.5
     heritage: Helm
-  name: jaseci-prometheus-pushgateway
-  namespace: prometheus
+  name: jaseci-prometheus-pushgateway-$j{ServiceAccount["jaseci-prometheus-pushgateway"].metadata.namespace}
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-pushgateway
@@ -771,8 +768,7 @@ metadata:
     release: jaseci-prometheus
     chart: prometheus-15.10.5
     heritage: Helm
-  name: jaseci-prometheus-server
-  namespace: prometheus
+  name: jaseci-prometheus-server-$j{ServiceAccount["jaseci-prometheus-server"].metadata.namespace}
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-server
