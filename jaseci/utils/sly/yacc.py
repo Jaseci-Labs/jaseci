@@ -2265,7 +2265,10 @@ class Parser(metaclass=ParserMeta):
                         value = (
                             pname,
                             pslice.lineno,
-                            *(s.value for s in pslice._slice),
+                            *(
+                                s.value if isinstance(s, YaccSymbol) else s
+                                for s in pslice._slice
+                            ),
                         )
 
                     sym.value = value

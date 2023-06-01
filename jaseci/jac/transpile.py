@@ -479,28 +479,28 @@ class JacTranspiler:
 
     def transpile_int_literal(self: "JacParser", tree: tuple) -> None:
         """Integer literal rule."""
-        self.proc_rhs(tree)
+        self.stack.append(tree)
 
     def transpile_float_literal(self: "JacParser", tree: tuple) -> None:
         """Float literal rule."""
-        self.proc_rhs(tree)
+        self.stack.append(tree)
 
     def transpile_string_literal(self: "JacParser", tree: tuple) -> None:
         """Str literal rule."""
-        self.proc_rhs(tree)
+        self.stack.append(tree)
 
     def transpile_doc_string_literal(self: "JacParser", tree: tuple) -> None:
         """Doc_string literal rule."""
-        self.proc_rhs(tree)
+        self.stack.append(tree)
 
     def transpile_bool_literal(self: "JacParser", tree: tuple) -> None:
         """Boolean literal rule."""
-        self.proc_rhs(tree)
+        self.stack.append(tree)
 
     def transpile_null_literal(self: "JacParser", tree: tuple) -> None:
         """Null literal rule."""
-        self.proc_rhs(tree)
+        self.stack.append(tree)
 
     def transpile_name_literal(self: "JacParser", tree: tuple) -> None:
         """Name literal rule."""
-        self.proc_rhs(tree)
+        self.stack.append(tree)
