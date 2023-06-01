@@ -116,6 +116,7 @@ class TaskService(Ts):
                 mst = kwargs.get("mst")
                 if is_admin or (mst != None and mst in master.jid):
                     pt.delete()
+                    return True
         except PeriodicTask.DoesNotExist:
             pass
 
