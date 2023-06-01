@@ -13,8 +13,8 @@ class Memory:
     def __init__(self: "Memory") -> None:
         """Initialize memory."""
         self.mem = {}
-        self._machine = None
         self.save_obj_list = set()
+        self._machine = None
 
     def get_obj(
         self: "Memory", caller_id: UUID, item_id: UUID, override: bool = False
