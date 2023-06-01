@@ -56,7 +56,7 @@ class QueueApi:
             body["mst"] = self.jid
 
         return (
-            "Schedued Walker created successfully!"
+            "Scheduled Walker created successfully!"
             if task.add_scheduled_queue(task.scheduled_walker, name, schedule, body)
             else "Django is required to support scheduled walker!"
         )
@@ -71,7 +71,7 @@ class QueueApi:
             return "Task hook is not yet initialized!"
 
         return (
-            "Schedued Sequence created successfully!"
+            "Scheduled Sequence created successfully!"
             if task.add_scheduled_queue(task.scheduled_sequence, name, schedule, body)
             else "Django is required to support scheduled walker!"
         )
@@ -102,7 +102,7 @@ class QueueApi:
         if result == None:
             return "Django is required to support scheduled walker!"
         return (
-            "Successfully deleted"
+            "Successfully deleted!"
             if result
             else f"Scheduled Queue with id({scheduled_queue_id}) is not existing!"
         )
