@@ -147,6 +147,7 @@ class JacParser(Parser):
     @_(
         "LBRACE RBRACE",
         "LBRACE attr_stmt_list RBRACE",
+        "LBRACE DOC_STRING attr_stmt_list RBRACE",
         "COLON attr_stmt",
         "SEMI",
     )
@@ -543,8 +544,10 @@ class JacParser(Parser):
         return p
 
     @_(
-        "STRING multistring",
         "STRING",
+        "DOC_STRING",
+        "STRING multistring",
+        "DOC_STRING multistring",
     )
     def multistring(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Multistring rule."""
