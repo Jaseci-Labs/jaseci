@@ -1,0 +1,1 @@
+"""Walker class for Jaseci."""

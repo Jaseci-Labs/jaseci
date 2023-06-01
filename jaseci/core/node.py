@@ -1,0 +1,1 @@
+"""Node class for Jaseci."""
