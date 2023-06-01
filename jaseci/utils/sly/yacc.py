@@ -2262,7 +2262,11 @@ class Parser(metaclass=ParserMeta):
                     sym.type = pname
                     value = p.func(self, pslice)
                     if value is pslice:
-                        value = (pname, *(s.value for s in pslice._slice))
+                        value = (
+                            pname,
+                            pslice.lineno,
+                            *(s.value for s in pslice._slice),
+                        )
 
                     sym.value = value
 
