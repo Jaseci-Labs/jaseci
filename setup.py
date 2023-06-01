@@ -8,9 +8,7 @@ setup(
     name="jaseci",
     version=VERSION,
     packages=find_packages(include=["jaseci", "jaseci.*"]),
-    install_requires=[
-        "sly",
-    ],
+    install_requires=[],
     package_data={
         "": ["*.ini"],
     },

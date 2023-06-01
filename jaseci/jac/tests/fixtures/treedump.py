@@ -1,5 +1,6 @@
-"""Dump of parse tree for testing"""
+"""Dump of parse tree for testing."""
 
+# flake8: noqa
 tree = (
     "start",
     (
@@ -14,7 +15,10 @@ tree = (
                         "element_list",
                         (
                             "element",
-                            '"""\nThese are doc strings and can be used as comments\nUse them to document your code\n"""',
+                            (
+                                "doc_string_lit",
+                                '"""\nThese are doc strings and can be used as comments\nUse them to document your code\n"""',
+                            ),
                         ),
                     ),
                     (
@@ -23,10 +27,10 @@ tree = (
                             "import_stmt",
                             "import",
                             ":",
-                            "jac",
+                            ("name_lit", "jac"),
                             (
                                 "import_path",
-                                ("import_path_prefix", ".", "stuff"),
+                                ("import_path_prefix", ".", ("name_lit", "stuff")),
                             ),
                             ";",
                         ),
@@ -38,14 +42,19 @@ tree = (
                         "import_stmt",
                         "import",
                         ":",
-                        "py",
+                        ("name_lit", "py"),
                         "from",
                         (
                             "import_path",
-                            ("import_path_prefix", ".", "activity"),
+                            ("import_path_prefix", ".", ("name_lit", "activity")),
                         ),
                         ",",
-                        ("name_as_list", "Activity", "as", "Actvy"),
+                        (
+                            "name_as_list",
+                            ("name_lit", "Activity"),
+                            "as",
+                            ("name_lit", "Actvy"),
+                        ),
                         ";",
                     ),
                 ),
@@ -55,7 +64,7 @@ tree = (
                 (
                     "architype",
                     "node",
-                    "location",
+                    ("name_lit", "location"),
                     (
                         "arch_decl_tail",
                         (
@@ -84,7 +93,10 @@ tree = (
                                                                     "has_assign_clause",
                                                                     (
                                                                         "has_assign",
-                                                                        "x",
+                                                                        (
+                                                                            "name_lit",
+                                                                            "x",
+                                                                        ),
                                                                         (
                                                                             "type_spec",
                                                                             ":",
@@ -101,7 +113,7 @@ tree = (
                                                                 ",",
                                                                 (
                                                                     "has_assign",
-                                                                    "y",
+                                                                    ("name_lit", "y"),
                                                                     (
                                                                         "type_spec",
                                                                         ":",
@@ -118,7 +130,7 @@ tree = (
                                                             ",",
                                                             (
                                                                 "has_assign",
-                                                                "name",
+                                                                ("name_lit", "name"),
                                                                 (
                                                                     "type_spec",
                                                                     ":",
@@ -145,11 +157,8 @@ tree = (
                                                         "has_assign_clause",
                                                         (
                                                             "has_assign",
-                                                            (
-                                                                "has_tag",
-                                                                "anchor",
-                                                            ),
-                                                            "activities",
+                                                            ("has_tag", "anchor"),
+                                                            ("name_lit", "activities"),
                                                             (
                                                                 "type_spec",
                                                                 ":",
@@ -159,7 +168,10 @@ tree = (
                                                                     "[",
                                                                     (
                                                                         "type_name",
-                                                                        "Activity",
+                                                                        (
+                                                                            "name_lit",
+                                                                            "Activity",
+                                                                        ),
                                                                     ),
                                                                     "]",
                                                                 ),
@@ -179,20 +191,14 @@ tree = (
                                                     "has_assign_clause",
                                                     (
                                                         "has_assign",
-                                                        (
-                                                            "has_tag",
-                                                            "hidden",
-                                                        ),
-                                                        "intro",
+                                                        ("has_tag", "hidden"),
+                                                        ("name_lit", "intro"),
                                                         (
                                                             "type_spec",
                                                             ":",
                                                             (
                                                                 "type_name",
-                                                                (
-                                                                    "builtin_type",
-                                                                    "str",
-                                                                ),
+                                                                ("builtin_type", "str"),
                                                             ),
                                                         ),
                                                         "=",
@@ -216,7 +222,10 @@ tree = (
                                                                                             "atom",
                                                                                             (
                                                                                                 "multistring",
-                                                                                                '"Welcome"',
+                                                                                                (
+                                                                                                    "string_lit",
+                                                                                                    '"Welcome"',
+                                                                                                ),
                                                                                             ),
                                                                                         ),
                                                                                     ),
@@ -242,16 +251,13 @@ tree = (
                                                 "has_assign_clause",
                                                 (
                                                     "has_assign",
-                                                    "visited",
+                                                    ("name_lit", "visited"),
                                                     (
                                                         "type_spec",
                                                         ":",
                                                         (
                                                             "type_name",
-                                                            (
-                                                                "builtin_type",
-                                                                "int",
-                                                            ),
+                                                            ("builtin_type", "int"),
                                                         ),
                                                     ),
                                                     "=",
@@ -273,7 +279,10 @@ tree = (
                                                                                     "power",
                                                                                     (
                                                                                         "atom",
-                                                                                        "0",
+                                                                                        (
+                                                                                            "int_lit",
+                                                                                            "0",
+                                                                                        ),
                                                                                     ),
                                                                                 ),
                                                                             ),
@@ -294,11 +303,11 @@ tree = (
                                     (
                                         "can_stmt",
                                         "can",
-                                        "record",
+                                        ("name_lit", "record"),
                                         (
                                             "event_clause",
                                             "with",
-                                            ("name_list", "tourist"),
+                                            ("name_list", ("name_lit", "tourist")),
                                             "entry",
                                         ),
                                         (
@@ -326,7 +335,10 @@ tree = (
                                                                                     "power",
                                                                                     (
                                                                                         "atom",
-                                                                                        "visited",
+                                                                                        (
+                                                                                            "name_lit",
+                                                                                            "visited",
+                                                                                        ),
                                                                                     ),
                                                                                 ),
                                                                             ),
@@ -335,10 +347,7 @@ tree = (
                                                                 ),
                                                             ),
                                                         ),
-                                                        (
-                                                            "assignment_op",
-                                                            "+=",
-                                                        ),
+                                                        ("assignment_op", "+="),
                                                         (
                                                             "expression",
                                                             (
@@ -357,7 +366,10 @@ tree = (
                                                                                         "power",
                                                                                         (
                                                                                             "atom",
-                                                                                            "1",
+                                                                                            (
+                                                                                                "int_lit",
+                                                                                                "1",
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                                 ),
@@ -377,7 +389,7 @@ tree = (
                                                         (
                                                             "for_stmt",
                                                             "for",
-                                                            ("atom", "i"),
+                                                            ("atom", ("name_lit", "i")),
                                                             "in",
                                                             (
                                                                 "expression",
@@ -397,7 +409,10 @@ tree = (
                                                                                             "power",
                                                                                             (
                                                                                                 "atom",
-                                                                                                "activities",
+                                                                                                (
+                                                                                                    "name_lit",
+                                                                                                    "activities",
+                                                                                                ),
                                                                                             ),
                                                                                         ),
                                                                                     ),
@@ -434,12 +449,18 @@ tree = (
                                                                                                             "atom",
                                                                                                             (
                                                                                                                 "atom",
-                                                                                                                "i",
+                                                                                                                (
+                                                                                                                    "name_lit",
+                                                                                                                    "i",
+                                                                                                                ),
                                                                                                             ),
                                                                                                             (
                                                                                                                 "atom_trailer",
                                                                                                                 ".",
-                                                                                                                "duration",
+                                                                                                                (
+                                                                                                                    "name_lit",
+                                                                                                                    "duration",
+                                                                                                                ),
                                                                                                             ),
                                                                                                         ),
                                                                                                     ),
@@ -473,12 +494,18 @@ tree = (
                                                                                                                 "atom",
                                                                                                                 (
                                                                                                                     "atom",
-                                                                                                                    "visitor",
+                                                                                                                    (
+                                                                                                                        "name_lit",
+                                                                                                                        "visitor",
+                                                                                                                    ),
                                                                                                                 ),
                                                                                                                 (
                                                                                                                     "atom_trailer",
                                                                                                                     ".",
-                                                                                                                    "duration",
+                                                                                                                    (
+                                                                                                                        "name_lit",
+                                                                                                                        "duration",
+                                                                                                                    ),
                                                                                                                 ),
                                                                                                             ),
                                                                                                         ),
@@ -519,12 +546,18 @@ tree = (
                                                                                                                     "atom",
                                                                                                                     (
                                                                                                                         "atom",
-                                                                                                                        "here",
+                                                                                                                        (
+                                                                                                                            "name_lit",
+                                                                                                                            "here",
+                                                                                                                        ),
                                                                                                                     ),
                                                                                                                     (
                                                                                                                         "atom_trailer",
                                                                                                                         ".",
-                                                                                                                        "name",
+                                                                                                                        (
+                                                                                                                            "name_lit",
+                                                                                                                            "name",
+                                                                                                                        ),
                                                                                                                     ),
                                                                                                                 ),
                                                                                                             ),
@@ -549,12 +582,18 @@ tree = (
                                                                                                                         "atom",
                                                                                                                         (
                                                                                                                             "atom",
-                                                                                                                            "visitor",
+                                                                                                                            (
+                                                                                                                                "name_lit",
+                                                                                                                                "visitor",
+                                                                                                                            ),
                                                                                                                         ),
                                                                                                                         (
                                                                                                                             "atom_trailer",
                                                                                                                             ".",
-                                                                                                                            "passport",
+                                                                                                                            (
+                                                                                                                                "name_lit",
+                                                                                                                                "passport",
+                                                                                                                            ),
                                                                                                                         ),
                                                                                                                     ),
                                                                                                                 ),
@@ -597,18 +636,27 @@ tree = (
                                                                                                                                         "atom",
                                                                                                                                         (
                                                                                                                                             "atom",
-                                                                                                                                            "visitor",
+                                                                                                                                            (
+                                                                                                                                                "name_lit",
+                                                                                                                                                "visitor",
+                                                                                                                                            ),
                                                                                                                                         ),
                                                                                                                                         (
                                                                                                                                             "atom_trailer",
                                                                                                                                             ".",
-                                                                                                                                            "passport",
+                                                                                                                                            (
+                                                                                                                                                "name_lit",
+                                                                                                                                                "passport",
+                                                                                                                                            ),
                                                                                                                                         ),
                                                                                                                                     ),
                                                                                                                                     (
                                                                                                                                         "atom_trailer",
                                                                                                                                         ".",
-                                                                                                                                        "append",
+                                                                                                                                        (
+                                                                                                                                            "name_lit",
+                                                                                                                                            "append",
+                                                                                                                                        ),
                                                                                                                                     ),
                                                                                                                                 ),
                                                                                                                                 (
@@ -638,12 +686,18 @@ tree = (
                                                                                                                                                                                 "atom",
                                                                                                                                                                                 (
                                                                                                                                                                                     "atom",
-                                                                                                                                                                                    "here",
+                                                                                                                                                                                    (
+                                                                                                                                                                                        "name_lit",
+                                                                                                                                                                                        "here",
+                                                                                                                                                                                    ),
                                                                                                                                                                                 ),
                                                                                                                                                                                 (
                                                                                                                                                                                     "atom_trailer",
                                                                                                                                                                                     ".",
-                                                                                                                                                                                    "name",
+                                                                                                                                                                                    (
+                                                                                                                                                                                        "name_lit",
+                                                                                                                                                                                        "name",
+                                                                                                                                                                                    ),
                                                                                                                                                                                 ),
                                                                                                                                                                             ),
                                                                                                                                                                         ),
@@ -698,7 +752,7 @@ tree = (
             (
                 "architype",
                 "walker",
-                "tourist",
+                ("name_lit", "tourist"),
                 (
                     "arch_decl_tail",
                     (
@@ -721,16 +775,13 @@ tree = (
                                                     "has_assign_clause",
                                                     (
                                                         "has_assign",
-                                                        "duration",
+                                                        ("name_lit", "duration"),
                                                         (
                                                             "type_spec",
                                                             ":",
                                                             (
                                                                 "type_name",
-                                                                (
-                                                                    "builtin_type",
-                                                                    "int",
-                                                                ),
+                                                                ("builtin_type", "int"),
                                                             ),
                                                         ),
                                                     ),
@@ -748,16 +799,13 @@ tree = (
                                                 "has_assign_clause",
                                                 (
                                                     "has_assign",
-                                                    "budget",
+                                                    ("name_lit", "budget"),
                                                     (
                                                         "type_spec",
                                                         ":",
                                                         (
                                                             "type_name",
-                                                            (
-                                                                "builtin_type",
-                                                                "int",
-                                                            ),
+                                                            ("builtin_type", "int"),
                                                         ),
                                                     ),
                                                 ),
@@ -775,7 +823,7 @@ tree = (
                                             "has_assign_clause",
                                             (
                                                 "has_assign",
-                                                "passport",
+                                                ("name_lit", "passport"),
                                                 (
                                                     "type_spec",
                                                     ":",
@@ -785,10 +833,7 @@ tree = (
                                                         "[",
                                                         (
                                                             "type_name",
-                                                            (
-                                                                "builtin_type",
-                                                                "str",
-                                                            ),
+                                                            ("builtin_type", "str"),
                                                         ),
                                                         "]",
                                                     ),
@@ -804,11 +849,11 @@ tree = (
                                 (
                                     "can_stmt",
                                     "can",
-                                    "visit",
+                                    ("name_lit", "visit"),
                                     (
                                         "event_clause",
                                         "with",
-                                        ("name_list", "location"),
+                                        ("name_list", ("name_lit", "location")),
                                         "exit",
                                     ),
                                     (
@@ -841,12 +886,18 @@ tree = (
                                                                                         "atom",
                                                                                         (
                                                                                             "atom",
-                                                                                            "here",
+                                                                                            (
+                                                                                                "name_lit",
+                                                                                                "here",
+                                                                                            ),
                                                                                         ),
                                                                                         (
                                                                                             "atom_trailer",
                                                                                             ".",
-                                                                                            "activities",
+                                                                                            (
+                                                                                                "name_lit",
+                                                                                                "activities",
+                                                                                            ),
                                                                                         ),
                                                                                     ),
                                                                                 ),
