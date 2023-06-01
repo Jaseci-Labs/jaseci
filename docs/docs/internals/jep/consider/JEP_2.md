@@ -22,19 +22,3 @@ Aligning the design of Jaseci's graph compute structures to Netron provides seve
 2. **Portability**: The alignment with Netron ensures that Jaseci models and graph computations can be seamlessly transported and shared across platforms and frameworks supported by Netron. This portability empowers developers to leverage Jaseci's capabilities in diverse environments.
 
 3. **Understandability**: Netron's visualization codebase is widely recognized and understood by the developer and user community. By piggybacking on Netron's existing codebase, Jaseci benefits from a familiar and user-friendly interface, facilitating comprehension and adoption among users.
-
-## Considered but Rejected
-
-
-## Template
-
-### JEP X - Title...
----
-#### Details
-| Author      | Type | Quick Description | 
-| ----------- | ------ | ------ |
-|  |  |  |
-
-#### Description
-
-Description goes here...
