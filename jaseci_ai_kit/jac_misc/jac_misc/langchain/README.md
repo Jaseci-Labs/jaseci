@@ -57,12 +57,12 @@ walker find_answer {
 
 ## Chains Available
 ### **`json`** - JSON Langchain Flow
-This chain is used to load the langchain flow from a json file. You can get the json file from the langflow platform. Follow the following tutorial to get the json file.
-<!-- TODO: Add the Youtube Video -->
+This chain is used to load the langchain flow from a json file. You can get the json file from the langflow platform. Follow the following tutorial to get the json file. Use **[this link](https://jaseci-langflow.hf.space/)** to go to the langflow platform.
+
+<iframe width="1280" height="665" src="https://www.youtube.com/embed/KJ-ux3hre4s?start=0?end=740" title="⛓️ LangFlow: Build Chatbots without Writing Code - LangChain" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
 ### **`qa-flow`** - Question Answering Flow
 This chain is used to generate the answer for the given question using the giving context. You can use the `generate` action to generate the answer.
-
-<!-- TODO: Add the Youtube Video -->
 
 #### Setup Parameters:
 - `text`: str
@@ -99,8 +99,6 @@ jaseci> actions call langchain.setup -ctx '{"flow_type":"qa-flow", "text": "The 
 
 ### **`document-chat-flow`** - Document Retrieval Chat Flow
 This chain is used to generate the answer for the given question using the giving context but you can maintain a conversation with the model. You can use the `generate` action to generate the answer.
-
-<!-- TODO: Add the Youtube Video -->
 
 #### Setup Parameters:
 - `text`: str
