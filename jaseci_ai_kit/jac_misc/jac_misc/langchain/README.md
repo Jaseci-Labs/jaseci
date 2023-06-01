@@ -131,3 +131,10 @@ jaseci > actions call langchain.generate -ctx '{"input":{"query": "What is the c
 {"answer": "New Delhi"}
 ```
 
+## Examples
+- [Document Retrieval Chatbot with Streamlit UI](https://github.com/Jaseci-Labs/jaseci/tree/feature/langchain/examples/langchain_example/chatbot)
+
+## References
+- [Jaseci Hosted LangFlow Platform](https://jaseci-langflow.hf.space/)
+- [LangFlow Platform Tutorial](https://www.youtube.com/watch?v=KJ-ux3hre4s)
+- [Langchain Documentation](https://python.langchain.com/en/latest/)
