@@ -22,4 +22,19 @@ def fruit_details(fruit):
   return r.json()
 ```
 
+If you run this as a usual python script you will see following response as the output;
+
+```json
+{"name": "Apple",
+ "id": 6,
+ "family": "Rosaceae",
+ "order": "Rosales",
+ "genus": "Malus",
+ "nutritions": {"calories": 52,
+  "fat": 0.4,
+  "sugar": 10.3,
+  "carbohydrates": 11.4,
+  "protein": 0.3}}
+```
+
 ## Integrate  custom action into Jaseci
