@@ -37,6 +37,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "test",
         "import_stmt",
         "architype",
+        "ability",
     )
     def element(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Element rule."""
@@ -142,6 +143,13 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Sub name rule."""
         return p
 
+    # Ability elements
+    # ----------------
+    @_("KW_ABILITY arch_ref NAME code_block")
+    def ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability rule."""
+        return p
+
     # Attribute blocks
     # ----------------
     @_(
@@ -237,7 +245,12 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # Can statements
     # --------------
-    @_("KW_CAN NAME event_clause code_block")
+    @_(
+        "KW_CAN NAME code_block",
+        "KW_CAN NAME SEMI",
+        "KW_CAN NAME event_clause code_block",
+        "KW_CAN NAME event_clause SEMI",
+    )
     def can_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
@@ -724,18 +737,17 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # Architype reference rules
     # -------------------------
-    @_("node_ref", "edge_ref", "walker_ref", "obj_ref")
+    @_(
+        "node_ref",
+        "walker_ref",
+        "obj_ref",
+    )
     def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
         return p
 
     @_("KW_NODE DBL_COLON NAME")
     def node_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Node reference rule."""
-        return p
-
-    @_("KW_EDGE DBL_COLON NAME")
-    def edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Node reference rule."""
         return p
 
