@@ -1,8 +1,16 @@
 """Transpilation of Jaseci code to python code."""
-
 from jaseci.jac.lexer import JacLexer
 from jaseci.jac.parser import JacParser
+from jaseci.jac.utils import Stack, is_term, parse_tree_name
 from jaseci.utils.sly.lex import Token
+
+# MACROS for rapid development
+MAST = "active_master"
+MAST_PATH = "jaseci.core.master"
+SENT = "active_sentinel"
+RT = "runtime"
+SET_LINE = "set_line"
+REG_GLOB = "register_global"
 
 
 class JacTranspiler:
@@ -15,7 +23,7 @@ class JacTranspiler:
         self.output = ""
         self.indent = 0
         self.cur_line = 0
-        self.stack = []
+        self.stk = Stack()
         self.output = ""
 
     def transpile(self: "JacTranspiler", code: str) -> None:
@@ -31,7 +39,7 @@ class JacTranspiler:
             self.check_line_changed(tree)
             return getattr(self, f"transpile_{tree[0]}")(tree)
         elif isinstance(tree, Token):
-            pass
+            self.stk.push(tree)
 
     def emit(self: "JacTranspiler", code: str) -> None:
         """Emit code."""
@@ -46,7 +54,7 @@ class JacTranspiler:
     def check_line_changed(self: "JacTranspiler", tree: int) -> bool:
         """Check if line changed."""
         if self.cur_line != tree[1]:
-            self.emit(f"active_sent.set_jac_line({int(tree[1])})")
+            self.emit(f"{MAST}.{RT}.{SET_LINE}({int(tree[1])})")
             self.cur_line = int(tree[1])
             return True
         return False
@@ -55,7 +63,7 @@ class JacTranspiler:
     # ---------------------
     def transpile_start(self: "JacParser", tree: tuple) -> None:
         """Start rule."""
-        self.emit("from jaseci.core.sentinel import active_sent")
+        self.emit(f"from {MAST_PATH} import {MAST}")
         self.proc_rhs(tree)
 
     # Jac program structured as a list of elements
@@ -69,10 +77,12 @@ class JacTranspiler:
     def transpile_element(self: "JacParser", tree: tuple) -> None:
         """Element rule."""
         self.indent = 2
-        if isinstance(tree[2], Token):  # Must be docstring given rule
-            self.emit(f"{tree[2].value}")
-        # self.emit(f"# {tree[2][0]}")
-        self.proc_rhs(tree)
+        if is_term(tree[2], "DOC_STRING"):
+            self.proc_rhs(tree)
+            self.emit(f"{self.stk.pop().value}")
+        else:
+            self.emit(f"# {parse_tree_name(tree[2])}")
+            self.proc_rhs(tree)
 
     def transpile_global_var(self: "JacParser", tree: tuple) -> None:
         """Global variable rule."""
@@ -80,7 +90,13 @@ class JacTranspiler:
 
     def transpile_global_var_clause(self: "JacParser", tree: tuple) -> None:
         """Global variable tail rule."""
-        self.proc_rhs(tree)
+        code = ""
+        if is_term(tree[2], "NAME"):
+            self.proc_rhs(tree)
+            code += f"{MAST}.{SENT}.{REG_GLOB}({self.stk.pop().value})\n"
+            self.emit(code)
+        else:
+            self.proc_rhs(tree)
 
     def transpile_test(self: "JacParser", tree: tuple) -> None:
         """Test rule."""

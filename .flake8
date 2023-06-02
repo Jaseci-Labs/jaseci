@@ -2,3 +2,4 @@
 exclude = fixtures
 plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations, pep8-naming
 max-line-length = 120
+ignore = E203, W503
