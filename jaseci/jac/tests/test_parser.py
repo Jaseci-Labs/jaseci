@@ -12,5 +12,6 @@ class TestParser(TestCase):
         """Basic test for lexer."""
         lexer = JacLexer()
         parser = JacParser()
-        output = parser.parse(lexer.tokenize(self.load_fixture("fam.jac")))
+        output = parser.parse(lexer.tokenize(self.load_fixture("stuff.jac")))
+        print(output)
         self.assertGreater(len(str(output)), 1000)

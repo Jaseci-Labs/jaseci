@@ -2,6 +2,7 @@
 
 from jaseci.jac.lexer import JacLexer
 from jaseci.jac.parser import JacParser
+from jaseci.utils.sly.lex import Token
 
 
 class JacTranspiler:
@@ -28,6 +29,8 @@ class JacTranspiler:
         if isinstance(rule, tuple):
             self.check_line_changed(rule)
             return getattr(self, f"transpile_{rule[0]}")(rule)
+        elif isinstance(rule, Token):
+            print(type(rule))
 
     def emit(self: "JacTranspiler", code: str) -> None:
         """Emit code."""

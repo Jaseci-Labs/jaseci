@@ -107,3 +107,4 @@ plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_
 - Objects have a context and Node, Edge, and Walker inherit it
 - Protobufs is used to automatically serialize and deserialzie jaseci objects
 - transpile rules should always have a 1 to 1 mapping to parser rules
+- The data spacial concept is enhanced in that objects are introduced that are essentially untetherd nodes, (traditional objects), and walkers can travel to them just like notes, this walker/object dynamic is essentially a method call dynamic except paramters are in the walker through the here/visitor semantic

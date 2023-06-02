@@ -2154,12 +2154,14 @@ class Parser(metaclass=ParserMeta):
             lineno = getattr(token, "lineno", 0)
             if lineno:
                 sys.stderr.write(
-                    f"sly: Syntax error at line {lineno}, token={token.type}\n"
+                    f'Jac Parse Error: Syntax error at line {lineno} while parsing "{token.value}"\n'
                 )
             else:
-                sys.stderr.write(f"sly: Syntax error, token={token.type}")
+                sys.stderr.write(
+                    f'Jac Parse Error: Syntax error while parsing "{token.value}"'
+                )
         else:
-            sys.stderr.write("sly: Parse error in input. EOF\n")
+            sys.stderr.write("Jac Parse Error: Parse error in input. EOF\n")
 
     def errok(self):
         """

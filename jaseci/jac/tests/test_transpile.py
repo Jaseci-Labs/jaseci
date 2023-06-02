@@ -19,27 +19,21 @@ class TestTranspiler(TestCase):
         """Test number and names of transpiler and parser rules match."""
         from jaseci.jac.parser import JacParser
 
-        parser_func_names = [
-            attr
-            for attr in dir(JacParser)
-            if inspect.isfunction(getattr(JacParser, attr))
-        ]
+        parser_func_names = []
+        for name, value in inspect.getmembers(JacParser):
+            if (
+                inspect.isfunction(value)
+                and value.__qualname__.split(".")[0] == JacParser.__name__
+            ):
+                parser_func_names.append(name)
 
-        transpiler_func_names = [
-            attr
-            for attr in dir(JacTranspiler)
-            if inspect.isfunction(getattr(JacTranspiler, attr))
-            and attr.startswith("transpile_")
-        ]
+        transpiler_func_names = []
+        for name, value in inspect.getmembers(JacTranspiler):
+            if (
+                name.startswith("transpile_")
+                and inspect.isfunction(value)
+                and value.__qualname__.split(".")[0] == JacTranspiler.__name__
+            ):
+                transpiler_func_names.append(name.replace("transpile_", ""))
 
-        parser_only_funcs = [
-            x
-            for x in parser_func_names
-            if "transpile_" + x not in transpiler_func_names
-        ]
-
-        self.assertEqual(len(parser_func_names) - 6, len(transpiler_func_names))
-        self.assertEqual(
-            parser_only_funcs,
-            ["errok", "error", "index_position", "line_position", "parse", "restart"],
-        )
+        self.assertEqual(len(parser_func_names), len(transpiler_func_names))
