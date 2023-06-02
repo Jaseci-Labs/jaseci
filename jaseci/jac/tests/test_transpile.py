@@ -12,7 +12,6 @@ class TestTranspiler(TestCase):
         """Basic test for transpiler."""
         transpiler = JacTranspiler()
         output = transpiler.transpile(self.load_fixture("fam.jac"))
-        print(output)
         self.assertIsNotNone(output)
 
     def test_transpiler_parser_rules_match(self: "TestTranspiler") -> None:

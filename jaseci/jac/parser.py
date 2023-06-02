@@ -1,11 +1,12 @@
 """Parser for Jac."""
+from jaseci.jac.errors import JacParseErrorMixIn
 from jaseci.jac.lexer import JacLexer
 from jaseci.utils.sly.yacc import Parser, YaccProduction
 
 _ = None  # For flake8 linting
 
 
-class JacParser(Parser):
+class JacParser(JacParseErrorMixIn, Parser):
     """Parser for Jac."""
 
     tokens = JacLexer.tokens
@@ -31,7 +32,7 @@ class JacParser(Parser):
     # Element types
     # -------------
     @_(
-        "doc_string_literal",
+        "DOC_STRING",
         "global_var",
         "test",
         "import_stmt",
@@ -47,18 +48,18 @@ class JacParser(Parser):
         return p
 
     @_(
-        "name_literal EQ connect",
-        "global_var_clause COMMA name_literal EQ connect",
+        "NAME EQ connect",
+        "global_var_clause COMMA NAME EQ connect",
     )
     def global_var_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global variable tail rule."""
         return p
 
     @_(
-        "KW_TEST name_literal multistring KW_WITH walker_ref code_block",
-        "KW_TEST name_literal multistring KW_WITH walker_ref spawn_ctx code_block",
-        "KW_TEST name_literal multistring KW_WITH attr_block code_block",
-        "KW_TEST name_literal multistring KW_WITH attr_block spawn_ctx code_block",
+        "KW_TEST NAME multistring KW_WITH walker_ref code_block",
+        "KW_TEST NAME multistring KW_WITH walker_ref spawn_ctx code_block",
+        "KW_TEST NAME multistring KW_WITH attr_block code_block",
+        "KW_TEST NAME multistring KW_WITH attr_block spawn_ctx code_block",
     )
     def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Test rule."""
@@ -67,9 +68,9 @@ class JacParser(Parser):
     # Import Statements
     # -----------------
     @_(
-        "KW_IMPORT COLON name_literal import_path SEMI",
-        "KW_IMPORT COLON name_literal import_path KW_AS name_literal SEMI",
-        "KW_IMPORT COLON name_literal KW_FROM import_path COMMA name_as_list SEMI",
+        "KW_IMPORT COLON NAME import_path SEMI",
+        "KW_IMPORT COLON NAME import_path KW_AS NAME SEMI",
+        "KW_IMPORT COLON NAME KW_FROM import_path COMMA name_as_list SEMI",
     )
     def import_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Import rule."""
@@ -84,25 +85,25 @@ class JacParser(Parser):
         return p
 
     @_(
-        "name_literal",
-        "DOT name_literal",
-        "DOT DOT name_literal",
+        "NAME",
+        "DOT NAME",
+        "DOT DOT NAME",
     )
     def import_path_prefix(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Import path prefix rule."""
         return p
 
     @_(
-        "DOT name_literal",
-        "import_path_tail DOT name_literal",
+        "DOT NAME",
+        "import_path_tail DOT NAME",
     )
     def import_path_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Import path tail rule."""
         return p
 
     @_(
-        "name_literal KW_AS name_literal",
-        "name_as_list COMMA name_literal KW_AS name_literal",
+        "NAME KW_AS NAME",
+        "name_as_list COMMA NAME KW_AS NAME",
     )
     def name_as_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Name as list rule."""
@@ -111,10 +112,10 @@ class JacParser(Parser):
     # Architype elements
     # ------------------
     @_(
-        "KW_NODE name_literal arch_decl_tail",
-        "KW_EDGE name_literal arch_decl_tail",
-        "KW_OBJECT name_literal arch_decl_tail",
-        "KW_WALKER name_literal arch_decl_tail",
+        "KW_NODE NAME arch_decl_tail",
+        "KW_EDGE NAME arch_decl_tail",
+        "KW_OBJECT NAME arch_decl_tail",
+        "KW_WALKER NAME arch_decl_tail",
     )
     def architype(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
@@ -136,7 +137,7 @@ class JacParser(Parser):
         """Sub name list rule."""
         return p
 
-    @_("COLON name_literal")
+    @_("COLON NAME")
     def sub_name(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Sub name rule."""
         return p
@@ -146,7 +147,7 @@ class JacParser(Parser):
     @_(
         "LBRACE RBRACE",
         "LBRACE attr_stmt_list RBRACE",
-        "LBRACE doc_string_literal attr_stmt_list RBRACE",
+        "LBRACE DOC_STRING attr_stmt_list RBRACE",
         "COLON attr_stmt",
         "SEMI",
     )
@@ -186,10 +187,10 @@ class JacParser(Parser):
         return p
 
     @_(
-        "has_tag name_literal type_spec",
-        "has_tag name_literal type_spec EQ expression",
-        "name_literal type_spec",
-        "name_literal type_spec EQ expression",
+        "has_tag NAME type_spec",
+        "has_tag NAME type_spec EQ expression",
+        "NAME type_spec",
+        "NAME type_spec EQ expression",
     )
     def has_assign(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has assign rule."""
@@ -212,7 +213,7 @@ class JacParser(Parser):
 
     @_(
         "builtin_type",
-        "name_literal",
+        "NAME",
         "TYP_LIST LSQUARE type_name RSQUARE",
         "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
     )
@@ -236,7 +237,7 @@ class JacParser(Parser):
 
     # Can statements
     # --------------
-    @_("KW_CAN name_literal event_clause code_block")
+    @_("KW_CAN NAME event_clause code_block")
     def can_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
@@ -252,8 +253,8 @@ class JacParser(Parser):
         return p
 
     @_(
-        "name_literal",
-        "name_list COMMA name_literal",
+        "NAME",
+        "name_list COMMA NAME",
     )
     def name_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Name list rule."""
@@ -324,7 +325,7 @@ class JacParser(Parser):
         return p
 
     @_(
-        "KW_ELSE KW_WITH name_literal code_block",
+        "KW_ELSE KW_WITH NAME code_block",
         "KW_ELSE code_block",
     )
     def else_from_try(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -522,12 +523,12 @@ class JacParser(Parser):
     # Atom rules
     # --------------------
     @_(
-        "int_literal",
-        "float_literal",
+        "INT",
+        "FLOAT",
         "multistring",
-        "bool_literal",
-        "null_literal",
-        "name_literal",
+        "BOOL",
+        "NULL",
+        "NAME",
         "list_val",
         "dict_val",
         "LPAREN connect RPAREN",
@@ -543,10 +544,10 @@ class JacParser(Parser):
         return p
 
     @_(
-        "string_literal",
-        "doc_string_literal",
-        "string_literal multistring",
-        "doc_string_literal multistring",
+        "STRING",
+        "DOC_STRING",
+        "STRING multistring",
+        "DOC_STRING multistring",
     )
     def multistring(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Multistring rule."""
@@ -585,14 +586,14 @@ class JacParser(Parser):
         return p
 
     @_(
-        "DBL_COLON name_literal",
+        "DBL_COLON NAME",
     )
     def ability_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability operator rule."""
         return p
 
     @_(
-        "DOT name_literal",
+        "DOT NAME",
         "index_slice",
         "ability_call",
         "PIPE_FWD built_in",
@@ -620,8 +621,8 @@ class JacParser(Parser):
         return p
 
     @_(
-        "name_literal EQ connect",
-        "name_literal EQ connect COMMA kw_expr_list",
+        "NAME EQ connect",
+        "NAME EQ connect COMMA kw_expr_list",
     )
     def kw_expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Keyword expression list rule."""
@@ -637,7 +638,7 @@ class JacParser(Parser):
 
     @_(
         "KW_GLOBAL DOT obj_built_in",
-        "KW_GLOBAL DOT name_literal",
+        "KW_GLOBAL DOT NAME",
     )
     def global_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
@@ -728,22 +729,22 @@ class JacParser(Parser):
         """Architype reference rule."""
         return p
 
-    @_("KW_NODE DBL_COLON name_literal")
+    @_("KW_NODE DBL_COLON NAME")
     def node_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Node reference rule."""
         return p
 
-    @_("KW_EDGE DBL_COLON name_literal")
+    @_("KW_EDGE DBL_COLON NAME")
     def edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Node reference rule."""
         return p
 
-    @_("KW_WALKER DBL_COLON name_literal")
+    @_("KW_WALKER DBL_COLON NAME")
     def walker_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Walker reference rule."""
         return p
 
-    @_("KW_OBJECT DBL_COLON name_literal")
+    @_("KW_OBJECT DBL_COLON NAME")
     def obj_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Type reference rule."""
         return p
@@ -761,7 +762,7 @@ class JacParser(Parser):
 
     @_(
         "ARROW_R",
-        "ARROW_R_p1 name_literal filter_ctx ARROW_R_p2",
+        "ARROW_R_p1 NAME filter_ctx ARROW_R_p2",
     )
     def edge_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge to rule."""
@@ -769,7 +770,7 @@ class JacParser(Parser):
 
     @_(
         "ARROW_L",
-        "ARROW_L_p1 name_literal filter_ctx ARROW_L_p2",
+        "ARROW_L_p1 NAME filter_ctx ARROW_L_p2",
     )
     def edge_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge from rule."""
@@ -777,7 +778,7 @@ class JacParser(Parser):
 
     @_(
         "ARROW_BI",
-        "ARROW_L_p1 name_literal filter_ctx ARROW_R_p2",
+        "ARROW_L_p1 NAME filter_ctx ARROW_R_p2",
     )
     def edge_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge any rule."""
@@ -794,7 +795,7 @@ class JacParser(Parser):
 
     @_(
         "CARROW_R",
-        "CARROW_R_p1 name_literal spawn_ctx CARROW_R_p2",
+        "CARROW_R_p1 NAME spawn_ctx CARROW_R_p2",
     )
     def connect_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect to rule."""
@@ -802,7 +803,7 @@ class JacParser(Parser):
 
     @_(
         "CARROW_L",
-        "CARROW_L_p1 name_literal spawn_ctx CARROW_L_p2",
+        "CARROW_L_p1 NAME spawn_ctx CARROW_L_p2",
     )
     def connect_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect from rule."""
@@ -810,7 +811,7 @@ class JacParser(Parser):
 
     @_(
         "CARROW_BI",
-        "CARROW_L_p1 name_literal spawn_ctx CARROW_R_p2",
+        "CARROW_L_p1 NAME spawn_ctx CARROW_R_p2",
     )
     def connect_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect any rule."""
@@ -830,8 +831,8 @@ class JacParser(Parser):
         return p
 
     @_(
-        "name_literal EQ expression",
-        "name_literal EQ expression COMMA spawn_assign_list",
+        "NAME EQ expression",
+        "NAME EQ expression COMMA spawn_assign_list",
         # "",
     )
     def spawn_assign_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -839,48 +840,10 @@ class JacParser(Parser):
         return p
 
     @_(
-        "name_literal cmp_op expression",
-        "name_literal cmp_op expression COMMA filter_compare_list",
+        "NAME cmp_op expression",
+        "NAME cmp_op expression COMMA filter_compare_list",
         # "",
     )
     def filter_compare_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Filter comparison list rule."""
-        return p
-
-    # Literal rules (overcomes sly limitations)
-    # -----------------------------------------
-
-    @_("INT")
-    def int_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Integer literal rule."""
-        return p
-
-    @_("FLOAT")
-    def float_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Float literal rule."""
-        return p
-
-    @_("STRING")
-    def string_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Str literal rule."""
-        return p
-
-    @_("DOC_STRING")
-    def doc_string_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Doc_string literal rule."""
-        return p
-
-    @_("BOOL")
-    def bool_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Boolean literal rule."""
-        return p
-
-    @_("NULL")
-    def null_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Null literal rule."""
-        return p
-
-    @_("NAME")
-    def name_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Name literal rule."""
         return p

@@ -13,39 +13,41 @@ class JacTranspiler:
         self.lexer = JacLexer()
         self.parser = JacParser()
         self.output = ""
-
-    def transpile(self: "JacTranspiler", code: str) -> None:
-        """Transpile code."""
         self.indent = 0
         self.cur_line = 0
         self.stack = []
         self.output = ""
+
+    def transpile(self: "JacTranspiler", code: str) -> None:
+        """Transpile code."""
+        self.__init__()
         self.tree = self.parser.parse(self.lexer.tokenize(code))
         self.transpile_start(self.tree)
         return self.output
 
-    def proc_lhs(self: "JacTranspiler", rule: tuple) -> str:
-        """Convert rule to function name."""
-        if isinstance(rule, tuple):
-            self.check_line_changed(rule)
-            return getattr(self, f"transpile_{rule[0]}")(rule)
-        elif isinstance(rule, Token):
-            print(type(rule))
+    def proc_lhs(self: "JacTranspiler", tree: tuple) -> str:
+        """Convert tree to function name."""
+        if isinstance(tree, tuple):
+            self.check_line_changed(tree)
+            return getattr(self, f"transpile_{tree[0]}")(tree)
+        elif isinstance(tree, Token):
+            pass
 
     def emit(self: "JacTranspiler", code: str) -> None:
         """Emit code."""
+        code = code.replace("\n", "\n+" + "    " * self.indent)
         self.output += "    " * self.indent + code + "\n"
 
     def proc_rhs(self: "JacTranspiler", tree: tuple) -> None:
-        """Process right hand side of rule."""
-        for rule in tree[2:]:
-            self.proc_lhs(rule)
+        """Process right hand side of tree."""
+        for subtree in tree[2:]:
+            self.proc_lhs(subtree)
 
-    def check_line_changed(self: "JacTranspiler", rule: int) -> bool:
+    def check_line_changed(self: "JacTranspiler", tree: int) -> bool:
         """Check if line changed."""
-        if self.cur_line != rule[1]:
-            self.emit(f"active_sent.set_jac_line({int(rule[1])})")
-            self.cur_line = int(rule[1])
+        if self.cur_line != tree[1]:
+            self.emit(f"active_sent.set_jac_line({int(tree[1])})")
+            self.cur_line = int(tree[1])
             return True
         return False
 
@@ -66,7 +68,10 @@ class JacTranspiler:
     # -------------
     def transpile_element(self: "JacParser", tree: tuple) -> None:
         """Element rule."""
-        self.emit(f"# {tree[2][0]}")
+        self.indent = 2
+        if isinstance(tree[2], Token):  # Must be docstring given rule
+            self.emit(f"{tree[2].value}")
+        # self.emit(f"# {tree[2][0]}")
         self.proc_rhs(tree)
 
     def transpile_global_var(self: "JacParser", tree: tuple) -> None:
@@ -476,34 +481,3 @@ class JacTranspiler:
     def transpile_filter_compare_list(self: "JacParser", tree: tuple) -> None:
         """Filter comparison list rule."""
         self.proc_rhs(tree)
-
-    # Literal rules (overcomes sly limitations)
-    # -----------------------------------------
-
-    def transpile_int_literal(self: "JacParser", tree: tuple) -> None:
-        """Integer literal rule."""
-        self.stack.append(tree)
-
-    def transpile_float_literal(self: "JacParser", tree: tuple) -> None:
-        """Float literal rule."""
-        self.stack.append(tree)
-
-    def transpile_string_literal(self: "JacParser", tree: tuple) -> None:
-        """Str literal rule."""
-        self.stack.append(tree)
-
-    def transpile_doc_string_literal(self: "JacParser", tree: tuple) -> None:
-        """Doc_string literal rule."""
-        self.stack.append(tree)
-
-    def transpile_bool_literal(self: "JacParser", tree: tuple) -> None:
-        """Boolean literal rule."""
-        self.stack.append(tree)
-
-    def transpile_null_literal(self: "JacParser", tree: tuple) -> None:
-        """Null literal rule."""
-        self.stack.append(tree)
-
-    def transpile_name_literal(self: "JacParser", tree: tuple) -> None:
-        """Name literal rule."""
-        self.stack.append(tree)
