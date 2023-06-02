@@ -23,7 +23,7 @@ class JacTranspiler:
         self.transpile_start(self.tree)
         return self.output
 
-    def transpile_rule(self: "JacTranspiler", rule: tuple) -> str:
+    def proc_lhs(self: "JacTranspiler", rule: tuple) -> str:
         """Convert rule to function name."""
         if isinstance(rule, tuple):
             self.check_line_changed(rule)
@@ -36,7 +36,7 @@ class JacTranspiler:
     def proc_rhs(self: "JacTranspiler", tree: tuple) -> None:
         """Process right hand side of rule."""
         for rule in tree[2:]:
-            self.transpile_rule(rule)
+            self.proc_lhs(rule)
 
     def check_line_changed(self: "JacTranspiler", rule: int) -> bool:
         """Check if line changed."""
