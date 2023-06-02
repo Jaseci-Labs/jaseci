@@ -11,9 +11,13 @@ class AstNodeKind(Enum):
     PARSE_RULE = 1
     TOKEN = 2
 
-    def __repr__(self: "AstNodeKind") -> str:
+    def __str__(self: "AstNodeKind") -> str:
         """Return string representation of AstNodeKind."""
         return self.name
+
+    def __repr__(self: "AstNodeKind") -> str:
+        """Return string representation of AstNodeKind."""
+        return str(self)
 
 
 class AstNode:
@@ -35,6 +39,17 @@ class AstNode:
         self.kid = kid if kid else []
         self.line = line
         self.py_code = py_code
+
+    def __str__(self: "AstNode") -> str:
+        """Return string representation of node."""
+        return (
+            f"{self.name} {self.line}, ({self.value}), "
+            f"{len(self.kid)} kids, {str(self.kind).lower()}"
+        )
+
+    def __repr__(self: "AstNode") -> str:
+        """Return string representation of node."""
+        return str(self)
 
     def to_dict(self: "AstNode") -> dict:
         """Return dict representation of node."""
@@ -67,11 +82,13 @@ class Pass:
 
     def enter_node(self: "Pass", node: AstNode) -> None:
         """Run on entering node."""
-        pass
+        if hasattr(self, f"enter_{node.name.lower()}"):
+            getattr(self, f"enter_{node.name.lower()}")(node)
 
     def exit_node(self: "Pass", node: AstNode) -> None:
         """Run on exiting node."""
-        pass
+        if hasattr(self, f"exit_{node.name.lower()}"):
+            getattr(self, f"exit_{node.name.lower()}")(node)
 
     def run(self: "Pass") -> AstNode:
         """Run pass."""
@@ -108,6 +125,7 @@ def parse_tree_to_ast(tree: tuple) -> AstNode:
             tree = AstNode(
                 name=tree.type,
                 kind=AstNodeKind.TOKEN,
+                value=tree.value,
                 kid=[],
                 line=tree.lineno,
                 py_code="",
