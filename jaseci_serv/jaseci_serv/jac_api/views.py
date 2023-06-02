@@ -106,17 +106,17 @@ class AbstractJacAPIView(APIView):
             api_result_str = json.dumps(api_result)[:OBJECT_LOG_LIMIT]
         except TypeError:
             api_result_str = str(api_result)[:OBJECT_LOG_LIMIT]
-        # try:
-        #     success = check_success(api_result_str)
-        #     if success is True or success is None:
-        log_dict["api_response"] = api_result_str
-        log_dict["extra_fields"] = list(log_dict.keys())
-        logger.info(log_str, extra=log_dict)
-        JsOrc.get("action_manager", ActionManager).post_request_hook(
-            type(self).__name__, request, tot_time
-        )
-        # except Exception as e:
-        #     logger.error(f"Exception: {e}\n{success}")
+        try:
+            success = check_success(api_result_str)
+            if success is True or success is None:
+                log_dict["api_response"] = api_result_str
+                log_dict["extra_fields"] = list(log_dict.keys())
+                logger.info(log_str, extra=log_dict)
+                JsOrc.get("action_manager", ActionManager).post_request_hook(
+                    type(self).__name__, request, tot_time
+                )
+        except Exception as e:
+            logger.error(f"Exception: {e}\n{success}")
 
     def proc_prime_ctx(self, request, req_data):
         try:
