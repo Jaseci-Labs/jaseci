@@ -49,8 +49,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "NAME EQ connect",
-        "global_var_clause COMMA NAME EQ connect",
+        "NAME EQ expression",
+        "global_var_clause COMMA NAME EQ expression",
     )
     def global_var_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global variable tail rule."""

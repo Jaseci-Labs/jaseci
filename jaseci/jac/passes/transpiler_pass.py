@@ -5,10 +5,10 @@ from jaseci.jac.passes.ir_pass import AstNode, Pass
 # MACROS for rapid development
 MAST = "active_master"
 MAST_PATH = "jaseci.core.master"
-SENT = "active_sentinel"
-RT = "runtime"
-SET_LINE = "set_line"
-REG_GLOB = "register_global"
+SENT = f"{MAST}.active_sentinel"
+RT = f"{MAST}.runtime"
+SET_LINE_FUNC = lambda x: f"{RT}set_line('{x}')\n"  # noqa
+REG_GLOB_FUNC = lambda x, y: f"{RT}.register_global({x}, {y})\n"  # noqa
 
 
 class TranspilePass(Pass):
@@ -31,13 +31,21 @@ class TranspilePass(Pass):
         """Convert element to python code."""
         node.py_code = node.kid[0].py_code
 
-    # def exit_global_var_clause(self: "TranspilePass", node: AstNode) -> None:
-    #     """Convert global var clause to python code."""
-    #     node.py_code = node.kid[0].py_code
-
     def exit_global_var(self: "TranspilePass", node: AstNode) -> None:
         """Convert global var to python code."""
         node.py_code = node.kid[1].py_code
+
+    def exit_global_var_clause(self: "TranspilePass", node: AstNode) -> None:
+        """Convert global var clause to python code."""
+        if node.kid[0].name == "NAME":
+            node.py_code = REG_GLOB_FUNC(node.kid[0].py_code, node.kid[2].py_code)
+        else:
+            node.py_code = node.kid[0].py_code
+            node.py_code += REG_GLOB_FUNC(node.kid[2].py_code, node.kid[4].py_code)
+
+    def exit_test(self: "TranspilePass", node: AstNode) -> None:
+        """Convert test to python code."""
+        # TODO: Implement this later
 
     def exit_int(self: "TranspilePass", node: AstNode) -> None:
         """Convert int to python code."""
