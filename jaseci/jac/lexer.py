@@ -115,6 +115,7 @@ class JacLexer(Lexer):
         "CARROW_L_p2",
         "CARROW_R_p1",
         "CARROW_R_p2",
+        "GLOBAL_OP",
     }
 
     # Ignored patterns
@@ -206,6 +207,9 @@ class JacLexer(Lexer):
     CARROW_L_p2 = r"]\+"
     CARROW_R_p1 = r"\+\["
     CARROW_R_p2 = r"]\+>"
+
+    # Just special
+    GLOBAL_OP = r"g::"
 
     # Token rules
     KW_AND = r"&&"

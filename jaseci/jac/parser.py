@@ -667,8 +667,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "KW_GLOBAL DOT obj_built_in",
-        "KW_GLOBAL DOT NAME",
+        "GLOBAL_OP obj_built_in",
+        "GLOBAL_OP NAME",
     )
     def global_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global reference rule."""

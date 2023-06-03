@@ -47,6 +47,10 @@ class TranspilePass(Pass):
         """Convert test to python code."""
         # TODO: Implement this later
 
+    def exit_import_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert import stmt to python code."""
+        node.py_code = node.kid[0].py_code
+
     def exit_int(self: "TranspilePass", node: AstNode) -> None:
         """Convert int to python code."""
         node.py_code = str(node.value)
