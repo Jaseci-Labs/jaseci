@@ -31,6 +31,10 @@ class TranspilePass(Pass):
         """Convert element to python code."""
         node.py_code = node.kid[0].py_code
 
+    # def exit_global_var_clause(self: "TranspilePass", node: AstNode) -> None:
+    #     """Convert global var clause to python code."""
+    #     node.py_code = node.kid[0].py_code
+
     def exit_global_var(self: "TranspilePass", node: AstNode) -> None:
         """Convert global var to python code."""
         node.py_code = node.kid[1].py_code

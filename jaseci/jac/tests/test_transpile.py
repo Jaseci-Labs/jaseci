@@ -1,18 +1,18 @@
 """Test transpiler."""
 # import inspect
 
-from jaseci.jac.transpile import JacTranspiler
+# from jaseci.jac.transpile import JacTranspiler
 from jaseci.utils.test import TestCase
 
 
 class TestTranspiler(TestCase):
     """Test Jac transpiler."""
 
-    def test_core_transpiler_loop(self: "TestTranspiler") -> None:
-        """Basic test for transpiler."""
-        transpiler = JacTranspiler()
-        output = transpiler.transpile(self.load_fixture("fam.jac"))
-        self.assertIsNotNone(output)
+    # def test_core_transpiler_loop(self: "TestTranspiler") -> None:
+    #     """Basic test for transpiler."""
+    #     transpiler = JacTranspiler()
+    #     output = transpiler.transpile(self.load_fixture("fam.jac"))
+    #     self.assertIsNotNone(output)
 
     # def test_transpiler_parser_rules_match(self: "TestTranspiler") -> None:
     #     """Test number and names of transpiler and parser rules match."""

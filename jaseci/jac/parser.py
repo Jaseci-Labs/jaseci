@@ -626,6 +626,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "call",
         "PIPE_FWD built_in",  # casting and creating tuples and sets
         "PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
+        "PIPE_FWD spawn_ctx",  # for rapid assignments to collections
     )
     def atom_trailer(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
