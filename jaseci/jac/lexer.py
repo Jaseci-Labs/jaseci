@@ -18,6 +18,8 @@ class JacLexer(Lexer):
         "TYP_INT",
         "TYP_FLOAT",
         "TYP_LIST",
+        "TYP_TUPLE",
+        "TYP_SET",
         "TYP_DICT",
         "TYP_BOOL",
         "TYP_BYTES",
@@ -137,6 +139,8 @@ class JacLexer(Lexer):
     NAME["int"] = "TYP_INT"
     NAME["float"] = "TYP_FLOAT"
     NAME["list"] = "TYP_LIST"
+    NAME["tuple"] = "TYP_TUPLE"
+    NAME["set"] = "TYP_SET"
     NAME["dict"] = "TYP_DICT"
     NAME["bool"] = "TYP_BOOL"
     NAME["bytes"] = "TYP_BYTES"

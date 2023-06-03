@@ -235,6 +235,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         "TYP_INT",
         "TYP_FLOAT",
         "TYP_LIST",
+        "TYP_TUPLE",
+        "TYP_SET",
         "TYP_DICT",
         "TYP_BOOL",
         "KW_TYPE",
@@ -536,6 +538,20 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Atom rules
     # --------------------
     @_(
+        "atom_literal",
+        "atom_collection",
+        "LPAREN expression RPAREN",
+        "global_ref",
+        "ability_ref",
+        "atom atom_trailer",
+        "atom node_edge_ref",
+        "spawn",
+    )
+    def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom rule."""
+        return p
+
+    @_(
         "INT",
         "FLOAT",
         "multistring",
@@ -543,17 +559,17 @@ class JacParser(JacParseErrorMixIn, Parser):
         "BOOL",
         "NULL",
         "NAME",
+        "builtin_type",
+    )
+    def atom_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom rule."""
+        return p
+
+    @_(
         "list_val",
         "dict_val",
-        "LPAREN connect RPAREN",
-        "ability_op",
-        "atom atom_trailer",
-        "builtin_type",
-        "global_ref",
-        "atom node_edge_ref",
-        "spawn",
     )
-    def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def atom_collection(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom rule."""
         return p
 
@@ -600,15 +616,16 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "DBL_COLON NAME",
     )
-    def ability_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability operator rule."""
         return p
 
     @_(
         "DOT NAME",
         "index_slice",
-        "ability_call",
-        "PIPE_FWD built_in",
+        "call",
+        "PIPE_FWD built_in",  # casting and creating tuples and sets
+        "PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
     )
     def atom_trailer(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
@@ -617,9 +634,9 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "LPAREN RPAREN",
         "LPAREN param_list RPAREN",
-        "ability_op",
+        "ability_ref",
     )
-    def ability_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def call(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability call rule."""
         return p
 
