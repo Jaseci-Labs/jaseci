@@ -1,5 +1,6 @@
 ---
 sidebar_position: 2
+title: JEP 2 - Co-design and Interoperability With Netron
 ---
 
 ### JEP 2 - Co-design and Interoperability With Netron
