@@ -39,27 +39,19 @@ Prism.languages.jac = {
         greedy: true
     },
     'function': {
-        pattern: /((?:^|\s)def[ \t]+)[a-zA-Z_]\w*(?=\s*\()/g,
+        pattern: /(\bcan\s+)\w+/g,
         lookbehind: true
     },
     'class-name': {
-        pattern: /(\bclass\s+)\w+/i,
+        pattern: /(\bobject\s+)\w+|(\bnode\s+)\w+|(\bedge\s+)\w+|(\bwalker\s+)\w+/i,
         lookbehind: true
     },
-    'decorator': {
-        pattern: /(^[\t ]*)@\w+(?:\.\w+)*/m,
-        lookbehind: true,
-        alias: ['annotation', 'punctuation'],
-        inside: {
-            'punctuation': /\./
-        }
-    },
-    'keyword': /\b(?:_(?=\s*:)|walker|and|as|assert|async|await|break|case|class|continue|def|del|elif|else|except|exec|finally|for|from|global|if|import|in|is|lambda|match|nonlocal|not|or|pass|print|raise|return|try|while|with|yield)\b/,
-    'builtin': /\b(?:__import__|abs|all|any|apply|ascii|basestring|bin|bool|buffer|bytearray|bytes|callable|chr|classmethod|cmp|coerce|compile|complex|delattr|dict|dir|divmod|enumerate|eval|execfile|file|filter|float|format|frozenset|getattr|globals|hasattr|hash|help|hex|id|input|int|intern|isinstance|issubclass|iter|len|list|locals|long|map|max|memoryview|min|next|object|oct|open|ord|pow|property|range|raw_input|reduce|reload|repr|reversed|round|set|setattr|slice|sorted|staticmethod|str|sum|super|tuple|type|unichr|unicode|vars|xrange|zip)\b/,
+    'keyword': /\b(?:ignore|take|with|entry|exit|import|from|as|async|sync|assert|and|or|if|elif|else|for|to|by|while|continue|break|disengage|yield|skip|report|del|try|in|not|anchor|has|hidden|can)\b/,
+    'builtin': /\b(?:here|visitor|str|int|float|list|tuple|set|dict|bool|bytes|type|context|info|details)\b/,
     'boolean': /\b(?:False|None|True)\b/,
     'number': /\b0(?:b(?:_?[01])+|o(?:_?[0-7])+|x(?:_?[a-f0-9])+)\b|(?:\b\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\B\.\d+(?:_\d+)*)(?:e[+-]?\d+(?:_\d+)*)?j?(?!\w)/i,
-    'operator': /[-+%=]=?|!=|:=|\*\*?=?|\/\/?=?|<[<=>]?|>[=>]?|[&|^~]/,
-    'punctuation': /[{}[\];(),.:]/
+    'operator': /spawn|<--|-->|<-->|<-\[|\]-|-\[|]->|<\+\+|\+\+>|<\+\+\>|<\+\[|\]\+|\+\[|\]\+>|&&|\|\||!|\|>|==|=|\+=|-=|\*=|\/=|:=|&|<|>|<=|>=|!=|,|\+|-|\*|\/|%|\^/,
+    'punctuation': /\(|\)|\[|\]|\{|\}|;|\.:|::|:/
 };
 
 Prism.languages.jac['string-interpolation'].inside['interpolation'].inside.rest = Prism.languages.jac;

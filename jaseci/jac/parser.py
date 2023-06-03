@@ -546,6 +546,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom atom_trailer",
         "atom node_edge_ref",
         "spawn",
+        "KW_HERE",
+        "KW_VISITOR",
     )
     def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom rule."""

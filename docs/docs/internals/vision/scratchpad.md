@@ -7,118 +7,45 @@ title: Scratchpad
 Brainstorm Code Snippet
 
 ```jac
-walker init {
-	
-can ..
+# This is a comment
+// This is also a commment
+"""
+These are doc strings and can be used as comments
+Use them to document your code
+"""
 
-std.out()
-with entry {}
-std.log()
-nodeblock1 {}
+import:jac .stuff;
+import:py from .activity, Activity as Actvy;
 
-nodeblock1, n2 {}
+node location {
+    has x: int, y: int, name: str;
+    has anchor activities: list[Activity];
+    has hidden intro: str = "Welcome";
+    has visited: int = 0;
 
-n2 {}
 
+    can record with tourist entry {
+        visited+=1;
+        for i in activities {
+            i.duration = visitor.duration;
+            if here.name not in visitor.passport {
+                visitor.passport.append(here.name);
+               }
+        }
+    }
 }
 
-walker init {
-has ..
-can ..
+walker tourist {
+    has duration: int;
+    has budget: int;
+    has passport: list[str];
 
-can name with * entry {}
-can myblock with mynode entry {}
-can myblock2 with mynode entry {}
-can name with * exit {}
-
+    can visit with location exit {
+        take -->;
+        if here.visited == 0 {
+            print here.intro;
+        }
+        report here.activities;
+    }
 }
-
-walker init2:init1 {
-
-can myblock with mynode_sub {}
-
-}
-
-
-node whatever {
-}
-
-py whatever2 {
-
-import imp; 
-a =5;
-
-def func
-class blha
-
-}
-
-py whatever2 {
-
-import imp;
-a =5;
-
-
-def func
-class blha
-
-}
-
-py w2 {
-import w1
-import pandas
-}
-
-
-
-cpy whateverc {
-}
-
-walker init {
-
-   pak = whatever2.func;
-   a=pak.a
-	nodea.a=pak.a
-
-   pak.imp()
-   pak.blha.fun()
-
-}
-
-class Walker()
-{
-   Abilities
-
- 	def take(node)
-	def run
-}
-
-
-class init(Walker):
-  def __init__
-
-
-
-walker init {
-   take -->;
-}
-
-node simple {
-has 
-has 
-can 
-}
-
-class simple(Node) {
-  addAbility(can); 
-}
-
-class init(Walker):
-   def run:
-      self.take(self.outbout_nodes());
-
-Quick next steps
-* build in sly
-* trans pile
-* create proper super set, library first implementation
 ```
