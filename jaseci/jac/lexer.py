@@ -1,6 +1,6 @@
 """Lexer for Jac language."""
 
-from sly.lex import Lexer, Token
+from jaseci.utils.sly.lex import Lexer, Token
 
 
 class JacLexer(Lexer):
@@ -18,6 +18,8 @@ class JacLexer(Lexer):
         "TYP_INT",
         "TYP_FLOAT",
         "TYP_LIST",
+        "TYP_TUPLE",
+        "TYP_SET",
         "TYP_DICT",
         "TYP_BOOL",
         "TYP_BYTES",
@@ -38,6 +40,7 @@ class JacLexer(Lexer):
         "KW_AS",
         "KW_EDGE",
         "KW_WALKER",
+        "KW_ABILITY",
         "KW_ASYNC",
         "KW_SYNC",
         "KW_TEST",
@@ -136,6 +139,8 @@ class JacLexer(Lexer):
     NAME["int"] = "TYP_INT"
     NAME["float"] = "TYP_FLOAT"
     NAME["list"] = "TYP_LIST"
+    NAME["tuple"] = "TYP_TUPLE"
+    NAME["set"] = "TYP_SET"
     NAME["dict"] = "TYP_DICT"
     NAME["bool"] = "TYP_BOOL"
     NAME["bytes"] = "TYP_BYTES"
@@ -156,6 +161,7 @@ class JacLexer(Lexer):
     NAME["as"] = "KW_AS"
     NAME["edge"] = "KW_EDGE"
     NAME["walker"] = "KW_WALKER"
+    NAME["ability"] = "KW_ABILITY"
     NAME["async"] = "KW_ASYNC"
     NAME["sync"] = "KW_SYNC"
     NAME["test"] = "KW_TEST"

@@ -1,4 +1,6 @@
+global x = 54;
+
 edge path {
-    has: int distance;
-    has: int visited = 0;
+    has distance: int = 0;
+    // has: int visited = 0;
 }

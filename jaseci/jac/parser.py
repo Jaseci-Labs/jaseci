@@ -1,12 +1,12 @@
 """Parser for Jac."""
+from jaseci.jac.errors import JacParseErrorMixIn
 from jaseci.jac.lexer import JacLexer
-
-from sly.yacc import Parser, YaccProduction
+from jaseci.utils.sly.yacc import Parser, YaccProduction
 
 _ = None  # For flake8 linting
 
 
-class JacParser(Parser):
+class JacParser(JacParseErrorMixIn, Parser):
     """Parser for Jac."""
 
     tokens = JacLexer.tokens
@@ -37,6 +37,7 @@ class JacParser(Parser):
         "test",
         "import_stmt",
         "architype",
+        "ability",
     )
     def element(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Element rule."""
@@ -48,8 +49,8 @@ class JacParser(Parser):
         return p
 
     @_(
-        "NAME EQ connect",
-        "global_var_clause COMMA NAME EQ connect",
+        "NAME EQ expression",
+        "global_var_clause COMMA NAME EQ expression",
     )
     def global_var_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global variable tail rule."""
@@ -142,6 +143,13 @@ class JacParser(Parser):
         """Sub name rule."""
         return p
 
+    # Ability elements
+    # ----------------
+    @_("KW_ABILITY arch_ref NAME code_block")
+    def ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability rule."""
+        return p
+
     # Attribute blocks
     # ----------------
     @_(
@@ -227,6 +235,8 @@ class JacParser(Parser):
         "TYP_INT",
         "TYP_FLOAT",
         "TYP_LIST",
+        "TYP_TUPLE",
+        "TYP_SET",
         "TYP_DICT",
         "TYP_BOOL",
         "KW_TYPE",
@@ -237,7 +247,12 @@ class JacParser(Parser):
 
     # Can statements
     # --------------
-    @_("KW_CAN NAME event_clause code_block")
+    @_(
+        "KW_CAN NAME code_block",
+        "KW_CAN NAME SEMI",
+        "KW_CAN NAME event_clause code_block",
+        "KW_CAN NAME event_clause SEMI",
+    )
     def can_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
@@ -520,22 +535,15 @@ class JacParser(Parser):
         """Dereference rule."""
         return p
 
-    # Atom / Literal rules
+    # Atom rules
     # --------------------
     @_(
-        "INT",
-        "FLOAT",
-        "multistring",
-        "BOOL",
-        "NULL",
-        "NAME",
-        "list_val",
-        "dict_val",
-        "LPAREN connect RPAREN",
-        "ability_op",
-        "atom atom_trailer",
-        "builtin_type",
+        "atom_literal",
+        "atom_collection",
+        "LPAREN expression RPAREN",
         "global_ref",
+        "ability_ref",
+        "atom atom_trailer",
         "atom node_edge_ref",
         "spawn",
     )
@@ -544,10 +552,30 @@ class JacParser(Parser):
         return p
 
     @_(
-        "STRING",
+        "INT",
+        "FLOAT",
+        "multistring",
         "DOC_STRING",
+        "BOOL",
+        "NULL",
+        "NAME",
+        "builtin_type",
+    )
+    def atom_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom rule."""
+        return p
+
+    @_(
+        "list_val",
+        "dict_val",
+    )
+    def atom_collection(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom rule."""
+        return p
+
+    @_(
+        "STRING",
         "STRING multistring",
-        "DOC_STRING multistring",
     )
     def multistring(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Multistring rule."""
@@ -588,15 +616,17 @@ class JacParser(Parser):
     @_(
         "DBL_COLON NAME",
     )
-    def ability_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability operator rule."""
         return p
 
     @_(
         "DOT NAME",
         "index_slice",
-        "ability_call",
-        "PIPE_FWD built_in",
+        "call",
+        "PIPE_FWD built_in",  # casting and creating tuples and sets
+        "PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
+        "PIPE_FWD spawn_ctx",  # for rapid assignments to collections
     )
     def atom_trailer(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
@@ -605,9 +635,9 @@ class JacParser(Parser):
     @_(
         "LPAREN RPAREN",
         "LPAREN param_list RPAREN",
-        "ability_op",
+        "ability_ref",
     )
-    def ability_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def call(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability call rule."""
         return p
 
@@ -724,18 +754,17 @@ class JacParser(Parser):
 
     # Architype reference rules
     # -------------------------
-    @_("node_ref", "edge_ref", "walker_ref", "obj_ref")
+    @_(
+        "node_ref",
+        "walker_ref",
+        "obj_ref",
+    )
     def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
         return p
 
     @_("KW_NODE DBL_COLON NAME")
     def node_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Node reference rule."""
-        return p
-
-    @_("KW_EDGE DBL_COLON NAME")
-    def edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Node reference rule."""
         return p
 

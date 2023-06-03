@@ -20,4 +20,4 @@ The Jaseci Enhancement Proposal (JEP) is a design document that provides informa
 
 ## How To Create a JEP
 
-We use the documentation system and in particular this folder to manage JEPs. See the first accepted JEP (JEP 1) for more details. 
+We use the documentation system and in particular this folder to manage JEPs. See the first accepted [JEP (JEP 1)](./accepted/JEP_1.md) for more details.
