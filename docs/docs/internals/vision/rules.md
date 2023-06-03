@@ -27,7 +27,7 @@ No exceptions to these rules. If a PR sneaks in that doesn't follow this protoco
 
 ## How to Inject Ideas on Jaseci Improvement/Suggestions
 
-Visit our [Ideas (JEPs) page](./ideas.md) and follow the process. Everyone is welcome to propose ideas!!
+Visit our [Ideas (JEPs) page](../jep/ideas.md) and follow the process. Everyone is welcome to propose ideas!!
 
 ## How to Contribute Code
 
