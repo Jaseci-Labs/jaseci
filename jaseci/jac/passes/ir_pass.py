@@ -31,6 +31,7 @@ class AstNode:
         kid: list = None,
         line: int = 0,
         py_code: str = "",
+        misc: dict = None,
     ) -> None:
         """Initialize ast."""
         self.name = name
@@ -39,6 +40,7 @@ class AstNode:
         self.kid = kid if kid else []
         self.line = line
         self.py_code = py_code
+        self.misc = misc if misc else {}
 
     def __str__(self: "AstNode") -> str:
         """Return string representation of node."""
@@ -60,6 +62,7 @@ class AstNode:
             "kid": [x.to_dict() for x in self.kid],
             "line": self.line,
             "py_code": self.py_code,
+            "misc": self.misc,
         }
 
 

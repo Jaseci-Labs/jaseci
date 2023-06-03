@@ -539,6 +539,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "INT",
         "FLOAT",
         "multistring",
+        "DOC_STRING",
         "BOOL",
         "NULL",
         "NAME",
@@ -558,9 +559,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "STRING",
-        "DOC_STRING",
         "STRING multistring",
-        "DOC_STRING multistring",
     )
     def multistring(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Multistring rule."""
