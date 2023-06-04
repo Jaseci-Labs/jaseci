@@ -891,7 +891,7 @@ class TranspilePass(Pass):
         atomic_chain -> atom PIPE_FWD spawn_ctx
         atomic_chain -> atom PIPE_FWD filter_ctx
         atomic_chain -> atom PIPE_FWD built_in
-        atomic_chain -> atom func_call
+        atomic_chain -> atom call
         atomic_chain -> atom index_slice
         atomic_chain -> atom DOT NAME
         """
@@ -915,24 +915,66 @@ class TranspilePass(Pass):
             for i in node.kid:
                 self.emit(node, i.py_code)
 
-    # atom_trailer -> PIPE_FWD spawn_ctx
-    # atom_trailer -> PIPE_FWD filter_ctx
-    # atom_trailer -> PIPE_FWD built_in
-    # atom_trailer -> func_call
-    # atom_trailer -> index_slice
-    # atom_trailer -> DOT NAME
-    # func_call -> ability_ref
-    # func_call -> LPAREN param_list RPAREN
-    # func_call -> LPAREN RPAREN
-    # param_list -> expr_list COMMA assignment_list
-    # param_list -> assignment_list
-    # param_list -> expr_list
-    # assignment_list -> assignment COMMA assignment_list
-    # assignment_list -> assignment
-    # index_slice -> LSQUARE expression COLON expression RSQUARE
-    # index_slice -> LSQUARE expression RSQUARE
-    # global_ref -> GLOBAL_OP NAME
-    # global_ref -> GLOBAL_OP obj_built_in
+    def exit_call(self: "TranspilePass", node: AstNode) -> None:
+        """Convert call to python code.
+
+        call -> ability_ref
+        call -> LPAREN param_list RPAREN
+        call -> LPAREN RPAREN
+        """
+        if len(node.kid) == 1:
+            self.emit(node, node.kid[0].py_code)
+        elif len(node.kid) == 3:
+            self.emit(node, f"({node.kid[1].py_code})")
+        else:
+            self.emit(node, "()")
+    
+    def exit_param_list(self: "TranspilePass", node: AstNode) -> None:
+        """Convert param_list to python code.
+
+        param_list -> expr_list COMMA assignment_list
+        param_list -> assignment_list
+        param_list -> expr_list
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_assignment_list(self: "TranspilePass", node: AstNode) -> None:
+        """Convert assignment_list to python code.
+
+        assignment_list -> assignment COMMA assignment_list
+        assignment_list -> assignment
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+    
+    def exit_index_slice(self: "TranspilePass", node: AstNode) -> None:
+        """Convert index_slice to python code.
+
+        index_slice -> LSQUARE expression COLON expression RSQUARE
+        index_slice -> LSQUARE expression RSQUARE
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_global_ref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert global_ref to python code.
+
+        global_ref -> GLOBAL_OP NAME
+        global_ref -> GLOBAL_OP obj_built_in
+        """
+        if node.kid[-1].name == "obj_built_in":
+            self.emit(node, f"{RT}.{node.kid[1].py_code}")
+        else:
+            self.emit(node, f"{node.kid[1].py_code}")
+
+    def exit_node_edge_ref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert node_edge_ref to python code.
+
+        node_edge_ref -> edge_op_ref
+        node_edge_ref -> node_ref filter_ctx
+        """
+        
     # node_edge_ref -> edge_op_ref
     # node_edge_ref -> node_ref filter_ctx
     # spawn -> KW_SPAWN spawn_arch

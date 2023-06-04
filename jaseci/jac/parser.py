@@ -637,7 +637,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "atom DOT NAME",
         "atom index_slice",
-        "atom func_call",
+        "atom call",
         "atom PIPE_FWD built_in",  # casting and creating tuples and sets
         "atom PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
         "atom PIPE_FWD spawn_ctx",  # for rapid assignments to collections
@@ -651,8 +651,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LPAREN param_list RPAREN",
         "ability_ref",
     )
-    def func_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Ability func_call rule."""
+    def call(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability call rule."""
         return p
 
     @_(
