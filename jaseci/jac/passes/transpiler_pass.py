@@ -380,9 +380,6 @@ class TranspilePass(Pass):
     # spawn_assign_list -> NAME EQ expression
     # filter_compare_list -> NAME cmp_op expression COMMA filter_compare_list
     # filter_compare_list -> NAME cmp_op expression
-    def exit_import_stmt(self: "TranspilePass", node: AstNode) -> None:
-        """Convert import stmt to python code."""
-        node.py_code = node.kid[0].py_code
 
     def exit_int(self: "TranspilePass", node: AstNode) -> None:
         """Convert int to python code."""
