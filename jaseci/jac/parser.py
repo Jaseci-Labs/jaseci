@@ -296,6 +296,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "assignment SEMI",
         "expression SEMI",
         "if_stmt",
         "try_stmt",
@@ -350,7 +351,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "KW_FOR atom EQ expression KW_TO expression KW_BY expression code_block",
+        "KW_FOR assignment KW_TO expression KW_BY expression code_block",
         "KW_FOR atom KW_IN expression code_block",
         "KW_FOR atom COMMA atom KW_IN expression code_block",
     )
@@ -384,7 +385,6 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "KW_REPORT expression",
-        "KW_REPORT sub_name EQ expression",
     )
     def report_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Report statement rule."""
@@ -428,22 +428,28 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Expression rules
     # ----------------
     @_(
+        "atom EQ expression",
+    )
+    def assignment(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Rule for assignment statement."""
+        return p
+
+    @_(
         "connect",
-        "connect assignment_op expression",
+        "connect walrus_op expression",
     )
     def expression(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Expression rule."""
         return p
 
     @_(
-        "EQ",
-        "CPY_EQ",
+        "WALRUS_EQ",
         "ADD_EQ",
         "SUB_EQ",
         "MUL_EQ",
         "DIV_EQ",
     )
-    def assignment_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def walrus_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Production Assignment rule."""
         return p
 
@@ -647,18 +653,18 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "expr_list",
-        "kw_expr_list",
-        "expr_list COMMA kw_expr_list",
+        "assignment_list",
+        "expr_list COMMA assignment_list",
     )
     def param_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Parameter list rule."""
         return p
 
     @_(
-        "NAME EQ connect",
-        "NAME EQ connect COMMA kw_expr_list",
+        "assignment",
+        "assignment COMMA assignment_list",
     )
-    def kw_expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def assignment_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Keyword expression list rule."""
         return p
 
@@ -858,18 +864,9 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Filter context rule."""
         return p
 
-    @_("LPAREN spawn_assign_list RPAREN")
+    @_("LPAREN assignment_list RPAREN")
     def spawn_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Spawn context rule."""
-        return p
-
-    @_(
-        "NAME EQ expression",
-        "NAME EQ expression COMMA spawn_assign_list",
-        # "",
-    )
-    def spawn_assign_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn assignment list rule."""
         return p
 
     @_(

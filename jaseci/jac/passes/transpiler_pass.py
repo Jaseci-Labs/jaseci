@@ -10,6 +10,7 @@ RT = f"{MAST}.runtime"
 SET_LINE_FUNC = lambda x: f"{RT}set_line('{x}')\n"  # noqa
 REG_GLOB_FUNC = lambda x, y: f"{RT}.register_global({x}, {y})\n"  # noqa
 HAS_TAGS = "HasTags"  # noqa
+EVENT_TAG = "EventTag"  # noqa
 
 
 class TranspilePass(Pass):
@@ -190,7 +191,7 @@ class TranspilePass(Pass):
             class_type = node.kid[2].misc["inherits"]
         self.emit_ln(node, f"class {class_name}({class_type}):", indent_delta=-1)
         self.emit_ln(node, "def __init__(self):")
-        self.emit_ln(node, node.kid[2].py_code, indent_delta=1)
+        self.emit_ln(node, node.kid[2].py_code)
         self.indent_level -= 1
         self.cur_arch = None
 
@@ -377,7 +378,7 @@ class TranspilePass(Pass):
         if node.kid[-1] == "code_block":
             self.emit_ln(node, f"def {name}(here, visitor):")
             self.emit_ln(node, node.kid[-1].py_code, indent_delta=1)
-        clause = "None" if node.kid[2] != "event_clause" else node.kid[2].py_code
+        clause = "None" if node.kid[2].name != "event_clause" else node.kid[2].py_code
         self.emit_ln(
             node,
             f"self.add_ability(func={name}, on_event={clause})",
@@ -391,67 +392,264 @@ class TranspilePass(Pass):
         event_clause -> KW_WITH KW_EXIT
         event_clause -> KW_WITH KW_ENTRY
         """
+        event = node.kid[-1].py_code.upper()
+        names = node.kid[1].py_code if node.kid[1].name == "name_list" else ""
+        self.emit(node, f"({EVENT_TAG}.{event}, ({names}))")
+
+    def exit_name_list(self: "TranspilePass", node: AstNode) -> None:
+        """Convert name list to python code.
+
+        name_list -> name_list COMMA NAME
+        name_list -> NAME
+        """
+        if len(node.kid) == 1:
+            self.emit(node, f'"{node.kid[0].py_code}"')
+        else:
+            self.emit(node, f'{node.kid[0].py_code}, "{node.kid[2].py_code}"')
+
+    def enter_code_block(self: "TranspilePass", node: AstNode) -> None:
+        """Convert code block to python code.
+
+        code_block -> LBRACE statement_list RBRACE
+        code_block -> LBRACE RBRACE
+        """
+        self.indent_level += 1
+
+    def exit_code_block(self: "TranspilePass", node: AstNode) -> None:
+        """Convert code block to python code.
+
+        code_block -> LBRACE statement_list RBRACE
+        code_block -> LBRACE RBRACE
+        """
         if len(node.kid) == 3:
             self.emit(node, node.kid[1].py_code)
         else:
-            self.emit(node, "None")
+            self.emit_ln(node, "pass")
+        self.indent_level -= 1
 
-    # name_list -> name_list COMMA NAME
-    # name_list -> NAME
-    # code_block -> LBRACE statement_list RBRACE
-    # code_block -> LBRACE RBRACE
-    # statement_list -> statement
-    # statement_list -> statement statement_list
-    # statement -> walker_stmt
-    # statement -> report_stmt SEMI
-    # statement -> delete_stmt SEMI
-    # statement -> ctrl_stmt SEMI
-    # statement -> assert_stmt SEMI
-    # statement -> while_stmt
-    # statement -> for_stmt
-    # statement -> try_stmt
-    # statement -> if_stmt
-    # statement -> expression SEMI
-    # if_stmt -> KW_IF expression code_block elif_stmt_list else_stmt
-    # if_stmt -> KW_IF expression code_block else_stmt
-    # if_stmt -> KW_IF expression code_block
-    # elif_stmt_list -> KW_ELIF expression code_block elif_stmt_list
-    # elif_stmt_list -> KW_ELIF expression code_block
-    # else_stmt -> KW_ELSE code_block
-    # try_stmt -> KW_TRY code_block else_from_try
-    # try_stmt -> KW_TRY code_block
-    # else_from_try -> KW_ELSE code_block
-    # else_from_try -> KW_ELSE KW_WITH NAME code_block
-    # for_stmt -> KW_FOR atom COMMA atom KW_IN expression code_block
-    # for_stmt -> KW_FOR atom KW_IN expression code_block
-    # for_stmt -> KW_FOR atom EQ expression KW_TO expression KW_BY expression code_block
-    # while_stmt -> KW_WHILE expression code_block
-    # assert_stmt -> KW_ASSERT expression
-    # ctrl_stmt -> KW_SKIP
-    # ctrl_stmt -> KW_BREAK
-    # ctrl_stmt -> KW_CONTINUE
-    # delete_stmt -> KW_DELETE expression
-    # report_stmt -> KW_REPORT sub_name EQ expression
-    # report_stmt -> KW_REPORT expression
-    # walker_stmt -> yield_stmt
-    # walker_stmt -> disengage_stmt
-    # walker_stmt -> take_stmt
-    # walker_stmt -> ignore_stmt
-    # ignore_stmt -> KW_IGNORE expression SEMI
-    # take_stmt -> KW_TAKE sub_name expression else_stmt
-    # take_stmt -> KW_TAKE expression else_stmt
-    # take_stmt -> KW_TAKE sub_name expression SEMI
-    # take_stmt -> KW_TAKE expression SEMI
-    # disengage_stmt -> KW_DISENGAGE SEMI
-    # yield_stmt -> KW_YIELD SEMI
-    # expression -> connect assignment_op expression
+    def exit_statement_list(self: "TranspilePass", node: AstNode) -> None:
+        """Convert statement list to python code.
+
+        statement_list -> statement
+        statement_list -> statement statement_list
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_statement(self: "TranspilePass", node: AstNode) -> None:
+        """Convert statement to python code.
+
+        statement -> walker_stmt
+        statement -> report_stmt SEMI
+        statement -> delete_stmt SEMI
+        statement -> ctrl_stmt SEMI
+        statement -> assert_stmt SEMI
+        statement -> while_stmt
+        statement -> for_stmt
+        statement -> try_stmt
+        statement -> if_stmt
+        statement -> expression SEMI
+        statement -> assignment SEMI
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_if_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert if stmt to python code.
+
+        if_stmt -> KW_IF expression code_block elif_stmt_list else_stmt
+        if_stmt -> KW_IF expression code_block else_stmt
+        if_stmt -> KW_IF expression code_block
+        """
+        self.emit_ln(node, "if " + node.kid[1].py_code + ":")
+        self.emit(node, node.kid[2].py_code)
+        if len(node.kid) == 4:
+            self.emit(node, node.kid[3].py_code)
+        elif len(node.kid) == 5:
+            self.emit(node, node.kid[3].py_code)
+            self.emit(node, node.kid[4].py_code)
+
+    def exit_elif_stmt_list(self: "TranspilePass", node: AstNode) -> None:
+        """Convert elif stmt list to python code.
+
+        elif_stmt_list -> KW_ELIF expression code_block elif_stmt_list
+        elif_stmt_list -> KW_ELIF expression code_block
+        """
+        self.emit_ln(node, "elif " + node.kid[1].py_code + ":")
+        self.emit(node, node.kid[2].py_code)
+        if len(node.kid) == 4:
+            self.emit(node, node.kid[3].py_code)
+
+    def exit_else_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert else stmt to python code.
+
+        else_stmt -> KW_ELSE code_block
+        """
+        self.emit_ln(node, "else:")
+        self.emit(node, node.kid[1].py_code)
+
+    def exit_try_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert try stmt to python code.
+
+        try_stmt -> KW_TRY code_block else_from_try
+        try_stmt -> KW_TRY code_block
+        """
+        self.emit_ln(node, "try:")
+        self.emit(node, node.kid[1].py_code)
+        if len(node.kid) == 3:
+            self.emit(node, node.kid[2].py_code)
+
+    def exit_else_from_try(self: "TranspilePass", node: AstNode) -> None:
+        """Convert else from try to python code.
+
+        else_from_try -> KW_ELSE code_block
+        else_from_try -> KW_ELSE KW_WITH NAME code_block
+        """
+        if len(node.kid) == 4:
+            name = node.kid[2].py_code
+            self.emit_ln(node, f"except Exception as {name}:")
+            self.emit(node, node.kid[3].py_code)
+        else:
+            self.emit_ln(node, "except Exception:")
+            self.emit(node, node.kid[3].py_code)
+
+    def exit_for_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert for stmt to python code.
+
+        for_stmt -> KW_FOR atom COMMA atom KW_IN expression code_block
+        for_stmt -> KW_FOR atom KW_IN expression code_block
+        for_stmt -> KW_FOR assignment KW_TO expression KW_BY expression code_block
+        """
+        if len(node.kid) == 7:
+            self.emit_ln(
+                node,
+                f"for {node.kid[1].py_code}, {node.kid[3].py_code} in {node.kid[5].py_code}:",
+            )
+            self.emit(node, node.kid[6].py_code)
+        elif len(node.kid) == 5:
+            self.emit_ln(node, f"for {node.kid[1].py_code} in {node.kid[3].py_code}:")
+            self.emit(node, node.kid[4].py_code)
+        else:
+            self.emit_ln(node, f"{node.kid[1].py_code}")
+            self.emit_ln(node, f"while {node.kid[3].py_code}:")
+            self.emit(node, node.kid[5].py_code)
+            self.emit_ln(node, f"{node.kid[6].py_code}", indent_delta=1)
+
+    def exit_while_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert while stmt to python code.
+
+        while_stmt -> KW_WHILE expression code_block
+        """
+        self.emit_ln(node, f"while {node.kid[1].py_code}:")
+        self.emit(node, node.kid[2].py_code)
+
+    def exit_assert_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert assert stmt to python code.
+
+        assert_stmt -> KW_ASSERT expression
+        """
+        self.emit_ln(node, f"assert {node.kid[1].py_code}")
+
+    def exit_ctrl_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert ctrl stmt to python code.
+
+        ctrl_stmt -> KW_SKIP
+        ctrl_stmt -> KW_BREAK
+        ctrl_stmt -> KW_CONTINUE
+        """
+        if node.kid[0].name == "KW_SKIP":
+            self.emit_ln(node, "visitor.skip()")
+        self.emit_ln(node, node.kid[0].py_code)
+
+    def exit_delete_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert delete stmt to python code.
+
+        delete_stmt -> KW_DELETE expression
+        """
+        self.emit_ln(node, f"del {node.kid[1].py_code}")
+
+    def exit_report_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert report stmt to python code.
+
+        report_stmt -> KW_REPORT expression
+        """
+        self.emit_ln(node, f"visitor.report({node.kid[1].py_code})")
+
+    def exit_walker_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert walker stmt to python code.
+
+        walker_stmt -> yield_stmt
+        walker_stmt -> disengage_stmt
+        walker_stmt -> take_stmt
+        walker_stmt -> ignore_stmt
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_ignore_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert ignore stmt to python code.
+
+        ignore_stmt -> KW_IGNORE expression SEMI
+        """
+        self.emit_ln(node, f"visitor.ignore({node.kid[1].py_code})")
+
+    def exit_take_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert take stmt to python code.
+
+        take_stmt -> KW_TAKE sub_name expression else_stmt
+        take_stmt -> KW_TAKE expression else_stmt
+        take_stmt -> KW_TAKE sub_name expression SEMI
+        take_stmt -> KW_TAKE expression SEMI
+        """
+        if len(node.kid) == 5:
+            self.emit_ln(
+                node, f"visitor.take({node.kid[2].py_code}, {node.kid[3].py_code})"
+            )
+            self.emit(node, node.kid[4].py_code)
+        else:
+            self.emit_ln(node, f"visitor.take({node.kid[1].py_code})")
+            self.emit(node, node.kid[2].py_code)
+
+    def exit_disengage_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert disengage stmt to python code.
+
+        disengage_stmt -> KW_DISENGAGE SEMI
+        """
+        self.emit_ln(node, "visitor.disengage()")
+
+    def exit_yield_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert yield stmt to python code.
+
+        yield_stmt -> KW_YIELD SEMI
+        """
+        self.emit_ln(node, "visitor.yield_stmt()")
+
+    def exit_assignment(self: "TranspilePass", node: AstNode) -> None:
+        """Convert assignment to python code.
+
+        assignment -> atom EQ expression
+        """
+        self.emit_ln(node, f"{node.kid[0].py_code} = {node.kid[2].py_code}")
+
+    def exit_expression(self: "TranspilePass", node: AstNode) -> None:
+        """Convert expression to python code.
+
+        expression -> connect walrus_op expression
+        expression -> connect
+        """
+        if len(node.kid) == 3:
+            self.emit_ln(
+                node,
+                f"{node.kid[0].py_code} {node.kid[1].py_code} {node.kid[2].py_code}",
+            )
+        else:
+            self.emit(node, node.kid[0].py_code)
+
+    # expression -> connect walrus_op expression
     # expression -> connect
-    # assignment_op -> DIV_EQ
-    # assignment_op -> MUL_EQ
-    # assignment_op -> SUB_EQ
-    # assignment_op -> ADD_EQ
-    # assignment_op -> CPY_EQ
-    # assignment_op -> EQ
+    # walrus_op -> DIV_EQ
+    # walrus_op -> MUL_EQ
+    # walrus_op -> SUB_EQ
+    # walrus_op -> ADD_EQ
+    # walrus_op -> WALRUS_EQ
     # connect -> logical connect_op connect
     # connect -> logical NOT edge_op_ref connect
     # connect -> logical
@@ -526,11 +724,11 @@ class TranspilePass(Pass):
     # call -> ability_ref
     # call -> LPAREN param_list RPAREN
     # call -> LPAREN RPAREN
-    # param_list -> expr_list COMMA kw_expr_list
-    # param_list -> kw_expr_list
+    # param_list -> expr_list COMMA assignment_list
+    # param_list -> assignment_list
     # param_list -> expr_list
-    # kw_expr_list -> NAME EQ connect COMMA kw_expr_list
-    # kw_expr_list -> NAME EQ connect
+    # assignment_list -> assignment COMMA assignment_list
+    # assignment_list -> assignment
     # index_slice -> LSQUARE expression COLON expression RSQUARE
     # index_slice -> LSQUARE expression RSQUARE
     # global_ref -> GLOBAL_OP NAME
@@ -555,7 +753,7 @@ class TranspilePass(Pass):
     # obj_built_in -> KW_CONTEXT
     # cast_built_in -> arch_ref
     # cast_built_in -> builtin_type
-    # arch_ref -> obj_ref (REMEMBER SHOULD BE FORMAT {name: name, type: type})
+    # arch_ref -> obj_ref
     # arch_ref -> walker_ref
     # arch_ref -> node_ref
     # node_ref -> KW_NODE DBL_COLON NAME
@@ -580,9 +778,7 @@ class TranspilePass(Pass):
     # connect_any -> CARROW_L_p1 NAME spawn_ctx CARROW_R_p2
     # connect_any -> CARROW_BI
     # filter_ctx -> LPAREN filter_compare_list RPAREN
-    # spawn_ctx -> LPAREN spawn_assign_list RPAREN
-    # spawn_assign_list -> NAME EQ expression COMMA spawn_assign_list
-    # spawn_assign_list -> NAME EQ expression
+    # spawn_ctx -> LPAREN assignment_list RPAREN
     # filter_compare_list -> NAME cmp_op expression COMMA filter_compare_list
     # filter_compare_list -> NAME cmp_op expression
 

@@ -58,7 +58,7 @@ class JacLexer(Lexer):
         "SUB_EQ",
         "MUL_EQ",
         "DIV_EQ",
-        "CPY_EQ",
+        "WALRUS_EQ",
         "KW_AND",
         "KW_OR",
         "KW_IF",
@@ -231,7 +231,7 @@ class JacLexer(Lexer):
     SUB_EQ = r"-="
     MUL_EQ = r"\*="
     DIV_EQ = r"/="
-    CPY_EQ = r":="
+    WALRUS_EQ = r":="
     KW_REF = r"&"
     DOT = r"\."
     LT = r"<"
