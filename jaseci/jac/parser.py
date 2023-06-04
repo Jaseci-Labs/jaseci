@@ -103,7 +103,9 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "NAME",
         "NAME KW_AS NAME",
+        "name_as_list COMMA NAME",
         "name_as_list COMMA NAME KW_AS NAME",
     )
     def name_as_list(self: "JacParser", p: YaccProduction) -> YaccProduction:

@@ -9,6 +9,7 @@ SENT = f"{MAST}.active_sentinel"
 RT = f"{MAST}.runtime"
 SET_LINE_FUNC = lambda x: f"{RT}set_line('{x}')\n"  # noqa
 REG_GLOB_FUNC = lambda x, y: f"{RT}.register_global({x}, {y})\n"  # noqa
+HAS_TAGS = "HasTags"  # noqa
 
 
 class TranspilePass(Pass):
@@ -18,6 +19,7 @@ class TranspilePass(Pass):
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
+        self.cur_arch = None  # tracks current architype during transpilation
         super().__init__(ir)
 
     def indent_str(self: "TranspilePass", indent_delta: int) -> str:
@@ -53,7 +55,7 @@ class TranspilePass(Pass):
         element_list -> element
         """
         for i in node.kid:
-            self.emit(node, i.py_code + "\n")
+            self.emit(node, i.py_code)
 
     def exit_element(self: "TranspilePass", node: AstNode) -> None:
         """Convert element to python code.
@@ -146,12 +148,19 @@ class TranspilePass(Pass):
         """Convert name as list to python code.
 
         name_as_list -> name_as_list COMMA NAME KW_AS NAME
+        name_as_list -> name_as_list COMMA NAME
         name_as_list -> NAME KW_AS NAME
+        name_as_list -> NAME
         """
         if len(node.kid) == 3:
-            self.emit_ln(node, f"{node.kid[0].py_code} as {node.kid[2].py_code}")
+            if node.kid[0].name == "NAME":
+                self.emit(node, f"{node.kid[0].py_code} as {node.kid[2].py_code}")
+            else:
+                self.emit(node, f"{node.kid[0].py_code}, {node.kid[2].py_code}")
+        elif len(node.kid) == 1:
+            self.emit(node, f"{node.kid[0].py_code}")
         else:
-            self.emit_ln(
+            self.emit(
                 node,
                 f"{node.kid[0].py_code}, {node.kid[2].py_code} as {node.kid[4].py_code}",
             )
@@ -165,6 +174,7 @@ class TranspilePass(Pass):
         architype -> KW_NODE NAME arch_decl_tail
         """
         self.indent_level += 1
+        self.cur_arch = {"name": node.kid[1].value, "typ": node.kid[0].value}
 
     def exit_architype(self: "TranspilePass", node: AstNode) -> None:
         """Convert architype to python code.
@@ -175,12 +185,14 @@ class TranspilePass(Pass):
         architype -> KW_NODE NAME arch_decl_tail
         """
         class_type = node.kid[0].py_code.capitalize()
+        class_name = node.kid[1].py_code.capitalize() + "_" + class_type
         if "inherits" in node.kid[2].misc.keys():
             class_type = node.kid[2].misc["inherits"]
-        class_name = node.kid[1].py_code.capitalize()
-        self.emit_ln(node, f"class {class_name}({class_type}):\n", indent_delta=-1)
-        self.emit_ln(node, node.kid[2].py_code + "\n")
+        self.emit_ln(node, f"class {class_name}({class_type}):", indent_delta=-1)
+        self.emit_ln(node, "def __init__(self):")
+        self.emit_ln(node, node.kid[2].py_code, indent_delta=1)
         self.indent_level -= 1
+        self.cur_arch = None
 
     def exit_arch_decl_tail(self: "TranspilePass", node: AstNode) -> None:
         """Convert arch decl tail to python code.
@@ -201,9 +213,11 @@ class TranspilePass(Pass):
         inherited_archs -> sub_name
         """
         if len(node.kid) == 1:
-            self.emit(node, node.kid[0].py_code)
+            self.emit(node, node.kid[0].py_code.capitalize())
         else:
-            self.emit(node, node.kid[0].py_code + ", " + node.kid[1].py_code)
+            self.emit(
+                node, node.kid[0].py_code + ", " + node.kid[1].py_code.capitalize()
+            )
 
     def exit_sub_name(self: "TranspilePass", node: AstNode) -> None:
         """Convert sub name to python code.
@@ -212,51 +226,176 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[1].py_code)
 
-    # sub_name -> COLON NAME
-    # ability -> KW_ABILITY arch_ref NAME code_block
-    # attr_block -> SEMI
-    # attr_block -> COLON attr_stmt
-    # attr_block -> LBRACE DOC_STRING attr_stmt_list RBRACE
-    # attr_block -> LBRACE attr_stmt_list RBRACE
-    # attr_block -> LBRACE RBRACE
-    # attr_stmt_list -> attr_stmt_list attr_stmt
-    # attr_stmt_list -> attr_stmt
-    # attr_stmt -> can_stmt
-    # attr_stmt -> has_stmt
-    # has_stmt -> KW_HAS has_assign_clause SEMI
-    # has_assign_clause -> has_assign_clause COMMA has_assign
-    # has_assign_clause -> has_assign
-    # has_assign -> NAME type_spec EQ expression
-    # has_assign -> NAME type_spec
-    # has_assign -> has_tag NAME type_spec EQ expression
-    # has_assign -> has_tag NAME type_spec
-    # has_tag -> KW_ANCHOR
-    # has_tag -> KW_HIDDEN
-    # has_tag -> has_tag KW_ANCHOR
-    # has_tag -> has_tag KW_HIDDEN
-    # type_spec -> COLON type_name
-    # type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
-    # type_name -> TYP_LIST LSQUARE type_name RSQUARE
-    # type_name -> NAME
-    # type_name -> builtin_type
-    # builtin_type -> KW_TYPE
-    # builtin_type -> TYP_BOOL
-    # builtin_type -> TYP_DICT
-    # builtin_type -> TYP_SET
-    # builtin_type -> TYP_TUPLE
-    # builtin_type -> TYP_LIST
-    # builtin_type -> TYP_FLOAT
-    # builtin_type -> TYP_INT
-    # builtin_type -> TYP_BYTES
-    # builtin_type -> TYP_STRING
-    # can_stmt -> KW_CAN NAME event_clause SEMI
-    # can_stmt -> KW_CAN NAME event_clause code_block
-    # can_stmt -> KW_CAN NAME SEMI
-    # can_stmt -> KW_CAN NAME code_block
-    # event_clause -> KW_WITH name_list KW_EXIT
-    # event_clause -> KW_WITH name_list KW_ENTRY
-    # event_clause -> KW_WITH KW_EXIT
-    # event_clause -> KW_WITH KW_ENTRY
+    def enter_ability(self: "TranspilePass", node: AstNode) -> None:
+        """Convert ability to python code.
+
+        ability -> KW_ABILITY arch_ref NAME code_block
+        """
+        self.indent_level += 1
+
+    def exit_ability(self: "TranspilePass", node: AstNode) -> None:
+        """Convert ability to python code.
+
+        ability -> KW_ABILITY arch_ref NAME code_block
+        """
+        arch = node.kid[1].py_code
+        name = f"ability_{arch['typ']}_{arch['name']}_{node.kid[2].py_code}"
+        self.emit_ln(node, f"def {name}(here, visitor):", indent_delta=-1)
+        self.emit_ln(node, node.kid[3].py_code)
+        self.indent_level -= 1
+
+    def exit_attr_block(self: "TranspilePass", node: AstNode) -> None:
+        """Convert attr block to python code.
+
+        attr_block -> SEMI
+        attr_block -> COLON attr_stmt
+        attr_block -> LBRACE DOC_STRING attr_stmt_list RBRACE
+        attr_block -> LBRACE attr_stmt_list RBRACE
+        attr_block -> LBRACE RBRACE
+        """
+        if len(node.kid) == 1 or (len(node.kid) == 2 and node.kid[0].name != "COLON"):
+            self.emit_ln(node, "pass")
+        elif len(node.kid) == 4:
+            self.emit_ln(node, node.kid[1].py_code)
+            self.emit(node, node.kid[2].py_code)
+        else:
+            self.emit(node, node.kid[1].py_code)
+
+    def exit_attr_stmt_list(self: "TranspilePass", node: AstNode) -> None:
+        """Convert attr stmt list to python code.
+
+        attr_stmt_list -> attr_stmt_list attr_stmt
+        attr_stmt_list -> attr_stmt
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_attr_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert attr stmt to python code.
+
+        attr_stmt -> can_stmt
+        attr_stmt -> has_stmt
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_has_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert has stmt to python code.
+
+        has_stmt -> KW_HAS has_assign_clause SEMI
+        """
+        self.emit(node, node.kid[1].py_code)
+
+    def exit_has_assign_clause(self: "TranspilePass", node: AstNode) -> None:
+        """Convert has assign clause to python code.
+
+        has_assign_clause -> has_assign_clause COMMA has_assign
+        has_assign_clause -> has_assign
+        """
+        if len(node.kid) == 1:
+            self.emit(node, node.kid[0].py_code)
+        else:
+            self.emit(node, node.kid[0].py_code)
+            self.emit(node, node.kid[2].py_code)
+
+    def exit_has_assign(self: "TranspilePass", node: AstNode) -> None:
+        """Convert has assign to python code.
+
+        has_assign -> NAME type_spec EQ expression
+        has_assign -> NAME type_spec
+        has_assign -> has_tag NAME type_spec EQ expression
+        has_assign -> has_tag NAME type_spec
+        """
+        has_tag = node.kid[0].name == "has_tag"
+        tags = node.kid[0].py_code if has_tag else ""
+        name = node.kid[1].py_code if has_tag else node.kid[0].py_code
+        typ = node.kid[2].py_code if has_tag else node.kid[1].py_code
+        value = node.kid[-1].py_code if node.kid[-1].name == "expression" else "None"
+        self.emit_ln(
+            node,
+            f"self.add_context(name={name}, value={value}, typ={typ}, tags=[{tags}])",
+        )
+
+    def exit_has_tag(self: "TranspilePass", node: AstNode) -> None:
+        """Convert has tag to python code.
+
+        has_tag -> KW_ANCHOR
+        has_tag -> KW_HIDDEN
+        has_tag -> has_tag KW_ANCHOR
+        has_tag -> has_tag KW_HIDDEN
+        """
+        if len(node.kid) == 1:
+            self.emit(node, f"{HAS_TAGS}.{node.kid[0].py_code.upper()}")
+        else:
+            self.emit(
+                node, f"{node.kid[0].py_code}, {HAS_TAGS}.{node.kid[0].py_code.upper()}"
+            )
+
+    def exit_type_spec(self: "TranspilePass", node: AstNode) -> None:
+        """Convert type spec to python code.
+
+        type_spec -> COLON type_name
+        """
+        self.emit(node, node.kid[1].py_code)
+
+    def exit_type_name(self: "TranspilePass", node: AstNode) -> None:
+        """Convert type name to python code.
+
+        type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
+        type_name -> TYP_LIST LSQUARE type_name RSQUARE
+        type_name -> NAME
+        type_name -> builtin_type
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_builtin_type(self: "TranspilePass", node: AstNode) -> None:
+        """Convert builtin type to python code.
+
+        builtin_type -> KW_TYPE
+        builtin_type -> TYP_BOOL
+        builtin_type -> TYP_DICT
+        builtin_type -> TYP_SET
+        builtin_type -> TYP_TUPLE
+        builtin_type -> TYP_LIST
+        builtin_type -> TYP_FLOAT
+        builtin_type -> TYP_INT
+        builtin_type -> TYP_BYTES
+        builtin_type -> TYP_STRING
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_can_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert can stmt to python code.
+
+        can_stmt -> KW_CAN NAME event_clause SEMI
+        can_stmt -> KW_CAN NAME event_clause code_block
+        can_stmt -> KW_CAN NAME SEMI
+        can_stmt -> KW_CAN NAME code_block
+        """
+        arch = self.cur_arch
+        name = f"ability_{arch['typ']}_{arch['name']}_{node.kid[1].py_code}"
+        if node.kid[-1] == "code_block":
+            self.emit_ln(node, f"def {name}(here, visitor):")
+            self.emit_ln(node, node.kid[-1].py_code, indent_delta=1)
+        clause = "None" if node.kid[2] != "event_clause" else node.kid[2].py_code
+        self.emit_ln(
+            node,
+            f"self.add_ability(func={name}, on_event={clause})",
+        )
+
+    def exit_event_clause(self: "TranspilePass", node: AstNode) -> None:
+        """Convert event clause to python code.
+
+        event_clause -> KW_WITH name_list KW_EXIT
+        event_clause -> KW_WITH name_list KW_ENTRY
+        event_clause -> KW_WITH KW_EXIT
+        event_clause -> KW_WITH KW_ENTRY
+        """
+        if len(node.kid) == 3:
+            self.emit(node, node.kid[1].py_code)
+        else:
+            self.emit(node, "None")
+
     # name_list -> name_list COMMA NAME
     # name_list -> NAME
     # code_block -> LBRACE statement_list RBRACE
@@ -416,7 +555,7 @@ class TranspilePass(Pass):
     # obj_built_in -> KW_CONTEXT
     # cast_built_in -> arch_ref
     # cast_built_in -> builtin_type
-    # arch_ref -> obj_ref
+    # arch_ref -> obj_ref (REMEMBER SHOULD BE FORMAT {name: name, type: type})
     # arch_ref -> walker_ref
     # arch_ref -> node_ref
     # node_ref -> KW_NODE DBL_COLON NAME

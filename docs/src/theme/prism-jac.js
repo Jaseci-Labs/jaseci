@@ -1,6 +1,6 @@
 const { Prism } = require("prism-react-renderer")
 
-Prism.languages.jac = {
+Prism.languages.python = {
     'comment': {
         pattern: /(^|[^\\])#.*|(^|[^\\])\/\/.*/,
         lookbehind: true,
@@ -54,7 +54,7 @@ Prism.languages.jac = {
     'punctuation': /\(|\)|\[|\]|\{|\}|;|\.:|::|:/
 };
 
-Prism.languages.jac['string-interpolation'].inside['interpolation'].inside.rest = Prism.languages.jac;
+Prism.languages.python['string-interpolation'].inside['interpolation'].inside.rest = Prism.languages.python;
 
-Prism.languages.jac = Prism.languages.jac;
+Prism.languages.python = Prism.languages.python;
 
