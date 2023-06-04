@@ -46,7 +46,7 @@ class AstNode:
         """Return string representation of node."""
         return (
             f"{self.name} {self.line}, ({self.value}), "
-            f"{len(self.kid)} kids, {str(self.kind).lower()}"
+            f"{len(self.kid)} kids, {str(self.kind)}"
         )
 
     def __repr__(self: "AstNode") -> str:
@@ -85,13 +85,13 @@ class Pass:
 
     def enter_node(self: "Pass", node: AstNode) -> None:
         """Run on entering node."""
-        if hasattr(self, f"enter_{node.name.lower()}"):
-            getattr(self, f"enter_{node.name.lower()}")(node)
+        if hasattr(self, f"enter_{node.name}"):
+            getattr(self, f"enter_{node.name}")(node)
 
     def exit_node(self: "Pass", node: AstNode) -> None:
         """Run on exiting node."""
-        if hasattr(self, f"exit_{node.name.lower()}"):
-            getattr(self, f"exit_{node.name.lower()}")(node)
+        if hasattr(self, f"exit_{node.name}"):
+            getattr(self, f"exit_{node.name}")(node)
 
     def run(self: "Pass") -> AstNode:
         """Run pass."""

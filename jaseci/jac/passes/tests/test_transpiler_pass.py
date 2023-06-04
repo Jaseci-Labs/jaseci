@@ -17,13 +17,14 @@ class TranspilerPassTests(TestCase):
         parser = JacParser()
         parse_tree = parser.parse(lexer.tokenize(self.load_fixture("fam.jac")))
         ast = ptoa(parse_tree)
-        self.assertGreater(len(str(TranspilePass(ast).ir.to_dict())), 1000)
+        trans_pass = TranspilePass(ast)
+        self.assertGreater(len(str(trans_pass.ir.to_dict())), 1000)
 
     def test_no_typo_in_pass(self: "TestCase") -> None:
         """Test for enter/exit name diffs with parser."""
         from jaseci.jac.parser import JacParser
 
-        parser_func_names = [x.lower() for x in JacParser.tokens]
+        parser_func_names = list(JacParser.tokens)
         for name, value in inspect.getmembers(JacParser):
             if (
                 inspect.isfunction(value)
@@ -35,6 +36,7 @@ class TranspilerPassTests(TestCase):
             if (
                 (name.startswith("enter_") or name.startswith("exit_"))
                 and inspect.isfunction(value)
+                and not getattr(TranspilePass.__base__, value.__name__, False)
                 and value.__qualname__.split(".")[0]
                 == TranspilePass.__name__.replace("enter_", "").replace("exit_", "")
             ):
