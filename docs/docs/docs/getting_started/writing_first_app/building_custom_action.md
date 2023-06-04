@@ -16,10 +16,11 @@ import requests
 from jaseci.jsorc.live_actions import jaseci_action
 
 @jaseci_action(act_group=["fruit_details"], allow_remote=True)
-def fruit_details(fruit):
-  URL = "https://www.fruityvice.com/api/fruit/" + str(fruit)
-  r = requests.get(url = URL)
-  return r.json()
+def fruit_details(fruit: str):
+    fruit = fruit.lower()
+    URL = "https://www.fruityvice.com/api/fruit/" + fruit
+    r = requests.get(url=URL)
+    return r.json()
 ```
 
 If you run this as a usual python script you will see following response as the output;
@@ -37,4 +38,42 @@ If you run this as a usual python script you will see following response as the 
   "protein": 0.3}}
 ```
 
-## Integrate  custom action into Jaseci
+## Integrate  custom action into Jaseci Shell
+
+Please save the Python script above as a regular Python program by giving it the file name `description.py`.
+
+To load the custom action module into the Jaseci terminal, please follow these instructions:
+
+1. Open the Jaseci shell or terminal.
+2. Execute the following command in the Jaseci terminal:
+
+```bash
+action load local description.py
+```
+By executing this command, the action module will be loaded locally into the Jaseci shell, enabling you to utilize the actions created within the module in your JAC program. Once successfully loaded the action you will see following message.
+
+```json
+{
+  "success": true
+}
+```
+
+## Updating Jac program to use custom action
+
+Now let's create a walker to get the product details using the custom action module.
+
+```jac
+walker product_details {
+    has product_name;
+    can custom_action.fruit_details;
+
+    report custom_action.fruit_details(product_name);
+}
+```
+As in previous examples you have to register a walker archetype with the above code in Jaseci Studio. and to run the walker use the following payload input as a example.
+
+```json
+{
+    "product_name":"apple"
+}
+```
