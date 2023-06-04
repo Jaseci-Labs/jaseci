@@ -14,6 +14,8 @@ EVENT_TAG = "EventTag"  # noqa
 SYNC_CMD = "sync_on"  # noqa
 YIELD_CMD = "yield_now"  # noqa
 A_CALL = "call_ability"  # noqa
+APPLY_SPAWN_CTX = "apply_spawn_ctx"  # noqa
+APPLY_FILTER_CTX = "apply_filter_ctx"  # noqa
 
 
 class TranspilePass(Pass):
@@ -798,7 +800,7 @@ class TranspilePass(Pass):
         atom -> KW_HERE
         atom -> spawn
         atom -> atom node_edge_ref
-        atom -> atom atom_trailer
+        atom -> atomic_chain
         atom -> global_ref
         atom -> LPAREN expression RPAREN
         atom -> atom_collection
@@ -883,28 +885,45 @@ class TranspilePass(Pass):
         """
         self.emit(node, f"visitor.{A_CALL}({node.kid[1].py_code})")
 
-    def exit_atom_trailer(self: "TranspilePass", node: AstNode) -> None:
+    def exit_atomic_chain(self: "TranspilePass", node: AstNode) -> None:
         """Convert atom_trailer to python code.
 
-        atom_trailer -> PIPE_FWD spawn_ctx
-        atom_trailer -> PIPE_FWD filter_ctx
-        atom_trailer -> PIPE_FWD built_in
-        atom_trailer -> call
-        atom_trailer -> index_slice
-        atom_trailer -> DOT NAME
+        atomic_chain -> atom PIPE_FWD spawn_ctx
+        atomic_chain -> atom PIPE_FWD filter_ctx
+        atomic_chain -> atom PIPE_FWD built_in
+        atomic_chain -> atom func_call
+        atomic_chain -> atom index_slice
+        atomic_chain -> atom DOT NAME
         """
-        for i in node.kid:
-            self.emit(node, i.py_code)
+        if node.kid[1].name == "PIPE_FWD":
+            if node[2].name == "spawn_ctx":
+                self.emit(
+                    node,
+                    f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[0].py_code}, ctx={node.kid[2].py_code})",
+                )
+            elif node[2].name == "filter_ctx":
+                self.emit(
+                    node,
+                    f"{RT}.{APPLY_FILTER_CTX}(target={node.kid[0].py_code}, ctx={node.kid[2].py_code})",
+                )
+            else:
+                self.emit(
+                    node,
+                    f"{node.kid[2].py_code}({node.kid[0].py_code})",
+                )
+        else:
+            for i in node.kid:
+                self.emit(node, i.py_code)
 
     # atom_trailer -> PIPE_FWD spawn_ctx
     # atom_trailer -> PIPE_FWD filter_ctx
     # atom_trailer -> PIPE_FWD built_in
-    # atom_trailer -> call
+    # atom_trailer -> func_call
     # atom_trailer -> index_slice
     # atom_trailer -> DOT NAME
-    # call -> ability_ref
-    # call -> LPAREN param_list RPAREN
-    # call -> LPAREN RPAREN
+    # func_call -> ability_ref
+    # func_call -> LPAREN param_list RPAREN
+    # func_call -> LPAREN RPAREN
     # param_list -> expr_list COMMA assignment_list
     # param_list -> assignment_list
     # param_list -> expr_list
