@@ -57,3 +57,4 @@ Prism.languages.jac = {
 Prism.languages.jac['string-interpolation'].inside['interpolation'].inside.rest = Prism.languages.jac;
 
 Prism.languages.jac = Prism.languages.jac;
+
