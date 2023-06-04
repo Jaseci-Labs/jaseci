@@ -11,6 +11,8 @@ SET_LINE_FUNC = lambda x: f"{RT}set_line('{x}')\n"  # noqa
 REG_GLOB_FUNC = lambda x, y: f"{RT}.register_global({x}, {y})\n"  # noqa
 HAS_TAGS = "HasTags"  # noqa
 EVENT_TAG = "EventTag"  # noqa
+SYNC_CMD = "sync_on"  # noqa
+YIELD_CMD = "yield_now"  # noqa
 
 
 class TranspilePass(Pass):
@@ -620,7 +622,7 @@ class TranspilePass(Pass):
 
         yield_stmt -> KW_YIELD SEMI
         """
-        self.emit_ln(node, "visitor.yield_stmt()")
+        self.emit_ln(node, f"visitor.{YIELD_CMD}()")
 
     def exit_assignment(self: "TranspilePass", node: AstNode) -> None:
         """Convert assignment to python code.
@@ -635,6 +637,57 @@ class TranspilePass(Pass):
         expression -> connect walrus_op expression
         expression -> connect
         """
+        if len(node.kid) == 3 and node.kid[1].name == "WALRUS_EQ":
+            self.emit_ln(
+                node,
+                f"{node.kid[0].py_code} {node.kid[1].py_code} {node.kid[2].py_code}",
+            )
+        elif len(node.kid) == 1:
+            self.emit(node, node.kid[0].py_code)
+        else:
+            self.emit_ln(
+                node,
+                f"{node.kid[0].py_code}:={node.kid[0].py_code}{node.kid[1].py_code}{node.kid[2].py_code}",
+            )
+
+    def exit_walrus_op(self: "TranspilePass", node: AstNode) -> None:
+        """Convert walrus op to python code.
+
+        walrus_op -> DIV_EQ
+        walrus_op -> MUL_EQ
+        walrus_op -> SUB_EQ
+        walrus_op -> ADD_EQ
+        walrus_op -> WALRUS_EQ
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_connect(self: "TranspilePass", node: AstNode) -> None:
+        """Convert connect to python code.
+
+        connect -> logical connect_op connect
+        connect -> logical NOT edge_op_ref connect
+        connect -> logical
+        """
+        if len(node.kid) == 3:
+            self.emit_ln(
+                node,
+                f"{node.kid[0].py_code}.connect(typ={node.kid[1].py_code}, target={node.kid[2].py_code})",
+            )
+        elif len(node.kid) == 4:
+            self.emit_ln(
+                node,
+                f"{node.kid[0].py_code}.disconnect(typ={node.kid[2].py_code}, target={node.kid[3].py_code})",
+            )
+        else:
+            self.emit(node, node.kid[0].py_code)
+
+    def exit_logical(self: "TranspilePass", node: AstNode) -> None:
+        """Convert logical to python code.
+
+        logical -> compare KW_OR logical
+        logical -> compare KW_AND logical
+        logical -> compare
+        """
         if len(node.kid) == 3:
             self.emit_ln(
                 node,
@@ -643,40 +696,97 @@ class TranspilePass(Pass):
         else:
             self.emit(node, node.kid[0].py_code)
 
-    # expression -> connect walrus_op expression
-    # expression -> connect
-    # walrus_op -> DIV_EQ
-    # walrus_op -> MUL_EQ
-    # walrus_op -> SUB_EQ
-    # walrus_op -> ADD_EQ
-    # walrus_op -> WALRUS_EQ
-    # connect -> logical connect_op connect
-    # connect -> logical NOT edge_op_ref connect
-    # connect -> logical
-    # logical -> compare KW_OR logical
-    # logical -> compare KW_AND logical
-    # logical -> compare
-    # compare -> arithmetic cmp_op compare
-    # compare -> NOT compare
-    # compare -> arithmetic
-    # cmp_op -> KW_NIN
-    # cmp_op -> KW_IN
-    # cmp_op -> NE
-    # cmp_op -> GTE
-    # cmp_op -> LTE
-    # cmp_op -> GT
-    # cmp_op -> LT
-    # cmp_op -> EE
-    # arithmetic -> term MINUS arithmetic
-    # arithmetic -> term PLUS arithmetic
-    # arithmetic -> term
-    # term -> factor MOD term
-    # term -> factor DIV term
-    # term -> factor STAR_MUL term
-    # term -> factor
-    # factor -> power
-    # factor -> MINUS factor
-    # factor -> PLUS factor
+    def exit_compare(self: "TranspilePass", node: AstNode) -> None:
+        """Convert compare to python code.
+
+        compare -> arithmetic cmp_op compare
+        compare -> NOT compare
+        compare -> arithmetic
+        """
+        if len(node.kid) == 3:
+            self.emit_ln(
+                node,
+                f"{node.kid[0].py_code} {node.kid[1].py_code} {node.kid[2].py_code}",
+            )
+        elif len(node.kid) == 2:
+            self.emit_ln(node, f"not {node.kid[1].py_code}")
+        else:
+            self.emit(node, node.kid[0].py_code)
+
+    def exit_cmp_op(self: "TranspilePass", node: AstNode) -> None:
+        """Convert cmp_op to python code.
+
+        cmp_op -> KW_NIN
+        cmp_op -> KW_IN
+        cmp_op -> NE
+        cmp_op -> GTE
+        cmp_op -> LTE
+        cmp_op -> GT
+        cmp_op -> LT
+        cmp_op -> EE
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_arithmetic(self: "TranspilePass", node: AstNode) -> None:
+        """Convert arithmetic to python code.
+
+        arithmetic -> term MINUS arithmetic
+        arithmetic -> term PLUS arithmetic
+        arithmetic -> term
+        """
+        if len(node.kid) == 3:
+            self.emit_ln(
+                node,
+                f"{node.kid[0].py_code} {node.kid[1].py_code} {node.kid[2].py_code}",
+            )
+        else:
+            self.emit(node, node.kid[0].py_code)
+
+    def exit_term(self: "TranspilePass", node: AstNode) -> None:
+        """Convert term to python code.
+
+        term -> factor MOD term
+        term -> factor DIV term
+        term -> factor STAR_MUL term
+        term -> factor
+        """
+        if len(node.kid) == 3:
+            self.emit_ln(
+                node,
+                f"{node.kid[0].py_code} {node.kid[1].py_code} {node.kid[2].py_code}",
+            )
+        else:
+            self.emit(node, node.kid[0].py_code)
+
+    def exit_factor(self: "TranspilePass", node: AstNode) -> None:
+        """Convert factor to python code.
+
+        factor -> power
+        factor -> MINUS factor
+        factor -> PLUS factor
+        """
+        op = "-" if node.kid[0].name == "MINUS" else ""
+        if len(node.kid) == 2:
+            self.emit_ln(node, f"{op}{node.kid[1].py_code}")
+        else:
+            self.emit(node, node.kid[0].py_code)
+
+    def exit_power(self: "TranspilePass", node: AstNode) -> None:
+        """Convert power to python code.
+
+        power -> KW_SYNC atom
+        power -> deref
+        power -> ref
+        power -> atom POW factor
+        power -> atom
+        """
+        if node.kid[0].name == "KW_SYNC":
+            self.emit_ln(node, f"visitor.{SYNC_CMD}({node.kid[1].py_code})")
+        elif len(node.kid) == 3:
+            self.emit(node, f"{node.kid[0].py_code} ** {node.kid[2].py_code}")
+        else:
+            self.emit(node, node.kid[0].py_code)
+
     # power -> KW_SYNC atom
     # power -> deref
     # power -> ref
