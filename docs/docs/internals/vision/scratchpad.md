@@ -17,7 +17,7 @@ Use them to document your code
 import:jac .stuff;
 import:py from .activity, Activity as Actvy;
 
-node location {
+node location:super:blah {
     has x: int, y: int, name: str;
     has anchor activities: list[Activity];
     has hidden intro: str = "Welcome";
@@ -40,7 +40,7 @@ walker tourist {
     has budget: int;
     has passport: list[str];
 
-    can visit with location exit {
+    can visit with location, other exit {
         take -->;
         if here.visited == 0 {
             print here.intro;

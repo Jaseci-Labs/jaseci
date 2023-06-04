@@ -43,10 +43,10 @@ Prism.languages.jac = {
         lookbehind: true
     },
     'class-name': {
-        pattern: /(\bobject\s+)\w+|(\bnode\s+)\w+|(\bedge\s+)\w+|(\bwalker\s+)\w+/i,
+        pattern: /(\b(object|node|edge|walker|global|with)\s+)(\w+(?:(:\s*|,\s*)\w+)*)/i,
         lookbehind: true
     },
-    'keyword': /\b(?:ignore|take|with|entry|exit|import|from|as|async|sync|assert|and|or|if|elif|else|for|to|by|while|continue|break|disengage|yield|skip|report|del|try|in|not|anchor|has|hidden|can)\b/,
+    'keyword': /\b(?:object|node|edge|walker|global|ignore|take|with|entry|exit|import|from|as|async|sync|assert|and|or|if|elif|else|for|to|by|while|continue|break|disengage|yield|skip|report|del|try|in|not|anchor|has|hidden|can)\b/,
     'builtin': /\b(?:here|visitor|str|int|float|list|tuple|set|dict|bool|bytes|type|context|info|details)\b/,
     'boolean': /\b(?:False|None|True)\b/,
     'number': /\b0(?:b(?:_?[01])+|o(?:_?[0-7])+|x(?:_?[a-f0-9])+)\b|(?:\b\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\B\.\d+(?:_\d+)*)(?:e[+-]?\d+(?:_\d+)*)?j?(?!\w)/i,
