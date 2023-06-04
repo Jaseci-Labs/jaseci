@@ -395,6 +395,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "take_stmt",
         "disengage_stmt",
         "yield_stmt",
+        "sync_stmt",
     )
     def walker_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Walker statement rule."""
@@ -423,6 +424,11 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_("KW_YIELD SEMI")
     def yield_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Yield statement rule."""
+        return p
+
+    @_("KW_SYNC expression SEMI")
+    def sync_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Sync statement rule."""
         return p
 
     # Expression rules
@@ -527,7 +533,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom POW factor",
         "ref",
         "deref",
-        "KW_SYNC atom",
     )
     def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Power rule."""
@@ -550,7 +555,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom_collection",
         "LPAREN expression RPAREN",
         "global_ref",
-        "ability_ref",
         "atom atom_trailer",
         "atom node_edge_ref",
         "spawn",
@@ -600,8 +604,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "connect",
-        "expr_list COMMA connect",
+        "expression",
+        "expr_list COMMA expression",
     )
     def expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Expression list rule."""
@@ -616,8 +620,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "connect COLON connect",
-        "connect COLON connect COMMA kv_pairs",
+        "expression COLON expression",
+        "expression COLON expression COMMA kv_pairs",
     )
     def kv_pairs(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Key/value pairs rule."""

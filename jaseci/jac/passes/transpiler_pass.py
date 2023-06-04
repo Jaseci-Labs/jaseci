@@ -13,6 +13,7 @@ HAS_TAGS = "HasTags"  # noqa
 EVENT_TAG = "EventTag"  # noqa
 SYNC_CMD = "sync_on"  # noqa
 YIELD_CMD = "yield_now"  # noqa
+A_CALL = "call_ability"  # noqa
 
 
 class TranspilePass(Pass):
@@ -582,6 +583,7 @@ class TranspilePass(Pass):
     def exit_walker_stmt(self: "TranspilePass", node: AstNode) -> None:
         """Convert walker stmt to python code.
 
+        walker_stmt -> sync_stmt
         walker_stmt -> yield_stmt
         walker_stmt -> disengage_stmt
         walker_stmt -> take_stmt
@@ -626,6 +628,13 @@ class TranspilePass(Pass):
         yield_stmt -> KW_YIELD SEMI
         """
         self.emit_ln(node, f"visitor.{YIELD_CMD}()")
+
+    def exit_sync_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert sync stmt to python code.
+
+        sync_stmt -> KW_SYNC expression SEMI
+        """
+        self.emit_ln(node, f"visitor.{SYNC_CMD}({node.kid[1].py_code})")
 
     def exit_assignment(self: "TranspilePass", node: AstNode) -> None:
         """Convert assignment to python code.
@@ -758,57 +767,135 @@ class TranspilePass(Pass):
     def exit_power(self: "TranspilePass", node: AstNode) -> None:
         """Convert power to python code.
 
-        power -> KW_SYNC atom
         power -> deref
         power -> ref
         power -> atom POW factor
         power -> atom
         """
-        if node.kid[0].name == "KW_SYNC":
-            self.emit_ln(node, f"visitor.{SYNC_CMD}({node.kid[1].py_code})")
-        elif len(node.kid) == 3:
+        if len(node.kid) == 3:
             self.emit(node, f"{node.kid[0].py_code} ** {node.kid[2].py_code}")
         else:
             self.emit(node, node.kid[0].py_code)
 
-    # power -> KW_SYNC atom
-    # power -> deref
-    # power -> ref
-    # power -> atom POW factor
-    # power -> atom
-    # ref -> KW_REF atom
-    # deref -> STAR_MUL atom
-    # atom -> KW_VISITOR
-    # atom -> KW_HERE
-    # atom -> spawn
-    # atom -> atom node_edge_ref
-    # atom -> atom atom_trailer
-    # atom -> ability_ref
-    # atom -> global_ref
-    # atom -> LPAREN expression RPAREN
-    # atom -> atom_collection
-    # atom -> atom_literal
-    # atom_literal -> builtin_type
-    # atom_literal -> NAME
-    # atom_literal -> NULL
-    # atom_literal -> BOOL
-    # atom_literal -> DOC_STRING
-    # atom_literal -> multistring
-    # atom_literal -> FLOAT
-    # atom_literal -> INT
-    # atom_collection -> dict_val
-    # atom_collection -> list_val
-    # multistring -> STRING multistring
-    # multistring -> STRING
-    # list_val -> LSQUARE expr_list RSQUARE
-    # list_val -> LSQUARE RSQUARE
-    # expr_list -> expr_list COMMA connect
-    # expr_list -> connect
-    # dict_val -> LBRACE kv_pairs RBRACE
-    # dict_val -> LBRACE RBRACE
-    # kv_pairs -> connect COLON connect COMMA kv_pairs
-    # kv_pairs -> connect COLON connect
-    # ability_ref -> DBL_COLON NAME
+    def exit_ref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert ref to python code.
+
+        ref -> KW_REF atom
+        """
+        self.emit(node, f"visitor.ref({node.kid[1].py_code})")
+
+    def exit_deref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert deref to python code.
+
+        deref -> STAR_MUL atom
+        """
+        self.emit(node, f"visitor.deref({node.kid[1].py_code})")
+
+    def exit_atom(self: "TranspilePass", node: AstNode) -> None:
+        """Convert atom to python code.
+
+        atom -> KW_VISITOR
+        atom -> KW_HERE
+        atom -> spawn
+        atom -> atom node_edge_ref
+        atom -> atom atom_trailer
+        atom -> global_ref
+        atom -> LPAREN expression RPAREN
+        atom -> atom_collection
+        atom -> atom_literal
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_atom_literal(self: "TranspilePass", node: AstNode) -> None:
+        """Convert atom_literal to python code.
+
+        atom_literal -> builtin_type
+        atom_literal -> NAME
+        atom_literal -> NULL
+        atom_literal -> BOOL
+        atom_literal -> DOC_STRING
+        atom_literal -> multistring
+        atom_literal -> FLOAT
+        atom_literal -> INT
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_atom_collection(self: "TranspilePass", node: AstNode) -> None:
+        """Convert atom_collection to python code.
+
+        atom_collection -> dict_val
+        atom_collection -> list_val
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_multistring(self: "TranspilePass", node: AstNode) -> None:
+        """Convert multistring to python code.
+
+        multistring -> STRING multistring
+        multistring -> STRING
+        """
+        if len(node.kid) == 1:
+            self.emit(node, node.kid[0].py_code)
+        else:
+            self.emit(node, f"{node.kid[0].py_code} {node.kid[1].py_code}")
+
+    def exit_list_val(self: "TranspilePass", node: AstNode) -> None:
+        """Convert list_val to python code.
+
+        list_val -> LSQUARE expr_list RSQUARE
+        list_val -> LSQUARE RSQUARE
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_expr_list(self: "TranspilePass", node: AstNode) -> None:
+        """Convert expr_list to python code.
+
+        expr_list -> expr_list COMMA expression
+        expr_list -> expression
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_dict_val(self: "TranspilePass", node: AstNode) -> None:
+        """Convert dict_val to python code.
+
+        dict_val -> LBRACE kv_pairs RBRACE
+        dict_val -> LBRACE RBRACE
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_kv_pairs(self: "TranspilePass", node: AstNode) -> None:
+        """Convert kv_pairs to python code.
+
+        kv_pairs -> expression COLON expression COMMA kv_pairs
+        kv_pairs -> expression COLON expression
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_ability_ref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert ability_ref to python code.
+
+        ability_ref -> DBL_COLON NAME
+        """
+        self.emit(node, f"visitor.{A_CALL}({node.kid[1].py_code})")
+
+    def exit_atom_trailer(self: "TranspilePass", node: AstNode) -> None:
+        """Convert atom_trailer to python code.
+
+        atom_trailer -> PIPE_FWD spawn_ctx
+        atom_trailer -> PIPE_FWD filter_ctx
+        atom_trailer -> PIPE_FWD built_in
+        atom_trailer -> call
+        atom_trailer -> index_slice
+        atom_trailer -> DOT NAME
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
     # atom_trailer -> PIPE_FWD spawn_ctx
     # atom_trailer -> PIPE_FWD filter_ctx
     # atom_trailer -> PIPE_FWD built_in
@@ -875,12 +962,6 @@ class TranspilePass(Pass):
     # spawn_ctx -> LPAREN assignment_list RPAREN
     # filter_compare_list -> NAME cmp_op expression COMMA filter_compare_list
     # filter_compare_list -> NAME cmp_op expression
-
-    def exit_multistring(self: "TranspilePass", node: AstNode) -> None:
-        """Convert multistring to python code."""
-        for i in node.kid:
-            self.emit(node, i.py_code + " ")
-        self.emit(node, str(node.value))
 
     def exit_node(self: "TranspilePass", node: AstNode) -> None:
         """Convert node to python code."""
