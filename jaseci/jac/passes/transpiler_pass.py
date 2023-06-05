@@ -17,6 +17,7 @@ A_CALL = "call_ability"  # noqa
 APPLY_SPAWN_CTX = "apply_spawn_ctx"  # noqa
 APPLY_FILTER_CTX = "apply_filter_ctx"  # noqa
 CREATE_EDGE = "create_edge"  # noqa
+CREATE_NODE = "create_node"  # noqa
 
 
 class TranspilePass(Pass):
@@ -1025,6 +1026,23 @@ class TranspilePass(Pass):
             f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[0].py_code}, ctx={node.kid[1].py_code})",
         )
 
+    def exit_node_spawn(self: "TranspilePass", node: AstNode) -> None:
+        """Convert node_spawn to python code.
+
+        node_spawn -> node_spawn spawn_edge node_ref
+        node_spawn -> node_ref
+        """
+        if len(node.kid) == 1:
+            self.emit(
+                node, f"{RT}.{CREATE_NODE}(typ={node.kid[0].py_code}, connect=None)"
+            )
+        else:
+            self.emit(
+                node,
+                f"{RT}.{CREATE_NODE}(typ={node.kid[0].py_code}, "
+                f"connect=({node.kid[1].py_code},{node.kid[2].py_code}))",
+            )
+
     def exit_spawn_edge(self: "TranspilePass", node: AstNode) -> None:
         """Convert spawn_edge to python code.
 
@@ -1035,47 +1053,47 @@ class TranspilePass(Pass):
             f"{RT}.{CREATE_EDGE}(target={node.kid[0].py_code}, typ={node.kid[1].py_code})",
         )
 
-        # node_spawn -> spawn_edge node_ref
-        # node_spawn -> node_ref
-        # walker_spawn -> walker_ref
-        # walker_spawn -> expression walker_ref
-        # walker_spawn -> KW_ASYNC expression walker_ref
-        # object_spawn -> obj_ref
-        # built_in -> cast_built_in
-        # built_in -> obj_built_in
-        # obj_built_in -> KW_DETAILS
-        # obj_built_in -> KW_INFO
-        # obj_built_in -> KW_CONTEXT
-        # cast_built_in -> arch_ref
-        # cast_built_in -> builtin_type
-        # arch_ref -> obj_ref
-        # arch_ref -> walker_ref
-        # arch_ref -> node_ref
-        # node_ref -> KW_NODE DBL_COLON NAME
-        # walker_ref -> KW_WALKER DBL_COLON NAME
-        # obj_ref -> KW_OBJECT DBL_COLON NAME
-        # edge_op_ref -> edge_any
-        # edge_op_ref -> edge_from
-        # edge_op_ref -> edge_to
-        # edge_to -> ARROW_R_p1 NAME filter_ctx ARROW_R_p2
-        # edge_to -> ARROW_R
-        # edge_from -> ARROW_L_p1 NAME filter_ctx ARROW_L_p2
-        # edge_from -> ARROW_L
-        # edge_any -> ARROW_L_p1 NAME filter_ctx ARROW_R_p2
-        # edge_any -> ARROW_BI
-        # connect_op -> connect_any
-        # connect_op -> connect_from
-        # connect_op -> connect_to
-        # connect_to -> CARROW_R_p1 NAME spawn_ctx CARROW_R_p2
-        # connect_to -> CARROW_R
-        # connect_from -> CARROW_L_p1 NAME spawn_ctx CARROW_L_p2
-        # connect_from -> CARROW_L
-        # connect_any -> CARROW_L_p1 NAME spawn_ctx CARROW_R_p2
-        # connect_any -> CARROW_BI
-        # filter_ctx -> LPAREN filter_compare_list RPAREN
-        # spawn_ctx -> LPAREN assignment_list RPAREN
-        # filter_compare_list -> NAME cmp_op expression COMMA filter_compare_list
-        # filter_compare_list -> NAME cmp_op expression
+    # node_spawn -> spawn_edge node_ref
+    # node_spawn -> node_ref
+    # walker_spawn -> walker_ref
+    # walker_spawn -> expression walker_ref
+    # walker_spawn -> KW_ASYNC expression walker_ref
+    # object_spawn -> obj_ref
+    # built_in -> cast_built_in
+    # built_in -> obj_built_in
+    # obj_built_in -> KW_DETAILS
+    # obj_built_in -> KW_INFO
+    # obj_built_in -> KW_CONTEXT
+    # cast_built_in -> arch_ref
+    # cast_built_in -> builtin_type
+    # arch_ref -> obj_ref
+    # arch_ref -> walker_ref
+    # arch_ref -> node_ref
+    # node_ref -> KW_NODE DBL_COLON NAME
+    # walker_ref -> KW_WALKER DBL_COLON NAME
+    # obj_ref -> KW_OBJECT DBL_COLON NAME
+    # edge_op_ref -> edge_any
+    # edge_op_ref -> edge_from
+    # edge_op_ref -> edge_to
+    # edge_to -> ARROW_R_p1 NAME filter_ctx ARROW_R_p2
+    # edge_to -> ARROW_R
+    # edge_from -> ARROW_L_p1 NAME filter_ctx ARROW_L_p2
+    # edge_from -> ARROW_L
+    # edge_any -> ARROW_L_p1 NAME filter_ctx ARROW_R_p2
+    # edge_any -> ARROW_BI
+    # connect_op -> connect_any
+    # connect_op -> connect_from
+    # connect_op -> connect_to
+    # connect_to -> CARROW_R_p1 NAME spawn_ctx CARROW_R_p2
+    # connect_to -> CARROW_R
+    # connect_from -> CARROW_L_p1 NAME spawn_ctx CARROW_L_p2
+    # connect_from -> CARROW_L
+    # connect_any -> CARROW_L_p1 NAME spawn_ctx CARROW_R_p2
+    # connect_any -> CARROW_BI
+    # filter_ctx -> LPAREN filter_compare_list RPAREN
+    # spawn_ctx -> LPAREN assignment_list RPAREN
+    # filter_compare_list -> NAME cmp_op expression COMMA filter_compare_list
+    # filter_compare_list -> NAME cmp_op expression
 
     def exit_node(self: "TranspilePass", node: AstNode) -> None:
         """Convert node to python code."""

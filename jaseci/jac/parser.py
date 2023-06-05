@@ -723,17 +723,17 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Spawn object rule."""
         return p
 
-    @_("logical connect_op")
-    def spawn_edge(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn edge rule."""
-        return p
-
     @_(
         "node_ref",
-        "spawn_edge node_ref",
+        "node_spawn spawn_edge node_ref",
     )
     def node_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Node spawn rule."""
+        return p
+
+    @_("logical connect_op")
+    def spawn_edge(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Spawn edge rule."""
         return p
 
     @_(
