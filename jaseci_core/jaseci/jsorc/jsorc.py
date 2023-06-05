@@ -606,7 +606,7 @@ class JsOrc:
 
 
 def interval_check(signum, frame):
-    JsOrc.regenerate()
+    # JsOrc.regenerate()
 
     # wait interval_check to be finished before decrement
     JsOrc._running_interval -= 1
