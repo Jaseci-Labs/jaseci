@@ -1029,7 +1029,7 @@ class TranspilePass(Pass):
     def exit_node_spawn(self: "TranspilePass", node: AstNode) -> None:
         """Convert node_spawn to python code.
 
-        node_spawn -> node_spawn spawn_edge node_ref
+        node_spawn -> spawn_edge node_ref
         node_spawn -> node_ref
         """
         if len(node.kid) == 1:
@@ -1050,7 +1050,7 @@ class TranspilePass(Pass):
         """
         self.emit(
             node,
-            f"{RT}.{CREATE_EDGE}(target={node.kid[0].py_code}, typ={node.kid[1].py_code})",
+            f"{RT}.{CREATE_EDGE}({node.kid[0].py_code}, typ={node.kid[1].py_code})",
         )
 
     def exit_walker_spawn(self: "TranspilePass", node: AstNode) -> None:

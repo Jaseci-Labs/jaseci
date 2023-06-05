@@ -715,9 +715,9 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "node_spawn spawn_ctx",  # captures edge and node spawns
-        "walker_spawn spawn_ctx",
-        "object_spawn spawn_ctx",
+        "node_spawn",  # captures edge and node spawns
+        "walker_spawn",
+        "object_spawn",
     )
     def spawn_arch(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Spawn object rule."""
@@ -725,7 +725,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "node_ref",
-        "node_spawn spawn_edge node_ref",
+        "spawn_edge node_ref",
     )
     def node_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Node spawn rule."""
