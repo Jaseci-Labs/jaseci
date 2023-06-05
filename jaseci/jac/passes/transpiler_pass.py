@@ -1053,11 +1053,29 @@ class TranspilePass(Pass):
             f"{RT}.{CREATE_EDGE}(target={node.kid[0].py_code}, typ={node.kid[1].py_code})",
         )
 
-    # node_spawn -> spawn_edge node_ref
-    # node_spawn -> node_ref
-    # walker_spawn -> walker_ref
-    # walker_spawn -> expression walker_ref
-    # walker_spawn -> KW_ASYNC expression walker_ref
+    def exit_walker_spawn(self: "TranspilePass", node: AstNode) -> None:
+        """Convert walker_spawn to python code.
+
+        walker_spawn -> walker_ref
+        walker_spawn -> expression walker_ref
+        walker_spawn -> KW_ASYNC expression walker_ref
+        """
+        if len(node.kid) == 2:
+            self.emit(
+                node,
+                f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[0].py_code}, ctx={node.kid[1].py_code})",
+            )
+        elif len(node.kid) == 3:
+            self.emit(
+                node,
+                f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[1].py_code}, ctx={node.kid[2].py_code})",
+            )
+        else:
+            self.emit(
+                node,
+                f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[2].py_code}, ctx={node.kid[3].py_code})",
+            )
+
     # object_spawn -> obj_ref
     # built_in -> cast_built_in
     # built_in -> obj_built_in

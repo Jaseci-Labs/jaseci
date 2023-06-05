@@ -709,7 +709,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # Spawn rules
     # -----------
-    @_("KW_SPAWN spawn_arch")
+    @_("KW_SPAWN spawn_arch", "SPAWN_OP spawn_arch")
     def spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Spawn rule."""
         return p
