@@ -9,6 +9,7 @@ SENT = f"{MAST}.active_sentinel"
 RT = f"{MAST}.runtime"
 SET_LINE_FUNC = lambda x: f"{RT}set_line('{x}')\n"  # noqa
 REG_GLOB_FUNC = lambda x, y: f"{RT}.register_global({x}, {y})\n"  # noqa
+GET_GLOBAL_FUNC = lambda x: f"{RT}.get_global({x})\n"  # noqa
 HAS_TAGS = "HasTags"  # noqa
 EVENT_TAG = "EventTag"  # noqa
 BUILTIN_TAG = "BuiltinTag"  # noqa
@@ -1003,9 +1004,11 @@ class TranspilePass(Pass):
         global_ref -> GLOBAL_OP obj_built_in
         """
         if node.kid[-1].name == "obj_built_in":
-            self.emit(node, f"{RT}.{node.kid[1].py_code}")
+            self.emit(node, f"{GET_GLOBAL_FUNC}({node.kid[1].py_code})")
         else:
-            self.emit(node, f"{node.kid[1].py_code}")
+            self.emit(
+                node, f"{GET_GLOBAL_FUNC}(({BUILTIN_TAG}.VAR, {node.kid[1].py_code}))"
+            )
 
     def exit_node_edge_ref(self: "TranspilePass", node: AstNode) -> None:
         """Convert node_edge_ref to python code.
@@ -1096,7 +1099,7 @@ class TranspilePass(Pass):
         obj_built_in -> KW_INFO
         obj_built_in -> KW_CONTEXT
         """
-        self.emit(node, f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()})")
+        self.emit(node, f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, None)")
 
     def exit_cast_built_in(self: "TranspilePass", node: AstNode) -> None:
         """Convert cast_built_in to python code.
@@ -1120,44 +1123,165 @@ class TranspilePass(Pass):
 
         node_ref -> KW_NODE DBL_COLON NAME
         """
-        self.emit(node, f"({node.kid[0].py_code}, {node.kid[2].py_code})")
+        self.emit(
+            node,
+            f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
+        )
 
     def exit_walker_ref(self: "TranspilePass", node: AstNode) -> None:
         """Convert walker_ref to python code.
 
         walker_ref -> KW_WALKER DBL_COLON NAME
         """
-        self.emit(node, f"({node.kid[0].py_code}, {node.kid[2].py_code})")
+        self.emit(
+            node,
+            f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
+        )
 
     def exit_object_ref(self: "TranspilePass", node: AstNode) -> None:
         """Convert object_ref to python code.
 
         object_ref -> KW_OBJECT DBL_COLON NAME
         """
-        self.emit(node, f"({node.kid[0].py_code}, {node.kid[2].py_code})")
+        self.emit(
+            node,
+            f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
+        )
 
-    # edge_op_ref -> edge_any
-    # edge_op_ref -> edge_from
-    # edge_op_ref -> edge_to
-    # edge_to -> ARROW_R_p1 NAME filter_ctx ARROW_R_p2
-    # edge_to -> ARROW_R
-    # edge_from -> ARROW_L_p1 NAME filter_ctx ARROW_L_p2
-    # edge_from -> ARROW_L
-    # edge_any -> ARROW_L_p1 NAME filter_ctx ARROW_R_p2
-    # edge_any -> ARROW_BI
-    # connect_op -> connect_any
-    # connect_op -> connect_from
-    # connect_op -> connect_to
-    # connect_to -> CARROW_R_p1 NAME spawn_ctx CARROW_R_p2
-    # connect_to -> CARROW_R
-    # connect_from -> CARROW_L_p1 NAME spawn_ctx CARROW_L_p2
-    # connect_from -> CARROW_L
-    # connect_any -> CARROW_L_p1 NAME spawn_ctx CARROW_R_p2
-    # connect_any -> CARROW_BI
-    # filter_ctx -> LPAREN filter_compare_list RPAREN
-    # spawn_ctx -> LPAREN assignment_list RPAREN
-    # filter_compare_list -> NAME cmp_op expression COMMA filter_compare_list
-    # filter_compare_list -> NAME cmp_op expression
+    def exit_edge_op_ref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert edge_op_ref to python code.
+
+        edge_op_ref -> edge_any
+        edge_op_ref -> edge_from
+        edge_op_ref -> edge_to
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_edge_any(self: "TranspilePass", node: AstNode) -> None:
+        """Convert edge_any to python code.
+
+        edge_any -> ARROW_L_p1 NAME filter_ctx ARROW_R_p2
+        edge_any -> ARROW_BI
+        """
+        if len(node.kid) == 1:
+            self.emit(node, f"({BUILTIN_TAG}.EDGE_ANY, None)")
+        else:
+            self.emit(
+                node,
+                f"({BUILTIN_TAG}.EDGE_ANY, ({node.kid[1].py_code}, {node.kid[2].py_code})",
+            )
+
+    def exit_edge_from(self: "TranspilePass", node: AstNode) -> None:
+        """Convert edge_from to python code.
+
+        edge_from -> ARROW_L_p1 NAME filter_ctx ARROW_L_p2
+        edge_from -> ARROW_L
+        """
+        if len(node.kid) == 1:
+            self.emit(node, f"({BUILTIN_TAG}.EDGE_FROM, None)")
+        else:
+            self.emit(
+                node,
+                f"({BUILTIN_TAG}.EDGE_FROM, ({node.kid[1].py_code}, {node.kid[2].py_code})",
+            )
+
+    def exit_edge_to(self: "TranspilePass", node: AstNode) -> None:
+        """Convert edge_to to python code.
+
+        edge_to -> ARROW_R_p1 NAME filter_ctx ARROW_R_p2
+        edge_to -> ARROW_R
+        """
+        if len(node.kid) == 1:
+            self.emit(node, f"({BUILTIN_TAG}.EDGE_TO, None)")
+        else:
+            self.emit(
+                node,
+                f"({BUILTIN_TAG}.EDGE_TO, ({node.kid[1].py_code}, {node.kid[2].py_code})",
+            )
+
+    def exit_connect_op(self: "TranspilePass", node: AstNode) -> None:
+        """Convert connect_op to python code.
+
+        connect_op -> connect_any
+        connect_op -> connect_from
+        connect_op -> connect_to
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_connect_to(self: "TranspilePass", node: AstNode) -> None:
+        """Convert connect_to to python code.
+
+        connect_to -> CARROW_R_p1 NAME spawn_ctx CARROW_R_p2
+        connect_to -> CARROW_R
+        """
+        if len(node.kid) == 1:
+            self.emit(node, f"({BUILTIN_TAG}.CONNECT_TO, None)")
+        else:
+            self.emit(
+                node,
+                f"({BUILTIN_TAG}.CONNECT_TO, ({node.kid[1].py_code}, {node.kid[2].py_code})",
+            )
+
+    def exit_connect_from(self: "TranspilePass", node: AstNode) -> None:
+        """Convert connect_from to python code.
+
+        connect_from -> CARROW_L_p1 NAME spawn_ctx CARROW_L_p2
+        connect_from -> CARROW_L
+        """
+        if len(node.kid) == 1:
+            self.emit(node, f"({BUILTIN_TAG}.CONNECT_FROM, None)")
+        else:
+            self.emit(
+                node,
+                f"({BUILTIN_TAG}.CONNECT_FROM, ({node.kid[1].py_code}, {node.kid[2].py_code})",
+            )
+
+    def exit_connect_any(self: "TranspilePass", node: AstNode) -> None:
+        """Convert connect_any to python code.
+
+        connect_any -> CARROW_L_p1 NAME spawn_ctx CARROW_R_p2
+        connect_any -> CARROW_BI
+        """
+        if len(node.kid) == 1:
+            self.emit(node, f"({BUILTIN_TAG}.CONNECT_ANY, None)")
+        else:
+            self.emit(
+                node,
+                f"({BUILTIN_TAG}.CONNECT_ANY, ({node.kid[1].py_code}, {node.kid[2].py_code})",
+            )
+
+    def exit_filter_ctx(self: "TranspilePass", node: AstNode) -> None:
+        """Convert filter_ctx to python code.
+
+        filter_ctx -> LPAREN filter_compare_list RPAREN
+        """
+        self.emit(node, f"{node.kid[1].py_code}")
+
+    def exit_spawn_ctx(self: "TranspilePass", node: AstNode) -> None:
+        """Convert spawn_ctx to python code.
+
+        spawn_ctx -> LPAREN assignment_list RPAREN
+        """
+        self.emit(node, f"{node.kid[1].py_code}")
+
+    def exit_filter_compare_list(self: "TranspilePass", node: AstNode) -> None:
+        """Convert filter_compare_list to python code.
+
+        filter_compare_list -> NAME cmp_op expression COMMA filter_compare_list
+        filter_compare_list -> NAME cmp_op expression
+        """
+        if len(node.kid) == 3:
+            self.emit(
+                node,
+                f"({BUILTIN_TAG}.FILTER_COMPARE_LIST, "
+                f"({node.kid[0].py_code}, {node.kid[1].py_code}, {node.kid[2].py_code}))",
+            )
+        else:
+            self.emit(
+                node,
+                f"({BUILTIN_TAG}.FILTER_COMPARE_LIST, "
+                f"({node.kid[0].py_code}, {node.kid[1].py_code}, {node.kid[2].py_code})),  {node.kid[2].py_code})",
+            )
 
     def exit_node(self: "TranspilePass", node: AstNode) -> None:
         """Convert node to python code."""
