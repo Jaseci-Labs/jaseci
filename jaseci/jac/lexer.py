@@ -28,7 +28,8 @@ class JacLexer(Lexer):
         "KW_NODE",
         "KW_IGNORE",
         "KW_VISITOR",
-        "KW_TAKE",
+        "KW_VISIT",
+        "KW_REVISIT",
         "KW_SPAWN",
         "KW_WITH",
         "KW_ENTRY",
@@ -152,7 +153,8 @@ class JacLexer(Lexer):
     NAME["node"] = "KW_NODE"
     NAME["ignore"] = "KW_IGNORE"
     NAME["visitor"] = "KW_VISITOR"
-    NAME["take"] = "KW_TAKE"
+    NAME["visit"] = "KW_VISIT"
+    NAME["revisit"] = "KW_REVISIT"
     NAME["spawn"] = "KW_SPAWN"
     NAME["with"] = "KW_WITH"
     NAME["entry"] = "KW_ENTRY"

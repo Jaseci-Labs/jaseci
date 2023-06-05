@@ -589,7 +589,8 @@ class TranspilePass(Pass):
         walker_stmt -> sync_stmt
         walker_stmt -> yield_stmt
         walker_stmt -> disengage_stmt
-        walker_stmt -> take_stmt
+        walker_stmt -> revisit_stmt
+        walker_stmt -> visit_stmt
         walker_stmt -> ignore_stmt
         """
         self.emit(node, node.kid[0].py_code)
@@ -601,22 +602,33 @@ class TranspilePass(Pass):
         """
         self.emit_ln(node, f"visitor.ignore({node.kid[1].py_code})")
 
-    def exit_take_stmt(self: "TranspilePass", node: AstNode) -> None:
-        """Convert take stmt to python code.
+    def exit_visit_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert visit stmt to python code.
 
-        take_stmt -> KW_TAKE sub_name expression else_stmt
-        take_stmt -> KW_TAKE expression else_stmt
-        take_stmt -> KW_TAKE sub_name expression SEMI
-        take_stmt -> KW_TAKE expression SEMI
+        visit_stmt -> KW_VISIT sub_name expression else_stmt
+        visit_stmt -> KW_VISIT expression else_stmt
+        visit_stmt -> KW_VISIT sub_name expression SEMI
+        visit_stmt -> KW_VISIT expression SEMI
         """
         if len(node.kid) == 5:
             self.emit_ln(
-                node, f"visitor.take({node.kid[2].py_code}, {node.kid[3].py_code})"
+                node, f"visitor.visit({node.kid[2].py_code}, {node.kid[3].py_code})"
             )
             self.emit(node, node.kid[4].py_code)
         else:
-            self.emit_ln(node, f"visitor.take({node.kid[1].py_code})")
+            self.emit_ln(node, f"visitor.visit({node.kid[1].py_code})")
             self.emit(node, node.kid[2].py_code)
+
+    def exit_revisit_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert visit stmt to python code.
+
+        visit_stmt -> KW_REVISIT expression SEMI
+        visit_stmt -> KW_REVISIT SEMI
+        """
+        if len(node.kid) == 0:
+            self.emit_ln(node, "visitor.revisit()")
+        else:
+            self.emit_ln(node, f"visitor.revisit({node.kid[1].py_code})")
 
     def exit_disengage_stmt(self: "TranspilePass", node: AstNode) -> None:
         """Convert disengage stmt to python code.

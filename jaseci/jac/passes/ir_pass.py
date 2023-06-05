@@ -134,5 +134,5 @@ def parse_tree_to_ast(tree: tuple) -> AstNode:
                 py_code="",
             )
         else:
-            raise ValueError("node must be AstNode or parser output tuple")
+            raise ValueError(f"node must be AstNode or parser output tuple: {tree}")
     return tree

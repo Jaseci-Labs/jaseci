@@ -37,7 +37,7 @@ walker tourist {
     has budget: int;
     has passport: list[str];
 
-    can visit with location, other exit {
+    can make_visit with location, other exit {
         report here.activities;
     }
 }

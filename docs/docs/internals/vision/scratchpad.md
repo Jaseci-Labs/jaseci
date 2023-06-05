@@ -41,7 +41,7 @@ walker tourist {
     has passport: list[str];
 
     can visit with location, other exit {
-        take -->;
+        visit -->;
         if here.visited == 0 {
             print here.intro;
         }

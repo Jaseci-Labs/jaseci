@@ -32,5 +32,5 @@ class TestLexer(TestCase):
                 tokens[-1].index,
                 tokens[-1].end,
             ],
-            ["RBRACE", "}", 37, 795, 796],
+            ["RBRACE", "}", 37, 800, 801],
         )

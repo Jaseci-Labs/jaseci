@@ -392,7 +392,8 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ignore_stmt",
-        "take_stmt",
+        "visit_stmt",
+        "revisit_stmt",
         "disengage_stmt",
         "yield_stmt",
         "sync_stmt",
@@ -407,13 +408,21 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "KW_TAKE expression SEMI",
-        "KW_TAKE sub_name expression SEMI",
-        "KW_TAKE expression else_stmt",
-        "KW_TAKE sub_name expression else_stmt",
+        "KW_VISIT expression SEMI",
+        "KW_VISIT sub_name expression SEMI",
+        "KW_VISIT expression else_stmt",
+        "KW_VISIT sub_name expression else_stmt",
     )
-    def take_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Take statement rule."""
+    def visit_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Visit statement rule."""
+        return p
+
+    @_(
+        "KW_REVISIT SEMI",
+        "KW_REVISIT expression SEMI",
+    )
+    def revisit_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Visit statement rule."""
         return p
 
     @_("KW_DISENGAGE SEMI")
