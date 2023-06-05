@@ -600,7 +600,9 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "STRING",
+        "FSTRING",
         "STRING multistring",
+        "FSTRING multistring",
     )
     def multistring(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Multistring rule."""

@@ -112,6 +112,21 @@ class Pass:
         return self.ir
 
 
+class FstringProcPass(Pass):
+    """Pass to process fstrings."""
+
+    def __init__(self: "FstringProcPass", ir: AstNode = None) -> None:
+        """Initialize pass."""
+        super().__init__(ir)
+
+    def enter_fstring(self: "FstringProcPass", node: AstNode) -> None:
+        """Run on entering node."""
+        # from jaseci.jac.lexer import JacFStringLexer
+        # from jaseci.jac.parser import JacParser
+
+        node.value = node.value.replace("{{", "{").replace("}}", "}")
+
+
 def parse_tree_to_ast(tree: tuple) -> AstNode:
     """Convert parser output to ast."""
     if not isinstance(tree, AstNode):
@@ -125,13 +140,24 @@ def parse_tree_to_ast(tree: tuple) -> AstNode:
                 py_code="",
             )
         elif isinstance(tree, Token):
-            tree = AstNode(
-                name=tree.type,
-                kind=AstNodeKind.TOKEN,
-                value=tree.value,
-                kid=[],
-                line=tree.lineno,
-                py_code="",
+            tree = (
+                AstNode(
+                    name=tree.type,
+                    kind=AstNodeKind.TOKEN,
+                    value=tree.value,
+                    kid=[],
+                    line=tree.lineno,
+                    py_code="",
+                )
+                if not tree.type == "FSTRING"
+                else AstNode(
+                    name=tree.type.lower(),
+                    kind=AstNodeKind.PARSE_RULE,
+                    value=tree.value,
+                    kid=[],
+                    line=tree.lineno,
+                    py_code="",
+                )
             )
         else:
             raise ValueError(f"node must be AstNode or parser output tuple: {tree}")

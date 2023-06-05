@@ -10,6 +10,7 @@ class JacLexer(Lexer):
         "FLOAT",
         "STRING",
         "DOC_STRING",
+        "FSTRING",
         "BOOL",
         "INT",
         "NULL",
@@ -132,6 +133,7 @@ class JacLexer(Lexer):
     # Regular expression rules for tokens
     FLOAT = r"(\d+)?\.\d+"
     DOC_STRING = r'"""[^"]*"""|\'\'\'[^\']*\'\'\''
+    FSTRING = r'f"[^"\r\n]*"|f\'[^\'\r\n]*\''
     STRING = r'"[^"\r\n]*"|\'[^\'\r\n]*\''
     BOOL = r"True|False"
     KW_NIN = r"not in"
@@ -265,6 +267,34 @@ class JacLexer(Lexer):
         self.lineno += t.value.count("\n")
         self.lineno += t.value.count("\r")
         return t
+
+    # Error handling rule
+    def error(self: "JacLexer", t: Token) -> None:
+        """Raise an error for illegal characters."""
+        print(f"Illegal character '{t.value[0]}' at line {self.lineno}")
+        self.index += 1
+
+
+class JacFStringLexer(Lexer):
+    """Lexer for Jac f-strings."""
+
+    tokens = {
+        "DQ_L",
+        "DQ_R",
+        "MIDDLE",
+        "SQ_L",
+        "SQ_R",
+        "FEXPR",
+    }
+
+    # Regular expression rules for f-strings pieces
+    DQ_L = r'f"[^"{]*(?:{{[^"{]*)*{'  # Chomps "...{"
+    DQ_R = r'}[^"}]*(?:}}[^"}]*)*"'  # Chomps "}..."
+    MIDDLE = r'}[^"]*(?:{{[^"}]*}}[^"]*)*{'  # Chomps }...{
+    SQ_L = r"f'[^'{]*(?:{{[^'{]*)*{"  # Chomps '...{'
+    SQ_R = r"}[^'}]*(?:}}[^'}]*)*'"  # Chomps }...'
+
+    FEXPR = r"[^{}]+"
 
     # Error handling rule
     def error(self: "JacLexer", t: Token) -> None:

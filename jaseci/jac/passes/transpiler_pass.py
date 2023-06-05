@@ -59,7 +59,6 @@ class TranspilePass(Pass):
         start -> element_list
         """
         self.emit(node, node.kid[0].py_code)
-        print(node.py_code)
 
     def exit_element_list(self: "TranspilePass", node: AstNode) -> None:
         """Convert element list to python code.
