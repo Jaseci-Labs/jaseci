@@ -420,6 +420,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "KW_REVISIT SEMI",
         "KW_REVISIT expression SEMI",
+        "KW_REVISIT else_stmt",
+        "KW_REVISIT expression else_stmt",
     )
     def revisit_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Visit statement rule."""

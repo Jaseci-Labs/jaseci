@@ -622,13 +622,22 @@ class TranspilePass(Pass):
     def exit_revisit_stmt(self: "TranspilePass", node: AstNode) -> None:
         """Convert visit stmt to python code.
 
-        visit_stmt -> KW_REVISIT expression SEMI
-        visit_stmt -> KW_REVISIT SEMI
+        revisit_stmt -> KW_REVISIT expression else_stmt
+        revisit_stmt -> KW_REVISIT else_stmt
+        revisit_stmt -> KW_REVISIT expression SEMI
+        revisit_stmt -> KW_REVISIT SEMI
         """
-        if len(node.kid) == 0:
-            self.emit_ln(node, "visitor.revisit()")
-        else:
+        if node.kid[-1].name == "else_stmt":
+            if len(node.kid) == 2:
+                self.emit_ln(node, "if visitor.revisit():")
+            else:
+                self.emit_ln(node, f"if visitor.revisit({node.kid[1].py_code}):")
+            self.emit_ln(node, "pass", indent_delta=1)
+            self.emit(node, node.kid[-1].py_code)
+        elif len(node.kid) == 3:
             self.emit_ln(node, f"visitor.revisit({node.kid[1].py_code})")
+        else:
+            self.emit_ln(node, "visitor.revisit()")
 
     def exit_disengage_stmt(self: "TranspilePass", node: AstNode) -> None:
         """Convert disengage stmt to python code.
