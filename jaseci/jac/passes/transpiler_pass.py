@@ -43,12 +43,11 @@ class TranspilePass(Pass):
         self: "TranspilePass", node: AstNode, s: str, indent_delta: int = 0
     ) -> None:
         """Emit code to node."""
-        node.py_code = (
+        node.py_code += (
             self.indent_str(indent_delta)
             + s.replace("\n", "\n" + self.indent_str(indent_delta))
             + "\n"
         )
-        print(node.py_code)
 
     def emit(self: "TranspilePass", node: AstNode, s: str) -> None:
         """Emit code to node."""
@@ -60,6 +59,7 @@ class TranspilePass(Pass):
         start -> element_list
         """
         self.emit(node, node.kid[0].py_code)
+        print(node.py_code)
 
     def exit_element_list(self: "TranspilePass", node: AstNode) -> None:
         """Convert element list to python code.
@@ -1286,5 +1286,8 @@ class TranspilePass(Pass):
     def exit_node(self: "TranspilePass", node: AstNode) -> None:
         """Convert node to python code."""
         if node.kind == AstNodeKind.TOKEN:
-            self.emit(node, str(node.value))
+            if node.name == "DOC_STRING":
+                self.emit_ln(node, node.value)
+            else:
+                self.emit(node, str(node.value))
         super().exit_node(node)
