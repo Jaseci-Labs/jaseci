@@ -26,8 +26,8 @@ TFM_NER_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone -b action_subprocess_sub https://github.com/Jaseci-Labs/jaseci.git; cd jaseci; cd jaseci_ai_kit/jac_nlp; pip install -e .[tfm_ner]; uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
-                # "prod_up": "uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
+                # "prod_up": "git clone -b action_subprocess_sub https://github.com/Jaseci-Labs/jaseci.git; cd jaseci; cd jaseci_ai_kit/jac_nlp; pip install -e .[tfm_ner]; uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.tfm_ner:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -57,7 +57,7 @@ TFM_NER_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "tfm-ner",
-                                "image": "jaseci/jac-nlp:1.4.0.21",
+                                "image": "jaseci/jac-nlp:1.4.0.22",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

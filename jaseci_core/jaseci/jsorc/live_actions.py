@@ -198,6 +198,8 @@ def action_handler_wrapper(name, *args, **kwargs):
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     # logger.info(f"load module actions {mod}")
     # If the module status is intialization, return False
+
+    logger.info(f"{mod} received for loading")
     if mod in act_procs and act_procs[mod]["status"] == "INITIALIZATION":
         return False
 
@@ -406,6 +408,8 @@ def load_preconfig_actions(hook):
     import json
 
     action_preload = hook.resolve_glob("ACTION_SETS", None)
+    logger.info("===============================================")
+    logger.info(f"{action_preload} action_preload for loading")
     if action_preload:
         try:
             action_preload = json.loads(action_preload)
