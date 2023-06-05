@@ -11,6 +11,7 @@ SET_LINE_FUNC = lambda x: f"{RT}set_line('{x}')\n"  # noqa
 REG_GLOB_FUNC = lambda x, y: f"{RT}.register_global({x}, {y})\n"  # noqa
 HAS_TAGS = "HasTags"  # noqa
 EVENT_TAG = "EventTag"  # noqa
+BUILTIN_TAG = "BuiltinTag"  # noqa
 SYNC_CMD = "sync_on"  # noqa
 YIELD_CMD = "yield_now"  # noqa
 A_CALL = "call_ability"  # noqa
@@ -20,6 +21,7 @@ APPLY_FILTER_CTX = "apply_filter_ctx"  # noqa
 CREATE_EDGE = "create_edge"  # noqa
 CREATE_NODE = "create_node"  # noqa
 CREATE_WALKER = "create_walker"  # noqa
+CREATE_OBJECT = "create_object"  # noqa
 
 
 class TranspilePass(Pass):
@@ -1072,20 +1074,68 @@ class TranspilePass(Pass):
         """
         self.emit(node, f"{RT}.{CREATE_WALKER}({node.kid[0].py_code})")
 
-    # object_spawn -> object_ref
-    # built_in -> cast_built_in
-    # built_in -> obj_built_in
-    # obj_built_in -> KW_DETAILS
-    # obj_built_in -> KW_INFO
-    # obj_built_in -> KW_CONTEXT
-    # cast_built_in -> arch_ref
-    # cast_built_in -> builtin_type
-    # arch_ref -> object_ref
-    # arch_ref -> walker_ref
-    # arch_ref -> node_ref
-    # node_ref -> KW_NODE DBL_COLON NAME
-    # walker_ref -> KW_WALKER DBL_COLON NAME
-    # object_ref -> KW_OBJECT DBL_COLON NAME
+    def exit_object_spawn(self: "TranspilePass", node: AstNode) -> None:
+        """Convert object_spawn to python code.
+
+        object_spawn -> object_ref
+        """
+        self.emit(node, f"{RT}.{CREATE_OBJECT}({node.kid[0].py_code})")
+
+    def exit_built_in(self: "TranspilePass", node: AstNode) -> None:
+        """Convert built_in to python code.
+
+        built_in -> cast_built_in
+        built_in -> obj_built_in
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_obj_built_in(self: "TranspilePass", node: AstNode) -> None:
+        """Convert obj_built_in to python code.
+
+        obj_built_in -> KW_DETAILS
+        obj_built_in -> KW_INFO
+        obj_built_in -> KW_CONTEXT
+        """
+        self.emit(node, f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()})")
+
+    def exit_cast_built_in(self: "TranspilePass", node: AstNode) -> None:
+        """Convert cast_built_in to python code.
+
+        cast_built_in -> arch_ref
+        cast_built_in -> builtin_type
+        """
+        self.emit(node, node.kid[2].py_code)
+
+    def exit_arch_ref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert arch_ref to python code.
+
+        arch_ref -> object_ref
+        arch_ref -> walker_ref
+        arch_ref -> node_ref
+        """
+        self.emit(node, node.kid[0].py_code)
+
+    def exit_node_ref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert node_ref to python code.
+
+        node_ref -> KW_NODE DBL_COLON NAME
+        """
+        self.emit(node, f"({node.kid[0].py_code}, {node.kid[2].py_code})")
+
+    def exit_walker_ref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert walker_ref to python code.
+
+        walker_ref -> KW_WALKER DBL_COLON NAME
+        """
+        self.emit(node, f"({node.kid[0].py_code}, {node.kid[2].py_code})")
+
+    def exit_object_ref(self: "TranspilePass", node: AstNode) -> None:
+        """Convert object_ref to python code.
+
+        object_ref -> KW_OBJECT DBL_COLON NAME
+        """
+        self.emit(node, f"({node.kid[0].py_code}, {node.kid[2].py_code})")
+
     # edge_op_ref -> edge_any
     # edge_op_ref -> edge_from
     # edge_op_ref -> edge_to
