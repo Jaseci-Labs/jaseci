@@ -726,8 +726,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "KW_ASYNC connect walker_ref",
-        "connect walker_ref",
+        "KW_ASYNC expression walker_ref",
+        "expression walker_ref",
         "walker_ref",
     )
     def walker_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
