@@ -639,9 +639,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "DBL_COLON NAME",
+        "DBL_COLON",
+        "DBL_COLON NAME",  # :: for walkers, ::name for abilities
+        "DBL_COLON KW_ASYNC",
+        "DBL_COLON NAME KW_ASYNC",  # :: for walkers, ::name for abilities
     )
-    def ability_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability_run(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability operator rule."""
         return p
 
@@ -660,7 +663,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "LPAREN RPAREN",
         "LPAREN param_list RPAREN",
-        "ability_ref",
+        "ability_run",
     )
     def call(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability call rule."""
@@ -709,7 +712,10 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # Spawn rules
     # -----------
-    @_("KW_SPAWN spawn_arch", "SPAWN_OP spawn_arch")
+    @_(
+        "KW_SPAWN spawn_arch",
+        "SPAWN_OP spawn_arch",
+    )
     def spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Spawn rule."""
         return p
@@ -736,16 +742,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Spawn edge rule."""
         return p
 
-    @_(
-        "KW_ASYNC expression walker_ref",
-        "expression walker_ref",
-        "walker_ref",
-    )
+    @_("walker_ref")
     def walker_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Walker spawn rule."""
         return p
 
-    @_("obj_ref")
+    @_("object_ref")
     def object_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Type spawn rule."""
         return p
@@ -782,7 +784,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "node_ref",
         "walker_ref",
-        "obj_ref",
+        "object_ref",
     )
     def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
@@ -799,7 +801,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_("KW_OBJECT DBL_COLON NAME")
-    def obj_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def object_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Type reference rule."""
         return p
 

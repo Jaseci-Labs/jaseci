@@ -111,3 +111,4 @@ plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_
 - After parsing various IR passes are performed, including the transpile pass
 - There are inline abilities and ability elements
 - Any time theres a change to the language validate the prism in docs
+- Need to think about deallocation with spawn commands

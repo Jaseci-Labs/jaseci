@@ -14,10 +14,12 @@ EVENT_TAG = "EventTag"  # noqa
 SYNC_CMD = "sync_on"  # noqa
 YIELD_CMD = "yield_now"  # noqa
 A_CALL = "call_ability"  # noqa
+W_CALL = "call_walker"  # noqa
 APPLY_SPAWN_CTX = "apply_spawn_ctx"  # noqa
 APPLY_FILTER_CTX = "apply_filter_ctx"  # noqa
 CREATE_EDGE = "create_edge"  # noqa
 CREATE_NODE = "create_node"  # noqa
+CREATE_WALKER = "create_walker"  # noqa
 
 
 class TranspilePass(Pass):
@@ -901,12 +903,24 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_ability_ref(self: "TranspilePass", node: AstNode) -> None:
-        """Convert ability_ref to python code.
+    def exit_ability_run(self: "TranspilePass", node: AstNode) -> None:
+        """Convert ability_run to python code.
 
-        ability_ref -> DBL_COLON NAME
+        ability_run -> DBL_COLON NAME
+        ability_run -> DBL_COLON
+        ability_run -> DBL_COLON NAME KW_ASYNC
+        ability_run -> DBL_COLON KW_ASYNC
         """
-        self.emit(node, f"{RT}.{A_CALL}({node.kid[1].py_code})")
+        if node.kid[-1].name == "KW_ASYNC":
+            if node.kid[-2].name == "NAME":
+                self.emit(node, f".{A_CALL}({node.kid[1].py_code}, is_async=True)")
+            else:
+                self.emit(node, f".{W_CALL}(is_async=True)")
+        else:
+            if len(node.kid) == 1:
+                self.emit(node, f".{W_CALL}()")
+            else:
+                self.emit(node, f".{A_CALL}({node.kid[1].py_code})")
 
     def exit_atomic_chain(self: "TranspilePass", node: AstNode) -> None:
         """Convert atom_trailer to python code.
@@ -941,12 +955,12 @@ class TranspilePass(Pass):
     def exit_call(self: "TranspilePass", node: AstNode) -> None:
         """Convert call to python code.
 
-        call -> ability_ref
+        call -> ability_run
         call -> LPAREN param_list RPAREN
         call -> LPAREN RPAREN
         """
         if len(node.kid) == 1:
-            self.emit(node, node.kid[0].py_code)
+            self.emit(node, {node.kid[0].py_code})
         elif len(node.kid) == 3:
             self.emit(node, f"({node.kid[1].py_code})")
         else:
@@ -1017,14 +1031,12 @@ class TranspilePass(Pass):
     def exit_spawn_arch(self: "TranspilePass", node: AstNode) -> None:
         """Convert spawn_arch to python code.
 
-        spawn_arch -> object_spawn spawn_ctx
-        spawn_arch -> walker_spawn spawn_ctx
-        spawn_arch -> node_spawn spawn_ctx
+        spawn_arch -> object_spawn
+        spawn_arch -> walker_spawn
+        spawn_arch -> node_spawn
         """
-        self.emit(
-            node,
-            f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[0].py_code}, ctx={node.kid[1].py_code})",
-        )
+        for i in node.kid:
+            self.emit(node, i.py_code)
 
     def exit_node_spawn(self: "TranspilePass", node: AstNode) -> None:
         """Convert node_spawn to python code.
@@ -1057,26 +1069,10 @@ class TranspilePass(Pass):
         """Convert walker_spawn to python code.
 
         walker_spawn -> walker_ref
-        walker_spawn -> expression walker_ref
-        walker_spawn -> KW_ASYNC expression walker_ref
         """
-        if len(node.kid) == 2:
-            self.emit(
-                node,
-                f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[0].py_code}, ctx={node.kid[1].py_code})",
-            )
-        elif len(node.kid) == 3:
-            self.emit(
-                node,
-                f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[1].py_code}, ctx={node.kid[2].py_code})",
-            )
-        else:
-            self.emit(
-                node,
-                f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[2].py_code}, ctx={node.kid[3].py_code})",
-            )
+        self.emit(node, f"{RT}.{CREATE_WALKER}({node.kid[0].py_code})")
 
-    # object_spawn -> obj_ref
+    # object_spawn -> object_ref
     # built_in -> cast_built_in
     # built_in -> obj_built_in
     # obj_built_in -> KW_DETAILS
@@ -1084,12 +1080,12 @@ class TranspilePass(Pass):
     # obj_built_in -> KW_CONTEXT
     # cast_built_in -> arch_ref
     # cast_built_in -> builtin_type
-    # arch_ref -> obj_ref
+    # arch_ref -> object_ref
     # arch_ref -> walker_ref
     # arch_ref -> node_ref
     # node_ref -> KW_NODE DBL_COLON NAME
     # walker_ref -> KW_WALKER DBL_COLON NAME
-    # obj_ref -> KW_OBJECT DBL_COLON NAME
+    # object_ref -> KW_OBJECT DBL_COLON NAME
     # edge_op_ref -> edge_any
     # edge_op_ref -> edge_from
     # edge_op_ref -> edge_to
