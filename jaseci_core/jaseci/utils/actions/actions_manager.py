@@ -1,6 +1,7 @@
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.prome_svc import PrometheusService
 from jaseci.jsorc.live_actions import load_action_config
+from jaseci.utils.utils import logger
 from .actions_optimizer import ActionsOptimizer
 
 import time
@@ -247,8 +248,12 @@ class ActionManager:
         request_type = args[0]
         request = args[1]
         request_time = args[2]
+        response = args[3]
         if self.benchmark["jsorc"]["active"]:
-            self.add_to_benchmark(request_type, request, request_time)
+            if response.get("success", True):
+                self.add_to_benchmark(request_type, request, request_time)
+            else:
+                logger.info("Excluding failed requests from benchmark.")
 
     def optimize(self, jsorc_interval):
         self.actions_optimizer.run(jsorc_interval)

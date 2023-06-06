@@ -3,7 +3,6 @@ from base64 import b64encode
 from io import BytesIO
 from tempfile import _TemporaryFileWrapper
 from time import time
-import ast
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -105,25 +104,18 @@ class AbstractJacAPIView(APIView):
         # Add custom fields depending on the type of API
         if log_dict["api_name"] == "walker_run":
             log_dict["walker_name"] = self.cmd.get("name", "")
-            log_dict["success"] = (api_result.get("success", True),)
+            log_dict["success"] = api_result.get("success", True)
         try:
             api_result_str = json.dumps(api_result)[:OBJECT_LOG_LIMIT]
         except TypeError:
             api_result_str = str(api_result)[:OBJECT_LOG_LIMIT]
-        try:
-            success = check_success(api_result_str)
-            if success is True or success is None:
-                log_dict["api_response"] = api_result_str
-                log_dict["extra_fields"] = list(log_dict.keys())
-                logger.info(log_str, extra=log_dict)
-                JsOrc.get("action_manager", ActionManager).post_request_hook(
-                    type(self).__name__, request, tot_time
-                )
-            else:
-                logger.info("+++++++++++++++++++++else++++++++++++++++++")
-                logger.info(f"false result is: {api_result_str}")
-        except Exception as e:
-            logger.error(f"Exception: {e}\n{success}")
+        log_dict["api_response"] = api_result_str
+        log_dict["extra_fields"] = list(log_dict.keys())
+        logger.info(log_str, extra=log_dict)
+
+        JsOrc.get("action_manager", ActionManager).post_request_hook(
+            type(self).__name__, request, tot_time, api_result
+        )
 
     def proc_prime_ctx(self, request, req_data):
         try:
@@ -311,14 +303,3 @@ class AbstractPublicJacAPIView(AbstractJacAPIView):
             return JResponse(self.caller._pub_committer, api_result, status=status)
         else:
             return Response(api_result, status=status)
-
-
-def check_success(json_str):
-    try:
-        data = json.loads(json_str)
-        if isinstance(data, dict) and "success" in data:
-            return data["success"]
-        else:
-            return None
-    except json.JSONDecodeError:
-        return None
