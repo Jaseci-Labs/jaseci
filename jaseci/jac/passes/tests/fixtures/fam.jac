@@ -39,7 +39,8 @@ walker tourist {
 
     can make_visit with location, other exit {
         b=:g:stuff:w:tourist;
-        a = spawn :g:stuff |> :w:tourist;
+        a = spawn :g:stuff:w:tourist;
+        a = spawn (:g:stuff:w:tourist)::;
         report here.activities;
     }
 

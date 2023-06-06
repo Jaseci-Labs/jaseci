@@ -497,8 +497,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "connect",
-        "connect walrus_op expression",
+        "logical",
+        "logical walrus_op expression",
     )
     def expression(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Expression rule."""
@@ -513,15 +513,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def walrus_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Production Assignment rule."""
-        return p
-
-    @_(
-        "logical",
-        "logical NOT edge_op_ref connect",
-        "logical connect_op connect",
-    )
-    def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Connect rule."""
         return p
 
     @_(
@@ -585,11 +576,10 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "atom",
-        "atom POW power",
+        "connect",
+        "connect POW power",
         "ref",
         "deref",
-        "spawn",
     )
     def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Power rule."""
@@ -605,15 +595,25 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Dereference rule."""
         return p
 
+    @_(
+        "atom",
+        "atom NOT edge_op_ref connect",
+        "atom connect_op connect",
+        "spawn_edge_node_chain",
+    )
+    def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Connect rule."""
+        return p
+
     # Spawn rules
     # -----------
     @_(
-        # "KW_SPAWN node_spawn",
-        # "SPAWN_OP walker_ref",
-        # "SPAWN_OP object_ref",
-        "SPAWN_OP atom COLON atom connect_op node_ref",
+        "KW_SPAWN atom connect_op connect",
+        "SPAWN_OP atom connect_op connect",
+        "KW_SPAWN atom",
+        "SPAWN_OP atom",
     )
-    def spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def spawn_edge_node_chain(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Spawn rule."""
         return p
 
@@ -638,6 +638,9 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LPAREN expression RPAREN",
         "global_ref",
         "atomic_chain",
+        # "spawn node_spawn",
+        # "spawn walker_ref",
+        # "spawn object_ref",
         "arch_ref",
         "KW_HERE",
         "KW_VISITOR",
