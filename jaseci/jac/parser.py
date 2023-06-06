@@ -593,6 +593,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "list_val",
         "dict_val",
+        # sets and tuples are supported through the pipe forward semantic
     )
     def atom_collection(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom rule."""
@@ -653,6 +654,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "atom DOT NAME",
         "atom index_slice",
+        "atom NULL_OK DOT NAME",
+        "atom NULL_OK index_slice",
         "atom call",
         "atom PIPE_FWD built_in",  # casting and creating tuples and sets
         "atom PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.

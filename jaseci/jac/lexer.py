@@ -121,6 +121,7 @@ class JacLexer(Lexer):
         "CARROW_R_p2",
         "GLOBAL_OP",
         "SPAWN_OP",
+        "NULL_OK",
     }
 
     # Ignored patterns
@@ -220,6 +221,7 @@ class JacLexer(Lexer):
     # Just special
     GLOBAL_OP = r"g::"
     SPAWN_OP = r"::>"
+    NULL_OK = r"\?"
 
     # Token rules
     KW_AND = r"&&"

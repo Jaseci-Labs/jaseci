@@ -931,6 +931,8 @@ class TranspilePass(Pass):
         atomic_chain -> atom PIPE_FWD filter_ctx
         atomic_chain -> atom PIPE_FWD built_in
         atomic_chain -> atom call
+        atomic_chain -> atom NULL_OK index_slice  TODO: this is not implemented
+        atomic_chain -> atom NULL_OK DOT NAME  TODO: this is not implemented
         atomic_chain -> atom index_slice
         atomic_chain -> atom DOT NAME
         """

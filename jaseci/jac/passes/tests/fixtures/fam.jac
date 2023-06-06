@@ -40,4 +40,12 @@ walker tourist {
     can make_visit with location, other exit {
         report here.activities;
     }
+
+    // can do_something(app=Actvy) {
+    //     app.do_something();
+    // }
+    // can do_something(app=Actvy, other=Actvy): Actvy {
+    //     return app?.do_something(other);
+    // }
 }
+
