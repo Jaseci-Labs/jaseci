@@ -1,5 +1,5 @@
 """Transpiler pass module."""
-import inspect
+# import inspect
 
 from jaseci.jac.lexer import JacLexer
 from jaseci.jac.parser import JacParser
