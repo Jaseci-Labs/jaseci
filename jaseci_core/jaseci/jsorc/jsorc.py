@@ -491,6 +491,13 @@ class JsOrc:
                                 regeneration_queue, service.manifest_type
                             ),
                         )
+                        logger.info(
+                            "****************************MANIFEST**********************"
+                        )
+                        logger.info(manifest)
+                        logger.info(
+                            "****************************MANIFEST**********************"
+                        )
 
                         rmhists: dict = hook.get_or_create_glob(
                             "RESOLVED_MANIFEST_HISTORY", {}
@@ -606,7 +613,7 @@ class JsOrc:
 
 
 def interval_check(signum, frame):
-    # JsOrc.regenerate()
+    JsOrc.regenerate()
 
     # wait interval_check to be finished before decrement
     JsOrc._running_interval -= 1
