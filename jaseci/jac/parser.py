@@ -612,7 +612,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LPAREN expression RPAREN",
         "global_ref",
         "atomic_chain",
-        "atom node_edge_ref",
         "spawn",
         "KW_HERE",
         "KW_VISITOR",
@@ -711,6 +710,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom PIPE_FWD built_in",  # casting and creating tuples and sets
         "atom PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
         "atom PIPE_FWD spawn_ctx",  # for rapid assignments to collections
+        "atom arch_ref",  # for refs to :g:var:w:wtype calls
     )
     def atomic_chain_unsafe(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
@@ -723,6 +723,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom NULL_OK PIPE_FWD built_in",  # casting and creating tuples and sets
         "atom NULL_OK PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
         "atom NULL_OK PIPE_FWD spawn_ctx",  # for rapid assignments to collections
+        "atom NULL_OK arch_ref",
     )
     def atomic_chain_safe(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
@@ -768,14 +769,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def global_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
-        return p
-
-    @_(
-        "node_ref filter_ctx",
-        "edge_op_ref",
-    )
-    def node_edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Node/edge reference rule."""
         return p
 
     # Spawn rules
@@ -851,11 +844,9 @@ class JacParser(JacParseErrorMixIn, Parser):
     # -------------------------
     @_(
         "node_ref",
+        "edge_op_ref",
         "walker_ref",
         "object_ref",
-        "global_ref node_ref",
-        "global_ref walker_ref",
-        "global_ref object_ref",
     )
     def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
@@ -898,7 +889,8 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ARROW_R",
-        "ARROW_R_p1 NAME filter_ctx ARROW_R_p2",
+        "ARROW_R_p1 NAME ARROW_R_p2",
+        "ARROW_R_p1 NAME PIPE_FWD filter_ctx ARROW_R_p2",
     )
     def edge_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge to rule."""
@@ -906,7 +898,8 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ARROW_L",
-        "ARROW_L_p1 NAME filter_ctx ARROW_L_p2",
+        "ARROW_L_p1 NAME ARROW_L_p2",
+        "ARROW_L_p1 NAME PIPE_FWD filter_ctx ARROW_L_p2",
     )
     def edge_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge from rule."""
@@ -914,7 +907,8 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ARROW_BI",
-        "ARROW_L_p1 NAME filter_ctx ARROW_R_p2",
+        "ARROW_L_p1 NAME ARROW_R_p2",
+        "ARROW_L_p1 NAME PIPE_FWD filter_ctx ARROW_R_p2",
     )
     def edge_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge any rule."""

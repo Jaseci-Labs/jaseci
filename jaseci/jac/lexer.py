@@ -224,10 +224,10 @@ class JacLexer(Lexer):
     CARROW_R_p2 = r"]\+>"
 
     # Just special
-    GLOBAL_OP = r":g:"
-    WALKER_OP = r":w:"
-    NODE_OP = r":n:"
-    OBJECT_OP = r":o:"
+    GLOBAL_OP = r":g:|:global:"
+    WALKER_OP = r":w:|:walker:"
+    NODE_OP = r":n:|:node:"
+    OBJECT_OP = r":o:|:object:"
     SPAWN_OP = r"::>"
     NULL_OK = r"\?"
 

@@ -1088,19 +1088,19 @@ class TranspilePass(Pass):
                 node, f"{GET_GLOBAL_FUNC}(({BUILTIN_TAG}.VAR, {node.kid[1].py_code}))"
             )
 
-    def exit_node_edge_ref(self: "TranspilePass", node: AstNode) -> None:
-        """Convert node_edge_ref to python code.
+    # def exit_node_edge_ref(self: "TranspilePass", node: AstNode) -> None:
+    #     """Convert node_edge_ref to python code.
 
-        node_edge_ref -> edge_op_ref
-        node_edge_ref -> node_ref filter_ctx
-        """
-        if len(node.kid) == 1:
-            self.emit(node, node.kid[0].py_code)
-        else:
-            self.emit(
-                node,
-                f"{RT}.{APPLY_FILTER_CTX}(target={node.kid[0].py_code}, ctx={node.kid[1].py_code})",
-            )
+    #     node_edge_ref -> edge_op_ref
+    #     node_edge_ref -> node_ref filter_ctx
+    #     """
+    #     if len(node.kid) == 1:
+    #         self.emit(node, node.kid[0].py_code)
+    #     else:
+    #         self.emit(
+    #             node,
+    #             f"{RT}.{APPLY_FILTER_CTX}(target={node.kid[0].py_code}, ctx={node.kid[1].py_code})",
+    #         )
 
     def exit_spawn(self: "TranspilePass", node: AstNode) -> None:
         """Convert spawn to python code.
