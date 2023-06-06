@@ -153,10 +153,7 @@ metadata:
   namespace: $j{namespace}
 data:
   prod_up: |-
-    pip install kubernetes==21.7.0;
-    cd /;
-    jsserv wait_for_db && jsserv makemigrations base;
-    jsserv makemigrations jsx_oauth;
+    jsserv wait_for_db && jsserv makemigrations base && jsserv makemigrations jsx_oauth
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
 ---
@@ -179,10 +176,10 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: jaseci/jaseci:1.4.0.17
+          image: jaseci/jaseci:latest
           resources:
             requests:
-              memory: "2Gi"
+              memory: "350Mi"
           imagePullPolicy: IfNotPresent
           command: [bash, -c, "source script/prod_up"]
           ports:

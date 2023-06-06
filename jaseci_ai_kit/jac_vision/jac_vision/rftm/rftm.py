@@ -10,8 +10,12 @@ import os
 import requests
 from .model import RFTM, ToTensor
 
-RTFM_CLASSIFIER_WEIGHTS = "https://huggingface.co/spaces/jaseci/video-anomaly-detection/resolve/main/rftm_classifier.pth"
-RTFM_RESNET_101_WEIGHTS = "https://huggingface.co/spaces/jaseci/video-anomaly-detection/resolve/main/rftm_resnet101.pth"
+RTFM_CLASSIFIER_WEIGHTS = (
+    "https://huggingface.co/jaseci/rtfm/resolve/main/rtfm_classifier.pth"
+)
+RTFM_RESNET_101_WEIGHTS = (
+    "https://huggingface.co/jaseci/rtfm/resolve/main/rtfm_resnet101.pth"
+)
 
 
 @jaseci_action(act_group=["rftm"], allow_remote=True)
