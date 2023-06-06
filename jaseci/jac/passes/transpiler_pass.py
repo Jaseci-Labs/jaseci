@@ -241,20 +241,26 @@ class TranspilePass(Pass):
     def enter_ability(self: "TranspilePass", node: AstNode) -> None:
         """Convert ability to python code.
 
-        ability -> KW_ABILITY arch_ref NAME code_block
+        ability -> KW_ABILITY arch_ref DBL_COLON NAME func_decl code_block
+        ability -> KW_ABILITY arch_ref DBL_COLON NAME code_block
         """
         self.indent_level += 1
 
     def exit_ability(self: "TranspilePass", node: AstNode) -> None:
         """Convert ability to python code.
 
-        ability -> KW_ABILITY arch_ref NAME code_block
+        # OLD: ability -> KW_ABILITY arch_ref NAME code_block
+        ability -> KW_ABILITY arch_ref DBL_COLON NAME func_decl code_block
+        ability -> KW_ABILITY arch_ref DBL_COLON NAME code_block
         """
-        arch = node.kid[1].py_code
-        name = f"ability_{arch['typ']}_{arch['name']}_{node.kid[2].py_code}"
-        self.emit_ln(node, f"def {name}(here, visitor):", indent_delta=-1)
-        self.emit_ln(node, node.kid[3].py_code)
-        self.indent_level -= 1
+        for i in node.kid:
+            self.emit(node, i.py_code)
+        # arch = node.kid[1].py_code
+        # if len(node.kid) == 5:
+        #     name = f"ability_{arch['typ']}_{arch['name']}_{node.kid[3].py_code}"
+        #     self.emit_ln(node, f"def {name}(here, visitor):", indent_delta=-1)
+        #     self.emit_ln(node, node.kid[3].py_code)
+        # self.indent_level -= 1
 
     def exit_attr_block(self: "TranspilePass", node: AstNode) -> None:
         """Convert attr block to python code.
@@ -300,32 +306,20 @@ class TranspilePass(Pass):
     def exit_has_assign_clause(self: "TranspilePass", node: AstNode) -> None:
         """Convert has assign clause to python code.
 
+        #TODO: BROKEN
         has_assign_clause -> has_assign_clause COMMA has_assign
         has_assign_clause -> has_assign
         """
-        if len(node.kid) == 1:
-            self.emit(node, node.kid[0].py_code)
-        else:
-            self.emit(node, node.kid[0].py_code)
-            self.emit(node, node.kid[2].py_code)
+        for i in node.kid:
+            self.emit(node, i.py_code)
 
-    def exit_has_assign(self: "TranspilePass", node: AstNode) -> None:
-        """Convert has assign to python code.
+    def exit_param_var(self: "TranspilePass", node: AstNode) -> None:
+        """Convert function declaration to python code.
 
-        has_assign -> NAME type_spec EQ expression
-        has_assign -> NAME type_spec
-        has_assign -> has_tag NAME type_spec EQ expression
-        has_assign -> has_tag NAME type_spec
+        TODO: Broken
         """
-        has_tag = node.kid[0].name == "has_tag"
-        tags = node.kid[0].py_code if has_tag else ""
-        name = node.kid[1].py_code if has_tag else node.kid[0].py_code
-        typ = node.kid[2].py_code if has_tag else node.kid[1].py_code
-        value = node.kid[-1].py_code if node.kid[-1].name == "expression" else "None"
-        self.emit_ln(
-            node,
-            f"self.add_context(name={name}, value={value}, typ={typ}, tags=[{tags}])",
-        )
+        for i in node.kid:
+            self.emit(node, i.py_code)
 
     def exit_has_tag(self: "TranspilePass", node: AstNode) -> None:
         """Convert has tag to python code.
@@ -377,6 +371,11 @@ class TranspilePass(Pass):
         self.emit(node, node.kid[0].py_code)
 
     def exit_can_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert can stmt to python code."""
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_can_ds_ability(self: "TranspilePass", node: AstNode) -> None:
         """Convert can stmt to python code.
 
         can_stmt -> KW_CAN NAME event_clause SEMI
@@ -394,6 +393,39 @@ class TranspilePass(Pass):
             node,
             f"self.add_ability(func={name}, on_event={clause})",
         )
+
+    def exit_can_func_ability(self: "TranspilePass", node: AstNode) -> None:
+        """Convert can stmt to python code.
+
+        TODO: Broken
+        can_stmt -> KW_CAN NAME event_clause SEMI
+        can_stmt -> KW_CAN NAME event_clause code_block
+        can_stmt -> KW_CAN NAME SEMI
+        can_stmt -> KW_CAN NAME code_block
+        """
+        arch = self.cur_arch
+        name = f"ability_{arch['typ']}_{arch['name']}_{node.kid[1].py_code}"
+        if node.kid[-1] == "code_block":
+            self.emit_ln(node, f"def {name}(here, visitor):")
+            self.emit_ln(node, node.kid[-1].py_code, indent_delta=1)
+        clause = "None" if node.kid[2].name != "event_clause" else node.kid[2].py_code
+        self.emit_ln(
+            node,
+            f"self.add_ability(func={name}, on_event={clause})",
+        )
+
+    def exit_func_decl(self: "TranspilePass", node: AstNode) -> None:
+        """Convert function declaration to python code.
+
+        TODO: Broken
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_func_decl_param_list(self: "TranspilePass", node: AstNode) -> None:
+        """TODO: Broken."""
+        for i in node.kid:
+            self.emit(node, i.py_code)
 
     def exit_event_clause(self: "TranspilePass", node: AstNode) -> None:
         """Convert event clause to python code.
@@ -587,6 +619,13 @@ class TranspilePass(Pass):
         report_stmt -> KW_REPORT expression
         """
         self.emit_ln(node, f"visitor.report({node.kid[1].py_code})")
+
+    def exit_return_stmt(self: "TranspilePass", node: AstNode) -> None:
+        """Convert return stmt to python code.
+
+        return_stmt -> KW_RETURN expression
+        """
+        self.emit_ln(node, f"return {node.kid[1].py_code}")
 
     def exit_walker_stmt(self: "TranspilePass", node: AstNode) -> None:
         """Convert walker stmt to python code.

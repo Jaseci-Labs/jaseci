@@ -119,6 +119,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_EDGE NAME arch_decl_tail",
         "KW_OBJECT NAME arch_decl_tail",
         "KW_WALKER NAME arch_decl_tail",
+        "KW_ANCHOR KW_WALKER NAME arch_decl_tail",
     )
     def architype(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
@@ -148,8 +149,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Ability elements
     # ----------------
     @_(
-        "KW_ABILITY arch_ref NAME code_block",
-        "KW_ABILITY arch_ref NAME func_decl code_block",
+        "KW_ABILITY arch_ref DBL_COLON NAME code_block",
+        "KW_ABILITY arch_ref DBL_COLON NAME func_decl code_block",
     )
     def ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability rule."""
@@ -226,6 +227,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "builtin_type",
+        "NULL",
         "NAME",
         "TYP_LIST LSQUARE type_name RSQUARE",
         "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
@@ -288,7 +290,10 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Event clause rule."""
         return p
 
-    @_("LPAREN func_decl_param_list RPAREN type_spec")
+    @_(
+        "LPAREN RPAREN type_spec",
+        "LPAREN func_decl_param_list RPAREN type_spec",
+    )
     def func_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Func declaration parameter rule."""
         return p

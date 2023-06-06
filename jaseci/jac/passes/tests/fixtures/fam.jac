@@ -47,5 +47,11 @@ walker tourist {
     can do_something(app: int = Actvy, other: float = Actvy): Actvy {
         return app?.do_something(other);
     }
+
+    can outside_func(): None;
 }
 
+
+ability walker::tourist::outside_func {
+
+}
