@@ -257,7 +257,7 @@ class JsorcLoadTest:
                             for module in action_modules:
                                 package, module = module.split(".")
                                 self.unload_action(
-                                    module, mode="remote", retire_svc=True
+                                    module, mode="remote", retire_svc=False
                                 )
                         else:
                             for module in action_modules:
