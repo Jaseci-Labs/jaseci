@@ -41,6 +41,7 @@ walker tourist {
         b=:g:stuff:w:tourist;
         a = spawn :g:stuff:w:tourist;
         a = spawn (:g:stuff:w:tourist)::;
+        :g:stuff:w:tourist::;
         report here.activities;
     }
 
