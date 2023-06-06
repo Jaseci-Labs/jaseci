@@ -925,16 +925,54 @@ class TranspilePass(Pass):
                 self.emit(node, f".{A_CALL}({node.kid[1].py_code})")
 
     def exit_atomic_chain(self: "TranspilePass", node: AstNode) -> None:
+        """Convert atomic_chain to python code.
+
+        atomic_chain -> atomic_chain_unsafe
+        atomic_chain -> atomic_chain_safe  # TODO: implement
+        """
+        for i in node.kid:
+            self.emit(node, i.py_code)
+
+    def exit_atomic_chain_unsafe(self: "TranspilePass", node: AstNode) -> None:
         """Convert atom_trailer to python code.
 
         atomic_chain -> atom PIPE_FWD spawn_ctx
         atomic_chain -> atom PIPE_FWD filter_ctx
         atomic_chain -> atom PIPE_FWD built_in
         atomic_chain -> atom call
-        atomic_chain -> atom NULL_OK index_slice  TODO: this is not implemented
-        atomic_chain -> atom NULL_OK DOT NAME  TODO: this is not implemented
         atomic_chain -> atom index_slice
         atomic_chain -> atom DOT NAME
+        """
+        if node.kid[1].name == "PIPE_FWD":
+            if node[2].name == "spawn_ctx":
+                self.emit(
+                    node,
+                    f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[0].py_code}, ctx={node.kid[2].py_code})",
+                )
+            elif node[2].name == "filter_ctx":
+                self.emit(
+                    node,
+                    f"{RT}.{APPLY_FILTER_CTX}(target={node.kid[0].py_code}, ctx={node.kid[2].py_code})",
+                )
+            else:
+                self.emit(
+                    node,
+                    f"{node.kid[2].py_code}({node.kid[0].py_code})",
+                )
+        else:
+            for i in node.kid:
+                self.emit(node, i.py_code)
+
+    def exit_atomic_chain_safe(self: "TranspilePass", node: AstNode) -> None:
+        """Convert atom_trailer to python code.
+
+        # TODO: implement
+        atomic_chain -> atom NULL_OK PIPE_FWD spawn_ctx
+        atomic_chain -> atom NULL_OK PIPE_FWD filter_ctx
+        atomic_chain -> atom NULL_OK PIPE_FWD built_in
+        atomic_chain -> atom NULL_OK call
+        atomic_chain -> atom NULL_OK index_slice
+        atomic_chain -> atom NULL_OK DOT NAME
         """
         if node.kid[1].name == "PIPE_FWD":
             if node[2].name == "spawn_ctx":

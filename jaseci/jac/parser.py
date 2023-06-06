@@ -652,16 +652,34 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "atomic_chain_safe",
+        "atomic_chain_unsafe",
+    )
+    def atomic_chain(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom trailer rule."""
+        return p
+
+    @_(
         "atom DOT NAME",
         "atom index_slice",
-        "atom NULL_OK DOT NAME",
-        "atom NULL_OK index_slice",
         "atom call",
         "atom PIPE_FWD built_in",  # casting and creating tuples and sets
         "atom PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
         "atom PIPE_FWD spawn_ctx",  # for rapid assignments to collections
     )
-    def atomic_chain(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def atomic_chain_unsafe(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom trailer rule."""
+        return p
+
+    @_(
+        "atom NULL_OK DOT NAME",
+        "atom NULL_OK index_slice",
+        "atom NULL_OK call",
+        "atom NULL_OK PIPE_FWD built_in",  # casting and creating tuples and sets
+        "atom NULL_OK PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
+        "atom NULL_OK PIPE_FWD spawn_ctx",  # for rapid assignments to collections
+    )
+    def atomic_chain_safe(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
         return p
 
