@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import TestCase
 from rest_framework.test import APIClient
-from django_celery_beat.models import PeriodicTask
+from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
 
 class TaskServiceTest(TestCaseHelper, TestCase):
@@ -43,6 +43,15 @@ class TaskServiceTest(TestCaseHelper, TestCase):
         payload = {"op": "sentinel_active_global"}
         self.admin_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        # Simulate celery.backend_cleanup
+        PeriodicTask.objects.create(
+            name="celery.backend_cleanup",
+            task="celery.backend_cleanup",
+            crontab=CrontabSchedule.objects.get_or_create(
+                minute="0", hour="4", day_of_week="*"
+            )[0],
         )
 
     @skip_without_redis
@@ -80,6 +89,27 @@ class TaskServiceTest(TestCaseHelper, TestCase):
 
         self.assertTrue(task_result["success"])
         self.assertEqual([True], task_result["report"])
+
+        res = self.admin_client.post(
+            reverse(f'jac_api:{"get_scheduled_queues"}'),
+            {},
+            format="json",
+        ).data
+
+        self.assertEqual(
+            res,
+            [
+                {
+                    "id": 2,
+                    "name": "scheduled_walker",
+                    "schedule": {
+                        "type": "interval",
+                        "conf": {"every": 1, "period": "minutes"},
+                    },
+                    "kwargs": {"wlk": "scheduled_walker", "mst": self.admin_master.jid},
+                }
+            ],
+        )
 
         res = self.admin_client.post(
             reverse(f'jac_api:{"delete_scheduled_queue"}'),
