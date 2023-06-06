@@ -147,7 +147,10 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # Ability elements
     # ----------------
-    @_("KW_ABILITY arch_ref NAME code_block")
+    @_(
+        "KW_ABILITY arch_ref NAME code_block",
+        "KW_ABILITY arch_ref NAME func_decl code_block",
+    )
     def ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
@@ -189,21 +192,21 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "has_assign",
-        "has_assign_clause COMMA has_assign",
+        "param_var",
+        "has_assign_clause COMMA param_var",
+        "has_tag param_var",
+        "has_assign_clause COMMA has_tag param_var",
     )
     def has_assign_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has assign list rule."""
         return p
 
     @_(
-        "has_tag NAME type_spec",
-        "has_tag NAME type_spec EQ expression",
         "NAME type_spec",
         "NAME type_spec EQ expression",
     )
-    def has_assign(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Has assign rule."""
+    def param_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Parameter variable rule rule."""
         return p
 
     @_(
@@ -250,12 +253,28 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Can statements
     # --------------
     @_(
+        "can_ds_ability",
+        "can_func_ability",
+    )
+    def can_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Can statement rule."""
+        return p
+
+    @_(
         "KW_CAN NAME code_block",
         "KW_CAN NAME SEMI",
         "KW_CAN NAME event_clause code_block",
         "KW_CAN NAME event_clause SEMI",
     )
-    def can_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def can_ds_ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Can statement rule."""
+        return p
+
+    @_(
+        "KW_CAN NAME func_decl code_block",
+        "KW_CAN NAME func_decl SEMI",
+    )
+    def can_func_ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
 
@@ -267,6 +286,19 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def event_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Event clause rule."""
+        return p
+
+    @_("LPAREN func_decl_param_list RPAREN type_spec")
+    def func_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Func declaration parameter rule."""
+        return p
+
+    @_(
+        "param_var",
+        "func_decl_param_list COMMA param_var",
+    )
+    def func_decl_param_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Func declaration parameters list rule."""
         return p
 
     @_(
@@ -306,6 +338,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "ctrl_stmt SEMI",
         "delete_stmt SEMI",
         "report_stmt SEMI",
+        "return_stmt SEMI",
         "walker_stmt",
     )
     def statement(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -387,6 +420,13 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_REPORT expression",
     )
     def report_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Report statement rule."""
+        return p
+
+    @_(
+        "KW_RETURN expression",
+    )
+    def return_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Report statement rule."""
         return p
 

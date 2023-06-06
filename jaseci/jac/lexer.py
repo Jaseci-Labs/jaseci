@@ -76,6 +76,7 @@ class JacLexer(Lexer):
         "KW_YIELD",
         "KW_SKIP",
         "KW_REPORT",
+        "KW_RETURN",
         "KW_DELETE",
         "KW_TRY",
         "KW_REF",
@@ -192,6 +193,7 @@ class JacLexer(Lexer):
     NAME["yield"] = "KW_YIELD"
     NAME["skip"] = "KW_SKIP"
     NAME["report"] = "KW_REPORT"
+    NAME["return"] = "KW_RETURN"
     NAME["del"] = "KW_DELETE"
     NAME["try"] = "KW_TRY"
     NAME["in"] = "KW_IN"

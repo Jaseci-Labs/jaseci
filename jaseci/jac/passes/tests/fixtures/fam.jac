@@ -41,11 +41,11 @@ walker tourist {
         report here.activities;
     }
 
-    // can do_something(app=Actvy) {
-    //     app.do_something();
-    // }
-    // can do_something(app=Actvy, other=Actvy): Actvy {
-    //     return app?.do_something(other);
-    // }
+    can do_something(app: int =Actvy): Actvy {
+        app.do_something();
+    }
+    can do_something(app: int = Actvy, other: float = Actvy): Actvy {
+        return app?.do_something(other);
+    }
 }
 
