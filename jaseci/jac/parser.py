@@ -586,9 +586,10 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "atom",
-        "atom POW factor",
+        "atom POW power",
         "ref",
         "deref",
+        "spawn",
     )
     def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Power rule."""
@@ -604,6 +605,31 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Dereference rule."""
         return p
 
+    # Spawn rules
+    # -----------
+    @_(
+        # "KW_SPAWN node_spawn",
+        # "SPAWN_OP walker_ref",
+        # "SPAWN_OP object_ref",
+        "SPAWN_OP atom COLON atom connect_op node_ref",
+    )
+    def spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Spawn rule."""
+        return p
+
+    # @_(
+    #     "node_ref",
+    #     "spawn_edge node_ref",
+    # )
+    # def node_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Node spawn rule."""
+    #     return p
+
+    # @_("logical connect_op")
+    # def spawn_edge(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    #     """Spawn edge rule."""
+    #     return p
+
     # Atom rules
     # --------------------
     @_(
@@ -612,7 +638,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LPAREN expression RPAREN",
         "global_ref",
         "atomic_chain",
-        "spawn",
+        "arch_ref",
         "KW_HERE",
         "KW_VISITOR",
     )
@@ -710,7 +736,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom PIPE_FWD built_in",  # casting and creating tuples and sets
         "atom PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
         "atom PIPE_FWD spawn_ctx",  # for rapid assignments to collections
-        "atom arch_ref",  # for refs to :g:var:w:wtype calls
+        "atom arch_ref",
     )
     def atomic_chain_unsafe(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
@@ -771,48 +797,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Global reference rule."""
         return p
 
-    # Spawn rules
-    # -----------
-    @_(
-        "KW_SPAWN spawn_arch",
-        "SPAWN_OP spawn_arch",
-    )
-    def spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn rule."""
-        return p
-
-    @_(
-        "node_spawn",  # captures edge and node spawns
-        "walker_spawn",
-        "object_spawn",
-    )
-    def spawn_arch(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn object rule."""
-        return p
-
-    @_(
-        "node_ref",
-        "spawn_edge node_ref",
-    )
-    def node_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Node spawn rule."""
-        return p
-
-    @_("logical connect_op")
-    def spawn_edge(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn edge rule."""
-        return p
-
-    @_("walker_ref")
-    def walker_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Walker spawn rule."""
-        return p
-
-    @_("object_ref")
-    def object_spawn(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Type spawn rule."""
-        return p
-
     # Built-in function rules
     # -----------------------
     @_(
@@ -852,26 +836,17 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Architype reference rule."""
         return p
 
-    @_(
-        "KW_NODE DBL_COLON NAME",
-        "NODE_OP NAME",
-    )
+    @_("NODE_OP NAME")
     def node_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Node reference rule."""
         return p
 
-    @_(
-        "KW_WALKER DBL_COLON NAME",
-        "WALKER_OP NAME",
-    )
+    @_("WALKER_OP NAME")
     def walker_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Walker reference rule."""
         return p
 
-    @_(
-        "KW_OBJECT DBL_COLON NAME",
-        "OBJECT_OP NAME",
-    )
+    @_("OBJECT_OP NAME")
     def object_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Type reference rule."""
         return p

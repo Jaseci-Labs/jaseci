@@ -1111,15 +1111,15 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_spawn_arch(self: "TranspilePass", node: AstNode) -> None:
-        """Convert spawn_arch to python code.
+    # def exit_spawn_arch(self: "TranspilePass", node: AstNode) -> None:
+    #     """Convert spawn_arch to python code.
 
-        spawn_arch -> object_spawn
-        spawn_arch -> walker_spawn
-        spawn_arch -> node_spawn
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
+    #     spawn_arch -> object_spawn
+    #     spawn_arch -> walker_spawn
+    #     spawn_arch -> node_spawn
+    #     """
+    #     for i in node.kid:
+    #         self.emit(node, i.py_code)
 
     def exit_node_spawn(self: "TranspilePass", node: AstNode) -> None:
         """Convert node_spawn to python code.
@@ -1148,19 +1148,19 @@ class TranspilePass(Pass):
             f"{RT}.{CREATE_EDGE}({node.kid[0].py_code}, typ={node.kid[1].py_code})",
         )
 
-    def exit_walker_spawn(self: "TranspilePass", node: AstNode) -> None:
-        """Convert walker_spawn to python code.
+    # def exit_walker_spawn(self: "TranspilePass", node: AstNode) -> None:
+    #     """Convert walker_spawn to python code.
 
-        walker_spawn -> walker_ref
-        """
-        self.emit(node, f"{RT}.{CREATE_WALKER}({node.kid[0].py_code})")
+    #     walker_spawn -> walker_ref
+    #     """
+    #     self.emit(node, f"{RT}.{CREATE_WALKER}({node.kid[0].py_code})")
 
-    def exit_object_spawn(self: "TranspilePass", node: AstNode) -> None:
-        """Convert object_spawn to python code.
+    # def exit_object_spawn(self: "TranspilePass", node: AstNode) -> None:
+    #     """Convert object_spawn to python code.
 
-        object_spawn -> object_ref
-        """
-        self.emit(node, f"{RT}.{CREATE_OBJECT}({node.kid[0].py_code})")
+    #     object_spawn -> object_ref
+    #     """
+    #     self.emit(node, f"{RT}.{CREATE_OBJECT}({node.kid[0].py_code})")
 
     def exit_built_in(self: "TranspilePass", node: AstNode) -> None:
         """Convert built_in to python code.
