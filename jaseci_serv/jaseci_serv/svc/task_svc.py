@@ -22,6 +22,7 @@ class TaskService(Ts):
             "name": name,
             "task": self.get_task_name(queue_type),
             "kwargs": dumps(body),
+            "one_off": schedule.get("one_off", False),
         }
 
         if schedule.get("type") == "interval":
