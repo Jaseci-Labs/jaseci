@@ -15,7 +15,7 @@ class JacParseErrorMixIn:
     def error(self: "JacParseErrorMixIn", p: YaccProduction) -> None:
         """Improved error handling for Jac Parser."""
         self.had_error = True
-        error = f'Jac Parse Error on line {p.lineno}, incorrect usage of "{p.value}"\n'
+        error = f'Jac Parse Error on line {p.lineno}, incorrect usage of "{p.value}" ({p.type})\n'
         sys.stderr.write(error)
         if not p:
             sys.stderr.write("Escaping at end of File!")

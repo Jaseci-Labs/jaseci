@@ -853,22 +853,34 @@ class JacParser(JacParseErrorMixIn, Parser):
         "node_ref",
         "walker_ref",
         "object_ref",
+        "global_ref node_ref",
+        "global_ref walker_ref",
+        "global_ref object_ref",
     )
     def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
         return p
 
-    @_("KW_NODE DBL_COLON NAME")
+    @_(
+        "KW_NODE DBL_COLON NAME",
+        "NODE_OP NAME",
+    )
     def node_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Node reference rule."""
         return p
 
-    @_("KW_WALKER DBL_COLON NAME")
+    @_(
+        "KW_WALKER DBL_COLON NAME",
+        "WALKER_OP NAME",
+    )
     def walker_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Walker reference rule."""
         return p
 
-    @_("KW_OBJECT DBL_COLON NAME")
+    @_(
+        "KW_OBJECT DBL_COLON NAME",
+        "OBJECT_OP NAME",
+    )
     def object_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Type reference rule."""
         return p

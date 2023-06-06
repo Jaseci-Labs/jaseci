@@ -121,6 +121,9 @@ class JacLexer(Lexer):
         "CARROW_R_p1",
         "CARROW_R_p2",
         "GLOBAL_OP",
+        "WALKER_OP",
+        "NODE_OP",
+        "OBJECT_OP",
         "SPAWN_OP",
         "NULL_OK",
     }
@@ -221,7 +224,10 @@ class JacLexer(Lexer):
     CARROW_R_p2 = r"]\+>"
 
     # Just special
-    GLOBAL_OP = r"g::"
+    GLOBAL_OP = r":g:"
+    WALKER_OP = r":w:"
+    NODE_OP = r":n:"
+    OBJECT_OP = r":o:"
     SPAWN_OP = r"::>"
     NULL_OK = r"\?"
 

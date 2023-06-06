@@ -38,6 +38,7 @@ walker tourist {
     has passport: list[str];
 
     can make_visit with location, other exit {
+        a =  spawn :g:stuff :w:tourist;
         report here.activities;
     }
 

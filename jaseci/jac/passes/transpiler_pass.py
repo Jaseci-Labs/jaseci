@@ -51,7 +51,7 @@ class TranspilePass(Pass):
 
     def emit(self: "TranspilePass", node: AstNode, s: str) -> None:
         """Emit code to node."""
-        node.py_code += s
+        # node.py_code += s
 
     def exit_start(self: "TranspilePass", node: AstNode) -> None:
         """Convert start to python code.
@@ -1211,10 +1211,10 @@ class TranspilePass(Pass):
 
         walker_ref -> KW_WALKER DBL_COLON NAME
         """
-        self.emit(
-            node,
-            f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
-        )
+        # self.emit(
+        #     node,
+        #     f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
+        # )
 
     def exit_object_ref(self: "TranspilePass", node: AstNode) -> None:
         """Convert object_ref to python code.
