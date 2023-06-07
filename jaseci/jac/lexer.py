@@ -222,9 +222,9 @@ class JacLexer(Lexer):
     CARROW_R = r"\+\+>"
     CARROW_BI = r"<\+\+>"
     CARROW_L_p1 = r"<\+\["
+    CARROW_R_p2 = r"]\+>"
     CARROW_L_p2 = r"]\+"
     CARROW_R_p1 = r"\+\["
-    CARROW_R_p2 = r"]\+>"
 
     # Just special
     GLOBAL_OP = r":g:|:global:"
