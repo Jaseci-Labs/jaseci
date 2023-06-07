@@ -249,7 +249,6 @@ class ActionManager:
         request = args[1]
         request_time = args[2]
         response = args[3]
-        logger.info(f"checking response obj {response}")
         if self.benchmark["jsorc"]["active"]:
             if isinstance(response, dict) and response.get("success", True):
                 self.add_to_benchmark(request_type, request, request_time)
