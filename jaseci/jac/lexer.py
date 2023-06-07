@@ -123,6 +123,7 @@ class JacLexer(Lexer):
         "GLOBAL_OP",
         "WALKER_OP",
         "NODE_OP",
+        "EDGE_OP",
         "OBJECT_OP",
         "SPAWN_OP",
         "NULL_OK",
@@ -227,6 +228,7 @@ class JacLexer(Lexer):
     GLOBAL_OP = r":g:|:global:"
     WALKER_OP = r":w:|:walker:"
     NODE_OP = r":n:|:node:"
+    EDGE_OP = r":e:|:edge:"
     OBJECT_OP = r":o:|:object:"
     SPAWN_OP = r"::>"
     NULL_OK = r"\?"

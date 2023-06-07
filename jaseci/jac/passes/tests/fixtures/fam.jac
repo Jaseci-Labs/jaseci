@@ -56,6 +56,6 @@ walker tourist {
 }
 
 
-ability :walker:tourist::outside_func {
+ability :w:tourist::outside_func {
 
 }

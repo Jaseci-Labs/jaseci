@@ -596,10 +596,9 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "atom",
         "atom NOT edge_op_ref connect",
         "atom connect_op connect",
-        "spawn_edge_node_chain",
+        "spawn_edge_node",
     )
     def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect rule."""
@@ -612,8 +611,9 @@ class JacParser(JacParseErrorMixIn, Parser):
         "SPAWN_OP atom connect_op connect",
         "KW_SPAWN atom",
         "SPAWN_OP atom",
+        "atom",
     )
-    def spawn_edge_node_chain(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def spawn_edge_node(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Spawn rule."""
         return p
 
@@ -831,7 +831,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     # -------------------------
     @_(
         "node_ref",
-        "edge_op_ref",
+        "edge_ref",
         "walker_ref",
         "object_ref",
     )
@@ -844,6 +844,11 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Node reference rule."""
         return p
 
+    @_("EDGE_OP NAME")
+    def edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Edge reference rule."""
+        return p
+
     @_("WALKER_OP NAME")
     def walker_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Walker reference rule."""
@@ -851,7 +856,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_("OBJECT_OP NAME")
     def object_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Type reference rule."""
+        """Object type reference rule."""
         return p
 
     # Node / Edge reference and connection rules
@@ -867,8 +872,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ARROW_R",
-        "ARROW_R_p1 NAME ARROW_R_p2",
-        "ARROW_R_p1 NAME PIPE_FWD filter_ctx ARROW_R_p2",
+        "ARROW_R_p1 atom ARROW_R_p2",
     )
     def edge_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge to rule."""
@@ -876,8 +880,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ARROW_L",
-        "ARROW_L_p1 NAME ARROW_L_p2",
-        "ARROW_L_p1 NAME PIPE_FWD filter_ctx ARROW_L_p2",
+        "ARROW_L_p1 atom ARROW_L_p2",
     )
     def edge_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge from rule."""
@@ -885,8 +888,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ARROW_BI",
-        "ARROW_L_p1 NAME ARROW_R_p2",
-        "ARROW_L_p1 NAME PIPE_FWD filter_ctx ARROW_R_p2",
+        "ARROW_L_p1 atom ARROW_R_p2",
     )
     def edge_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge any rule."""
@@ -903,7 +905,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "CARROW_R",
-        "CARROW_R_p1 NAME spawn_ctx CARROW_R_p2",
+        "CARROW_R_p1 atom CARROW_R_p2",
     )
     def connect_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect to rule."""
@@ -911,7 +913,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "CARROW_L",
-        "CARROW_L_p1 NAME spawn_ctx CARROW_L_p2",
+        "CARROW_L_p1 atom CARROW_L_p2",
     )
     def connect_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect from rule."""
@@ -919,7 +921,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "CARROW_BI",
-        "CARROW_L_p1 NAME spawn_ctx CARROW_R_p2",
+        "CARROW_L_p1 atom CARROW_R_p2",
     )
     def connect_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect any rule."""
