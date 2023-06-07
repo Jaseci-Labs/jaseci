@@ -1,6 +1,6 @@
 const { Prism } = require("prism-react-renderer")
 
-Prism.languages.python = {
+Prism.languages.jac = {
     'comment': {
         pattern: /(^|[^\\])#.*|(^|[^\\])\/\/.*/,
         lookbehind: true,
@@ -43,18 +43,18 @@ Prism.languages.python = {
         lookbehind: true
     },
     'class-name': {
-        pattern: /(\b(object|node|edge|walker|global|with)\s+)(\w+(?:(:\s*|,\s*)\w+)*)/i,
+        pattern: /(\b(object|node|edge|walker|global|test|with)\s+)(\w+(?:(:\s*|,\s*)\w+)*)/i,
         lookbehind: true
     },
-    'keyword': /\b(?:object|node|edge|walker|global|ignore|visit|revisit|with|entry|exit|import|from|as|async|sync|assert|and|or|if|elif|else|for|to|by|while|continue|break|disengage|yield|skip|report|del|try|in|not|anchor|has|hidden|can)\b/,
+    'keyword': /\b(?:object|node|edge|walker|global|test|ignore|visit|revisit|with|entry|exit|import|from|as|async|sync|assert|and|or|if|elif|else|for|to|by|while|continue|break|disengage|yield|skip|report|del|try|in|not|anchor|has|hidden|can)\b/,
     'builtin': /\b(?:here|visitor|str|int|float|list|tuple|set|dict|bool|bytes|type|context|info|details)\b/,
     'boolean': /\b(?:False|None|True)\b/,
     'number': /\b0(?:b(?:_?[01])+|o(?:_?[0-7])+|x(?:_?[a-f0-9])+)\b|(?:\b\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\B\.\d+(?:_\d+)*)(?:e[+-]?\d+(?:_\d+)*)?j?(?!\w)/i,
-    'operator': /spawn|::>|<--|-->|<-->|<-\[|\]-|-\[|]->|<\+\+|\+\+>|<\+\+\>|<\+\[|\]\+|\+\[|\]\+>|&&|\|\||!|\|>|==|=|\+=|-=|\*=|\/=|:=|&|<|>|<=|>=|!=|,|\+|-|\*|\/|%|\^/,
+    'operator': /\|>|\?:|\?|::>|:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:|spawn|::>|<--|-->|<-->|<-\[|\]-|-\[|]->|<\+\+|\+\+>|<\+\+\>|<\+\[|\]\+|\+\[|\]\+>|&&|\|\||!|==|=|\+=|-=|\*=|\/=|:=|&|<|>|<=|>=|!=|,|\+|-|\*|\/|%|\^/,
     'punctuation': /\(|\)|\[|\]|\{|\}|;|\.:|::|:/
 };
 
-Prism.languages.python['string-interpolation'].inside['interpolation'].inside.rest = Prism.languages.python;
+Prism.languages.jac['string-interpolation'].inside['interpolation'].inside.rest = Prism.languages.jac;
 
-Prism.languages.python = Prism.languages.python;
+Prism.languages.jac = Prism.languages.jac;
 

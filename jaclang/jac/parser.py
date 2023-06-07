@@ -56,7 +56,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Global variable tail rule."""
         return p
 
-    @_("KW_TEST NAME multistring KW_WITH code_block")
+    @_("KW_TEST NAME multistring code_block")
     def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Test rule."""
         return p
