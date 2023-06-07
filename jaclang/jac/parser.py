@@ -481,8 +481,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Sync statement rule."""
         return p
 
-    # Expression rules
-    # ----------------
+    # Expression rules (precedence built into grammar)
+    # ------------------------------------------------
     @_(
         "atom EQ expression",
     )
@@ -491,10 +491,20 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "elvis_check",
-        "elvis_check walrus_op expression",
+        "pipe",
+        "pipe walrus_op expression",
     )
     def expression(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Expression rule."""
+        return p
+
+    @_(
+        "elvis_check",
+        "elvis_check PIPE_FWD pipe",  # casting achieved here
+        # "elvis_check PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
+        "elvis_check PIPE_FWD spawn_ctx",  # for rapid assignments to collections
+    )
+    def pipe(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Expression rule."""
         return p
 
@@ -741,9 +751,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom DOT NAME",
         "atom index_slice",
         "atom call",
-        "atom PIPE_FWD built_in",  # casting and creating tuples and sets
-        "atom PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
-        "atom PIPE_FWD spawn_ctx",  # for rapid assignments to collections
+
         "atom arch_ref",
     )
     def atomic_chain_unsafe(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -754,9 +762,9 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom NULL_OK DOT NAME",
         "atom NULL_OK index_slice",
         "atom NULL_OK call",
-        "atom NULL_OK PIPE_FWD built_in",  # casting and creating tuples and sets
-        "atom NULL_OK PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
-        "atom NULL_OK PIPE_FWD spawn_ctx",  # for rapid assignments to collections
+        # "atom NULL_OK PIPE_FWD built_in",  # casting and creating tuples and sets
+        # "atom NULL_OK PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
+        # "atom NULL_OK PIPE_FWD spawn_ctx",  # for rapid assignments to collections
         "atom NULL_OK arch_ref",
     )
     def atomic_chain_safe(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -882,7 +890,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ARROW_R",
-        "ARROW_R_p1 atom ARROW_R_p2",
+        "ARROW_R_p1 expression ARROW_R_p2",
     )
     def edge_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge to rule."""
@@ -890,7 +898,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ARROW_L",
-        "ARROW_L_p1 atom ARROW_L_p2",
+        "ARROW_L_p1 expression ARROW_L_p2",
     )
     def edge_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge from rule."""
@@ -898,7 +906,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "ARROW_BI",
-        "ARROW_L_p1 atom ARROW_R_p2",
+        "ARROW_L_p1 expression ARROW_R_p2",
     )
     def edge_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Edge any rule."""
@@ -915,7 +923,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "CARROW_R",
-        "CARROW_R_p1 atom CARROW_R_p2",
+        "CARROW_R_p1 expression CARROW_R_p2",
     )
     def connect_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect to rule."""
@@ -923,7 +931,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "CARROW_L",
-        "CARROW_L_p1 atom CARROW_L_p2",
+        "CARROW_L_p1 expression CARROW_L_p2",
     )
     def connect_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect from rule."""
@@ -931,7 +939,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "CARROW_BI",
-        "CARROW_L_p1 atom CARROW_R_p2",
+        "CARROW_L_p1 expression CARROW_R_p2",
     )
     def connect_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect any rule."""
