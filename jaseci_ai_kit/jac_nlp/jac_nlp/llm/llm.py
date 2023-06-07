@@ -61,7 +61,7 @@ def train(
     resume_from_checkpoint=False,
     **kwargs,
 ):
-
+    global model, tokenizer
     os.makedirs(
         output_dir, exist_ok=True
     )  # create output directory if it doesn't exist
@@ -95,9 +95,11 @@ def train(
         lora_alpha=LORA_ALPHA,
         lora_dropout=LORA_DROPOUT,
         bias="none",
-        task_type="CAUSAL_LM" ** kwargs.get("lora_config_kwargs", {}),
+        task_type="CAUSAL_LM",
+        **kwargs.get("lora_config_kwargs", {}),
     )
     model = get_peft_model(model, config)
+    tokenizer.pad_token_id = 0
 
     # Preparing the dataset
     data = load_dataset("json", data_files=data_file)
@@ -123,6 +125,7 @@ def train(
             logging_steps=1,
             output_dir=output_dir,
             save_total_limit=3,
+            **kwargs.get("training_args_kwargs", {}),
         ),
         data_collator=transformers.DataCollatorForLanguageModeling(
             tokenizer, mlm=False
@@ -137,9 +140,10 @@ def train(
     model.save_pretrained(os.path.join(output_dir, "final"))
 
 
+@jaseci_action(act_group=["llm"], allow_remote=True)
 def generate_prompt(data_point):
     # taken from https://github.com/tloen/alpaca-lora
-    if data_point["instruction"]:
+    if data_point["input"]:
         return f"""Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
         ### Instruction:
