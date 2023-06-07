@@ -491,22 +491,19 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "logical",
-        "logical walrus_op expression",
+        "elvis_check",
+        "elvis_check walrus_op expression",
     )
     def expression(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Expression rule."""
         return p
 
     @_(
-        "WALRUS_EQ",
-        "ADD_EQ",
-        "SUB_EQ",
-        "MUL_EQ",
-        "DIV_EQ",
+        "logical",
+        "logical ELVIS_OP elvis_check",
     )
-    def walrus_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Production Assignment rule."""
+    def elvis_check(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Expression rule."""
         return p
 
     @_(
@@ -525,20 +522,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def compare(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Compare rule."""
-        return p
-
-    @_(
-        "EE",
-        "LT",
-        "GT",
-        "LTE",
-        "GTE",
-        "NE",
-        "KW_IN",
-        "KW_NIN",
-    )
-    def cmp_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Compare operator rule."""
         return p
 
     @_(
@@ -596,6 +579,31 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect rule."""
+        return p
+
+    @_(
+        "WALRUS_EQ",
+        "ADD_EQ",
+        "SUB_EQ",
+        "MUL_EQ",
+        "DIV_EQ",
+    )
+    def walrus_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Production Assignment rule."""
+        return p
+
+    @_(
+        "EE",
+        "LT",
+        "GT",
+        "LTE",
+        "GTE",
+        "NE",
+        "KW_IN",
+        "KW_NIN",
+    )
+    def cmp_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Compare operator rule."""
         return p
 
     # Spawn rules
