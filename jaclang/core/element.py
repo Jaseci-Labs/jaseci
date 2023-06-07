@@ -4,7 +4,7 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 
-from jaseci.core.memory import Memory
+from jaclang.core.memory import Memory
 
 
 class AccessMode(Enum):

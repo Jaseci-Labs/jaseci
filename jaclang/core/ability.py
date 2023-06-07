@@ -1,7 +1,7 @@
 """Jaseci Ability class definition."""
 from typing import TypeVar
 
-from jaseci.core.element import Element
+from jaclang.core.element import Element
 
 
 Node = TypeVar("Node")

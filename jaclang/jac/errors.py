@@ -1,7 +1,7 @@
 """Error handling for Jac."""
 import sys
 
-from jaseci.utils.sly.yacc import YaccProduction
+from jaclang.utils.sly.yacc import YaccProduction
 
 
 class JacParseErrorMixIn:

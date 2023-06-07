@@ -1,7 +1,7 @@
 """Tests for Jac lexer."""
 
-from jaseci.jac.lexer import JacFStringLexer, JacLexer
-from jaseci.utils.test import TestCase
+from jaclang.jac.lexer import JacFStringLexer, JacLexer
+from jaclang.utils.test import TestCase
 
 
 class TestLexer(TestCase):

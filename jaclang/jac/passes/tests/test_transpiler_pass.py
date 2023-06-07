@@ -1,11 +1,11 @@
 """Transpiler pass module."""
 # import inspect
 
-from jaseci.jac.lexer import JacLexer
-from jaseci.jac.parser import JacParser
-from jaseci.jac.passes.ir_pass import parse_tree_to_ast as ptoa
-from jaseci.jac.passes.transpiler_pass import TranspilePass
-from jaseci.utils.test import TestCase
+from jaclang.jac.lexer import JacLexer
+from jaclang.jac.parser import JacParser
+from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
+from jaclang.jac.passes.transpiler_pass import TranspilePass
+from jaclang.utils.test import TestCase
 
 
 class TranspilerPassTests(TestCase):
@@ -22,7 +22,7 @@ class TranspilerPassTests(TestCase):
 
     # def test_no_typo_in_pass(self: "TestCase") -> None:
     #     """Test for enter/exit name diffs with parser."""
-    #     from jaseci.jac.parser import JacParser
+    #     from jaclang.jac.parser import JacParser
 
     #     parser_func_names = []
     #     for name, value in inspect.getmembers(JacParser):
@@ -48,7 +48,7 @@ class TranspilerPassTests(TestCase):
 
     # def test_pass_grammar_complete(self: "TestCase") -> None:
     #     """Test for enter/exit name diffs with parser."""
-    #     from jaseci.jac.parser import JacParser
+    #     from jaclang.jac.parser import JacParser
 
     #     parser_func_names = []
     #     for name, value in inspect.getmembers(JacParser):

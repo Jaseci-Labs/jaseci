@@ -1,5 +1,5 @@
 """Node class for Jaseci."""
-from jaseci.core.object import object
+from jaclang.core.object import object
 
 
 class Node(object):

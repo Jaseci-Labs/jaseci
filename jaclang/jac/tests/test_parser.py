@@ -1,8 +1,8 @@
 """Tests for Jac parser."""
 
-from jaseci.jac.lexer import JacLexer
-from jaseci.jac.parser import JacParser
-from jaseci.utils.test import TestCase
+from jaclang.jac.lexer import JacLexer
+from jaclang.jac.parser import JacParser
+from jaclang.utils.test import TestCase
 
 
 class TestParser(TestCase):

@@ -1,6 +1,6 @@
 # flake8: noqa
 import pytest
-from jaseci.utils.sly import Lexer, Parser
+from jaclang.utils.sly import Lexer, Parser
 
 
 class CalcLexer(Lexer):
@@ -43,6 +43,12 @@ class CalcLexer(Lexer):
 class CalcParser(Parser):
     tokens = CalcLexer.tokens
 
+    precedence = (
+        ("left", PLUS, MINUS),
+        ("left", TIMES, DIVIDE),
+        ("right", UMINUS),
+    )
+
     def __init__(self):
         self.names = {}
         self.errors = []
@@ -63,44 +69,40 @@ class CalcParser(Parser):
     def statement(self, p):
         return p.expr
 
-    @_("term { PLUS|MINUS term }")
+    @_("expr PLUS expr")
     def expr(self, p):
-        lval = p.term0
-        for op, rval in p[1]:
-            if op == "+":
-                lval = lval + rval
-            elif op == "-":
-                lval = lval - rval
-        return lval
+        return p.expr0 + p.expr1
 
-    @_("factor { TIMES|DIVIDE factor }")
-    def term(self, p):
-        lval = p.factor0
-        for op, rval in p[1]:
-            if op == "*":
-                lval = lval * rval
-            elif op == "/":
-                lval = lval / rval
-        return lval
+    @_("expr MINUS expr")
+    def expr(self, p):
+        return p.expr0 - p.expr1
 
-    @_("MINUS factor")
-    def factor(self, p):
-        return -p.factor
+    @_("expr TIMES expr")
+    def expr(self, p):
+        return p.expr0 * p.expr1
 
-    @_("'(' expr ')'")
-    def factor(self, p):
+    @_("expr DIVIDE expr")
+    def expr(self, p):
+        return p.expr0 / p.expr1
+
+    @_("MINUS expr %prec UMINUS")
+    def expr(self, p):
+        return -p.expr
+
+    @_('"(" expr ")"')
+    def expr(self, p):
         return p.expr
 
     @_("NUMBER")
-    def factor(self, p):
-        return int(p.NUMBER)
+    def expr(self, p):
+        return p.NUMBER
 
     @_("ID")
-    def factor(self, p):
+    def expr(self, p):
         try:
             return self.names[p.ID]
         except LookupError:
-            print(f"Undefined name {p.ID!r}")
+            self.errors.append(("undefined", p.ID))
             return 0
 
     def error(self, tok):

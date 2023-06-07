@@ -1,7 +1,7 @@
 """Parser for Jac."""
-from jaseci.jac.errors import JacParseErrorMixIn
-from jaseci.jac.lexer import JacLexer
-from jaseci.utils.sly.yacc import Parser, YaccProduction
+from jaclang.jac.errors import JacParseErrorMixIn
+from jaclang.jac.lexer import JacLexer
+from jaclang.utils.sly.yacc import Parser, YaccProduction
 
 _ = None  # For flake8 linting
 

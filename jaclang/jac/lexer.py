@@ -1,6 +1,6 @@
 """Lexer for Jac language."""
 
-from jaseci.utils.sly.lex import Lexer, Token
+from jaclang.utils.sly.lex import Lexer, Token
 
 
 class JacLexer(Lexer):

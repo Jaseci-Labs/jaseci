@@ -1,5 +1,5 @@
 """Edge class for Jaseci."""
-from jaseci.core.object import Object
+from jaclang.core.object import Object
 
 
 class Edge(Object):

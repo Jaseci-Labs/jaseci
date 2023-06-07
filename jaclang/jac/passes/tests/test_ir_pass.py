@@ -1,8 +1,8 @@
 """Test pass module."""
-from jaseci.jac.lexer import JacLexer
-from jaseci.jac.parser import JacParser
-from jaseci.jac.passes.ir_pass import Pass, parse_tree_to_ast as ptoa
-from jaseci.utils.test import TestCase
+from jaclang.jac.lexer import JacLexer
+from jaclang.jac.parser import JacParser
+from jaclang.jac.passes.ir_pass import Pass, parse_tree_to_ast as ptoa
+from jaclang.utils.test import TestCase
 
 
 class TestPass(TestCase):

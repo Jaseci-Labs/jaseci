@@ -1,5 +1,5 @@
 """Object class for Jaseci."""
-from jaseci.core.element import Element
+from jaclang.core.element import Element
 
 
 class Object(Element):

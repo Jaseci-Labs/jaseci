@@ -1,5 +1,5 @@
 """Master class for Jaseci."""
-from jaseci.core.element import Element
+from jaclang.core.element import Element
 
 
 class Master(Element):

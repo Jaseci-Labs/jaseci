@@ -1,6 +1,6 @@
 """Utility functions and classes for Jac compilation toolchain."""
 
-from jaseci.jac.parser import JacLexer
+from jaclang.jac.parser import JacLexer
 
 
 def get_prism_highight_info() -> str:

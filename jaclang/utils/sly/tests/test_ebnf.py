@@ -1,6 +1,6 @@
 # flake8: noqa
 import pytest
-from jaseci.utils.sly import Lexer, Parser
+from jaclang.utils.sly import Lexer, Parser
 
 
 class CalcLexer(Lexer):
@@ -43,12 +43,6 @@ class CalcLexer(Lexer):
 class CalcParser(Parser):
     tokens = CalcLexer.tokens
 
-    precedence = (
-        ("left", PLUS, MINUS),
-        ("left", TIMES, DIVIDE),
-        ("right", UMINUS),
-    )
-
     def __init__(self):
         self.names = {}
         self.errors = []
@@ -69,40 +63,44 @@ class CalcParser(Parser):
     def statement(self, p):
         return p.expr
 
-    @_("expr PLUS expr")
+    @_("term { PLUS|MINUS term }")
     def expr(self, p):
-        return p.expr0 + p.expr1
+        lval = p.term0
+        for op, rval in p[1]:
+            if op == "+":
+                lval = lval + rval
+            elif op == "-":
+                lval = lval - rval
+        return lval
 
-    @_("expr MINUS expr")
-    def expr(self, p):
-        return p.expr0 - p.expr1
+    @_("factor { TIMES|DIVIDE factor }")
+    def term(self, p):
+        lval = p.factor0
+        for op, rval in p[1]:
+            if op == "*":
+                lval = lval * rval
+            elif op == "/":
+                lval = lval / rval
+        return lval
 
-    @_("expr TIMES expr")
-    def expr(self, p):
-        return p.expr0 * p.expr1
+    @_("MINUS factor")
+    def factor(self, p):
+        return -p.factor
 
-    @_("expr DIVIDE expr")
-    def expr(self, p):
-        return p.expr0 / p.expr1
-
-    @_("MINUS expr %prec UMINUS")
-    def expr(self, p):
-        return -p.expr
-
-    @_('"(" expr ")"')
-    def expr(self, p):
+    @_("'(' expr ')'")
+    def factor(self, p):
         return p.expr
 
     @_("NUMBER")
-    def expr(self, p):
-        return p.NUMBER
+    def factor(self, p):
+        return int(p.NUMBER)
 
     @_("ID")
-    def expr(self, p):
+    def factor(self, p):
         try:
             return self.names[p.ID]
         except LookupError:
-            self.errors.append(("undefined", p.ID))
+            print(f"Undefined name {p.ID!r}")
             return 0
 
     def error(self, tok):

@@ -1,6 +1,6 @@
 # flake8: noqa
 import pytest
-from jaseci.utils.sly import Lexer
+from jaclang.utils.sly import Lexer
 
 
 class CalcLexer(Lexer):

@@ -1,7 +1,7 @@
 """Abstract class for IR Passes for Jac."""
 from enum import Enum
 
-from jaseci.utils.sly.lex import Token
+from jaclang.utils.sly.lex import Token
 
 
 class AstNodeKind(Enum):
@@ -121,8 +121,8 @@ class FstringProcPass(Pass):
 
     def enter_fstring(self: "FstringProcPass", node: AstNode) -> None:
         """Run on entering node."""
-        # from jaseci.jac.lexer import JacFStringLexer
-        # from jaseci.jac.parser import JacParser
+        # from jaclang.jac.lexer import JacFStringLexer
+        # from jaclang.jac.parser import JacParser
 
         node.value = node.value.replace("{{", "{").replace("}}", "}")
 
