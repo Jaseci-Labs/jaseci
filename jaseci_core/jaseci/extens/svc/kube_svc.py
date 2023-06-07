@@ -361,12 +361,13 @@ class KubeService(JsOrc.CommonService):
                 for conf in confs.values():
                     metadata: dict = conf["metadata"]
                     namespace = metadata.get("namespace", "default")
-                    if manifest_type == ManifestType.DEDICATED:
-                        namespace = self.namespace
-                        metadata["namespace"] = namespace
-                    elif manifest_type == ManifestType.MANUAL:
-                        namespace = manual_namespace
-                        metadata["namespace"] = namespace
+                    if not namespace.startswith("jsorc-dedicated"):
+                        if manifest_type == ManifestType.DEDICATED:
+                            namespace = self.namespace
+                            metadata["namespace"] = namespace
+                        elif manifest_type == ManifestType.MANUAL:
+                            namespace = manual_namespace
+                            metadata["namespace"] = namespace
 
                     if namespace and namespace not in self._cached_namespace:
                         res = self.read("Namespace", namespace, None)

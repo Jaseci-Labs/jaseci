@@ -83,7 +83,22 @@ def get_value(source: dict, keys: list):
 
 
 def placeholder_resolver(manifest, data: dict or list):
-    for k, d in data.items() if isinstance(data, dict) else enumerate(data):
+    for k, d in list(data.items()) if isinstance(data, dict) else enumerate(data):
+        if isinstance(k, str):
+            pk = k
+            matcher = placeholder_full.search(k)
+            if matcher:
+                keys = get_splitter(matcher.group(1))
+                pk = get_value(manifest, keys)
+            else:
+                for matcher in placeholder_partial.findall(k):
+                    keys = get_splitter(matcher)
+                    pk = pk.replace("$j{" + matcher + "}", get_value(manifest, keys))
+            if pk != k:
+                d = data.pop(k)
+                k = pk
+                data[pk] = d
+
         if isinstance(d, (dict, list)):
             placeholder_resolver(manifest, d)
         elif isinstance(d, str):
