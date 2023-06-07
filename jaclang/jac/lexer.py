@@ -35,10 +35,7 @@ class JacLexer(Lexer):
         "KW_WITH",
         "KW_ENTRY",
         "KW_EXIT",
-        "KW_CONTEXT",
         "KW_HERE",
-        "KW_INFO",
-        "KW_DETAILS",
         "KW_IMPORT",
         "KW_FROM",
         "KW_AS",
@@ -169,10 +166,7 @@ class JacLexer(Lexer):
     NAME["with"] = "KW_WITH"
     NAME["entry"] = "KW_ENTRY"
     NAME["exit"] = "KW_EXIT"
-    NAME["context"] = "KW_CONTEXT"
     NAME["here"] = "KW_HERE"
-    NAME["info"] = "KW_INFO"
-    NAME["details"] = "KW_DETAILS"
     NAME["import"] = "KW_IMPORT"
     NAME["from"] = "KW_FROM"
     NAME["as"] = "KW_AS"

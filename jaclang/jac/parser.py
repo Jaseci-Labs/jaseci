@@ -805,39 +805,9 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Index/slice rule."""
         return p
 
-    @_(
-        "GLOBAL_OP obj_built_in",
-        "GLOBAL_OP NAME",
-    )
+    @_("GLOBAL_OP NAME")
     def global_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
-        return p
-
-    # Built-in function rules
-    # -----------------------
-    @_(
-        "obj_built_in",
-        "cast_built_in",
-    )
-    def built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Built-in rule."""
-        return p
-
-    @_(
-        "KW_CONTEXT",
-        "KW_INFO",
-        "KW_DETAILS",
-    )
-    def obj_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Object built-in rule."""
-        return p
-
-    @_(
-        "builtin_type",
-        "arch_ref",
-    )
-    def cast_built_in(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Cast built-in rule."""
         return p
 
     # Architype reference rules
