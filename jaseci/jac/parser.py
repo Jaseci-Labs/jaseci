@@ -37,7 +37,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "test",
         "import_stmt",
         "architype",
-        "ability",
+        "ability_spec",
     )
     def element(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Element rule."""
@@ -56,12 +56,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Global variable tail rule."""
         return p
 
-    @_(
-        "KW_TEST NAME multistring KW_WITH walker_ref code_block",
-        "KW_TEST NAME multistring KW_WITH walker_ref spawn_ctx code_block",
-        "KW_TEST NAME multistring KW_WITH attr_block code_block",
-        "KW_TEST NAME multistring KW_WITH attr_block spawn_ctx code_block",
-    )
+    @_("KW_TEST NAME multistring KW_WITH code_block")
     def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Test rule."""
         return p
@@ -69,9 +64,9 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Import Statements
     # -----------------
     @_(
-        "KW_IMPORT COLON NAME import_path SEMI",
-        "KW_IMPORT COLON NAME import_path KW_AS NAME SEMI",
-        "KW_IMPORT COLON NAME KW_FROM import_path COMMA name_as_list SEMI",
+        "KW_IMPORT sub_name import_path SEMI",
+        "KW_IMPORT sub_name import_path KW_AS NAME SEMI",
+        "KW_IMPORT sub_name KW_FROM import_path COMMA name_as_list SEMI",
     )
     def import_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Import rule."""
@@ -119,7 +114,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_EDGE NAME arch_decl_tail",
         "KW_OBJECT NAME arch_decl_tail",
         "KW_WALKER NAME arch_decl_tail",
-        "KW_ANCHOR KW_WALKER NAME arch_decl_tail",
     )
     def architype(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
@@ -149,10 +143,10 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Ability elements
     # ----------------
     @_(
-        "KW_ABILITY arch_ref DBL_COLON NAME code_block",
-        "KW_ABILITY arch_ref DBL_COLON NAME func_decl code_block",
+        "arch_ref ability_ref code_block",
+        "arch_ref ability_ref func_decl code_block",
     )
-    def ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
 
@@ -857,6 +851,11 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_("OBJECT_OP NAME")
     def object_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Object type reference rule."""
+        return p
+
+    @_("ABILITY_OP NAME")  # Not a arch, used for ability_spec
+    def ability_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability reference rule."""
         return p
 
     # Node / Edge reference and connection rules

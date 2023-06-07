@@ -40,7 +40,7 @@ walker tourist {
     can make_visit with location, other exit {
         b=:g:stuff:w:tourist;
         a = spawn :g:stuff:w:tourist;
-        a = spawn (:g:stuff:w:tourist)::;
+        a = spawn (:w:tourist)::;
         :g:stuff:w:tourist::;
         report here.activities;
     }
@@ -56,6 +56,6 @@ walker tourist {
 }
 
 
-ability :w:tourist::outside_func {
+:walker:tourist:ability:outside_func {
 
 }

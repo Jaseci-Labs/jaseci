@@ -13,6 +13,7 @@ class TestParser(TestCase):
         lexer = JacLexer()
         parser = JacParser()
         output = parser.parse(lexer.tokenize(self.load_fixture("fam.jac")))
+        self.assertFalse(parser.had_error)
         self.assertGreater(len(str(output)), 1000)
 
     def test_shift_reduce_conflict(self: "TestParser") -> None:

@@ -11,7 +11,7 @@ class TestLexer(TestCase):
         """Basic test for lexer."""
         lexer = JacLexer()
         tokens = []
-        for t in lexer.tokenize(self.load_fixture("fam.jac")):
+        for t in lexer.tokenize(self.load_fixture("lexer_fam.jac")):
             tokens.append(t)
         self.assertEqual(tokens[0].type, "DOC_STRING")
         self.assertEqual(
@@ -32,7 +32,7 @@ class TestLexer(TestCase):
                 tokens[-1].index,
                 tokens[-1].end,
             ],
-            ["RBRACE", "}", 37, 800, 801],
+            ["RBRACE", "}", 61, 1416, 1417],
         )
 
     def test_fstring_basic(self: "TestLexer") -> None:

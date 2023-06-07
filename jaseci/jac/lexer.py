@@ -125,6 +125,7 @@ class JacLexer(Lexer):
         "NODE_OP",
         "EDGE_OP",
         "OBJECT_OP",
+        "ABILITY_OP",
         "SPAWN_OP",
         "NULL_OK",
     }
@@ -230,6 +231,7 @@ class JacLexer(Lexer):
     NODE_OP = r":n:|:node:"
     EDGE_OP = r":e:|:edge:"
     OBJECT_OP = r":o:|:object:"
+    ABILITY_OP = r":a:|:ability:"
     SPAWN_OP = r"::>"
     NULL_OK = r"\?"
 

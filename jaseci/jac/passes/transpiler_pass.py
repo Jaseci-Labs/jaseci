@@ -117,14 +117,14 @@ class TranspilePass(Pass):
         import_stmt -> KW_IMPORT COLON NAME import_path KW_AS NAME SEMI
         import_stmt -> KW_IMPORT COLON NAME import_path SEMI
         """
-        if node.kid[3].name == "KW_FROM":
-            self.emit_ln(
-                node, f"from {node.kid[4].py_code} import {node.kid[6].py_code}"
-            )
-        elif node.kid[4].name == "KW_AS":
-            self.emit_ln(node, f"import {node.kid[3].py_code} as {node.kid[5].py_code}")
-        else:
-            self.emit_ln(node, f"import {node.kid[3].py_code}")
+        # if node.kid[3].name == "KW_FROM":
+        #     self.emit_ln(
+        #         node, f"from {node.kid[4].py_code} import {node.kid[6].py_code}"
+        #     )
+        # elif node.kid[4].name == "KW_AS":
+        #     self.emit_ln(node, f"import {node.kid[3].py_code} as {node.kid[5].py_code}")
+        # else:
+        #     self.emit_ln(node, f"import {node.kid[3].py_code}")
 
     def exit_import_path(self: "TranspilePass", node: AstNode) -> None:
         """Convert import path to python code.
