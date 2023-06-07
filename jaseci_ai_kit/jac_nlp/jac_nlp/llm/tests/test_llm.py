@@ -7,22 +7,16 @@ class LLMTests(CoreTest):
 
     @classmethod
     def setUpClass(cls):
-        pass
         super(LLMTests, cls).setUpClass()
-        # ret = load_module_actions("jac_nlp.dolly")
-        # assert ret == True
+        ret = load_module_actions("jac_nlp.llm", ctx={"model_name": "gpt2"})
+        assert ret == True
 
-    # @jac_testcase("dolly.jac", "test_generate_without_context")
-    # def test_generate_without_context(self, ret):
-    #     self.assertEqual(ret["success"], True)
-
-    # @jac_testcase("dolly.jac", "test_generate_with_context")
-    # def test_generate_with_context(self, ret):
-    #     self.assertEqual(ret["success"], True)
+    @jac_testcase("llm.jac", "test_generate")
+    def test_generate(self, ret):
+        self.assertEqual(ret["success"], True)
 
     @classmethod
     def tearDownClass(cls):
-        pass
         super(LLMTests, cls).tearDownClass()
-        # ret = unload_module("jac_nlp.dolly.dolly")
-        # assert ret == True
+        ret = unload_module("jac_nlp.llm.llm")
+        assert ret == True
