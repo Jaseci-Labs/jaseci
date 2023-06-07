@@ -3,6 +3,6 @@
 }
 
 # :w: and :a: are aliases for :walker: and :abilitiy:
-:w:travelor:a:say_whatever(msg: str) { 
+:w:travelor:a:say_whatever(msg: str): None {
     msg |> print;
 }

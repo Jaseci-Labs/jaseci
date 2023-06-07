@@ -1,24 +1,25 @@
-"""Tests for Jac self.p."""
+"""Tests for Jac self.prse."""
+import os
 
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.utils.test import TestCase
 
-import os
-
 
 class TestParser(TestCase):
-    """Test Jac self.p."""
+    """Test Jac self.prse."""
 
     def setUp(self: TestCase) -> None:
-        self.l = JacLexer()
-        self.p = JacParser()
+        """Set up test."""
+        self.lex = JacLexer()
+        self.prse = JacParser()
         return super().setUp()
-    
+
     def parse_micro(self: "TestParser", filename: str) -> None:
         """Parse micro jac file."""
-        self.p.parse(self.l.tokenize(self.load_fixture(f'micro/{filename}')))
-        self.assertFalse(self.p.had_error)
+        self.prse.cur_file = filename
+        self.prse.parse(self.lex.tokenize(self.load_fixture(f"micro/{filename}")))
+        self.assertFalse(self.prse.had_error)
 
     def test_shift_reduce_conflict(self: "TestParser") -> None:
         """Test for shift reduce conflict."""
@@ -30,9 +31,8 @@ class TestParser(TestCase):
 
     def test_basci_parsing(self: "TestParser") -> None:
         """Basic test for parsing."""
-
-        output = self.p.parse(self.l.tokenize(self.load_fixture("fam.jac")))
-        self.assertFalse(self.p.had_error)
+        output = self.prse.parse(self.lex.tokenize(self.load_fixture("fam.jac")))
+        self.assertFalse(self.prse.had_error)
         self.assertGreater(len(str(output)), 1000)
 
     def test_micro_decl_defs_imp(self: "TestParser") -> None:
@@ -47,12 +47,10 @@ class TestParser(TestCase):
         """Test for module structure."""
         self.parse_micro("module_structure.jac")
 
-
     def test_micro_jac_files_fully_tested(self: "TestParser") -> None:
         """Test that all micro jac files are fully tested."""
         self.directory = os.path.dirname(__file__) + "/fixtures/micro"
         for filename in os.listdir(self.directory):
-            print(filename)
             if os.path.isfile(os.path.join(self.directory, filename)):
                 method_name = f"test_micro_{filename.replace('.jac', '')}"
                 self.assertIn(method_name, dir(self))

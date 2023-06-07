@@ -7,15 +7,16 @@ from jaclang.utils.sly.yacc import YaccProduction
 class JacParseErrorMixIn:
     """Error handling for Jac Parse Errors."""
 
-    def __init__(self: "JacParseErrorMixIn") -> None:
+    def __init__(self: "JacParseErrorMixIn", cur_filename: str = "str_parse") -> None:
         """Initialize Jac Parse Error Mixin."""
         super().__init__()
+        self.cur_file = cur_filename
         self.had_error = False
 
     def error(self: "JacParseErrorMixIn", p: YaccProduction) -> None:
         """Improved error handling for Jac Parser."""
         self.had_error = True
-        error = f'Jac Parse Error on line {p.lineno}, incorrect usage of "{p.value}" ({p.type})\n'
+        error = f'{self.cur_file}: Jac Parse Error on line {p.lineno}, incorrect usage of "{p.value}" ({p.type})\n'
         sys.stderr.write(error)
         if not p:
             sys.stderr.write("Escaping at end of File!")

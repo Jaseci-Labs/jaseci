@@ -41,6 +41,7 @@ walker tourist {
         b=:g:stuff:w:tourist;
         a = spawn :g:stuff:w:tourist;
         a = spawn (:w:tourist)::;
+        a = <-[:g:edget:e:myedge |> =(a==1)]-;
         a = b +[:g:edget:e:myedge|>(a=1)]+> c;
         a = b <+[:g:edget:e:myedge|>(a=1)]+ c;
         a = spawn to here +[:g:edget:e:myedge|>(a=1)]+> :g:stuff:n:tourist;

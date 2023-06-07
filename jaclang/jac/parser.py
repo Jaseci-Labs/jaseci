@@ -501,7 +501,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "elvis_check",
         "elvis_check PIPE_FWD pipe",  # casting achieved here
-        # "elvis_check PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
+        "elvis_check PIPE_FWD EQ filter_ctx",  # for comprehension on list, dict, etc.
         "elvis_check PIPE_FWD spawn_ctx",  # for rapid assignments to collections
     )
     def pipe(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -657,6 +657,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "global_ref",
         "atomic_chain",
         "arch_ref",
+        "edge_op_ref",
         "KW_HERE",
         "KW_VISITOR",
     )
@@ -751,7 +752,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom DOT NAME",
         "atom index_slice",
         "atom call",
-
         "atom arch_ref",
     )
     def atomic_chain_unsafe(self: "JacParser", p: YaccProduction) -> YaccProduction:
