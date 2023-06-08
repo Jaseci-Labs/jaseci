@@ -117,14 +117,15 @@ class FstringProcPass(Pass):
 
     def __init__(self: "FstringProcPass", ir: AstNode = None) -> None:
         """Initialize pass."""
+        from jaclang.utils.fstring_parser import FStringLexer, FStringParser
+
+        self.lexer = FStringLexer()
+        self.parser = FStringParser()
         super().__init__(ir)
 
     def enter_fstring(self: "FstringProcPass", node: AstNode) -> None:
         """Run on entering node."""
-        # from jaclang.jac.lexer import JacFStringLexer
-        # from jaclang.jac.parser import JacParser
-
-        node.value = node.value.replace("{{", "{").replace("}}", "}")
+        node = parse_tree_to_ast(self.parser.parse(self.lexer.tokenize(node.value)))
 
 
 def parse_tree_to_ast(tree: tuple) -> AstNode:
@@ -140,17 +141,8 @@ def parse_tree_to_ast(tree: tuple) -> AstNode:
                 py_code="",
             )
         elif isinstance(tree, Token):
-            tree = (
+            if tree.type == "FSTRING":
                 AstNode(
-                    name=tree.type,
-                    kind=AstNodeKind.TOKEN,
-                    value=tree.value,
-                    kid=[],
-                    line=tree.lineno,
-                    py_code="",
-                )
-                if not tree.type == "FSTRING"
-                else AstNode(
                     name=tree.type.lower(),
                     kind=AstNodeKind.PARSE_RULE,
                     value=tree.value,
@@ -158,7 +150,15 @@ def parse_tree_to_ast(tree: tuple) -> AstNode:
                     line=tree.lineno,
                     py_code="",
                 )
-            )
+            else:
+                tree = AstNode(
+                    name=tree.type,
+                    kind=AstNodeKind.TOKEN,
+                    value=tree.value,
+                    kid=[],
+                    line=tree.lineno,
+                    py_code="",
+                )
         else:
             raise ValueError(f"node must be AstNode or parser output tuple: {tree}")
-    return tree
+    return FstringProcPass(tree).ir

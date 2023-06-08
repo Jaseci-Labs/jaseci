@@ -18,11 +18,12 @@ class FStringLexer(Lexer):
     ignore = " \t"
 
     # Tokens
+
     STRING_START = r"f\""
     STRING_END = r"\""
-    EXPR_START = r"\{"
-    EXPR_END = r"\}"
-    PIECE = r"[^\{\}\"]+"
+    EXPR_START = r"(?<!\{)\{(?!\{)"
+    EXPR_END = r"(?<!\})\}(?!\})"
+    PIECE = r"[^\{\}\"']+|\{\{|\}\}"
 
 
 class FStringParser(Parser):
