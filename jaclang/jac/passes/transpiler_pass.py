@@ -199,8 +199,8 @@ class TranspilePass(Pass):
         """
         class_type = node.kid[0].py_code.capitalize()
         class_name = node.kid[1].py_code.capitalize() + "_" + class_type
-        if "inherits" in node.kid[2].misc.keys():
-            class_type = node.kid[2].misc["inherits"]
+        if "inherits" in node.kid[2].meta.keys():
+            class_type = node.kid[2].meta["inherits"]
         self.emit_ln(node, f"class {class_name}({class_type}):", indent_delta=-1)
         self.emit_ln(node, "def __init__(self):")
         self.emit_ln(node, node.kid[2].py_code)
@@ -216,7 +216,7 @@ class TranspilePass(Pass):
         if len(node.kid) == 1:
             self.emit(node, node.kid[0].py_code)
         else:
-            node.misc["inherits"] = node.kid[0].py_code
+            node.meta["inherits"] = node.kid[0].py_code
             self.emit(node, node.kid[1].py_code)
 
     def exit_inherited_archs(self: "TranspilePass", node: AstNode) -> None:

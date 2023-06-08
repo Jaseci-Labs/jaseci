@@ -1,14 +1,17 @@
 """Abstract class for IR Passes for Jac."""
-from enum import Enum
-from pprint import pprint
+import pprint
+from enum import Enum, auto
 
 
 class AstNodeKind(Enum):
     """Type of node in ast."""
 
-    UNKNOWN = 0
-    PARSE_RULE = 1
-    TOKEN = 2
+    UNKNOWN = auto()
+    PARSE_RULE = auto()
+    TOKEN = auto()
+    WHOLE_BUILD = auto()
+    DOC_STRING = auto()
+    GLOBAL_VAR = auto()
 
     def __str__(self: "AstNodeKind") -> str:
         """Return string representation of AstNodeKind."""
@@ -30,7 +33,7 @@ class AstNode:
         kid: list = None,
         line: int = 0,
         py_code: str = "",
-        misc: dict = None,
+        meta: dict = None,
     ) -> None:
         """Initialize ast."""
         self.name = name
@@ -39,7 +42,7 @@ class AstNode:
         self.kid = kid if kid else []
         self.line = line
         self.py_code = py_code
-        self.misc = misc if misc else {}
+        self.meta = meta if meta else {}
 
     def __str__(self: "AstNode") -> str:
         """Return string representation of node."""
@@ -61,9 +64,9 @@ class AstNode:
             "kid": [x.to_dict() for x in self.kid],
             "line": self.line,
             "py_code": self.py_code,
-            "misc": self.misc,
+            "misc": self.meta,
         }
 
-    def print(self: "AstNode") -> None:
+    def print(self: "AstNode", depth: int = 0) -> None:
         """Print ast."""
-        pprint(self.to_dict())
+        pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
