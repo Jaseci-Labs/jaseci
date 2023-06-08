@@ -1,5 +1,6 @@
 """Transpilation pass for Jaseci Ast."""
-from jaclang.jac.passes.ir_pass import AstNode, AstNodeKind, Pass
+from jaclang.jac.ast import AstNode, AstNodeKind
+from jaclang.jac.passes.ir_pass import Pass
 
 
 # MACROS for rapid development

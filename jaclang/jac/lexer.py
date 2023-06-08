@@ -281,31 +281,3 @@ class JacLexer(Lexer):
         """Raise an error for illegal characters."""
         print(f"Illegal character '{t.value[0]}' at line {self.lineno}")
         self.index += 1
-
-
-class JacFStringLexer(Lexer):
-    """Lexer for Jac f-strings."""
-
-    tokens = {
-        "DQ_L",
-        "DQ_R",
-        "MIDDLE",
-        "SQ_L",
-        "SQ_R",
-        "FEXPR",
-    }
-
-    # Regular expression rules for f-strings pieces
-    DQ_L = r'f"[^"{]*(?:{{[^"{]*)*{'  # Chomps "...{"
-    DQ_R = r'}[^"}]*(?:}}[^"}]*)*"'  # Chomps "}..."
-    MIDDLE = r'}[^"]*(?:{{[^"}]*}}[^"]*)*{'  # Chomps }...{
-    SQ_L = r"f'[^'{]*(?:{{[^'{]*)*{"  # Chomps '...{'
-    SQ_R = r"}[^'}]*(?:}}[^'}]*)*'"  # Chomps }...'
-
-    FEXPR = r"[^{}]+"
-
-    # Error handling rule
-    def error(self: "JacLexer", t: Token) -> None:
-        """Raise an error for illegal characters."""
-        print(f"Illegal character '{t.value[0]}' at line {self.lineno}")
-        self.index += 1
