@@ -1,5 +1,6 @@
 """Abstract class for IR Passes for Jac."""
 from enum import Enum
+from pprint import pprint
 
 from jaclang.utils.sly.lex import Token
 
@@ -65,6 +66,10 @@ class AstNode:
             "misc": self.misc,
         }
 
+    def print(self: "AstNode") -> None:
+        """Print ast."""
+        pprint(self.to_dict())
+
 
 class Pass:
     """Abstract class for IR passes."""
@@ -112,53 +117,34 @@ class Pass:
         return self.ir
 
 
-class FstringProcPass(Pass):
-    """Pass to process fstrings."""
+def parse_tree_to_ast(tree: tuple, lineno: int = None) -> AstNode:
+    """Convert parser output to ast, also parses fstrings."""
+    from jaclang.utils.fstring_parser import FStringLexer, FStringParser
 
-    def __init__(self: "FstringProcPass", ir: AstNode = None) -> None:
-        """Initialize pass."""
-        from jaclang.utils.fstring_parser import FStringLexer, FStringParser
-
-        self.lexer = FStringLexer()
-        self.parser = FStringParser()
-        super().__init__(ir)
-
-    def enter_fstring(self: "FstringProcPass", node: AstNode) -> None:
-        """Run on entering node."""
-        node = parse_tree_to_ast(self.parser.parse(self.lexer.tokenize(node.value)))
-
-
-def parse_tree_to_ast(tree: tuple) -> AstNode:
-    """Convert parser output to ast."""
     if not isinstance(tree, AstNode):
         if isinstance(tree, tuple):
             tree = AstNode(
                 name=tree[0],
                 kind=AstNodeKind.PARSE_RULE,
                 value="",
-                kid=[parse_tree_to_ast(x) for x in tree[2:]],
-                line=tree[1],
+                kid=[parse_tree_to_ast(x, lineno=lineno) for x in tree[2:]],
+                line=tree[1] if lineno is None else lineno,
                 py_code="",
             )
         elif isinstance(tree, Token):
             if tree.type == "FSTRING":
-                AstNode(
-                    name=tree.type.lower(),
-                    kind=AstNodeKind.PARSE_RULE,
-                    value=tree.value,
-                    kid=[],
-                    line=tree.lineno,
-                    py_code="",
-                )
+                lineno = tree.lineno
+                tree = FStringParser().parse(FStringLexer().tokenize(tree.value))
+                return parse_tree_to_ast(tree, lineno=lineno)
             else:
                 tree = AstNode(
                     name=tree.type,
                     kind=AstNodeKind.TOKEN,
                     value=tree.value,
                     kid=[],
-                    line=tree.lineno,
+                    line=tree.lineno if lineno is None else lineno,
                     py_code="",
                 )
         else:
             raise ValueError(f"node must be AstNode or parser output tuple: {tree}")
-    return FstringProcPass(tree).ir
+    return tree

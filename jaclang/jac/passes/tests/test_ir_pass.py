@@ -15,3 +15,11 @@ class TestPass(TestCase):
         parse_tree = parser.parse(lexer.tokenize(self.load_fixture("fam.jac")))
         ast = ptoa(parse_tree)
         self.assertGreater(len(str(Pass(ast).ir.to_dict())), 1000)
+
+    def test_basic_fstring(self: "TestPass") -> None:
+        """Basic test for pass."""
+        lexer = JacLexer()
+        parser = JacParser()
+        parse_tree = parser.parse(lexer.tokenize(self.load_fixture("fstrings.jac")))
+        ast = ptoa(parse_tree)
+        self.assertGreater(len(str(Pass(ast).ir.to_dict())), 1000)

@@ -20,7 +20,7 @@ node location {
         for i in activities {
             i.duration = visitor.duration;
             if here.name not in visitor.passport {
-                if i.name == "Hiking" {
+                if i.name == f"Hiking in {here.name}" {
                     for j=0 to j<3 by j+=1 {
                         i.duration += 1;
                     }

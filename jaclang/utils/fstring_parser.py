@@ -15,7 +15,7 @@ class FStringLexer(Lexer):
         "EXPR_END",
         "PIECE",
     }
-    ignore = " \t"
+    # ignore = " \t"
 
     # Tokens
 
