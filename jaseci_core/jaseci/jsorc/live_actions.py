@@ -152,7 +152,7 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
             result = str(e)
 
         out_q.put((action, result))
-        logger.info(f"{os.getpid()}put in out_q")
+        # logger.info(f"{os.getpid()}put in out_q")
 
 
 def action_handler_wrapper(name, *args, **kwargs):
