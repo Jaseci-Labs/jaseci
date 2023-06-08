@@ -3,7 +3,7 @@ A
 Docstring
 """
 
-global ver = "0.0.1";  # global variable
+global ver = "0.0.1", what=6777;  # global variable
 
 import:jac .utils;  # import a module
 
@@ -21,7 +21,7 @@ walker travelor {  # define a new walker
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
-test mytest 
+test mytest
 "A test of my functionality" {
    # test code here
 }

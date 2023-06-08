@@ -49,28 +49,33 @@ class Pass:
         return self.ir
 
 
-def parse_tree_to_ast(tree: tuple, lineno: int = None) -> AstNode:
+def parse_tree_to_ast(
+    tree: tuple, parent: AstNode = None, lineno: int = None
+) -> AstNode:
     """Convert parser output to ast, also parses fstrings."""
     from jaclang.utils.fstring_parser import FStringLexer, FStringParser
 
     if not isinstance(tree, AstNode):
         if isinstance(tree, tuple):
+            kids = tree[2:]
             tree = AstNode(
                 name=tree[0],
+                parent=parent,
                 kind=AstNodeKind.PARSE_RULE,
                 value="",
-                kid=[parse_tree_to_ast(x, lineno=lineno) for x in tree[2:]],
                 line=tree[1] if lineno is None else lineno,
                 py_code="",
             )
+            tree.kid = [parse_tree_to_ast(x, parent=tree, lineno=lineno) for x in kids]
         elif isinstance(tree, Token):
             if tree.type == "FSTRING":
                 lineno = tree.lineno
                 tree = FStringParser().parse(FStringLexer().tokenize(tree.value))
-                return parse_tree_to_ast(tree, lineno=lineno)
+                return parse_tree_to_ast(tree, parent=parent, lineno=lineno)
             else:
                 tree = AstNode(
                     name=tree.type,
+                    parent=parent,
                     kind=AstNodeKind.TOKEN,
                     value=tree.value,
                     kid=[],

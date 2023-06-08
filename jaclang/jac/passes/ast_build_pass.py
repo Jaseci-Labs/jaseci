@@ -1,4 +1,6 @@
 """Pass that builds well formed AST from parse tree AST."""
+import pprint
+
 from jaclang.jac.ast import AstNode, AstNodeKind as Ak
 from jaclang.jac.passes.ir_pass import Pass
 
@@ -13,27 +15,31 @@ class AstBuildPass(Pass):
     def exit_start(self: "AstBuildPass", node: AstNode) -> None:
         """Exit start node."""
         node.kind = Ak.WHOLE_BUILD
-        node.kid = [node.kid[0]]
+        node.kid = node.kid[0].kid
 
     def exit_element_list(self: "AstBuildPass", node: AstNode) -> None:
         """Exit element list node."""
-        if len(node.kid) == 1:
-            node = node.kid[0]
-        else:
+        if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
 
     def exit_element(self: "AstBuildPass", node: AstNode) -> None:
         """Exit element node."""
-        node.kind = node.kid[0].kind
+        node = replace_node(node, node.kid[0])
         if node.kind == Ak.TOKEN:
             node.kind = Ak.DOC_STRING
 
     def exit_global_var(self: "AstBuildPass", node: AstNode) -> None:
         """Exit global var node."""
         node.kind = Ak.GLOBAL_VAR
-        node.value = node.kid[0].value
+        pprint.PrettyPrinter(depth=3).pprint(node.kid)
 
-    # def exit_global_var_clause(self: "AstBuildPass", node: AstNode) -> None:
+    def exit_global_var_clause(self: "AstBuildPass", node: AstNode) -> None:
+        """Exit global var clause node."""
+        node.kind = Ak.NAMED_ASSIGN
+        if len(node.kid) == 5:
+            node.parent.kid = [node.kid[0], node]
+        node.kid = [node.kid[-3], node.kid[-1]]
+
     # def exit_test(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_import_stmt(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_import_path(self: "AstBuildPass", node: AstNode) -> None:
@@ -137,3 +143,9 @@ class AstBuildPass(Pass):
     # def exit_filter_ctx(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_spawn_ctx(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_filter_compare_list(self: "AstBuildPass", node: AstNode) -> None:
+
+
+def replace_node(node: AstNode, new_node: AstNode) -> None:
+    """Replace node with new_node."""
+    node.parent.kid[node.parent.kid.index(node)] = new_node
+    return new_node

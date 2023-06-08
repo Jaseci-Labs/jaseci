@@ -12,6 +12,7 @@ class AstNodeKind(Enum):
     WHOLE_BUILD = auto()
     DOC_STRING = auto()
     GLOBAL_VAR = auto()
+    NAMED_ASSIGN = auto()
 
     def __str__(self: "AstNodeKind") -> str:
         """Return string representation of AstNodeKind."""
@@ -27,6 +28,7 @@ class AstNode:
 
     def __init__(
         self: "AstNode",
+        parent: "AstNode" = None,
         name: str = "",
         kind: AstNodeKind = AstNodeKind.UNKNOWN,
         value: str = "",
@@ -37,6 +39,7 @@ class AstNode:
     ) -> None:
         """Initialize ast."""
         self.name = name
+        self.parent = parent
         self.kind = kind
         self.value = value
         self.kid = kid if kid else []
@@ -47,8 +50,8 @@ class AstNode:
     def __str__(self: "AstNode") -> str:
         """Return string representation of node."""
         return (
-            f"{self.name} {self.line}, ({self.value}), "
-            f"{len(self.kid)} kids, {str(self.kind)}"
+            f"{str(self.kind)}->[{self.line},{self.name},({self.value}),"
+            f"{len(self.kid)} kids]"
         )
 
     def __repr__(self: "AstNode") -> str:

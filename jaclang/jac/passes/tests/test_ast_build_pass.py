@@ -28,7 +28,7 @@ class AstBuildPassTests(TestCase):
         )
         ast = ptoa(parse_tree)
         build_pass = AstBuildPass(ast)
-        print(build_pass.ir.kid[0].kid)
+        build_pass.ir.print(depth=3)
         # self.assertGreater(len(str(build_pass.ir.to_dict())), 1000)
 
     def parse_micro(self: "AstBuildPass", filename: str) -> None:
