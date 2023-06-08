@@ -139,14 +139,14 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 
     while not terminate_event.is_set() or not in_q.empty():
         # while True:
-        logger.info(f"{os.getpid()} waiting on input")
+        # logger.info(f"{os.getpid()} waiting on input")
         action, args, kwargs = in_q.get()
         try:
-            logger.info(f"{os.getpid()} Got input")
+            # logger.info(f"{os.getpid()} Got input")
             func = live_actions[action]
-            logger.info(f"{os.getpid()}got func {func}")
+            # logger.info(f"{os.getpid()}got func {func}")
             result = func(*args, **kwargs)
-            logger.info(f"{os.getpid()}got result")
+            # logger.info(f"{os.getpid()}got result")
         except Exception as e:
             logger.info(f"{os.getpid()}Exception: {str(e)}")
             result = str(e)
@@ -158,7 +158,7 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
-    logger.info(f"{os.getpid()}local action called for {name}")
+    # logger.info(f"{os.getpid()}local action called for {name}")
     module = name.split(".")[0]
     act_name = name.split(".")[1]
     # TODO: temporary hack
@@ -177,10 +177,10 @@ def action_handler_wrapper(name, *args, **kwargs):
     act_procs[module]["reqs"] += 1
     # cnt = act_procs[module]["reqs"]
     # logger.info(f"{module} reqs: {cnt}")
-    logger.info(f"{os.getpid()}put in_q")
+    # logger.info(f"{os.getpid()}put in_q")
     act_procs[module]["in_q"].put((name, args, kwargs))
 
-    logger.info(f"{os.getpid()}waiting on out_q")
+    # logger.info(f"{os.getpid()}waiting on out_q")
     # TODO: Handle concurrent calls?
     try:
         res = act_procs[module]["out_q"].get(timeout=ACTION_SUBPROC_TIMEOUT)[1]
