@@ -1,6 +1,6 @@
 """Tests for Jac lexer."""
 
-from jaclang.jac.lexer import JacFStringLexer, JacLexer
+from jaclang.jac.lexer import JacLexer
 from jaclang.utils.test import TestCase
 
 
@@ -34,11 +34,3 @@ class TestLexer(TestCase):
             ],
             ["RBRACE", "}", 61, 1416, 1417],
         )
-
-    def test_fstring_basic(self: "TestLexer") -> None:
-        """Basic test for lexer."""
-        lexer = JacFStringLexer()
-        for t in lexer.tokenize('f"I am {5+6} years old"'):
-            print(t)
-        for t in lexer.tokenize('f"hello{({a})}world"'):
-            print(t)
