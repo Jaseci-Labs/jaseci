@@ -58,12 +58,12 @@ class Ability(Element, JacCode, Interp):
         if not interp.check_builtin_action(action_name):
             interp.rt_error(f"Cannot execute {action_name} - Not Found")
             return None
-        before_lock = time.time()
+        # before_lock = time.time()
         live_actions_lock.reader_acquire()
-        logger.info(f"run_action reader acquire in {time.time()-before_lock}")
+        # logger.info(f"run_action reader acquire in {time.time()-before_lock}")
         try:
             func = live_actions[action_name]
-            logger.info(f"got func {func}")
+            # logger.info(f"got func {func}")
             args = inspect.getfullargspec(func)
             self.do_auto_conversions(args, param_list)
             args = args[0] + args[4]
@@ -72,7 +72,7 @@ class Ability(Element, JacCode, Interp):
             action_manager = JsOrc.get("action_manager", ActionManager)
             action_manager.pre_action_call_hook()
 
-            logger.info(f"after preaction callhook")
+            # logger.info("after preaction callhook")
             ts = time.time()
             if "meta" in args:
                 logger.info("in meta call")
@@ -101,7 +101,7 @@ class Ability(Element, JacCode, Interp):
                         f"Invalid arguments {param_list} to action call {self.name}! Valid paramters are {params}.",
                         interp._cur_jac_ast,
                     )
-                    logger.info("failing 1")
+                    logger.info(f"failing 1 {e}")
                     raise
                 except Exception as e:
                     # Checking for race condition between walker running abilities and JSORC unloading modules
@@ -119,7 +119,7 @@ class Ability(Element, JacCode, Interp):
                     raise
         finally:
             live_actions_lock.reader_release()
-        logger.info(f"run_action reader release in {time.time()-before_lock}")
+        # logger.info(f"run_action reader release in {time.time()-before_lock}")
         t = time.time() - ts
         action_manager.post_action_call_hook(action_name, t)
         return result

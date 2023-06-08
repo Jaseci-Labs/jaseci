@@ -388,42 +388,42 @@ class RXW1Lock:
         self.writer_condition = Condition(self.resource_lock)
 
     def reader_acquire(self):
-        id = time()
-        logger.info(f"{id} reader_acquire")
+        # id = time()
+        # logger.info(f"{id} reader_acquire")
         with self.resource_lock:
             while self.readers_count == -1:
-                logger.info(f"{id} reader_acquire waiting on {self.readers_count}")
+                # logger.info(f"{id} reader_acquire waiting on {self.readers_count}")
                 self.readers_condition.wait()
-                logger.info(f"{id} reader_acquire got notified")
+                # logger.info(f"{id} reader_acquire got notified")
             self.readers_count += 1
-        logger.info(f"{id} reader_acquire finishes")
+        # logger.info(f"{id} reader_acquire finishes")
 
     def reader_release(self):
-        id = time()
-        logger.info(f"{id} reader_release")
+        # id = time()
+        # logger.info(f"{id} reader_release")
         with self.resource_lock:
             self.readers_count -= 1
             if self.readers_count == 0:
                 self.writer_condition.notify()
-        logger.info(f"{id} reader_release finishes")
+        # logger.info(f"{id} reader_release finishes")
 
     def writer_acquire(self):
-        id = time()
-        logger.info(f"{id} writer_acquire")
+        # id = time()
+        # logger.info(f"{id} writer_acquire")
         with self.resource_lock:
-            logger.info(f"{id} writer_acquire got lock")
+            # logger.info(f"{id} writer_acquire got lock")
             while self.readers_count != 0:
-                logger.info(f"{id} writer_acquire waiting on {self.readers_count}")
+                # logger.info(f"{id} writer_acquire waiting on {self.readers_count}")
                 self.writer_condition.wait()
-                logger.info(f"{id} writer_acquire got notified")
+                # logger.info(f"{id} writer_acquire got notified")
             self.readers_count = -1
-        logger.info(f"{id} writer_acquire finishes")
+        # logger.info(f"{id} writer_acquire finishes")
 
     def writer_release(self):
-        id = time()
-        logger.info(f"{id} writer_release")
+        # id = time()
+        # logger.info(f"{id} writer_release")
         with self.resource_lock:
             self.readers_count = 0
             self.readers_condition.notify_all()
             self.writer_condition.notify()
-        logger.info(f"{id} writer_release finishes")
+        # logger.info(f"{id} writer_release finishes")
