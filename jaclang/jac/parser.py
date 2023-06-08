@@ -565,8 +565,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "connect",
         "connect POW power",
-        "ref",
-        "deref",
     )
     def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Power rule."""
@@ -586,7 +584,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "spawn_object",
     )
     def spawn_walker(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn rule."""
+        """Spawn walker rule."""
         return p
 
     @_(
@@ -594,15 +592,25 @@ class JacParser(JacParseErrorMixIn, Parser):
         "spawn_edge_node",
     )
     def spawn_object(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn rule."""
+        """Spawn object rule."""
         return p
 
     @_(
         "spawn_op KW_TO spawn_object connect_op spawn_object",
-        "atom",
+        "unpack",
     )
     def spawn_edge_node(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn rule."""
+        """Spawn edge and node rule."""
+        return p
+
+    @_(
+        "STAR_MUL STAR_MUL atom",
+        "STAR_MUL atom",
+        "KW_REF atom",
+        "atom",
+    )
+    def unpack(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Unpack rule."""
         return p
 
     @_(
@@ -628,16 +636,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def cmp_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Compare operator rule."""
-        return p
-
-    @_("KW_REF atom")
-    def ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Production for reference rule."""
-        return p
-
-    @_("STAR_MUL atom")
-    def deref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Dereference rule."""
         return p
 
     @_(
