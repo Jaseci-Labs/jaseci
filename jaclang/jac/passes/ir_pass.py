@@ -64,7 +64,6 @@ def parse_tree_to_ast(
                 kind=AstNodeKind.PARSE_RULE,
                 value="",
                 line=tree[1] if lineno is None else lineno,
-                py_code="",
             )
             tree.kid = [parse_tree_to_ast(x, parent=tree, lineno=lineno) for x in kids]
         elif isinstance(tree, Token):
@@ -80,7 +79,6 @@ def parse_tree_to_ast(
                     value=tree.value,
                     kid=[],
                     line=tree.lineno if lineno is None else lineno,
-                    py_code="",
                 )
         else:
             raise ValueError(f"node must be AstNode or parser output tuple: {tree}")

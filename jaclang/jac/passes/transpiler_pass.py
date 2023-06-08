@@ -216,7 +216,7 @@ class TranspilePass(Pass):
         if len(node.kid) == 1:
             self.emit(node, node.kid[0].py_code)
         else:
-            node.meta["inherits"] = node.kid[0].py_code
+            node.details["inherits"] = node.kid[0].py_code
             self.emit(node, node.kid[1].py_code)
 
     def exit_inherited_archs(self: "TranspilePass", node: AstNode) -> None:

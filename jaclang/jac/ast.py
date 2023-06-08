@@ -37,7 +37,6 @@ class AstNode:
         value: str = "",
         kid: list = None,
         line: int = 0,
-        py_code: str = "",
         meta: dict = None,
     ) -> None:
         """Initialize ast."""
@@ -47,7 +46,6 @@ class AstNode:
         self.value = value
         self.kid = kid if kid else []
         self.line = line
-        self.py_code = py_code
         self.meta = meta if meta else {}
 
     def __str__(self: "AstNode") -> str:
@@ -69,7 +67,6 @@ class AstNode:
             "value": self.value,
             "kid": [x.to_dict() for x in self.kid],
             "line": self.line,
-            "py_code": self.py_code,
             "misc": self.meta,
         }
 
