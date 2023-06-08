@@ -491,11 +491,19 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "pipe",
-        "pipe walrus_op expression",
+        "walrus_assign",
+        "walrus_assign KW_IF expression KW_ELSE expression",
     )
     def expression(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Expression rule."""
+        return p
+
+    @_(
+        "pipe",
+        "pipe walrus_op walrus_assign",
+    )
+    def walrus_assign(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Walrus assignment rule."""
         return p
 
     @_(
