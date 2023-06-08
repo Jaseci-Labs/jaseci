@@ -28,8 +28,7 @@ class AstBuildPassTests(TestCase):
         )
         ast = ptoa(parse_tree)
         build_pass = AstBuildPass(ast)
-        build_pass.ir.print(depth=3)
-        # self.assertGreater(len(str(build_pass.ir.to_dict())), 1000)
+        self.assertGreater(len(str(build_pass.ir.to_dict())), 200)
 
     def parse_micro(self: "AstBuildPass", filename: str) -> None:
         """Parse micro jac file."""

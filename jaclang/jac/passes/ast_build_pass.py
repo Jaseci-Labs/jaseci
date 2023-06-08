@@ -1,6 +1,4 @@
 """Pass that builds well formed AST from parse tree AST."""
-import pprint
-
 from jaclang.jac.ast import AstNode, AstNodeKind as Ak
 from jaclang.jac.passes.ir_pass import Pass
 
@@ -31,7 +29,6 @@ class AstBuildPass(Pass):
     def exit_global_var(self: "AstBuildPass", node: AstNode) -> None:
         """Exit global var node."""
         node.kind = Ak.GLOBAL_VAR
-        pprint.PrettyPrinter(depth=3).pprint(node.kid)
 
     def exit_global_var_clause(self: "AstBuildPass", node: AstNode) -> None:
         """Exit global var clause node."""
@@ -40,7 +37,23 @@ class AstBuildPass(Pass):
             node.parent.kid = [node.kid[0], node]
         node.kid = [node.kid[-3], node.kid[-1]]
 
-    # def exit_test(self: "AstBuildPass", node: AstNode) -> None:
+    def exit_test(self: "AstBuildPass", node: AstNode) -> None:
+        """Exit test node."""
+        node.kind = Ak.TEST
+        node.kid = node.kid[1:]
+
+    def exit_import_stmt(self: "AstBuildPass", node: AstNode) -> None:
+        """Exit import stmt node."""
+        kid = node.kid
+        node.kind = Ak.IMPORT
+        if len(node.kid) == 7:
+            node.kind = Ak.IMPORT_FROM
+            node.kid = [kid[1], kid[3], kid[5]]
+        elif len(node.kid) == 6:
+            node.kid = [kid[1], kid[2], kid[4]]
+        else:
+            node.kid = [kid[1], kid[2]]
+
     # def exit_import_stmt(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_import_path(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_import_path_prefix(self: "AstBuildPass", node: AstNode) -> None:
