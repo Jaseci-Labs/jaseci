@@ -15,26 +15,25 @@ class AstBuildPassTests(TestCase):
         """Set up test."""
         self.lex = JacLexer()
         self.prse = JacParser()
+        self.builder = AstBuildPass()
         return super().setUp()
 
-    def test_basic_pass(self: "TestCase") -> None:
-        """Basic test for pass."""
-        self.lex = JacLexer()
-        self.prse = JacParser()
-        parse_tree = self.prse.parse(
-            self.lex.tokenize(
-                self.load_fixture("../../../tests/fixtures/micro/module_structure.jac")
-            )
-        )
-        ast = ptoa(parse_tree)
-        build_pass = AstBuildPass(ast)
-        self.assertGreater(len(str(build_pass.ir.to_dict())), 200)
-
-    def parse_micro(self: "AstBuildPass", filename: str) -> None:
+    def build_micro(self: "AstBuildPass", filename: str) -> None:
         """Parse micro jac file."""
         self.prse.cur_file = filename
-        self.prse.parse(self.lex.tokenize(self.load_fixture(f"micro/{filename}")))
-        self.assertFalse(self.prse.had_error)
+        ptree = self.prse.parse(
+            self.lex.tokenize(
+                self.load_fixture(f"../../../tests/fixtures/micro/{filename}")
+            )
+        )
+        build_pass = self.builder.run(node=ptoa(ptree))
+        return build_pass
+
+    def test_ast_build_module_structure(self: "TestCase") -> None:
+        """Basic test for pass."""
+        build_pass = self.build_micro("module_structure.jac")
+        build_pass.print()
+        self.assertGreater(len(str(build_pass.to_dict())), 200)
 
     def test_no_typo_in_pass(self: "TestCase") -> None:
         """Test for enter/exit name diffs with parser."""

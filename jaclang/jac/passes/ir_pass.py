@@ -9,7 +9,7 @@ class Pass:
 
     def __init__(self: "Pass", ir: ast.AstNode = None) -> None:
         """Initialize pass."""
-        self.ir = ir if ir else ast.AstNode()
+        self.ir = ir if ir else ast.AstNode(parent=None, kid=[], line=0)
         if ir:
             self.run()
 
@@ -37,10 +37,10 @@ class Pass:
         elif hasattr(self, f"exit_{pascal_to_snake(str(type(node)))}"):
             getattr(self, f"exit_{pascal_to_snake(str(type(node)))}")(node)
 
-    def run(self: "Pass") -> ast.AstNode:
+    def run(self: "Pass", node: ast.AstNode = None) -> ast.AstNode:
         """Run pass."""
         self.before_pass()
-        self.traverse()
+        self.traverse(node)
         self.after_pass()
         return self.ir
 
@@ -52,7 +52,6 @@ class Pass:
         for i in node.kid:
             self.traverse(i)
         self.exit_node(node)
-        self.ir = node  # Makes sure we update the ir with whatever is passed in
         return self.ir
 
 

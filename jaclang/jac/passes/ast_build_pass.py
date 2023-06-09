@@ -175,7 +175,7 @@ class AstBuildPass(Pass):
             else:
                 meta["signature"] = None
                 meta["body"] = node.kid[2]
-        print(update_kind(node, ast.AbilitySpec, **meta))
+        update_kind(node, ast.AbilitySpec, **meta)
 
     def exit_attr_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ARCH_BLOCK Ast node."""

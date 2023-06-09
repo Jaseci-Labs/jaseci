@@ -13,7 +13,7 @@ class AstNode:
 
     def __str__(self: "AstNode") -> str:
         """Return string representation of node."""
-        return f"{type(self)}->[{self.line},{len(self.kid)} kids]"
+        return f"{str(type(self).__name__)}->[{self.line},{len(self.kid)} kids]"
 
     def __repr__(self: "AstNode") -> str:
         """Return string representation of node."""
@@ -22,12 +22,12 @@ class AstNode:
     def to_dict(self: "AstNode") -> dict:
         """Return dict representation of node."""
         return {
-            "kind": type(self),
+            "node": str(type(self).__name__),
             "kid": [x.to_dict() for x in self.kid],
             "line": self.line,
         }
 
-    def print(self: "AstNode", depth: int = 0) -> None:
+    def print(self: "AstNode", depth: int = None) -> None:
         """Print ast."""
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
 
@@ -61,6 +61,7 @@ class WholeBuild(AstNode):
     ) -> None:
         """Initialize whole program node."""
         self.elements = elements
+        super().__init__(*args, **kwargs)
 
 
 class DocString(AstNode):
