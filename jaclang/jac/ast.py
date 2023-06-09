@@ -259,3 +259,25 @@ class ArchBlock(AstNode):
     def __init__(self: "ArchBlock", *args: list, **kwargs: dict) -> None:
         """Initialize arch block node."""
         super().__init__(*args, **kwargs)
+
+
+class AbilitySpec(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchBlock",
+        name: AstNode,
+        arch: AstNode,
+        mod: AstNode,
+        signature: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize arch block node."""
+        self.name = name
+        self.arch = arch
+        self.mod = mod
+        self.signature = signature
+        self.body = body
+        super().__init__(*args, **kwargs)

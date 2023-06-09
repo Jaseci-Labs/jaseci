@@ -152,7 +152,30 @@ class AstBuildPass(Pass):
         """Build SUB_NAME Ast node."""
         node = replace_node(node, node.kid[1])
 
-    # def exit_ability_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_ability_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AbilitySpec Ast node."""
+        meta = {}
+        if node.kid[0].name == "NAME":
+            meta["mod"] = node.kid[0]
+            meta["arch"] = node.kid[1]
+            meta["name"] = node.kid[2]
+            if node.kid[3].name == "func_decl":
+                meta["signature"] = node.kid[3]
+                meta["body"] = node.kid[4]
+            else:
+                meta["signature"] = None
+                meta["body"] = node.kid[3]
+        else:
+            meta["mod"] = None
+            meta["arch"] = node.kid[0]
+            meta["name"] = node.kid[1]
+            if node.kid[2].name == "func_decl":
+                meta["signature"] = node.kid[2]
+                meta["body"] = node.kid[3]
+            else:
+                meta["signature"] = None
+                meta["body"] = node.kid[2]
+        print(update_kind(node, ast.AbilitySpec, **meta))
 
     def exit_attr_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ARCH_BLOCK Ast node."""

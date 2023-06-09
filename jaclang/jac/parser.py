@@ -144,6 +144,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "arch_ref ability_ref code_block",
         "arch_ref ability_ref func_decl code_block",
+        "NAME arch_ref ability_ref code_block",
+        "NAME arch_ref ability_ref func_decl code_block",
     )
     def ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability rule."""
