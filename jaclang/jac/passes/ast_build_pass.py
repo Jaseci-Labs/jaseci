@@ -32,7 +32,6 @@ class AstBuildPass(Pass):
         update_kind(node, Ak.GLOBAL_VAR)
         node.kid = node.kid[:-3]  # only keep absorbed list of clauses
         node.meta["values"] = node.kid
-        print(node.meta["values"])
 
     def exit_global_var_clause(self: "AstBuildPass", node: AstNode) -> None:
         """Build NAMED_ASSIGN list of Ast nodes."""
@@ -118,12 +117,52 @@ class AstBuildPass(Pass):
             node.kid = [node.kid[-1]]
             node.meta["name"] = node.kid[-1]
 
-    # def exit_architype(self: "AstBuildPass", node: AstNode) -> None:
-    # def exit_arch_decl_tail(self: "AstBuildPass", node: AstNode) -> None:
-    # def exit_inherited_archs(self: "AstBuildPass", node: AstNode) -> None:
-    # def exit_sub_name(self: "AstBuildPass", node: AstNode) -> None:
+    def exit_architype(self: "AstBuildPass", node: AstNode) -> None:
+        """Build various architype Ast nodes."""
+        if node.kid[0].name == "KW_SPAWNER":
+            update_kind(node, Ak.SPAWNER_ARCH)
+            node.kid = node.kid[1:]
+            node.meta = {"name": node.kid[0], "body": node.kid[1]}
+        else:
+            if node.kid[0].name == "KW_NODE":
+                update_kind(node, Ak.NODE_ARCH)
+            elif node.kid[0].name == "KW_EDGE":
+                update_kind(node, Ak.EDGE_ARCH)
+            elif node.kid[0].name == "KW_OBJECT":
+                update_kind(node, Ak.OBJECT_ARCH)
+            elif node.kid[0].name == "KW_WALKER":
+                update_kind(node, Ak.WALKER_ARCH)
+            node.meta["name"] = node.kid[1]
+            if node.kid[2].kid[0].name == "BASE_CLASSES":
+                node.kid = [node.kid[1], node.kid[2].kid[0], node.kid[2].kid[1]]
+                node.meta["base_classes"] = node.kid[1]
+                node.meta["body"] = node.kid[2]
+            else:
+                node.kid = [node.kid[1], node.kid[2].kid[0]]
+                node.meta["base_classes"] = None
+                node.meta["body"] = node.kid[1]
+        print(node)
+
+    def exit_arch_decl_tail(self: "AstBuildPass", node: AstNode) -> None:
+        """Absorbed by single consumer."""
+
+    def exit_inherited_archs(self: "AstBuildPass", node: AstNode) -> None:
+        """Chain list together into actual list."""
+        update_kind(node, Ak.BASE_CLASSES)
+        if len(node.kid) == 2:
+            node.kid = node.kid[0].kid + [node.kid[1]]
+
+    def exit_sub_name(self: "AstBuildPass", node: AstNode) -> None:
+        """Build SUB_NAME Ast node."""
+        node = replace_node(node, node.kid[1])
+
     # def exit_ability_spec(self: "AstBuildPass", node: AstNode) -> None:
-    # def exit_attr_block(self: "AstBuildPass", node: AstNode) -> None:
+
+    def exit_attr_block(self: "AstBuildPass", node: AstNode) -> None:
+        """Build ARCH_BLOCK Ast node."""
+        update_kind(node, Ak.ARCH_BLOCK)
+        # TODO: Finish this.
+
     # def exit_attr_stmt_list(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_attr_stmt(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_has_stmt(self: "AstBuildPass", node: AstNode) -> None:

@@ -121,14 +121,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "arch_ref ability_ref code_block",
-        "arch_ref ability_ref func_decl code_block",
-    )
-    def ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Ability rule."""
-        return p
-
-    @_(
         "attr_block",
         "inherited_archs attr_block",
     )
@@ -147,6 +139,14 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_("COLON NAME")
     def sub_name(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Sub name rule."""
+        return p
+
+    @_(
+        "arch_ref ability_ref code_block",
+        "arch_ref ability_ref func_decl code_block",
+    )
+    def ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability rule."""
         return p
 
     # Attribute blocks

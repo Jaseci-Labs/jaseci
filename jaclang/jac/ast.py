@@ -22,6 +22,8 @@ class AstNodeKind(Enum):
     OBJECT_ARCH = auto()
     WALKER_ARCH = auto()
     SPAWNER_ARCH = auto()
+    BASE_CLASSES = auto()
+    ARCH_BLOCK = auto()
 
     def __str__(self: "AstNodeKind") -> str:
         """Return string representation of AstNodeKind."""

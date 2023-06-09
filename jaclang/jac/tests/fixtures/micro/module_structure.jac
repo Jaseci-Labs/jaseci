@@ -9,7 +9,7 @@ import:jac .utils;  # import a module
 
 object mytype {}  # define a new type
 
-node mynode {}  # define a new node
+node mynode:this:that {}  # define a new node
 
 edge parent {}  # define a new edge
 
