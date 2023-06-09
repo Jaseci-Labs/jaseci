@@ -14,7 +14,7 @@ class AstBuildPass(Pass):
         """Exit start node."""
         update_kind(node, Ak.WHOLE_BUILD)
         node.kid = node.kid[0].kid
-        print(node.kid)
+        node.meta["elements"] = node.kid
 
     def exit_element_list(self: "AstBuildPass", node: AstNode) -> None:
         """Exit element list node."""
@@ -30,6 +30,7 @@ class AstBuildPass(Pass):
     def exit_global_var(self: "AstBuildPass", node: AstNode) -> None:
         """Exit global var node."""
         update_kind(node, Ak.GLOBAL_VAR)
+        node.meta["values"] = node.kid
 
     def exit_global_var_clause(self: "AstBuildPass", node: AstNode) -> None:
         """Exit global var clause node."""
@@ -37,25 +38,40 @@ class AstBuildPass(Pass):
         if len(node.kid) == 5:
             node.parent.kid = [node.kid[0], node]
         node.kid = [node.kid[-3], node.kid[-1]]
+        node.meta["name"] = node.kid[0]
+        node.meta["expr"] = node.kid[1]
 
     def exit_test(self: "AstBuildPass", node: AstNode) -> None:
         """Exit test node."""
         update_kind(node, Ak.TEST)
         node.kid = node.kid[1:]
+        node.meta = {
+            "name": node.kid[0],
+            "description": node.kid[1],
+            "body": node.kid[2],
+        }
 
     def exit_import_stmt(self: "AstBuildPass", node: AstNode) -> None:
         """Exit import stmt node."""
         kid = node.kid
         update_kind(node, Ak.IMPORT)
+        node.meta = {
+            "lang": kid[1],
+            "path": kid[2],
+            "alias": [],
+            "items": [],
+        }
         if len(node.kid) == 7:
-            update_kind(node, Ak.IMPORT_FROM)
+            node.meta["path"] = kid[3]
+            node.meta["items"] = kid[5]
             node.kid = [kid[1], kid[3], kid[5]]
         elif len(node.kid) == 6:
+            node.meta["alias"] = kid[4]
             node.kid = [kid[1], kid[2], kid[4]]
         else:
             node.kid = [kid[1], kid[2]]
 
-    # def exit_import_stmt(self: "AstBuildPass", node: AstNode) -> None:
+    # def exit_import_path(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_import_path(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_import_path_prefix(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_import_path_tail(self: "AstBuildPass", node: AstNode) -> None:
