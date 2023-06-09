@@ -118,8 +118,8 @@ def create_invoice(customer_id: str, **kwargs):
 @jaseci_action()
 def get_invoice_list(
     customer_id: str,
-    subscription_id: str,
-    starting_after: str = "",
+    subscription_id: str = None,
+    starting_after: str = None,
     limit: int = 10,
     **kwargs,
 ):
@@ -239,6 +239,13 @@ def get_subscription(subscription_id: str, **kwargs):
     """retrieve customer subcription details"""
 
     return stripe().Subscription.retrieve(id=subscription_id, **kwargs)
+
+
+@jaseci_action()
+def get_subscriptions(**kwargs):
+    """list all customer's subcriptions"""
+
+    return stripe().Subscription.list(**kwargs)
 
 
 @jaseci_action()
