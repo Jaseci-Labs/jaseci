@@ -41,6 +41,7 @@ class JacLexer(Lexer):
         "KW_AS",
         "KW_EDGE",
         "KW_WALKER",
+        "KW_SPAWNER",
         "KW_ASYNC",
         "KW_SYNC",
         "KW_TEST",
@@ -118,6 +119,7 @@ class JacLexer(Lexer):
         "CARROW_R_p2",
         "GLOBAL_OP",
         "WALKER_OP",
+        "SPAWNER_OP",
         "NODE_OP",
         "EDGE_OP",
         "OBJECT_OP",
@@ -172,6 +174,7 @@ class JacLexer(Lexer):
     NAME["as"] = "KW_AS"
     NAME["edge"] = "KW_EDGE"
     NAME["walker"] = "KW_WALKER"
+    NAME["spawner"] = "KW_SPAWNER"
     NAME["async"] = "KW_ASYNC"
     NAME["sync"] = "KW_SYNC"
     NAME["test"] = "KW_TEST"
@@ -221,6 +224,7 @@ class JacLexer(Lexer):
     # Just special
     GLOBAL_OP = r":g:|:global:"
     WALKER_OP = r":w:|:walker:"
+    SPAWNER_OP = r":s:|:spawner:"
     NODE_OP = r":n:|:node:"
     EDGE_OP = r":e:|:edge:"
     OBJECT_OP = r":o:|:object:"

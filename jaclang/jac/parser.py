@@ -114,9 +114,18 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_EDGE NAME arch_decl_tail",
         "KW_OBJECT NAME arch_decl_tail",
         "KW_WALKER NAME arch_decl_tail",
+        "KW_SPAWNER NAME code_block",
     )
     def architype(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
+        return p
+
+    @_(
+        "arch_ref ability_ref code_block",
+        "arch_ref ability_ref func_decl code_block",
+    )
+    def ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability rule."""
         return p
 
     @_(
@@ -138,16 +147,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_("COLON NAME")
     def sub_name(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Sub name rule."""
-        return p
-
-    # Ability elements
-    # ----------------
-    @_(
-        "arch_ref ability_ref code_block",
-        "arch_ref ability_ref func_decl code_block",
-    )
-    def ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Ability rule."""
         return p
 
     # Attribute blocks
@@ -277,6 +276,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "KW_WITH KW_ENTRY",
         "KW_WITH KW_EXIT",
+        "KW_WITH STAR_MUL KW_ENTRY",
+        "KW_WITH STAR_MUL KW_EXIT",
         "KW_WITH name_list KW_ENTRY",
         "KW_WITH name_list KW_EXIT",
     )
@@ -822,6 +823,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "node_ref",
         "edge_ref",
         "walker_ref",
+        "spawner_ref",
         "object_ref",
     )
     def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -841,6 +843,11 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_("WALKER_OP NAME")
     def walker_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Walker reference rule."""
+        return p
+
+    @_("SPAWNER_OP NAME")
+    def spawner_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Spawner reference rule."""
         return p
 
     @_("OBJECT_OP NAME")

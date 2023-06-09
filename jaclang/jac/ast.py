@@ -17,6 +17,11 @@ class AstNodeKind(Enum):
     IMPORT = auto()
     MOD_PATH = auto()
     MOD_ITEM = auto()
+    NODE_ARCH = auto()
+    EDGE_ARCH = auto()
+    OBJECT_ARCH = auto()
+    WALKER_ARCH = auto()
+    SPAWNER_ARCH = auto()
 
     def __str__(self: "AstNodeKind") -> str:
         """Return string representation of AstNodeKind."""

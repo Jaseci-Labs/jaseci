@@ -118,7 +118,6 @@ class AstBuildPass(Pass):
             node.kid = [node.kid[-1]]
             node.meta["name"] = node.kid[-1]
 
-    # def exit_name_as_list(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_architype(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_arch_decl_tail(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_inherited_archs(self: "AstBuildPass", node: AstNode) -> None:

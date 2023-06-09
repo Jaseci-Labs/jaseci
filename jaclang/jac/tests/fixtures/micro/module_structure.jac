@@ -17,6 +17,8 @@ walker travelor {  # define a new walker
     can say_hello;
 }
 
+spawner myspawner {} # define a new spawner
+
 :walker:travelor:ability:say_hello {
     "Hello" |> print;  # |> is a pipe forward operator
 }
