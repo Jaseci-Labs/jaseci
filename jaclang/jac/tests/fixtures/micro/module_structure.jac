@@ -3,7 +3,7 @@ A
 Docstring
 """
 
-global ver = "0.0.1", what=6777;  # global variable
+global ver = "0.0.1";  # global variable
 
 import:jac .utils;  # import a module
 

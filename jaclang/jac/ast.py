@@ -15,6 +15,8 @@ class AstNodeKind(Enum):
     NAMED_ASSIGN = auto()
     TEST = auto()
     IMPORT = auto()
+    MOD_PATH = auto()
+    MOD_ITEM = auto()
 
     def __str__(self: "AstNodeKind") -> str:
         """Return string representation of AstNodeKind."""

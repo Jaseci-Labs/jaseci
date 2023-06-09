@@ -11,38 +11,45 @@ class AstBuildPass(Pass):
     #     super().__init__(ir)
 
     def exit_start(self: "AstBuildPass", node: AstNode) -> None:
-        """Exit start node."""
+        """Build WHOLE_BUILD Ast node."""
         update_kind(node, Ak.WHOLE_BUILD)
         node.kid = node.kid[0].kid
         node.meta["elements"] = node.kid
 
     def exit_element_list(self: "AstBuildPass", node: AstNode) -> None:
-        """Exit element list node."""
+        """Chain list together into actual list."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
 
     def exit_element(self: "AstBuildPass", node: AstNode) -> None:
-        """Exit element node."""
+        """Replace element with its kid."""
         node = replace_node(node, node.kid[0])
         if node.kind == Ak.TOKEN:
             update_kind(node, Ak.DOC_STRING)
 
     def exit_global_var(self: "AstBuildPass", node: AstNode) -> None:
-        """Exit global var node."""
+        """Build GLOBAL_VAR Ast node."""
         update_kind(node, Ak.GLOBAL_VAR)
+        node.kid = node.kid[:-3]  # only keep absorbed list of clauses
         node.meta["values"] = node.kid
+        print(node.meta["values"])
 
     def exit_global_var_clause(self: "AstBuildPass", node: AstNode) -> None:
-        """Exit global var clause node."""
+        """Build NAMED_ASSIGN list of Ast nodes."""
         update_kind(node, Ak.NAMED_ASSIGN)
-        if len(node.kid) == 5:
-            node.parent.kid = [node.kid[0], node]
+        if len(node.kid) == 3:
+            # at base case abosrb node to front of parent
+            node.parent.kid = [node] + node.parent.kid
+        elif len(node.kid) >= 4:
+            # at recursive case abosrb node to front of parent and
+            # cut include all aborbed nodes so far
+            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
         node.kid = [node.kid[-3], node.kid[-1]]
         node.meta["name"] = node.kid[0]
         node.meta["expr"] = node.kid[1]
 
     def exit_test(self: "AstBuildPass", node: AstNode) -> None:
-        """Exit test node."""
+        """Build TEST Ast node."""
         update_kind(node, Ak.TEST)
         node.kid = node.kid[1:]
         node.meta = {
@@ -52,14 +59,14 @@ class AstBuildPass(Pass):
         }
 
     def exit_import_stmt(self: "AstBuildPass", node: AstNode) -> None:
-        """Exit import stmt node."""
+        """Build IMPORT Ast node."""
         kid = node.kid
         update_kind(node, Ak.IMPORT)
         node.meta = {
             "lang": kid[1],
             "path": kid[2],
-            "alias": [],
-            "items": [],
+            "alias": None,
+            "items": None,
         }
         if len(node.kid) == 7:
             node.meta["path"] = kid[3]
@@ -71,10 +78,46 @@ class AstBuildPass(Pass):
         else:
             node.kid = [kid[1], kid[2]]
 
-    # def exit_import_path(self: "AstBuildPass", node: AstNode) -> None:
-    # def exit_import_path(self: "AstBuildPass", node: AstNode) -> None:
-    # def exit_import_path_prefix(self: "AstBuildPass", node: AstNode) -> None:
-    # def exit_import_path_tail(self: "AstBuildPass", node: AstNode) -> None:
+    def exit_import_path(self: "AstBuildPass", node: AstNode) -> None:
+        """Build MOD_PATH Ast node."""
+        update_kind(node, Ak.MOD_PATH)
+        if len(node.kid) == 1:
+            node.kid = node.kid[0].kid
+        else:
+            node.kid = node.kid[0].kid + node.kid[1].kid
+        node.meta = {"path": node.kid}
+
+    def exit_import_path_prefix(self: "AstBuildPass", node: AstNode) -> None:
+        """No action needed, absorbed by parent."""
+
+    def exit_import_path_tail(self: "AstBuildPass", node: AstNode) -> None:
+        """Chain list together into actual list."""
+        if len(node.kid) > 2:
+            print(node.kid)
+            node.kid = node.kid[0].kid + [node.kid[1], node.kid[2]]
+
+    def exit_name_as_list(self: "AstBuildPass", node: AstNode) -> None:
+        """Build MOD_ITEM list of Ast nodes. TODO: VALIDATE."""
+        update_kind(node, Ak.MOD_ITEM)
+        node.meta["alias"] = None
+        if node.kid[0].name == "NAME":
+            node.meta["name"] = node.kid[0]
+            node.parent.kid = [node] + node.parent.kid
+            if len(node.kid) == 3:
+                node.kid = [node.kid[0], node.kid[2]]
+                node.meta["alias"] = node.kid[2]
+            else:
+                node.kid = [node.kid[0]]
+        elif node.kid[-2].name == "KW_AS":
+            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
+            node.kid = [node.kid[-3], node.kid[-1]]
+            node.meta["name"] = node.kid[-3]
+            node.meta["alias"] = node.kid[-1]
+        else:
+            node.parent.kid = [node] + node.kid[:-3] + node.parent.kid
+            node.kid = [node.kid[-1]]
+            node.meta["name"] = node.kid[-1]
+
     # def exit_name_as_list(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_architype(self: "AstBuildPass", node: AstNode) -> None:
     # def exit_arch_decl_tail(self: "AstBuildPass", node: AstNode) -> None:
