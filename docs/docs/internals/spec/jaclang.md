@@ -11,7 +11,7 @@ title: Jac Language Specification
 
 ### General Organization
 
-In the Jac programming language, the fundamental organizational unit of code is the "module". Each Jac module is a coherent assembly of various elements, which we term "architypes". The modular design is intended to encourage clean, well-structured, and maintainable code. 
+In the Jac programming language, the fundamental organizational unit of code is the "module". Each Jac module is a coherent assembly of various elements, which we term "architypes". The modular design is intended to encourage clean, well-structured, and maintainable code.
 
 #### Architypes
 
@@ -19,7 +19,7 @@ The term "architype" is a distinct concept in the data spatial programming parad
 
 1. **Object Types**: Traditional classes, as seen in Object-Oriented Programming (OOP), form the foundation of Jac's object types. They are responsible for encapsulating data and the operations that can be performed on that data.
 
-1. **Node Types**: Node types define the structure of individual nodes in the data space. They detail the properties and data that a node can hold.
+1. **Node Types**: Node types define the structure of individual nodes in the data space. They detail the properties and data that a node can hold. Node types, along with edge adn walker types can seen as variations of object types that have different semantics.
 
 1. **Edge Types**: Edge types establish the semantics of the connections between nodes. They specify the nature of the relationship, including any constraints or properties associated with the edge.
 
@@ -27,9 +27,11 @@ The term "architype" is a distinct concept in the data spatial programming parad
 
 #### Additional Module Elements
 
-Beyond the key architypes, a Jac module incorporates several additional components:
+Beyond the key architypes, a Jac module incorporates several additional element components, the complete list includes:
 
 1. **Abilities Definitions**: Abilities can manifest as either traditional OOP-style methods or data spatial-specific abilities. These abilities give object types, node types, edge types, and walker types the capacity to perform tasks or computations.
+
+1. **Spawners**: Spawners are like functions but with a data-spatial twist. They execute and return values like function however instead of taking parameters, spawners are sent to the data they need to process and leverage a duck typing philosophy to their execution. They can be thought of as mobile computation units that are dispatched to data elements, and the can be spawned on any type including, objects, dictionaries, lists, etc.
 
 1. **Import Directives**: Import directives provide the mechanism for reusing code across different modules. They enable a module to incorporate functionalities defined in other modules, fostering code reusability and modularity.
 
@@ -39,6 +41,8 @@ Beyond the key architypes, a Jac module incorporates several additional componen
 1. **Test Definitions**: In line with best practices for software development, Jac modules can contain test definitions. These tests provide an automated way to validate the behavior of architypes, abilities, and other components within a module. They form a key part of the development cycle, enabling continuous validation and refactoring of code with confidence. Test definitions can be structured in a variety of ways, including unit tests for individual components, integration tests to verify interoperability, and end-to-end tests to validate system-wide behavior.
 
 #### Minimal Code Example
+
+The following code example shows all elements that form a Jac module.
 
 ```jac
 """
@@ -52,9 +56,11 @@ import:jac .utils;  # import a module
 
 object mytype {}  # define a new type
 
-node mynode {}  # define a new node
+node mynode:this:that {}  # define a new node
 
 edge parent {}  # define a new edge
+
+spawner myspawner {} # define a new spawner
 
 walker travelor {  # define a new walker
     can say_hello;
@@ -64,7 +70,7 @@ walker travelor {  # define a new walker
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
-test mytest 
+test mytest
 "A test of my functionality" {
    # test code here
 }
@@ -74,7 +80,7 @@ test mytest
 
 In the pursuit of more organized, scalable, and readable codebases, the Jac programming language revives the distinction between ability declarations and definitions. This approach is a deviation from Python, which do not explicitly separate method definitions from their declarations.
 
-In Jac, a declaration refers to announcing the existence and signature of an ability to an object type, node type, edge type, or walker type. A declaration specifies the name and either data spatial event details, or method parameters and return details of an ability, but does not detail the actual implementation or behavior. On the other hand, a definition provides the complete description of the declared element, detailing how it operates or behaves. This can be specified within the same Jas module file, or in a separate module file. 
+In Jac, a declaration refers to announcing the existence and signature of an ability to an object type, node type, edge type, or walker type. A declaration specifies the name and either data spatial event details, or method parameters and return details of an ability, but does not detail the actual implementation or behavior. On the other hand, a definition provides the complete description of the declared element, detailing how it operates or behaves. This can be specified within the same Jas module file, or in a separate module file.
 #### Minimal Code Example
 `main.jac`
 ```jac
@@ -85,9 +91,9 @@ walker travelor {
     can say_whatever(msg: str);  # traditional method declared
 
     # inline ability definition (python only supports this)
-    can say_goodbye { 
-        "Goodbye" |> print; 
-    } 
+    can say_goodbye {
+        "Goodbye" |> print;
+    }
 }
 ```
 
@@ -98,7 +104,7 @@ walker travelor {
 }
 
 # :w: and :a: are aliases for :walker: and :ability:
-:w:travelor:a:say_whatever(msg: str) { 
+:w:travelor:a:say_whatever(msg: str) {
     msg |> print;
 }
 ```
