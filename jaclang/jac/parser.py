@@ -557,7 +557,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "elvis_check",
         "elvis_check PIPE_FWD pipe",  # casting achieved here
-        "elvis_check PIPE_FWD EQ filter_ctx",  # for comprehension on list, dict, etc.
+        "elvis_check PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
         "elvis_check PIPE_FWD spawn_ctx",  # for rapid assignments to collections
     )
     def pipe(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -627,7 +627,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "spawn_walker NOT edge_op_ref connect",
+        "spawn_walker disconnect_op connect",
         "spawn_walker connect_op connect",
         "spawn_walker",
     )
@@ -644,7 +644,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "spawn_op spawn_edge_node",
+        "spawn_op atom",
         "spawn_edge_node",
     )
     def spawn_object(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -816,9 +816,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom NULL_OK DOT NAME",
         "atom NULL_OK index_slice",
         "atom NULL_OK call",
-        # "atom NULL_OK PIPE_FWD built_in",  # casting and creating tuples and sets
-        # "atom NULL_OK PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
-        # "atom NULL_OK PIPE_FWD spawn_ctx",  # for rapid assignments to collections
         "atom NULL_OK arch_ref",
     )
     def atomic_chain_safe(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -951,6 +948,11 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Connect operator rule."""
         return p
 
+    @_("NOT edge_op_ref")
+    def disconnect_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Connect operator not rule."""
+        return p
+
     @_(
         "CARROW_R",
         "CARROW_R_p1 expression CARROW_R_p2",
@@ -976,7 +978,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "LPAREN filter_compare_list RPAREN",
+        "LPAREN EQ filter_compare_list RPAREN",
     )
     def filter_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Filter context rule."""

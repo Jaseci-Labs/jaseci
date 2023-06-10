@@ -10,10 +10,6 @@ from jaclang.jac.passes.ir_pass import Pass
 class AstBuildPass(Pass):
     """Ast build pass."""
 
-    # def __init__(self: "AstBuildPass", ir: ast.AstNode = None) -> None:
-    #     """Initialize pass."""
-    #     super().__init__(ir)
-
     def exit_start(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build WHOLE_BUILD Ast node."""
         node.kid = node.kid[0].kid
@@ -643,43 +639,72 @@ class AstBuildPass(Pass):
             value=node.kid[1],
         )
 
-    def exit_expression(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Expression Ast node."""
-        if len(node.kid) == 1:
-            replace_node(node, node.kid[0])
-        else:
-            node.kid = [node.kid[0], node.kid[2], node.kid[4]]
-            update_kind(
-                node,
-                ast.ExprIfElse,
-                value=node.kid[0],
-                condition=node.kid[2],
-                else_value=node.kid[4],
-            )
-
-    def exit_walrus_assign(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build WalrusAssign Ast node."""
+    def binary_op_helper(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Reused as utility function for binary operators."""
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
         else:
             node.kid = [node.kid[0], node.kid[1], node.kid[2]]
             update_kind(
                 node,
-                ast.ExprBinary,
-                left=node.kid[0],
-                op=node.kid[1],
-                right=node.kid[2],
+                ast.ExprIfElse,
+                value=node.kid[0],
+                condition=node.kid[1],
+                else_value=node.kid[2],
             )
 
-    # def exit_pipe(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_elvis_check(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_logical(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_compare(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_arithmetic(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_term(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_factor(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_power(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_connect(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_expression(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Expression Ast node."""
+        self.binary_op_helper(node)
+
+    def exit_walrus_assign(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build WalrusAssign Ast node."""
+        self.binary_op_helper(node)
+
+    def exit_pipe(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Pipe Ast node."""
+        self.binary_op_helper(node)
+
+    def exit_elvis_check(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ElvisCheck Ast node."""
+        self.binary_op_helper(node)
+
+    def exit_logical(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Logical Ast node."""
+        self.binary_op_helper(node)
+
+    def exit_compare(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Compare Ast node."""
+        if len(node.kid) == 2:
+            node.kid = [node.kid[0], node.kid[1]]
+            update_kind(node, ast.ExprUnary, op=node.kid[0], operand=node.kid[1])
+        else:
+            self.binary_op_helper(node)
+
+    def exit_arithmetic(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Arithmetic Ast node."""
+        self.binary_op_helper(node)
+
+    def exit_term(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Term Ast node."""
+        self.binary_op_helper(node)
+
+    def exit_factor(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Factor Ast node."""
+        if len(node.kid) == 2:
+            node.kid = [node.kid[0], node.kid[1]]
+            update_kind(node, ast.ExprUnary, op=node.kid[0], operand=node.kid[1])
+        else:
+            self.binary_op_helper(node)
+
+    def exit_power(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Power Ast node."""
+        self.binary_op_helper(node)
+
+    def exit_connect(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Connect Ast node."""
+        self.binary_op_helper(node)
+
     # def exit_spawn_walker(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_spawn_object(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_spawn_edge_node(self: "AstBuildPass", node: ast.AstNode) -> None:

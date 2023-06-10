@@ -853,3 +853,81 @@ class ExprBinary(AstNode):
         self.right = right
         self.op = op
         super().__init__(*args, **kwargs)
+
+
+class ExprUnary(AstNode):
+    """ExprUnary node type for Jac Ast."""
+
+    def __init__(
+        self: "ExprUnary",
+        operand: AstNode,
+        op: str,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize unary expression node."""
+        self.operand = operand
+        self.op = op
+        super().__init__(*args, **kwargs)
+
+
+class ExprSpawnWalker(AstNode):
+    """ExprSpawnWalker node type for Jac Ast."""
+
+    def __init__(
+        self: "ExprSpawnWalker",
+        target: AstNode,
+        location: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize spawn walker expression node."""
+        self.target = target
+        self.location = location
+        super().__init__(*args, **kwargs)
+
+
+class ExprSpawnObject(AstNode):
+    """ExprSpawnObject node type for Jac Ast."""
+
+    def __init__(
+        self: "ExprSpawnObject",
+        target: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize spawn object expression node."""
+        self.target = target
+        super().__init__(*args, **kwargs)
+
+
+class ExprSpawnEdgeNode(AstNode):
+    """ExprSpawnEdgeNode node type for Jac Ast."""
+
+    def __init__(
+        self: "ExprSpawnEdgeNode",
+        edge: AstNode,
+        node: AstNode,
+        location: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize spawn edge node expression node."""
+        self.edge = edge
+        self.node = node
+        self.location = location
+        super().__init__(*args, **kwargs)
+
+
+class ExprUnpack(AstNode):
+    """ExprUnpack node type for Jac Ast."""
+
+    def __init__(
+        self: "ExprUnpack",
+        target: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize unpack expression node."""
+        self.target = target
+        super().__init__(*args, **kwargs)
