@@ -32,6 +32,14 @@ class AstNode:
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
 
 
+class Blank(AstNode):
+    """Blank node type for Jac Ast."""
+
+    def __init__(self: "Blank") -> None:
+        """Initialize blank."""
+        super().__init__(parent=None, kid=[], line=0)
+
+
 class Token(AstNode):
     """Token node type for Jac Ast."""
 

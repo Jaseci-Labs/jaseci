@@ -37,7 +37,10 @@ class AstBuildPass(Pass):
 
     def exit_access_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build  Ast node."""
-        node = replace_node(node, node.kid[0])
+        if len(node.kid) == 1:
+            make_blank(node)
+        else:
+            replace_node(node, node.kid[0])
 
     def exit_global_var_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build NAMED_ASSIGN list of Ast nodes."""
@@ -64,8 +67,8 @@ class AstBuildPass(Pass):
         meta = {
             "lang": kid[1],
             "path": kid[2],
-            "alias": None,
-            "items": None,
+            "alias": ast.Blank(),
+            "items": ast.Blank(),
         }
         if len(node.kid) == 7:
             meta["path"] = kid[3]
@@ -97,7 +100,7 @@ class AstBuildPass(Pass):
     def exit_name_as_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build MOD_ITEM list of Ast nodes. TODO: VALIDATE."""
         meta = {}
-        meta["alias"] = None
+        meta["alias"] = ast.Blank()
         if node.kid[0].name == "NAME":
             meta["name"] = node.kid[0]
             node.parent.kid = [node] + node.parent.kid
@@ -150,7 +153,7 @@ class AstBuildPass(Pass):
                 meta["body"] = node.kid[3]
             else:
                 node.kid = [node.kid[0], node.kid[2], node.kid[3].kid[0]]
-                meta["base_classes"] = None
+                meta["base_classes"] = ast.Blank()
                 meta["body"] = node.kid[2]
             update_kind(node, **meta)
 
@@ -178,17 +181,17 @@ class AstBuildPass(Pass):
                 meta["signature"] = node.kid[3]
                 meta["body"] = node.kid[4]
             else:
-                meta["signature"] = None
+                meta["signature"] = ast.Blank()
                 meta["body"] = node.kid[3]
         else:
-            meta["mod"] = None
+            meta["mod"] = ast.Blank()
             meta["arch"] = node.kid[0]
             meta["name"] = node.kid[1]
             if node.kid[2].name == "func_decl":
                 meta["signature"] = node.kid[2]
                 meta["body"] = node.kid[3]
             else:
-                meta["signature"] = None
+                meta["signature"] = ast.Blank()
                 meta["body"] = node.kid[2]
         update_kind(node, ast.AbilitySpec, **meta)
 
@@ -225,9 +228,24 @@ class AstBuildPass(Pass):
 
     def exit_typed_has(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build HasVar Ast node."""
-        # node = replace_node(node, node.kid[1])
+        if len(node.kid) == 5:
+            del node.kid[3]
+        update_kind(
+            node,
+            ast.HasVar,
+            tags=node.kid[0],
+            name=node.kid[1],
+            type_spec=node.kid[2],
+            value=node.kid[3] if len(node.kid) == 4 else None,
+        )
 
-    # def exit_has_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_has_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build HasTag Ast node."""
+        if len(node.kid) == 1:
+            make_blank(node)
+        elif len(node.kid) == 2:
+            node.kid = node.kid[0].kid + [node.kid[1]]
+
     # def exit_type_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_type_name(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_builtin_type(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -313,6 +331,11 @@ class AstBuildPass(Pass):
     # def exit_filter_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_spawn_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_filter_compare_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+
+
+def make_blank(node: ast.AstNode) -> None:
+    """Make node empty."""
+    node.parent.kid[node.parent.kid.index(node)] = ast.Blank()
 
 
 def replace_node(node: ast.AstNode, new_node: ast.AstNode) -> None:
