@@ -355,6 +355,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "delete_stmt SEMI",
         "report_stmt SEMI",
         "return_stmt SEMI",
+        "yield_stmt SEMI",
         "walker_stmt",
     )
     def statement(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -466,6 +467,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "KW_RETURN",
         "KW_RETURN expression",
     )
     def return_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -473,18 +475,25 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "ignore_stmt",
+        "KW_YIELD",
+        "KW_YIELD expression",
+    )
+    def yield_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Yield statement rule."""
+        return p
+
+    @_(
+        "ignore_stmt SEMI",
         "visit_stmt",
         "revisit_stmt",
-        "disengage_stmt",
-        "yield_stmt",
-        "sync_stmt",
+        "disengage_stmt SEMI",
+        "sync_stmt SEMI",
     )
     def walker_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Walker statement rule."""
         return p
 
-    @_("KW_IGNORE expression SEMI")
+    @_("KW_IGNORE expression")
     def ignore_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ignore statement rule."""
         return p
@@ -509,17 +518,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Visit statement rule."""
         return p
 
-    @_("KW_DISENGAGE SEMI")
+    @_("KW_DISENGAGE")
     def disengage_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Disengage statement rule."""
         return p
 
-    @_("KW_YIELD SEMI")
-    def yield_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Yield statement rule."""
-        return p
-
-    @_("KW_SYNC expression SEMI")
+    @_("KW_SYNC expression")
     def sync_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Sync statement rule."""
         return p

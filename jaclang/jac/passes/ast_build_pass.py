@@ -554,18 +554,123 @@ class AstBuildPass(Pass):
         node.kid = [node.kid[1]]
         update_kind(node, ast.DeleteStmt, target=node.kid[0])
 
-    # def exit_report_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_return_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_walker_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_ignore_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_visit_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_revisit_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_disengage_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_yield_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_sync_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_assignment(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_expression(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_walrus_assign(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_report_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ReportStmt Ast node."""
+        node.kid = [node.kid[1]]
+        update_kind(node, ast.ReportStmt, expr=node.kid[0])
+
+    def exit_return_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ReturnStmt Ast node."""
+        if len(node.kid) == 1:
+            node.kid = []
+            update_kind(node, ast.ReturnStmt, expr=ast.Blank())
+        else:
+            node.kid = [node.kid[1]]
+            update_kind(node, ast.ReturnStmt, expr=node.kid[0])
+
+    def exit_walker_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build WalkerStmt Ast node."""
+        replace_node(node, node.kid[1])
+
+    def exit_ignore_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build IgnoreStmt Ast node."""
+        node.kid = [node.kid[1]]
+        update_kind(node, ast.IgnoreStmt, target=node.kid[0])
+
+    def exit_visit_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build VisitStmt Ast node."""
+        meta = {"typ": ast.Blank(), "else_body": ast.Blank()}
+        if node.kid[-1].name == "SEMI":
+            if len(node.kid) == 4:
+                node.kid = [node.kid[1], node.kid[2]]
+                meta["typ"] = node.kid[0]
+                meta["target"] = node.kid[1]
+            else:
+                node.kid = [node.kid[1]]
+                meta["target"] = node.kid[0]
+        elif len(node.kid) == 4:
+            node.kid = [node.kid[1], node.kid[2], node.kid[3]]
+            meta["typ"] = node.kid[0]
+            meta["target"] = node.kid[1]
+            meta["else_body"] = node.kid[2]
+        else:
+            node.kid = [node.kid[1], node.kid[2]]
+            meta["target"] = node.kid[0]
+            meta["else_body"] = node.kid[1]
+        update_kind(node, ast.VisitStmt, **meta)
+
+    def exit_revisit_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build RevisitStmt Ast node."""
+        meta = {"hops": ast.Blank(), "else_body": ast.Blank()}
+        if node.kid[-1].name == "SEMI":
+            if len(node.kid) == 3:
+                node.kid = [node.kid[1]]
+                meta["hops"] = node.kid[0]
+        elif len(node.kid) == 3:
+            node.kid = [node.kid[1], node.kid[2]]
+            meta["hops"] = node.kid[0]
+            meta["else_body"] = node.kid[1]
+        else:
+            node.kid = [node.kid[1], node.kid[2]]
+            meta["hops"] = node.kid[0]
+            meta["else_body"] = node.kid[1]
+        update_kind(node, ast.RevisitStmt, **meta)
+
+    def exit_disengage_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build DisengageStmt Ast node."""
+        node.kid = []
+        update_kind(node, ast.DisengageStmt)
+
+    def exit_yield_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build YieldStmt Ast node."""
+        node.kid = [node.kid[1]]
+        update_kind(node, ast.YieldStmt, expr=node.kid[0])
+
+    def exit_sync_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build SyncStmt Ast node."""
+        node.kid = [node.kid[1]]
+        update_kind(node, ast.SyncStmt, target=node.kid[0])
+
+    def exit_assignment(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Assignment Ast node."""
+        node.kid = [node.kid[-3], node.kid[-1]]
+        is_static = type(node.kid[0]) == ast.Token and node.kid[0].name == "KW_HAS"
+        update_kind(
+            node,
+            ast.Assignment,
+            is_static=is_static,
+            target=node.kid[0],
+            value=node.kid[1],
+        )
+
+    def exit_expression(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Expression Ast node."""
+        if len(node.kid) == 1:
+            replace_node(node, node.kid[0])
+        else:
+            node.kid = [node.kid[0], node.kid[2], node.kid[4]]
+            update_kind(
+                node,
+                ast.ExprIfElse,
+                value=node.kid[0],
+                condition=node.kid[2],
+                else_value=node.kid[4],
+            )
+
+    def exit_walrus_assign(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build WalrusAssign Ast node."""
+        if len(node.kid) == 1:
+            replace_node(node, node.kid[0])
+        else:
+            node.kid = [node.kid[0], node.kid[1], node.kid[2]]
+            update_kind(
+                node,
+                ast.ExprBinary,
+                left=node.kid[0],
+                op=node.kid[1],
+                right=node.kid[2],
+            )
+
     # def exit_pipe(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_elvis_check(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_logical(self: "AstBuildPass", node: ast.AstNode) -> None:

@@ -660,8 +660,196 @@ class CtrlStmt(AstNode):
 
     def __init__(
         self: "CtrlStmt",
+        stmt: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize control statement node."""
+        self.stmt = stmt
+        super().__init__(*args, **kwargs)
+
+
+class DeleteStmt(AstNode):
+    """DeleteStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "DeleteStmt",
+        target: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize delete statement node."""
+        self.target = target
+        super().__init__(*args, **kwargs)
+
+
+class ReportStmt(AstNode):
+    """ReportStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "ReportStmt",
+        expr: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize report statement node."""
+        self.expr = expr
+        super().__init__(*args, **kwargs)
+
+
+class ReturnStmt(AstNode):
+    """ReturnStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "ReturnStmt",
+        expr: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize return statement node."""
+        self.expr = expr
+        super().__init__(*args, **kwargs)
+
+
+class IgnoreStmt(AstNode):
+    """IgnoreStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "IgnoreStmt",
+        target: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize ignore statement node."""
+        self.target = target
+        super().__init__(*args, **kwargs)
+
+
+class VisitStmt(AstNode):
+    """VisitStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "VisitStmt",
+        typ: AstNode,
+        target: AstNode,
+        else_body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize visit statement node."""
+        self.typ = typ
+        self.target = target
+        self.else_body = else_body
+        super().__init__(*args, **kwargs)
+
+
+class RevisitStmt(AstNode):
+    """ReVisitStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "RevisitStmt",
+        target: AstNode,
+        hops: AstNode,
+        else_body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize revisit statement node."""
+        self.target = target
+        self.hops = hops
+        self.else_body = else_body
+        super().__init__(*args, **kwargs)
+
+
+class DisengageStmt(AstNode):
+    """DisengageStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "DisengageStmt",
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize disengage statement node."""
+        super().__init__(*args, **kwargs)
+
+
+class YeildStmt(AstNode):
+    """YeildStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "YeildStmt",
+        expr: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize yeild statement node."""
+        self.expr = expr
+        super().__init__(*args, **kwargs)
+
+
+class SyncStmt(AstNode):
+    """SyncStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "SyncStmt",
+        *args: list,
+        target: AstNode,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize sync statement node."""
+        self.target = target
+        super().__init__(*args, **kwargs)
+
+
+class Assignment(AstNode):
+    """Assignment node type for Jac Ast."""
+
+    def __init__(
+        self: "Assignment",
+        is_static: bool,
+        target: AstNode,
+        value: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize assignment node."""
+        self.is_static = is_static
+        self.target = target
+        self.value = value
+        super().__init__(*args, **kwargs)
+
+
+class ExprIfElse(AstNode):
+    """ExprIfElse node type for Jac Ast."""
+
+    def __init__(
+        self: "ExprIfElse",
+        condition: AstNode,
+        value: AstNode,
+        else_value: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize if else expression node."""
+        self.condition = condition
+        self.value = value
+        self.else_value = else_value
+        super().__init__(*args, **kwargs)
+
+
+class ExprBinary(AstNode):
+    """ExprBinary node type for Jac Ast."""
+
+    def __init__(
+        self: "ExprBinary",
+        left: AstNode,
+        right: AstNode,
+        op: str,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize binary expression node."""
+        self.left = left
+        self.right = right
+        self.op = op
         super().__init__(*args, **kwargs)
