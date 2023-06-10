@@ -156,8 +156,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "LBRACE RBRACE",
         "LBRACE attr_stmt_list RBRACE",
-        "LBRACE DOC_STRING attr_stmt_list RBRACE",
-        "COLON attr_stmt",
         "SEMI",
     )
     def attr_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -175,6 +173,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "has_stmt",
         "can_stmt",
+        "DOC_STRING",
     )
     def attr_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute statement rule."""
@@ -188,10 +187,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "param_var",
-        "has_assign_clause COMMA param_var",
-        "has_tag param_var",
-        "has_assign_clause COMMA has_tag param_var",
+        "typed_has",
+        "has_assign_clause COMMA typed_has",
     )
     def has_assign_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has assign list rule."""
@@ -200,8 +197,10 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "NAME type_spec",
         "NAME type_spec EQ expression",
+        "has_tag NAME type_spec",
+        "has_tag NAME type_spec EQ expression",
     )
-    def param_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def typed_has(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
         return p
 
@@ -301,6 +300,14 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def func_decl_param_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Func declaration parameters list rule."""
+        return p
+
+    @_(
+        "NAME type_spec",
+        "NAME type_spec EQ expression",
+    )
+    def param_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Parameter variable rule rule."""
         return p
 
     @_(

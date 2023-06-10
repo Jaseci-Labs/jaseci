@@ -179,18 +179,11 @@ class AstBuildPass(Pass):
 
     def exit_attr_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ARCH_BLOCK Ast node."""
-        meta = {"doc_string": None, "body": None}
-        if len(node.kid) == 1 or node.kid[1].name == "RBRACE":
+        meta = {"body": None}
+        if len(node.kid) <= 2:
             node.kid = []
-        elif node.kid[1].name == "attr_stmt":
-            node.kid = [node.kid[1]]
-            meta["body"] = node.kid[0]
-        elif node.kid[1].name == "DOC_STRING":
-            node.kid = [node.kid[1], node.kid[2]]
-            meta["doc_string"] = node.kid[0]
-            meta["body"] = node.kid[1]
         else:
-            node.kid = [node.kid[1]]
+            node.kid = node.kid[1].kid
             meta["body"] = node.kid[0]
         update_kind(node, ast.ArchBlock, **meta)
 
@@ -198,7 +191,6 @@ class AstBuildPass(Pass):
         """Chain list together into actual list."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
-        update_kind(node, ast.ArchBlockStmts, statements=node.kid)
 
     # def exit_attr_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     #     """Replace self with actual attr stmt."""

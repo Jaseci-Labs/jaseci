@@ -281,10 +281,10 @@ class ArchBlock(AstNode):
 
     def __init__(
         self: "ArchBlock",
-        doc_string: AstNode,
         body: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize arch block node."""
+        self.body = body
         super().__init__(*args, **kwargs)
