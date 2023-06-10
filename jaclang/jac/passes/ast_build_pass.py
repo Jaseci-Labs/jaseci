@@ -540,9 +540,20 @@ class AstBuildPass(Pass):
             node.kid = [node.kid[1]]
             update_kind(node, ast.RaiseStmt, cause=node.kid[0])
 
-    # def exit_assert_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_ctrl_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_delete_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_assert_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AssertStmt Ast node."""
+        node.kid = [node.kid[1]]
+        update_kind(node, ast.AssertStmt, condition=node.kid[0])
+
+    def exit_ctrl_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build CtrlStmt Ast node."""
+        update_kind(node, ast.CtrlStmt, stmt=node.kid[0])
+
+    def exit_delete_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build DeleteStmt Ast node."""
+        node.kid = [node.kid[1]]
+        update_kind(node, ast.DeleteStmt, target=node.kid[0])
+
     # def exit_report_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_return_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_walker_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:

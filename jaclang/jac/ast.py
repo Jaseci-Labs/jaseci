@@ -639,3 +639,29 @@ class RaiseStmt(AstNode):
         """Initialize raise statement node."""
         self.cause = cause
         super().__init__(*args, **kwargs)
+
+
+class AssertStmt(AstNode):
+    """AssertStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "AssertStmt",
+        condition: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize assert statement node."""
+        self.condition = condition
+        super().__init__(*args, **kwargs)
+
+
+class CtrlStmt(AstNode):
+    """CtrlStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "CtrlStmt",
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize control statement node."""
+        super().__init__(*args, **kwargs)
