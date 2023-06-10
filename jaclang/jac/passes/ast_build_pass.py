@@ -187,12 +187,12 @@ class AstBuildPass(Pass):
             meta["body"] = node.kid[0]
         update_kind(node, ast.ArchBlock, **meta)
 
-    def exit_attr_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_member_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Chain list together into actual list."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
 
-    # def exit_attr_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+    # def exit_member_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     #     """Replace self with actual attr stmt."""
     #     node = replace_node(node, node.kid[0])
 

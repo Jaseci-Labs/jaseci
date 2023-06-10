@@ -267,9 +267,9 @@ class TranspilePass(Pass):
         """Convert attr block to python code.
 
         attr_block -> SEMI
-        attr_block -> COLON attr_stmt
-        attr_block -> LBRACE DOC_STRING attr_stmt_list RBRACE
-        attr_block -> LBRACE attr_stmt_list RBRACE
+        attr_block -> COLON member_stmt
+        attr_block -> LBRACE DOC_STRING member_stmt_list RBRACE
+        attr_block -> LBRACE member_stmt_list RBRACE
         attr_block -> LBRACE RBRACE
         """
         if len(node.kid) == 1 or (len(node.kid) == 2 and node.kid[0].name != "COLON"):
@@ -280,20 +280,20 @@ class TranspilePass(Pass):
         else:
             self.emit(node, node.kid[1].py_code)
 
-    def exit_attr_stmt_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_member_stmt_list(self: "TranspilePass", node: AstNode) -> None:
         """Convert attr stmt list to python code.
 
-        attr_stmt_list -> attr_stmt_list attr_stmt
-        attr_stmt_list -> attr_stmt
+        member_stmt_list -> member_stmt_list member_stmt
+        member_stmt_list -> member_stmt
         """
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_attr_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_member_stmt(self: "TranspilePass", node: AstNode) -> None:
         """Convert attr stmt to python code.
 
-        attr_stmt -> can_stmt
-        attr_stmt -> has_stmt
+        member_stmt -> can_stmt
+        member_stmt -> has_stmt
         """
         self.emit(node, node.kid[0].py_code)
 

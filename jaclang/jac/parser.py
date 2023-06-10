@@ -155,7 +155,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     # ----------------
     @_(
         "LBRACE RBRACE",
-        "LBRACE attr_stmt_list RBRACE",
+        "LBRACE member_stmt_list RBRACE",
         "SEMI",
     )
     def attr_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -163,10 +163,10 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "attr_stmt",
-        "attr_stmt_list attr_stmt",
+        "member_stmt",
+        "member_stmt_list member_stmt",
     )
-    def attr_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def member_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute statement list rule."""
         return p
 
@@ -175,7 +175,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "can_stmt",
         "DOC_STRING",
     )
-    def attr_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def member_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute statement rule."""
         return p
 
