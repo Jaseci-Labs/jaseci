@@ -359,7 +359,10 @@ class AstBuildPass(Pass):
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
 
-    # def exit_statement(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_statement(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Statement Ast node."""
+        replace_node(node, node.kid[0])
+
     # def exit_if_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_elif_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_else_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
