@@ -177,7 +177,7 @@ class AstBuildPass(Pass):
             meta["mod"] = node.kid[0]
             meta["arch"] = node.kid[1]
             meta["name"] = node.kid[2]
-            if node.kid[3].name == "func_decl":
+            if type(node.kid[3]) == ast.MethodSignature:
                 meta["signature"] = node.kid[3]
                 meta["body"] = node.kid[4]
             else:
@@ -187,7 +187,7 @@ class AstBuildPass(Pass):
             meta["mod"] = ast.Blank()
             meta["arch"] = node.kid[0]
             meta["name"] = node.kid[1]
-            if node.kid[2].name == "func_decl":
+            if type(node.kid[2]) == ast.MethodSignature:
                 meta["signature"] = node.kid[2]
                 meta["body"] = node.kid[3]
             else:
@@ -236,7 +236,7 @@ class AstBuildPass(Pass):
             tags=node.kid[0],
             name=node.kid[1],
             type_spec=node.kid[2],
-            value=node.kid[3] if len(node.kid) == 4 else None,
+            value=node.kid[3] if len(node.kid) == 4 else ast.Blank(),
         )
 
     def exit_has_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -284,12 +284,12 @@ class AstBuildPass(Pass):
 
     def exit_can_ds_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Data spatial can Ast node."""
-        if node.kid[-1].name == "SEMI":
+        if type(node.kid[-1]) == ast.Token and node.kid[-1].name == "SEMI":
             node.kid[-1] = ast.Blank()
 
     def exit_can_func_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Function can Ast node."""
-        if node.kid[-1].name == "SEMI":
+        if type(node.kid[-1]) == ast.Token and node.kid[-1].name == "SEMI":
             node.kid[-1] = ast.Blank()
 
     def exit_event_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -307,6 +307,12 @@ class AstBuildPass(Pass):
                 node, ast.EventSignature, event=node.kid[1], arch_access=node.kid[0]
             )
 
+    def exit_name_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build NameList Ast node."""
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+        update_kind(node, ast.NameList, names=node.kid)
+
     def exit_func_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build FuncDecl Ast node."""
         if len(node.kid) == 3:
@@ -320,10 +326,39 @@ class AstBuildPass(Pass):
                 node, ast.MethodSignature, params=node.kid[0], return_type=node.kid[1]
             )
 
-    # def exit_func_decl_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_name_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_code_block(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_statement_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_func_decl_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build FuncDeclParamList Ast node."""
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+        update_kind(node, ast.MethodParams, params=node.kid)
+
+    def exit_param_var(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ParamVar Ast node."""
+        if len(node.kid) == 4:
+            del node.kid[2]
+        update_kind(
+            node,
+            ast.ParamVar,
+            name=node.kid[0],
+            type_spec=node.kid[1],
+            value=node.kid[2] if len(node.kid) == 3 else ast.Blank(),
+        )
+
+    def exit_code_block(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build CodeBlock Ast node."""
+        meta = {"body": []}
+        if len(node.kid) <= 2:
+            node.kid = []
+        else:
+            node.kid = node.kid[1].kid
+            meta["body"] = node.kid
+        update_kind(node, ast.CodeBlock, body=node.kid)
+
+    def exit_statement_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build StatementList Ast node."""
+        if len(node.kid) == 2:
+            node.kid = node.kid[0].kid + [node.kid[1]]
+
     # def exit_statement(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_if_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_elif_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:

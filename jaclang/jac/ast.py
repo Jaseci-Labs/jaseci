@@ -228,10 +228,10 @@ class BaseClasses(AstNode):
 
 
 class AbilitySpec(AstNode):
-    """ArchBlock node type for Jac Ast."""
+    """AbilitySpec node type for Jac Ast."""
 
     def __init__(
-        self: "ArchBlock",
+        self: "AbilitySpec",
         name: AstNode,
         arch: AstNode,
         mod: AstNode,
@@ -264,10 +264,10 @@ class ArchBlock(AstNode):
 
 
 class HasStmt(AstNode):
-    """ArchBlock node type for Jac Ast."""
+    """HasStmt node type for Jac Ast."""
 
     def __init__(
-        self: "ArchBlock",
+        self: "HasStmt",
         access: AstNode,
         vars: AstNode,
         *args: list,
@@ -279,12 +279,11 @@ class HasStmt(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class HasVar(AstNode):
-    """ArchBlock node type for Jac Ast."""
+class ParamVar(AstNode):
+    """ParamVar node type for Jac Ast."""
 
     def __init__(
-        self: "ArchBlock",
-        tags: AstNode,
+        self: "ParamVar",
         name: AstNode,
         type_spec: AstNode,
         value: AstNode,
@@ -292,18 +291,31 @@ class HasVar(AstNode):
         **kwargs: dict,
     ) -> None:
         """Initialize has var node."""
-        self.tags = tags
         self.name = name
         self.type_spec = type_spec
         self.value = value
         super().__init__(*args, **kwargs)
 
 
-class HasVarTags(AstNode):
-    """ArchBlock node type for Jac Ast."""
+class HasVar(ParamVar):
+    """HasVar node type for Jac Ast."""
 
     def __init__(
-        self: "ArchBlock",
+        self: "HasVar",
+        tags: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize has var node."""
+        self.tags = tags
+        super().__init__(*args, **kwargs)
+
+
+class HasVarTags(AstNode):
+    """HasVarTags node type for Jac Ast."""
+
+    def __init__(
+        self: "HasVarTags",
         tags: list,
         *args: list,
         **kwargs: dict,
@@ -314,10 +326,10 @@ class HasVarTags(AstNode):
 
 
 class TypeSpec(AstNode):
-    """ArchBlock node type for Jac Ast."""
+    """TypeSpec node type for Jac Ast."""
 
     def __init__(
-        self: "ArchBlock",
+        self: "TypeSpec",
         typ: AstNode,
         nested1: AstNode,  # needed for lists
         nested2: AstNode,  # needed for dicts
@@ -332,10 +344,10 @@ class TypeSpec(AstNode):
 
 
 class CanDS(AstNode):
-    """ArchBlock node type for Jac Ast."""
+    """CanDS node type for Jac Ast."""
 
     def __init__(
-        self: "ArchBlock",
+        self: "CanDS",
         name: AstNode,
         access: AstNode,
         signature: AstNode,
@@ -352,14 +364,14 @@ class CanDS(AstNode):
 
 
 class CanMethod(CanDS):
-    """ArchBlock node type for Jac Ast."""
+    """CanMethod node type for Jac Ast."""
 
 
 class EventSignature(AstNode):
-    """ArchBlock node type for Jac Ast."""
+    """EventSignature node type for Jac Ast."""
 
     def __init__(
-        self: "ArchBlock",
+        self: "EventSignature",
         event: AstNode,
         arch_access: AstNode,
         *args: list,
@@ -372,10 +384,10 @@ class EventSignature(AstNode):
 
 
 class MethodSignature(AstNode):
-    """ArchBlock node type for Jac Ast."""
+    """MethodSignature node type for Jac Ast."""
 
     def __init__(
-        self: "ArchBlock",
+        self: "MethodSignature",
         params: AstNode,
         return_type: AstNode,
         *args: list,
@@ -384,4 +396,46 @@ class MethodSignature(AstNode):
         """Initialize method signature node."""
         self.params = params
         self.return_type = return_type
+        super().__init__(*args, **kwargs)
+
+
+class NameList(AstNode):
+    """NameList node type for Jac Ast."""
+
+    def __init__(
+        self: "NameList",
+        names: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize name list node."""
+        self.names = names
+        super().__init__(*args, **kwargs)
+
+
+class MethodParams(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "MethodParams",
+        params: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize method params node."""
+        self.params = params
+        super().__init__(*args, **kwargs)
+
+
+class CodeBlock(AstNode):
+    """CodeBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "CodeBlock",
+        body: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize code block node."""
+        self.body = body
         super().__init__(*args, **kwargs)

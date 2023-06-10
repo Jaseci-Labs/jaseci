@@ -293,6 +293,14 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "NAME",
+        "name_list COMMA NAME",
+    )
+    def name_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Name list rule."""
+        return p
+
+    @_(
         "LPAREN RPAREN type_spec",
         "LPAREN func_decl_param_list RPAREN type_spec",
     )
@@ -317,14 +325,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "NAME",
-        "name_list COMMA NAME",
-    )
-    def name_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Name list rule."""
-        return p
-
-    @_(
         "LBRACE RBRACE",
         "LBRACE statement_list RBRACE",
     )
@@ -335,7 +335,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Codeblock statements
     # --------------------
     @_(
-        "statement statement_list",
+        "statement_list statement",
         "statement",
     )
     def statement_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
