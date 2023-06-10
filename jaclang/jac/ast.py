@@ -297,3 +297,35 @@ class HasVar(AstNode):
         self.type_spec = type_spec
         self.value = value
         super().__init__(*args, **kwargs)
+
+
+class HasVarTags(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchBlock",
+        tags: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize has var tags node."""
+        self.tags = tags
+        super().__init__(*args, **kwargs)
+
+
+class TypeSpec(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchBlock",
+        typ: AstNode,
+        nested1: AstNode,  # needed for lists
+        nested2: AstNode,  # needed for dicts
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize type spec node."""
+        self.typ = typ
+        self.nested1 = nested1
+        self.nested2 = nested2
+        super().__init__(*args, **kwargs)

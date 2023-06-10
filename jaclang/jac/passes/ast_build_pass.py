@@ -168,7 +168,7 @@ class AstBuildPass(Pass):
 
     def exit_sub_name(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build SUB_NAME Ast node."""
-        node = replace_node(node, node.kid[1])
+        replace_node(node, node.kid[1])
 
     def exit_ability_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build AbilitySpec Ast node."""
@@ -245,10 +245,28 @@ class AstBuildPass(Pass):
             make_blank(node)
         elif len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
+            update_kind(node, ast.HasVarTags, tags=node.kid)
 
-    # def exit_type_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_type_name(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_builtin_type(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_type_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build TypeSpec Ast node."""
+        replace_node(node, node.kid[1])
+
+    def exit_type_name(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build TypeName Ast node."""
+        meta = {"typ": node.kid[0], "nested1": ast.Blank(), "nested2": ast.Blank()}
+        if len(node.kid) == 4:
+            node.kid = [node.kid[0], node.kid[2]]
+            meta["nested1"] = node.kid[1]
+        elif len(node.kid) == 6:
+            node.kid = [node.kid[0], node.kid[2], node.kid[4]]
+            meta["nested1"] = node.kid[2]
+            meta["nested2"] = node.kid[3]
+        update_kind(node, ast.TypeSpec, **meta)
+
+    def exit_builtin_type(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build BuiltinType Ast node."""
+        replace_node(node, node.kid[0])
+
     # def exit_can_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_can_ds_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_can_func_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
