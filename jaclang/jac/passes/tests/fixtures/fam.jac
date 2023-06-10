@@ -26,6 +26,18 @@ priv: node location {
                     }
                     i.duration += 1;
                 }
+                elif i.name == f"Hiking in {here.name}" {
+                    for j=0 to j<3 by j+=1 {
+                        i.duration += 1;
+                    }
+                    i.duration += 1;
+                }
+                elif i.name == f"Hiking in {here.name}" {
+                    for j=0 to j<3 by j+=1 {
+                        i.duration += 1;
+                    }
+                    i.duration += 1;
+                }
                 visitor.passport.append(here.name);
                }
         }

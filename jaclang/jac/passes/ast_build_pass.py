@@ -1,5 +1,7 @@
 """Pass that builds well formed AST from parse tree AST."""
+from copy import copy
 from typing import Type
+
 
 import jaclang.jac.ast as ast
 from jaclang.jac.passes.ir_pass import Pass
@@ -35,13 +37,6 @@ class AstBuildPass(Pass):
         node.kid = node.kid[:-3]  # only keep absorbed list of clauses
         update_kind(node, ast.GlobalVars, access=node.kid[0], values=node.kid[1:])
 
-    def exit_access_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build  Ast node."""
-        if len(node.kid) == 1:
-            make_blank(node)
-        else:
-            replace_node(node, node.kid[0])
-
     def exit_global_var_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build NAMED_ASSIGN list of Ast nodes."""
         if len(node.kid) == 3:
@@ -53,6 +48,13 @@ class AstBuildPass(Pass):
             node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
         node.kid = [node.kid[-3], node.kid[-1]]
         update_kind(node, ast.NamedAssign, name=node.kid[0], value=node.kid[1])
+
+    def exit_access_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build  Ast node."""
+        if len(node.kid) == 1:
+            make_blank(node)
+        else:
+            replace_node(node, node.kid[0])
 
     def exit_test(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build TEST Ast node."""
@@ -363,9 +365,72 @@ class AstBuildPass(Pass):
         """Build Statement Ast node."""
         replace_node(node, node.kid[0])
 
-    # def exit_if_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_elif_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_else_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_if_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build IfStmt Ast node."""
+        if len(node.kid) == 3:
+            node.kid = [node.kid[1], node.kid[2]]
+            update_kind(
+                node,
+                ast.IfStmt,
+                condition=node.kid[0],
+                body=node.kid[1],
+                elseifs=ast.Blank(),
+                else_body=ast.Blank(),
+            )
+        elif len(node.kid) == 4 and type(node.kid[3]) == ast.ElseIfs:
+            node.kid = [node.kid[1], node.kid[2], node.kid[3]]
+            update_kind(
+                node,
+                ast.IfStmt,
+                condition=node.kid[0],
+                body=node.kid[1],
+                elseifs=node.kid[2],
+                else_body=ast.Blank(),
+            )
+        elif len(node.kid) == 4:
+            node.kid = [node.kid[1], node.kid[2], node.kid[3]]
+            update_kind(
+                node,
+                ast.IfStmt,
+                condition=node.kid[0],
+                body=node.kid[1],
+                elseifs=ast.Blank(),
+                else_body=node.kid[2],
+            )
+        else:
+            node.kid = [node.kid[1], node.kid[2], node.kid[3], node.kid[4]]
+            update_kind(
+                node,
+                ast.IfStmt,
+                condition=node.kid[0],
+                body=node.kid[1],
+                elseifs=node.kid[2],
+                else_body=node.kid[3],
+            )
+
+    def exit_elif_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ElifStmtList Ast node."""
+        cpy_node = copy(node)
+        cpy_node.kid = [node.kid[-2], node.kid[-1]]
+        cpy_node = convert_kind(  # coverts ElseIf to IfStmt for ElseIfs list
+            cpy_node,
+            ast.IfStmt,
+            condition=cpy_node.kid[0],
+            body=cpy_node.kid[1],
+            elseifs=ast.Blank(),
+            else_body=ast.Blank(),
+        )
+        if len(node.kid) == 3:
+            node.kid = [cpy_node]
+        if len(node.kid) == 4:
+            node.kid = node.kid[0].kid + [cpy_node]
+        update_kind(node, ast.ElseIfs, elseifs=node.kid)
+
+    def exit_else_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ElseStmt Ast node."""
+        node.kid = [node.kid[1]]
+        update_kind(node, ast.ElseStmt, body=node.kid[0])
+
     # def exit_try_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_else_from_try(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_for_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -450,6 +515,12 @@ def replace_node(node: ast.AstNode, new_node: ast.AstNode) -> None:
 
 def update_kind(node: ast.AstNode, kind: Type[ast.AstNode], **kwargs: dict) -> None:
     """Update node kind."""
-    new_node = kind(**kwargs, parent=node.parent, kid=node.kid, line=node.line)
+    new_node = convert_kind(node, kind=kind, **kwargs)
     node.parent.kid[node.parent.kid.index(node)] = new_node
+    return new_node
+
+
+def convert_kind(node: ast.AstNode, kind: Type[ast.AstNode], **kwargs: dict) -> None:
+    """Convert node from one kind to another."""
+    new_node = kind(**kwargs, parent=node.parent, kid=node.kid, line=node.line)
     return new_node

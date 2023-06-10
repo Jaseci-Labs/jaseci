@@ -503,7 +503,7 @@ class TranspilePass(Pass):
     def exit_if_stmt(self: "TranspilePass", node: AstNode) -> None:
         """Convert if stmt to python code.
 
-        if_stmt -> KW_IF expression code_block elif_stmt_list else_stmt
+        if_stmt -> KW_IF expression code_block elif_list else_stmt
         if_stmt -> KW_IF expression code_block else_stmt
         if_stmt -> KW_IF expression code_block
         """
@@ -515,11 +515,11 @@ class TranspilePass(Pass):
             self.emit(node, node.kid[3].py_code)
             self.emit(node, node.kid[4].py_code)
 
-    def exit_elif_stmt_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_elif_list(self: "TranspilePass", node: AstNode) -> None:
         """Convert elif stmt list to python code.
 
-        elif_stmt_list -> KW_ELIF expression code_block elif_stmt_list
-        elif_stmt_list -> KW_ELIF expression code_block
+        elif_list -> KW_ELIF expression code_block elif_list
+        elif_list -> KW_ELIF expression code_block
         """
         self.emit_ln(node, "elif " + node.kid[1].py_code + ":")
         self.emit(node, node.kid[2].py_code)

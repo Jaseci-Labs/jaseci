@@ -439,3 +439,51 @@ class CodeBlock(AstNode):
         """Initialize code block node."""
         self.body = body
         super().__init__(*args, **kwargs)
+
+
+class IfStmt(AstNode):
+    """IfStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "IfStmt",
+        condition: AstNode,
+        body: AstNode,
+        elseifs: AstNode,
+        else_body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize if statement node."""
+        self.condition = condition
+        self.body = body
+        self.elseifs = elseifs
+        self.else_body = else_body
+        super().__init__(*args, **kwargs)
+
+
+class ElseIfs(AstNode):
+    """ElseIfs node type for Jac Ast."""
+
+    def __init__(
+        self: "ElseIfs",
+        elseifs: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize elseifs node."""
+        self.elseifs = elseifs
+        super().__init__(*args, **kwargs)
+
+
+class ElseStmt(AstNode):
+    """Else node type for Jac Ast."""
+
+    def __init__(
+        self: "ElseStmt",
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize else node."""
+        self.body = body
+        super().__init__(*args, **kwargs)

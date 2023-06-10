@@ -349,6 +349,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "try_stmt",
         "for_stmt",
         "while_stmt",
+        "raise_stmt SEMI",
         "assert_stmt SEMI",
         "ctrl_stmt SEMI",
         "delete_stmt SEMI",
@@ -363,7 +364,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "KW_IF expression code_block",
         "KW_IF expression code_block else_stmt",
-        "KW_IF expression code_block elif_stmt_list else_stmt",
+        "KW_IF expression code_block elif_list",
+        "KW_IF expression code_block elif_list else_stmt",
     )
     def if_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """If statement rule."""
@@ -371,9 +373,9 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "KW_ELIF expression code_block",
-        "KW_ELIF expression code_block elif_stmt_list",
+        "elif_list KW_ELIF expression code_block",
     )
-    def elif_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def elif_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Else if statement list rule."""
         return p
 
@@ -384,18 +386,35 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "KW_TRY code_block",
-        "KW_TRY code_block else_from_try",
+        "KW_TRY code_block except_list",
+        "KW_TRY code_block finally_stmt",
+        "KW_TRY code_block except_list finally_stmt",
     )
     def try_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Try statement rule."""
         return p
 
     @_(
-        "KW_ELSE KW_WITH NAME code_block",
-        "KW_ELSE code_block",
+        "except_def",
+        "except_list except_def",
     )
-    def else_from_try(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Else from try rule."""
+    def except_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Except statement list rule."""
+        return p
+
+    @_(
+        "KW_EXCEPT expression code_block",
+        "KW_EXCEPT expression KW_AS NAME code_block",
+    )
+    def except_def(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Except definition rule."""
+        return p
+
+    @_(
+        "KW_FINALLY code_block",
+    )
+    def finally_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Except finally statement rule."""
         return p
 
     @_(
@@ -410,6 +429,11 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_("KW_WHILE expression code_block")
     def while_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """While statement rule."""
+        return p
+
+    @_("KW_RAISE expression")
+    def raise_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Raise statement rule."""
         return p
 
     @_("KW_ASSERT expression")
@@ -946,7 +970,6 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "LPAREN filter_compare_list RPAREN",
-        # "",
     )
     def filter_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Filter context rule."""
@@ -960,7 +983,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "NAME cmp_op expression",
         "NAME cmp_op expression COMMA filter_compare_list",
-        # "",
     )
     def filter_compare_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Filter comparison list rule."""
