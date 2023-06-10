@@ -264,8 +264,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "KW_CAN NAME code_block",
-        "KW_CAN NAME SEMI",
         "KW_CAN NAME event_clause code_block",
         "KW_CAN NAME event_clause SEMI",
     )
@@ -282,6 +280,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "empty",
         "KW_WITH KW_ENTRY",
         "KW_WITH KW_EXIT",
         "KW_WITH STAR_MUL KW_ENTRY",

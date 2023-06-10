@@ -267,11 +267,59 @@ class AstBuildPass(Pass):
         """Build BuiltinType Ast node."""
         replace_node(node, node.kid[0])
 
-    # def exit_can_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_can_ds_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_can_func_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_event_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_func_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_can_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build CanStmt Ast node."""
+        typ = ast.CanDS if node.kid[1].name == "can_ds_ability" else ast.CanMethod
+        access = node.kid[0]
+        node = replace_node(node, node.kid[1])
+        node.kid = [access] + node.kid
+        update_kind(
+            node,
+            typ,
+            name=node.kid[2],
+            access=access,
+            signature=node.kid[-2],
+            body=node.kid[-1],
+        )
+
+    def exit_can_ds_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Data spatial can Ast node."""
+        if node.kid[-1].name == "SEMI":
+            node.kid[-1] = ast.Blank()
+
+    def exit_can_func_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Function can Ast node."""
+        if node.kid[-1].name == "SEMI":
+            node.kid[-1] = ast.Blank()
+
+    def exit_event_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build EventClause Ast node."""
+        if len(node.kid) == 1:
+            make_blank(node)
+        elif len(node.kid) == 2:
+            node.kid = [node.kid[1]]
+            update_kind(
+                node, ast.EventSignature, event=node.kid[0], arch_access=ast.Blank()
+            )
+        else:
+            node.kid = [node.kid[1], node.kid[2]]
+            update_kind(
+                node, ast.EventSignature, event=node.kid[1], arch_access=node.kid[0]
+            )
+
+    def exit_func_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build FuncDecl Ast node."""
+        if len(node.kid) == 3:
+            node.kid = [node.kid[-1]]
+            update_kind(
+                node, ast.MethodSignature, params=ast.Blank(), return_type=node.kid[0]
+            )
+        else:
+            node.kid = [node.kid[1], node.kid[3]]
+            update_kind(
+                node, ast.MethodSignature, params=node.kid[0], return_type=node.kid[1]
+            )
+
     # def exit_func_decl_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_name_list(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_code_block(self: "AstBuildPass", node: ast.AstNode) -> None:

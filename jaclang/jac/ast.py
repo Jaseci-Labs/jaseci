@@ -329,3 +329,59 @@ class TypeSpec(AstNode):
         self.nested1 = nested1
         self.nested2 = nested2
         super().__init__(*args, **kwargs)
+
+
+class CanDS(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchBlock",
+        name: AstNode,
+        access: AstNode,
+        signature: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize can statement node."""
+        self.name = name
+        self.access = access
+        self.signature = signature
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class CanMethod(CanDS):
+    """ArchBlock node type for Jac Ast."""
+
+
+class EventSignature(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchBlock",
+        event: AstNode,
+        arch_access: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize event signature node."""
+        self.event = event
+        self.arch_access = arch_access
+        super().__init__(*args, **kwargs)
+
+
+class MethodSignature(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchBlock",
+        params: AstNode,
+        return_type: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize method signature node."""
+        self.params = params
+        self.return_type = return_type
+        super().__init__(*args, **kwargs)
