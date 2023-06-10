@@ -247,7 +247,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "TYP_SET",
         "TYP_DICT",
         "TYP_BOOL",
-        "KW_TYPE",
+        "TYP_TYPE",
     )
     def builtin_type(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Any type rule."""

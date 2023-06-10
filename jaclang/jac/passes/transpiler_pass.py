@@ -358,7 +358,7 @@ class TranspilePass(Pass):
     def exit_builtin_type(self: "TranspilePass", node: AstNode) -> None:
         """Convert builtin type to python code.
 
-        builtin_type -> KW_TYPE
+        builtin_type -> TYP_TYPE
         builtin_type -> TYP_BOOL
         builtin_type -> TYP_DICT
         builtin_type -> TYP_SET
