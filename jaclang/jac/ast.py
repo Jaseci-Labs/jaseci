@@ -819,11 +819,11 @@ class Assignment(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class ExprIfElse(AstNode):
+class IfElseExpr(AstNode):
     """ExprIfElse node type for Jac Ast."""
 
     def __init__(
-        self: "ExprIfElse",
+        self: "IfElseExpr",
         condition: AstNode,
         value: AstNode,
         else_value: AstNode,
@@ -837,11 +837,11 @@ class ExprIfElse(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class ExprBinary(AstNode):
+class BinaryExpr(AstNode):
     """ExprBinary node type for Jac Ast."""
 
     def __init__(
-        self: "ExprBinary",
+        self: "BinaryExpr",
         left: AstNode,
         right: AstNode,
         op: str,
@@ -855,11 +855,11 @@ class ExprBinary(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class ExprUnary(AstNode):
+class UnaryExpr(AstNode):
     """ExprUnary node type for Jac Ast."""
 
     def __init__(
-        self: "ExprUnary",
+        self: "UnaryExpr",
         operand: AstNode,
         op: str,
         *args: list,
@@ -871,11 +871,11 @@ class ExprUnary(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class ExprSpawnWalker(AstNode):
+class SpawnWalkerExpr(AstNode):
     """ExprSpawnWalker node type for Jac Ast."""
 
     def __init__(
-        self: "ExprSpawnWalker",
+        self: "SpawnWalkerExpr",
         target: AstNode,
         location: AstNode,
         *args: list,
@@ -887,11 +887,11 @@ class ExprSpawnWalker(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class ExprSpawnObject(AstNode):
+class SpawnObjectExpr(AstNode):
     """ExprSpawnObject node type for Jac Ast."""
 
     def __init__(
-        self: "ExprSpawnObject",
+        self: "SpawnObjectExpr",
         target: AstNode,
         *args: list,
         **kwargs: dict,
@@ -901,11 +901,11 @@ class ExprSpawnObject(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class ExprSpawnEdgeNode(AstNode):
+class SpawnEdgeNodeExpr(AstNode):
     """ExprSpawnEdgeNode node type for Jac Ast."""
 
     def __init__(
-        self: "ExprSpawnEdgeNode",
+        self: "SpawnEdgeNodeExpr",
         edge: AstNode,
         node: AstNode,
         location: AstNode,
@@ -919,11 +919,11 @@ class ExprSpawnEdgeNode(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class ExprUnpack(AstNode):
+class UnpackExpr(AstNode):
     """ExprUnpack node type for Jac Ast."""
 
     def __init__(
-        self: "ExprUnpack",
+        self: "UnpackExpr",
         target: AstNode,
         *args: list,
         **kwargs: dict,

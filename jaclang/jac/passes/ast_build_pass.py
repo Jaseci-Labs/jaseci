@@ -647,7 +647,7 @@ class AstBuildPass(Pass):
             node.kid = [node.kid[0], node.kid[1], node.kid[2]]
             update_kind(
                 node,
-                ast.ExprIfElse,
+                ast.IfElseExpr,
                 value=node.kid[0],
                 condition=node.kid[1],
                 else_value=node.kid[2],
@@ -677,7 +677,7 @@ class AstBuildPass(Pass):
         """Build Compare Ast node."""
         if len(node.kid) == 2:
             node.kid = [node.kid[0], node.kid[1]]
-            update_kind(node, ast.ExprUnary, op=node.kid[0], operand=node.kid[1])
+            update_kind(node, ast.UnaryExpr, op=node.kid[0], operand=node.kid[1])
         else:
             self.binary_op_helper(node)
 
@@ -693,7 +693,7 @@ class AstBuildPass(Pass):
         """Build Factor Ast node."""
         if len(node.kid) == 2:
             node.kid = [node.kid[0], node.kid[1]]
-            update_kind(node, ast.ExprUnary, op=node.kid[0], operand=node.kid[1])
+            update_kind(node, ast.UnaryExpr, op=node.kid[0], operand=node.kid[1])
         else:
             self.binary_op_helper(node)
 
