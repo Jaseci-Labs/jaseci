@@ -431,8 +431,69 @@ class AstBuildPass(Pass):
         node.kid = [node.kid[1]]
         update_kind(node, ast.ElseStmt, body=node.kid[0])
 
-    # def exit_try_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_else_from_try(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_try_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build TryStmt Ast node."""
+        if len(node.kid) == 2:
+            node.kid = [node.kid[1]]
+            update_kind(
+                node,
+                ast.TryStmt,
+                body=node.kid[0],
+                excepts=ast.Blank(),
+                finally_body=ast.Blank(),
+            )
+        elif len(node.kid) == 3 and type(node.kid[2]) == ast.ExceptList:
+            node.kid = [node.kid[1], node.kid[2]]
+            update_kind(
+                node,
+                ast.TryStmt,
+                body=node.kid[0],
+                excepts=node.kid[1],
+                finally_body=ast.Blank(),
+            )
+        elif len(node.kid) == 3:
+            node.kid = [node.kid[1], node.kid[2]]
+            update_kind(
+                node,
+                ast.TryStmt,
+                body=node.kid[0],
+                excepts=ast.Blank(),
+                finally_body=node.kid[1],
+            )
+        else:
+            node.kid = [node.kid[1], node.kid[2], node.kid[3]]
+            update_kind(
+                node,
+                ast.TryStmt,
+                body=node.kid[0],
+                excepts=node.kid[1],
+                finally_body=node.kid[2],
+            )
+
+    def except_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ExceptList Ast node."""
+        if len(node.kid) == 2:
+            node.kid = node.kid[0].kid + [node.kid[1]]
+        update_kind(node, ast.ExceptList, excepts=node.kid)
+
+    def except_def(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ExceptDef Ast node."""
+        if len(node.kid) == 3:
+            node.kid = [node.kid[1], node.kid[2]]
+            update_kind(
+                node, ast.Except, typ=node.kid[0], name=ast.Blank(), body=node.kid[1]
+            )
+        else:
+            node.kid = [node.kid[1], node.kid[3], node.kid[4]]
+            update_kind(
+                node, ast.Except, typ=node.kid[0], name=node.kid[1], body=node.kid[2]
+            )
+
+    def exit_finally_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build FinallyStmt Ast node."""
+        node.kid = [node.kid[1]]
+        update_kind(node, ast.FinallyStmt, body=node.kid[0])
+
     # def exit_for_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_while_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_assert_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:

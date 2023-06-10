@@ -487,3 +487,67 @@ class ElseStmt(AstNode):
         """Initialize else node."""
         self.body = body
         super().__init__(*args, **kwargs)
+
+
+class TryStmt(AstNode):
+    """TryStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "TryStmt",
+        body: AstNode,
+        excepts: AstNode,
+        finally_body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize try statement node."""
+        self.body = body
+        self.excepts = excepts
+        self.finally_body = finally_body
+        super().__init__(*args, **kwargs)
+
+
+class ExceptList(AstNode):
+    """ExceptList node type for Jac Ast."""
+
+    def __init__(
+        self: "ExceptList",
+        excepts: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize excepts node."""
+        self.excepts = excepts
+        super().__init__(*args, **kwargs)
+
+
+class Except(AstNode):
+    """Except node type for Jac Ast."""
+
+    def __init__(
+        self: "Except",
+        typ: AstNode,
+        name: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize except node."""
+        self.typ = typ
+        self.name = name
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class FinallyStmt(AstNode):
+    """FinallyStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "FinallyStmt",
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize finally statement node."""
+        self.body = body
+        super().__init__(*args, **kwargs)
