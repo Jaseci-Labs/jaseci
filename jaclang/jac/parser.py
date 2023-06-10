@@ -121,8 +121,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "attr_block",
-        "inherited_archs attr_block",
+        "member_block",
+        "inherited_archs member_block",
     )
     def arch_decl_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype tail rule."""
@@ -158,7 +158,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LBRACE member_stmt_list RBRACE",
         "SEMI",
     )
-    def attr_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def member_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute block rule."""
         return p
 

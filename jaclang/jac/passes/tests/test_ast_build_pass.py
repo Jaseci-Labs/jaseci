@@ -29,10 +29,15 @@ class AstBuildPassTests(TestCase):
         build_pass = self.builder.run(node=ptoa(ptree))
         return build_pass
 
+    def test_ast_build_basic(self: "TestCase") -> None:
+        """Basic test for pass."""
+        ptree = self.prse.parse(self.lex.tokenize(self.load_fixture("fam.jac")))
+        self.builder.run(node=ptoa(ptree))
+
     def test_ast_build_module_structure(self: "TestCase") -> None:
         """Basic test for pass."""
         build_pass = self.build_micro("module_structure.jac")
-        build_pass.print()
+        # build_pass.print()
         self.assertGreater(len(str(build_pass.to_dict())), 200)
 
     def test_no_typo_in_pass(self: "TestCase") -> None:

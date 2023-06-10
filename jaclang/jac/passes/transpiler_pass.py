@@ -104,8 +104,8 @@ class TranspilePass(Pass):
     def exit_test(self: "TranspilePass", node: AstNode) -> None:
         """Convert test to python code.
 
-        test -> KW_TEST NAME multistring KW_WITH attr_block spawn_ctx code_block
-        test -> KW_TEST NAME multistring KW_WITH attr_block code_block
+        test -> KW_TEST NAME multistring KW_WITH member_block spawn_ctx code_block
+        test -> KW_TEST NAME multistring KW_WITH member_block code_block
         test -> KW_TEST NAME multistring KW_WITH walker_ref spawn_ctx code_block
         test -> KW_TEST NAME multistring KW_WITH walker_ref code_block
         """
@@ -210,8 +210,8 @@ class TranspilePass(Pass):
     def exit_arch_decl_tail(self: "TranspilePass", node: AstNode) -> None:
         """Convert arch decl tail to python code.
 
-        arch_decl_tail -> inherited_archs attr_block
-        arch_decl_tail -> attr_block
+        arch_decl_tail -> inherited_archs member_block
+        arch_decl_tail -> member_block
         """
         if len(node.kid) == 1:
             self.emit(node, node.kid[0].py_code)
@@ -263,14 +263,14 @@ class TranspilePass(Pass):
         #     self.emit_ln(node, node.kid[3].py_code)
         # self.indent_level -= 1
 
-    def exit_attr_block(self: "TranspilePass", node: AstNode) -> None:
+    def exit_member_block(self: "TranspilePass", node: AstNode) -> None:
         """Convert attr block to python code.
 
-        attr_block -> SEMI
-        attr_block -> COLON member_stmt
-        attr_block -> LBRACE DOC_STRING member_stmt_list RBRACE
-        attr_block -> LBRACE member_stmt_list RBRACE
-        attr_block -> LBRACE RBRACE
+        member_block -> SEMI
+        member_block -> COLON member_stmt
+        member_block -> LBRACE DOC_STRING member_stmt_list RBRACE
+        member_block -> LBRACE member_stmt_list RBRACE
+        member_block -> LBRACE RBRACE
         """
         if len(node.kid) == 1 or (len(node.kid) == 2 and node.kid[0].name != "COLON"):
             self.emit_ln(node, "pass")

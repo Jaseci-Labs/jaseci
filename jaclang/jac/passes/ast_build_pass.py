@@ -99,7 +99,7 @@ class AstBuildPass(Pass):
             node.parent.kid = [node] + node.parent.kid
             if len(node.kid) == 3:
                 node.kid = [node.kid[0], node.kid[2]]
-                meta["alias"] = node.kid[2]
+                meta["alias"] = node.kid[1]
             else:
                 node.kid = [node.kid[0]]
         elif node.kid[-2].name == "KW_AS":
@@ -177,14 +177,14 @@ class AstBuildPass(Pass):
                 meta["body"] = node.kid[2]
         update_kind(node, ast.AbilitySpec, **meta)
 
-    def exit_attr_block(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_member_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ARCH_BLOCK Ast node."""
-        meta = {"body": None}
+        meta = {"body": []}
         if len(node.kid) <= 2:
             node.kid = []
         else:
             node.kid = node.kid[1].kid
-            meta["body"] = node.kid[0]
+            meta["body"] = node.kid
         update_kind(node, ast.ArchBlock, **meta)
 
     def exit_member_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -192,19 +192,19 @@ class AstBuildPass(Pass):
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
 
-    # def exit_member_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    #     """Replace self with actual attr stmt."""
-    #     node = replace_node(node, node.kid[0])
+    def exit_member_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Replace self with actual attr stmt."""
+        node = replace_node(node, node.kid[0])
 
-    # def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    #     """Collect list of individual vars."""
-    #     node = replace_node(node, node.kid[0])
+    def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Move var list up to parent."""
+        node = replace_node(node, node.kid[1])
 
-    # def exit_has_assign_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
-    #     """Push list of individual vars into parent."""
-    #     node = replace_node(node, node.kid[0])
-    #     if len(node.kid) == 1:
-    #         node.parent.kid = [node] + node.parent.kid
+    def exit_has_assign_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Push list of individual vars into parent."""
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+        update_kind(node, ast.HasVars, vars=node.kid)
 
     # def exit_param_var(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_has_tag(self: "AstBuildPass", node: ast.AstNode) -> None:

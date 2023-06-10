@@ -288,3 +288,17 @@ class ArchBlock(AstNode):
         """Initialize arch block node."""
         self.body = body
         super().__init__(*args, **kwargs)
+
+
+class HasVars(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchBlock",
+        vars: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize arch block node."""
+        self.vars = vars
+        super().__init__(*args, **kwargs)
