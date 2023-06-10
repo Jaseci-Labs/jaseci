@@ -13,6 +13,7 @@ class TestPass(TestCase):
         lexer = JacLexer()
         parser = JacParser()
         parse_tree = parser.parse(lexer.tokenize(self.load_fixture("fam.jac")))
+        self.assertFalse(parser.had_error)
         ast = ptoa(parse_tree)
         self.assertGreater(len(str(Pass(ast).ir.to_dict())), 1000)
 
@@ -21,5 +22,6 @@ class TestPass(TestCase):
         lexer = JacLexer()
         parser = JacParser()
         parse_tree = parser.parse(lexer.tokenize(self.load_fixture("fstrings.jac")))
+        self.assertFalse(parser.had_error)
         ast = ptoa(parse_tree)
         self.assertGreater(len(str(Pass(ast).ir.to_dict())), 1000)

@@ -33,7 +33,11 @@ class AstBuildPass(Pass):
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build GLOBAL_VAR Ast node."""
         node.kid = node.kid[:-3]  # only keep absorbed list of clauses
-        update_kind(node, ast.GlobalVars, values=node.kid)
+        update_kind(node, ast.GlobalVars, access=node.kid[0], values=node.kid[1:])
+
+    def exit_access_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build  Ast node."""
+        node = replace_node(node, node.kid[0])
 
     def exit_global_var_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build NAMED_ASSIGN list of Ast nodes."""
@@ -115,28 +119,39 @@ class AstBuildPass(Pass):
 
     def exit_architype(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build various architype Ast nodes."""
-        if node.kid[0].name == "KW_SPAWNER":
+        if node.kid[1].name == "KW_SPAWNER":
             node.kid = node.kid[1:]
-            update_kind(node, ast.SpawnerArch, name=node.kid[0], body=node.kid[1])
+            update_kind(
+                node,
+                ast.SpawnerArch,
+                access=node.kid[0],
+                name=node.kid[1],
+                body=node.kid[2],
+            )
         else:
-            meta = {}
-            if node.kid[0].name == "KW_NODE":
+            meta = {"access": node.kid[0]}
+            if node.kid[1].name == "KW_NODE":
                 meta["kind"] = ast.NodeArch
-            elif node.kid[0].name == "KW_EDGE":
+            elif node.kid[1].name == "KW_EDGE":
                 meta["kind"] = ast.EdgeArch
-            elif node.kid[0].name == "KW_OBJECT":
+            elif node.kid[1].name == "KW_OBJECT":
                 meta["kind"] = ast.ObjectArch
-            elif node.kid[0].name == "KW_WALKER":
+            elif node.kid[1].name == "KW_WALKER":
                 meta["kind"] = ast.WalkerArch
-            meta["name"] = node.kid[1]
-            if (type(node.kid[2].kid[0])) == ast.BaseClasses:
-                node.kid = [node.kid[1], node.kid[2].kid[0], node.kid[2].kid[1]]
-                meta["base_classes"] = node.kid[1]
-                meta["body"] = node.kid[2]
+            meta["name"] = node.kid[2]
+            if (type(node.kid[3].kid[0])) == ast.BaseClasses:
+                node.kid = [
+                    node.kid[0],
+                    node.kid[2],
+                    node.kid[3].kid[0],
+                    node.kid[3].kid[1],
+                ]
+                meta["base_classes"] = node.kid[2]
+                meta["body"] = node.kid[3]
             else:
-                node.kid = [node.kid[1], node.kid[2].kid[0]]
+                node.kid = [node.kid[0], node.kid[2], node.kid[3].kid[0]]
                 meta["base_classes"] = None
-                meta["body"] = node.kid[1]
+                meta["body"] = node.kid[2]
             update_kind(node, **meta)
 
     def exit_arch_decl_tail(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -198,15 +213,20 @@ class AstBuildPass(Pass):
 
     def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Move var list up to parent."""
+        access = node.kid[0]
         node = replace_node(node, node.kid[1])
+        node.kid = [access] + node.kid
+        update_kind(node, ast.HasStmt, access=node.kid[0], vars=node.kid)
 
     def exit_has_assign_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Push list of individual vars into parent."""
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
-        update_kind(node, ast.HasVars, vars=node.kid)
 
-    # def exit_param_var(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_typed_has(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build HasVar Ast node."""
+        # node = replace_node(node, node.kid[1])
+
     # def exit_has_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_type_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_type_name(self: "AstBuildPass", node: ast.AstNode) -> None:

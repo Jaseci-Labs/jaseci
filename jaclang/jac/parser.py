@@ -43,9 +43,19 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Element rule."""
         return p
 
-    @_("KW_GLOBAL global_var_clause SEMI")
+    @_("access_tag KW_GLOBAL global_var_clause SEMI")
     def global_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global variable rule."""
+        return p
+
+    @_(
+        "KW_PRIV COLON",
+        "KW_PUB COLON",
+        "KW_PROT COLON",
+        "empty",
+    )
+    def access_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Permission tag rule."""
         return p
 
     @_(
@@ -110,11 +120,11 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Architype elements
     # ------------------
     @_(
-        "KW_NODE NAME arch_decl_tail",
-        "KW_EDGE NAME arch_decl_tail",
-        "KW_OBJECT NAME arch_decl_tail",
-        "KW_WALKER NAME arch_decl_tail",
-        "KW_SPAWNER NAME code_block",
+        "access_tag KW_NODE NAME arch_decl_tail",
+        "access_tag KW_EDGE NAME arch_decl_tail",
+        "access_tag KW_OBJECT NAME arch_decl_tail",
+        "access_tag KW_WALKER NAME arch_decl_tail",
+        "access_tag KW_SPAWNER NAME code_block",
     )
     def architype(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
@@ -181,7 +191,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # Has statements
     # --------------
-    @_("KW_HAS has_assign_clause SEMI")
+    @_("access_tag KW_HAS has_assign_clause SEMI")
     def has_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has statement rule."""
         return p
@@ -195,8 +205,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "NAME type_spec",
-        "NAME type_spec EQ expression",
         "has_tag NAME type_spec",
         "has_tag NAME type_spec EQ expression",
     )
@@ -207,8 +215,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "has_tag KW_HIDDEN",
         "has_tag KW_ANCHOR",
-        "KW_HIDDEN",
-        "KW_ANCHOR",
+        "empty",
     )
     def has_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has tag rule."""
@@ -249,8 +256,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Can statements
     # --------------
     @_(
-        "can_ds_ability",
-        "can_func_ability",
+        "access_tag can_ds_ability",
+        "access_tag can_func_ability",
     )
     def can_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
@@ -958,4 +965,9 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def filter_compare_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Filter comparison list rule."""
+        return p
+
+    @_("")
+    def empty(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Empty rule."""
         return p

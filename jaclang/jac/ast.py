@@ -78,8 +78,11 @@ class DocString(AstNode):
 class GlobalVars(AstNode):
     """GlobalVars node type for Jac Ast."""
 
-    def __init__(self: "GlobalVars", values: list, *args: list, **kwargs: dict) -> None:
+    def __init__(
+        self: "GlobalVars", access: AstNode, values: list, *args: list, **kwargs: dict
+    ) -> None:
         """Initialize global var node."""
+        self.access = access
         self.values = values
         super().__init__(*args, **kwargs)
 
@@ -155,48 +158,13 @@ class ModuleItem(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class NodeArch(AstNode):
-    """NodeArch node type for Jac Ast."""
-
-    def __init__(
-        self: "NodeArch",
-        name: AstNode,
-        base_classes: AstNode,
-        body: AstNode,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize node arch node."""
-        self.name = name
-        self.base_classes = base_classes
-        self.body = body
-        super().__init__(*args, **kwargs)
-
-
-class EdgeArch(AstNode):
-    """EdgeArch node type for Jac Ast."""
-
-    def __init__(
-        self: "EdgeArch",
-        name: AstNode,
-        base_classes: AstNode,
-        body: AstNode,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize edge arch node."""
-        self.name = name
-        self.base_classes = base_classes
-        self.body = body
-        super().__init__(*args, **kwargs)
-
-
 class ObjectArch(AstNode):
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
         self: "ObjectArch",
         name: AstNode,
+        access: AstNode,
         base_classes: AstNode,
         body: AstNode,
         *args: list,
@@ -204,27 +172,22 @@ class ObjectArch(AstNode):
     ) -> None:
         """Initialize object arch node."""
         self.name = name
+        self.access = access
         self.base_classes = base_classes
         self.body = body
         super().__init__(*args, **kwargs)
 
 
-class WalkerArch(AstNode):
+class NodeArch(ObjectArch):
+    """NodeArch node type for Jac Ast."""
+
+
+class EdgeArch(ObjectArch):
+    """EdgeArch node type for Jac Ast."""
+
+
+class WalkerArch(ObjectArch):
     """WalkerArch node type for Jac Ast."""
-
-    def __init__(
-        self: "WalkerArch",
-        name: AstNode,
-        base_classes: AstNode,
-        body: AstNode,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize walker arch node."""
-        self.name = name
-        self.base_classes = base_classes
-        self.body = body
-        super().__init__(*args, **kwargs)
 
 
 class SpawnerArch(AstNode):
@@ -233,12 +196,14 @@ class SpawnerArch(AstNode):
     def __init__(
         self: "SpawnerArch",
         name: AstNode,
+        access: AstNode,
         body: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize spawner arch node."""
         self.name = name
+        self.access = access
         self.body = body
         super().__init__(*args, **kwargs)
 
@@ -290,15 +255,37 @@ class ArchBlock(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class HasVars(AstNode):
+class HasStmt(AstNode):
     """ArchBlock node type for Jac Ast."""
 
     def __init__(
         self: "ArchBlock",
+        access: AstNode,
         vars: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
-        """Initialize arch block node."""
+        """Initialize has statement node."""
+        self.access = access
         self.vars = vars
+        super().__init__(*args, **kwargs)
+
+
+class HasVar(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchBlock",
+        tags: AstNode,
+        name: AstNode,
+        type_spec: AstNode,
+        value: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize has var node."""
+        self.tags = tags
+        self.name = name
+        self.type_spec = type_spec
+        self.value = value
         super().__init__(*args, **kwargs)

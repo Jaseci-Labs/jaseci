@@ -8,14 +8,14 @@ Use them to document your code
 import:jac .stuff;
 import:py from .activity, Activity as Actvy;
 
-node location {
-    has x: int, y: int, name: str;
-    has anchor activities: list[Activity];
+priv: node location {
+    priv: has x: int, y: int, name: str;
+    prot: has anchor activities: list[Activity];
     has hidden intro: str = "Welcome";
     has visited: int = 0;
 
 
-    can record with tourist entry {
+    priv: can record with tourist entry {
         visited+=1;
         for i in activities {
             i.duration = visitor.duration;

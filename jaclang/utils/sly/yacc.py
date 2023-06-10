@@ -2266,7 +2266,7 @@ class Parser(metaclass=ParserMeta):
                     if value is pslice:
                         value = (
                             pname,
-                            pslice.lineno,
+                            pslice.lineno if hasattr(pslice, "lineno") else 0,
                             *(
                                 s.value if isinstance(s, YaccSymbol) else s
                                 for s in pslice._slice
