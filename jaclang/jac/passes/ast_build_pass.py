@@ -494,8 +494,52 @@ class AstBuildPass(Pass):
         node.kid = [node.kid[1]]
         update_kind(node, ast.FinallyStmt, body=node.kid[0])
 
-    # def exit_for_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_while_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_for_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ForStmt Ast node."""
+        if node.kid[2].name == "KW_TO":
+            node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[6]]
+            update_kind(
+                node,
+                ast.IterForStmt,
+                iter=node.kid[0],
+                condition=node.kid[1],
+                count_by=node.kid[2],
+                body=node.kid[3],
+            )
+        elif node.kid[2].name == "KW_IN":
+            node.kid = [node.kid[1], node.kid[3], node.kid[4]]
+            update_kind(
+                node,
+                ast.InForStmt,
+                name=node.kid[0],
+                collection=node.kid[1],
+                body=node.kid[2],
+            )
+        else:
+            node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[6]]
+            update_kind(
+                node,
+                ast.DictForStmt,
+                k_name=node.kid[0],
+                v_name=node.kid[1],
+                collection=node.kid[2],
+                body=node.kid[3],
+            )
+
+    def exit_while_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build WhileStmt Ast node."""
+        node.kid = [node.kid[1], node.kid[2]]
+        update_kind(node, ast.WhileStmt, condition=node.kid[0], body=node.kid[1])
+
+    def exit_raise_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build RaiseStmt Ast node."""
+        if len(node.kid) == 1:
+            node.kid = []
+            update_kind(node, ast.RaiseStmt, cause=ast.Blank())
+        else:
+            node.kid = [node.kid[1]]
+            update_kind(node, ast.RaiseStmt, cause=node.kid[0])
+
     # def exit_assert_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_ctrl_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_delete_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:

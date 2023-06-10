@@ -551,3 +551,91 @@ class FinallyStmt(AstNode):
         """Initialize finally statement node."""
         self.body = body
         super().__init__(*args, **kwargs)
+
+
+class IterForStmt(AstNode):
+    """IterFor node type for Jac Ast."""
+
+    def __init__(
+        self: "IterForStmt",
+        iter: AstNode,
+        condition: AstNode,
+        count_by: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize iter for node."""
+        self.iter = iter
+        self.condition = condition
+        self.count_by = count_by
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class InForStmt(AstNode):
+    """InFor node type for Jac Ast."""
+
+    def __init__(
+        self: "InForStmt",
+        name: AstNode,
+        collection: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize in for node."""
+        self.name = name
+        self.collection = collection
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class DictForStmt(AstNode):
+    """DictForStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "DictForStmt",
+        k_name: AstNode,
+        v_name: AstNode,
+        collection: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize dict for node."""
+        self.k_name = k_name
+        self.v_name = v_name
+        self.collection = collection
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class WhileStmt(AstNode):
+    """WhileStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "WhileStmt",
+        condition: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize while statement node."""
+        self.condition = condition
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class RaiseStmt(AstNode):
+    """RaiseStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "RaiseStmt",
+        cause: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize raise statement node."""
+        self.cause = cause
+        super().__init__(*args, **kwargs)

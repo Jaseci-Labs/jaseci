@@ -419,8 +419,8 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "KW_FOR assignment KW_TO expression KW_BY expression code_block",
-        "KW_FOR atom KW_IN expression code_block",
-        "KW_FOR atom COMMA atom KW_IN expression code_block",
+        "KW_FOR NAME KW_IN expression code_block",
+        "KW_FOR NAME COMMA NAME KW_IN expression code_block",
     )
     def for_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """For statement rule."""
@@ -431,7 +431,10 @@ class JacParser(JacParseErrorMixIn, Parser):
         """While statement rule."""
         return p
 
-    @_("KW_RAISE expression")
+    @_(
+        "KW_RAISE",
+        "KW_RAISE expression",
+    )
     def raise_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Raise statement rule."""
         return p
