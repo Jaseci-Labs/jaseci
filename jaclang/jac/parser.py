@@ -488,6 +488,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     # ------------------------------------------------
     @_(
         "atom EQ expression",
+        "KW_HAS NAME EQ expression",  # static variables
     )
     def assignment(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Rule for assignment statement."""

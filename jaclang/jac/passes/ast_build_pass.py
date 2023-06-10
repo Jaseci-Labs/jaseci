@@ -179,13 +179,41 @@ class AstBuildPass(Pass):
 
     def exit_attr_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ARCH_BLOCK Ast node."""
-        update_kind(node, ast.ArchBlock)
-        # TODO: Finish this.
+        meta = {"doc_string": None, "body": None}
+        if len(node.kid) == 1 or node.kid[1].name == "RBRACE":
+            node.kid = []
+        elif node.kid[1].name == "attr_stmt":
+            node.kid = [node.kid[1]]
+            meta["body"] = node.kid[0]
+        elif node.kid[1].name == "DOC_STRING":
+            node.kid = [node.kid[1], node.kid[2]]
+            meta["doc_string"] = node.kid[0]
+            meta["body"] = node.kid[1]
+        else:
+            node.kid = [node.kid[1]]
+            meta["body"] = node.kid[0]
+        update_kind(node, ast.ArchBlock, **meta)
 
-    # def exit_attr_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_attr_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Chain list together into actual list."""
+        if len(node.kid) == 2:
+            node.kid = node.kid[0].kid + [node.kid[1]]
+        update_kind(node, ast.ArchBlockStmts, statements=node.kid)
+
     # def exit_attr_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+    #     """Replace self with actual attr stmt."""
+    #     node = replace_node(node, node.kid[0])
+
     # def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+    #     """Collect list of individual vars."""
+    #     node = replace_node(node, node.kid[0])
+
     # def exit_has_assign_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
+    #     """Push list of individual vars into parent."""
+    #     node = replace_node(node, node.kid[0])
+    #     if len(node.kid) == 1:
+    #         node.parent.kid = [node] + node.parent.kid
+
     # def exit_param_var(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_has_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_type_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
