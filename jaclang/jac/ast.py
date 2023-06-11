@@ -983,6 +983,7 @@ class UnpackExpr(AstNode):
     def __init__(
         self: "UnpackExpr",
         target: AstNode,
+        is_dict: bool,
         *args: list,
         **kwargs: dict,
     ) -> None:

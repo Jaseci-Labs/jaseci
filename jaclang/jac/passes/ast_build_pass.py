@@ -733,15 +733,72 @@ class AstBuildPass(Pass):
         """Build Connect Ast node."""
         self.binary_op_helper(node)
 
-    # def exit_spawn_walker(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_spawn_object(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_spawn_edge_node(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_unpack(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_walrus_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_cmp_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_spawn_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_atom(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_atom_literal(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_spawn_walker(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build SpawnWalkerExpr Ast node."""
+        if len(node.kid) == 1:
+            replace_node(node, node.kid[0])
+        else:
+            node.kid = [node.kid[2], node.kid[4]]
+            update_kind(
+                node, ast.SpawnWalkerExpr, target=node.kid[1], location=node.kid[0]
+            )
+
+    def exit_spawn_object(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build SpawnObjectExpr Ast node."""
+        if len(node.kid) == 1:
+            replace_node(node, node.kid[0])
+        else:
+            node.kid = [node.kid[1]]
+            update_kind(node, ast.SpawnObjectExpr, target=node.kid[0])
+
+    def exit_spawn_edge_node(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build SpawnEdgeNodeExpr Ast node."""
+        if len(node.kid) == 1:
+            replace_node(node, node.kid[0])
+        else:
+            node.kid = [node.kid[2], node.kid[3], node.kid[4]]
+            update_kind(
+                node,
+                ast.SpawnEdgeNodeExpr,
+                location=node.kid[0],
+                edge=node.kid[1],
+                node=node.kid[2],
+            )
+
+    def exit_unpack(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Unpack Ast node."""
+        if len(node.kid) == 1:
+            replace_node(node, node.kid[0])
+        else:
+            node.kid = [node.kid[-1]]
+            if len(node.kid) == 2:
+                update_kind(node, ast.UnpackExpr, target=node.kid[0], is_dict=False)
+            else:
+                update_kind(node, ast.UnpackExpr, target=node.kid[0], is_dict=True)
+
+    def exit_walrus_op(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Replace self with child."""
+        replace_node(node, node.kid[0])
+
+    def exit_cmp_op(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build CmpOp Ast node."""
+        replace_node(node, node.kid[0])
+
+    def exit_spawn_op(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build SpawnOp Ast node."""
+        replace_node(node, node.kid[0])
+
+    def exit_atom(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Atom Ast node."""
+        if len(node.kid) == 3:
+            replace_node(node, node.kid[1])
+        else:
+            replace_node(node, node.kid[0])
+
+    def exit_atom_literal(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AtomLiteral Ast node."""
+        replace_node(node, node.kid[0])
+
     # def exit_atom_collection(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_multistring(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_list_val(self: "AstBuildPass", node: ast.AstNode) -> None:

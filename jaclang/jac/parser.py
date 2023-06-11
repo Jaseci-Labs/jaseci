@@ -683,10 +683,17 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "STAR_MUL STAR_MUL atom",
         "STAR_MUL atom",
+        "ref",
+    )
+    def unpack(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Unpack rule."""
+        return p
+
+    @_(
         "KW_REF atom",
         "atom",
     )
-    def unpack(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Unpack rule."""
         return p
 
