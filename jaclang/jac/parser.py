@@ -813,6 +813,41 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "atomic_chain_safe",
+        "atomic_chain_unsafe",
+        "atomic_call",
+    )
+    def atomic_chain(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom trailer rule."""
+        return p
+
+    @_(
+        "atom DOT NAME",
+        "atom index_slice",
+        "atom arch_ref",
+    )
+    def atomic_chain_unsafe(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom trailer rule."""
+        return p
+
+    @_(
+        "atom NULL_OK DOT NAME",
+        "atom NULL_OK index_slice",
+        "atom NULL_OK arch_ref",
+    )
+    def atomic_chain_safe(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Atom trailer rule."""
+        return p
+
+    @_(
+        "atom func_call",
+        "atom ds_call",
+    )
+    def atomic_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability call rule."""
+        return p
+
+    @_(
         "DBL_COLON",
         "DBL_COLON NAME",  # :: for walkers, ::name for abilities
         "DBL_COLON KW_ASYNC",
@@ -823,40 +858,11 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "atomic_chain_safe",
-        "atomic_chain_unsafe",
-    )
-    def atomic_chain(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Atom trailer rule."""
-        return p
-
-    @_(
-        "atom DOT NAME",
-        "atom index_slice",
-        "atom call",
-        "atom arch_ref",
-    )
-    def atomic_chain_unsafe(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Atom trailer rule."""
-        return p
-
-    @_(
-        "atom NULL_OK DOT NAME",
-        "atom NULL_OK index_slice",
-        "atom NULL_OK call",
-        "atom NULL_OK arch_ref",
-    )
-    def atomic_chain_safe(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Atom trailer rule."""
-        return p
-
-    @_(
         "LPAREN RPAREN",
         "LPAREN param_list RPAREN",
-        "ds_call",
     )
-    def call(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Ability call rule."""
+    def func_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Rule for function calls."""
         return p
 
     @_(

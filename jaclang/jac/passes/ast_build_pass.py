@@ -839,18 +839,6 @@ class AstBuildPass(Pass):
             node.kid = [node.kid[-3], node.kid[-1]]
         update_kind(node, ast.KVPair, key=node.kid[0], value=node.kid[1])
 
-    def exit_ds_call(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build DSCall Ast node."""
-        meta = {"name": ast.Blank(), "is_async": False}
-        if len(node.kid) == 2 and node.kid[1].name == "NAME":
-            meta["name"] = node.kid[1]
-        elif len(node.kid) == 3 and node.kid[1].name == "NAME":
-            meta["name"] = node.kid[1]
-            meta["is_async"] = True
-        else:
-            meta["is_async"] = True
-        update_kind(node, ast.DSCall, **meta)
-
     def exit_atomic_chain(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build AtomicChain Ast node."""
         replace_node(node, node.kid[0])
@@ -870,8 +858,55 @@ class AstBuildPass(Pass):
             node, ast.AtomTrailer, target=node.kid[0], right=node.kid[1], null_ok=True
         )
 
-    # def exit_call(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_atomic_call(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Call Ast node."""
+        atom = node.kid[0]
+        if type(node.kid[1]) == ast.DSCall:
+            node.kid[1].kid = [atom] + node.kid[1].kid
+            node.kid[1].target = atom
+            replace_node(node, node.kid[1])
+        else:
+            node.kid = [atom, node.kid[1]]
+            update_kind(node, ast.FuncCall, target=node.kid[0], params=node.kid[1])
+
+    def exit_ds_call(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build DSCall Ast node."""
+        meta = {"target": ast.Blank(), "a_name": ast.Blank(), "is_async": False}
+        if len(node.kid) == 1:
+            node.kid = []
+        elif len(node.kid) == 2 and node.kid[1].name == "NAME":
+            meta["a_name"] = node.kid[1]
+            node.kid = [node.kid[1]]
+        elif len(node.kid) == 3 and node.kid[1].name == "NAME":
+            meta["a_name"] = node.kid[1]
+            meta["is_async"] = True
+            node.kid = [node.kid[1]]
+        else:
+            meta["is_async"] = True
+
+        update_kind(node, ast.DSCall, **meta)
+
+    def exit_func_call(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build FuncCall Ast node."""
+        if len(node.kid) == 2:
+            replace_node(node, ast.Blank())
+        else:
+            replace_node(node, node.kid[1])
+
+    def exit_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ParamList Ast node."""
+        if len(node.kid) == 1:
+            if type(node.kid[0]) == ast.ExprList:
+                update_kind(
+                    node, ast.ParamList, p_args=node.kid[0], p_kwargs=ast.Blank()
+                )
+            else:
+                update_kind(
+                    node, ast.ParamList, p_args=ast.Blank(), p_kwargs=node.kid[0]
+                )
+        else:
+            update_kind(node, ast.ParamList, p_args=node.kid[0], p_kwargs=node.kid[1])
+
     # def exit_assignment_list(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_index_slice(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_global_ref(self: "AstBuildPass", node: ast.AstNode) -> None:

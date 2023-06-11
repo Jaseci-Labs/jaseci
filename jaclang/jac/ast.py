@@ -1054,22 +1054,6 @@ class KVPair(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class DSCall(AstNode):
-    """DSCall node type for Jac Ast."""
-
-    def __init__(
-        self: "DSCall",
-        name: AstNode,
-        is_async: bool,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize ds call expression node."""
-        self.name = name
-        self.is_async = is_async
-        super().__init__(*args, **kwargs)
-
-
 class AtomTrailer(AstNode):
     """AtomTrailer node type for Jac Ast."""
 
@@ -1084,4 +1068,55 @@ class AtomTrailer(AstNode):
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
+        self.null_ok = null_ok
+        super().__init__(*args, **kwargs)
+
+
+class DSCall(AstNode):
+    """DSCall node type for Jac Ast."""
+
+    def __init__(
+        self: "DSCall",
+        target: AstNode,
+        a_name: AstNode,
+        is_async: bool,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize ds call expression node."""
+        self.target = target
+        self.a_name = a_name
+        self.is_async = is_async
+        super().__init__(*args, **kwargs)
+
+
+class FuncCall(AstNode):
+    """FuncCall node type for Jac Ast."""
+
+    def __init__(
+        self: "FuncCall",
+        target: AstNode,
+        params: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize function call expression node."""
+        self.target = target
+        self.params = params
+        super().__init__(*args, **kwargs)
+
+
+class ParamList(AstNode):
+    """ParamList node type for Jac Ast."""
+
+    def __init__(
+        self: "ParamList",
+        p_args: AstNode,
+        p_kwargs: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize parameter list expression node."""
+        self.p_args = p_args
+        self.p_kwargs = p_kwargs
         super().__init__(*args, **kwargs)
