@@ -876,7 +876,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "assignment",
-        "assignment COMMA assignment_list",
+        "assignment_list COMMA assignment",
     )
     def assignment_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Keyword expression list rule."""

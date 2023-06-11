@@ -907,7 +907,12 @@ class AstBuildPass(Pass):
         else:
             update_kind(node, ast.ParamList, p_args=node.kid[0], p_kwargs=node.kid[1])
 
-    # def exit_assignment_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_assignment_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AssignmentList Ast node."""
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+        update_kind(node, ast.ExprList, values=node.kid)
+
     # def exit_index_slice(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_global_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_arch_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
