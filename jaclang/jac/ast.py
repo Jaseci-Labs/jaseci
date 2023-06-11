@@ -990,3 +990,65 @@ class UnpackExpr(AstNode):
         """Initialize unpack expression node."""
         self.target = target
         super().__init__(*args, **kwargs)
+
+
+class MultiString(AstNode):
+    """ExprMultiString node type for Jac Ast."""
+
+    def __init__(
+        self: "MultiString",
+        strings: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize multi string expression node."""
+        self.strings = strings
+        super().__init__(*args, **kwargs)
+
+
+class ExprList(AstNode):
+    """ExprList node type for Jac Ast."""
+
+    def __init__(
+        self: "ExprList",
+        values: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize list expression node."""
+        self.values = values
+        super().__init__(*args, **kwargs)
+
+
+class ListVal(ExprList):
+    """ExprList node type for Jac Ast."""
+
+
+class DictVal(AstNode):
+    """ExprDict node type for Jac Ast."""
+
+    def __init__(
+        self: "DictVal",
+        kv_pairs: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize dict expression node."""
+        self.kv_pairs = kv_pairs
+        super().__init__(*args, **kwargs)
+
+
+class KVPair(AstNode):
+    """ExprKVPair node type for Jac Ast."""
+
+    def __init__(
+        self: "KVPair",
+        key: AstNode,
+        value: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize key value pair expression node."""
+        self.key = key
+        self.value = value
+        super().__init__(*args, **kwargs)

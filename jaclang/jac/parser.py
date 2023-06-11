@@ -806,7 +806,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "expression COLON expression",
-        "expression COLON expression COMMA kv_pairs",
+        "kv_pairs COMMA expression COLON expression",
     )
     def kv_pairs(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Key/value pairs rule."""

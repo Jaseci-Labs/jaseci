@@ -35,13 +35,7 @@ class AstBuildPass(Pass):
 
     def exit_global_var_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build NAMED_ASSIGN list of Ast nodes."""
-        if len(node.kid) == 3:
-            # at base case abosrb node to front of parent
-            node.parent.kid = [node] + node.parent.kid
-        elif len(node.kid) >= 4:
-            # at recursive case abosrb node to front of parent and
-            # cut include all aborbed nodes so far
-            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
+        node.parent.kid = [node] + node.parent.kid
         node.kid = [node.kid[-3], node.kid[-1]]
         update_kind(node, ast.NamedAssign, name=node.kid[0], value=node.kid[1])
 
@@ -799,12 +793,44 @@ class AstBuildPass(Pass):
         """Build AtomLiteral Ast node."""
         replace_node(node, node.kid[0])
 
-    # def exit_atom_collection(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_multistring(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_list_val(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_expr_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_dict_val(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_kv_pairs(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_atom_collection(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AtomCollection Ast node."""
+        replace_node(node, node.kid[0])
+
+    def exit_multistring(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Multistring Ast node."""
+        if len(node.kid) == 2:
+            node.kid = node.kid[0].kid + [node.kid[1]]
+        update_kind(node, ast.MultiString, strings=node.kid)
+
+    def exit_list_val(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ListVal Ast node."""
+        if len(node.kid) > 2:
+            node = replace_node(node, node.kid[1])
+        else:
+            node.kid = []
+        update_kind(node, ast.ListVal, values=node.kid)
+
+    def exit_expr_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ExprList Ast node."""
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+        update_kind(node, ast.ExprList, values=node.kid)
+
+    def exit_dict_val(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build DictVal Ast node."""
+        if len(node.kid) == 3:
+            node.kid = node.kid[:-3]
+        else:
+            node.kid = []
+        update_kind(node, ast.DictVal, kv_pairs=node.kid)
+
+    def exit_kv_pairs(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build KVPairs Ast node."""
+        node.parent.kid = [node] + node.parent.kid
+        node.kid = [node.kid[-3], node.kid[-1]]
+        update_kind(node, ast.KVPair, key=node.kid[0], value=node.kid[1])
+
     # def exit_ability_run(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_atomic_chain(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_atomic_chain_unsafe(self: "AstBuildPass", node: ast.AstNode) -> None:
