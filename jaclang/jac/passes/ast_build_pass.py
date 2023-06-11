@@ -133,6 +133,16 @@ class AstBuildPass(Pass):
                 name=node.kid[1],
                 body=node.kid[2],
             )
+        elif node.kid[1].name == "KW_FUNC":
+            del node.kid[1]
+            update_kind(
+                node,
+                ast.FuncArch,
+                access=node.kid[0],
+                name=node.kid[1],
+                signature=node.kid[2],
+                body=node.kid[3],
+            )
         else:
             meta = {"access": node.kid[0]}
             if node.kid[1].name == "KW_NODE":
@@ -163,7 +173,7 @@ class AstBuildPass(Pass):
             access=node.kid[0],
             typ=node.kid[1],
             name=node.kid[2],
-            base_classes=node.kid[3] if len(node.kid) == 4 else ast.Blank(),
+            details=node.kid[3] if len(node.kid) == 4 else ast.Blank(),
         )
 
     def exit_architype_def(self: "AstBuildPass", node: ast.AstNode) -> None:

@@ -42,6 +42,7 @@ class JacLexer(Lexer):
         "KW_EDGE",
         "KW_WALKER",
         "KW_SPAWNER",
+        "KW_FUNC",
         "KW_ASYNC",
         "KW_SYNC",
         "KW_TEST",
@@ -131,6 +132,7 @@ class JacLexer(Lexer):
         "OBJECT_OP",
         "ABILITY_OP",
         "SPAWN_OP",
+        "FUNC_OP",
         "ELVIS_OP",
         "NULL_OK",
     }
@@ -181,6 +183,7 @@ class JacLexer(Lexer):
     NAME["edge"] = "KW_EDGE"
     NAME["walker"] = "KW_WALKER"
     NAME["spawner"] = "KW_SPAWNER"
+    NAME["func"] = "KW_FUNC"
     NAME["async"] = "KW_ASYNC"
     NAME["sync"] = "KW_SYNC"
     NAME["test"] = "KW_TEST"
@@ -234,6 +237,7 @@ class JacLexer(Lexer):
     GLOBAL_OP = r":g:|:global:"
     WALKER_OP = r":w:|:walker:"
     SPAWNER_OP = r":s:|:spawner:"
+    FUNC_OP = r":f:|:func:"
     NODE_OP = r":n:|:node:"
     EDGE_OP = r":e:|:edge:"
     OBJECT_OP = r":o:|:object:"

@@ -166,26 +166,6 @@ class ModuleItem(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class ObjectArch(AstNode):
-    """ObjectArch node type for Jac Ast."""
-
-    def __init__(
-        self: "ObjectArch",
-        name: AstNode,
-        access: AstNode,
-        base_classes: AstNode,
-        body: AstNode,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize object arch node."""
-        self.name = name
-        self.access = access
-        self.base_classes = base_classes
-        self.body = body
-        super().__init__(*args, **kwargs)
-
-
 class ArchDecl(AstNode):
     """ArchDecl node type for Jac Ast."""
 
@@ -194,7 +174,7 @@ class ArchDecl(AstNode):
         access: AstNode,
         typ: AstNode,
         name: AstNode,
-        base_classes: AstNode,
+        details: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
@@ -202,7 +182,7 @@ class ArchDecl(AstNode):
         self.access = access
         self.typ = typ
         self.name = name
-        self.base_classes = base_classes
+        self.details = details
         super().__init__(*args, **kwargs)
 
 
@@ -220,6 +200,26 @@ class ArchDef(AstNode):
         """Initialize arch def node."""
         self.mod = mod
         self.arch = arch
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class ObjectArch(AstNode):
+    """ObjectArch node type for Jac Ast."""
+
+    def __init__(
+        self: "ObjectArch",
+        name: AstNode,
+        access: AstNode,
+        base_classes: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize object arch node."""
+        self.name = name
+        self.access = access
+        self.base_classes = base_classes
         self.body = body
         super().__init__(*args, **kwargs)
 
@@ -250,6 +250,26 @@ class SpawnerArch(AstNode):
         """Initialize spawner arch node."""
         self.name = name
         self.access = access
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class FuncArch(AstNode):
+    """FuncArch node type for Jac Ast."""
+
+    def __init__(
+        self: "FuncArch",
+        name: AstNode,
+        access: AstNode,
+        signature: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize func arch node."""
+        self.name = name
+        self.access = access
+        self.signature = signature
         self.body = body
         super().__init__(*args, **kwargs)
 

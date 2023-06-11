@@ -134,6 +134,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "access_tag KW_OBJECT NAME inherited_archs member_block",
         "access_tag KW_WALKER NAME inherited_archs member_block",
         "access_tag KW_SPAWNER NAME code_block",
+        "access_tag KW_FUNC NAME func_decl code_block",
     )
     def architype_full_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
@@ -145,6 +146,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "access_tag KW_OBJECT NAME inherited_archs SEMI",
         "access_tag KW_WALKER NAME inherited_archs SEMI",
         "access_tag KW_SPAWNER NAME SEMI",
+        "access_tag KW_FUNC NAME func_decl SEMI",
     )
     def architype_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype declaration rule."""
@@ -888,6 +890,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "walker_ref",
         "spawner_ref",
         "object_ref",
+        "func_ref",
     )
     def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
@@ -911,6 +914,11 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_("SPAWNER_OP NAME")
     def spawner_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Spawner reference rule."""
+        return p
+
+    @_("FUNC_OP NAME")
+    def func_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Funcs reference rule."""
         return p
 
     @_("OBJECT_OP NAME")
