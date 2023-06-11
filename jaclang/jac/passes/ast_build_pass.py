@@ -851,9 +851,25 @@ class AstBuildPass(Pass):
             meta["is_async"] = True
         update_kind(node, ast.DSCall, **meta)
 
-    # def exit_atomic_chain(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_atomic_chain_unsafe(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_atomic_chain_safe(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_atomic_chain(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AtomicChain Ast node."""
+        replace_node(node, node.kid[0])
+
+    def exit_atomic_chain_unsafe(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AtomicChain Ast node."""
+        if len(node.kid) == 3:
+            del node.kid[1]
+        update_kind(node, ast.AtomTrailer, target=node.kid[0], right=node.kid[1])
+
+    def exit_atomic_chain_safe(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AtomicChain with safety Ast node."""
+        del node.kid[1]
+        if len(node.kid) == 3:
+            del node.kid[1]
+        update_kind(
+            node, ast.AtomTrailer, target=node.kid[0], right=node.kid[1], null_ok=True
+        )
+
     # def exit_call(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_assignment_list(self: "AstBuildPass", node: ast.AstNode) -> None:

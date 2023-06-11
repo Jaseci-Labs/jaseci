@@ -902,7 +902,7 @@ class BinaryExpr(AstNode):
         self: "BinaryExpr",
         left: AstNode,
         right: AstNode,
-        op: str,
+        op: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
@@ -919,7 +919,7 @@ class UnaryExpr(AstNode):
     def __init__(
         self: "UnaryExpr",
         operand: AstNode,
-        op: str,
+        op: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
@@ -1059,7 +1059,7 @@ class DSCall(AstNode):
 
     def __init__(
         self: "DSCall",
-        name: str,
+        name: AstNode,
         is_async: bool,
         *args: list,
         **kwargs: dict,
@@ -1067,4 +1067,21 @@ class DSCall(AstNode):
         """Initialize ds call expression node."""
         self.name = name
         self.is_async = is_async
+        super().__init__(*args, **kwargs)
+
+
+class AtomTrailer(AstNode):
+    """AtomTrailer node type for Jac Ast."""
+
+    def __init__(
+        self: "AtomTrailer",
+        target: AstNode,
+        right: list,
+        null_ok: bool = False,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize atom trailer expression node."""
+        self.target = target
+        self.right = right
         super().__init__(*args, **kwargs)
