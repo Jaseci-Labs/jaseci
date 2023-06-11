@@ -945,13 +945,13 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_ability_run(self: "TranspilePass", node: AstNode) -> None:
-        """Convert ability_run to python code.
+    def exit_ds_call(self: "TranspilePass", node: AstNode) -> None:
+        """Convert ds_call to python code.
 
-        ability_run -> DBL_COLON NAME
-        ability_run -> DBL_COLON
-        ability_run -> DBL_COLON NAME KW_ASYNC
-        ability_run -> DBL_COLON KW_ASYNC
+        ds_call -> DBL_COLON NAME
+        ds_call -> DBL_COLON
+        ds_call -> DBL_COLON NAME KW_ASYNC
+        ds_call -> DBL_COLON KW_ASYNC
         """
         if node.kid[-1].name == "KW_ASYNC":
             if node.kid[-2].name == "NAME":
@@ -1037,7 +1037,7 @@ class TranspilePass(Pass):
     def exit_call(self: "TranspilePass", node: AstNode) -> None:
         """Convert call to python code.
 
-        call -> ability_run
+        call -> ds_call
         call -> LPAREN param_list RPAREN
         call -> LPAREN RPAREN
         """

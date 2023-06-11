@@ -839,7 +839,18 @@ class AstBuildPass(Pass):
             node.kid = [node.kid[-3], node.kid[-1]]
         update_kind(node, ast.KVPair, key=node.kid[0], value=node.kid[1])
 
-    # def exit_ability_run(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_ds_call(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build DSCall Ast node."""
+        meta = {"name": ast.Blank(), "is_async": False}
+        if len(node.kid) == 2 and node.kid[1].name == "NAME":
+            meta["name"] = node.kid[1]
+        elif len(node.kid) == 3 and node.kid[1].name == "NAME":
+            meta["name"] = node.kid[1]
+            meta["is_async"] = True
+        else:
+            meta["is_async"] = True
+        update_kind(node, ast.DSCall, **meta)
+
     # def exit_atomic_chain(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_atomic_chain_unsafe(self: "AstBuildPass", node: ast.AstNode) -> None:
     # def exit_atomic_chain_safe(self: "AstBuildPass", node: ast.AstNode) -> None:

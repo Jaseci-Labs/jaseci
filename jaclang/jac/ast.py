@@ -1052,3 +1052,19 @@ class KVPair(AstNode):
         self.key = key
         self.value = value
         super().__init__(*args, **kwargs)
+
+
+class DSCall(AstNode):
+    """DSCall node type for Jac Ast."""
+
+    def __init__(
+        self: "DSCall",
+        name: str,
+        is_async: bool,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize ds call expression node."""
+        self.name = name
+        self.is_async = is_async
+        super().__init__(*args, **kwargs)

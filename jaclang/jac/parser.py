@@ -818,7 +818,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "DBL_COLON KW_ASYNC",
         "DBL_COLON NAME KW_ASYNC",  # :: for walkers, ::name for abilities
     )
-    def ability_run(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ds_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability operator rule."""
         return p
 
@@ -853,7 +853,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "LPAREN RPAREN",
         "LPAREN param_list RPAREN",
-        "ability_run",
+        "ds_call",
     )
     def call(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability call rule."""
