@@ -31,12 +31,16 @@ class AstBuildPass(Pass):
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build GLOBAL_VAR Ast node."""
         node.kid = node.kid[:-3]  # only keep absorbed list of clauses
-        update_kind(node, ast.GlobalVars, access=node.kid[0], values=node.kid[1:])
+        update_kind(node, ast.GlobalVars, access=node.kid[-1], values=node.kid[:-1])
 
     def exit_global_var_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build NAMED_ASSIGN list of Ast nodes."""
-        node.parent.kid = [node] + node.parent.kid
-        node.kid = [node.kid[-3], node.kid[-1]]
+        if len(node.kid) == 3:
+            node.parent.kid = [node] + node.parent.kid
+            node.kid = [node.kid[0], node.kid[2]]
+        else:
+            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
+            node.kid = [node.kid[-3], node.kid[-1]]
         update_kind(node, ast.NamedAssign, name=node.kid[0], value=node.kid[1])
 
     def exit_access_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -827,8 +831,12 @@ class AstBuildPass(Pass):
 
     def exit_kv_pairs(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build KVPairs Ast node."""
-        node.parent.kid = [node] + node.parent.kid
-        node.kid = [node.kid[-3], node.kid[-1]]
+        if len(node.kid) == 3:
+            node.parent.kid = [node] + node.parent.kid
+            node.kid = [node.kid[0], node.kid[2]]
+        else:
+            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
+            node.kid = [node.kid[-3], node.kid[-1]]
         update_kind(node, ast.KVPair, key=node.kid[0], value=node.kid[1])
 
     # def exit_ability_run(self: "AstBuildPass", node: ast.AstNode) -> None:
