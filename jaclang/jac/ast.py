@@ -186,6 +186,44 @@ class ObjectArch(AstNode):
         super().__init__(*args, **kwargs)
 
 
+class ArchDecl(AstNode):
+    """ArchDecl node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchDecl",
+        access: AstNode,
+        typ: AstNode,
+        name: AstNode,
+        base_classes: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize arch decl node."""
+        self.access = access
+        self.typ = typ
+        self.name = name
+        self.base_classes = base_classes
+        super().__init__(*args, **kwargs)
+
+
+class ArchDef(AstNode):
+    """ArchDef node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchDecl",
+        mod: AstNode,
+        arch: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize arch def node."""
+        self.mod = mod
+        self.arch = arch
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
 class NodeArch(ObjectArch):
     """NodeArch node type for Jac Ast."""
 

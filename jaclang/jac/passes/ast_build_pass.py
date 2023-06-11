@@ -119,9 +119,13 @@ class AstBuildPass(Pass):
         update_kind(node, ast.ModuleItem, **meta)
 
     def exit_architype(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Replace self with kid."""
+        replace_node(node, node.kid[0])
+
+    def exit_architype_full_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build various architype Ast nodes."""
         if node.kid[1].name == "KW_SPAWNER":
-            node.kid = node.kid[1:]
+            del node.kid[1]
             update_kind(
                 node,
                 ast.SpawnerArch,
@@ -140,23 +144,37 @@ class AstBuildPass(Pass):
             elif node.kid[1].name == "KW_WALKER":
                 meta["kind"] = ast.WalkerArch
             meta["name"] = node.kid[2]
-            if (type(node.kid[3].kid[0])) == ast.BaseClasses:
-                node.kid = [
-                    node.kid[0],
-                    node.kid[2],
-                    node.kid[3].kid[0],
-                    node.kid[3].kid[1],
-                ]
-                meta["base_classes"] = node.kid[2]
-                meta["body"] = node.kid[3]
-            else:
-                node.kid = [node.kid[0], node.kid[2], node.kid[3].kid[0]]
-                meta["base_classes"] = ast.Blank()
-                meta["body"] = node.kid[2]
+            node.kid = [
+                node.kid[0],
+                node.kid[2],
+                node.kid[3],
+                node.kid[4],
+            ]
+            meta["base_classes"] = node.kid[2]
+            meta["body"] = node.kid[3]
             update_kind(node, **meta)
 
-    def exit_arch_decl_tail(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Absorbed by single consumer."""
+    def exit_architype_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ArchDecl Ast node."""
+        del node.kid[-1]
+        update_kind(
+            node,
+            ast.ArchDecl,
+            access=node.kid[0],
+            typ=node.kid[1],
+            name=node.kid[2],
+            base_classes=node.kid[3] if len(node.kid) == 4 else ast.Blank(),
+        )
+
+    def exit_architype_def(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ArchDef Ast node."""
+        update_kind(
+            node,
+            ast.ArchDef,
+            mod=node.kid[0] if len(node.kid) == 3 else ast.Blank(),
+            arch=node.kid[1] if len(node.kid) == 3 else node.kid[0],
+            body=node.kid[3] if len(node.kid) == 3 else node.kid[1],
+        )
 
     def exit_inherited_archs(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Chain list together into actual list."""

@@ -120,26 +120,46 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Architype elements
     # ------------------
     @_(
-        "access_tag KW_NODE NAME arch_decl_tail",
-        "access_tag KW_EDGE NAME arch_decl_tail",
-        "access_tag KW_OBJECT NAME arch_decl_tail",
-        "access_tag KW_WALKER NAME arch_decl_tail",
-        "access_tag KW_SPAWNER NAME code_block",
+        "architype_full_spec",
+        "architype_decl",
+        "architype_def",
     )
     def architype(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
         return p
 
     @_(
-        "member_block",
-        "inherited_archs member_block",
+        "access_tag KW_NODE NAME inherited_archs member_block",
+        "access_tag KW_EDGE NAME inherited_archs member_block",
+        "access_tag KW_OBJECT NAME inherited_archs member_block",
+        "access_tag KW_WALKER NAME inherited_archs member_block",
+        "access_tag KW_SPAWNER NAME code_block",
     )
-    def arch_decl_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Architype tail rule."""
+    def architype_full_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Architype rule."""
         return p
 
     @_(
-        "sub_name",
+        "access_tag KW_NODE NAME inherited_archs SEMI",
+        "access_tag KW_EDGE NAME inherited_archs SEMI",
+        "access_tag KW_OBJECT NAME inherited_archs SEMI",
+        "access_tag KW_WALKER NAME inherited_archs SEMI",
+        "access_tag KW_SPAWNER NAME SEMI",
+    )
+    def architype_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Architype declaration rule."""
+        return p
+
+    @_(
+        "arch_ref member_block",
+        "NAME arch_ref member_block",
+    )
+    def architype_def(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Architype definition rule."""
+        return p
+
+    @_(
+        "empty",
         "inherited_archs sub_name",
     )
     def inherited_archs(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -166,7 +186,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "LBRACE RBRACE",
         "LBRACE member_stmt_list RBRACE",
-        "SEMI",
     )
     def member_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute block rule."""
