@@ -40,6 +40,8 @@ class PyCodeGenPassTests(TestCase):
         """Basic test for pass."""
         build_pass = self.build_micro("module_structure.jac")
         # build_pass.print()
+        code_gen = self.codegen.run(node=build_pass)
+        print(code_gen.py_code)
         self.assertGreater(len(str(build_pass.to_dict())), 200)
 
     # def test_no_typo_in_pass(self: "PyCodeGenPassTests") -> None:
