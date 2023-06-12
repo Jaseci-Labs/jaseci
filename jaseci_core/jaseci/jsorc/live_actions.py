@@ -7,6 +7,8 @@ from jaseci.jsorc.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.jsorc.remote_actions import serv_actions, mark_as_remote, mark_as_endpoint
 import requests
 import multiprocessing
+
+# from queue import Empty
 import os
 import sys
 import inspect
@@ -184,10 +186,13 @@ def action_handler_wrapper(name, *args, **kwargs):
     # TODO: Handle concurrent calls?
     try:
         res = act_procs[module]["out_q"].get(timeout=ACTION_SUBPROC_TIMEOUT)[1]
-    except Exception as e:
+    except multiprocessing.Empty as e:
         logger.info(f"action subprocess out_q timeout {e}")
         logger.info(e)
         res = str(e)
+    except Exception as e:
+        logger.info("Unknown exception caught.")
+        raise e
 
     act_procs[module]["reqs"] -= 1
     cnt = act_procs[module]["reqs"]
