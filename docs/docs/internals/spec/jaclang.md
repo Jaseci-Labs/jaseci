@@ -30,7 +30,7 @@ The Red Pill section provides a thorough examination of the language features re
 
 By exploring each of these sections, readers can gain a thorough understanding of Jac, its similarities and differences with Python, its innovative features, and the benefits of data spatial programming.
 
-## Module Structure
+## General Overview of a Jac Module
 
 ### Code Organization
 
@@ -238,10 +238,14 @@ Jac uses `func` instead of Python's `def` to declare a function. The function's 
 ### Class Declarations in Jac
 
 Class declarations in Jac use `object` instead of Python's `class`. The constructor function in Jac is declared using `can entry()` instead of Python's `__init__`. This shift aligns with Jac's innovative approach to object-oriented programming, while still maintaining familiarity for Python developers.
+### Exception Handling in Jac
 
-### Code Statements in Jac
+Jac Exceptions build directly upon Python's exceptions. Jac includes `try`, `except`, `finally` and `raise` keywords using the same semantics (and imported objects) as python.
+### Code Statements amd Expressions in Jac
 
-For general code statements, we provide an equivalency set that mirrors Python's structures. The only exceptions are the new types introduced in the next section, which add additional functionality and flexibility to the Jac programming language.
+For general code statements and expression, we provide an equivalency set that mirrors Python's structures. We've also expanded on the capabilities described here with the new language features that add additional functionality and flexibility to the Jac programming language. These are discussed in the next section (Purple Pill). Here we describe the basic equivalency set.
+
+
 
 ## Purple Pill: New Language Features to Improve Traditional Programming
 
