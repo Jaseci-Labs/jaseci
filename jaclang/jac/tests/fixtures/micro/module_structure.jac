@@ -25,6 +25,10 @@ spawner myspawner {} # define a new spawner
 
 func myfunc(): None {} # define a function
 
+with entry {
+    # module level freestyle code
+}
+
 test mytest
 "A test of my functionality" {
    # test code here

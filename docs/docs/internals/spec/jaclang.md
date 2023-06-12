@@ -40,7 +40,7 @@ In the Jac programming language, the fundamental organizational unit of code is 
 
 The term "architype" is a distinct concept in the data spatial programming paradigm. It represents several classes of traditional classes, each carrying unique semantics. In Jac, an architype can take one of the following forms:
 
-1. **Object Types**: Traditional classes, as seen in Object-Oriented Programming (OOP), form the foundation of Jac's object types. They are responsible for encapsulating data and the operations that can be performed on that data.
+1. **Object Types**: Traditional classes, as seen in Object-Oriented Programming (OOP), form the foundation of Jac's object architypes. They are responsible for encapsulating data and the operations that can be performed on that data.
 
 1. **Node Types**: Node types define the structure of individual nodes in the data space. They detail the properties and data that a node can hold. Node types, along with edge adn walker types can seen as variations of object types that have different semantics.
 
@@ -52,11 +52,17 @@ The term "architype" is a distinct concept in the data spatial programming parad
 
 Beyond the key architypes, a Jac module incorporates several additional element components, the complete list includes:
 
+1. **Import Directives**: Import directives provide the mechanism for reusing code across different modules. They enable a module to incorporate functionalities defined in other modules, fostering code reusability and modularity.
+
+1. **Functions**: Traditional functions, these represent the basic standard python `def` style function which can include input parameters and return a value.
+
+1. **Module Level Free-Style Code**:  "Free Style" code at the module level refers to executable code that is not encapsulated within a function or class. This code is executed when the module is imported or run as a script, making it ideal for initializing module-level variables or running setup tasks.
+    1. Note: However, we recommended to limit its usage to improve readability and maintainability of the code. We also enforce explicit specification of this with a module level `with entry {}` directive.
+
 1. **Abilities Definitions**: Abilities can manifest as either traditional OOP-style methods or data spatial-specific abilities. These abilities give object types, node types, edge types, and walker types the capacity to perform tasks or computations.
 
 1. **Spawners**: Spawners are like functions but with a data-spatial twist. They execute and return values like function however instead of taking parameters, spawners are sent to the data they need to process and leverage a duck typing philosophy to their execution. They can be thought of as mobile computation units that are dispatched to data elements, and the can be spawned on any type including, objects, dictionaries, lists, etc.
 
-1. **Import Directives**: Import directives provide the mechanism for reusing code across different modules. They enable a module to incorporate functionalities defined in other modules, fostering code reusability and modularity.
 
 1. **Global Variable Definitions**: Global variables can be declared and defined within a module. These are accessible throughout the module's scope. However, Jac's design philosophy mildly discourages extensive reliance on globals. This discouragement stems from a desire to enhance modularity and encapsulation, promote code readability, and support codebase scalability. Overuse of global variables can lead to tightly coupled, less maintainable code.
     1. Note: While Jac provides the ability to declare global variables, developers are urged to exercise this power sparingly. Overdependence on global variables often results in code that is hard to debug, difficult to understand, and not modular, reducing the scalability of the codebase. Instead, the Jac language promotes encapsulation and modular design through its architype and abilities system, leading to cleaner, more maintainable, and scalable code.
@@ -94,6 +100,10 @@ walker travelor {  # define a new walker
 spawner myspawner {} # define a new spawner
 
 func myfunc(): None {} # define a function
+
+with entry {
+    # module level freestyle code
+}
 
 test mytest
 "A test of my functionality" {
