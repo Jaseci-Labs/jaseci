@@ -270,6 +270,71 @@ class ActionsOptimizer:
             self._actionpolicy_evaluation()
         # if len(self.actions_change) > 0:
         #     self.apply_actions_change()
+        elif self.policy == "Auto":
+            self._actionpolicy_auto()
+        else:
+            logger.error(f"Unrecognized policy {self.policy}")
+
+    def _actionpolicy_auto(self):
+        """
+        A automatic policy that automatically loads and unloads actions based on the current workload.
+        """
+        logger.info("===Auto Policy===")
+        policy_state = self.policy_state["Auto"]
+
+        if len(policy_state) == 0:
+            # Initialize policy tracking state
+            policy_state = {
+                "phase": "Auto",  # current phase of policy: Auto|perf
+                "cur_config": None,  # current active configuration
+                "remain_configs": [],  # remaining configurations that need to be evaluated
+                "past_configs": [],  # configurations already evaluated
+                "eval_phase": self.policy_params.get(
+                    "eval_phase", 10
+                ),  # how long is evaluatin period (in seconds)
+                "perf_phase": self.policy_params.get(
+                    "perf_phase", 100
+                ),  # how long is the performance period (in seconds)
+                "cur_phase": 0,  # how long the current period has been running
+                "prev_best_config": self.actions_state.get_all_state(),
+            }
+        policy_state["cur_phase"] += self.jsorc_interval
+
+        # check if we should go into evaluation phase
+        if (
+            policy_state["phase"] == "perf"
+            and policy_state["cur_phase"] >= policy_state["perf_phase"]
+        ):
+            # if no enough walker were execueted in this period, keep in perf phase
+            if "walker_run" not in self.benchmark["requests"]:
+                policy_state["cur_phase"] = 0
+            else:
+                logger.info("===Auto Policy=== Switching to Evaluation mode")
+                policy_state["phase"] = "Auto"
+                policy_state["cur_phase"] = 0
+                policy_state["cur_config"] = None
+                if len(policy_state["remain_configs"]) == 0:
+                    self._init_evalution_policy(policy_state)
+        if policy_state["phase"] == "Auto":
+            # In evaluation phase
+            logger.info(
+                f"""===Auto Policy===
+                \nbenchmark: {self.benchmark}
+                \nactions_history: {self.actions_history}
+                \nactions_calls: {self.actions_calls}"""
+            )
+        if policy_state["phase"] == "eval_switching":
+            # in the middle of switching between configs for evaluation
+            if len(self.actions_change) == 0:
+                # this means all actions change have been applied,start evaluation phase
+                logger.info(
+                    "===Auto Policy=== All actions change have been applied. Start evaluation phase."
+                )
+                policy_state["phase"] = "Auto"
+                policy_state["cur_phase"] = 0
+                self.benchmark["active"] = True
+                self.benchmark["requests"] = {}
+        self.policy_state["Auto"] = policy_state
 
     def _init_evalution_policy(self, policy_state):
         # 999 is just really large memory size so everything can fits in local
@@ -360,11 +425,6 @@ class ActionsOptimizer:
             policy_state["phase"] == "perf"
             and policy_state["cur_phase"] >= policy_state["perf_phase"]
         ):
-            logger.info("================ PERFORMANC# PERIOD ====================")
-            logger.info(
-                f"policy_state: {policy_state}\nbenchmark: {self.benchmark['requests']}"
-            )
-            logger.info("====================================================")
             # if no enough walker were execueted in this period, keep in perf phase
             if "walker_run" not in self.benchmark["requests"]:
                 policy_state["cur_phase"] = 0
@@ -397,18 +457,13 @@ class ActionsOptimizer:
                     self.benchmark["active"] = False
                     self.apply_actions_change()
             else:
-                logger.info("================ CURRENT POLICY ====================")
-                logger.info(
-                    f"policy_state: {policy_state}\ncur_config: {policy_state['cur_config']}\nremain_configs:{policy_state['remain_configs']}"
-                )
-                logger.info("====================================================")
                 if policy_state["cur_phase"] >= policy_state["eval_phase"]:
                     # The eval phase for the current configuration is complete
                     # Get performance
                     if "walker_run" not in self.benchmark["requests"]:
                         # meaning no incoming requests during this period.
                         # stay in this phase
-                        logger.info(f"===Evaluation Policy=== No walkers were executed")
+                        logger.info("===Evaluation Policy=== No walkers were executed")
                         self.policy_state["Evaluation"] = policy_state
                         return
 
