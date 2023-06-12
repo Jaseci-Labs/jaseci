@@ -1470,13 +1470,11 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = public_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        print(res.json())
         non_admin_user_id = res.json()["user"]["jid"]
         payload = {"op": "master_become", "mast": non_admin_user_id}
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        print(res.json())
 
         # check no admin privilege
         payload = {"op": "master_allusers"}
@@ -1496,7 +1494,6 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
-        print(res.json())
         self.assertTrue("data" in res.json())
 
     def test_jac_report_custom(self):
