@@ -24,6 +24,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "element",
         "element_list element",
+        "access LBRACE element_list RBRACE",
     )
     def element_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Element list rule."""
@@ -50,9 +51,16 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "KW_PRIV COLON",
-        "KW_PUB COLON",
-        "KW_PROT COLON",
+        "KW_PRIV",
+        "KW_PUB",
+        "KW_PROT",
+    )
+    def access(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Permission tag rule."""
+        return p
+
+    @_(
+        "access COLON",
         "empty",
     )
     def access_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -202,6 +210,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "member_stmt",
         "member_stmt_list member_stmt",
+        "access LBRACE member_stmt_list RBRACE",
     )
     def member_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute statement list rule."""
