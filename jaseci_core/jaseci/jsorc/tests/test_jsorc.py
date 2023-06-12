@@ -33,6 +33,7 @@ class MockKubeTest(CoreTest):
     def setUp(self, mock_config, mock_call_api):
         super().setUp()
         JsOrcSettings.KUBE_CONFIG["enabled"] = True
+        JsOrcSettings.KUBE_CONFIG["namespace"] = "jsorc-unit-test"
         JsOrcSettings.ELASTIC_CONFIG["enabled"] = True
         self.kube = JsOrc.svc("kube")
 
