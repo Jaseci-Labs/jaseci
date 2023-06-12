@@ -186,6 +186,7 @@ def action_handler_wrapper(name, *args, **kwargs):
         res = act_procs[module]["out_q"].get(timeout=ACTION_SUBPROC_TIMEOUT)[1]
     except Exception as e:
         logger.info(f"action subprocess out_q timeout {e}")
+        logger.info(e)
         res = str(e)
 
     act_procs[module]["reqs"] -= 1
