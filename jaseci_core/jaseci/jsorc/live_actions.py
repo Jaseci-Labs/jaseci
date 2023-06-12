@@ -23,7 +23,7 @@ import signal
 # MAX_WORKERS = 100
 # actions_sem = Semaphore(MAX_WORKERS + 1)
 
-ACTION_SUBPROC_TIMEOUT = 1  # 3 seconds
+ACTION_SUBPROC_TIMEOUT = 5  # 5 seconds
 
 live_actions_lock = RXW1Lock()
 live_actions = {}  # {"act.func": func_obj, ...}
@@ -121,14 +121,14 @@ def load_local_actions(file: str, ctx: dict = {}):
 
 def action_handler(mod, ctx, in_q, out_q, terminate_event):
     # Clearing the live actions in subprocess
-    logger.info(f"clearing live_actions")
+    # logger.info(f"clearing live_actions")
     live_actions.clear()
-    logger.info(f"import_module on {mod}")
+    # logger.info(f"import_module on {mod}")
     loaded_mod = importlib.import_module(mod)
-    logger.info(f"{mod} loaded")
+    # logger.info(f"{mod} loaded")
     try:
         if hasattr(loaded_mod, "setup"):
-            logger.info(f"call setup")
+            # logger.info(f"call setup")
             loaded_mod.setup(**ctx)
     except Exception as e:
         logger.error(
@@ -136,31 +136,31 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
             " This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided.",
         )
         logger.error(e)
-    logger.info(f"return list of actions")
+    # logger.info(f"return list of actions")
     out_q.put(list(live_actions.keys()))
 
     while not terminate_event.is_set() or not in_q.empty():
         # while True:
-        logger.info(f"{os.getpid()} waiting on input")
+        # logger.info(f"{os.getpid()} waiting on input")
         action, args, kwargs = in_q.get()
         try:
-            logger.info(f"{os.getpid()} Got input")
+            # logger.info(f"{os.getpid()} Got input")
             func = live_actions[action]
-            logger.info(f"{os.getpid()}got func {func}")
+            # logger.info(f"{os.getpid()}got func {func}")
             result = func(*args, **kwargs)
-            logger.info(f"{os.getpid()}got result")
+            # logger.info(f"{os.getpid()}got result")
         except Exception as e:
             logger.info(f"{os.getpid()}Exception: {str(e)}")
             result = str(e)
 
         out_q.put((action, result))
-        logger.info(f"{os.getpid()}put in out_q")
+        # logger.info(f"{os.getpid()}put in out_q")
 
 
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
-    logger.info(f"{os.getpid()}local action called for {name}")
+    # logger.info(f"{os.getpid()}local action called for {name}")
     module = name.split(".")[0]
     act_name = name.split(".")[1]
     # TODO: temporary hack
@@ -175,20 +175,19 @@ def action_handler_wrapper(name, *args, **kwargs):
 
     module = f"jac_nlp.{module}"
 
-    logger.info("put in_q")
+    # logger.info("put in_q")
     act_procs[module]["reqs"] += 1
     cnt = act_procs[module]["reqs"]
-    logger.info(f"{module} reqs: {cnt}")
-    logger.info(f"{os.getpid()}put in_q")
+    # logger.info(f"{module} reqs: {cnt}")
+    # logger.info(f"{os.getpid()}put in_q")
     act_procs[module]["in_q"].put((name, args, kwargs))
 
-    logger.info(f"{os.getpid()}waiting on out_q")
+    # logger.info(f"{os.getpid()}waiting on out_q")
     # TODO: Handle concurrent calls?
     try:
         res = act_procs[module]["out_q"].get(timeout=ACTION_SUBPROC_TIMEOUT)[1]
     except Empty as e:
-        logger.info(f"action subprocess out_q timeout {e}")
-        logger.info(e)
+        logger.info(f"action subprocess out_q timeout.")
         raise e
     except Exception as e:
         logger.info("Unknown exception caught.")
@@ -196,7 +195,7 @@ def action_handler_wrapper(name, *args, **kwargs):
 
     act_procs[module]["reqs"] -= 1
     cnt = act_procs[module]["reqs"]
-    logger.info(f"{module} reqs: {cnt}")
+    # logger.info(f"{module} reqs: {cnt}")
 
     return res
 

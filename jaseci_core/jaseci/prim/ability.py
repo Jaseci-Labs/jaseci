@@ -64,7 +64,7 @@ class Ability(Element, JacCode, Interp):
         # logger.info(f"run_action reader acquire in {time.time()-before_lock}")
         try:
             func = live_actions[action_name]
-            logger.info(f"got func {func}")
+            # logger.info(f"got func {func}")
             args = inspect.getfullargspec(func)
             self.do_auto_conversions(args, param_list)
             args = args[0] + args[4]
@@ -76,7 +76,7 @@ class Ability(Element, JacCode, Interp):
             # logger.info("after preaction callhook")
             ts = time.time()
             if "meta" in args:
-                logger.info("in meta call")
+                # logger.info("in meta call")
                 result = func(
                     *param_list["args"],
                     **param_list["kwargs"],
@@ -90,20 +90,20 @@ class Ability(Element, JacCode, Interp):
             else:
                 try:
                     if func.__module__ == "js_remote_hook":
-                        logger.info(f"remote action called for {action_name}")
+                        # logger.info(f"remote action called for {action_name}")
                         result = func(*param_list["args"], **param_list["kwargs"])
                     else:
                         result = func(
                             self.name, *param_list["args"], **param_list["kwargs"]
                         )
-                        logger.info("got results in ability")
+                        # logger.info("got results in ability")
                 except TypeError as e:
                     params = str(inspect.signature(func))
                     interp.rt_error(
                         f"Invalid arguments {param_list} to action call {self.name}! Valid paramters are {params}.",
                         interp._cur_jac_ast,
                     )
-                    logger.info(f"failing 1 {e}")
+                    # logger.info(f"failing 1 {e}")
                     raise
                 except Empty:
                     interp.rt_error(
