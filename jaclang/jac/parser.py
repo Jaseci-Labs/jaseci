@@ -283,6 +283,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "TYP_SET",
         "TYP_DICT",
         "TYP_BOOL",
+        "TYP_ANY",
         "TYP_TYPE",
     )
     def builtin_type(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -956,7 +957,10 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Object type reference rule."""
         return p
 
-    @_("ABILITY_OP NAME")  # Not a arch, used for ability_spec
+    @_(
+        "ABILITY_OP NAME",
+        "ABILITY_OP KW_ENTRY",
+    )  # Not a arch, used for ability_spec
     def ability_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability reference rule."""
         return p

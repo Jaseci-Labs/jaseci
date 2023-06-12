@@ -47,6 +47,26 @@ class TestParser(TestCase):
         """Test for module structure."""
         self.parse_micro("module_structure.jac")
 
+    def test_micro_whitespace(self: "TestParser") -> None:
+        """Test for whitespace."""
+        self.parse_micro("whitespace.jac")
+
+    def test_micro_type_hints(self: "TestParser") -> None:
+        """Test for type hints."""
+        self.parse_micro("type_hints.jac")
+
+    def test_micro_no_here(self: "TestParser") -> None:
+        """Test for no here."""
+        self.parse_micro("no_here.jac")
+
+    def test_micro_access_info(self: "TestParser") -> None:
+        """Test for access info."""
+        self.parse_micro("access_info.jac")
+
+    def test_micro_separate_defs(self: "TestParser") -> None:
+        """Test for separate defs."""
+        self.parse_micro("separate_defs.jac")
+
     def test_micro_jac_files_fully_tested(self: "TestParser") -> None:
         """Test that all micro jac files are fully tested."""
         self.directory = os.path.dirname(__file__) + "/fixtures/micro"

@@ -174,6 +174,24 @@ While Python places strong emphasis on the usage of whitespace and indentations 
 
 That being said, Jac acknowledges the value of the Python's black package, a code formatting tool that strictly enforces a uniform (and opinionated) standard code structure across a project, thereby enhancing a particular approach readability and maintainability. Thus, Jac has built this concept into the core of the language stack itself, offering a standardized auto-formatting tool as an optional feature. This feature provides the benefit and tooling for PEP8 style conventions to create clean, structured, and consistent code across all projects. By integrating strict coding standards via black-style tooling while allowing for flexibility for developer choice, we believes this strikes the perfect balance for a language.
 
+##### Minimal Code Example
+
+```jac
+"""Same functionality 3 white space styles."""
+
+with entry { "hello" |> len |> print; }  # more concise
+
+with entry {  # a bit more python like
+    a = "hello" |> len;
+    a |> print;
+}
+
+with entry {  # very pythonic
+    a = "hello";
+    b = len("hello");
+    print(b); }
+```
+
 #### Typing System
 
 While Python has dynamic typing with optional type hints, Jac takes it a small step further. Type hints in Jac are mandatory in function/method signatures and for object class member vairables. It's really not that much work, and provides key benefits of statically typed languages such as better code understanding, fewer programming errors and better performance. However, Jac still allows dynamic typing under the hood to be fully semantically interoperable with Python, and offer the pythonic flexibility of a dynamically typed language.
@@ -182,6 +200,26 @@ An additional benefit of this restrained strict type hinting is the potential fo
 
 By blending the best aspects of static and dynamic typing, along with the potential for type inference, Jac positions itself as a versatile language that can adapt to different development needs while maintaining a strong tie to Python's design principles.
 
+##### Minimal Code Example
+```jac
+"""Type hints aren't that much work."""
+
+func foo(a: int, b: str): int {
+    c = a + (b|>int);  # no type hint needed here
+    return c;
+}
+
+object Bar {
+    has a_list: list[int] = [1, 2, 3];
+    has b_list: list[str] = ["5", "6", "7"];
+
+    can entry(): None {
+        for i in here.b_list {
+            foo(5, i) |> print;
+        }
+    }
+}
+```
 #### Improving on the class `self` reference
 
 In Python, instance methods require the explicit mention of `self` as their first parameter for accessing instance data. This explicit declaration, although informative, can feel a little awkward and redundant to developers, especially given the language's propensity for clear and clean code.
@@ -191,6 +229,23 @@ Jac seeks to remedy this through introducing the `here` reference as s replaceme
 This alteration in Jac addresses a longstanding peculiarity in Python's object-oriented design. The repeated use of self in Python can seem a bit odd, particularly considering the language's dynamic nature. While Python utilizes self to ensure that instance methods have a way to access and modify instance data, Jac believes that this access can be assumed rather than explicitly stated, given the context of the method within a class.
 
 Furthermore, Jac's approach aligns better with other object-oriented languages, where the current instance of the object within its methods is implicitly understood. By casting objects explicitly and assuming an implicit here reference, Jac simplifies method definitions and allows developers to focus on the logic of the method rather than the mechanics of accessing instance data.
+
+##### Minimal Code Example
+```jac
+"""Not focusing on the self is cleaner."""
+
+object MyObj {
+    has a: int;
+
+    can entry(a: int): None {
+        here.a = a;
+    }
+
+    can set_a(val: int): None {
+        here.a = val;
+    }
+}
+```
 
 #### OOP Access Modifiers
 
@@ -204,6 +259,21 @@ Moreover, the formal support for these accessors in Jac makes it straightforward
 
 By transitioning from Python's underscore convention to the use of explicit keywords, Jac promotes predictability and readability, leading to a more structured and intuitive programming model.
 
+##### Minimal Code Example
+```jac
+"""No more `_` and `__` for access/visibility directives."""
+
+object MyObj {
+    prot: has a: int;
+    priv: can entry(a: int): None {
+        here.a = a;
+    }
+    pub: can set_a(val: int): None {
+        here.a = val;
+    }
+}
+```
+
 #### Definitions and Declarations
 
 As previously mentioned, in Python, there is a direct tie between declarations and definitions. When you declare a function or a class, you inherently provide its definition. This conjoined approach can be efficient in certain contexts, but forcing this approach when dealing with larger code bases present readability and organizational challenges. Often, understanding the interface of a class or a function requires scrolling through lines of implementation details, or relying on IDE tools for quick summaries. This can make it difficult to get a comprehensive overview of the class or function structure.
@@ -211,7 +281,24 @@ As previously mentioned, in Python, there is a direct tie between declarations a
 Jac introduces a distinction between declarations and definitions, directly addressing this challenge. In Jac, a programmer can first declare the structure of a class, outlining its methods and member variables, and subsequently provide the definitions or implementation details. This separation improves code readability and organization by enabling a clear, high-level overview of the class or function structure before diving into the implementation specifics. If a programmer chooses to conjoin declaration and definition, they can also do that as well.
 
 This approach is particularly beneficial in large projects where different team members may be working on different parts of a class or function. With the separation of declarations and definitions, developers can quickly understand the interface of a class or function without having to navigate through the implementation details. This leads to a better collaborative environment and more efficient development process.
+##### Minimal Code Example
+```jac
+"""Modified for separate defs/decls."""
 
+object MyObj {
+    prot: has a: int;
+    priv: can entry(a: int): None;
+    pub: can set_a(val: int): None;
+}
+
+:o:MyObj:a:entry {
+        here.a = a;
+}
+
+:o:MyObj:a:set_a {
+        here.a = val;
+}
+```
 ### Realizing Pythonic implemenations in a Jactastic way
 
 Jac provides a comprehensive mapping of Python's core language features, ensuring Python developers can smoothly transition to Jac. At the same time, Jac introduces innovative modifications that enhance readability, explicitness, and flexibility, elevating the developer experience.
