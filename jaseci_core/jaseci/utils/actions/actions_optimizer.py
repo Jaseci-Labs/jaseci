@@ -22,7 +22,7 @@ from functools import cmp_to_key
 
 from .actions_state import ActionsState
 
-POLICIES = ["Default", "Evaluation", "Auto"]
+POLICIES = ["Default", "Evaluation"]
 THRESHOLD = 0.2
 NODE_MEM_THRESHOLD = 0.8
 
@@ -270,10 +270,6 @@ class ActionsOptimizer:
             self._actionpolicy_evaluation()
         # if len(self.actions_change) > 0:
         #     self.apply_actions_change()
-        elif self.policy == "Auto":
-            self._actionpolicy_auto()
-        else:
-            logger.error(f"Unrecognized policy {self.policy}")
 
     def _init_evalution_policy(self, policy_state):
         # 999 is just really large memory size so everything can fits in local
@@ -331,99 +327,6 @@ class ActionsOptimizer:
             sorted_configurations.append(min_config)
         logger.info(f"config selected for evaluation: {sorted_configurations}")
         policy_state["remain_configs"] = sorted_configurations
-
-    def _actionpolicy_auto(self):
-        """
-        A automatic policy that automatically loads and unloads actions based on the current workload.
-        """
-        logger.info("===Auto Policy===")
-        policy_state = self.policy_state["Auto"]
-
-        if len(policy_state) == 0:
-            # Initialize policy tracking state
-            policy_state = {
-                "phase": "Auto",  # current phase of policy: Auto|perf
-                "cur_config": None,  # current active configuration
-                "remain_configs": [],  # remaining configurations that need to be evaluated
-                "past_configs": [],  # configurations already evaluated
-                "eval_phase": self.policy_params.get(
-                    "eval_phase", 10
-                ),  # how long is evaluatin period (in seconds)
-                "perf_phase": self.policy_params.get(
-                    "perf_phase", 100
-                ),  # how long is the performance period (in seconds)
-                "cur_phase": 0,  # how long the current period has been running
-                "prev_best_config": self.actions_state.get_all_state(),
-            }
-            self._init_evalution_policy(policy_state)
-        policy_state["cur_phase"] += self.jsorc_interval
-
-        # check if we should go into evaluation phase
-        if (
-            policy_state["phase"] == "perf"
-            and policy_state["cur_phase"] >= policy_state["perf_phase"]
-        ):
-            # if no enough walker were execueted in this period, keep in perf phase
-            if "walker_run" not in self.benchmark["requests"]:
-                policy_state["cur_phase"] = 0
-            else:
-                logger.info("===Auto Policy=== Switching to Evaluation mode")
-                policy_state["phase"] = "Auto"
-                policy_state["cur_phase"] = 0
-                policy_state["cur_config"] = None
-                if len(policy_state["remain_configs"]) == 0:
-                    self._init_evalution_policy(policy_state)
-        if policy_state["phase"] == "Auto":
-            # In evaluation phase
-            walker_runs = []
-            for walker, times in self.benchmark["requests"]["walker_run"].items():
-                if walker == "_default_":
-                    continue
-                else:
-                    walker_runs.extend(times)
-
-            avg_walker_lat = sum(walker_runs) / len(walker_runs)
-            logger.info(f"===Auto Policy=== avg_walker_lat: {avg_walker_lat}")
-
-            if len(policy_state["remain_configs"]) == 0:
-                logger.info(
-                    f"""===Auto Policy===
-                    \nbenchmark: {self.benchmark}
-                    \nactions_history: {self.actions_history}
-                    \nactions_calls: {self.actions_calls.keys()}
-                    \n{policy_state['remain_configs']}"""
-                )
-                policy_state["phase"] = "perf"
-            else:
-                next_config = policy_state["remain_configs"][0]
-                del policy_state["remain_configs"][0]
-                self.actions_change = self._get_action_change(next_config)
-                policy_state["cur_config"] = next_config
-                policy_state["cur_phase"] = 0
-                self.benchmark["requests"] = {}
-                if len(self.actions_change) > 0:
-                    logger.info(
-                        f"===Auto Policy=== Switching eval config to {policy_state['cur_config']}"
-                    )
-                    policy_state["phase"] = "eval_switching"
-                    self.benchmark["active"] = False
-                    self.apply_actions_change()
-
-                logger.info(
-                    f"===Auto Policy=== Switching to next config to evaluate {next_config}"
-                )
-        if policy_state["phase"] == "eval_switching":
-            # in the middle of switching between configs for evaluation
-            if len(self.actions_change) == 0:
-                # this means all actions change have been applied,start evaluation phase
-                logger.info(
-                    "===Auto Policy=== All actions change have been applied. Start evaluation phase."
-                )
-                policy_state["phase"] = "Auto"
-                policy_state["cur_phase"] = 0
-                self.benchmark["active"] = True
-                self.benchmark["requests"] = {}
-        self.policy_state["Auto"] = policy_state
 
     def _actionpolicy_evaluation(self):
         """
