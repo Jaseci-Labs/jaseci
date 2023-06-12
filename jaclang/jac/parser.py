@@ -72,7 +72,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Test rule."""
         return p
 
-    @_("KW_WITH KW_IMPORT code_block")
+    @_("KW_WITH KW_ENTRY code_block")
     def mod_code(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Module-level free code rule."""
         return p

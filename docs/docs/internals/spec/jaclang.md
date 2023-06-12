@@ -204,6 +204,35 @@ This approach is particularly beneficial in large projects where different team 
 
 ### Realizing Pythonic implemenations in a Jactastic way
 
+Jac provides a comprehensive mapping of Python's core language features, ensuring Python developers can smoothly transition to Jac. At the same time, Jac introduces innovative modifications that enhance readability, explicitness, and flexibility, elevating the developer experience.
+
+
+To ensure Jac provides a comprehensive coverage of Python's features, we provide analogous structures and functionalities for essential elements such as imports, global variables, free code at module level, Python-style function definitions, and Python-style class declarations, as well as a general mapping of code statements. Here, we detail these analogies.
+
+#### Imports in Jac
+
+In Jac, there are two kinds of imports: `jac` imports and `py` imports. The syntax for the import path maps directly to Python. However, for `name as` type imports, the syntax is slightly changed with the `as` clause coming at the end. This subtle shift aligns with Jac's design philosophy of explicitness and readability.
+
+#### Global Variables in Jac
+
+To specify global variables in Jac, we use the `global` keyword, similar to Python. However, in line with Jac's design philosophy, we view each global variable as an element floating in the module, reinforcing Jac's explicit approach to variable declaration and scope.
+
+#### Free Code in Jac
+
+For free code, or code that is not inside a function or method, we use a `with import {}` code block. While multiple blocks can be used if desired, we recommend sticking to a single block for readability and clarity.
+
+#### Function Definitions in Jac
+
+Jac uses `func` instead of Python's `def` to declare a function. The function's name follows the `func` keyword, similar to Python's convention. The semantics and structure of function definitions are nearly identical to Python's, ensuring a seamless transition for Python developers.
+
+#### Class Declarations in Jac
+
+Class declarations in Jac use `object` instead of Python's `class`. The constructor function in Jac is declared using `can entry()` instead of Python's `__init__`. This shift aligns with Jac's innovative approach to object-oriented programming, while still maintaining familiarity for Python developers.
+
+#### Code Statements in Jac
+
+For general code statements, we provide an equivalency set that mirrors Python's structures. The only exceptions are the new types introduced in the next section, which add additional functionality and flexibility to the Jac programming language.
+
 ## Purple Pill: New Language Features to Improve Traditional Programming
 
 ## Red Pill: Concepts and Semantics Realizing Data Spatial Programming in Jac
