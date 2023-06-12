@@ -32,7 +32,8 @@ class AstBuildPassTests(TestCase):
     def test_ast_build_basic(self: "TestCase") -> None:
         """Basic test for pass."""
         ptree = self.prse.parse(self.lex.tokenize(self.load_fixture("fam.jac")))
-        self.builder.run(node=ptoa(ptree))
+        build_pass = self.builder.run(node=ptoa(ptree))
+        build_pass.print()
 
     def test_ast_build_module_structure(self: "TestCase") -> None:
         """Basic test for pass."""

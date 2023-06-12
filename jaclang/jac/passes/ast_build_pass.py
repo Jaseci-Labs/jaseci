@@ -241,7 +241,7 @@ class AstBuildPass(Pass):
     def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Move var list up to parent."""
         access = node.kid[0]
-        node = replace_node(node, node.kid[1])
+        node = replace_node(node, node.kid[2])
         node.kid = [access] + node.kid
         update_kind(node, ast.HasStmt, access=node.kid[0], vars=node.kid)
 

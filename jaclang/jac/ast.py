@@ -23,11 +23,15 @@ class AstNode:
 
     def to_dict(self: "AstNode") -> dict:
         """Return dict representation of node."""
-        return {
+        ret = {
             "node": str(type(self).__name__),
             "kid": [x.to_dict() for x in self.kid],
             "line": self.line,
         }
+        if type(self) == Token:
+            ret["name"] = self.name
+            ret["value"] = self.value
+        return ret
 
     def print(self: "AstNode", depth: int = None) -> None:
         """Print ast."""
