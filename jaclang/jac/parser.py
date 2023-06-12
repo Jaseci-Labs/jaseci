@@ -299,6 +299,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "KW_CAN KW_ENTRY func_decl code_block",
+        "KW_CAN KW_ENTRY func_decl SEMI",
         "KW_CAN NAME func_decl code_block",
         "KW_CAN NAME func_decl SEMI",
     )
