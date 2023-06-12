@@ -97,7 +97,7 @@ class JsorcLoadTest:
         jac_code = open(jac_file).read()
         # TODO: remove this once opt_level bug is fixed
         payload = {"op": "sentinel_register", "code": jac_code, "opt_level": 2}
-        res = self.sauth_client.post(
+        self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 
@@ -107,7 +107,7 @@ class JsorcLoadTest:
             "policy_name": policy_name,
             "policy_params": policy_params,
         }
-        res = self.sauth_client.post(
+        self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 
@@ -221,6 +221,13 @@ class JsorcLoadTest:
                                 package, module = module.split(".")
                                 self.load_action_config(f"{package}.config", module)
                                 self.load_action(module, "remote", wait_for_ready=True)
+                        elif policy == "autp":
+                            jsorc_policy = "Auto"
+                            # For JSORC mode, we start as remote everything
+                            for module in action_modules:
+                                package, module = module.split(".")
+                                self.load_action_config(f"{package}.config", module)
+                                self.load_action(module, "remote", wait_for_ready=True)
                         else:
                             logger.error(f"Unrecognized policy {policy}")
                             return
@@ -233,7 +240,7 @@ class JsorcLoadTest:
                         self.start_actions_tracking()
                         start_ts = time.time()
                         while (time.time() - start_ts) < experiment_duration:
-                            res = self.run_walker(app)
+                            self.run_walker(app)
                         result = self.stop_benchmark()
                         action_result = self.stop_actions_tracking()
                         if policy == "all_local" or policy == "all_remote":
