@@ -355,6 +355,7 @@ class ActionsOptimizer:
                 "cur_phase": 0,  # how long the current period has been running
                 "prev_best_config": self.actions_state.get_all_state(),
             }
+            self._init_evalution_policy(policy_state)
         policy_state["cur_phase"] += self.jsorc_interval
 
         # check if we should go into evaluation phase
@@ -392,6 +393,7 @@ class ActionsOptimizer:
                     \nactions_calls: {self.actions_calls.keys()}
                     \n{policy_state['remain_configs']}"""
                 )
+                policy_state["phase"] = "perf"
             else:
                 next_config = policy_state["remain_configs"][0]
                 del policy_state["remain_configs"][0]
@@ -401,14 +403,14 @@ class ActionsOptimizer:
                 self.benchmark["requests"] = {}
                 if len(self.actions_change) > 0:
                     logger.info(
-                        f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"
+                        f"===Auto Policy=== Switching eval config to {policy_state['cur_config']}"
                     )
                     policy_state["phase"] = "eval_switching"
                     self.benchmark["active"] = False
                     self.apply_actions_change()
 
                 logger.info(
-                    f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"
+                    f"===Auto Policy=== Switching to next config to evaluate {next_config}"
                 )
         if policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
