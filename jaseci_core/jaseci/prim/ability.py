@@ -15,6 +15,7 @@ from jaseci.jac.ir.jac_code import JacCode
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.utils.utils import logger
+from queue import Empty
 
 
 class Ability(Element, JacCode, Interp):
@@ -104,6 +105,12 @@ class Ability(Element, JacCode, Interp):
                     )
                     logger.info(f"failing 1 {e}")
                     raise
+                except Empty:
+                    interp.rt_error(
+                        f"Exception within action call {self.name}: Timeout waiting on results from action subprocess",
+                        interp._cur_jac_ast,
+                    )
+                    raise
                 except Exception as e:
                     # Checking for race condition between walker running abilities and JSORC unloading modules
                     # if func != live_actions[action_name]:
@@ -113,10 +120,9 @@ class Ability(Element, JacCode, Interp):
                     #     return self.run_action(param_list, scope, interp)
 
                     interp.rt_error(
-                        f"Exception within action call {self.name}! {e}",
+                        f"Exception within action call {self.name}! {str(e)}",
                         interp._cur_jac_ast,
                     )
-                    logger.info("failing 2")
                     raise
         finally:
             live_actions_lock.reader_release()
