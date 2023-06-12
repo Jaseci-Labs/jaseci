@@ -194,6 +194,8 @@ class AstBuildPass(Pass):
         """Chain list together into actual list."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
+        if type(node.kid[0]) == ast.Blank:
+            del node.kid[0]
         update_kind(node, ast.BaseClasses, base_classes=node.kid)
 
     def exit_sub_name(self: "AstBuildPass", node: ast.AstNode) -> None:

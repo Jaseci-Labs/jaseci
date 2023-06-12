@@ -93,8 +93,7 @@ class PyCodeGenPass(Pass):
                 node,
                 f"class {node.name.py_code}({node.base_classes.py_code}):",
             )
-        for i in node.body:
-            self.emit(node, i.py_code)
+        self.emit(node, node.body.py_code)
 
     # class NodeArch(ObjectArch):
     # class EdgeArch(ObjectArch):
@@ -104,12 +103,12 @@ class PyCodeGenPass(Pass):
     def exit_func_arch(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert func arch to python code."""
         self.emit_ln(node, f"def {node.name.py_code}({node.signature.py_code}):")
-        for i in node.body:
-            self.emit(node, i.py_code)
+        self.emit(node, node.body.py_code)
         self.indent_level -= 1
 
     def exit_base_classes(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert base classes to python code."""
+        print(node.kid)
         self.emit(node, ", ".join([i.value for i in node.base_classes]))
 
     # class AbilitySpec(AstNode):
