@@ -994,6 +994,20 @@ class UnpackExpr(AstNode):
         super().__init__(*args, **kwargs)
 
 
+class RefExpr(AstNode):
+    """ExprRef node type for Jac Ast."""
+
+    def __init__(
+        self: "RefExpr",
+        target: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize ref expression node."""
+        self.target = target
+        super().__init__(*args, **kwargs)
+
+
 class MultiString(AstNode):
     """ExprMultiString node type for Jac Ast."""
 
