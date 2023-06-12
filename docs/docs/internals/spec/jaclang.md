@@ -162,7 +162,7 @@ The reintroduction of this distinction in Jac reflects a philosophy of design cl
 
 Jac is a data spatial programming language that goes beyond Python in several key ways. However it is a superset language semantically, so lets start with understanding Jac through the lens of how typical python style implementation is realized.
 
-### General blue-pill key differences / improvements over Python
+### General blue-pill tier differences / improvements over Python
 
 While Python has been widely lauded for its readability and simplicity, Jac introduces several new features and structures that are aimed at providing even greater control, predictability, and flexibility to developers.
 
