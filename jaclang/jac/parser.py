@@ -35,6 +35,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "DOC_STRING",
         "global_var",
         "test",
+        "mod_code",
         "import_stmt",
         "architype",
         "ability_spec",
@@ -69,6 +70,11 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_("KW_TEST NAME multistring code_block")
     def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Test rule."""
+        return p
+
+    @_("KW_WITH KW_IMPORT code_block")
+    def mod_code(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Module-level free code rule."""
         return p
 
     # Import Statements

@@ -57,6 +57,10 @@ class AstBuildPass(Pass):
             node, ast.Test, name=node.kid[0], description=node.kid[1], body=node.kid[2]
         )
 
+    def exit_mod_code(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build TEST Ast node."""
+        replace_node(node, node.kid[2])
+
     def exit_import_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build IMPORT Ast node."""
         kid = node.kid
