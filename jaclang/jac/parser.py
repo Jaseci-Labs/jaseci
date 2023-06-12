@@ -24,7 +24,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "element",
         "element_list element",
-        "access LBRACE element_list RBRACE",
     )
     def element_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Element list rule."""
@@ -210,7 +209,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "member_stmt",
         "member_stmt_list member_stmt",
-        "access LBRACE member_stmt_list RBRACE",
     )
     def member_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute statement list rule."""

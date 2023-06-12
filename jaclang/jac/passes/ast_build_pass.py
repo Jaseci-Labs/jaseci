@@ -10,11 +10,6 @@ from jaclang.jac.passes.ir_pass import Pass
 class AstBuildPass(Pass):
     """Ast build pass."""
 
-    def __init__(self: "AstBuildPass", ir: ast.AstNode = None) -> None:
-        """Initialize AstBuildPass."""
-        self.cur_access = [ast.Blank()]
-        super().__init__(ir)
-
     def exit_start(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build WHOLE_BUILD Ast node."""
         node.kid = node.kid[0].kid
@@ -22,22 +17,10 @@ class AstBuildPass(Pass):
             elements=node.kid, parent=None, kid=node.kid, line=node.line
         )
 
-    def enter_element_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build list of elements."""
-        if len(node.kid) == 4:
-            self.cur_access.append(node.kid[0].kid[0])
-
     def exit_element_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Chain list together into actual list."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
-        if (
-            len(node.kid) == 4
-            and type(node.kid[3]) == ast.Token
-            and node.kid[3].name == "RBRACE"
-        ):
-            node.kid = node.kid[1].kid
-            self.cur_access.pop()
 
     def exit_element(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Replace element with its kid."""
@@ -258,22 +241,10 @@ class AstBuildPass(Pass):
             meta["body"] = node.kid
         update_kind(node, ast.ArchBlock, **meta)
 
-    def enter_member_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build list of member stmts."""
-        if len(node.kid) == 4:
-            self.cur_access.append(node.kid[0].kid[0])
-
     def exit_member_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Chain list together into actual list."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
-        if (
-            len(node.kid) == 4
-            and type(node.kid[3]) == ast.Token
-            and node.kid[3].name == "RBRACE"
-        ):
-            node.kid = node.kid[1].kid
-            self.cur_access.pop()
 
     def exit_member_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Replace self with actual attr stmt."""

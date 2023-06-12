@@ -310,27 +310,43 @@ To ensure Jac provides a comprehensive coverage of Python's features, we provide
 
 In Jac, there are two kinds of imports: `jac` imports and `py` imports. The syntax for the import path maps directly to Python. However, for `name as` type imports, the syntax is slightly changed with the `as` clause coming at the end. This subtle shift aligns with Jac's design philosophy of explicitness and readability.
 
+#### Minimal Code Example
+
 ### Global Variables in Jac
 
 To specify global variables in Jac, we use the `global` keyword, similar to Python. However, in line with Jac's design philosophy, we view each global variable as an element floating in the module, reinforcing Jac's explicit approach to variable declaration and scope.
+
+#### Minimal Code Example
 
 ### Module Level Free Coding in Jac
 
 For free code, or code that is not inside a function or method, we use a `with import {}` code block. While multiple blocks can be used if desired, we recommend sticking to a single block for readability and clarity.
 
+#### Minimal Code Example
+
 ### Function Definitions in Jac
 
 Jac uses `func` instead of Python's `def` to declare a function. The function's name follows the `func` keyword, similar to Python's convention. The semantics and structure of function definitions are nearly identical to Python's, ensuring a seamless transition for Python developers.
 
+#### Minimal Code Example
+
 ### Class Declarations in Jac
 
 Class declarations in Jac use `object` instead of Python's `class`. The constructor function in Jac is declared using `can entry()` instead of Python's `__init__`. This shift aligns with Jac's innovative approach to object-oriented programming, while still maintaining familiarity for Python developers.
+
+#### Minimal Code Example
+
 ### Exception Handling in Jac
 
 Jac Exceptions build directly upon Python's exceptions. Jac includes `try`, `except`, `finally` and `raise` keywords using the same semantics (and imported objects) as python.
+
+#### Minimal Code Example
+
 ### Code Statements amd Expressions in Jac
 
 For general code statements and expression, we provide an equivalency set that mirrors Python's structures. We've also expanded on the capabilities described here with the new language features that add additional functionality and flexibility to the Jac programming language. These are discussed in the next section (Purple Pill). Here we describe the basic equivalency set.
+
+#### Minimal Code Example
 
 
 
