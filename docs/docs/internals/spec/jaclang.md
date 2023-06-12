@@ -259,7 +259,7 @@ For general code statements and expression, we provide an equivalency set that m
 ### Dict Typing
 ### Duck Typing
 
-## Red Pill: Concepts and Semantics Realizing Data Spatial Programming in Jac
+## Red Pill: Concepts, Semantics, and Features for Realizing Data Spatial Programming
 
 ### Main Architypes of Jac
 
