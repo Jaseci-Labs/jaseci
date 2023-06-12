@@ -189,7 +189,7 @@ def action_handler_wrapper(name, *args, **kwargs):
     except Empty as e:
         logger.info(f"action subprocess out_q timeout {e}")
         logger.info(e)
-        res = str(e)
+        raise e
     except Exception as e:
         logger.info("Unknown exception caught.")
         raise e
