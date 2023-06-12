@@ -22,7 +22,7 @@ from functools import cmp_to_key
 
 from .actions_state import ActionsState
 
-POLICIES = ["Default", "Evaluation"]
+POLICIES = ["Default", "Evaluation", "Auto"]
 THRESHOLD = 0.2
 NODE_MEM_THRESHOLD = 0.8
 
@@ -270,6 +270,10 @@ class ActionsOptimizer:
             self._actionpolicy_evaluation()
         # if len(self.actions_change) > 0:
         #     self.apply_actions_change()
+        elif self.policy == "Auto":
+            self._actionpolicy_auto()
+        else:
+            logger.error(f"Unrecognized policy {self.policy}")
 
     def _init_evalution_policy(self, policy_state):
         # 999 is just really large memory size so everything can fits in local
@@ -294,7 +298,9 @@ class ActionsOptimizer:
                             new_configs.append(dict(c))
                         else:
                             logger.info(
-                                f"config dropped for memory constraint: {c},\n\tcurrent node memory: {node_mem}\n\tavailable memory: {(node_mem * NODE_MEM_THRESHOLD)-c['local_mem'] }"
+                                f"""config dropped for memory constraint: {c},
+                                \n\tcurrent node memory: {node_mem}
+                                \n\tavailable memory: {(node_mem * NODE_MEM_THRESHOLD)-c['local_mem'] }"""  # noqa: E501
                             )
                     else:
                         new_configs.append(dict(c))
@@ -307,7 +313,7 @@ class ActionsOptimizer:
                     num_changes += 1
             return num_changes
 
-        # Sort the configurations based on the minimum changes between each configuration
+        # Sort the configurations based on the minimum changes between each config
         sorted_configurations = [all_configs[0]]  # Start with the first configuration
 
         while len(sorted_configurations) < len(all_configs):
@@ -328,10 +334,113 @@ class ActionsOptimizer:
         logger.info(f"config selected for evaluation: {sorted_configurations}")
         policy_state["remain_configs"] = sorted_configurations
 
+    def _actionpolicy_auto(self):
+        """
+        A automatic policy that automatically loads and unloads
+        actions based on the current workload.
+        """
+        logger.info("===Auto Policy===")
+        policy_state = self.policy_state["Auto"]
+
+        if len(policy_state) == 0:
+            # Initialize policy tracking state
+            policy_state = {
+                "phase": "Auto",  # current phase of policy: Auto|perf
+                "cur_config": None,  # current active configuration
+                "remain_configs": [],  # remaining config that need to be evaluated
+                "past_configs": [],  # configurations already evaluated
+                "eval_phase": self.policy_params.get(
+                    "eval_phase", 10
+                ),  # how long is evaluatin period (in seconds)
+                "perf_phase": self.policy_params.get(
+                    "perf_phase", 100
+                ),  # how long is the performance period (in seconds)
+                "cur_phase": 0,  # how long the current period has been running
+                "prev_best_config": self.actions_state.get_all_state(),
+                "prev_actions": [],
+            }
+            self._init_evalution_policy(policy_state)
+        policy_state["cur_phase"] += self.jsorc_interval
+
+        # check if we should go into evaluation phase
+        if (
+            policy_state["phase"] == "perf"
+            and policy_state["cur_phase"] >= policy_state["perf_phase"]
+        ):
+            # if no enough walker were execueted in this period, keep in perf phase
+            if "walker_run" not in self.benchmark["requests"]:
+                policy_state["cur_phase"] = 0
+            else:
+                logger.info("===Auto Policy=== Switching to Evaluation mode")
+                policy_state["phase"] = "Auto"
+                policy_state["cur_phase"] = 0
+                policy_state["cur_config"] = None
+                if len(policy_state["remain_configs"]) == 0:
+                    self._init_evalution_policy(policy_state)
+        if policy_state["phase"] == "Auto":
+            # In evaluation phase
+
+            if len(policy_state["remain_configs"]) == 0:
+                walker_runs = []
+                for walker, times in self.benchmark["requests"]["walker_run"].items():
+                    if walker == "_default_":
+                        continue
+                    else:
+                        walker_runs.extend(times)
+
+                avg_walker_lat = sum(walker_runs) / len(walker_runs)
+                logger.info(f"===Auto Policy=== avg_walker_lat: {avg_walker_lat}")
+                logger.info(
+                    f"""===Auto Policy===
+                    \nbenchmark: {self.benchmark}
+                    \nactions_history: {self.actions_history}
+                    \nactions_calls: {self.actions_calls.keys()}
+                    \n{policy_state['remain_configs']}"""
+                )
+                policy_state["phase"] = "perf"
+                policy_state["cur_config"] = None
+                policy_state["past_configs"] = []
+                policy_state["cur_phase"] = 0
+                policy_state["prev_actions"] = list(self.actions_calls.keys())
+                self.benchmark["requests"] = {}
+                self.benchmark["active"] = True
+                self.apply_actions_change()
+            else:
+                next_config = policy_state["remain_configs"][0]
+                del policy_state["remain_configs"][0]
+                self.actions_change = self._get_action_change(next_config)
+                policy_state["cur_config"] = next_config
+                policy_state["cur_phase"] = 0
+                self.benchmark["requests"] = {}
+                if len(self.actions_change) > 0:
+                    logger.info(
+                        f"===Auto Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
+                    )
+                    policy_state["phase"] = "eval_switching"
+                    self.benchmark["active"] = False
+                    self.apply_actions_change()
+
+                logger.info(
+                    f"===Auto Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
+                )
+        if policy_state["phase"] == "eval_switching":
+            # in the middle of switching between configs for evaluation
+            if len(self.actions_change) == 0:
+                # this means all actions change have been applied,start evaluation phase
+                logger.info(
+                    "===Auto Policy=== All actions change have been applied. Start evaluation phase."  # noqa: E501
+                )
+                policy_state["phase"] = "Auto"
+                policy_state["cur_phase"] = 0
+                self.benchmark["active"] = True
+                self.benchmark["requests"] = {}
+        self.policy_state["Auto"] = policy_state
+
     def _actionpolicy_evaluation(self):
         """
         A evaluation based policy.
-        JSORC cycle through possible action configurations and evaluate request performance and select the one with the best performance.
+        JSORC cycle through possible action configurations and
+        evaluate request performance and select the one with the best performance.
         Use the post_request_hook from JSORC to track request performance
         """
         logger.info("===Evaluation Policy===")
@@ -342,7 +451,7 @@ class ActionsOptimizer:
             policy_state = {
                 "phase": "eval",  # current phase of policy: eval|perf
                 "cur_config": None,  # current active configuration
-                "remain_configs": [],  # remaining configurations that need to be evaluated
+                "remain_configs": [],  # remaining configs that need to be evaluated
                 "past_configs": [],  # configurations already evaluated
                 "eval_phase": self.policy_params.get(
                     "eval_phase", 10
@@ -386,7 +495,7 @@ class ActionsOptimizer:
                 )
                 if len(self.actions_change) > 0:
                     logger.info(
-                        f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"
+                        f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
                     )
                     policy_state["phase"] = "eval_switching"
                     self.benchmark["active"] = False
@@ -415,13 +524,14 @@ class ActionsOptimizer:
                     policy_state["cur_config"]["avg_walker_lat"] = avg_walker_lat
                     policy_state["past_configs"].append(policy_state["cur_config"])
                     logger.info(
-                        f"===Evaluation Policy=== Complete evaluation period for {policy_state['cur_config']} latency: {avg_walker_lat}"
+                        f"""===Evaluation Policy=== Complete evaluation period for:
+                         {policy_state['cur_config']} latency: {avg_walker_lat}"""
                     )
 
                     # check if all configs have been evaluated
                     if len(policy_state["remain_configs"]) == 0:
-                        # best config is the one with the fastest walker latency during the evaluation period
-                        logger.info(f"===Evaluation Policy=== Evaluation phase over.")
+                        # best config is the one with the fastest walker latency during the evaluation period # noqa: E501
+                        logger.info("===Evaluation Policy=== Evaluation phase over.")
                         best_config = copy.deepcopy(
                             min(
                                 policy_state["past_configs"],
@@ -449,9 +559,9 @@ class ActionsOptimizer:
                         self.actions_change = self._get_action_change(best_config)
                         if len(self.last_eval_configs) == 0:
                             logger.info(
-                                f"best_config : {best_config}\nprev_best_config : {policy_state['prev_best_config']}"
+                                f"best_config : {best_config}\nprev_best_config : {policy_state['prev_best_config']}"  # noqa: E501
                             )
-                            # ADAPTIVE: if the selected best config is the same config as the previous best one, double the performance period
+                            # ADAPTIVE: if the selected best config is the same config as the previous best one, double the performance period # noqa: E501
                             if (
                                 all(
                                     [
@@ -466,7 +576,7 @@ class ActionsOptimizer:
 
                                 policy_state["perf_phase"] *= 2
                                 logger.info(
-                                    f"===Evaluation Policy=== Best config is the same as previous one. Doubling performance phase to {policy_state['perf_phase']}"
+                                    f"===Evaluation Policy=== Best config is the same as previous one. Doubling performance phase to {policy_state['perf_phase']}"  # noqa: E501
                                 )
                         else:
                             total_lat = 0
@@ -501,12 +611,12 @@ class ActionsOptimizer:
                                     > THRESHOLD
                                 ):
                                     logger.info(
-                                        f"===Evaluation Policy=== The latency has changed for current config w.r.t previous config, skipping for now"
+                                        "===Evaluation Policy=== The latency has changed for current config w.r.t previous config, skipping for now"  # noqa: E501
                                     )
                                 else:
                                     policy_state["perf_phase"] *= 3
                                     logger.info(
-                                        f"===Evaluation Policy=== All current config has same latency as previous one. Doubling performance phase to {policy_state['perf_phase']} "
+                                        f"===Evaluation Policy=== All current config has same latency as previous one. Doubling performance phase to {policy_state['perf_phase']} "  # noqa: E501
                                     )
                         self.last_eval_configs = copy.deepcopy(
                             policy_state["past_configs"]
@@ -523,7 +633,7 @@ class ActionsOptimizer:
                         self.benchmark["requests"] = {}
                         self.benchmark["active"] = True
                         logger.info(
-                            f"===Evaluation Policy=== Evaluation phase over. Selected best config as {best_config}"
+                            f"===Evaluation Policy=== Evaluation phase over. Selected best config as {best_config}"  # noqa: E501
                         )
                         self.apply_actions_change()
                     else:
@@ -535,21 +645,21 @@ class ActionsOptimizer:
                         self.benchmark["requests"] = {}
                         if len(self.actions_change) > 0:
                             logger.info(
-                                f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"
+                                f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
                             )
                             policy_state["phase"] = "eval_switching"
                             self.benchmark["active"] = False
                             self.apply_actions_change()
 
                         logger.info(
-                            f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"
+                            f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
                         )
         if policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
-                # this means all actions change have been applied, start evaluation phase
+                # this means all actions change have been applied, start evaluation phase # noqa: E501
                 logger.info(
-                    f"===Evaluation Policy=== All actions change have been applied. Start evaluation phase."
+                    "===Evaluation Policy=== All actions change have been applied. Start evaluation phase."  # noqa: E501
                 )
                 policy_state["phase"] = "eval"
                 policy_state["cur_phase"] = 0
@@ -559,8 +669,10 @@ class ActionsOptimizer:
 
     def _get_action_change(self, new_action_state):
         """
-        Given a new desired action state and the current action_state tracking, return the change set
-        Prioritize any module to remote switch first to avoid situation where linux OOM kill the subprocess first
+        Given a new desired action state and the current action_state tracking,
+        return the change set.
+        Prioritize any module to remote switch first to avoid situation
+        where linux OOM kill the subprocess first
         """
 
         def change_to_remote_first(item1, item2):
@@ -618,7 +730,7 @@ class ActionsOptimizer:
                 )
                 del self.actions_change[name]
                 if len(actions_change) > 0 and self.actions_history["active"]:
-                    # Summarize action stats during this period and add to previous state
+                    # Summarize action stats during this period and add to previous state # noqa: E501
                     self.summarize_action_calls()
                     self.actions_history["history"].append(
                         {
