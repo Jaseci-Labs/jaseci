@@ -26,33 +26,32 @@ class Pass:
         if isinstance(node, ast.Parse):
             if hasattr(self, f"enter_{node.name}"):
                 getattr(self, f"enter_{node.name}")(node)
-        elif hasattr(self, f"enter_{pascal_to_snake(str(type(node)))}"):
-            getattr(self, f"enter_{pascal_to_snake(str(type(node)))}")(node)
+        elif hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
+            getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
 
     def exit_node(self: "Pass", node: ast.AstNode) -> None:
         """Run on exiting node."""
         if isinstance(node, ast.Parse):
             if hasattr(self, f"exit_{node.name}"):
                 getattr(self, f"exit_{node.name}")(node)
-        elif hasattr(self, f"exit_{pascal_to_snake(str(type(node)))}"):
-            getattr(self, f"exit_{pascal_to_snake(str(type(node)))}")(node)
+        elif hasattr(self, f"exit_{pascal_to_snake(type(node).__name__)}"):
+            getattr(self, f"exit_{pascal_to_snake(type(node).__name__)}")(node)
 
     def run(self: "Pass", node: ast.AstNode = None) -> ast.AstNode:
         """Run pass."""
+        if node is None:
+            node = self.ir
         self.before_pass()
         self.traverse(node)
         self.after_pass()
         return self.ir
 
-    def traverse(self: "Pass", node: ast.AstNode = None) -> None:
+    def traverse(self: "Pass", node: ast.AstNode) -> None:
         """Traverse tree."""
-        if node is None:
-            node = self.ir
         self.enter_node(node)
         for i in node.kid:
             self.traverse(i)
         self.exit_node(node)
-        return self.ir
 
 
 def parse_tree_to_ast(

@@ -1,26 +1,25 @@
 """Transpilation pass for Jaseci Ast."""
+import jaclang.jac.ast as ast
 from jaclang.jac.ast import AstNode
 from jaclang.jac.passes.ir_pass import Pass
 
-# flake8: noqa
 
-
-class PyCodeGen(Pass):
+class PyCodeGenPass(Pass):
     """Jac transpilation to python pass."""
 
-    def __init__(self: "PyCodeGen", ir: AstNode) -> None:
+    def __init__(self: "PyCodeGenPass") -> None:
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
         self.cur_arch = None  # tracks current architype during transpilation
-        super().__init__(ir)
+        super().__init__()
 
-    def indent_str(self: "PyCodeGen", indent_delta: int) -> str:
+    def indent_str(self: "PyCodeGenPass", indent_delta: int) -> str:
         """Return string for indent."""
         return " " * self.indent_size * (self.indent_level + indent_delta)
 
     def emit_ln(
-        self: "PyCodeGen", node: AstNode, s: str, indent_delta: int = 0
+        self: "PyCodeGenPass", node: AstNode, s: str, indent_delta: int = 0
     ) -> None:
         """Emit code to node."""
         node.py_code += (
@@ -29,1323 +28,991 @@ class PyCodeGen(Pass):
             + "\n"
         )
 
-    def emit(self: "PyCodeGen", node: AstNode, s: str) -> None:
+    def emit(self: "PyCodeGenPass", node: AstNode, s: str) -> None:
         """Emit code to node."""
-        # node.py_code += s
+        node.py_code += s
 
-    def exit_start(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert start to python code.
-
-        start -> element_list
-        """
-        self.emit(node, node.kid[0].py_code)
-
-    def exit_element_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert element list to python code.
-
-        element_list -> element_list element
-        element_list -> element
-        """
-        for i in node.kid:
+    def exit_module(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert module to python code."""
+        for i in node.elements:
             self.emit(node, i.py_code)
-
-    def exit_element(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert element to python code.
-
-        element -> ability
-        element -> architype
-        element -> import_stmt
-        element -> test
-        element -> global_var
-        element -> DOC_STRING
-        """
-        self.emit(node, node.kid[0].py_code)
-
-    def exit_global_var(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert global var to python code.
-
-        global_var -> KW_GLOBAL global_var_clause SEMI
-        """
-        self.emit_ln(node, node.kid[1].py_code)
-
-    def exit_global_var_clause(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert global var clause to python code.
-
-        global_var_clause -> global_var_clause COMMA NAME EQ expression
-        global_var_clause -> NAME EQ expression
-        """
-        if node.kid[0].name == "NAME":
-            self.emit_ln(node, REG_GLOB_FUNC(node.kid[0].py_code, node.kid[2].py_code))
-        else:
-            self.emit_ln(node, node.kid[0].py_code)
-            self.emit_ln(node, REG_GLOB_FUNC(node.kid[2].py_code, node.kid[4].py_code))
-
-    def exit_test(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert test to python code.
-
-        test -> KW_TEST NAME multistring KW_WITH member_block spawn_ctx code_block
-        test -> KW_TEST NAME multistring KW_WITH member_block code_block
-        test -> KW_TEST NAME multistring KW_WITH walker_ref spawn_ctx code_block
-        test -> KW_TEST NAME multistring KW_WITH walker_ref code_block
-        """
-        # TODO: Add implementation
-
-    def exit_import_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert import statement to python code.
-
-        import_stmt -> KW_IMPORT COLON NAME KW_FROM import_path COMMA name_as_list SEMI
-        import_stmt -> KW_IMPORT COLON NAME import_path KW_AS NAME SEMI
-        import_stmt -> KW_IMPORT COLON NAME import_path SEMI
-        """
-        # if node.kid[3].name == "KW_FROM":
-        #     self.emit_ln(
-        #         node, f"from {node.kid[4].py_code} import {node.kid[6].py_code}"
-        #     )
-        # elif node.kid[4].name == "KW_AS":
-        #     self.emit_ln(node, f"import {node.kid[3].py_code} as {node.kid[5].py_code}")
-        # else:
-        #     self.emit_ln(node, f"import {node.kid[3].py_code}")
-
-    def exit_import_path(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert import path to python code.
-
-        import_path -> import_path_prefix import_path_tail
-        import_path -> import_path_prefix
-        """
-        if len(node.kid) == 1:
-            self.emit(node, node.kid[0].py_code)
-        else:
-            self.emit(node, node.kid[0].py_code + node.kid[1].py_code)
-
-    def exit_import_path_prefix(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert import path prefix to python code.
-
-        import_path_prefix -> DOT DOT NAME
-        import_path_prefix -> DOT NAME
-        import_path_prefix -> NAME
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_import_path_tail(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert import path tail to python code.
-
-        import_path_tail -> import_path_tail DOT NAME
-        import_path_tail -> DOT NAME
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_name_as_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert name as list to python code.
-
-        name_as_list -> name_as_list COMMA NAME KW_AS NAME
-        name_as_list -> name_as_list COMMA NAME
-        name_as_list -> NAME KW_AS NAME
-        name_as_list -> NAME
-        """
-        if len(node.kid) == 3:
-            if node.kid[0].name == "NAME":
-                self.emit(node, f"{node.kid[0].py_code} as {node.kid[2].py_code}")
-            else:
-                self.emit(node, f"{node.kid[0].py_code}, {node.kid[2].py_code}")
-        elif len(node.kid) == 1:
-            self.emit(node, f"{node.kid[0].py_code}")
-        else:
-            self.emit(
-                node,
-                f"{node.kid[0].py_code}, {node.kid[2].py_code} as {node.kid[4].py_code}",
-            )
-
-    def enter_architype(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert architype to python code.
-
-        architype -> KW_WALKER NAME arch_decl_tail
-        architype -> KW_OBJECT NAME arch_decl_tail
-        architype -> KW_EDGE NAME arch_decl_tail
-        architype -> KW_NODE NAME arch_decl_tail
-        """
-        self.indent_level += 1
-        self.cur_arch = {"name": node.kid[1].value, "typ": node.kid[0].value}
-
-    def exit_architype(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert architype to python code.
-
-        architype -> KW_WALKER NAME arch_decl_tail
-        architype -> KW_OBJECT NAME arch_decl_tail
-        architype -> KW_EDGE NAME arch_decl_tail
-        architype -> KW_NODE NAME arch_decl_tail
-        """
-        class_type = node.kid[0].py_code.capitalize()
-        class_name = node.kid[1].py_code.capitalize() + "_" + class_type
-        if "inherits" in node.kid[2].meta.keys():
-            class_type = node.kid[2].meta["inherits"]
-        self.emit_ln(node, f"class {class_name}({class_type}):", indent_delta=-1)
-        self.emit_ln(node, "def __init__(self):")
-        self.emit_ln(node, node.kid[2].py_code)
-        self.indent_level -= 1
-        self.cur_arch = None
-
-    def exit_arch_decl_tail(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert arch decl tail to python code.
-
-        arch_decl_tail -> inherited_archs member_block
-        arch_decl_tail -> member_block
-        """
-        if len(node.kid) == 1:
-            self.emit(node, node.kid[0].py_code)
-        else:
-            node.details["inherits"] = node.kid[0].py_code
-            self.emit(node, node.kid[1].py_code)
-
-    def exit_inherited_archs(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert inherited archs to python code.
-
-        inherited_archs -> inherited_archs sub_name
-        inherited_archs -> sub_name
-        """
-        if len(node.kid) == 1:
-            self.emit(node, node.kid[0].py_code.capitalize())
-        else:
-            self.emit(
-                node, node.kid[0].py_code + ", " + node.kid[1].py_code.capitalize()
-            )
-
-    def exit_sub_name(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert sub name to python code.
-
-        sub_name -> COLON NAME
-        """
-        self.emit(node, node.kid[1].py_code)
-
-    def enter_ability(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert ability to python code.
-
-        ability -> KW_ABILITY arch_ref DBL_COLON NAME func_decl code_block
-        ability -> KW_ABILITY arch_ref DBL_COLON NAME code_block
-        """
-        self.indent_level += 1
-
-    def exit_ability(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert ability to python code.
-
-        # OLD: ability -> KW_ABILITY arch_ref NAME code_block
-        ability -> KW_ABILITY arch_ref DBL_COLON NAME func_decl code_block
-        ability -> KW_ABILITY arch_ref DBL_COLON NAME code_block
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-        # arch = node.kid[1].py_code
-        # if len(node.kid) == 5:
-        #     name = f"ability_{arch['typ']}_{arch['name']}_{node.kid[3].py_code}"
-        #     self.emit_ln(node, f"def {name}(here, visitor):", indent_delta=-1)
-        #     self.emit_ln(node, node.kid[3].py_code)
-        # self.indent_level -= 1
-
-    def exit_member_block(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert attr block to python code.
-
-        member_block -> SEMI
-        member_block -> COLON member_stmt
-        member_block -> LBRACE DOC_STRING member_stmt_list RBRACE
-        member_block -> LBRACE member_stmt_list RBRACE
-        member_block -> LBRACE RBRACE
-        """
-        if len(node.kid) == 1 or (len(node.kid) == 2 and node.kid[0].name != "COLON"):
-            self.emit_ln(node, "pass")
-        elif len(node.kid) == 4:
-            self.emit_ln(node, node.kid[1].py_code)
-            self.emit(node, node.kid[2].py_code)
-        else:
-            self.emit(node, node.kid[1].py_code)
-
-    def exit_member_stmt_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert attr stmt list to python code.
-
-        member_stmt_list -> member_stmt_list member_stmt
-        member_stmt_list -> member_stmt
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_member_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert attr stmt to python code.
-
-        member_stmt -> can_stmt
-        member_stmt -> has_stmt
-        """
-        self.emit(node, node.kid[0].py_code)
-
-    def exit_has_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert has stmt to python code.
-
-        has_stmt -> KW_HAS has_assign_clause SEMI
-        """
-        self.emit(node, node.kid[1].py_code)
-
-    def exit_has_assign_clause(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert has assign clause to python code.
-
-        #TODO: BROKEN
-        has_assign_clause -> has_assign_clause COMMA has_assign
-        has_assign_clause -> has_assign
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_param_var(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert function declaration to python code.
-
-        TODO: Broken
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_has_tag(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert has tag to python code.
-
-        has_tag -> KW_ANCHOR
-        has_tag -> KW_HIDDEN
-        has_tag -> has_tag KW_ANCHOR
-        has_tag -> has_tag KW_HIDDEN
-        """
-        if len(node.kid) == 1:
-            self.emit(node, f"{HAS_TAGS}.{node.kid[0].py_code.upper()}")
-        else:
-            self.emit(
-                node, f"{node.kid[0].py_code}, {HAS_TAGS}.{node.kid[0].py_code.upper()}"
-            )
-
-    def exit_type_spec(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert type spec to python code.
-
-        type_spec -> COLON type_name
-        """
-        self.emit(node, node.kid[1].py_code)
-
-    def exit_type_name(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert type name to python code.
-
-        type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
-        type_name -> TYP_LIST LSQUARE type_name RSQUARE
-        type_name -> NAME
-        type_name -> builtin_type
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_builtin_type(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert builtin type to python code.
-
-        builtin_type -> TYP_TYPE
-        builtin_type -> TYP_BOOL
-        builtin_type -> TYP_DICT
-        builtin_type -> TYP_SET
-        builtin_type -> TYP_TUPLE
-        builtin_type -> TYP_LIST
-        builtin_type -> TYP_FLOAT
-        builtin_type -> TYP_INT
-        builtin_type -> TYP_BYTES
-        builtin_type -> TYP_STRING
-        """
-        self.emit(node, node.kid[0].py_code)
-
-    def exit_can_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert can stmt to python code."""
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_can_ds_ability(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert can stmt to python code.
-
-        can_stmt -> KW_CAN NAME event_clause SEMI
-        can_stmt -> KW_CAN NAME event_clause code_block
-        can_stmt -> KW_CAN NAME SEMI
-        can_stmt -> KW_CAN NAME code_block
-        """
-        arch = self.cur_arch
-        name = f"ability_{arch['typ']}_{arch['name']}_{node.kid[1].py_code}"
-        if node.kid[-1] == "code_block":
-            self.emit_ln(node, f"def {name}(here, visitor):")
-            self.emit_ln(node, node.kid[-1].py_code, indent_delta=1)
-        clause = "None" if node.kid[2].name != "event_clause" else node.kid[2].py_code
-        self.emit_ln(
-            node,
-            f"self.add_ability(func={name}, on_event={clause})",
-        )
-
-    def exit_can_func_ability(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert can stmt to python code.
-
-        TODO: Broken
-        can_stmt -> KW_CAN NAME event_clause SEMI
-        can_stmt -> KW_CAN NAME event_clause code_block
-        can_stmt -> KW_CAN NAME SEMI
-        can_stmt -> KW_CAN NAME code_block
-        """
-        arch = self.cur_arch
-        name = f"ability_{arch['typ']}_{arch['name']}_{node.kid[1].py_code}"
-        if node.kid[-1] == "code_block":
-            self.emit_ln(node, f"def {name}(here, visitor):")
-            self.emit_ln(node, node.kid[-1].py_code, indent_delta=1)
-        clause = "None" if node.kid[2].name != "event_clause" else node.kid[2].py_code
-        self.emit_ln(
-            node,
-            f"self.add_ability(func={name}, on_event={clause})",
-        )
-
-    def exit_func_decl(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert function declaration to python code.
-
-        TODO: Broken
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_func_decl_param_list(self: "PyCodeGen", node: AstNode) -> None:
-        """TODO: Broken."""
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_event_clause(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert event clause to python code.
-
-        event_clause -> KW_WITH name_list KW_EXIT
-        event_clause -> KW_WITH name_list KW_ENTRY
-        event_clause -> KW_WITH KW_EXIT
-        event_clause -> KW_WITH KW_ENTRY
-        """
-        event = node.kid[-1].py_code.upper()
-        names = node.kid[1].py_code if node.kid[1].name == "name_list" else ""
-        self.emit(node, f"({EVENT_TAG}.{event}, ({names}))")
-
-    def exit_name_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert name list to python code.
-
-        name_list -> name_list COMMA NAME
-        name_list -> NAME
-        """
-        if len(node.kid) == 1:
-            self.emit(node, f'"{node.kid[0].py_code}"')
-        else:
-            self.emit(node, f'{node.kid[0].py_code}, "{node.kid[2].py_code}"')
-
-    def enter_code_block(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert code block to python code.
-
-        code_block -> LBRACE statement_list RBRACE
-        code_block -> LBRACE RBRACE
-        """
-        self.indent_level += 1
-
-    def exit_code_block(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert code block to python code.
-
-        code_block -> LBRACE statement_list RBRACE
-        code_block -> LBRACE RBRACE
-        """
-        if len(node.kid) == 3:
-            self.emit(node, node.kid[1].py_code)
-        else:
-            self.emit_ln(node, "pass")
-        self.indent_level -= 1
-
-    def exit_statement_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert statement list to python code.
-
-        statement_list -> statement
-        statement_list -> statement statement_list
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_statement(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert statement to python code.
-
-        statement -> walker_stmt
-        statement -> report_stmt SEMI
-        statement -> delete_stmt SEMI
-        statement -> ctrl_stmt SEMI
-        statement -> assert_stmt SEMI
-        statement -> while_stmt
-        statement -> for_stmt
-        statement -> try_stmt
-        statement -> if_stmt
-        statement -> expression SEMI
-        statement -> assignment SEMI
-        """
-        if node.kid[0].name in ["expression", "assignment"]:
-            self.emit_ln(node, node.kid[0].py_code)
-        else:
-            self.emit(node, node.kid[0].py_code)
-
-    def exit_if_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert if stmt to python code.
-
-        if_stmt -> KW_IF expression code_block elif_list else_stmt
-        if_stmt -> KW_IF expression code_block else_stmt
-        if_stmt -> KW_IF expression code_block
-        """
-        self.emit_ln(node, "if " + node.kid[1].py_code + ":")
-        self.emit(node, node.kid[2].py_code)
-        if len(node.kid) == 4:
-            self.emit(node, node.kid[3].py_code)
-        elif len(node.kid) == 5:
-            self.emit(node, node.kid[3].py_code)
-            self.emit(node, node.kid[4].py_code)
-
-    def exit_elif_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert elif stmt list to python code.
-
-        elif_list -> KW_ELIF expression code_block elif_list
-        elif_list -> KW_ELIF expression code_block
-        """
-        self.emit_ln(node, "elif " + node.kid[1].py_code + ":")
-        self.emit(node, node.kid[2].py_code)
-        if len(node.kid) == 4:
-            self.emit(node, node.kid[3].py_code)
-
-    def exit_else_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert else stmt to python code.
-
-        else_stmt -> KW_ELSE code_block
-        """
-        self.emit_ln(node, "else:")
-        self.emit(node, node.kid[1].py_code)
-
-    def exit_try_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert try stmt to python code.
-
-        try_stmt -> KW_TRY code_block else_from_try
-        try_stmt -> KW_TRY code_block
-        """
-        self.emit_ln(node, "try:")
-        self.emit(node, node.kid[1].py_code)
-        if len(node.kid) == 3:
-            self.emit(node, node.kid[2].py_code)
-
-    def exit_else_from_try(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert else from try to python code.
-
-        else_from_try -> KW_ELSE code_block
-        else_from_try -> KW_ELSE KW_WITH NAME code_block
-        """
-        if len(node.kid) == 4:
-            name = node.kid[2].py_code
-            self.emit_ln(node, f"except Exception as {name}:")
-            self.emit(node, node.kid[3].py_code)
-        else:
-            self.emit_ln(node, "except Exception:")
-            self.emit(node, node.kid[3].py_code)
-
-    def exit_for_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert for stmt to python code.
-
-        for_stmt -> KW_FOR atom COMMA atom KW_IN expression code_block
-        for_stmt -> KW_FOR atom KW_IN expression code_block
-        for_stmt -> KW_FOR assignment KW_TO expression KW_BY expression code_block
-        """
-        if len(node.kid) == 7:
-            self.emit_ln(
-                node,
-                f"for {node.kid[1].py_code}, {node.kid[3].py_code} in {node.kid[5].py_code}:",
-            )
-            self.emit(node, node.kid[6].py_code)
-        elif len(node.kid) == 5:
-            self.emit_ln(node, f"for {node.kid[1].py_code} in {node.kid[3].py_code}:")
-            self.emit(node, node.kid[4].py_code)
-        else:
-            self.emit_ln(node, f"{node.kid[1].py_code}")
-            self.emit_ln(node, f"while {node.kid[3].py_code}:")
-            self.emit(node, node.kid[5].py_code)
-            self.emit_ln(node, f"{node.kid[6].py_code}", indent_delta=1)
-
-    def exit_while_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert while stmt to python code.
-
-        while_stmt -> KW_WHILE expression code_block
-        """
-        self.emit_ln(node, f"while {node.kid[1].py_code}:")
-        self.emit(node, node.kid[2].py_code)
-
-    def exit_assert_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert assert stmt to python code.
-
-        assert_stmt -> KW_ASSERT expression
-        """
-        self.emit_ln(node, f"assert {node.kid[1].py_code}")
-
-    def exit_ctrl_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert ctrl stmt to python code.
-
-        ctrl_stmt -> KW_SKIP
-        ctrl_stmt -> KW_BREAK
-        ctrl_stmt -> KW_CONTINUE
-        """
-        if node.kid[0].name == "KW_SKIP":
-            self.emit_ln(node, "visitor.skip()")
-        self.emit_ln(node, node.kid[0].py_code)
-
-    def exit_delete_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert delete stmt to python code.
-
-        delete_stmt -> KW_DELETE expression
-        """
-        self.emit_ln(node, f"del {node.kid[1].py_code}")
-
-    def exit_report_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert report stmt to python code.
-
-        report_stmt -> KW_REPORT expression
-        """
-        self.emit_ln(node, f"visitor.report({node.kid[1].py_code})")
-
-    def exit_return_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert return stmt to python code.
-
-        return_stmt -> KW_RETURN expression
-        """
-        self.emit_ln(node, f"return {node.kid[1].py_code}")
-
-    def exit_walker_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert walker stmt to python code.
-
-        walker_stmt -> sync_stmt
-        walker_stmt -> yield_stmt
-        walker_stmt -> disengage_stmt
-        walker_stmt -> revisit_stmt
-        walker_stmt -> visit_stmt
-        walker_stmt -> ignore_stmt
-        """
-        self.emit(node, node.kid[0].py_code)
-
-    def exit_ignore_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert ignore stmt to python code.
-
-        ignore_stmt -> KW_IGNORE expression SEMI
-        """
-        self.emit_ln(node, f"visitor.ignore({node.kid[1].py_code})")
-
-    def exit_visit_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert visit stmt to python code.
-
-        visit_stmt -> KW_VISIT sub_name expression else_stmt
-        visit_stmt -> KW_VISIT expression else_stmt
-        visit_stmt -> KW_VISIT sub_name expression SEMI
-        visit_stmt -> KW_VISIT expression SEMI
-        """
-        if len(node.kid) == 5:
-            self.emit_ln(
-                node, f"visitor.visit({node.kid[2].py_code}, {node.kid[3].py_code})"
-            )
-            self.emit(node, node.kid[4].py_code)
-        else:
-            self.emit_ln(node, f"visitor.visit({node.kid[1].py_code})")
-            self.emit(node, node.kid[2].py_code)
-
-    def exit_revisit_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert visit stmt to python code.
-
-        revisit_stmt -> KW_REVISIT expression else_stmt
-        revisit_stmt -> KW_REVISIT else_stmt
-        revisit_stmt -> KW_REVISIT expression SEMI
-        revisit_stmt -> KW_REVISIT SEMI
-        """
-        if node.kid[-1].name == "else_stmt":
-            if len(node.kid) == 2:
-                self.emit_ln(node, "if visitor.revisit():")
-            else:
-                self.emit_ln(node, f"if visitor.revisit({node.kid[1].py_code}):")
-            self.emit_ln(node, "pass", indent_delta=1)
-            self.emit(node, node.kid[-1].py_code)
-        elif len(node.kid) == 3:
-            self.emit_ln(node, f"visitor.revisit({node.kid[1].py_code})")
-        else:
-            self.emit_ln(node, "visitor.revisit()")
-
-    def exit_disengage_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert disengage stmt to python code.
-
-        disengage_stmt -> KW_DISENGAGE SEMI
-        """
-        self.emit_ln(node, "visitor.disengage()")
-
-    def exit_yield_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert yield stmt to python code.
-
-        yield_stmt -> KW_YIELD SEMI
-        """
-        self.emit_ln(node, f"visitor.{YIELD_CMD}()")
-
-    def exit_sync_stmt(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert sync stmt to python code.
-
-        sync_stmt -> KW_SYNC expression SEMI
-        """
-        self.emit_ln(node, f"{RT}.{SYNC_CMD}({node.kid[1].py_code})")
-
-    def exit_assignment(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert assignment to python code.
-
-        assignment -> atom EQ expression
-        """
-        self.emit(node, f"{node.kid[0].py_code} = {node.kid[2].py_code}")
-
-    def exit_expression(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert expression to python code.
-
-        expression -> connect walrus_op expression
-        expression -> connect
-        """
-        if len(node.kid) == 3 and node.kid[1].name == "WALRUS_EQ":
-            self.emit(
-                node,
-                f"{node.kid[0].py_code} {node.kid[1].py_code} {node.kid[2].py_code}",
-            )
-        elif len(node.kid) == 1:
-            self.emit(node, node.kid[0].py_code)
-        else:
-            self.emit(
-                node,
-                f"{node.kid[0].py_code}:={node.kid[0].py_code}{node.kid[1].py_code}{node.kid[2].py_code}",
-            )
-
-    def exit_walrus_op(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert walrus op to python code.
-
-        walrus_op -> DIV_EQ
-        walrus_op -> MUL_EQ
-        walrus_op -> SUB_EQ
-        walrus_op -> ADD_EQ
-        walrus_op -> WALRUS_EQ
-        """
-        self.emit(node, node.kid[0].py_code)
-
-    def exit_connect(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert connect to python code.
-
-        connect -> logical connect_op connect
-        connect -> logical NOT edge_op_ref connect
-        connect -> logical
-        """
-        if len(node.kid) == 3:
-            self.emit(
-                node,
-                f"{node.kid[0].py_code}.connect(typ={node.kid[1].py_code}, target={node.kid[2].py_code})",
-            )
-        elif len(node.kid) == 4:
-            self.emit(
-                node,
-                f"{node.kid[0].py_code}.disconnect(typ={node.kid[2].py_code}, target={node.kid[3].py_code})",
-            )
-        else:
-            self.emit(node, node.kid[0].py_code)
-
-    def exit_logical(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert logical to python code.
-
-        logical -> compare KW_OR logical
-        logical -> compare KW_AND logical
-        logical -> compare
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_compare(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert compare to python code.
-
-        compare -> arithmetic cmp_op compare
-        compare -> NOT compare
-        compare -> arithmetic
-        """
-        if len(node.kid) == 2:
-            self.emit(node, f"not {node.kid[1].py_code}")
-        else:
-            for i in node.kid:
-                self.emit(node, i.py_code)
-
-    def exit_cmp_op(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert cmp_op to python code.
-
-        cmp_op -> KW_NIN
-        cmp_op -> KW_IN
-        cmp_op -> NE
-        cmp_op -> GTE
-        cmp_op -> LTE
-        cmp_op -> GT
-        cmp_op -> LT
-        cmp_op -> EE
-        """
-        self.emit(node, node.kid[0].py_code)
-
-    def exit_arithmetic(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert arithmetic to python code.
-
-        arithmetic -> term MINUS arithmetic
-        arithmetic -> term PLUS arithmetic
-        arithmetic -> term
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_term(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert term to python code.
-
-        term -> factor MOD term
-        term -> factor DIV term
-        term -> factor STAR_MUL term
-        term -> factor
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_factor(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert factor to python code.
-
-        factor -> power
-        factor -> MINUS factor
-        factor -> PLUS factor
-        """
-        op = "-" if node.kid[0].name == "MINUS" else ""
-        if len(node.kid) == 2:
-            self.emit(node, f"{op}{node.kid[1].py_code}")
-        else:
-            self.emit(node, node.kid[0].py_code)
-
-    def exit_power(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert power to python code.
-
-        power -> deref
-        power -> ref
-        power -> atom POW factor
-        power -> atom
-        """
-        if len(node.kid) == 3:
-            self.emit(node, f"{node.kid[0].py_code} ** {node.kid[2].py_code}")
-        else:
-            self.emit(node, node.kid[0].py_code)
-
-    def exit_ref(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert ref to python code.
-
-        ref -> KW_REF atom
-        """
-        self.emit(node, f"{RT}.ref({node.kid[1].py_code})")
-
-    def exit_deref(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert deref to python code.
-
-        deref -> STAR_MUL atom
-        """
-        self.emit(node, f"{RT}.deref({node.kid[1].py_code})")
-
-    def exit_atom(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert atom to python code.
-
-        atom -> KW_VISITOR
-        atom -> KW_HERE
-        atom -> spawn
-        atom -> atom node_edge_ref
-        atom -> atomic_chain
-        atom -> global_ref
-        atom -> LPAREN expression RPAREN
-        atom -> atom_collection
-        atom -> atom_literal
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_atom_literal(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert atom_literal to python code.
-
-        atom_literal -> builtin_type
-        atom_literal -> NAME
-        atom_literal -> NULL
-        atom_literal -> BOOL
-        atom_literal -> DOC_STRING
-        atom_literal -> multistring
-        atom_literal -> FLOAT
-        atom_literal -> INT
-        """
-        self.emit(node, node.kid[0].py_code)
-
-    def exit_atom_collection(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert atom_collection to python code.
-
-        atom_collection -> dict_val
-        atom_collection -> list_val
-        """
-        self.emit(node, node.kid[0].py_code)
-
-    def exit_multistring(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert multistring to python code.
-
-        multistring -> STRING multistring
-        multistring -> STRING
-        """
-        if len(node.kid) == 1:
-            self.emit(node, node.kid[0].py_code)
-        else:
-            self.emit(node, f"{node.kid[0].py_code} {node.kid[1].py_code}")
-
-    def exit_list_val(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert list_val to python code.
-
-        list_val -> LSQUARE expr_list RSQUARE
-        list_val -> LSQUARE RSQUARE
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_expr_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert expr_list to python code.
-
-        expr_list -> expr_list COMMA expression
-        expr_list -> expression
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_dict_val(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert dict_val to python code.
-
-        dict_val -> LBRACE kv_pairs RBRACE
-        dict_val -> LBRACE RBRACE
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_kv_pairs(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert kv_pairs to python code.
-
-        kv_pairs -> expression COLON expression COMMA kv_pairs
-        kv_pairs -> expression COLON expression
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_ds_call(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert ds_call to python code.
-
-        ds_call -> DBL_COLON NAME
-        ds_call -> DBL_COLON
-        ds_call -> DBL_COLON NAME KW_ASYNC
-        ds_call -> DBL_COLON KW_ASYNC
-        """
-        if node.kid[-1].name == "KW_ASYNC":
-            if node.kid[-2].name == "NAME":
-                self.emit(node, f".{A_CALL}({node.kid[1].py_code}, is_async=True)")
-            else:
-                self.emit(node, f".{W_CALL}(is_async=True)")
-        else:
-            if len(node.kid) == 1:
-                self.emit(node, f".{W_CALL}()")
-            else:
-                self.emit(node, f".{A_CALL}({node.kid[1].py_code})")
-
-    def exit_atomic_chain(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert atomic_chain to python code.
-
-        atomic_chain -> atomic_chain_unsafe
-        atomic_chain -> atomic_chain_safe  # TODO: implement
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
-
-    def exit_atomic_chain_unsafe(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert atom_trailer to python code.
-
-        atomic_chain -> atom PIPE_FWD spawn_ctx
-        atomic_chain -> atom PIPE_FWD filter_ctx
-        atomic_chain -> atom PIPE_FWD built_in
-        atomic_chain -> atom call
-        atomic_chain -> atom index_slice
-        atomic_chain -> atom DOT NAME
-        """
-        if node.kid[1].name == "PIPE_FWD":
-            if node[2].name == "spawn_ctx":
-                self.emit(
-                    node,
-                    f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[0].py_code}, ctx={node.kid[2].py_code})",
-                )
-            elif node[2].name == "filter_ctx":
-                self.emit(
-                    node,
-                    f"{RT}.{APPLY_FILTER_CTX}(target={node.kid[0].py_code}, ctx={node.kid[2].py_code})",
-                )
-            else:
-                self.emit(
-                    node,
-                    f"{node.kid[2].py_code}({node.kid[0].py_code})",
-                )
-        else:
-            for i in node.kid:
-                self.emit(node, i.py_code)
-
-    def exit_atomic_chain_safe(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert atom_trailer to python code.
-
+        self.ir = node
+
+    def exit_doc_string(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert doc_string to python code."""
+        self.emit_ln(node, node.value.value)
+
+    def exit_global_vars(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert global vars to python code."""
+        print(node)
+        for i in node.values:
+            print(i)
+            self.emit_ln(node, i.py_code)
+
+    def exit_named_assign(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert named assign to python code."""
+        self.emit(node, f"{node.name.py_code} = {node.value.py_code}")
+
+    def exit_test(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert test to python code."""
         # TODO: implement
-        atomic_chain -> atom NULL_OK PIPE_FWD spawn_ctx
-        atomic_chain -> atom NULL_OK PIPE_FWD filter_ctx
-        atomic_chain -> atom NULL_OK PIPE_FWD built_in
-        atomic_chain -> atom NULL_OK call
-        atomic_chain -> atom NULL_OK index_slice
-        atomic_chain -> atom NULL_OK DOT NAME
-        """
-        if node.kid[1].name == "PIPE_FWD":
-            if node[2].name == "spawn_ctx":
-                self.emit(
-                    node,
-                    f"{RT}.{APPLY_SPAWN_CTX}(target={node.kid[0].py_code}, ctx={node.kid[2].py_code})",
-                )
-            elif node[2].name == "filter_ctx":
-                self.emit(
-                    node,
-                    f"{RT}.{APPLY_FILTER_CTX}(target={node.kid[0].py_code}, ctx={node.kid[2].py_code})",
-                )
+
+    def exit_import(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert import to python code."""
+        if is_blank(node.items):
+            if is_blank(node.alias):
+                self.emit_ln(node, f"import {node.path.py_code}")
             else:
-                self.emit(
-                    node,
-                    f"{node.kid[2].py_code}({node.kid[0].py_code})",
+                self.emit_ln(
+                    node, f"import {node.path.py_code} as {node.alias.py_code}"
                 )
         else:
-            for i in node.kid:
-                self.emit(node, i.py_code)
+            for i in node.items:
+                self.emit_ln(node, f"from {node.path.py_code} import {i.py_code}")
 
-    def exit_call(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert call to python code.
+    def exit_module_path(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert module path to python code."""
+        self.emit(node, "".join([i.value for i in node.path]))
 
-        call -> ds_call
-        call -> LPAREN param_list RPAREN
-        call -> LPAREN RPAREN
-        """
-        if len(node.kid) == 1:
-            self.emit(node, {node.kid[0].py_code})
-        elif len(node.kid) == 3:
-            self.emit(node, f"({node.kid[1].py_code})")
+    def exit_module_item(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert module item to python code."""
+        if is_blank(node.alias):
+            self.emit(node, node.name.value)
         else:
-            self.emit(node, "()")
+            self.emit(node, node.name.value + " as " + node.alias.value)
 
-    def exit_param_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert param_list to python code.
+    # class ArchDecl(AstNode):
+    # class ArchDef(AstNode):
 
-        param_list -> expr_list COMMA assignment_list
-        param_list -> assignment_list
-        param_list -> expr_list
-        """
-        for i in node.kid:
+    def exit_object_arch(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert object arch to python code."""
+        if is_blank(node.base_classes):
+            self.emit_ln(node, f"class {node.name.py_code}:")
+        else:
+            self.emit_ln(
+                node,
+                f"class {node.name.py_code}({node.base_classes.py_code}):",
+            )
+        for i in node.body:
             self.emit(node, i.py_code)
 
-    def exit_assignment_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert assignment_list to python code.
+    # class NodeArch(ObjectArch):
+    # class EdgeArch(ObjectArch):
+    # class WalkerArch(ObjectArch):
+    # class SpawnerArch(AstNode):
 
-        assignment_list -> assignment COMMA assignment_list
-        assignment_list -> assignment
-        """
-        for i in node.kid:
+    def exit_func_arch(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert func arch to python code."""
+        self.emit_ln(node, f"def {node.name.py_code}({node.signature.py_code}):")
+        for i in node.body:
             self.emit(node, i.py_code)
+        self.indent_level -= 1
 
-    def exit_index_slice(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert index_slice to python code.
+    def exit_base_classes(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert base classes to python code."""
+        self.emit(node, ", ".join([i.value for i in node.base_classes]))
 
-        index_slice -> LSQUARE expression COLON expression RSQUARE
-        index_slice -> LSQUARE expression RSQUARE
-        """
-        for i in node.kid:
+    # class AbilitySpec(AstNode):
+
+    def enter_arch_block(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Enter arch block."""
+        self.indent_level += 1
+
+    def exit_arch_block(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Exit arch block."""
+        for i in node.body:
             self.emit(node, i.py_code)
+        self.indent_level -= 1
 
-    def exit_global_ref(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert global_ref to python code.
+    # class HasStmt(AstNode):
+    #     """HasStmt node type for Jac Ast."""
 
-        global_ref -> GLOBAL_OP NAME
-        global_ref -> GLOBAL_OP obj_built_in
-        """
-        if node.kid[-1].name == "obj_built_in":
-            self.emit(node, f"{GET_GLOBAL_FUNC}({node.kid[1].py_code})")
-        else:
-            self.emit(
-                node, f"{GET_GLOBAL_FUNC}(({BUILTIN_TAG}.VAR, {node.kid[1].py_code}))"
-            )
+    #     def __init__(
+    #         self: "HasStmt",
+    #         access: AstNode,
+    #         vars: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize has statement node."""
+    #         self.access = access
+    #         self.vars = vars
+    #         super().__init__(*args, **kwargs)
 
-    # def exit_node_edge_ref(self: "PyCodeGen", node: AstNode) -> None:
-    #     """Convert node_edge_ref to python code.
+    # class ParamVar(AstNode):
+    #     """ParamVar node type for Jac Ast."""
 
-    #     node_edge_ref -> edge_op_ref
-    #     node_edge_ref -> node_ref filter_ctx
-    #     """
-    #     if len(node.kid) == 1:
-    #         self.emit(node, node.kid[0].py_code)
-    #     else:
-    #         self.emit(
-    #             node,
-    #             f"{RT}.{APPLY_FILTER_CTX}(target={node.kid[0].py_code}, ctx={node.kid[1].py_code})",
-    #         )
+    #     def __init__(
+    #         self: "ParamVar",
+    #         name: AstNode,
+    #         type_spec: AstNode,
+    #         value: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize has var node."""
+    #         self.name = name
+    #         self.type_spec = type_spec
+    #         self.value = value
+    #         super().__init__(*args, **kwargs)
 
-    def exit_spawn(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert spawn to python code.
+    # class HasVar(ParamVar):
+    #     """HasVar node type for Jac Ast."""
 
-        spawn -> spawn_arch
-        spawn -> spawn_edge
-        """
-        for i in node.kid:
-            self.emit(node, i.py_code)
+    #     def __init__(
+    #         self: "HasVar",
+    #         tags: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize has var node."""
+    #         self.tags = tags
+    #         super().__init__(*args, **kwargs)
 
-    # def exit_spawn_arch(self: "PyCodeGen", node: AstNode) -> None:
-    #     """Convert spawn_arch to python code.
+    # class HasVarTags(AstNode):
+    #     """HasVarTags node type for Jac Ast."""
 
-    #     spawn_arch -> object_spawn
-    #     spawn_arch -> walker_spawn
-    #     spawn_arch -> node_spawn
-    #     """
-    #     for i in node.kid:
-    #         self.emit(node, i.py_code)
+    #     def __init__(
+    #         self: "HasVarTags",
+    #         tags: list,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize has var tags node."""
+    #         self.tags = tags
+    #         super().__init__(*args, **kwargs)
 
-    def exit_node_spawn(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert node_spawn to python code.
+    # class TypeSpec(AstNode):
+    #     """TypeSpec node type for Jac Ast."""
 
-        node_spawn -> spawn_edge node_ref
-        node_spawn -> node_ref
-        """
-        if len(node.kid) == 1:
-            self.emit(
-                node, f"{RT}.{CREATE_NODE}(typ={node.kid[0].py_code}, connect=None)"
-            )
-        else:
-            self.emit(
-                node,
-                f"{RT}.{CREATE_NODE}(typ={node.kid[0].py_code}, "
-                f"connect=({node.kid[1].py_code},{node.kid[2].py_code}))",
-            )
+    #     def __init__(
+    #         self: "TypeSpec",
+    #         typ: AstNode,
+    #         nested1: AstNode,  # needed for lists
+    #         nested2: AstNode,  # needed for dicts
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize type spec node."""
+    #         self.typ = typ
+    #         self.nested1 = nested1
+    #         self.nested2 = nested2
+    #         super().__init__(*args, **kwargs)
 
-    def exit_spawn_edge(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert spawn_edge to python code.
+    # class CanDS(AstNode):
+    #     """CanDS node type for Jac Ast."""
 
-        spawn_edge -> logical connect_op
-        """
-        self.emit(
-            node,
-            f"{RT}.{CREATE_EDGE}({node.kid[0].py_code}, typ={node.kid[1].py_code})",
-        )
+    #     def __init__(
+    #         self: "CanDS",
+    #         name: AstNode,
+    #         access: AstNode,
+    #         signature: AstNode,
+    #         body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize can statement node."""
+    #         self.name = name
+    #         self.access = access
+    #         self.signature = signature
+    #         self.body = body
+    #         super().__init__(*args, **kwargs)
 
-    # def exit_walker_spawn(self: "PyCodeGen", node: AstNode) -> None:
-    #     """Convert walker_spawn to python code.
+    # class CanMethod(CanDS):
+    #     """CanMethod node type for Jac Ast."""
 
-    #     walker_spawn -> walker_ref
-    #     """
-    #     self.emit(node, f"{RT}.{CREATE_WALKER}({node.kid[0].py_code})")
+    # class EventSignature(AstNode):
+    #     """EventSignature node type for Jac Ast."""
 
-    # def exit_object_spawn(self: "PyCodeGen", node: AstNode) -> None:
-    #     """Convert object_spawn to python code.
+    #     def __init__(
+    #         self: "EventSignature",
+    #         event: AstNode,
+    #         arch_access: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize event signature node."""
+    #         self.event = event
+    #         self.arch_access = arch_access
+    #         super().__init__(*args, **kwargs)
 
-    #     object_spawn -> object_ref
-    #     """
-    #     self.emit(node, f"{RT}.{CREATE_OBJECT}({node.kid[0].py_code})")
+    # class MethodSignature(AstNode):
+    #     """MethodSignature node type for Jac Ast."""
 
-    def exit_built_in(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert built_in to python code.
+    #     def __init__(
+    #         self: "MethodSignature",
+    #         params: AstNode,
+    #         return_type: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize method signature node."""
+    #         self.params = params
+    #         self.return_type = return_type
+    #         super().__init__(*args, **kwargs)
 
-        built_in -> cast_built_in
-        built_in -> obj_built_in
-        """
-        self.emit(node, node.kid[0].py_code)
+    # class NameList(AstNode):
+    #     """NameList node type for Jac Ast."""
 
-    def exit_obj_built_in(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert obj_built_in to python code.
+    #     def __init__(
+    #         self: "NameList",
+    #         names: list,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize name list node."""
+    #         self.names = names
+    #         super().__init__(*args, **kwargs)
 
-        obj_built_in -> KW_DETAILS
-        obj_built_in -> KW_INFO
-        obj_built_in -> KW_CONTEXT
-        """
-        self.emit(node, f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, None)")
+    # class MethodParams(AstNode):
+    #     """ArchBlock node type for Jac Ast."""
 
-    def exit_cast_built_in(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert cast_built_in to python code.
+    #     def __init__(
+    #         self: "MethodParams",
+    #         params: list,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize method params node."""
+    #         self.params = params
+    #         super().__init__(*args, **kwargs)
 
-        cast_built_in -> arch_ref
-        cast_built_in -> builtin_type
-        """
-        self.emit(node, node.kid[2].py_code)
+    # class CodeBlock(AstNode):
+    #     """CodeBlock node type for Jac Ast."""
 
-    def exit_arch_ref(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert arch_ref to python code.
+    #     def __init__(
+    #         self: "CodeBlock",
+    #         body: list,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize code block node."""
+    #         self.body = body
+    #         super().__init__(*args, **kwargs)
 
-        arch_ref -> object_ref
-        arch_ref -> walker_ref
-        arch_ref -> node_ref
-        """
-        self.emit(node, node.kid[0].py_code)
+    # class IfStmt(AstNode):
+    #     """IfStmt node type for Jac Ast."""
 
-    def exit_node_ref(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert node_ref to python code.
+    #     def __init__(
+    #         self: "IfStmt",
+    #         condition: AstNode,
+    #         body: AstNode,
+    #         elseifs: AstNode,
+    #         else_body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize if statement node."""
+    #         self.condition = condition
+    #         self.body = body
+    #         self.elseifs = elseifs
+    #         self.else_body = else_body
+    #         super().__init__(*args, **kwargs)
 
-        node_ref -> KW_NODE DBL_COLON NAME
-        """
-        self.emit(
-            node,
-            f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
-        )
+    # class ElseIfs(AstNode):
+    #     """ElseIfs node type for Jac Ast."""
 
-    def exit_walker_ref(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert walker_ref to python code.
+    #     def __init__(
+    #         self: "ElseIfs",
+    #         elseifs: list,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize elseifs node."""
+    #         self.elseifs = elseifs
+    #         super().__init__(*args, **kwargs)
 
-        walker_ref -> KW_WALKER DBL_COLON NAME
-        """
-        # self.emit(
-        #     node,
-        #     f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
-        # )
+    # class ElseStmt(AstNode):
+    #     """Else node type for Jac Ast."""
 
-    def exit_object_ref(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert object_ref to python code.
+    #     def __init__(
+    #         self: "ElseStmt",
+    #         body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize else node."""
+    #         self.body = body
+    #         super().__init__(*args, **kwargs)
 
-        object_ref -> KW_OBJECT DBL_COLON NAME
-        """
-        self.emit(
-            node,
-            f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
-        )
+    # class TryStmt(AstNode):
+    #     """TryStmt node type for Jac Ast."""
 
-    def exit_edge_op_ref(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert edge_op_ref to python code.
+    #     def __init__(
+    #         self: "TryStmt",
+    #         body: AstNode,
+    #         excepts: AstNode,
+    #         finally_body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize try statement node."""
+    #         self.body = body
+    #         self.excepts = excepts
+    #         self.finally_body = finally_body
+    #         super().__init__(*args, **kwargs)
 
-        edge_op_ref -> edge_any
-        edge_op_ref -> edge_from
-        edge_op_ref -> edge_to
-        """
-        self.emit(node, node.kid[0].py_code)
+    # class ExceptList(AstNode):
+    #     """ExceptList node type for Jac Ast."""
 
-    def exit_edge_any(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert edge_any to python code.
+    #     def __init__(
+    #         self: "ExceptList",
+    #         excepts: list,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize excepts node."""
+    #         self.excepts = excepts
+    #         super().__init__(*args, **kwargs)
 
-        edge_any -> ARROW_L_p1 NAME filter_ctx ARROW_R_p2
-        edge_any -> ARROW_BI
-        """
-        if len(node.kid) == 1:
-            self.emit(node, f"({BUILTIN_TAG}.EDGE_ANY, None)")
-        else:
-            self.emit(
-                node,
-                f"({BUILTIN_TAG}.EDGE_ANY, ({node.kid[1].py_code}, {node.kid[2].py_code})",
-            )
+    # class Except(AstNode):
+    #     """Except node type for Jac Ast."""
 
-    def exit_edge_from(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert edge_from to python code.
+    #     def __init__(
+    #         self: "Except",
+    #         typ: AstNode,
+    #         name: AstNode,
+    #         body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize except node."""
+    #         self.typ = typ
+    #         self.name = name
+    #         self.body = body
+    #         super().__init__(*args, **kwargs)
 
-        edge_from -> ARROW_L_p1 NAME filter_ctx ARROW_L_p2
-        edge_from -> ARROW_L
-        """
-        if len(node.kid) == 1:
-            self.emit(node, f"({BUILTIN_TAG}.EDGE_FROM, None)")
-        else:
-            self.emit(
-                node,
-                f"({BUILTIN_TAG}.EDGE_FROM, ({node.kid[1].py_code}, {node.kid[2].py_code})",
-            )
+    # class FinallyStmt(AstNode):
+    #     """FinallyStmt node type for Jac Ast."""
 
-    def exit_edge_to(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert edge_to to python code.
+    #     def __init__(
+    #         self: "FinallyStmt",
+    #         body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize finally statement node."""
+    #         self.body = body
+    #         super().__init__(*args, **kwargs)
 
-        edge_to -> ARROW_R_p1 NAME filter_ctx ARROW_R_p2
-        edge_to -> ARROW_R
-        """
-        if len(node.kid) == 1:
-            self.emit(node, f"({BUILTIN_TAG}.EDGE_TO, None)")
-        else:
-            self.emit(
-                node,
-                f"({BUILTIN_TAG}.EDGE_TO, ({node.kid[1].py_code}, {node.kid[2].py_code})",
-            )
+    # class IterForStmt(AstNode):
+    #     """IterFor node type for Jac Ast."""
 
-    def exit_connect_op(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert connect_op to python code.
+    #     def __init__(
+    #         self: "IterForStmt",
+    #         iter: AstNode,
+    #         condition: AstNode,
+    #         count_by: AstNode,
+    #         body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize iter for node."""
+    #         self.iter = iter
+    #         self.condition = condition
+    #         self.count_by = count_by
+    #         self.body = body
+    #         super().__init__(*args, **kwargs)
 
-        connect_op -> connect_any
-        connect_op -> connect_from
-        connect_op -> connect_to
-        """
-        self.emit(node, node.kid[0].py_code)
+    # class InForStmt(AstNode):
+    #     """InFor node type for Jac Ast."""
 
-    def exit_connect_to(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert connect_to to python code.
+    #     def __init__(
+    #         self: "InForStmt",
+    #         name: AstNode,
+    #         collection: AstNode,
+    #         body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize in for node."""
+    #         self.name = name
+    #         self.collection = collection
+    #         self.body = body
+    #         super().__init__(*args, **kwargs)
 
-        connect_to -> CARROW_R_p1 NAME spawn_ctx CARROW_R_p2
-        connect_to -> CARROW_R
-        """
-        if len(node.kid) == 1:
-            self.emit(node, f"({BUILTIN_TAG}.CONNECT_TO, None)")
-        else:
-            self.emit(
-                node,
-                f"({BUILTIN_TAG}.CONNECT_TO, ({node.kid[1].py_code}, {node.kid[2].py_code})",
-            )
+    # class DictForStmt(AstNode):
+    #     """DictForStmt node type for Jac Ast."""
 
-    def exit_connect_from(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert connect_from to python code.
+    #     def __init__(
+    #         self: "DictForStmt",
+    #         k_name: AstNode,
+    #         v_name: AstNode,
+    #         collection: AstNode,
+    #         body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize dict for node."""
+    #         self.k_name = k_name
+    #         self.v_name = v_name
+    #         self.collection = collection
+    #         self.body = body
+    #         super().__init__(*args, **kwargs)
 
-        connect_from -> CARROW_L_p1 NAME spawn_ctx CARROW_L_p2
-        connect_from -> CARROW_L
-        """
-        if len(node.kid) == 1:
-            self.emit(node, f"({BUILTIN_TAG}.CONNECT_FROM, None)")
-        else:
-            self.emit(
-                node,
-                f"({BUILTIN_TAG}.CONNECT_FROM, ({node.kid[1].py_code}, {node.kid[2].py_code})",
-            )
+    # class WhileStmt(AstNode):
+    #     """WhileStmt node type for Jac Ast."""
 
-    def exit_connect_any(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert connect_any to python code.
+    #     def __init__(
+    #         self: "WhileStmt",
+    #         condition: AstNode,
+    #         body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize while statement node."""
+    #         self.condition = condition
+    #         self.body = body
+    #         super().__init__(*args, **kwargs)
 
-        connect_any -> CARROW_L_p1 NAME spawn_ctx CARROW_R_p2
-        connect_any -> CARROW_BI
-        """
-        if len(node.kid) == 1:
-            self.emit(node, f"({BUILTIN_TAG}.CONNECT_ANY, None)")
-        else:
-            self.emit(
-                node,
-                f"({BUILTIN_TAG}.CONNECT_ANY, ({node.kid[1].py_code}, {node.kid[2].py_code})",
-            )
+    # class RaiseStmt(AstNode):
+    #     """RaiseStmt node type for Jac Ast."""
 
-    def exit_filter_ctx(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert filter_ctx to python code.
+    #     def __init__(
+    #         self: "RaiseStmt",
+    #         cause: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize raise statement node."""
+    #         self.cause = cause
+    #         super().__init__(*args, **kwargs)
 
-        filter_ctx -> LPAREN filter_compare_list RPAREN
-        """
-        self.emit(node, f"{node.kid[1].py_code}")
+    # class AssertStmt(AstNode):
+    #     """AssertStmt node type for Jac Ast."""
 
-    def exit_spawn_ctx(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert spawn_ctx to python code.
+    #     def __init__(
+    #         self: "AssertStmt",
+    #         condition: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize assert statement node."""
+    #         self.condition = condition
+    #         super().__init__(*args, **kwargs)
 
-        spawn_ctx -> LPAREN assignment_list RPAREN
-        """
-        self.emit(node, f"{node.kid[1].py_code}")
+    # class CtrlStmt(AstNode):
+    #     """CtrlStmt node type for Jac Ast."""
 
-    def exit_filter_compare_list(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert filter_compare_list to python code.
+    #     def __init__(
+    #         self: "CtrlStmt",
+    #         stmt: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize control statement node."""
+    #         self.stmt = stmt
+    #         super().__init__(*args, **kwargs)
 
-        filter_compare_list -> NAME cmp_op expression COMMA filter_compare_list
-        filter_compare_list -> NAME cmp_op expression
-        """
-        if len(node.kid) == 3:
-            self.emit(
-                node,
-                f"({BUILTIN_TAG}.FILTER_COMPARE_LIST, "
-                f"({node.kid[0].py_code}, {node.kid[1].py_code}, {node.kid[2].py_code}))",
-            )
-        else:
-            self.emit(
-                node,
-                f"({BUILTIN_TAG}.FILTER_COMPARE_LIST, "
-                f"({node.kid[0].py_code}, {node.kid[1].py_code}, {node.kid[2].py_code})),  {node.kid[2].py_code})",
-            )
+    # class DeleteStmt(AstNode):
+    #     """DeleteStmt node type for Jac Ast."""
 
-    def exit_node(self: "PyCodeGen", node: AstNode) -> None:
-        """Convert node to python code."""
-        if node.kind == AstNodeKind.TOKEN:
-            if node.name == "DOC_STRING":
-                self.emit_ln(node, node.value)
-            else:
-                self.emit(node, str(node.value))
-        super().exit_node(node)
+    #     def __init__(
+    #         self: "DeleteStmt",
+    #         target: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize delete statement node."""
+    #         self.target = target
+    #         super().__init__(*args, **kwargs)
+
+    # class ReportStmt(AstNode):
+    #     """ReportStmt node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "ReportStmt",
+    #         expr: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize report statement node."""
+    #         self.expr = expr
+    #         super().__init__(*args, **kwargs)
+
+    # class ReturnStmt(AstNode):
+    #     """ReturnStmt node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "ReturnStmt",
+    #         expr: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize return statement node."""
+    #         self.expr = expr
+    #         super().__init__(*args, **kwargs)
+
+    # class IgnoreStmt(AstNode):
+    #     """IgnoreStmt node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "IgnoreStmt",
+    #         target: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize ignore statement node."""
+    #         self.target = target
+    #         super().__init__(*args, **kwargs)
+
+    # class VisitStmt(AstNode):
+    #     """VisitStmt node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "VisitStmt",
+    #         typ: AstNode,
+    #         target: AstNode,
+    #         else_body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize visit statement node."""
+    #         self.typ = typ
+    #         self.target = target
+    #         self.else_body = else_body
+    #         super().__init__(*args, **kwargs)
+
+    # class RevisitStmt(AstNode):
+    #     """ReVisitStmt node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "RevisitStmt",
+    #         target: AstNode,
+    #         hops: AstNode,
+    #         else_body: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize revisit statement node."""
+    #         self.target = target
+    #         self.hops = hops
+    #         self.else_body = else_body
+    #         super().__init__(*args, **kwargs)
+
+    # class DisengageStmt(AstNode):
+    #     """DisengageStmt node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "DisengageStmt",
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize disengage statement node."""
+    #         super().__init__(*args, **kwargs)
+
+    # class YeildStmt(AstNode):
+    #     """YeildStmt node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "YeildStmt",
+    #         expr: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize yeild statement node."""
+    #         self.expr = expr
+    #         super().__init__(*args, **kwargs)
+
+    # class SyncStmt(AstNode):
+    #     """SyncStmt node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "SyncStmt",
+    #         *args: list,
+    #         target: AstNode,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize sync statement node."""
+    #         self.target = target
+    #         super().__init__(*args, **kwargs)
+
+    # class Assignment(AstNode):
+    #     """Assignment node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "Assignment",
+    #         is_static: bool,
+    #         target: AstNode,
+    #         value: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize assignment node."""
+    #         self.is_static = is_static
+    #         self.target = target
+    #         self.value = value
+    #         super().__init__(*args, **kwargs)
+
+    # class IfElseExpr(AstNode):
+    #     """ExprIfElse node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "IfElseExpr",
+    #         condition: AstNode,
+    #         value: AstNode,
+    #         else_value: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize if else expression node."""
+    #         self.condition = condition
+    #         self.value = value
+    #         self.else_value = else_value
+    #         super().__init__(*args, **kwargs)
+
+    # class BinaryExpr(AstNode):
+    #     """ExprBinary node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "BinaryExpr",
+    #         left: AstNode,
+    #         right: AstNode,
+    #         op: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize binary expression node."""
+    #         self.left = left
+    #         self.right = right
+    #         self.op = op
+    #         super().__init__(*args, **kwargs)
+
+    # class UnaryExpr(AstNode):
+    #     """ExprUnary node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "UnaryExpr",
+    #         operand: AstNode,
+    #         op: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize unary expression node."""
+    #         self.operand = operand
+    #         self.op = op
+    #         super().__init__(*args, **kwargs)
+
+    # class SpawnWalkerExpr(AstNode):
+    #     """ExprSpawnWalker node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "SpawnWalkerExpr",
+    #         target: AstNode,
+    #         location: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize spawn walker expression node."""
+    #         self.target = target
+    #         self.location = location
+    #         super().__init__(*args, **kwargs)
+
+    # class SpawnObjectExpr(AstNode):
+    #     """ExprSpawnObject node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "SpawnObjectExpr",
+    #         target: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize spawn object expression node."""
+    #         self.target = target
+    #         super().__init__(*args, **kwargs)
+
+    # class SpawnEdgeNodeExpr(AstNode):
+    #     """ExprSpawnEdgeNode node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "SpawnEdgeNodeExpr",
+    #         edge: AstNode,
+    #         node: AstNode,
+    #         location: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize spawn edge node expression node."""
+    #         self.edge = edge
+    #         self.node = node
+    #         self.location = location
+    #         super().__init__(*args, **kwargs)
+
+    # class UnpackExpr(AstNode):
+    #     """ExprUnpack node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "UnpackExpr",
+    #         target: AstNode,
+    #         is_dict: bool,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize unpack expression node."""
+    #         self.target = target
+    #         super().__init__(*args, **kwargs)
+
+    # class RefExpr(AstNode):
+    #     """ExprRef node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "RefExpr",
+    #         target: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize ref expression node."""
+    #         self.target = target
+    #         super().__init__(*args, **kwargs)
+
+    # class MultiString(AstNode):
+    #     """ExprMultiString node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "MultiString",
+    #         strings: list,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize multi string expression node."""
+    #         self.strings = strings
+    #         super().__init__(*args, **kwargs)
+
+    # class ExprList(AstNode):
+    #     """ExprList node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "ExprList",
+    #         values: list,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize list expression node."""
+    #         self.values = values
+    #         super().__init__(*args, **kwargs)
+
+    # class AssignmentList(ExprList):
+    #     """AssignmentList node type for Jac Ast."""
+
+    # class ListVal(ExprList):
+    #     """ExprList node type for Jac Ast."""
+
+    # class DictVal(AstNode):
+    #     """ExprDict node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "DictVal",
+    #         kv_pairs: list,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize dict expression node."""
+    #         self.kv_pairs = kv_pairs
+    #         super().__init__(*args, **kwargs)
+
+    # class KVPair(AstNode):
+    #     """ExprKVPair node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "KVPair",
+    #         key: AstNode,
+    #         value: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize key value pair expression node."""
+    #         self.key = key
+    #         self.value = value
+    #         super().__init__(*args, **kwargs)
+
+    # class AtomTrailer(AstNode):
+    #     """AtomTrailer node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "AtomTrailer",
+    #         target: AstNode,
+    #         right: list,
+    #         null_ok: bool = False,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize atom trailer expression node."""
+    #         self.target = target
+    #         self.right = right
+    #         self.null_ok = null_ok
+    #         super().__init__(*args, **kwargs)
+
+    # class DSCall(AstNode):
+    #     """DSCall node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "DSCall",
+    #         target: AstNode,
+    #         a_name: AstNode,
+    #         is_async: bool,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize ds call expression node."""
+    #         self.target = target
+    #         self.a_name = a_name
+    #         self.is_async = is_async
+    #         super().__init__(*args, **kwargs)
+
+    # class FuncCall(AstNode):
+    #     """FuncCall node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "FuncCall",
+    #         target: AstNode,
+    #         params: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize function call expression node."""
+    #         self.target = target
+    #         self.params = params
+    #         super().__init__(*args, **kwargs)
+
+    # class ParamList(AstNode):
+    #     """ParamList node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "ParamList",
+    #         p_args: AstNode,
+    #         p_kwargs: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize parameter list expression node."""
+    #         self.p_args = p_args
+    #         self.p_kwargs = p_kwargs
+    #         super().__init__(*args, **kwargs)
+
+    # class IndexSlice(AstNode):
+    #     """IndexSlice node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "IndexSlice",
+    #         start: AstNode,
+    #         stop: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize index slice expression node."""
+    #         self.start = start
+    #         self.stop = stop
+    #         super().__init__(*args, **kwargs)
+
+    # class GlobalRef(AstNode):
+    #     """GlobalRef node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "GlobalRef",
+    #         name: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize global reference expression node."""
+    #         self.name = name
+    #         super().__init__(*args, **kwargs)
+
+    # class NodeRef(GlobalRef):
+    #     """NodeRef node type for Jac Ast."""
+
+    # class EdgeRef(GlobalRef):
+    #     """EdgeRef node type for Jac Ast."""
+
+    # class WalkerRef(GlobalRef):
+    #     """WalkerRef node type for Jac Ast."""
+
+    # class SpawnerRef(GlobalRef):
+    #     """SpawnerRef node type for Jac Ast."""
+
+    # class FuncRef(GlobalRef):
+    #     """FuncRef node type for Jac Ast."""
+
+    # class ObjectRef(GlobalRef):
+    #     """ObjectRef node type for Jac Ast."""
+
+    # class AbilityRef(GlobalRef):
+    #     """AbilityRef node type for Jac Ast."""
+
+    # class EdgeOpRef(AstNode):
+    #     """EdgeOpRef node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "EdgeOpRef",
+    #         filter_cond: AstNode,
+    #         edge_dir: EdgeDir,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize edge op reference expression node."""
+    #         self.filter_cond = filter_cond
+    #         self.edge_dir = edge_dir
+    #         super().__init__(*args, **kwargs)
+
+    # class ConnectOp(AstNode):
+    #     """ConnectOpRef node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "ConnectOp",
+    #         spawn: AstNode,
+    #         edge_dir: EdgeDir,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize connect op reference expression node."""
+    #         self.spawn = spawn
+    #         self.edge_dir = edge_dir
+    #         super().__init__(*args, **kwargs)
+
+    # class DisconnectOp(EdgeOpRef):
+    #     """DisconnectOpRef node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "DisconnectOp",
+    #         edge_ref: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize disconnect op reference expression node."""
+    #         self.edge_ref = edge_ref
+    #         super().__init__(*args, **kwargs)
+
+    # class FilterCtx(AstNode):
+    #     """FilterCtx node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "FilterCtx",
+    #         compares: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize filter_cond context expression node."""
+    #         self.compares = compares
+    #         super().__init__(*args, **kwargs)
+
+    # class SpawnCtx(AstNode):
+    #     """SpawnCtx node type for Jac Ast."""
+
+    #     def __init__(
+    #         self: "SpawnCtx",
+    #         spawns: AstNode,
+    #         *args: list,
+    #         **kwargs: dict,
+    #     ) -> None:
+    #         """Initialize spawn context expression node."""
+    #         self.spawns = spawns
+    #         super().__init__(*args, **kwargs)`
+
+    def enter_node(self: Pass, node: AstNode) -> None:
+        """Enter node."""
+        node.py_code = ""
+        return super().enter_node(node)
+
+
+def is_blank(node: AstNode) -> bool:
+    """Check if node is blank."""
+    return type(node) == ast.Blank

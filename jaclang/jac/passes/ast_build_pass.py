@@ -24,9 +24,11 @@ class AstBuildPass(Pass):
 
     def exit_element(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Replace element with its kid."""
-        node = replace_node(node, node.kid[0])
-        if type(node) == ast.Token:
-            update_kind(node, ast.DocString, value=node.value)
+        if type(node.kid[0]) == ast.Token:
+            node.kid = [node.kid[0]]
+            update_kind(node, ast.DocString, value=node.kid[0])
+        else:
+            node = replace_node(node, node.kid[0])
 
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build GLOBAL_VAR Ast node."""
