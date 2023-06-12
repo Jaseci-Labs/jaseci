@@ -1,6 +1,8 @@
 """Abstract class for IR Passes for Jac."""
 import pprint
 
+from jaclang.core.edge import EdgeDir
+
 
 class AstNode:
     """Abstract syntax tree node for Jac."""
@@ -1020,6 +1022,10 @@ class ExprList(AstNode):
         super().__init__(*args, **kwargs)
 
 
+class AssignmentList(ExprList):
+    """AssignmentList node type for Jac Ast."""
+
+
 class ListVal(ExprList):
     """ExprList node type for Jac Ast."""
 
@@ -1119,4 +1125,136 @@ class ParamList(AstNode):
         """Initialize parameter list expression node."""
         self.p_args = p_args
         self.p_kwargs = p_kwargs
+        super().__init__(*args, **kwargs)
+
+
+class IndexSlice(AstNode):
+    """IndexSlice node type for Jac Ast."""
+
+    def __init__(
+        self: "IndexSlice",
+        start: AstNode,
+        stop: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize index slice expression node."""
+        self.start = start
+        self.stop = stop
+        super().__init__(*args, **kwargs)
+
+
+class GlobalRef(AstNode):
+    """GlobalRef node type for Jac Ast."""
+
+    def __init__(
+        self: "GlobalRef",
+        name: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize global reference expression node."""
+        self.name = name
+        super().__init__(*args, **kwargs)
+
+
+class NodeRef(GlobalRef):
+    """NodeRef node type for Jac Ast."""
+
+
+class EdgeRef(GlobalRef):
+    """EdgeRef node type for Jac Ast."""
+
+
+class WalkerRef(GlobalRef):
+    """WalkerRef node type for Jac Ast."""
+
+
+class SpawnerRef(GlobalRef):
+    """SpawnerRef node type for Jac Ast."""
+
+
+class FuncRef(GlobalRef):
+    """FuncRef node type for Jac Ast."""
+
+
+class ObjectRef(GlobalRef):
+    """ObjectRef node type for Jac Ast."""
+
+
+class AbilityRef(GlobalRef):
+    """AbilityRef node type for Jac Ast."""
+
+
+class EdgeOpRef(AstNode):
+    """EdgeOpRef node type for Jac Ast."""
+
+    def __init__(
+        self: "EdgeOpRef",
+        filter_cond: AstNode,
+        edge_dir: EdgeDir,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize edge op reference expression node."""
+        self.filter_cond = filter_cond
+        self.edge_dir = edge_dir
+        super().__init__(*args, **kwargs)
+
+
+class ConnectOp(AstNode):
+    """ConnectOpRef node type for Jac Ast."""
+
+    def __init__(
+        self: "ConnectOp",
+        spawn: AstNode,
+        edge_dir: EdgeDir,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize connect op reference expression node."""
+        self.spawn = spawn
+        self.edge_dir = edge_dir
+        super().__init__(*args, **kwargs)
+
+
+class DisconnectOp(EdgeOpRef):
+    """DisconnectOpRef node type for Jac Ast."""
+
+    def __init__(
+        self: "DisconnectOp",
+        edge_ref: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize disconnect op reference expression node."""
+        self.edge_ref = edge_ref
+        super().__init__(*args, **kwargs)
+
+
+class FilterCtx(AstNode):
+    """FilterCtx node type for Jac Ast."""
+
+    def __init__(
+        self: "FilterCtx",
+        compares: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize filter_cond context expression node."""
+        self.compares = compares
+        super().__init__(*args, **kwargs)
+
+
+class SpawnCtx(AstNode):
+    """SpawnCtx node type for Jac Ast."""
+
+    def __init__(
+        self: "SpawnCtx",
+        spawns: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize spawn context expression node."""
+        self.spawns = spawns
         super().__init__(*args, **kwargs)

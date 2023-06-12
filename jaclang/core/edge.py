@@ -1,5 +1,15 @@
 """Edge class for Jaseci."""
+from enum import Enum, auto
+
 from jaclang.core.object import Object
+
+
+class EdgeDir(Enum):
+    """Edge direction indicator."""
+
+    IN = auto()
+    OUT = auto()
+    BOTH = auto()
 
 
 class Edge(Object):

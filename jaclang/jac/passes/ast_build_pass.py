@@ -492,13 +492,13 @@ class AstBuildPass(Pass):
                 finally_body=node.kid[2],
             )
 
-    def except_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_except_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ExceptList Ast node."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
         update_kind(node, ast.ExceptList, excepts=node.kid)
 
-    def except_def(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_except_def(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ExceptDef Ast node."""
         if len(node.kid) == 3:
             node.kid = [node.kid[1], node.kid[2]]
@@ -774,6 +774,14 @@ class AstBuildPass(Pass):
             else:
                 update_kind(node, ast.UnpackExpr, target=node.kid[0], is_dict=True)
 
+    def exit_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Ref Ast node."""
+        if len(node.kid) == 1:
+            replace_node(node, node.kid[0])
+        else:
+            node.kid = [node.kid[1]]
+            update_kind(node, ast.RefExpr, target=node.kid[0])
+
     def exit_walrus_op(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Replace self with child."""
         replace_node(node, node.kid[0])
@@ -911,27 +919,162 @@ class AstBuildPass(Pass):
         """Build AssignmentList Ast node."""
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
-        update_kind(node, ast.ExprList, values=node.kid)
+        update_kind(node, ast.AssignmentList, values=node.kid)
 
-    # def exit_index_slice(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_global_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_arch_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_node_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_edge_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_walker_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_object_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_ability_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_edge_op_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_edge_to(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_edge_from(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_edge_any(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_connect_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_connect_to(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_connect_from(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_connect_any(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_filter_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_spawn_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
-    # def exit_filter_compare_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_index_slice(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build IndexSlice Ast node."""
+        if len(node.kid) == 3:
+            node.kid = node.kid[1]
+            update_kind(node, ast.IndexSlice, start=node.kid[0], stop=ast.Blank())
+        else:
+            node.kid = [node.kid[1], node.kid[3]]
+            update_kind(node, ast.IndexSlice, start=node.kid[0], stop=node.kid[1])
+
+    def exit_global_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build GlobalRef Ast node."""
+        node.kid = [node.kid[-1]]
+        update_kind(node, ast.GlobalRef, name=node.kid[-1])
+
+    def exit_arch_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ArchRef Ast node."""
+        replace_node(node, node.kid[0])
+
+    def exit_node_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build NodeRef Ast node."""
+        node.kid = [node.kid[-1]]
+        update_kind(node, ast.NodeRef, name=node.kid[-1])
+
+    def exit_edge_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build EdgeRef Ast node."""
+        node.kid = [node.kid[-1]]
+        update_kind(node, ast.EdgeRef, name=node.kid[-1])
+
+    def exit_walker_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build WalkerRef Ast node."""
+        node.kid = [node.kid[-1]]
+        update_kind(node, ast.WalkerRef, name=node.kid[-1])
+
+    def exit_spawner_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build SpawnerRef Ast node."""
+        node.kid = [node.kid[-1]]
+        update_kind(node, ast.SpawnerRef, name=node.kid[-1])
+
+    def exit_func_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build FuncRef Ast node."""
+        node.kid = [node.kid[-1]]
+        update_kind(node, ast.FuncRef, name=node.kid[-1])
+
+    def exit_object_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ObjectRef Ast node."""
+        node.kid = [node.kid[-1]]
+        update_kind(node, ast.ObjectRef, name=node.kid[-1])
+
+    def exit_ability_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AbilityRef Ast node."""
+        node.kid = [node.kid[-1]]
+        update_kind(node, ast.AbilityRef, name=node.kid[-1])
+
+    def exit_edge_op_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build EdgeOpRef Ast node."""
+        replace_node(node, node.kid[0])
+
+    def exit_edge_to(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build EdgeTo Ast node."""
+        if len(node.kid) == 3:
+            update_kind(
+                node, ast.EdgeOpRef, filter_cond=node.kid[1], edge_dir=ast.EdgeDir.OUT
+            )
+        else:
+            update_kind(
+                node, ast.EdgeOpRef, filter_cond=ast.Blank(), edge_dir=ast.EdgeDir.OUT
+            )
+
+    def exit_edge_from(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build EdgeFrom Ast node."""
+        if len(node.kid) == 3:
+            update_kind(
+                node, ast.EdgeOpRef, filter_cond=node.kid[1], edge_dir=ast.EdgeDir.IN
+            )
+        else:
+            update_kind(
+                node, ast.EdgeOpRef, filter_cond=ast.Blank(), edge_dir=ast.EdgeDir.IN
+            )
+
+    def exit_edge_any(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build EdgeAny Ast node."""
+        if len(node.kid) == 3:
+            update_kind(
+                node, ast.EdgeOpRef, filter_cond=node.kid[1], edge_dir=ast.EdgeDir.BOTH
+            )
+        else:
+            update_kind(
+                node, ast.EdgeOpRef, filter_cond=ast.Blank(), edge_dir=ast.EdgeDir.BOTH
+            )
+
+    def exit_connect_op(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ConnectOp Ast node."""
+        replace_node(node, node.kid[0])
+
+    def exit_disconnect_op(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build DisconnectOp Ast node."""
+        node = replace_node(node, node.kid[1])
+        update_kind(
+            node, ast.DisconnectOp, edge_dir=node.edge_dir, filter_cond=node.filter_cond
+        )
+
+    def exit_connect_to(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ConnectTo Ast node."""
+        if len(node.kid) == 3:
+            update_kind(
+                node, ast.ConnectOp, spawn=node.kid[1], edge_dir=ast.EdgeDir.OUT
+            )
+        else:
+            update_kind(
+                node, ast.ConnectOp, spawn=ast.Blank(), edge_dir=ast.EdgeDir.OUT
+            )
+
+    def exit_connect_from(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ConnectFrom Ast node."""
+        if len(node.kid) == 3:
+            update_kind(node, ast.ConnectOp, spawn=node.kid[1], edge_dir=ast.EdgeDir.IN)
+        else:
+            update_kind(node, ast.ConnectOp, spawn=ast.Blank(), edge_dir=ast.EdgeDir.IN)
+
+    def exit_connect_any(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ConnectAny Ast node."""
+        if len(node.kid) == 3:
+            update_kind(
+                node, ast.ConnectOp, spawn=node.kid[1], edge_dir=ast.EdgeDir.BOTH
+            )
+        else:
+            update_kind(
+                node, ast.ConnectOp, spawn=ast.Blank(), edge_dir=ast.EdgeDir.BOTH
+            )
+
+    def exit_filter_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build FilterCtx Ast node."""
+        node.kid = node.kid[:-4]
+        update_kind(node, ast.FilterCtx, compares=node.kid)
+
+    def exit_spawn_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build SpawnCtx Ast node."""
+        node = replace_node(node, node.kid[1])
+        update_kind(node, ast.SpawnCtx, spawns=node.kid)
+
+    def exit_filter_compare_list(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build FilterCompareList Ast node."""
+        if len(node.kid) == 3:
+            node.parent.kid = [node] + node.parent.kid
+        else:
+            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
+            node.kid = [node.kid[-3], node.kid[-2], node.kid[-1]]
+        update_kind(
+            node, ast.BinaryExpr, op=node.kid[1], left=node.kid[0], right=node.kid[2]
+        )
+
+    def exit_empty(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Empty Ast node."""
+        make_blank(node)
 
 
 def make_blank(node: ast.AstNode) -> None:
@@ -942,6 +1085,7 @@ def make_blank(node: ast.AstNode) -> None:
 def replace_node(node: ast.AstNode, new_node: ast.AstNode) -> None:
     """Replace node with new_node."""
     node.parent.kid[node.parent.kid.index(node)] = new_node
+    new_node.parent = node.parent
     return new_node
 
 

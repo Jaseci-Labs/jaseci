@@ -1031,7 +1031,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "NAME cmp_op expression",
-        "NAME cmp_op expression COMMA filter_compare_list",
+        "filter_compare_list COMMA NAME cmp_op expression",
     )
     def filter_compare_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Filter comparison list rule."""

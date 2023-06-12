@@ -66,28 +66,28 @@ class AstBuildPassTests(TestCase):
         for name in ast_build_func_names:
             self.assertIn(name, parser_func_names)
 
-    # def test_pass_grammar_complete(self: "TestCase") -> None:
-    #     """Test for enter/exit name diffs with parser."""
-    #     from jaclang.jac.parser import JacParser
+    def test_pass_grammar_complete(self: "TestCase") -> None:
+        """Test for enter/exit name diffs with parser."""
+        from jaclang.jac.parser import JacParser
 
-    #     parser_func_names = []
-    #     for name, value in inspect.getmembers(JacParser):
-    #         if (
-    #             inspect.isfunction(value)
-    #             and value.__qualname__.split(".")[0] == JacParser.__name__
-    #         ):
-    #             parser_func_names.append(name)
-    #     ast_build_func_names = []
-    #     for name, value in inspect.getmembers(AstBuildPass):
-    #         if (
-    #             (name.startswith("enter_") or name.startswith("exit_"))
-    #             and inspect.isfunction(value)
-    #             and not getattr(AstBuildPass.__base__, value.__name__, False)
-    #             and value.__qualname__.split(".")[0]
-    #             == AstBuildPass.__name__.replace("enter_", "").replace("exit_", "")
-    #         ):
-    #             ast_build_func_names.append(
-    #                 name.replace("enter_", "").replace("exit_", "")
-    #             )
-    #     for name in parser_func_names:
-    #         self.assertIn(name, ast_build_func_names)
+        parser_func_names = []
+        for name, value in inspect.getmembers(JacParser):
+            if (
+                inspect.isfunction(value)
+                and value.__qualname__.split(".")[0] == JacParser.__name__
+            ):
+                parser_func_names.append(name)
+        ast_build_func_names = []
+        for name, value in inspect.getmembers(AstBuildPass):
+            if (
+                (name.startswith("enter_") or name.startswith("exit_"))
+                and inspect.isfunction(value)
+                and not getattr(AstBuildPass.__base__, value.__name__, False)
+                and value.__qualname__.split(".")[0]
+                == AstBuildPass.__name__.replace("enter_", "").replace("exit_", "")
+            ):
+                ast_build_func_names.append(
+                    name.replace("enter_", "").replace("exit_", "")
+                )
+        for name in parser_func_names:
+            self.assertIn(name, ast_build_func_names)
