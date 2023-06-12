@@ -67,12 +67,10 @@ class Parse(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class WholeBuild(AstNode):
+class Module(AstNode):
     """Whole Program node type for Jac Ast."""
 
-    def __init__(
-        self: "WholeBuild", elements: list, *args: list, **kwargs: dict
-    ) -> None:
+    def __init__(self: "Module", elements: list, *args: list, **kwargs: dict) -> None:
         """Initialize whole program node."""
         self.elements = elements
         super().__init__(*args, **kwargs)

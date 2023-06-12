@@ -25,6 +25,7 @@ class JacLexer(Lexer):
         "TYP_BOOL",
         "TYP_BYTES",
         "KW_OBJECT",
+        "TYP_ANY",
         "TYP_TYPE",
         "KW_NODE",
         "KW_IGNORE",
@@ -166,6 +167,7 @@ class JacLexer(Lexer):
     NAME["bool"] = "TYP_BOOL"
     NAME["bytes"] = "TYP_BYTES"
     NAME["object"] = "KW_OBJECT"
+    NAME["any"] = "TYP_ANY"
     NAME["type"] = "TYP_TYPE"
     NAME["node"] = "KW_NODE"
     NAME["ignore"] = "KW_IGNORE"

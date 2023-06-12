@@ -60,8 +60,6 @@ node mynode:this:that {}  # define a new node
 
 edge parent {}  # define a new edge
 
-spawner myspawner {} # define a new spawner
-
 walker travelor {  # define a new walker
     can say_hello;
 }
@@ -69,6 +67,10 @@ walker travelor {  # define a new walker
 :walker:travelor:ability:say_hello {
     "Hello" |> print;  # |> is a pipe forward operator
 }
+
+spawner myspawner {} # define a new spawner
+
+func myfunc(): None {} # define a function
 
 test mytest
 "A test of my functionality" {

@@ -13,7 +13,7 @@ class AstBuildPass(Pass):
     def exit_start(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build WHOLE_BUILD Ast node."""
         node.kid = node.kid[0].kid
-        self.ir = ast.WholeBuild(
+        self.ir = ast.Module(
             elements=node.kid, parent=None, kid=node.kid, line=node.line
         )
 
