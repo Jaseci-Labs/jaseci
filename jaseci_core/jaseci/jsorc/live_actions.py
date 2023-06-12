@@ -134,31 +134,31 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
             " This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided.",
         )
         logger.error(e)
-    # logger.info(f"return list of actions")
+    logger.info(f"return list of actions")
     out_q.put(list(live_actions.keys()))
 
     while not terminate_event.is_set() or not in_q.empty():
         # while True:
-        # logger.info(f"{os.getpid()} waiting on input")
+        logger.info(f"{os.getpid()} waiting on input")
         action, args, kwargs = in_q.get()
         try:
-            # logger.info(f"{os.getpid()} Got input")
+            logger.info(f"{os.getpid()} Got input")
             func = live_actions[action]
-            # logger.info(f"{os.getpid()}got func {func}")
+            logger.info(f"{os.getpid()}got func {func}")
             result = func(*args, **kwargs)
-            # logger.info(f"{os.getpid()}got result")
+            logger.info(f"{os.getpid()}got result")
         except Exception as e:
             logger.info(f"{os.getpid()}Exception: {str(e)}")
             result = str(e)
 
         out_q.put((action, result))
-        # logger.info(f"{os.getpid()}put in out_q")
+        logger.info(f"{os.getpid()}put in out_q")
 
 
 def action_handler_wrapper(name, *args, **kwargs):
     # module = action.split(".")[0]
     # name = action.split(".")[1]
-    # logger.info(f"{os.getpid()}local action called for {name}")
+    logger.info(f"{os.getpid()}local action called for {name}")
     module = name.split(".")[0]
     act_name = name.split(".")[1]
     # TODO: temporary hack
@@ -173,14 +173,14 @@ def action_handler_wrapper(name, *args, **kwargs):
 
     module = f"jac_nlp.{module}"
 
-    # logger.info("put in_q")
+    logger.info("put in_q")
     act_procs[module]["reqs"] += 1
-    # cnt = act_procs[module]["reqs"]
-    # logger.info(f"{module} reqs: {cnt}")
-    # logger.info(f"{os.getpid()}put in_q")
+    cnt = act_procs[module]["reqs"]
+    logger.info(f"{module} reqs: {cnt}")
+    logger.info(f"{os.getpid()}put in_q")
     act_procs[module]["in_q"].put((name, args, kwargs))
 
-    # logger.info(f"{os.getpid()}waiting on out_q")
+    logger.info(f"{os.getpid()}waiting on out_q")
     # TODO: Handle concurrent calls?
     try:
         res = act_procs[module]["out_q"].get(timeout=ACTION_SUBPROC_TIMEOUT)[1]
@@ -190,15 +190,16 @@ def action_handler_wrapper(name, *args, **kwargs):
 
     act_procs[module]["reqs"] -= 1
     cnt = act_procs[module]["reqs"]
-    # logger.info(f"{module} reqs: {cnt}")
+    logger.info(f"{module} reqs: {cnt}")
 
     return res
 
 
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
-    # logger.info(f"load module actions {mod}")
+    logger.info(f"load module actions {mod}")
     # If the module status is intialization, return False
     if mod in act_procs and act_procs[mod]["status"] == "INITIALIZATION":
+        logger.info("already in initialization")
         return False
 
     # If the module is already loaded and not set as terminate, return True
@@ -207,7 +208,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         and act_procs[mod]["status"] == "READY"
         and not act_procs[mod]["terminate_event"].is_set()
     ):
-        # logger.info(f"already loaded and ready")
+        logger.info(f"already loaded and ready")
         return True
 
     # If module termination set to be True and no outstanding requests, we delete previously allocated queues and process
@@ -216,7 +217,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         and act_procs[mod]["terminate_event"].is_set()
         and act_procs[mod]["reqs"] == 0
     ):
-        # logger.info(f"clearing existing queues etc.")
+        logger.info(f"clearing existing queues etc.")
         del act_procs[mod]["in_q"]
         del act_procs[mod]["out_q"]
         del act_procs[mod]["proc"]
@@ -231,7 +232,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         "reqs": 0,
         "status": "INITIALIZATION",
     }
-    # logger.info(f"init the process")
+    logger.info(f"init the process")
     act_procs[mod]["proc"] = mp_ctx.Process(
         target=action_handler,
         args=(
@@ -242,7 +243,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
             act_procs[mod]["terminate_event"],
         ),
     )
-    # logger.info(f"start the process")
+    logger.info(f"start the process")
     act_procs[mod]["proc"].start()
 
     # get the list of action back
@@ -271,6 +272,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     return True
 
 
+#
 # def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
 #     """Load all jaseci actions from python module"""
 #     try:
@@ -322,7 +324,7 @@ def unload_module(mod):
         # act_procs[mod]["proc"].kill()
         # act_procs[mod]["proc"].terminate()
         if act_procs[mod]["reqs"] > 0:
-            # logger.info("Oustanding requests. Gracefully kill.")
+            logger.info("Oustanding requests. Gracefully kill.")
             # logger.info("set event")
             act_procs[mod]["terminate_event"].set()
             # logger.info("joining")
@@ -336,7 +338,7 @@ def unload_module(mod):
             del act_procs[mod]
             return True
         else:
-            # logger.info("No outstanding requests. Kill now.")
+            logger.info("No outstanding requests. Kill now.")
             # logger.info("set event")
             # act_procs[mod]["terminate_event"].set()
             # logger.info("kill")
