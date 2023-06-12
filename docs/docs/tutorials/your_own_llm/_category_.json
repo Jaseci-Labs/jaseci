@@ -1,0 +1,8 @@
+{
+    "label": "Create Your Own LLM",
+    "position": 10,
+    "link": {
+        "type": "generated-index",
+        "description": "This guide will help you create your own LLM (Large Language Model) using the Jac NLP's llm package. It will walk you through the process of creating a dataset, training a model, and using the model to generate text."
+    }
+}
