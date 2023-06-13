@@ -271,7 +271,7 @@ class ActionsOptimizer:
         # if len(self.actions_change) > 0:
         #     self.apply_actions_change()
 
-    def _init_evalution_policy(self, policy_state):
+    def _init_evaluation_policy(self, policy_state):
         # 999 is just really large memory size so everything can fits in local
         node_mem = self.policy_params.get("node_mem", 999 * 1024)
         jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
@@ -316,10 +316,11 @@ class ActionsOptimizer:
 
             for config in all_configs:
                 if config not in sorted_configurations:
-                    distance = min(
-                        get_config_distance(config, sorted_config)
-                        for sorted_config in sorted_configurations
-                    )
+                    # distance = min(
+                    #     get_config_distance(config, sorted_config)
+                    #     for sorted_config in sorted_configurations
+                    # )
+                    distance = get_config_distance(sorted_configurations[-1], config)
                     if distance < min_distance:
                         min_distance = distance
                         min_config = config
@@ -369,11 +370,11 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 policy_state["cur_config"] = None
                 if len(policy_state["remain_configs"]) == 0:
-                    self._init_evalution_policy(policy_state)
+                    self._init_evaluation_policy(policy_state)
         if policy_state["phase"] == "eval":
             # In evaluation phase
             if policy_state["cur_config"] is None:
-                self._init_evalution_policy(policy_state)
+                self._init_evaluation_policy(policy_state)
 
                 # This is the start of evaluation period
                 policy_state["cur_config"] = policy_state["remain_configs"][0]
@@ -463,7 +464,6 @@ class ActionsOptimizer:
                                 )
                                 and lat_decrease_pct > THRESHOLD
                             ):
-
                                 policy_state["perf_phase"] *= 2
                                 logger.info(
                                     f"===Evaluation Policy=== Best config is the same as previous one. Doubling performance phase to {policy_state['perf_phase']}"
