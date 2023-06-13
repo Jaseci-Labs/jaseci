@@ -1,36 +1,35 @@
 walker create_product {
     has name = "product1", description = "new product";
-    can stripe.create_product;
+    can stripe.product_create;
 
-    stripe.create_product(name, description);
+    stripe.product_create(name = name, description = description);
 }
 
 walker create_product_price {
     has productId = "product1", amount = 12, currency = "usd", recurring = {};
-    can stripe.create_product_price;
+    can stripe.price_create;
 
-    stripe.create_product_price(productId, amount, currency, recurring);
+    stripe.price_create(productId, amount, currency, recurring = recurring);
 }
 
 walker product_list {
-    has detailed = true;
     can stripe.product_list;
 
-    stripe.product_list(detailed);
+    stripe.product_list(active = true);
 }
 
 walker create_customer {
     has email = "test12@gmail.com", name = "stripe customer", address = {"billing_address": "123 metro manila"};
-    can stripe.create_customer;
+    can stripe.customer_create;
 
-    stripe.create_customer(email, name, address);
+    stripe.customer_create(email=email, name=name, address=address);
 }
 
 walker get_customer {
     has customer_id = "cus_NBsqL1C1GrrHYM";
-    can stripe.get_customer;
+    can stripe.customer_retrieve;
 
-    stripe.get_customer(customer_id);
+    stripe.customer_retrieve(customer_id);
 }
 
 walker attach_payment_method {
@@ -42,9 +41,9 @@ walker attach_payment_method {
 
 walker detach_payment_method {
     has payment_method_id = "pm_1MN1iN2xToAoV8chTjvX94hm";
-    can stripe.detach_payment_method;
+    can stripe.payment_method_detach;
 
-    stripe.detach_payment_method(payment_method_id);
+    stripe.payment_method_detach(payment_method_id);
 }
 
 walker get_payment_methods {
@@ -63,37 +62,37 @@ walker update_default_payment_method {
 
 walker create_invoice {
     has customer_id = "cus_NBsqL1C1GrrHYM";
-    can stripe.create_invoice;
+    can stripe.invoice_create;
 
-    stripe.create_invoice(customer_id);
+    stripe.invoice_create(customer_id);
 }
 
 walker get_invoice_list {
     has customer_id = "cus_NBsqL1C1GrrHYM", subscription_id = "sub_1MTgMQCZO78n7fsZqu1dk6nD";
-    can stripe.get_invoice_list;
+    can stripe.invoice_list;
 
-    stripe.get_invoice_list(customer_id, subscription_id);
+    stripe.invoice_list(customer = customer_id, subscription = subscription_id);
 }
 
 walker get_payment_intents {
     has customer_id = "cus_NBsqL1C1GrrHYM";
-    can stripe.get_payment_intents;
+    can stripe.payment_intent_list;
 
-    stripe.get_payment_intents(customer_id);
+    stripe.payment_intent_list(customer = customer_id);
 }
 
 walker create_payment_intents {
     has customer_id = "cus_NBsqL1C1GrrHYM", amount = 12, currency = "usd", payment_method_types = ["card"];
-    can stripe.create_payment_intents;
+    can stripe.payment_intent_create;
 
-    report stripe.create_payment_intents(customer_id, amount, currency, payment_method_types);
+    report stripe.payment_intent_create(amount, currency, customer = customer_id, payment_method_types = payment_method_types);
 }
 
 walker get_customer_subscription {
-    has subscription_id = "sub_1MTgMQCZO78n7fsZqu1dk6nD";
-    can stripe.get_customer_subscription;
+    has customer_id = "customer_id";
+    can stripe.subscription_list;
 
-    stripe.get_customer_subscription(subscription_id);
+    stripe.subscription_list(customer = customer_id);
 }
 
 walker create_payment_method {
@@ -105,9 +104,9 @@ walker create_payment_method {
         "exp_year": 2024,
         "cvc": "314"
     };
-    can stripe.create_payment_method;
+    can stripe.payment_method_create;
 
-    stripe.create_payment_method(card_type, card, billing_details);
+    stripe.payment_method_create(card_type, card = card, billing_details = billing_details);
 }
 
 walker create_trial_subscription {
@@ -126,16 +125,16 @@ walker create_subscription {
 
 walker cancel_subscription {
     has subscription_id = "sub_1MTgMQCZO78n7fsZqu1dk6nD";
-    can stripe.cancel_subscription;
+    can stripe.subscription_delete;
 
-    stripe.cancel_subscription(subscription_id);
+    stripe.subscription_delete(subscription_id);
 }
 
 walker get_subscription {
     has subscription_id = "sub_1MTgMQCZO78n7fsZqu1dk6nD";
-    can stripe.get_subscription;
+    can stripe.subscription_retrieve;
 
-    stripe.get_subscription(subscription_id);
+    stripe.subscription_retrieve(subscription_id);
 }
 
 walker update_subscription_item {
@@ -147,21 +146,21 @@ walker update_subscription_item {
 
 walker get_invoice {
     has invoice_id = "inv_1MTgMQCZO78n7fsZqu1dk6nD";
-    can stripe.get_invoice;
+    can stripe.invoice_retrieve;
 
-    stripe.get_invoice(invoice_id);
+    stripe.invoice_retrieve(invoice_id);
 }
 
 walker create_usage_report {
     has subscription_id = "sub_1MTgMQCZO78n7fsZqu1dk6nD", quantity = 12;
-    can stripe.create_usage_report;
+    can stripe.subscription_item_create_usage_report;
 
-    stripe.create_usage_report(subscription_id, quantity);
+    stripe.subscription_item_create_usage_report(subscription_id, quantity);
 }
 
 walker create_checkout_session {
     has success_url = "https://example.com/success", cancel_url = "https://example.com/cancel", line_items = [{"price": "price_H5ggYwtDq4fbrJ","quantity": 12}], mode = "payment";
-    can stripe.create_checkout_session;
+    can stripe.checkout_session_create;
 
-    stripe.create_checkout_session(success_url, cancel_url, line_items, mode);
+    stripe.checkout_session_create(success_url, line_items, mode, cancel_url = cancel_url);
 }
