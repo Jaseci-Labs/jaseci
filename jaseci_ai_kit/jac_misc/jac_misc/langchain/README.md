@@ -17,7 +17,7 @@ jaseci> actions load module jac_misc.langchain
 ### Using the `setup` Action to Initialize the Langchain Flow
 If you have already loaded the module, you can use the `setup` action to set the langchain flow and also pass the required parameters.
 Below example shows how to set the json langchain flow with the generated JSON file you got from the langflow platform.
-Refer [Langchain Flows]() for the available flows.
+Refer [Langchain Flows](https://python.langchain.com/en/latest/) for the available flows.
 ```bash
 jaseci> actions call langchain.setup -ctx '{"flow_type":"json", "json_file": <path-to-json-file>}'
 ```
