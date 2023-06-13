@@ -392,7 +392,8 @@ class ActionsOptimizer:
                             walker_runs.extend(times)
 
                     avg_walker_lat = sum(walker_runs) / len(walker_runs)
-                logger.info(f"===Auto Policy=== avg_walker_lat: {avg_walker_lat}")
+
+                    logger.info(f"===Auto Policy=== avg_walker_lat: {avg_walker_lat}")
                 logger.info(
                     f"""===Auto Policy===
                     \nbenchmark: {self.benchmark}
@@ -409,23 +410,30 @@ class ActionsOptimizer:
                 self.benchmark["active"] = True
                 self.apply_actions_change()
             else:
-                next_config = policy_state["remain_configs"][0]
-                del policy_state["remain_configs"][0]
-                self.actions_change = self._get_action_change(next_config)
-                policy_state["cur_config"] = next_config
-                policy_state["cur_phase"] = 0
-                self.benchmark["requests"] = {}
-                if len(self.actions_change) > 0:
-                    logger.info(
-                        f"===Auto Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
-                    )
-                    policy_state["phase"] = "eval_switching"
-                    self.benchmark["active"] = False
-                    self.apply_actions_change()
+                if policy_state["cur_config"] is None:
+                    next_config = policy_state["remain_configs"][0]
+                    del policy_state["remain_configs"][0]
+                    self.actions_change = self._get_action_change(next_config)
+                    policy_state["cur_config"] = next_config
+                    policy_state["cur_phase"] = 0
+                    self.benchmark["requests"] = {}
+                    if len(self.actions_change) > 0:
+                        logger.info(
+                            f"===Auto Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
+                        )
+                        policy_state["phase"] = "eval_switching"
+                        self.benchmark["active"] = False
+                        self.apply_actions_change()
 
-                logger.info(
-                    f"===Auto Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
-                )
+                    logger.info(
+                        f"===Auto Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
+                    )
+                else:
+                    logger.info(
+                        f"""===Auto Policy===
+                        \nprev_actions: {policy_state["prev_actions"]}
+                        \nactions_calls: {list(self.actions_calls.keys())}"""  # noqa: E501
+                    )
         if policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
