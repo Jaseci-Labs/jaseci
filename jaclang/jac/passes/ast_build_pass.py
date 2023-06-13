@@ -141,7 +141,7 @@ class AstBuildPass(Pass):
                 name=node.kid[1],
                 body=node.kid[2],
             )
-        elif node.kid[1].name == "KW_FUNC":
+        elif node.kid[1].name == "KW_CAN":
             del node.kid[1]
             update_kind(
                 node,
@@ -970,11 +970,6 @@ class AstBuildPass(Pass):
         """Build SpawnerRef Ast node."""
         node.kid = [node.kid[-1]]
         update_kind(node, ast.SpawnerRef, name=node.kid[-1])
-
-    def exit_func_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build FuncRef Ast node."""
-        node.kid = [node.kid[-1]]
-        update_kind(node, ast.FuncRef, name=node.kid[-1])
 
     def exit_object_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ObjectRef Ast node."""

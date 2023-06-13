@@ -23,7 +23,7 @@ walker travelor {  # define a new walker
 
 spawner myspawner {} # define a new spawner
 
-func myfunc(): None {} # define a function
+can myfunc(): None {} # define a function
 
 with entry {
     # module level freestyle code

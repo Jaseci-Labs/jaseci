@@ -1,6 +1,6 @@
 """Type hints aren't that much work."""
 
-func foo(a: int, b: str): int {
+can foo(a: int, b: str): int {
     c = a + (b|>int);  # no type hint needed here
     return c;
 }

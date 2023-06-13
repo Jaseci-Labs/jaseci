@@ -97,9 +97,9 @@ walker travelor {  # define a new walker
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
-spawner myspawner {} # define a new spawner
+spawner myspawner {} # define a spawner
 
-func myfunc(): None {} # define a function
+can myfunc(): None {} # define a function
 
 with entry {
     # module level freestyle code
@@ -204,7 +204,7 @@ By blending the best aspects of static and dynamic typing, along with the potent
 ```jac
 """Type hints aren't that much work."""
 
-func foo(a: int, b: str): int {
+can foo(a: int, b: str): int {
     c = a + (b|>int);  # no type hint needed here
     return c;
 }
