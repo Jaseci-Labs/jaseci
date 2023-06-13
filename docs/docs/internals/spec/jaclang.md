@@ -174,7 +174,7 @@ In Jac, docstrings are only permitted in the following locations:
 - In the beginning of object definitions as the first item
 - In the beginning of code blocks that define functions, methods, and abilities as the first item
 
-Indeed, these are the typical places you see docstrings in any good codebase, and these are the only locations that are recognized by most documentation generation tools for Python, yet!, we still see code with docstrings all over the place in various code bases :-P.
+Indeed, these are the typical places you see docstrings in any good codebase, and these are the only locations that are recognized by most documentation generation tools for Python, yet!, we still see code with docstrings used willy nilly all over the place in various code bases :-P.
 
 If a docstring appears in any arbitrary location that doesn't conform to the aforementioned rules, the Jac compiler will complain. This may seem strict but ensures a clean, concise, and effective usage of docstrings for their primary role: code documentation. Oh and the programs end up being more beautiful too!
 
