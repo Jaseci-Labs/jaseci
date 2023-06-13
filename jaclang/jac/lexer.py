@@ -59,6 +59,7 @@ class JacLexer(Lexer):
         "SUB_EQ",
         "MUL_EQ",
         "DIV_EQ",
+        "MOD_EQ",
         "WALRUS_EQ",
         "KW_AND",
         "KW_OR",
@@ -252,6 +253,15 @@ class JacLexer(Lexer):
     KW_AND = r"&&"
     KW_OR = r"\|\|"
     NOT = r"!"
+    ADD_EQ = r"\+="
+    SUB_EQ = r"-="
+    MUL_EQ = r"\*="
+    DIV_EQ = r"/="
+    MOD_EQ = r"%="
+    LTE = r"<="
+    GTE = r">="
+    NE = r"!="
+    WALRUS_EQ = r":="
     DBL_COLON = r"::"
     PIPE_FWD = r"\|>"
     COLON = r":"
@@ -260,18 +270,10 @@ class JacLexer(Lexer):
     SEMI = r";"
     EE = r"=="
     EQ = r"="
-    ADD_EQ = r"\+="
-    SUB_EQ = r"-="
-    MUL_EQ = r"\*="
-    DIV_EQ = r"/="
-    WALRUS_EQ = r":="
     KW_REF = r"&"
     DOT = r"\."
     LT = r"<"
     GT = r">"
-    LTE = r"<="
-    GTE = r">="
-    NE = r"!="
     COMMA = r","
     PLUS = r"\+"
     MINUS = r"-"

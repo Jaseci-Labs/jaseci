@@ -590,8 +590,14 @@ class AstBuildPass(Pass):
 
     def exit_assert_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build AssertStmt Ast node."""
-        node.kid = [node.kid[1]]
-        update_kind(node, ast.AssertStmt, condition=node.kid[0])
+        if len(node.kid) == 4:
+            node.kid = [node.kid[1], node.kid[3]]
+            update_kind(
+                node, ast.AssertStmt, condition=node.kid[0], error_msg=node.kid[1]
+            )
+        else:
+            node.kid = [node.kid[1]]
+            update_kind(node, ast.AssertStmt, condition=node.kid[0])
 
     def exit_ctrl_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build CtrlStmt Ast node."""

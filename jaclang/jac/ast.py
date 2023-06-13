@@ -710,11 +710,13 @@ class AssertStmt(AstNode):
     def __init__(
         self: "AssertStmt",
         condition: AstNode,
+        error_msg: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize assert statement node."""
         self.condition = condition
+        self.error_msg = error_msg
         super().__init__(*args, **kwargs)
 
 

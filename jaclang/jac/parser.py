@@ -481,7 +481,10 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Raise statement rule."""
         return p
 
-    @_("KW_ASSERT expression")
+    @_(
+        "KW_ASSERT expression",
+        "KW_ASSERT expression COMMA expression",
+    )
     def assert_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Assert statement rule."""
         return p
@@ -723,6 +726,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "SUB_EQ",
         "MUL_EQ",
         "DIV_EQ",
+        "MOD_EQ",
     )
     def walrus_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Production Assignment rule."""
