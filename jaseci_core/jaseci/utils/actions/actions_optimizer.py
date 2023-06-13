@@ -410,7 +410,10 @@ class ActionsOptimizer:
                 self.benchmark["active"] = True
                 self.apply_actions_change()
             else:
-                if policy_state["cur_config"] is None:
+                if (
+                    policy_state["cur_config"] is None
+                    and policy_state["prev_actions"] is not None
+                ):
                     next_config = policy_state["remain_configs"][0]
                     del policy_state["remain_configs"][0]
                     self.actions_change = self._get_action_change(next_config)
