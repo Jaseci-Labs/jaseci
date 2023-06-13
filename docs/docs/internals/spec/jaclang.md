@@ -460,8 +460,12 @@ can factorial_recount(n: int): int {
 
 In Jac, pythonic class declarations take on a slightly different syntax compared to Python, using the `object` keyword as opposed to `class`. This `object` notion along with a few others are key primitives in Jac's unique data spatial programming approach and capable of embodying various data spatial semantics. However, it also fully subsumes and maps to Python's class semantics so we discuss `object`s through this lens here. Later we'll delve into `object`s through a data spatial lens.
 
-#### Constructor, spawning, and self referencing
-A slight departure from Python is the replacement of the `__init__` method with simply `init` in Jac. This `init` method serves as the constructor function in a Jac object, initiating the object's state. `init` can be made private using the `priv` keyword. There is also no need to specify the `self` keyword in method signatures. Instead, Jac implies its presence and uses of the `here` keyword to refer to the enclosing object instance.
+#### Constructor, spawning, self referencing, and access modifiers
+A slight departure from Python is the replacement of the `__init__` method with simply `init` in Jac. This `init` method serves as the constructor function in a Jac object, initiating the object's state. `init` can be made private using the `priv` keyword.
+
+Jac introduces a robust system of access modifiers, unlike Python which relies on the `_` and `__` conventions. Jac's 'priv', 'prot', and 'pub' keywords provide explicit control over access levels to the properties and methods of an object. These keywords represent private, protected, and public access modifiers respectively, providing a level of encapsulation more akin to other languages such as C++ or Java.
+
+ There is also no need to specify the `self` keyword in method signatures. This has always felt awkward and redundant in Python. Instead, Jac implies its presence and uses of the `here` keyword to refer to the enclosing object instance.
 
 
 ```jac
@@ -498,13 +502,14 @@ Next, we have the `greet` method, which is a public method as denoted by the `pu
 By switching from `self` to `here`, and from `__init__` to `init`, Jac brings a cleaner and more straightforward syntax for defining and initializing objects. With the introduction of access modifiers (`priv`, `prot` and `pub`), Jac provides a more robust system than `_` and `__` for encapsulating properties and methods within an object, aligning closer to other languages such as C++, Java, and C#. At the same time its all optional and up to the developer if they'd like a more pythonic less pedantic style ot implementation as per:
 
 ```jac
-"""Bit more pythonic."""
+"""A bit more chill approach."""
 
 object Person {
     has age: int, name: str;
 
     can init(name: str, age: int): None {
-        here.name = name; here.age = age;
+        here.name = name;
+        here.age = age;
     }
 
     can greet(): None {
@@ -594,12 +599,7 @@ When it comes to method overriding (i.e., a subclass providing a different imple
 Furthermore, if a method in a superclass needs to be invoked from the subclass, it can be done using the object reference op `:o:` and the particular object type name, following the same convention as in Python. Super() is less explicit and potentially confusing so its not present in Jac at the moment (though this is under consideration for future versions).
 
 These inheritance semantics enable Jac to utilize the powerful constructs of object-oriented programming, providing a familiar and flexible paradigm for Python developers.
-#### Access modifiers
-Moreover, Jac introduces a robust system of access modifiers, unlike Python which relies on the `_` and `__` conventions. Jac's 'priv', 'prot', and 'pub' keywords provide explicit control over access levels to the properties and methods of an object. These keywords represent private, protected, and public access modifiers respectively, providing a level of encapsulation more akin to other languages such as C++ or Java.
 
-In summary, while Jac draws inspiration from Python's approach to object-oriented programming, it also introduces a range of enhanced features. From the shift from `class` to `object`, the introduction of the `entry` method, the replacement of `self` with `here`, and the provision of explicit access modifiers, Jac strives to provide a more expressive, intuitive, and robust approach to object-oriented programming.
-
-##### Minimal Code Example
 
 ### Exception Handling in Jac
 

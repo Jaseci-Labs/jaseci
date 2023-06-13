@@ -1,10 +1,11 @@
-"""Bit more pythonic."""
+"""A bit more chill approach."""
 
 object Person {
     has age: int, name: str;
 
     can init(name: str, age: int): None {
-        here.name = name; here.age = age;
+        here.name = name;
+        here.age = age;
     }
 
     can greet(): None {
