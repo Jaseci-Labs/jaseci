@@ -34,19 +34,21 @@ By exploring each of these sections, readers can gain a thorough understanding o
 
 ### Code Organization
 
-In the Jac programming language, the fundamental organizational unit of code is the "module". Each Jac module is a coherent assembly of various elements, which we term "architypes". The modular design is intended to encourage clean, well-structured, and maintainable code.
+In the Jac programming language, the fundamental organizational unit of code is the "module". Each Jac module is a coherent assembly of various elements in a source file. The complete set of these element include the four core object Architypes of the language, as well additional elements.
 
 #### Architypes
 
-The term "architype" is a distinct concept in the data spatial programming paradigm. It represents several classes of traditional classes, each carrying unique semantics. In Jac, an architype can take one of the following forms:
+The term "architype" is a distinct concept in the data spatial programming paradigm. It is introduced to represents the notion that there can be several categories of classes, each carrying unique semantics. Every other OOP language we are aware of has a singular notion of a "class", so we use "architype" for brevity. In Jac, an architype can take one of the following forms:
 
-1. **Object Types**: Traditional classes, as seen in Object-Oriented Programming (OOP), form the foundation of Jac's object architypes. They are responsible for encapsulating data and the operations that can be performed on that data.
+1. **Object Types**: Traditional classes, as seen in Object-Oriented Programming (OOP), form the core primitive that Jac's other architypes build upon. Objects encapsulate data and the operations that can be performed on that data, but does not inherently harbor or encode relationships with other objects.
 
-1. **Node Types**: Node types define the structure of individual nodes in the data space. They detail the properties and data that a node can hold. Node types, along with edge adn walker types can seen as variations of object types that have different semantics.
+1. **Node Types**: Node types define the structure of individual nodes in the data space. They detail the properties and data that a node can hold. Node types are object that can inherently encode relationships and compatibility with other node types.
 
-1. **Edge Types**: Edge types establish the semantics of the connections between nodes. They specify the nature of the relationship, including any constraints or properties associated with the edge.
+1. **Edge Types**: Edge types encode the semantics of an instance of relationship between nodes. They specify the nature of the relationship, including any constraints or properties associated with the particular connection.
 
-1. **Walker Types**: Walker types encapsulate the logic for navigating the data space. They can be seen as agents that traverse nodes and edges to perform operations or gather information.
+1. **Walker Types**: Walker types encapsulate the logic for navigating the graph data space. They can be seen as agents that traverse nodes and edges to perform operations, gather information, and deploy information throughout nodes edges and objects.
+
+(intrigued? hop to the red pill for more. scared? check out the blue pill. neither? read on.)
 
 #### Additional Module Elements
 
@@ -156,8 +158,27 @@ The benefits of this separation are manifold:
 
 The reintroduction of this distinction in Jac reflects a philosophy of design clarity and software robustness. By encouraging developers to think about the interface of their code separate from its implementation, Jac promotes the development of clear, maintainable, and scalable software.
 
+### Doc strings in Jac
 
+Jac, compared to Python, offers a thoughtful approach to the implementation of docstrings, aiming to facilitate a cleaner and more helpful usage model for developers. The core philosophy of Jac is to ensure that docstrings are used in a way that truly benefits their intended purpose, which is to serve as an easily accessible documentation for modules, objects, or functions.
 
+Python allows docstrings to appear virtually anywhere within the program. While this provides flexibility, it tends to blur the line between docstrings and comments, with developers often using them as a medium for writing comment. Docstrings should be strictly for documenting the purpose and usage of certain sections of the code. We have comments for... comments.
+
+#### Jac's Approach to Docstrings
+
+Unlike Python, Jac implements a strict yet sensible parser level rule on where docstrings should be placed within the code. The Jac language grammar asserts the position of docstrings are relegated to only placed where they are most beneficial.
+
+In Jac, docstrings are only permitted in the following locations:
+
+- At the start of modules as the first item
+- In the beginning of object definitions as the first item
+- In the beginning of code blocks that define functions, methods, and abilities as the first item
+
+Indeed, these are the typical places you see docstrings in any good codebase, and these are the only locations that are recognized by most documentation generation tools for Python, yet!, we still see code with docstrings all over the place in various code bases :-P.
+
+If a docstring appears in any arbitrary location that doesn't conform to the aforementioned rules, the Jac compiler will complain. This may seem strict but ensures a clean, concise, and effective usage of docstrings for their primary role: code documentation. Oh and the programs end up being more beautiful too!
+
+Developers are still allowed the freedom to use any style of comments anywhere else in the code. This distinction emphasizes the point that docstrings and comments serve different roles: docstrings for code documentation, and comments for in-line explanations and code narrative.
 ## Blue Pill: Jac Mapping to Python Semantics and Syntax
 
 Jac is a data spatial programming language that goes beyond Python in several key ways. However it is a superset language semantically, so lets start with understanding Jac through the lens of how typical python style implementation is realized.
