@@ -391,11 +391,11 @@ This section of the Jac language specification dives into the composition of how
 
 Across all architypes in Jac, there are three main types of fields: has variables, data spatial abilities, and method abilities.
 
-##### Has Variables
+#### Has Variables
 
 Has variables stand for the variable fields of the architype. Unlike other elements of the Jac language, these fields are strongly typed, thereby requiring explicit type declaration. This ensures that each has variable adheres to a specific type, promoting a sense of robustness and predictability within the language, even while other areas of code allow for dynamic type inference.
 
-##### Data Spatial Abilities
+#### Data Spatial Abilities
 
 Data spatial abilities, on the other hand, are akin to methods in other languages but imbued with the distinct semantics of data spatial programming. These abilities do not operate on traditional parameter passing or value returning paradigms. Instead, all data access is facilitated exclusively through two references: `here` and `visitor`.
 
@@ -405,7 +405,7 @@ Data spatial abilities, on the other hand, are akin to methods in other language
 
 This spatial ability to access and manipulate data, unique to Jac, aligns with the spatial model of data programming, thus strengthening its differentiating edge.
 
-##### Method Abilities
+#### Method Abilities
 
 Method abilities are reminiscent of traditional class methods in other programming languages. They accept parameters and return values, providing a more conventional programming mechanism within Jac. However, just like has variables, these parameters and return types must also be explicitly defined. This requirement ensures type safety during method invocation, helping to prevent runtime errors.
 
