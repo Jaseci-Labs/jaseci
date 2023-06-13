@@ -312,6 +312,25 @@ In Jac, there are two kinds of imports: `jac` imports and `py` imports. The synt
 
 #### Minimal Code Example
 
+```jac
+"""You can import python modules freely"""
+
+import:py random;
+import:py from math, sqrt as square_root;
+import:py datetime;
+
+with entry {  # code that executes on module load or script run
+    random_number = random.randint(1, 10);
+    print("Random number:", random_number);
+
+    s_root = square_root(16);
+    print("Square root:", s_root);
+
+    current_time = datetime.datetime.now();
+    print("Current time:", current_time);
+}
+```
+
 ### Global Variables in Jac
 
 To specify global variables in Jac, we use the `global` keyword, similar to Python. However, in line with Jac's design philosophy, we view each global variable as an element floating in the module, reinforcing Jac's explicit approach to variable declaration and scope.
