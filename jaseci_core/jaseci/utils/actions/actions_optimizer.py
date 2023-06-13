@@ -414,7 +414,7 @@ class ActionsOptimizer:
             else:
                 if (
                     policy_state["cur_config"] is None
-                    and policy_state["prev_actions"] is not None
+                    and len(policy_state["prev_actions"]) > 0
                 ):
                     next_config = policy_state["remain_configs"][0]
                     del policy_state["remain_configs"][0]
