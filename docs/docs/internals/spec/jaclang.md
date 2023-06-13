@@ -22,7 +22,7 @@ The Blue Pill section covers the features of Jac that have a direct one-to-one m
 
 ### The Purple Pill Specification
 
-The Purple Pill section delves into the newly introduced features in Jac that build upon and extend the current OOP model in Python. These enhancements are designed to make coding easier, more efficient, and more robust, thus improving the overall developer experience. This section provides an in-depth exploration of these innovative features and their practical applications.
+The Purple Pill section delves into the newly introduced features in Jac that build upon and extend the current OOP / procedural model in Python. These enhancements are designed to make coding easier, more efficient, and more robust, thus improving the overall developer experience. This section provides an in-depth exploration of these innovative features and their practical applications.
 
 ### The Red Pill Specification
 
