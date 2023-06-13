@@ -70,8 +70,20 @@ class Parse(AstNode):
 class Module(AstNode):
     """Whole Program node type for Jac Ast."""
 
-    def __init__(self: "Module", elements: list, *args: list, **kwargs: dict) -> None:
+    def __init__(
+        self: "Module", doc: AstNode, body: AstNode, *args: list, **kwargs: dict
+    ) -> None:
         """Initialize whole program node."""
+        self.doc = doc
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class Elements(AstNode):
+    """Elements node type for Jac Ast."""
+
+    def __init__(self: "Elements", elements: list, *args: list, **kwargs: dict) -> None:
+        """Initialize elements node."""
         self.elements = elements
         super().__init__(*args, **kwargs)
 
@@ -180,6 +192,7 @@ class ArchDecl(AstNode):
         typ: AstNode,
         name: AstNode,
         details: AstNode,
+        doc: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
@@ -188,6 +201,7 @@ class ArchDecl(AstNode):
         self.typ = typ
         self.name = name
         self.details = details
+        self.doc = doc
         super().__init__(*args, **kwargs)
 
 
@@ -317,12 +331,28 @@ class ArchBlock(AstNode):
 
     def __init__(
         self: "ArchBlock",
+        doc: AstNode,
         body: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize arch block node."""
+        self.doc = doc
         self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class ArchMembers(AstNode):
+    """ArchMembers node type for Jac Ast."""
+
+    def __init__(
+        self: "ArchMembers",
+        members: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize arch members node."""
+        self.members = members
         super().__init__(*args, **kwargs)
 
 
@@ -495,12 +525,28 @@ class CodeBlock(AstNode):
 
     def __init__(
         self: "CodeBlock",
-        body: list,
+        doc: AstNode,
+        body: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize code block node."""
+        self.doc = doc
         self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class StmtList(AstNode):
+    """StmtList node type for Jac Ast."""
+
+    def __init__(
+        self: "StmtList",
+        stmts: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize stmt list node."""
+        self.stmts = stmts
         super().__init__(*args, **kwargs)
 
 

@@ -34,9 +34,15 @@ class PyCodeGenPass(Pass):
 
     def exit_module(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert module to python code."""
+        if not is_blank(node.doc):
+            self.emit_ln(node, node.doc.py_code)
+        self.emit(node, node.body.py_code)
+        self.ir = node
+
+    def exit_elements(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Convert module to python code."""
         for i in node.elements:
             self.emit(node, i.py_code)
-        self.ir = node
 
     def exit_doc_string(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert doc_string to python code."""
@@ -44,9 +50,7 @@ class PyCodeGenPass(Pass):
 
     def exit_global_vars(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert global vars to python code."""
-        print(node)
         for i in node.values:
-            print(i)
             self.emit_ln(node, i.py_code)
 
     def exit_named_assign(self: "PyCodeGenPass", node: AstNode) -> None:
@@ -108,7 +112,6 @@ class PyCodeGenPass(Pass):
 
     def exit_base_classes(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert base classes to python code."""
-        print(node.kid)
         self.emit(node, ", ".join([i.value for i in node.base_classes]))
 
     # class AbilitySpec(AstNode):
@@ -119,9 +122,16 @@ class PyCodeGenPass(Pass):
 
     def exit_arch_block(self: "PyCodeGenPass", node: AstNode) -> None:
         """Exit arch block."""
-        for i in node.body:
-            self.emit(node, i.py_code)
+        if not is_blank(node.doc):
+            self.emit(node, node.doc.py_code)
+        if not is_blank(node.body):
+            self.emit(node, node.body.py_code)
         self.indent_level -= 1
+
+    def exit_arch_members(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Exit arch block."""
+        for i in node.members:
+            self.emit(node, i.py_code)
 
     # class HasStmt(AstNode):
     #     """HasStmt node type for Jac Ast."""

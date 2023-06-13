@@ -14,9 +14,17 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # All mighty start rule
     # ---------------------
-    @_("element_list")
+    @_("doc_tag element_list")
     def start(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Start rule."""
+        return p
+
+    @_(
+        "empty",
+        "DOC_STRING",
+    )
+    def doc_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Doc tag rule."""
         return p
 
     # Jac program structured as a list of elements
@@ -32,7 +40,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Element types
     # -------------
     @_(
-        "DOC_STRING",
         "global_var",
         "test",
         "mod_code",
@@ -206,7 +213,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     # ----------------
     @_(
         "LBRACE RBRACE",
-        "LBRACE member_stmt_list RBRACE",
+        "LBRACE doc_tag member_stmt_list RBRACE",
     )
     def member_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute block rule."""
@@ -223,7 +230,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "has_stmt",
         "can_stmt",
-        "DOC_STRING",
     )
     def member_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Attribute statement rule."""
@@ -367,7 +373,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "LBRACE RBRACE",
-        "LBRACE statement_list RBRACE",
+        "LBRACE doc_tag statement_list RBRACE",
     )
     def code_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Code block rule."""
@@ -775,7 +781,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         "INT",
         "FLOAT",
         "multistring",
-        "DOC_STRING",
         "BOOL",
         "NULL",
         "NAME",

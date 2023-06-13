@@ -12,23 +12,29 @@ class AstBuildPass(Pass):
 
     def exit_start(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build WHOLE_BUILD Ast node."""
-        node.kid = node.kid[0].kid
         self.ir = ast.Module(
-            elements=node.kid, parent=None, kid=node.kid, line=node.line
+            doc=node.kid[0],
+            body=node.kid[1],
+            parent=None,
+            kid=node.kid,
+            line=node.line,
         )
+
+    def exit_doc_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build DOC_TAG Ast node."""
+        if type(node.kid[0]) == ast.Token:
+            node.kid = [node.kid[0]]
+            update_kind(node, ast.DocString, value=node.kid[0])
 
     def exit_element_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Chain list together into actual list."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
+        update_kind(node, ast.Elements, elements=node.kid)
 
     def exit_element(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Replace element with its kid."""
-        if type(node.kid[0]) == ast.Token:
-            node.kid = [node.kid[0]]
-            update_kind(node, ast.DocString, value=node.kid[0])
-        else:
-            node = replace_node(node, node.kid[0])
+        node = replace_node(node, node.kid[0])
 
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build GLOBAL_VAR Ast node."""
@@ -247,18 +253,20 @@ class AstBuildPass(Pass):
 
     def exit_member_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ARCH_BLOCK Ast node."""
-        meta = {"body": []}
+        meta = {"doc": ast.Blank(), "body": ast.Blank()}
         if len(node.kid) <= 2:
             node.kid = []
         else:
-            node.kid = node.kid[1].kid
-            meta["body"] = node.kid
+            node.kid = [node.kid[1], node.kid[2]]
+            meta["doc"] = node.kid[0]
+            meta["body"] = node.kid[1]
         update_kind(node, ast.ArchBlock, **meta)
 
     def exit_member_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Chain list together into actual list."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
+        update_kind(node, ast.ArchMembers, members=node.kid)
 
     def exit_member_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Replace self with actual attr stmt."""
@@ -396,18 +404,20 @@ class AstBuildPass(Pass):
 
     def exit_code_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build CodeBlock Ast node."""
-        meta = {"body": []}
+        meta = {"doc": ast.Blank(), "body": ast.Blank()}
         if len(node.kid) <= 2:
             node.kid = []
         else:
-            node.kid = node.kid[1].kid
-            meta["body"] = node.kid
-        update_kind(node, ast.CodeBlock, body=node.kid)
+            node.kid = [node.kid[1], node.kid[2]]
+            meta["doc"] = node.kid[0]
+            meta["body"] = node.kid[1]
+        update_kind(node, ast.CodeBlock, **meta)
 
     def exit_statement_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build StatementList Ast node."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
+        update_kind(node, ast.StmtList, stmts=node.kid)
 
     def exit_statement(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Statement Ast node."""
