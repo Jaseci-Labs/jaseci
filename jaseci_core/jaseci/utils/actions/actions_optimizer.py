@@ -382,13 +382,16 @@ class ActionsOptimizer:
 
             if len(policy_state["remain_configs"]) == 0:
                 walker_runs = []
-                for walker, times in self.benchmark["requests"]["walker_run"].items():
-                    if walker == "_default_":
-                        continue
-                    else:
-                        walker_runs.extend(times)
+                if "walker_run" in self.benchmark["requests"]:
+                    for walker, times in self.benchmark["requests"][
+                        "walker_run"
+                    ].items():
+                        if walker == "_default_":
+                            continue
+                        else:
+                            walker_runs.extend(times)
 
-                avg_walker_lat = sum(walker_runs) / len(walker_runs)
+                    avg_walker_lat = sum(walker_runs) / len(walker_runs)
                 logger.info(f"===Auto Policy=== avg_walker_lat: {avg_walker_lat}")
                 logger.info(
                     f"""===Auto Policy===
