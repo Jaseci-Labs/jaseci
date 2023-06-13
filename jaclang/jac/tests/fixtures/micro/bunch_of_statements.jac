@@ -1,7 +1,9 @@
 """A mega example of a bunch of statements and expressions."""
 
+"""
+This function takes a list of numbers and returns a generator of even numbers.
+"""
 can example_function(numbers: list[int]): int {
-    """This function takes a list of numbers and returns a generator of even numbers""";
     # multi string
     print("this function processes the provided list."
           "It then yields the even numbers."
