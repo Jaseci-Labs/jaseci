@@ -738,8 +738,11 @@ output = f"i can do math {1+1}";
 ```jac
 """A mega example of a bunch of statements and expressions."""
 
+
 can example_function(numbers: list[int]): int {
-    """This function takes a list of numbers and returns a generator of even numbers""";
+    """
+    This function takes a list of numbers and returns a generator of even numbers.
+    """
     # multi string
     print("this function processes the provided list."
           "It then yields the even numbers."
@@ -793,7 +796,6 @@ with entry {
         }
     }
 }
-
 ```
 
 
