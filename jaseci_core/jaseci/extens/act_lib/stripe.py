@@ -2,65 +2,189 @@
 import stripe as s
 
 from jaseci.jsorc.jsorc import JsOrc
+from jaseci.utils.utils import logger
 from jaseci.extens.svc.stripe_svc import StripeService
 from datetime import datetime
 from jaseci.jsorc.live_actions import jaseci_action
 
 
 def stripe() -> s:
-    return JsOrc.svc("stripe", StripeService).poke()
+    _stripe = JsOrc.svc("stripe", StripeService)
+    if _stripe.is_running():
+        return _stripe.app
+    else:
+        logger.info(
+            "Stripe service is not running! Fallback to direct stripe call with required api key params."
+        )
+        return s
 
 
 @jaseci_action()
-def create_product(name: str, description: str, **kwargs):
+def create_product(name: str, **kwargs):
     """create product"""
 
-    return stripe().Product.create(name=name, description=description, **kwargs)
+    return stripe().Product.create(name=name, **kwargs)
 
 
 @jaseci_action()
 def create_product_price(
-    productId: str,
-    amount: int,
+    product: str,
+    unit_amount: int,
     currency: str,
-    recurring: dict = {},
     **kwargs,
 ):
-    """modify product price"""
+    """create product price"""
 
     return stripe().Price.create(
-        product=productId,
-        unit_amount=amount,
-        currency=currency,
-        **recurring if recurring else {},
-        **kwargs,
+        product=product, unit_amount=unit_amount, currency=currency, **kwargs
     )
 
 
 @jaseci_action()
-def product_list(detailed: bool = False, **kwargs):
+def product_list(**kwargs):
     """retrieve all producs"""
 
-    return stripe().Product.list(**{"active": True} if detailed else {}, **kwargs)
+    return stripe().Product.list(**kwargs)
 
 
 @jaseci_action()
-def create_customer(
-    email: str,
-    name: str,
-    address: dict = {},
-    **kwargs,
-):
+def create_customer(**kwargs):
     """create customer"""
 
-    return stripe().Customer.create(email=email, name=name, address=address, **kwargs)
+    return stripe().Customer.create(**kwargs)
+
+
+@jaseci_action()
+def update_customer(customer_id: str, **kwargs):
+    """update customer"""
+
+    return stripe().Customer.modify(customer_id, **kwargs)
 
 
 @jaseci_action()
 def get_customer(customer_id: str, **kwargs):
     """retrieve customer information"""
 
-    return stripe().Customer.retrieve(id=customer_id, **kwargs)
+    return stripe().Customer.retrieve(customer_id, **kwargs)
+
+
+@jaseci_action()
+def detach_payment_method(payment_method_id: str, **kwargs):
+    """detach payment method from customer"""
+
+    return stripe().PaymentMethod.detach(payment_method_id, **kwargs)
+
+
+@jaseci_action()
+def get_payment_methods(**kwargs):
+    """get customer list of payment methods"""
+
+    return stripe().PaymentMethod.list(**kwargs)
+
+
+@jaseci_action()
+def create_invoice(**kwargs):
+    """create customer invoice"""
+
+    return stripe().Invoice.create(**kwargs)
+
+
+@jaseci_action()
+def get_invoice_list(**kwargs):
+    """retrieve customer list of invoices"""
+
+    return stripe().Invoice.list(**kwargs)
+
+
+@jaseci_action()
+def get_payment_intents(**kwargs):
+    """get customer payment intents"""
+
+    return stripe().PaymentIntent.list(**kwargs)
+
+
+@jaseci_action()
+def create_payment_intents(amount: int, currency: str, **kwargs):
+    """Create customer payment"""
+
+    return stripe().PaymentIntent.create(amount=amount, currency=currency, **kwargs)
+
+
+@jaseci_action()
+def get_customer_subscription(**kwargs):
+    """retrieve customer subcription list"""
+
+    return stripe().Subscription.list(**kwargs)
+
+
+@jaseci_action()
+def get_subscriptions(**kwargs):
+    """list all customer's subcriptions"""
+
+    return stripe().Subscription.list(**kwargs)
+
+
+@jaseci_action()
+def get_subscription(subscription_id: str, **kwargs):
+    """retrieve customer subcription details"""
+
+    return stripe().Subscription.retrieve(id=subscription_id, **kwargs)
+
+
+@jaseci_action()
+def create_payment_method(type: str, **kwargs):
+    """create payment method"""
+
+    return stripe().PaymentMethod.create(type=type, **kwargs)
+
+
+@jaseci_action()
+def cancel_subscription(subscription_id: str, **kwargs):
+    """cancel customer subscription"""
+
+    return stripe().Subscription.delete(subscription_id, **kwargs)
+
+
+@jaseci_action()
+def get_invoice(invoice_id: str, **kwargs):
+    """get invoice information"""
+
+    return stripe().Invoice.retrieve(invoice_id, **kwargs)
+
+
+@jaseci_action()
+def create_usage_report(subscription_item_id: str, quantity: int, **kwargs):
+    """Create usage record"""
+
+    return stripe().SubscriptionItem.create_usage_record(
+        subscription_item_id, quantity=quantity, timestamp=datetime.now(), **kwargs
+    )
+
+
+@jaseci_action()
+def create_checkout_session(success_url: str, line_items: list, mode: str, **kwargs):
+    return stripe().checkout.Session.create(
+        success_url=success_url,
+        line_items=line_items,
+        mode=mode,
+        **kwargs,
+    )
+
+
+#################################################
+#            WITH PRE CUSTOM PROCESS            #
+#################################################
+
+
+@jaseci_action()
+def update_default_payment_method(customer_id: str, payment_method_id: str, **kwargs):
+    """update default payment method of customer"""
+
+    return update_customer(
+        customer_id,
+        invoice_settings={"default_payment_method": payment_method_id},
+        **kwargs,
+    )
 
 
 @jaseci_action()
@@ -81,106 +205,6 @@ def attach_payment_method(payment_method_id: str, customer_id: str, **kwargs):
     paymentMethod["is_default"] = is_default
 
     return paymentMethod
-
-
-@jaseci_action()
-def detach_payment_method(payment_method_id: str, **kwargs):
-    """detach payment method from customer"""
-
-    return stripe().PaymentMethod.detach(payment_method=payment_method_id, **kwargs)
-
-
-@jaseci_action()
-def get_payment_methods(customer_id: str, **kwargs):
-    """get customer list of payment methods"""
-
-    return stripe().PaymentMethod.list(customer=customer_id, type="card", **kwargs)
-
-
-@jaseci_action()
-def update_default_payment_method(customer_id: str, payment_method_id: str, **kwargs):
-    """update default payment method of customer"""
-
-    return stripe().Customer.modify(
-        sid=customer_id,
-        invoice_settings={"default_payment_method": payment_method_id},
-        **kwargs,
-    )
-
-
-@jaseci_action()
-def create_invoice(customer_id: str, **kwargs):
-    """create customer invoice"""
-
-    return stripe().Invoice.create(customer=customer_id, **kwargs)
-
-
-@jaseci_action()
-def get_invoice_list(
-    customer_id: str,
-    subscription_id: str = None,
-    starting_after: str = None,
-    limit: int = 10,
-    **kwargs,
-):
-    """retrieve customer list of invoices"""
-
-    return stripe().Invoice.list(
-        customer=customer_id,
-        limit=limit,
-        subscription=subscription_id,
-        **{"starting_after": starting_after} if starting_after else {},
-        **kwargs,
-    )
-
-
-@jaseci_action()
-def get_payment_intents(
-    customer_id: str, starting_after: str = "", limit: int = 10, **kwargs
-):
-    """get customer payment intents"""
-
-    return stripe().PaymentIntent.list(
-        customer=customer_id,
-        limit=limit,
-        **{"starting_after": starting_after} if starting_after else {},
-        **kwargs,
-    )
-
-
-@jaseci_action()
-def create_payment_intents(
-    customer_id: str,
-    amount: int,
-    currency: str,
-    payment_method_types: list = ["card"],
-    **kwargs,
-):
-    """Create customer payment"""
-
-    return stripe().PaymentIntent.create(
-        customer=customer_id,
-        amount=amount,
-        currency=currency,
-        payment_method_types=payment_method_types,
-        **kwargs,
-    )
-
-
-@jaseci_action()
-def get_customer_subscription(customer_id: str, **kwargs):
-    """retrieve customer subcription list"""
-
-    return stripe().Subscription.list(customer=customer_id, **kwargs)
-
-
-@jaseci_action()
-def create_payment_method(card_type: str, card: dict, billing_details: dict, **kwargs):
-    """create payment method"""
-
-    return stripe().PaymentMethod.create(
-        type=card_type, card=card, billing_details=billing_details, **kwargs
-    )
 
 
 @jaseci_action()
@@ -228,27 +252,6 @@ def create_subscription(
 
 
 @jaseci_action()
-def cancel_subscription(subscription_id: str, **kwargs):
-    """cancel customer subscription"""
-
-    return stripe().Subscription.delete(sid=subscription_id, **kwargs)
-
-
-@jaseci_action()
-def get_subscription(subscription_id: str, **kwargs):
-    """retrieve customer subcription details"""
-
-    return stripe().Subscription.retrieve(id=subscription_id, **kwargs)
-
-
-@jaseci_action()
-def get_subscriptions(**kwargs):
-    """list all customer's subcriptions"""
-
-    return stripe().Subscription.list(**kwargs)
-
-
-@jaseci_action()
 def update_subscription_item(
     subscription_id: str, subscription_item_id: str, price_id: str, **kwargs
 ):
@@ -263,35 +266,6 @@ def update_subscription_item(
                 "price": price_id,
             },
         ],
-        **kwargs,
-    )
-
-
-@jaseci_action()
-def get_invoice(invoice_id: str, **kwargs):
-    """get invoice information"""
-
-    return stripe().Invoice.retrieve(id=invoice_id, **kwargs)
-
-
-@jaseci_action()
-def create_usage_report(subscription_item_id: str, quantity: int, **kwargs):
-    """Create usage record"""
-
-    return stripe().SubscriptionItem.create_usage_record(
-        id=subscription_item_id, quantity=quantity, timestamp=datetime.now(), **kwargs
-    )
-
-
-@jaseci_action()
-def create_checkout_session(
-    success_url: str, cancel_url: str, line_items: list, mode: str, **kwargs
-):
-    return stripe().checkout.Session.create(
-        success_url=success_url,
-        cancel_url=cancel_url,
-        line_items=line_items,
-        mode=mode,
         **kwargs,
     )
 
