@@ -3,7 +3,7 @@
 object MyObj {
     has a: int;
 
-    can entry(a: int): None {
+    can init(a: int): None {
         here.a = a;
     }
 

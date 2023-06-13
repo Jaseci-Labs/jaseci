@@ -2,7 +2,7 @@
 
 object MyObj {
     prot: has a: int;
-    priv: can entry(a: int): None {
+    priv: can init(a: int): None {
         here.a = a;
     }
     pub: can set_a(val: int): None {

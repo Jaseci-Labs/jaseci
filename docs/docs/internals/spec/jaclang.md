@@ -213,7 +213,7 @@ object Bar {
     has a_list: list[int] = [1, 2, 3];
     has b_list: list[str] = ["5", "6", "7"];
 
-    can entry(): None {
+    can init(): None {
         for i in here.b_list {
             foo(5, i) |> print;
         }
@@ -237,7 +237,7 @@ Furthermore, Jac's approach aligns better with other object-oriented languages, 
 object MyObj {
     has a: int;
 
-    can entry(a: int): None {
+    can init(a: int): None {
         here.a = a;
     }
 
@@ -265,7 +265,7 @@ By transitioning from Python's underscore convention to the use of explicit keyw
 
 object MyObj {
     prot: has a: int;
-    priv: can entry(a: int): None {
+    priv: can init(a: int): None {
         here.a = a;
     }
     pub: can set_a(val: int): None {
@@ -287,11 +287,11 @@ This approach is particularly beneficial in large projects where different team 
 
 object MyObj {
     prot: has a: int;
-    priv: can entry(a: int): None;
+    priv: can init(a: int): None;
     pub: can set_a(val: int): None;
 }
 
-:o:MyObj:a:entry {
+:o:MyObj:a:init {
         here.a = a;
 }
 
@@ -312,7 +312,9 @@ In Jac, the import system allows for two types of imports - 'jac' imports and 'p
 
 Also note that Jac's import system uses Python's `.` and `..` syntax for path specification in both jac and py style imports. This allows for consistency with existing Python syntax and understanding, and provides a seamless transition for developers familiar with Python's import system.
 
-However, an important distinction lies in the elimination of wildcard imports like `from .mylib import *`, and its replacement with the `include` keyword. We view wildcarding as an issue of how to handle name visibility during standard imports. When a developer writes `include:jac .myjac;` or `include:py .mypy`, all element names within 'myjac' or 'mypy' are implicitly made available in the encompassing module. For instance, if an object named `Obj` exists within the included module, a developer can refer to `Obj` directly as `Obj` without the need to prefix it with `myjac.Obj`. This introduction of `include` alongside `import` promotes ease of use and cleaner syntax when dealing with imported modules. This nuanced flexibility aligns with Jac's philosophy of providing explicit and intentional programming syntax while still maintaining the familiarity of Python conventions.
+However, an important distinction lies in the elimination of wildcard imports like `from .mylib import *`, and its replacement with the `include` keyword. We view wildcarding as an issue of how to handle name visibility during standard imports. When a developer writes `include:jac .myjac;` or `include:py .mypy`, all element names within 'myjac' or 'mypy' are implicitly made available in the encompassing module. For instance, if an object named `Obj` exists within the included module, a developer can refer to `Obj` directly as `Obj` without the need to prefix it with `myjac.Obj`. Note however that the semantics of include are the same as import otherwise and do not behave like C/C++ includes. That is to mean a module is "executed" upon an include as with an import.
+
+This introduction of `include` alongside `import` promotes ease of use and cleaner syntax when dealing with imported modules. This nuanced flexibility aligns with Jac's philosophy of providing explicit and intentional programming syntax while still maintaining the familiarity of Python conventions.
 
 #### Minimal Code Example
 
@@ -321,7 +323,9 @@ However, an important distinction lies in the elimination of wildcard imports li
 
 import:py random;
 import:py from math, sqrt as square_root;  # list of as clauses comes at end
-import:py datetime;
+import:py datetime as dt;
+include:jac .main_defs;  # includes are useful when brigning definitions into scope
+import:jac from .lib, jactastic;
 
 with entry {  # code that executes on module load or script run
     random_number = random.randint(1, 10);
@@ -332,9 +336,11 @@ with entry {  # code that executes on module load or script run
     print("Square root:", s_root);
     # or, f"Square root: {s_root}" |> print;
 
-    current_time = datetime.datetime.now();
+    current_time = dt.datetime.now();
     print("Current time:", current_time);
     # or, f"Current time: {current_time}" |> print;
+
+    jactastic.Jactastic() |> print;
 }
 ```
 
@@ -345,8 +351,6 @@ In Jac, global variables are indicated using the `global` keyword. Similar to Py
 Supplementing the clear-cut design of Jac is the introduction of the global reference operator. With the potential for both global and local variables to share identical names, confusion may arise during code execution. To prevent this, the global reference operator can be used to unambiguously indicate that a global variable is being referred to.
 
 The global reference operator in Jac can be represented in two equivalent forms, either `:global:` or `:g:`. When a variable name is surrounded by this operator, it is a clear indication that the variable in question is a global one.
-
-
 
 Consider a scenario where you have a local and a global variable, both named `age`. If you simply call `age` in your code, it might be unclear or ambiguous whether you are referring to the local or global variable. However, by using the global reference operator `:global:age` or `:g:age` it becomes clear that you are explicitly referring to the global variable `age`.
 
@@ -371,21 +375,231 @@ can print_globs(): None {
 
 ### Module Level Free Coding in Jac
 
-For free code, or code that is not inside a function or method, we use a `with import {}` code block. While multiple blocks can be used if desired, we recommend sticking to a single block for readability and clarity.
+In Jac, the use of a `with entry {}` code block is designed to encapsulate free code. Free code is code that is not encapsulated within a function or method, allowing it to be executed at the global level of a program.
+
+These `with entry {}` blocks can be utilized multiple times within a module, similar to how Python allows interspersed code statements along with functions and classes. Although Jac provides the flexibility of having multiple blocks, it is recommended to maintain a single `with entry {}` block for the sake of clarity and readability. An issue with Python is it does not dissuade excessive scattering of free code in a module that can lead to a fractured codebase, making the code harder to understand and maintain.
+
+In Jac, even though the language permits free code, caution is strongly encouraged when deciding where and when to use these blocks. We view the `with entry {}` approach as an important improvement upon free code in pyton. It adds an additional layer of organization and readability. This results in a cleaner code base by providing a clear demarcation of code that is meant to be executed at the global level. This not only promotes the clarity of intention but also assists in maintaining a neat and tidy code structure. This is consistent with Jac's philosophy of facilitating clean, comprehensible code and explicit programming practices.
+
+#### Minimal Code Example
+```jac
+"""Organized free coding at module level."""
+
+object Obj1 {
+    has var: int;
+    can init {
+        here.var = 1;
+    }
+}
+
+# with entry {  # allowed but discouraged
+#    o1 = spawn Obj1; o1::init;
+# }
+
+object Obj2 {
+    has var: int;
+    can init {
+        here.var = 2;
+    }
+}
+
+# with entry {  # allowed but discouraged
+#     o2 = spawn Obj2; o2::init;
+# }
+
+object Obj3 {
+    has var: int;
+    can init {
+        here.var = 3;
+    }
+}
+
+# with entry {  # allowed but discouraged
+#     o3 = spawn Obj1; o3::init;
+# }
+
+with entry {
+    o1 = spawn Obj1; o1::init;
+    o2 = spawn Obj2; o2::init;
+    o3 = spawn Obj3; o3::init;
+    print(o1.var);
+    print(o2.var);
+    print(o3.var);
+}
+```
+### Functions in Jac
+
+In the Jac programming language, the `can` keyword is used in place of Python's `def` to declare a function, followed by the function's name, maintaining a structure similar to Python. Though the data spatial programming model doesn't need functions, the design decision to have these "module level can's" allows Python developers to transition to Jac smoothly, as the semantics and structures of Python's function definitions remain largely identical.
+
+One unique aspect of function handling in Jac is the introduction of `has` variables along with pythonic variable definitions. These variables behave similarly to static variables in languages like C/C++, Java, and C#. Unlike other variables that are reinitialized every time a function is called, a `has` variable retains its value between function calls, making it a valuable tool for certain programming tasks. Python does not natively support this concept of static variables, Jac rectifies this gap.
+
+Jac functions follows Python's dynamic typing approach inside the function's body. No type hints are required here. However, Jac does make type hints mandatory for function parameters to ensure type safety at function boundaries. Also, the type of the return value is required to be indicated in the function's signature. As an aside, A nice property of this approach is all variable types within functions are perfectly inferable, allowing strongly typed semantics without type specification in the body of the function and interestingly creating a foundation for new and interesting type semantics, though that is for future work.
+
+It is important to note that unlike Python, Jac does not support returning multiple values directly in its return statement. From our perspective, this design choice enhances readability by reducing potential ambiguities. Instead of returning multiple values, we suggest wrapping these values in a collection object like a list, tuple, set, or dict, depending on the use case. This aligns with Jac's aim to provide a more explicit, intuitive, and efficient programming experience.
+
+
 
 #### Minimal Code Example
 
-### Function Definitions in Jac
+```jac
+"""Functions in Jac."""
 
-Jac uses `func` instead of Python's `def` to declare a function. The function's name follows the `func` keyword, similar to Python's convention. The semantics and structure of function definitions are nearly identical to Python's, ensuring a seamless transition for Python developers.
+can factorial(n: int): int {
+    if n == 0 { return 1; }
+    else { return n * factorial(n-1); }
+}
 
-#### Minimal Code Example
+can factorial_recount(n: int): int {
+    has count = 0;  # static variable, state kept between calls
+    count += 1 |> print;  # += is a walrus style operator in Jac
+    if n == 0 { return 1; }
+    else { return n * factorial(n-1); }
+}
+```
+### Classes in Jac
 
-### Class Declarations in Jac
+In Jac, pythonic class declarations take on a slightly different syntax compared to Python, using the `object` keyword as opposed to `class`. This `object` notion along with a few others are key primitives in Jac's unique data spatial programming approach and capable of embodying various data spatial semantics. However, it also fully subsumes and maps to Python's class semantics so we discuss `object`s through this lens here. Later we'll delve into `object`s through a data spatial lens.
 
-Class declarations in Jac use `object` instead of Python's `class`. The constructor function in Jac is declared using `can entry()` instead of Python's `__init__`. This shift aligns with Jac's innovative approach to object-oriented programming, while still maintaining familiarity for Python developers.
+#### Constructor, spawning, and self referencing
+A slight departure from Python is the replacement of the `__init__` method with simply `init` in Jac. This `init` method serves as the constructor function in a Jac object, initiating the object's state. `init` can be made private using the `priv` keyword. There is also no need to specify the `self` keyword in method signatures. Instead, Jac implies its presence and uses of the `here` keyword to refer to the enclosing object instance.
 
-#### Minimal Code Example
+
+```jac
+"""Basic class implementation and spawning example."""
+
+object Person {
+    prot: has age: int;  # no need ot use `_age`
+    pub: has name: str;
+
+    priv: can init(name: str, age: int): None {
+        here.name = name;
+        here.age = age;
+    }
+
+    pub: can greet(): None {  # public is default if `pub` is not specified
+        print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
+    }
+}
+
+with entry {
+    my_guy = Person("John", 42);
+    my_guy.greet();
+}
+```
+
+In this example, we have a `Person` object with two properties: `name` and `age`. The `prot` keyword before `age` indicates that `age` is a protected property (only visible to it's class members and sub class members). Similarly, the `pub` keyword before `name` indicates that `name` is a public property (can be accessed via `.name` everywhere).
+
+The constructor function is declared using `priv: can init(name: str, age: int): None`. This `init` function initializes the `Person` object's state. The `priv` keyword denotes that `init` is a private method, meaning it can only be accessed within the `Person` object. The method takes two arguments: `name` and `age`.
+
+Inside the `init` method, we use the `here` keyword instead of `self`, which is traditionally used in Python. The `here` keyword refers to the instance of the `Person` object being manipulated, similar to how `self` works in Python.
+
+Next, we have the `greet` method, which is a public method as denoted by the `pub` keyword. This method prints a greeting message using the `name` and `age` properties.
+
+By switching from `self` to `here`, and from `__init__` to `init`, Jac brings a cleaner and more straightforward syntax for defining and initializing objects. With the introduction of access modifiers (`priv`, `prot` and `pub`), Jac provides a more robust system than `_` and `__` for encapsulating properties and methods within an object, aligning closer to other languages such as C++, Java, and C#. At the same time its all optional and up to the developer if they'd like a more pythonic less pedantic style ot implementation as per:
+
+```jac
+"""Bit more pythonic."""
+
+object Person {
+    has age: int, name: str;
+
+    can init(name: str, age: int): None {
+        here.name = name; here.age = age;
+    }
+
+    can greet(): None {
+        print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
+    }
+}
+
+with entry {
+    Person("John", 42).greet();
+}
+```
+#### Inheritance
+
+Inheritance is a fundamental principle of object-oriented programming that allows one class (or `object` in Jac) to inherit the properties and methods of another. This helps promote code reusability and can lead to a more logical, hierarchical object structure.
+
+Similar to Python, Jac allows for both single and multiple inheritance. Here's how you might define a simple single inheritance scenario:
+
+```jac
+"""Super simple example of inheritance."""
+
+object Parent {
+    can init(): None {
+        # Parent initialization
+    }
+    can speak(): None {
+        # Parent speaking
+    }
+}
+
+object Child:Parent {
+    can init(): None {
+        # Child initialization
+        :o:Parent.init();  # Initialize parent, :o: is alias for :object:
+    }
+}
+```
+
+In this example, `Child` is a subclass of `Parent` and inherits all properties and methods of `Parent`. This means instances of `Child` can also invoke the `speak()` method.
+
+Multiple inheritance, a concept where a class can inherit from more than one superclass, is also supported:
+
+```jac
+"""Example of multiple inheritance."""
+
+object Parent {
+    can init(): None {
+        # Parent initialization
+    }
+    can speak(): None {
+        # Parent speaking
+    }
+}
+
+object Mom:Parent {
+    can init(): None {
+        # Mom initialization
+        :o:Parent.init();
+    }
+    can calm(): None {
+        # Mom speaking
+    }
+}
+
+object Dad:Parent {
+    can init(): None {
+        # Dad initialization
+        :o:Parent.init();
+    }
+    can excite(): None {
+        # Dad speaking
+    }
+}
+
+object Child:Mom:Dad { #Child inherits from Mom and Dad
+    can init(): None {
+        # Child initialization
+        :o:Mom.init();
+        :o:Dad.init();
+    }
+}
+```
+
+In this case, `Child` is a subclass of both `Mom` and `Dad` and inherits all their methods. Therefore, instances of `Child` can invoke both `calm()` and `excite()` methods.
+
+When it comes to method overriding (i.e., a subclass providing a different implementation of a method already defined in its superclass), the subclass can simply define the method with the same name. If the method is called on the subclass, Jac will prioritize its own implementation over the inherited one.
+
+Furthermore, if a method in a superclass needs to be invoked from the subclass, it can be done using the object reference op `:o:` and the particular object type name, following the same convention as in Python. Super() is less explicit and potentially confusing so its not present in Jac at the moment (though this is under consideration for future versions).
+
+These inheritance semantics enable Jac to utilize the powerful constructs of object-oriented programming, providing a familiar and flexible paradigm for Python developers.
+#### Access modifiers
+Moreover, Jac introduces a robust system of access modifiers, unlike Python which relies on the `_` and `__` conventions. Jac's 'priv', 'prot', and 'pub' keywords provide explicit control over access levels to the properties and methods of an object. These keywords represent private, protected, and public access modifiers respectively, providing a level of encapsulation more akin to other languages such as C++ or Java.
+
+In summary, while Jac draws inspiration from Python's approach to object-oriented programming, it also introduces a range of enhanced features. From the shift from `class` to `object`, the introduction of the `entry` method, the replacement of `self` with `here`, and the provision of explicit access modifiers, Jac strives to provide a more expressive, intuitive, and robust approach to object-oriented programming.
+
+##### Minimal Code Example
 
 ### Exception Handling in Jac
 

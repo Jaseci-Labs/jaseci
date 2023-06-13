@@ -313,8 +313,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "KW_CAN KW_ENTRY func_decl code_block",
-        "KW_CAN KW_ENTRY func_decl SEMI",
         "KW_CAN NAME func_decl code_block",
         "KW_CAN NAME func_decl SEMI",
     )
@@ -956,10 +954,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Object type reference rule."""
         return p
 
-    @_(
-        "ABILITY_OP NAME",
-        "ABILITY_OP KW_ENTRY",
-    )  # Not a arch, used for ability_spec
+    @_("ABILITY_OP NAME")  # Not a arch, used for ability_spec
     def ability_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability reference rule."""
         return p
