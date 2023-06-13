@@ -409,6 +409,8 @@ class ActionsOptimizer:
                 self.benchmark["requests"] = {}
                 self.benchmark["active"] = True
                 self.apply_actions_change()
+                logger.info("==============================================")
+                logger.info(f"===Auto Policy=== policy_state: {policy_state}")
             else:
                 if (
                     policy_state["cur_config"] is None
@@ -432,11 +434,13 @@ class ActionsOptimizer:
                         f"===Auto Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
                     )
                 else:
+                    logger.info("==============================================")
                     logger.info(
                         f"""===Auto Policy===
                         \nprev_actions: {policy_state["prev_actions"]}
                         \nactions_calls: {list(self.actions_calls.keys())}"""  # noqa: E501
                     )
+                    logger.info("==============================================")
         if policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
