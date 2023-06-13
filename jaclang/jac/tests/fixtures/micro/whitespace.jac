@@ -9,5 +9,5 @@ with entry {  # a bit more python like
 
 with entry {  # very pythonic
     a = "hello";
-    b = len("hello");
+    b = len(a);
     print(b); }

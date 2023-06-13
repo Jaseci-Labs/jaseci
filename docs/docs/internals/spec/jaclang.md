@@ -188,7 +188,7 @@ with entry {  # a bit more python like
 
 with entry {  # very pythonic
     a = "hello";
-    b = len("hello");
+    b = len(a);
     print(b); }
 ```
 
@@ -414,7 +414,7 @@ Method abilities are reminiscent of traditional class methods in other programmi
 ### The Edge Architype
 ### The Walker Architype
 ### The Object Architype
-### Computeration via Traversing Graphs
+### Computation via Traversing Graphs
 ### Data In-Situ Programming
 ### Report
 ### Yield
