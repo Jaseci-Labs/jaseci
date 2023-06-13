@@ -207,6 +207,8 @@ class JacLexer(Lexer):
     NAME["return"] = "KW_RETURN"
     NAME["del"] = "KW_DELETE"
     NAME["try"] = "KW_TRY"
+    NAME["except"] = "KW_EXCEPT"
+    NAME["finally"] = "KW_FINALLY"
     NAME["in"] = "KW_IN"
     NAME["not"] = "NOT"
     NAME["anchor"] = "KW_ANCHOR"

@@ -603,13 +603,138 @@ These inheritance semantics enable Jac to utilize the powerful constructs of obj
 
 ### Exception Handling in Jac
 
-Jac Exceptions build directly upon Python's exceptions. Jac includes `try`, `except`, `finally` and `raise` keywords using the same semantics (and imported objects) as python.
+Jac Exceptions build directly upon Python's exceptions including `try`, `except`, `finally` and `raise` keywords using the same semantics (and imported Exception objects) as python. Jac also imports Python's hierarchy of exceptions with base class `Exception` and supporting the various built-ins like `IOError`, `ValueError`, `TypeError`, `IndexError`, and `KeyError`, etc. Users can define their own exceptions by creating a new subclass of the `Exception` class or any of its descendants.
+
+The `try` block wraps around a section of code for which exceptions will be checked. If an exception is raised in the `try` block, the flow of control immediately passes to an appropriate `except` block that handles that exception. If no exception is raised, the `except` blocks are skipped.
+
+Multiple `except` clauses can be defined to handle various types of exceptions. Each `except` clause specifies the type of exception it handles, and if an exception of that type or a subtype thereof is raised in the `try` block, that `except` clause handles it. An `except` clause with no exception type specified will catch all exceptions that are not caught by an earlier `except` clause.
+
+The `finally` keyword is used for specifying actions that must be executed regardless of whether an exception was raised or not. Code under the `finally` block will always execute after the `try` and `except` blocks, even if they include a `return`, `continue`, or `break` statement, or if an exception is raised that isn't caught.
+
+The `raise` keyword is used to trigger an exception manually and can be followed by the name of the exception to be raised.
 
 #### Minimal Code Example
+
+```jac
+"""Exception example in Jac."""
+
+can divide_numbers(a: float, b: float): float {
+    try {
+        result = a / b;
+    }
+    except ZeroDivisionError as e {
+        print("Error: Cannot divide by zero!", e);
+        result = None;
+        raise;  # Re-raise the exception
+    }
+    finally {
+        print("Division operation completed.");
+    }
+    return result;
+}
+
+with entry {
+    try {
+        numerator = int(input("Enter the numerator: "));
+        denominator = int(input("Enter the denominator: "));
+        result = divide_numbers(numerator, denominator);
+        print("Result:", result);
+    }
+    except ValueError {
+        print("Error: Invalid input! Please enter valid integers.");
+    }
+}
+```
 
 ### Code Statements amd Expressions in Jac
 
 For general code statements and expression, we provide an equivalency set that mirrors Python's structures. We've also expanded on the capabilities described here with the new language features that add additional functionality and flexibility to the Jac programming language. These are discussed in the next section (Purple Pill). Here we describe the basic equivalency set.
+
+#### Complete Set
+
+##### Assignment
+
+```jac
+a = 8+foo(9);
+```
+
+##### Expressions
+
+```jac
+data[5+3].foo(9);
+```
+##### Walrus (expanded)
+
+```jac
+a := b := 5;
+```
+
+##### Walrus (expanded set, introduced in Jac)
+```jac
+a += b *= 5 /= c;
+```
+
+##### If, Elif, Else
+```jac
+if a > b {print("a is greater than b");}
+elif a < b {print("a is less than b");}
+else {print("a is equal to b");}
+```
+##### For Loops
+```jac
+for fruit in ["apple", "banana", "cherry"] {fruit|>print;}
+```
+
+##### Iteration For Loops (introduced in Jac)
+```jac
+for i=0 to i<100 by i+=1 {i|>print;}
+```
+##### While Loops
+```jac
+i = 100;
+while i {
+    i|>print;
+    i-=1;
+}
+```
+
+##### Asserts
+```jac
+assert(mem_left!=0);
+```
+
+##### Control (Continues, Breaks)
+```jac
+for i=0 to i<100 by i+=1 {i|>print; if(i<50) {break;}}
+```
+
+##### Delete
+```jac
+delete mylist[4];
+```
+
+##### Return
+```jac
+return "I completed";
+```
+
+##### Yield
+```jac
+yield i-2;
+```
+
+##### Multistrings
+```jac
+output = "the first "
+         "and then second";
+```
+
+##### F-strings
+```jac
+output = f"i can do math {1+1}";
+```
+
+
 
 #### Minimal Code Example
 
