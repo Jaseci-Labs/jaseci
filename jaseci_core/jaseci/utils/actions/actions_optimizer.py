@@ -401,6 +401,13 @@ class ActionsOptimizer:
                     \nactions_calls: {self.actions_calls.keys()}
                     \n{policy_state['remain_configs']}"""
                 )
+                action_utilz = {}
+                for action in self.actions_calls.keys():
+                    action_utilz[action] = len(self.actions_calls[action])
+                    total_count = +len(self.actions_calls[action])
+                action_utilz["total_count"] = total_count
+                logger.info(f"===Auto Policy=== action_utilz: {action_utilz}")
+
                 policy_state["phase"] = "perf"
                 policy_state["cur_config"] = None
                 policy_state["past_configs"] = []
