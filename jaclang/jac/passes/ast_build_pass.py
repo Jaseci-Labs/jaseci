@@ -75,6 +75,7 @@ class AstBuildPass(Pass):
             "path": kid[2],
             "alias": ast.Blank(),
             "items": ast.Blank(),
+            "is_absorb": False,
         }
         if len(node.kid) == 7:
             meta["path"] = kid[3]
@@ -85,6 +86,19 @@ class AstBuildPass(Pass):
             node.kid = [kid[1], kid[2], kid[4]]
         else:
             node.kid = [kid[1], kid[2]]
+        update_kind(node, ast.Import, **meta)
+
+    def exit_include_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Include Ast node."""
+        kid = node.kid
+        meta = {
+            "lang": kid[1],
+            "path": kid[2],
+            "alias": ast.Blank(),
+            "items": ast.Blank(),
+            "is_absorb": True,
+        }
+        node.kid = [kid[1], kid[2]]
         update_kind(node, ast.Import, **meta)
 
     def exit_import_path(self: "AstBuildPass", node: ast.AstNode) -> None:

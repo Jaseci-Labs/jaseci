@@ -138,6 +138,7 @@ class Import(AstNode):
         path: AstNode,
         alias: AstNode,
         items: AstNode,
+        is_absorb: bool,  # For includes
         *args: list,
         **kwargs: dict,
     ) -> None:

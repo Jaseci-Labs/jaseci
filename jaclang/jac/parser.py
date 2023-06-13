@@ -37,6 +37,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "test",
         "mod_code",
         "import_stmt",
+        "include_stmt",
         "architype",
         "ability_spec",
     )
@@ -92,6 +93,11 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_IMPORT sub_name KW_FROM import_path COMMA name_as_list SEMI",
     )
     def import_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Import rule."""
+        return p
+
+    @_("KW_INCLUDE sub_name import_path SEMI")
+    def include_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Import rule."""
         return p
 

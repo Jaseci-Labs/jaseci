@@ -1,8 +1,10 @@
 """You can import python modules freely."""
 
 import:py random;
-import:py from math, sqrt as square_root;
-import:py datetime;
+import:py from math, sqrt as square_root;  # list of as clauses comes at end
+import:py datetime as dt;
+include:jac .main_defs;  # includes are useful when brigning definitions into scope
+import:jac from .lib, jactastic;
 
 with entry {  # code that executes on module load or script run
     random_number = random.randint(1, 10);
@@ -13,7 +15,9 @@ with entry {  # code that executes on module load or script run
     print("Square root:", s_root);
     # or, f"Square root: {s_root}" |> print;
 
-    current_time = datetime.datetime.now();
+    current_time = dt.datetime.now();
     print("Current time:", current_time);
     # or, f"Current time: {current_time}" |> print;
+
+    jactastic.Jactastic() |> print;
 }

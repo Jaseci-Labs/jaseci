@@ -34,7 +34,8 @@ class PyCodeGenPassTests(TestCase):
         ptree = self.prse.parse(self.lex.tokenize(self.load_fixture("fam.jac")))
         build_pass = self.builder.run(node=ptoa(ptree))
         code_gen = self.codegen.run(node=build_pass)
-        print(code_gen.py_code)
+        code_gen = code_gen
+        # print(code_gen.py_code)
 
     def test_pygen_module_structure(self: "PyCodeGenPassTests") -> None:
         """Basic test for pass."""

@@ -192,7 +192,7 @@ with entry {  # very pythonic
     print(b); }
 ```
 
-#### Typing System
+#### Type System
 
 While Python has dynamic typing with optional type hints, Jac takes it a small step further. Type hints in Jac are mandatory in function/method signatures and for object class member vairables. It's really not that much work, and provides key benefits of statically typed languages such as better code understanding, fewer programming errors and better performance. However, Jac still allows dynamic typing under the hood to be fully semantically interoperable with Python, and offer the pythonic flexibility of a dynamically typed language.
 
@@ -306,9 +306,13 @@ Jac provides a comprehensive mapping of Python's core language features, ensurin
 
 To ensure Jac provides a comprehensive coverage of Python's features, we provide analogous structures and functionalities for essential elements such as imports, global variables, free code at module level, Python-style function definitions, and Python-style class declarations, as well as a general mapping of code statements. Here, we detail these analogies.
 
-### Imports in Jac
+### Imports in Jac, and Introducing Include
 
-In Jac, there are two kinds of imports: `jac` imports and `py` imports. The syntax for the import path maps directly to Python. However, for `name as` type imports, the syntax is slightly changed with the `as` clause coming at the end. This subtle shift aligns with Jac's design philosophy of explicitness and readability.
+In Jac, the import system allows for two types of imports - 'jac' imports and 'py' imports, denoted as `import:jac ...` and `import:py ...` respectively. The syntax used for specifying the import paths is a direct mapping from the Python language's import syntax. This applies equally to both jac and py style imports. However, in Jac, the 'from' style imports have undergone a slight alteration, with the `name as new_name, ...` clauses being moved to the end of the sequence.
+
+Also note that Jac's import system uses Python's `.` and `..` syntax for path specification in both jac and py style imports. This allows for consistency with existing Python syntax and understanding, and provides a seamless transition for developers familiar with Python's import system.
+
+However, an important distinction lies in the elimination of wildcard imports like `from .mylib import *`, and its replacement with the `include` keyword. We view wildcarding as an issue of how to handle name visibility during standard imports. When a developer writes `include:jac .myjac;` or `include:py .mypy`, all element names within 'myjac' or 'mypy' are implicitly made available in the encompassing module. For instance, if an object named `Obj` exists within the included module, a developer can refer to `Obj` directly as `Obj` without the need to prefix it with `myjac.Obj`. This introduction of `include` alongside `import` promotes ease of use and cleaner syntax when dealing with imported modules. This nuanced flexibility aligns with Jac's philosophy of providing explicit and intentional programming syntax while still maintaining the familiarity of Python conventions.
 
 #### Minimal Code Example
 
@@ -316,7 +320,7 @@ In Jac, there are two kinds of imports: `jac` imports and `py` imports. The synt
 """You can import python modules freely."""
 
 import:py random;
-import:py from math, sqrt as square_root;
+import:py from math, sqrt as square_root;  # list of as clauses comes at end
 import:py datetime;
 
 with entry {  # code that executes on module load or script run
@@ -336,9 +340,34 @@ with entry {  # code that executes on module load or script run
 
 ### Global Variables in Jac
 
-To specify global variables in Jac, we use the `global` keyword, similar to Python. However, in line with Jac's design philosophy, we view each global variable as an element floating in the module, reinforcing Jac's explicit approach to variable declaration and scope.
+In Jac, global variables are indicated using the `global` keyword. Similar to Python, these globals can be defined anywhere within the module. However, Jac was created with an emphasis on clarity and intentional programming; thus, globals must be explicitly marked with the `global` keyword to ensure that developers are conscious of their decision to use a global scope, thereby preventing potential conflicts and misunderstandings.
 
+Supplementing the clear-cut design of Jac is the introduction of the global reference operator. With the potential for both global and local variables to share identical names, confusion may arise during code execution. To prevent this, the global reference operator can be used to unambiguously indicate that a global variable is being referred to.
+
+The global reference operator in Jac can be represented in two equivalent forms, either `:global:` or `:g:`. When a variable name is surrounded by this operator, it is a clear indication that the variable in question is a global one.
+
+
+
+Consider a scenario where you have a local and a global variable, both named `age`. If you simply call `age` in your code, it might be unclear or ambiguous whether you are referring to the local or global variable. However, by using the global reference operator `:global:age` or `:g:age` it becomes clear that you are explicitly referring to the global variable `age`.
+
+This addition strengthens Jac's philosophy of explicitness and intentionality. It allows developers to maintain clarity in their codebase, preventing potential bugs caused by scoping issues, and promoting a high level of code readability.
 #### Minimal Code Example
+
+```jac
+"""Globals are explicitly defined."""
+
+global age = 25, temperature = 98.6, name = "John Doe";
+global fruits = ["apple", "banana", "orange"];
+global person = {"name": "Alice", "age": 30, "city": "New York"};
+
+can print_globs(): None {
+    age = 30;
+    fruits = ["pear", "grape", "kiwi"];
+    print(:g:age, temperature, name);  # :g:<name> references global vs local
+    :global:fruits |> print;  # :g: and :global: are equivalent
+    person |> print;
+}
+```
 
 ### Module Level Free Coding in Jac
 
