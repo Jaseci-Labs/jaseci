@@ -402,9 +402,10 @@ class ActionsOptimizer:
                     \n{policy_state['remain_configs']}"""
                 )
                 action_utilz = {}
+                total_count = 0
                 for action in self.actions_calls.keys():
                     action_utilz[action] = len(self.actions_calls[action])
-                    total_count = +len(self.actions_calls[action])
+                    total_count += len(self.actions_calls[action])
                 action_utilz["total_count"] = total_count
                 logger.info(f"===Auto Policy=== action_utilz: {action_utilz}")
 
