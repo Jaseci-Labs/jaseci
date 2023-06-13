@@ -386,9 +386,8 @@ For general code statements and expression, we provide an equivalency set that m
 
 ## Red Pill: Concepts, Semantics, and Features for Realizing Data Spatial Programming
 
-### Main Architypes of Jac
-
-This section of the Jac language specification dives into the composition of its four primary architypes: objects, nodes, edges, and walkers. These architypes represent various categories of traditional class notions, each with its unique traits and functionalities.
+This section of the Jac language specification dives into the composition of how the data spatial programming model is achieved through Jac's four primary architypes: objects, nodes, edges, and walkers. These architypes represent various categories of the notion of a traditional class, each with its unique traits and functionalities.
+### Main Components of an Architype in Jac
 
 Across all architypes in Jac, there are three main types of fields: has variables, data spatial abilities, and method abilities.
 
@@ -410,6 +409,14 @@ This spatial ability to access and manipulate data, unique to Jac, aligns with t
 
 Method abilities are reminiscent of traditional class methods in other programming languages. They accept parameters and return values, providing a more conventional programming mechanism within Jac. However, just like has variables, these parameters and return types must also be explicitly defined. This requirement ensures type safety during method invocation, helping to prevent runtime errors.
 
-### Key new concept
 
-Each of Jac's architypes—object types, node types, edge types, and walker types—possesses these three main field types: has variables, data spatial abilities, and method abilities. This innovative blend of strict typing for variables and methods, along with data spatial programming concepts, forms the crux of Jac's robust and unique programming model. The interplay between the `here` and `visitor` references further accentuates Jac's commitment to facilitating a dynamic and intuitive data spatial programming experience.
+### The Node Architype
+### The Edge Architype
+### The Walker Architype
+### The Object Architype
+### Computeration via Traversing Graphs
+### Data In-Situ Programming
+### Report
+### Yield
+### Cross Invocation Persistence
+### The Sentinel
