@@ -357,10 +357,15 @@ class ActionsOptimizer:
         Check if the current system state has changed
         """
         curr_start_window = len(policy_state["prev_avg_walker_lat"]) - WINDOW_SIZE
+        curr_end_window = curr_start_window + WINDOW_SIZE
         prev_start_window = len(policy_state["prev_avg_walker_lat"]) - (WINDOW_SIZE + 1)
+        prev_end_window = prev_start_window + WINDOW_SIZE
+
         lat_change_pct = abs(
-            sum(policy_state["prev_avg_walker_lat"][prev_start_window:-2])
-            - sum(policy_state["prev_avg_walker_lat"][curr_start_window:])
+            sum(policy_state["prev_avg_walker_lat"][prev_start_window:prev_end_window])
+            - sum(
+                policy_state["prev_avg_walker_lat"][curr_start_window:curr_end_window]
+            )
         )
         if (lat_change_pct > THRESHOLD) or set(policy_state["prev_actions"]) != set(
             list(self.actions_calls.keys())
