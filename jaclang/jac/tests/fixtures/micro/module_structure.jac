@@ -21,7 +21,7 @@ walker travelor {  # define a new walker
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
-spawner myspawner {} # define a new spawner
+can myablty with int {} # define a data spacial freestyle ability
 
 can myfunc(): None {} # define a function
 

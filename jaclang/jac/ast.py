@@ -191,7 +191,6 @@ class ArchDecl(AstNode):
         access: AstNode,
         typ: AstNode,
         name: AstNode,
-        details: AstNode,
         doc: AstNode,
         *args: list,
         **kwargs: dict,
@@ -200,7 +199,6 @@ class ArchDecl(AstNode):
         self.access = access
         self.typ = typ
         self.name = name
-        self.details = details
         self.doc = doc
         super().__init__(*args, **kwargs)
 
@@ -223,12 +221,13 @@ class ArchDef(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class ObjectArch(AstNode):
+class Architype(AstNode):
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
-        self: "ObjectArch",
+        self: "Architype",
         name: AstNode,
+        typ: AstNode,
         access: AstNode,
         base_classes: AstNode,
         body: AstNode,
@@ -237,48 +236,56 @@ class ObjectArch(AstNode):
     ) -> None:
         """Initialize object arch node."""
         self.name = name
+        self.typ = typ
         self.access = access
         self.base_classes = base_classes
         self.body = body
         super().__init__(*args, **kwargs)
 
 
-class NodeArch(ObjectArch):
-    """NodeArch node type for Jac Ast."""
-
-
-class EdgeArch(ObjectArch):
-    """EdgeArch node type for Jac Ast."""
-
-
-class WalkerArch(ObjectArch):
-    """WalkerArch node type for Jac Ast."""
-
-
-class SpawnerArch(AstNode):
-    """SpawnerArch node type for Jac Ast."""
+class AbilityDecl(AstNode):
+    """AbilityDecl node type for Jac Ast."""
 
     def __init__(
-        self: "SpawnerArch",
-        name: AstNode,
+        self: "AbilityDecl",
         access: AstNode,
+        name: AstNode,
+        is_func: bool,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize ability decl node."""
+        self.access = access
+        self.name = name
+        self.is_func = is_func
+        super().__init__(*args, **kwargs)
+
+
+class AbilityDef(AstNode):
+    """AbilityDef node type for Jac Ast."""
+
+    def __init__(
+        self: "AbilityDef",
+        mod: AstNode,
+        arch: AstNode,
         body: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
-        """Initialize spawner arch node."""
-        self.name = name
-        self.access = access
+        """Initialize ability def node."""
+        self.mod = mod
+        self.arch = arch
         self.body = body
         super().__init__(*args, **kwargs)
 
 
-class FuncArch(AstNode):
+class Ability(AstNode):
     """FuncArch node type for Jac Ast."""
 
     def __init__(
-        self: "FuncArch",
+        self: "Ability",
         name: AstNode,
+        is_func: bool,
         access: AstNode,
         signature: AstNode,
         body: AstNode,
@@ -287,6 +294,7 @@ class FuncArch(AstNode):
     ) -> None:
         """Initialize func arch node."""
         self.name = name
+        self.is_func = is_func
         self.access = access
         self.signature = signature
         self.body = body
@@ -1221,10 +1229,6 @@ class EdgeRef(GlobalRef):
 
 class WalkerRef(GlobalRef):
     """WalkerRef node type for Jac Ast."""
-
-
-class SpawnerRef(GlobalRef):
-    """SpawnerRef node type for Jac Ast."""
 
 
 class FuncRef(GlobalRef):

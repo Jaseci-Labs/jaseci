@@ -46,7 +46,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         "import_stmt",
         "include_stmt",
         "architype",
-        "ability_spec",
+        "ability",
+        "sub_ability_spec",
     )
     def element(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Element rule."""
@@ -159,8 +160,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         "access_tag KW_EDGE NAME inherited_archs member_block",
         "access_tag KW_OBJECT NAME inherited_archs member_block",
         "access_tag KW_WALKER NAME inherited_archs member_block",
-        "access_tag KW_SPAWNER NAME code_block",
-        "access_tag KW_CAN NAME func_decl code_block",
     )
     def architype_full_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
@@ -171,16 +170,14 @@ class JacParser(JacParseErrorMixIn, Parser):
         "access_tag KW_EDGE NAME inherited_archs SEMI",
         "access_tag KW_OBJECT NAME inherited_archs SEMI",
         "access_tag KW_WALKER NAME inherited_archs SEMI",
-        "access_tag KW_SPAWNER NAME SEMI",
-        "access_tag KW_CAN NAME func_decl SEMI",
     )
     def architype_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype declaration rule."""
         return p
 
     @_(
-        "arch_ref member_block",
-        "NAME arch_ref member_block",
+        "strict_arch_ref member_block",
+        "NAME strict_arch_ref member_block",
     )
     def architype_def(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
@@ -199,13 +196,50 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Sub name rule."""
         return p
 
+    # Ability elements
+    # ----------------
     @_(
-        "arch_ref ability_ref code_block",
-        "arch_ref ability_ref func_decl code_block",
-        "NAME arch_ref ability_ref code_block",
-        "NAME arch_ref ability_ref func_decl code_block",
+        "ability_full_spec",
+        "ability_decl",
+        "ability_def",
     )
-    def ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability rule."""
+        return p
+
+    @_(
+        "access_tag KW_CAN NAME code_block",
+        "access_tag KW_CAN NAME KW_WITH type_name code_block",
+        "access_tag KW_CAN NAME func_decl code_block",
+    )
+    def ability_full_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability rule."""
+        return p
+
+    @_(
+        "access_tag KW_CAN NAME SEMI",
+        "access_tag KW_CAN NAME KW_WITH type_name SEMI",
+        "access_tag KW_CAN NAME func_decl SEMI",
+    )
+    def ability_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Ability declaration rule."""
+        return p
+
+    @_(
+        "ability_ref code_block",
+        "NAME ability_ref code_block",
+    )
+    def ability_def(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Architype definition rule."""
+        return p
+
+    @_(
+        "strict_arch_ref ability_ref code_block",
+        "strict_arch_ref ability_ref func_decl code_block",
+        "NAME strict_arch_ref ability_ref code_block",
+        "NAME strict_arch_ref ability_ref func_decl code_block",
+    )
+    def sub_ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
 
@@ -921,12 +955,21 @@ class JacParser(JacParseErrorMixIn, Parser):
         "node_ref",
         "edge_ref",
         "walker_ref",
-        "spawner_ref",
         "object_ref",
         "ability_ref",
     )
     def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
+        return p
+
+    @_(
+        "node_ref",
+        "edge_ref",
+        "walker_ref",
+        "object_ref",
+    )
+    def strict_arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Strict Architype reference rule."""
         return p
 
     @_("NODE_OP NAME")
@@ -944,17 +987,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Walker reference rule."""
         return p
 
-    @_("SPAWNER_OP NAME")
-    def spawner_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawner reference rule."""
-        return p
-
     @_("OBJECT_OP NAME")
     def object_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Object type reference rule."""
         return p
 
-    @_("ABILITY_OP NAME")  # Not a arch, used for ability_spec
+    @_("ABILITY_OP NAME")
     def ability_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability reference rule."""
         return p

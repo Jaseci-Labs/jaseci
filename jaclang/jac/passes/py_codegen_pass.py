@@ -88,7 +88,7 @@ class PyCodeGenPass(Pass):
     # class ArchDecl(AstNode):
     # class ArchDef(AstNode):
 
-    def exit_object_arch(self: "PyCodeGenPass", node: AstNode) -> None:
+    def exit_architype(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert object arch to python code."""
         if is_blank(node.base_classes):
             self.emit_ln(node, f"class {node.name.py_code}:")
@@ -102,7 +102,6 @@ class PyCodeGenPass(Pass):
     # class NodeArch(ObjectArch):
     # class EdgeArch(ObjectArch):
     # class WalkerArch(ObjectArch):
-    # class SpawnerArch(AstNode):
 
     def exit_func_arch(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert func arch to python code."""
@@ -934,9 +933,6 @@ class PyCodeGenPass(Pass):
 
     # class WalkerRef(GlobalRef):
     #     """WalkerRef node type for Jac Ast."""
-
-    # class SpawnerRef(GlobalRef):
-    #     """SpawnerRef node type for Jac Ast."""
 
     # class FuncRef(GlobalRef):
     #     """FuncRef node type for Jac Ast."""

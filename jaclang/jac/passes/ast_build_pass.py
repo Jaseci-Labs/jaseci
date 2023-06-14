@@ -152,45 +152,14 @@ class AstBuildPass(Pass):
 
     def exit_architype_full_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build various architype Ast nodes."""
-        if node.kid[1].name == "KW_SPAWNER":
-            del node.kid[1]
-            update_kind(
-                node,
-                ast.SpawnerArch,
-                access=node.kid[0],
-                name=node.kid[1],
-                body=node.kid[2],
-            )
-        elif node.kid[1].name == "KW_CAN":
-            del node.kid[1]
-            update_kind(
-                node,
-                ast.FuncArch,
-                access=node.kid[0],
-                name=node.kid[1],
-                signature=node.kid[2],
-                body=node.kid[3],
-            )
-        else:
-            meta = {"access": node.kid[0]}
-            if node.kid[1].name == "KW_NODE":
-                meta["kind"] = ast.NodeArch
-            elif node.kid[1].name == "KW_EDGE":
-                meta["kind"] = ast.EdgeArch
-            elif node.kid[1].name == "KW_OBJECT":
-                meta["kind"] = ast.ObjectArch
-            elif node.kid[1].name == "KW_WALKER":
-                meta["kind"] = ast.WalkerArch
-            meta["name"] = node.kid[2]
-            node.kid = [
-                node.kid[0],
-                node.kid[2],
-                node.kid[3],
-                node.kid[4],
-            ]
-            meta["base_classes"] = node.kid[2]
-            meta["body"] = node.kid[3]
-            update_kind(node, **meta)
+        meta = {
+            "access": node.kid[0],
+            "typ": node.kid[1],
+            "name": node.kid[2],
+            "base_classes": node.kid[3],
+            "body": node.kid[4],
+        }
+        update_kind(node, ast.Architype, **meta)
 
     def exit_architype_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ArchDecl Ast node."""
@@ -201,7 +170,6 @@ class AstBuildPass(Pass):
             access=node.kid[0],
             typ=node.kid[1],
             name=node.kid[2],
-            details=node.kid[3] if len(node.kid) == 4 else ast.Blank(),
         )
 
     def exit_architype_def(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -226,7 +194,52 @@ class AstBuildPass(Pass):
         """Build SUB_NAME Ast node."""
         replace_node(node, node.kid[1])
 
-    def exit_ability_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Ability Ast node."""
+        replace_node(node, node.kid[0])
+
+    def exit_ability_full_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build various ability Ast nodes."""
+        del node.kid[1]
+        meta = {
+            "access": node.kid[0],
+            "name": node.kid[1],
+            "body": node.kid[-1],
+            "signature": ast.Blank(),
+            "is_func": False,
+        }
+        if len(node.kid) > 3:
+            meta["signature"] = node.kid[-2]
+            if type(node.kid[-2]) == ast.MethodSignature:
+                meta["is_func"] = True
+        update_kind(node, ast.Ability, **meta)
+
+    def exit_ability_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AbilityDecl Ast node."""
+        del node.kid[1]
+        del node.kid[-1]
+        meta = {
+            "access": node.kid[0],
+            "name": node.kid[1],
+            "is_func": False,
+        }
+        if len(node.kid) > 2:
+            meta["signature"] = node.kid[-1]
+            if type(node.kid[-1]) == ast.MethodSignature:
+                meta["is_func"] = True
+        update_kind(node, ast.AbilityDecl, **meta)
+
+    def exit_ability_def(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build AbilityDef Ast node."""
+        update_kind(
+            node,
+            ast.AbilityDef,
+            mod=node.kid[0] if len(node.kid) == 3 else ast.Blank(),
+            ability=node.kid[1] if len(node.kid) == 3 else node.kid[0],
+            body=node.kid[3] if len(node.kid) == 3 else node.kid[1],
+        )
+
+    def exit_sub_ability_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build AbilitySpec Ast node."""
         meta = {}
         if node.kid[0].name == "NAME":
@@ -975,6 +988,10 @@ class AstBuildPass(Pass):
         """Build ArchRef Ast node."""
         replace_node(node, node.kid[0])
 
+    def exit_strict_arch_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build strict ArchRef Ast node."""
+        replace_node(node, node.kid[0])
+
     def exit_node_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build NodeRef Ast node."""
         node.kid = [node.kid[-1]]
@@ -989,11 +1006,6 @@ class AstBuildPass(Pass):
         """Build WalkerRef Ast node."""
         node.kid = [node.kid[-1]]
         update_kind(node, ast.WalkerRef, name=node.kid[-1])
-
-    def exit_spawner_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build SpawnerRef Ast node."""
-        node.kid = [node.kid[-1]]
-        update_kind(node, ast.SpawnerRef, name=node.kid[-1])
 
     def exit_object_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ObjectRef Ast node."""
