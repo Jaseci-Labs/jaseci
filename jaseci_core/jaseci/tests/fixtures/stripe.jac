@@ -153,9 +153,9 @@ walker get_invoice {
 
 walker create_usage_report {
     has subscription_id = "sub_1MTgMQCZO78n7fsZqu1dk6nD", quantity = 12;
-    can stripe.subscription_item_create_usage_report;
+    can stripe.subscription_item_create_usage_record;
 
-    stripe.subscription_item_create_usage_report(subscription_id, quantity);
+    stripe.subscription_item_create_usage_record(subscription_id, quantity);
 }
 
 walker create_checkout_session {

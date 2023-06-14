@@ -169,7 +169,7 @@ def invoice_retrieve(invoice_id: str, **kwargs):
 
 
 @jaseci_action()
-def subscription_item_create_usage_report(
+def subscription_item_create_usage_record(
     subscription_item_id: str, quantity: int, **kwargs
 ):
     """Create usage record"""
