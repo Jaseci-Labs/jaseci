@@ -359,7 +359,7 @@ class ActionsOptimizer:
         curr_start_window = len(policy_state["prev_avg_walker_lat"]) - WINDOW_SIZE
         prev_start_window = len(policy_state["prev_avg_walker_lat"]) - (WINDOW_SIZE + 1)
         lat_change_pct = abs(
-            sum(policy_state["prev_avg_walker_lat"][prev_start_window:])
+            sum(policy_state["prev_avg_walker_lat"][prev_start_window:-2])
             - sum(policy_state["prev_avg_walker_lat"][curr_start_window:])
         )
         if lat_change_pct > THRESHOLD:
@@ -409,7 +409,7 @@ class ActionsOptimizer:
                 "prev_avg_walker_lat": [],
                 "call_counter": 0,  # counter for number of calls
             }
-        if policy_state["call_counter"] <= WINDOW_SIZE:
+        if policy_state["call_counter"] < WINDOW_SIZE:
             # Increment the call counter
             policy_state["call_counter"] += 1
             logger.info(
