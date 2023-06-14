@@ -1075,6 +1075,28 @@ class DictVal(AstNode):
         super().__init__(*args, **kwargs)
 
 
+class Comprehension(AstNode):
+    """Comprehension node type for Jac Ast."""
+
+    def __init__(
+        self: "Comprehension",
+        key_expr: AstNode,
+        out_expr: AstNode,
+        name: AstNode,
+        collection: AstNode,
+        conditional: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize comprehension expression node."""
+        self.key_expr = key_expr
+        self.out_expr = out_expr
+        self.name = name
+        self.collection = collection
+        self.conditional = conditional
+        super().__init__(*args, **kwargs)
+
+
 class KVPair(AstNode):
     """ExprKVPair node type for Jac Ast."""
 

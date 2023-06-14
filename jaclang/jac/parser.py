@@ -779,6 +779,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "list_val",
         "dict_val",
         # sets and tuples are supported through the pipe forward semantic
+        "comprehension",
     )
     def atom_collection(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom rule."""
@@ -816,6 +817,16 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def dict_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Production for dictionary value rule."""
+        return p
+
+    @_(
+        "LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE",
+        "LSQUARE expression COLON expression KW_FOR NAME KW_IN walrus_assign RSQUARE",
+        "LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE",
+        "LSQUARE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE",
+    )
+    def comprehension(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Comprehension rule."""
         return p
 
     @_(

@@ -855,6 +855,34 @@ class AstBuildPass(Pass):
             node.kid = []
         update_kind(node, ast.DictVal, kv_pairs=node.kid)
 
+    def exit_comprehension(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Comprehension Ast node."""
+        meta = {
+            "key_expr": ast.Blank(),
+            "out_expr": ast.Blank(),
+            "name": ast.Blank(),
+            "collection": ast.Blank(),
+            "conditional": ast.Blank(),
+        }
+        if node.kid[2].name == "COLON":
+            meta["key_expr"] = node.kid[1]
+            meta["out_expr"] = node.kid[3]
+            meta["name"] = node.kid[5]
+            meta["collection"] = node.kid[7]
+        else:
+            meta["out_expr"] = node.kid[1]
+            meta["name"] = node.kid[3]
+            meta["collection"] = node.kid[5]
+        if node.kid[-3].name == "KW_IF":
+            meta["conditional"] = node.kid[-2]
+        if len(node.kid) == 7:
+            node.kid = [node.kid[1], node.kid[3], node.kid[5]]
+        elif len(node.kid) == 9:
+            node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7]]
+        elif len(node.kid) == 11:
+            node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7], node.kid[9]]
+        update_kind(node, ast.Comprehension, **meta)
+
     def exit_kv_pairs(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build KVPairs Ast node."""
         if len(node.kid) == 3:
