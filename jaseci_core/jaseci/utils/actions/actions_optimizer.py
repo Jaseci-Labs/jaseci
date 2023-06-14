@@ -370,7 +370,8 @@ class ActionsOptimizer:
                 f"""===walker latency changes===
                 \nlat_change_pct: {lat_change_pct}
                 \nprev_actions: {policy_state["prev_actions"]}
-                \nactions_calls: {list(self.actions_calls.keys())}need to kick in evaluation"""
+                \nactions_calls: {list(self.actions_calls.keys())}
+                \nneed to kick in evaluation"""
             )
             return True
         else:
