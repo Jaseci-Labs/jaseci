@@ -54,6 +54,7 @@ walker tourist {
         a = spawn :g:stuff:w:tourist;
         a = spawn :w:tourist;
         :g:stuff:w:tourist |> here;
+        {here, other} |> foo;
         report here.activities;
     }
 

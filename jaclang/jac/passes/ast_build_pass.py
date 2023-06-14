@@ -902,7 +902,7 @@ class AstBuildPass(Pass):
         node.kid = [node.kid[1]]
         update_kind(node, ast.DSCall, **meta)  # target updated in atomic call
 
-    def exit_func_call(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_func_call_tail(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build FuncCall Ast node."""
         if len(node.kid) == 2:
             replace_node(node, ast.Blank())

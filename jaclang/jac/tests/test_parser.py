@@ -18,7 +18,9 @@ class TestParser(TestCase):
     def parse_micro(self: "TestParser", filename: str) -> None:
         """Parse micro jac file."""
         self.prse.cur_file = filename
-        self.prse.parse(self.lex.tokenize(self.load_fixture(f"micro/{filename}")))
+        self.prse.parse(
+            self.lex.tokenize(self.load_fixture(f"micro/{filename}")), filename=filename
+        )
         self.assertFalse(self.prse.had_error)
 
     @classmethod
@@ -42,7 +44,9 @@ class TestParser(TestCase):
 
     def test_basci_parsing(self: "TestParser") -> None:
         """Basic test for parsing."""
-        output = self.prse.parse(self.lex.tokenize(self.load_fixture("fam.jac")))
+        output = self.prse.parse(
+            self.lex.tokenize(self.load_fixture("fam.jac")), filename="fam.jac"
+        )
         self.assertFalse(self.prse.had_error)
         self.assertGreater(len(str(output)), 1000)
 

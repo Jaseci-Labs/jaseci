@@ -609,6 +609,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "elvis_check PIPE_FWD pipe",  # casting achieved here
         "elvis_check PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
         "elvis_check PIPE_FWD spawn_ctx",  # for rapid assignments to collections
+        "spawn_ctx PIPE_FWD pipe",  # for function calls
     )
     def pipe(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Expression rule."""
@@ -853,7 +854,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "atom func_call",
+        "atom func_call_tail",
         "atom ds_call",
     )
     def atomic_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -869,7 +870,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LPAREN RPAREN",
         "LPAREN param_list RPAREN",
     )
-    def func_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def func_call_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Rule for function calls."""
         return p
 
@@ -1027,7 +1028,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Filter context rule."""
         return p
 
-    @_("LPAREN assignment_list RPAREN")
+    @_("LBRACE param_list RBRACE")
     def spawn_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Spawn context rule."""
         return p
