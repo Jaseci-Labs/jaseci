@@ -821,9 +821,9 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE",
-        "LSQUARE expression COLON expression KW_FOR NAME KW_IN walrus_assign RSQUARE",
+        "LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE",
         "LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE",
-        "LSQUARE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE",
+        "LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE",
     )
     def comprehension(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Comprehension rule."""

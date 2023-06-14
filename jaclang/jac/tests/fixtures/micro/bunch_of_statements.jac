@@ -14,8 +14,8 @@ can example_function(numbers: list[int]): int {
     counter = 0;
     even_numbers = [];
 
-    # for loop
-    for number in numbers {
+    # for loop and comprehension
+    for number in [i+1 for i in numbers] {
         # walrus operation (assignment expressions, appears Python 3.8 and later, and Jac!)
         # if (result := number % 2) == 0 {  # Python compaitble version
         if (result %= 2) == 0 { # Jac improved version
