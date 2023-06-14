@@ -78,7 +78,7 @@ Beyond the key architypes, a Jac module incorporates several additional element 
 
 1. **Abilities Definitions**: Abilities can manifest as either traditional OOP-style methods or data spatial-specific abilities. These abilities give object types, node types, edge types, and walker types the capacity to perform tasks or computations.
 
-1. **Spawners**: Spawners are like functions but with a data-spatial twist. They execute and return values like function however instead of taking parameters, spawners are sent to the data they need to process and leverage a duck typing philosophy to their execution. They can be thought of as mobile computation units that are dispatched to data elements, and the can be spawned on any type including, objects, dictionaries, lists, etc.
+1. **Freestyle Abilities**: Freestyle Abilities are like functions but with a data-spatial twist. They execute and return values like function however instead of taking parameters, freestyle abilitys are sent to the data they need to process and leverage a duck typing philosophy to their execution. They can be thought of as mobile computation units that are dispatched to data elements, and the can be spawned on any type including, objects, dictionaries, lists, etc.
 
 
 1. **Global Variable Definitions**: Global variables can be declared and defined within a module. These are accessible throughout the module's scope. However, Jac's design philosophy mildly discourages extensive reliance on globals. This discouragement stems from a desire to enhance modularity and encapsulation, promote code readability, and support codebase scalability. Overuse of global variables can lead to tightly coupled, less maintainable code.
@@ -114,7 +114,7 @@ walker travelor {  # define a new walker
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
-spawner myspawner {} # define a spawner
+can myablty with int {} # define a data spacial freestyle ability
 
 can myfunc(): None {} # define a function
 
@@ -850,7 +850,7 @@ with entry {
 
 This section describes the cutting-edge features introduced by Jac that enhance and refine traditional programming concepts. This section is designed to offer you an in-depth exploration of these novel features, their syntactical implementation, and the added benefits they bring to the coding experience. By leveraging these features, you can develop efficient, robust, and maintainable software solutions. Here we give Python wings!
 
-In this Purple Pill spec, a range of innovative features including the Pipe Forward Operator, Null Safe Operators, the Elvis Operator, Spawners, Freestyle Spawn and Filter Contexts, Enhanced Walrus Operations, and advancements in Dict and Duck Typing. Each feature is designed to build upon traditional programming paradigms, integrating seamlessly with the existing Jac language structure, while offering improved readability, functionality, brevity and performance. Let's delve into these features one by one.
+In this Purple Pill spec, a range of innovative features including the Pipe Forward Operator, Null Safe Operators, the Elvis Operator, Freestyle Abilities, Freestyle Spawn and Filter Contexts, Enhanced Walrus Operations, and advancements in Dict and Duck Typing. Each feature is designed to build upon traditional programming paradigms, integrating seamlessly with the existing Jac language structure, while offering improved readability, functionality, brevity and performance. Let's delve into these features one by one.
 
 ### Null Safe Operators
 
@@ -1045,29 +1045,29 @@ Overall, spawn contexts in Jac provide a versatile toolset for handling and tran
 
 ##### Another Foundational Construct in Jac
 
-Spawn contexts is another key primitive construct that assists with data spatial programming. In advanced use-cases such as with spawners and walkers (to be detailed later), you can leverage spawn contexts to create transient faux objects and nodes.
+Spawn contexts is another key primitive construct that assists with data spatial programming. In advanced use-cases such as with freestyle abilitys and walkers (to be detailed later), you can leverage spawn contexts to create transient faux objects and nodes.
 
 For now simply note that spawn contexts are functionally intertwined with the use of pipe forwards (`|>`) as demonstrated in all examples above. In addition, spawn contexts also have a tight functional relationship with the `spawn` keyword, which will be introduced in the very next section of this specification.
 
-### Spawners
+### Freestyle Abilities
 
-The **spawner** is the simplest data spatial programming construct in Jac and a keystone concept to introduce in the language. Spawners encapsulates Jac's innovative perspective on the treatment of data. Unlike conventional functions, which receive data through parameters, conceptually, a spawner leaps to the data in some location, operating on it there, and then returning a value. In this sense, a spawner is dispatched to the data it needs, leaping from one location to another in a spatial view of data.
+The **freestyle ability** is the simplest data spatial programming construct in Jac and a keystone concept to introduce in the language. Freestyle Abilities encapsulates Jac's innovative perspective on the treatment of data. Unlike conventional functions, which receive data through parameters, conceptually, a freestyle ability leaps to the data in some location, operating on it there, and then returning a value. In this sense, a freestyle ability is dispatched to the data it needs, leaping from one location to another in a spatial view of data.
 
-One of the fundamental aspects of a spawner is its reliance on the `here` reference. `here` allows a spawner to interact with the data present at the "location" it was spawned. As mentioned in the Blue Pill section `here` is analogously to the `self` keyword in the context of a class in python, and in this context, it allows the spawner to access and manipulate the data it resides on.
+One of the fundamental aspects of a freestyle ability is its reliance on the `here` reference. `here` allows a freestyle ability to interact with the data present at the "location" it was spawned. As mentioned in the Blue Pill section `here` is analogously to the `self` keyword in the context of a class in python, and in this context, it allows the freestyle ability to access and manipulate the data it resides on.
 
-Here is a basic spawner definition:
+Here is a basic freestyle ability definition:
 
 ```jac
-spawner calculate_avg {
+can calculate_avg with float {
     sum = 0
     for i in here.array:
         sum += i
     return sum/len(here.array)
 }
 ```
-In this example, the spawner `calculate_avg` is designed to calculate the average of an array. Note that it does not take parameters but uses `here` to reference the object it is currently residing on. This spawner expects the object it's being spawned on to have a field named `array`.
+In this example, the freestyle ability `calculate_avg` is designed to calculate the average of an array. Note that it does not take parameters but uses `here` to reference the object it is currently residing on. This freestyle ability expects the object it's being spawned on to have a field named `array`.
 
-To invoke the spawner, the `spawn` keyword is used, followed by the target object and the name of the spawner. The syntax is `spawn to <object>, :s:<spawner_name>`.
+To invoke the freestyle ability, the `spawn` keyword is used, followed by the target object and the name of the freestyle ability. The syntax is `spawn to <object>, :s:<freestyle ability_name>`.
 
 Consider the following object:
 
@@ -1077,21 +1077,21 @@ obj = {
 }
 ```
 
-Invoking the spawner on this object would look as follows:
+Invoking the freestyle ability on this object would look as follows:
 
 ```jac
 avg = spawn to obj, :s:calculate_avg
 ```
 
-The `calculate_avg` spawner is sent to the `obj` object. The spawner then accesses the fields of the object using the `here` reference, processes them, and returns the result.
+The `calculate_avg` freestyle ability is sent to the `obj` object. The freestyle ability then accesses the fields of the object using the `here` reference, processes them, and returns the result.
 
 #### Introducing Duct Typing
 
-A key aspect of the spawner's design is the use of **duct typing**. A spawner does not explicitly require parameters or a data type. Instead, it uses the `here` reference to fetch the data it needs from its current location. Therefore, the success of a spawner invocation largely depends on whether the data it operates on contains the necessary fields and whether they hold the appropriate type of data. (More on the concept of duct typing in the next subsection)
+A key aspect of the freestyle ability's design is the use of **duct typing**. A freestyle ability does not explicitly require parameters or a data type. Instead, it uses the `here` reference to fetch the data it needs from its current location. Therefore, the success of a freestyle ability invocation largely depends on whether the data it operates on contains the necessary fields and whether they hold the appropriate type of data. (More on the concept of duct typing in the next subsection)
 
 #### A Gentle Introduction to Data Spatial Programming
 
-The spawner construct in Jac provides an introductory yet profound insight into the world of data spatial programming. It emphasizes the shift from sending data to operations to moving operations to data, implementing in-situ data processing. This not only reduces data movement but also creates more cohesive, readable, and intuitive coding style by encouraging operations to stay close to the data they're associated with. We delve deeply into this topic in the Red Pill, however, this is a handy and useful data spatial superpower anyone can wield.
+The freestyle ability construct in Jac provides an introductory yet profound insight into the world of data spatial programming. It emphasizes the shift from sending data to operations to moving operations to data, implementing in-situ data processing. This not only reduces data movement but also creates more cohesive, readable, and intuitive coding style by encouraging operations to stay close to the data they're associated with. We delve deeply into this topic in the Red Pill, however, this is a handy and useful data spatial superpower anyone can wield.
 
 ### Understanding Duck Typing in Jac
 
@@ -1102,12 +1102,12 @@ In Jac, Duck Typing is employed (particular in its data spatial feature set) to 
 Here's a simple example to illustrate Duck Typing in Jac:
 
 ```jac
-function quack(duck) {
-    duck.quack()
+can quack {
+    duck.quack();
 }
 ```
 
-In this example, the `quack` function accepts any object as long as it has a `quack` method. The function doesn't care about the type of the object; it only cares that the object can perform the `quack` operation.
+In this example, the `quack` ability works on object as long as it has a `quack` method. The function doesn't care about the type of the object; it only cares that the object can perform the `quack` operation.
 
 This concept not only provides flexibility when using objects, but also promotes code reusability and encourages the design of loosely coupled systems. With Duck Typing, you can write more dynamic and adaptable code. It makes the language more expressive and eases the development of complex systems, making Jac an attractive choice for developing robust and flexible software solutions.
 Jac's approach to Duck Typing expands on traditional concepts, offering more flexible and dynamic behavior based on object capabilities rather than their types.
