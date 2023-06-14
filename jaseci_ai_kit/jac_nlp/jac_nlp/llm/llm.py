@@ -162,3 +162,12 @@ def generate_prompt(data_point):
 
         ### Response:
         {data_point["output"]}"""
+
+
+@jaseci_action(act_group=["llm"], allow_remote=True)
+def run_dataset_builder():
+    import streamlit.web.bootstrap
+
+    streamlit.web.bootstrap.run(
+        os.path.join(os.path.dirname(__file__), "dataset_builder.py"), "", [], []
+    )
