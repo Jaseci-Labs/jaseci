@@ -1051,7 +1051,7 @@ For now simply note that spawn contexts are functionally intertwined with the us
 
 ### Spawners
 
-The **spawner** is the simplest data spatial programming construct in Jac and a keystone concept to introduce in the language. Spawners encapsulates Jac's innovative perspective on the treatment of data. Unlike conventional functions, which receive data through parameters, conceptually, a spawner ventures to the data in some location, operating on it there. In this sense, a spawner is dispatched to the data it needs, leaping from one location to another in a spatial view of data.
+The **spawner** is the simplest data spatial programming construct in Jac and a keystone concept to introduce in the language. Spawners encapsulates Jac's innovative perspective on the treatment of data. Unlike conventional functions, which receive data through parameters, conceptually, a spawner leaps to the data in some location, operating on it there, and then returning a value. In this sense, a spawner is dispatched to the data it needs, leaping from one location to another in a spatial view of data.
 
 One of the fundamental aspects of a spawner is its reliance on the `here` reference. `here` allows a spawner to interact with the data present at the "location" it was spawned. As mentioned in the Blue Pill section `here` is analogously to the `self` keyword in the context of a class in python, and in this context, it allows the spawner to access and manipulate the data it resides on.
 
