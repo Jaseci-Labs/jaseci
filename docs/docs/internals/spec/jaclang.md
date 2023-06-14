@@ -850,72 +850,7 @@ with entry {
 
 This section describes the cutting-edge features introduced by Jac that enhance and refine traditional programming concepts. This section is designed to offer you an in-depth exploration of these novel features, their syntactical implementation, and the added benefits they bring to the coding experience. By leveraging these features, you can develop efficient, robust, and maintainable software solutions. Here we give Python wings!
 
-### Overview
-
 In this Purple Pill spec, a range of innovative features including the Pipe Forward Operator, Null Safe Operators, the Elvis Operator, Spawners, Freestyle Spawn and Filter Contexts, Enhanced Walrus Operations, and advancements in Dict and Duck Typing. Each feature is designed to build upon traditional programming paradigms, integrating seamlessly with the existing Jac language structure, while offering improved readability, functionality, brevity and performance. Let's delve into these features one by one.
-
-### Pipe Forward Operator
-
-The Pipe Forward Operator, denoted as `|>`, is an elegant addition to Jac that facilitates a intuitive style of programming and improves code readability. It also serves as a unifying bridge between traditional and data spatial programming concepts and constructs (more on that later.)
-
-The Pipe Forward operator is one that has appeared in other languages. It allows the result of an expression to be 'piped forward' into a function or method. It essentially streamlines the process of passing a value or set of values from one function to the next, making code more intuitive and decluttered.
-
-Here's how it works: the expression on the left-hand side of the operator serves as an input to the function on the right-hand side. The operator takes the result of the left-hand expression and inserts it as the first argument of the right-hand function. This feature is especially useful when you have a sequence of functions where the output of one function is the input to the next.
-
-Consider the following Python code:
-
-```python
-result = f(g(h(x)))
-```
-
-Using the Pipe Forward Operator in Jac, the above can be written as:
-
-```jac
-result = x |> h |> g |> f;
-```
-
-In this scenario, `x` is passed as an argument to the function `h()`, the result of which is then passed to `g()`, and so on, until it finally feeds into `f()`. This arrangement of code not only increases readability but also follows a more logical, left-to-right flow, closely mirroring the way the data 'moves' through the transformations.
-
-The Pipe Forward Operator is generally preferred in Jac as it embodies the expressive and readable nature of Jac, empowering you to write clean, efficient, and 'Jactastic' code.
-
-#### Enhanced Pipe Fowarding
-
-Jac introduces an ehanced versatile usage model for the pipe forward operator (`|>`), extending beyond the traditional single output, single input paradigm. This enhanced semantic allows the passing of an arbitrary amount of parameters by employing a unique notation leveraging _spawn contexts_ (more on these later).
-
-This notation is denoted by `{}` and can contain multiple parameters. These parameters will be mapped to the arguments of a function when used in conjunction with the pipe forward operator. The syntax is as follows:
-
-```jac
-result = {param1, param2, param3} |> foo;
-```
-
-In the example above, `param1`, `param2`, and `param3` will be applied to the first three arguments of the `foo` function.
-
-The spawn context notation also supports named arguments similar to Python's _kwargs_ functionality. Here's how you can use it:
-
-```jac
-result = {param1, in_param=param2} |> foo;
-```
-
-In the above example, `param1` will be passed as the first argument to the `foo` function and `param2` will be passed to the argument named `in_param` in the `foo` function.
-
-#### Chaining Spawn Contexts
-
-Pipes through spawn contexts can be chained together. This enables more complex parameter passing and function chaining:
-
-```jac
-{bar() |> baz(), param2} |> foo |> qux
-```
-
-In this example, the result of `bar() |> baz()` is passed as the first argument to `foo` and `param2` is passed as the second argument. The result of `foo` is then piped forward to the `qux` function.
-
-#### A Foundational Construct and Conceptual Insight
-
-As you may have realized, in Jac, any traditional style function or method call can be replaced with a pipe forward construct for passing parameters. We highly recommend using this notation for improving both readability and intuitiveness of your code. However, this is not the only reason we make this recommendation.
-
-
-Beyond providing a powerful mechanism to make your code more readable and intuitive, the use of the pipe forward operator also serves as an important conceptual bridge for understanding the relationship between traditional programming and data spatial programming. Function calls can be seen as, and indeed is, a process of sending data, through parameters, to compute units.
-
-Data spatial programming flips this thought process on its head by allowing you to send compute to data and to have compute travel through data. This important insight forms the foundation of the innovative data spatial programming model, which will be explored in more detail in the Red Pill section.
 
 ### Null Safe Operators
 
@@ -968,9 +903,155 @@ else:
 
 As seen from this comparison, the Elvis Operator is a powerful tool to make your code more readable and elegant, reducing unnecessary verbosity while maintaining clear intent. It's one of the many features that contribute to Jac's goal of creating an enjoyable and efficient programming experience.
 
+### Pipe Forwarding
+
+The Pipe Forward Operator, denoted as `|>`, is an elegant addition to Jac that facilitates a intuitive style of programming and improves code readability. It also serves as a unifying bridge between traditional and data spatial programming concepts and constructs (more on that later.)
+
+The Pipe Forward operator is one that has appeared in other languages. It allows the result of an expression to be 'piped forward' into a function or method. It essentially streamlines the process of passing a value or set of values from one function to the next, making code more intuitive and decluttered.
+
+Here's how it works: the expression on the left-hand side of the operator serves as an input to the function on the right-hand side. The operator takes the result of the left-hand expression and inserts it as the first argument of the right-hand function. This feature is especially useful when you have a sequence of functions where the output of one function is the input to the next.
+
+Consider the following Python code:
+
+```python
+result = f(g(h(x)))
+```
+
+Using the Pipe Forward Operator in Jac, the above can be written as:
+
+```jac
+result = x |> h |> g |> f;
+```
+
+In this scenario, `x` is passed as an argument to the function `h()`, the result of which is then passed to `g()`, and so on, until it finally feeds into `f()`. This arrangement of code not only increases readability but also follows a more logical, left-to-right flow, closely mirroring the way the data 'moves' through the transformations.
+
+The Pipe Forward Operator is generally preferred in Jac as it embodies the expressive and readable nature of Jac, empowering you to write clean, efficient, and 'Jactastic' code.
+
+#### Enhanced Pipe Fowarding
+
+Jac introduces an ehanced versatile usage model for the pipe forward operator (`|>`), extending beyond the traditional single output, single input paradigm. This enhanced semantic allows the passing of an arbitrary amount of parameters by employing a unique notation leveraging _spawn contexts_ (more on these later).
+
+This notation is denoted by `{}` and can contain multiple parameters. These parameters will be mapped to the arguments of a function when used in conjunction with the pipe forward operator. The syntax is as follows:
+
+```jac
+result = {param1, param2, param3} |> foo;
+```
+
+In the example above, `param1`, `param2`, and `param3` will be applied to the first three arguments of the `foo` function.
+
+The spawn context notation also supports named arguments similar to Python's _kwargs_ functionality. Here's how you can use it:
+
+```jac
+result = {param1, in_param=param2} |> foo;
+```
+
+In the above example, `param1` will be passed as the first argument to the `foo` function and `param2` will be passed to the argument named `in_param` in the `foo` function.
+
+#### Chaining Spawn Contexts and Pipes
+
+Pipes through spawn contexts can be chained together. This enables more complex parameter passing and function chaining:
+
+```jac
+{bar() |> baz(), param2} |> foo |> qux
+```
+
+In this example, the result of `bar() |> baz()` is passed as the first argument to `foo` and `param2` is passed as the second argument. The result of `foo` is then piped forward to the `qux` function.
+#### A Foundational Construct and Conceptual Insight
+
+As you may have realized, in Jac, any traditional style function or method call can be replaced with a pipe forward construct for passing parameters. We highly recommend using this notation for improving both readability and intuitiveness of your code. However, this is not the only reason we make this recommendation.
+
+Beyond providing a powerful mechanism to make your code more readable and intuitive, the use of the pipe forward operator also serves as an important conceptual bridge for understanding the relationship between traditional programming and data spatial programming. Function calls can be seen as, and indeed is, a process of sending data, through parameters, to compute units.
+
+Data spatial programming flips this thought process on its head by allowing you to send compute to data and to have compute travel through data. This important insight forms the foundation of the innovative data spatial programming model, which will be explored in more detail in the Red Pill section.
+
+### Freestyle Spawn Contexts
+
+While we've previously seen spawn contexts utilized as a means to send parameters to functions, the role of spawn contexts in Jac is far more expansive. At its core, a spawn context is an impromptu transient expression that describes a collection of data and can be used in various contexts throughout a program.
+
+#### Spawn Context Structure
+
+A spawn context in Jac provides a flexible and dynamic syntax for representing a collection of data. At its core, the structure of a spawn context is `{ <expressions, ...>, <keys=values, ...> }`. Let's break down this structure and examine its components.
+
+The first part, `<expressions, ...>`, can contain a list of one or more expressions. An expression in this context can be a variable, a function call, an operation, or any other valid Jac expression that produces a value. These expressions are evaluated and their resulting values are collected in the spawn context.
+
+Here is an example using expressions-only in a spawn context:
+
+```jac
+{param1, param2, do_something()}
+```
+
+The second part, `<keys=values, ...>`, allows you to specify one or more key-value assignments. These key-value pairs can be used to initialize an object, augment a dictionary (or object), or even set parameters with specific names in function calls.
+
+Here's an example of using key-value pairs in a spawn context:
+
+```jac
+{key1=value1, key2=value2}
+```
+
+Spawn contexts can flexibly combine both expressions and key-value pairs within the same context as long as all the experssions preceeds the key, value assignments:
+
+```jac
+{param1, param2, key1=value1, key2=value2}
+```
+
+#### Various Use Cases of Spawn Contexts
+
+In Jac, spawn contexts are not just a feature, but an indispensable tool that supports a variety of use cases. Let's explore some of these practical applications and see how spawn contexts can simplify our code, make it more intuitive and readable.
+
+##### Initializing Object Members with Spawn Contexts
+
+One of the major applications of spawn contexts lies in initializing member fields of an arbitrary object or dictionary. This can be accomplished by "piping" that object into a spawn context.
+
+Consider this example:
+
+```jac
+MyObj |> {field1="4", field2="5"};
+```
+
+With this succinct and intuitive syntax, we set the member fields `field1` and `field2` of `MyObj` to `4` and `5` respectively. The elegance of this approach becomes more apparent when dealing with larger objects with numerous fields, making the initialization process cleaner and more readable.
+
+##### Simplifying Method Calls with Spawn Contexts
+
+Spawn contexts in Jac also greatly simplify the process of sending parameters to a method. Consider the following example:
+
+```jac
+{p1, p2} |> MyObj.process
+```
+
+In this example, the parameters `p1` and `p2` are being passed to the `process` method of `MyObj`. This use of spawn contexts makes the method calls much more readable and understandable.
+
+##### Augmenting Dictionaries using Spawn Contexts
+
+Spawn contexts also facilitate the process of adding new keys and values to an existing dictionary or object. Here's how:
+
+```jac
+my_dict |> {"k1"=v1, "k2"=v2}
+```
+
+In this example, the keys `k1` and `k2` with corresponding values `v1` and `v2` are added to the `my_dict` dictionary. The same operation can be performed on an object as well, demonstrating the flexibility of spawn contexts.
+
+##### Modifying Lists with Spawn Contexts
+
+Spawn contexts also extend their utility to lists. They can be used to overwrite specific items in a list. Consider this example:
+
+```jac
+my_list |> {"first", "three", "words"}
+```
+
+Here, the first three items of `my_list` are replaced by "first", "three", and "words", respectively. This opens up an intuitive way to manipulate list data in Jac.
+
+Overall, spawn contexts in Jac provide a versatile toolset for handling and transforming data in a variety of scenarios, making them an integral part of the language's design.
+
+
+##### Another Foundational Construct in Jac
+
+Spawn contexts is another key primitive construct that assists with data spatial programming. In advanced use-cases such as with spawners and walkers (to be detailed later), you can leverage spawn contexts to create transient faux objects and nodes.
+
+For now simply note that spawn contexts are functionally intertwined with the use of pipe forwards (`|>`) as demonstrated in all examples above. In addition, spawn contexts also have a tight functional relationship with the `spawn` keyword, which will be introduced in the very next section of this specification.
+
 ### Spawners
 
-The **spawner** is a core concept in Jac and the simplest data spatial programming construct in the language. Spawners encapsulate an innovative perspective on the treatment of data. Unlike conventional functions, which receive data through parameters, a spawner ventures to the data in some location, operating on it there. In this sense, a spawner is dispatched to the data it needs, leaping from one location to another in a spatial structure of data.
+The **spawner** is the simplest data spatial programming construct in Jac and a keystone concept to introduce in the language. Spawners encapsulates Jac's innovative perspective on the treatment of data. Unlike conventional functions, which receive data through parameters, conceptually, a spawner ventures to the data in some location, operating on it there. In this sense, a spawner is dispatched to the data it needs, leaping from one location to another in a spatial view of data.
 
 One of the fundamental aspects of a spawner is its reliance on the `here` reference. `here` allows a spawner to interact with the data present at the "location" it was spawned. As mentioned in the Blue Pill section `here` is analogously to the `self` keyword in the context of a class in python, and in this context, it allows the spawner to access and manipulate the data it resides on.
 
@@ -1012,7 +1093,7 @@ A key aspect of the spawner's design is the use of **duct typing**. A spawner do
 
 The spawner construct in Jac provides an introductory yet profound insight into the world of data spatial programming. It emphasizes the shift from sending data to operations to moving operations to data, implementing in-situ data processing. This not only reduces data movement but also creates more cohesive, readable, and intuitive coding style by encouraging operations to stay close to the data they're associated with. We delve deeply into this topic in the Red Pill, however, this is a handy and useful data spatial superpower anyone can wield.
 
-### Duck Typing
+### Understanding Duck Typing in Jac
 
 Duck Typing is a programming concept that emphasizes on the behavior of an object over its actual type. The term 'duck typing' comes from the phrase "If it looks like a duck, swims like a duck, and quacks like a duck, then it probably is a duck," illustrating the idea that an object's suitability for a task is determined by its methods and properties, not its class or type.
 
@@ -1030,9 +1111,6 @@ In this example, the `quack` function accepts any object as long as it has a `qu
 
 This concept not only provides flexibility when using objects, but also promotes code reusability and encourages the design of loosely coupled systems. With Duck Typing, you can write more dynamic and adaptable code. It makes the language more expressive and eases the development of complex systems, making Jac an attractive choice for developing robust and flexible software solutions.
 Jac's approach to Duck Typing expands on traditional concepts, offering more flexible and dynamic behavior based on object capabilities rather than their types.
-### Freestyle Spawn Contexts
-
-Freestyle Spawn Contexts provide flexible and expressive means for object creation, allowing for context-based control over object spawning.
 
 ### Freestyle Filter Contexts
 
