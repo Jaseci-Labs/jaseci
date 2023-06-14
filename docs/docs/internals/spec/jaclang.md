@@ -856,7 +856,47 @@ We start with the most basic improvements and gradually go down the rabbit hole 
 
 ### Enhanced Walrus Operations
 
-Building on Python's Walrus Operator, Jac introduces Enhanced Walrus Operations for more efficient and readable assignments within expressions.
+In the Jac programming language, we have taken inspiration from Python's "walrus operator" (`:=`), a nickname for the assignment expressions feature. The walrus operator allows you to assign and return a value in the same expression. But why stop there - we have extended this concept to include augmented assignment statements such as `+=`, `-=`, `/=`, `*=`, and `%=`.
+
+In Python, these operators perform an operation on a variable and assign the result back to that variable. In Jac, these operators behave like walrus assignments, meaning that they perform the operation, assign the result back to the variable, and then return the new value, within the single statement.
+
+Let's take a closer look at a few examples:
+
+#### `+=`
+
+The `+=` operator in Jac will add the right operand to the left operand, assign the result back to the left operand, and return the new value of the left operand.
+
+```jac
+if (x += 5) > 10 {
+    print(x);
+}
+```
+
+In the example above, `x += 5` will add `5` to `x`, assign the result back to `x`, and return the new value. If the new value of `x` is greater than `10`, it will print `x`.
+
+#### `-=`, `*=`, `/=`, and `%=`
+
+The `-=` operator behaves similarly. It subtracts the right operand from the left operand, assigns the result back to the left operand, and returns the new value. The `*=` operator multiplies, the `/=` operator divides and the `%=` operator finds the modulus of the left operand divided by the right operand, all assigning the result back to the left operand, and returning the new value.
+
+Here are examples of how they can be used:
+
+```jac
+while (y -= 2) >= 0 {
+    print(y);
+}
+
+if (z *= 3) < 100 {
+    print(z);
+}
+
+while (a /= 2) > 1 {
+    print(a);
+}
+
+var = [b %= 7 for b in my_array];
+```
+
+These enhancements to the augmented assignment statements in Jac facilitate succinct expressions and efficient programming especially in loops and conditionals.
 
 ### Null Safe Operators
 
