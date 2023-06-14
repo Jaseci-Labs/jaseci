@@ -361,7 +361,7 @@ class ActionsOptimizer:
         lat_change_pct = abs(
             sum(policy_state["prev_avg_walker_lat"][prev_start_window:])
             - sum(policy_state["prev_avg_walker_lat"][curr_start_window:])
-        ) / sum(policy_state["prev_avg_walker_lat"][prev_start_window:])
+        )
         if lat_change_pct > THRESHOLD:
             # if walker latency changes too much, kick the evaluation phase
 
