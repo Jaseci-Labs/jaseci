@@ -334,6 +334,22 @@ class ActionsOptimizer:
         logger.info(f"config selected for evaluation: {sorted_configurations}")
         policy_state["remain_configs"] = sorted_configurations
 
+    def _get_walker_latency(self):
+        """
+        Get the average latency of walkers
+        """
+        walker_runs = []
+        if "walker_run" in self.benchmark["requests"]:
+            for walker, times in self.benchmark["requests"]["walker_run"].items():
+                if walker == "_default_":
+                    continue
+                else:
+                    walker_runs.extend(times)
+            latency = sum(walker_runs) / len(walker_runs)
+        else:
+            latency = 0.0
+        return latency
+
     def _actionpolicy_auto(self):
         """
         A automatic policy that automatically loads and unloads
@@ -360,19 +376,30 @@ class ActionsOptimizer:
                 "prev_actions": [],
                 "action_utilz": {},
                 "eval_complete": False,
+                "prev_avg_walker_lat": 0.0,
             }
-            self._init_evalution_policy(policy_state)
-        policy_state["cur_phase"] += self.jsorc_interval
-        logger.info(
-            f"""===Auto Policy===
-            \nbenchmark: {self.benchmark}
-            \nactions_history: {self.actions_history}
-            \nactions_calls: {self.actions_calls.keys()}
-            \n{policy_state['remain_configs']}"""
-        )
+
+            policy_state["prev_avg_walker_lat"] = self._get_walker_latency()
+            return
+        lat_change_pct = (
+            policy_state["prev_avg_walker_lat"] - self._get_walker_latency()
+        ) / policy_state["prev_avg_walker_lat"]
+        if lat_change_pct > THRESHOLD:
+            # if walker latency changes too much, reset the policy
+
+            logger.info(
+                f"""===walker latency changes===
+                \nlat_change_pct: {lat_change_pct} need to kick in evaluation"""
+            )
         # check if we should go into evaluation phase
         # compare the current interval with the previous interval
         # compare the walker state for each interval and if change go in the eval phase
+        else:
+            logger.info(
+                f"""===walker latency is not more than previous state===
+                \nlat_change_pct: {lat_change_pct}
+                \nprev_avg_walker_lat :{policy_state['prev_avg_walker_lat']}"""
+            )
 
     def _actionpolicy_evaluation(self):
         """
