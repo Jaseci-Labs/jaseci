@@ -24,14 +24,17 @@ class AstBuildPassTests(TestCase):
         ptree = self.prse.parse(
             self.lex.tokenize(
                 self.load_fixture(f"../../../tests/fixtures/micro/{filename}")
-            )
+            ),
+            filename=filename,
         )
         build_pass = self.builder.run(node=ptoa(ptree))
         return build_pass
 
     def test_ast_build_basic(self: "TestCase") -> None:
         """Basic test for pass."""
-        ptree = self.prse.parse(self.lex.tokenize(self.load_fixture("fam.jac")))
+        ptree = self.prse.parse(
+            self.lex.tokenize(self.load_fixture("fam.jac")), filename="fam.jac"
+        )
         self.builder.run(node=ptoa(ptree))
         # build_pass = self.builder.run(node=ptoa(ptree))
         # build_pass.print()

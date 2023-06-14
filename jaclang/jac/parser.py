@@ -677,36 +677,20 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "spawn_walker disconnect_op connect",
-        "spawn_walker connect_op connect",
-        "spawn_walker",
+        "spawn_object disconnect_op connect",
+        "spawn_object connect_op connect",
+        "spawn_object",
     )
     def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Connect rule."""
         return p
 
     @_(
-        "spawn_op KW_TO atom COMMA spawn_object",  # should auto run walker here
-        "spawn_object",
-    )
-    def spawn_walker(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn walker rule."""
-        return p
-
-    @_(
         "spawn_op atom",
-        "spawn_edge_node",
+        "unpack",
     )
     def spawn_object(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Spawn object rule."""
-        return p
-
-    @_(
-        "spawn_op KW_TO spawn_object connect_op spawn_object",
-        "unpack",
-    )
-    def spawn_edge_node(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Spawn edge and node rule."""
         return p
 
     @_(
@@ -876,12 +860,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Ability call rule."""
         return p
 
-    @_(
-        "DBL_COLON",
-        "DBL_COLON NAME",  # :: for walkers, ::name for abilities
-        "DBL_COLON KW_ASYNC",
-        "DBL_COLON NAME KW_ASYNC",  # :: for walkers, ::name for abilities
-    )
+    @_("DBL_COLON NAME")  # ::name for abilitie
     def ds_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability operator rule."""
         return p

@@ -982,22 +982,6 @@ class UnaryExpr(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class SpawnWalkerExpr(AstNode):
-    """ExprSpawnWalker node type for Jac Ast."""
-
-    def __init__(
-        self: "SpawnWalkerExpr",
-        target: AstNode,
-        location: AstNode,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize spawn walker expression node."""
-        self.target = target
-        self.location = location
-        super().__init__(*args, **kwargs)
-
-
 class SpawnObjectExpr(AstNode):
     """ExprSpawnObject node type for Jac Ast."""
 
@@ -1009,24 +993,6 @@ class SpawnObjectExpr(AstNode):
     ) -> None:
         """Initialize spawn object expression node."""
         self.target = target
-        super().__init__(*args, **kwargs)
-
-
-class SpawnEdgeNodeExpr(AstNode):
-    """ExprSpawnEdgeNode node type for Jac Ast."""
-
-    def __init__(
-        self: "SpawnEdgeNodeExpr",
-        edge: AstNode,
-        node: AstNode,
-        location: AstNode,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize spawn edge node expression node."""
-        self.edge = edge
-        self.node = node
-        self.location = location
         super().__init__(*args, **kwargs)
 
 

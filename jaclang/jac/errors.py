@@ -28,3 +28,10 @@ class JacParseErrorMixIn:
             if not tok or tok.type == "RBRACE":
                 break
         self.restart()
+
+    def parse(self: "JacParseErrorMixIn", tokens: list, filename: str = None) -> None:
+        """Overload of parse to take filenames."""
+        if filename:
+            self.cur_file = filename
+        self.had_error = False
+        return super().parse(tokens)

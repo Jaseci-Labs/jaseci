@@ -773,16 +773,6 @@ class AstBuildPass(Pass):
         """Build Connect Ast node."""
         self.binary_op_helper(node)
 
-    def exit_spawn_walker(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build SpawnWalkerExpr Ast node."""
-        if len(node.kid) == 1:
-            replace_node(node, node.kid[0])
-        else:
-            node.kid = [node.kid[2], node.kid[4]]
-            update_kind(
-                node, ast.SpawnWalkerExpr, target=node.kid[1], location=node.kid[0]
-            )
-
     def exit_spawn_object(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build SpawnObjectExpr Ast node."""
         if len(node.kid) == 1:
@@ -790,20 +780,6 @@ class AstBuildPass(Pass):
         else:
             node.kid = [node.kid[1]]
             update_kind(node, ast.SpawnObjectExpr, target=node.kid[0])
-
-    def exit_spawn_edge_node(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build SpawnEdgeNodeExpr Ast node."""
-        if len(node.kid) == 1:
-            replace_node(node, node.kid[0])
-        else:
-            node.kid = [node.kid[2], node.kid[3], node.kid[4]]
-            update_kind(
-                node,
-                ast.SpawnEdgeNodeExpr,
-                location=node.kid[0],
-                edge=node.kid[1],
-                node=node.kid[2],
-            )
 
     def exit_unpack(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Unpack Ast node."""
@@ -922,19 +898,9 @@ class AstBuildPass(Pass):
     def exit_ds_call(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build DSCall Ast node."""
         meta = {"target": ast.Blank(), "a_name": ast.Blank(), "is_async": False}
-        if len(node.kid) == 1:
-            node.kid = []
-        elif len(node.kid) == 2 and node.kid[1].name == "NAME":
-            meta["a_name"] = node.kid[1]
-            node.kid = [node.kid[1]]
-        elif len(node.kid) == 3 and node.kid[1].name == "NAME":
-            meta["a_name"] = node.kid[1]
-            meta["is_async"] = True
-            node.kid = [node.kid[1]]
-        else:
-            meta["is_async"] = True
-
-        update_kind(node, ast.DSCall, **meta)
+        meta["a_name"] = node.kid[1]
+        node.kid = [node.kid[1]]
+        update_kind(node, ast.DSCall, **meta)  # target updated in atomic call
 
     def exit_func_call(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build FuncCall Ast node."""
