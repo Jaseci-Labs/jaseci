@@ -381,13 +381,14 @@ class ActionsOptimizer:
                 "eval_complete": False,
                 "prev_avg_walker_lat": 0.0,
             }
-
         if policy_state["prev_avg_walker_lat"] == 0.0:
             policy_state["prev_avg_walker_lat"] = self._get_walker_latency()
+            self.policy_state["Auto"] = policy_state
             return
         lat_change_pct = (
-            policy_state["prev_avg_walker_lat"] - self._get_walker_latency()
-        ) / policy_state["prev_avg_walker_lat"]
+            abs(policy_state["prev_avg_walker_lat"] - self._get_walker_latency())
+            / policy_state["prev_avg_walker_lat"]
+        )
         if lat_change_pct > THRESHOLD:
             # if walker latency changes too much, reset the policy
             logger.info(
