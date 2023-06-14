@@ -157,7 +157,7 @@ def chat(
 
     response = openai.ChatCompletion.create(
         model=model,
-        prompt=messages,
+        messages=messages,
         temperature=temperature,
         top_p=top_p,
         n=n,
