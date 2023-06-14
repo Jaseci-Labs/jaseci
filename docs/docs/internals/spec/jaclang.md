@@ -852,6 +852,12 @@ This section describes the cutting-edge features introduced by Jac that enhance 
 
 In this Purple Pill spec, a range of innovative features including the Pipe Forward Operator, Null Safe Operators, the Elvis Operator, Freestyle Abilities, Freestyle Spawn and Filter Contexts, Enhanced Walrus Operations, and advancements in Dict and Duck Typing. Each feature is designed to build upon traditional programming paradigms, integrating seamlessly with the existing Jac language structure, while offering improved readability, functionality, brevity and performance. Let's delve into these features one by one.
 
+We start with the most basic improvements and gradually go down the rabbit hole towards the Red Pill section (thats where you learn about your new super powers young neophyte).
+
+### Enhanced Walrus Operations
+
+Building on Python's Walrus Operator, Jac introduces Enhanced Walrus Operations for more efficient and readable assignments within expressions.
+
 ### Null Safe Operators
 
 Dealing with null values is a common pain point in many programming languages. Jac introduces Null Safe Operators as an effective solution to mitigate potential null reference exceptions, which helps make your code more robust and readable.
@@ -1112,17 +1118,15 @@ In this example, the `quack` ability works on object as long as it has a `quack`
 This concept not only provides flexibility when using objects, but also promotes code reusability and encourages the design of loosely coupled systems. With Duck Typing, you can write more dynamic and adaptable code. It makes the language more expressive and eases the development of complex systems, making Jac an attractive choice for developing robust and flexible software solutions.
 Jac's approach to Duck Typing expands on traditional concepts, offering more flexible and dynamic behavior based on object capabilities rather than their types.
 
+### Dict Typing
+
+Dict Typing in Jac allows for more precise type annotations for dictionary objects, ensuring type safety and improving code clarity.
 ### Freestyle Filter Contexts
 
 Freestyle Filter Contexts offer an innovative approach to data manipulation, providing powerful filtering capabilities within defined contexts.
 
-### Enhanced Walrus Operations
 
-Building on Python's Walrus Operator, Jac introduces Enhanced Walrus Operations for more efficient and readable assignments within expressions.
 
-### Dict Typing
-
-Dict Typing in Jac allows for more precise type annotations for dictionary objects, ensuring type safety and improving code clarity.
 ## Red Pill: Concepts, Semantics, and Features for Realizing Data Spatial Programming
 
 This section of the Jac language specification dives into the composition of how the data spatial programming model is achieved through Jac's four primary architypes: objects, nodes, edges, and walkers. These architypes represent various categories of the notion of a traditional class, each with its unique traits and functionalities.
