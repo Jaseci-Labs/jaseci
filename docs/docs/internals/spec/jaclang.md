@@ -868,17 +868,17 @@ Let's consider an example. Suppose you want to access a property of an object. I
 
 ```python
 value = None
-if obj is not None:
+if obj and hasattr(obj, "property"):
     value = obj.property
 ```
 
 With Jac's Null Safe Operator, this could be significantly simplified:
 
 ```jac
-value = obj?.property
+value = obj?.property;
 ```
 
-In this code snippet, if `obj` is `null`, the Null Safe Operator (`?.`) short-circuits the operation, and `value` is set to `null`. If `obj` is not `null`, `value` is set to `obj.property`. This mechanism ensures that you never try to access a property or method on a `null` object, thereby avoiding runtime errors.
+In this code snippet, if `obj` is `null`, the Null Safe Operator (`?.`) short-circuits the operation, and `value` is set to `null`. If `obj` is not `null`, `value` is set to `obj.property` only if obj has the property. This mechanism ensures that you never try to access a property or method on a `null` object, thereby avoiding runtime errors.
 
 Null Safe Operators also work with function and method calls. If `obj` is `null`, a call like `obj?.method()` simply returns `null` instead of throwing an error.
 
@@ -893,7 +893,7 @@ This operator is especially handy when you need to assign default values to vari
 Here's how you can use the Elvis Operator in Jac:
 
 ```jac
-value = potentiallyNullValue ?: defaultValue
+value = potentiallyNullValue ?: defaultValue;
 ```
 
 In this example, `value` is assigned the value of `potentiallyNullValue` if it's not `null`. If `potentiallyNullValue` is `null`, `value` is assigned `defaultValue`.
@@ -907,13 +907,20 @@ else:
     value = defaultValue
 ```
 
-As seen from this comparison, the Elvis Operator is a powerful tool to make your code more readable and elegant, reducing unnecessary verbosity while maintaining clear intent. It's one of the many features that contribute to Jac's goal of creating an enjoyable and efficient programming experience.
+and at best
+```python
+value = potentiallyNullValue if potentiallyNullValue is not None else defaultValue
+```
+
+As seen from this comparison, the Elvis Operator is a powerful tool to make your code more readable and succinct, reducing unnecessary verbosity while maintaining clear intent. It's one of the many features that contribute to Jac's goal of creating an enjoyable and efficient programming experience.
+
+Next lets increase the heat and introduce some deeper Jactastic concepts.
 
 ### Pipe Forwarding
 
 The Pipe Forward Operator, denoted as `|>`, is an elegant addition to Jac that facilitates a intuitive style of programming and improves code readability. It also serves as a unifying bridge between traditional and data spatial programming concepts and constructs (more on that later.)
 
-The Pipe Forward operator is one that has appeared in other languages. It allows the result of an expression to be 'piped forward' into a function or method. It essentially streamlines the process of passing a value or set of values from one function to the next, making code more intuitive and decluttered.
+The basic pipe forward operator allows the result of an expression to be 'piped forward' into a function or method. It essentially streamlines the process of passing a value or set of values from one function to the next, making code more intuitive and decluttered.
 
 Here's how it works: the expression on the left-hand side of the operator serves as an input to the function on the right-hand side. The operator takes the result of the left-hand expression and inserts it as the first argument of the right-hand function. This feature is especially useful when you have a sequence of functions where the output of one function is the input to the next.
 
@@ -1057,9 +1064,9 @@ For now simply note that spawn contexts are functionally intertwined with the us
 
 ### Freestyle Abilities
 
-The **freestyle ability** is the simplest data spatial programming construct in Jac and a keystone concept to introduce in the language. Freestyle Abilities encapsulates Jac's innovative perspective on the treatment of data. Unlike conventional functions, which receive data through parameters, conceptually, a freestyle ability leaps to the data in some location, operating on it there, and then returning a value. In this sense, a freestyle ability is dispatched to the data it needs, leaping from one location to another in a spatial view of data.
+The **freestyle ability** is the simplest data spatial programming construct in Jac and a keystone starting place to introduce Jac's innovative perspective on the treatment of data. An ability is a variation of a typical function that we cover in detail later. A freestyle ability is unattached to any object, node, or walker, resides at the module level, can be called from anywhere in the module, and can return a value. Unlike conventional functions, which receive data through parameters, a freestyle ability is conceptually a region of code that jumps to the data in some location, operates on it there, and then may return a value. In this sense, a freestyle ability is dispatched to the data it needs, leaping from one location to another when taking a spatial view of data.
 
-One of the fundamental aspects of a freestyle ability is its reliance on the `here` reference. `here` allows a freestyle ability to interact with the data present at the "location" it was spawned. As mentioned in the Blue Pill section `here` is analogously to the `self` keyword in the context of a class in python, and in this context, it allows the freestyle ability to access and manipulate the data it resides on.
+The fundamental aspect of a freestyle ability is its reliance on the `here` reference. `here` allows a freestyle ability to interact with the data present at the "location" (data object) it was spawned from. As mentioned in the Blue Pill section `here` is analogously to the `self` keyword in the context of a class in python, and in this context, it allows the freestyle ability to access and manipulate the data it resides on.
 
 Here is a basic freestyle ability definition:
 
@@ -1071,25 +1078,33 @@ can calculate_avg with float {
     return sum/len(here.array)
 }
 ```
-In this example, the freestyle ability `calculate_avg` is designed to calculate the average of an array. Note that it does not take parameters but uses `here` to reference the object it is currently residing on. This freestyle ability expects the object it's being spawned on to have a field named `array`.
+In this example, the ability `calculate_avg` is designed to calculate the average of an array and return a float value. Note that it does not take parameters but uses `here` to reference the object it is currently residing on. This freestyle ability expects the object it's being spawned on to have a field named `array`.
 
-To invoke the freestyle ability, the `spawn` keyword is used, followed by the target object and the name of the freestyle ability. The syntax is `spawn to <object>, :s:<freestyle ability_name>`.
+To invoke the freestyle ability, pipe forward is used to indicate shipping the ability to the data. The syntax is `:a:<freestyle ability_name> |> <object/data>`.
 
 Consider the following object:
 
 ```jac
-obj = {
-    'array': [1, 2, 3, 4, 5]
+object MyObj {
+    has array: list[int] = [1, 2, 3, 4, 5];
 }
+
+global obj = spawn :o:MyObj;
 ```
 
 Invoking the freestyle ability on this object would look as follows:
 
 ```jac
-avg = spawn to obj, :s:calculate_avg
+avg = :a:calculate_avg |> obj;
 ```
 
-The `calculate_avg` freestyle ability is sent to the `obj` object. The freestyle ability then accesses the fields of the object using the `here` reference, processes them, and returns the result.
+The `calculate_avg` freestyle ability is sent to the `obj` object. The freestyle ability then accesses the fields of the object using the `here` reference, processes them, and returns the result which is assigned to `avg`.
+
+Note that a spawn context can be used here as well,
+
+```jac
+avg = :a:calculate_av |> {array = [1, 2, 3, 4, 5]};
+```
 
 #### Introducing Duct Typing
 
@@ -1111,6 +1126,11 @@ Here's a simple example to illustrate Duck Typing in Jac:
 can quack {
     duck.quack();
 }
+
+with entry {
+    goose = spawn Goose;
+    quack |> goose;
+}
 ```
 
 In this example, the `quack` ability works on object as long as it has a `quack` method. The function doesn't care about the type of the object; it only cares that the object can perform the `quack` operation.
@@ -1120,10 +1140,62 @@ Jac's approach to Duck Typing expands on traditional concepts, offering more fle
 
 ### Dict Typing
 
-Dict Typing in Jac allows for more precise type annotations for dictionary objects, ensuring type safety and improving code clarity.
+This principle of duct typing and the way it is leveraged in Jac allows dictionaries and object instances to be used interchangeably for freestyle abilities and walkers, as long as they adhere to the required interface or 'shape'.
+
+Lets look at an example in Jac. A dictionary is a collection of key-value pairs. The key can be any immutable type, typically a string, and the value can be any valid expression. For example:
+```jac
+dict1 = {'name': 'John', 'age': 30};
+```
+
+An object instance in Jac can be a structurally similar entity, but it is created from an object type and can have associated data spatial and method abilities in addition to properties:
+
+```jac
+object Person {
+    has name: str = 'John';
+    has age: int = 30;
+    }
+
+    can greet(): None {
+        return `Hello, my name is ${this.name}`;
+    }
+}
+
+person1 = spawn :o:Person;
+```
+
+In Jac's duck typing, these two types can be used interchangeably. For instance, if an ability expects an object with properties 'name' and 'age', both a dictionary with these keys and an instance of `Person` could be passed in:
+
+```jac
+can get_age with int {
+    return here.age;
+}
+
+with entry {
+    :a:get_age |> dict1; // returns 30
+    :a:get_age |> person1; // returns 30
+}
+```
+
+In this scenario, `get_age` function is not concerned with the type of entity, only that it has an 'age' property. The same concept will be used for walkers as well.
 ### Freestyle Filter Contexts
 
-Freestyle Filter Contexts offer an innovative approach to data manipulation, providing powerful filtering capabilities within defined contexts.
+A filter context in Jac provides a robust and powerful syntax for constraining a dataset. It is represented as a sequence of constraints using the notation `(= <var> <cmp_op> <expr>, ...)`. Let's dissect this structure and look at its components.
+
+The core notation `(= <var> <cmp_op> <expr>, ...)` defines a set of conditions that the data must meet. `<var>` is a variable that represents the data we are comparing. `<cmp_op>` is a comparison operator such as `==`, `!=`, `<`, `<=`, `>`, `>=`. `<expr>` can be a variable, a function call, an operation, or any other valid Jac expression that produces a value. These expressions are evaluated and used for comparisons. The data that meets these conditions will be collected in the filter context.
+
+Here is an example using a single filter constraint:
+
+`(= age >= 18)`
+
+Multiple constraints can be specified in a filter context. The constraints are evaluated independently and the intersection of data that satisfies all conditions is collected in the filter context. It is a powerful tool for specifying complex conditions on the data.
+
+Here's an example of using multiple filter constraints:
+
+`(= age >= 18, income > 50000)`
+
+The order of constraints doesn't matter. The data is filtered in a way that it meets all the conditions, irrespective of the order in which they are specified. So, the above filter context is equivalent to `(= income > 50000, age >= 18)`
+
+Filter contexts provide a way to concisely specify data constraints and open up a wide range of possibilities for data manipulation in Jac programming.
 
 
 
