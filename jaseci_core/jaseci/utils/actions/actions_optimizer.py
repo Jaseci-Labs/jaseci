@@ -357,7 +357,9 @@ class ActionsOptimizer:
         """
         logger.info("===Auto Policy===")
         policy_state = self.policy_state["Auto"]
-
+        # check if we should go into evaluation phase
+        # compare the current interval with the previous interval
+        # compare the walker state for each interval and if change go in the eval phase
         if len(policy_state) == 0:
             # Initialize policy tracking state
             policy_state = {
@@ -379,6 +381,7 @@ class ActionsOptimizer:
                 "prev_avg_walker_lat": 0.0,
             }
 
+        if policy_state["prev_avg_walker_lat"] == 0.0:
             policy_state["prev_avg_walker_lat"] = self._get_walker_latency()
             return
         lat_change_pct = (
@@ -386,14 +389,10 @@ class ActionsOptimizer:
         ) / policy_state["prev_avg_walker_lat"]
         if lat_change_pct > THRESHOLD:
             # if walker latency changes too much, reset the policy
-
             logger.info(
                 f"""===walker latency changes===
                 \nlat_change_pct: {lat_change_pct} need to kick in evaluation"""
             )
-        # check if we should go into evaluation phase
-        # compare the current interval with the previous interval
-        # compare the walker state for each interval and if change go in the eval phase
         else:
             logger.info(
                 f"""===walker latency is not more than previous state===
