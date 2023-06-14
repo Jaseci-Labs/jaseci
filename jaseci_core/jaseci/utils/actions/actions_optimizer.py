@@ -362,12 +362,15 @@ class ActionsOptimizer:
             sum(policy_state["prev_avg_walker_lat"][prev_start_window:-2])
             - sum(policy_state["prev_avg_walker_lat"][curr_start_window:])
         )
-        if lat_change_pct > THRESHOLD:
+        if (lat_change_pct > THRESHOLD) or set(policy_state["prev_actions"]) != set(
+            list(self.actions_calls.keys())
+        ):
             # if walker latency changes too much, kick the evaluation phase
-
             logger.info(
                 f"""===walker latency changes===
-                \nlat_change_pct: {lat_change_pct} need to kick in evaluation"""
+                \nlat_change_pct: {lat_change_pct}
+                \nprev_actions: {policy_state["prev_actions"]}
+                \nactions_calls: {list(self.actions_calls.keys())}need to kick in evaluation"""
             )
             return True
         else:
@@ -409,6 +412,8 @@ class ActionsOptimizer:
                 "prev_avg_walker_lat": [],
                 "call_counter": 0,  # counter for number of calls
             }
+        action_utilz = {}
+        total_count = 0
         if policy_state["call_counter"] < WINDOW_SIZE:
             # Increment the call counter
             policy_state["call_counter"] += 1
@@ -416,6 +421,12 @@ class ActionsOptimizer:
                 f"Waiting for ({(WINDOW_SIZE+1) - policy_state['call_counter']} more calls before starting the policy state."  # noqa: E501
             )
             policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
+            for action in self.actions_calls.keys():
+                action_utilz[action] = len(self.actions_calls[action])
+                total_count = total_count + len(self.actions_calls[action])
+            action_utilz["total_call_count"] = total_count
+            logger.info(f"===Auto Policy=== action_utilz: {action_utilz}")
+            policy_state["prev_actions"] = list(self.actions_calls.keys())
             self.policy_state["Auto"] = policy_state
             return
         policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
