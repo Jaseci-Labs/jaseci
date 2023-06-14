@@ -348,6 +348,7 @@ class ActionsOptimizer:
             latency = sum(walker_runs) / len(walker_runs)
         else:
             latency = 0.0
+        logger.info(f"===walker latency===\nlatency: {latency}")
         return latency
 
     def _actionpolicy_auto(self):
