@@ -53,13 +53,13 @@ Output
 #### **Example**
 Using JSCTL
 ```bash
-jaseci> actions call dolly.generate -ctx '{"prompt": "Hello, how are you?"}'
+jaseci> actions call llm.generate -ctx '{"prompt": "Hello, how are you?"}'
 ```
 Using JAC
 ```jac
 walker test_generate {
-    can dolly.generate;
-    report dolly.generate(prompt="Hello, how are you?");
+    can llm.generate;
+    report llm.generate(prompt="Hello, how are you?");
 }
 ```
 ## **Training (`train`)**
@@ -86,6 +86,12 @@ You can use this [GUI](https://github.com/gururise/AlpacaDataCleaned/tree/main/g
 - training_params: dict (default: DEFAULT_TRAINING_PARAMS). This is the some of the training parameters for the model and the LoRA configuration.
 - lora_config_kwargs: dict (default: {}). This is the kwargs for the LoRA configuration. Refer [peft.LoraConfig](https://huggingface.co/docs/peft/main/en/package_reference/tuners#peft.LoraConfig) for more details.
 - training_args_kwargs: dict (default: {}). This is the kwargs for the training arguments. Refer [transformers.Trainer](https://huggingface.co/docs/transformers/v4.29.1/en/main_classes/trainer#transformers.Trainer) for more details.
+
+#### **Example**
+Using JSCTL
+```bash
+jascei> actions call dolly.train -ctx '{"data_file": "data.json", "output_dir": "output"'
+```
 ## **References**
 - [HuggingFace LLM Leaderboard](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard)
 - PEFT: Parameter-Efficient Fine-Tuning for Transformers via Probabilistic Early Exiting, [arXiv:2106.01345](https://arxiv.org/abs/2106.01345)
