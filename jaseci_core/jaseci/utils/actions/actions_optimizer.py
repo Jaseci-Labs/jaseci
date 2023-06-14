@@ -23,8 +23,9 @@ from functools import cmp_to_key
 from .actions_state import ActionsState
 
 POLICIES = ["Default", "Evaluation", "Auto"]
-THRESHOLD = 0.2
+THRESHOLD = 0.1
 NODE_MEM_THRESHOLD = 0.8
+WINDOW_SIZE = 4
 
 
 class ActionsOptimizer:
@@ -351,6 +352,32 @@ class ActionsOptimizer:
         logger.info(f"===walker latency===\nlatency: {latency}")
         return latency
 
+    def _check_phase_change(self, policy_state):
+        """
+        Check if the current system state has changed
+        """
+        curr_start_window = len(policy_state["prev_avg_walker_lat"]) - WINDOW_SIZE
+        prev_start_window = len(policy_state["prev_avg_walker_lat"]) - (WINDOW_SIZE + 1)
+        lat_change_pct = abs(
+            sum(policy_state["prev_avg_walker_lat"][prev_start_window:])
+            - sum(policy_state["prev_avg_walker_lat"][curr_start_window:])
+        ) / sum(policy_state["prev_avg_walker_lat"][prev_start_window:])
+        if lat_change_pct > THRESHOLD:
+            # if walker latency changes too much, kick the evaluation phase
+
+            logger.info(
+                f"""===walker latency changes===
+                \nlat_change_pct: {lat_change_pct} need to kick in evaluation"""
+            )
+            return True
+        else:
+            logger.info(
+                f"""===walker latency is not more than previous state===
+                \nlat_change_pct: {lat_change_pct}
+                \nprev_avg_walker_lat :{policy_state['prev_avg_walker_lat']}"""
+            )
+            return False
+
     def _actionpolicy_auto(self):
         """
         A automatic policy that automatically loads and unloads
@@ -379,26 +406,25 @@ class ActionsOptimizer:
                 "prev_actions": [],
                 "action_utilz": {},
                 "eval_complete": False,
-                "prev_avg_walker_lat": 0.0,
+                "prev_avg_walker_lat": [],
+                "call_counter": 0,  # counter for number of calls
             }
-        if policy_state["prev_avg_walker_lat"] == 0.0:
-            policy_state["prev_avg_walker_lat"] = self._get_walker_latency()
+        if policy_state["call_counter"] <= WINDOW_SIZE:
+            # Increment the call counter
+            policy_state["call_counter"] += 1
+            logger.info(
+                f"Waiting for ({(WINDOW_SIZE+1) - policy_state['call_counter']} more calls before starting the policy state."  # noqa: E501
+            )
+            policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
             self.policy_state["Auto"] = policy_state
             return
-        lat_change_pct = (
-            abs(policy_state["prev_avg_walker_lat"] - self._get_walker_latency())
-            / policy_state["prev_avg_walker_lat"]
-        )
-        if lat_change_pct > THRESHOLD:
-            # if walker latency changes too much, reset the policy
+        policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
+        self.policy_state["Auto"] = policy_state
+        if self._check_phase_change(policy_state):
+            # if no enough walker were execueted in this period, keep in perf phase
             logger.info(
-                f"""===walker latency changes===
-                \nlat_change_pct: {lat_change_pct} need to kick in evaluation"""
-            )
-        else:
-            logger.info(
-                f"""===walker latency is not more than previous state===
-                \nlat_change_pct: {lat_change_pct}
+                f"""==in check phase===
+                \npolicy_state: {policy_state}
                 \nprev_avg_walker_lat :{policy_state['prev_avg_walker_lat']}"""
             )
 
