@@ -418,7 +418,9 @@ class ActionsOptimizer:
                 "prev_avg_walker_lat": [],
                 "call_counter": 0,  # counter for number of calls
             }
-        logger.info(f"===Auto Policy=== {policy_state}")
+        logger.info(
+            f"===Auto Policy=== \n{policy_state}\nactions_change: {self.actions_change}"
+        )
         policy_state["cur_phase"] += self.jsorc_interval
         if policy_state["phase"] == "pref":
             action_utilz = {}
