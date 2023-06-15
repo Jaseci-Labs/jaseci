@@ -446,7 +446,6 @@ class ActionsOptimizer:
         elif policy_state["phase"] == "eval":
             if policy_state["cur_config"] is None:
                 self._init_evalution_policy(policy_state)
-
                 # This is the start of evaluation period
                 policy_state["cur_config"] = policy_state["remain_configs"][0]
                 del policy_state["remain_configs"][0]
@@ -468,7 +467,7 @@ class ActionsOptimizer:
                     # meaning no incoming requests during this period.
                     # stay in this phase
                     logger.info("===Evaluation Policy=== No walkers were executed")
-                    self.policy_state["Evaluation"] = policy_state
+                    self.policy_state["Auto"] = policy_state
                     return
                 walker_runs = []
                 for walker, times in self.benchmark["requests"]["walker_run"].items():
@@ -533,7 +532,7 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
-        self.policy_state["Evaluation"] = policy_state
+        self.policy_state["Auto"] = policy_state
 
     def _actionpolicy_evaluation(self):
         """
