@@ -50,8 +50,7 @@ class PyCodeGenPass(Pass):
 
     def exit_global_vars(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert global vars to python code."""
-        for i in node.values:
-            self.emit_ln(node, i.py_code)
+        self.emit_ln(node, node.assignments.py_code)
 
     def exit_named_assign(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert named assign to python code."""

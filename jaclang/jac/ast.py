@@ -103,23 +103,15 @@ class GlobalVars(AstNode):
     """GlobalVars node type for Jac Ast."""
 
     def __init__(
-        self: "GlobalVars", access: AstNode, values: list, *args: list, **kwargs: dict
+        self: "GlobalVars",
+        access: AstNode,
+        assignments: AstNode,
+        *args: list,
+        **kwargs: dict,
     ) -> None:
         """Initialize global var node."""
         self.access = access
-        self.values = values
-        super().__init__(*args, **kwargs)
-
-
-class NamedAssign(AstNode):
-    """NamedAssign node type for Jac Ast."""
-
-    def __init__(
-        self: "NamedAssign", name: AstNode, value: AstNode, *args: list, **kwargs: dict
-    ) -> None:
-        """Initialize named assign node."""
-        self.name = name
-        self.value = value
+        self.assignments = assignments
         super().__init__(*args, **kwargs)
 
 

@@ -38,18 +38,8 @@ class AstBuildPass(Pass):
 
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build GLOBAL_VAR Ast node."""
-        node.kid = node.kid[:-3]  # only keep absorbed list of clauses
-        update_kind(node, ast.GlobalVars, access=node.kid[-1], values=node.kid[:-1])
-
-    def exit_global_var_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build NAMED_ASSIGN list of Ast nodes."""
-        if len(node.kid) == 3:
-            node.parent.kid = [node] + node.parent.kid
-            node.kid = [node.kid[0], node.kid[2]]
-        else:
-            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
-            node.kid = [node.kid[-3], node.kid[-1]]
-        update_kind(node, ast.NamedAssign, name=node.kid[0], value=node.kid[1])
+        node.kid = [node.kid[0], node.kid[2]]
+        update_kind(node, ast.GlobalVars, access=node.kid[0], assignments=node.kid[1])
 
     def exit_access(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build  Ast node."""
@@ -150,7 +140,7 @@ class AstBuildPass(Pass):
         """Replace self with kid."""
         replace_node(node, node.kid[0])
 
-    def exit_architype_full_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_architype_inline_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build various architype Ast nodes."""
         meta = {
             "access": node.kid[0],
@@ -198,7 +188,7 @@ class AstBuildPass(Pass):
         """Build Ability Ast node."""
         replace_node(node, node.kid[0])
 
-    def exit_ability_full_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_ability_inline_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build various ability Ast nodes."""
         del node.kid[1]
         meta = {
@@ -297,7 +287,7 @@ class AstBuildPass(Pass):
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
 
-    def exit_typed_has(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_typed_has_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build HasVar Ast node."""
         if len(node.kid) == 5:
             del node.kid[3]
@@ -715,14 +705,15 @@ class AstBuildPass(Pass):
     def exit_assignment(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Assignment Ast node."""
         node.kid = [node.kid[-3], node.kid[-1]]
-        is_static = type(node.kid[0]) == ast.Token and node.kid[0].name == "KW_HAS"
         update_kind(
-            node,
-            ast.Assignment,
-            is_static=is_static,
-            target=node.kid[0],
-            value=node.kid[1],
+            node, ast.Assignment, is_static=False, target=node.kid[0], value=node.kid[1]
         )
+
+    def exit_static_assignment(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build StaticAssignment Ast node."""
+        node = replace_node(node, node.kid[1])
+        for i in node.kid:
+            i.is_static = True
 
     def binary_op_helper(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Reused as utility function for binary operators."""

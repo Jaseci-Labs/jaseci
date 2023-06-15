@@ -53,7 +53,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Element rule."""
         return p
 
-    @_("access_tag KW_GLOBAL global_var_clause SEMI")
+    @_("access_tag KW_GLOBAL assignment_list SEMI")
     def global_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global variable rule."""
         return p
@@ -73,14 +73,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def access_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Permission tag rule."""
-        return p
-
-    @_(
-        "NAME EQ expression",
-        "global_var_clause COMMA NAME EQ expression",
-    )
-    def global_var_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Global variable tail rule."""
         return p
 
     @_("KW_TEST NAME multistring code_block")
@@ -147,7 +139,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Architype elements
     # ------------------
     @_(
-        "architype_full_spec",
+        "architype_inline_spec",
         "architype_decl",
         "architype_def",
     )
@@ -161,7 +153,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "access_tag KW_OBJECT NAME inherited_archs member_block",
         "access_tag KW_WALKER NAME inherited_archs member_block",
     )
-    def architype_full_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def architype_inline_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
         return p
 
@@ -199,7 +191,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Ability elements
     # ----------------
     @_(
-        "ability_full_spec",
+        "ability_inline_spec",
         "ability_decl",
         "ability_def",
     )
@@ -212,7 +204,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "access_tag KW_CAN NAME return_type_tag code_block",
         "access_tag KW_CAN NAME func_decl code_block",
     )
-    def ability_full_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability_inline_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
 
@@ -277,8 +269,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "typed_has",
-        "has_assign_clause COMMA typed_has",
+        "typed_has_clause",
+        "has_assign_clause COMMA typed_has_clause",
     )
     def has_assign_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has assign list rule."""
@@ -288,7 +280,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "has_tag NAME type_tag",
         "has_tag NAME type_tag EQ expression",
     )
-    def typed_has(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def typed_has_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
         return p
 
@@ -430,6 +422,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "assignment SEMI",
+        "static_assignment",
         "expression SEMI",
         "if_stmt",
         "try_stmt",
@@ -619,12 +612,14 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # Expression rules (precedence built into grammar)
     # ------------------------------------------------
-    @_(
-        "atom EQ expression",
-        "KW_HAS NAME EQ expression",  # static variables
-    )
+    @_("atom EQ expression")
     def assignment(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Rule for assignment statement."""
+        return p
+
+    @_("KW_HAS assignment_list SEMI")
+    def static_assignment(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Rule for static assignment statement."""
         return p
 
     @_(
