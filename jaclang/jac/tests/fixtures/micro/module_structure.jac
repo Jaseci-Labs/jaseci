@@ -6,6 +6,8 @@ Docstring
 global ver = "0.0.1";  # global variable
 
 import:jac .utils;  # import a module
+import:py os; # import a python module
+include:jac .mod_defs;  # includes a file
 
 object mytype {}  # define a new type
 

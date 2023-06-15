@@ -118,3 +118,7 @@ plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_
 
 - Need black like standard pass for formatting
 - Need type checking infrance analyses
+
+### Design changes to apply
+
+- here and visitor keywords should turn into ops :h:, :v:, and global should follow the same format :g:.

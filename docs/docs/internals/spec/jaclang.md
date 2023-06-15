@@ -71,6 +71,8 @@ Beyond the key architypes, a Jac module incorporates several additional element 
 
 1. **Import Directives**: Import directives provide the mechanism for reusing code across different modules. They enable a module to incorporate functionalities defined in other modules, fostering code reusability and modularity.
 
+1. **Include Directives**: Sometimes it is be useful to include code directly into the current namespace as with the definitions that correspond to declarations. We have added `include` for these purposes. Do note that, with `import`, all classes, functions, variables, etc from the imported module come under that modules namespace. This is great for avoiding collisions.
+
 1. **Functions**: Traditional functions, these represent the basic standard python `def` style function which can include input parameters and return a value.
 
 1. **Module Level Free-Style Code**:  "Free Style" code at the module level refers to executable code that is not encapsulated within a function or class. This code is executed when the module is imported or run as a script, making it ideal for initializing module-level variables or running setup tasks.
@@ -99,6 +101,8 @@ Docstring
 global ver = "0.0.1";  # global variable
 
 import:jac .utils;  # import a module
+import:py os; # import a python module
+include:jac .mod_defs;  # includes a file
 
 object mytype {}  # define a new type
 
