@@ -122,3 +122,7 @@ plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_
 ### Design changes to apply
 
 - here and visitor keywords should turn into ops :h:, :v:, and global should follow the same format :g:.
+- Make it ok to not specify return type if its None, but compiler should complain if a rturn is present;
+- Get docstring to live outsie
+- :: should turn into |> for self calls on abilities
+- Lets have a left sizded pipe
