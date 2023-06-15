@@ -13,8 +13,8 @@ class AstBuildPass(Pass):
     def exit_start(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build WHOLE_BUILD Ast node."""
         self.ir = ast.Module(
-            doc=node.kid[0],
-            body=node.kid[1],
+            doc=node.kid[0] if len(node.kid) == 2 else ast.Blank(),
+            body=node.kid[1] if len(node.kid) == 2 else node.kid[0],
             parent=None,
             kid=node.kid,
             line=node.line,
@@ -39,7 +39,7 @@ class AstBuildPass(Pass):
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build GLOBAL_VAR Ast node."""
         node.kid = [node.kid[0], node.kid[2]]
-        update_kind(node, ast.GlobalVars, access=node.kid[0], assignments=node.kid[1])
+        update_kind(node, ast.GlobalVars, tag_info=node.kid[0], assignments=node.kid[1])
 
     def exit_access(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build  Ast node."""
@@ -48,9 +48,10 @@ class AstBuildPass(Pass):
     def exit_access_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build  Ast node."""
         if len(node.kid) == 1:
-            make_blank(node)
-        else:
             replace_node(node, node.kid[0])
+        else:
+            del node.kid[2]
+            update_kind(node, ast.TagInfo, doc=node.kid[0], access=node.kid[1])
 
     def exit_test(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build TEST Ast node."""
@@ -149,7 +150,7 @@ class AstBuildPass(Pass):
     def exit_architype_inline_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build various architype Ast nodes."""
         meta = {
-            "access": node.kid[0],
+            "tag_info": node.kid[0],
             "typ": node.kid[1],
             "name": node.kid[2],
             "base_classes": node.kid[3],
@@ -163,7 +164,7 @@ class AstBuildPass(Pass):
         update_kind(
             node,
             ast.ArchDecl,
-            access=node.kid[0],
+            tag_info=node.kid[0],
             typ=node.kid[1],
             name=node.kid[2],
         )
@@ -173,9 +174,10 @@ class AstBuildPass(Pass):
         update_kind(
             node,
             ast.ArchDef,
-            mod=node.kid[0] if len(node.kid) == 3 else ast.Blank(),
-            arch=node.kid[1] if len(node.kid) == 3 else node.kid[0],
-            body=node.kid[3] if len(node.kid) == 3 else node.kid[1],
+            doc=node.kid[0],
+            mod=node.kid[1] if len(node.kid) == 4 else ast.Blank(),
+            arch=node.kid[2] if len(node.kid) == 4 else node.kid[1],
+            body=node.kid[-1],
         )
 
     def exit_inherited_archs(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -198,7 +200,7 @@ class AstBuildPass(Pass):
         """Build various ability Ast nodes."""
         del node.kid[1]
         meta = {
-            "access": node.kid[0],
+            "tag_info": node.kid[0],
             "name": node.kid[1],
             "body": node.kid[-1],
             "signature": ast.Blank(),
@@ -215,7 +217,7 @@ class AstBuildPass(Pass):
         del node.kid[1]
         del node.kid[-1]
         meta = {
-            "access": node.kid[0],
+            "tag_info": node.kid[0],
             "name": node.kid[1],
             "is_func": False,
         }
@@ -230,16 +232,27 @@ class AstBuildPass(Pass):
         update_kind(
             node,
             ast.AbilityDef,
-            mod=node.kid[0] if len(node.kid) == 3 else ast.Blank(),
-            ability=node.kid[1] if len(node.kid) == 3 else node.kid[0],
-            body=node.kid[3] if len(node.kid) == 3 else node.kid[1],
+            doc=node.kid[0],
+            mod=node.kid[1] if len(node.kid) == 4 else ast.Blank(),
+            ability=node.kid[2] if len(node.kid) == 4 else node.kid[1],
+            body=node.kid[-1],
         )
 
     def exit_sub_ability_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build AbilitySpec Ast node."""
-        meta = {}
-        if node.kid[0].name == "NAME":
-            meta["mod"] = node.kid[0]
+        meta = {"doc": node.kid[0]}
+        if node.kid[1].name == "NAME":
+            meta["mod"] = node.kid[1]
+            meta["arch"] = node.kid[2]
+            meta["name"] = node.kid[3]
+            if type(node.kid[4]) == ast.FuncSignature:
+                meta["signature"] = node.kid[4]
+                meta["body"] = node.kid[5]
+            else:
+                meta["signature"] = ast.Blank()
+                meta["body"] = node.kid[4]
+        else:
+            meta["mod"] = ast.Blank()
             meta["arch"] = node.kid[1]
             meta["name"] = node.kid[2]
             if type(node.kid[3]) == ast.FuncSignature:
@@ -248,21 +261,14 @@ class AstBuildPass(Pass):
             else:
                 meta["signature"] = ast.Blank()
                 meta["body"] = node.kid[3]
-        else:
-            meta["mod"] = ast.Blank()
-            meta["arch"] = node.kid[0]
-            meta["name"] = node.kid[1]
-            if type(node.kid[2]) == ast.FuncSignature:
-                meta["signature"] = node.kid[2]
-                meta["body"] = node.kid[3]
-            else:
-                meta["signature"] = ast.Blank()
-                meta["body"] = node.kid[2]
         update_kind(node, ast.AbilitySpec, **meta)
 
     def exit_member_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ARCH_BLOCK Ast node."""
-        replace_node(node, node.kid[1])
+        if len(node.kid) == 3:
+            node = replace_node(node, node.kid[1])
+        else:
+            node.kid = []
         update_kind(node, ast.ArchBlock, members=node.kid)
 
     def exit_member_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -279,7 +285,7 @@ class AstBuildPass(Pass):
         access = node.kid[0]
         node = replace_node(node, node.kid[2])
         node.kid = [access] + node.kid
-        update_kind(node, ast.HasStmt, access=node.kid[0], vars=node.kid)
+        update_kind(node, ast.HasStmt, tag_info=node.kid[0], vars=node.kid)
 
     def exit_has_assign_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Push list of individual vars into parent."""
@@ -344,7 +350,7 @@ class AstBuildPass(Pass):
             node,
             typ,
             name=node.kid[2],
-            access=access,
+            tag_info=access,
             signature=node.kid[-2],
             body=node.kid[-1],
         )
@@ -366,12 +372,12 @@ class AstBuildPass(Pass):
         elif len(node.kid) == 2:
             node.kid = [node.kid[1]]
             update_kind(
-                node, ast.EventSignature, event=node.kid[0], arch_access=ast.Blank()
+                node, ast.EventSignature, event=node.kid[0], arch_tag_info=ast.Blank()
             )
         else:
             node.kid = [node.kid[1], node.kid[2]]
             update_kind(
-                node, ast.EventSignature, event=node.kid[1], arch_access=node.kid[0]
+                node, ast.EventSignature, event=node.kid[1], arch_tag_info=node.kid[0]
             )
 
     def exit_name_list(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -413,7 +419,10 @@ class AstBuildPass(Pass):
 
     def exit_code_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build CodeBlock Ast node."""
-        replace_node(node, node.kid[1])
+        if len(node.kid) == 3:
+            node = replace_node(node, node.kid[1])
+        else:
+            node.kid = []
         update_kind(node, ast.CodeBlock, stmts=node.kid)
 
     def exit_statement_list(self: "AstBuildPass", node: ast.AstNode) -> None:

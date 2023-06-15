@@ -116,20 +116,19 @@ class PyCodeGenPass(Pass):
 
     def enter_arch_block(self: "PyCodeGenPass", node: AstNode) -> None:
         """Enter arch block."""
+        if not is_blank(node.tag_info):
+            if not is_blank(node.tag_info.doc):
+                self.emit(node, node.tag_info.doc.py_code)
         self.indent_level += 1
 
     def exit_arch_block(self: "PyCodeGenPass", node: AstNode) -> None:
         """Exit arch block."""
-        if not is_blank(node.doc):
-            self.emit(node, node.doc.py_code)
-        if not is_blank(node.body):
-            self.emit(node, node.body.py_code)
         self.indent_level -= 1
 
-    def exit_arch_members(self: "PyCodeGenPass", node: AstNode) -> None:
-        """Exit arch block."""
-        for i in node.members:
-            self.emit(node, i.py_code)
+    # def exit_arch_members(self: "PyCodeGenPass", node: AstNode) -> None:
+    #     """Exit arch block."""
+    #     for i in node.members:
+    #         self.emit(node, i.py_code)
 
     # class HasStmt(AstNode):
     #     """HasStmt node type for Jac Ast."""

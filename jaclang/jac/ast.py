@@ -104,14 +104,30 @@ class GlobalVars(AstNode):
 
     def __init__(
         self: "GlobalVars",
-        access: AstNode,
+        tag_info: AstNode,
         assignments: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize global var node."""
-        self.access = access
+        self.tag_info = tag_info
         self.assignments = assignments
+        super().__init__(*args, **kwargs)
+
+
+class TagInfo(AstNode):
+    """TagInfo node type for Jac Ast."""
+
+    def __init__(
+        self: "TagInfo",
+        doc: AstNode,
+        access: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize tag info node."""
+        self.doc = doc
+        self.access = access
         super().__init__(*args, **kwargs)
 
 
@@ -198,7 +214,7 @@ class ArchDecl(AstNode):
 
     def __init__(
         self: "ArchDecl",
-        access: AstNode,
+        tag_info: AstNode,
         typ: AstNode,
         name: AstNode,
         doc: AstNode,
@@ -206,7 +222,7 @@ class ArchDecl(AstNode):
         **kwargs: dict,
     ) -> None:
         """Initialize arch decl node."""
-        self.access = access
+        self.tag_info = tag_info
         self.typ = typ
         self.name = name
         self.doc = doc
@@ -218,6 +234,7 @@ class ArchDef(AstNode):
 
     def __init__(
         self: "ArchDecl",
+        doc: AstNode,
         mod: AstNode,
         arch: AstNode,
         body: AstNode,
@@ -225,6 +242,7 @@ class ArchDef(AstNode):
         **kwargs: dict,
     ) -> None:
         """Initialize arch def node."""
+        self.doc = doc
         self.mod = mod
         self.arch = arch
         self.body = body
@@ -238,7 +256,7 @@ class Architype(AstNode):
         self: "Architype",
         name: AstNode,
         typ: AstNode,
-        access: AstNode,
+        tag_info: AstNode,
         base_classes: AstNode,
         body: AstNode,
         *args: list,
@@ -247,7 +265,7 @@ class Architype(AstNode):
         """Initialize object arch node."""
         self.name = name
         self.typ = typ
-        self.access = access
+        self.tag_info = tag_info
         self.base_classes = base_classes
         self.body = body
         super().__init__(*args, **kwargs)
@@ -258,14 +276,14 @@ class AbilityDecl(AstNode):
 
     def __init__(
         self: "AbilityDecl",
-        access: AstNode,
+        tag_info: AstNode,
         name: AstNode,
         is_func: bool,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize ability decl node."""
-        self.access = access
+        self.tag_info = tag_info
         self.name = name
         self.is_func = is_func
         super().__init__(*args, **kwargs)
@@ -296,7 +314,7 @@ class Ability(AstNode):
         self: "Ability",
         name: AstNode,
         is_func: bool,
-        access: AstNode,
+        tag_info: AstNode,
         signature: AstNode,
         body: AstNode,
         *args: list,
@@ -305,7 +323,7 @@ class Ability(AstNode):
         """Initialize func arch node."""
         self.name = name
         self.is_func = is_func
-        self.access = access
+        self.tag_info = tag_info
         self.signature = signature
         self.body = body
         super().__init__(*args, **kwargs)
@@ -327,6 +345,7 @@ class AbilitySpec(AstNode):
 
     def __init__(
         self: "AbilitySpec",
+        doc: AstNode,
         name: AstNode,
         arch: AstNode,
         mod: AstNode,
@@ -336,6 +355,7 @@ class AbilitySpec(AstNode):
         **kwargs: dict,
     ) -> None:
         """Initialize arch block node."""
+        self.doc = doc
         self.name = name
         self.arch = arch
         self.mod = mod
@@ -363,13 +383,13 @@ class HasStmt(AstNode):
 
     def __init__(
         self: "HasStmt",
-        access: AstNode,
+        tag_info: AstNode,
         vars: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize has statement node."""
-        self.access = access
+        self.tag_info = tag_info
         self.vars = vars
         super().__init__(*args, **kwargs)
 
@@ -444,7 +464,7 @@ class CanDS(AstNode):
     def __init__(
         self: "CanDS",
         name: AstNode,
-        access: AstNode,
+        tag_info: AstNode,
         signature: AstNode,
         body: AstNode,
         *args: list,
@@ -452,7 +472,7 @@ class CanDS(AstNode):
     ) -> None:
         """Initialize can statement node."""
         self.name = name
-        self.access = access
+        self.tag_info = tag_info
         self.signature = signature
         self.body = body
         super().__init__(*args, **kwargs)
@@ -468,13 +488,13 @@ class EventSignature(AstNode):
     def __init__(
         self: "EventSignature",
         event: AstNode,
-        arch_access: AstNode,
+        arch_tag_info: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize event signature node."""
         self.event = event
-        self.arch_access = arch_access
+        self.arch_tag_info = arch_tag_info
         super().__init__(*args, **kwargs)
 
 

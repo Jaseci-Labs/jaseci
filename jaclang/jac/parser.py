@@ -14,7 +14,11 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # All mighty start rule
     # ---------------------
-    @_("DOC_STRING element_list")
+    @_(
+        "DOC_STRING element_list",
+        "STRING element_list",
+        # "element_list",
+    )
     def start(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Start rule."""
         return p
@@ -60,8 +64,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "access COLON",
-        "empty",
+        "doc_tag access COLON",
+        "doc_tag",
     )
     def access_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Permission tag rule."""
@@ -80,6 +84,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "empty",
         "DOC_STRING",
+        "STRING",
     )
     def doc_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Doc tag rule."""
@@ -168,8 +173,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "strict_arch_ref member_block",
-        "NAME strict_arch_ref member_block",
+        "doc_tag strict_arch_ref member_block",
+        "doc_tag NAME strict_arch_ref member_block",
     )
     def architype_def(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
@@ -216,18 +221,18 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "ability_ref code_block",
-        "NAME ability_ref code_block",
+        "doc_tag ability_ref code_block",
+        "doc_tag NAME ability_ref code_block",
     )
     def ability_def(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
         return p
 
     @_(
-        "strict_arch_ref ability_ref code_block",
-        "strict_arch_ref ability_ref func_decl code_block",
-        "NAME strict_arch_ref ability_ref code_block",
-        "NAME strict_arch_ref ability_ref func_decl code_block",
+        "doc_tag strict_arch_ref ability_ref code_block",
+        "doc_tag strict_arch_ref ability_ref func_decl code_block",
+        "doc_tag NAME strict_arch_ref ability_ref code_block",
+        "doc_tag NAME strict_arch_ref ability_ref func_decl code_block",
     )
     def sub_ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability rule."""
