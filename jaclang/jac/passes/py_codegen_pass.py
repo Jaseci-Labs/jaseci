@@ -271,11 +271,11 @@ class PyCodeGenPass(Pass):
     #         self.names = names
     #         super().__init__(*args, **kwargs)
 
-    # class MethodParams(AstNode):
+    # class FuncParams(AstNode):
     #     """ArchBlock node type for Jac Ast."""
 
     #     def __init__(
-    #         self: "MethodParams",
+    #         self: "FuncParams",
     #         params: list,
     #         *args: list,
     #         **kwargs: dict,

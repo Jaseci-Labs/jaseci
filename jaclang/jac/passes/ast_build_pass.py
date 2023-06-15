@@ -54,14 +54,20 @@ class AstBuildPass(Pass):
 
     def exit_test(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build TEST Ast node."""
-        node.kid = node.kid[1:]
+        del node.kid[1]
         update_kind(
-            node, ast.Test, name=node.kid[0], description=node.kid[1], body=node.kid[2]
+            node,
+            ast.Test,
+            doc=node.kid[0],
+            name=node.kid[1],
+            description=node.kid[2],
+            body=node.kid[3],
         )
 
     def exit_mod_code(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build TEST Ast node."""
-        replace_node(node, node.kid[2])
+        node.kid = [node.kid[0], node.kid[-1]]
+        update_kind(node, ast.ModuleCode, doc=node.kid[0], body=node.kid[1])
 
     def exit_import_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build IMPORT Ast node."""
@@ -256,20 +262,13 @@ class AstBuildPass(Pass):
 
     def exit_member_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ARCH_BLOCK Ast node."""
-        meta = {"doc": ast.Blank(), "body": ast.Blank()}
-        if len(node.kid) <= 2:
-            node.kid = []
-        else:
-            node.kid = [node.kid[1], node.kid[2]]
-            meta["doc"] = node.kid[0]
-            meta["body"] = node.kid[1]
-        update_kind(node, ast.ArchBlock, **meta)
+        replace_node(node, node.kid[1])
+        update_kind(node, ast.ArchBlock, members=node.kid)
 
     def exit_member_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Chain list together into actual list."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
-        update_kind(node, ast.ArchMembers, members=node.kid)
 
     def exit_member_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Replace self with actual attr stmt."""
@@ -398,7 +397,7 @@ class AstBuildPass(Pass):
         """Build FuncDeclParamList Ast node."""
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
-        update_kind(node, ast.MethodParams, params=node.kid)
+        update_kind(node, ast.FuncParams, params=node.kid)
 
     def exit_param_var(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ParamVar Ast node."""
@@ -414,20 +413,13 @@ class AstBuildPass(Pass):
 
     def exit_code_block(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build CodeBlock Ast node."""
-        meta = {"doc": ast.Blank(), "body": ast.Blank()}
-        if len(node.kid) <= 2:
-            node.kid = []
-        else:
-            node.kid = [node.kid[1], node.kid[2]]
-            meta["doc"] = node.kid[0]
-            meta["body"] = node.kid[1]
-        update_kind(node, ast.CodeBlock, **meta)
+        replace_node(node, node.kid[1])
+        update_kind(node, ast.CodeBlock, stmts=node.kid)
 
     def exit_statement_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build StatementList Ast node."""
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
-        update_kind(node, ast.StmtList, stmts=node.kid)
 
     def exit_statement(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Statement Ast node."""

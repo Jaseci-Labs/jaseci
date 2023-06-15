@@ -121,14 +121,32 @@ class Test(AstNode):
     def __init__(
         self: "Test",
         name: AstNode,
+        doc: AstNode,
         description: AstNode,
         body: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize test node."""
+        self.doc = doc
         self.name = name
         self.description = description
+        self.body = body
+        super().__init__(*args, **kwargs)
+
+
+class ModuleCode(AstNode):
+    """Free mod code for Jac Ast."""
+
+    def __init__(
+        self: "Test",
+        doc: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize test node."""
+        self.doc = doc
         self.body = body
         super().__init__(*args, **kwargs)
 
@@ -331,27 +349,11 @@ class ArchBlock(AstNode):
 
     def __init__(
         self: "ArchBlock",
-        doc: AstNode,
-        body: AstNode,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize arch block node."""
-        self.doc = doc
-        self.body = body
-        super().__init__(*args, **kwargs)
-
-
-class ArchMembers(AstNode):
-    """ArchMembers node type for Jac Ast."""
-
-    def __init__(
-        self: "ArchMembers",
         members: list,
         *args: list,
         **kwargs: dict,
     ) -> None:
-        """Initialize arch members node."""
+        """Initialize arch block node."""
         self.members = members
         super().__init__(*args, **kwargs)
 
@@ -506,11 +508,11 @@ class NameList(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class MethodParams(AstNode):
+class FuncParams(AstNode):
     """ArchBlock node type for Jac Ast."""
 
     def __init__(
-        self: "MethodParams",
+        self: "FuncParams",
         params: list,
         *args: list,
         **kwargs: dict,
@@ -525,27 +527,11 @@ class CodeBlock(AstNode):
 
     def __init__(
         self: "CodeBlock",
-        doc: AstNode,
-        body: AstNode,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize code block node."""
-        self.doc = doc
-        self.body = body
-        super().__init__(*args, **kwargs)
-
-
-class StmtList(AstNode):
-    """StmtList node type for Jac Ast."""
-
-    def __init__(
-        self: "StmtList",
         stmts: list,
         *args: list,
         **kwargs: dict,
     ) -> None:
-        """Initialize stmt list node."""
+        """Initialize code block node."""
         self.stmts = stmts
         super().__init__(*args, **kwargs)
 
