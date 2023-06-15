@@ -400,7 +400,7 @@ class ActionsOptimizer:
         if len(policy_state) == 0:
             # Initialize policy tracking state
             policy_state = {
-                "phase": "Auto",  # current phase of policy: Auto|perf
+                "phase": "eval",  # current phase of policy: Auto|perf
                 "cur_config": None,  # current active configuration
                 "remain_configs": [],  # remaining config that need to be evaluated
                 "past_configs": [],  # configurations already evaluated
@@ -418,32 +418,122 @@ class ActionsOptimizer:
                 "prev_avg_walker_lat": [],
                 "call_counter": 0,  # counter for number of calls
             }
-        action_utilz = {}
-        total_count = 0
-        if policy_state["call_counter"] < WINDOW_SIZE:
-            # Increment the call counter
-            policy_state["call_counter"] += 1
-            logger.info(
-                f"Waiting for ({(WINDOW_SIZE+1) - policy_state['call_counter']} more calls before starting the policy state."  # noqa: E501
-            )
+        if policy_state["phase"] == "Auto":
+            action_utilz = {}
+            total_count = 0
+            if policy_state["call_counter"] < WINDOW_SIZE:
+                # Increment the call counter
+                policy_state["call_counter"] += 1
+                logger.info(
+                    f"Waiting for ({(WINDOW_SIZE+1) - policy_state['call_counter']} more calls before starting the policy state."  # noqa: E501
+                )
+                policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
+                for action in self.actions_calls.keys():
+                    action_utilz[action] = len(self.actions_calls[action])
+                    total_count = total_count + len(self.actions_calls[action])
+                action_utilz["total_call_count"] = total_count
+                logger.info(f"===Auto Policy=== action_utilz: {action_utilz}")
+
             policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
-            for action in self.actions_calls.keys():
-                action_utilz[action] = len(self.actions_calls[action])
-                total_count = total_count + len(self.actions_calls[action])
-            action_utilz["total_call_count"] = total_count
-            logger.info(f"===Auto Policy=== action_utilz: {action_utilz}")
+            if self._check_phase_change(policy_state):
+                # if no enough walker were execueted in this period, keep in perf phase
+                logger.info(
+                    f"""==in check phase===
+                    \npolicy_state: {policy_state}
+                    \nprev_avg_walker_lat :{policy_state['prev_avg_walker_lat']}"""
+                )
             policy_state["prev_actions"] = list(self.actions_calls.keys())
-            self.policy_state["Auto"] = policy_state
-            return
-        policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
-        self.policy_state["Auto"] = policy_state
-        if self._check_phase_change(policy_state):
-            # if no enough walker were execueted in this period, keep in perf phase
-            logger.info(
-                f"""==in check phase===
-                \npolicy_state: {policy_state}
-                \nprev_avg_walker_lat :{policy_state['prev_avg_walker_lat']}"""
-            )
+        elif policy_state["phase"] == "eval":
+            if policy_state["cur_config"] is None:
+                self._init_evalution_policy(policy_state)
+
+                # This is the start of evaluation period
+                policy_state["cur_config"] = policy_state["remain_configs"][0]
+                del policy_state["remain_configs"][0]
+                policy_state["cur_phase"] = 0
+                self.benchmark["active"] = True
+                self.benchmark["requests"] = {}
+                self.actions_change = self._get_action_change(
+                    policy_state["cur_config"]
+                )
+                if len(self.actions_change) > 0:
+                    logger.info(
+                        f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
+                    )
+                    policy_state["phase"] = "eval_switching"
+                    self.benchmark["active"] = False
+            else:
+                # Get performance
+                if "walker_run" not in self.benchmark["requests"]:
+                    # meaning no incoming requests during this period.
+                    # stay in this phase
+                    logger.info("===Evaluation Policy=== No walkers were executed")
+                    self.policy_state["Evaluation"] = policy_state
+                    return
+                walker_runs = []
+                for walker, times in self.benchmark["requests"]["walker_run"].items():
+                    if walker == "_default_":
+                        continue
+                    else:
+                        walker_runs.extend(times)
+
+                avg_walker_lat = sum(walker_runs) / len(walker_runs)
+                policy_state["cur_config"]["avg_walker_lat"] = avg_walker_lat
+                policy_state["past_configs"].append(policy_state["cur_config"])
+                logger.info(
+                    f"""===Evaluation Policy=== Complete evaluation period for:
+                        {policy_state['cur_config']} latency: {avg_walker_lat}"""
+                )
+                if len(policy_state["remain_configs"]) == 0:
+                    # need to paas the control to Auto phase
+                    logger.info("===Evaluation Policy=== Evaluation phase over.")
+                    best_config = copy.deepcopy(
+                        min(
+                            policy_state["past_configs"],
+                            key=lambda x: x["avg_walker_lat"],
+                        )
+                    )
+                    self.actions_change = self._get_action_change(best_config)
+                    policy_state["phase"] = "Auto"
+                    policy_state["cur_config"] = None
+                    policy_state["past_configs"] = []
+                    policy_state["cur_phase"] = 0
+                    policy_state["eval_complete"] = True
+                    policy_state["prev_best_config"] = best_config
+                    self.benchmark["requests"] = {}
+                    self.benchmark["active"] = True
+
+                else:
+                    next_config = policy_state["remain_configs"][0]
+                    del policy_state["remain_configs"][0]
+                    self.actions_change = self._get_action_change(next_config)
+                    policy_state["cur_config"] = next_config
+                    policy_state["cur_phase"] = 0
+                    self.benchmark["requests"] = {}
+                    if len(self.actions_change) > 0:
+                        logger.info(
+                            f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
+                        )
+                        policy_state["phase"] = "eval_switching"
+                        self.benchmark["active"] = False
+                    else:
+                        policy_state["phase"] = "eval"
+                        self.benchmark["active"] = True
+                    logger.info(
+                        f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
+                    )
+        elif policy_state["phase"] == "eval_switching":
+            # in the middle of switching between configs for evaluation
+            if len(self.actions_change) == 0:
+                # this means all actions change have been applied, start evaluation phase  # noqa: E501
+                logger.info(
+                    "===Evaluation Policy=== All actions change have been applied. Start evaluation phase."  # noqa: E501
+                )
+                policy_state["phase"] = "eval"
+                policy_state["cur_phase"] = 0
+                self.benchmark["active"] = True
+                self.benchmark["requests"] = {}
+        self.policy_state["Evaluation"] = policy_state
 
     def _actionpolicy_evaluation(self):
         """
