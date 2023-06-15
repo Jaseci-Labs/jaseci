@@ -1211,12 +1211,22 @@ can get_age with int {
 }
 
 with entry {
-    :a:get_age |> dict1; // returns 30
-    :a:get_age |> person1; // returns 30
+    :a:get_age |> dict1; # returns 30
+    :a:get_age |> person1; # returns 30
 }
 ```
 
 In this scenario, `get_age` function is not concerned with the type of entity, only that it has an 'age' property. The same concept will be used for walkers as well.
+
+You can also reference items in a dictionary with as you would an object as per
+```jac
+with entry {
+   dict1.age = 31; # sets age to 31
+}
+```
+
+However do note, that this feature is only available for string type keys that have no spaces or special characters and are formated as proper identifiers. Otherwise the standard `dict1["some key"]` type format must be used.
+
 ### Freestyle Filter Contexts
 
 A filter context in Jac provides a robust and powerful syntax for constraining a dataset. It is represented as a sequence of constraints using the notation `(= <var> <cmp_op> <expr>, ...)`. Let's dissect this structure and look at its components.
