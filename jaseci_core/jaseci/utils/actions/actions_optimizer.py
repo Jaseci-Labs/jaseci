@@ -367,8 +367,10 @@ class ActionsOptimizer:
                 policy_state["prev_avg_walker_lat"][curr_start_window:curr_end_window]
             )
         )
-        if (lat_change_pct > THRESHOLD) or set(policy_state["prev_actions"]) != set(
-            list(self.actions_calls.keys())
+        if (lat_change_pct > THRESHOLD) or (
+            len(list(self.actions_calls.keys())) > 0
+            and set(policy_state["prev_actions"])
+            != set(list(self.actions_calls.keys()))
         ):
             # if walker latency changes too much, kick the evaluation phase
             logger.info(
@@ -418,9 +420,6 @@ class ActionsOptimizer:
                 "prev_avg_walker_lat": [],
                 "call_counter": 0,  # counter for number of calls
             }
-        logger.info(
-            f"===Auto Policy=== \n{policy_state}\nactions_change: {self.actions_change}"
-        )
         policy_state["cur_phase"] += self.jsorc_interval
         if policy_state["phase"] == "pref":
             action_utilz = {}
@@ -437,7 +436,8 @@ class ActionsOptimizer:
                     total_count = total_count + len(self.actions_calls[action])
                 action_utilz["total_call_count"] = total_count
                 logger.info(f"===Auto Policy=== action_utilz: {action_utilz}")
-
+                self.policy_state["Auto"] = policy_state
+                return
             policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
             if self._check_phase_change(policy_state):
                 # if no enough walker were execueted in this period, keep in perf phase
