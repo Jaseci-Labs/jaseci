@@ -21,9 +21,9 @@ walker travelor {  # define a new walker
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
-can myablty with int {} # define a data spacial freestyle ability
+can myablty -> int {} # define a data spacial freestyle ability
 
-can myfunc(): None {} # define a function
+can myfunc() -> None {} # define a function
 
 with entry {
     # module level freestyle code

@@ -210,7 +210,7 @@ class AstBuildPass(Pass):
         }
         if len(node.kid) > 3:
             meta["signature"] = node.kid[-2]
-            if type(node.kid[-2]) == ast.MethodSignature:
+            if type(node.kid[-2]) == ast.FuncSignature:
                 meta["is_func"] = True
         update_kind(node, ast.Ability, **meta)
 
@@ -225,7 +225,7 @@ class AstBuildPass(Pass):
         }
         if len(node.kid) > 2:
             meta["signature"] = node.kid[-1]
-            if type(node.kid[-1]) == ast.MethodSignature:
+            if type(node.kid[-1]) == ast.FuncSignature:
                 meta["is_func"] = True
         update_kind(node, ast.AbilityDecl, **meta)
 
@@ -246,7 +246,7 @@ class AstBuildPass(Pass):
             meta["mod"] = node.kid[0]
             meta["arch"] = node.kid[1]
             meta["name"] = node.kid[2]
-            if type(node.kid[3]) == ast.MethodSignature:
+            if type(node.kid[3]) == ast.FuncSignature:
                 meta["signature"] = node.kid[3]
                 meta["body"] = node.kid[4]
             else:
@@ -256,7 +256,7 @@ class AstBuildPass(Pass):
             meta["mod"] = ast.Blank()
             meta["arch"] = node.kid[0]
             meta["name"] = node.kid[1]
-            if type(node.kid[2]) == ast.MethodSignature:
+            if type(node.kid[2]) == ast.FuncSignature:
                 meta["signature"] = node.kid[2]
                 meta["body"] = node.kid[3]
             else:
@@ -306,7 +306,7 @@ class AstBuildPass(Pass):
             ast.HasVar,
             tags=node.kid[0],
             name=node.kid[1],
-            type_spec=node.kid[2],
+            type_tag=node.kid[2],
             value=node.kid[3] if len(node.kid) == 4 else ast.Blank(),
         )
 
@@ -318,8 +318,12 @@ class AstBuildPass(Pass):
             node.kid = node.kid[0].kid + [node.kid[1]]
             update_kind(node, ast.HasVarTags, tags=node.kid)
 
-    def exit_type_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
+    def exit_type_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build TypeSpec Ast node."""
+        replace_node(node, node.kid[1])
+
+    def exit_return_type_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build ReturnTypeSpec Ast node."""
         replace_node(node, node.kid[1])
 
     def exit_type_name(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -389,12 +393,12 @@ class AstBuildPass(Pass):
         if len(node.kid) == 3:
             node.kid = [node.kid[-1]]
             update_kind(
-                node, ast.MethodSignature, params=ast.Blank(), return_type=node.kid[0]
+                node, ast.FuncSignature, params=ast.Blank(), return_type=node.kid[0]
             )
         else:
             node.kid = [node.kid[1], node.kid[3]]
             update_kind(
-                node, ast.MethodSignature, params=node.kid[0], return_type=node.kid[1]
+                node, ast.FuncSignature, params=node.kid[0], return_type=node.kid[1]
             )
 
     def exit_func_decl_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -411,7 +415,7 @@ class AstBuildPass(Pass):
             node,
             ast.ParamVar,
             name=node.kid[0],
-            type_spec=node.kid[1],
+            type_tag=node.kid[1],
             value=node.kid[2] if len(node.kid) == 3 else ast.Blank(),
         )
 

@@ -153,14 +153,14 @@ class PyCodeGenPass(Pass):
     #     def __init__(
     #         self: "ParamVar",
     #         name: AstNode,
-    #         type_spec: AstNode,
+    #         type_tag: AstNode,
     #         value: AstNode,
     #         *args: list,
     #         **kwargs: dict,
     #     ) -> None:
     #         """Initialize has var node."""
     #         self.name = name
-    #         self.type_spec = type_spec
+    #         self.type_tag = type_tag
     #         self.value = value
     #         super().__init__(*args, **kwargs)
 
@@ -244,11 +244,11 @@ class PyCodeGenPass(Pass):
     #         self.arch_access = arch_access
     #         super().__init__(*args, **kwargs)
 
-    # class MethodSignature(AstNode):
-    #     """MethodSignature node type for Jac Ast."""
+    # class FuncSignature(AstNode):
+    #     """FuncSignature node type for Jac Ast."""
 
     #     def __init__(
-    #         self: "MethodSignature",
+    #         self: "FuncSignature",
     #         params: AstNode,
     #         return_type: AstNode,
     #         *args: list,

@@ -49,14 +49,14 @@ walker tourist {
         report here.activities;
     }
 
-    can do_something(app: int =Actvy): Actvy {
+    can do_something(app: int =Actvy) -> Actvy {
         app.do_something();
     }
-    can do_something(app: int = Actvy, other: float = Actvy): Actvy {
+    can do_something(app: int = Actvy, other: float = Actvy) -> Actvy {
         return app?.do_something(other);
     }
 
-    can outside_func(): None;
+    can outside_func() -> None;
 }
 
 

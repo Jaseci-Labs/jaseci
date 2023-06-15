@@ -133,6 +133,7 @@ class JacLexer(Lexer):
         "ABILITY_OP",
         "SPAWN_OP",
         "ELVIS_OP",
+        "RETURN_HINT",
         "NULL_OK",
     }
 
@@ -242,6 +243,7 @@ class JacLexer(Lexer):
     OBJECT_OP = r":o:|:object:"
     ABILITY_OP = r":a:|:ability:"
     SPAWN_OP = r"::>"
+    RETURN_HINT = r"->"
     ELVIS_OP = r"\?:"
     NULL_OK = r"\?"
 

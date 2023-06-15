@@ -337,10 +337,10 @@ class TranspilePass(Pass):
                 node, f"{node.kid[0].py_code}, {HAS_TAGS}.{node.kid[0].py_code.upper()}"
             )
 
-    def exit_type_spec(self: "TranspilePass", node: AstNode) -> None:
+    def exit_type_tag(self: "TranspilePass", node: AstNode) -> None:
         """Convert type spec to python code.
 
-        type_spec -> COLON type_name
+        type_tag -> COLON type_name
         """
         self.emit(node, node.kid[1].py_code)
 

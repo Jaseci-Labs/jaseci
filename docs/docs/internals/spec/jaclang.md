@@ -116,7 +116,7 @@ walker travelor {  # define a new walker
 
 can myablty with int {} # define a data spacial freestyle ability
 
-can myfunc(): None {} # define a function
+can myfunc() -> None {} # define a function
 
 with entry {
     # module level freestyle code
@@ -240,7 +240,7 @@ By blending the best aspects of static and dynamic typing, along with the potent
 ```jac
 """Type hints aren't that much work."""
 
-can foo(a: int, b: str): int {
+can foo(a: int, b: str) -> int {
     c = a + (b|>int);  # no type hint needed here
     return c;
 }
@@ -249,7 +249,7 @@ object Bar {
     has a_list: list[int] = [1, 2, 3];
     has b_list: list[str] = ["5", "6", "7"];
 
-    can init(): None {
+    can init() -> None {
         for i in here.b_list {
             foo(5, i) |> print;
         }
@@ -273,11 +273,11 @@ Furthermore, Jac's approach aligns better with other object-oriented languages, 
 object MyObj {
     has a: int;
 
-    can init(a: int): None {
+    can init(a: int) -> None {
         here.a = a;
     }
 
-    can set_a(val: int): None {
+    can set_a(val: int) -> None {
         here.a = val;
     }
 }
@@ -301,10 +301,10 @@ By transitioning from Python's underscore convention to the use of explicit keyw
 
 object MyObj {
     prot: has a: int;
-    priv: can init(a: int): None {
+    priv: can init(a: int) -> None {
         here.a = a;
     }
-    pub: can set_a(val: int): None {
+    pub: can set_a(val: int) -> None {
         here.a = val;
     }
 }
@@ -323,8 +323,8 @@ This approach is particularly beneficial in large projects where different team 
 
 object MyObj {
     prot: has a: int;
-    priv: can init(a: int): None;
-    pub: can set_a(val: int): None;
+    priv: can init(a: int) -> None;
+    pub: can set_a(val: int) -> None;
 }
 
 :o:MyObj:a:init {
@@ -400,7 +400,7 @@ global age = 25, temperature = 98.6, name = "John Doe";
 global fruits = ["apple", "banana", "orange"];
 global person = {"name": "Alice", "age": 30, "city": "New York"};
 
-can print_globs(): None {
+can print_globs() -> None {
     age = 30;
     fruits = ["pear", "grape", "kiwi"];
     print(:g:age, temperature, name);  # :g:<name> references global vs local
@@ -480,12 +480,12 @@ It is important to note that unlike Python, Jac does not support returning multi
 ```jac
 """Functions in Jac."""
 
-can factorial(n: int): int {
+can factorial(n: int) -> int {
     if n == 0 { return 1; }
     else { return n * factorial(n-1); }
 }
 
-can factorial_recount(n: int): int {
+can factorial_recount(n: int) -> int {
     has count = 0;  # static variable, state kept between calls
     count += 1 |> print;  # += is a walrus style operator in Jac
     if n == 0 { return 1; }
@@ -511,12 +511,12 @@ object Person {
     prot: has age: int;  # no need ot use `_age`
     pub: has name: str;
 
-    priv: can init(name: str, age: int): None {
+    priv: can init(name: str, age: int) -> None {
         here.name = name;
         here.age = age;
     }
 
-    pub: can greet(): None {  # public is default if `pub` is not specified
+    pub: can greet() -> None {  # public is default if `pub` is not specified
         print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
     }
 }
@@ -529,7 +529,7 @@ with entry {
 
 In this example, we have a `Person` object with two properties: `name` and `age`. The `prot` keyword before `age` indicates that `age` is a protected property (only visible to it's class members and sub class members). Similarly, the `pub` keyword before `name` indicates that `name` is a public property (can be accessed via `.name` everywhere).
 
-The constructor function is declared using `priv: can init(name: str, age: int): None`. This `init` function initializes the `Person` object's state. The `priv` keyword denotes that `init` is a private method, meaning it can only be accessed within the `Person` object. The method takes two arguments: `name` and `age`.
+The constructor function is declared using `priv: can init(name: str, age: int) -> None`. This `init` function initializes the `Person` object's state. The `priv` keyword denotes that `init` is a private method, meaning it can only be accessed within the `Person` object. The method takes two arguments: `name` and `age`.
 
 Inside the `init` method, we use the `here` keyword instead of `self`, which is traditionally used in Python. The `here` keyword refers to the instance of the `Person` object being manipulated, similar to how `self` works in Python.
 
@@ -543,12 +543,12 @@ By switching from `self` to `here`, and from `__init__` to `init`, Jac brings a 
 object Person {
     has age: int, name: str;
 
-    can init(name: str, age: int): None {
+    can init(name: str, age: int) -> None {
         here.name = name;
         here.age = age;
     }
 
-    can greet(): None {
+    can greet() -> None {
         print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
     }
 }
@@ -567,16 +567,16 @@ Similar to Python, Jac allows for both single and multiple inheritance. Here's h
 """Super simple example of inheritance."""
 
 object Parent {
-    can init(): None {
+    can init() -> None {
         # Parent initialization
     }
-    can speak(): None {
+    can speak() -> None {
         # Parent speaking
     }
 }
 
 object Child:Parent {
-    can init(): None {
+    can init() -> None {
         # Child initialization
         :o:Parent.init();  # Initialize parent, :o: is alias for :object:
     }
@@ -591,36 +591,36 @@ Multiple inheritance, a concept where a class can inherit from more than one sup
 """Example of multiple inheritance."""
 
 object Parent {
-    can init(): None {
+    can init() -> None {
         # Parent initialization
     }
-    can speak(): None {
+    can speak() -> None {
         # Parent speaking
     }
 }
 
 object Mom:Parent {
-    can init(): None {
+    can init() -> None {
         # Mom initialization
         :o:Parent.init();
     }
-    can calm(): None {
+    can calm() -> None {
         # Mom speaking
     }
 }
 
 object Dad:Parent {
-    can init(): None {
+    can init() -> None {
         # Dad initialization
         :o:Parent.init();
     }
-    can excite(): None {
+    can excite() -> None {
         # Dad speaking
     }
 }
 
 object Child:Mom:Dad { #Child inherits from Mom and Dad
-    can init(): None {
+    can init() -> None {
         # Child initialization
         :o:Mom.init();
         :o:Dad.init();
@@ -654,7 +654,7 @@ The `raise` keyword is used to trigger an exception manually and can be followed
 ```jac
 """Exception example in Jac."""
 
-can divide_numbers(a: float, b: float): float {
+can divide_numbers(a: float, b: float) -> float {
     try {
         result = a / b;
     }
@@ -786,7 +786,7 @@ new_dict2 = {i: i * i for i in range(10) if i % 2 == 0}
 """A mega example of a bunch of statements and expressions."""
 
 
-can example_function(numbers: list[int]): int {
+can example_function(numbers: list[int]) -> int {
     """
     This function takes a list of numbers and returns a generator of even numbers.
     """
@@ -1195,7 +1195,7 @@ object Person {
     has age: int = 30;
     }
 
-    can greet(): None {
+    can greet() -> None {
         return `Hello, my name is ${this.name}`;
     }
 }

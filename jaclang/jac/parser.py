@@ -209,7 +209,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "access_tag KW_CAN NAME code_block",
-        "access_tag KW_CAN NAME KW_WITH type_name code_block",
+        "access_tag KW_CAN NAME return_type_tag code_block",
         "access_tag KW_CAN NAME func_decl code_block",
     )
     def ability_full_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -218,7 +218,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "access_tag KW_CAN NAME SEMI",
-        "access_tag KW_CAN NAME KW_WITH type_name SEMI",
+        "access_tag KW_CAN NAME return_type_tag SEMI",
         "access_tag KW_CAN NAME func_decl SEMI",
     )
     def ability_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
@@ -285,8 +285,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "has_tag NAME type_spec",
-        "has_tag NAME type_spec EQ expression",
+        "has_tag NAME type_tag",
+        "has_tag NAME type_tag EQ expression",
     )
     def typed_has(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
@@ -302,7 +302,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_("COLON type_name")
-    def type_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def type_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Type hint rule."""
+        return p
+
+    @_("RETURN_HINT type_name")
+    def return_type_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
         return p
 
@@ -382,8 +387,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "LPAREN RPAREN type_spec",
-        "LPAREN func_decl_param_list RPAREN type_spec",
+        "LPAREN RPAREN return_type_tag",
+        "LPAREN func_decl_param_list RPAREN return_type_tag",
     )
     def func_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Func declaration parameter rule."""
@@ -398,8 +403,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "NAME type_spec",
-        "NAME type_spec EQ expression",
+        "NAME type_tag",
+        "NAME type_tag EQ expression",
     )
     def param_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""

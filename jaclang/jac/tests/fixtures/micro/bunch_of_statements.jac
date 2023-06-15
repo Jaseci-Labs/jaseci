@@ -1,7 +1,7 @@
 """A mega example of a bunch of statements and expressions."""
 
 
-can example_function(numbers: list[int]): int {
+can example_function(numbers: list[int]) -> int {
     """
     This function takes a list of numbers and returns a generator of even numbers.
     """
