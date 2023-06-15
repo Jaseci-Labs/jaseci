@@ -15,5 +15,5 @@ setup(
     entry_points={},
     author="Jason Mars",
     author_email="jason@jaseci.org",
-    url="https://github.com/Jaseci-Labs/jaseci2",
+    url="https://github.com/Jaseci-Labs/jaclang",
 )

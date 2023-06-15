@@ -4,8 +4,8 @@ import re
 from jaclang.jac.parser import JacLexer
 
 
-def get_prism_highight_info() -> str:
-    """Get prism highlight info from JacLexer."""
+def get_all_jac_keywords() -> str:
+    """Get all Jac keywords as an or string."""
     ret = ""
     for k in JacLexer._remapping["NAME"].keys():
         ret += f"{k}|"
@@ -13,7 +13,7 @@ def get_prism_highight_info() -> str:
 
 
 if __name__ == "__main__":
-    print(get_prism_highight_info())
+    print(get_all_jac_keywords())
 
 
 def pascal_to_snake(pascal_string: str) -> str:
