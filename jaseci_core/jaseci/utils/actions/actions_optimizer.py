@@ -436,9 +436,9 @@ class ActionsOptimizer:
                     total_count = total_count + len(self.actions_calls[action])
                 action_utilz["total_call_count"] = total_count
                 logger.info(f"===Auto Policy=== action_utilz: {action_utilz}")
+                policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
                 self.policy_state["Auto"] = policy_state
                 return
-            policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
             if self._check_phase_change(policy_state):
                 # if no enough walker were execueted in this period, keep in perf phase
                 logger.info(
