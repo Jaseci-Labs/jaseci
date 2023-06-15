@@ -1,5 +1,5 @@
 echo "Deploying using namespace: $1"
-sed "s/\$j{namespace}/$1/" jaseci-template > tmp.jaseci.yaml
+sed "s/\$j{namespace}/$1/" jaseci-template-exp > tmp.jaseci.yaml
 
 env_vars=""
 declare -A keyword_args=( [POSTGRES_HOST]="jaseci-db" [DBNAME]="postgres" [JSORC_DB_REGEN]="\"true\"" [REDIS_HOST]="jaseci-redis" [PROME_HOST]="jaseci-prometheus-server" [ELASTIC_HOST]="jaseci-es-http")
