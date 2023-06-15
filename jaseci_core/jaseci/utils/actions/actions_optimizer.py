@@ -461,17 +461,18 @@ class ActionsOptimizer:
                 )
                 if len(self.actions_change) > 0:
                     logger.info(
-                        f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
+                        f"===Auto Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
                     )
                     policy_state["phase"] = "eval_switching"
                     self.benchmark["active"] = False
+                    self.apply_actions_change()
             else:
                 if policy_state["cur_phase"] >= policy_state["eval_phase"]:
                     # Get performance
                     if "walker_run" not in self.benchmark["requests"]:
                         # meaning no incoming requests during this period.
                         # stay in this phase
-                        logger.info("===Evaluation Policy=== No walkers were executed")
+                        logger.info("===Auto Policy=== No walkers were executed")
                         self.policy_state["Auto"] = policy_state
                         return
                     walker_runs = []
@@ -487,12 +488,12 @@ class ActionsOptimizer:
                     policy_state["cur_config"]["avg_walker_lat"] = avg_walker_lat
                     policy_state["past_configs"].append(policy_state["cur_config"])
                     logger.info(
-                        f"""===Evaluation Policy=== Complete evaluation period for:
+                        f"""===Auto Policy=== Complete evaluation period for:
                             {policy_state['cur_config']} latency: {avg_walker_lat}"""
                     )
                     if len(policy_state["remain_configs"]) == 0:
                         # need to paas the control to Auto phase
-                        logger.info("===Evaluation Policy=== Evaluation phase over.")
+                        logger.info("===Auto Policy=== Evaluation phase over.")
                         best_config = copy.deepcopy(
                             min(
                                 policy_state["past_configs"],
@@ -518,22 +519,23 @@ class ActionsOptimizer:
                         self.benchmark["requests"] = {}
                         if len(self.actions_change) > 0:
                             logger.info(
-                                f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
+                                f"===Auto Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
                             )
                             policy_state["phase"] = "eval_switching"
                             self.benchmark["active"] = False
+                            self.apply_actions_change()
                         else:
                             policy_state["phase"] = "eval"
                             self.benchmark["active"] = True
                         logger.info(
-                            f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
+                            f"===Auto Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
                         )
         elif policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
                 # this means all actions change have been applied, start evaluation phase  # noqa: E501
                 logger.info(
-                    "===Evaluation Policy=== All actions change have been applied. Start evaluation phase."  # noqa: E501
+                    "===Auto Policy=== All actions change have been applied. Start evaluation phase."  # noqa: E501
                 )
                 policy_state["phase"] = "eval"
                 policy_state["cur_phase"] = 0
