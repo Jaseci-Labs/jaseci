@@ -418,6 +418,7 @@ class ActionsOptimizer:
                 "prev_avg_walker_lat": [],
                 "call_counter": 0,  # counter for number of calls
             }
+        policy_state["cur_phase"] += self.jsorc_interval
         if policy_state["phase"] == "Auto":
             action_utilz = {}
             total_count = 0
@@ -462,65 +463,68 @@ class ActionsOptimizer:
                     policy_state["phase"] = "eval_switching"
                     self.benchmark["active"] = False
             else:
-                # Get performance
-                if "walker_run" not in self.benchmark["requests"]:
-                    # meaning no incoming requests during this period.
-                    # stay in this phase
-                    logger.info("===Evaluation Policy=== No walkers were executed")
-                    self.policy_state["Auto"] = policy_state
-                    return
-                walker_runs = []
-                for walker, times in self.benchmark["requests"]["walker_run"].items():
-                    if walker == "_default_":
-                        continue
-                    else:
-                        walker_runs.extend(times)
+                if policy_state["cur_phase"] >= policy_state["eval_phase"]:
+                    # Get performance
+                    if "walker_run" not in self.benchmark["requests"]:
+                        # meaning no incoming requests during this period.
+                        # stay in this phase
+                        logger.info("===Evaluation Policy=== No walkers were executed")
+                        self.policy_state["Auto"] = policy_state
+                        return
+                    walker_runs = []
+                    for walker, times in self.benchmark["requests"][
+                        "walker_run"
+                    ].items():
+                        if walker == "_default_":
+                            continue
+                        else:
+                            walker_runs.extend(times)
 
-                avg_walker_lat = sum(walker_runs) / len(walker_runs)
-                policy_state["cur_config"]["avg_walker_lat"] = avg_walker_lat
-                policy_state["past_configs"].append(policy_state["cur_config"])
-                logger.info(
-                    f"""===Evaluation Policy=== Complete evaluation period for:
-                        {policy_state['cur_config']} latency: {avg_walker_lat}"""
-                )
-                if len(policy_state["remain_configs"]) == 0:
-                    # need to paas the control to Auto phase
-                    logger.info("===Evaluation Policy=== Evaluation phase over.")
-                    best_config = copy.deepcopy(
-                        min(
-                            policy_state["past_configs"],
-                            key=lambda x: x["avg_walker_lat"],
-                        )
-                    )
-                    self.actions_change = self._get_action_change(best_config)
-                    policy_state["phase"] = "Auto"
-                    policy_state["cur_config"] = None
-                    policy_state["past_configs"] = []
-                    policy_state["cur_phase"] = 0
-                    policy_state["eval_complete"] = True
-                    policy_state["prev_best_config"] = best_config
-                    self.benchmark["requests"] = {}
-                    self.benchmark["active"] = True
-
-                else:
-                    next_config = policy_state["remain_configs"][0]
-                    del policy_state["remain_configs"][0]
-                    self.actions_change = self._get_action_change(next_config)
-                    policy_state["cur_config"] = next_config
-                    policy_state["cur_phase"] = 0
-                    self.benchmark["requests"] = {}
-                    if len(self.actions_change) > 0:
-                        logger.info(
-                            f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
-                        )
-                        policy_state["phase"] = "eval_switching"
-                        self.benchmark["active"] = False
-                    else:
-                        policy_state["phase"] = "eval"
-                        self.benchmark["active"] = True
+                    avg_walker_lat = sum(walker_runs) / len(walker_runs)
+                    policy_state["cur_config"]["avg_walker_lat"] = avg_walker_lat
+                    policy_state["past_configs"].append(policy_state["cur_config"])
                     logger.info(
-                        f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
+                        f"""===Evaluation Policy=== Complete evaluation period for:
+                            {policy_state['cur_config']} latency: {avg_walker_lat}"""
                     )
+                    if len(policy_state["remain_configs"]) == 0:
+                        # need to paas the control to Auto phase
+                        logger.info("===Evaluation Policy=== Evaluation phase over.")
+                        best_config = copy.deepcopy(
+                            min(
+                                policy_state["past_configs"],
+                                key=lambda x: x["avg_walker_lat"],
+                            )
+                        )
+                        self.actions_change = self._get_action_change(best_config)
+                        policy_state["phase"] = "Auto"
+                        policy_state["cur_config"] = None
+                        policy_state["past_configs"] = []
+                        policy_state["cur_phase"] = 0
+                        policy_state["eval_complete"] = True
+                        policy_state["prev_best_config"] = best_config
+                        self.benchmark["requests"] = {}
+                        self.benchmark["active"] = True
+
+                    else:
+                        next_config = policy_state["remain_configs"][0]
+                        del policy_state["remain_configs"][0]
+                        self.actions_change = self._get_action_change(next_config)
+                        policy_state["cur_config"] = next_config
+                        policy_state["cur_phase"] = 0
+                        self.benchmark["requests"] = {}
+                        if len(self.actions_change) > 0:
+                            logger.info(
+                                f"===Evaluation Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
+                            )
+                            policy_state["phase"] = "eval_switching"
+                            self.benchmark["active"] = False
+                        else:
+                            policy_state["phase"] = "eval"
+                            self.benchmark["active"] = True
+                        logger.info(
+                            f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
+                        )
         elif policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
