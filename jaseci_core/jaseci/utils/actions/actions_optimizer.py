@@ -400,7 +400,7 @@ class ActionsOptimizer:
         if len(policy_state) == 0:
             # Initialize policy tracking state
             policy_state = {
-                "phase": "eval",  # current phase of policy: Auto|perf
+                "phase": "eval",  # current phase of policy: eval|perf
                 "cur_config": None,  # current active configuration
                 "remain_configs": [],  # remaining config that need to be evaluated
                 "past_configs": [],  # configurations already evaluated
@@ -419,7 +419,7 @@ class ActionsOptimizer:
                 "call_counter": 0,  # counter for number of calls
             }
         policy_state["cur_phase"] += self.jsorc_interval
-        if policy_state["phase"] == "Auto":
+        if policy_state["phase"] == "pref":
             action_utilz = {}
             total_count = 0
             if policy_state["call_counter"] < WINDOW_SIZE:
@@ -497,7 +497,7 @@ class ActionsOptimizer:
                             )
                         )
                         self.actions_change = self._get_action_change(best_config)
-                        policy_state["phase"] = "Auto"
+                        policy_state["phase"] = "pref"
                         policy_state["cur_config"] = None
                         policy_state["past_configs"] = []
                         policy_state["cur_phase"] = 0
