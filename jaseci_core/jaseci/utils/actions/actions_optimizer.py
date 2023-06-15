@@ -446,6 +446,10 @@ class ActionsOptimizer:
                     \npolicy_state: {policy_state}
                     \nprev_avg_walker_lat :{policy_state['prev_avg_walker_lat']}"""
                 )
+                policy_state["phase"] = "eval"
+                policy_state["cur_config"] = None
+                policy_state["cur_phase"] = 0
+                policy_state["eval_complete"] = False
             policy_state["prev_actions"] = list(self.actions_calls.keys())
         elif policy_state["phase"] == "eval":
             if policy_state["cur_config"] is None:
