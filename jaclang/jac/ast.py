@@ -1211,6 +1211,14 @@ class GlobalRef(AstNode):
         super().__init__(*args, **kwargs)
 
 
+class HereRef(GlobalRef):
+    """HereRef node type for Jac Ast."""
+
+
+class VisitorRef(GlobalRef):
+    """VisitorRef node type for Jac Ast."""
+
+
 class NodeRef(GlobalRef):
     """NodeRef node type for Jac Ast."""
 

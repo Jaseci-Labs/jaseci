@@ -314,7 +314,10 @@ class AstBuildPass(Pass):
 
     def exit_return_type_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ReturnTypeSpec Ast node."""
-        replace_node(node, node.kid[1])
+        if len(node.kid) == 2:
+            replace_node(node, node.kid[1])
+        else:
+            replace_node(node, ast.Blank())
 
     def exit_type_name(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build TypeName Ast node."""
@@ -978,6 +981,24 @@ class AstBuildPass(Pass):
         """Build GlobalRef Ast node."""
         node.kid = [node.kid[-1]]
         update_kind(node, ast.GlobalRef, name=node.kid[-1])
+
+    def exit_here_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build GlobalRef Ast node."""
+        if len(node.kid) == 2:
+            node.kid = [node.kid[-1]]
+            update_kind(node, ast.HereRef, name=node.kid[-1])
+        else:
+            node.kid = []
+            update_kind(node, ast.HereRef, name=ast.Blank())
+
+    def exit_visitor_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build GlobalRef Ast node."""
+        if len(node.kid) == 2:
+            node.kid = [node.kid[-1]]
+            update_kind(node, ast.VisitorRef, name=node.kid[-1])
+        else:
+            node.kid = []
+            update_kind(node, ast.VisitorRef, name=ast.Blank())
 
     def exit_arch_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build ArchRef Ast node."""

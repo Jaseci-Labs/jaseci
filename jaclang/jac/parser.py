@@ -200,7 +200,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "access_tag KW_CAN NAME code_block",
         "access_tag KW_CAN NAME return_type_tag code_block",
         "access_tag KW_CAN NAME func_decl code_block",
     )
@@ -209,7 +208,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "access_tag KW_CAN NAME SEMI",
         "access_tag KW_CAN NAME return_type_tag SEMI",
         "access_tag KW_CAN NAME func_decl SEMI",
     )
@@ -298,7 +296,10 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Type hint rule."""
         return p
 
-    @_("RETURN_HINT type_name")
+    @_(
+        "empty",
+        "RETURN_HINT type_name",
+    )
     def return_type_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
         return p
@@ -786,11 +787,11 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom_collection",
         "LPAREN expression RPAREN",
         "global_ref",
+        "here_ref",
+        "visitor_ref",
         "atomic_chain",
         "arch_ref",
         "edge_op_ref",
-        "KW_HERE",
-        "KW_VISITOR",
     )
     def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Atom rule."""
@@ -946,6 +947,22 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_("GLOBAL_OP NAME")
     def global_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Global reference rule."""
+        return p
+
+    @_(
+        "HERE_OP NAME",
+        "HERE_OP",
+    )
+    def here_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Global reference rule."""
+        return p
+
+    @_(
+        "VISITOR_OP NAME",
+        "VISITOR_OP",
+    )
+    def visitor_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
         return p
 

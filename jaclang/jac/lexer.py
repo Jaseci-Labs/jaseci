@@ -29,14 +29,12 @@ class JacLexer(Lexer):
         "TYP_TYPE",
         "KW_NODE",
         "KW_IGNORE",
-        "KW_VISITOR",
         "KW_VISIT",
         "KW_REVISIT",
         "KW_SPAWN",
         "KW_WITH",
         "KW_ENTRY",
         "KW_EXIT",
-        "KW_HERE",
         "KW_IMPORT",
         "KW_INCLUDE",
         "KW_FROM",
@@ -126,6 +124,8 @@ class JacLexer(Lexer):
         "CARROW_R_p1",
         "CARROW_R_p2",
         "GLOBAL_OP",
+        "HERE_OP",
+        "VISITOR_OP",
         "WALKER_OP",
         "NODE_OP",
         "EDGE_OP",
@@ -170,14 +170,12 @@ class JacLexer(Lexer):
     NAME["type"] = "TYP_TYPE"
     NAME["node"] = "KW_NODE"
     NAME["ignore"] = "KW_IGNORE"
-    NAME["visitor"] = "KW_VISITOR"
     NAME["visit"] = "KW_VISIT"
     NAME["revisit"] = "KW_REVISIT"
     NAME["spawn"] = "KW_SPAWN"
     NAME["with"] = "KW_WITH"
     NAME["entry"] = "KW_ENTRY"
     NAME["exit"] = "KW_EXIT"
-    NAME["here"] = "KW_HERE"
     NAME["import"] = "KW_IMPORT"
     NAME["include"] = "KW_INCLUDE"
     NAME["from"] = "KW_FROM"
@@ -237,6 +235,8 @@ class JacLexer(Lexer):
 
     # Just special
     GLOBAL_OP = r":g:|:global:"
+    HERE_OP = r":h:|:here:"
+    VISITOR_OP = r":v:|:visitor:"
     WALKER_OP = r":w:|:walker:"
     NODE_OP = r":n:|:node:"
     EDGE_OP = r":e:|:edge:"
