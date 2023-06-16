@@ -99,11 +99,11 @@ object JacCli {
     can cli() {
         args = :h:parser.parse_args;
         if args.run {
-            :h:run(args.file, args.debug);
+            {args.file, args.debug} |> :h:run;
         } elif args.build {
-            :h:build(args.file, args.debug);
+            {args.file, args.debug} |> :h:build;
         } else {
-            :h:parser.print_help;
+            |> :h:parser.print_help;
         }
     }
 }
