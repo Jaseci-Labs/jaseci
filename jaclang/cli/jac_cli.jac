@@ -77,7 +77,7 @@ object JacCli {
     can init() {
         :h:parser.add_argument("-v", "--version", action="version",
                                version=f"Jac CLI Tool {version}");
-        :h:setup;
+        |> :h:setup;
     }
 
     can setup() {
@@ -106,4 +106,8 @@ object JacCli {
             :h:parser.print_help;
         }
     }
+}
+
+with entry {
+    |> (:+: JacCli).cli;
 }
