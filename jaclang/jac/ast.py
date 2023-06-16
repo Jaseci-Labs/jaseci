@@ -374,18 +374,34 @@ class ArchBlock(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class HasStmt(AstNode):
+class ArchHas(AstNode):
     """HasStmt node type for Jac Ast."""
 
     def __init__(
-        self: "HasStmt",
+        self: "ArchHas",
+        doc: AstNode,
         access: AstNode,
         vars: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize has statement node."""
+        self.doc = doc
         self.access = access
+        self.vars = vars
+        super().__init__(*args, **kwargs)
+
+
+class HasVarList(AstNode):
+    """HasVarList node type for Jac Ast."""
+
+    def __init__(
+        self: "HasVarList",
+        vars: list,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        """Initialize has var list node."""
         self.vars = vars
         super().__init__(*args, **kwargs)
 

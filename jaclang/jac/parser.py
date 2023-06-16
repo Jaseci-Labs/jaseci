@@ -266,7 +266,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # Has statements
     # --------------
-    @_("KW_HAS access_tag has_assign_clause SEMI")
+    @_("doc_tag KW_HAS access_tag has_assign_clause SEMI")
     def has_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has statement rule."""
         return p

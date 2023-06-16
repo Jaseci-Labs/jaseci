@@ -286,15 +286,16 @@ class AstBuildPass(Pass):
 
     def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Move var list up to parent."""
-        access = node.kid[1]
-        node = replace_node(node, node.kid[2])
-        node.kid = [access] + node.kid
-        update_kind(node, ast.HasStmt, access=node.kid[0], vars=node.kid[1:])
+        node.kid = [node.kid[0], node.kid[2], node.kid[3]]
+        update_kind(
+            node, ast.ArchHas, doc=node.kid[0], access=node.kid[1], vars=node.kid[2]
+        )
 
     def exit_has_assign_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Push list of individual vars into parent."""
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
+        update_kind(node, ast.HasVarList, vars=node.kid)
 
     def exit_typed_has_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build HasVar Ast node."""
