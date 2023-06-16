@@ -162,5 +162,5 @@ walker create_checkout_session {
     has success_url = "https://example.com/success", cancel_url = "https://example.com/cancel", line_items = [{"price": "price_H5ggYwtDq4fbrJ","quantity": 12}], mode = "payment";
     can stripe.checkout_session_create;
 
-    stripe.checkout_session_create(success_url, line_items, mode, cancel_url = cancel_url);
+    stripe.checkout_session_create(success_url, mode, line_items = line_items, cancel_url = cancel_url);
 }

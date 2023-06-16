@@ -197,7 +197,7 @@ class StripeTests(CoreTest):
     def test_stripe_create_checkout_session(self, ret):
         stripe.checkout.Session.create.assert_called_once_with(
             success_url="https://example.com/success",
-            line_items=[{"price": "price_H5ggYwtDq4fbrJ", "quantity": 12}],
             mode="payment",
+            line_items=[{"price": "price_H5ggYwtDq4fbrJ", "quantity": 12}],
             cancel_url="https://example.com/cancel",
         )

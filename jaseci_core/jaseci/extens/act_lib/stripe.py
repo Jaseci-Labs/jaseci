@@ -180,10 +180,9 @@ def subscription_item_create_usage_record(
 
 
 @jaseci_action()
-def checkout_session_create(success_url: str, line_items: list, mode: str, **kwargs):
+def checkout_session_create(success_url: str, mode: str, **kwargs):
     return stripe().checkout.Session.create(
         success_url=success_url,
-        line_items=line_items,
         mode=mode,
         **kwargs,
     )
