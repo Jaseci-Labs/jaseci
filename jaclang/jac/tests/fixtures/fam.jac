@@ -1,5 +1,9 @@
 # This is a comment
 // This is also a commment
+/*
+This is multi line comment
+Many styles!
+*/
 """
 These are doc strings and can be used as comments
 Use them to document your code
@@ -9,7 +13,7 @@ import:jac .stuff;
 import:py from .activity, Activity as Actvy;
 
 node location {
-    has x: int, y: int, name: str;
+    has x: int, y: int, name: str = True;
     has activities: list[Activity];
     has intro: str = "Welcome";
     has visited: int = 0;
