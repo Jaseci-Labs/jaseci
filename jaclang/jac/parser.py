@@ -280,20 +280,11 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "has_tag NAME type_tag",
-        "has_tag NAME type_tag EQ expression",
+        "NAME type_tag",
+        "NAME type_tag EQ expression",
     )
     def typed_has_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
-        return p
-
-    @_(
-        "has_tag KW_HIDDEN",
-        "has_tag KW_ANCHOR",
-        "empty",
-    )
-    def has_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Has tag rule."""
         return p
 
     @_("COLON type_name")

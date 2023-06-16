@@ -299,24 +299,15 @@ class AstBuildPass(Pass):
 
     def exit_typed_has_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build HasVar Ast node."""
-        if len(node.kid) == 5:
-            del node.kid[3]
+        if len(node.kid) == 4:
+            del node.kid[2]
         update_kind(
             node,
             ast.HasVar,
-            tags=node.kid[0],
-            name=node.kid[1],
-            type_tag=node.kid[2],
-            value=node.kid[3] if len(node.kid) == 4 else ast.Blank(),
+            name=node.kid[0],
+            type_tag=node.kid[1],
+            value=node.kid[2] if len(node.kid) == 3 else ast.Blank(),
         )
-
-    def exit_has_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build HasTag Ast node."""
-        if len(node.kid) == 1:
-            make_blank(node)
-        elif len(node.kid) == 2:
-            node.kid = node.kid[0].kid + [node.kid[1]]
-            update_kind(node, ast.HasVarTags, tags=node.kid)
 
     def exit_type_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build TypeSpec Ast node."""

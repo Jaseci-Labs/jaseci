@@ -429,26 +429,10 @@ class HasVar(ParamVar):
 
     def __init__(
         self: "HasVar",
-        tags: AstNode,
         *args: list,
         **kwargs: dict,
     ) -> None:
         """Initialize has var node."""
-        self.tags = tags
-        super().__init__(*args, **kwargs)
-
-
-class HasVarTags(AstNode):
-    """HasVarTags node type for Jac Ast."""
-
-    def __init__(
-        self: "HasVarTags",
-        tags: list,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize has var tags node."""
-        self.tags = tags
         super().__init__(*args, **kwargs)
 
 

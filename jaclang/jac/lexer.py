@@ -90,13 +90,11 @@ class JacLexer(Lexer):
         "NE",
         "KW_IN",
         "KW_NIN",
-        "KW_ANCHOR",
         "KW_PRIV",
         "KW_PUB",
         "KW_PROT",
         "KW_HAS",
         "KW_GLOBAL",
-        "KW_HIDDEN",
         "COMMA",
         "KW_CAN",
         "PLUS",
@@ -208,13 +206,11 @@ class JacLexer(Lexer):
     NAME["finally"] = "KW_FINALLY"
     NAME["in"] = "KW_IN"
     NAME["not"] = "NOT"
-    NAME["anchor"] = "KW_ANCHOR"
     NAME["priv"] = "KW_PRIV"
     NAME["pub"] = "KW_PUB"
     NAME["prot"] = "KW_PROT"
     NAME["has"] = "KW_HAS"
     NAME["global"] = "KW_GLOBAL"
-    NAME["hidden"] = "KW_HIDDEN"
     NAME["can"] = "KW_CAN"
 
     # Special Arrow Tokens

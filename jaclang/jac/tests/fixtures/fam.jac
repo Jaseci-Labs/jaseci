@@ -10,8 +10,8 @@ import:py from .activity, Activity as Actvy;
 
 node location {
     has x: int, y: int, name: str;
-    has anchor activities: list[Activity];
-    has hidden intro: str = "Welcome";
+    has activities: list[Activity];
+    has intro: str = "Welcome";
     has visited: int = 0;
 
 
