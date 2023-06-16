@@ -442,7 +442,6 @@ class ActionsOptimizer:
                 policy_state["prev_actions"] = list(self.actions_calls.keys())
                 return
             if self._check_phase_change(policy_state):
-                # if no enough walker were execueted in this period, keep in perf phase
                 logger.info(
                     f"""==in check phase===
                     \npolicy_state: {policy_state}
@@ -452,7 +451,7 @@ class ActionsOptimizer:
                 policy_state["cur_config"] = None
                 policy_state["cur_phase"] = 0
                 policy_state["eval_complete"] = False
-            policy_state["prev_actions"] = list(self.actions_calls.keys())
+                policy_state["prev_actions"] = list(self.actions_calls.keys())
         elif policy_state["phase"] == "eval":
             if policy_state["cur_config"] is None:
                 self._init_evalution_policy(policy_state)
@@ -515,6 +514,7 @@ class ActionsOptimizer:
                         policy_state["prev_best_config"] = best_config
                         self.benchmark["requests"] = {}
                         self.benchmark["active"] = True
+                        policy_state["call_counter"] = 0
                         logger.info(
                             f"""===Auto Policy===
                                 \nbest_config: {best_config}"""
