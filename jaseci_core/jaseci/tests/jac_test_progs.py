@@ -755,3 +755,17 @@ walker json_casting {
     }
 }
 """
+
+edge_to_node_casting = """
+node a {}
+
+walker edge_to_node_casting {
+    root {
+        spawn here ++> node::a;
+        edges = --> node::a.edge;
+        report edges;
+        report edges.node;
+        report edges[0].node;
+    }
+}
+"""

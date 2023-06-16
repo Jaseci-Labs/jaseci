@@ -875,7 +875,9 @@ class Interp(VirtualMachine):
             if isinstance(atom_res.value, Node):
                 return atom_res
             elif isinstance(atom_res.value, Edge):
-                return JacValue(self, value=self.obj_set_to_jac_set(atom_res.nodes()))
+                return JacValue(
+                    self, value=self.obj_set_to_jac_set(atom_res.value.nodes())
+                )
             elif isinstance(atom_res.value, JacSet):
                 res = JacSet()
                 for i in atom_res.value.obj_list():
