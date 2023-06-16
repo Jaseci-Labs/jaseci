@@ -519,6 +519,7 @@ class ActionsOptimizer:
                             f"""===Auto Policy===
                                 \nbest_config: {best_config}"""
                         )
+                        self.apply_actions_change()
                     else:
                         next_config = policy_state["remain_configs"][0]
                         del policy_state["remain_configs"][0]
