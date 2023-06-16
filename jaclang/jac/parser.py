@@ -755,10 +755,18 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "KW_REF atom",
-        "atom",
+        "KW_REF ds_call",
+        "ds_call",
     )
     def ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Unpack rule."""
+        return p
+
+    @_(
+        "PIPE_FWD atom",
+        "atom",
+    )
+    def ds_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Unpack rule."""
         return p
 
@@ -915,17 +923,9 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Atom trailer rule."""
         return p
 
-    @_(
-        "atom func_call_tail",
-        "atom ds_call",
-    )
+    @_("atom func_call_tail")
     def atomic_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability call rule."""
-        return p
-
-    @_("DBL_COLON NAME")  # ::name for abilitie
-    def ds_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Ability operator rule."""
         return p
 
     @_(

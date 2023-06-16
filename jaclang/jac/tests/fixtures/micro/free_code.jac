@@ -34,9 +34,9 @@ object Obj3 {
 # }
 
 with entry {
-    o1 = spawn Obj1; o1::init;
-    o2 = spawn Obj2; o2::init;
-    o3 = spawn Obj3; o3::init;
+    o1 = spawn Obj1; |> o1.init;
+    o2 = spawn Obj2; |> o2.init;
+    o3 = spawn Obj3; |> o3.init;
     print(o1.var);
     print(o2.var);
     print(o3.var);

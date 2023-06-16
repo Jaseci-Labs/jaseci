@@ -46,7 +46,6 @@ class JacLexer(Lexer):
         "KW_TEST",
         "KW_ASSERT",
         "COLON",
-        "DBL_COLON",
         "PIPE_FWD",
         "PIPE_BKWD",
         "LBRACE",
@@ -243,7 +242,7 @@ class JacLexer(Lexer):
     EDGE_OP = r":e:|:edge:"
     OBJECT_OP = r":o:|:object:"
     ABILITY_OP = r":a:|:ability:"
-    SPAWN_OP = r"::>"
+    SPAWN_OP = r":\+:"
     RETURN_HINT = r"->"
     ELVIS_OP = r"\?:"
     NULL_OK = r"\?"
@@ -261,7 +260,6 @@ class JacLexer(Lexer):
     GTE = r">="
     NE = r"!="
     WALRUS_EQ = r":="
-    DBL_COLON = r"::"
     PIPE_FWD = r"\|>"
     PIPE_BKWD = r"<\|"
     COLON = r":"

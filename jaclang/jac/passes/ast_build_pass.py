@@ -831,11 +831,19 @@ class AstBuildPass(Pass):
 
     def exit_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Ref Ast node."""
-        if len(node.kid) == 1:
-            replace_node(node, node.kid[0])
+        if len(node.kid) == 2:
+            node.kid = [node.kid[0], node.kid[1]]
+            update_kind(node, ast.UnaryExpr, op=node.kid[0], operand=node.kid[1])
         else:
-            node.kid = [node.kid[1]]
-            update_kind(node, ast.RefExpr, target=node.kid[0])
+            self.binary_op_helper(node)
+
+    def exit_ds_call(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build DSCall Ast node."""
+        if len(node.kid) == 2:
+            node.kid = [node.kid[0], node.kid[1]]
+            update_kind(node, ast.UnaryExpr, op=node.kid[0], operand=node.kid[1])
+        else:
+            self.binary_op_helper(node)
 
     def exit_walrus_op(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Replace self with child."""
@@ -951,21 +959,7 @@ class AstBuildPass(Pass):
 
     def exit_atomic_call(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Call Ast node."""
-        atom = node.kid[0]
-        if type(node.kid[1]) == ast.DSCall:
-            node.kid[1].kid = [atom] + node.kid[1].kid
-            node.kid[1].target = atom
-            replace_node(node, node.kid[1])
-        else:
-            node.kid = [atom, node.kid[1]]
-            update_kind(node, ast.FuncCall, target=node.kid[0], params=node.kid[1])
-
-    def exit_ds_call(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build DSCall Ast node."""
-        meta = {"target": ast.Blank(), "a_name": ast.Blank(), "is_async": False}
-        meta["a_name"] = node.kid[1]
-        node.kid = [node.kid[1]]
-        update_kind(node, ast.DSCall, **meta)  # target updated in atomic call
+        update_kind(node, ast.FuncCall, target=node.kid[0], params=node.kid[1])
 
     def exit_func_call_tail(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build FuncCall Ast node."""

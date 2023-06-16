@@ -1031,20 +1031,6 @@ class UnpackExpr(AstNode):
         super().__init__(*args, **kwargs)
 
 
-class RefExpr(AstNode):
-    """ExprRef node type for Jac Ast."""
-
-    def __init__(
-        self: "RefExpr",
-        target: AstNode,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize ref expression node."""
-        self.target = target
-        super().__init__(*args, **kwargs)
-
-
 class MultiString(AstNode):
     """ExprMultiString node type for Jac Ast."""
 
@@ -1148,24 +1134,6 @@ class AtomTrailer(AstNode):
         self.target = target
         self.right = right
         self.null_ok = null_ok
-        super().__init__(*args, **kwargs)
-
-
-class DSCall(AstNode):
-    """DSCall node type for Jac Ast."""
-
-    def __init__(
-        self: "DSCall",
-        target: AstNode,
-        a_name: AstNode,
-        is_async: bool,
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize ds call expression node."""
-        self.target = target
-        self.a_name = a_name
-        self.is_async = is_async
         super().__init__(*args, **kwargs)
 
 
