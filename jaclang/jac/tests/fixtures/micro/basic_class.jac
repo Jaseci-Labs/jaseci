@@ -1,15 +1,15 @@
 """Basic class implementation and spawning example."""
 
 object Person {
-    prot: has age: int;  # no need ot use `_age`
-    pub: has name: str;
+    has:prot age: int;  # no need ot use `_age`
+    has:pub name: str;
 
-    priv: can init(name: str, age: int) -> None {
+    can:priv init(name: str, age: int) -> None {
         here.name = name;
         here.age = age;
     }
 
-    pub: can greet() -> None {  # public is default if `pub` is not specified
+    can:pub greet() -> None {  # public is default if `pub` is not specified
         print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
     }
 }

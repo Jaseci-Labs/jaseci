@@ -49,7 +49,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         """Element rule."""
         return p
 
-    @_("access_tag KW_GLOBAL assignment_list SEMI")
+    @_("doc_tag KW_GLOBAL access_tag assignment_list SEMI")
     def global_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Global variable rule."""
         return p
@@ -64,8 +64,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "doc_tag access COLON",
-        "doc_tag",
+        "COLON access",
+        "empty",
     )
     def access_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Permission tag rule."""
@@ -153,20 +153,20 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "access_tag KW_NODE NAME inherited_archs member_block",
-        "access_tag KW_EDGE NAME inherited_archs member_block",
-        "access_tag KW_OBJECT NAME inherited_archs member_block",
-        "access_tag KW_WALKER NAME inherited_archs member_block",
+        "doc_tag KW_NODE access_tag NAME inherited_archs member_block",
+        "doc_tag KW_EDGE access_tag NAME inherited_archs member_block",
+        "doc_tag KW_OBJECT access_tag NAME inherited_archs member_block",
+        "doc_tag KW_WALKER access_tag NAME inherited_archs member_block",
     )
     def architype_inline_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype rule."""
         return p
 
     @_(
-        "access_tag KW_NODE NAME inherited_archs SEMI",
-        "access_tag KW_EDGE NAME inherited_archs SEMI",
-        "access_tag KW_OBJECT NAME inherited_archs SEMI",
-        "access_tag KW_WALKER NAME inherited_archs SEMI",
+        "doc_tag KW_NODE access_tag NAME inherited_archs SEMI",
+        "doc_tag KW_EDGE access_tag NAME inherited_archs SEMI",
+        "doc_tag KW_OBJECT access_tag NAME inherited_archs SEMI",
+        "doc_tag KW_WALKER access_tag NAME inherited_archs SEMI",
     )
     def architype_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Architype declaration rule."""
@@ -205,16 +205,16 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "access_tag KW_CAN NAME return_type_tag code_block",
-        "access_tag KW_CAN NAME func_decl code_block",
+        "doc_tag KW_CAN access_tag NAME return_type_tag code_block",
+        "doc_tag KW_CAN access_tag NAME func_decl code_block",
     )
     def ability_inline_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
 
     @_(
-        "access_tag KW_CAN NAME return_type_tag SEMI",
-        "access_tag KW_CAN NAME func_decl SEMI",
+        "doc_tag KW_CAN access_tag NAME return_type_tag SEMI",
+        "doc_tag KW_CAN access_tag NAME func_decl SEMI",
     )
     def ability_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Ability declaration rule."""
@@ -266,7 +266,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     # Has statements
     # --------------
-    @_("access_tag KW_HAS has_assign_clause SEMI")
+    @_("KW_HAS access_tag has_assign_clause SEMI")
     def has_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Has statement rule."""
         return p
@@ -340,24 +340,24 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Can statements
     # --------------
     @_(
-        "access_tag can_ds_ability",
-        "access_tag can_func_ability",
+        "can_ds_ability",
+        "can_func_ability",
     )
     def can_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
 
     @_(
-        "KW_CAN NAME event_clause code_block",
-        "KW_CAN NAME event_clause SEMI",
+        "doc_tag KW_CAN access_tag NAME event_clause code_block",
+        "doc_tag KW_CAN access_tag NAME event_clause SEMI",
     )
     def can_ds_ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
 
     @_(
-        "KW_CAN NAME func_decl code_block",
-        "KW_CAN NAME func_decl SEMI",
+        "doc_tag KW_CAN access_tag NAME func_decl code_block",
+        "doc_tag KW_CAN access_tag NAME func_decl SEMI",
     )
     def can_func_ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
         """Can statement rule."""

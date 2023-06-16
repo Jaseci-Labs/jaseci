@@ -24,7 +24,7 @@ class AstBuildPass(Pass):
         """Build DOC_TAG Ast node."""
         if type(node.kid[0]) == ast.Token:
             node.kid = [node.kid[0]]
-            update_kind(node, ast.DocString, value=node.kid[0])
+        update_kind(node, ast.DocString, value=node.kid[0])
 
     def exit_element_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Chain list together into actual list."""
@@ -38,8 +38,14 @@ class AstBuildPass(Pass):
 
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build GLOBAL_VAR Ast node."""
-        node.kid = [node.kid[0], node.kid[2]]
-        update_kind(node, ast.GlobalVars, tag_info=node.kid[0], assignments=node.kid[1])
+        node.kid = [node.kid[0], node.kid[2], node.kid[3]]
+        update_kind(
+            node,
+            ast.GlobalVars,
+            doc=node.kid[0],
+            access=node.kid[1],
+            assignments=node.kid[2],
+        )
 
     def exit_access(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build  Ast node."""
@@ -47,11 +53,7 @@ class AstBuildPass(Pass):
 
     def exit_access_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build  Ast node."""
-        if len(node.kid) == 1:
-            replace_node(node, node.kid[0])
-        else:
-            del node.kid[2]
-            update_kind(node, ast.TagInfo, doc=node.kid[0], access=node.kid[1])
+        replace_node(node, node.kid[-1])
 
     def exit_test(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build TEST Ast node."""
@@ -150,11 +152,12 @@ class AstBuildPass(Pass):
     def exit_architype_inline_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build various architype Ast nodes."""
         meta = {
-            "tag_info": node.kid[0],
+            "doc": node.kid[0],
             "typ": node.kid[1],
-            "name": node.kid[2],
-            "base_classes": node.kid[3],
-            "body": node.kid[4],
+            "access": node.kid[2],
+            "name": node.kid[3],
+            "base_classes": node.kid[4],
+            "body": node.kid[5],
         }
         update_kind(node, ast.Architype, **meta)
 
@@ -164,9 +167,11 @@ class AstBuildPass(Pass):
         update_kind(
             node,
             ast.ArchDecl,
-            tag_info=node.kid[0],
+            doc=node.kid[0],
             typ=node.kid[1],
-            name=node.kid[2],
+            access=node.kid[2],
+            name=node.kid[3],
+            base_classes=node.kid[4],
         )
 
     def exit_architype_def(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -200,16 +205,15 @@ class AstBuildPass(Pass):
         """Build various ability Ast nodes."""
         del node.kid[1]
         meta = {
-            "tag_info": node.kid[0],
-            "name": node.kid[1],
+            "doc": node.kid[0],
+            "access": node.kid[1],
+            "name": node.kid[2],
             "body": node.kid[-1],
-            "signature": ast.Blank(),
+            "signature": node.kid[-2],
             "is_func": False,
         }
-        if len(node.kid) > 3:
-            meta["signature"] = node.kid[-2]
-            if type(node.kid[-2]) == ast.FuncSignature:
-                meta["is_func"] = True
+        if type(node.kid[-2]) == ast.FuncSignature:
+            meta["is_func"] = True
         update_kind(node, ast.Ability, **meta)
 
     def exit_ability_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -217,14 +221,14 @@ class AstBuildPass(Pass):
         del node.kid[1]
         del node.kid[-1]
         meta = {
-            "tag_info": node.kid[0],
-            "name": node.kid[1],
+            "doc": node.kid[0],
+            "access": node.kid[1],
+            "name": node.kid[2],
+            "signature": node.kid[3],
             "is_func": False,
         }
-        if len(node.kid) > 2:
-            meta["signature"] = node.kid[-1]
-            if type(node.kid[-1]) == ast.FuncSignature:
-                meta["is_func"] = True
+        if type(node.kid[-1]) == ast.FuncSignature:
+            meta["is_func"] = True
         update_kind(node, ast.AbilityDecl, **meta)
 
     def exit_ability_def(self: "AstBuildPass", node: ast.AstNode) -> None:
@@ -282,10 +286,10 @@ class AstBuildPass(Pass):
 
     def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Move var list up to parent."""
-        access = node.kid[0]
+        access = node.kid[1]
         node = replace_node(node, node.kid[2])
         node.kid = [access] + node.kid
-        update_kind(node, ast.HasStmt, tag_info=node.kid[0], vars=node.kid)
+        update_kind(node, ast.HasStmt, access=node.kid[0], vars=node.kid[1:])
 
     def exit_has_assign_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Push list of individual vars into parent."""
@@ -342,28 +346,35 @@ class AstBuildPass(Pass):
 
     def exit_can_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build CanStmt Ast node."""
-        typ = ast.CanDS if node.kid[1].name == "can_ds_ability" else ast.CanMethod
-        access = node.kid[0]
-        node = replace_node(node, node.kid[1])
-        node.kid = [access] + node.kid
-        update_kind(
-            node,
-            typ,
-            name=node.kid[2],
-            tag_info=access,
-            signature=node.kid[-2],
-            body=node.kid[-1],
-        )
+        replace_node(node, node.kid[0])
 
     def exit_can_ds_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Data spatial can Ast node."""
+        del node.kid[1]
         if type(node.kid[-1]) == ast.Token and node.kid[-1].name == "SEMI":
-            node.kid[-1] = ast.Blank()
+            del node.kid[-1]
+            update_kind(
+                node,
+                ast.ArchCanDecl,
+                doc=node.kid[0],
+                access=node.kid[1],
+                name=node.kid[2],
+                signature=node.kid[3],
+            )
+        else:
+            update_kind(
+                node,
+                ast.ArchCan,
+                doc=node.kid[0],
+                access=node.kid[1],
+                name=node.kid[2],
+                signature=node.kid[3],
+                body=node.kid[4],
+            )
 
     def exit_can_func_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Function can Ast node."""
-        if type(node.kid[-1]) == ast.Token and node.kid[-1].name == "SEMI":
-            node.kid[-1] = ast.Blank()
+        self.exit_can_ds_ability(node)
 
     def exit_event_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build EventClause Ast node."""

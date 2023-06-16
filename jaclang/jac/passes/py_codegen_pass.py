@@ -46,7 +46,8 @@ class PyCodeGenPass(Pass):
 
     def exit_doc_string(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert doc_string to python code."""
-        self.emit_ln(node, node.value.value)
+        if not is_blank(node.value):
+            self.emit_ln(node, node.value.value)
 
     def exit_global_vars(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert global vars to python code."""
@@ -87,6 +88,11 @@ class PyCodeGenPass(Pass):
     # class ArchDecl(AstNode):
     # class ArchDef(AstNode):
 
+    def enter_architype(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Enter architype."""
+        if not is_blank(node.doc.value):
+            self.emit(node, node.doc.value)
+
     def exit_architype(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert object arch to python code."""
         if is_blank(node.base_classes):
@@ -116,9 +122,6 @@ class PyCodeGenPass(Pass):
 
     def enter_arch_block(self: "PyCodeGenPass", node: AstNode) -> None:
         """Enter arch block."""
-        if not is_blank(node.tag_info):
-            if not is_blank(node.tag_info.doc):
-                self.emit(node, node.tag_info.doc.py_code)
         self.indent_level += 1
 
     def exit_arch_block(self: "PyCodeGenPass", node: AstNode) -> None:
