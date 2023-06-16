@@ -515,7 +515,10 @@ class ActionsOptimizer:
                         policy_state["prev_best_config"] = best_config
                         self.benchmark["requests"] = {}
                         self.benchmark["active"] = True
-
+                        logger.info(
+                            f"""===Auto Policy===
+                                \nbest_config: {best_config}"""
+                        )
                     else:
                         next_config = policy_state["remain_configs"][0]
                         del policy_state["remain_configs"][0]
