@@ -738,15 +738,25 @@ class AstBuildPass(Pass):
             node.kid = [node.kid[0], node.kid[1], node.kid[2]]
             update_kind(
                 node,
+                ast.BinaryExpr,
+                left=node.kid[0],
+                op=node.kid[1],
+                right=node.kid[2],
+            )
+
+    def exit_expression(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build Expression Ast node."""
+        if len(node.kid) == 1:
+            replace_node(node, node.kid[0])
+        else:
+            node.kid = [node.kid[0], node.kid[1], node.kid[2]]
+            update_kind(
+                node,
                 ast.IfElseExpr,
                 value=node.kid[0],
                 condition=node.kid[1],
                 else_value=node.kid[2],
             )
-
-    def exit_expression(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Expression Ast node."""
-        self.binary_op_helper(node)
 
     def exit_walrus_assign(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build WalrusAssign Ast node."""
@@ -754,6 +764,10 @@ class AstBuildPass(Pass):
 
     def exit_pipe(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Pipe Ast node."""
+        self.binary_op_helper(node)
+
+    def exit_pipe_back(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """Build PipeBack Ast node."""
         self.binary_op_helper(node)
 
     def exit_elvis_check(self: "AstBuildPass", node: ast.AstNode) -> None:

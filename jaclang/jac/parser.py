@@ -645,14 +645,25 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "elvis_check",
-        "elvis_check PIPE_FWD pipe",  # casting achieved here
-        "elvis_check PIPE_FWD filter_ctx",  # for comprehension on list, dict, etc.
-        "elvis_check PIPE_FWD spawn_ctx",  # for rapid assignments to collections
+        "pipe_back",
+        "pipe_back PIPE_FWD pipe",  # casting achieved here
+        "pipe_back PIPE_FWD filter_ctx",  # for filtering lists of dicts/objs, etc.
+        "pipe_back PIPE_FWD spawn_ctx",  # for rapid assignments to collections, etc
         "spawn_ctx PIPE_FWD pipe",  # for function calls
     )
     def pipe(self: "JacParser", p: YaccProduction) -> YaccProduction:
-        """Expression rule."""
+        """Pipe forward rule."""
+        return p
+
+    @_(
+        "elvis_check",
+        "elvis_check PIPE_BKWD pipe_back",
+        "elvis_check PIPE_BKWD filter_ctx",
+        "elvis_check PIPE_BKWD spawn_ctx",
+        "spawn_ctx PIPE_BKWD pipe_back",
+    )
+    def pipe_back(self: "JacParser", p: YaccProduction) -> YaccProduction:
+        """Pipe backward rule."""
         return p
 
     @_(

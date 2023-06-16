@@ -48,6 +48,7 @@ class JacLexer(Lexer):
         "COLON",
         "DBL_COLON",
         "PIPE_FWD",
+        "PIPE_BKWD",
         "LBRACE",
         "RBRACE",
         "SEMI",
@@ -262,6 +263,7 @@ class JacLexer(Lexer):
     WALRUS_EQ = r":="
     DBL_COLON = r"::"
     PIPE_FWD = r"\|>"
+    PIPE_BKWD = r"<\|"
     COLON = r":"
     LBRACE = r"{"
     RBRACE = r"}"
