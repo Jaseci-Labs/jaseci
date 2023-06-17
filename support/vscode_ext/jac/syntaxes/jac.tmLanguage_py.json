@@ -1,164 +1,24 @@
 {
+	"information_for_contributors": [
+		"This file is based on the one has been converted from https://github.com/MagicStack/MagicPython/blob/master/grammars/MagicPython.tmLanguage",
+		"If you want to provide a fix or improvement, please create a pull request against the original repository.",
+		"Once accepted there, we are happy to receive an update request."
+	],
+	"version": "https://github.com/MagicStack/MagicPython/commit/7d0f2b22a5ad8fccbd7341bc7b7a715169283044",
 	"name": "The Jac Programming Language",
 	"scopeName": "source.jac",
 	"patterns": [
 		{
-			"include": "#elements"
+			"include": "#statement"
+		},
+		{
+			"include": "#expression"
 		}
 	],
 	"repository": {
-		"elements": {
-			"patterns": [
-				{
-					"include": "#import"
-				},
-				{
-					"include": "#global"
-				},
-				{
-					"include": "#architype"
-				},
-				{
-					"include": "#comments"
-				},
-				{
-					"include": "#docstring-statement"
-				}
-			]
-		},
-		"import": {
-			"patterns": [
-				{
-					"begin": "\\b(?<!\\.)(import|include)\\b",
-					"end": ";",
-					"beginCaptures": {
-						"1": {
-							"name": "keyword.control.import.jac"
-						}
-					},
-					"patterns": [
-						{
-							"name": "keyword.control.import.jac",
-							"match": "\\b(?<!\\.)(as|from)\\b"
-						},
-						{
-							"name": "punctuation.separator.jac",
-							"match": ",|:"
-						},
-						{
-							"name": "variable.language.special.self.jac",
-							"match": "\\b(py|jac)\\b"
-						},
-						{
-							"name": "entity.name.namespace.jac",
-							"match": "\\b(?<!:)([[:alpha:]_]\\w*)\\b"
-						}
-					]
-				}
-			]
-		},
-		"architype": {
-			"patterns": [
-				{
-					"name": "meta.class.jac",
-					"begin": "(?x)\\s*(object|node|edge|walker|test)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*({|;))",
-					"end": "(?={)|;",
-					"beginCaptures": {
-						"1": {
-							"name": "storage.type.class.jac"
-						}
-					},
-					"endCaptures": {
-						"1": {
-							"name": "punctuation.section.class.begin.jac"
-						}
-					},
-					"patterns": [
-						{
-							"name": "punctuation.separator.jac",
-							"match": ":"
-						},
-						{
-							"include": "#string"
-						},
-						{
-							"name": "entity.name.type.class.jac",
-							"match": "\\b([[:alpha:]_]\\w*)\\b"
-						}
-					]
-				}
-			]
-		},
-		"comments": {
-			"patterns": [
-				{
-					"include": "#py_style_comment"
-				},
-				{
-					"include": "#js_style_comment"
-				},
-				{
-					"include": "#c_style_block_comment"
-				}
-			]
-		},
-		"py_style_comment": {
-			"name": "comment.line.number-sign.jac",
-			"begin": "(\\#)",
-			"beginCaptures": {
-				"1": {
-					"name": "punctuation.definition.comment.jac"
-				}
-			},
-			"end": "($)",
-			"patterns": [
-				{
-					"include": "#codetags"
-				}
-			]
-		},
-		"js_style_comment": {
-			"name": "comment.line.double-slash.jac",
-			"begin": "(\\/\\/)",
-			"beginCaptures": {
-				"1": {
-					"name": "punctuation.definition.comment.jac"
-				}
-			},
-			"end": "(?=\\n)",
-			"patterns": [
-				{
-					"include": "#codetags"
-				}
-			]
-		},
-		"c_style_block_comment": {
-			"name": "comment.block.jac",
-			"begin": "(\\/\\*)",
-			"beginCaptures": {
-				"1": {
-					"name": "punctuation.definition.comment.begin.jac"
-				}
-			},
-			"end": "(\\*\\/)",
-			"endCaptures": {
-				"1": {
-					"name": "punctuation.definition.comment.end.jac"
-				}
-			},
-			"patterns": [
-				{
-					"include": "#codetags"
-				}
-			]
-		},
-		"codetags": {
-			"match": "(?:\\b(NOTE|XXX|HACK|FIXME|BUG|TODO)\\b)",
-			"captures": {
-				"1": {
-					"name": "keyword.codetag.notation.jac"
-				}
-			}
+		"impossible": {
+			"comment": "This is a special rule that should be used where no match is desired. It is not a good idea to match something like '1{0}' because in some cases that can result in infinite loops in token generation. So the rule instead matches and impossible expression to allow a match to fail and move to the next token.",
+			"match": "$.^"
 		},
 		"statement": {
 			"patterns": [
@@ -199,6 +59,45 @@
 				{
 					"name": "invalid.deprecated.semicolon.python",
 					"match": "\\;$"
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.number-sign.python",
+					"contentName": "meta.typehint.comment.python",
+					"begin": "(?x)\n  (?:\n    \\# \\s* (type:)\n    \\s*+ (?# we want `\\s*+` which is possessive quantifier since\n             we do not actually want to backtrack when matching\n             whitespace here)\n    (?! $ | \\#)\n  )\n",
+					"end": "(?:$|(?=\\#))",
+					"beginCaptures": {
+						"0": {
+							"name": "meta.typehint.comment.python"
+						},
+						"1": {
+							"name": "comment.typehint.directive.notation.python"
+						}
+					},
+					"patterns": [
+						{
+							"name": "comment.typehint.ignore.notation.python",
+							"match": "(?x)\n  \\G ignore\n  (?= \\s* (?: $ | \\#))\n"
+						},
+						{
+							"name": "comment.typehint.type.notation.python",
+							"match": "(?x)\n  (?<!\\.)\\b(\n    bool | bytes | float | int | object | str\n    | List | Dict | Iterable | Sequence | Set\n    | FrozenSet | Callable | Union | Tuple\n    | Any | None\n  )\\b\n"
+						},
+						{
+							"name": "comment.typehint.punctuation.notation.python",
+							"match": "([\\[\\]\\(\\),\\.\\=\\*]|(->))"
+						},
+						{
+							"name": "comment.typehint.variable.notation.python",
+							"match": "([[:alpha:]_]\\w*)"
+						}
+					]
+				},
+				{
+					"include": "#comments-base"
 				}
 			]
 		},
@@ -1050,6 +949,47 @@
 		"fstring-formatting-singe-brace": {
 			"name": "invalid.illegal.brace.python",
 			"match": "(}(?!}))"
+		},
+		"import": {
+			"comment": "Import statements used to correctly mark `from`, `import`, and `as`\n",
+			"patterns": [
+				{
+					"begin": "\\b(?<!\\.)(from)\\b(?=.+import)",
+					"end": "$|(?=import)",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.import.python"
+						}
+					},
+					"patterns": [
+						{
+							"name": "punctuation.separator.period.python",
+							"match": "\\.+"
+						},
+						{
+							"include": "#expression"
+						}
+					]
+				},
+				{
+					"begin": "\\b(?<!\\.)(import)\\b",
+					"end": "$",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.import.python"
+						}
+					},
+					"patterns": [
+						{
+							"name": "keyword.control.import.python",
+							"match": "\\b(?<!\\.)as\\b"
+						},
+						{
+							"include": "#expression"
+						}
+					]
+				}
+			]
 		},
 		"arch-declaration": {
 			"patterns": [
@@ -2075,6 +2015,14 @@
 					"include": "#regexp-escape-catchall"
 				}
 			]
+		},
+		"codetags": {
+			"match": "(?:\\b(NOTE|XXX|HACK|FIXME|BUG|TODO)\\b)",
+			"captures": {
+				"1": {
+					"name": "keyword.codetag.notation.python"
+				}
+			}
 		},
 		"comments-base": {
 			"name": "comment.line.number-sign.python",

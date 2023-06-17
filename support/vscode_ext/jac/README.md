@@ -1,65 +1,51 @@
-# jac README
+# Jac Extension
 
-This is the README for your extension "jac". After writing up a brief description, we recommend including the following sections.
+This extension provides support for the [Jac](https://doc.jaseci.org) programming language. It provides syntax highlighting and leverages the LSP to provide a rich editing experience.
 
-## Features
+# Quick Start
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+When you install the extension you will need to add a setting to your `settings.json` file that points to the python path of your Jaseci environment.
 
-For example if there is an image subfolder under your extension project workspace:
+1. Activate your python environment where for which Jaseci is installed.
+2. Create a `.vscode/settings.json` file in your project root if one is not already present.
+3. Go to your terminal and run `which python` and copy the path.
+4. Update your `settings.json` file in the `.vscode` directory by adding `jac.pythonPath` to the settings object with the path you copied.
 
-\!\[feature X\]\(images/feature-x.png\)
+Example:
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+```json
+{
+  "jac.pythonPath": "/Users/john_doe/mambaforge/envs/jac/bin/python"
+}
+```
 
-## Requirements
+# Features
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- Code completion
+- Syntax highlighting
+- Snippets
+- Go to definition
+- Document symbols, workspace symbols
+- Variables hint, and documentation on hover
+- Diagnostics
 
-## Extension Settings
+# Contributing
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## Install Server Dependencies
 
-For example:
+1. `python -m venv env`
+2. `python -m pip install -e .` from root directory
+3. Create `.vscode/settings.json` file and set `jac.pythonPath` to point to your python environment where `jaseci` is installed
 
-This extension contributes the following settings:
+## Install Client Dependencies
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+Open terminal and execute following commands:
 
-## Known Issues
+1. `yarn install`
+1. `cd client/ && yarn install`
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Run Extension
 
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+1. Open this directory in VS Code
+2. Open debug view (`ctrl + shift + D`)
+3. Select `Server + Client` and press `F5`
