@@ -37,7 +37,7 @@ node location {
 }
 
 walker tourist {
-    has duration: int;
+    has duration: float = .435e-2;
     has budget: int;
     has passport: list[str];
 

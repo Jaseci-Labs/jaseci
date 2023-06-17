@@ -18,9 +18,7 @@ object CmdFlag {
 
     can init(full_flag: str, flag: str = None, help: str = "No Help Here!",
              typ: type = None, action: str = None, default: any = None) {
-        self
-        :h:
-        :h: flag = flag ?: f"-{full_flag[2]}";
+        :h:flag = flag ?: f"-{full_flag[2]}";
         :h:full_flag = full_flag;
         :h:help = help;
         :h:typ = typ;

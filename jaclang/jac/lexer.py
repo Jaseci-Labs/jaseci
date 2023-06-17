@@ -13,6 +13,9 @@ class JacLexer(Lexer):
         "FSTRING",
         "BOOL",
         "INT",
+        "HEX",
+        "BIN",
+        "OCT",
         "NULL",
         "NAME",
         "TYP_STRING",
@@ -138,18 +141,21 @@ class JacLexer(Lexer):
     # Ignored patterns
     ignore_ws = r"[ \t]+"
     ignore_newline = r"[\r\n]+"
-    ignore_comment = r"/\*.*?\*/"
+    ignore_comment = r"/\*(.|\n|\r)*\*/"
     ignore_line_comment = r"//.*"
     ignore_py_comment = r"#.*"
 
     # Regular expression rules for tokens
-    FLOAT = r"(\d+)?\.\d+"
+    FLOAT = r"(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
     DOC_STRING = r'"""[^"]*"""|\'\'\'[^\']*\'\'\''
     FSTRING = r'f"[^"\r\n]*"|f\'[^\'\r\n]*\''
     STRING = r'"[^"\r\n]*"|\'[^\'\r\n]*\''
     BOOL = r"True|False"
     KW_NIN = r"not in"
-    INT = r"\d+"
+    HEX = r"0[xX][0-9a-fA-F_]+"
+    BIN = r"0[bB][01_]+"
+    OCT = r"0[oO][0-7_]+"
+    INT = r"[0-9_]+"
     NULL = r"None"
     NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
 

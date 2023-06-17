@@ -814,6 +814,9 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "INT",
+        "HEX",
+        "BIN",
+        "OCT",
         "FLOAT",
         "multistring",
         "BOOL",

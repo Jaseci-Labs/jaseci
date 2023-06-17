@@ -25,13 +25,7 @@
 					"include": "#ability"
 				},
 				{
-					"include": "#comments"
-				},
-				{
-					"include": "#docstring-statement"
-				},
-				{
-					"include": "#string"
+					"include": "#general"
 				}
 			]
 		},
@@ -132,7 +126,7 @@
 				{
 					"name": "meta.class.jac",
 					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)",
-					"end": "(?=:|{)",
+					"end": "(?=:|{|\\W)",
 					"beginCaptures": {
 						"1": {
 							"name": "storage.type.class.jac"
@@ -178,6 +172,37 @@
 							"match": "(?x)\n  \\b ([[:alpha:]_]\\w*) \\b\n"
 						}
 					]
+				}
+			]
+		},
+		"general": {
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#builtin-types"
+				},
+				{
+					"include": "#literal"
+				},
+				{
+					"include": "#special-variables"
+				},
+				{
+					"include": "#statement-keyword"
+				},
+				{
+					"include": "#operator"
+				},
+				{
+					"include": "#assignment-operator"
+				},
+				{
+					"include": "#docstring-statement"
+				},
+				{
+					"include": "#string"
 				}
 			]
 		},
@@ -755,7 +780,7 @@
 			"match": "(?x)\n     <<= | >>= | //= | \\*\\*=\n    | \\+= | -= | /= | @=\n    | \\*= | %= | ~= | \\^= | &= | \\|=\n    | =(?!=)\n"
 		},
 		"operator": {
-			"match": "(?x)\n    \\b(?<!\\.)\n      (?:\n        (and | or | not | in | is)                         (?# 1)\n        |\n        (for | if | else | await | (?:yield(?:\\s+from)?))  (?# 2)\n      )\n    (?!\\s*:)\\b\n\n    | (<< | >> | & | \\| | \\^ | ~)                          (?# 3)\n\n    | (\\*\\* | \\* | \\+ | - | % | // | / | @)                (?# 4)\n\n    | (!= | == | >= | <= | < | >)                          (?# 5)\n\n    | (:=)                                                 (?# 6)\n",
+			"match": "(?x)\\b(?<!\\.)(?:(and | or | not | in | is) (?# 1)|(for | if | else | await | (?:yield(?:\\s+from)?)) (?# 2))(?!\\s*:)\\b| (<< | >> | & | \\| | \\^ | ~) (?# 3)| (\\*\\* | \\* | \\+ | - | % | // | / | @) (?# 4)| (!= | == | >= | <= | < | >) (?# 5)| (:=) (?# 6)",
 			"captures": {
 				"1": {
 					"name": "keyword.operator.logical.jac"
@@ -793,7 +818,7 @@
 			"patterns": [
 				{
 					"name": "constant.language.jac",
-					"match": "\\b(True|False|None|NotImplemented|Ellipsis)\\b"
+					"match": "\\b(True|False|None)\\b"
 				},
 				{
 					"include": "#number"
@@ -1905,7 +1930,7 @@
 		},
 		"builtin-types": {
 			"name": "support.type.jac",
-			"match": "(?x)\n  (?<!\\.) \\b(\n    bool | bytearray | bytes | classmethod | complex | dict\n    | float | frozenset | int | list | object | property\n    | set | slice | staticmethod | str | tuple | type\n\n    (?# Although 'super' is not a type, it's related to types,\n        and is special enough to be highlighted differently from\n        other built-ins)\n    | super\n  )\\b\n"
+			"match": "(?x)(?<!\\.) \\b(str|int|float|list|tuple|set|dict|bool|bytes|any|type)\\b\n"
 		},
 		"magic-function-names": {
 			"comment": "these methods have magic interpretation by python and are generally called\nindirectly through syntactic constructs\n",
@@ -1947,7 +1972,7 @@
 			}
 		},
 		"special-variables": {
-			"match": "(?x)\n  \\b (?<!\\.) (?:\n    (self) | (cls)\n  )\\b\n",
+			"match": "(?x)(:h:|:here:|:v:|:visitor:)",
 			"captures": {
 				"1": {
 					"name": "variable.language.special.self.jac"
