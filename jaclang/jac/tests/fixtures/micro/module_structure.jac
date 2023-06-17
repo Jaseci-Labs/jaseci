@@ -35,5 +35,3 @@ test mytest
 "A test of my functionality" {
    # test code here
 }
-
-"(?=(:|{))",
