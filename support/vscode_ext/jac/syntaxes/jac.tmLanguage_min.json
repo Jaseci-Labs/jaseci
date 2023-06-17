@@ -9,20 +9,10 @@
 			"include": "#keywords"
 		},
 		{
-			"include": "#strings"
+			"include": "#operators"
 		},
 		{
-			"name": "Python f-string",
-			"scope": [
-				"string.quoted.single.jac",
-				"string.quoted.double.jac"
-			],
-			"patterns": [
-				{
-					"match": "(?<!\\\\)\\{(?:[^}]|\\\\.)*\\}",
-					"name": "string.interpolated.python"
-				}
-			]
+			"include": "#strings"
 		}
 	],
 	"repository": {
@@ -109,7 +99,7 @@
 				},
 				{
 					"match": ":h:|:here:|:v:|:visitor:",
-					"name": "variable.language.jac"
+					"name": "variable.language.special.jac"
 				},
 				{
 					"match": "(\\b(object|node|edge|walker|global)\\b)|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:g:|:global:",
@@ -134,6 +124,101 @@
 				{
 					"match": "\\b(None|True|False)\\b",
 					"name": "constant.language.jac"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"match": "(?:([a-zA-Z$_][\\w$]*)?\\s+|(?<![\\w$]))(and=|or=)",
+					"captures": {
+						"1": {
+							"name": "variable.assignment.jac"
+						},
+						"2": {
+							"name": "keyword.operator.assignment.compound.jac"
+						}
+					}
+				},
+				{
+					"match": "([a-zA-Z$_][\\w$]*)?\\s*(%=|\\+=|-=|\\*=|&&=|\\|\\|=|\\?=|(?<!\\()/=)",
+					"captures": {
+						"1": {
+							"name": "variable.assignment.jac"
+						},
+						"2": {
+							"name": "keyword.operator.assignment.compound.jac"
+						}
+					}
+				},
+				{
+					"match": "([a-zA-Z$_][\\w$]*)?\\s*(&=|\\^=|<<=|>>=|>>>=|\\|=)",
+					"captures": {
+						"1": {
+							"name": "variable.assignment.coffee"
+						},
+						"2": {
+							"name": "keyword.operator.assignment.compound.bitwise.jac"
+						}
+					}
+				},
+				{
+					"match": "<<|>>>|>>",
+					"name": "keyword.operator.bitwise.shift.jac"
+				},
+				{
+					"match": "!=|<=|>=|==|<|>",
+					"name": "keyword.operator.comparison.jac"
+				},
+				{
+					"match": "&&|!|\\|\\|",
+					"name": "keyword.operator.logical.jac"
+				},
+				{
+					"match": "&|\\||\\^|~",
+					"name": "keyword.operator.bitwise.jac"
+				},
+				{
+					"match": "([a-zA-Z$_][\\w$]*)?\\s*(=|:(?!:))(?![>=])",
+					"captures": {
+						"1": {
+							"name": "variable.assignment.jac"
+						},
+						"2": {
+							"name": "keyword.operator.assignment.jac"
+						}
+					}
+				},
+				{
+					"match": "--",
+					"name": "keyword.operator.decrement.jac"
+				},
+				{
+					"match": "\\+\\+",
+					"name": "keyword.operator.increment.jac"
+				},
+				{
+					"match": "\\.\\.\\.",
+					"name": "keyword.operator.splat.jac"
+				},
+				{
+					"match": "\\?",
+					"name": "keyword.operator.existential.jac"
+				},
+				{
+					"match": "%|\\*|/|-|\\+",
+					"name": "keyword.operator.jac"
+				},
+				{
+					"match": "(?x)\n\\b(?<![\\.\\$])\n(?:\n  (and|or|not) # logical\n  |\n  (is|isn't) # comparison\n)\n(?!\\s*:)\\b",
+					"captures": {
+						"1": {
+							"name": "keyword.operator.logical.jac"
+						},
+						"2": {
+							"name": "keyword.operator.comparison.jac"
+						}
+					}
 				}
 			]
 		},

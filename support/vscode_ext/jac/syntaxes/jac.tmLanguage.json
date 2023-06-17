@@ -26,7 +26,10 @@
 					"include": "#import"
 				},
 				{
-					"include": "#class-declaration"
+					"include": "#arch-declaration"
+				},
+				{
+					"include": "#arch-reference"
 				},
 				{
 					"include": "#function-declaration"
@@ -247,7 +250,7 @@
 			"patterns": [
 				{
 					"name": "storage.type.function.python",
-					"match": "\\b((async\\s+)?\\s*def)\\b"
+					"match": "\\b((async\\s+)?\\s*can)\\b"
 				},
 				{
 					"name": "keyword.control.flow.python",
@@ -270,6 +273,10 @@
 				{
 					"name": "storage.type.class.python",
 					"match": "\\b(?<!\\.)(class)\\b"
+				},
+				{
+					"name": "storage.type.has.python",
+					"match": "\\b(?<!\\.)(has)\\b"
 				},
 				{
 					"match": "(?x)\n  ^\\s*(\n    case | match\n  )(?=\\s*([-+\\w\\d(\\[{'\":#]|$))\\b\n",
@@ -984,12 +991,39 @@
 				}
 			]
 		},
-		"class-declaration": {
+		"arch-declaration": {
 			"patterns": [
 				{
 					"name": "meta.class.python",
-					"begin": "(?x)\\s*(object|node|edge|walker)\\s*(?=\\s*[[:alpha:]_]\\w+|\\s*({|;|\\n))",
+					"begin": "(?x)\\s*(object|node|edge|walker|test)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\n))",
 					"end": "({|;)",
+					"beginCaptures": {
+						"1": {
+							"name": "storage.type.class.python"
+						}
+					},
+					"endCaptures": {
+						"1": {
+							"name": "punctuation.section.class.begin.python"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#class-name"
+						},
+						{
+							"include": "#class-inheritance"
+						}
+					]
+				}
+			]
+		},
+		"arch-reference": {
+			"patterns": [
+				{
+					"name": "meta.class.python",
+					"begin": "(:g:|:global:|:h:|:here:|:v:|:visitor:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
+					"end": "((?=:| )|;)",
 					"beginCaptures": {
 						"1": {
 							"name": "storage.type.class.python"
