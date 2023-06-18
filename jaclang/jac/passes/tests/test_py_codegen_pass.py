@@ -41,6 +41,14 @@ class PyCodeGenPassTests(TestCase):
         """Basic test for pass."""
         build_pass = self.build_micro("module_structure.jac")
         # build_pass.print()
+        self.codegen.run(node=build_pass)
+        # print(code_gen.py_code)
+        self.assertGreater(len(str(build_pass.to_dict())), 200)
+
+    def test_pygen_import_pass(self: "PyCodeGenPassTests") -> None:
+        """Basic test for pass."""
+        build_pass = self.build_micro("../../../passes/import_pass.jac")
+        # build_pass.print()
         code_gen = self.codegen.run(node=build_pass)
         print(code_gen.py_code)
         self.assertGreater(len(str(build_pass.to_dict())), 200)

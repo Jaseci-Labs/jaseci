@@ -336,8 +336,8 @@ class AstBuildPass(Pass):
             meta["nested1"] = node.kid[1]
         elif len(node.kid) == 6:
             node.kid = [node.kid[0], node.kid[2], node.kid[4]]
-            meta["nested1"] = node.kid[2]
-            meta["nested2"] = node.kid[3]
+            meta["nested1"] = node.kid[1]
+            meta["nested2"] = node.kid[2]
         update_kind(node, ast.TypeSpec, **meta)
 
     def exit_builtin_type(self: "AstBuildPass", node: ast.AstNode) -> None:

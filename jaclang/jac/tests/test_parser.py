@@ -58,6 +58,14 @@ class TestParser(TestCase):
         )
         self.assertFalse(self.prse.had_error)
 
+    def test_parsing_import_pass(self: "TestParser") -> None:
+        """Basic test for parsing."""
+        self.prse.parse(
+            self.lex.tokenize(self.load_fixture("../../passes/import_pass.jac")),
+            filename="import_pass.jac",
+        )
+        self.assertFalse(self.prse.had_error)
+
     def test_micro_jac_files_fully_tested(self: "TestParser") -> None:
         """Test that all micro jac files are fully tested."""
         self.directory = os.path.dirname(__file__) + "/fixtures/micro"
