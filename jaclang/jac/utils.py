@@ -4,8 +4,6 @@ import re
 import jaclang.jac.ast as ast
 from jaclang.jac.parser import JacLexer
 from jaclang.jac.parser import JacParser
-from jaclang.jac.passes.ast_build_pass import AstBuildPass
-from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
 
 
 def get_all_jac_keywords() -> str:
@@ -28,6 +26,9 @@ def pascal_to_snake(pascal_string: str) -> str:
 
 def jac_file_to_ast(mod_path: str, base_path: str = None) -> ast.AstNode:
     """Convert a Jac file to an AST."""
+    from jaclang.jac.passes.ast_build_pass import AstBuildPass
+    from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
+
     if base_path is None:
         base_path = ""
     lex = JacLexer()

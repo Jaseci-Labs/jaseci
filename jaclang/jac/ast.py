@@ -38,6 +38,15 @@ class AstNode:
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
 
 
+# Utiliiy functions
+# -----------------
+
+
+def is_blank(node: AstNode) -> bool:
+    """Check if node is blank."""
+    return type(node) == Blank
+
+
 class Blank(AstNode):
     """Blank node type for Jac Ast."""
 

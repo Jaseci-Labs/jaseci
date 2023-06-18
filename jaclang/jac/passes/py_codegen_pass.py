@@ -1,6 +1,5 @@
 """Transpilation pass for Jaseci Ast."""
-import jaclang.jac.ast as ast
-from jaclang.jac.ast import AstNode
+from jaclang.jac.ast import AstNode, is_blank
 from jaclang.jac.passes.ir_pass import Pass
 
 
@@ -1017,8 +1016,3 @@ class PyCodeGenPass(Pass):
         """Enter node."""
         node.py_code = ""
         return super().enter_node(node)
-
-
-def is_blank(node: AstNode) -> bool:
-    """Check if node is blank."""
-    return type(node) == ast.Blank
