@@ -10,9 +10,17 @@ from jaclang.jac.passes.ir_pass import Pass
 class AstBuildPass(Pass):
     """Ast build pass."""
 
+    def __init__(
+        self: "AstBuildPass", mod_name: str = None, *args: list, **kwargs: dict
+    ) -> None:
+        """Initialize pass."""
+        self.mod_name = mod_name
+        super().__init__(*args, **kwargs)
+
     def exit_start(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build WHOLE_BUILD Ast node."""
         self.ir = ast.Module(
+            name=self.mod_name,
             doc=node.kid[0] if len(node.kid) == 2 else ast.Blank(),
             body=node.kid[1] if len(node.kid) == 2 else node.kid[0],
             parent=None,

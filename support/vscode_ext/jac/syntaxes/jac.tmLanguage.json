@@ -50,7 +50,7 @@
 						},
 						{
 							"name": "variable.language.special.self.jac",
-							"match": "\\b(py|jac)\\b"
+							"match": "\\b(?<!\\.)(py|jac)\\b"
 						},
 						{
 							"name": "entity.name.namespace.jac",
@@ -80,6 +80,9 @@
 						{
 							"name": "punctuation.separator.jac",
 							"match": ","
+						},
+						{
+							"include": "#general"
 						},
 						{
 							"name": "entity.name.type.property.jac",
@@ -166,6 +169,9 @@
 						{
 							"name": "punctuation.separator.jac",
 							"match": ","
+						},
+						{
+							"include": "#general"
 						},
 						{
 							"name": "entity.name.function.jac",
@@ -482,11 +488,11 @@
 				},
 				{
 					"name": "keyword.control.flow.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    async | continue | del | assert | break | finally | for\n    | from | elif | else | if | except | pass | raise\n    | return | try | while | with\n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    async | continue | entry | exit | del | assert | break | finally | for\n    | from | elif | else | if | except | pass | raise\n    | return | try | while | with\n  )\\b\n"
 				},
 				{
 					"name": "storage.modifier.declaration.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    global | nonlocal\n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    priv|prot|pub\n  )\\b\n"
 				},
 				{
 					"name": "storage.type.class.jac",

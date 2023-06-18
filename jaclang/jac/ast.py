@@ -71,9 +71,15 @@ class Module(AstNode):
     """Whole Program node type for Jac Ast."""
 
     def __init__(
-        self: "Module", doc: AstNode, body: AstNode, *args: list, **kwargs: dict
+        self: "Module",
+        name: str,
+        doc: AstNode,
+        body: AstNode,
+        *args: list,
+        **kwargs: dict,
     ) -> None:
         """Initialize whole program node."""
+        self.name = name
         self.doc = doc
         self.body = body
         super().__init__(*args, **kwargs)

@@ -16,7 +16,7 @@ object CmdFlag {
     has flag: str, full_flag: str, help: str,
         typ: type, action: str, default: any;
 
-    can init(full_flag: str, flag: str = None, help: str = "No Help Here!",
+    can:priv init(full_flag: str, flag: str = None, help: str = "No Help Here!",
              typ: type = None, action: str = None, default: any = None) {
         :h:flag = flag ?: f"-{full_flag[2]}";
         :h:full_flag = full_flag;
@@ -109,5 +109,5 @@ object JacCli {
 }
 
 with entry {
-    |> (:+: JacCli).cli;
+    |> (:+:JacCli).cli;
 }
