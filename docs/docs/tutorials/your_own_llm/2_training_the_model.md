@@ -11,7 +11,7 @@ we will be fine-tuning Dolly v2, a pre-existing language model, using the Alpaca
 To initiate the training process, we will utilize the Jaseci platform and execute the following command:
 
 ```bash
-jascei> actions call dolly.train -ctx '{"data_file": "dataset.json", "output_dir": "output"}'
+jascei> actions call llm.train -ctx '{"data_file": "dataset.json", "output_dir": "output"}'
 ```
 
 The `data_file` parameter is the path to the JSON file. In our case we will use the [Alpaca Cleaned Dataset](https://github.com/gururise/AlpacaDataCleaned) (Clone the Repository and used the `alpaca_data_cleaned.json`). The `output_dir` parameter is the directory where the model will be saved. The model checkpoints will be saved in the `output_dir` directory. and after the training is complete, the LoRA weights will be saved in the `output_dir/final` directory.

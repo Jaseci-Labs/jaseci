@@ -90,7 +90,7 @@ You can use this [GUI](https://github.com/gururise/AlpacaDataCleaned/tree/main/g
 #### **Example**
 Using JSCTL
 ```bash
-jascei> actions call dolly.train -ctx '{"data_file": "data.json", "output_dir": "output"'
+jascei> actions call llm.train -ctx '{"data_file": "data.json", "output_dir": "output"'
 ```
 ## **References**
 - [HuggingFace LLM Leaderboard](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard)
