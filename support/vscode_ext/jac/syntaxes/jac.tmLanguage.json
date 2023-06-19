@@ -154,7 +154,7 @@
 				{
 					"name": "meta.function.jac",
 					"begin": "(?x)\\s*(can|with)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\(||\\n))",
-					"end": "(?=\\(|{)|;",
+					"end": "(?=\\)|{)|;",
 					"beginCaptures": {
 						"1": {
 							"name": "storage.type.function.jac"
@@ -171,7 +171,10 @@
 							"match": ","
 						},
 						{
-							"include": "#general"
+							"include": "#parameters"
+						},
+						{
+							"include": "#builtin-types"
 						},
 						{
 							"name": "entity.name.function.jac",
@@ -190,13 +193,16 @@
 					"include": "#builtin-types"
 				},
 				{
-					"include": "#literal"
-				},
-				{
 					"include": "#special-variables"
 				},
 				{
 					"include": "#statement-keyword"
+				},
+				{
+					"include": "#function-call"
+				},
+				{
+					"include": "#literal"
 				},
 				{
 					"include": "#operator"
@@ -789,7 +795,7 @@
 			"match": "(?x)\\b(?<!\\.)(?:(and | or | not | in | is) (?# 1)|(for | if | else | await | (?:yield(?:\\s+from)?)) (?# 2))(?!\\s*:)\\b| (<< | >> | & | \\| | \\^ | ~) (?# 3)| (\\*\\* | \\* | \\+ | - | % | // | / | @) (?# 4)| (!= | == | >= | <= | < | >) (?# 5)| (:=) (?# 6)",
 			"captures": {
 				"1": {
-					"name": "keyword.control.flow.jac"
+					"name": "keyword.operator.logical.python"
 				},
 				"2": {
 					"name": "keyword.control.flow.jac"
@@ -1671,13 +1677,7 @@
 		"item-name": {
 			"patterns": [
 				{
-					"include": "#special-variables"
-				},
-				{
-					"include": "#builtin-functions"
-				},
-				{
-					"include": "#special-names"
+					"include": "#general"
 				},
 				{
 					"name": "meta.indexed-name.jac",
@@ -1926,7 +1926,7 @@
 			"patterns": [
 				{
 					"name": "support.function.builtin.jac",
-					"match": "(?x)\n  (?<!\\.) \\b(\n    __import__ | abs | aiter | all | any | anext | ascii | bin\n    | breakpoint | callable | chr | compile | copyright | credits\n    | delattr | dir | divmod | enumerate | eval | exec | exit\n    | filter | format | getattr | globals | hasattr | hash | help\n    | hex | id | input | isinstance | issubclass | iter | len\n    | license | locals | map | max | memoryview | min | next\n    | oct | open | ord | pow | print | quit | range | reload | repr\n    | reversed | round | setattr | sorted | sum | vars | zip\n  )\\b\n"
+					"match": "(?x)\n  (?<!\\.) \\b(\n    __import__ | abs | aiter | all | anext | ascii | bin\n    | breakpoint | callable | chr | compile | copyright | credits\n    | delattr | dir | divmod | enumerate | eval | exec | exit\n    | filter | format | getattr | globals | hasattr | hash | help\n    | hex | id | input | isinstance | issubclass | iter | len\n    | license | locals | map | max | memoryview | min | next\n    | oct | open | ord | pow | print | quit | range | reload | repr\n    | reversed | round | setattr | sorted | sum | vars | zip\n  )\\b\n"
 				},
 				{
 					"name": "variable.legacy.builtin.jac",
