@@ -1,4 +1,5 @@
 """Transpilation pass for Jaseci Ast."""
+import jaclang.jac.ast as ast
 from jaclang.jac.ast import AstNode, is_blank
 from jaclang.jac.passes.ir_pass import Pass
 
@@ -21,7 +22,7 @@ class PyCodeGenPass(Pass):
         self: "PyCodeGenPass", node: AstNode, s: str, indent_delta: int = 0
     ) -> None:
         """Emit code to node."""
-        node.py_code += (
+        node.meta["py_code"] += (
             self.indent_str(indent_delta)
             + s.replace("\n", "\n" + self.indent_str(indent_delta))
             + "\n"
@@ -29,19 +30,19 @@ class PyCodeGenPass(Pass):
 
     def emit(self: "PyCodeGenPass", node: AstNode, s: str) -> None:
         """Emit code to node."""
-        node.py_code += s
+        node.meta["py_code"] += s
 
-    def exit_module(self: "PyCodeGenPass", node: AstNode) -> None:
+    def exit_module(self: "PyCodeGenPass", node: ast.Module) -> None:
         """Convert module to python code."""
         if not is_blank(node.doc):
-            self.emit_ln(node, node.doc.py_code)
-        self.emit(node, node.body.py_code)
+            self.emit_ln(node, node.doc.meta["py_code"])
+        self.emit(node, node.body.meta["py_code"])
         self.ir = node
 
-    def exit_elements(self: "PyCodeGenPass", node: AstNode) -> None:
+    def exit_elements(self: "PyCodeGenPass", node: ast.Elements) -> None:
         """Convert module to python code."""
         for i in node.elements:
-            self.emit(node, i.py_code)
+            self.emit(node, i.meta["py_code"])
 
     def exit_doc_string(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert doc_string to python code."""
@@ -50,11 +51,11 @@ class PyCodeGenPass(Pass):
 
     def exit_global_vars(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert global vars to python code."""
-        self.emit_ln(node, node.assignments.py_code)
+        self.emit_ln(node, node.assignments.meta["py_code"])
 
     def exit_named_assign(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert named assign to python code."""
-        self.emit(node, f"{node.name.py_code} = {node.value.py_code}")
+        self.emit(node, f"{node.name.meta['py_code']} = {node.value.meta['py_code']}")
 
     def exit_test(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert test to python code."""
@@ -64,14 +65,17 @@ class PyCodeGenPass(Pass):
         """Convert import to python code."""
         if is_blank(node.items):
             if is_blank(node.alias):
-                self.emit_ln(node, f"import {node.path.py_code}")
+                self.emit_ln(node, f"import {node.path.meta['py_code']}")
             else:
                 self.emit_ln(
-                    node, f"import {node.path.py_code} as {node.alias.py_code}"
+                    node,
+                    f"import {node.path.meta['py_code']} as {node.alias.meta['py_code']}",
                 )
         else:
             for i in node.items:
-                self.emit_ln(node, f"from {node.path.py_code} import {i.py_code}")
+                self.emit_ln(
+                    node, f"from {node.path.meta['py_code']} import {i.meta['py_code']}"
+                )
 
     def exit_module_path(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert module path to python code."""
@@ -95,13 +99,13 @@ class PyCodeGenPass(Pass):
     def exit_architype(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert object arch to python code."""
         if is_blank(node.base_classes):
-            self.emit_ln(node, f"class {node.name.py_code}:")
+            self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
             self.emit_ln(
                 node,
-                f"class {node.name.py_code}({node.base_classes.py_code}):",
+                f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
             )
-        self.emit(node, node.body.py_code)
+        self.emit(node, node.body.meta["py_code"])
 
     # class NodeArch(ObjectArch):
     # class EdgeArch(ObjectArch):
@@ -109,8 +113,10 @@ class PyCodeGenPass(Pass):
 
     def exit_func_arch(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert func arch to python code."""
-        self.emit_ln(node, f"def {node.name.py_code}({node.signature.py_code}):")
-        self.emit(node, node.body.py_code)
+        self.emit_ln(
+            node, f"def {node.name.meta['py_code']}({node.signature.meta['py_code']}):"
+        )
+        self.emit(node, node.body.meta["py_code"])
         self.indent_level -= 1
 
     def exit_base_classes(self: "PyCodeGenPass", node: AstNode) -> None:
@@ -130,7 +136,7 @@ class PyCodeGenPass(Pass):
     # def exit_arch_members(self: "PyCodeGenPass", node: AstNode) -> None:
     #     """Exit arch block."""
     #     for i in node.members:
-    #         self.emit(node, i.py_code)
+    #         self.emit(node, i.meta['py_code'])
 
     # class HasStmt(AstNode):
     #     """HasStmt node type for Jac Ast."""
@@ -1014,5 +1020,5 @@ class PyCodeGenPass(Pass):
 
     def enter_node(self: Pass, node: AstNode) -> None:
         """Enter node."""
-        node.py_code = ""
+        node.meta["py_code"] = ""
         return super().enter_node(node)

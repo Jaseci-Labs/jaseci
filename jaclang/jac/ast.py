@@ -1,5 +1,6 @@
 """Abstract class for IR Passes for Jac."""
 import pprint
+from typing import Optional, Type
 
 from jaclang.core.edge import EdgeDir
 
@@ -12,6 +13,7 @@ class AstNode:
         self.parent = parent
         self.kid = kid if kid else []
         self.line = line
+        self.meta = {}
 
     def __str__(self: "AstNode") -> str:
         """Return string representation of node."""
@@ -33,7 +35,7 @@ class AstNode:
             ret["value"] = self.value
         return ret
 
-    def print(self: "AstNode", depth: int = None) -> None:
+    def print(self: "AstNode", depth: Optional[int] = None) -> None:
         """Print ast."""
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
 
@@ -45,6 +47,35 @@ class AstNode:
 def is_blank(node: AstNode) -> bool:
     """Check if node is blank."""
     return type(node) == Blank
+
+
+def make_blank(node: AstNode) -> None:
+    """Make node empty."""
+    node.parent.kid[node.parent.kid.index(node)] = Blank()
+
+
+def replace_node(node: AstNode, new_node: AstNode) -> AstNode:
+    """Replace node with new_node."""
+    node.parent.kid[node.parent.kid.index(node)] = new_node
+    new_node.parent = node.parent
+    return new_node
+
+
+def update_kind(node: AstNode, kind: Type[AstNode], **kwargs: dict) -> AstNode:
+    """Update node kind."""
+    new_node = convert_kind(node, kind=kind, **kwargs)
+    node.parent.kid[node.parent.kid.index(node)] = new_node
+    return new_node
+
+
+def convert_kind(node: AstNode, kind: Type[AstNode], **kwargs: dict) -> AstNode:
+    """Convert node from one kind to another."""
+    new_node = kind(**kwargs, parent=node.parent, kid=node.kid, line=node.line)
+    return new_node
+
+
+# AST Node Types
+# --------------
 
 
 class Blank(AstNode):
@@ -59,21 +90,23 @@ class Token(AstNode):
     """Token node type for Jac Ast."""
 
     def __init__(
-        self: "Token", name: str, value: str, *args: list, **kwargs: dict
+        self: "Token", name: str, value: str, parent: AstNode, kid: list, line: int
     ) -> None:
         """Initialize token."""
         self.name = name
         self.value = value
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Parse(AstNode):
     """Parse node type for Jac Ast."""
 
-    def __init__(self: "Parse", name: str, *args: list, **kwargs: dict) -> None:
+    def __init__(
+        self: "Parse", name: str, parent: AstNode, kid: list, line: int
+    ) -> None:
         """Initialize parse."""
         self.name = name
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Module(AstNode):
@@ -84,34 +117,37 @@ class Module(AstNode):
         name: str,
         doc: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize whole program node."""
         self.name = name
         self.doc = doc
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Elements(AstNode):
     """Elements node type for Jac Ast."""
 
-    def __init__(self: "Elements", elements: list, *args: list, **kwargs: dict) -> None:
+    def __init__(
+        self: "Elements", elements: list, parent: AstNode, kid: list, line: int
+    ) -> None:
         """Initialize elements node."""
         self.elements = elements
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class DocString(AstNode):
     """DocString node type for Jac Ast."""
 
     def __init__(
-        self: "DocString", value: AstNode, *args: list, **kwargs: dict
+        self: "DocString", value: AstNode, parent: AstNode, kid: list, line: int
     ) -> None:
         """Initialize docstring node."""
         self.value = value
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class GlobalVars(AstNode):
@@ -122,14 +158,15 @@ class GlobalVars(AstNode):
         doc: AstNode,
         access: AstNode,
         assignments: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize global var node."""
         self.doc = doc
         self.access = access
         self.assignments = assignments
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Test(AstNode):
@@ -141,15 +178,16 @@ class Test(AstNode):
         doc: AstNode,
         description: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize test node."""
         self.doc = doc
         self.name = name
         self.description = description
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ModuleCode(AstNode):
@@ -159,13 +197,14 @@ class ModuleCode(AstNode):
         self: "Test",
         doc: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize test node."""
         self.doc = doc
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Import(AstNode):
@@ -178,36 +217,44 @@ class Import(AstNode):
         alias: AstNode,
         items: AstNode,
         is_absorb: bool,  # For includes
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize import node."""
         self.lang = lang
         self.path = path
         self.alias = alias
         self.items = items
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ModulePath(AstNode):
     """ModulePath node type for Jac Ast."""
 
-    def __init__(self: "ModulePath", path: list, *args: list, **kwargs: dict) -> None:
+    def __init__(
+        self: "ModulePath", path: list, parent: AstNode, kid: list, line: int
+    ) -> None:
         """Initialize module path node."""
         self.path = path
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ModuleItem(AstNode):
     """ModuleItem node type for Jac Ast."""
 
     def __init__(
-        self: "ModuleItem", name: AstNode, alias: AstNode, *args: list, **kwargs: dict
+        self: "ModuleItem",
+        name: AstNode,
+        alias: AstNode,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize module item node."""
         self.name = name
         self.alias = alias
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Architype(AstNode):
@@ -221,8 +268,9 @@ class Architype(AstNode):
         access: AstNode,
         base_classes: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize object arch node."""
         self.name = name
@@ -231,7 +279,7 @@ class Architype(AstNode):
         self.access = access
         self.base_classes = base_classes
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ArchDecl(AstNode):
@@ -244,8 +292,9 @@ class ArchDecl(AstNode):
         typ: AstNode,
         name: AstNode,
         base_classes: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize arch decl node."""
         self.doc = doc
@@ -253,7 +302,7 @@ class ArchDecl(AstNode):
         self.typ = typ
         self.name = name
         self.base_classes = base_classes
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ArchDef(AstNode):
@@ -265,15 +314,16 @@ class ArchDef(AstNode):
         mod: AstNode,
         arch: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize arch def node."""
         self.doc = doc
         self.mod = mod
         self.arch = arch
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Ability(AstNode):
@@ -287,8 +337,9 @@ class Ability(AstNode):
         access: AstNode,
         signature: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize func arch node."""
         self.name = name
@@ -297,7 +348,7 @@ class Ability(AstNode):
         self.access = access
         self.signature = signature
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class AbilityDecl(AstNode):
@@ -310,8 +361,9 @@ class AbilityDecl(AstNode):
         name: AstNode,
         signature: AstNode,
         is_func: bool,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize ability decl node."""
         self.doc = doc
@@ -319,7 +371,7 @@ class AbilityDecl(AstNode):
         self.name = name
         self.signature = signature
         self.is_func = is_func
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class AbilityDef(AstNode):
@@ -330,25 +382,26 @@ class AbilityDef(AstNode):
         mod: AstNode,
         arch: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize ability def node."""
         self.mod = mod
         self.arch = arch
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class BaseClasses(AstNode):
     """BaseArch node type for Jac Ast."""
 
     def __init__(
-        self: "BaseClasses", base_classes: list, *args: list, **kwargs: dict
+        self: "BaseClasses", base_classes: list, parent: AstNode, kid: list, line: int
     ) -> None:
         """Initialize base classes node."""
         self.base_classes = base_classes
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class AbilitySpec(AstNode):
@@ -362,8 +415,9 @@ class AbilitySpec(AstNode):
         mod: AstNode,
         signature: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize arch block node."""
         self.doc = doc
@@ -372,7 +426,7 @@ class AbilitySpec(AstNode):
         self.mod = mod
         self.signature = signature
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ArchBlock(AstNode):
@@ -381,12 +435,13 @@ class ArchBlock(AstNode):
     def __init__(
         self: "ArchBlock",
         members: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize arch block node."""
         self.members = members
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ArchHas(AstNode):
@@ -397,14 +452,15 @@ class ArchHas(AstNode):
         doc: AstNode,
         access: AstNode,
         vars: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize has statement node."""
         self.doc = doc
         self.access = access
         self.vars = vars
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class HasVarList(AstNode):
@@ -413,12 +469,13 @@ class HasVarList(AstNode):
     def __init__(
         self: "HasVarList",
         vars: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize has var list node."""
         self.vars = vars
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ParamVar(AstNode):
@@ -429,26 +486,19 @@ class ParamVar(AstNode):
         name: AstNode,
         type_tag: AstNode,
         value: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize has var node."""
         self.name = name
         self.type_tag = type_tag
         self.value = value
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class HasVar(ParamVar):
     """HasVar node type for Jac Ast."""
-
-    def __init__(
-        self: "HasVar",
-        *args: list,
-        **kwargs: dict,
-    ) -> None:
-        """Initialize has var node."""
-        super().__init__(*args, **kwargs)
 
 
 class TypeSpec(AstNode):
@@ -459,14 +509,15 @@ class TypeSpec(AstNode):
         typ: AstNode,
         nested1: AstNode,  # needed for lists
         nested2: AstNode,  # needed for dicts
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize type spec node."""
         self.typ = typ
         self.nested1 = nested1
         self.nested2 = nested2
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ArchCan(AstNode):
@@ -479,8 +530,9 @@ class ArchCan(AstNode):
         access: AstNode,
         signature: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize can statement node."""
         self.name = name
@@ -488,7 +540,7 @@ class ArchCan(AstNode):
         self.access = access
         self.signature = signature
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ArchCanDecl(AstNode):
@@ -500,15 +552,16 @@ class ArchCanDecl(AstNode):
         doc: AstNode,
         access: AstNode,
         signature: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize can statement node."""
         self.name = name
         self.doc = doc
         self.access = access
         self.signature = signature
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class EventSignature(AstNode):
@@ -518,13 +571,14 @@ class EventSignature(AstNode):
         self: "EventSignature",
         event: AstNode,
         arch_tag_info: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize event signature node."""
         self.event = event
         self.arch_tag_info = arch_tag_info
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class FuncSignature(AstNode):
@@ -534,13 +588,14 @@ class FuncSignature(AstNode):
         self: "FuncSignature",
         params: AstNode,
         return_type: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize method signature node."""
         self.params = params
         self.return_type = return_type
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class NameList(AstNode):
@@ -549,12 +604,13 @@ class NameList(AstNode):
     def __init__(
         self: "NameList",
         names: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize name list node."""
         self.names = names
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class FuncParams(AstNode):
@@ -563,12 +619,13 @@ class FuncParams(AstNode):
     def __init__(
         self: "FuncParams",
         params: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize method params node."""
         self.params = params
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class CodeBlock(AstNode):
@@ -577,12 +634,13 @@ class CodeBlock(AstNode):
     def __init__(
         self: "CodeBlock",
         stmts: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize code block node."""
         self.stmts = stmts
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class IfStmt(AstNode):
@@ -594,15 +652,16 @@ class IfStmt(AstNode):
         body: AstNode,
         elseifs: AstNode,
         else_body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize if statement node."""
         self.condition = condition
         self.body = body
         self.elseifs = elseifs
         self.else_body = else_body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ElseIfs(AstNode):
@@ -611,12 +670,13 @@ class ElseIfs(AstNode):
     def __init__(
         self: "ElseIfs",
         elseifs: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize elseifs node."""
         self.elseifs = elseifs
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ElseStmt(AstNode):
@@ -625,12 +685,13 @@ class ElseStmt(AstNode):
     def __init__(
         self: "ElseStmt",
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize else node."""
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class TryStmt(AstNode):
@@ -641,14 +702,15 @@ class TryStmt(AstNode):
         body: AstNode,
         excepts: AstNode,
         finally_body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize try statement node."""
         self.body = body
         self.excepts = excepts
         self.finally_body = finally_body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ExceptList(AstNode):
@@ -657,12 +719,13 @@ class ExceptList(AstNode):
     def __init__(
         self: "ExceptList",
         excepts: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize excepts node."""
         self.excepts = excepts
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Except(AstNode):
@@ -673,14 +736,15 @@ class Except(AstNode):
         typ: AstNode,
         name: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize except node."""
         self.typ = typ
         self.name = name
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class FinallyStmt(AstNode):
@@ -689,12 +753,13 @@ class FinallyStmt(AstNode):
     def __init__(
         self: "FinallyStmt",
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize finally statement node."""
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class IterForStmt(AstNode):
@@ -706,15 +771,16 @@ class IterForStmt(AstNode):
         condition: AstNode,
         count_by: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize iter for node."""
         self.iter = iter
         self.condition = condition
         self.count_by = count_by
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class InForStmt(AstNode):
@@ -725,14 +791,15 @@ class InForStmt(AstNode):
         name: AstNode,
         collection: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize in for node."""
         self.name = name
         self.collection = collection
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class DictForStmt(AstNode):
@@ -744,15 +811,16 @@ class DictForStmt(AstNode):
         v_name: AstNode,
         collection: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize dict for node."""
         self.k_name = k_name
         self.v_name = v_name
         self.collection = collection
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class WhileStmt(AstNode):
@@ -762,13 +830,14 @@ class WhileStmt(AstNode):
         self: "WhileStmt",
         condition: AstNode,
         body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize while statement node."""
         self.condition = condition
         self.body = body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class RaiseStmt(AstNode):
@@ -777,12 +846,13 @@ class RaiseStmt(AstNode):
     def __init__(
         self: "RaiseStmt",
         cause: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize raise statement node."""
         self.cause = cause
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class AssertStmt(AstNode):
@@ -792,13 +862,14 @@ class AssertStmt(AstNode):
         self: "AssertStmt",
         condition: AstNode,
         error_msg: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize assert statement node."""
         self.condition = condition
         self.error_msg = error_msg
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class CtrlStmt(AstNode):
@@ -807,12 +878,13 @@ class CtrlStmt(AstNode):
     def __init__(
         self: "CtrlStmt",
         stmt: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize control statement node."""
         self.stmt = stmt
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class DeleteStmt(AstNode):
@@ -821,12 +893,13 @@ class DeleteStmt(AstNode):
     def __init__(
         self: "DeleteStmt",
         target: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize delete statement node."""
         self.target = target
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ReportStmt(AstNode):
@@ -835,12 +908,13 @@ class ReportStmt(AstNode):
     def __init__(
         self: "ReportStmt",
         expr: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize report statement node."""
         self.expr = expr
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ReturnStmt(AstNode):
@@ -849,12 +923,13 @@ class ReturnStmt(AstNode):
     def __init__(
         self: "ReturnStmt",
         expr: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize return statement node."""
         self.expr = expr
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class IgnoreStmt(AstNode):
@@ -863,12 +938,13 @@ class IgnoreStmt(AstNode):
     def __init__(
         self: "IgnoreStmt",
         target: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize ignore statement node."""
         self.target = target
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class VisitStmt(AstNode):
@@ -879,14 +955,15 @@ class VisitStmt(AstNode):
         typ: AstNode,
         target: AstNode,
         else_body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize visit statement node."""
         self.typ = typ
         self.target = target
         self.else_body = else_body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class RevisitStmt(AstNode):
@@ -897,14 +974,15 @@ class RevisitStmt(AstNode):
         target: AstNode,
         hops: AstNode,
         else_body: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize revisit statement node."""
         self.target = target
         self.hops = hops
         self.else_body = else_body
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class DisengageStmt(AstNode):
@@ -912,11 +990,12 @@ class DisengageStmt(AstNode):
 
     def __init__(
         self: "DisengageStmt",
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize disengage statement node."""
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class YeildStmt(AstNode):
@@ -925,12 +1004,13 @@ class YeildStmt(AstNode):
     def __init__(
         self: "YeildStmt",
         expr: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize yeild statement node."""
         self.expr = expr
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class SyncStmt(AstNode):
@@ -938,13 +1018,14 @@ class SyncStmt(AstNode):
 
     def __init__(
         self: "SyncStmt",
-        *args: list,
         target: AstNode,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize sync statement node."""
         self.target = target
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Assignment(AstNode):
@@ -955,14 +1036,15 @@ class Assignment(AstNode):
         is_static: bool,
         target: AstNode,
         value: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize assignment node."""
         self.is_static = is_static
         self.target = target
         self.value = value
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class IfElseExpr(AstNode):
@@ -973,14 +1055,15 @@ class IfElseExpr(AstNode):
         condition: AstNode,
         value: AstNode,
         else_value: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize if else expression node."""
         self.condition = condition
         self.value = value
         self.else_value = else_value
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class BinaryExpr(AstNode):
@@ -991,14 +1074,15 @@ class BinaryExpr(AstNode):
         left: AstNode,
         right: AstNode,
         op: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize binary expression node."""
         self.left = left
         self.right = right
         self.op = op
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class UnaryExpr(AstNode):
@@ -1008,13 +1092,14 @@ class UnaryExpr(AstNode):
         self: "UnaryExpr",
         operand: AstNode,
         op: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize unary expression node."""
         self.operand = operand
         self.op = op
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class SpawnObjectExpr(AstNode):
@@ -1023,12 +1108,13 @@ class SpawnObjectExpr(AstNode):
     def __init__(
         self: "SpawnObjectExpr",
         target: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize spawn object expression node."""
         self.target = target
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class UnpackExpr(AstNode):
@@ -1038,12 +1124,13 @@ class UnpackExpr(AstNode):
         self: "UnpackExpr",
         target: AstNode,
         is_dict: bool,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize unpack expression node."""
         self.target = target
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class MultiString(AstNode):
@@ -1052,12 +1139,13 @@ class MultiString(AstNode):
     def __init__(
         self: "MultiString",
         strings: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize multi string expression node."""
         self.strings = strings
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ExprList(AstNode):
@@ -1066,12 +1154,13 @@ class ExprList(AstNode):
     def __init__(
         self: "ExprList",
         values: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize list expression node."""
         self.values = values
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class AssignmentList(ExprList):
@@ -1088,12 +1177,13 @@ class DictVal(AstNode):
     def __init__(
         self: "DictVal",
         kv_pairs: list,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize dict expression node."""
         self.kv_pairs = kv_pairs
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class Comprehension(AstNode):
@@ -1106,8 +1196,9 @@ class Comprehension(AstNode):
         name: AstNode,
         collection: AstNode,
         conditional: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize comprehension expression node."""
         self.key_expr = key_expr
@@ -1115,7 +1206,7 @@ class Comprehension(AstNode):
         self.name = name
         self.collection = collection
         self.conditional = conditional
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class KVPair(AstNode):
@@ -1125,13 +1216,14 @@ class KVPair(AstNode):
         self: "KVPair",
         key: AstNode,
         value: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize key value pair expression node."""
         self.key = key
         self.value = value
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class AtomTrailer(AstNode):
@@ -1141,15 +1233,16 @@ class AtomTrailer(AstNode):
         self: "AtomTrailer",
         target: AstNode,
         right: list,
-        null_ok: bool = False,
-        *args: list,
-        **kwargs: dict,
+        null_ok: bool,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
         self.null_ok = null_ok
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class FuncCall(AstNode):
@@ -1159,13 +1252,14 @@ class FuncCall(AstNode):
         self: "FuncCall",
         target: AstNode,
         params: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize function call expression node."""
         self.target = target
         self.params = params
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ParamList(AstNode):
@@ -1175,13 +1269,14 @@ class ParamList(AstNode):
         self: "ParamList",
         p_args: AstNode,
         p_kwargs: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize parameter list expression node."""
         self.p_args = p_args
         self.p_kwargs = p_kwargs
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class IndexSlice(AstNode):
@@ -1191,13 +1286,14 @@ class IndexSlice(AstNode):
         self: "IndexSlice",
         start: AstNode,
         stop: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize index slice expression node."""
         self.start = start
         self.stop = stop
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class GlobalRef(AstNode):
@@ -1206,12 +1302,13 @@ class GlobalRef(AstNode):
     def __init__(
         self: "GlobalRef",
         name: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize global reference expression node."""
         self.name = name
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class HereRef(GlobalRef):
@@ -1253,13 +1350,14 @@ class EdgeOpRef(AstNode):
         self: "EdgeOpRef",
         filter_cond: AstNode,
         edge_dir: EdgeDir,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize edge op reference expression node."""
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class ConnectOp(AstNode):
@@ -1269,13 +1367,14 @@ class ConnectOp(AstNode):
         self: "ConnectOp",
         spawn: AstNode,
         edge_dir: EdgeDir,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize connect op reference expression node."""
         self.spawn = spawn
         self.edge_dir = edge_dir
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class DisconnectOp(EdgeOpRef):
@@ -1284,12 +1383,13 @@ class DisconnectOp(EdgeOpRef):
     def __init__(
         self: "DisconnectOp",
         edge_ref: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize disconnect op reference expression node."""
         self.edge_ref = edge_ref
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class FilterCtx(AstNode):
@@ -1298,12 +1398,13 @@ class FilterCtx(AstNode):
     def __init__(
         self: "FilterCtx",
         compares: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize filter_cond context expression node."""
         self.compares = compares
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class SpawnCtx(AstNode):
@@ -1312,9 +1413,10 @@ class SpawnCtx(AstNode):
     def __init__(
         self: "SpawnCtx",
         spawns: AstNode,
-        *args: list,
-        **kwargs: dict,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize spawn context expression node."""
         self.spawns = spawns
-        super().__init__(*args, **kwargs)
+        super().__init__(parent=parent, kid=kid, line=line)

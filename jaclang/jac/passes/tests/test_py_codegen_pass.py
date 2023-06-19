@@ -35,14 +35,14 @@ class PyCodeGenPassTests(TestCase):
         build_pass = self.builder.run(node=ptoa(ptree))
         code_gen = self.codegen.run(node=build_pass)
         code_gen = code_gen
-        # print(code_gen.py_code)
+        # print(code_gen.meta['py_code'])
 
     def test_pygen_module_structure(self: "PyCodeGenPassTests") -> None:
         """Basic test for pass."""
         build_pass = self.build_micro("module_structure.jac")
         # build_pass.print()
         self.codegen.run(node=build_pass)
-        # print(code_gen.py_code)
+        # print(code_gen.meta['py_code'])
         self.assertGreater(len(str(build_pass.to_dict())), 200)
 
     def test_pygen_import_pass(self: "PyCodeGenPassTests") -> None:
@@ -50,7 +50,7 @@ class PyCodeGenPassTests(TestCase):
         build_pass = self.build_micro("../../../passes/import_pass.jac")
         # build_pass.print()
         code_gen = self.codegen.run(node=build_pass)
-        print(code_gen.py_code)
+        print(code_gen.meta["py_code"])
         self.assertGreater(len(str(build_pass.to_dict())), 200)
 
     # def test_no_typo_in_pass(self: "PyCodeGenPassTests") -> None:

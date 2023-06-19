@@ -1,9 +1,9 @@
 """Pass that builds well formed AST from parse tree AST."""
 from copy import copy
-from typing import Type
 
 
 import jaclang.jac.ast as ast
+from jaclang.jac.ast import convert_kind, make_blank, replace_node, update_kind
 from jaclang.jac.passes.ir_pass import Pass
 
 
@@ -946,7 +946,9 @@ class AstBuildPass(Pass):
         """Build AtomicChain Ast node."""
         if len(node.kid) == 3:
             del node.kid[1]
-        update_kind(node, ast.AtomTrailer, target=node.kid[0], right=node.kid[1])
+        update_kind(
+            node, ast.AtomTrailer, target=node.kid[0], right=node.kid[1], null_ok=False
+        )
 
     def exit_atomic_chain_safe(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build AtomicChain with safety Ast node."""
@@ -1154,28 +1156,3 @@ class AstBuildPass(Pass):
     def exit_empty(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Empty Ast node."""
         make_blank(node)
-
-
-def make_blank(node: ast.AstNode) -> None:
-    """Make node empty."""
-    node.parent.kid[node.parent.kid.index(node)] = ast.Blank()
-
-
-def replace_node(node: ast.AstNode, new_node: ast.AstNode) -> None:
-    """Replace node with new_node."""
-    node.parent.kid[node.parent.kid.index(node)] = new_node
-    new_node.parent = node.parent
-    return new_node
-
-
-def update_kind(node: ast.AstNode, kind: Type[ast.AstNode], **kwargs: dict) -> None:
-    """Update node kind."""
-    new_node = convert_kind(node, kind=kind, **kwargs)
-    node.parent.kid[node.parent.kid.index(node)] = new_node
-    return new_node
-
-
-def convert_kind(node: ast.AstNode, kind: Type[ast.AstNode], **kwargs: dict) -> None:
-    """Convert node from one kind to another."""
-    new_node = kind(**kwargs, parent=node.parent, kid=node.kid, line=node.line)
-    return new_node
