@@ -1,3 +1,4 @@
+# type: ignore
 """Lexer for Jac language."""
 
 from jaclang.utils.sly.lex import Lexer, Token

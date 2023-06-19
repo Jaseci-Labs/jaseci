@@ -946,8 +946,16 @@ class AstBuildPass(Pass):
         """Build AtomicChain Ast node."""
         if len(node.kid) == 3:
             del node.kid[1]
-        update_kind(
-            node, ast.AtomTrailer, target=node.kid[0], right=node.kid[1], null_ok=False
+        replace_node(
+            node,
+            ast.AtomTrailer(
+                target=node.kid[0],
+                right=node.kid[1],
+                null_ok=False,
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
         )
 
     def exit_atomic_chain_safe(self: "AstBuildPass", node: ast.AstNode) -> None:

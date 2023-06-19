@@ -10,12 +10,13 @@ from jaclang.utils.test import TestCase
 class PyCodeGenPassTests(TestCase):
     """Test pass module."""
 
+    lex = JacLexer()
+    prse = JacParser()
+    builder = AstBuildPass()
+    codegen = PyCodeGenPass()
+
     def setUp(self: TestCase) -> None:
         """Set up test."""
-        self.lex = JacLexer()
-        self.prse = JacParser()
-        self.builder = AstBuildPass()
-        self.codegen = PyCodeGenPass()
         return super().setUp()
 
     def build_micro(self: "PyCodeGenPassTests", filename: str) -> None:

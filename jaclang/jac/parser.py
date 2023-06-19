@@ -1,3 +1,4 @@
+# type: ignore
 """Parser for Jac."""
 from jaclang.jac.errors import JacParseErrorMixIn
 from jaclang.jac.lexer import JacLexer

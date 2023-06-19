@@ -8,7 +8,9 @@ from jaclang.core.edge import EdgeDir
 class AstNode:
     """Abstract syntax tree node for Jac."""
 
-    def __init__(self: "AstNode", parent: "AstNode", kid: list, line: int) -> None:
+    def __init__(
+        self: "AstNode", parent: Optional["AstNode"], kid: list, line: int
+    ) -> None:
         """Initialize ast."""
         self.parent = parent
         self.kid = kid if kid else []
@@ -51,12 +53,14 @@ def is_blank(node: AstNode) -> bool:
 
 def make_blank(node: AstNode) -> None:
     """Make node empty."""
-    node.parent.kid[node.parent.kid.index(node)] = Blank()
+    if node.parent:
+        node.parent.kid[node.parent.kid.index(node)] = Blank()
 
 
 def replace_node(node: AstNode, new_node: AstNode) -> AstNode:
     """Replace node with new_node."""
-    node.parent.kid[node.parent.kid.index(node)] = new_node
+    if node.parent:
+        node.parent.kid[node.parent.kid.index(node)] = new_node
     new_node.parent = node.parent
     return new_node
 
@@ -64,7 +68,8 @@ def replace_node(node: AstNode, new_node: AstNode) -> AstNode:
 def update_kind(node: AstNode, kind: Type[AstNode], **kwargs: dict) -> AstNode:
     """Update node kind."""
     new_node = convert_kind(node, kind=kind, **kwargs)
-    node.parent.kid[node.parent.kid.index(node)] = new_node
+    if node.parent:
+        node.parent.kid[node.parent.kid.index(node)] = new_node
     return new_node
 
 
@@ -194,7 +199,7 @@ class ModuleCode(AstNode):
     """Free mod code for Jac Ast."""
 
     def __init__(
-        self: "Test",
+        self: "ModuleCode",
         doc: AstNode,
         body: AstNode,
         parent: AstNode,
