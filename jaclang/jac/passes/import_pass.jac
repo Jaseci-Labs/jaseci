@@ -1,12 +1,18 @@
 """Import Pass written in Jac bootstrapped with Python strategy."""
 
-import:py jaclang.jac.ast;
+import:py jaclang.jac.ast as ast;
 import:py os;
 import:py from jaclang.jac.ast, AstNode, is_blank;
 import:py from jaclang.jac.passes.ir_pass, Pass;
 import:py from jaclang.jac.utils, jac_file_to_ast;
 
-
+"""
+ImportPass is a pass that handles import statements.
+It is responsible for:
+    - Resolving the import path to a directory
+    - Loading the AST from the directory
+    - Adding the AST to the symbol table
+"""
 object ImportPass:Pass {
     has symbol_table: dict[str, any];
 

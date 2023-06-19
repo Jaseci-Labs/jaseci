@@ -99,7 +99,12 @@ class Token(AstNode):
     """Token node type for Jac Ast."""
 
     def __init__(
-        self: "Token", name: str, value: str, parent: AstNode, kid: list, line: int
+        self: "Token",
+        name: str,
+        value: str,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize token."""
         self.name = name
@@ -111,7 +116,11 @@ class Parse(AstNode):
     """Parse node type for Jac Ast."""
 
     def __init__(
-        self: "Parse", name: str, parent: AstNode, kid: list, line: int
+        self: "Parse",
+        name: str,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize parse."""
         self.name = name
@@ -141,7 +150,11 @@ class Elements(AstNode):
     """Elements node type for Jac Ast."""
 
     def __init__(
-        self: "Elements", elements: list, parent: AstNode, kid: list, line: int
+        self: "Elements",
+        elements: list,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize elements node."""
         self.elements = elements
@@ -152,7 +165,11 @@ class DocString(AstNode):
     """DocString node type for Jac Ast."""
 
     def __init__(
-        self: "DocString", value: Token, parent: AstNode, kid: list, line: int
+        self: "DocString",
+        value: Token,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize docstring node."""
         self.value = value
@@ -235,6 +252,7 @@ class Import(AstNode):
         self.path = path
         self.alias = alias
         self.items = items
+        self.is_absorb = is_absorb
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -242,7 +260,11 @@ class ModulePath(AstNode):
     """ModulePath node type for Jac Ast."""
 
     def __init__(
-        self: "ModulePath", path: list, parent: AstNode, kid: list, line: int
+        self: "ModulePath",
+        path: list,
+        parent: AstNode,
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize module path node."""
         self.path = path
@@ -254,8 +276,8 @@ class ModuleItem(AstNode):
 
     def __init__(
         self: "ModuleItem",
-        name: AstNode,
-        alias: AstNode,
+        name: Token,
+        alias: Token,
         parent: AstNode,
         kid: list,
         line: int,
@@ -318,7 +340,7 @@ class ArchDef(AstNode):
     """ArchDef node type for Jac Ast."""
 
     def __init__(
-        self: "ArchDecl",
+        self: "ArchDef",
         doc: AstNode,
         mod: AstNode,
         arch: AstNode,
@@ -1388,17 +1410,6 @@ class ConnectOp(AstNode):
 
 class DisconnectOp(EdgeOpRef):
     """DisconnectOpRef node type for Jac Ast."""
-
-    def __init__(
-        self: "DisconnectOp",
-        edge_ref: AstNode,
-        parent: AstNode,
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize disconnect op reference expression node."""
-        self.edge_ref = edge_ref
-        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class FilterCtx(AstNode):

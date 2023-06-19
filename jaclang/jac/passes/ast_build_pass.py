@@ -100,6 +100,7 @@ class AstBuildPass(Pass):
         else:
             node.kid = [kid[1], kid[2]]
         update_kind(node, ast.Import, **meta)
+        print("".join([i.value for i in meta["path"].kid]))
 
     def exit_include_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Include Ast node."""
@@ -1107,8 +1108,15 @@ class AstBuildPass(Pass):
     def exit_disconnect_op(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build DisconnectOp Ast node."""
         node = replace_node(node, node.kid[1])
-        update_kind(
-            node, ast.DisconnectOp, edge_dir=node.edge_dir, filter_cond=node.filter_cond
+        node = replace_node(
+            node,
+            ast.DisconnectOp(
+                filter_cond=node.filter_cond,
+                edge_dir=node.edge_dir,
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
         )
 
     def exit_connect_to(self: "AstBuildPass", node: ast.AstNode) -> None:
