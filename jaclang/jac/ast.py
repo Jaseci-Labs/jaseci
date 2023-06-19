@@ -37,6 +37,10 @@ class AstNode:
             ret["value"] = self.value
         return ret
 
+    def is_type(self: "AstNode", typ: Type["AstNode"]) -> bool:
+        """Check if node is of type."""
+        return type(self) == typ
+
     def print(self: "AstNode", depth: Optional[int] = None) -> None:
         """Print ast."""
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
@@ -120,7 +124,7 @@ class Module(AstNode):
     def __init__(
         self: "Module",
         name: str,
-        doc: AstNode,
+        doc: Token,
         body: AstNode,
         parent: AstNode,
         kid: list,
@@ -148,7 +152,7 @@ class DocString(AstNode):
     """DocString node type for Jac Ast."""
 
     def __init__(
-        self: "DocString", value: AstNode, parent: AstNode, kid: list, line: int
+        self: "DocString", value: Token, parent: AstNode, kid: list, line: int
     ) -> None:
         """Initialize docstring node."""
         self.value = value

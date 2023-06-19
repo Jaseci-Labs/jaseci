@@ -35,7 +35,7 @@ class PyCodeGenPass(Pass):
     def exit_module(self: "PyCodeGenPass", node: ast.Module) -> None:
         """Convert module to python code."""
         if not is_blank(node.doc):
-            self.emit_ln(node, node.doc.meta["py_code"])
+            self.emit_ln(node, node.doc.value)
         self.emit(node, node.body.meta["py_code"])
         self.ir = node
 
@@ -44,7 +44,7 @@ class PyCodeGenPass(Pass):
         for i in node.elements:
             self.emit(node, i.meta["py_code"])
 
-    def exit_doc_string(self: "PyCodeGenPass", node: AstNode) -> None:
+    def exit_doc_string(self: "PyCodeGenPass", node: ast.DocString) -> None:
         """Convert doc_string to python code."""
         if not is_blank(node.value):
             self.emit_ln(node, node.value.value)

@@ -30,7 +30,7 @@ class AstBuildPass(Pass):
 
     def exit_doc_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build DOC_TAG Ast node."""
-        if type(node.kid[0]) == ast.Token:
+        if node.kid[0].is_type(ast.Token):
             node.kid = [node.kid[0]]
         update_kind(node, ast.DocString, value=node.kid[0])
 
