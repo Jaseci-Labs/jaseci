@@ -102,7 +102,7 @@ class Token(AstNode):
         self: "Token",
         name: str,
         value: str,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -118,7 +118,7 @@ class Parse(AstNode):
     def __init__(
         self: "Parse",
         name: str,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -135,7 +135,7 @@ class Module(AstNode):
         name: str,
         doc: Token,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -152,7 +152,7 @@ class Elements(AstNode):
     def __init__(
         self: "Elements",
         elements: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -167,7 +167,7 @@ class DocString(AstNode):
     def __init__(
         self: "DocString",
         value: Token,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -184,7 +184,7 @@ class GlobalVars(AstNode):
         doc: AstNode,
         access: AstNode,
         assignments: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -204,7 +204,7 @@ class Test(AstNode):
         doc: AstNode,
         description: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -223,7 +223,7 @@ class ModuleCode(AstNode):
         self: "ModuleCode",
         doc: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -243,7 +243,7 @@ class Import(AstNode):
         alias: AstNode,
         items: AstNode,
         is_absorb: bool,  # For includes
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -262,12 +262,27 @@ class ModulePath(AstNode):
     def __init__(
         self: "ModulePath",
         path: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
         """Initialize module path node."""
         self.path = path
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ModuleItems(AstNode):
+    """ModuleItems node type for Jac Ast."""
+
+    def __init__(
+        self: "ModuleItems",
+        items: list,
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize module items node."""
+        self.items = items
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -277,8 +292,8 @@ class ModuleItem(AstNode):
     def __init__(
         self: "ModuleItem",
         name: Token,
-        alias: Token,
-        parent: AstNode,
+        alias: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -299,7 +314,7 @@ class Architype(AstNode):
         access: AstNode,
         base_classes: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -323,7 +338,7 @@ class ArchDecl(AstNode):
         typ: AstNode,
         name: AstNode,
         base_classes: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -345,7 +360,7 @@ class ArchDef(AstNode):
         mod: AstNode,
         arch: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -368,7 +383,7 @@ class Ability(AstNode):
         access: AstNode,
         signature: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -392,7 +407,7 @@ class AbilityDecl(AstNode):
         name: AstNode,
         signature: AstNode,
         is_func: bool,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -413,7 +428,7 @@ class AbilityDef(AstNode):
         mod: AstNode,
         arch: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -428,7 +443,11 @@ class BaseClasses(AstNode):
     """BaseArch node type for Jac Ast."""
 
     def __init__(
-        self: "BaseClasses", base_classes: list, parent: AstNode, kid: list, line: int
+        self: "BaseClasses",
+        base_classes: list,
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
     ) -> None:
         """Initialize base classes node."""
         self.base_classes = base_classes
@@ -446,7 +465,7 @@ class AbilitySpec(AstNode):
         mod: AstNode,
         signature: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -466,7 +485,7 @@ class ArchBlock(AstNode):
     def __init__(
         self: "ArchBlock",
         members: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -483,7 +502,7 @@ class ArchHas(AstNode):
         doc: AstNode,
         access: AstNode,
         vars: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -500,7 +519,7 @@ class HasVarList(AstNode):
     def __init__(
         self: "HasVarList",
         vars: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -517,7 +536,7 @@ class ParamVar(AstNode):
         name: AstNode,
         type_tag: AstNode,
         value: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -540,7 +559,7 @@ class TypeSpec(AstNode):
         typ: AstNode,
         nested1: AstNode,  # needed for lists
         nested2: AstNode,  # needed for dicts
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -561,7 +580,7 @@ class ArchCan(AstNode):
         access: AstNode,
         signature: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -583,7 +602,7 @@ class ArchCanDecl(AstNode):
         doc: AstNode,
         access: AstNode,
         signature: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -602,7 +621,7 @@ class EventSignature(AstNode):
         self: "EventSignature",
         event: AstNode,
         arch_tag_info: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -619,7 +638,7 @@ class FuncSignature(AstNode):
         self: "FuncSignature",
         params: AstNode,
         return_type: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -635,7 +654,7 @@ class NameList(AstNode):
     def __init__(
         self: "NameList",
         names: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -650,7 +669,7 @@ class FuncParams(AstNode):
     def __init__(
         self: "FuncParams",
         params: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -665,7 +684,7 @@ class CodeBlock(AstNode):
     def __init__(
         self: "CodeBlock",
         stmts: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -683,7 +702,7 @@ class IfStmt(AstNode):
         body: AstNode,
         elseifs: AstNode,
         else_body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -701,7 +720,7 @@ class ElseIfs(AstNode):
     def __init__(
         self: "ElseIfs",
         elseifs: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -716,7 +735,7 @@ class ElseStmt(AstNode):
     def __init__(
         self: "ElseStmt",
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -733,7 +752,7 @@ class TryStmt(AstNode):
         body: AstNode,
         excepts: AstNode,
         finally_body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -750,7 +769,7 @@ class ExceptList(AstNode):
     def __init__(
         self: "ExceptList",
         excepts: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -767,7 +786,7 @@ class Except(AstNode):
         typ: AstNode,
         name: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -784,7 +803,7 @@ class FinallyStmt(AstNode):
     def __init__(
         self: "FinallyStmt",
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -802,7 +821,7 @@ class IterForStmt(AstNode):
         condition: AstNode,
         count_by: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -822,7 +841,7 @@ class InForStmt(AstNode):
         name: AstNode,
         collection: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -842,7 +861,7 @@ class DictForStmt(AstNode):
         v_name: AstNode,
         collection: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -861,7 +880,7 @@ class WhileStmt(AstNode):
         self: "WhileStmt",
         condition: AstNode,
         body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -877,7 +896,7 @@ class RaiseStmt(AstNode):
     def __init__(
         self: "RaiseStmt",
         cause: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -893,7 +912,7 @@ class AssertStmt(AstNode):
         self: "AssertStmt",
         condition: AstNode,
         error_msg: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -909,7 +928,7 @@ class CtrlStmt(AstNode):
     def __init__(
         self: "CtrlStmt",
         stmt: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -924,7 +943,7 @@ class DeleteStmt(AstNode):
     def __init__(
         self: "DeleteStmt",
         target: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -939,7 +958,7 @@ class ReportStmt(AstNode):
     def __init__(
         self: "ReportStmt",
         expr: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -954,7 +973,7 @@ class ReturnStmt(AstNode):
     def __init__(
         self: "ReturnStmt",
         expr: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -969,7 +988,7 @@ class IgnoreStmt(AstNode):
     def __init__(
         self: "IgnoreStmt",
         target: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -986,7 +1005,7 @@ class VisitStmt(AstNode):
         typ: AstNode,
         target: AstNode,
         else_body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1005,7 +1024,7 @@ class RevisitStmt(AstNode):
         target: AstNode,
         hops: AstNode,
         else_body: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1021,7 +1040,7 @@ class DisengageStmt(AstNode):
 
     def __init__(
         self: "DisengageStmt",
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1035,7 +1054,7 @@ class YeildStmt(AstNode):
     def __init__(
         self: "YeildStmt",
         expr: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1050,7 +1069,7 @@ class SyncStmt(AstNode):
     def __init__(
         self: "SyncStmt",
         target: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1067,7 +1086,7 @@ class Assignment(AstNode):
         is_static: bool,
         target: AstNode,
         value: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1086,7 +1105,7 @@ class IfElseExpr(AstNode):
         condition: AstNode,
         value: AstNode,
         else_value: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1105,7 +1124,7 @@ class BinaryExpr(AstNode):
         left: AstNode,
         right: AstNode,
         op: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1123,7 +1142,7 @@ class UnaryExpr(AstNode):
         self: "UnaryExpr",
         operand: AstNode,
         op: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1139,7 +1158,7 @@ class SpawnObjectExpr(AstNode):
     def __init__(
         self: "SpawnObjectExpr",
         target: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1155,7 +1174,7 @@ class UnpackExpr(AstNode):
         self: "UnpackExpr",
         target: AstNode,
         is_dict: bool,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1170,7 +1189,7 @@ class MultiString(AstNode):
     def __init__(
         self: "MultiString",
         strings: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1185,7 +1204,7 @@ class ExprList(AstNode):
     def __init__(
         self: "ExprList",
         values: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1208,7 +1227,7 @@ class DictVal(AstNode):
     def __init__(
         self: "DictVal",
         kv_pairs: list,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1227,7 +1246,7 @@ class Comprehension(AstNode):
         name: AstNode,
         collection: AstNode,
         conditional: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1247,7 +1266,7 @@ class KVPair(AstNode):
         self: "KVPair",
         key: AstNode,
         value: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1265,7 +1284,7 @@ class AtomTrailer(AstNode):
         target: AstNode,
         right: list,
         null_ok: bool,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1283,7 +1302,7 @@ class FuncCall(AstNode):
         self: "FuncCall",
         target: AstNode,
         params: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1300,7 +1319,7 @@ class ParamList(AstNode):
         self: "ParamList",
         p_args: AstNode,
         p_kwargs: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1317,7 +1336,7 @@ class IndexSlice(AstNode):
         self: "IndexSlice",
         start: AstNode,
         stop: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1333,7 +1352,7 @@ class GlobalRef(AstNode):
     def __init__(
         self: "GlobalRef",
         name: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1381,7 +1400,7 @@ class EdgeOpRef(AstNode):
         self: "EdgeOpRef",
         filter_cond: AstNode,
         edge_dir: EdgeDir,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1398,7 +1417,7 @@ class ConnectOp(AstNode):
         self: "ConnectOp",
         spawn: AstNode,
         edge_dir: EdgeDir,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1418,7 +1437,7 @@ class FilterCtx(AstNode):
     def __init__(
         self: "FilterCtx",
         compares: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
@@ -1433,7 +1452,7 @@ class SpawnCtx(AstNode):
     def __init__(
         self: "SpawnCtx",
         spawns: AstNode,
-        parent: AstNode,
+        parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:

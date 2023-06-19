@@ -82,6 +82,10 @@ class PyCodeGenPass(Pass):
         """Convert module path to python code."""
         self.emit(node, "".join([i.value for i in node.path]))
 
+    def exit_module_items(self: "PyCodeGenPass", node: ast.ModuleItems) -> None:
+        """Convert module items to python code."""
+        self.emit(node, ", ".join([i.meta["py_code"] for i in node.items]))
+
     def exit_module_item(self: "PyCodeGenPass", node: ast.ModuleItem) -> None:
         """Convert module item to python code."""
         if is_blank(node.alias):

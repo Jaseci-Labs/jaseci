@@ -1,6 +1,6 @@
 """Pass that builds well formed AST from parse tree AST."""
 from copy import copy
-
+from typing import Optional
 
 import jaclang.jac.ast as ast
 from jaclang.jac.ast import convert_kind, make_blank, replace_node, update_kind
@@ -11,25 +11,25 @@ class AstBuildPass(Pass):
     """Ast build pass."""
 
     def __init__(
-        self: "AstBuildPass", mod_name: str = None, *args: list, **kwargs: dict
+        self: "AstBuildPass", mod_name: str = "", ir: Optional[ast.AstNode] = None
     ) -> None:
         """Initialize pass."""
         self.mod_name = mod_name
-        super().__init__(*args, **kwargs)
+        super().__init__(ir=ir)
 
     def exit_start(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build WHOLE_BUILD Ast node."""
         self.ir = ast.Module(
             name=self.mod_name,
-            doc=node.kid[0] if len(node.kid) == 2 else ast.Blank(),
-            body=node.kid[1] if len(node.kid) == 2 else node.kid[0],
-            parent=None,
+            doc=node.kid[0],
+            body=node.kid[1],
+            parent=ast.Blank(),
             kid=node.kid,
             line=node.line,
         )
 
     def exit_doc_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build DOC_TAG Ast node."""
+        """Build DocString Ast node."""
         if node.kid[0].is_type(ast.Token):
             node.kid = [node.kid[0]]
         update_kind(node, ast.DocString, value=node.kid[0])
@@ -100,7 +100,6 @@ class AstBuildPass(Pass):
         else:
             node.kid = [kid[1], kid[2]]
         update_kind(node, ast.Import, **meta)
-        print("".join([i.value for i in meta["path"].kid]))
 
     def exit_include_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Include Ast node."""
@@ -133,26 +132,33 @@ class AstBuildPass(Pass):
 
     def exit_name_as_list(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build MOD_ITEM list of Ast nodes. TODO: VALIDATE."""
-        meta = {}
-        meta["alias"] = ast.Blank()
-        if node.kid[0].name == "NAME":
-            meta["name"] = node.kid[0]
-            node.parent.kid = [node] + node.parent.kid
-            if len(node.kid) == 3:
-                node.kid = [node.kid[0], node.kid[2]]
-                meta["alias"] = node.kid[1]
-            else:
-                node.kid = [node.kid[0]]
-        elif node.kid[-2].name == "KW_AS":
-            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
-            node.kid = [node.kid[-3], node.kid[-1]]
-            meta["name"] = node.kid[-3]
-            meta["alias"] = node.kid[-1]
+        this_item = None
+        if node.kid[0].is_type(ast.Token) and node.kid[0].name == "NAME":
+            this_item = ast.ModuleItem(
+                name=node.kid[0],
+                alias=node.kid[1] if len(node.kid) == 3 else ast.Blank(),
+                parent=node.parent,
+                kid=[node.kid[0], node.kid[2]] if len(node.kid) == 3 else [node.kid[0]],
+                line=node.line,
+            )
+            node.kid = [this_item]
         else:
-            node.parent.kid = [node] + node.kid[:-3] + node.parent.kid
-            node.kid = [node.kid[-1]]
-            meta["name"] = node.kid[-1]
-        update_kind(node, ast.ModuleItem, **meta)
+            this_item = ast.ModuleItem(
+                name=node.kid[-3] if node.kid[-2].name == "KW_AS" else node.kid[-1],
+                alias=node.kid[-1] if node.kid[-2].name == "KW_AS" else ast.Blank(),
+                parent=node.parent,
+                kid=[node.kid[-3], node.kid[-1]]
+                if node.kid[-2].name == "KW_AS"
+                else [node.kid[-1]],
+                line=node.line,
+            )
+            node.kid = node.kid[0].kid + [this_item]
+        replace_node(
+            node,
+            ast.ModuleItems(
+                items=node.kid, parent=node.parent, kid=node.kid, line=node.line
+            ),
+        )
 
     def exit_architype(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Replace self with kid."""
