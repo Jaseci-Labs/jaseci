@@ -1,7 +1,7 @@
 """Abstract class for IR Passes for Jac."""
 from typing import Callable, List, Optional, Type
 
-import jaclang.jac.ast as ast
+import jaclang.jac.jac_ast as ast
 from jaclang.jac.utils import pascal_to_snake
 from jaclang.utils.sly import lex
 

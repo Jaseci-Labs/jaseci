@@ -1,8 +1,8 @@
 """Transpilation pass for Jaseci Ast."""
 from typing import List
 
-import jaclang.jac.ast as ast
-from jaclang.jac.ast import AstNode
+import jaclang.jac.jac_ast as ast
+from jaclang.jac.jac_ast import AstNode
 from jaclang.jac.passes.ir_pass import Pass
 from jaclang.utils.log import logging
 
@@ -168,17 +168,6 @@ class PyCodeGenPass(Pass):
         else:
             self.emit(node, node.name.value)
 
-    def enter_architype(self: "PyCodeGenPass", node: ast.Architype) -> None:
-        """Sub objects.
-
-        name: Token,
-        typ: Token,
-        doc: DocString,
-        access: Token,
-        base_classes: "BaseClasses",
-        body: "ArchBlock",
-        """
-
     @Pass.incomplete
     def exit_architype(self: "PyCodeGenPass", node: ast.Architype) -> None:
         """Sub objects.
@@ -190,8 +179,6 @@ class PyCodeGenPass(Pass):
         base_classes: "BaseClasses",
         body: "ArchBlock",
         """
-        if type(node.doc.value) == ast.Token:
-            self.emit(node, node.doc.value.value)
         if node.base_classes.is_blank():
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
@@ -199,6 +186,7 @@ class PyCodeGenPass(Pass):
                 node,
                 f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
             )
+        self.emit_ln(node, node.doc.value.meta["py_code"], indent_delta=1)
         self.emit(node, node.body.meta["py_code"])
 
     @Pass.incomplete
@@ -230,7 +218,8 @@ class PyCodeGenPass(Pass):
         """
         self.emit(node, ", ".join([i.value for i in node.base_classes]))
 
-    def exit_ability(self: "PyCodeGenPass", node: AstNode) -> None:
+    @Pass.incomplete
+    def exit_ability(self: "PyCodeGenPass", node: ast.Ability) -> None:
         """Sub objects.
 
         name: Token,
@@ -240,3 +229,6 @@ class PyCodeGenPass(Pass):
         signature: "FuncSignature | TypeSpec",
         body: "CodeBlock",
         """
+        self.emit_ln(node, f"def {node.name.value}{node.signature.meta['py_code']}:")
+        self.emit_ln(node, node.doc.value.meta["py_code"], indent_delta=1)
+        self.emit(node, node.body.meta["py_code"])

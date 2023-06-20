@@ -1422,7 +1422,7 @@ class SpawnCtx(AstNode):
 
     def __init__(
         self: "SpawnCtx",
-        spawns: list,
+        spawns: List[Assignment],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1437,7 +1437,7 @@ class FilterCtx(AstNode):
 
     def __init__(
         self: "FilterCtx",
-        compares: list,
+        compares: List[BinaryExpr],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1445,3 +1445,10 @@ class FilterCtx(AstNode):
         """Initialize filter_cond context expression node."""
         self.compares = compares
         super().__init__(parent=parent, kid=kid, line=line)
+
+
+# Test the function
+if __name__ == "__main__":
+    from jaclang.jac.utils import load_ast_and_print_pass_template
+
+    print(load_ast_and_print_pass_template())

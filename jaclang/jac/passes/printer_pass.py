@@ -1,5 +1,5 @@
 """Printer pass for Jac AST."""
-from jaclang.jac.ast import AstNode
+from jaclang.jac.jac_ast import AstNode
 from jaclang.jac.passes.ir_pass import Pass
 
 

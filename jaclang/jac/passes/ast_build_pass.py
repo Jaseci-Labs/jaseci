@@ -1,8 +1,8 @@
 """Ast build pass for Jaseci Ast."""
 from typing import Optional
 
-import jaclang.jac.ast as ast
-from jaclang.jac.ast import replace_node
+import jaclang.jac.jac_ast as ast
+from jaclang.jac.jac_ast import replace_node
 from jaclang.jac.passes.ir_pass import Pass
 
 
@@ -656,7 +656,11 @@ class AstBuildPass(Pass):
         type_name -> NULL
         type_name -> builtin_type
         """
-        meta = {"typ": node.kid[0], "nested1": ast.Blank(), "nested2": ast.Blank()}
+        meta = {
+            "typ": node.kid[0],
+            "nested1": ast.Blank(),
+            "nested2": ast.Blank(),
+        }
         if len(node.kid) == 4:
             node.kid = [node.kid[0], node.kid[2]]
             meta["nested1"] = node.kid[1]
