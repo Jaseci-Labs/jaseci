@@ -22,6 +22,11 @@ class PyCodeGenPass(Pass):
         self.cur_arch = None  # tracks current architype during transpilation
         super().__init__()
 
+    def enter_node(self: Pass, node: AstNode) -> None:
+        """Enter node."""
+        node.meta["py_code"] = ""
+        return super().enter_node(node)
+
     def indent_str(self: "PyCodeGenPass", indent_delta: int) -> str:
         """Return string for indent."""
         return " " * self.indent_size * (self.indent_level + indent_delta)
@@ -196,27 +201,42 @@ class PyCodeGenPass(Pass):
             )
         self.emit(node, node.body.meta["py_code"])
 
-    def exit_func_arch(self: "PyCodeGenPass", node: AstNode) -> None:
-        """Convert func arch to python code."""
-        self.emit_ln(
-            node, f"def {node.name.meta['py_code']}({node.signature.meta['py_code']}):"
-        )
-        self.emit(node, node.body.meta["py_code"])
-        self.indent_level -= 1
+    @Pass.incomplete
+    def exit_arch_decl(self: "PyCodeGenPass", node: ast.ArchDecl) -> None:
+        """Sub objects.
 
-    def exit_base_classes(self: "PyCodeGenPass", node: AstNode) -> None:
-        """Convert base classes to python code."""
+        doc: DocString,
+        access: Token,
+        typ: Token,
+        name: Token,
+        base_classes: "BaseClasses",
+        self.def_link: Optional["ArchDef"] = None
+        """
+
+    @Pass.incomplete
+    def exit_arch_def(self: "PyCodeGenPass", node: ast.ArchDef) -> None:
+        """Sub objects.
+
+        doc: DocString,
+        mod: Token,
+        arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
+        body: "ArchBlock",
+        """
+
+    def exit_base_classes(self: "PyCodeGenPass", node: ast.BaseClasses) -> None:
+        """Sub objects.
+
+        base_classes: List[Token],
+        """
         self.emit(node, ", ".join([i.value for i in node.base_classes]))
 
-    def enter_arch_block(self: "PyCodeGenPass", node: AstNode) -> None:
-        """Enter arch block."""
-        self.indent_level += 1
+    def exit_ability(self: "PyCodeGenPass", node: AstNode) -> None:
+        """Sub objects.
 
-    def exit_arch_block(self: "PyCodeGenPass", node: AstNode) -> None:
-        """Exit arch block."""
-        self.indent_level -= 1
-
-    def enter_node(self: Pass, node: AstNode) -> None:
-        """Enter node."""
-        node.meta["py_code"] = ""
-        return super().enter_node(node)
+        name: Token,
+        is_func: bool,
+        doc: DocString,
+        access: Token,
+        signature: "FuncSignature | TypeSpec",
+        body: "CodeBlock",
+        """

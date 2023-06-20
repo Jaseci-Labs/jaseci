@@ -9,7 +9,7 @@ class AstNode:
     """Abstract syntax tree node for Jac."""
 
     def __init__(
-        self: "AstNode", parent: Optional["AstNode"], kid: list, line: int
+        self: "AstNode", parent: Optional["AstNode"], kid: List["AstNode"], line: int
     ) -> None:
         """Initialize ast."""
         self.parent = parent
@@ -82,7 +82,7 @@ class Token(AstNode):
         name: str,
         value: str,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize token."""
@@ -98,7 +98,7 @@ class Parse(AstNode):
         self: "Parse",
         name: str,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize parse."""
@@ -117,7 +117,7 @@ class Module(AstNode):
         doc: Token,
         body: "Elements",
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize whole program node."""
@@ -136,7 +136,7 @@ class Elements(AstNode):
             "GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec"
         ],
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize elements node."""
@@ -153,7 +153,7 @@ class GlobalVars(AstNode):
         access: Token | Blank,
         assignments: "AssignmentList",
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize global var node."""
@@ -173,7 +173,7 @@ class Test(AstNode):
         description: Token,
         body: "CodeBlock",
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize test node."""
@@ -192,7 +192,7 @@ class ModuleCode(AstNode):
         doc: "DocString",
         body: "CodeBlock",
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize test node."""
@@ -208,7 +208,7 @@ class DocString(AstNode):
         self: "DocString",
         value: Token | Blank,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize docstring node."""
@@ -227,7 +227,7 @@ class Import(AstNode):
         items: "ModuleItems | Blank",
         is_absorb: bool,  # For includes
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize import node."""
@@ -246,7 +246,7 @@ class ModulePath(AstNode):
         self: "ModulePath",
         path: List[Token],
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize module path node."""
@@ -261,7 +261,7 @@ class ModuleItems(AstNode):
         self: "ModuleItems",
         items: List["ModuleItem"],
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize module items node."""
@@ -277,7 +277,7 @@ class ModuleItem(AstNode):
         name: Token,
         alias: Token | Blank,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize module item node."""
@@ -298,7 +298,7 @@ class Architype(AstNode):
         base_classes: "BaseClasses",
         body: "ArchBlock",
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize object arch node."""
@@ -316,13 +316,13 @@ class ArchDecl(AstNode):
 
     def __init__(
         self: "ArchDecl",
-        doc: AstNode,
-        access: AstNode,
-        typ: AstNode,
-        name: AstNode,
-        base_classes: AstNode,
+        doc: DocString,
+        access: Token,
+        typ: Token,
+        name: Token,
+        base_classes: "BaseClasses",
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize arch decl node."""
@@ -331,6 +331,7 @@ class ArchDecl(AstNode):
         self.typ = typ
         self.name = name
         self.base_classes = base_classes
+        self.def_link: Optional["ArchDef"] = None
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -339,12 +340,12 @@ class ArchDef(AstNode):
 
     def __init__(
         self: "ArchDef",
-        doc: AstNode,
-        mod: AstNode,
-        arch: AstNode,
-        body: AstNode,
+        doc: DocString,
+        mod: Token,
+        arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
+        body: "ArchBlock",
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize arch def node."""
@@ -360,9 +361,9 @@ class BaseClasses(AstNode):
 
     def __init__(
         self: "BaseClasses",
-        base_classes: list,
+        base_classes: List[Token],
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize base classes node."""
@@ -371,18 +372,18 @@ class BaseClasses(AstNode):
 
 
 class Ability(AstNode):
-    """FuncArch node type for Jac Ast."""
+    """Ability node type for Jac Ast."""
 
     def __init__(
         self: "Ability",
-        name: AstNode,
+        name: Token,
         is_func: bool,
-        doc: AstNode,
-        access: AstNode,
-        signature: AstNode,
-        body: AstNode,
+        doc: DocString,
+        access: Token,
+        signature: "FuncSignature | TypeSpec",
+        body: "CodeBlock",
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize func arch node."""
@@ -406,7 +407,7 @@ class AbilityDecl(AstNode):
         signature: AstNode,
         is_func: bool,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize ability decl node."""
@@ -428,7 +429,7 @@ class AbilityDef(AstNode):
         ability: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize ability def node."""
@@ -451,7 +452,7 @@ class AbilitySpec(AstNode):
         signature: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize arch block node."""
@@ -471,7 +472,7 @@ class ArchBlock(AstNode):
         self: "ArchBlock",
         members: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize arch block node."""
@@ -488,7 +489,7 @@ class ArchHas(AstNode):
         access: AstNode,
         vars: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize has statement node."""
@@ -505,7 +506,7 @@ class HasVarList(AstNode):
         self: "HasVarList",
         vars: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize has var list node."""
@@ -522,7 +523,7 @@ class HasVar(AstNode):
         type_tag: AstNode,
         value: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize has var node."""
@@ -541,7 +542,7 @@ class TypeSpec(AstNode):
         nested1: AstNode,  # needed for lists
         nested2: AstNode,  # needed for dicts
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize type spec node."""
@@ -562,7 +563,7 @@ class ArchCan(AstNode):
         signature: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize can statement node."""
@@ -584,7 +585,7 @@ class ArchCanDecl(AstNode):
         access: AstNode,
         signature: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize can statement node."""
@@ -603,7 +604,7 @@ class EventSignature(AstNode):
         event: AstNode,
         arch_tag_info: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize event signature node."""
@@ -619,7 +620,7 @@ class NameList(AstNode):
         self: "NameList",
         names: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize name list node."""
@@ -635,7 +636,7 @@ class FuncSignature(AstNode):
         params: AstNode,
         return_type: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize method signature node."""
@@ -651,7 +652,7 @@ class FuncParams(AstNode):
         self: "FuncParams",
         params: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize method params node."""
@@ -670,7 +671,7 @@ class CodeBlock(AstNode):
         self: "CodeBlock",
         stmts: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize code block node."""
@@ -688,7 +689,7 @@ class IfStmt(AstNode):
         elseifs: AstNode,
         else_body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize if statement node."""
@@ -706,7 +707,7 @@ class ElseIfs(AstNode):
         self: "ElseIfs",
         elseifs: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize elseifs node."""
@@ -721,7 +722,7 @@ class ElseStmt(AstNode):
         self: "ElseStmt",
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize else node."""
@@ -738,7 +739,7 @@ class TryStmt(AstNode):
         excepts: AstNode,
         finally_body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize try statement node."""
@@ -755,7 +756,7 @@ class ExceptList(AstNode):
         self: "ExceptList",
         excepts: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize excepts node."""
@@ -772,7 +773,7 @@ class Except(AstNode):
         name: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize except node."""
@@ -789,7 +790,7 @@ class FinallyStmt(AstNode):
         self: "FinallyStmt",
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize finally statement node."""
@@ -807,7 +808,7 @@ class IterForStmt(AstNode):
         count_by: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize iter for node."""
@@ -827,7 +828,7 @@ class InForStmt(AstNode):
         collection: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize in for node."""
@@ -847,7 +848,7 @@ class DictForStmt(AstNode):
         collection: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize dict for node."""
@@ -866,7 +867,7 @@ class WhileStmt(AstNode):
         condition: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize while statement node."""
@@ -882,7 +883,7 @@ class RaiseStmt(AstNode):
         self: "RaiseStmt",
         cause: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize raise statement node."""
@@ -898,7 +899,7 @@ class AssertStmt(AstNode):
         condition: AstNode,
         error_msg: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize assert statement node."""
@@ -914,7 +915,7 @@ class CtrlStmt(AstNode):
         self: "CtrlStmt",
         stmt: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize control statement node."""
@@ -929,7 +930,7 @@ class DeleteStmt(AstNode):
         self: "DeleteStmt",
         target: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize delete statement node."""
@@ -944,7 +945,7 @@ class ReportStmt(AstNode):
         self: "ReportStmt",
         expr: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize report statement node."""
@@ -959,7 +960,7 @@ class ReturnStmt(AstNode):
         self: "ReturnStmt",
         expr: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize return statement node."""
@@ -974,7 +975,7 @@ class IgnoreStmt(AstNode):
         self: "IgnoreStmt",
         target: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize ignore statement node."""
@@ -991,7 +992,7 @@ class VisitStmt(AstNode):
         target: AstNode,
         else_body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize visit statement node."""
@@ -1009,7 +1010,7 @@ class RevisitStmt(AstNode):
         hops: AstNode,
         else_body: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize revisit statement node."""
@@ -1024,7 +1025,7 @@ class DisengageStmt(AstNode):
     def __init__(
         self: "DisengageStmt",
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize disengage statement node."""
@@ -1038,7 +1039,7 @@ class YieldStmt(AstNode):
         self: "YieldStmt",
         expr: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize yeild statement node."""
@@ -1053,7 +1054,7 @@ class SyncStmt(AstNode):
         self: "SyncStmt",
         target: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize sync statement node."""
@@ -1070,7 +1071,7 @@ class Assignment(AstNode):
         target: AstNode,
         value: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize assignment node."""
@@ -1089,7 +1090,7 @@ class BinaryExpr(AstNode):
         right: AstNode,
         op: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize binary expression node."""
@@ -1108,7 +1109,7 @@ class IfElseExpr(AstNode):
         value: AstNode,
         else_value: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize if else expression node."""
@@ -1126,7 +1127,7 @@ class UnaryExpr(AstNode):
         operand: AstNode,
         op: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize unary expression node."""
@@ -1142,7 +1143,7 @@ class SpawnObjectExpr(AstNode):
         self: "SpawnObjectExpr",
         target: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize spawn object expression node."""
@@ -1158,7 +1159,7 @@ class UnpackExpr(AstNode):
         target: AstNode,
         is_dict: bool,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize unpack expression node."""
@@ -1173,7 +1174,7 @@ class MultiString(AstNode):
         self: "MultiString",
         strings: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize multi string expression node."""
@@ -1190,7 +1191,7 @@ class ListVal(AstNode):
             UnaryExpr | BinaryExpr | IfElseExpr | UnpackExpr | SpawnObjectExpr
         ],
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize list value node."""
@@ -1209,7 +1210,7 @@ class DictVal(AstNode):
         self: "DictVal",
         kv_pairs: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize dict expression node."""
@@ -1228,7 +1229,7 @@ class Comprehension(AstNode):
         collection: AstNode,
         conditional: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize comprehension expression node."""
@@ -1248,7 +1249,7 @@ class KVPair(AstNode):
         key: AstNode,
         value: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize key value pair expression node."""
@@ -1266,7 +1267,7 @@ class AtomTrailer(AstNode):
         right: list,
         null_ok: bool,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize atom trailer expression node."""
@@ -1284,7 +1285,7 @@ class FuncCall(AstNode):
         target: AstNode,
         params: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize function call expression node."""
@@ -1301,7 +1302,7 @@ class ParamList(AstNode):
         p_args: AstNode,
         p_kwargs: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize parameter list expression node."""
@@ -1322,7 +1323,7 @@ class IndexSlice(AstNode):
         start: AstNode,
         stop: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize index slice expression node."""
@@ -1338,7 +1339,7 @@ class GlobalRef(AstNode):
         self: "GlobalRef",
         name: AstNode,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize global reference expression node."""
@@ -1386,7 +1387,7 @@ class EdgeOpRef(AstNode):
         filter_cond: AstNode,
         edge_dir: EdgeDir,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize edge op reference expression node."""
@@ -1407,7 +1408,7 @@ class ConnectOp(AstNode):
         spawn: AstNode,
         edge_dir: EdgeDir,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize connect op reference expression node."""
@@ -1423,7 +1424,7 @@ class SpawnCtx(AstNode):
         self: "SpawnCtx",
         spawns: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize spawn context expression node."""
@@ -1438,7 +1439,7 @@ class FilterCtx(AstNode):
         self: "FilterCtx",
         compares: list,
         parent: Optional[AstNode],
-        kid: list,
+        kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize filter_cond context expression node."""
