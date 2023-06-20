@@ -1,5 +1,6 @@
 """Printer pass for Jac AST."""
-from jaclang.jac.passes.ir_pass import AstNode, Pass
+from jaclang.jac.ast import AstNode
+from jaclang.jac.passes.ir_pass import Pass
 
 
 # Should be able to mix in this pass to any other pass to get

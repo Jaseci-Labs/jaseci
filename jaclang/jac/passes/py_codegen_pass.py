@@ -1,11 +1,19 @@
 """Transpilation pass for Jaseci Ast."""
+from typing import List
+
 import jaclang.jac.ast as ast
 from jaclang.jac.ast import AstNode
 from jaclang.jac.passes.ir_pass import Pass
+from jaclang.utils.log import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class PyCodeGenPass(Pass):
     """Jac transpilation to python pass."""
+
+    marked_incomplete: List[str] = []
 
     def __init__(self: "PyCodeGenPass") -> None:
         """Initialize pass."""
@@ -36,6 +44,11 @@ class PyCodeGenPass(Pass):
         """Convert token to python code."""
         self.emit(node, node.value)
 
+    def exit_parse(self: "PyCodeGenPass", node: ast.Parse) -> None:
+        """Convert parse to python code."""
+        logger.critical("Parse node should not be in this AST!!")
+        raise ValueError("Parse node should not be in AST after being Built!!")
+
     def exit_module(self: "PyCodeGenPass", node: ast.Module) -> None:
         """Convert module to python code."""
         if not node.doc.is_blank():
@@ -53,6 +66,7 @@ class PyCodeGenPass(Pass):
         if not node.value.is_blank():
             self.emit_ln(node, node.value.value)
 
+    @Pass.incomplete
     def exit_global_vars(self: "PyCodeGenPass", node: ast.GlobalVars) -> None:
         """Convert global vars to python code."""
         self.emit_ln(node, node.assignments.meta["py_code"])

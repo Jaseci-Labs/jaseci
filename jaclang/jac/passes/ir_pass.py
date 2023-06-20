@@ -1,17 +1,29 @@
 """Abstract class for IR Passes for Jac."""
-from typing import Optional
+from typing import Callable, List, Optional, Type
 
 import jaclang.jac.ast as ast
 from jaclang.jac.utils import pascal_to_snake
-from jaclang.utils.sly.lex import Token
+from jaclang.utils.sly import lex
 
 
 class Pass:
     """Abstract class for IR passes."""
 
+    marked_incomplete: List[str] = []
+
+    @classmethod
+    def incomplete(cls: Type["Pass"], func: Callable) -> Callable:
+        """Mark function as incomplete, used as indicator for future passes."""
+        cls.marked_incomplete.append(func.__name__)
+
+        def wrapper(*args: list, **kwargs: dict) -> None:
+            return func(*args, **kwargs)
+
+        return wrapper
+
     def __init__(self: "Pass", ir: Optional[ast.AstNode] = None) -> None:
         """Initialize pass."""
-        self.ir = ir if ir else ast.AstNode(parent=None, kid=[], line=0)
+        self.ir = ir if ir else ast.AstNode(parent=ir, kid=[], line=0)
         self.run()
 
     def before_pass(self: "Pass") -> None:
@@ -54,6 +66,10 @@ class Pass:
             self.traverse(i)
         self.exit_node(node)
 
+    def get_imcomplete(self: "Pass") -> List[str]:
+        """Return list of incomplete functions."""
+        return self.marked_incomplete
+
 
 def parse_tree_to_ast(
     tree: tuple, parent: Optional[ast.AstNode] = None, lineno: int = 0
@@ -61,7 +77,7 @@ def parse_tree_to_ast(
     """Convert parser output to ast, also parses fstrings."""
     from jaclang.utils.fstring_parser import FStringLexer, FStringParser
 
-    ast_tree = ast.Blank()
+    ast_tree: ast.AstNode = ast.Blank()
     if not isinstance(tree, ast.AstNode):
         if isinstance(tree, tuple):
             kids = tree[2:]
@@ -74,11 +90,11 @@ def parse_tree_to_ast(
             ast_tree.kid = [
                 parse_tree_to_ast(x, parent=ast_tree, lineno=lineno) for x in kids
             ]
-        elif isinstance(tree, Token):
+        elif isinstance(tree, lex.Token):
             if tree.type == "FSTRING":
                 lineno = tree.lineno
-                ast_tree = FStringParser().parse(FStringLexer().tokenize(tree.value))
-                return parse_tree_to_ast(ast_tree, parent=parent, lineno=lineno)
+                tree = FStringParser().parse(FStringLexer().tokenize(tree.value))
+                return parse_tree_to_ast(tree, parent=parent, lineno=lineno)
             else:
                 ast_tree = ast.Token(
                     name=tree.type,
