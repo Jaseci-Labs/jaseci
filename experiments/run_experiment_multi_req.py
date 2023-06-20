@@ -37,8 +37,8 @@ no_local_config = [
     "virtual_assistant",
 ]
 
-all_policy_config = ["all_local", "evaluation", "all_remote"]
-# all_policy_config = ["all_local","all_remote"]
+# all_policy_config = ["all_local", "auto", "all_remote"]
+all_policy_config = ["auto", "all_remote"]
 APP_PATH = "/home/ubuntu/jaseci/jaseci_serv/jaseci_serv/base/example_jac"
 
 
@@ -80,16 +80,67 @@ def make_walker_run_request(snt_id, headers, app_name, freq, experiment_duration
         # time.sleep(interval)  # Adjust the duration as needed
 
 
-def sent_reg(app_name, headers):
+loaded_apps = []
+
+
+def sent_reg(app_name, headers, mode):
     jac_file = os.path.join(APP_PATH, f"{app_name}.jac")
     jac_code = open(jac_file).read()
     payload = {"code": jac_code, "opt_level": 2, "name": app_name}
 
-    res = requests.post(
+    sent_data = requests.post(
         url=config.url + "/js/sentinel_register", headers=headers, json=payload
     )
-    # print(res.text)
-    return res.json()
+    # Load models that are not already loaded
+    for module in app_to_actions[app_name]:
+        package, act_name = module.split(".")
+        payload = {"name": act_name}
+        res = requests.post(
+            url=config.url + "/js_admin/jsorc_actions_status",
+            headers=headers,
+            json=payload,
+        )
+        if res.status_code == 200:
+            if (
+                res.json()["action_status"] is None
+                or res.json()["action_status"]["mode"] is None
+            ):
+                payload = {
+                    "config": f"{package}.config",
+                    "name": act_name,
+                }
+                res = requests.post(
+                    url=config.url + "/js_admin/jsorc_actions_config",
+                    headers=headers,
+                    json=payload,
+                )
+                if res.status_code == 200:
+                    payload = {
+                        "name": act_name,
+                        "mode": mode,
+                    }
+                    res = requests.post(
+                        url=config.url + "/js_admin/jsorc_actions_load",
+                        headers=headers,
+                        json=payload,
+                    )
+                    while True:
+                        if res.json()["action_status"]["mode"] == payload["mode"]:
+                            break
+                        time.sleep(10)
+                        res = requests.post(
+                            url=config.url + "/js_admin/jsorc_actions_load",
+                            headers=headers,
+                            json=payload,
+                        )
+            else:
+                print(
+                    f"{act_name} already loaded: {res.json()['action_status']['mode']}"
+                )
+        else:
+            print(f"unalbe to get status for {act_name}: {res.text}")
+            return None
+    return sent_data.json()
 
 
 def run_experiments(
@@ -115,11 +166,13 @@ def run_experiments(
     }
     action_modules = None
 
-    def run_walker(app_name, freq):
-        sent_id = sent_reg(app_name, headers)
-        make_walker_run_request(
-            sent_id[0]["jid"], headers, app_name, freq, experiment_duration
-        )
+    def run_walker(app_name, freq, mode):
+        sent_id = sent_reg(app_name, headers, mode)
+        if sent_id is not None:
+            print(sent_id)
+            make_walker_run_request(
+                sent_id[0]["jid"], headers, app_name, freq, experiment_duration
+            )
 
     for app_name, freq in app_freq_pairs:
         if action_modules is None:
@@ -132,138 +185,40 @@ def run_experiments(
         try:
             if policy == "all_local" or policy == "all_remote":
                 policy_params = [{}]
+                jsorc_policy = "Default"
             else:
                 policy_params = [{"node_mem": nm} for nm in node_mem]
+                jsorc_policy = policy.capitalize()
             for pparams in policy_params:
                 pparams["eval_phase"] = eval_phase
                 pparams["perf_phase"] = perf_phase
-                for app_name, freq in app_freq_pairs:
-                    action_modules = app_to_actions[app_name]
-                    if policy == "all_local":
-                        if app_name in no_local_config:
-                            continue
-                        jsorc_policy = "Default"
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            payload = {
-                                "config": f"{package}.config",
-                                "name": module,
-                            }
-                            res = requests.post(
-                                url=config.url + "/js_admin/jsorc_actions_config",
-                                headers=headers,
-                                json=payload,
-                            )
-                            if res.status_code == 200:
-                                payload = {
-                                    "name": module,
-                                    "mode": "local",
-                                }
-                                res = requests.post(
-                                    url=config.url + "/js_admin/jsorc_actions_load",
-                                    headers=headers,
-                                    json=payload,
-                                )
-                    elif policy == "all_remote":
-                        jsorc_policy = "Default"
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            payload = {
-                                "config": f"{package}.config",
-                                "name": module,
-                            }
-                            res = requests.post(
-                                url=config.url + "/js_admin/jsorc_actions_config",
-                                headers=headers,
-                                json=payload,
-                            )
-                            if res.status_code == 200:
-                                payload = {
-                                    "name": module,
-                                    "mode": "remote",
-                                }
-                                res = requests.post(
-                                    url=config.url + "/js_admin/jsorc_actions_load",
-                                    headers=headers,
-                                    json=payload,
-                                )
-                                while True:
-                                    if (
-                                        res.json()["action_status"]["mode"]
-                                        == payload["mode"]
-                                    ):
-                                        break
-                                    time.sleep(10)
-                                    res = requests.post(
-                                        url=config.url + "/js_admin/jsorc_actions_load",
-                                        headers=headers,
-                                        json=payload,
-                                    )
-                    elif policy == "evaluation":
-                        jsorc_policy = "Evaluation"
-                        # For JSORC mode, we start as remote everything
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            payload = {
-                                "config": f"{package}.config",
-                                "name": module,
-                            }
-                            res = requests.post(
-                                url=config.url + "/js_admin/jsorc_actions_config",
-                                headers=headers,
-                                json=payload,
-                            )
-                            if res.status_code == 200:
-                                payload = {
-                                    "name": module,
-                                    "mode": "remote",
-                                }
-                                res = requests.post(
-                                    url=config.url + "/js_admin/jsorc_actions_load",
-                                    headers=headers,
-                                    json=payload,
-                                )
-                                while True:
-                                    if (
-                                        res.json()["action_status"]["mode"]
-                                        == payload["mode"]
-                                    ):
-                                        break
-                                    time.sleep(10)
-                                    res = requests.post(
-                                        url=config.url + "/js_admin/jsorc_actions_load",
-                                        headers=headers,
-                                        json=payload,
-                                    )
-                    else:
-                        print(f"Unrecognized policy {policy}")
-                        return
-                    payload = {
-                        "policy_name": jsorc_policy,
-                        "policy_params": pparams,
-                    }
-                res = requests.post(
+
+                payload = {
+                    "policy_name": jsorc_policy,
+                    "policy_params": pparams,
+                }
+                requests.post(
                     url=config.url + "/js_admin/jsorc_actionpolicy_set",
                     headers=headers,
                     json=payload,
                 )
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_benchmark_start", headers=headers
                 )
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_trackact_start", headers=headers
                 )
                 for app_name, freq in app_freq_pairs:
                     if policy == "all_local":
                         if app_name not in no_local_config:
                             task = threading.Thread(
-                                target=run_walker, args=(app_name, freq)
+                                target=run_walker, args=(app_name, freq, "local")
                             )
                             tasks.append(task)
                             task.start()
                     else:
                         task = threading.Thread(
-                            target=run_walker, args=(app_name, freq)
+                            target=run_walker, args=(app_name, freq, "remote")
                         )
                         tasks.append(task)
                         task.start()
@@ -299,7 +254,7 @@ def run_experiments(
                     "mode": "local",
                     "retire_svc": True,
                 }
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_actions_unload", headers=headers
                 )
         elif policy == "all_remote":
@@ -310,7 +265,7 @@ def run_experiments(
                     "mode": "remote",
                     "retire_svc": False,
                 }
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_actions_unload", headers=headers
                 )
         else:
@@ -321,7 +276,7 @@ def run_experiments(
                     "mode": "remote",
                     "retire_svc": False,
                 }
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_actions_unload", headers=headers
                 )
         time.sleep(20)
@@ -329,7 +284,7 @@ def run_experiments(
             "policy_name": "Default",
             "policy_params": {},
         }
-        res = requests.post(
+        requests.post(
             url=config.url + "/js_admin/jsorc_actionpolicy_set",
             headers=headers,
             json=payload,

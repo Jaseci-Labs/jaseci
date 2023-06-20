@@ -24,7 +24,7 @@ from .actions_state import ActionsState
 
 POLICIES = ["Default", "Evaluation", "Auto"]
 THRESHOLD = 0.1
-NODE_MEM_THRESHOLD = 0.8
+NODE_MEM_THRESHOLD = 0.75
 WINDOW_SIZE = 4
 
 
@@ -323,10 +323,11 @@ class ActionsOptimizer:
 
             for config in all_configs:
                 if config not in sorted_configurations:
-                    distance = min(
-                        get_config_distance(config, sorted_config)
-                        for sorted_config in sorted_configurations
-                    )
+                    # distance = min(
+                    #     get_config_distance(config, sorted_config)
+                    #     for sorted_config in sorted_configurations
+                    # )
+                    distance = get_config_distance(sorted_configurations[-1], config)
                     if distance < min_distance:
                         min_distance = distance
                         min_config = config
@@ -595,11 +596,11 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 policy_state["cur_config"] = None
                 if len(policy_state["remain_configs"]) == 0:
-                    self._init_evalution_policy(policy_state)
+                    self._init_evaluation_policy(policy_state)
         if policy_state["phase"] == "eval":
             # In evaluation phase
             if policy_state["cur_config"] is None:
-                self._init_evalution_policy(policy_state)
+                self._init_evaluation_policy(policy_state)
 
                 # This is the start of evaluation period
                 policy_state["cur_config"] = policy_state["remain_configs"][0]

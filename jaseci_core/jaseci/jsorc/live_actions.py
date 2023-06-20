@@ -7,21 +7,24 @@ from jaseci.jsorc.remote_actions import ACTIONS_SPEC_LOC
 from jaseci.jsorc.remote_actions import serv_actions, mark_as_remote, mark_as_endpoint
 import requests
 import multiprocessing
+from queue import Empty
 import os
 import sys
 import inspect
 import importlib
-import threading
-import gc
+
+# import threading
+# import gc
 import time
-import signal
+
+# import signal
 
 # a = 1
 # mutex = threading.Lock()
 # MAX_WORKERS = 100
 # actions_sem = Semaphore(MAX_WORKERS + 1)
 
-ACTION_SUBPROC_TIMEOUT = 3  # 3 seconds
+ACTION_SUBPROC_TIMEOUT = 1  # 3 seconds
 
 live_actions_lock = RXW1Lock()
 live_actions = {}  # {"act.func": func_obj, ...}
@@ -184,9 +187,13 @@ def action_handler_wrapper(name, *args, **kwargs):
     # TODO: Handle concurrent calls?
     try:
         res = act_procs[module]["out_q"].get(timeout=ACTION_SUBPROC_TIMEOUT)[1]
-    except Exception as e:
+    except Empty as e:
         logger.info(f"action subprocess out_q timeout {e}")
-        res = str(e)
+        logger.info(e)
+        raise e
+    except Exception as e:
+        logger.info("Unknown exception caught.")
+        raise e
 
     act_procs[module]["reqs"] -= 1
     cnt = act_procs[module]["reqs"]
@@ -199,6 +206,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     # logger.info(f"load module actions {mod}")
     # If the module status is intialization, return False
     if mod in act_procs and act_procs[mod]["status"] == "INITIALIZATION":
+        logger.info("already in initialization")
         return False
 
     # If the module is already loaded and not set as terminate, return True
