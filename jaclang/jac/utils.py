@@ -87,4 +87,6 @@ def load_ast_and_print_pass_template() -> str:
     output = output.replace("<enum '", "")
     output = output.replace("'>", "")
     output = output.replace("<class '", "")
+    output = output.replace("ForwardRef('", "")
+    output = output.replace("')", "")
     return output
