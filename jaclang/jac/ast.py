@@ -705,9 +705,9 @@ class ElseIfs(AstNode):
 
     def __init__(
         self: "ElseIfs",
-        elseifs: list,
+        elseifs: List["IfStmt"],
         parent: Optional[AstNode],
-        kid: List[AstNode],
+        kid: List["IfStmt"],
         line: int,
     ) -> None:
         """Initialize elseifs node."""
