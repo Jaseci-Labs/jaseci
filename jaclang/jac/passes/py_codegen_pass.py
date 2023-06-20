@@ -163,13 +163,30 @@ class PyCodeGenPass(Pass):
         else:
             self.emit(node, node.name.value + " as " + node.alias.value)
 
-    def enter_architype(self: "PyCodeGenPass", node: AstNode) -> None:
-        """Enter architype."""
-        if not node.doc.value.is_blank():
-            self.emit(node, node.doc.value.value)
+    def enter_architype(self: "PyCodeGenPass", node: ast.Architype) -> None:
+        """Sub objects.
 
-    def exit_architype(self: "PyCodeGenPass", node: AstNode) -> None:
-        """Convert object arch to python code."""
+        name: Token,
+        typ: Token,
+        doc: DocString,
+        access: Token,
+        base_classes: "BaseClasses",
+        body: "ArchBlock",
+        """
+
+    @Pass.incomplete
+    def exit_architype(self: "PyCodeGenPass", node: ast.Architype) -> None:
+        """Sub objects.
+
+        name: Token,
+        typ: Token,
+        doc: DocString,
+        access: Token,
+        base_classes: "BaseClasses",
+        body: "ArchBlock",
+        """
+        if type(node.doc.value) == ast.Token:
+            self.emit(node, node.doc.value.value)
         if node.base_classes.is_blank():
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
