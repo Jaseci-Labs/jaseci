@@ -63,8 +63,7 @@ class PyCodeGenPass(Pass):
         doc: Token,
         body: "Elements",
         """
-        if not node.doc.is_blank():
-            self.emit_ln(node, node.doc.value)
+        self.emit_ln(node, node.doc.value)
         self.emit(node, node.body.meta["py_code"])
         self.ir = node
 
@@ -90,20 +89,41 @@ class PyCodeGenPass(Pass):
 
     @Pass.incomplete
     def exit_test(self: "PyCodeGenPass", node: ast.Test) -> None:
-        """Convert test to python code."""
+        """Sub objects.
 
-    def exit_doc_string(self: "PyCodeGenPass", node: ast.DocString) -> None:
-        """Convert doc_string to python code."""
-        if not node.value.is_blank():
-            self.emit_ln(node, node.value.value)
+        name: Token,
+        doc: "DocString",
+        description: Token,
+        body: "CodeBlock",
+        """
 
     def exit_module_code(self: "PyCodeGenPass", node: ast.ModuleCode) -> None:
-        """Convert module code to python code."""
+        """Sub objects.
+
+        doc: "DocString",
+        body: "CodeBlock",
+        """
         self.emit(node, node.doc.meta["py_code"])
         self.emit(node, node.body.meta["py_code"])
 
+    def exit_doc_string(self: "PyCodeGenPass", node: ast.DocString) -> None:
+        """Sub objects.
+
+        value: Token | Blank,
+        """
+        if type(node.value) == ast.Token:
+            self.emit_ln(node, node.value.value)
+
+    @Pass.incomplete
     def exit_import(self: "PyCodeGenPass", node: ast.Import) -> None:
-        """Convert import to python code."""
+        """Sub objects.
+
+        lang: Token,
+        path: "ModulePath",
+        alias: Token | Blank,
+        items: "ModuleItems | Blank",
+        is_absorb: bool,  # For includes
+        """
         if node.items.is_blank():
             if node.alias.is_blank():
                 self.emit_ln(node, f"import {node.path.meta['py_code']}")
@@ -119,15 +139,25 @@ class PyCodeGenPass(Pass):
             )
 
     def exit_module_path(self: "PyCodeGenPass", node: ast.ModulePath) -> None:
-        """Convert module path to python code."""
+        """Sub objects.
+
+        path: List[Token],
+        """
         self.emit(node, "".join([i.value for i in node.path]))
 
     def exit_module_items(self: "PyCodeGenPass", node: ast.ModuleItems) -> None:
-        """Convert module items to python code."""
+        """Sub objects.
+
+        items: List["ModuleItem"],
+        """
         self.emit(node, ", ".join([i.meta["py_code"] for i in node.items]))
 
     def exit_module_item(self: "PyCodeGenPass", node: ast.ModuleItem) -> None:
-        """Convert module item to python code."""
+        """Sub objects.
+
+        name: Token,
+        alias: Token | Blank,
+        """
         if node.alias.is_blank():
             self.emit(node, node.name.value)
         else:

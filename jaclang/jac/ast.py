@@ -163,6 +163,44 @@ class GlobalVars(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
+class Test(AstNode):
+    """Test node type for Jac Ast."""
+
+    def __init__(
+        self: "Test",
+        name: Token,
+        doc: "DocString",
+        description: Token,
+        body: "CodeBlock",
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize test node."""
+        self.doc = doc
+        self.name = name
+        self.description = description
+        self.body = body
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ModuleCode(AstNode):
+    """Free mod code for Jac Ast."""
+
+    def __init__(
+        self: "ModuleCode",
+        doc: "DocString",
+        body: "CodeBlock",
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize test node."""
+        self.doc = doc
+        self.body = body
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
 class DocString(AstNode):
     """DocString node type for Jac Ast."""
 
@@ -175,6 +213,76 @@ class DocString(AstNode):
     ) -> None:
         """Initialize docstring node."""
         self.value = value
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class Import(AstNode):
+    """Import node type for Jac Ast."""
+
+    def __init__(
+        self: "Import",
+        lang: Token,
+        path: "ModulePath",
+        alias: Token | Blank,
+        items: "ModuleItems | Blank",
+        is_absorb: bool,  # For includes
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize import node."""
+        self.lang = lang
+        self.path = path
+        self.alias = alias
+        self.items = items
+        self.is_absorb = is_absorb
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ModulePath(AstNode):
+    """ModulePath node type for Jac Ast."""
+
+    def __init__(
+        self: "ModulePath",
+        path: List[Token],
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize module path node."""
+        self.path = path
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ModuleItems(AstNode):
+    """ModuleItems node type for Jac Ast."""
+
+    def __init__(
+        self: "ModuleItems",
+        items: List["ModuleItem"],
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize module items node."""
+        self.items = items
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ModuleItem(AstNode):
+    """ModuleItem node type for Jac Ast."""
+
+    def __init__(
+        self: "ModuleItem",
+        name: Token,
+        alias: Token | Blank,
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize module item node."""
+        self.name = name
+        self.alias = alias
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -285,67 +393,6 @@ class AssignmentList(ExprList):
     """AssignmentList node type for Jac Ast."""
 
 
-class Test(AstNode):
-    """Test node type for Jac Ast."""
-
-    def __init__(
-        self: "Test",
-        name: AstNode,
-        doc: AstNode,
-        description: AstNode,
-        body: AstNode,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize test node."""
-        self.doc = doc
-        self.name = name
-        self.description = description
-        self.body = body
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class ModuleCode(AstNode):
-    """Free mod code for Jac Ast."""
-
-    def __init__(
-        self: "ModuleCode",
-        doc: AstNode,
-        body: AstNode,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize test node."""
-        self.doc = doc
-        self.body = body
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class Import(AstNode):
-    """Import node type for Jac Ast."""
-
-    def __init__(
-        self: "Import",
-        lang: AstNode,
-        path: AstNode,
-        alias: AstNode,
-        items: AstNode,
-        is_absorb: bool,  # For includes
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize import node."""
-        self.lang = lang
-        self.path = path
-        self.alias = alias
-        self.items = items
-        self.is_absorb = is_absorb
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
 class Architype(AstNode):
     """ObjectArch node type for Jac Ast."""
 
@@ -418,53 +465,6 @@ class AbilitySpec(AstNode):
         self.mod = mod
         self.signature = signature
         self.body = body
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class ModulePath(AstNode):
-    """ModulePath node type for Jac Ast."""
-
-    def __init__(
-        self: "ModulePath",
-        path: list,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize module path node."""
-        self.path = path
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class ModuleItems(AstNode):
-    """ModuleItems node type for Jac Ast."""
-
-    def __init__(
-        self: "ModuleItems",
-        items: list,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize module items node."""
-        self.items = items
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class ModuleItem(AstNode):
-    """ModuleItem node type for Jac Ast."""
-
-    def __init__(
-        self: "ModuleItem",
-        name: Token,
-        alias: AstNode,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize module item node."""
-        self.name = name
-        self.alias = alias
         super().__init__(parent=parent, kid=kid, line=line)
 
 
