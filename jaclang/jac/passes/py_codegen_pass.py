@@ -25,7 +25,7 @@ class PyCodeGenPass(Pass):
     def enter_node(self: Pass, node: AstNode) -> None:
         """Enter node."""
         node.meta["py_code"] = ""
-        return super().enter_node(node)
+        return Pass.enter_node(self, node)
 
     def indent_str(self: "PyCodeGenPass", indent_delta: int) -> str:
         """Return string for indent."""
