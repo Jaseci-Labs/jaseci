@@ -1,4 +1,4 @@
-"""Pass that builds well formed AST from parse tree AST."""
+"""Ast build pass for Jaseci Ast."""
 from typing import Optional
 
 import jaclang.jac.ast as ast
@@ -7,7 +7,7 @@ from jaclang.jac.passes.ir_pass import Pass
 
 
 class AstBuildPass(Pass):
-    """Ast build pass."""
+    """Jac Ast build pass."""
 
     def __init__(
         self: "AstBuildPass", mod_name: str = "", ir: Optional[ast.AstNode] = None
@@ -17,7 +17,10 @@ class AstBuildPass(Pass):
         super().__init__(ir=ir)
 
     def exit_start(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build WHOLE_BUILD Ast node."""
+        """# noqa: D2, D4 # noqa: D2, D4
+        start -> STRING element_list
+        start -> DOC_STRING element_list
+        """
         self.ir = ast.Module(
             name=self.mod_name,
             doc=node.kid[0],
@@ -27,22 +30,11 @@ class AstBuildPass(Pass):
             line=node.line,
         )
 
-    def exit_doc_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build DocString Ast node."""
-        if node.kid[0].is_type(ast.Token):
-            node.kid = [node.kid[0]]
-        replace_node(
-            node,
-            ast.DocString(
-                value=node.kid[0],
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
     def exit_element_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Chain list together into actual list."""
+        """# noqa: D2, D4
+        element_list -> element_list element
+        element_list -> element
+        """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
         replace_node(
@@ -56,11 +48,22 @@ class AstBuildPass(Pass):
         )
 
     def exit_element(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Replace element with its kid."""
+        """# noqa: D2, D4
+        element -> sub_ability_spec
+        element -> ability
+        element -> architype
+        element -> include_stmt
+        element -> import_stmt
+        element -> mod_code
+        element -> test
+        element -> global_var
+        """
         node = replace_node(node, node.kid[0])
 
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build GLOBAL_VAR Ast node."""
+        """# noqa: D2, D4
+        global_var -> doc_tag KW_GLOBAL access_tag assignment_list SEMI
+        """
         node.kid = [node.kid[0], node.kid[2], node.kid[3]]
         replace_node(
             node,
@@ -75,15 +78,24 @@ class AstBuildPass(Pass):
         )
 
     def exit_access(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build  Ast node."""
+        """# noqa: D2, D4
+        access -> KW_PROT
+        access -> KW_PUB
+        access -> KW_PRIV
+        """
         replace_node(node, node.kid[0])
 
     def exit_access_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build  Ast node."""
+        """# noqa: D2, D4
+        access_tag -> empty
+        access_tag -> COLON access
+        """
         replace_node(node, node.kid[-1])
 
     def exit_test(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build TEST Ast node."""
+        """# noqa: D2, D4
+        test -> doc_tag KW_TEST NAME multistring code_block
+        """
         del node.kid[1]
         replace_node(
             node,
@@ -99,7 +111,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_mod_code(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build TEST Ast node."""
+        """# noqa: D2, D4
+        mod_code -> doc_tag KW_WITH KW_ENTRY code_block
+        """
         node.kid = [node.kid[0], node.kid[-1]]
         replace_node(
             node,
@@ -112,8 +126,30 @@ class AstBuildPass(Pass):
             ),
         )
 
+    def exit_doc_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """# noqa: D2, D4
+        doc_tag -> STRING
+        doc_tag -> DOC_STRING
+        doc_tag -> empty
+        """
+        if node.kid[0].is_type(ast.Token):
+            node.kid = [node.kid[0]]
+        replace_node(
+            node,
+            ast.DocString(
+                value=node.kid[0],
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
     def exit_import_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build IMPORT Ast node."""
+        """# noqa: D2, D4
+        import_stmt -> KW_IMPORT sub_name KW_FROM import_path COMMA name_as_list SEMI
+        import_stmt -> KW_IMPORT sub_name import_path KW_AS NAME SEMI
+        import_stmt -> KW_IMPORT sub_name import_path SEMI
+        """
         kid = node.kid
         meta = {
             "lang": kid[1],
@@ -146,7 +182,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_include_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Include Ast node."""
+        """# noqa: D2, D4
+        include_stmt -> KW_INCLUDE sub_name import_path SEMI
+        """
         kid = node.kid
         meta = {
             "lang": kid[1],
@@ -171,7 +209,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_import_path(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build MOD_PATH Ast node."""
+        """# noqa: D2, D4
+        import_path -> import_path_prefix import_path_tail
+        import_path -> import_path_prefix
+        """
         if len(node.kid) == 1:
             node.kid = node.kid[0].kid
         else:
@@ -187,15 +228,27 @@ class AstBuildPass(Pass):
         )
 
     def exit_import_path_prefix(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """No action needed, absorbed by parent."""
+        """# noqa: D2, D4
+        import_path_prefix -> DOT DOT NAME
+        import_path_prefix -> DOT NAME
+        import_path_prefix -> NAME
+        """
 
     def exit_import_path_tail(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Chain list together into actual list."""
+        """# noqa: D2, D4
+        import_path_tail -> import_path_tail DOT NAME
+        import_path_tail -> DOT NAME
+        """
         if len(node.kid) > 2:
             node.kid = node.kid[0].kid + [node.kid[1], node.kid[2]]
 
     def exit_name_as_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build MOD_ITEM list of Ast nodes. TODO: VALIDATE."""
+        """# noqa: D2, D4
+        name_as_list -> name_as_list COMMA NAME KW_AS NAME
+        name_as_list -> name_as_list COMMA NAME
+        name_as_list -> NAME KW_AS NAME
+        name_as_list -> NAME
+        """
         this_item = None
         if node.kid[0].is_type(ast.Token) and node.kid[0].name == "NAME":
             this_item = ast.ModuleItem(
@@ -225,11 +278,20 @@ class AstBuildPass(Pass):
         )
 
     def exit_architype(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Replace self with kid."""
+        """# noqa: D2, D4
+        architype -> architype_def
+        architype -> architype_decl
+        architype -> architype_inline_spec
+        """
         replace_node(node, node.kid[0])
 
     def exit_architype_inline_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build various architype Ast nodes."""
+        """# noqa: D2, D4
+        architype_inline_spec -> doc_tag KW_WALKER access_tag NAME inherited_archs member_block
+        architype_inline_spec -> doc_tag KW_OBJECT access_tag NAME inherited_archs member_block
+        architype_inline_spec -> doc_tag KW_EDGE access_tag NAME inherited_archs member_block
+        architype_inline_spec -> doc_tag KW_NODE access_tag NAME inherited_archs member_block
+        """
         meta = {
             "doc": node.kid[0],
             "typ": node.kid[1],
@@ -254,7 +316,12 @@ class AstBuildPass(Pass):
         )
 
     def exit_architype_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ArchDecl Ast node."""
+        """# noqa: D2, D4
+        architype_decl -> doc_tag KW_WALKER access_tag NAME inherited_archs SEMI
+        architype_decl -> doc_tag KW_OBJECT access_tag NAME inherited_archs SEMI
+        architype_decl -> doc_tag KW_EDGE access_tag NAME inherited_archs SEMI
+        architype_decl -> doc_tag KW_NODE access_tag NAME inherited_archs SEMI
+        """
         del node.kid[-1]
         replace_node(
             node,
@@ -271,7 +338,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_architype_def(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ArchDef Ast node."""
+        """# noqa: D2, D4
+        architype_def -> doc_tag NAME strict_arch_ref member_block
+        architype_def -> doc_tag strict_arch_ref member_block
+        """
         replace_node(
             node,
             ast.ArchDef(
@@ -286,7 +356,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_inherited_archs(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Chain list together into actual list."""
+        """# noqa: D2, D4
+        inherited_archs -> inherited_archs sub_name
+        inherited_archs -> empty
+        """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
         if type(node.kid[0]) == ast.Blank:
@@ -302,15 +375,24 @@ class AstBuildPass(Pass):
         )
 
     def exit_sub_name(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build SUB_NAME Ast node."""
+        """# noqa: D2, D4
+        sub_name -> COLON NAME
+        """
         replace_node(node, node.kid[1])
 
     def exit_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Ability Ast node."""
+        """# noqa: D2, D4
+        ability -> ability_def
+        ability -> ability_decl
+        ability -> ability_inline_spec
+        """
         replace_node(node, node.kid[0])
 
     def exit_ability_inline_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build various ability Ast nodes."""
+        """# noqa: D2, D4
+        ability_inline_spec -> doc_tag KW_CAN access_tag NAME func_decl code_block
+        ability_inline_spec -> doc_tag KW_CAN access_tag NAME return_type_tag code_block
+        """
         del node.kid[1]
         meta = {
             "doc": node.kid[0],
@@ -338,7 +420,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_ability_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AbilityDecl Ast node."""
+        """# noqa: D2, D4
+        ability_decl -> doc_tag KW_CAN access_tag NAME func_decl SEMI
+        ability_decl -> doc_tag KW_CAN access_tag NAME return_type_tag SEMI
+        """
         del node.kid[1]
         del node.kid[-1]
         meta = {
@@ -365,7 +450,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_ability_def(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AbilityDef Ast node."""
+        """# noqa: D2, D4
+        ability_def -> doc_tag NAME ability_ref code_block
+        ability_def -> doc_tag ability_ref code_block
+        """
         replace_node(
             node,
             ast.AbilityDef(
@@ -380,7 +468,12 @@ class AstBuildPass(Pass):
         )
 
     def exit_sub_ability_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AbilitySpec Ast node."""
+        """# noqa: D2, D4
+        sub_ability_spec -> doc_tag NAME strict_arch_ref ability_ref func_decl code_block
+        sub_ability_spec -> doc_tag NAME strict_arch_ref ability_ref code_block
+        sub_ability_spec -> doc_tag strict_arch_ref ability_ref func_decl code_block
+        sub_ability_spec -> doc_tag strict_arch_ref ability_ref code_block
+        """
         meta = {"doc": node.kid[0]}
         if node.kid[1].name == "NAME":
             meta["mod"] = node.kid[1]
@@ -418,7 +511,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_member_block(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ARCH_BLOCK Ast node."""
+        """# noqa: D2, D4
+        member_block -> LBRACE member_stmt_list RBRACE
+        member_block -> LBRACE RBRACE
+        """
         if len(node.kid) == 3:
             node = replace_node(node, node.kid[1])
         else:
@@ -434,16 +530,24 @@ class AstBuildPass(Pass):
         )
 
     def exit_member_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Chain list together into actual list."""
+        """# noqa: D2, D4
+        member_stmt_list -> member_stmt_list member_stmt
+        member_stmt_list -> member_stmt
+        """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
 
     def exit_member_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Replace self with actual attr stmt."""
+        """# noqa: D2, D4
+        member_stmt -> can_stmt
+        member_stmt -> has_stmt
+        """
         node = replace_node(node, node.kid[0])
 
     def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Move var list up to parent."""
+        """# noqa: D2, D4
+        has_stmt -> doc_tag KW_HAS access_tag has_assign_clause SEMI
+        """
         node.kid = [node.kid[0], node.kid[2], node.kid[3]]
         replace_node(
             node,
@@ -458,7 +562,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_has_assign_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Push list of individual vars into parent."""
+        """# noqa: D2, D4
+        has_assign_clause -> has_assign_clause COMMA typed_has_clause
+        has_assign_clause -> typed_has_clause
+        """
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
         replace_node(
@@ -472,7 +579,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_typed_has_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build HasVar Ast node."""
+        """# noqa: D2, D4
+        typed_has_clause -> NAME type_tag EQ expression
+        typed_has_clause -> NAME type_tag
+        """
         if len(node.kid) == 4:
             del node.kid[2]
         replace_node(
@@ -488,18 +598,29 @@ class AstBuildPass(Pass):
         )
 
     def exit_type_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build TypeSpec Ast node."""
+        """# noqa: D2, D4
+        type_tag -> COLON type_name
+        """
         replace_node(node, node.kid[1])
 
     def exit_return_type_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ReturnTypeSpec Ast node."""
+        """# noqa: D2, D4
+        return_type_tag -> RETURN_HINT type_name
+        return_type_tag -> empty
+        """
         if len(node.kid) == 2:
             replace_node(node, node.kid[1])
         else:
             replace_node(node, ast.Blank())
 
     def exit_type_name(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build TypeName Ast node."""
+        """# noqa: D2, D4
+        type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
+        type_name -> TYP_LIST LSQUARE type_name RSQUARE
+        type_name -> NAME
+        type_name -> NULL
+        type_name -> builtin_type
+        """
         meta = {"typ": node.kid[0], "nested1": ast.Blank(), "nested2": ast.Blank()}
         if len(node.kid) == 4:
             node.kid = [node.kid[0], node.kid[2]]
@@ -521,15 +642,33 @@ class AstBuildPass(Pass):
         )
 
     def exit_builtin_type(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build BuiltinType Ast node."""
+        """# noqa: D2, D4
+        builtin_type -> TYP_TYPE
+        builtin_type -> TYP_ANY
+        builtin_type -> TYP_BOOL
+        builtin_type -> TYP_DICT
+        builtin_type -> TYP_SET
+        builtin_type -> TYP_TUPLE
+        builtin_type -> TYP_LIST
+        builtin_type -> TYP_FLOAT
+        builtin_type -> TYP_INT
+        builtin_type -> TYP_BYTES
+        builtin_type -> TYP_STRING
+        """
         replace_node(node, node.kid[0])
 
     def exit_can_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build CanStmt Ast node."""
+        """# noqa: D2, D4
+        can_stmt -> can_func_ability
+        can_stmt -> can_ds_ability
+        """
         replace_node(node, node.kid[0])
 
     def exit_can_ds_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Data spatial can Ast node."""
+        """# noqa: D2, D4
+        can_ds_ability -> doc_tag KW_CAN access_tag NAME event_clause SEMI
+        can_ds_ability -> doc_tag KW_CAN access_tag NAME event_clause code_block
+        """
         del node.kid[1]
         if type(node.kid[-1]) == ast.Token and node.kid[-1].name == "SEMI":
             del node.kid[-1]
@@ -561,11 +700,22 @@ class AstBuildPass(Pass):
             )
 
     def exit_can_func_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Function can Ast node."""
+        """# noqa: D2, D4
+        can_func_ability -> doc_tag KW_CAN access_tag NAME func_decl SEMI
+        can_func_ability -> doc_tag KW_CAN access_tag NAME func_decl code_block
+        """
         self.exit_can_ds_ability(node)
 
     def exit_event_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build EventClause Ast node."""
+        """# noqa: D2, D4
+        event_clause -> KW_WITH name_list KW_EXIT
+        event_clause -> KW_WITH name_list KW_ENTRY
+        event_clause -> KW_WITH STAR_MUL KW_EXIT
+        event_clause -> KW_WITH STAR_MUL KW_ENTRY
+        event_clause -> KW_WITH KW_EXIT
+        event_clause -> KW_WITH KW_ENTRY
+        event_clause -> empty
+        """
         if len(node.kid) == 1:
             replace_node(node, ast.Blank())
         elif len(node.kid) == 2:
@@ -594,7 +744,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_name_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build NameList Ast node."""
+        """# noqa: D2, D4
+        name_list -> name_list COMMA NAME
+        name_list -> NAME
+        """
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
         replace_node(
@@ -608,7 +761,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_func_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build FuncDecl Ast node."""
+        """# noqa: D2, D4
+        func_decl -> LPAREN func_decl_param_list RPAREN return_type_tag
+        func_decl -> LPAREN RPAREN return_type_tag
+        """
         if len(node.kid) == 3:
             node.kid = [node.kid[-1]]
             replace_node(
@@ -635,7 +791,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_func_decl_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build FuncDeclParamList Ast node."""
+        """# noqa: D2, D4
+        func_decl_param_list -> func_decl_param_list COMMA param_var
+        func_decl_param_list -> param_var
+        """
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
         replace_node(
@@ -649,7 +808,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_param_var(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ParamVar Ast node."""
+        """# noqa: D2, D4
+        param_var -> NAME type_tag EQ expression
+        param_var -> NAME type_tag
+        """
         if len(node.kid) == 4:
             del node.kid[2]
         replace_node(
@@ -665,7 +827,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_code_block(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build CodeBlock Ast node."""
+        """# noqa: D2, D4
+        code_block -> LBRACE statement_list RBRACE
+        code_block -> LBRACE RBRACE
+        """
         if len(node.kid) == 3:
             node = replace_node(node, node.kid[1])
         else:
@@ -681,16 +846,40 @@ class AstBuildPass(Pass):
         )
 
     def exit_statement_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build StatementList Ast node."""
+        """# noqa: D2, D4
+        statement_list -> statement
+        statement_list -> statement_list statement
+        """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
 
     def exit_statement(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Statement Ast node."""
+        """# noqa: D2, D4
+        statement -> walker_stmt
+        statement -> yield_stmt SEMI
+        statement -> return_stmt SEMI
+        statement -> report_stmt SEMI
+        statement -> delete_stmt SEMI
+        statement -> ctrl_stmt SEMI
+        statement -> assert_stmt SEMI
+        statement -> raise_stmt SEMI
+        statement -> while_stmt
+        statement -> for_stmt
+        statement -> try_stmt
+        statement -> if_stmt
+        statement -> expression SEMI
+        statement -> static_assignment
+        statement -> assignment SEMI
+        """
         replace_node(node, node.kid[0])
 
     def exit_if_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build IfStmt Ast node."""
+        """# noqa: D2, D4
+        if_stmt -> KW_IF expression code_block elif_list else_stmt
+        if_stmt -> KW_IF expression code_block elif_list
+        if_stmt -> KW_IF expression code_block else_stmt
+        if_stmt -> KW_IF expression code_block
+        """
         if len(node.kid) == 3:
             node.kid = [node.kid[1], node.kid[2]]
             replace_node(
@@ -749,7 +938,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_elif_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ElifStmtList Ast node."""
+        """# noqa: D2, D4
+        elif_list -> elif_list KW_ELIF expression code_block
+        elif_list -> KW_ELIF expression code_block
+        """
         cpy_node = ast.IfStmt(
             condition=node.kid[0],
             body=node.kid[1],
@@ -774,7 +966,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_else_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ElseStmt Ast node."""
+        """# noqa: D2, D4
+        else_stmt -> KW_ELSE code_block
+        """
         node.kid = [node.kid[1]]
         replace_node(
             node,
@@ -787,7 +981,12 @@ class AstBuildPass(Pass):
         )
 
     def exit_try_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build TryStmt Ast node."""
+        """# noqa: D2, D4
+        try_stmt -> KW_TRY code_block except_list finally_stmt
+        try_stmt -> KW_TRY code_block finally_stmt
+        try_stmt -> KW_TRY code_block except_list
+        try_stmt -> KW_TRY code_block
+        """
         if len(node.kid) == 2:
             node.kid = [node.kid[1]]
             replace_node(
@@ -842,7 +1041,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_except_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ExceptList Ast node."""
+        """# noqa: D2, D4
+        except_list -> except_list except_def
+        except_list -> except_def
+        """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
         replace_node(
@@ -856,7 +1058,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_except_def(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ExceptDef Ast node."""
+        """# noqa: D2, D4
+        except_def -> KW_EXCEPT expression KW_AS NAME code_block
+        except_def -> KW_EXCEPT expression code_block
+        """
         if len(node.kid) == 3:
             node.kid = [node.kid[1], node.kid[2]]
             replace_node(
@@ -885,7 +1090,9 @@ class AstBuildPass(Pass):
             )
 
     def exit_finally_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build FinallyStmt Ast node."""
+        """# noqa: D2, D4
+        finally_stmt -> KW_FINALLY code_block
+        """
         node.kid = [node.kid[1]]
         replace_node(
             node,
@@ -898,7 +1105,11 @@ class AstBuildPass(Pass):
         )
 
     def exit_for_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ForStmt Ast node."""
+        """# noqa: D2, D4
+        for_stmt -> KW_FOR NAME COMMA NAME KW_IN expression code_block
+        for_stmt -> KW_FOR NAME KW_IN expression code_block
+        for_stmt -> KW_FOR assignment KW_TO expression KW_BY expression code_block
+        """
         if node.kid[2].name == "KW_TO":
             node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[6]]
             replace_node(
@@ -942,7 +1153,9 @@ class AstBuildPass(Pass):
             )
 
     def exit_while_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build WhileStmt Ast node."""
+        """# noqa: D2, D4
+        while_stmt -> KW_WHILE expression code_block
+        """
         node.kid = [node.kid[1], node.kid[2]]
         replace_node(
             node,
@@ -956,7 +1169,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_raise_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build RaiseStmt Ast node."""
+        """# noqa: D2, D4
+        raise_stmt -> KW_RAISE expression
+        raise_stmt -> KW_RAISE
+        """
         if len(node.kid) == 1:
             node.kid = []
             replace_node(
@@ -981,7 +1197,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_assert_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AssertStmt Ast node."""
+        """# noqa: D2, D4
+        assert_stmt -> KW_ASSERT expression COMMA expression
+        assert_stmt -> KW_ASSERT expression
+        """
         if len(node.kid) == 4:
             node.kid = [node.kid[1], node.kid[3]]
             replace_node(
@@ -1008,7 +1227,11 @@ class AstBuildPass(Pass):
             )
 
     def exit_ctrl_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build CtrlStmt Ast node."""
+        """# noqa: D2, D4
+        ctrl_stmt -> KW_SKIP
+        ctrl_stmt -> KW_BREAK
+        ctrl_stmt -> KW_CONTINUE
+        """
         replace_node(
             node,
             ast.CtrlStmt(
@@ -1020,7 +1243,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_delete_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build DeleteStmt Ast node."""
+        """# noqa: D2, D4
+        delete_stmt -> KW_DELETE expression
+        """
         node.kid = [node.kid[1]]
         replace_node(
             node,
@@ -1033,7 +1258,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_report_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ReportStmt Ast node."""
+        """# noqa: D2, D4
+        report_stmt -> KW_REPORT expression
+        """
         node.kid = [node.kid[1]]
         replace_node(
             node,
@@ -1046,7 +1273,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_return_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ReturnStmt Ast node."""
+        """# noqa: D2, D4
+        return_stmt -> KW_RETURN expression
+        return_stmt -> KW_RETURN
+        """
         if len(node.kid) == 1:
             node.kid = []
             replace_node(
@@ -1070,12 +1300,26 @@ class AstBuildPass(Pass):
                 ),
             )
 
+    def exit_yield_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
+        """# noqa: D2, D4
+        yield_stmt -> KW_YIELD expression
+        yield_stmt -> KW_YIELD
+        """
+
     def exit_walker_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build WalkerStmt Ast node."""
+        """# noqa: D2, D4
+        walker_stmt -> sync_stmt SEMI
+        walker_stmt -> disengage_stmt SEMI
+        walker_stmt -> revisit_stmt
+        walker_stmt -> visit_stmt
+        walker_stmt -> ignore_stmt SEMI
+        """
         replace_node(node, node.kid[1])
 
     def exit_ignore_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build IgnoreStmt Ast node."""
+        """# noqa: D2, D4
+        ignore_stmt -> KW_IGNORE expression
+        """
         node.kid = [node.kid[1]]
         replace_node(
             node,
@@ -1088,7 +1332,12 @@ class AstBuildPass(Pass):
         )
 
     def exit_visit_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build VisitStmt Ast node."""
+        """# noqa: D2, D4
+        visit_stmt -> KW_VISIT sub_name expression else_stmt
+        visit_stmt -> KW_VISIT expression else_stmt
+        visit_stmt -> KW_VISIT sub_name expression SEMI
+        visit_stmt -> KW_VISIT expression SEMI
+        """
         meta = {"typ": ast.Blank(), "else_body": ast.Blank()}
         if node.kid[-1].name == "SEMI":
             if len(node.kid) == 4:
@@ -1120,7 +1369,12 @@ class AstBuildPass(Pass):
         )
 
     def exit_revisit_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build RevisitStmt Ast node."""
+        """# noqa: D2, D4
+        revisit_stmt -> KW_REVISIT expression else_stmt
+        revisit_stmt -> KW_REVISIT else_stmt
+        revisit_stmt -> KW_REVISIT expression SEMI
+        revisit_stmt -> KW_REVISIT SEMI
+        """
         meta = {"hops": ast.Blank(), "else_body": ast.Blank()}
         if node.kid[-1].name == "SEMI":
             if len(node.kid) == 3:
@@ -1146,7 +1400,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_disengage_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build DisengageStmt Ast node."""
+        """# noqa: D2, D4
+        disengage_stmt -> KW_DISENGAGE
+        """
         node.kid = []
         replace_node(
             node,
@@ -1157,8 +1413,6 @@ class AstBuildPass(Pass):
             ),
         )
 
-    def exit_yield_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build YieldStmt Ast node."""
         node.kid = [node.kid[1]]
         replace_node(
             node,
@@ -1171,7 +1425,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_sync_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build SyncStmt Ast node."""
+        """# noqa: D2, D4
+        sync_stmt -> KW_SYNC expression
+        """
         node.kid = [node.kid[1]]
         replace_node(
             node,
@@ -1184,7 +1440,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_assignment(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Assignment Ast node."""
+        """# noqa: D2, D4
+        assignment -> atom EQ expression
+        """
         node.kid = [node.kid[-3], node.kid[-1]]
         replace_node(
             node,
@@ -1199,13 +1457,15 @@ class AstBuildPass(Pass):
         )
 
     def exit_static_assignment(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build StaticAssignment Ast node."""
+        """# noqa: D2, D4
+        static_assignment -> KW_HAS assignment_list SEMI
+        """
         node = replace_node(node, node.kid[1])
         for i in node.kid:
             i.is_static = True
 
     def binary_op_helper(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Reused as utility function for binary operators."""
+        """# noqa: D2, D4"""
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
         else:
@@ -1223,7 +1483,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_expression(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Expression Ast node."""
+        """# noqa: D2, D4
+        expression -> walrus_assign KW_IF expression KW_ELSE expression
+        expression -> walrus_assign
+        """
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
         else:
@@ -1241,27 +1504,53 @@ class AstBuildPass(Pass):
             )
 
     def exit_walrus_assign(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build WalrusAssign Ast node."""
+        """# noqa: D2, D4
+        walrus_assign -> pipe walrus_op walrus_assign
+        walrus_assign -> pipe
+        """
         self.binary_op_helper(node)
 
     def exit_pipe(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Pipe Ast node."""
+        """# noqa: D2, D4
+        pipe -> spawn_ctx PIPE_FWD pipe
+        pipe -> pipe_back PIPE_FWD spawn_ctx
+        pipe -> pipe_back PIPE_FWD filter_ctx
+        pipe -> pipe_back PIPE_FWD pipe
+        pipe -> pipe_back
+        """
         self.binary_op_helper(node)
 
     def exit_pipe_back(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build PipeBack Ast node."""
+        """# noqa: D2, D4
+        pipe_back -> spawn_ctx PIPE_BKWD pipe_back
+        pipe_back -> elvis_check PIPE_BKWD spawn_ctx
+        pipe_back -> elvis_check PIPE_BKWD filter_ctx
+        pipe_back -> elvis_check PIPE_BKWD pipe_back
+        pipe_back -> elvis_check
+        """
         self.binary_op_helper(node)
 
     def exit_elvis_check(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ElvisCheck Ast node."""
+        """# noqa: D2, D4
+        elvis_check -> logical ELVIS_OP elvis_check
+        elvis_check -> logical
+        """
         self.binary_op_helper(node)
 
     def exit_logical(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Logical Ast node."""
+        """# noqa: D2, D4
+        logical -> compare KW_OR logical
+        logical -> compare KW_AND logical
+        logical -> compare
+        """
         self.binary_op_helper(node)
 
     def exit_compare(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Compare Ast node."""
+        """# noqa: D2, D4
+        compare -> arithmetic cmp_op compare
+        compare -> NOT compare
+        compare -> arithmetic
+        """
         if len(node.kid) == 2:
             node.kid = [node.kid[0], node.kid[1]]
             replace_node(
@@ -1278,15 +1567,28 @@ class AstBuildPass(Pass):
             self.binary_op_helper(node)
 
     def exit_arithmetic(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Arithmetic Ast node."""
+        """# noqa: D2, D4
+        arithmetic -> term MINUS arithmetic
+        arithmetic -> term PLUS arithmetic
+        arithmetic -> term
+        """
         self.binary_op_helper(node)
 
     def exit_term(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Term Ast node."""
+        """# noqa: D2, D4
+        term -> factor MOD term
+        term -> factor DIV term
+        term -> factor STAR_MUL term
+        term -> factor
+        """
         self.binary_op_helper(node)
 
     def exit_factor(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Factor Ast node."""
+        """# noqa: D2, D4
+        factor -> power
+        factor -> MINUS factor
+        factor -> PLUS factor
+        """
         if len(node.kid) == 2:
             node.kid = [node.kid[0], node.kid[1]]
             replace_node(
@@ -1303,15 +1605,25 @@ class AstBuildPass(Pass):
             self.binary_op_helper(node)
 
     def exit_power(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Power Ast node."""
+        """# noqa: D2, D4
+        power -> connect POW power
+        power -> connect
+        """
         self.binary_op_helper(node)
 
     def exit_connect(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Connect Ast node."""
+        """# noqa: D2, D4
+        connect -> spawn_object
+        connect -> spawn_object connect_op connect
+        connect -> spawn_object disconnect_op connect
+        """
         self.binary_op_helper(node)
 
     def exit_spawn_object(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build SpawnObjectExpr Ast node."""
+        """# noqa: D2, D4
+        spawn_object -> unpack
+        spawn_object -> spawn_op atom
+        """
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
         else:
@@ -1327,7 +1639,11 @@ class AstBuildPass(Pass):
             )
 
     def exit_unpack(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Unpack Ast node."""
+        """# noqa: D2, D4
+        unpack -> ref
+        unpack -> STAR_MUL atom
+        unpack -> STAR_MUL STAR_MUL atom
+        """
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
         else:
@@ -1356,7 +1672,10 @@ class AstBuildPass(Pass):
                 )
 
     def exit_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Ref Ast node."""
+        """# noqa: D2, D4
+        ref -> ds_call
+        ref -> KW_REF ds_call
+        """
         if len(node.kid) == 2:
             node.kid = [node.kid[0], node.kid[1]]
             replace_node(
@@ -1374,7 +1693,10 @@ class AstBuildPass(Pass):
             self.binary_op_helper(node)
 
     def exit_ds_call(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build DSCall Ast node."""
+        """# noqa: D2, D4
+        ds_call -> atom
+        ds_call -> PIPE_FWD atom
+        """
         if len(node.kid) == 2:
             node.kid = [node.kid[0], node.kid[1]]
             replace_node(
@@ -1391,34 +1713,83 @@ class AstBuildPass(Pass):
             self.binary_op_helper(node)
 
     def exit_walrus_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Replace self with child."""
+        """# noqa: D2, D4
+        walrus_op -> MOD_EQ
+        walrus_op -> DIV_EQ
+        walrus_op -> MUL_EQ
+        walrus_op -> SUB_EQ
+        walrus_op -> ADD_EQ
+        walrus_op -> WALRUS_EQ
+        """
         replace_node(node, node.kid[0])
 
     def exit_cmp_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build CmpOp Ast node."""
+        """# noqa: D2, D4
+        cmp_op -> KW_NIN
+        cmp_op -> KW_IN
+        cmp_op -> NE
+        cmp_op -> GTE
+        cmp_op -> LTE
+        cmp_op -> GT
+        cmp_op -> LT
+        cmp_op -> EE
+        """
         replace_node(node, node.kid[0])
 
     def exit_spawn_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build SpawnOp Ast node."""
+        """# noqa: D2, D4
+        spawn_op -> SPAWN_OP
+        spawn_op -> KW_SPAWN
+        """
         replace_node(node, node.kid[0])
 
     def exit_atom(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Atom Ast node."""
+        """# noqa: D2, D4
+        atom -> edge_op_ref
+        atom -> arch_ref
+        atom -> atomic_chain
+        atom -> visitor_ref
+        atom -> here_ref
+        atom -> global_ref
+        atom -> LPAREN expression RPAREN
+        atom -> atom_collection
+        atom -> atom_literal
+        """
         if len(node.kid) == 3:
             replace_node(node, node.kid[1])
         else:
             replace_node(node, node.kid[0])
 
     def exit_atom_literal(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AtomLiteral Ast node."""
+        """# noqa: D2, D4
+        atom_literal -> builtin_type
+        atom_literal -> NAME
+        atom_literal -> NULL
+        atom_literal -> BOOL
+        atom_literal -> multistring
+        atom_literal -> FLOAT
+        atom_literal -> OCT
+        atom_literal -> BIN
+        atom_literal -> HEX
+        atom_literal -> INT
+        """
         replace_node(node, node.kid[0])
 
     def exit_atom_collection(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AtomCollection Ast node."""
+        """# noqa: D2, D4
+        atom_collection -> comprehension
+        atom_collection -> dict_val
+        atom_collection -> list_val
+        """
         replace_node(node, node.kid[0])
 
     def exit_multistring(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Multistring Ast node."""
+        """# noqa: D2, D4
+        multistring -> FSTRING multistring
+        multistring -> STRING multistring
+        multistring -> FSTRING
+        multistring -> STRING
+        """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
         replace_node(
@@ -1432,7 +1803,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_list_val(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ListVal Ast node."""
+        """# noqa: D2, D4
+        list_val -> LSQUARE expr_list RSQUARE
+        list_val -> LSQUARE RSQUARE
+        """
         if len(node.kid) > 2:
             node = replace_node(node, node.kid[1])
         else:
@@ -1448,7 +1822,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_expr_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ExprList Ast node."""
+        """# noqa: D2, D4
+        expr_list -> expr_list COMMA expression
+        expr_list -> expression
+        """
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
         replace_node(
@@ -1462,7 +1839,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_dict_val(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build DictVal Ast node."""
+        """# noqa: D2, D4
+        dict_val -> LBRACE kv_pairs RBRACE
+        dict_val -> LBRACE RBRACE
+        """
         if len(node.kid) == 3:
             node.kid = node.kid[:-3]
         else:
@@ -1478,7 +1858,12 @@ class AstBuildPass(Pass):
         )
 
     def exit_comprehension(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Comprehension Ast node."""
+        """# noqa: D2, D4
+        comprehension -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE
+        comprehension -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE
+        comprehension -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE
+        comprehension -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE
+        """
         meta = {
             "key_expr": ast.Blank(),
             "out_expr": ast.Blank(),
@@ -1518,7 +1903,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_kv_pairs(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build KVPairs Ast node."""
+        """# noqa: D2, D4
+        kv_pairs -> kv_pairs COMMA expression COLON expression
+        kv_pairs -> expression COLON expression
+        """
         if len(node.kid) == 3:
             node.parent.kid = [node] + node.parent.kid
             node.kid = [node.kid[0], node.kid[2]]
@@ -1537,11 +1925,19 @@ class AstBuildPass(Pass):
         )
 
     def exit_atomic_chain(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AtomicChain Ast node."""
+        """# noqa: D2, D4
+        atomic_chain -> atomic_call
+        atomic_chain -> atomic_chain_unsafe
+        atomic_chain -> atomic_chain_safe
+        """
         replace_node(node, node.kid[0])
 
     def exit_atomic_chain_unsafe(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AtomicChain Ast node."""
+        """# noqa: D2, D4
+        atomic_chain_unsafe -> atom arch_ref
+        atomic_chain_unsafe -> atom index_slice
+        atomic_chain_unsafe -> atom DOT NAME
+        """
         if len(node.kid) == 3:
             del node.kid[1]
         replace_node(
@@ -1557,7 +1953,11 @@ class AstBuildPass(Pass):
         )
 
     def exit_atomic_chain_safe(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AtomicChain with safety Ast node."""
+        """# noqa: D2, D4
+        atomic_chain_safe -> atom NULL_OK arch_ref
+        atomic_chain_safe -> atom NULL_OK index_slice
+        atomic_chain_safe -> atom NULL_OK DOT NAME
+        """
         del node.kid[1]
         if len(node.kid) == 3:
             del node.kid[1]
@@ -1574,7 +1974,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_atomic_call(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Call Ast node."""
+        """# noqa: D2, D4
+        atomic_call -> atom func_call_tail
+        """
         replace_node(
             node,
             ast.FuncCall(
@@ -1587,14 +1989,21 @@ class AstBuildPass(Pass):
         )
 
     def exit_func_call_tail(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build FuncCall Ast node."""
+        """# noqa: D2, D4
+        func_call_tail -> LPAREN param_list RPAREN
+        func_call_tail -> LPAREN RPAREN
+        """
         if len(node.kid) == 2:
             replace_node(node, ast.Blank())
         else:
             replace_node(node, node.kid[1])
 
     def exit_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ParamList Ast node."""
+        """# noqa: D2, D4
+        param_list -> expr_list COMMA assignment_list
+        param_list -> assignment_list
+        param_list -> expr_list
+        """
         if len(node.kid) == 1:
             if type(node.kid[0]) == ast.ExprList:
                 replace_node(
@@ -1631,7 +2040,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_assignment_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AssignmentList Ast node."""
+        """# noqa: D2, D4
+        assignment_list -> assignment_list COMMA assignment
+        assignment_list -> assignment
+        """
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
         replace_node(
@@ -1645,7 +2057,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_index_slice(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build IndexSlice Ast node."""
+        """# noqa: D2, D4
+        index_slice -> LSQUARE expression COLON expression RSQUARE
+        index_slice -> LSQUARE expression RSQUARE
+        """
         if len(node.kid) == 3:
             node.kid = node.kid[1]
             replace_node(
@@ -1672,7 +2087,9 @@ class AstBuildPass(Pass):
             )
 
     def exit_global_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build GlobalRef Ast node."""
+        """# noqa: D2, D4
+        global_ref -> GLOBAL_OP NAME
+        """
         node.kid = [node.kid[-1]]
         replace_node(
             node,
@@ -1685,7 +2102,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_here_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build GlobalRef Ast node."""
+        """# noqa: D2, D4
+        here_ref -> HERE_OP
+        here_ref -> HERE_OP NAME
+        """
         if len(node.kid) == 2:
             node.kid = [node.kid[-1]]
             replace_node(
@@ -1710,7 +2130,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_visitor_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build GlobalRef Ast node."""
+        """# noqa: D2, D4
+        visitor_ref -> VISITOR_OP
+        visitor_ref -> VISITOR_OP NAME
+        """
         if len(node.kid) == 2:
             node.kid = [node.kid[-1]]
             replace_node(
@@ -1735,15 +2158,28 @@ class AstBuildPass(Pass):
             )
 
     def exit_arch_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ArchRef Ast node."""
+        """# noqa: D2, D4
+        arch_ref -> ability_ref
+        arch_ref -> object_ref
+        arch_ref -> walker_ref
+        arch_ref -> edge_ref
+        arch_ref -> node_ref
+        """
         replace_node(node, node.kid[0])
 
     def exit_strict_arch_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build strict ArchRef Ast node."""
+        """# noqa: D2, D4
+        strict_arch_ref -> object_ref
+        strict_arch_ref -> walker_ref
+        strict_arch_ref -> edge_ref
+        strict_arch_ref -> node_ref
+        """
         replace_node(node, node.kid[0])
 
     def exit_node_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build NodeRef Ast node."""
+        """# noqa: D2, D4
+        node_ref -> NODE_OP NAME
+        """
         node.kid = [node.kid[-1]]
         replace_node(
             node,
@@ -1756,7 +2192,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_edge_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build EdgeRef Ast node."""
+        """# noqa: D2, D4
+        edge_ref -> EDGE_OP NAME
+        """
         node.kid = [node.kid[-1]]
         replace_node(
             node,
@@ -1769,7 +2207,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_walker_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build WalkerRef Ast node."""
+        """# noqa: D2, D4
+        walker_ref -> WALKER_OP NAME
+        """
         node.kid = [node.kid[-1]]
         replace_node(
             node,
@@ -1782,7 +2222,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_object_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ObjectRef Ast node."""
+        """# noqa: D2, D4
+        object_ref -> OBJECT_OP NAME
+        """
         node.kid = [node.kid[-1]]
         replace_node(
             node,
@@ -1795,7 +2237,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_ability_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build AbilityRef Ast node."""
+        """# noqa: D2, D4
+        ability_ref -> ABILITY_OP NAME
+        """
         node.kid = [node.kid[-1]]
         replace_node(
             node,
@@ -1808,11 +2252,18 @@ class AstBuildPass(Pass):
         )
 
     def exit_edge_op_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build EdgeOpRef Ast node."""
+        """# noqa: D2, D4
+        edge_op_ref -> edge_any
+        edge_op_ref -> edge_from
+        edge_op_ref -> edge_to
+        """
         replace_node(node, node.kid[0])
 
     def exit_edge_to(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build EdgeTo Ast node."""
+        """# noqa: D2, D4
+        edge_to -> ARROW_R_p1 expression ARROW_R_p2
+        edge_to -> ARROW_R
+        """
         if len(node.kid) == 3:
             replace_node(
                 node,
@@ -1837,7 +2288,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_edge_from(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build EdgeFrom Ast node."""
+        """# noqa: D2, D4
+        edge_from -> ARROW_L_p1 expression ARROW_L_p2
+        edge_from -> ARROW_L
+        """
         if len(node.kid) == 3:
             replace_node(
                 node,
@@ -1862,7 +2316,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_edge_any(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build EdgeAny Ast node."""
+        """# noqa: D2, D4
+        edge_any -> ARROW_L_p1 expression ARROW_R_p2
+        edge_any -> ARROW_BI
+        """
         if len(node.kid) == 3:
             replace_node(
                 node,
@@ -1887,11 +2344,17 @@ class AstBuildPass(Pass):
             )
 
     def exit_connect_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ConnectOp Ast node."""
+        """# noqa: D2, D4
+        connect_op -> connect_any
+        connect_op -> connect_from
+        connect_op -> connect_to
+        """
         replace_node(node, node.kid[0])
 
     def exit_disconnect_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build DisconnectOp Ast node."""
+        """# noqa: D2, D4
+        disconnect_op -> NOT edge_op_ref
+        """
         node = replace_node(node, node.kid[1])
         if type(node) == ast.EdgeOpRef:
             node = replace_node(
@@ -1906,7 +2369,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_connect_to(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ConnectTo Ast node."""
+        """# noqa: D2, D4
+        connect_to -> CARROW_R_p1 expression CARROW_R_p2
+        connect_to -> CARROW_R
+        """
         if len(node.kid) == 3:
             replace_node(
                 node,
@@ -1931,7 +2397,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_connect_from(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ConnectFrom Ast node."""
+        """# noqa: D2, D4
+        connect_from -> CARROW_L_p1 expression CARROW_L_p2
+        connect_from -> CARROW_L
+        """
         if len(node.kid) == 3:
             replace_node(
                 node,
@@ -1956,7 +2425,10 @@ class AstBuildPass(Pass):
             )
 
     def exit_connect_any(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build ConnectAny Ast node."""
+        """# noqa: D2, D4
+        connect_any -> CARROW_L_p1 expression CARROW_R_p2
+        connect_any -> CARROW_BI
+        """
         if len(node.kid) == 3:
             replace_node(
                 node,
@@ -1981,7 +2453,9 @@ class AstBuildPass(Pass):
             )
 
     def exit_filter_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build FilterCtx Ast node."""
+        """# noqa: D2, D4
+        filter_ctx -> LPAREN EQ filter_compare_list RPAREN
+        """
         node.kid = node.kid[:-4]
         replace_node(
             node,
@@ -1994,7 +2468,9 @@ class AstBuildPass(Pass):
         )
 
     def exit_spawn_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build SpawnCtx Ast node."""
+        """# noqa: D2, D4
+        spawn_ctx -> LBRACE param_list RBRACE
+        """
         node = replace_node(node, node.kid[1])
         replace_node(
             node,
@@ -2007,7 +2483,10 @@ class AstBuildPass(Pass):
         )
 
     def exit_filter_compare_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build FilterCompareList Ast node."""
+        """# noqa: D2, D4
+        filter_compare_list -> filter_compare_list COMMA NAME cmp_op expression
+        filter_compare_list -> NAME cmp_op expression
+        """
         if len(node.kid) == 3:
             node.parent.kid = [node] + node.parent.kid
         else:
@@ -2026,5 +2505,7 @@ class AstBuildPass(Pass):
         )
 
     def exit_empty(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """Build Empty Ast node."""
+        """# noqa: D2, D4
+        empty -> <empty>
+        """
         replace_node(node, ast.Blank())
