@@ -163,10 +163,10 @@ class PyCodeGenPass(Pass):
         name: Token,
         alias: Token | Blank,
         """
-        if node.alias.is_blank():
-            self.emit(node, node.name.value)
-        else:
+        if type(node.alias) == ast.Token:
             self.emit(node, node.name.value + " as " + node.alias.value)
+        else:
+            self.emit(node, node.name.value)
 
     def enter_architype(self: "PyCodeGenPass", node: ast.Architype) -> None:
         """Sub objects.
