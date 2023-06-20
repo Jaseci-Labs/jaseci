@@ -886,7 +886,7 @@ class AssertStmt(AstNode):
     def __init__(
         self: "AssertStmt",
         condition: "ExprType",
-        error_msg: "ExprType",
+        error_msg: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -902,13 +902,13 @@ class CtrlStmt(AstNode):
 
     def __init__(
         self: "CtrlStmt",
-        stmt: AstNode,
+        ctrl: Token,
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize control statement node."""
-        self.stmt = stmt
+        self.ctrl = ctrl
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -917,7 +917,7 @@ class DeleteStmt(AstNode):
 
     def __init__(
         self: "DeleteStmt",
-        target: AstNode,
+        target: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -932,7 +932,7 @@ class ReportStmt(AstNode):
 
     def __init__(
         self: "ReportStmt",
-        expr: AstNode,
+        expr: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -947,7 +947,7 @@ class ReturnStmt(AstNode):
 
     def __init__(
         self: "ReturnStmt",
-        expr: AstNode,
+        expr: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -957,12 +957,27 @@ class ReturnStmt(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
+class YieldStmt(AstNode):
+    """YieldStmt node type for Jac Ast."""
+
+    def __init__(
+        self: "YieldStmt",
+        expr: Optional["ExprType"],
+        parent: Optional[AstNode],
+        kid: List[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize yeild statement node."""
+        self.expr = expr
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
 class IgnoreStmt(AstNode):
     """IgnoreStmt node type for Jac Ast."""
 
     def __init__(
         self: "IgnoreStmt",
-        target: AstNode,
+        target: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -977,9 +992,9 @@ class VisitStmt(AstNode):
 
     def __init__(
         self: "VisitStmt",
-        typ: AstNode,
-        target: AstNode,
-        else_body: AstNode,
+        typ: Optional[Token],
+        target: Optional["ExprType"],
+        else_body: Optional["ElseStmt"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -996,8 +1011,8 @@ class RevisitStmt(AstNode):
 
     def __init__(
         self: "RevisitStmt",
-        hops: AstNode,
-        else_body: AstNode,
+        hops: Optional["ExprType"],
+        else_body: Optional["ElseStmt"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1021,27 +1036,12 @@ class DisengageStmt(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class YieldStmt(AstNode):
-    """YieldStmt node type for Jac Ast."""
-
-    def __init__(
-        self: "YieldStmt",
-        expr: AstNode,
-        parent: Optional[AstNode],
-        kid: List[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize yeild statement node."""
-        self.expr = expr
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
 class SyncStmt(AstNode):
     """SyncStmt node type for Jac Ast."""
 
     def __init__(
         self: "SyncStmt",
-        target: AstNode,
+        target: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1057,8 +1057,8 @@ class Assignment(AstNode):
     def __init__(
         self: "Assignment",
         is_static: bool,
-        target: AstNode,
-        value: AstNode,
+        target: "AtomType",
+        value: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1075,9 +1075,9 @@ class BinaryExpr(AstNode):
 
     def __init__(
         self: "BinaryExpr",
-        left: AstNode,
-        right: AstNode,
-        op: AstNode,
+        left: "ExprType",
+        right: "ExprType",
+        op: Token,
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1095,8 +1095,8 @@ class IfElseExpr(AstNode):
     def __init__(
         self: "IfElseExpr",
         condition: "BinaryExpr | IfElseExpr",
-        value: AstNode,
-        else_value: AstNode,
+        value: "ExprType",
+        else_value: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1113,8 +1113,8 @@ class UnaryExpr(AstNode):
 
     def __init__(
         self: "UnaryExpr",
-        operand: AstNode,
-        op: AstNode,
+        operand: "ExprType",
+        op: Token,
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1130,7 +1130,7 @@ class SpawnObjectExpr(AstNode):
 
     def __init__(
         self: "SpawnObjectExpr",
-        target: AstNode,
+        target: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1145,7 +1145,7 @@ class UnpackExpr(AstNode):
 
     def __init__(
         self: "UnpackExpr",
-        target: AstNode,
+        target: "ExprType",
         is_dict: bool,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1153,6 +1153,7 @@ class UnpackExpr(AstNode):
     ) -> None:
         """Initialize unpack expression node."""
         self.target = target
+        self.is_dict = is_dict
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -1161,7 +1162,7 @@ class MultiString(AstNode):
 
     def __init__(
         self: "MultiString",
-        strings: list,
+        strings: List[Token],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1210,11 +1211,11 @@ class Comprehension(AstNode):
 
     def __init__(
         self: "Comprehension",
-        key_expr: AstNode,
-        out_expr: AstNode,
+        key_expr: Optional["ExprType"],
+        out_expr: "ExprType",
         name: Token,
-        collection: AstNode,
-        conditional: AstNode,
+        collection: "ExprType",
+        conditional: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1233,8 +1234,8 @@ class KVPair(AstNode):
 
     def __init__(
         self: "KVPair",
-        key: AstNode,
-        value: AstNode,
+        key: "ExprType",
+        value: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1250,8 +1251,8 @@ class AtomTrailer(AstNode):
 
     def __init__(
         self: "AtomTrailer",
-        target: AstNode,
-        right: list,
+        target: "AtomType",
+        right: "IndexSlice | ArchRefType | Token",
         null_ok: bool,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1269,8 +1270,8 @@ class FuncCall(AstNode):
 
     def __init__(
         self: "FuncCall",
-        target: AstNode,
-        params: AstNode,
+        target: "AtomType",
+        params: Optional["ParamList"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1286,8 +1287,8 @@ class ParamList(AstNode):
 
     def __init__(
         self: "ParamList",
-        p_args: AstNode,
-        p_kwargs: AstNode,
+        p_args: Optional[ExprList],
+        p_kwargs: Optional["AssignmentList"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1307,8 +1308,8 @@ class IndexSlice(AstNode):
 
     def __init__(
         self: "IndexSlice",
-        start: AstNode,
-        stop: AstNode,
+        start: "ExprType",
+        stop: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1334,11 +1335,22 @@ class GlobalRef(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class HereRef(GlobalRef):
+class HereRef(AstNode):
     """HereRef node type for Jac Ast."""
 
+    def __init__(
+        self: "HereRef",
+        name: Optional[Token],
+        parent: Optional[AstNode],
+        kid: List[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize here reference expression node."""
+        self.name = name
+        super().__init__(parent=parent, kid=kid, line=line)
 
-class VisitorRef(GlobalRef):
+
+class VisitorRef(HereRef):
     """VisitorRef node type for Jac Ast."""
 
 
@@ -1371,7 +1383,7 @@ class EdgeOpRef(AstNode):
 
     def __init__(
         self: "EdgeOpRef",
-        filter_cond: AstNode,
+        filter_cond: Optional["ExprType"],
         edge_dir: EdgeDir,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1392,7 +1404,7 @@ class ConnectOp(AstNode):
 
     def __init__(
         self: "ConnectOp",
-        spawn: AstNode,
+        spawn: Optional["ExprType"],
         edge_dir: EdgeDir,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1434,7 +1446,42 @@ class FilterCtx(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-ExprType = Union[UnaryExpr, BinaryExpr, IfElseExpr, UnpackExpr, SpawnObjectExpr]
+AtomType = Union[
+    MultiString,
+    ListVal,
+    DictVal,
+    Comprehension,
+    AtomTrailer,
+    GlobalRef,
+    HereRef,
+    VisitorRef,
+    NodeRef,
+    EdgeRef,
+    WalkerRef,
+    FuncRef,
+    ObjectRef,
+    AbilityRef,
+    EdgeOpRef,
+    SpawnCtx,
+    FilterCtx,
+]
+
+ExprType = Union[
+    UnaryExpr,
+    BinaryExpr,
+    IfElseExpr,
+    UnpackExpr,
+    SpawnObjectExpr,
+    AtomType,
+]
+
+ArchRefType = Union[
+    ObjectRef,
+    AbilityRef,
+    NodeRef,
+    EdgeRef,
+    WalkerRef,
+]
 
 # Test the function
 if __name__ == "__main__":

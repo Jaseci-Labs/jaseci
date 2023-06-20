@@ -1300,7 +1300,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.CtrlStmt(
-                stmt=node.kid[0],
+                ctrl=node.kid[0],
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
@@ -1374,6 +1374,16 @@ class AstBuildPass(Pass):
         yield_stmt -> KW_YIELD expression
         yield_stmt -> KW_YIELD
         """
+        node.kid = [node.kid[1]]
+        replace_node(
+            node,
+            ast.YieldStmt(
+                expr=node.kid[0],
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_walker_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Grammar rule.
@@ -1487,17 +1497,6 @@ class AstBuildPass(Pass):
             ),
         )
 
-        node.kid = [node.kid[1]]
-        replace_node(
-            node,
-            ast.YieldStmt(
-                expr=node.kid[0],
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
     def exit_sync_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Grammar rule.
 
@@ -1537,7 +1536,8 @@ class AstBuildPass(Pass):
 
         static_assignment -> KW_HAS assignment_list SEMI
         """
-        node = replace_node(node, node.kid[1])
+        ret = replace_node(node, node.kid[1])
+        node = ret if ret else node
         for i in node.kid:
             i.is_static = True
 
@@ -2487,9 +2487,10 @@ class AstBuildPass(Pass):
 
         disconnect_op -> NOT edge_op_ref
         """
-        node = replace_node(node, node.kid[1])
+        ret = replace_node(node, node.kid[1])
+        node = ret if ret else node
         if type(node) == ast.EdgeOpRef:
-            node = replace_node(
+            replace_node(
                 node,
                 ast.DisconnectOp(
                     filter_cond=node.filter_cond,
@@ -2608,14 +2609,13 @@ class AstBuildPass(Pass):
 
         spawn_ctx -> LBRACE param_list RBRACE
         """
-        node = replace_node(node, node.kid[1])
         replace_node(
             node,
             ast.SpawnCtx(
-                spawns=node.kid,
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
+                spawns=node.kid[1].kid,
+                parent=node.kid[1].parent,
+                kid=node.kid[1].kid,
+                line=node.kid[1].line,
             ),
         )
 
