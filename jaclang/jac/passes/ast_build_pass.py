@@ -2007,10 +2007,12 @@ class AstBuildPass(Pass):
         kv_pairs -> expression COLON expression
         """
         if len(node.kid) == 3:
-            node.parent.kid = [node] + node.parent.kid
+            if node.parent is not None:
+                node.parent.kid = [node] + node.parent.kid
             node.kid = [node.kid[0], node.kid[2]]
         else:
-            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
+            if node.parent is not None:
+                node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
             node.kid = [node.kid[-3], node.kid[-1]]
         replace_node(
             node,
@@ -2617,9 +2619,11 @@ class AstBuildPass(Pass):
         filter_compare_list -> NAME cmp_op expression
         """
         if len(node.kid) == 3:
-            node.parent.kid = [node] + node.parent.kid
+            if node.parent is not None:
+                node.parent.kid = [node] + node.parent.kid
         else:
-            node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
+            if node.parent is not None:
+                node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
             node.kid = [node.kid[-3], node.kid[-2], node.kid[-1]]
         replace_node(
             node,

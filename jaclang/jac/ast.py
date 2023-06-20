@@ -9,7 +9,7 @@ class AstNode:
     """Abstract syntax tree node for Jac."""
 
     def __init__(
-        self: "AstNode", parent: Optional["AstNode"], kid: List["AstNode"], line: int
+        self: "AstNode", parent: Optional["AstNode"], kid: list, line: int
     ) -> None:
         """Initialize ast."""
         self.parent = parent
@@ -261,7 +261,7 @@ class ModuleItems(AstNode):
         self: "ModuleItems",
         items: List["ModuleItem"],
         parent: Optional[AstNode],
-        kid: List[AstNode],
+        kid: List["ModuleItem"],
         line: int,
     ) -> None:
         """Initialize module items node."""
@@ -341,7 +341,7 @@ class ArchDef(AstNode):
     def __init__(
         self: "ArchDef",
         doc: DocString,
-        mod: Token,
+        mod: Token | Blank,
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
         parent: Optional[AstNode],
