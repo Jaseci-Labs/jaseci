@@ -29,7 +29,7 @@ class AstNode:
         """Return dict representation of node."""
         ret = {
             "node": str(type(self).__name__),
-            "kid": [x.to_dict() for x in self.kid],
+            "kid": [x.to_dict() for x in self.kid if x],
             "line": self.line,
         }
         if type(self) == Token:
@@ -41,10 +41,6 @@ class AstNode:
         """Check if node is of type."""
         return type(self) == typ
 
-    def is_blank(self: "AstNode") -> bool:
-        """Check if node is blank."""
-        return self.is_type(Blank)
-
     def print(self: "AstNode", depth: Optional[int] = None) -> None:
         """Print ast."""
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
@@ -54,24 +50,17 @@ class AstNode:
 # -----------------
 
 
-def replace_node(node: AstNode, new_node: AstNode) -> AstNode:
+def replace_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
     """Replace node with new_node."""
     if node.parent:
         node.parent.kid[node.parent.kid.index(node)] = new_node
-    new_node.parent = node.parent
+    if new_node:
+        new_node.parent = node.parent
     return new_node
 
 
 # AST Parse Level Node Types
 # --------------------------
-
-
-class Blank(AstNode):
-    """Blank node type for Jac Ast."""
-
-    def __init__(self: "Blank") -> None:
-        """Initialize blank."""
-        super().__init__(parent=self, kid=[], line=0)
 
 
 class Token(AstNode):
@@ -150,7 +139,7 @@ class GlobalVars(AstNode):
     def __init__(
         self: "GlobalVars",
         doc: "DocString",
-        access: Token | Blank,
+        access: Optional[Token],
         assignments: "AssignmentList",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -206,7 +195,7 @@ class DocString(AstNode):
 
     def __init__(
         self: "DocString",
-        value: Token | Blank,
+        value: Optional[Token],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -223,8 +212,8 @@ class Import(AstNode):
         self: "Import",
         lang: Token,
         path: "ModulePath",
-        alias: Token | Blank,
-        items: "ModuleItems | Blank",
+        alias: Optional[Token],
+        items: Optional["ModuleItems"],
         is_absorb: bool,  # For includes
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -275,7 +264,7 @@ class ModuleItem(AstNode):
     def __init__(
         self: "ModuleItem",
         name: Token,
-        alias: Token | Blank,
+        alias: Optional[Token],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -341,7 +330,7 @@ class ArchDef(AstNode):
     def __init__(
         self: "ArchDef",
         doc: DocString,
-        mod: Token | Blank,
+        mod: Optional[Token],
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
         parent: Optional[AstNode],
@@ -401,10 +390,10 @@ class AbilityDecl(AstNode):
 
     def __init__(
         self: "AbilityDecl",
-        doc: AstNode,
-        access: AstNode,
-        name: AstNode,
-        signature: AstNode,
+        doc: DocString,
+        access: Token,
+        name: Token,
+        signature: "FuncSignature | TypeSpec",
         is_func: bool,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -424,10 +413,10 @@ class AbilityDef(AstNode):
 
     def __init__(
         self: "AbilityDef",
-        doc: AstNode,
-        mod: AstNode,
-        ability: AstNode,
-        body: AstNode,
+        doc: DocString,
+        mod: Optional[Token],
+        ability: "AbilityRef",
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -445,11 +434,11 @@ class AbilitySpec(AstNode):
 
     def __init__(
         self: "AbilitySpec",
-        doc: AstNode,
-        name: AstNode,
-        arch: AstNode,
-        mod: AstNode,
-        signature: AstNode,
+        doc: DocString,
+        name: Token,
+        arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
+        mod: Optional[Token],
+        signature: Optional["FuncSignature"],
         body: AstNode,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -470,7 +459,7 @@ class ArchBlock(AstNode):
 
     def __init__(
         self: "ArchBlock",
-        members: list,
+        members: List["ArchHas | ArchCan | ArchCanDecl "],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -485,8 +474,8 @@ class ArchHas(AstNode):
 
     def __init__(
         self: "ArchHas",
-        doc: AstNode,
-        access: AstNode,
+        doc: DocString,
+        access: Token,
         vars: AstNode,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -504,7 +493,7 @@ class HasVarList(AstNode):
 
     def __init__(
         self: "HasVarList",
-        vars: list,
+        vars: List["HasVar"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -519,9 +508,9 @@ class HasVar(AstNode):
 
     def __init__(
         self: "HasVar",
-        name: AstNode,
+        name: Token,
         type_tag: AstNode,
-        value: AstNode,
+        value: Optional[AstNode],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -557,9 +546,9 @@ class ArchCan(AstNode):
 
     def __init__(
         self: "ArchCan",
-        name: AstNode,
-        doc: AstNode,
-        access: AstNode,
+        name: Token,
+        doc: DocString,
+        access: Token,
         signature: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
@@ -580,9 +569,9 @@ class ArchCanDecl(AstNode):
 
     def __init__(
         self: "ArchCanDecl",
-        name: AstNode,
-        doc: AstNode,
-        access: AstNode,
+        name: Token,
+        doc: DocString,
+        access: Token,
         signature: AstNode,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -770,7 +759,7 @@ class Except(AstNode):
     def __init__(
         self: "Except",
         typ: AstNode,
-        name: AstNode,
+        name: Token,
         body: AstNode,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -824,7 +813,7 @@ class InForStmt(AstNode):
 
     def __init__(
         self: "InForStmt",
-        name: AstNode,
+        name: Token,
         collection: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
@@ -843,8 +832,8 @@ class DictForStmt(AstNode):
 
     def __init__(
         self: "DictForStmt",
-        k_name: AstNode,
-        v_name: AstNode,
+        k_name: Token,
+        v_name: Token,
         collection: AstNode,
         body: AstNode,
         parent: Optional[AstNode],
@@ -1225,7 +1214,7 @@ class Comprehension(AstNode):
         self: "Comprehension",
         key_expr: AstNode,
         out_expr: AstNode,
-        name: AstNode,
+        name: Token,
         collection: AstNode,
         conditional: AstNode,
         parent: Optional[AstNode],
@@ -1337,7 +1326,7 @@ class GlobalRef(AstNode):
 
     def __init__(
         self: "GlobalRef",
-        name: AstNode,
+        name: Token,
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,

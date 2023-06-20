@@ -26,7 +26,7 @@ class AstBuildPass(Pass):
             name=self.mod_name,
             doc=node.kid[0],
             body=node.kid[1],
-            parent=ast.Blank(),
+            parent=None,
             kid=node.kid,
             line=node.line,
         )
@@ -61,7 +61,7 @@ class AstBuildPass(Pass):
         element -> test
         element -> global_var
         """
-        node = replace_node(node, node.kid[0])
+        replace_node(node, node.kid[0])
 
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Grammar rule.
@@ -141,7 +141,7 @@ class AstBuildPass(Pass):
         doc_tag -> DOC_STRING
         doc_tag -> empty
         """
-        if node.kid[0].is_type(ast.Token):
+        if node.kid[0]:
             node.kid = [node.kid[0]]
         replace_node(
             node,
@@ -164,8 +164,8 @@ class AstBuildPass(Pass):
         meta = {
             "lang": kid[1],
             "path": kid[2],
-            "alias": ast.Blank(),
-            "items": ast.Blank(),
+            "alias": None,
+            "items": None,
             "is_absorb": False,
         }
         if len(node.kid) == 7:
@@ -200,8 +200,8 @@ class AstBuildPass(Pass):
         meta = {
             "lang": kid[1],
             "path": kid[2],
-            "alias": ast.Blank(),
-            "items": ast.Blank(),
+            "alias": None,
+            "items": None,
             "is_absorb": True,
         }
         node.kid = [kid[1], kid[2]]
@@ -268,7 +268,7 @@ class AstBuildPass(Pass):
         if node.kid[0].is_type(ast.Token) and node.kid[0].name == "NAME":
             this_item = ast.ModuleItem(
                 name=node.kid[0],
-                alias=node.kid[1] if len(node.kid) == 3 else ast.Blank(),
+                alias=node.kid[1] if len(node.kid) == 3 else None,
                 parent=node.parent,
                 kid=[node.kid[0], node.kid[2]] if len(node.kid) == 3 else [node.kid[0]],
                 line=node.line,
@@ -277,7 +277,7 @@ class AstBuildPass(Pass):
         else:
             this_item = ast.ModuleItem(
                 name=node.kid[-3] if node.kid[-2].name == "KW_AS" else node.kid[-1],
-                alias=node.kid[-1] if node.kid[-2].name == "KW_AS" else ast.Blank(),
+                alias=node.kid[-1] if node.kid[-2].name == "KW_AS" else None,
                 parent=node.parent,
                 kid=[node.kid[-3], node.kid[-1]]
                 if node.kid[-2].name == "KW_AS"
@@ -365,7 +365,7 @@ class AstBuildPass(Pass):
             node,
             ast.ArchDef(
                 doc=node.kid[0],
-                mod=node.kid[1] if len(node.kid) == 4 else ast.Blank(),
+                mod=node.kid[1] if len(node.kid) == 4 else None,
                 arch=node.kid[2] if len(node.kid) == 4 else node.kid[1],
                 body=node.kid[-1],
                 parent=node.parent,
@@ -382,7 +382,7 @@ class AstBuildPass(Pass):
         """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
-        if type(node.kid[0]) == ast.Blank:
+        if not node.kid[0]:
             del node.kid[0]
         replace_node(
             node,
@@ -483,7 +483,7 @@ class AstBuildPass(Pass):
             node,
             ast.AbilityDef(
                 doc=node.kid[0],
-                mod=node.kid[1] if len(node.kid) == 4 else ast.Blank(),
+                mod=node.kid[1] if len(node.kid) == 4 else None,
                 ability=node.kid[2] if len(node.kid) == 4 else node.kid[1],
                 body=node.kid[-1],
                 parent=node.parent,
@@ -509,17 +509,17 @@ class AstBuildPass(Pass):
                 meta["signature"] = node.kid[4]
                 meta["body"] = node.kid[5]
             else:
-                meta["signature"] = ast.Blank()
+                meta["signature"] = None
                 meta["body"] = node.kid[4]
         else:
-            meta["mod"] = ast.Blank()
+            meta["mod"] = None
             meta["arch"] = node.kid[1]
             meta["name"] = node.kid[2]
             if type(node.kid[3]) == ast.FuncSignature:
                 meta["signature"] = node.kid[3]
                 meta["body"] = node.kid[4]
             else:
-                meta["signature"] = ast.Blank()
+                meta["signature"] = None
                 meta["body"] = node.kid[3]
         replace_node(
             node,
@@ -543,7 +543,8 @@ class AstBuildPass(Pass):
         member_block -> LBRACE RBRACE
         """
         if len(node.kid) == 3:
-            node = replace_node(node, node.kid[1])
+            ret = replace_node(node, node.kid[1])
+            node = ret if ret else node
         else:
             node.kid = []
         replace_node(
@@ -571,7 +572,7 @@ class AstBuildPass(Pass):
         member_stmt -> can_stmt
         member_stmt -> has_stmt
         """
-        node = replace_node(node, node.kid[0])
+        replace_node(node, node.kid[0])
 
     def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Grammar rule.
@@ -622,7 +623,7 @@ class AstBuildPass(Pass):
             ast.HasVar(
                 name=node.kid[0],
                 type_tag=node.kid[1],
-                value=node.kid[2] if len(node.kid) == 3 else ast.Blank(),
+                value=node.kid[2] if len(node.kid) == 3 else None,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
@@ -645,7 +646,7 @@ class AstBuildPass(Pass):
         if len(node.kid) == 2:
             replace_node(node, node.kid[1])
         else:
-            replace_node(node, ast.Blank())
+            replace_node(node, None)
 
     def exit_type_name(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Grammar rule.
@@ -658,8 +659,8 @@ class AstBuildPass(Pass):
         """
         meta = {
             "typ": node.kid[0],
-            "nested1": ast.Blank(),
-            "nested2": ast.Blank(),
+            "nested1": None,
+            "nested2": None,
         }
         if len(node.kid) == 4:
             node.kid = [node.kid[0], node.kid[2]]
@@ -761,14 +762,14 @@ class AstBuildPass(Pass):
         event_clause -> empty
         """
         if len(node.kid) == 1:
-            replace_node(node, ast.Blank())
+            replace_node(node, None)
         elif len(node.kid) == 2:
             node.kid = [node.kid[1]]
             replace_node(
                 node,
                 ast.EventSignature(
                     event=node.kid[0],
-                    arch_tag_info=ast.Blank(),
+                    arch_tag_info=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -816,7 +817,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.FuncSignature(
-                    params=ast.Blank(),
+                    params=None,
                     return_type=node.kid[0],
                     parent=node.parent,
                     kid=node.kid,
@@ -867,7 +868,7 @@ class AstBuildPass(Pass):
             ast.ParamVar(
                 name=node.kid[0],
                 type_tag=node.kid[1],
-                value=node.kid[2] if len(node.kid) == 3 else ast.Blank(),
+                value=node.kid[2] if len(node.kid) == 3 else None,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
@@ -939,8 +940,8 @@ class AstBuildPass(Pass):
                 ast.IfStmt(
                     condition=node.kid[0],
                     body=node.kid[1],
-                    elseifs=ast.Blank(),
-                    else_body=ast.Blank(),
+                    elseifs=None,
+                    else_body=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -954,7 +955,7 @@ class AstBuildPass(Pass):
                     condition=node.kid[0],
                     body=node.kid[1],
                     elseifs=node.kid[2],
-                    else_body=ast.Blank(),
+                    else_body=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -967,7 +968,7 @@ class AstBuildPass(Pass):
                 ast.IfStmt(
                     condition=node.kid[0],
                     body=node.kid[1],
-                    elseifs=ast.Blank(),
+                    elseifs=None,
                     else_body=node.kid[2],
                     parent=node.parent,
                     kid=node.kid,
@@ -998,8 +999,8 @@ class AstBuildPass(Pass):
         cpy_node = ast.IfStmt(
             condition=node.kid[0],
             body=node.kid[1],
-            elseifs=ast.Blank(),
-            else_body=ast.Blank(),
+            elseifs=None,
+            else_body=None,
             parent=node.parent,
             kid=[node.kid[-2], node.kid[-1]],
             line=node.line,
@@ -1048,8 +1049,8 @@ class AstBuildPass(Pass):
                 node,
                 ast.TryStmt(
                     body=node.kid[0],
-                    excepts=ast.Blank(),
-                    finally_body=ast.Blank(),
+                    excepts=None,
+                    finally_body=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -1062,7 +1063,7 @@ class AstBuildPass(Pass):
                 ast.TryStmt(
                     body=node.kid[0],
                     excepts=node.kid[1],
-                    finally_body=ast.Blank(),
+                    finally_body=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -1074,7 +1075,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.TryStmt(
                     body=node.kid[0],
-                    excepts=ast.Blank(),
+                    excepts=None,
                     finally_body=node.kid[1],
                     parent=node.parent,
                     kid=node.kid,
@@ -1125,7 +1126,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.Except(
                     typ=node.kid[0],
-                    name=ast.Blank(),
+                    name=None,
                     body=node.kid[1],
                     parent=node.parent,
                     kid=node.kid,
@@ -1239,7 +1240,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.RaiseStmt(
-                    cause=ast.Blank(),
+                    cause=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -1281,7 +1282,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.AssertStmt(
                     condition=node.kid[0],
-                    error_msg=ast.Blank(),
+                    error_msg=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -1348,7 +1349,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.ReturnStmt(
-                    expr=ast.Blank(),
+                    expr=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -1408,7 +1409,7 @@ class AstBuildPass(Pass):
         visit_stmt -> KW_VISIT sub_name expression SEMI
         visit_stmt -> KW_VISIT expression SEMI
         """
-        meta = {"typ": ast.Blank(), "else_body": ast.Blank()}
+        meta = {"typ": None, "else_body": None}
         if node.kid[-1].name == "SEMI":
             if len(node.kid) == 4:
                 node.kid = [node.kid[1], node.kid[2]]
@@ -1446,7 +1447,7 @@ class AstBuildPass(Pass):
         revisit_stmt -> KW_REVISIT expression SEMI
         revisit_stmt -> KW_REVISIT SEMI
         """
-        meta = {"hops": ast.Blank(), "else_body": ast.Blank()}
+        meta = {"hops": None, "else_body": None}
         if node.kid[-1].name == "SEMI":
             if len(node.kid) == 3:
                 node.kid = [node.kid[1]]
@@ -1967,11 +1968,11 @@ class AstBuildPass(Pass):
         comprehension -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE
         """
         meta = {
-            "key_expr": ast.Blank(),
-            "out_expr": ast.Blank(),
-            "name": ast.Blank(),
-            "collection": ast.Blank(),
-            "conditional": ast.Blank(),
+            "key_expr": None,
+            "out_expr": None,
+            "name": None,
+            "collection": None,
+            "conditional": None,
         }
         if node.kid[2].name == "COLON":
             meta["key_expr"] = node.kid[1]
@@ -2104,7 +2105,7 @@ class AstBuildPass(Pass):
         func_call_tail -> LPAREN RPAREN
         """
         if len(node.kid) == 2:
-            replace_node(node, ast.Blank())
+            replace_node(node, None)
         else:
             replace_node(node, node.kid[1])
 
@@ -2121,7 +2122,7 @@ class AstBuildPass(Pass):
                     node,
                     ast.ParamList(
                         p_args=node.kid[0],
-                        p_kwargs=ast.Blank(),
+                        p_kwargs=None,
                         parent=node.parent,
                         kid=node.kid,
                         line=node.line,
@@ -2131,7 +2132,7 @@ class AstBuildPass(Pass):
                 replace_node(
                     node,
                     ast.ParamList(
-                        p_args=ast.Blank(),
+                        p_args=None,
                         p_kwargs=node.kid[0],
                         parent=node.parent,
                         kid=node.kid,
@@ -2180,7 +2181,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.IndexSlice(
                     start=node.kid[0],
-                    stop=ast.Blank(),
+                    stop=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -2237,7 +2238,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.HereRef(
-                    name=ast.Blank(),
+                    name=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -2266,7 +2267,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.VisitorRef(
-                    name=ast.Blank(),
+                    name=None,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -2404,7 +2405,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.EdgeOpRef(
-                    filter_cond=ast.Blank(),
+                    filter_cond=None,
                     edge_dir=ast.EdgeDir.OUT,
                     parent=node.parent,
                     kid=node.kid,
@@ -2433,7 +2434,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.EdgeOpRef(
-                    filter_cond=ast.Blank(),
+                    filter_cond=None,
                     edge_dir=ast.EdgeDir.IN,
                     parent=node.parent,
                     kid=node.kid,
@@ -2462,7 +2463,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.EdgeOpRef(
-                    filter_cond=ast.Blank(),
+                    filter_cond=None,
                     edge_dir=ast.EdgeDir.BOTH,
                     parent=node.parent,
                     kid=node.kid,
@@ -2518,7 +2519,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.ConnectOp(
-                    spawn=ast.Blank(),
+                    spawn=None,
                     edge_dir=ast.EdgeDir.OUT,
                     parent=node.parent,
                     kid=node.kid,
@@ -2547,7 +2548,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.ConnectOp(
-                    spawn=ast.Blank(),
+                    spawn=None,
                     edge_dir=ast.EdgeDir.IN,
                     parent=node.parent,
                     kid=node.kid,
@@ -2576,7 +2577,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.ConnectOp(
-                    spawn=ast.Blank(),
+                    spawn=None,
                     edge_dir=ast.EdgeDir.BOTH,
                     parent=node.parent,
                     kid=node.kid,
@@ -2646,4 +2647,4 @@ class AstBuildPass(Pass):
 
         empty -> <empty>
         """
-        replace_node(node, ast.Blank())
+        replace_node(node, None)

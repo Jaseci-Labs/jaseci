@@ -63,7 +63,8 @@ class Pass:
         """Traverse tree."""
         self.enter_node(node)
         for i in node.kid:
-            self.traverse(i)
+            if i:
+                self.traverse(i)
         self.exit_node(node)
 
     def get_imcomplete(self: "Pass") -> List[str]:
@@ -77,7 +78,7 @@ def parse_tree_to_ast(
     """Convert parser output to ast, also parses fstrings."""
     from jaclang.utils.fstring_parser import FStringLexer, FStringParser
 
-    ast_tree: ast.AstNode = ast.Blank()
+    ast_tree: Optional[ast.AstNode] = None
     if not isinstance(tree, ast.AstNode):
         if isinstance(tree, tuple):
             kids = tree[2:]

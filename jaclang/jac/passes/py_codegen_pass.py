@@ -24,7 +24,8 @@ class PyCodeGenPass(Pass):
 
     def enter_node(self: Pass, node: AstNode) -> None:
         """Enter node."""
-        node.meta["py_code"] = ""
+        if node:
+            node.meta["py_code"] = ""
         return Pass.enter_node(self, node)
 
     def indent_str(self: "PyCodeGenPass", indent_delta: int) -> str:
@@ -87,7 +88,7 @@ class PyCodeGenPass(Pass):
         """Sub objects.
 
         doc: "DocString",
-        access: Token | Blank,
+        access: Optional[Token],
         assignments: "AssignmentList",
         """
         self.emit_ln(node, node.assignments.meta["py_code"])
@@ -114,7 +115,7 @@ class PyCodeGenPass(Pass):
     def exit_doc_string(self: "PyCodeGenPass", node: ast.DocString) -> None:
         """Sub objects.
 
-        value: Token | Blank,
+        value: Optional[Token],
         """
         if type(node.value) == ast.Token:
             self.emit_ln(node, node.value.value)
@@ -125,12 +126,12 @@ class PyCodeGenPass(Pass):
 
         lang: Token,
         path: "ModulePath",
-        alias: Token | Blank,
-        items: "ModuleItems | Blank",
+        alias: Optional[Token],
+        items: Optional["ModuleItems"],
         is_absorb: bool,  # For includes
         """
-        if node.items.is_blank():
-            if node.alias.is_blank():
+        if not node.items:
+            if not node.alias:
                 self.emit_ln(node, f"import {node.path.meta['py_code']}")
             else:
                 self.emit_ln(
@@ -161,7 +162,7 @@ class PyCodeGenPass(Pass):
         """Sub objects.
 
         name: Token,
-        alias: Token | Blank,
+        alias: Optional[Token],
         """
         if type(node.alias) == ast.Token:
             self.emit(node, node.name.value + " as " + node.alias.value)
@@ -179,14 +180,14 @@ class PyCodeGenPass(Pass):
         base_classes: "BaseClasses",
         body: "ArchBlock",
         """
-        if node.base_classes.is_blank():
+        if not node.base_classes:
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
             self.emit_ln(
                 node,
                 f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
             )
-        self.emit_ln(node, node.doc.value.meta["py_code"], indent_delta=1)
+        self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit(node, node.body.meta["py_code"])
 
     @Pass.incomplete
@@ -230,5 +231,5 @@ class PyCodeGenPass(Pass):
         body: "CodeBlock",
         """
         self.emit_ln(node, f"def {node.name.value}{node.signature.meta['py_code']}:")
-        self.emit_ln(node, node.doc.value.meta["py_code"], indent_delta=1)
+        self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit(node, node.body.meta["py_code"])

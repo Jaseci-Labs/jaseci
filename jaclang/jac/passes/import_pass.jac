@@ -2,7 +2,7 @@
 
 import:py jaclang.jac.jac_ast as ast;
 import:py os;
-import:py from jaclang.jac.jac_ast, AstNode, is_blank;
+import:py from jaclang.jac.jac_ast, AstNode;
 import:py from jaclang.jac.passes.ir_pass, Pass;
 import:py from jaclang.jac.utils, jac_file_to_ast;
 
@@ -19,7 +19,7 @@ object ImportPass:Pass {
     can exit_import(nd:AstNode) {
         alias = None;
         if nd.lang == 'jac' {
-            if not is_blank(nd.alias) {
+            if not nd.alias {
                 alias = nd.alias.value;
                 alias |> print;
             }
