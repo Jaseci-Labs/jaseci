@@ -882,7 +882,8 @@ class AstBuildPass(Pass):
         code_block -> LBRACE RBRACE
         """
         if len(node.kid) == 3:
-            node = replace_node(node, node.kid[1])
+            ret = replace_node(node, node.kid[1])
+            node = ret if ret else node
         else:
             node.kid = []
         replace_node(
@@ -1908,7 +1909,8 @@ class AstBuildPass(Pass):
         list_val -> LSQUARE RSQUARE
         """
         if len(node.kid) > 2:
-            node = replace_node(node, node.kid[1])
+            ret = replace_node(node, node.kid[1])
+            node = ret if ret else node
         else:
             node.kid = []
         replace_node(

@@ -1,6 +1,6 @@
 """Abstract class for IR Passes for Jac."""
 import pprint
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional, Type, Union
 
 from jaclang.core.edge import EdgeDir
 
@@ -283,7 +283,7 @@ class Architype(AstNode):
         name: Token,
         typ: Token,
         doc: DocString,
-        access: Token,
+        access: Optional[Token],
         base_classes: "BaseClasses",
         body: "ArchBlock",
         parent: Optional[AstNode],
@@ -306,7 +306,7 @@ class ArchDecl(AstNode):
     def __init__(
         self: "ArchDecl",
         doc: DocString,
-        access: Token,
+        access: Optional[Token],
         typ: Token,
         name: Token,
         base_classes: "BaseClasses",
@@ -368,7 +368,7 @@ class Ability(AstNode):
         name: Token,
         is_func: bool,
         doc: DocString,
-        access: Token,
+        access: Optional[Token],
         signature: "FuncSignature | TypeSpec",
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -391,7 +391,7 @@ class AbilityDecl(AstNode):
     def __init__(
         self: "AbilityDecl",
         doc: DocString,
-        access: Token,
+        access: Optional[Token],
         name: Token,
         signature: "FuncSignature | TypeSpec",
         is_func: bool,
@@ -439,7 +439,7 @@ class AbilitySpec(AstNode):
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         mod: Optional[Token],
         signature: Optional["FuncSignature"],
-        body: AstNode,
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -475,8 +475,8 @@ class ArchHas(AstNode):
     def __init__(
         self: "ArchHas",
         doc: DocString,
-        access: Token,
-        vars: AstNode,
+        access: Optional[Token],
+        vars: "HasVarList",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -509,7 +509,7 @@ class HasVar(AstNode):
     def __init__(
         self: "HasVar",
         name: Token,
-        type_tag: AstNode,
+        type_tag: "TypeSpec",
         value: Optional[AstNode],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -527,9 +527,9 @@ class TypeSpec(AstNode):
 
     def __init__(
         self: "TypeSpec",
-        typ: AstNode,
-        nested1: AstNode,  # needed for lists
-        nested2: AstNode,  # needed for dicts
+        typ: Token,
+        nested1: "TypeSpec",  # needed for lists
+        nested2: "TypeSpec",  # needed for dicts
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -548,9 +548,9 @@ class ArchCan(AstNode):
         self: "ArchCan",
         name: Token,
         doc: DocString,
-        access: Token,
-        signature: AstNode,
-        body: AstNode,
+        access: Optional[Token],
+        signature: Optional["EventSignature | FuncSignature"],
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -571,8 +571,8 @@ class ArchCanDecl(AstNode):
         self: "ArchCanDecl",
         name: Token,
         doc: DocString,
-        access: Token,
-        signature: AstNode,
+        access: Optional[Token],
+        signature: Optional["EventSignature | FuncSignature"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -590,8 +590,8 @@ class EventSignature(AstNode):
 
     def __init__(
         self: "EventSignature",
-        event: AstNode,
-        arch_tag_info: AstNode,
+        event: Token,
+        arch_tag_info: Optional["NameList | Token"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -622,8 +622,8 @@ class FuncSignature(AstNode):
 
     def __init__(
         self: "FuncSignature",
-        params: AstNode,
-        return_type: AstNode,
+        params: Optional["FuncParams"],
+        return_type: Optional[TypeSpec],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -673,10 +673,10 @@ class IfStmt(AstNode):
 
     def __init__(
         self: "IfStmt",
-        condition: AstNode,
-        body: AstNode,
-        elseifs: AstNode,
-        else_body: AstNode,
+        condition: "ExprType",
+        body: "CodeBlock",
+        elseifs: Optional["ElseIfs"],
+        else_body: Optional["ElseStmt"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -709,7 +709,7 @@ class ElseStmt(AstNode):
 
     def __init__(
         self: "ElseStmt",
-        body: AstNode,
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -724,9 +724,9 @@ class TryStmt(AstNode):
 
     def __init__(
         self: "TryStmt",
-        body: AstNode,
-        excepts: AstNode,
-        finally_body: AstNode,
+        body: "CodeBlock",
+        excepts: Optional["ExceptList"],
+        finally_body: Optional["FinallyStmt"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -743,7 +743,7 @@ class ExceptList(AstNode):
 
     def __init__(
         self: "ExceptList",
-        excepts: list,
+        excepts: List["Except"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -758,9 +758,9 @@ class Except(AstNode):
 
     def __init__(
         self: "Except",
-        typ: AstNode,
-        name: Token,
-        body: AstNode,
+        typ: "ExprType",
+        name: Optional[Token],
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -777,7 +777,7 @@ class FinallyStmt(AstNode):
 
     def __init__(
         self: "FinallyStmt",
-        body: AstNode,
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -792,10 +792,10 @@ class IterForStmt(AstNode):
 
     def __init__(
         self: "IterForStmt",
-        iter: AstNode,
-        condition: AstNode,
-        count_by: AstNode,
-        body: AstNode,
+        iter: "Assignment",
+        condition: "ExprType",
+        count_by: "ExprType",
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -814,8 +814,8 @@ class InForStmt(AstNode):
     def __init__(
         self: "InForStmt",
         name: Token,
-        collection: AstNode,
-        body: AstNode,
+        collection: "ExprType",
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -834,8 +834,8 @@ class DictForStmt(AstNode):
         self: "DictForStmt",
         k_name: Token,
         v_name: Token,
-        collection: AstNode,
-        body: AstNode,
+        collection: "ExprType",
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -853,8 +853,8 @@ class WhileStmt(AstNode):
 
     def __init__(
         self: "WhileStmt",
-        condition: AstNode,
-        body: AstNode,
+        condition: "ExprType",
+        body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -870,7 +870,7 @@ class RaiseStmt(AstNode):
 
     def __init__(
         self: "RaiseStmt",
-        cause: AstNode,
+        cause: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -885,8 +885,8 @@ class AssertStmt(AstNode):
 
     def __init__(
         self: "AssertStmt",
-        condition: AstNode,
-        error_msg: AstNode,
+        condition: "ExprType",
+        error_msg: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1176,9 +1176,7 @@ class ListVal(AstNode):
 
     def __init__(
         self: "ListVal",
-        values: List[
-            UnaryExpr | BinaryExpr | IfElseExpr | UnpackExpr | SpawnObjectExpr
-        ],
+        values: List["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1435,6 +1433,8 @@ class FilterCtx(AstNode):
         self.compares = compares
         super().__init__(parent=parent, kid=kid, line=line)
 
+
+ExprType = Union[UnaryExpr, BinaryExpr, IfElseExpr, UnpackExpr, SpawnObjectExpr]
 
 # Test the function
 if __name__ == "__main__":
