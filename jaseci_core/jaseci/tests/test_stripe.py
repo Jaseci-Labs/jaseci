@@ -43,6 +43,7 @@ class StripeTests(CoreTest):
         stripe.Invoice.retrieve = Mock()
         stripe.SubscriptionItem.create_usage_record = Mock()
         stripe.checkout.Session.create = Mock()
+        stripe.billing_portal.Session.create = Mock()
 
     @classmethod
     def tearDownClass(cls):
@@ -200,4 +201,10 @@ class StripeTests(CoreTest):
             mode="payment",
             line_items=[{"price": "price_H5ggYwtDq4fbrJ", "quantity": 12}],
             cancel_url="https://example.com/cancel",
+        )
+
+    @jac_testcase("stripe.jac", "create_billing_portal_session")
+    def test_stripe_create_billing_portal_session(self, ret):
+        stripe.billing_portal.Session.create.assert_called_once_with(
+            customer="cus_O7ECcoZCZFwinb", return_url="https://example.com/account"
         )

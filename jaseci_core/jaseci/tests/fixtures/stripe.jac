@@ -164,3 +164,12 @@ walker create_checkout_session {
 
     stripe.checkout_session_create(success_url, mode, line_items = line_items, cancel_url = cancel_url);
 }
+
+walker create_billing_portal_session {
+    can stripe.billing_portal_session_create;
+
+    stripe.billing_portal_session_create(
+        customer="cus_O7ECcoZCZFwinb",
+        return_url="https://example.com/account"
+    );
+}

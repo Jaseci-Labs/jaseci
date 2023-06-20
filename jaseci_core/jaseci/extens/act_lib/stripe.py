@@ -188,6 +188,14 @@ def checkout_session_create(success_url: str, mode: str, **kwargs):
     )
 
 
+@jaseci_action()
+def billing_portal_session_create(customer: str, **kwargs):
+    return stripe().billing_portal.Session.create(
+        customer=customer,
+        **kwargs,
+    )
+
+
 #################################################
 #            WITH PRE CUSTOM PROCESS            #
 #################################################
