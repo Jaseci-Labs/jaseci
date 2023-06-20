@@ -17,7 +17,8 @@ class AstBuildPass(Pass):
         super().__init__(ir=ir)
 
     def exit_start(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4 # noqa: D2, D4
+        """Grammar rule.
+
         start -> STRING element_list
         start -> DOC_STRING element_list
         """
@@ -31,7 +32,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_element_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         element_list -> element_list element
         element_list -> element
         """
@@ -48,7 +50,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_element(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         element -> sub_ability_spec
         element -> ability
         element -> architype
@@ -61,7 +64,8 @@ class AstBuildPass(Pass):
         node = replace_node(node, node.kid[0])
 
     def exit_global_var(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         global_var -> doc_tag KW_GLOBAL access_tag assignment_list SEMI
         """
         node.kid = [node.kid[0], node.kid[2], node.kid[3]]
@@ -78,7 +82,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_access(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         access -> KW_PROT
         access -> KW_PUB
         access -> KW_PRIV
@@ -86,14 +91,16 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_access_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         access_tag -> empty
         access_tag -> COLON access
         """
         replace_node(node, node.kid[-1])
 
     def exit_test(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         test -> doc_tag KW_TEST NAME multistring code_block
         """
         del node.kid[1]
@@ -111,7 +118,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_mod_code(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         mod_code -> doc_tag KW_WITH KW_ENTRY code_block
         """
         node.kid = [node.kid[0], node.kid[-1]]
@@ -127,7 +135,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_doc_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         doc_tag -> STRING
         doc_tag -> DOC_STRING
         doc_tag -> empty
@@ -145,7 +154,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_import_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         import_stmt -> KW_IMPORT sub_name KW_FROM import_path COMMA name_as_list SEMI
         import_stmt -> KW_IMPORT sub_name import_path KW_AS NAME SEMI
         import_stmt -> KW_IMPORT sub_name import_path SEMI
@@ -182,7 +192,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_include_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         include_stmt -> KW_INCLUDE sub_name import_path SEMI
         """
         kid = node.kid
@@ -209,7 +220,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_import_path(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         import_path -> import_path_prefix import_path_tail
         import_path -> import_path_prefix
         """
@@ -228,14 +240,16 @@ class AstBuildPass(Pass):
         )
 
     def exit_import_path_prefix(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         import_path_prefix -> DOT DOT NAME
         import_path_prefix -> DOT NAME
         import_path_prefix -> NAME
         """
 
     def exit_import_path_tail(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         import_path_tail -> import_path_tail DOT NAME
         import_path_tail -> DOT NAME
         """
@@ -243,7 +257,8 @@ class AstBuildPass(Pass):
             node.kid = node.kid[0].kid + [node.kid[1], node.kid[2]]
 
     def exit_name_as_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         name_as_list -> name_as_list COMMA NAME KW_AS NAME
         name_as_list -> name_as_list COMMA NAME
         name_as_list -> NAME KW_AS NAME
@@ -278,7 +293,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_architype(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         architype -> architype_def
         architype -> architype_decl
         architype -> architype_inline_spec
@@ -286,7 +302,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_architype_inline_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         architype_inline_spec -> doc_tag KW_WALKER access_tag NAME inherited_archs member_block
         architype_inline_spec -> doc_tag KW_OBJECT access_tag NAME inherited_archs member_block
         architype_inline_spec -> doc_tag KW_EDGE access_tag NAME inherited_archs member_block
@@ -316,7 +333,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_architype_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         architype_decl -> doc_tag KW_WALKER access_tag NAME inherited_archs SEMI
         architype_decl -> doc_tag KW_OBJECT access_tag NAME inherited_archs SEMI
         architype_decl -> doc_tag KW_EDGE access_tag NAME inherited_archs SEMI
@@ -338,7 +356,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_architype_def(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         architype_def -> doc_tag NAME strict_arch_ref member_block
         architype_def -> doc_tag strict_arch_ref member_block
         """
@@ -356,7 +375,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_inherited_archs(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         inherited_archs -> inherited_archs sub_name
         inherited_archs -> empty
         """
@@ -375,13 +395,15 @@ class AstBuildPass(Pass):
         )
 
     def exit_sub_name(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         sub_name -> COLON NAME
         """
         replace_node(node, node.kid[1])
 
     def exit_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         ability -> ability_def
         ability -> ability_decl
         ability -> ability_inline_spec
@@ -389,7 +411,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_ability_inline_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         ability_inline_spec -> doc_tag KW_CAN access_tag NAME func_decl code_block
         ability_inline_spec -> doc_tag KW_CAN access_tag NAME return_type_tag code_block
         """
@@ -420,7 +443,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_ability_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         ability_decl -> doc_tag KW_CAN access_tag NAME func_decl SEMI
         ability_decl -> doc_tag KW_CAN access_tag NAME return_type_tag SEMI
         """
@@ -450,7 +474,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_ability_def(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         ability_def -> doc_tag NAME ability_ref code_block
         ability_def -> doc_tag ability_ref code_block
         """
@@ -468,7 +493,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_sub_ability_spec(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         sub_ability_spec -> doc_tag NAME strict_arch_ref ability_ref func_decl code_block
         sub_ability_spec -> doc_tag NAME strict_arch_ref ability_ref code_block
         sub_ability_spec -> doc_tag strict_arch_ref ability_ref func_decl code_block
@@ -511,7 +537,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_member_block(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         member_block -> LBRACE member_stmt_list RBRACE
         member_block -> LBRACE RBRACE
         """
@@ -530,7 +557,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_member_stmt_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         member_stmt_list -> member_stmt_list member_stmt
         member_stmt_list -> member_stmt
         """
@@ -538,14 +566,16 @@ class AstBuildPass(Pass):
             node.kid = node.kid[0].kid + [node.kid[1]]
 
     def exit_member_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         member_stmt -> can_stmt
         member_stmt -> has_stmt
         """
         node = replace_node(node, node.kid[0])
 
     def exit_has_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         has_stmt -> doc_tag KW_HAS access_tag has_assign_clause SEMI
         """
         node.kid = [node.kid[0], node.kid[2], node.kid[3]]
@@ -562,7 +592,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_has_assign_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         has_assign_clause -> has_assign_clause COMMA typed_has_clause
         has_assign_clause -> typed_has_clause
         """
@@ -579,7 +610,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_typed_has_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         typed_has_clause -> NAME type_tag EQ expression
         typed_has_clause -> NAME type_tag
         """
@@ -598,13 +630,15 @@ class AstBuildPass(Pass):
         )
 
     def exit_type_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         type_tag -> COLON type_name
         """
         replace_node(node, node.kid[1])
 
     def exit_return_type_tag(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         return_type_tag -> RETURN_HINT type_name
         return_type_tag -> empty
         """
@@ -614,7 +648,8 @@ class AstBuildPass(Pass):
             replace_node(node, ast.Blank())
 
     def exit_type_name(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
         type_name -> TYP_LIST LSQUARE type_name RSQUARE
         type_name -> NAME
@@ -642,7 +677,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_builtin_type(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         builtin_type -> TYP_TYPE
         builtin_type -> TYP_ANY
         builtin_type -> TYP_BOOL
@@ -658,14 +694,16 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_can_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         can_stmt -> can_func_ability
         can_stmt -> can_ds_ability
         """
         replace_node(node, node.kid[0])
 
     def exit_can_ds_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         can_ds_ability -> doc_tag KW_CAN access_tag NAME event_clause SEMI
         can_ds_ability -> doc_tag KW_CAN access_tag NAME event_clause code_block
         """
@@ -700,14 +738,16 @@ class AstBuildPass(Pass):
             )
 
     def exit_can_func_ability(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         can_func_ability -> doc_tag KW_CAN access_tag NAME func_decl SEMI
         can_func_ability -> doc_tag KW_CAN access_tag NAME func_decl code_block
         """
         self.exit_can_ds_ability(node)
 
     def exit_event_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         event_clause -> KW_WITH name_list KW_EXIT
         event_clause -> KW_WITH name_list KW_ENTRY
         event_clause -> KW_WITH STAR_MUL KW_EXIT
@@ -744,7 +784,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_name_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         name_list -> name_list COMMA NAME
         name_list -> NAME
         """
@@ -761,7 +802,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_func_decl(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         func_decl -> LPAREN func_decl_param_list RPAREN return_type_tag
         func_decl -> LPAREN RPAREN return_type_tag
         """
@@ -791,7 +833,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_func_decl_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         func_decl_param_list -> func_decl_param_list COMMA param_var
         func_decl_param_list -> param_var
         """
@@ -808,7 +851,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_param_var(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         param_var -> NAME type_tag EQ expression
         param_var -> NAME type_tag
         """
@@ -827,7 +871,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_code_block(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         code_block -> LBRACE statement_list RBRACE
         code_block -> LBRACE RBRACE
         """
@@ -846,7 +891,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_statement_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         statement_list -> statement
         statement_list -> statement_list statement
         """
@@ -854,7 +900,8 @@ class AstBuildPass(Pass):
             node.kid = node.kid[0].kid + [node.kid[1]]
 
     def exit_statement(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         statement -> walker_stmt
         statement -> yield_stmt SEMI
         statement -> return_stmt SEMI
@@ -874,7 +921,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_if_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         if_stmt -> KW_IF expression code_block elif_list else_stmt
         if_stmt -> KW_IF expression code_block elif_list
         if_stmt -> KW_IF expression code_block else_stmt
@@ -938,7 +986,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_elif_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         elif_list -> elif_list KW_ELIF expression code_block
         elif_list -> KW_ELIF expression code_block
         """
@@ -966,7 +1015,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_else_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         else_stmt -> KW_ELSE code_block
         """
         node.kid = [node.kid[1]]
@@ -981,7 +1031,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_try_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         try_stmt -> KW_TRY code_block except_list finally_stmt
         try_stmt -> KW_TRY code_block finally_stmt
         try_stmt -> KW_TRY code_block except_list
@@ -1041,7 +1092,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_except_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         except_list -> except_list except_def
         except_list -> except_def
         """
@@ -1058,7 +1110,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_except_def(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         except_def -> KW_EXCEPT expression KW_AS NAME code_block
         except_def -> KW_EXCEPT expression code_block
         """
@@ -1090,7 +1143,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_finally_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         finally_stmt -> KW_FINALLY code_block
         """
         node.kid = [node.kid[1]]
@@ -1105,7 +1159,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_for_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         for_stmt -> KW_FOR NAME COMMA NAME KW_IN expression code_block
         for_stmt -> KW_FOR NAME KW_IN expression code_block
         for_stmt -> KW_FOR assignment KW_TO expression KW_BY expression code_block
@@ -1153,7 +1208,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_while_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         while_stmt -> KW_WHILE expression code_block
         """
         node.kid = [node.kid[1], node.kid[2]]
@@ -1169,7 +1225,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_raise_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         raise_stmt -> KW_RAISE expression
         raise_stmt -> KW_RAISE
         """
@@ -1197,7 +1254,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_assert_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         assert_stmt -> KW_ASSERT expression COMMA expression
         assert_stmt -> KW_ASSERT expression
         """
@@ -1227,7 +1285,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_ctrl_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         ctrl_stmt -> KW_SKIP
         ctrl_stmt -> KW_BREAK
         ctrl_stmt -> KW_CONTINUE
@@ -1243,7 +1302,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_delete_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         delete_stmt -> KW_DELETE expression
         """
         node.kid = [node.kid[1]]
@@ -1258,7 +1318,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_report_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         report_stmt -> KW_REPORT expression
         """
         node.kid = [node.kid[1]]
@@ -1273,7 +1334,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_return_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         return_stmt -> KW_RETURN expression
         return_stmt -> KW_RETURN
         """
@@ -1301,13 +1363,15 @@ class AstBuildPass(Pass):
             )
 
     def exit_yield_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         yield_stmt -> KW_YIELD expression
         yield_stmt -> KW_YIELD
         """
 
     def exit_walker_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         walker_stmt -> sync_stmt SEMI
         walker_stmt -> disengage_stmt SEMI
         walker_stmt -> revisit_stmt
@@ -1317,7 +1381,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[1])
 
     def exit_ignore_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         ignore_stmt -> KW_IGNORE expression
         """
         node.kid = [node.kid[1]]
@@ -1332,7 +1397,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_visit_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         visit_stmt -> KW_VISIT sub_name expression else_stmt
         visit_stmt -> KW_VISIT expression else_stmt
         visit_stmt -> KW_VISIT sub_name expression SEMI
@@ -1369,7 +1435,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_revisit_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         revisit_stmt -> KW_REVISIT expression else_stmt
         revisit_stmt -> KW_REVISIT else_stmt
         revisit_stmt -> KW_REVISIT expression SEMI
@@ -1400,7 +1467,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_disengage_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         disengage_stmt -> KW_DISENGAGE
         """
         node.kid = []
@@ -1425,7 +1493,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_sync_stmt(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         sync_stmt -> KW_SYNC expression
         """
         node.kid = [node.kid[1]]
@@ -1440,7 +1509,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_assignment(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         assignment -> atom EQ expression
         """
         node.kid = [node.kid[-3], node.kid[-1]]
@@ -1457,7 +1527,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_static_assignment(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         static_assignment -> KW_HAS assignment_list SEMI
         """
         node = replace_node(node, node.kid[1])
@@ -1465,7 +1536,7 @@ class AstBuildPass(Pass):
             i.is_static = True
 
     def binary_op_helper(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4"""
+        """Grammar rule."""
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
         else:
@@ -1483,7 +1554,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_expression(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         expression -> walrus_assign KW_IF expression KW_ELSE expression
         expression -> walrus_assign
         """
@@ -1504,14 +1576,16 @@ class AstBuildPass(Pass):
             )
 
     def exit_walrus_assign(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         walrus_assign -> pipe walrus_op walrus_assign
         walrus_assign -> pipe
         """
         self.binary_op_helper(node)
 
     def exit_pipe(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         pipe -> spawn_ctx PIPE_FWD pipe
         pipe -> pipe_back PIPE_FWD spawn_ctx
         pipe -> pipe_back PIPE_FWD filter_ctx
@@ -1521,7 +1595,8 @@ class AstBuildPass(Pass):
         self.binary_op_helper(node)
 
     def exit_pipe_back(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         pipe_back -> spawn_ctx PIPE_BKWD pipe_back
         pipe_back -> elvis_check PIPE_BKWD spawn_ctx
         pipe_back -> elvis_check PIPE_BKWD filter_ctx
@@ -1531,14 +1606,16 @@ class AstBuildPass(Pass):
         self.binary_op_helper(node)
 
     def exit_elvis_check(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         elvis_check -> logical ELVIS_OP elvis_check
         elvis_check -> logical
         """
         self.binary_op_helper(node)
 
     def exit_logical(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         logical -> compare KW_OR logical
         logical -> compare KW_AND logical
         logical -> compare
@@ -1546,7 +1623,8 @@ class AstBuildPass(Pass):
         self.binary_op_helper(node)
 
     def exit_compare(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         compare -> arithmetic cmp_op compare
         compare -> NOT compare
         compare -> arithmetic
@@ -1567,7 +1645,8 @@ class AstBuildPass(Pass):
             self.binary_op_helper(node)
 
     def exit_arithmetic(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         arithmetic -> term MINUS arithmetic
         arithmetic -> term PLUS arithmetic
         arithmetic -> term
@@ -1575,7 +1654,8 @@ class AstBuildPass(Pass):
         self.binary_op_helper(node)
 
     def exit_term(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         term -> factor MOD term
         term -> factor DIV term
         term -> factor STAR_MUL term
@@ -1584,7 +1664,8 @@ class AstBuildPass(Pass):
         self.binary_op_helper(node)
 
     def exit_factor(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         factor -> power
         factor -> MINUS factor
         factor -> PLUS factor
@@ -1605,14 +1686,16 @@ class AstBuildPass(Pass):
             self.binary_op_helper(node)
 
     def exit_power(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         power -> connect POW power
         power -> connect
         """
         self.binary_op_helper(node)
 
     def exit_connect(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         connect -> spawn_object
         connect -> spawn_object connect_op connect
         connect -> spawn_object disconnect_op connect
@@ -1620,7 +1703,8 @@ class AstBuildPass(Pass):
         self.binary_op_helper(node)
 
     def exit_spawn_object(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         spawn_object -> unpack
         spawn_object -> spawn_op atom
         """
@@ -1639,7 +1723,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_unpack(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         unpack -> ref
         unpack -> STAR_MUL atom
         unpack -> STAR_MUL STAR_MUL atom
@@ -1672,7 +1757,8 @@ class AstBuildPass(Pass):
                 )
 
     def exit_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         ref -> ds_call
         ref -> KW_REF ds_call
         """
@@ -1693,7 +1779,8 @@ class AstBuildPass(Pass):
             self.binary_op_helper(node)
 
     def exit_ds_call(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         ds_call -> atom
         ds_call -> PIPE_FWD atom
         """
@@ -1713,7 +1800,8 @@ class AstBuildPass(Pass):
             self.binary_op_helper(node)
 
     def exit_walrus_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         walrus_op -> MOD_EQ
         walrus_op -> DIV_EQ
         walrus_op -> MUL_EQ
@@ -1724,7 +1812,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_cmp_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         cmp_op -> KW_NIN
         cmp_op -> KW_IN
         cmp_op -> NE
@@ -1737,14 +1826,16 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_spawn_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         spawn_op -> SPAWN_OP
         spawn_op -> KW_SPAWN
         """
         replace_node(node, node.kid[0])
 
     def exit_atom(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         atom -> edge_op_ref
         atom -> arch_ref
         atom -> atomic_chain
@@ -1761,7 +1852,8 @@ class AstBuildPass(Pass):
             replace_node(node, node.kid[0])
 
     def exit_atom_literal(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         atom_literal -> builtin_type
         atom_literal -> NAME
         atom_literal -> NULL
@@ -1776,7 +1868,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_atom_collection(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         atom_collection -> comprehension
         atom_collection -> dict_val
         atom_collection -> list_val
@@ -1784,7 +1877,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_multistring(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         multistring -> FSTRING multistring
         multistring -> STRING multistring
         multistring -> FSTRING
@@ -1803,7 +1897,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_list_val(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         list_val -> LSQUARE expr_list RSQUARE
         list_val -> LSQUARE RSQUARE
         """
@@ -1822,7 +1917,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_expr_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         expr_list -> expr_list COMMA expression
         expr_list -> expression
         """
@@ -1839,7 +1935,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_dict_val(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         dict_val -> LBRACE kv_pairs RBRACE
         dict_val -> LBRACE RBRACE
         """
@@ -1858,7 +1955,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_comprehension(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         comprehension -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE
         comprehension -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE
         comprehension -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE
@@ -1903,7 +2001,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_kv_pairs(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         kv_pairs -> kv_pairs COMMA expression COLON expression
         kv_pairs -> expression COLON expression
         """
@@ -1925,7 +2024,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_atomic_chain(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         atomic_chain -> atomic_call
         atomic_chain -> atomic_chain_unsafe
         atomic_chain -> atomic_chain_safe
@@ -1933,7 +2033,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_atomic_chain_unsafe(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         atomic_chain_unsafe -> atom arch_ref
         atomic_chain_unsafe -> atom index_slice
         atomic_chain_unsafe -> atom DOT NAME
@@ -1953,7 +2054,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_atomic_chain_safe(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         atomic_chain_safe -> atom NULL_OK arch_ref
         atomic_chain_safe -> atom NULL_OK index_slice
         atomic_chain_safe -> atom NULL_OK DOT NAME
@@ -1974,7 +2076,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_atomic_call(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         atomic_call -> atom func_call_tail
         """
         replace_node(
@@ -1989,7 +2092,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_func_call_tail(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         func_call_tail -> LPAREN param_list RPAREN
         func_call_tail -> LPAREN RPAREN
         """
@@ -1999,7 +2103,8 @@ class AstBuildPass(Pass):
             replace_node(node, node.kid[1])
 
     def exit_param_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         param_list -> expr_list COMMA assignment_list
         param_list -> assignment_list
         param_list -> expr_list
@@ -2040,7 +2145,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_assignment_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         assignment_list -> assignment_list COMMA assignment
         assignment_list -> assignment
         """
@@ -2057,7 +2163,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_index_slice(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         index_slice -> LSQUARE expression COLON expression RSQUARE
         index_slice -> LSQUARE expression RSQUARE
         """
@@ -2087,7 +2194,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_global_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         global_ref -> GLOBAL_OP NAME
         """
         node.kid = [node.kid[-1]]
@@ -2102,7 +2210,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_here_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         here_ref -> HERE_OP
         here_ref -> HERE_OP NAME
         """
@@ -2130,7 +2239,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_visitor_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         visitor_ref -> VISITOR_OP
         visitor_ref -> VISITOR_OP NAME
         """
@@ -2158,7 +2268,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_arch_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         arch_ref -> ability_ref
         arch_ref -> object_ref
         arch_ref -> walker_ref
@@ -2168,7 +2279,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_strict_arch_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         strict_arch_ref -> object_ref
         strict_arch_ref -> walker_ref
         strict_arch_ref -> edge_ref
@@ -2177,7 +2289,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_node_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         node_ref -> NODE_OP NAME
         """
         node.kid = [node.kid[-1]]
@@ -2192,7 +2305,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_edge_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         edge_ref -> EDGE_OP NAME
         """
         node.kid = [node.kid[-1]]
@@ -2207,7 +2321,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_walker_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         walker_ref -> WALKER_OP NAME
         """
         node.kid = [node.kid[-1]]
@@ -2222,7 +2337,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_object_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         object_ref -> OBJECT_OP NAME
         """
         node.kid = [node.kid[-1]]
@@ -2237,7 +2353,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_ability_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         ability_ref -> ABILITY_OP NAME
         """
         node.kid = [node.kid[-1]]
@@ -2252,7 +2369,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_edge_op_ref(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         edge_op_ref -> edge_any
         edge_op_ref -> edge_from
         edge_op_ref -> edge_to
@@ -2260,7 +2378,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_edge_to(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         edge_to -> ARROW_R_p1 expression ARROW_R_p2
         edge_to -> ARROW_R
         """
@@ -2288,7 +2407,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_edge_from(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         edge_from -> ARROW_L_p1 expression ARROW_L_p2
         edge_from -> ARROW_L
         """
@@ -2316,7 +2436,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_edge_any(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         edge_any -> ARROW_L_p1 expression ARROW_R_p2
         edge_any -> ARROW_BI
         """
@@ -2344,7 +2465,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_connect_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         connect_op -> connect_any
         connect_op -> connect_from
         connect_op -> connect_to
@@ -2352,7 +2474,8 @@ class AstBuildPass(Pass):
         replace_node(node, node.kid[0])
 
     def exit_disconnect_op(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         disconnect_op -> NOT edge_op_ref
         """
         node = replace_node(node, node.kid[1])
@@ -2369,7 +2492,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_connect_to(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         connect_to -> CARROW_R_p1 expression CARROW_R_p2
         connect_to -> CARROW_R
         """
@@ -2397,7 +2521,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_connect_from(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         connect_from -> CARROW_L_p1 expression CARROW_L_p2
         connect_from -> CARROW_L
         """
@@ -2425,7 +2550,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_connect_any(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         connect_any -> CARROW_L_p1 expression CARROW_R_p2
         connect_any -> CARROW_BI
         """
@@ -2453,7 +2579,8 @@ class AstBuildPass(Pass):
             )
 
     def exit_filter_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         filter_ctx -> LPAREN EQ filter_compare_list RPAREN
         """
         node.kid = node.kid[:-4]
@@ -2468,7 +2595,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_spawn_ctx(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         spawn_ctx -> LBRACE param_list RBRACE
         """
         node = replace_node(node, node.kid[1])
@@ -2483,7 +2611,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_filter_compare_list(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         filter_compare_list -> filter_compare_list COMMA NAME cmp_op expression
         filter_compare_list -> NAME cmp_op expression
         """
@@ -2505,7 +2634,8 @@ class AstBuildPass(Pass):
         )
 
     def exit_empty(self: "AstBuildPass", node: ast.AstNode) -> None:
-        """# noqa: D2, D4
+        """Grammar rule.
+
         empty -> <empty>
         """
         replace_node(node, ast.Blank())

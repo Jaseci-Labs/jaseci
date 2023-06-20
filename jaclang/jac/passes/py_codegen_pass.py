@@ -41,35 +41,61 @@ class PyCodeGenPass(Pass):
         node.meta["py_code"] += s
 
     def exit_token(self: "PyCodeGenPass", node: ast.Token) -> None:
-        """Convert token to python code."""
+        """Sub objects.
+
+        name: str,
+        value: str,
+        """
         self.emit(node, node.value)
 
     def exit_parse(self: "PyCodeGenPass", node: ast.Parse) -> None:
-        """Convert parse to python code."""
+        """Sub objects.
+
+        name: str,
+        """
         logger.critical("Parse node should not be in this AST!!")
         raise ValueError("Parse node should not be in AST after being Built!!")
 
     def exit_module(self: "PyCodeGenPass", node: ast.Module) -> None:
-        """Convert module to python code."""
+        """Sub objects.
+
+        name: str,
+        doc: Token,
+        body: "Elements",
+        """
         if not node.doc.is_blank():
             self.emit_ln(node, node.doc.value)
         self.emit(node, node.body.meta["py_code"])
         self.ir = node
 
     def exit_elements(self: "PyCodeGenPass", node: ast.Elements) -> None:
-        """Convert module to python code."""
+        """Sub objects.
+
+         elements: List[
+            "GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec"
+        ],
+        """
         for i in node.elements:
             self.emit(node, i.meta["py_code"])
+
+    @Pass.incomplete
+    def exit_global_vars(self: "PyCodeGenPass", node: ast.GlobalVars) -> None:
+        """Sub objects.
+
+        doc: "DocString",
+        access: Token | Blank,
+        assignments: "AssignmentList",
+        """
+        self.emit_ln(node, node.assignments.meta["py_code"])
+
+    @Pass.incomplete
+    def exit_test(self: "PyCodeGenPass", node: ast.Test) -> None:
+        """Convert test to python code."""
 
     def exit_doc_string(self: "PyCodeGenPass", node: ast.DocString) -> None:
         """Convert doc_string to python code."""
         if not node.value.is_blank():
             self.emit_ln(node, node.value.value)
-
-    @Pass.incomplete
-    def exit_global_vars(self: "PyCodeGenPass", node: ast.GlobalVars) -> None:
-        """Convert global vars to python code."""
-        self.emit_ln(node, node.assignments.meta["py_code"])
 
     def exit_module_code(self: "PyCodeGenPass", node: ast.ModuleCode) -> None:
         """Convert module code to python code."""

@@ -108,6 +108,61 @@ class Parse(AstNode):
 
 # AST Mid Level Node Types
 # --------------------------
+class Module(AstNode):
+    """Whole Program node type for Jac Ast."""
+
+    def __init__(
+        self: "Module",
+        name: str,
+        doc: Token,
+        body: "Elements",
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize whole program node."""
+        self.name = name
+        self.doc = doc
+        self.body = body
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class Elements(AstNode):
+    """Elements node type for Jac Ast."""
+
+    def __init__(
+        self: "Elements",
+        elements: List[
+            "GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec"
+        ],
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize elements node."""
+        self.elements = elements
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class GlobalVars(AstNode):
+    """GlobalVars node type for Jac Ast."""
+
+    def __init__(
+        self: "GlobalVars",
+        doc: "DocString",
+        access: Token | Blank,
+        assignments: "AssignmentList",
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize global var node."""
+        self.doc = doc
+        self.access = access
+        self.assignments = assignments
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
 class DocString(AstNode):
     """DocString node type for Jac Ast."""
 
@@ -123,23 +178,111 @@ class DocString(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class GlobalVars(AstNode):
-    """GlobalVars node type for Jac Ast."""
+class BinaryExpr(AstNode):
+    """ExprBinary node type for Jac Ast."""
 
     def __init__(
-        self: "GlobalVars",
-        doc: DocString,
-        access: Token | Blank,
-        assignments: AstNode,
+        self: "BinaryExpr",
+        left: AstNode,
+        right: AstNode,
+        op: AstNode,
         parent: Optional[AstNode],
         kid: list,
         line: int,
     ) -> None:
-        """Initialize global var node."""
-        self.doc = doc
-        self.access = access
-        self.assignments = assignments
+        """Initialize binary expression node."""
+        self.left = left
+        self.right = right
+        self.op = op
         super().__init__(parent=parent, kid=kid, line=line)
+
+
+class IfElseExpr(AstNode):
+    """ExprIfElse node type for Jac Ast."""
+
+    def __init__(
+        self: "IfElseExpr",
+        condition: "BinaryExpr | IfElseExpr",
+        value: AstNode,
+        else_value: AstNode,
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize if else expression node."""
+        self.condition = condition
+        self.value = value
+        self.else_value = else_value
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class UnaryExpr(AstNode):
+    """ExprUnary node type for Jac Ast."""
+
+    def __init__(
+        self: "UnaryExpr",
+        operand: AstNode,
+        op: AstNode,
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize unary expression node."""
+        self.operand = operand
+        self.op = op
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class SpawnObjectExpr(AstNode):
+    """ExprSpawnObject node type for Jac Ast."""
+
+    def __init__(
+        self: "SpawnObjectExpr",
+        target: AstNode,
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize spawn object expression node."""
+        self.target = target
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class UnpackExpr(AstNode):
+    """ExprUnpack node type for Jac Ast."""
+
+    def __init__(
+        self: "UnpackExpr",
+        target: AstNode,
+        is_dict: bool,
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize unpack expression node."""
+        self.target = target
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ExprList(AstNode):
+    """ExprList node type for Jac Ast."""
+
+    def __init__(
+        self: "ExprList",
+        values: List[
+            UnaryExpr | BinaryExpr | IfElseExpr | UnpackExpr | SpawnObjectExpr
+        ],
+        parent: Optional[AstNode],
+        kid: list,
+        line: int,
+    ) -> None:
+        """Initialize list expression node."""
+        self.values = values
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class AssignmentList(ExprList):
+    """AssignmentList node type for Jac Ast."""
 
 
 class Test(AstNode):
@@ -274,42 +417,6 @@ class AbilitySpec(AstNode):
         self.arch = arch
         self.mod = mod
         self.signature = signature
-        self.body = body
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class Elements(AstNode):
-    """Elements node type for Jac Ast."""
-
-    def __init__(
-        self: "Elements",
-        elements: List[
-            GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec
-        ],
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize elements node."""
-        self.elements = elements
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class Module(AstNode):
-    """Whole Program node type for Jac Ast."""
-
-    def __init__(
-        self: "Module",
-        name: str,
-        doc: Token,
-        body: Elements,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize whole program node."""
-        self.name = name
-        self.doc = doc
         self.body = body
         super().__init__(parent=parent, kid=kid, line=line)
 
@@ -1080,92 +1187,6 @@ class Assignment(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class IfElseExpr(AstNode):
-    """ExprIfElse node type for Jac Ast."""
-
-    def __init__(
-        self: "IfElseExpr",
-        condition: AstNode,
-        value: AstNode,
-        else_value: AstNode,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize if else expression node."""
-        self.condition = condition
-        self.value = value
-        self.else_value = else_value
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class BinaryExpr(AstNode):
-    """ExprBinary node type for Jac Ast."""
-
-    def __init__(
-        self: "BinaryExpr",
-        left: AstNode,
-        right: AstNode,
-        op: AstNode,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize binary expression node."""
-        self.left = left
-        self.right = right
-        self.op = op
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class UnaryExpr(AstNode):
-    """ExprUnary node type for Jac Ast."""
-
-    def __init__(
-        self: "UnaryExpr",
-        operand: AstNode,
-        op: AstNode,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize unary expression node."""
-        self.operand = operand
-        self.op = op
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class SpawnObjectExpr(AstNode):
-    """ExprSpawnObject node type for Jac Ast."""
-
-    def __init__(
-        self: "SpawnObjectExpr",
-        target: AstNode,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize spawn object expression node."""
-        self.target = target
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class UnpackExpr(AstNode):
-    """ExprUnpack node type for Jac Ast."""
-
-    def __init__(
-        self: "UnpackExpr",
-        target: AstNode,
-        is_dict: bool,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize unpack expression node."""
-        self.target = target
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
 class MultiString(AstNode):
     """ExprMultiString node type for Jac Ast."""
 
@@ -1179,25 +1200,6 @@ class MultiString(AstNode):
         """Initialize multi string expression node."""
         self.strings = strings
         super().__init__(parent=parent, kid=kid, line=line)
-
-
-class ExprList(AstNode):
-    """ExprList node type for Jac Ast."""
-
-    def __init__(
-        self: "ExprList",
-        values: list,
-        parent: Optional[AstNode],
-        kid: list,
-        line: int,
-    ) -> None:
-        """Initialize list expression node."""
-        self.values = values
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class AssignmentList(ExprList):
-    """AssignmentList node type for Jac Ast."""
 
 
 class ListVal(ExprList):
