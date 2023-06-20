@@ -2,7 +2,7 @@
 from typing import Optional
 
 import jaclang.jac.ast as ast
-from jaclang.jac.ast import make_blank, replace_node
+from jaclang.jac.ast import replace_node
 from jaclang.jac.passes.ir_pass import Pass
 
 
@@ -567,7 +567,7 @@ class AstBuildPass(Pass):
     def exit_event_clause(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build EventClause Ast node."""
         if len(node.kid) == 1:
-            make_blank(node)
+            replace_node(node, ast.Blank())
         elif len(node.kid) == 2:
             node.kid = [node.kid[1]]
             replace_node(
@@ -2027,4 +2027,4 @@ class AstBuildPass(Pass):
 
     def exit_empty(self: "AstBuildPass", node: ast.AstNode) -> None:
         """Build Empty Ast node."""
-        make_blank(node)
+        replace_node(node, ast.Blank())

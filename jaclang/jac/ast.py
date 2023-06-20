@@ -39,6 +39,10 @@ class AstNode:
         """Check if node is of type."""
         return type(self) == typ
 
+    def is_blank(self: "AstNode") -> bool:
+        """Check if node is blank."""
+        return self.is_type(Blank)
+
     def print(self: "AstNode", depth: Optional[int] = None) -> None:
         """Print ast."""
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
@@ -46,17 +50,6 @@ class AstNode:
 
 # Utiliiy functions
 # -----------------
-
-
-def is_blank(node: AstNode) -> bool:
-    """Check if node is blank."""
-    return type(node) == Blank
-
-
-def make_blank(node: AstNode) -> None:
-    """Make node empty."""
-    if node.parent:
-        node.parent.kid[node.parent.kid.index(node)] = Blank()
 
 
 def replace_node(node: AstNode, new_node: AstNode) -> AstNode:

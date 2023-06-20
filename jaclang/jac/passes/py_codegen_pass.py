@@ -1,6 +1,6 @@
 """Transpilation pass for Jaseci Ast."""
 import jaclang.jac.ast as ast
-from jaclang.jac.ast import AstNode, is_blank
+from jaclang.jac.ast import AstNode
 from jaclang.jac.passes.ir_pass import Pass
 
 
@@ -38,7 +38,7 @@ class PyCodeGenPass(Pass):
 
     def exit_module(self: "PyCodeGenPass", node: ast.Module) -> None:
         """Convert module to python code."""
-        if not is_blank(node.doc):
+        if not node.doc.is_blank():
             self.emit_ln(node, node.doc.value)
         self.emit(node, node.body.meta["py_code"])
         self.ir = node
@@ -50,7 +50,7 @@ class PyCodeGenPass(Pass):
 
     def exit_doc_string(self: "PyCodeGenPass", node: ast.DocString) -> None:
         """Convert doc_string to python code."""
-        if not is_blank(node.value):
+        if not node.value.is_blank():
             self.emit_ln(node, node.value.value)
 
     def exit_global_vars(self: "PyCodeGenPass", node: ast.GlobalVars) -> None:
@@ -64,8 +64,8 @@ class PyCodeGenPass(Pass):
 
     def exit_import(self: "PyCodeGenPass", node: ast.Import) -> None:
         """Convert import to python code."""
-        if is_blank(node.items):
-            if is_blank(node.alias):
+        if node.items.is_blank():
+            if node.alias.is_blank():
                 self.emit_ln(node, f"import {node.path.meta['py_code']}")
             else:
                 self.emit_ln(
@@ -88,19 +88,19 @@ class PyCodeGenPass(Pass):
 
     def exit_module_item(self: "PyCodeGenPass", node: ast.ModuleItem) -> None:
         """Convert module item to python code."""
-        if is_blank(node.alias):
+        if node.alias.is_blank():
             self.emit(node, node.name.value)
         else:
             self.emit(node, node.name.value + " as " + node.alias.value)
 
     def enter_architype(self: "PyCodeGenPass", node: AstNode) -> None:
         """Enter architype."""
-        if not is_blank(node.doc.value):
+        if not node.doc.value.is_blank():
             self.emit(node, node.doc.value.value)
 
     def exit_architype(self: "PyCodeGenPass", node: AstNode) -> None:
         """Convert object arch to python code."""
-        if is_blank(node.base_classes):
+        if node.base_classes.is_blank():
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
             self.emit_ln(
