@@ -1653,18 +1653,10 @@ class AstBuildPass(Pass):
     def exit_logical(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        logical -> NOT logical
         logical -> compare KW_OR logical
         logical -> compare KW_AND logical
         logical -> compare
-        """
-        self.binary_op_helper(node)
-
-    def exit_compare(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        compare -> arithmetic cmp_op compare
-        compare -> NOT compare
-        compare -> arithmetic
         """
         if len(node.kid) == 2:
             node.kid = [node.kid[0], node.kid[1]]
@@ -1680,6 +1672,14 @@ class AstBuildPass(Pass):
             )
         else:
             self.binary_op_helper(node)
+
+    def exit_compare(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        compare -> arithmetic cmp_op compare
+        compare -> arithmetic
+        """
+        self.binary_op_helper(node)
 
     def exit_arithmetic(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -1705,6 +1705,7 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         factor -> power
+        factor -> BW_NOT factor
         factor -> MINUS factor
         factor -> PLUS factor
         """

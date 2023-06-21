@@ -695,6 +695,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "compare",
         "compare KW_AND logical",
         "compare KW_OR logical",
+        "NOT logical",
     )
     def logical(self, p: YaccProduction) -> YaccProduction:
         """Logical rule."""
@@ -702,7 +703,6 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "arithmetic",
-        "NOT compare",
         "arithmetic cmp_op compare",
     )
     def compare(self, p: YaccProduction) -> YaccProduction:
@@ -732,6 +732,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "PLUS factor",
         "MINUS factor",
+        "BW_NOT factor",
         "power",
     )
     def factor(self, p: YaccProduction) -> YaccProduction:

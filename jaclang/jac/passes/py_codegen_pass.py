@@ -729,6 +729,10 @@ class PyCodeGenPass(Pass):
         value: ExprType,
         else_value: ExprType,
         """
+        self.emit_ln(
+            node,
+            f"{node.value.meta['py_code']} if {node.condition.meta['py_code']} else {node.else_value.meta['py_code']}",
+        )
 
     def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
         """Sub objects.
@@ -736,6 +740,10 @@ class PyCodeGenPass(Pass):
         operand: ExprType,
         op: Token,
         """
+        if node.op.value in ["not", "-", "~", "+"]:
+            self.emit_ln(node, f"{node.op.value}{node.operand.meta['py_code']}")
+        else:
+            self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
 
     def exit_spawn_object_expr(self, node: ast.SpawnObjectExpr) -> None:
         """Sub objects.
