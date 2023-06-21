@@ -45,7 +45,7 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create a new user with encrypted password and return it"""
         created_object = get_user_model().objects.create_user(**validated_data)
-        if not created_object.is_activated:
+        if getattr(self, "_send_email", True) and not created_object.is_activated:
             send_activation_email(created_object.email)
         return created_object
 

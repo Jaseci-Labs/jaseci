@@ -26,6 +26,7 @@ class UserApi:
         global_init: str = "",
         global_init_ctx: dict = {},
         other_fields: dict = {},
+        send_email: bool = False,
     ):
         """
         Create a new user (master object)
@@ -60,7 +61,7 @@ class UserApi:
             and is_superuser.
         """
         ret = {}
-        mast = self.user_creator(name, password, other_fields)
+        mast = self.user_creator(name, password, other_fields, send_email)
         if type(mast) is dict:  # in case of upstream error
             return mast
         ret["user"] = mast.serialize()
@@ -102,7 +103,9 @@ class UserApi:
             ret["status_code"] = 400
         return ret
 
-    def user_creator(self, name, password: str = "", other_fields: dict = {}):
+    def user_creator(
+        self, name, password: str = "", other_fields: dict = {}, send_email=True
+    ):
         """
         Abstraction for user creation for elegant overriding
         """
