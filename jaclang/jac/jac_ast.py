@@ -131,7 +131,22 @@ class Elements(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class GlobalVars(AstNode):
+class OOPAccessNode(AstNode):
+    """OOPAccessNode node type for Jac Ast."""
+
+    def __init__(
+        self,
+        access: Optional[Token],
+        parent: Optional[AstNode],
+        kid: List[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize OOPAccessible node."""
+        self.access = access
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class GlobalVars(OOPAccessNode):
     """GlobalVars node type for Jac Ast."""
 
     def __init__(
@@ -145,9 +160,8 @@ class GlobalVars(AstNode):
     ) -> None:
         """Initialize global var node."""
         self.doc = doc
-        self.access = access
         self.assignments = assignments
-        super().__init__(parent=parent, kid=kid, line=line)
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
 class Test(AstNode):
@@ -273,7 +287,7 @@ class ModuleItem(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class Architype(AstNode):
+class Architype(OOPAccessNode):
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
@@ -292,13 +306,12 @@ class Architype(AstNode):
         self.name = name
         self.typ = typ
         self.doc = doc
-        self.access = access
         self.base_classes = base_classes
         self.body = body
-        super().__init__(parent=parent, kid=kid, line=line)
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
-class ArchDecl(AstNode):
+class ArchDecl(OOPAccessNode):
     """ArchDecl node type for Jac Ast."""
 
     def __init__(
@@ -314,12 +327,11 @@ class ArchDecl(AstNode):
     ) -> None:
         """Initialize arch decl node."""
         self.doc = doc
-        self.access = access
         self.typ = typ
         self.name = name
         self.base_classes = base_classes
         self.def_link: Optional["ArchDef"] = None
-        super().__init__(parent=parent, kid=kid, line=line)
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
 class ArchDef(AstNode):
@@ -358,7 +370,7 @@ class BaseClasses(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class Ability(AstNode):
+class Ability(OOPAccessNode):
     """Ability node type for Jac Ast."""
 
     def __init__(
@@ -377,13 +389,12 @@ class Ability(AstNode):
         self.name = name
         self.is_func = is_func
         self.doc = doc
-        self.access = access
         self.signature = signature
         self.body = body
-        super().__init__(parent=parent, kid=kid, line=line)
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
-class AbilityDecl(AstNode):
+class AbilityDecl(OOPAccessNode):
     """AbilityDecl node type for Jac Ast."""
 
     def __init__(
@@ -399,11 +410,10 @@ class AbilityDecl(AstNode):
     ) -> None:
         """Initialize ability decl node."""
         self.doc = doc
-        self.access = access
         self.name = name
         self.signature = signature
         self.is_func = is_func
-        super().__init__(parent=parent, kid=kid, line=line)
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
 class AbilityDef(AstNode):
@@ -467,8 +477,10 @@ class ArchBlock(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class ArchHas(AstNode):
+class ArchHas(OOPAccessNode):
     """HasStmt node type for Jac Ast."""
+
+    counter: int = 1
 
     def __init__(
         self,
@@ -481,9 +493,10 @@ class ArchHas(AstNode):
     ) -> None:
         """Initialize has statement node."""
         self.doc = doc
-        self.access = access
         self.vars = vars
-        super().__init__(parent=parent, kid=kid, line=line)
+        self.h_id = ArchHas.counter
+        ArchHas.counter += 1
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
 class HasVarList(AstNode):
@@ -526,20 +539,20 @@ class TypeSpec(AstNode):
     def __init__(
         self,
         typ: Token,
-        nested1: "TypeSpec",  # needed for lists
-        nested2: "TypeSpec",  # needed for dicts
+        list_nest: "TypeSpec",  # needed for lists
+        dict_nest: "TypeSpec",  # needed for dicts
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize type spec node."""
         self.typ = typ
-        self.nested1 = nested1
-        self.nested2 = nested2
+        self.list_nest = list_nest
+        self.dict_nest = dict_nest
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class ArchCan(AstNode):
+class ArchCan(OOPAccessNode):
     """CanDS node type for Jac Ast."""
 
     def __init__(
@@ -556,13 +569,12 @@ class ArchCan(AstNode):
         """Initialize can statement node."""
         self.name = name
         self.doc = doc
-        self.access = access
         self.signature = signature
         self.body = body
-        super().__init__(parent=parent, kid=kid, line=line)
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
-class ArchCanDecl(AstNode):
+class ArchCanDecl(OOPAccessNode):
     """CanDS node type for Jac Ast."""
 
     def __init__(
@@ -578,9 +590,8 @@ class ArchCanDecl(AstNode):
         """Initialize can statement node."""
         self.name = name
         self.doc = doc
-        self.access = access
         self.signature = signature
-        super().__init__(parent=parent, kid=kid, line=line)
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
 class EventSignature(AstNode):
@@ -605,7 +616,7 @@ class NameList(AstNode):
 
     def __init__(
         self,
-        names: list,
+        names: List[Token],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -637,7 +648,7 @@ class FuncParams(AstNode):
 
     def __init__(
         self,
-        params: list,
+        params: List["ParamVar"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -656,7 +667,7 @@ class CodeBlock(AstNode):
 
     def __init__(
         self,
-        stmts: list,
+        stmts: List["StmtType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1480,6 +1491,29 @@ ArchRefType = Union[
     EdgeRef,
     WalkerRef,
 ]
+StmtType = Union[
+    Assignment,
+    ExprType,
+    IfStmt,
+    TryStmt,
+    IterForStmt,
+    InForStmt,
+    DictForStmt,
+    WhileStmt,
+    RaiseStmt,
+    AssertStmt,
+    CtrlStmt,
+    DeleteStmt,
+    ReportStmt,
+    ReturnStmt,
+    YieldStmt,
+    SyncStmt,
+    DisengageStmt,
+    RevisitStmt,
+    VisitStmt,
+    IgnoreStmt,
+]
+
 
 # Test the function
 if __name__ == "__main__":

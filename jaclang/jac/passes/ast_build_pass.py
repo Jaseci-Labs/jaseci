@@ -657,22 +657,22 @@ class AstBuildPass(Pass):
         """
         meta = {
             "typ": node.kid[0],
-            "nested1": None,
-            "nested2": None,
+            "list_nest": None,
+            "dict_nest": None,
         }
         if len(node.kid) == 4:
             node.kid = [node.kid[0], node.kid[2]]
-            meta["nested1"] = node.kid[1]
+            meta["list_nest"] = node.kid[1]
         elif len(node.kid) == 6:
             node.kid = [node.kid[0], node.kid[2], node.kid[4]]
-            meta["nested1"] = node.kid[1]
-            meta["nested2"] = node.kid[2]
+            meta["list_nest"] = node.kid[1]
+            meta["dict_nest"] = node.kid[2]
         replace_node(
             node,
             ast.TypeSpec(
                 typ=meta["typ"],
-                nested1=meta["nested1"],
-                nested2=meta["nested2"],
+                list_nest=meta["list_nest"],
+                dict_nest=meta["dict_nest"],
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,

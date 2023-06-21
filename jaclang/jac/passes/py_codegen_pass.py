@@ -40,6 +40,23 @@ class PyCodeGenPass(Pass):
         """Emit code to node."""
         node.meta["py_code"] += s
 
+    def access_check(self, node: ast.OOPAccessNode) -> None:
+        """Check if node uses access."""
+        if node.access:
+            self.warning(
+                f"Line {node.line}, Access specifiers not supported in bootstrap Jac."
+            )
+
+    def decl_def_warn(self) -> None:
+        """Warn about declaration."""
+        self.warning(
+            "Separate declarations and definitions not supported in bootstrap Jac."
+        )
+
+    def ds_feature_warn(self) -> None:
+        """Warn about feature."""
+        self.warning("Data spatial features not supported in bootstrap Jac.")
+
     def exit_token(self, node: ast.Token) -> None:
         """Sub objects.
 
@@ -83,10 +100,7 @@ class PyCodeGenPass(Pass):
         access: Optional[Token],
         assignments: "AssignmentList",
         """
-        if node.access:
-            self.warning(
-                f"Line {node.line}, Test feature not yet supported in bootstrap Jac."
-            )
+        self.access_check(node)
         self.emit_ln(node, node.assignments.meta["py_code"])
 
     @Pass.incomplete
@@ -98,9 +112,7 @@ class PyCodeGenPass(Pass):
         description: Token,
         body: "CodeBlock",
         """
-        self.warning(
-            f"Line {node.line}, Test feature not yet supported in bootstrap Jac."
-        )
+        self.warning(f"Line {node.line}, Test feature not supported in bootstrap Jac.")
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
@@ -129,6 +141,12 @@ class PyCodeGenPass(Pass):
         items: Optional["ModuleItems"],
         is_absorb: bool,  # For includes
         """
+        if node.lang.value != "py":
+            self.warning(
+                f"Line {node.line}, Importing non-python modules not supported in bootstrap Jac."
+            )
+        if node.is_absorb:
+            self.warning(f"Line {node.line}, Includes not supported in bootstrap Jac.")
         if not node.items:
             if not node.alias:
                 self.emit_ln(node, f"import {node.path.meta['py_code']}")
@@ -175,10 +193,11 @@ class PyCodeGenPass(Pass):
         name: Token,
         typ: Token,
         doc: DocString,
-        access: Token,
+        access: Optional[Token],
         base_classes: "BaseClasses",
         body: "ArchBlock",
         """
+        self.access_check(node)
         if not node.base_classes:
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
@@ -200,6 +219,7 @@ class PyCodeGenPass(Pass):
         base_classes: "BaseClasses",
         self.def_link: Optional["ArchDef"] = None
         """
+        self.decl_def_warn()
 
     @Pass.incomplete
     def exit_arch_def(self, node: ast.ArchDef) -> None:
@@ -210,6 +230,7 @@ class PyCodeGenPass(Pass):
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
         """
+        self.decl_def_warn()
 
     def exit_base_classes(self, node: ast.BaseClasses) -> None:
         """Sub objects.
@@ -222,17 +243,19 @@ class PyCodeGenPass(Pass):
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
-         name: Token,
+        name: Token,
         is_func: bool,
         doc: DocString,
         access: Optional[Token],
         signature: FuncSignature | TypeSpec,
         body: CodeBlock,
         """
+        self.access_check(node)
         self.emit_ln(node, f"def {node.name.value}{node.signature.meta['py_code']}:")
         self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit(node, node.body.meta["py_code"])
 
+    @Pass.incomplete
     def exit_ability_decl(self, node: ast.AbilityDecl) -> None:
         """Sub objects.
 
@@ -242,7 +265,9 @@ class PyCodeGenPass(Pass):
         signature: FuncSignature | TypeSpec,
         is_func: bool,
         """
+        self.decl_def_warn()
 
+    @Pass.incomplete
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
 
@@ -251,7 +276,9 @@ class PyCodeGenPass(Pass):
         ability: AbilityRef,
         body: CodeBlock,
         """
+        self.decl_def_warn()
 
+    @Pass.incomplete
     def exit_ability_spec(self, node: ast.AbilitySpec) -> None:
         """Sub objects.
 
@@ -262,12 +289,16 @@ class PyCodeGenPass(Pass):
         signature: Optional[FuncSignature],
         body: CodeBlock,
         """
+        self.decl_def_warn()
 
+    @Pass.incomplete
     def exit_arch_block(self, node: ast.ArchBlock) -> None:
         """Sub objects.
 
         members: List[ArchHas | ArchCan | ArchCanDecl ],
         """
+        for i in node.members:
+            self.emit_ln(node, i.meta["py_code"])
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -275,7 +306,19 @@ class PyCodeGenPass(Pass):
         doc: DocString,
         access: Optional[Token],
         vars: HasVarList,
+        self.h_id = HasVar.counter
         """
+        self.emit_ln(node, f"def has_{node.h_id}:")
+        self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+        self.emit_ln(node, node.vars.meta["py_code"], indent_delta=1)
+
+    def exit_has_var_list(self, node: ast.HasVarList) -> None:
+        """Sub objects.
+
+        vars: List[HasVar],
+        """
+        for i in node.vars:
+            self.emit_ln(node, i.meta["py_code"])
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
@@ -284,21 +327,34 @@ class PyCodeGenPass(Pass):
         type_tag: TypeSpec,
         value: Optional[AstNode],
         """
-
-    def exit_has_var_list(self, node: ast.HasVarList) -> None:
-        """Sub objects.
-
-        vars: List[HasVar],
-        """
+        if node.value:
+            self.emit(
+                node,
+                f"self.{node.name.value}: {node.type_tag.meta['py_code']} = {node.value.meta['py_code']}",
+            )
+        else:
+            self.emit(
+                node, f"self.{node.name.value}: {node.type_tag.meta['py_code']} = None"
+            )
 
     def exit_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
         typ: Token,
-        nested1: TypeSpec,
-        nested2: TypeSpec,
+        list_nest: TypeSpec,
+        dict_nest: TypeSpec,
         """
+        if node.dict_nest:
+            self.emit(
+                node,
+                f"Dict[{node.list_nest.meta['py_code']}, {node.dict_nest.meta['py_code']}]",
+            )
+        elif node.list_nest:
+            self.emit(node, f"List[{node.list_nest.meta['py_code']}]")
+        else:
+            self.emit(node, node.typ.value)
 
+    @Pass.incomplete
     def exit_arch_can(self, node: ast.ArchCan) -> None:
         """Sub objects.
 
@@ -308,7 +364,17 @@ class PyCodeGenPass(Pass):
         signature: Optional[EventSignature | FuncSignature],
         body: CodeBlock,
         """
+        self.access_check(node)
+        if node.signature:  # Error for EventSignature in EventSignature
+            self.emit_ln(
+                node, f"def {node.name.value}{node.signature.meta['py_code']}:"
+            )
+        else:
+            self.emit_ln(node, f"def {node.name.value}():")
+        self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
+    @Pass.incomplete
     def exit_arch_can_decl(self, node: ast.ArchCanDecl) -> None:
         """Sub objects.
 
@@ -317,19 +383,23 @@ class PyCodeGenPass(Pass):
         access: Optional[Token],
         signature: Optional[EventSignature | FuncSignature],
         """
+        self.decl_def_warn()
 
+    @Pass.incomplete
     def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
 
         event: Token,
         arch_tag_info: Optional[NameList | Token],
         """
+        self.error("Event style abilities not supported in bootstrap Jac")
 
     def exit_name_list(self, node: ast.NameList) -> None:
         """Sub objects.
 
-        names: list,
+        names: List[Token],
         """
+        self.emit(node, ", ".join([i.value for i in node.names]))
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
@@ -337,12 +407,23 @@ class PyCodeGenPass(Pass):
         params: Optional[FuncParams],
         return_type: Optional[TypeSpec],
         """
+        self.emit(node, "(")
+        if node.params:
+            self.emit(node, node.params.meta["py_code"])
+        self.emit(node, ")")
+        if node.return_type:
+            self.emit(node, f" -> {node.return_type.meta['py_code']}")
 
     def exit_func_params(self, node: ast.FuncParams) -> None:
         """Sub objects.
 
-        params: list,
+        params: List["ParamVar"],
         """
+        first_out = False
+        for i in node.params:
+            self.emit(node, ", ") if first_out else None
+            self.emit(node, i.meta["py_code"])
+            first_out = True
 
     def exit_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
@@ -351,12 +432,22 @@ class PyCodeGenPass(Pass):
         type_tag: TypeSpec,
         value: Optional[AstNode],
         """
+        if node.value:
+            self.emit(
+                node,
+                f"{node.name.value}: {node.type_tag.meta['py_code']} = {node.value.meta['py_code']}",
+            )
+        else:
+            self.emit(node, f"{node.name.value}: {node.type_tag.meta['py_code']}")
 
     def exit_code_block(self, node: ast.CodeBlock) -> None:
         """Sub objects.
 
-        stmts: list,
+        stmts: List["StmtType"],
         """
+        self.emit(node, "\n")
+        for i in node.stmts:
+            self.emit_ln(node, i.meta["py_code"], indent_delta=1)
 
     def exit_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
@@ -366,18 +457,29 @@ class PyCodeGenPass(Pass):
         elseifs: Optional[ElseIfs],
         else_body: Optional[ElseStmt],
         """
+        self.emit_ln(node, f"if {node.condition.meta['py_code']}:")
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        if node.elseifs:
+            self.emit_ln(node, node.elseifs.meta["py_code"])
+        if node.else_body:
+            self.emit_ln(node, node.else_body.meta["py_code"])
 
     def exit_else_ifs(self, node: ast.ElseIfs) -> None:
         """Sub objects.
 
         elseifs: List[IfStmt],
         """
+        for i in node.elseifs:
+            self.emit_ln(node, f"elif {i.condition.meta['py_code']}:")
+            self.emit_ln(node, i.body.meta["py_code"], indent_delta=1)
 
     def exit_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
 
         body: CodeBlock,
         """
+        self.emit_ln(node, "else:")
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
@@ -386,6 +488,12 @@ class PyCodeGenPass(Pass):
         excepts: Optional[ExceptList],
         finally_body: Optional[FinallyStmt],
         """
+        self.emit_ln(node, "try:")
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        if node.excepts:
+            self.emit_ln(node, node.excepts.meta["py_code"])
+        if node.finally_body:
+            self.emit_ln(node, node.finally_body.meta["py_code"])
 
     def exit_except(self, node: ast.Except) -> None:
         """Sub objects.
@@ -394,18 +502,29 @@ class PyCodeGenPass(Pass):
         name: Optional[Token],
         body: CodeBlock,
         """
+        if node.name:
+            self.emit_ln(
+                node, f"except {node.typ.meta['py_code']} as {node.name.value}:"
+            )
+        else:
+            self.emit_ln(node, f"except {node.typ.meta['py_code']}:")
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
     def exit_except_list(self, node: ast.ExceptList) -> None:
         """Sub objects.
 
         excepts: List[Except],
         """
+        for i in node.excepts:
+            self.emit_ln(node, i.meta["py_code"])
 
     def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
 
         body: CodeBlock,
         """
+        self.emit_ln(node, "finally:")
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
     def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.
@@ -415,6 +534,10 @@ class PyCodeGenPass(Pass):
         count_by: ExprType,
         body: CodeBlock,
         """
+        self.emit_ln(node, f"{node.iter.meta['py_code']}")
+        self.emit_ln(node, f"while {node.condition.meta['py_code']}:")
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.emit_ln(node, f"{node.count_by.meta['py_code']}", indent_delta=1)
 
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
@@ -423,6 +546,10 @@ class PyCodeGenPass(Pass):
         collection: ExprType,
         body: CodeBlock,
         """
+        self.emit_ln(
+            node, f"for {node.name.value} in {node.collection.meta['py_code']}:"
+        )
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
     def exit_dict_for_stmt(self, node: ast.DictForStmt) -> None:
         """Sub objects.
@@ -432,6 +559,11 @@ class PyCodeGenPass(Pass):
         collection: ExprType,
         body: CodeBlock,
         """
+        self.emit_ln(
+            node,
+            f"for {node.k_name.value}, {node.v_name.value} in {node.collection.meta['py_code']}.items():",
+        )
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
@@ -439,12 +571,18 @@ class PyCodeGenPass(Pass):
         condition: ExprType,
         body: CodeBlock,
         """
+        self.emit_ln(node, f"while {node.condition.meta['py_code']}:")
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
     def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.
 
         cause: Optional[ExprType],
         """
+        if node.cause:
+            self.emit_ln(node, f"raise {node.cause.meta['py_code']}")
+        else:
+            self.emit_ln(node, "raise")
 
     def exit_assert_stmt(self, node: ast.AssertStmt) -> None:
         """Sub objects.
@@ -452,43 +590,70 @@ class PyCodeGenPass(Pass):
         condition: ExprType,
         error_msg: Optional[ExprType],
         """
+        if node.error_msg:
+            self.emit_ln(
+                node,
+                f"assert {node.condition.meta['py_code']}, {node.error_msg.meta['py_code']}",
+            )
+        else:
+            self.emit_ln(node, f"assert {node.condition.meta['py_code']}")
 
+    @Pass.incomplete
     def exit_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
 
         ctrl: Token,
         """
+        if node.ctrl.value == "skip":
+            self.error("skip is not supported in bootstrap Jac")
+        else:
+            self.emit_ln(node, node.ctrl.value)
 
     def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
+        self.emit_ln(node, f"del {node.target.meta['py_code']}")
 
+    @Pass.incomplete
     def exit_report_stmt(self, node: ast.ReportStmt) -> None:
         """Sub objects.
 
         expr: ExprType,
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete  # Need to have validation that return type specified if return present
     def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
+        if node.expr:
+            self.emit_ln(node, f"return {node.expr.meta['py_code']}")
+        else:
+            self.emit_ln(node, "return")
 
     def exit_yield_stmt(self, node: ast.YieldStmt) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
+        if node.expr:
+            self.emit_ln(node, f"yield {node.expr.meta['py_code']}")
+        else:
+            self.emit_ln(node, "yield")
 
+    @Pass.incomplete
     def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
@@ -496,22 +661,29 @@ class PyCodeGenPass(Pass):
         target: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_revisit_stmt(self, node: ast.RevisitStmt) -> None:
         """Sub objects.
 
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_sync_stmt(self, node: ast.SyncStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
+        self.ds_feature_warn()
 
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
