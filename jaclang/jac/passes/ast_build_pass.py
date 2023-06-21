@@ -1612,8 +1612,41 @@ class AstBuildPass(Pass):
     def exit_elvis_check(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        elvis_check -> logical ELVIS_OP elvis_check
-        elvis_check -> logical
+        elvis_check -> bitwise_or ELVIS_OP elvis_check
+        elvis_check -> bitwise_or
+        """
+        self.binary_op_helper(node)
+
+    def exit_bitwise_or(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        bitwise_or -> bitwise_xor BW_OR bitwise_or
+        bitwise_or -> bitwise_xor
+        """
+        self.binary_op_helper(node)
+
+    def exit_bitwise_xor(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        bitwise_xor -> bitwise_and BW_XOR bitwise_xor
+        bitwise_xor -> bitwise_and
+        """
+        self.binary_op_helper(node)
+
+    def exit_bitwise_and(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        bitwise_and -> shift BW_AND bitwise_and
+        bitwise_and -> shift
+        """
+        self.binary_op_helper(node)
+
+    def exit_shift(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        shift -> logical RSHIFT shift
+        shift -> logical LSHIFT shift
+        shift -> logical
         """
         self.binary_op_helper(node)
 
@@ -1692,7 +1725,7 @@ class AstBuildPass(Pass):
     def exit_power(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        power -> connect POW power
+        power -> connect STAR_POW power
         power -> connect
         """
         self.binary_op_helper(node)
@@ -1731,13 +1764,13 @@ class AstBuildPass(Pass):
 
         unpack -> ref
         unpack -> STAR_MUL atom
-        unpack -> STAR_MUL STAR_MUL atom
+        unpack -> STAR_POW atom
         """
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
         else:
             node.kid = [node.kid[-1]]
-            if len(node.kid) == 2:
+            if node.kid[0].name == "STAR_MUL":
                 replace_node(
                     node,
                     ast.UnpackExpr(

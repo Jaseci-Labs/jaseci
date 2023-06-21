@@ -61,6 +61,12 @@ class JacLexer(Lexer):
         "MUL_EQ",
         "DIV_EQ",
         "MOD_EQ",
+        "BW_AND_EQ",
+        "BW_OR_EQ",
+        "BW_XOR_EQ",
+        "BW_NOT_EQ",
+        "LSHIFT_EQ",
+        "RSHIFT_EQ",
         "WALRUS_EQ",
         "KW_AND",
         "KW_OR",
@@ -83,7 +89,6 @@ class JacLexer(Lexer):
         "KW_EXCEPT",
         "KW_FINALLY",
         "KW_RAISE",
-        "KW_REF",
         "DOT",
         "NOT",
         "EE",
@@ -106,7 +111,13 @@ class JacLexer(Lexer):
         "STAR_MUL",
         "DIV",
         "MOD",
-        "POW",
+        "BW_AND",
+        "BW_OR",
+        "BW_XOR",
+        "BW_NOT",
+        "LSHIFT",
+        "RSHIFT",
+        "STAR_POW",
         "LPAREN",
         "RPAREN",
         "LSQUARE",
@@ -259,6 +270,14 @@ class JacLexer(Lexer):
     MUL_EQ = r"\*="
     DIV_EQ = r"/="
     MOD_EQ = r"%="
+    BW_AND_EQ = r"&="
+    BW_OR_EQ = r"\|="
+    BW_XOR_EQ = r"\^="
+    BW_NOT_EQ = r"~="
+    LSHIFT_EQ = r"<<="
+    RSHIFT_EQ = r">>="
+    LSHIFT = r"<<"
+    RSHIFT = r">>"
     LTE = r"<="
     GTE = r">="
     NE = r"!="
@@ -271,17 +290,20 @@ class JacLexer(Lexer):
     SEMI = r";"
     EE = r"=="
     EQ = r"="
-    KW_REF = r"&"
     DOT = r"\."
     LT = r"<"
     GT = r">"
     COMMA = r","
     PLUS = r"\+"
     MINUS = r"-"
+    STAR_POW = r"\*\*"
     STAR_MUL = r"\*"
     DIV = r"/"
     MOD = r"%"
-    POW = r"\^"
+    BW_AND = r"&"
+    BW_OR = r"\|"
+    BW_XOR = r"\^"
+    BW_NOT = r"~"
     LPAREN = r"\("
     RPAREN = r"\)"
     LSQUARE = r"\["

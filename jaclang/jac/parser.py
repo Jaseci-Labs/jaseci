@@ -621,19 +621,11 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "walrus_assign",
-        "walrus_assign KW_IF expression KW_ELSE expression",
+        "pipe",
+        "pipe KW_IF expression KW_ELSE expression",
     )
     def expression(self, p: YaccProduction) -> YaccProduction:
         """Expression rule."""
-        return p
-
-    @_(
-        "pipe",
-        "pipe walrus_op walrus_assign",
-    )
-    def walrus_assign(self, p: YaccProduction) -> YaccProduction:
-        """Walrus assignment rule."""
         return p
 
     @_(
@@ -659,11 +651,44 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "logical",
-        "logical ELVIS_OP elvis_check",
+        "bitwise_or",
+        "bitwise_or ELVIS_OP elvis_check",
     )
     def elvis_check(self, p: YaccProduction) -> YaccProduction:
         """Expression rule."""
+        return p
+
+    @_(
+        "bitwise_xor",
+        "bitwise_xor BW_OR bitwise_or",
+    )
+    def bitwise_or(self, p: YaccProduction) -> YaccProduction:
+        """Bitwise or rule."""
+        return p
+
+    @_(
+        "bitwise_and",
+        "bitwise_and BW_XOR bitwise_xor",
+    )
+    def bitwise_xor(self, p: YaccProduction) -> YaccProduction:
+        """Bitwise xor rule."""
+        return p
+
+    @_(
+        "shift",
+        "shift BW_AND bitwise_and",
+    )
+    def bitwise_and(self, p: YaccProduction) -> YaccProduction:
+        """Bitwise and rule."""
+        return p
+
+    @_(
+        "logical",
+        "logical LSHIFT shift",
+        "logical RSHIFT shift",
+    )
+    def shift(self, p: YaccProduction) -> YaccProduction:
+        """Shift expression rule."""
         return p
 
     @_(
@@ -714,7 +739,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "connect",
-        "connect POW power",
+        "connect STAR_POW power",
     )
     def power(self, p: YaccProduction) -> YaccProduction:
         """Power rule."""
@@ -738,7 +763,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "STAR_MUL STAR_MUL atom",
+        "STAR_POW atom",
         "STAR_MUL atom",
         "ref",
     )
@@ -747,7 +772,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "KW_REF ds_call",
+        "BW_AND ds_call",
         "ds_call",
     )
     def ref(self, p: YaccProduction) -> YaccProduction:
@@ -755,11 +780,19 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "PIPE_FWD atom",
-        "atom",
+        "PIPE_FWD walrus_assign",
+        "walrus_assign",
     )
     def ds_call(self, p: YaccProduction) -> YaccProduction:
         """Unpack rule."""
+        return p
+
+    @_(
+        "atom",
+        "atom walrus_op walrus_assign",
+    )
+    def walrus_assign(self, p: YaccProduction) -> YaccProduction:
+        """Walrus assignment rule."""
         return p
 
     @_(
@@ -769,6 +802,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "MUL_EQ",
         "DIV_EQ",
         "MOD_EQ",
+        "BW_AND_EQ",
+        "BW_OR_EQ",
+        "BW_XOR_EQ",
+        "BW_NOT_EQ",
+        "LSHIFT_EQ",
+        "RSHIFT_EQ",
     )
     def walrus_op(self, p: YaccProduction) -> YaccProduction:
         """Production Assignment rule."""
