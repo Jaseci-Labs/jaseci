@@ -30,15 +30,14 @@ class PyCodeGenPass(Pass):
 
     def emit_ln(self, node: AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
-        node.meta["py_code"] += (
-            self.indent_str(indent_delta)
-            + s.replace("\n", "\n" + self.indent_str(indent_delta))
-            + "\n"
-        )
+        self.emit(node, s.strip().strip("\n"), indent_delta)
+        self.emit(node, "\n")
 
-    def emit(self, node: AstNode, s: str) -> None:
+    def emit(self, node: AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
-        node.meta["py_code"] += s
+        node.meta["py_code"] += self.indent_str(indent_delta) + s.replace(
+            "\n", "\n" + self.indent_str(indent_delta)
+        )
 
     def access_check(self, node: ast.OOPAccessNode) -> None:
         """Check if node uses access."""
@@ -90,13 +89,13 @@ class PyCodeGenPass(Pass):
         elements: List[GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec],
         """
         for i in node.elements:
-            self.emit(node, i.meta["py_code"])
+            self.emit_ln(node, i.meta["py_code"])
 
     @Pass.incomplete
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
-        doc: "DocString",
+        doc: Optional["DocString"],
         access: Optional[Token],
         assignments: "AssignmentList",
         """
@@ -108,7 +107,7 @@ class PyCodeGenPass(Pass):
         """Sub objects.
 
         name: Token,
-        doc: "DocString",
+        doc: Optional["DocString"],
         description: Token,
         body: "CodeBlock",
         """
@@ -117,10 +116,11 @@ class PyCodeGenPass(Pass):
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
 
-        doc: "DocString",
+        doc: Optional["DocString"],
         body: "CodeBlock",
         """
-        self.emit(node, node.doc.meta["py_code"])
+        if node.doc:
+            self.emit(node, node.doc.meta["py_code"])
         self.emit(node, node.body.meta["py_code"])
 
     def exit_doc_string(self, node: ast.DocString) -> None:
@@ -192,7 +192,7 @@ class PyCodeGenPass(Pass):
 
         name: Token,
         typ: Token,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         base_classes: "BaseClasses",
         body: "ArchBlock",
@@ -205,14 +205,15 @@ class PyCodeGenPass(Pass):
                 node,
                 f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
             )
-        self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
-        self.emit(node, node.body.meta["py_code"])
+        if node.doc:
+            self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
     @Pass.incomplete
     def exit_arch_decl(self, node: ast.ArchDecl) -> None:
         """Sub objects.
 
-        doc: DocString,
+        doc: Optional[DocString],
         access: Token,
         typ: Token,
         name: Token,
@@ -225,7 +226,7 @@ class PyCodeGenPass(Pass):
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
 
-        doc: DocString,
+        doc: Optional[DocString],
         mod: Token,
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
@@ -245,21 +246,22 @@ class PyCodeGenPass(Pass):
 
         name: Token,
         is_func: bool,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         signature: FuncSignature | TypeSpec,
         body: CodeBlock,
         """
         self.access_check(node)
         self.emit_ln(node, f"def {node.name.value}{node.signature.meta['py_code']}:")
-        self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
-        self.emit(node, node.body.meta["py_code"])
+        if node.doc:
+            self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+        self.emit(node, node.body.meta["py_code"], indent_delta=1)
 
     @Pass.incomplete
     def exit_ability_decl(self, node: ast.AbilityDecl) -> None:
         """Sub objects.
 
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         name: Token,
         signature: FuncSignature | TypeSpec,
@@ -271,7 +273,7 @@ class PyCodeGenPass(Pass):
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
 
-        doc: DocString,
+        doc: Optional[DocString],
         mod: Optional[Token],
         ability: AbilityRef,
         body: CodeBlock,
@@ -282,7 +284,7 @@ class PyCodeGenPass(Pass):
     def exit_ability_spec(self, node: ast.AbilitySpec) -> None:
         """Sub objects.
 
-        doc: DocString,
+        doc: Optional[DocString],
         name: Token,
         arch: ObjectRef | NodeRef | EdgeRef | WalkerRef,
         mod: Optional[Token],
@@ -303,13 +305,14 @@ class PyCodeGenPass(Pass):
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
 
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         vars: HasVarList,
         self.h_id = HasVar.counter
         """
-        self.emit_ln(node, f"def has_{node.h_id}:")
-        self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+        self.emit_ln(node, f"def has_{node.h_id}(self):")
+        if node.doc:
+            self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit_ln(node, node.vars.meta["py_code"], indent_delta=1)
 
     def exit_has_var_list(self, node: ast.HasVarList) -> None:
@@ -325,7 +328,7 @@ class PyCodeGenPass(Pass):
 
         name: Token,
         type_tag: TypeSpec,
-        value: Optional[AstNode],
+        value: Optional["ExprType"],
         """
         if node.value:
             self.emit(
@@ -359,7 +362,7 @@ class PyCodeGenPass(Pass):
         """Sub objects.
 
         name: Token,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         signature: Optional[EventSignature | FuncSignature],
         body: CodeBlock,
@@ -371,7 +374,8 @@ class PyCodeGenPass(Pass):
             )
         else:
             self.emit_ln(node, f"def {node.name.value}():")
-        self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+        if node.doc:
+            self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
     @Pass.incomplete
@@ -379,7 +383,7 @@ class PyCodeGenPass(Pass):
         """Sub objects.
 
         name: Token,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         signature: Optional[EventSignature | FuncSignature],
         """
@@ -445,9 +449,8 @@ class PyCodeGenPass(Pass):
 
         stmts: List["StmtType"],
         """
-        self.emit(node, "\n")
         for i in node.stmts:
-            self.emit_ln(node, i.meta["py_code"], indent_delta=1)
+            self.emit_ln(node, i.meta["py_code"])
 
     def exit_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
@@ -738,8 +741,10 @@ class PyCodeGenPass(Pass):
         operand: ExprType,
         op: Token,
         """
-        if node.op.value in ["not", "-", "~", "+"]:
+        if node.op.value in ["-", "~", "+"]:
             self.emit(node, f"{node.op.value}{node.operand.meta['py_code']}")
+        elif node.op.value == "not":
+            self.emit(node, f"not {node.operand.meta['py_code']}")
         else:
             self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
 

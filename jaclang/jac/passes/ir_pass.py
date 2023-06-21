@@ -99,7 +99,7 @@ def parse_tree_to_ast(
             ast_tree = ast.Parse(
                 name=tree[0],
                 parent=parent,
-                line=tree[1] if lineno is None else lineno,
+                line=tree[1] if lineno == 0 else lineno,
                 kid=[],
             )
             ast_tree.kid = [
@@ -116,7 +116,7 @@ def parse_tree_to_ast(
                     parent=parent,
                     value=tree.value,
                     kid=[],
-                    line=tree.lineno if lineno is None else lineno,
+                    line=tree.lineno if lineno == 0 else lineno,
                 )
         else:
             raise ValueError(f"node must be ast.AstNode or parser output tuple: {tree}")

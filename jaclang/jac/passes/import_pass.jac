@@ -33,3 +33,8 @@ can import_path_to_dir(import_path:str) -> str {
     directory = *parts |> os.path.join;
     return directory;
 }
+
+
+with entry {
+  print("hello world");
+}

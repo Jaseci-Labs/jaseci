@@ -151,7 +151,7 @@ class GlobalVars(OOPAccessNode):
 
     def __init__(
         self,
-        doc: "DocString",
+        doc: Optional["DocString"],
         access: Optional[Token],
         assignments: "AssignmentList",
         parent: Optional[AstNode],
@@ -170,7 +170,7 @@ class Test(AstNode):
     def __init__(
         self,
         name: Token,
-        doc: "DocString",
+        doc: Optional["DocString"],
         description: Token,
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -190,7 +190,7 @@ class ModuleCode(AstNode):
 
     def __init__(
         self,
-        doc: "DocString",
+        doc: Optional["DocString"],
         body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -294,7 +294,7 @@ class Architype(OOPAccessNode):
         self,
         name: Token,
         typ: Token,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         base_classes: "BaseClasses",
         body: "ArchBlock",
@@ -316,7 +316,7 @@ class ArchDecl(OOPAccessNode):
 
     def __init__(
         self,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         typ: Token,
         name: Token,
@@ -339,7 +339,7 @@ class ArchDef(AstNode):
 
     def __init__(
         self,
-        doc: DocString,
+        doc: Optional[DocString],
         mod: Optional[Token],
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
@@ -377,7 +377,7 @@ class Ability(OOPAccessNode):
         self,
         name: Token,
         is_func: bool,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         signature: "FuncSignature | TypeSpec",
         body: "CodeBlock",
@@ -399,7 +399,7 @@ class AbilityDecl(OOPAccessNode):
 
     def __init__(
         self,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         name: Token,
         signature: "FuncSignature | TypeSpec",
@@ -421,7 +421,7 @@ class AbilityDef(AstNode):
 
     def __init__(
         self,
-        doc: DocString,
+        doc: Optional[DocString],
         mod: Optional[Token],
         ability: "AbilityRef",
         body: "CodeBlock",
@@ -442,7 +442,7 @@ class AbilitySpec(AstNode):
 
     def __init__(
         self,
-        doc: DocString,
+        doc: Optional[DocString],
         name: Token,
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         mod: Optional[Token],
@@ -484,7 +484,7 @@ class ArchHas(OOPAccessNode):
 
     def __init__(
         self,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         vars: "HasVarList",
         parent: Optional[AstNode],
@@ -521,7 +521,7 @@ class HasVar(AstNode):
         self,
         name: Token,
         type_tag: "TypeSpec",
-        value: Optional[AstNode],
+        value: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -558,7 +558,7 @@ class ArchCan(OOPAccessNode):
     def __init__(
         self,
         name: Token,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         signature: Optional["EventSignature | FuncSignature"],
         body: "CodeBlock",
@@ -580,7 +580,7 @@ class ArchCanDecl(OOPAccessNode):
     def __init__(
         self,
         name: Token,
-        doc: DocString,
+        doc: Optional[DocString],
         access: Optional[Token],
         signature: Optional["EventSignature | FuncSignature"],
         parent: Optional[AstNode],
