@@ -24,7 +24,7 @@ import time
 # MAX_WORKERS = 100
 # actions_sem = Semaphore(MAX_WORKERS + 1)
 
-ACTION_SUBPROC_TIMEOUT = 4  # 3 seconds
+ACTION_SUBPROC_TIMEOUT = 2  # 3 seconds
 
 live_actions_lock = RXW1Lock()
 live_actions = {}  # {"act.func": func_obj, ...}
