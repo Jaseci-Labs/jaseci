@@ -1205,7 +1205,7 @@ class DictVal(AstNode):
 
     def __init__(
         self,
-        kv_pairs: list,
+        kv_pairs: List["KVPair"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,

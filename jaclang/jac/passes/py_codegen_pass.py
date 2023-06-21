@@ -695,9 +695,7 @@ class PyCodeGenPass(Pass):
         """
         if node.is_static:
             self.warning("Static variable semantics is not supported in bootstrap Jac")
-        self.emit_ln(
-            node, f"{node.target.meta['py_code']} = {node.value.meta['py_code']}"
-        )
+        self.emit(node, f"{node.target.meta['py_code']} = {node.value.meta['py_code']}")
 
     @Pass.incomplete
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
@@ -713,7 +711,7 @@ class PyCodeGenPass(Pass):
             *[">", "<", ">=", "<=", "==", "!="],
             *["and", "or", "in", "not in", "is", "is not"],
         ]:
-            self.emit_ln(
+            self.emit(
                 node,
                 f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
             )
@@ -729,7 +727,7 @@ class PyCodeGenPass(Pass):
         value: ExprType,
         else_value: ExprType,
         """
-        self.emit_ln(
+        self.emit(
             node,
             f"{node.value.meta['py_code']} if {node.condition.meta['py_code']} else {node.else_value.meta['py_code']}",
         )
@@ -741,15 +739,17 @@ class PyCodeGenPass(Pass):
         op: Token,
         """
         if node.op.value in ["not", "-", "~", "+"]:
-            self.emit_ln(node, f"{node.op.value}{node.operand.meta['py_code']}")
+            self.emit(node, f"{node.op.value}{node.operand.meta['py_code']}")
         else:
             self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
 
+    @Pass.incomplete
     def exit_spawn_object_expr(self, node: ast.SpawnObjectExpr) -> None:
         """Sub objects.
 
         target: ExprType,
         """
+        self.ds_feature_warn()
 
     def exit_unpack_expr(self, node: ast.UnpackExpr) -> None:
         """Sub objects.
@@ -757,30 +757,48 @@ class PyCodeGenPass(Pass):
         target: ExprType,
         is_dict: bool,
         """
+        if node.is_dict:
+            self.emit(node, f"**{node.target.meta['py_code']}")
+        else:
+            self.emit(node, f"*{node.target.meta['py_code']}")
 
+    @Pass.incomplete  # TODO: Need to add support for fstrings
     def exit_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 
         strings: List[Token],
         """
+        for string in node.strings:
+            if type(string) == ast.Token:
+                self.emit(node, string.value)
 
     def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
 
         values: List[ExprType],
         """
+        self.emit(
+            node, f"[{', '.join([value.meta['py_code'] for value in node.values])}]"
+        )
 
     def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
         values: List[ExprType],
         """
+        self.emit(
+            node, f"{', '.join([value.meta['py_code'] for value in node.values])}"
+        )
 
     def exit_dict_val(self, node: ast.DictVal) -> None:
         """Sub objects.
 
-        kv_pairs: list,
+        kv_pairs: List["KVPair"],
         """
+        self.emit(
+            node,
+            f"{{{', '.join([kv_pair.meta['py_code'] for kv_pair in node.kv_pairs])}}}",
+        )
 
     def exit_comprehension(self, node: ast.Comprehension) -> None:
         """Sub objects.
