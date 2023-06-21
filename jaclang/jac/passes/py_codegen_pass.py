@@ -685,6 +685,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
@@ -692,7 +693,13 @@ class PyCodeGenPass(Pass):
         target: AtomType,
         value: ExprType,
         """
+        if node.is_static:
+            self.warning("Static variable semantics is not supported in bootstrap Jac")
+        self.emit_ln(
+            node, f"{node.target.meta['py_code']} = {node.value.meta['py_code']}"
+        )
 
+    @Pass.incomplete
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
 
@@ -700,6 +707,14 @@ class PyCodeGenPass(Pass):
         right: ExprType,
         op: Token,
         """
+        if node.op.value in [
+            *["+", "-", "*", "/", "%", "**", "//"],
+            *["&", "|", "^", "<<", ">>"],
+        ]:
+            self.emit_ln(
+                node,
+                f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
+            )
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
