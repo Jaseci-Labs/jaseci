@@ -8,24 +8,22 @@ from jaclang.core.edge import EdgeDir
 class AstNode:
     """Abstract syntax tree node for Jac."""
 
-    def __init__(
-        self: "AstNode", parent: Optional["AstNode"], kid: list, line: int
-    ) -> None:
+    def __init__(self, parent: Optional["AstNode"], kid: list, line: int) -> None:
         """Initialize ast."""
         self.parent = parent
         self.kid = kid if kid else []
         self.line = line
         self.meta: Dict[str, str] = {}
 
-    def __str__(self: "AstNode") -> str:
+    def __str__(self) -> str:
         """Return string representation of node."""
         return f"{str(type(self).__name__)}->[{self.line},{len(self.kid)} kids]"
 
-    def __repr__(self: "AstNode") -> str:
+    def __repr__(self) -> str:
         """Return string representation of node."""
         return str(self)
 
-    def to_dict(self: "AstNode") -> dict:
+    def to_dict(self) -> dict:
         """Return dict representation of node."""
         ret = {
             "node": str(type(self).__name__),
@@ -37,11 +35,11 @@ class AstNode:
             ret["value"] = self.value
         return ret
 
-    def is_type(self: "AstNode", typ: Type["AstNode"]) -> bool:
+    def is_type(self, typ: Type["AstNode"]) -> bool:
         """Check if node is of type."""
         return type(self) == typ
 
-    def print(self: "AstNode", depth: Optional[int] = None) -> None:
+    def print(self, depth: Optional[int] = None) -> None:
         """Print ast."""
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
 
@@ -67,7 +65,7 @@ class Token(AstNode):
     """Token node type for Jac Ast."""
 
     def __init__(
-        self: "Token",
+        self,
         name: str,
         value: str,
         parent: Optional[AstNode],
@@ -84,7 +82,7 @@ class Parse(AstNode):
     """Parse node type for Jac Ast."""
 
     def __init__(
-        self: "Parse",
+        self,
         name: str,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -101,7 +99,7 @@ class Module(AstNode):
     """Whole Program node type for Jac Ast."""
 
     def __init__(
-        self: "Module",
+        self,
         name: str,
         doc: Token,
         body: "Elements",
@@ -120,7 +118,7 @@ class Elements(AstNode):
     """Elements node type for Jac Ast."""
 
     def __init__(
-        self: "Elements",
+        self,
         elements: List[
             "GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec"
         ],
@@ -137,7 +135,7 @@ class GlobalVars(AstNode):
     """GlobalVars node type for Jac Ast."""
 
     def __init__(
-        self: "GlobalVars",
+        self,
         doc: "DocString",
         access: Optional[Token],
         assignments: "AssignmentList",
@@ -156,7 +154,7 @@ class Test(AstNode):
     """Test node type for Jac Ast."""
 
     def __init__(
-        self: "Test",
+        self,
         name: Token,
         doc: "DocString",
         description: Token,
@@ -177,7 +175,7 @@ class ModuleCode(AstNode):
     """Free mod code for Jac Ast."""
 
     def __init__(
-        self: "ModuleCode",
+        self,
         doc: "DocString",
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -194,7 +192,7 @@ class DocString(AstNode):
     """DocString node type for Jac Ast."""
 
     def __init__(
-        self: "DocString",
+        self,
         value: Optional[Token],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -209,7 +207,7 @@ class Import(AstNode):
     """Import node type for Jac Ast."""
 
     def __init__(
-        self: "Import",
+        self,
         lang: Token,
         path: "ModulePath",
         alias: Optional[Token],
@@ -232,7 +230,7 @@ class ModulePath(AstNode):
     """ModulePath node type for Jac Ast."""
 
     def __init__(
-        self: "ModulePath",
+        self,
         path: List[Token],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -247,7 +245,7 @@ class ModuleItems(AstNode):
     """ModuleItems node type for Jac Ast."""
 
     def __init__(
-        self: "ModuleItems",
+        self,
         items: List["ModuleItem"],
         parent: Optional[AstNode],
         kid: List["ModuleItem"],
@@ -262,7 +260,7 @@ class ModuleItem(AstNode):
     """ModuleItem node type for Jac Ast."""
 
     def __init__(
-        self: "ModuleItem",
+        self,
         name: Token,
         alias: Optional[Token],
         parent: Optional[AstNode],
@@ -279,7 +277,7 @@ class Architype(AstNode):
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
-        self: "Architype",
+        self,
         name: Token,
         typ: Token,
         doc: DocString,
@@ -304,7 +302,7 @@ class ArchDecl(AstNode):
     """ArchDecl node type for Jac Ast."""
 
     def __init__(
-        self: "ArchDecl",
+        self,
         doc: DocString,
         access: Optional[Token],
         typ: Token,
@@ -328,7 +326,7 @@ class ArchDef(AstNode):
     """ArchDef node type for Jac Ast."""
 
     def __init__(
-        self: "ArchDef",
+        self,
         doc: DocString,
         mod: Optional[Token],
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
@@ -349,7 +347,7 @@ class BaseClasses(AstNode):
     """BaseArch node type for Jac Ast."""
 
     def __init__(
-        self: "BaseClasses",
+        self,
         base_classes: List[Token],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -364,7 +362,7 @@ class Ability(AstNode):
     """Ability node type for Jac Ast."""
 
     def __init__(
-        self: "Ability",
+        self,
         name: Token,
         is_func: bool,
         doc: DocString,
@@ -389,7 +387,7 @@ class AbilityDecl(AstNode):
     """AbilityDecl node type for Jac Ast."""
 
     def __init__(
-        self: "AbilityDecl",
+        self,
         doc: DocString,
         access: Optional[Token],
         name: Token,
@@ -412,7 +410,7 @@ class AbilityDef(AstNode):
     """AbilityDef node type for Jac Ast."""
 
     def __init__(
-        self: "AbilityDef",
+        self,
         doc: DocString,
         mod: Optional[Token],
         ability: "AbilityRef",
@@ -433,7 +431,7 @@ class AbilitySpec(AstNode):
     """AbilitySpec node type for Jac Ast."""
 
     def __init__(
-        self: "AbilitySpec",
+        self,
         doc: DocString,
         name: Token,
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
@@ -458,7 +456,7 @@ class ArchBlock(AstNode):
     """ArchBlock node type for Jac Ast."""
 
     def __init__(
-        self: "ArchBlock",
+        self,
         members: List["ArchHas | ArchCan | ArchCanDecl "],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -473,7 +471,7 @@ class ArchHas(AstNode):
     """HasStmt node type for Jac Ast."""
 
     def __init__(
-        self: "ArchHas",
+        self,
         doc: DocString,
         access: Optional[Token],
         vars: "HasVarList",
@@ -492,7 +490,7 @@ class HasVarList(AstNode):
     """HasVarList node type for Jac Ast."""
 
     def __init__(
-        self: "HasVarList",
+        self,
         vars: List["HasVar"],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -507,7 +505,7 @@ class HasVar(AstNode):
     """HasVar node type for Jac Ast."""
 
     def __init__(
-        self: "HasVar",
+        self,
         name: Token,
         type_tag: "TypeSpec",
         value: Optional[AstNode],
@@ -526,7 +524,7 @@ class TypeSpec(AstNode):
     """TypeSpec node type for Jac Ast."""
 
     def __init__(
-        self: "TypeSpec",
+        self,
         typ: Token,
         nested1: "TypeSpec",  # needed for lists
         nested2: "TypeSpec",  # needed for dicts
@@ -545,7 +543,7 @@ class ArchCan(AstNode):
     """CanDS node type for Jac Ast."""
 
     def __init__(
-        self: "ArchCan",
+        self,
         name: Token,
         doc: DocString,
         access: Optional[Token],
@@ -568,7 +566,7 @@ class ArchCanDecl(AstNode):
     """CanDS node type for Jac Ast."""
 
     def __init__(
-        self: "ArchCanDecl",
+        self,
         name: Token,
         doc: DocString,
         access: Optional[Token],
@@ -589,7 +587,7 @@ class EventSignature(AstNode):
     """EventSignature node type for Jac Ast."""
 
     def __init__(
-        self: "EventSignature",
+        self,
         event: Token,
         arch_tag_info: Optional["NameList | Token"],
         parent: Optional[AstNode],
@@ -606,7 +604,7 @@ class NameList(AstNode):
     """NameList node type for Jac Ast."""
 
     def __init__(
-        self: "NameList",
+        self,
         names: list,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -621,7 +619,7 @@ class FuncSignature(AstNode):
     """FuncSignature node type for Jac Ast."""
 
     def __init__(
-        self: "FuncSignature",
+        self,
         params: Optional["FuncParams"],
         return_type: Optional[TypeSpec],
         parent: Optional[AstNode],
@@ -638,7 +636,7 @@ class FuncParams(AstNode):
     """ArchBlock node type for Jac Ast."""
 
     def __init__(
-        self: "FuncParams",
+        self,
         params: list,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -657,7 +655,7 @@ class CodeBlock(AstNode):
     """CodeBlock node type for Jac Ast."""
 
     def __init__(
-        self: "CodeBlock",
+        self,
         stmts: list,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -672,7 +670,7 @@ class IfStmt(AstNode):
     """IfStmt node type for Jac Ast."""
 
     def __init__(
-        self: "IfStmt",
+        self,
         condition: "ExprType",
         body: "CodeBlock",
         elseifs: Optional["ElseIfs"],
@@ -693,7 +691,7 @@ class ElseIfs(AstNode):
     """ElseIfs node type for Jac Ast."""
 
     def __init__(
-        self: "ElseIfs",
+        self,
         elseifs: List["IfStmt"],
         parent: Optional[AstNode],
         kid: List["IfStmt"],
@@ -708,7 +706,7 @@ class ElseStmt(AstNode):
     """Else node type for Jac Ast."""
 
     def __init__(
-        self: "ElseStmt",
+        self,
         body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -723,7 +721,7 @@ class TryStmt(AstNode):
     """TryStmt node type for Jac Ast."""
 
     def __init__(
-        self: "TryStmt",
+        self,
         body: "CodeBlock",
         excepts: Optional["ExceptList"],
         finally_body: Optional["FinallyStmt"],
@@ -742,7 +740,7 @@ class ExceptList(AstNode):
     """ExceptList node type for Jac Ast."""
 
     def __init__(
-        self: "ExceptList",
+        self,
         excepts: List["Except"],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -757,7 +755,7 @@ class Except(AstNode):
     """Except node type for Jac Ast."""
 
     def __init__(
-        self: "Except",
+        self,
         typ: "ExprType",
         name: Optional[Token],
         body: "CodeBlock",
@@ -776,7 +774,7 @@ class FinallyStmt(AstNode):
     """FinallyStmt node type for Jac Ast."""
 
     def __init__(
-        self: "FinallyStmt",
+        self,
         body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -791,7 +789,7 @@ class IterForStmt(AstNode):
     """IterFor node type for Jac Ast."""
 
     def __init__(
-        self: "IterForStmt",
+        self,
         iter: "Assignment",
         condition: "ExprType",
         count_by: "ExprType",
@@ -812,7 +810,7 @@ class InForStmt(AstNode):
     """InFor node type for Jac Ast."""
 
     def __init__(
-        self: "InForStmt",
+        self,
         name: Token,
         collection: "ExprType",
         body: "CodeBlock",
@@ -831,7 +829,7 @@ class DictForStmt(AstNode):
     """DictForStmt node type for Jac Ast."""
 
     def __init__(
-        self: "DictForStmt",
+        self,
         k_name: Token,
         v_name: Token,
         collection: "ExprType",
@@ -852,7 +850,7 @@ class WhileStmt(AstNode):
     """WhileStmt node type for Jac Ast."""
 
     def __init__(
-        self: "WhileStmt",
+        self,
         condition: "ExprType",
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -869,7 +867,7 @@ class RaiseStmt(AstNode):
     """RaiseStmt node type for Jac Ast."""
 
     def __init__(
-        self: "RaiseStmt",
+        self,
         cause: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -884,7 +882,7 @@ class AssertStmt(AstNode):
     """AssertStmt node type for Jac Ast."""
 
     def __init__(
-        self: "AssertStmt",
+        self,
         condition: "ExprType",
         error_msg: Optional["ExprType"],
         parent: Optional[AstNode],
@@ -901,7 +899,7 @@ class CtrlStmt(AstNode):
     """CtrlStmt node type for Jac Ast."""
 
     def __init__(
-        self: "CtrlStmt",
+        self,
         ctrl: Token,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -916,7 +914,7 @@ class DeleteStmt(AstNode):
     """DeleteStmt node type for Jac Ast."""
 
     def __init__(
-        self: "DeleteStmt",
+        self,
         target: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -931,7 +929,7 @@ class ReportStmt(AstNode):
     """ReportStmt node type for Jac Ast."""
 
     def __init__(
-        self: "ReportStmt",
+        self,
         expr: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -946,7 +944,7 @@ class ReturnStmt(AstNode):
     """ReturnStmt node type for Jac Ast."""
 
     def __init__(
-        self: "ReturnStmt",
+        self,
         expr: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -961,7 +959,7 @@ class YieldStmt(AstNode):
     """YieldStmt node type for Jac Ast."""
 
     def __init__(
-        self: "YieldStmt",
+        self,
         expr: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -976,7 +974,7 @@ class IgnoreStmt(AstNode):
     """IgnoreStmt node type for Jac Ast."""
 
     def __init__(
-        self: "IgnoreStmt",
+        self,
         target: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -991,7 +989,7 @@ class VisitStmt(AstNode):
     """VisitStmt node type for Jac Ast."""
 
     def __init__(
-        self: "VisitStmt",
+        self,
         typ: Optional[Token],
         target: Optional["ExprType"],
         else_body: Optional["ElseStmt"],
@@ -1010,7 +1008,7 @@ class RevisitStmt(AstNode):
     """ReVisitStmt node type for Jac Ast."""
 
     def __init__(
-        self: "RevisitStmt",
+        self,
         hops: Optional["ExprType"],
         else_body: Optional["ElseStmt"],
         parent: Optional[AstNode],
@@ -1027,7 +1025,7 @@ class DisengageStmt(AstNode):
     """DisengageStmt node type for Jac Ast."""
 
     def __init__(
-        self: "DisengageStmt",
+        self,
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -1040,7 +1038,7 @@ class SyncStmt(AstNode):
     """SyncStmt node type for Jac Ast."""
 
     def __init__(
-        self: "SyncStmt",
+        self,
         target: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1055,7 +1053,7 @@ class Assignment(AstNode):
     """Assignment node type for Jac Ast."""
 
     def __init__(
-        self: "Assignment",
+        self,
         is_static: bool,
         target: "AtomType",
         value: "ExprType",
@@ -1074,7 +1072,7 @@ class BinaryExpr(AstNode):
     """ExprBinary node type for Jac Ast."""
 
     def __init__(
-        self: "BinaryExpr",
+        self,
         left: "ExprType",
         right: "ExprType",
         op: Token,
@@ -1093,7 +1091,7 @@ class IfElseExpr(AstNode):
     """ExprIfElse node type for Jac Ast."""
 
     def __init__(
-        self: "IfElseExpr",
+        self,
         condition: "BinaryExpr | IfElseExpr",
         value: "ExprType",
         else_value: "ExprType",
@@ -1112,7 +1110,7 @@ class UnaryExpr(AstNode):
     """ExprUnary node type for Jac Ast."""
 
     def __init__(
-        self: "UnaryExpr",
+        self,
         operand: "ExprType",
         op: Token,
         parent: Optional[AstNode],
@@ -1129,7 +1127,7 @@ class SpawnObjectExpr(AstNode):
     """ExprSpawnObject node type for Jac Ast."""
 
     def __init__(
-        self: "SpawnObjectExpr",
+        self,
         target: "ExprType",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1144,7 +1142,7 @@ class UnpackExpr(AstNode):
     """ExprUnpack node type for Jac Ast."""
 
     def __init__(
-        self: "UnpackExpr",
+        self,
         target: "ExprType",
         is_dict: bool,
         parent: Optional[AstNode],
@@ -1161,7 +1159,7 @@ class MultiString(AstNode):
     """ExprMultiString node type for Jac Ast."""
 
     def __init__(
-        self: "MultiString",
+        self,
         strings: List[Token],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1176,7 +1174,7 @@ class ListVal(AstNode):
     """ListVal node type for Jac Ast."""
 
     def __init__(
-        self: "ListVal",
+        self,
         values: List["ExprType"],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1195,7 +1193,7 @@ class DictVal(AstNode):
     """ExprDict node type for Jac Ast."""
 
     def __init__(
-        self: "DictVal",
+        self,
         kv_pairs: list,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1210,7 +1208,7 @@ class Comprehension(AstNode):
     """Comprehension node type for Jac Ast."""
 
     def __init__(
-        self: "Comprehension",
+        self,
         key_expr: Optional["ExprType"],
         out_expr: "ExprType",
         name: Token,
@@ -1233,7 +1231,7 @@ class KVPair(AstNode):
     """ExprKVPair node type for Jac Ast."""
 
     def __init__(
-        self: "KVPair",
+        self,
         key: "ExprType",
         value: "ExprType",
         parent: Optional[AstNode],
@@ -1250,7 +1248,7 @@ class AtomTrailer(AstNode):
     """AtomTrailer node type for Jac Ast."""
 
     def __init__(
-        self: "AtomTrailer",
+        self,
         target: "AtomType",
         right: "IndexSlice | ArchRefType | Token",
         null_ok: bool,
@@ -1269,7 +1267,7 @@ class FuncCall(AstNode):
     """FuncCall node type for Jac Ast."""
 
     def __init__(
-        self: "FuncCall",
+        self,
         target: "AtomType",
         params: Optional["ParamList"],
         parent: Optional[AstNode],
@@ -1286,7 +1284,7 @@ class ParamList(AstNode):
     """ParamList node type for Jac Ast."""
 
     def __init__(
-        self: "ParamList",
+        self,
         p_args: Optional[ExprList],
         p_kwargs: Optional["AssignmentList"],
         parent: Optional[AstNode],
@@ -1307,7 +1305,7 @@ class IndexSlice(AstNode):
     """IndexSlice node type for Jac Ast."""
 
     def __init__(
-        self: "IndexSlice",
+        self,
         start: "ExprType",
         stop: Optional["ExprType"],
         parent: Optional[AstNode],
@@ -1324,7 +1322,7 @@ class GlobalRef(AstNode):
     """GlobalRef node type for Jac Ast."""
 
     def __init__(
-        self: "GlobalRef",
+        self,
         name: Token,
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1339,7 +1337,7 @@ class HereRef(AstNode):
     """HereRef node type for Jac Ast."""
 
     def __init__(
-        self: "HereRef",
+        self,
         name: Optional[Token],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1382,7 +1380,7 @@ class EdgeOpRef(AstNode):
     """EdgeOpRef node type for Jac Ast."""
 
     def __init__(
-        self: "EdgeOpRef",
+        self,
         filter_cond: Optional["ExprType"],
         edge_dir: EdgeDir,
         parent: Optional[AstNode],
@@ -1403,7 +1401,7 @@ class ConnectOp(AstNode):
     """ConnectOpRef node type for Jac Ast."""
 
     def __init__(
-        self: "ConnectOp",
+        self,
         spawn: Optional["ExprType"],
         edge_dir: EdgeDir,
         parent: Optional[AstNode],
@@ -1420,7 +1418,7 @@ class SpawnCtx(AstNode):
     """SpawnCtx node type for Jac Ast."""
 
     def __init__(
-        self: "SpawnCtx",
+        self,
         spawns: List[Assignment],
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -1435,7 +1433,7 @@ class FilterCtx(AstNode):
     """FilterCtx node type for Jac Ast."""
 
     def __init__(
-        self: "FilterCtx",
+        self,
         compares: List[BinaryExpr],
         parent: Optional[AstNode],
         kid: List[AstNode],

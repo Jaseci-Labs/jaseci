@@ -12,7 +12,7 @@ class Pass:
 
     marked_incomplete: List[str] = []
 
-    def __init__(self: "Pass", ir: Optional[ast.AstNode] = None) -> None:
+    def __init__(self, ir: Optional[ast.AstNode] = None) -> None:
         """Initialize pass."""
         self.logger = logging.getLogger(self.__class__.__module__)
         self.ir = ir if ir else ast.AstNode(parent=ir, kid=[], line=0)
@@ -29,15 +29,15 @@ class Pass:
 
         return wrapper
 
-    def before_pass(self: "Pass") -> None:
+    def before_pass(self) -> None:
         """Run once before pass."""
         pass
 
-    def after_pass(self: "Pass") -> None:
+    def after_pass(self) -> None:
         """Run once after pass."""
         pass
 
-    def enter_node(self: "Pass", node: ast.AstNode) -> None:
+    def enter_node(self, node: ast.AstNode) -> None:
         """Run on entering node."""
         if isinstance(node, ast.Parse):
             if hasattr(self, f"enter_{node.name}"):
@@ -45,7 +45,7 @@ class Pass:
         elif hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
 
-    def exit_node(self: "Pass", node: ast.AstNode) -> None:
+    def exit_node(self, node: ast.AstNode) -> None:
         """Run on exiting node."""
         if isinstance(node, ast.Parse):
             if hasattr(self, f"exit_{node.name}"):
@@ -53,7 +53,7 @@ class Pass:
         elif hasattr(self, f"exit_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"exit_{pascal_to_snake(type(node).__name__)}")(node)
 
-    def run(self: "Pass", node: Optional[ast.AstNode] = None) -> ast.AstNode:
+    def run(self, node: Optional[ast.AstNode] = None) -> ast.AstNode:
         """Run pass."""
         if node is None:
             node = self.ir
@@ -62,7 +62,7 @@ class Pass:
         self.after_pass()
         return self.ir
 
-    def traverse(self: "Pass", node: ast.AstNode) -> None:
+    def traverse(self, node: ast.AstNode) -> None:
         """Traverse tree."""
         self.cur_node = node
         self.enter_node(node)
@@ -71,7 +71,7 @@ class Pass:
                 self.traverse(i)
         self.exit_node(node)
 
-    def get_imcomplete(self: "Pass") -> List[str]:
+    def get_imcomplete(self) -> List[str]:
         """Return list of incomplete functions."""
         return self.marked_incomplete
 
@@ -120,4 +120,6 @@ def parse_tree_to_ast(
                 )
         else:
             raise ValueError(f"node must be ast.AstNode or parser output tuple: {tree}")
+    if not ast_tree:
+        raise ValueError(f"node must be ast.AstNode: {tree}")
     return ast_tree

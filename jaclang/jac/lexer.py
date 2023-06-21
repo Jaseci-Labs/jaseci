@@ -287,19 +287,19 @@ class JacLexer(Lexer):
     LSQUARE = r"\["
     RSQUARE = r"\]"
 
-    def ignore_newline(self: "JacLexer", t: Token) -> Token:
+    def ignore_newline(self, t: Token) -> Token:
         """Increment line number."""
         self.lineno += len(t.value)
         return t
 
-    def DOC_STRING(self: "JacLexer", t: Token) -> Token:  # noqa: N802
+    def DOC_STRING(self, t: Token) -> Token:  # noqa: N802
         """Add docstring to lexer."""
         self.lineno += t.value.count("\n")
         self.lineno += t.value.count("\r")
         return t
 
     # Error handling rule
-    def error(self: "JacLexer", t: Token) -> None:
+    def error(self, t: Token) -> None:
         """Raise an error for illegal characters."""
         print(f"Illegal character '{t.value[0]}' at line {self.lineno}")
         self.index += 1

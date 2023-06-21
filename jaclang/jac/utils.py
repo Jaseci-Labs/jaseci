@@ -63,7 +63,7 @@ def load_ast_and_print_pass_template() -> str:
         class_name = cls.__name__
         snake_case_name = pascal_to_snake(class_name)
 
-        output += f"def exit_{snake_case_name}(self: 'PyCodeGenPass', node: ast.{class_name}) -> None:\n"
+        output += f"def exit_{snake_case_name}(self, node: ast.{class_name}) -> None:\n"
         output += '    """Sub objects.\n\n'
 
         init_func = cls.__init__

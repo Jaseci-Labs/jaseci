@@ -15,11 +15,11 @@ class PyCodeGenPassTests(TestCase):
     builder = AstBuildPass()
     codegen = PyCodeGenPass()
 
-    def setUp(self: TestCase) -> None:
+    def setUp(self) -> None:
         """Set up test."""
         return super().setUp()
 
-    def build_micro(self: "PyCodeGenPassTests", filename: str) -> None:
+    def build_micro(self, filename: str) -> None:
         """Parse micro jac file."""
         self.prse.cur_file = filename
         ptree = self.prse.parse(
@@ -30,7 +30,7 @@ class PyCodeGenPassTests(TestCase):
         build_pass = self.builder.run(node=ptoa(ptree))
         return build_pass
 
-    def test_pygen_basic(self: "PyCodeGenPassTests") -> None:
+    def test_pygen_basic(self) -> None:
         """Basic test for pass."""
         ptree = self.prse.parse(self.lex.tokenize(self.load_fixture("fam.jac")))
         build_pass = self.builder.run(node=ptoa(ptree))
@@ -38,7 +38,7 @@ class PyCodeGenPassTests(TestCase):
         code_gen = code_gen
         # print(code_gen.meta['py_code'])
 
-    def test_pygen_module_structure(self: "PyCodeGenPassTests") -> None:
+    def test_pygen_module_structure(self) -> None:
         """Basic test for pass."""
         build_pass = self.build_micro("module_structure.jac")
         # build_pass.print()
@@ -46,7 +46,7 @@ class PyCodeGenPassTests(TestCase):
         # print(code_gen.meta['py_code'])
         self.assertGreater(len(str(build_pass.to_dict())), 200)
 
-    def test_pygen_import_pass(self: "PyCodeGenPassTests") -> None:
+    def test_pygen_import_pass(self) -> None:
         """Basic test for pass."""
         build_pass = self.build_micro("../../../passes/import_pass.jac")
         # build_pass.print()
@@ -54,7 +54,7 @@ class PyCodeGenPassTests(TestCase):
         print(code_gen.meta["py_code"])
         self.assertGreater(len(str(build_pass.to_dict())), 200)
 
-    # def test_no_typo_in_pass(self: "PyCodeGenPassTests") -> None:
+    # def test_no_typo_in_pass(self) -> None:
     #     """Test for enter/exit name diffs with parser."""
     #     from jaclang.jac.parser import JacParser
 
@@ -80,7 +80,7 @@ class PyCodeGenPassTests(TestCase):
     #     for name in pygen_func_names:
     #         self.assertIn(name, parser_func_names)
 
-    # def test_pass_grammar_complete(self: "PyCodeGenPassTests") -> None:
+    # def test_pass_grammar_complete(self) -> None:
     #     """Test for enter/exit name diffs with parser."""
     #     from jaclang.jac.parser import JacParser
 

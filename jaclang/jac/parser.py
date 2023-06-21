@@ -20,7 +20,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "STRING element_list",
         # "element_list",
     )
-    def start(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def start(self, p: YaccProduction) -> YaccProduction:
         """Start rule."""
         return p
 
@@ -30,7 +30,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "element",
         "element_list element",
     )
-    def element_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def element_list(self, p: YaccProduction) -> YaccProduction:
         """Element list rule."""
         return p
 
@@ -46,12 +46,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "ability",
         "sub_ability_spec",
     )
-    def element(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def element(self, p: YaccProduction) -> YaccProduction:
         """Element rule."""
         return p
 
     @_("doc_tag KW_GLOBAL access_tag assignment_list SEMI")
-    def global_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def global_var(self, p: YaccProduction) -> YaccProduction:
         """Global variable rule."""
         return p
 
@@ -60,7 +60,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_PUB",
         "KW_PROT",
     )
-    def access(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def access(self, p: YaccProduction) -> YaccProduction:
         """Permission tag rule."""
         return p
 
@@ -68,17 +68,17 @@ class JacParser(JacParseErrorMixIn, Parser):
         "COLON access",
         "empty",
     )
-    def access_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def access_tag(self, p: YaccProduction) -> YaccProduction:
         """Permission tag rule."""
         return p
 
     @_("doc_tag KW_TEST NAME multistring code_block")
-    def test(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def test(self, p: YaccProduction) -> YaccProduction:
         """Test rule."""
         return p
 
     @_("doc_tag KW_WITH KW_ENTRY code_block")
-    def mod_code(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def mod_code(self, p: YaccProduction) -> YaccProduction:
         """Module-level free code rule."""
         return p
 
@@ -87,7 +87,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "DOC_STRING",
         "STRING",
     )
-    def doc_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def doc_tag(self, p: YaccProduction) -> YaccProduction:
         """Doc tag rule."""
         return p
 
@@ -98,12 +98,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_IMPORT sub_name import_path KW_AS NAME SEMI",
         "KW_IMPORT sub_name KW_FROM import_path COMMA name_as_list SEMI",
     )
-    def import_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def import_stmt(self, p: YaccProduction) -> YaccProduction:
         """Import rule."""
         return p
 
     @_("KW_INCLUDE sub_name import_path SEMI")
-    def include_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def include_stmt(self, p: YaccProduction) -> YaccProduction:
         """Import rule."""
         return p
 
@@ -111,7 +111,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "import_path_prefix",
         "import_path_prefix import_path_tail",
     )
-    def import_path(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def import_path(self, p: YaccProduction) -> YaccProduction:
         """Import path rule."""
         return p
 
@@ -120,7 +120,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "DOT NAME",
         "DOT DOT NAME",
     )
-    def import_path_prefix(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def import_path_prefix(self, p: YaccProduction) -> YaccProduction:
         """Import path prefix rule."""
         return p
 
@@ -128,7 +128,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "DOT NAME",
         "import_path_tail DOT NAME",
     )
-    def import_path_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def import_path_tail(self, p: YaccProduction) -> YaccProduction:
         """Import path tail rule."""
         return p
 
@@ -138,7 +138,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "name_as_list COMMA NAME",
         "name_as_list COMMA NAME KW_AS NAME",
     )
-    def name_as_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def name_as_list(self, p: YaccProduction) -> YaccProduction:
         """Name as list rule."""
         return p
 
@@ -149,7 +149,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "architype_decl",
         "architype_def",
     )
-    def architype(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def architype(self, p: YaccProduction) -> YaccProduction:
         """Architype rule."""
         return p
 
@@ -159,7 +159,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag KW_OBJECT access_tag NAME inherited_archs member_block",
         "doc_tag KW_WALKER access_tag NAME inherited_archs member_block",
     )
-    def architype_inline_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def architype_inline_spec(self, p: YaccProduction) -> YaccProduction:
         """Architype rule."""
         return p
 
@@ -169,7 +169,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag KW_OBJECT access_tag NAME inherited_archs SEMI",
         "doc_tag KW_WALKER access_tag NAME inherited_archs SEMI",
     )
-    def architype_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def architype_decl(self, p: YaccProduction) -> YaccProduction:
         """Architype declaration rule."""
         return p
 
@@ -177,7 +177,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag strict_arch_ref member_block",
         "doc_tag NAME strict_arch_ref member_block",
     )
-    def architype_def(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def architype_def(self, p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
         return p
 
@@ -185,12 +185,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "empty",
         "inherited_archs sub_name",
     )
-    def inherited_archs(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def inherited_archs(self, p: YaccProduction) -> YaccProduction:
         """Sub name list rule."""
         return p
 
     @_("COLON NAME")
-    def sub_name(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def sub_name(self, p: YaccProduction) -> YaccProduction:
         """Sub name rule."""
         return p
 
@@ -201,7 +201,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "ability_decl",
         "ability_def",
     )
-    def ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
 
@@ -209,7 +209,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag KW_CAN access_tag NAME return_type_tag code_block",
         "doc_tag KW_CAN access_tag NAME func_decl code_block",
     )
-    def ability_inline_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability_inline_spec(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
 
@@ -217,7 +217,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag KW_CAN access_tag NAME return_type_tag SEMI",
         "doc_tag KW_CAN access_tag NAME func_decl SEMI",
     )
-    def ability_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability_decl(self, p: YaccProduction) -> YaccProduction:
         """Ability declaration rule."""
         return p
 
@@ -225,7 +225,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag ability_ref code_block",
         "doc_tag NAME ability_ref code_block",
     )
-    def ability_def(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability_def(self, p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
         return p
 
@@ -235,7 +235,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag NAME strict_arch_ref ability_ref code_block",
         "doc_tag NAME strict_arch_ref ability_ref func_decl code_block",
     )
-    def sub_ability_spec(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def sub_ability_spec(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
 
@@ -245,7 +245,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LBRACE RBRACE",
         "LBRACE member_stmt_list RBRACE",
     )
-    def member_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def member_block(self, p: YaccProduction) -> YaccProduction:
         """Attribute block rule."""
         return p
 
@@ -253,7 +253,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "member_stmt",
         "member_stmt_list member_stmt",
     )
-    def member_stmt_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def member_stmt_list(self, p: YaccProduction) -> YaccProduction:
         """Attribute statement list rule."""
         return p
 
@@ -261,14 +261,14 @@ class JacParser(JacParseErrorMixIn, Parser):
         "has_stmt",
         "can_stmt",
     )
-    def member_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def member_stmt(self, p: YaccProduction) -> YaccProduction:
         """Attribute statement rule."""
         return p
 
     # Has statements
     # --------------
     @_("doc_tag KW_HAS access_tag has_assign_clause SEMI")
-    def has_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def has_stmt(self, p: YaccProduction) -> YaccProduction:
         """Has statement rule."""
         return p
 
@@ -276,7 +276,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "typed_has_clause",
         "has_assign_clause COMMA typed_has_clause",
     )
-    def has_assign_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def has_assign_clause(self, p: YaccProduction) -> YaccProduction:
         """Has assign list rule."""
         return p
 
@@ -284,12 +284,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "NAME type_tag",
         "NAME type_tag EQ expression",
     )
-    def typed_has_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def typed_has_clause(self, p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
         return p
 
     @_("COLON type_name")
-    def type_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def type_tag(self, p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
         return p
 
@@ -297,7 +297,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "empty",
         "RETURN_HINT type_name",
     )
-    def return_type_tag(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def return_type_tag(self, p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
         return p
 
@@ -308,7 +308,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "TYP_LIST LSQUARE type_name RSQUARE",
         "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
     )
-    def type_name(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def type_name(self, p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
         return p
 
@@ -325,7 +325,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "TYP_ANY",
         "TYP_TYPE",
     )
-    def builtin_type(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def builtin_type(self, p: YaccProduction) -> YaccProduction:
         """Any type rule."""
         return p
 
@@ -335,7 +335,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "can_ds_ability",
         "can_func_ability",
     )
-    def can_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def can_stmt(self, p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
 
@@ -343,7 +343,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag KW_CAN access_tag NAME event_clause code_block",
         "doc_tag KW_CAN access_tag NAME event_clause SEMI",
     )
-    def can_ds_ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def can_ds_ability(self, p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
 
@@ -351,7 +351,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag KW_CAN access_tag NAME func_decl code_block",
         "doc_tag KW_CAN access_tag NAME func_decl SEMI",
     )
-    def can_func_ability(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def can_func_ability(self, p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
 
@@ -364,7 +364,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_WITH name_list KW_ENTRY",
         "KW_WITH name_list KW_EXIT",
     )
-    def event_clause(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def event_clause(self, p: YaccProduction) -> YaccProduction:
         """Event clause rule."""
         return p
 
@@ -372,7 +372,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "NAME",
         "name_list COMMA NAME",
     )
-    def name_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def name_list(self, p: YaccProduction) -> YaccProduction:
         """Name list rule."""
         return p
 
@@ -380,7 +380,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LPAREN RPAREN return_type_tag",
         "LPAREN func_decl_param_list RPAREN return_type_tag",
     )
-    def func_decl(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def func_decl(self, p: YaccProduction) -> YaccProduction:
         """Func declaration parameter rule."""
         return p
 
@@ -388,7 +388,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "param_var",
         "func_decl_param_list COMMA param_var",
     )
-    def func_decl_param_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def func_decl_param_list(self, p: YaccProduction) -> YaccProduction:
         """Func declaration parameters list rule."""
         return p
 
@@ -396,7 +396,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "NAME type_tag",
         "NAME type_tag EQ expression",
     )
-    def param_var(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def param_var(self, p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
         return p
 
@@ -404,7 +404,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LBRACE RBRACE",
         "LBRACE statement_list RBRACE",
     )
-    def code_block(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def code_block(self, p: YaccProduction) -> YaccProduction:
         """Code block rule."""
         return p
 
@@ -414,7 +414,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "statement_list statement",
         "statement",
     )
-    def statement_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def statement_list(self, p: YaccProduction) -> YaccProduction:
         """Statement list rule."""
         return p
 
@@ -435,7 +435,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "yield_stmt SEMI",
         "walker_stmt",
     )
-    def statement(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def statement(self, p: YaccProduction) -> YaccProduction:
         """Statement rule."""
         return p
 
@@ -445,7 +445,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_IF expression code_block elif_list",
         "KW_IF expression code_block elif_list else_stmt",
     )
-    def if_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def if_stmt(self, p: YaccProduction) -> YaccProduction:
         """If statement rule."""
         return p
 
@@ -453,12 +453,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_ELIF expression code_block",
         "elif_list KW_ELIF expression code_block",
     )
-    def elif_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def elif_list(self, p: YaccProduction) -> YaccProduction:
         """Else if statement list rule."""
         return p
 
     @_("KW_ELSE code_block")
-    def else_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def else_stmt(self, p: YaccProduction) -> YaccProduction:
         """Else statement rule."""
         return p
 
@@ -468,7 +468,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_TRY code_block finally_stmt",
         "KW_TRY code_block except_list finally_stmt",
     )
-    def try_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def try_stmt(self, p: YaccProduction) -> YaccProduction:
         """Try statement rule."""
         return p
 
@@ -476,7 +476,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "except_def",
         "except_list except_def",
     )
-    def except_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def except_list(self, p: YaccProduction) -> YaccProduction:
         """Except statement list rule."""
         return p
 
@@ -484,14 +484,14 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_EXCEPT expression code_block",
         "KW_EXCEPT expression KW_AS NAME code_block",
     )
-    def except_def(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def except_def(self, p: YaccProduction) -> YaccProduction:
         """Except definition rule."""
         return p
 
     @_(
         "KW_FINALLY code_block",
     )
-    def finally_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def finally_stmt(self, p: YaccProduction) -> YaccProduction:
         """Except finally statement rule."""
         return p
 
@@ -500,12 +500,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_FOR NAME KW_IN expression code_block",
         "KW_FOR NAME COMMA NAME KW_IN expression code_block",
     )
-    def for_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def for_stmt(self, p: YaccProduction) -> YaccProduction:
         """For statement rule."""
         return p
 
     @_("KW_WHILE expression code_block")
-    def while_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def while_stmt(self, p: YaccProduction) -> YaccProduction:
         """While statement rule."""
         return p
 
@@ -513,7 +513,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_RAISE",
         "KW_RAISE expression",
     )
-    def raise_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def raise_stmt(self, p: YaccProduction) -> YaccProduction:
         """Raise statement rule."""
         return p
 
@@ -521,7 +521,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_ASSERT expression",
         "KW_ASSERT expression COMMA expression",
     )
-    def assert_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def assert_stmt(self, p: YaccProduction) -> YaccProduction:
         """Assert statement rule."""
         return p
 
@@ -530,19 +530,19 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_BREAK",
         "KW_SKIP",
     )
-    def ctrl_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ctrl_stmt(self, p: YaccProduction) -> YaccProduction:
         """Control statement rule."""
         return p
 
     @_("KW_DELETE expression")
-    def delete_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def delete_stmt(self, p: YaccProduction) -> YaccProduction:
         """Delete statement rule."""
         return p
 
     @_(
         "KW_REPORT expression",
     )
-    def report_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def report_stmt(self, p: YaccProduction) -> YaccProduction:
         """Report statement rule."""
         return p
 
@@ -550,7 +550,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_RETURN",
         "KW_RETURN expression",
     )
-    def return_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def return_stmt(self, p: YaccProduction) -> YaccProduction:
         """Report statement rule."""
         return p
 
@@ -558,7 +558,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_YIELD",
         "KW_YIELD expression",
     )
-    def yield_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def yield_stmt(self, p: YaccProduction) -> YaccProduction:
         """Yield statement rule."""
         return p
 
@@ -569,12 +569,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "disengage_stmt SEMI",
         "sync_stmt SEMI",
     )
-    def walker_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def walker_stmt(self, p: YaccProduction) -> YaccProduction:
         """Walker statement rule."""
         return p
 
     @_("KW_IGNORE expression")
-    def ignore_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ignore_stmt(self, p: YaccProduction) -> YaccProduction:
         """Ignore statement rule."""
         return p
 
@@ -584,7 +584,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_VISIT expression else_stmt",
         "KW_VISIT sub_name expression else_stmt",
     )
-    def visit_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def visit_stmt(self, p: YaccProduction) -> YaccProduction:
         """Visit statement rule."""
         return p
 
@@ -594,29 +594,29 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_REVISIT else_stmt",
         "KW_REVISIT expression else_stmt",
     )
-    def revisit_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def revisit_stmt(self, p: YaccProduction) -> YaccProduction:
         """Visit statement rule."""
         return p
 
     @_("KW_DISENGAGE")
-    def disengage_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def disengage_stmt(self, p: YaccProduction) -> YaccProduction:
         """Disengage statement rule."""
         return p
 
     @_("KW_SYNC expression")
-    def sync_stmt(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def sync_stmt(self, p: YaccProduction) -> YaccProduction:
         """Sync statement rule."""
         return p
 
     # Expression rules (precedence built into grammar)
     # ------------------------------------------------
     @_("atom EQ expression")
-    def assignment(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def assignment(self, p: YaccProduction) -> YaccProduction:
         """Rule for assignment statement."""
         return p
 
     @_("KW_HAS assignment_list SEMI")
-    def static_assignment(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def static_assignment(self, p: YaccProduction) -> YaccProduction:
         """Rule for static assignment statement."""
         return p
 
@@ -624,7 +624,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "walrus_assign",
         "walrus_assign KW_IF expression KW_ELSE expression",
     )
-    def expression(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def expression(self, p: YaccProduction) -> YaccProduction:
         """Expression rule."""
         return p
 
@@ -632,7 +632,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "pipe",
         "pipe walrus_op walrus_assign",
     )
-    def walrus_assign(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def walrus_assign(self, p: YaccProduction) -> YaccProduction:
         """Walrus assignment rule."""
         return p
 
@@ -643,7 +643,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "pipe_back PIPE_FWD spawn_ctx",  # for rapid assignments to collections, etc
         "spawn_ctx PIPE_FWD pipe",  # for function calls
     )
-    def pipe(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def pipe(self, p: YaccProduction) -> YaccProduction:
         """Pipe forward rule."""
         return p
 
@@ -654,7 +654,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "elvis_check PIPE_BKWD spawn_ctx",
         "spawn_ctx PIPE_BKWD pipe_back",
     )
-    def pipe_back(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def pipe_back(self, p: YaccProduction) -> YaccProduction:
         """Pipe backward rule."""
         return p
 
@@ -662,7 +662,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "logical",
         "logical ELVIS_OP elvis_check",
     )
-    def elvis_check(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def elvis_check(self, p: YaccProduction) -> YaccProduction:
         """Expression rule."""
         return p
 
@@ -671,7 +671,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "compare KW_AND logical",
         "compare KW_OR logical",
     )
-    def logical(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def logical(self, p: YaccProduction) -> YaccProduction:
         """Logical rule."""
         return p
 
@@ -680,7 +680,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "NOT compare",
         "arithmetic cmp_op compare",
     )
-    def compare(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def compare(self, p: YaccProduction) -> YaccProduction:
         """Compare rule."""
         return p
 
@@ -689,7 +689,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "term PLUS arithmetic",
         "term MINUS arithmetic",
     )
-    def arithmetic(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def arithmetic(self, p: YaccProduction) -> YaccProduction:
         """Arithmetic rule."""
         return p
 
@@ -699,7 +699,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "factor DIV term",
         "factor MOD term",
     )
-    def term(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def term(self, p: YaccProduction) -> YaccProduction:
         """Term rule."""
         return p
 
@@ -708,7 +708,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "MINUS factor",
         "power",
     )
-    def factor(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def factor(self, p: YaccProduction) -> YaccProduction:
         """Factor rule."""
         return p
 
@@ -716,7 +716,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "connect",
         "connect POW power",
     )
-    def power(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def power(self, p: YaccProduction) -> YaccProduction:
         """Power rule."""
         return p
 
@@ -725,7 +725,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "spawn_object connect_op connect",
         "spawn_object",
     )
-    def connect(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def connect(self, p: YaccProduction) -> YaccProduction:
         """Connect rule."""
         return p
 
@@ -733,7 +733,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "spawn_op atom",
         "unpack",
     )
-    def spawn_object(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def spawn_object(self, p: YaccProduction) -> YaccProduction:
         """Spawn object rule."""
         return p
 
@@ -742,7 +742,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "STAR_MUL atom",
         "ref",
     )
-    def unpack(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def unpack(self, p: YaccProduction) -> YaccProduction:
         """Unpack rule."""
         return p
 
@@ -750,7 +750,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_REF ds_call",
         "ds_call",
     )
-    def ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ref(self, p: YaccProduction) -> YaccProduction:
         """Unpack rule."""
         return p
 
@@ -758,7 +758,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "PIPE_FWD atom",
         "atom",
     )
-    def ds_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ds_call(self, p: YaccProduction) -> YaccProduction:
         """Unpack rule."""
         return p
 
@@ -770,7 +770,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "DIV_EQ",
         "MOD_EQ",
     )
-    def walrus_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def walrus_op(self, p: YaccProduction) -> YaccProduction:
         """Production Assignment rule."""
         return p
 
@@ -784,7 +784,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_IN",
         "KW_NIN",
     )
-    def cmp_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def cmp_op(self, p: YaccProduction) -> YaccProduction:
         """Compare operator rule."""
         return p
 
@@ -792,7 +792,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "KW_SPAWN",
         "SPAWN_OP",
     )
-    def spawn_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def spawn_op(self, p: YaccProduction) -> YaccProduction:
         """Spawn operator rule."""
         return p
 
@@ -809,7 +809,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "arch_ref",
         "edge_op_ref",
     )
-    def atom(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def atom(self, p: YaccProduction) -> YaccProduction:
         """Atom rule."""
         return p
 
@@ -825,7 +825,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "NAME",
         "builtin_type",
     )
-    def atom_literal(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def atom_literal(self, p: YaccProduction) -> YaccProduction:
         """Atom rule."""
         return p
 
@@ -835,7 +835,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         # sets and tuples are supported through the pipe forward semantic
         "comprehension",
     )
-    def atom_collection(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def atom_collection(self, p: YaccProduction) -> YaccProduction:
         """Atom rule."""
         return p
 
@@ -845,7 +845,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "STRING multistring",
         "FSTRING multistring",
     )
-    def multistring(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def multistring(self, p: YaccProduction) -> YaccProduction:
         """Multistring rule."""
         return p
 
@@ -853,7 +853,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LSQUARE RSQUARE",
         "LSQUARE expr_list RSQUARE",
     )
-    def list_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def list_val(self, p: YaccProduction) -> YaccProduction:
         """List value rule."""
         return p
 
@@ -861,7 +861,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "expression",
         "expr_list COMMA expression",
     )
-    def expr_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def expr_list(self, p: YaccProduction) -> YaccProduction:
         """Expression list rule."""
         return p
 
@@ -869,7 +869,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LBRACE RBRACE",
         "LBRACE kv_pairs RBRACE",
     )
-    def dict_val(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def dict_val(self, p: YaccProduction) -> YaccProduction:
         """Production for dictionary value rule."""
         return p
 
@@ -879,7 +879,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE",
         "LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE",
     )
-    def comprehension(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def comprehension(self, p: YaccProduction) -> YaccProduction:
         """Comprehension rule."""
         return p
 
@@ -887,7 +887,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "expression COLON expression",
         "kv_pairs COMMA expression COLON expression",
     )
-    def kv_pairs(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def kv_pairs(self, p: YaccProduction) -> YaccProduction:
         """Key/value pairs rule."""
         return p
 
@@ -896,7 +896,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atomic_chain_unsafe",
         "atomic_call",
     )
-    def atomic_chain(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def atomic_chain(self, p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
         return p
 
@@ -905,7 +905,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom index_slice",
         "atom arch_ref",
     )
-    def atomic_chain_unsafe(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def atomic_chain_unsafe(self, p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
         return p
 
@@ -914,12 +914,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "atom NULL_OK index_slice",
         "atom NULL_OK arch_ref",
     )
-    def atomic_chain_safe(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def atomic_chain_safe(self, p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
         return p
 
     @_("atom func_call_tail")
-    def atomic_call(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def atomic_call(self, p: YaccProduction) -> YaccProduction:
         """Ability call rule."""
         return p
 
@@ -927,7 +927,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LPAREN RPAREN",
         "LPAREN param_list RPAREN",
     )
-    def func_call_tail(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def func_call_tail(self, p: YaccProduction) -> YaccProduction:
         """Rule for function calls."""
         return p
 
@@ -936,7 +936,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "assignment_list",
         "expr_list COMMA assignment_list",
     )
-    def param_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def param_list(self, p: YaccProduction) -> YaccProduction:
         """Parameter list rule."""
         return p
 
@@ -944,7 +944,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "assignment",
         "assignment_list COMMA assignment",
     )
-    def assignment_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def assignment_list(self, p: YaccProduction) -> YaccProduction:
         """Keyword expression list rule."""
         return p
 
@@ -952,12 +952,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "LSQUARE expression RSQUARE",
         "LSQUARE expression COLON expression RSQUARE",
     )
-    def index_slice(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def index_slice(self, p: YaccProduction) -> YaccProduction:
         """Index/slice rule."""
         return p
 
     @_("GLOBAL_OP NAME")
-    def global_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def global_ref(self, p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
         return p
 
@@ -965,7 +965,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "HERE_OP NAME",
         "HERE_OP",
     )
-    def here_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def here_ref(self, p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
         return p
 
@@ -973,7 +973,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "VISITOR_OP NAME",
         "VISITOR_OP",
     )
-    def visitor_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def visitor_ref(self, p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
         return p
 
@@ -986,7 +986,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "object_ref",
         "ability_ref",
     )
-    def arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def arch_ref(self, p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
         return p
 
@@ -996,32 +996,32 @@ class JacParser(JacParseErrorMixIn, Parser):
         "walker_ref",
         "object_ref",
     )
-    def strict_arch_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def strict_arch_ref(self, p: YaccProduction) -> YaccProduction:
         """Strict Architype reference rule."""
         return p
 
     @_("NODE_OP NAME")
-    def node_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def node_ref(self, p: YaccProduction) -> YaccProduction:
         """Node reference rule."""
         return p
 
     @_("EDGE_OP NAME")
-    def edge_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def edge_ref(self, p: YaccProduction) -> YaccProduction:
         """Edge reference rule."""
         return p
 
     @_("WALKER_OP NAME")
-    def walker_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def walker_ref(self, p: YaccProduction) -> YaccProduction:
         """Walker reference rule."""
         return p
 
     @_("OBJECT_OP NAME")
-    def object_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def object_ref(self, p: YaccProduction) -> YaccProduction:
         """Object type reference rule."""
         return p
 
     @_("ABILITY_OP NAME")
-    def ability_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def ability_ref(self, p: YaccProduction) -> YaccProduction:
         """Ability reference rule."""
         return p
 
@@ -1032,7 +1032,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "edge_from",
         "edge_any",
     )
-    def edge_op_ref(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def edge_op_ref(self, p: YaccProduction) -> YaccProduction:
         """Edge reference rule."""
         return p
 
@@ -1040,7 +1040,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "ARROW_R",
         "ARROW_R_p1 expression ARROW_R_p2",
     )
-    def edge_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def edge_to(self, p: YaccProduction) -> YaccProduction:
         """Edge to rule."""
         return p
 
@@ -1048,7 +1048,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "ARROW_L",
         "ARROW_L_p1 expression ARROW_L_p2",
     )
-    def edge_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def edge_from(self, p: YaccProduction) -> YaccProduction:
         """Edge from rule."""
         return p
 
@@ -1056,7 +1056,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "ARROW_BI",
         "ARROW_L_p1 expression ARROW_R_p2",
     )
-    def edge_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def edge_any(self, p: YaccProduction) -> YaccProduction:
         """Edge any rule."""
         return p
 
@@ -1065,12 +1065,12 @@ class JacParser(JacParseErrorMixIn, Parser):
         "connect_from",
         "connect_any",
     )
-    def connect_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def connect_op(self, p: YaccProduction) -> YaccProduction:
         """Connect operator rule."""
         return p
 
     @_("NOT edge_op_ref")
-    def disconnect_op(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def disconnect_op(self, p: YaccProduction) -> YaccProduction:
         """Connect operator not rule."""
         return p
 
@@ -1078,7 +1078,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "CARROW_R",
         "CARROW_R_p1 expression CARROW_R_p2",
     )
-    def connect_to(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def connect_to(self, p: YaccProduction) -> YaccProduction:
         """Connect to rule."""
         return p
 
@@ -1086,7 +1086,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "CARROW_L",
         "CARROW_L_p1 expression CARROW_L_p2",
     )
-    def connect_from(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def connect_from(self, p: YaccProduction) -> YaccProduction:
         """Connect from rule."""
         return p
 
@@ -1094,19 +1094,19 @@ class JacParser(JacParseErrorMixIn, Parser):
         "CARROW_BI",
         "CARROW_L_p1 expression CARROW_R_p2",
     )
-    def connect_any(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def connect_any(self, p: YaccProduction) -> YaccProduction:
         """Connect any rule."""
         return p
 
     @_(
         "LPAREN EQ filter_compare_list RPAREN",
     )
-    def filter_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def filter_ctx(self, p: YaccProduction) -> YaccProduction:
         """Filter context rule."""
         return p
 
     @_("LBRACE param_list RBRACE")
-    def spawn_ctx(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def spawn_ctx(self, p: YaccProduction) -> YaccProduction:
         """Spawn context rule."""
         return p
 
@@ -1114,11 +1114,11 @@ class JacParser(JacParseErrorMixIn, Parser):
         "NAME cmp_op expression",
         "filter_compare_list COMMA NAME cmp_op expression",
     )
-    def filter_compare_list(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def filter_compare_list(self, p: YaccProduction) -> YaccProduction:
         """Filter comparison list rule."""
         return p
 
     @_("")
-    def empty(self: "JacParser", p: YaccProduction) -> YaccProduction:
+    def empty(self, p: YaccProduction) -> YaccProduction:
         """Empty rule."""
         return p

@@ -19,7 +19,7 @@ class Element:
     """Base class for every object in Jaseci."""
 
     def __init__(
-        self: "Element",
+        self,
         owner_id: UUID,
         memory: Memory,
         id: UUID = None,
@@ -35,31 +35,31 @@ class Element:
         self.owner_id = owner_id
         self._memory = memory
 
-    def make_public_read(self: "Element") -> None:
+    def make_public_read(self) -> None:
         """Make element publically readable."""
         self.access_default = AccessMode.PUBLIC_READ
 
-    def make_public_write(self: "Element") -> None:
+    def make_public_write(self) -> None:
         """Make element publically writable."""
         self.access_default = AccessMode.PUBLIC_WRITE
 
-    def make_private(self: "Element") -> None:
+    def make_private(self) -> None:
         """Make element private."""
         self.access_default = AccessMode.PRIVATE
 
-    def is_public_read(self: "Element") -> bool:
+    def is_public_read(self) -> bool:
         """Check if element is publically readable."""
         return self.access_default == AccessMode.PUBLIC_READ
 
-    def is_public_write(self: "Element") -> bool:
+    def is_public_write(self) -> bool:
         """Check if element is publically writable."""
         return self.access_default == AccessMode.PUBLIC_WRITE
 
-    def is_private(self: "Element") -> bool:
+    def is_private(self) -> bool:
         """Check if element is private."""
         return self.access_default == AccessMode.PRIVATE
 
-    def is_readable(self: "Element", caller_id: UUID) -> bool:
+    def is_readable(self, caller_id: UUID) -> bool:
         """Check if element is readable by caller."""
         return (
             caller_id == self.owner_id
@@ -68,7 +68,7 @@ class Element:
             or caller_id in self.rw_access
         )
 
-    def is_writable(self: "Element", caller_id: UUID) -> bool:
+    def is_writable(self, caller_id: UUID) -> bool:
         """Check if element is writable by caller."""
         return (
             caller_id == self.owner_id
@@ -76,14 +76,14 @@ class Element:
             or caller_id in self.rw_access
         )
 
-    def give_access(self: "Element", caller_id: UUID, read_only: bool = True) -> None:
+    def give_access(self, caller_id: UUID, read_only: bool = True) -> None:
         """Give access to caller."""
         if read_only:
             self.ro_access.add(caller_id)
         else:
             self.rw_access.add(caller_id)
 
-    def revoke_access(self: "Element", caller_id: UUID) -> None:
+    def revoke_access(self, caller_id: UUID) -> None:
         """Revoke access from caller."""
         self.ro_access.discard(caller_id)
         self.rw_access.discard(caller_id)

@@ -29,20 +29,18 @@ CREATE_OBJECT = "create_object"  # noqa
 class TranspilePass(Pass):
     """Jac transpilation to python pass."""
 
-    def __init__(self: "TranspilePass", ir: AstNode) -> None:
+    def __init__(self, ir: AstNode) -> None:
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
         self.cur_arch = None  # tracks current architype during transpilation
         super().__init__(ir)
 
-    def indent_str(self: "TranspilePass", indent_delta: int) -> str:
+    def indent_str(self, indent_delta: int) -> str:
         """Return string for indent."""
         return " " * self.indent_size * (self.indent_level + indent_delta)
 
-    def emit_ln(
-        self: "TranspilePass", node: AstNode, s: str, indent_delta: int = 0
-    ) -> None:
+    def emit_ln(self, node: AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
         node.py_code += (
             self.indent_str(indent_delta)
@@ -50,18 +48,18 @@ class TranspilePass(Pass):
             + "\n"
         )
 
-    def emit(self: "TranspilePass", node: AstNode, s: str) -> None:
+    def emit(self, node: AstNode, s: str) -> None:
         """Emit code to node."""
         # node.py_code += s
 
-    def exit_start(self: "TranspilePass", node: AstNode) -> None:
+    def exit_start(self, node: AstNode) -> None:
         """Convert start to python code.
 
         start -> element_list
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_element_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_element_list(self, node: AstNode) -> None:
         """Convert element list to python code.
 
         element_list -> element_list element
@@ -70,7 +68,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_element(self: "TranspilePass", node: AstNode) -> None:
+    def exit_element(self, node: AstNode) -> None:
         """Convert element to python code.
 
         element -> ability
@@ -82,14 +80,14 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_global_var(self: "TranspilePass", node: AstNode) -> None:
+    def exit_global_var(self, node: AstNode) -> None:
         """Convert global var to python code.
 
         global_var -> KW_GLOBAL global_var_clause SEMI
         """
         self.emit_ln(node, node.kid[1].py_code)
 
-    def exit_global_var_clause(self: "TranspilePass", node: AstNode) -> None:
+    def exit_global_var_clause(self, node: AstNode) -> None:
         """Convert global var clause to python code.
 
         global_var_clause -> global_var_clause COMMA NAME EQ expression
@@ -101,7 +99,7 @@ class TranspilePass(Pass):
             self.emit_ln(node, node.kid[0].py_code)
             self.emit_ln(node, REG_GLOB_FUNC(node.kid[2].py_code, node.kid[4].py_code))
 
-    def exit_test(self: "TranspilePass", node: AstNode) -> None:
+    def exit_test(self, node: AstNode) -> None:
         """Convert test to python code.
 
         test -> KW_TEST NAME multistring KW_WITH member_block spawn_ctx code_block
@@ -111,7 +109,7 @@ class TranspilePass(Pass):
         """
         # TODO: Add implementation
 
-    def exit_import_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_import_stmt(self, node: AstNode) -> None:
         """Convert import statement to python code.
 
         import_stmt -> KW_IMPORT COLON NAME KW_FROM import_path COMMA name_as_list SEMI
@@ -127,7 +125,7 @@ class TranspilePass(Pass):
         # else:
         #     self.emit_ln(node, f"import {node.kid[3].py_code}")
 
-    def exit_import_path(self: "TranspilePass", node: AstNode) -> None:
+    def exit_import_path(self, node: AstNode) -> None:
         """Convert import path to python code.
 
         import_path -> import_path_prefix import_path_tail
@@ -138,7 +136,7 @@ class TranspilePass(Pass):
         else:
             self.emit(node, node.kid[0].py_code + node.kid[1].py_code)
 
-    def exit_import_path_prefix(self: "TranspilePass", node: AstNode) -> None:
+    def exit_import_path_prefix(self, node: AstNode) -> None:
         """Convert import path prefix to python code.
 
         import_path_prefix -> DOT DOT NAME
@@ -148,7 +146,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_import_path_tail(self: "TranspilePass", node: AstNode) -> None:
+    def exit_import_path_tail(self, node: AstNode) -> None:
         """Convert import path tail to python code.
 
         import_path_tail -> import_path_tail DOT NAME
@@ -157,7 +155,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_name_as_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_name_as_list(self, node: AstNode) -> None:
         """Convert name as list to python code.
 
         name_as_list -> name_as_list COMMA NAME KW_AS NAME
@@ -178,7 +176,7 @@ class TranspilePass(Pass):
                 f"{node.kid[0].py_code}, {node.kid[2].py_code} as {node.kid[4].py_code}",
             )
 
-    def enter_architype(self: "TranspilePass", node: AstNode) -> None:
+    def enter_architype(self, node: AstNode) -> None:
         """Convert architype to python code.
 
         architype -> KW_WALKER NAME arch_decl_tail
@@ -189,7 +187,7 @@ class TranspilePass(Pass):
         self.indent_level += 1
         self.cur_arch = {"name": node.kid[1].value, "typ": node.kid[0].value}
 
-    def exit_architype(self: "TranspilePass", node: AstNode) -> None:
+    def exit_architype(self, node: AstNode) -> None:
         """Convert architype to python code.
 
         architype -> KW_WALKER NAME arch_decl_tail
@@ -207,7 +205,7 @@ class TranspilePass(Pass):
         self.indent_level -= 1
         self.cur_arch = None
 
-    def exit_arch_decl_tail(self: "TranspilePass", node: AstNode) -> None:
+    def exit_arch_decl_tail(self, node: AstNode) -> None:
         """Convert arch decl tail to python code.
 
         arch_decl_tail -> inherited_archs member_block
@@ -219,7 +217,7 @@ class TranspilePass(Pass):
             node.details["inherits"] = node.kid[0].py_code
             self.emit(node, node.kid[1].py_code)
 
-    def exit_inherited_archs(self: "TranspilePass", node: AstNode) -> None:
+    def exit_inherited_archs(self, node: AstNode) -> None:
         """Convert inherited archs to python code.
 
         inherited_archs -> inherited_archs sub_name
@@ -232,14 +230,14 @@ class TranspilePass(Pass):
                 node, node.kid[0].py_code + ", " + node.kid[1].py_code.capitalize()
             )
 
-    def exit_sub_name(self: "TranspilePass", node: AstNode) -> None:
+    def exit_sub_name(self, node: AstNode) -> None:
         """Convert sub name to python code.
 
         sub_name -> COLON NAME
         """
         self.emit(node, node.kid[1].py_code)
 
-    def enter_ability(self: "TranspilePass", node: AstNode) -> None:
+    def enter_ability(self, node: AstNode) -> None:
         """Convert ability to python code.
 
         ability -> KW_ABILITY arch_ref DBL_COLON NAME func_decl code_block
@@ -247,7 +245,7 @@ class TranspilePass(Pass):
         """
         self.indent_level += 1
 
-    def exit_ability(self: "TranspilePass", node: AstNode) -> None:
+    def exit_ability(self, node: AstNode) -> None:
         """Convert ability to python code.
 
         # OLD: ability -> KW_ABILITY arch_ref NAME code_block
@@ -263,7 +261,7 @@ class TranspilePass(Pass):
         #     self.emit_ln(node, node.kid[3].py_code)
         # self.indent_level -= 1
 
-    def exit_member_block(self: "TranspilePass", node: AstNode) -> None:
+    def exit_member_block(self, node: AstNode) -> None:
         """Convert attr block to python code.
 
         member_block -> SEMI
@@ -280,7 +278,7 @@ class TranspilePass(Pass):
         else:
             self.emit(node, node.kid[1].py_code)
 
-    def exit_member_stmt_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_member_stmt_list(self, node: AstNode) -> None:
         """Convert attr stmt list to python code.
 
         member_stmt_list -> member_stmt_list member_stmt
@@ -289,7 +287,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_member_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_member_stmt(self, node: AstNode) -> None:
         """Convert attr stmt to python code.
 
         member_stmt -> can_stmt
@@ -297,14 +295,14 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_has_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_has_stmt(self, node: AstNode) -> None:
         """Convert has stmt to python code.
 
         has_stmt -> KW_HAS has_assign_clause SEMI
         """
         self.emit(node, node.kid[1].py_code)
 
-    def exit_has_assign_clause(self: "TranspilePass", node: AstNode) -> None:
+    def exit_has_assign_clause(self, node: AstNode) -> None:
         """Convert has assign clause to python code.
 
         #TODO: BROKEN
@@ -314,7 +312,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_param_var(self: "TranspilePass", node: AstNode) -> None:
+    def exit_param_var(self, node: AstNode) -> None:
         """Convert function declaration to python code.
 
         TODO: Broken
@@ -322,7 +320,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_has_tag(self: "TranspilePass", node: AstNode) -> None:
+    def exit_has_tag(self, node: AstNode) -> None:
         """Convert has tag to python code.
 
         has_tag -> KW_ANCHOR
@@ -337,14 +335,14 @@ class TranspilePass(Pass):
                 node, f"{node.kid[0].py_code}, {HAS_TAGS}.{node.kid[0].py_code.upper()}"
             )
 
-    def exit_type_tag(self: "TranspilePass", node: AstNode) -> None:
+    def exit_type_tag(self, node: AstNode) -> None:
         """Convert type spec to python code.
 
         type_tag -> COLON type_name
         """
         self.emit(node, node.kid[1].py_code)
 
-    def exit_type_name(self: "TranspilePass", node: AstNode) -> None:
+    def exit_type_name(self, node: AstNode) -> None:
         """Convert type name to python code.
 
         type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
@@ -355,7 +353,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_builtin_type(self: "TranspilePass", node: AstNode) -> None:
+    def exit_builtin_type(self, node: AstNode) -> None:
         """Convert builtin type to python code.
 
         builtin_type -> TYP_TYPE
@@ -371,12 +369,12 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_can_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_can_stmt(self, node: AstNode) -> None:
         """Convert can stmt to python code."""
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_can_ds_ability(self: "TranspilePass", node: AstNode) -> None:
+    def exit_can_ds_ability(self, node: AstNode) -> None:
         """Convert can stmt to python code.
 
         can_stmt -> KW_CAN NAME event_clause SEMI
@@ -395,7 +393,7 @@ class TranspilePass(Pass):
             f"self.add_ability(func={name}, on_event={clause})",
         )
 
-    def exit_can_func_ability(self: "TranspilePass", node: AstNode) -> None:
+    def exit_can_func_ability(self, node: AstNode) -> None:
         """Convert can stmt to python code.
 
         TODO: Broken
@@ -415,7 +413,7 @@ class TranspilePass(Pass):
             f"self.add_ability(func={name}, on_event={clause})",
         )
 
-    def exit_func_decl(self: "TranspilePass", node: AstNode) -> None:
+    def exit_func_decl(self, node: AstNode) -> None:
         """Convert function declaration to python code.
 
         TODO: Broken
@@ -423,12 +421,12 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_func_decl_param_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_func_decl_param_list(self, node: AstNode) -> None:
         """TODO: Broken."""
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_event_clause(self: "TranspilePass", node: AstNode) -> None:
+    def exit_event_clause(self, node: AstNode) -> None:
         """Convert event clause to python code.
 
         event_clause -> KW_WITH name_list KW_EXIT
@@ -440,7 +438,7 @@ class TranspilePass(Pass):
         names = node.kid[1].py_code if node.kid[1].name == "name_list" else ""
         self.emit(node, f"({EVENT_TAG}.{event}, ({names}))")
 
-    def exit_name_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_name_list(self, node: AstNode) -> None:
         """Convert name list to python code.
 
         name_list -> name_list COMMA NAME
@@ -451,7 +449,7 @@ class TranspilePass(Pass):
         else:
             self.emit(node, f'{node.kid[0].py_code}, "{node.kid[2].py_code}"')
 
-    def enter_code_block(self: "TranspilePass", node: AstNode) -> None:
+    def enter_code_block(self, node: AstNode) -> None:
         """Convert code block to python code.
 
         code_block -> LBRACE statement_list RBRACE
@@ -459,7 +457,7 @@ class TranspilePass(Pass):
         """
         self.indent_level += 1
 
-    def exit_code_block(self: "TranspilePass", node: AstNode) -> None:
+    def exit_code_block(self, node: AstNode) -> None:
         """Convert code block to python code.
 
         code_block -> LBRACE statement_list RBRACE
@@ -471,7 +469,7 @@ class TranspilePass(Pass):
             self.emit_ln(node, "pass")
         self.indent_level -= 1
 
-    def exit_statement_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_statement_list(self, node: AstNode) -> None:
         """Convert statement list to python code.
 
         statement_list -> statement
@@ -480,7 +478,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_statement(self: "TranspilePass", node: AstNode) -> None:
+    def exit_statement(self, node: AstNode) -> None:
         """Convert statement to python code.
 
         statement -> walker_stmt
@@ -500,7 +498,7 @@ class TranspilePass(Pass):
         else:
             self.emit(node, node.kid[0].py_code)
 
-    def exit_if_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_if_stmt(self, node: AstNode) -> None:
         """Convert if stmt to python code.
 
         if_stmt -> KW_IF expression code_block elif_list else_stmt
@@ -515,7 +513,7 @@ class TranspilePass(Pass):
             self.emit(node, node.kid[3].py_code)
             self.emit(node, node.kid[4].py_code)
 
-    def exit_elif_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_elif_list(self, node: AstNode) -> None:
         """Convert elif stmt list to python code.
 
         elif_list -> KW_ELIF expression code_block elif_list
@@ -526,7 +524,7 @@ class TranspilePass(Pass):
         if len(node.kid) == 4:
             self.emit(node, node.kid[3].py_code)
 
-    def exit_else_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_else_stmt(self, node: AstNode) -> None:
         """Convert else stmt to python code.
 
         else_stmt -> KW_ELSE code_block
@@ -534,7 +532,7 @@ class TranspilePass(Pass):
         self.emit_ln(node, "else:")
         self.emit(node, node.kid[1].py_code)
 
-    def exit_try_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_try_stmt(self, node: AstNode) -> None:
         """Convert try stmt to python code.
 
         try_stmt -> KW_TRY code_block else_from_try
@@ -545,7 +543,7 @@ class TranspilePass(Pass):
         if len(node.kid) == 3:
             self.emit(node, node.kid[2].py_code)
 
-    def exit_else_from_try(self: "TranspilePass", node: AstNode) -> None:
+    def exit_else_from_try(self, node: AstNode) -> None:
         """Convert else from try to python code.
 
         else_from_try -> KW_ELSE code_block
@@ -559,7 +557,7 @@ class TranspilePass(Pass):
             self.emit_ln(node, "except Exception:")
             self.emit(node, node.kid[3].py_code)
 
-    def exit_for_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_for_stmt(self, node: AstNode) -> None:
         """Convert for stmt to python code.
 
         for_stmt -> KW_FOR atom COMMA atom KW_IN expression code_block
@@ -581,7 +579,7 @@ class TranspilePass(Pass):
             self.emit(node, node.kid[5].py_code)
             self.emit_ln(node, f"{node.kid[6].py_code}", indent_delta=1)
 
-    def exit_while_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_while_stmt(self, node: AstNode) -> None:
         """Convert while stmt to python code.
 
         while_stmt -> KW_WHILE expression code_block
@@ -589,14 +587,14 @@ class TranspilePass(Pass):
         self.emit_ln(node, f"while {node.kid[1].py_code}:")
         self.emit(node, node.kid[2].py_code)
 
-    def exit_assert_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_assert_stmt(self, node: AstNode) -> None:
         """Convert assert stmt to python code.
 
         assert_stmt -> KW_ASSERT expression
         """
         self.emit_ln(node, f"assert {node.kid[1].py_code}")
 
-    def exit_ctrl_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_ctrl_stmt(self, node: AstNode) -> None:
         """Convert ctrl stmt to python code.
 
         ctrl_stmt -> KW_SKIP
@@ -607,28 +605,28 @@ class TranspilePass(Pass):
             self.emit_ln(node, "visitor.skip()")
         self.emit_ln(node, node.kid[0].py_code)
 
-    def exit_delete_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_delete_stmt(self, node: AstNode) -> None:
         """Convert delete stmt to python code.
 
         delete_stmt -> KW_DELETE expression
         """
         self.emit_ln(node, f"del {node.kid[1].py_code}")
 
-    def exit_report_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_report_stmt(self, node: AstNode) -> None:
         """Convert report stmt to python code.
 
         report_stmt -> KW_REPORT expression
         """
         self.emit_ln(node, f"visitor.report({node.kid[1].py_code})")
 
-    def exit_return_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_return_stmt(self, node: AstNode) -> None:
         """Convert return stmt to python code.
 
         return_stmt -> KW_RETURN expression
         """
         self.emit_ln(node, f"return {node.kid[1].py_code}")
 
-    def exit_walker_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_walker_stmt(self, node: AstNode) -> None:
         """Convert walker stmt to python code.
 
         walker_stmt -> sync_stmt
@@ -640,14 +638,14 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_ignore_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_ignore_stmt(self, node: AstNode) -> None:
         """Convert ignore stmt to python code.
 
         ignore_stmt -> KW_IGNORE expression SEMI
         """
         self.emit_ln(node, f"visitor.ignore({node.kid[1].py_code})")
 
-    def exit_visit_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_visit_stmt(self, node: AstNode) -> None:
         """Convert visit stmt to python code.
 
         visit_stmt -> KW_VISIT sub_name expression else_stmt
@@ -664,7 +662,7 @@ class TranspilePass(Pass):
             self.emit_ln(node, f"visitor.visit({node.kid[1].py_code})")
             self.emit(node, node.kid[2].py_code)
 
-    def exit_revisit_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_revisit_stmt(self, node: AstNode) -> None:
         """Convert visit stmt to python code.
 
         revisit_stmt -> KW_REVISIT expression else_stmt
@@ -684,35 +682,35 @@ class TranspilePass(Pass):
         else:
             self.emit_ln(node, "visitor.revisit()")
 
-    def exit_disengage_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_disengage_stmt(self, node: AstNode) -> None:
         """Convert disengage stmt to python code.
 
         disengage_stmt -> KW_DISENGAGE SEMI
         """
         self.emit_ln(node, "visitor.disengage()")
 
-    def exit_yield_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_yield_stmt(self, node: AstNode) -> None:
         """Convert yield stmt to python code.
 
         yield_stmt -> KW_YIELD SEMI
         """
         self.emit_ln(node, f"visitor.{YIELD_CMD}()")
 
-    def exit_sync_stmt(self: "TranspilePass", node: AstNode) -> None:
+    def exit_sync_stmt(self, node: AstNode) -> None:
         """Convert sync stmt to python code.
 
         sync_stmt -> KW_SYNC expression SEMI
         """
         self.emit_ln(node, f"{RT}.{SYNC_CMD}({node.kid[1].py_code})")
 
-    def exit_assignment(self: "TranspilePass", node: AstNode) -> None:
+    def exit_assignment(self, node: AstNode) -> None:
         """Convert assignment to python code.
 
         assignment -> atom EQ expression
         """
         self.emit(node, f"{node.kid[0].py_code} = {node.kid[2].py_code}")
 
-    def exit_expression(self: "TranspilePass", node: AstNode) -> None:
+    def exit_expression(self, node: AstNode) -> None:
         """Convert expression to python code.
 
         expression -> connect walrus_op expression
@@ -731,7 +729,7 @@ class TranspilePass(Pass):
                 f"{node.kid[0].py_code}:={node.kid[0].py_code}{node.kid[1].py_code}{node.kid[2].py_code}",
             )
 
-    def exit_walrus_op(self: "TranspilePass", node: AstNode) -> None:
+    def exit_walrus_op(self, node: AstNode) -> None:
         """Convert walrus op to python code.
 
         walrus_op -> DIV_EQ
@@ -742,7 +740,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_connect(self: "TranspilePass", node: AstNode) -> None:
+    def exit_connect(self, node: AstNode) -> None:
         """Convert connect to python code.
 
         connect -> logical connect_op connect
@@ -762,7 +760,7 @@ class TranspilePass(Pass):
         else:
             self.emit(node, node.kid[0].py_code)
 
-    def exit_logical(self: "TranspilePass", node: AstNode) -> None:
+    def exit_logical(self, node: AstNode) -> None:
         """Convert logical to python code.
 
         logical -> compare KW_OR logical
@@ -772,7 +770,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_compare(self: "TranspilePass", node: AstNode) -> None:
+    def exit_compare(self, node: AstNode) -> None:
         """Convert compare to python code.
 
         compare -> arithmetic cmp_op compare
@@ -785,7 +783,7 @@ class TranspilePass(Pass):
             for i in node.kid:
                 self.emit(node, i.py_code)
 
-    def exit_cmp_op(self: "TranspilePass", node: AstNode) -> None:
+    def exit_cmp_op(self, node: AstNode) -> None:
         """Convert cmp_op to python code.
 
         cmp_op -> KW_NIN
@@ -799,7 +797,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_arithmetic(self: "TranspilePass", node: AstNode) -> None:
+    def exit_arithmetic(self, node: AstNode) -> None:
         """Convert arithmetic to python code.
 
         arithmetic -> term MINUS arithmetic
@@ -809,7 +807,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_term(self: "TranspilePass", node: AstNode) -> None:
+    def exit_term(self, node: AstNode) -> None:
         """Convert term to python code.
 
         term -> factor MOD term
@@ -820,7 +818,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_factor(self: "TranspilePass", node: AstNode) -> None:
+    def exit_factor(self, node: AstNode) -> None:
         """Convert factor to python code.
 
         factor -> power
@@ -833,7 +831,7 @@ class TranspilePass(Pass):
         else:
             self.emit(node, node.kid[0].py_code)
 
-    def exit_power(self: "TranspilePass", node: AstNode) -> None:
+    def exit_power(self, node: AstNode) -> None:
         """Convert power to python code.
 
         power -> deref
@@ -846,21 +844,21 @@ class TranspilePass(Pass):
         else:
             self.emit(node, node.kid[0].py_code)
 
-    def exit_ref(self: "TranspilePass", node: AstNode) -> None:
+    def exit_ref(self, node: AstNode) -> None:
         """Convert ref to python code.
 
         ref -> KW_REF atom
         """
         self.emit(node, f"{RT}.ref({node.kid[1].py_code})")
 
-    def exit_deref(self: "TranspilePass", node: AstNode) -> None:
+    def exit_deref(self, node: AstNode) -> None:
         """Convert deref to python code.
 
         deref -> STAR_MUL atom
         """
         self.emit(node, f"{RT}.deref({node.kid[1].py_code})")
 
-    def exit_atom(self: "TranspilePass", node: AstNode) -> None:
+    def exit_atom(self, node: AstNode) -> None:
         """Convert atom to python code.
 
         atom -> KW_VISITOR
@@ -876,7 +874,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_atom_literal(self: "TranspilePass", node: AstNode) -> None:
+    def exit_atom_literal(self, node: AstNode) -> None:
         """Convert atom_literal to python code.
 
         atom_literal -> builtin_type
@@ -890,7 +888,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_atom_collection(self: "TranspilePass", node: AstNode) -> None:
+    def exit_atom_collection(self, node: AstNode) -> None:
         """Convert atom_collection to python code.
 
         atom_collection -> dict_val
@@ -898,7 +896,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_multistring(self: "TranspilePass", node: AstNode) -> None:
+    def exit_multistring(self, node: AstNode) -> None:
         """Convert multistring to python code.
 
         multistring -> STRING multistring
@@ -909,7 +907,7 @@ class TranspilePass(Pass):
         else:
             self.emit(node, f"{node.kid[0].py_code} {node.kid[1].py_code}")
 
-    def exit_list_val(self: "TranspilePass", node: AstNode) -> None:
+    def exit_list_val(self, node: AstNode) -> None:
         """Convert list_val to python code.
 
         list_val -> LSQUARE expr_list RSQUARE
@@ -918,7 +916,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_expr_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_expr_list(self, node: AstNode) -> None:
         """Convert expr_list to python code.
 
         expr_list -> expr_list COMMA expression
@@ -927,7 +925,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_dict_val(self: "TranspilePass", node: AstNode) -> None:
+    def exit_dict_val(self, node: AstNode) -> None:
         """Convert dict_val to python code.
 
         dict_val -> LBRACE kv_pairs RBRACE
@@ -936,7 +934,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_kv_pairs(self: "TranspilePass", node: AstNode) -> None:
+    def exit_kv_pairs(self, node: AstNode) -> None:
         """Convert kv_pairs to python code.
 
         kv_pairs -> expression COLON expression COMMA kv_pairs
@@ -945,7 +943,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_ds_call(self: "TranspilePass", node: AstNode) -> None:
+    def exit_ds_call(self, node: AstNode) -> None:
         """Convert ds_call to python code.
 
         ds_call -> DBL_COLON NAME
@@ -964,7 +962,7 @@ class TranspilePass(Pass):
             else:
                 self.emit(node, f".{A_CALL}({node.kid[1].py_code})")
 
-    def exit_atomic_chain(self: "TranspilePass", node: AstNode) -> None:
+    def exit_atomic_chain(self, node: AstNode) -> None:
         """Convert atomic_chain to python code.
 
         atomic_chain -> atomic_chain_unsafe
@@ -973,7 +971,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_atomic_chain_unsafe(self: "TranspilePass", node: AstNode) -> None:
+    def exit_atomic_chain_unsafe(self, node: AstNode) -> None:
         """Convert atom_trailer to python code.
 
         atomic_chain -> atom PIPE_FWD spawn_ctx
@@ -1003,7 +1001,7 @@ class TranspilePass(Pass):
             for i in node.kid:
                 self.emit(node, i.py_code)
 
-    def exit_atomic_chain_safe(self: "TranspilePass", node: AstNode) -> None:
+    def exit_atomic_chain_safe(self, node: AstNode) -> None:
         """Convert atom_trailer to python code.
 
         # TODO: implement
@@ -1034,7 +1032,7 @@ class TranspilePass(Pass):
             for i in node.kid:
                 self.emit(node, i.py_code)
 
-    def exit_call(self: "TranspilePass", node: AstNode) -> None:
+    def exit_call(self, node: AstNode) -> None:
         """Convert call to python code.
 
         call -> ds_call
@@ -1048,7 +1046,7 @@ class TranspilePass(Pass):
         else:
             self.emit(node, "()")
 
-    def exit_param_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_param_list(self, node: AstNode) -> None:
         """Convert param_list to python code.
 
         param_list -> expr_list COMMA assignment_list
@@ -1058,7 +1056,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_assignment_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_assignment_list(self, node: AstNode) -> None:
         """Convert assignment_list to python code.
 
         assignment_list -> assignment COMMA assignment_list
@@ -1067,7 +1065,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_index_slice(self: "TranspilePass", node: AstNode) -> None:
+    def exit_index_slice(self, node: AstNode) -> None:
         """Convert index_slice to python code.
 
         index_slice -> LSQUARE expression COLON expression RSQUARE
@@ -1076,7 +1074,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    def exit_global_ref(self: "TranspilePass", node: AstNode) -> None:
+    def exit_global_ref(self, node: AstNode) -> None:
         """Convert global_ref to python code.
 
         global_ref -> GLOBAL_OP NAME
@@ -1089,7 +1087,7 @@ class TranspilePass(Pass):
                 node, f"{GET_GLOBAL_FUNC}(({BUILTIN_TAG}.VAR, {node.kid[1].py_code}))"
             )
 
-    # def exit_node_edge_ref(self: "TranspilePass", node: AstNode) -> None:
+    # def exit_node_edge_ref(self, node: AstNode) -> None:
     #     """Convert node_edge_ref to python code.
 
     #     node_edge_ref -> edge_op_ref
@@ -1103,7 +1101,7 @@ class TranspilePass(Pass):
     #             f"{RT}.{APPLY_FILTER_CTX}(target={node.kid[0].py_code}, ctx={node.kid[1].py_code})",
     #         )
 
-    def exit_spawn(self: "TranspilePass", node: AstNode) -> None:
+    def exit_spawn(self, node: AstNode) -> None:
         """Convert spawn to python code.
 
         spawn -> spawn_arch
@@ -1112,7 +1110,7 @@ class TranspilePass(Pass):
         for i in node.kid:
             self.emit(node, i.py_code)
 
-    # def exit_spawn_arch(self: "TranspilePass", node: AstNode) -> None:
+    # def exit_spawn_arch(self, node: AstNode) -> None:
     #     """Convert spawn_arch to python code.
 
     #     spawn_arch -> object_spawn
@@ -1122,7 +1120,7 @@ class TranspilePass(Pass):
     #     for i in node.kid:
     #         self.emit(node, i.py_code)
 
-    def exit_node_spawn(self: "TranspilePass", node: AstNode) -> None:
+    def exit_node_spawn(self, node: AstNode) -> None:
         """Convert node_spawn to python code.
 
         node_spawn -> spawn_edge node_ref
@@ -1139,7 +1137,7 @@ class TranspilePass(Pass):
                 f"connect=({node.kid[1].py_code},{node.kid[2].py_code}))",
             )
 
-    def exit_spawn_edge(self: "TranspilePass", node: AstNode) -> None:
+    def exit_spawn_edge(self, node: AstNode) -> None:
         """Convert spawn_edge to python code.
 
         spawn_edge -> logical connect_op
@@ -1149,21 +1147,21 @@ class TranspilePass(Pass):
             f"{RT}.{CREATE_EDGE}({node.kid[0].py_code}, typ={node.kid[1].py_code})",
         )
 
-    # def exit_walker_spawn(self: "TranspilePass", node: AstNode) -> None:
+    # def exit_walker_spawn(self, node: AstNode) -> None:
     #     """Convert walker_spawn to python code.
 
     #     walker_spawn -> walker_ref
     #     """
     #     self.emit(node, f"{RT}.{CREATE_WALKER}({node.kid[0].py_code})")
 
-    # def exit_object_spawn(self: "TranspilePass", node: AstNode) -> None:
+    # def exit_object_spawn(self, node: AstNode) -> None:
     #     """Convert object_spawn to python code.
 
     #     object_spawn -> object_ref
     #     """
     #     self.emit(node, f"{RT}.{CREATE_OBJECT}({node.kid[0].py_code})")
 
-    def exit_built_in(self: "TranspilePass", node: AstNode) -> None:
+    def exit_built_in(self, node: AstNode) -> None:
         """Convert built_in to python code.
 
         built_in -> cast_built_in
@@ -1171,7 +1169,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_obj_built_in(self: "TranspilePass", node: AstNode) -> None:
+    def exit_obj_built_in(self, node: AstNode) -> None:
         """Convert obj_built_in to python code.
 
         obj_built_in -> KW_DETAILS
@@ -1180,7 +1178,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, None)")
 
-    def exit_cast_built_in(self: "TranspilePass", node: AstNode) -> None:
+    def exit_cast_built_in(self, node: AstNode) -> None:
         """Convert cast_built_in to python code.
 
         cast_built_in -> arch_ref
@@ -1188,7 +1186,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[2].py_code)
 
-    def exit_arch_ref(self: "TranspilePass", node: AstNode) -> None:
+    def exit_arch_ref(self, node: AstNode) -> None:
         """Convert arch_ref to python code.
 
         arch_ref -> object_ref
@@ -1197,7 +1195,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_node_ref(self: "TranspilePass", node: AstNode) -> None:
+    def exit_node_ref(self, node: AstNode) -> None:
         """Convert node_ref to python code.
 
         node_ref -> KW_NODE DBL_COLON NAME
@@ -1207,7 +1205,7 @@ class TranspilePass(Pass):
             f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
         )
 
-    def exit_walker_ref(self: "TranspilePass", node: AstNode) -> None:
+    def exit_walker_ref(self, node: AstNode) -> None:
         """Convert walker_ref to python code.
 
         walker_ref -> KW_WALKER DBL_COLON NAME
@@ -1217,7 +1215,7 @@ class TranspilePass(Pass):
         #     f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
         # )
 
-    def exit_object_ref(self: "TranspilePass", node: AstNode) -> None:
+    def exit_object_ref(self, node: AstNode) -> None:
         """Convert object_ref to python code.
 
         object_ref -> KW_OBJECT DBL_COLON NAME
@@ -1227,7 +1225,7 @@ class TranspilePass(Pass):
             f"({BUILTIN_TAG}.{node.kid[0].py_code.upper()}, {node.kid[2].py_code})",
         )
 
-    def exit_edge_op_ref(self: "TranspilePass", node: AstNode) -> None:
+    def exit_edge_op_ref(self, node: AstNode) -> None:
         """Convert edge_op_ref to python code.
 
         edge_op_ref -> edge_any
@@ -1236,7 +1234,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_edge_any(self: "TranspilePass", node: AstNode) -> None:
+    def exit_edge_any(self, node: AstNode) -> None:
         """Convert edge_any to python code.
 
         edge_any -> ARROW_L_p1 NAME filter_ctx ARROW_R_p2
@@ -1250,7 +1248,7 @@ class TranspilePass(Pass):
                 f"({BUILTIN_TAG}.EDGE_ANY, ({node.kid[1].py_code}, {node.kid[2].py_code})",
             )
 
-    def exit_edge_from(self: "TranspilePass", node: AstNode) -> None:
+    def exit_edge_from(self, node: AstNode) -> None:
         """Convert edge_from to python code.
 
         edge_from -> ARROW_L_p1 NAME filter_ctx ARROW_L_p2
@@ -1264,7 +1262,7 @@ class TranspilePass(Pass):
                 f"({BUILTIN_TAG}.EDGE_FROM, ({node.kid[1].py_code}, {node.kid[2].py_code})",
             )
 
-    def exit_edge_to(self: "TranspilePass", node: AstNode) -> None:
+    def exit_edge_to(self, node: AstNode) -> None:
         """Convert edge_to to python code.
 
         edge_to -> ARROW_R_p1 NAME filter_ctx ARROW_R_p2
@@ -1278,7 +1276,7 @@ class TranspilePass(Pass):
                 f"({BUILTIN_TAG}.EDGE_TO, ({node.kid[1].py_code}, {node.kid[2].py_code})",
             )
 
-    def exit_connect_op(self: "TranspilePass", node: AstNode) -> None:
+    def exit_connect_op(self, node: AstNode) -> None:
         """Convert connect_op to python code.
 
         connect_op -> connect_any
@@ -1287,7 +1285,7 @@ class TranspilePass(Pass):
         """
         self.emit(node, node.kid[0].py_code)
 
-    def exit_connect_to(self: "TranspilePass", node: AstNode) -> None:
+    def exit_connect_to(self, node: AstNode) -> None:
         """Convert connect_to to python code.
 
         connect_to -> CARROW_R_p1 NAME spawn_ctx CARROW_R_p2
@@ -1301,7 +1299,7 @@ class TranspilePass(Pass):
                 f"({BUILTIN_TAG}.CONNECT_TO, ({node.kid[1].py_code}, {node.kid[2].py_code})",
             )
 
-    def exit_connect_from(self: "TranspilePass", node: AstNode) -> None:
+    def exit_connect_from(self, node: AstNode) -> None:
         """Convert connect_from to python code.
 
         connect_from -> CARROW_L_p1 NAME spawn_ctx CARROW_L_p2
@@ -1315,7 +1313,7 @@ class TranspilePass(Pass):
                 f"({BUILTIN_TAG}.CONNECT_FROM, ({node.kid[1].py_code}, {node.kid[2].py_code})",
             )
 
-    def exit_connect_any(self: "TranspilePass", node: AstNode) -> None:
+    def exit_connect_any(self, node: AstNode) -> None:
         """Convert connect_any to python code.
 
         connect_any -> CARROW_L_p1 NAME spawn_ctx CARROW_R_p2
@@ -1329,21 +1327,21 @@ class TranspilePass(Pass):
                 f"({BUILTIN_TAG}.CONNECT_ANY, ({node.kid[1].py_code}, {node.kid[2].py_code})",
             )
 
-    def exit_filter_ctx(self: "TranspilePass", node: AstNode) -> None:
+    def exit_filter_ctx(self, node: AstNode) -> None:
         """Convert filter_ctx to python code.
 
         filter_ctx -> LPAREN filter_compare_list RPAREN
         """
         self.emit(node, f"{node.kid[1].py_code}")
 
-    def exit_spawn_ctx(self: "TranspilePass", node: AstNode) -> None:
+    def exit_spawn_ctx(self, node: AstNode) -> None:
         """Convert spawn_ctx to python code.
 
         spawn_ctx -> LPAREN assignment_list RPAREN
         """
         self.emit(node, f"{node.kid[1].py_code}")
 
-    def exit_filter_compare_list(self: "TranspilePass", node: AstNode) -> None:
+    def exit_filter_compare_list(self, node: AstNode) -> None:
         """Convert filter_compare_list to python code.
 
         filter_compare_list -> NAME cmp_op expression COMMA filter_compare_list
@@ -1362,7 +1360,7 @@ class TranspilePass(Pass):
                 f"({node.kid[0].py_code}, {node.kid[1].py_code}, {node.kid[2].py_code})),  {node.kid[2].py_code})",
             )
 
-    def exit_node(self: "TranspilePass", node: AstNode) -> None:
+    def exit_node(self, node: AstNode) -> None:
         """Convert node to python code."""
         if node.kind == AstNodeKind.TOKEN:
             if node.name == "DOC_STRING":

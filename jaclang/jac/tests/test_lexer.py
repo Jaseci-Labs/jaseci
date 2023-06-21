@@ -7,7 +7,7 @@ from jaclang.utils.test import TestCase
 class TestLexer(TestCase):
     """Test Jac lexer."""
 
-    def test_lexer(self: "TestLexer") -> None:
+    def test_lexer(self) -> None:
         """Basic test for lexer."""
         lexer = JacLexer()
         tokens = []

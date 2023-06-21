@@ -8,12 +8,12 @@ from jaclang.jac.passes.ir_pass import Pass
 class PrinterPass(Pass):
     """Printer Pass for Jac AST."""
 
-    def enter_node(self: "Pass", node: AstNode) -> None:
+    def enter_node(self, node: AstNode) -> None:
         """Run on entering node."""
         print("Entering:", node)
         super().enter_node(node)
 
-    def exit_node(self: "Pass", node: AstNode) -> None:
+    def exit_node(self, node: AstNode) -> None:
         """Run on exiting node."""
         super().exit_node(node)
         print("Exiting:", node)

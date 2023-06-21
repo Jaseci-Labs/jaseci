@@ -8,7 +8,7 @@ from jaclang.utils.test import TestCase
 class TestPass(TestCase):
     """Test pass module."""
 
-    def test_basic_pass(self: "TestPass") -> None:
+    def test_basic_pass(self) -> None:
         """Basic test for pass."""
         lexer = JacLexer()
         parser = JacParser()
@@ -19,7 +19,7 @@ class TestPass(TestCase):
         ast = ptoa(parse_tree)
         self.assertGreater(len(str(Pass(ast).ir.to_dict())), 1000)
 
-    def test_basic_fstring(self: "TestPass") -> None:
+    def test_basic_fstring(self) -> None:
         """Basic test for pass."""
         lexer = JacLexer()
         parser = JacParser()

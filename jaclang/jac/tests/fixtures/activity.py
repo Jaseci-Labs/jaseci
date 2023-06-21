@@ -4,7 +4,7 @@
 class Activity:
     """Activity class for testing."""
 
-    def __init__(self: "Activity", name: str = "basic", duration: int = 4) -> None:
+    def __init__(self, name: str = "basic", duration: int = 4) -> None:
         """Activity class for testing."""
         self.name = name
         self.duration = duration

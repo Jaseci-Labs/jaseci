@@ -11,14 +11,14 @@ from jaclang.utils.test import TestCase
 class AstBuildPassTests(TestCase):
     """Test pass module."""
 
-    def setUp(self: TestCase) -> None:
+    def setUp(self) -> None:
         """Set up test."""
         self.lex = JacLexer()
         self.prse = JacParser()
         self.builder = AstBuildPass()
         return super().setUp()
 
-    def build_micro(self: "AstBuildPass", filename: str) -> None:
+    def build_micro(self, filename: str) -> None:
         """Parse micro jac file."""
         self.prse.cur_file = filename
         ptree = self.prse.parse(
@@ -30,7 +30,7 @@ class AstBuildPassTests(TestCase):
         build_pass = self.builder.run(node=ptoa(ptree))
         return build_pass
 
-    def test_ast_build_basic(self: "TestCase") -> None:
+    def test_ast_build_basic(self) -> None:
         """Basic test for pass."""
         ptree = self.prse.parse(
             self.lex.tokenize(self.load_fixture("fam.jac")), filename="fam.jac"
@@ -39,13 +39,13 @@ class AstBuildPassTests(TestCase):
         # build_pass = self.builder.run(node=ptoa(ptree))
         # build_pass.print()
 
-    def test_ast_build_module_structure(self: "TestCase") -> None:
+    def test_ast_build_module_structure(self) -> None:
         """Basic test for pass."""
         build_pass = self.build_micro("module_structure.jac")
         # build_pass.print()
         self.assertGreater(len(str(build_pass.to_dict())), 200)
 
-    def test_no_typo_in_pass(self: "TestCase") -> None:
+    def test_no_typo_in_pass(self) -> None:
         """Test for enter/exit name diffs with parser."""
         from jaclang.jac.parser import JacParser
 
@@ -71,7 +71,7 @@ class AstBuildPassTests(TestCase):
         for name in ast_build_func_names:
             self.assertIn(name, parser_func_names)
 
-    def test_pass_grammar_complete(self: "TestCase") -> None:
+    def test_pass_grammar_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""
         from jaclang.jac.parser import JacParser
 

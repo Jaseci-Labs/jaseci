@@ -7,13 +7,13 @@ from jaclang.utils.sly.yacc import YaccProduction
 class JacParseErrorMixIn:
     """Error handling for Jac Parse Errors."""
 
-    def __init__(self: "JacParseErrorMixIn", cur_filename: str = "str_parse") -> None:
+    def __init__(self, cur_filename: str = "str_parse") -> None:
         """Initialize Jac Parse Error Mixin."""
         super().__init__()
         self.cur_file = cur_filename
         self.had_error = False
 
-    def error(self: "JacParseErrorMixIn", p: YaccProduction) -> None:
+    def error(self, p: YaccProduction) -> None:
         """Improved error handling for Jac Parser."""
         self.had_error = True
         error = f'{self.cur_file}: Jac Parse Error on line {p.lineno}, incorrect usage of "{p.value}" ({p.type})\n'
@@ -29,7 +29,7 @@ class JacParseErrorMixIn:
                 break
         self.restart()
 
-    def parse(self: "JacParseErrorMixIn", tokens: list, filename: str = None) -> None:
+    def parse(self, tokens: list, filename: str = None) -> None:
         """Overload of parse to take filenames."""
         if filename:
             self.cur_file = filename

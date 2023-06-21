@@ -8,15 +8,15 @@ from unittest import TestCase as _TestCase
 class TestCase(_TestCase):
     """Base test case for Jaseci."""
 
-    def setUp(self: "TestCase") -> None:
+    def setUp(self) -> None:
         """Set up test case."""
         return super().setUp()
 
-    def tearDown(self: "TestCase") -> None:
+    def tearDown(self) -> None:
         """Tear down test case."""
         return super().tearDown()
 
-    def load_fixture(self: "TestCase", fixture: str) -> str:
+    def load_fixture(self, fixture: str) -> str:
         """Load fixture from fixtures directory."""
         fixture_src = inspect.getmodule(inspect.currentframe().f_back).__file__
         with open(f"{os.path.dirname(fixture_src)}/fixtures/{fixture}", "r") as f:
