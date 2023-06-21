@@ -3,6 +3,7 @@ from typing import Callable, List, Optional, Type
 
 import jaclang.jac.jac_ast as ast
 from jaclang.jac.utils import pascal_to_snake
+from jaclang.utils.log import logging
 from jaclang.utils.sly import lex
 
 
@@ -10,6 +11,13 @@ class Pass:
     """Abstract class for IR passes."""
 
     marked_incomplete: List[str] = []
+
+    def __init__(self: "Pass", ir: Optional[ast.AstNode] = None) -> None:
+        """Initialize pass."""
+        self.logger = logging.getLogger(self.__class__.__module__)
+        self.ir = ir if ir else ast.AstNode(parent=ir, kid=[], line=0)
+        self.cur_node = ir  # tracks current node during traversal
+        self.run()
 
     @classmethod
     def incomplete(cls: Type["Pass"], func: Callable) -> Callable:
@@ -20,11 +28,6 @@ class Pass:
             return func(*args, **kwargs)
 
         return wrapper
-
-    def __init__(self: "Pass", ir: Optional[ast.AstNode] = None) -> None:
-        """Initialize pass."""
-        self.ir = ir if ir else ast.AstNode(parent=ir, kid=[], line=0)
-        self.run()
 
     def before_pass(self: "Pass") -> None:
         """Run once before pass."""
@@ -61,6 +64,7 @@ class Pass:
 
     def traverse(self: "Pass", node: ast.AstNode) -> None:
         """Traverse tree."""
+        self.cur_node = node
         self.enter_node(node)
         for i in node.kid:
             if i:
@@ -70,6 +74,16 @@ class Pass:
     def get_imcomplete(self: "Pass") -> List[str]:
         """Return list of incomplete functions."""
         return self.marked_incomplete
+
+    def error(self, msg: str) -> None:
+        """Pass Error."""
+        if self.cur_node:
+            self.logger.error(f"Line {self.cur_node.line}, " + msg)
+
+    def warning(self, msg: str) -> None:
+        """Pass Error."""
+        if self.cur_node:
+            self.logger.warning(f"Line {self.cur_node.line}, " + msg)
 
 
 def parse_tree_to_ast(

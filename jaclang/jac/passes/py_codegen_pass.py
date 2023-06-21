@@ -4,10 +4,6 @@ from typing import List
 import jaclang.jac.jac_ast as ast
 from jaclang.jac.jac_ast import AstNode
 from jaclang.jac.passes.ir_pass import Pass
-from jaclang.utils.log import logging
-
-
-logger = logging.getLogger(__name__)
 
 
 class PyCodeGenPass(Pass):
@@ -59,7 +55,7 @@ class PyCodeGenPass(Pass):
 
         name: str,
         """
-        logger.critical("Parse node should not be in this AST!!")
+        self.error("Parse node should not be in this AST!!")
         raise ValueError("Parse node should not be in AST after being Built!!")
 
     def exit_module(self: "PyCodeGenPass", node: ast.Module) -> None:
@@ -89,6 +85,10 @@ class PyCodeGenPass(Pass):
         access: Optional[Token],
         assignments: "AssignmentList",
         """
+        if node.access:
+            self.warning(
+                f"Line {node.line}, Test feature not yet supported in bootstrap Jac."
+            )
         self.emit_ln(node, node.assignments.meta["py_code"])
 
     @Pass.incomplete
@@ -100,6 +100,9 @@ class PyCodeGenPass(Pass):
         description: Token,
         body: "CodeBlock",
         """
+        self.warning(
+            f"Line {node.line}, Test feature not yet supported in bootstrap Jac."
+        )
 
     def exit_module_code(self: "PyCodeGenPass", node: ast.ModuleCode) -> None:
         """Sub objects.
