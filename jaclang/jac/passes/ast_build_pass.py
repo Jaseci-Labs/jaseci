@@ -996,8 +996,8 @@ class AstBuildPass(Pass):
         elif_list -> KW_ELIF expression code_block
         """
         cpy_node = ast.IfStmt(
-            condition=node.kid[0],
-            body=node.kid[1],
+            condition=node.kid[-2],
+            body=node.kid[-1],
             elseifs=None,
             else_body=None,
             parent=node.parent,
