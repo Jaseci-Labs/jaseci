@@ -1375,10 +1375,6 @@ class WalkerRef(GlobalRef):
     """WalkerRef node type for Jac Ast."""
 
 
-class FuncRef(GlobalRef):
-    """FuncRef node type for Jac Ast."""
-
-
 class ObjectRef(GlobalRef):
     """ObjectRef node type for Jac Ast."""
 
@@ -1467,7 +1463,6 @@ AtomType = Union[
     NodeRef,
     EdgeRef,
     WalkerRef,
-    FuncRef,
     ObjectRef,
     AbilityRef,
     EdgeOpRef,

@@ -809,6 +809,20 @@ class PyCodeGenPass(Pass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
+        partial = ""
+        if node.key_expr:
+            partial += (
+                f"{node.key_expr.meta['py_code']}: {node.out_expr.meta['py_code']} for "
+                f"{node.name.value} in {node.collection.meta['py_code']}"
+            )
+        else:
+            partial += (
+                f"{node.out_expr.meta['py_code']} for {node.name.value} "
+                f"in {node.collection.meta['py_code']}"
+            )
+        if node.conditional:
+            partial += f" if {node.conditional.meta['py_code']}"
+        self.emit(node, f"[{partial}]")
 
     def exit_k_v_pair(self, node: ast.KVPair) -> None:
         """Sub objects.
@@ -816,6 +830,7 @@ class PyCodeGenPass(Pass):
         key: ExprType,
         value: ExprType,
         """
+        self.emit(node, f"{node.key.meta['py_code']}: {node.value.meta['py_code']}")
 
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
@@ -824,13 +839,36 @@ class PyCodeGenPass(Pass):
         right: IndexSlice | ArchRefType | Token,
         null_ok: bool,
         """
+        if type(node.right) == ast.IndexSlice:
+            self.emit(
+                node,
+                f"{node.target.meta['py_code']}{node.right.meta['py_code']}",
+            )
+        elif type(node.right) == ast.Token:
+            self.emit(
+                node,
+                f"{node.target.meta['py_code']}.{node.right.value}",
+            )
+        else:
+            self.emit(
+                node,
+                f"{node.target.meta['py_code']}.{node.right.meta['py_code']}",
+            )
 
+    @Pass.incomplete
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
 
         target: AtomType,
         params: Optional[ParamList],
         """
+        if node.params:
+            self.emit(
+                node,
+                f"{node.target.meta['py_code']}({node.params.meta['py_code']})",
+            )
+        else:
+            self.emit(node, f"{node.target.meta['py_code']}()")
 
     def exit_param_list(self, node: ast.ParamList) -> None:
         """Sub objects.
@@ -838,12 +876,25 @@ class PyCodeGenPass(Pass):
         p_args: Optional[ExprList],
         p_kwargs: Optional[AssignmentList],
         """
+        if node.p_args:
+            if node.p_kwargs:
+                self.emit(
+                    node,
+                    f"{node.p_args.meta['py_code']}, {node.p_kwargs.meta['py_code']}",
+                )
+            else:
+                self.emit(node, f"{node.p_args.meta['py_code']}")
+        elif node.p_kwargs:
+            self.emit(node, f"{node.p_kwargs.meta['py_code']}")
 
     def exit_assignment_list(self, node: ast.AssignmentList) -> None:
         """Sub objects.
 
         values: List[ExprType],
         """
+        self.emit(
+            node, f"{', '.join([value.meta['py_code'] for value in node.values])}"
+        )
 
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
@@ -851,90 +902,116 @@ class PyCodeGenPass(Pass):
         start: ExprType,
         stop: Optional[ExprType],
         """
+        if node.stop:
+            self.emit(
+                node,
+                f"[{node.start.meta['py_code']}:{node.stop.meta['py_code']}]",
+            )
+        else:
+            self.emit(node, f"[{node.start.meta['py_code']}:]")
 
     def exit_global_ref(self, node: ast.GlobalRef) -> None:
         """Sub objects.
 
         name: Token,
         """
+        self.emit(node, f"{node.name.value}")
 
     def exit_here_ref(self, node: ast.HereRef) -> None:
         """Sub objects.
 
         name: Optional[Token],
         """
+        if node.name:
+            self.emit(node, f"self.{node.name.value}")
+        else:
+            self.emit(node, "self")
 
+    @Pass.incomplete
     def exit_visitor_ref(self, node: ast.VisitorRef) -> None:
         """Sub objects.
 
         name: Optional[Token],
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_node_ref(self, node: ast.NodeRef) -> None:
         """Sub objects.
 
         name: Token,
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_edge_ref(self, node: ast.EdgeRef) -> None:
         """Sub objects.
 
         name: Token,
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_walker_ref(self, node: ast.WalkerRef) -> None:
         """Sub objects.
 
         name: Token,
         """
-
-    def exit_func_ref(self, node: ast.FuncRef) -> None:
-        """Sub objects.
-
-        name: Token,
-        """
+        self.ds_feature_warn()
 
     def exit_object_ref(self, node: ast.ObjectRef) -> None:
         """Sub objects.
 
         name: Token,
         """
+        self.emit(node, f"{node.name.value}")
 
     def exit_ability_ref(self, node: ast.AbilityRef) -> None:
         """Sub objects.
 
         name: Token,
         """
+        self.emit(node, f"{node.name.value}")
 
+    @Pass.incomplete
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
 
         filter_cond: Optional[ExprType],
         edge_dir: EdgeDir,
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
 
         filter_cond: Optional[ExprType],
         edge_dir: EdgeDir,
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_connect_op(self, node: ast.ConnectOp) -> None:
         """Sub objects.
 
         spawn: Optional[ExprType],
         edge_dir: EdgeDir,
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_spawn_ctx(self, node: ast.SpawnCtx) -> None:
         """Sub objects.
 
         spawns: List[Assignment],
         """
+        self.ds_feature_warn()
 
+    @Pass.incomplete
     def exit_filter_ctx(self, node: ast.FilterCtx) -> None:
         """Sub objects.
 
         compares: List[BinaryExpr],
         """
+        self.ds_feature_warn()
