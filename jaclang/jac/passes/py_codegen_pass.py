@@ -91,7 +91,7 @@ class PyCodeGenPass(Pass):
         for i in node.elements:
             self.emit_ln(node, i.meta["py_code"])
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
@@ -102,7 +102,7 @@ class PyCodeGenPass(Pass):
         self.access_check(node)
         self.emit_ln(node, node.assignments.meta["py_code"])
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
 
@@ -131,7 +131,7 @@ class PyCodeGenPass(Pass):
         if type(node.value) == ast.Token:
             self.emit_ln(node, node.value.value)
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
 
@@ -186,7 +186,7 @@ class PyCodeGenPass(Pass):
         else:
             self.emit(node, node.name.value)
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_architype(self, node: ast.Architype) -> None:
         """Sub objects.
 
@@ -209,7 +209,7 @@ class PyCodeGenPass(Pass):
             self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_decl(self, node: ast.ArchDecl) -> None:
         """Sub objects.
 
@@ -222,7 +222,7 @@ class PyCodeGenPass(Pass):
         """
         self.decl_def_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
 
@@ -240,7 +240,7 @@ class PyCodeGenPass(Pass):
         """
         self.emit(node, ", ".join([i.value for i in node.base_classes]))
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
@@ -257,7 +257,7 @@ class PyCodeGenPass(Pass):
             self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit(node, node.body.meta["py_code"], indent_delta=1)
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_ability_decl(self, node: ast.AbilityDecl) -> None:
         """Sub objects.
 
@@ -269,7 +269,7 @@ class PyCodeGenPass(Pass):
         """
         self.decl_def_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
 
@@ -280,7 +280,7 @@ class PyCodeGenPass(Pass):
         """
         self.decl_def_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_ability_spec(self, node: ast.AbilitySpec) -> None:
         """Sub objects.
 
@@ -293,7 +293,7 @@ class PyCodeGenPass(Pass):
         """
         self.decl_def_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_block(self, node: ast.ArchBlock) -> None:
         """Sub objects.
 
@@ -357,7 +357,7 @@ class PyCodeGenPass(Pass):
         else:
             self.emit(node, node.typ.value)
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_can(self, node: ast.ArchCan) -> None:
         """Sub objects.
 
@@ -378,7 +378,7 @@ class PyCodeGenPass(Pass):
             self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_can_decl(self, node: ast.ArchCanDecl) -> None:
         """Sub objects.
 
@@ -389,7 +389,7 @@ class PyCodeGenPass(Pass):
         """
         self.decl_def_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
 
@@ -601,7 +601,7 @@ class PyCodeGenPass(Pass):
         else:
             self.emit_ln(node, f"assert {node.condition.meta['py_code']}")
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
 
@@ -619,7 +619,7 @@ class PyCodeGenPass(Pass):
         """
         self.emit_ln(node, f"del {node.target.meta['py_code']}")
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_report_stmt(self, node: ast.ReportStmt) -> None:
         """Sub objects.
 
@@ -627,7 +627,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete  # Need to have validation that return type specified if return present
+    # NOTE: Incomplete for Jac Purple and Red  # Need to have validation that return type specified if return present
     def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
         """Sub objects.
 
@@ -648,7 +648,7 @@ class PyCodeGenPass(Pass):
         else:
             self.emit_ln(node, "yield")
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
         """Sub objects.
 
@@ -656,7 +656,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
@@ -666,7 +666,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_revisit_stmt(self, node: ast.RevisitStmt) -> None:
         """Sub objects.
 
@@ -675,12 +675,12 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_sync_stmt(self, node: ast.SyncStmt) -> None:
         """Sub objects.
 
@@ -688,7 +688,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
@@ -700,7 +700,7 @@ class PyCodeGenPass(Pass):
             self.warning("Static variable semantics is not supported in bootstrap Jac")
         self.emit(node, f"{node.target.meta['py_code']} = {node.value.meta['py_code']}")
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
 
@@ -748,7 +748,7 @@ class PyCodeGenPass(Pass):
         else:
             self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_spawn_object_expr(self, node: ast.SpawnObjectExpr) -> None:
         """Sub objects.
 
@@ -767,7 +767,7 @@ class PyCodeGenPass(Pass):
         else:
             self.emit(node, f"*{node.target.meta['py_code']}")
 
-    @Pass.incomplete  # TODO: Need to add support for fstrings
+    # NOTE: Incomplete for Jac Purple and Red  # TODO: Need to add support for fstrings
     def exit_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 
@@ -860,7 +860,7 @@ class PyCodeGenPass(Pass):
                 f"{node.target.meta['py_code']}.{node.right.meta['py_code']}",
             )
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
 
@@ -932,7 +932,7 @@ class PyCodeGenPass(Pass):
         else:
             self.emit(node, "self")
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_visitor_ref(self, node: ast.VisitorRef) -> None:
         """Sub objects.
 
@@ -940,7 +940,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_node_ref(self, node: ast.NodeRef) -> None:
         """Sub objects.
 
@@ -948,7 +948,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_edge_ref(self, node: ast.EdgeRef) -> None:
         """Sub objects.
 
@@ -956,7 +956,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_walker_ref(self, node: ast.WalkerRef) -> None:
         """Sub objects.
 
@@ -978,7 +978,7 @@ class PyCodeGenPass(Pass):
         """
         self.emit(node, f"{node.name.value}")
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
 
@@ -987,7 +987,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
 
@@ -996,7 +996,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_connect_op(self, node: ast.ConnectOp) -> None:
         """Sub objects.
 
@@ -1005,7 +1005,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_spawn_ctx(self, node: ast.SpawnCtx) -> None:
         """Sub objects.
 
@@ -1013,7 +1013,7 @@ class PyCodeGenPass(Pass):
         """
         self.ds_feature_warn()
 
-    @Pass.incomplete
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_filter_ctx(self, node: ast.FilterCtx) -> None:
         """Sub objects.
 

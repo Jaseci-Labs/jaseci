@@ -24,21 +24,46 @@ def pascal_to_snake(pascal_string: str) -> str:
     return snake_string
 
 
-def jac_file_to_ast(mod_path: str, base_path: str = None) -> ast.AstNode:
+def jac_file_to_ast(mod_path: str, base_path: str = "") -> ast.AstNode:
     """Convert a Jac file to an AST."""
     from jaclang.jac.passes.ast_build_pass import AstBuildPass
     from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
 
-    if base_path is None:
-        base_path = ""
     lex = JacLexer()
     prse = JacParser()
-    builder = AstBuildPass(mod_path=mod_path)
+    builder = AstBuildPass(mod_name=mod_path)
     prse.cur_file = mod_path
     ptree = prse.parse(
         lex.tokenize(open(base_path + mod_path).read()), filename=mod_path
     )
-    return builder.run(node=ptoa(ptree))
+    if ptree:
+        return builder.run(node=ptoa(ptree))
+    else:
+        raise ValueError("Parsing of Jac file failed.")
+
+
+def get_ast_nodes_as_snake_case() -> list[str]:
+    """Get all AST nodes as snake case."""
+    import inspect
+    import sys
+
+    module_name = ast.__name__
+    module = sys.modules[module_name]
+
+    # Retrieve the source code of the module
+    source_code = inspect.getsource(module)
+
+    classes = inspect.getmembers(module, inspect.isclass)
+    ast_node_classes = [cls for _, cls in classes if issubclass(cls, ast.AstNode)]
+
+    ordered_classes = sorted(
+        ast_node_classes, key=lambda cls: source_code.find(f"class {cls.__name__}")
+    )
+    snake_names = []
+    for cls in ordered_classes:
+        class_name = cls.__name__
+        snake_names.append(pascal_to_snake(class_name))
+    return snake_names
 
 
 def load_ast_and_print_pass_template() -> str:

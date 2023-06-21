@@ -1,5 +1,5 @@
 """Abstract class for IR Passes for Jac."""
-from typing import Callable, List, Optional, Type
+from typing import Optional
 
 import jaclang.jac.jac_ast as ast
 from jaclang.jac.utils import pascal_to_snake
@@ -10,24 +10,12 @@ from jaclang.utils.sly import lex
 class Pass:
     """Abstract class for IR passes."""
 
-    marked_incomplete: List[str] = []
-
     def __init__(self, ir: Optional[ast.AstNode] = None) -> None:
         """Initialize pass."""
         self.logger = logging.getLogger(self.__class__.__module__)
         self.ir = ir if ir else ast.AstNode(parent=ir, kid=[], line=0)
         self.cur_node = ir  # tracks current node during traversal
         self.run()
-
-    @classmethod
-    def incomplete(cls: Type["Pass"], func: Callable) -> Callable:
-        """Mark function as incomplete, used as indicator for future passes."""
-        cls.marked_incomplete.append(func.__name__)
-
-        def wrapper(*args: list, **kwargs: dict) -> None:
-            return func(*args, **kwargs)
-
-        return wrapper
 
     def before_pass(self) -> None:
         """Run once before pass."""
@@ -70,10 +58,6 @@ class Pass:
             if i:
                 self.traverse(i)
         self.exit_node(node)
-
-    def get_imcomplete(self) -> List[str]:
-        """Return list of incomplete functions."""
-        return self.marked_incomplete
 
     def error(self, msg: str) -> None:
         """Pass Error."""
