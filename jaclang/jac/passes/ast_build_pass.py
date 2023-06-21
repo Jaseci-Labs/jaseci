@@ -1695,6 +1695,7 @@ class AstBuildPass(Pass):
 
         term -> factor MOD term
         term -> factor DIV term
+        term -> factor FLOOR_DIV term
         term -> factor STAR_MUL term
         term -> factor
         """
@@ -1839,8 +1840,15 @@ class AstBuildPass(Pass):
     def exit_walrus_op(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        walrus_op -> RSHIFT_EQ
+        walrus_op -> LSHIFT_EQ
+        walrus_op -> BW_NOT_EQ
+        walrus_op -> BW_XOR_EQ
+        walrus_op -> BW_OR_EQ
+        walrus_op -> BW_AND_EQ
         walrus_op -> MOD_EQ
         walrus_op -> DIV_EQ
+        walrus_op -> FLOOR_DIV_EQ
         walrus_op -> MUL_EQ
         walrus_op -> SUB_EQ
         walrus_op -> ADD_EQ
@@ -1851,6 +1859,8 @@ class AstBuildPass(Pass):
     def exit_cmp_op(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        cmp_op -> KW_ISN
+        cmp_op -> KW_IS
         cmp_op -> KW_NIN
         cmp_op -> KW_IN
         cmp_op -> NE

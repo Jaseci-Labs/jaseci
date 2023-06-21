@@ -59,6 +59,7 @@ class JacLexer(Lexer):
         "ADD_EQ",
         "SUB_EQ",
         "MUL_EQ",
+        "FLOOR_DIV_EQ",
         "DIV_EQ",
         "MOD_EQ",
         "BW_AND_EQ",
@@ -98,7 +99,9 @@ class JacLexer(Lexer):
         "GTE",
         "NE",
         "KW_IN",
+        "KW_IS",
         "KW_NIN",
+        "KW_ISN",
         "KW_PRIV",
         "KW_PUB",
         "KW_PROT",
@@ -109,6 +112,7 @@ class JacLexer(Lexer):
         "PLUS",
         "MINUS",
         "STAR_MUL",
+        "FLOOR_DIV",
         "DIV",
         "MOD",
         "BW_AND",
@@ -163,7 +167,8 @@ class JacLexer(Lexer):
     FSTRING = r'f"[^"\r\n]*"|f\'[^\'\r\n]*\''
     STRING = r'"[^"\r\n]*"|\'[^\'\r\n]*\''
     BOOL = r"True|False"
-    KW_NIN = r"not in"
+    KW_NIN = r"\bnot\s+in\b"
+    KW_ISN = r"\bis\s+not\b"
     HEX = r"0[xX][0-9a-fA-F_]+"
     BIN = r"0[bB][01_]+"
     OCT = r"0[oO][0-7_]+"
@@ -223,6 +228,7 @@ class JacLexer(Lexer):
     NAME["except"] = "KW_EXCEPT"
     NAME["finally"] = "KW_FINALLY"
     NAME["in"] = "KW_IN"
+    NAME["is"] = "KW_IS"
     NAME["not"] = "NOT"
     NAME["priv"] = "KW_PRIV"
     NAME["pub"] = "KW_PUB"
@@ -264,10 +270,10 @@ class JacLexer(Lexer):
     # Token rules
     KW_AND = r"&&"
     KW_OR = r"\|\|"
-    NOT = r"!"
     ADD_EQ = r"\+="
     SUB_EQ = r"-="
     MUL_EQ = r"\*="
+    FLOOR_DIV_EQ = r"//="
     DIV_EQ = r"/="
     MOD_EQ = r"%="
     BW_AND_EQ = r"&="
@@ -281,6 +287,7 @@ class JacLexer(Lexer):
     LTE = r"<="
     GTE = r">="
     NE = r"!="
+    NOT = r"!"
     WALRUS_EQ = r":="
     PIPE_FWD = r"\|>"
     PIPE_BKWD = r"<\|"
@@ -298,6 +305,7 @@ class JacLexer(Lexer):
     MINUS = r"-"
     STAR_POW = r"\*\*"
     STAR_MUL = r"\*"
+    FLOOR_DIV = r"//"
     DIV = r"/"
     MOD = r"%"
     BW_AND = r"&"

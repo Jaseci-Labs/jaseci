@@ -708,12 +708,18 @@ class PyCodeGenPass(Pass):
         op: Token,
         """
         if node.op.value in [
-            *["+", "-", "*", "/", "%", "**", "//"],
-            *["&", "|", "^", "<<", ">>"],
+            *["+", "-", "*", "/", "%", "**"],
+            *["//", "&", "|", "^", "<<", ">>"],
+            *[">", "<", ">=", "<=", "==", "!="],
+            *["and", "or", "in", "not in", "is", "is not"],
         ]:
             self.emit_ln(
                 node,
                 f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
+            )
+        else:
+            self.error(
+                f"Binary operator {node.op.value} not supported in bootstrap Jac"
             )
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:

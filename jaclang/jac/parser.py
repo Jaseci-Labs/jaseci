@@ -721,6 +721,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "factor",
         "factor STAR_MUL term",
+        "factor FLOOR_DIV term",
         "factor DIV term",
         "factor MOD term",
     )
@@ -800,6 +801,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "ADD_EQ",
         "SUB_EQ",
         "MUL_EQ",
+        "FLOOR_DIV_EQ",
         "DIV_EQ",
         "MOD_EQ",
         "BW_AND_EQ",
@@ -822,6 +824,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         "NE",
         "KW_IN",
         "KW_NIN",
+        "KW_IS",
+        "KW_ISN",
     )
     def cmp_op(self, p: YaccProduction) -> YaccProduction:
         """Compare operator rule."""
