@@ -145,7 +145,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Architype elements
     # ------------------
     @_(
-        "architype_inline_spec",
         "architype_decl",
         "architype_def",
     )
@@ -154,20 +153,10 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
-        "doc_tag KW_NODE access_tag NAME inherited_archs member_block",
-        "doc_tag KW_EDGE access_tag NAME inherited_archs member_block",
-        "doc_tag KW_OBJECT access_tag NAME inherited_archs member_block",
-        "doc_tag KW_WALKER access_tag NAME inherited_archs member_block",
-    )
-    def architype_inline_spec(self, p: YaccProduction) -> YaccProduction:
-        """Architype rule."""
-        return p
-
-    @_(
-        "doc_tag KW_NODE access_tag NAME inherited_archs SEMI",
-        "doc_tag KW_EDGE access_tag NAME inherited_archs SEMI",
-        "doc_tag KW_OBJECT access_tag NAME inherited_archs SEMI",
-        "doc_tag KW_WALKER access_tag NAME inherited_archs SEMI",
+        "doc_tag arch_type access_tag NAME inherited_archs SEMI",
+        "doc_tag decorators arch_type access_tag NAME inherited_archs SEMI",
+        "doc_tag arch_type access_tag NAME inherited_archs member_block",
+        "doc_tag decorators arch_type access_tag NAME inherited_archs member_block",
     )
     def architype_decl(self, p: YaccProduction) -> YaccProduction:
         """Architype declaration rule."""
@@ -179,6 +168,24 @@ class JacParser(JacParseErrorMixIn, Parser):
     )
     def architype_def(self, p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
+        return p
+
+    @_(
+        "KW_NODE",
+        "KW_EDGE",
+        "KW_OBJECT",
+        "KW_WALKER",
+    )
+    def arch_type(self, p: YaccProduction) -> YaccProduction:
+        """Arch type rule."""
+        return p
+
+    @_(
+        "DECOR_OP atom",
+        "decorators DECOR_OP atom",
+    )
+    def decorators(self, p: YaccProduction) -> YaccProduction:
+        """Python style decorator rule."""
         return p
 
     @_(

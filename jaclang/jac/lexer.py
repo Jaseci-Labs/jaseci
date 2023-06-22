@@ -152,6 +152,7 @@ class JacLexer(Lexer):
         "ELVIS_OP",
         "RETURN_HINT",
         "NULL_OK",
+        "DECOR_OP",
     }
 
     # Ignored patterns
@@ -266,6 +267,7 @@ class JacLexer(Lexer):
     RETURN_HINT = r"->"
     ELVIS_OP = r"\?:"
     NULL_OK = r"\?"
+    DECOR_OP = r"@"
 
     # Token rules
     KW_AND = r"&&"

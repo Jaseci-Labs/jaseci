@@ -207,20 +207,10 @@ class BluePygenPass(Pass):
             )
         if node.doc:
             self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
-
-    # NOTE: Incomplete for Jac Purple and Red
-    def exit_arch_decl(self, node: ast.ArchDecl) -> None:
-        """Sub objects.
-
-        doc: Optional[DocString],
-        access: Token,
-        typ: Token,
-        name: Token,
-        base_classes: "BaseClasses",
-        self.def_link: Optional["ArchDef"] = None
-        """
-        self.decl_def_warn()
+        if node.body:
+            self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        else:
+            self.decl_def_warn()
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_def(self, node: ast.ArchDef) -> None:

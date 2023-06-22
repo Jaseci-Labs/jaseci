@@ -299,9 +299,10 @@ class Architype(OOPAccessNode):
         name: Token,
         typ: Token,
         doc: Optional[DocString],
+        decorators: Optional["ExprList"],
         access: Optional[Token],
         base_classes: "BaseClasses",
-        body: "ArchBlock",
+        body: Optional["ArchBlock"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -310,31 +311,9 @@ class Architype(OOPAccessNode):
         self.name = name
         self.typ = typ
         self.doc = doc
+        self.decorators = decorators
         self.base_classes = base_classes
         self.body = body
-        super().__init__(access=access, parent=parent, kid=kid, line=line)
-
-
-class ArchDecl(OOPAccessNode):
-    """ArchDecl node type for Jac Ast."""
-
-    def __init__(
-        self,
-        doc: Optional[DocString],
-        access: Optional[Token],
-        typ: Token,
-        name: Token,
-        base_classes: "BaseClasses",
-        parent: Optional[AstNode],
-        kid: List[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize arch decl node."""
-        self.doc = doc
-        self.typ = typ
-        self.name = name
-        self.base_classes = base_classes
-        self.def_link: Optional["ArchDef"] = None
         super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 

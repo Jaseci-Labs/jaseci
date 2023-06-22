@@ -299,59 +299,31 @@ class AstBuildPass(Pass):
         """
         replace_node(node, node.kid[0])
 
-    def exit_architype_inline_spec(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        architype_inline_spec -> doc_tag KW_WALKER access_tag NAME inherited_archs member_block
-        architype_inline_spec -> doc_tag KW_OBJECT access_tag NAME inherited_archs member_block
-        architype_inline_spec -> doc_tag KW_EDGE access_tag NAME inherited_archs member_block
-        architype_inline_spec -> doc_tag KW_NODE access_tag NAME inherited_archs member_block
-        """
-        meta = {
-            "doc": node.kid[0],
-            "typ": node.kid[1],
-            "access": node.kid[2],
-            "name": node.kid[3],
-            "base_classes": node.kid[4],
-            "body": node.kid[5],
-        }
-        replace_node(
-            node,
-            ast.Architype(
-                doc=meta["doc"],
-                typ=meta["typ"],
-                access=meta["access"],
-                name=meta["name"],
-                base_classes=meta["base_classes"],
-                body=meta["body"],
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
     def exit_architype_decl(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        architype_decl -> doc_tag KW_WALKER access_tag NAME inherited_archs SEMI
-        architype_decl -> doc_tag KW_OBJECT access_tag NAME inherited_archs SEMI
-        architype_decl -> doc_tag KW_EDGE access_tag NAME inherited_archs SEMI
-        architype_decl -> doc_tag KW_NODE access_tag NAME inherited_archs SEMI
+        architype_decl -> doc_tag decorators arch_type access_tag NAME inherited_archs member_block
+        architype_decl -> doc_tag arch_type access_tag NAME inherited_archs member_block
+        architype_decl -> doc_tag decorators arch_type access_tag NAME inherited_archs SEMI
+        architype_decl -> doc_tag arch_type access_tag NAME inherited_archs SEMI
         """
-        del node.kid[-1]
         replace_node(
             node,
-            ast.ArchDecl(
+            ast.Architype(
                 doc=node.kid[0],
-                typ=node.kid[1],
-                access=node.kid[2],
-                name=node.kid[3],
-                base_classes=node.kid[4],
+                decorators=node.kid[1] if len(node.kid) == 7 else None,
+                typ=node.kid[2] if len(node.kid) == 7 else node.kid[1],
+                access=node.kid[3] if len(node.kid) == 7 else node.kid[2],
+                name=node.kid[4] if len(node.kid) == 7 else node.kid[3],
+                base_classes=node.kid[5] if len(node.kid) == 7 else node.kid[4],
+                body=node.kid[-1] if type(node.kid[-1]) == ast.ArchBlock else None,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
             ),
         )
+        if type(node.kid[-1]) == ast.Token:
+            del node.kid[-1]
 
     def exit_architype_def(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -371,6 +343,16 @@ class AstBuildPass(Pass):
                 line=node.line,
             ),
         )
+
+    def exit_arch_type(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        arch_type -> KW_WALKER
+        arch_type -> KW_OBJECT
+        arch_type -> KW_EDGE
+        arch_type -> KW_NODE
+        """
+        replace_node(node, node.kid[0])
 
     def exit_inherited_archs(self, node: ast.AstNode) -> None:
         """Grammar rule.
