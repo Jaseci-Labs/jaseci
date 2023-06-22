@@ -434,14 +434,13 @@ class ActionsOptimizer:
                 "cur_phase": 0,  # how long the current period has been running
                 "prev_best_config": self.actions_state.get_all_state(),
                 "prev_actions": [],
-                "action_utilz": {},
+                "prev_action_utilz": {},
                 "eval_complete": False,
                 "prev_avg_walker_lat": [],
                 "call_counter": 0,  # counter for number of calls
             }
         policy_state["cur_phase"] += self.jsorc_interval
         if policy_state["phase"] == "pref":
-            action_utilz = {}
             # total_count = 0
             if policy_state["call_counter"] < WINDOW_SIZE:
                 # Increment the call counter
@@ -450,12 +449,14 @@ class ActionsOptimizer:
                     f"Waiting for ({(WINDOW_SIZE+1) - policy_state['call_counter']} more calls before starting the policy state."  # noqa: E501
                 )
                 policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
-                action_utilz = self._get_action_utilization()
-                logger.info(f"===Auto Policy=== action_utilz: {action_utilz}")
+                policy_state["prev_actions"] = list(self.actions_calls.keys())
+                policy_state["prev_action_utilz"] = self._get_action_utilization()
+                logger.info(
+                    f"===Auto Policy=== current action_utilz: {policy_state['prev_action_utilz']}"  # noqa: E501
+                )
 
                 policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
                 self.policy_state["Auto"] = policy_state
-                policy_state["prev_actions"] = list(self.actions_calls.keys())
                 return
             if self._check_phase_change(policy_state):
                 logger.info(
@@ -569,6 +570,7 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
+        policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Auto"] = policy_state
 
     def has_action_utilz_changed(prev_action_utilz, curr_action_utilz, threshold=0.01):
@@ -611,7 +613,7 @@ class ActionsOptimizer:
                 "cur_phase": 0,  # how long the current period has been running
                 "prev_best_config": [],
                 "prev_actions": [],
-                "action_utilz": {},
+                "prev_action_utilz": {},
                 "prev_avg_walker_lat": [],
                 "remain_configs": [],
             }
@@ -629,10 +631,13 @@ class ActionsOptimizer:
         if policy_state["phase"] == "pref":
             current_act_utilz = self._get_action_utilization()
             logger.info(
-                f"===Predictive Policy=== in pref phase with cur_phase: {current_act_utilz},\nprev: {policy_state['action_utilz']}"  # noqa: E501
+                f"===Predictive Policy=== in pref phase with cur_phase: {current_act_utilz},\nprev: {policy_state['prev_action_utilz']}"  # noqa: E501
             )
-            if self.has_action_utilz_changed(
-                policy_state["action_utilz"], current_act_utilz
+            if len(
+                policy_state["prev_action_utilz"]
+            ) > 0 and self.has_action_utilz_changed(
+                prev_action_utilz=policy_state["prev_action_utilz"],
+                curr_action_utilz=current_act_utilz,
             ):
                 self._init_evalution_policy(policy_state)
                 best_config = max(
@@ -654,7 +659,7 @@ class ActionsOptimizer:
                 )
                 policy_state["phase"] = "pref"
                 policy_state["cur_phase"] = 0
-        policy_state["action_utilz"] = self._get_action_utilization()
+        policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Predictive"] = policy_state
 
     def _actionpolicy_evaluation(self):
