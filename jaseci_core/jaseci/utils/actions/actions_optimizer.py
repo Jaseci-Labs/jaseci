@@ -567,6 +567,7 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
+        policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
         policy_state["prev_actions"] = list(self.actions_calls.keys())
         policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Auto"] = policy_state
