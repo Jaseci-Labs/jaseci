@@ -577,22 +577,17 @@ class ActionsOptimizer:
         logger.info(f"prev_action_utilz: {prev_action_utilz}")
         logger.info(f"curr_action_utilz: {curr_action_utilz}")
         if len(prev_action_utilz) != len(curr_action_utilz):
-            logger.info("length diff")
             return True
 
         for action in curr_action_utilz:
             if action not in prev_action_utilz:
-                logger.info("action diff")
                 return True
 
             prev_utilz = prev_action_utilz[action]
             curr_utilz = curr_action_utilz[action]
-
-            if abs(curr_utilz - prev_utilz) > threshold:
-                logger.info(
-                    f"util diff : {abs(curr_utilz - prev_utilz)},action: {action}"
-                )
-                return True
+            if action != "total_call_count":
+                if abs(curr_utilz - prev_utilz) > threshold:
+                    return True
 
         return False
 
@@ -606,7 +601,6 @@ class ActionsOptimizer:
                 "phase": "pref",  # current phase of policy: eval|perf
                 "cur_phase": 0,  # how long the current period has been running
                 "prev_best_config": [],
-                "prev_actions": [],
                 "prev_action_utilz": {},
                 "prev_avg_walker_lat": [],
                 "remain_configs": [],
@@ -627,11 +621,13 @@ class ActionsOptimizer:
             logger.info(
                 f"===Predictive Policy=== in pref phase with cur_phase: {current_act_utilz},\nprev: {policy_state['prev_action_utilz']}"  # noqa: E501
             )
-            if policy_state["prev_action_utilz"][
-                "total_call_count"
-            ] > 0 and self.has_action_utilz_changed(
-                prev_action_utilz=policy_state["prev_action_utilz"],
-                curr_action_utilz=current_act_utilz,
+            if (
+                policy_state["prev_action_utilz"]["total_call_count"] > 0
+                and current_act_utilz["total_call_count"] > 0
+                and self.has_action_utilz_changed(
+                    prev_action_utilz=policy_state["prev_action_utilz"],
+                    curr_action_utilz=current_act_utilz,
+                )
             ):
                 self._init_evalution_policy(policy_state)
                 best_config = max(
@@ -652,7 +648,6 @@ class ActionsOptimizer:
                     "===Predictive Policy=== All actions change have been applied."
                 )
                 policy_state["phase"] = "pref"
-                policy_state["cur_phase"] = 0
         policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Predictive"] = policy_state
 
