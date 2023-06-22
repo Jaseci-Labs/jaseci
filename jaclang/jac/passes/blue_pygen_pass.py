@@ -193,6 +193,7 @@ class BluePygenPass(Pass):
         name: Token,
         typ: Token,
         doc: Optional[DocString],
+        decorators: Optional["ExprList"],
         access: Optional[Token],
         base_classes: "BaseClasses",
         body: "ArchBlock",
@@ -222,6 +223,14 @@ class BluePygenPass(Pass):
         body: "ArchBlock",
         """
         self.decl_def_warn()
+
+    def exit_decorators(self, node: ast.Decorators) -> None:
+        """Sub objects.
+
+        calls: List["ExprType"],
+        """
+        for i in node.calls:
+            self.emit_ln(node, i.meta["py_code"])
 
     def exit_base_classes(self, node: ast.BaseClasses) -> None:
         """Sub objects.

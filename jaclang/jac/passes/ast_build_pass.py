@@ -354,6 +354,21 @@ class AstBuildPass(Pass):
         """
         replace_node(node, node.kid[0])
 
+    def exit_decorators(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        decorators -> decorators DECOR_OP atom
+        decorators -> DECOR_OP atom
+        """
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+        replace_node(
+            node,
+            ast.Decorators(
+                decorators=node.kid, parent=node.parent, kid=node.kid, line=node.line
+            ),
+        )
+
     def exit_inherited_archs(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
