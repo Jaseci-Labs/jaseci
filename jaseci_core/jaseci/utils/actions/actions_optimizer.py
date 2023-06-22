@@ -474,6 +474,7 @@ class ActionsOptimizer:
                 policy_state["cur_config"] = policy_state["remain_configs"][0]
                 del policy_state["remain_configs"][0]
                 policy_state["cur_phase"] = 0
+                policy_state["prev_actions"] = list(self.actions_calls.keys())
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
                 self.actions_change = self._get_action_change(
@@ -566,6 +567,7 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
+        policy_state["prev_actions"] = list(self.actions_calls.keys())
         policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Auto"] = policy_state
 
