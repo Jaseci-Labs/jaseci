@@ -390,7 +390,9 @@ class ActionsOptimizer:
             logger.info(
                 f"""===walker latency is not more than previous state===
                 \nlat_change_pct: {lat_change_pct}
-                \nprev_avg_walker_lat :{policy_state['prev_avg_walker_lat']}"""
+                \nprev_avg_walker_lat :{policy_state['prev_avg_walker_lat']}
+                \nprev_actions: {policy_state["prev_actions"]}
+                \nactions_calls: {list(self.actions_calls.keys())}"""
             )
             return False
 
@@ -464,7 +466,6 @@ class ActionsOptimizer:
                 policy_state["cur_config"] = None
                 policy_state["cur_phase"] = 0
                 policy_state["eval_complete"] = False
-                policy_state["prev_actions"] = list(self.actions_calls.keys())
         elif policy_state["phase"] == "eval":
             if policy_state["cur_config"] is None or self._check_phase_change(
                 policy_state
@@ -474,7 +475,6 @@ class ActionsOptimizer:
                 policy_state["cur_config"] = policy_state["remain_configs"][0]
                 del policy_state["remain_configs"][0]
                 policy_state["cur_phase"] = 0
-                policy_state["prev_actions"] = list(self.actions_calls.keys())
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
                 self.actions_change = self._get_action_change(
