@@ -673,7 +673,7 @@ class ActionsOptimizer:
                     logger.info(
                         f"===Predictive Policy=== Action utilization has changed, We would wait for {2-policy_state['change_counter']} call before evaluation."  # noqa: E501
                     )
-                    policy_state["change_counter"] += policy_state["change_counter"]
+                    policy_state["change_counter"] += 1
                     self.policy_state["Predictive"] = policy_state
                     return
                 else:
