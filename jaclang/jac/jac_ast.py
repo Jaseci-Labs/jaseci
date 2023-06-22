@@ -68,6 +68,8 @@ class Token(AstNode):
         self,
         name: str,
         value: str,
+        col_start: int,
+        col_end: int,
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -75,6 +77,8 @@ class Token(AstNode):
         """Initialize token."""
         self.name = name
         self.value = value
+        self.col_start = col_start
+        self.col_end = col_end
         super().__init__(parent=parent, kid=kid, line=line)
 
 

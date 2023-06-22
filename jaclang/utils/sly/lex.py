@@ -83,10 +83,10 @@ class Token(object):
     Representation of a single token.
     """
 
-    __slots__ = ("type", "value", "lineno", "index", "end")
+    __slots__ = ("type", "value", "lineno", "lineidx", "index", "end")
 
     def __repr__(self):
-        return f"Token(type={self.type!r}, value={self.value!r}, lineno={self.lineno}, index={self.index}, end={self.end})"
+        return f"Token(type={self.type!r}, value={self.value!r}, lineno={self.lineno}, lineidx={self.lineidx}, index={self.index}, end={self.end})"
 
 
 class TokenStr(str):
@@ -431,6 +431,7 @@ class Lexer(metaclass=LexerMeta):
 
         # --- Main tokenization function
         self.text = text
+        self.line_lengths = [len(line) for line in text.splitlines(True)]
         try:
             while True:
                 try:
@@ -443,6 +444,11 @@ class Lexer(metaclass=LexerMeta):
                 tok = Token()
                 tok.lineno = lineno
                 tok.index = index
+                line_index = sum = 0
+                while index >= sum + self.line_lengths[line_index]:
+                    sum += self.line_lengths[line_index]
+                    line_index += 1
+                tok.lineidx = sum
                 m = _master_re.match(text, index)
                 if m:
                     tok.end = index = m.end()

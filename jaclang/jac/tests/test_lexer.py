@@ -34,3 +34,12 @@ class TestLexer(TestCase):
             ],
             ["RBRACE", "}", 61, 1422, 1423],
         )
+
+    def test_col_idxs(self) -> None:
+        """Basic test for lexer."""
+        lexer = JacLexer()
+        tokens = []
+        for t in lexer.tokenize(self.load_fixture("lexer_fam.jac")):
+            tokens.append((t.value, t.lineno, t.index - t.lineidx, t.end - t.lineidx))
+        self.assertEqual(tokens[12], ("activity", 9, 16, 24))
+        self.assertEqual(tokens[-3], ("outside_func", 59, 24, 36))

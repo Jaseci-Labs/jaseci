@@ -101,6 +101,8 @@ def parse_tree_to_ast(
                     value=tree.value,
                     kid=[],
                     line=tree.lineno if lineno == 0 else lineno,
+                    col_start=tree.index - tree.lineidx + 1,
+                    col_end=tree.end - tree.lineidx + 1,
                 )
         else:
             raise ValueError(f"node must be ast.AstNode or parser output tuple: {tree}")
