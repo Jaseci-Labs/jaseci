@@ -452,8 +452,6 @@ class ActionsOptimizer:
                 logger.info(
                     f"===Auto Policy=== current action_utilz: {policy_state['prev_action_utilz']}"  # noqa: E501
                 )
-
-                policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
                 self.policy_state["Auto"] = policy_state
                 return
             if self._check_phase_change(policy_state):
