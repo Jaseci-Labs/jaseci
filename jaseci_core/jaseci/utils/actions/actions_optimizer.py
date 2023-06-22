@@ -455,8 +455,6 @@ class ActionsOptimizer:
                 self.policy_state["Adaptive"] = policy_state
                 return
             policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
-            policy_state["prev_actions"] = list(self.actions_calls.keys())
-            policy_state["prev_action_utilz"] = self._get_action_utilization()
             if self._check_phase_change(policy_state):
                 logger.info(
                     f"""==in check phase===
@@ -467,6 +465,8 @@ class ActionsOptimizer:
                 policy_state["cur_config"] = None
                 policy_state["cur_phase"] = 0
                 policy_state["eval_complete"] = False
+            policy_state["prev_actions"] = list(self.actions_calls.keys())
+            policy_state["prev_action_utilz"] = self._get_action_utilization()
         elif policy_state["phase"] == "eval":
             if policy_state["cur_config"] is None:
                 # or self._check_phase_change(
