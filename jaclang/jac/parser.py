@@ -305,6 +305,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "builtin_type",
         "NULL",
         "NAME",
+        # "NAME DOT type_name", may need this
         "TYP_LIST LSQUARE type_name RSQUARE",
         "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
     )

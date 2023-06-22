@@ -41,6 +41,9 @@
 					},
 					"patterns": [
 						{
+							"include": "#comments"
+						},
+						{
 							"name": "keyword.control.import.jac",
 							"match": "\\b(?<!\\.)(as|from)\\b"
 						},
@@ -78,6 +81,9 @@
 					},
 					"patterns": [
 						{
+							"include": "#comments"
+						},
+						{
 							"name": "punctuation.separator.jac",
 							"match": ","
 						},
@@ -109,6 +115,9 @@
 						}
 					},
 					"patterns": [
+						{
+							"include": "#comments"
+						},
 						{
 							"name": "punctuation.separator.jac",
 							"match": ":"
@@ -142,6 +151,9 @@
 					},
 					"patterns": [
 						{
+							"include": "#comments"
+						},
+						{
 							"name": "entity.name.type.class.jac",
 							"match": "\\b([[:alpha:]_]\\w*)\\b"
 						}
@@ -166,6 +178,9 @@
 						}
 					},
 					"patterns": [
+						{
+							"include": "#comments"
+						},
 						{
 							"name": "punctuation.separator.jac",
 							"match": ","

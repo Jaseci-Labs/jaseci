@@ -1,6 +1,6 @@
 """Jaclang setup file."""
 
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # type: ignore
 
 VERSION = "0.0.1"
 

@@ -172,7 +172,7 @@ class JacLexer(Lexer):
     HEX = r"0[xX][0-9a-fA-F_]+"
     BIN = r"0[bB][01_]+"
     OCT = r"0[oO][0-7_]+"
-    INT = r"[0-9_]+"
+    INT = r"[0-9][0-9_]*"
     NULL = r"None"
     NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
 

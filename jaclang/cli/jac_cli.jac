@@ -4,110 +4,105 @@ Jac languages. It's built with the Jac language V2 via bootstraping and
 represents the first such production Jac program.
 """
 
-import:py from argparse, ArgumentParser as ArgParser;
+import:py inspect;
+import:py from argparse, ArgumentParser, ArgumentError;
+import:py cmd;
+import:py from typing, Any, Callable;
 
-global version="0.0.1";
 
-"""
-Object representing a command line flag to be
-attached to any command group.
-"""
-object CmdFlag {
-    has flag: str, full_flag: str, help: str,
-        typ: type, action: str, default: any;
+object Interface {
+    has functions: list[callable] = [];
 
-    can:priv init(full_flag: str, flag: str = None, help: str = "No Help Here!",
-             typ: type = None, action: str = None, default: any = None) {
-        :h:flag = flag ?: f"-{full_flag[2]}";
-        :h:full_flag = full_flag;
-        :h:help = help;
-        :h:typ = typ;
-        :h:action = action;
-        :h:default = default;
-    }
-}
-
-"""
-Object representing a command line argument to be
-attached to any command group.
-"""
-object CmdArg {
-    has name: str, help: str, typ: type, default: any;
-
-    can init(name: str, help: str = "No Help Here!", typ: type = None,
-             default: any = None) {
-        :h:name = name;
-        :h:help = help;
-        :h:typ = typ;
-        :h:default = default;
-    }
-}
-
-"""
-Represents a higher level command, each command
-can take one Argument and any number of flags.
-"""
-object Command {
-    has name: str, description: str, flags: list[CmdFlag], arg: CmdArg;
-
-    can init(name: str, description: str, flags: list[CmdFlag] = [],
-             arg: CmdArg = None) {
-        :h:name = name;
-        :h:description = description;
-        :h:flags = flags;
-        :h:arg = arg;
+    can register(func: callable) -> callable {
+        :h:functions.append(func);
+        return func;
     }
 
-    can add_flag(flag: CmdFlag) {
-        flag |> :h:flags.append;
-    }
+    can create_parser() -> ArgumentParser {
+        parser = ArgumentParser();
+        parser.add_argument("base",
+                            choices = [f.__name__ for f in functions],
+                            help = "The function to run");
 
-    can set_arg(arg: CmdArg) {
-        :h:arg = arg;
-    }
-}
-
-"""
-The main CLI object, this is the entry point for the
-CLI tool.
-"""
-object JacCli {
-    has parser:ArgParser = ArgParser(prog="jac", description="Jac CLI Tool");
-
-    can init() {
-        :h:parser.add_argument("-v", "--version", action="version",
-                               version=f"Jac CLI Tool {version}");
-        |> :h:setup;
-    }
-
-    can setup() {
-        run_cmd = Command(name="run", description="Run a Jac program");
-        run_cmd.set_arg <| spawn CmdArg(name="file",
-                           help="The Jac file to run",  typ=str);
-        run_cmd.add_flag <| spawn CmdFlag(full_flag="--debug",
-                            help="Run the program in debug mode",
-                            action="store_true");
-
-        build_cmd = Command(name="build", description="Build a Jac program");
-        build_cmd.set_arg <| spawn CmdArg(name="file",
-                             help="The Jac file to build",  typ=str);
-        build_cmd.add_flag <| spawn CmdFlag(full_flag="--debug",
-                              help="Build the program in debug mode",
-                              action="store_true");
-    }
-
-    can cli() {
-        args = :h:parser.parse_args;
-        if args.run {
-            {args.file, args.debug} |> :h:run;
-        } elif args.build {
-            {args.file, args.debug} |> :h:build;
-        } else {
-            |> :h:parser.print_help;
+        for func in :h:functions {
+            sig = inspect.signature(func);
+            for name, param in sig.parameters.items() {
+                kwargs = {};
+                if param.default == inspect.Parameter.empty {
+                    kwargs = {'required': True};
+                } else {
+                    kwargs = {'default': param.default};
+                }
+                parser.add_argument(f"--{func.__name__}.{name}", **kwargs);
+            }
         }
+
+        return parser;
+    }
+
+    can run_from_cli() {
+        parser = :h:create_parser();
+        args = parser.parse_args();
+        for f in :h:functions {
+            if f.__name__ == args.base {
+                func = f;
+            }
+        }
+        func = next([f for f in functions if f.__name__ == args.base]);
+        func_args = {k.split('.')[1]: v for k, v in vars(args).items() if k.startswith(func.__name__)};
+        func(**func_args);
+    }
+
+    can run_shell() {
+        ShellCmd(self).cmdloop();
+    }
+}
+
+object ShellCmd:cmd.Cmd {
+    has prompt: str = "> ";
+
+    can init(registry: Interface, *args: list, **kwargs: dict) {
+        :h::o:cmd.Cmd.__init__(*args, **kwargs);
+        :h:registry = registry;
+    }
+
+    can default(line: str) {
+        args = line.split();
+        parser = :h:registry.create_parser();
+        try {
+            parsed_args = parser.parse_args(args);
+            func = next(f for f in :h:registry.functions if f.__name__ == parsed_args.base);
+            func_args = {k.split('.')[1]: v for k, v in vars(parsed_args).items() if k.startswith(func.__name__)};
+            func(**func_args);
+        } except ArgumentError as e {
+            print(f"Error: {str(e)}");
+        }
+    }
+
+    can do_quit(arg: str) -> bool {
+        return True;
     }
 }
 
 with entry {
-    |> (:+:JacCli).cli;
+    interface = Interface();
+
+    @interface.register
+    can function_one(a: int, b: str, c: bool = False) {
+        print(f"Function One -> a: {a}, b: {b}, c: {c}");
+    }
+
+    @interface.register
+    can function_two(x: float, y: float) {
+        print(f"Function Two -> x: {x}, y: {y}")
+    }
+
+    @interface.register
+    can function_three(name: str, age: int, country: str = 'Unknown') {
+        print(f"Function Three -> name: {name}, age: {age}, country: {country}");
+    }
+
+    # Run CLI or Shell mode
+    # interface.run_from_cli()
+    interface.run_shell()
 }
