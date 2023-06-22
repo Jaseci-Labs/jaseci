@@ -297,13 +297,15 @@ class ActionsOptimizer:
                             "local_mem_requirement"
                         ]
                         c["local_mem"] = c["local_mem"] + local_mem_requirement
-                        if c["local_mem"] < (node_mem * NODE_MEM_THRESHOLD):
+                        if c["local_mem"] < (
+                            (node_mem - jaseci_runtime_mem) * NODE_MEM_THRESHOLD
+                        ):
                             new_configs.append(dict(c))
                         else:
                             logger.info(
                                 f"""config dropped for memory constraint: {c},
                                 \n\tcurrent node memory: {node_mem}
-                                \n\tavailable memory: {(node_mem * NODE_MEM_THRESHOLD)-c['local_mem'] }"""  # noqa: E501
+                                \n\tavailable memory: {((node_mem-jaseci_runtime_mem)  * NODE_MEM_THRESHOLD)-c['local_mem'] }"""  # noqa: E501
                             )
                     else:
                         new_configs.append(dict(c))
@@ -591,6 +593,43 @@ class ActionsOptimizer:
 
         return False
 
+    def get_module_config(self, curr_action_utilz):
+        try:
+            # Calculate the total utilization of each module
+            module_utilz = {}
+            for module, utilz in curr_action_utilz.items():
+                if module != "total_call_count":
+                    module_name = module.split(".")[0]
+                    module_utilz[module_name] = module_utilz.get(module_name, 0) + utilz
+
+            # Sort modules based on utilization in descending order
+            ordered_modules = sorted(
+                module_utilz.items(), key=lambda x: x[1], reverse=True
+            )
+
+            # Calculate the local memory requirement and determine module configuration
+            node_mem = self.policy_params.get("node_mem", 999 * 1024)
+            jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
+            total_avail_mem = (node_mem - jaseci_runtime_mem) * NODE_MEM_THRESHOLD
+            local_mem_requirement = 0
+            config = {}
+            for module, _ in ordered_modules:
+                mem_req = int(
+                    action_configs.get(module, {}).get("local_mem_requirement", 0)
+                )
+                if local_mem_requirement + mem_req > total_avail_mem:
+                    config[module] = "remote"
+                else:
+                    config[module] = "local"
+                    local_mem_requirement += mem_req
+
+            config["local_mem"] = local_mem_requirement
+            return config
+
+        except Exception as e:
+            print("Error occurred:", str(e))
+            return {}
+
     def _actionpolicy_predictive(self):
         logger.info("===Predictive Policy===")
         policy_state = self.policy_state["Predictive"]
@@ -632,11 +671,13 @@ class ActionsOptimizer:
             ):
                 if policy_state["change_counter"] == 0:
                     logger.info(
-                        "===Predictive Policy=== Action utilization has changed.we would wait for 1 call before evaluation."  # noqa: E501
+                        f"===Predictive Policy=== Action utilization has changed, We would wait for {policy_state['change_counter']-2} call before evaluation."  # noqa: E501
                     )
                     policy_state["change_counter"] = 1
+                    self.policy_state["Predictive"] = policy_state
+                    return
                 else:
-                    self._init_evalution_policy(policy_state)
+                    self.get_module_config(current_act_utilz)
                     best_config = max(
                         policy_state["remain_configs"], key=lambda x: x["local_mem"]
                     )
