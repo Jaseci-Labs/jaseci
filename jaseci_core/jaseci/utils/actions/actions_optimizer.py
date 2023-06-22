@@ -394,17 +394,11 @@ class ActionsOptimizer:
 
     def _get_action_utilization(self):
         logger.info(" ===Action Utilization===")
-        logger.info(f"self.actions_calls: {self.actions_calls}")
-
         total_count = sum(len(calls) for calls in self.actions_calls.values())
-
-        logger.info(f"total_count: {total_count}")
         action_utilization = {
             action: len(calls) / total_count
             for action, calls in self.actions_calls.items()
         }
-        logger.info(f"action_utilization: {action_utilization}")
-
         action_utilization["total_call_count"] = total_count
         return action_utilization
 
@@ -583,23 +577,19 @@ class ActionsOptimizer:
         logger.info(f"prev_action_utilz: {prev_action_utilz}")
         logger.info(f"curr_action_utilz: {curr_action_utilz}")
         if len(prev_action_utilz) != len(curr_action_utilz):
+            logger.info("length diff")
             return True
-
-        # prev_total = sum(prev_action_utilz.values())
-        # curr_total = sum(curr_action_utilz.values())
-
-        # # Check if the sum of action utilizations is equal to 100%
-        # if abs(prev_total - 1) > threshold or abs(curr_total - 1) > threshold:
-        #     return True
 
         for action in curr_action_utilz:
             if action not in prev_action_utilz:
+                logger.info("action diff")
                 return True
 
             prev_utilz = prev_action_utilz[action]
             curr_utilz = curr_action_utilz[action]
 
             if abs(curr_utilz - prev_utilz) > threshold:
+                logger.info(f"util diff : {abs(curr_utilz - prev_utilz) > threshold}")
                 return True
 
         return False
