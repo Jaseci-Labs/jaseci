@@ -236,9 +236,9 @@ class BluePygenPass(Pass):
     def exit_base_classes(self, node: ast.BaseClasses) -> None:
         """Sub objects.
 
-        base_classes: List[Token],
+        base_classes: List[NameList],
         """
-        self.emit(node, ", ".join([i.value for i in node.base_classes]))
+        self.emit(node, ", ".join([i.meta["py_code"] for i in node.base_classes]))
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_ability(self, node: ast.Ability) -> None:
@@ -402,8 +402,12 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         names: List[Token],
+        dotted: bool,
         """
-        self.emit(node, ", ".join([i.value for i in node.names]))
+        if node.dotted:
+            self.emit(node, ".".join([i.value for i in node.names]))
+        else:
+            self.emit(node, ", ".join([i.value for i in node.names]))
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
@@ -805,26 +809,39 @@ class BluePygenPass(Pass):
             f"{{{', '.join([kv_pair.meta['py_code'] for kv_pair in node.kv_pairs])}}}",
         )
 
-    def exit_comprehension(self, node: ast.Comprehension) -> None:
+    def exit_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.
 
-        key_expr: Optional[ExprType],
-        out_expr: ExprType,
+        out_expr: "ExprType",
         name: Token,
-        collection: ExprType,
-        conditional: Optional[ExprType],
+        collection: "ExprType",
+        conditional: Optional["ExprType"],
         """
-        partial = ""
-        if node.key_expr:
-            partial += (
-                f"{node.key_expr.meta['py_code']}: {node.out_expr.meta['py_code']} for "
-                f"{node.name.value} in {node.collection.meta['py_code']}"
-            )
-        else:
-            partial += (
-                f"{node.out_expr.meta['py_code']} for {node.name.value} "
-                f"in {node.collection.meta['py_code']}"
-            )
+        partial = (
+            f"{node.out_expr.meta['py_code']} for {node.name.value} "
+            f"in {node.collection.meta['py_code']}"
+        )
+        if node.conditional:
+            partial += f" if {node.conditional.meta['py_code']}"
+        self.emit(node, f"[{partial}]")
+
+    def exit_dict_compr(self, node: ast.DictCompr) -> None:
+        """Sub objects.
+
+        outk_expr: "ExprType",
+        outv_expr: "ExprType",
+        k_name: Token,
+        v_name: Optional[Token],
+        collection: "ExprType",
+        conditional: Optional["ExprType"],
+        """
+        partial = (
+            f"{node.outk_expr.meta['py_code']}: {node.outv_expr.meta['py_code']} for "
+            f"{node.k_name.value} in {node.collection.meta['py_code']}"
+        )
+        if node.v_name:
+            partial += f", {node.v_name.value}"
+        partial += f" in {node.collection.meta['py_code']}"
         if node.conditional:
             partial += f" if {node.conditional.meta['py_code']}"
         self.emit(node, f"[{partial}]")

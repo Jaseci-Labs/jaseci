@@ -183,7 +183,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "empty",
-        "inherited_archs sub_name",
+        "inherited_archs sub_name_dotted",
     )
     def inherited_archs(self, p: YaccProduction) -> YaccProduction:
         """Sub name list rule."""
@@ -192,6 +192,19 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_("COLON NAME")
     def sub_name(self, p: YaccProduction) -> YaccProduction:
         """Sub name rule."""
+        return p
+
+    @_("COLON dotted_name")
+    def sub_name_dotted(self, p: YaccProduction) -> YaccProduction:
+        """Sub name rule."""
+        return p
+
+    @_(
+        "NAME",
+        "dotted_name DOT NAME",
+    )
+    def dotted_name(self, p: YaccProduction) -> YaccProduction:
+        """Strict arch reference rule."""
         return p
 
     # Ability elements
@@ -305,7 +318,6 @@ class JacParser(JacParseErrorMixIn, Parser):
         "builtin_type",
         "NULL",
         "NAME",
-        # "NAME DOT type_name", may need this
         "TYP_LIST LSQUARE type_name RSQUARE",
         "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
     )
@@ -581,9 +593,9 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "KW_VISIT expression SEMI",
-        "KW_VISIT sub_name expression SEMI",
+        "KW_VISIT sub_name_dotted expression SEMI",
         "KW_VISIT expression else_stmt",
-        "KW_VISIT sub_name expression else_stmt",
+        "KW_VISIT sub_name_dotted expression else_stmt",
     )
     def visit_stmt(self, p: YaccProduction) -> YaccProduction:
         """Visit statement rule."""
@@ -877,8 +889,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "list_val",
         "dict_val",
-        # sets and tuples are supported through the pipe forward semantic
-        "comprehension",
+        "list_compr",
+        "dict_compr",
     )
     def atom_collection(self, p: YaccProduction) -> YaccProduction:
         """Atom rule."""
@@ -920,11 +932,19 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE",
-        "LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE",
         "LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE",
-        "LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE",
     )
-    def comprehension(self, p: YaccProduction) -> YaccProduction:
+    def list_compr(self, p: YaccProduction) -> YaccProduction:
+        """Comprehension rule."""
+        return p
+
+    @_(
+        "LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE",
+        "LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE",
+        "LBRACE expression COLON expression KW_FOR NAME COMMA NAME KW_IN walrus_assign RBRACE",
+        "LBRACE expression COLON expression KW_FOR NAME COMMA NAME KW_IN walrus_assign KW_IF expression RBRACE",
+    )
+    def dict_compr(self, p: YaccProduction) -> YaccProduction:
         """Comprehension rule."""
         return p
 

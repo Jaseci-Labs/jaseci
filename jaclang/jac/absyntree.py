@@ -364,7 +364,7 @@ class BaseClasses(AstNode):
 
     def __init__(
         self,
-        base_classes: List[Token],
+        base_classes: List["NameList"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -621,12 +621,14 @@ class NameList(AstNode):
     def __init__(
         self,
         names: List[Token],
+        dotted: bool,
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
     ) -> None:
         """Initialize name list node."""
         self.names = names
+        self.dotted = dotted
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -1219,12 +1221,11 @@ class DictVal(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class Comprehension(AstNode):
-    """Comprehension node type for Jac Ast."""
+class ListCompr(AstNode):
+    """ListCompr node type for Jac Ast."""
 
     def __init__(
         self,
-        key_expr: Optional["ExprType"],
         out_expr: "ExprType",
         name: Token,
         collection: "ExprType",
@@ -1234,9 +1235,33 @@ class Comprehension(AstNode):
         line: int,
     ) -> None:
         """Initialize comprehension expression node."""
-        self.key_expr = key_expr
         self.out_expr = out_expr
         self.name = name
+        self.collection = collection
+        self.conditional = conditional
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class DictCompr(AstNode):
+    """DictCompr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        outk_expr: "ExprType",
+        outv_expr: "ExprType",
+        k_name: Token,
+        v_name: Optional[Token],
+        collection: "ExprType",
+        conditional: Optional["ExprType"],
+        parent: Optional[AstNode],
+        kid: List[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize comprehension expression node."""
+        self.outk_expr = outk_expr
+        self.outv_expr = outv_expr
+        self.k_name = k_name
+        self.v_name = v_name
         self.collection = collection
         self.conditional = conditional
         super().__init__(parent=parent, kid=kid, line=line)
@@ -1459,7 +1484,8 @@ AtomType = Union[
     MultiString,
     ListVal,
     DictVal,
-    Comprehension,
+    ListCompr,
+    DictCompr,
     AtomTrailer,
     GlobalRef,
     HereRef,

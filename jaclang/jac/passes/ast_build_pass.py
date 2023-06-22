@@ -375,7 +375,7 @@ class AstBuildPass(Pass):
     def exit_inherited_archs(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        inherited_archs -> inherited_archs sub_name
+        inherited_archs -> inherited_archs sub_name_dotted
         inherited_archs -> empty
         """
         if len(node.kid) == 2:
@@ -398,6 +398,32 @@ class AstBuildPass(Pass):
         sub_name -> COLON NAME
         """
         replace_node(node, node.kid[1])
+
+    def exit_sub_name_dotted(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        sub_name_dotted -> COLON dotted_name
+        """
+        replace_node(node, node.kid[1])
+
+    def exit_dotted_name(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        dotted_name -> dotted_name DOT NAME
+        dotted_name -> NAME
+        """
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+        replace_node(
+            node,
+            ast.NameList(
+                names=node.kid,
+                dotted=True,
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_ability(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -798,6 +824,7 @@ class AstBuildPass(Pass):
             node,
             ast.NameList(
                 names=node.kid,
+                dotted=False,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
@@ -1413,9 +1440,9 @@ class AstBuildPass(Pass):
     def exit_visit_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        visit_stmt -> KW_VISIT sub_name expression else_stmt
+        visit_stmt -> KW_VISIT sub_name_dotted expression else_stmt
         visit_stmt -> KW_VISIT expression else_stmt
-        visit_stmt -> KW_VISIT sub_name expression SEMI
+        visit_stmt -> KW_VISIT sub_name_dotted expression SEMI
         visit_stmt -> KW_VISIT expression SEMI
         """
         meta = {"typ": None, "else_body": None}
@@ -1918,7 +1945,8 @@ class AstBuildPass(Pass):
     def exit_atom_collection(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        atom_collection -> comprehension
+        atom_collection -> dict_compr
+        atom_collection -> list_compr
         atom_collection -> dict_val
         atom_collection -> list_val
         """
@@ -2003,41 +2031,79 @@ class AstBuildPass(Pass):
             ),
         )
 
-    def exit_comprehension(self, node: ast.AstNode) -> None:
+    def exit_list_compr(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        comprehension -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE
-        comprehension -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE
-        comprehension -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE
-        comprehension -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE
+        list_compr -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE
+        list_compr -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE
         """
-        meta = {}
-        if node.kid[2].name == "COLON":
-            meta["key_expr"] = node.kid[1]
-            meta["out_expr"] = node.kid[3]
-            meta["name"] = node.kid[5]
-            meta["collection"] = node.kid[7]
-            meta["conditional"] = None
-        else:
-            meta["key_expr"] = None
-            meta["out_expr"] = node.kid[1]
-            meta["name"] = node.kid[3]
-            meta["collection"] = node.kid[5]
-            meta["conditional"] = None
+        meta = {
+            "out_expr": node.kid[1],
+            "name": node.kid[3],
+            "collection": node.kid[5],
+            "conditional": None,
+        }
         if node.kid[-3].name == "KW_IF":
             meta["conditional"] = node.kid[-2]
         if len(node.kid) == 7:
             node.kid = [node.kid[1], node.kid[3], node.kid[5]]
         elif len(node.kid) == 9:
             node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7]]
-        elif len(node.kid) == 11:
-            node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7], node.kid[9]]
         replace_node(
             node,
-            ast.Comprehension(
-                key_expr=meta["key_expr"],
+            ast.ListCompr(
                 out_expr=meta["out_expr"],
                 name=meta["name"],
+                collection=meta["collection"],
+                conditional=meta["conditional"],
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_dict_compr(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        dict_compr -> LBRACE expression COLON expression KW_FOR NAME COMMA NAME KW_IN walrus_assign KW_IF expression RBRACE # noqa
+        dict_compr -> LBRACE expression COLON expression KW_FOR NAME COMMA NAME KW_IN walrus_assign RBRACE
+        dict_compr -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE
+        dict_compr -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE
+        """
+        meta = {
+            "outk_expr": node.kid[1],
+            "outv_expr": node.kid[3],
+            "k_name": node.kid[5],
+            "conditional": None,
+        }
+        if node.kid[6].name == "COMMA":
+            meta["v_name"] = node.kid[7]
+            meta["collection"] = node.kid[9]
+        else:
+            meta["v_name"] = None
+            meta["collection"] = node.kid[7]
+        if node.kid[-3].name == "KW_IF":
+            meta["conditional"] = node.kid[-2]
+        if len(node.kid) == 9:
+            node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7]]
+        elif len(node.kid) == 11:
+            node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7], node.kid[9]]
+        elif len(node.kid) == 13:
+            node.kid = [
+                node.kid[1],
+                node.kid[3],
+                node.kid[5],
+                node.kid[7],
+                node.kid[9],
+                node.kid[11],
+            ]
+        replace_node(
+            node,
+            ast.DictCompr(
+                outk_expr=meta["outk_expr"],
+                outv_expr=meta["outv_expr"],
+                k_name=meta["k_name"],
+                v_name=meta["v_name"],
                 collection=meta["collection"],
                 conditional=meta["conditional"],
                 parent=node.parent,
