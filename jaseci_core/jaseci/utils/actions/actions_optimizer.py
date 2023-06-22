@@ -390,6 +390,17 @@ class ActionsOptimizer:
             )
             return False
 
+    def _get_action_utilization(self):
+        total_count = sum(len(calls) for calls in self.actions_calls.values())
+
+        action_utilization = {
+            action: len(calls) / total_count
+            for action, calls in self.actions_calls.items()
+        }
+
+        action_utilization["total_call_count"] = total_count
+        return action_utilization
+
     def _actionpolicy_auto(self):
         """
         A automatic policy that automatically loads and unloads
@@ -424,7 +435,7 @@ class ActionsOptimizer:
         policy_state["cur_phase"] += self.jsorc_interval
         if policy_state["phase"] == "pref":
             action_utilz = {}
-            total_count = 0
+            # total_count = 0
             if policy_state["call_counter"] < WINDOW_SIZE:
                 # Increment the call counter
                 policy_state["call_counter"] += 1
@@ -432,10 +443,7 @@ class ActionsOptimizer:
                     f"Waiting for ({(WINDOW_SIZE+1) - policy_state['call_counter']} more calls before starting the policy state."  # noqa: E501
                 )
                 policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
-                for action in self.actions_calls.keys():
-                    action_utilz[action] = len(self.actions_calls[action])
-                    total_count = total_count + len(self.actions_calls[action])
-                action_utilz["total_call_count"] = total_count
+                action_utilz = self._get_action_utilization()
                 logger.info(f"===Auto Policy=== action_utilz: {action_utilz}")
 
                 policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
@@ -454,7 +462,9 @@ class ActionsOptimizer:
                 policy_state["eval_complete"] = False
                 policy_state["prev_actions"] = list(self.actions_calls.keys())
         elif policy_state["phase"] == "eval":
-            if policy_state["cur_config"] is None:
+            if policy_state["cur_config"] is None or self._check_phase_change(
+                policy_state
+            ):
                 self._init_evalution_policy(policy_state)
                 # This is the start of evaluation period
                 policy_state["cur_config"] = policy_state["remain_configs"][0]
@@ -553,6 +563,83 @@ class ActionsOptimizer:
                 self.benchmark["active"] = True
                 self.benchmark["requests"] = {}
         self.policy_state["Auto"] = policy_state
+
+    def has_action_utilz_changed(prev_action_utilz, curr_action_utilz, threshold=0.01):
+        if len(prev_action_utilz) != len(curr_action_utilz):
+            return True
+
+        # prev_total = sum(prev_action_utilz.values())
+        # curr_total = sum(curr_action_utilz.values())
+
+        # # Check if the sum of action utilizations is equal to 100%
+        # if abs(prev_total - 1) > threshold or abs(curr_total - 1) > threshold:
+        #     return True
+
+        for action in curr_action_utilz:
+            if action not in prev_action_utilz:
+                return True
+
+            prev_utilz = prev_action_utilz[action]
+            curr_utilz = curr_action_utilz[action]
+
+            if abs(curr_utilz - prev_utilz) > threshold:
+                return True
+
+        return False
+
+    def _actionpolicy_predictive(self):
+        logger.info("===Predictive Policy===")
+        policy_state = self.policy_state["Predictive"]
+
+        if len(policy_state) == 0:
+            # Initialize policy tracking state
+            policy_state = {
+                "phase": "pref",  # current phase of policy: eval|perf
+                "cur_phase": 0,  # how long the current period has been running
+                "prev_best_config": [],
+                "prev_actions": [],
+                "action_utilz": {},
+                "prev_avg_walker_lat": [],
+                "remain_configs": [],
+            }
+            self._init_evalution_policy(policy_state)
+            best_config = max(
+                policy_state["remain_configs"], key=lambda x: x["local_mem"]
+            )
+            self.actions_change = self._get_action_change(best_config)
+            if len(self.actions_change) > 0:
+                logger.info(
+                    f"===Predictive Policy=== Switching config to best fit config: {best_config}"  # noqa: E501
+                )
+                policy_state["phase"] = "action_switching"
+                self.apply_actions_change()
+        if policy_state["phase"] == "pref":
+            current_act_utilz = self._get_action_utilization()
+            if self.has_action_utilz_changed(
+                policy_state["action_utilz"], current_act_utilz
+            ):
+                self._init_evalution_policy(policy_state)
+                best_config = max(
+                    policy_state["remain_configs"], key=lambda x: x["local_mem"]
+                )
+                self.actions_change = self._get_action_change(best_config)
+                if len(self.actions_change) > 0:
+                    logger.info(
+                        f"===Predictive Policy=== Switching config to best fit config: {best_config}"  # noqa: E501
+                    )
+                    policy_state["phase"] = "action_switching"
+                    self.apply_actions_change()
+        elif policy_state["phase"] == "action_switching":
+            # in the middle of switching between configs for evaluation
+            if len(self.actions_change) == 0:
+                # this means all actions change have been applied.
+                logger.info(
+                    "===Predictive Policy=== All actions change have been applied."
+                )
+                policy_state["phase"] = "pref"
+                policy_state["cur_phase"] = 0
+        policy_state["action_utilz"] = self._get_action_utilization()
+        self.policy_state["Predictive"] = policy_state
 
     def _actionpolicy_evaluation(self):
         """
