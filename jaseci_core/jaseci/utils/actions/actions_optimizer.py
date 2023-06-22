@@ -589,7 +589,9 @@ class ActionsOptimizer:
             curr_utilz = curr_action_utilz[action]
 
             if abs(curr_utilz - prev_utilz) > threshold:
-                logger.info(f"util diff : {abs(curr_utilz - prev_utilz) > threshold}")
+                logger.info(
+                    f"util diff : {abs(curr_utilz - prev_utilz)},action: {action}"
+                )
                 return True
 
         return False
