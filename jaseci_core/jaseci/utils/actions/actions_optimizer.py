@@ -393,12 +393,17 @@ class ActionsOptimizer:
             return False
 
     def _get_action_utilization(self):
+        logger.info(" ===Action Utilization===")
+        logger.info(f"self.actions_calls: {self.actions_calls}")
+
         total_count = sum(len(calls) for calls in self.actions_calls.values())
 
+        logger.info(f"total_count: {total_count}")
         action_utilization = {
             action: len(calls) / total_count
             for action, calls in self.actions_calls.items()
         }
+        logger.info(f"action_utilization: {action_utilization}")
 
         action_utilization["total_call_count"] = total_count
         return action_utilization
