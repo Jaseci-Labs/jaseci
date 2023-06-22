@@ -42,7 +42,7 @@ class GlobalApi:
     @Interface.admin_api()
     def global_sentinel_set(self, snt: Sentinel = None):
         """
-        Set sentinel as globally accessible
+        Make a sentinel globally accessible and set it as the global sentinel
         """
         snt.make_read_only()
         snt.propagate_access()
@@ -50,9 +50,18 @@ class GlobalApi:
         return {"response": f"Global sentinel set to '{snt}'!"}
 
     @Interface.admin_api()
+    def global_sentinel_set_access(self, snt: Sentinel = None):
+        """
+        Make a sentinel globally accessible
+        """
+        snt.make_read_only()
+        snt.propagate_access()
+        return {"response": f"Sentinel '{snt}' is now globally accessible."}
+
+    @Interface.admin_api()
     def global_sentinel_unset(self):
         """
-        Set sentinel as globally accessible
+        Unset a global sentinel
         """
         current = self.global_get("GLOB_SENTINEL")["value"]
         if current:
