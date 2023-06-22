@@ -1,12 +1,12 @@
 """Transpilation pass for Jaseci Ast."""
 from typing import List
 
-import jaclang.jac.jac_ast as ast
-from jaclang.jac.jac_ast import AstNode
+import jaclang.jac.absyntree as ast
+from jaclang.jac.absyntree import AstNode
 from jaclang.jac.passes.ir_pass import Pass
 
 
-class PyCodeGenPass(Pass):
+class BluePygenPass(Pass):
     """Jac transpilation to python pass."""
 
     marked_incomplete: List[str] = []

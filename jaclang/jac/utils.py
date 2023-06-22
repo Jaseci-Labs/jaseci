@@ -1,7 +1,7 @@
 """Utility functions and classes for Jac compilation toolchain."""
 import re
 
-import jaclang.jac.jac_ast as ast
+import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacLexer
 from jaclang.jac.parser import JacParser
 
@@ -33,9 +33,8 @@ def jac_file_to_ast(mod_path: str, base_path: str = "") -> ast.AstNode:
     prse = JacParser()
     builder = AstBuildPass(mod_name=mod_path)
     prse.cur_file = mod_path
-    ptree = prse.parse(
-        lex.tokenize(open(base_path + mod_path).read()), filename=mod_path
-    )
+    with open(base_path + mod_path) as file:
+        ptree = prse.parse(lex.tokenize(file), filename=mod_path)
     if ptree:
         return builder.run(node=ptoa(ptree))
     else:
@@ -107,7 +106,7 @@ def load_ast_and_print_pass_template() -> str:
                 output += f"    {param_name}: {param_type}{' ='+param_default if param_default else ''},\n"
 
         output += '    """\n\n'
-    output = output.replace("jaclang.jac.jac_ast.", "")
+    output = output.replace("jaclang.jac.absyntree.", "")
     output = output.replace("typing.", "")
     output = output.replace("<enum '", "")
     output = output.replace("'>", "")

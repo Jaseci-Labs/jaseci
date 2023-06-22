@@ -1,8 +1,8 @@
 """Ast build pass for Jaseci Ast."""
 from typing import Optional
 
-import jaclang.jac.jac_ast as ast
-from jaclang.jac.jac_ast import replace_node
+import jaclang.jac.absyntree as ast
+from jaclang.jac.absyntree import replace_node
 from jaclang.jac.passes.ir_pass import Pass
 
 

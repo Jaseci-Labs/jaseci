@@ -2,28 +2,29 @@
 import inspect
 from copy import copy
 
+from jaclang.jac.absyntree import AstNode
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes.ast_build_pass import AstBuildPass
+from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
 from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
-from jaclang.jac.passes.py_codegen_pass import PyCodeGenPass
 from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
 from jaclang.utils.test import TestCase
 
 
-class PyCodeGenPassTests(TestCase):
+class BluePygenPassTests(TestCase):
     """Test pass module."""
 
     lex = JacLexer()
     prse = JacParser()
     builder = AstBuildPass()
-    codegen = PyCodeGenPass()
+    codegen = BluePygenPass()
 
     def setUp(self) -> None:
         """Set up test."""
         return super().setUp()
 
-    def build_micro(self, filename: str) -> None:
+    def build_micro(self, filename: str) -> AstNode:
         """Parse micro jac file."""
         self.prse.cur_file = filename
         tokens = self.lex.tokenize(
@@ -38,14 +39,13 @@ class PyCodeGenPassTests(TestCase):
         ptree = self.prse.parse(self.lex.tokenize(self.load_fixture("fam.jac")))
         build_pass = self.builder.run(node=ptoa(ptree))
         code_gen = self.codegen.run(node=build_pass)
-        code_gen = code_gen
-        # print(code_gen.meta['py_code'])
+        self.assertGreater(len(str(code_gen.to_dict())), 200)
 
     def test_pygen_module_structure(self) -> None:
         """Basic test for pass."""
         build_pass = self.build_micro("module_structure.jac")
-        self.codegen.run(node=build_pass)
-        self.assertGreater(len(str(build_pass.to_dict())), 200)
+        code_gen = self.codegen.run(node=build_pass)
+        self.assertGreater(len(str(code_gen.to_dict())), 200)
 
     def test_pygen_import_pass(self) -> None:
         """Basic test for pass."""
@@ -59,14 +59,14 @@ class PyCodeGenPassTests(TestCase):
         ast_func_names = [
             x for x in ast_snakes() if x not in ["ast_node", "o_o_p_access_node"]
         ]
-        pygen_func_names = copy(PyCodeGenPass.marked_incomplete)
-        for name, value in inspect.getmembers(PyCodeGenPass):
+        pygen_func_names = copy(BluePygenPass.marked_incomplete)
+        for name, value in inspect.getmembers(BluePygenPass):
             if (
                 (name.startswith("enter_") or name.startswith("exit_"))
                 and inspect.isfunction(value)
-                and not getattr(PyCodeGenPass.__base__, value.__name__, False)
+                and not getattr(BluePygenPass.__base__, value.__name__, False)
                 and value.__qualname__.split(".")[0]
-                == PyCodeGenPass.__name__.replace("enter_", "").replace("exit_", "")
+                == BluePygenPass.__name__.replace("enter_", "").replace("exit_", "")
             ):
                 pygen_func_names.append(name.replace("enter_", "").replace("exit_", ""))
         for name in pygen_func_names:
@@ -77,14 +77,14 @@ class PyCodeGenPassTests(TestCase):
         ast_func_names = [
             x for x in ast_snakes() if x not in ["ast_node", "o_o_p_access_node"]
         ]
-        pygen_func_names = copy(PyCodeGenPass.marked_incomplete)
-        for name, value in inspect.getmembers(PyCodeGenPass):
+        pygen_func_names = copy(BluePygenPass.marked_incomplete)
+        for name, value in inspect.getmembers(BluePygenPass):
             if (
                 (name.startswith("enter_") or name.startswith("exit_"))
                 and inspect.isfunction(value)
-                and not getattr(PyCodeGenPass.__base__, value.__name__, False)
+                and not getattr(BluePygenPass.__base__, value.__name__, False)
                 and value.__qualname__.split(".")[0]
-                == PyCodeGenPass.__name__.replace("enter_", "").replace("exit_", "")
+                == BluePygenPass.__name__.replace("enter_", "").replace("exit_", "")
             ):
                 pygen_func_names.append(name.replace("enter_", "").replace("exit_", ""))
         for name in ast_func_names:

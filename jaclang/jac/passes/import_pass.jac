@@ -1,8 +1,8 @@
 """Import Pass written in Jac bootstrapped with Python strategy."""
 
-import:py jaclang.jac.jac_ast as ast;
+import:py jaclang.jac.absyntree as ast;
 import:py os;
-import:py from jaclang.jac.jac_ast, AstNode;
+import:py from jaclang.jac.absyntree, AstNode;
 import:py from jaclang.jac.passes.ir_pass, Pass;
 import:py from jaclang.jac.utils, jac_file_to_ast;
 

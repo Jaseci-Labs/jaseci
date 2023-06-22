@@ -24,7 +24,7 @@ class TestParser(TestCase):
         self.assertFalse(self.prse.had_error)
 
     @classmethod
-    def self_attach_micro_tests(cls: "TestParser") -> None:
+    def self_attach_micro_tests(cls) -> None:
         """Attach micro tests."""
         directory = os.path.dirname(__file__) + "/fixtures/micro"
         for filename in os.listdir(directory):
