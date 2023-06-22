@@ -25,14 +25,14 @@ class JacParseErrorMixIn:
 
         # Read ahead looking for a closing '}'
         while True:
-            tok = next(self.tokens, None)
+            tok = next(self.tokens, None)  # type: ignore
             if not tok or tok.type == "RBRACE":
                 break
-        self.restart()
+        self.restart()  # type: ignore
 
     def parse(self, tokens: Generator, filename: Optional[str] = None) -> None:
         """Overload of parse to take filenames."""
         if filename:
             self.cur_file = filename
         self.had_error = False
-        return super().parse(tokens)
+        return super().parse(tokens)  # type: ignore
