@@ -23,7 +23,7 @@ from functools import cmp_to_key
 from .actions_state import ActionsState
 
 POLICIES = ["Default", "Evaluation", "Adaptive", "Predictive"]
-THRESHOLD = 0.1
+THRESHOLD = 0.2
 NODE_MEM_THRESHOLD = 0.75
 WINDOW_SIZE = 4
 
