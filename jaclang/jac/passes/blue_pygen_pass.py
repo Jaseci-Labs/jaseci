@@ -227,7 +227,7 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         doc: Optional[DocString],
-        mod: Token,
+        mod: Optional["NameList"],
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
         """
@@ -274,7 +274,7 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         doc: Optional[DocString],
-        mod: Optional[Token],
+        mod: Optional["NameList"],
         ability: AbilityRef,
         body: CodeBlock,
         """
@@ -287,7 +287,7 @@ class BluePygenPass(Pass):
         doc: Optional[DocString],
         name: Token,
         arch: ObjectRef | NodeRef | EdgeRef | WalkerRef,
-        mod: Optional[Token],
+        mod: Optional["NameList"],
         signature: Optional[FuncSignature],
         body: CodeBlock,
         """
@@ -343,7 +343,7 @@ class BluePygenPass(Pass):
     def exit_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
-        typ: Token,
+        typ: "Token | NameList",
         list_nest: TypeSpec,
         dict_nest: TypeSpec,
         """
@@ -355,7 +355,7 @@ class BluePygenPass(Pass):
         elif node.list_nest:
             self.emit(node, f"List[{node.list_nest.meta['py_code']}]")
         else:
-            self.emit(node, node.typ.value)
+            self.emit(node, node.typ.meta["py_code"])
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_can(self, node: ast.ArchCan) -> None:

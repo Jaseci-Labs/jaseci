@@ -112,12 +112,13 @@ plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_
 - There are inline abilities and ability elements
 - Any time theres a change to the language validate the prism in docs
 - Need to think about deallocation with spawn commands
-
+- Null Ok only valid in proper expressions, not in type hints, or class inheritance for example
 
 ### Roadmap and design principles
 
 - Need black like standard pass for formatting
 - Need type checking infrance analyses
+
 
 ### Design changes to apply
 

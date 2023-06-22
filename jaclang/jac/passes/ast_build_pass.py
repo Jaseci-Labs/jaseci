@@ -356,7 +356,7 @@ class AstBuildPass(Pass):
     def exit_architype_def(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        architype_def -> doc_tag NAME strict_arch_ref member_block
+        architype_def -> doc_tag dotted_name strict_arch_ref member_block
         architype_def -> doc_tag strict_arch_ref member_block
         """
         replace_node(
@@ -500,7 +500,7 @@ class AstBuildPass(Pass):
     def exit_ability_def(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        ability_def -> doc_tag NAME ability_ref code_block
+        ability_def -> doc_tag dotted_name ability_ref code_block
         ability_def -> doc_tag ability_ref code_block
         """
         replace_node(
@@ -519,8 +519,8 @@ class AstBuildPass(Pass):
     def exit_sub_ability_spec(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        sub_ability_spec -> doc_tag NAME strict_arch_ref ability_ref func_decl code_block
-        sub_ability_spec -> doc_tag NAME strict_arch_ref ability_ref code_block
+        sub_ability_spec -> doc_tag dotted_name strict_arch_ref ability_ref func_decl code_block
+        sub_ability_spec -> doc_tag dotted_name strict_arch_ref ability_ref code_block
         sub_ability_spec -> doc_tag strict_arch_ref ability_ref func_decl code_block
         sub_ability_spec -> doc_tag strict_arch_ref ability_ref code_block
         """
@@ -677,7 +677,7 @@ class AstBuildPass(Pass):
 
         type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
         type_name -> TYP_LIST LSQUARE type_name RSQUARE
-        type_name -> NAME
+        type_name -> dotted_name
         type_name -> NULL
         type_name -> builtin_type
         """

@@ -175,7 +175,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "doc_tag strict_arch_ref member_block",
-        "doc_tag NAME strict_arch_ref member_block",
+        "doc_tag dotted_name strict_arch_ref member_block",
     )
     def architype_def(self, p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
@@ -236,7 +236,7 @@ class JacParser(JacParseErrorMixIn, Parser):
 
     @_(
         "doc_tag ability_ref code_block",
-        "doc_tag NAME ability_ref code_block",
+        "doc_tag dotted_name ability_ref code_block",
     )
     def ability_def(self, p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
@@ -245,8 +245,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "doc_tag strict_arch_ref ability_ref code_block",
         "doc_tag strict_arch_ref ability_ref func_decl code_block",
-        "doc_tag NAME strict_arch_ref ability_ref code_block",
-        "doc_tag NAME strict_arch_ref ability_ref func_decl code_block",
+        "doc_tag dotted_name strict_arch_ref ability_ref code_block",
+        "doc_tag dotted_name strict_arch_ref ability_ref func_decl code_block",
     )
     def sub_ability_spec(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
@@ -317,7 +317,7 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "builtin_type",
         "NULL",
-        "NAME",
+        "dotted_name",
         "TYP_LIST LSQUARE type_name RSQUARE",
         "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
     )

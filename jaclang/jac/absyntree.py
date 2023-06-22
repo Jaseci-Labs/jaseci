@@ -344,7 +344,7 @@ class ArchDef(AstNode):
     def __init__(
         self,
         doc: Optional[DocString],
-        mod: Optional[Token],
+        mod: Optional["NameList"],
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
         parent: Optional[AstNode],
@@ -426,7 +426,7 @@ class AbilityDef(AstNode):
     def __init__(
         self,
         doc: Optional[DocString],
-        mod: Optional[Token],
+        mod: Optional["NameList"],
         ability: "AbilityRef",
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -449,7 +449,7 @@ class AbilitySpec(AstNode):
         doc: Optional[DocString],
         name: Token,
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
-        mod: Optional[Token],
+        mod: Optional["NameList"],
         signature: Optional["FuncSignature"],
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -542,7 +542,7 @@ class TypeSpec(AstNode):
 
     def __init__(
         self,
-        typ: Token,
+        typ: "Token | NameList",
         list_nest: "TypeSpec",  # needed for lists
         dict_nest: "TypeSpec",  # needed for dicts
         parent: Optional[AstNode],
