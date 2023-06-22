@@ -628,6 +628,9 @@ class ActionsOptimizer:
                 self.apply_actions_change()
         if policy_state["phase"] == "pref":
             current_act_utilz = self._get_action_utilization()
+            logger.info(
+                f"===Predictive Policy=== in pref phase with cur_phase: {current_act_utilz},\nprev: {policy_state['action_utilz']}"  # noqa: E501
+            )
             if self.has_action_utilz_changed(
                 policy_state["action_utilz"], current_act_utilz
             ):
