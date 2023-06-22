@@ -669,18 +669,22 @@ class ActionsOptimizer:
                     curr_action_utilz=current_act_utilz,
                 )
             ):
-                if policy_state["change_counter"] == 0:
+                if policy_state["change_counter"] < 2:
                     logger.info(
-                        f"===Predictive Policy=== Action utilization has changed, We would wait for {policy_state['change_counter']-2} call before evaluation."  # noqa: E501
+                        f"===Predictive Policy=== Action utilization has changed, We would wait for {2-policy_state['change_counter']} call before evaluation."  # noqa: E501
                     )
-                    policy_state["change_counter"] = 1
+                    policy_state["change_counter"] += policy_state["change_counter"]
                     self.policy_state["Predictive"] = policy_state
                     return
                 else:
-                    self.get_module_config(current_act_utilz)
-                    best_config = max(
-                        policy_state["remain_configs"], key=lambda x: x["local_mem"]
+                    logger.info("===Predictive Policy=== start module change")
+                    best_config = self.get_module_config(current_act_utilz)
+                    logger.info(
+                        f"===Predictive Policy=== best fit config: {best_config}"
                     )
+                    # best_config = max(
+                    #     policy_state["remain_configs"], key=lambda x: x["local_mem"]
+                    # )
                     self.actions_change = self._get_action_change(best_config)
                     if len(self.actions_change) > 0:
                         logger.info(
