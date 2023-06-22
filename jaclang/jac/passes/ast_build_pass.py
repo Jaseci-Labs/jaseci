@@ -883,17 +883,31 @@ class AstBuildPass(Pass):
     def exit_param_var(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        param_var -> STAR_POW NAME type_tag EQ expression
+        param_var -> STAR_POW NAME type_tag
+        param_var -> STAR_MUL NAME type_tag EQ expression
+        param_var -> STAR_MUL NAME type_tag
         param_var -> NAME type_tag EQ expression
         param_var -> NAME type_tag
         """
-        if len(node.kid) == 4:
-            del node.kid[2]
+        meta = {"unpack": None, "value": None}
+        if node.kid[-2].name == "EQ":
+            del node.kid[-2]
+            meta["value"] = node.kid[-1]
+        if node.kid[0].name != "NAME":
+            meta["unpack"] = node.kid[0]
+            meta["name"] = node.kid[1]
+            meta["type_tag"] = node.kid[2]
+        else:
+            meta["name"] = node.kid[0]
+            meta["type_tag"] = node.kid[1]
         replace_node(
             node,
             ast.ParamVar(
-                name=node.kid[0],
-                type_tag=node.kid[1],
-                value=node.kid[2] if len(node.kid) == 3 else None,
+                name=meta["name"],
+                type_tag=meta["type_tag"],
+                unpack=meta["unpack"],
+                value=meta["value"],
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,

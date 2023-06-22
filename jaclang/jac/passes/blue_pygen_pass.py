@@ -437,9 +437,12 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         name: Token,
-        type_tag: TypeSpec,
-        value: Optional[AstNode],
+        unpack: Optional[Token],
+        type_tag: "TypeSpec",
+        value: Optional["ExprType"],
         """
+        if node.unpack:
+            self.emit(node, f"{node.unpack.value}")
         if node.value:
             self.emit(
                 node,

@@ -45,10 +45,9 @@ object Interface {
         args = parser.parse_args();
         for f in :h:functions {
             if f.__name__ == args.base {
-                func = f;
+                func = f; break;
             }
         }
-        func = next([f for f in functions if f.__name__ == args.base]);
         func_args = {k.split('.')[1]: v for k, v in vars(args).items() if k.startswith(func.__name__)};
         func(**func_args);
     }
@@ -59,20 +58,26 @@ object Interface {
 }
 
 object ShellCmd:cmd.Cmd {
-    has prompt: str = "> ";
+    has prompt: str = "> ",
+        reg: Interface;
 
     can init(registry: Interface, *args: list, **kwargs: dict) {
         :h::o:cmd.Cmd.__init__(*args, **kwargs);
-        :h:registry = registry;
+        :h:reg = registry;
     }
 
     can default(line: str) {
         args = line.split();
-        parser = :h:registry.create_parser();
+        parser = :h:reg.create_parser();
         try {
             parsed_args = parser.parse_args(args);
-            func = next(f for f in :h:registry.functions if f.__name__ == parsed_args.base);
-            func_args = {k.split('.')[1]: v for k, v in vars(parsed_args).items() if k.startswith(func.__name__)};
+            for f in :h:reg.functions {
+                if f.__name__ == parsed_args.base {
+                    func = f; break;
+                }
+            }
+            func_args = {k.split('.')[1]: v for k, v in vars(parsed_args).items()
+                        if k.startswith(func.__name__)};
             func(**func_args);
         } except ArgumentError as e {
             print(f"Error: {str(e)}");

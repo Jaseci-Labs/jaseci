@@ -408,6 +408,10 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "NAME type_tag",
         "NAME type_tag EQ expression",
+        "STAR_MUL NAME type_tag",
+        "STAR_MUL NAME type_tag EQ expression",
+        "STAR_POW NAME type_tag",
+        "STAR_POW NAME type_tag EQ expression",
     )
     def param_var(self, p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""

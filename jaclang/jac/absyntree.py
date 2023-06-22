@@ -664,8 +664,25 @@ class FuncParams(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class ParamVar(HasVar):
+class ParamVar(AstNode):
     """ParamVar node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: Token,
+        unpack: Optional[Token],
+        type_tag: "TypeSpec",
+        value: Optional["ExprType"],
+        parent: Optional[AstNode],
+        kid: List[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize param var node."""
+        self.name = name
+        self.unpack = unpack
+        self.type_tag = type_tag
+        self.value = value
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class CodeBlock(AstNode):
