@@ -273,6 +273,8 @@ class ActionsOptimizer:
         #     self.apply_actions_change()
         elif self.policy == "Auto":
             self._actionpolicy_auto()
+        elif self.policy == "Predictive":
+            self._actionpolicy_predictive()
         else:
             logger.error(f"Unrecognized policy {self.policy}")
 
