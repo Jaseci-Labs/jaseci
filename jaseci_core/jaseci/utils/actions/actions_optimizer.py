@@ -22,7 +22,7 @@ from functools import cmp_to_key
 
 from .actions_state import ActionsState
 
-POLICIES = ["Default", "Evaluation", "Auto", "Predictive"]
+POLICIES = ["Default", "Evaluation", "Adaptive", "Predictive"]
 THRESHOLD = 0.1
 NODE_MEM_THRESHOLD = 0.75
 WINDOW_SIZE = 4
@@ -271,8 +271,8 @@ class ActionsOptimizer:
             self._actionpolicy_evaluation()
         # if len(self.actions_change) > 0:
         #     self.apply_actions_change()
-        elif self.policy == "Auto":
-            self._actionpolicy_auto()
+        elif self.policy == "Adaptive":
+            self._actionpolicy_adaptive()
         elif self.policy == "Predictive":
             self._actionpolicy_predictive()
         else:
@@ -406,13 +406,13 @@ class ActionsOptimizer:
         action_utilization["total_call_count"] = total_count
         return action_utilization
 
-    def _actionpolicy_auto(self):
+    def _actionpolicy_adaptive(self):
         """
         A automatic policy that automatically loads and unloads
         actions based on the current workload.
         """
-        logger.info("===Auto Policy===")
-        policy_state = self.policy_state["Auto"]
+        logger.info("===Adaptive Policy===")
+        policy_state = self.policy_state["Adaptive"]
         # check if we should go into evaluation phase
         # compare the current interval with the previous interval
         # compare the walker state for each interval and if change go in the eval phase
@@ -450,9 +450,9 @@ class ActionsOptimizer:
                 policy_state["prev_actions"] = list(self.actions_calls.keys())
                 policy_state["prev_action_utilz"] = self._get_action_utilization()
                 logger.info(
-                    f"===Auto Policy=== current action_utilz: {policy_state['prev_action_utilz']}"  # noqa: E501
+                    f"===Adaptive Policy=== current action_utilz: {policy_state['prev_action_utilz']}"  # noqa: E501
                 )
-                self.policy_state["Auto"] = policy_state
+                self.policy_state["Adaptive"] = policy_state
                 return
             if self._check_phase_change(policy_state):
                 logger.info(
@@ -465,9 +465,10 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 policy_state["eval_complete"] = False
         elif policy_state["phase"] == "eval":
-            if policy_state["cur_config"] is None or self._check_phase_change(
-                policy_state
-            ):
+            if policy_state["cur_config"] is None:
+                # or self._check_phase_change(
+                # policy_state
+                # ):
                 self._init_evalution_policy(policy_state)
                 # This is the start of evaluation period
                 policy_state["cur_config"] = policy_state["remain_configs"][0]
@@ -480,7 +481,7 @@ class ActionsOptimizer:
                 )
                 if len(self.actions_change) > 0:
                     logger.info(
-                        f"===Auto Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
+                        f"===Adaptive Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
                     )
                     policy_state["phase"] = "eval_switching"
                     self.benchmark["active"] = False
@@ -491,8 +492,8 @@ class ActionsOptimizer:
                     if "walker_run" not in self.benchmark["requests"]:
                         # meaning no incoming requests during this period.
                         # stay in this phase
-                        logger.info("===Auto Policy=== No walkers were executed")
-                        self.policy_state["Auto"] = policy_state
+                        logger.info("===Adaptive Policy=== No walkers were executed")
+                        self.policy_state["Adaptive"] = policy_state
                         return
                     walker_runs = []
                     for walker, times in self.benchmark["requests"][
@@ -507,12 +508,12 @@ class ActionsOptimizer:
                     policy_state["cur_config"]["avg_walker_lat"] = avg_walker_lat
                     policy_state["past_configs"].append(policy_state["cur_config"])
                     logger.info(
-                        f"""===Auto Policy=== Complete evaluation period for:
+                        f"""===Adaptive Policy=== Complete evaluation period for:
                             {policy_state['cur_config']} latency: {avg_walker_lat}"""
                     )
                     if len(policy_state["remain_configs"]) == 0:
-                        # need to paas the control to Auto phase
-                        logger.info("===Auto Policy=== Evaluation phase over.")
+                        # need to paas the control to Adaptive phase
+                        logger.info("===Adaptive Policy=== Evaluation phase over.")
                         best_config = copy.deepcopy(
                             min(
                                 policy_state["past_configs"],
@@ -530,7 +531,7 @@ class ActionsOptimizer:
                         self.benchmark["active"] = True
                         policy_state["call_counter"] = 0
                         logger.info(
-                            f"""===Auto Policy===
+                            f"""===Adaptive Policy===
                                 \nbest_config: {best_config}"""
                         )
                         self.apply_actions_change()
@@ -543,7 +544,7 @@ class ActionsOptimizer:
                         self.benchmark["requests"] = {}
                         if len(self.actions_change) > 0:
                             logger.info(
-                                f"===Auto Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
+                                f"===Adaptive Policy=== Switching eval config to {policy_state['cur_config']}"  # noqa: E501
                             )
                             policy_state["phase"] = "eval_switching"
                             self.benchmark["active"] = False
@@ -552,14 +553,14 @@ class ActionsOptimizer:
                             policy_state["phase"] = "eval"
                             self.benchmark["active"] = True
                         logger.info(
-                            f"===Auto Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
+                            f"===Adaptive Policy=== Switching to next config to evaluate {next_config}"  # noqa: E501
                         )
         elif policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
                 # this means all actions change have been applied, start evaluation phase  # noqa: E501
                 logger.info(
-                    "===Auto Policy=== All actions change have been applied. Start evaluation phase."  # noqa: E501
+                    "===Adaptive Policy=== All actions change have been applied. Start evaluation phase."  # noqa: E501
                 )
                 policy_state["phase"] = "eval"
                 policy_state["cur_phase"] = 0
@@ -568,7 +569,7 @@ class ActionsOptimizer:
         policy_state["prev_avg_walker_lat"].append(self._get_walker_latency())
         policy_state["prev_actions"] = list(self.actions_calls.keys())
         policy_state["prev_action_utilz"] = self._get_action_utilization()
-        self.policy_state["Auto"] = policy_state
+        self.policy_state["Adaptive"] = policy_state
 
     def has_action_utilz_changed(
         self, prev_action_utilz, curr_action_utilz, threshold=0.01
