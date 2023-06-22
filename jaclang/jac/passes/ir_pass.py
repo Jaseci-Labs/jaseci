@@ -10,11 +10,12 @@ from jaclang.utils.sly import lex
 class Pass:
     """Abstract class for IR passes."""
 
-    def __init__(self, ir: Optional[ast.AstNode] = None) -> None:
+    def __init__(self, mod_name: str = "", ir: Optional[ast.AstNode] = None) -> None:
         """Initialize pass."""
         self.logger = logging.getLogger(self.__class__.__module__)
         self.ir = ir if ir else ast.AstNode(parent=ir, kid=[], line=0)
         self.cur_node = ir  # tracks current node during traversal
+        self.mod_name = mod_name
         self.run()
 
     def before_pass(self) -> None:
@@ -62,12 +63,14 @@ class Pass:
     def error(self, msg: str) -> None:
         """Pass Error."""
         if self.cur_node:
-            self.logger.error(f"Line {self.cur_node.line}, " + msg)
+            self.logger.error(f"Mod {self.mod_name}, Line {self.cur_node.line}, " + msg)
 
     def warning(self, msg: str) -> None:
         """Pass Error."""
         if self.cur_node:
-            self.logger.warning(f"Line {self.cur_node.line}, " + msg)
+            self.logger.warning(
+                f"Mod {self.mod_name}, Line {self.cur_node.line}, " + msg
+            )
 
 
 def parse_tree_to_ast(

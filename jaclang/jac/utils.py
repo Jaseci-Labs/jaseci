@@ -24,7 +24,7 @@ def pascal_to_snake(pascal_string: str) -> str:
     return snake_string
 
 
-def jac_file_to_ast(mod_path: str, base_path: str = "") -> ast.AstNode:
+def jac_file_to_ast(mod_path: str) -> ast.AstNode:
     """Convert a Jac file to an AST."""
     from jaclang.jac.passes.ast_build_pass import AstBuildPass
     from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
@@ -33,7 +33,7 @@ def jac_file_to_ast(mod_path: str, base_path: str = "") -> ast.AstNode:
     prse = JacParser()
     builder = AstBuildPass(mod_name=mod_path)
     prse.cur_file = mod_path
-    with open(base_path + mod_path) as file:
+    with open(mod_path) as file:
         ptree = prse.parse(lex.tokenize(file), filename=mod_path)
     if ptree:
         return builder.run(node=ptoa(ptree))

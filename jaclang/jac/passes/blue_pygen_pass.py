@@ -11,12 +11,12 @@ class BluePygenPass(Pass):
 
     marked_incomplete: List[str] = []
 
-    def __init__(self) -> None:
+    def __init__(self, *args: list, **kwargs: dict) -> None:
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
         self.cur_arch = None  # tracks current architype during transpilation
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
     def enter_node(self, node: AstNode) -> None:
         """Enter node."""

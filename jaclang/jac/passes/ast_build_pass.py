@@ -11,8 +11,7 @@ class AstBuildPass(Pass):
 
     def __init__(self, mod_name: str = "", ir: Optional[ast.AstNode] = None) -> None:
         """Initialize pass."""
-        self.mod_name = mod_name
-        super().__init__(ir=ir)
+        super().__init__(mod_name=mod_name, ir=ir)
 
     def exit_start(self, node: ast.AstNode) -> None:
         """Grammar rule.

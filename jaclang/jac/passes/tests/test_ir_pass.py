@@ -17,7 +17,7 @@ class TestPass(TestCase):
         )
         self.assertFalse(parser.had_error)
         ast = ptoa(parse_tree)
-        self.assertGreater(len(str(Pass(ast).ir.to_dict())), 1000)
+        self.assertGreater(len(str(Pass(ir=ast).ir.to_dict())), 1000)
 
     def test_basic_fstring(self) -> None:
         """Basic test for pass."""
@@ -28,4 +28,4 @@ class TestPass(TestCase):
         )
         self.assertFalse(parser.had_error)
         ast = ptoa(parse_tree)
-        self.assertGreater(len(str(Pass(ast).ir.to_dict())), 1000)
+        self.assertGreater(len(str(Pass(ir=ast).ir.to_dict())), 1000)
