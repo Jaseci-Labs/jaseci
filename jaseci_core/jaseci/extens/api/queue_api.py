@@ -16,7 +16,8 @@ class QueueApi:
     @Interface.private_api(allowed_methods=["get"])
     def walker_queue_check(self, task_id: str = ""):
         """
-        Monitor Queues
+        Monitor Queues. Check the task if it's still
+            pending, running or already have the result
         """
         task = JsOrc.svc("task", TaskService)
         if not task.is_running():
@@ -30,7 +31,11 @@ class QueueApi:
     @Interface.private_api(allowed_methods=["get"])
     def walker_queue_wait(self, task_id: str, timeout: int = 30):
         """
-        Wait Queues
+        Forcely wait the queues until executed.
+
+        :param task_id: the task need to wait for result
+        :param timeout: force timeout on your current request
+            to avoid hang up if there's too many task running currently
         """
         task = JsOrc.svc("task", TaskService)
         if not task.is_running():
@@ -44,7 +49,19 @@ class QueueApi:
     @Interface.private_api()
     def add_scheduled_walker(self, name: str, schedule: dict, body: dict = {}):
         """
-        temp
+        Create a scheduled walker
+
+        :param name: name of the actual queue for reference.
+        :param schedule: can be interval or cron.
+            Format: {"type": {% interval or cron %}, "conf": {% conf %}, "one_off": {% true if one time only; default false %} }
+            Interval conf: {"every": {% integer %}, "period": {% days | hours | minutes | seconds | microseconds %}
+            cron conf: {"minute": "*", "hour": "*", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"}
+        :param body: your periodic_task kwargs (dict)
+            mst: requestor's master or superadmin requested master - defaults to requestor
+            wlk: target walker - defaults to init
+            ctx: context to be used upon call - defaults to {}
+            nd: target node - defaults to root
+            snt: preferred sentinel - defaults to master's active sentinel
         """
         task = JsOrc.svc("task", TaskService)
         if not task.is_running():
@@ -64,7 +81,15 @@ class QueueApi:
     @Interface.admin_api()
     def add_scheduled_sequence(self, name: str, schedule: dict, body: dict):
         """
-        temp
+        Create a scheduled sequence. More like call multiple api in order.
+
+        :param name: name of the actual queue for reference.
+        :param schedule: can be interval or cron.
+            Format: {"type": {% interval or cron %}, "conf": {% conf %}, "one_off": {% true if one time only; default false %} }
+            Interval conf: {"every": {% integer %}, "period": {% days | hours | minutes | seconds | microseconds %}
+            cron conf: {"minute": "*", "hour": "*", "day_of_week": "*", "day_of_month": "*", "month_of_year": "*"}
+        :param body: refer to jaseci/docs/docs/deployment/extension_services/task.md
+            under schedule sequence argument structure
         """
         task = JsOrc.svc("task", TaskService)
         if not task.is_running():
@@ -81,7 +106,12 @@ class QueueApi:
         self, limit: int = 10, offset: int = 0, asc: bool = False, search: str = None
     ):
         """
-        temp
+        Get all periodic_task
+
+        :param limit: result limit
+        :param offset: query offset
+        :param asc: sorting
+        :param search: search by name
         """
         task = JsOrc.svc("task", TaskService)
         if not task.is_running():
@@ -92,7 +122,9 @@ class QueueApi:
     @Interface.private_api()
     def delete_scheduled_queue(self, scheduled_queue_id: int):
         """
-        temp
+        Delete specific periodic_task
+
+        :param scheduled_queue_id: the id of periodic task to delete
         """
         task = JsOrc.svc("task", TaskService)
         if not task.is_running():

@@ -67,9 +67,64 @@ Any walker that can be called with `is_async` field
 ```
 
 # **HOW TO SETUP SCHEDULE**
+## **SCHEDULED_WALKER via API**
+### `/js/add_scheduled_walker`
+**REQUEST BODY:**
+```json
+{
+    "name": "scheduled_walker3",
+    "schedule": {
 
-## **SCHEDULED_WALKER**
+        // ================ if type == interval ================ //
+        "type": "interval",
+        "conf": {
+            "every": 2,
+            "period": "minutes"
+        },
+        // ----------------------------------------------------- //
 
+        // OR
+
+        // ================== if type == cron ================== //
+        "type": "cron",
+        "conf": {
+            "minute": "*",
+            "hour": "*",
+            "day_of_week": "*",
+            "day_of_month": "*",
+            "month_of_year": "*",
+        },
+        // ----------------------------------------------------- //
+
+
+        // optional if task is for one time trigger only
+        "one_off": true
+
+        // if type == interval ========================== #
+    },
+    "body": {
+        // optional: defaults to requestor master id
+        "mst": "{{uuid}}",
+
+        // optional: defaults to init
+        "wlk": "sample",
+
+        // optional: defaults to {}
+        "ctx": {},
+
+        // optional: defaults to master's active graph
+        "nd": null,
+
+        // optional: defaults to master's active sentinel
+        "snt": null
+    }
+}
+```
+**RESPONSE BODY:**
+> `Scheduled Walker created successfully!`
+
+## **SCHEDULED_WALKER via ADMIN PORTAL**
+### `/admin/django_celery_beat/periodictask/`
  - Add periodic task
  - Select `jaseci.extens.svc.task.common.ScheduledWalker`
  - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
@@ -79,31 +134,67 @@ Any walker that can be called with `is_async` field
 
 ```json
 {
-    // Required
-    "name": "run",
+    // required: should be populated if api trigger
+    "mst": "{{uuid}}",
 
-    // Required
+    // optional: defaults to init
+    "wlk": "sample",
+
+    // optional: defaults to {}
     "ctx": {},
 
-    // Optional but may not have default
-    // accepted value: urn | alias
-    "nd": "active:graph",
+    // optional: defaults to master's active graph
+    "nd": null,
 
-    // Optional but may not have default
-    // accepted value: urn | alias | global
-    "snt": "active:sentinel",
-
-    // Required
-    // used also for getting aliases
-    "mst": "d6851f2a-e4a1-4fca-b582-9db5e146af59"
+    // optional: defaults to master's active sentinel
+    "snt": null
 }
 ```
 
 ----
 # **OPTIONAL FEATURES**
+## **SCHEDULED_WALKER via API**
+### `/js/add_scheduled_sequence`
+**REQUEST BODY:**
+```json
+{
+	"name": "scheduled_sequence",
+	"schedule": {
 
-## **SCHEDULED_SEQUENCE**
+        // ================ if type == interval ================ //
+		"type": "interval", //
+		"conf": {
+			"every": 2,
+			"period": "minutes"
+		},
+        // ----------------------------------------------------- //
 
+        // OR
+
+        // ================== if type == cron ================== //
+        "type": "cron",
+        "conf": {
+            "minute": "*",
+            "hour": "*",
+            "day_of_week": "*",
+            "day_of_month": "*",
+            "month_of_year": "*",
+        },
+        // ----------------------------------------------------- //
+
+
+        // optional if task is for one time trigger only
+		"one_off": true
+
+        // if type == interval ========================== #
+	},
+	"body": { /* SAME WITH ARGUMENT STRUCTURE BELOW */ }
+}
+```
+**RESPONSE BODY:**
+> `Scheduled Walker created successfully!`
+## **SCHEDULED_SEQUENCE via ADMIN PORTAL**
+### `/admin/django_celery_beat/periodictask/`
  - Add periodic task
  - Select `jaseci.extens.svc.task.common.ScheduledSequence`
  - set your schedule (interval, crontab, solar, clocked, start/end data are supported)
@@ -113,22 +204,22 @@ Any walker that can be called with `is_async` field
 
 ```json
 {
-        // optional if you just want to add default values
-        "persistence": {
-            "additional_field": "can_be_call_via_#.additional_field",
-        },
+    // optional if you just want to add default values
+    "persistence": {
+        "additional_field": "can_be_call_via_#.additional_field",
+    },
 
-        // not recommended to use but possible
-        "container": {
-            // act as previous response
-            "current": {},
+    // not recommended to use but possible
+    "container": {
+        // act as previous response
+        "current": {},
 
-            // will auto generate for the loop :: all of these are optional
-            "parent_current": {},
-            "index": {},
-        },
+        // will auto generate for the loop :: all of these are optional
+        "parent_current": {},
+        "index": {},
+    },
 
-        "requests": [{
+    "requests": [{
             "method": "POST",
             "api": "http://localhost:8000/user/token/",
             "body": {
