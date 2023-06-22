@@ -567,6 +567,12 @@ class ActionsOptimizer:
         self.policy_state["Auto"] = policy_state
 
     def has_action_utilz_changed(prev_action_utilz, curr_action_utilz, threshold=0.01):
+        """
+        Check if the action utilization has changed by a certain threshold
+        """
+        logger.info(" ===Action Utilization Change=== ")
+        logger.info(f"prev_action_utilz: {prev_action_utilz}")
+        logger.info(f"curr_action_utilz: {curr_action_utilz}")
         if len(prev_action_utilz) != len(curr_action_utilz):
             return True
 
