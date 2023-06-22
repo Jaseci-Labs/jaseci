@@ -604,6 +604,7 @@ class ActionsOptimizer:
                 "prev_action_utilz": {},
                 "prev_avg_walker_lat": [],
                 "remain_configs": [],
+                "change_counter": 0,
             }
             self._init_evalution_policy(policy_state)
             best_config = max(
@@ -629,17 +630,23 @@ class ActionsOptimizer:
                     curr_action_utilz=current_act_utilz,
                 )
             ):
-                self._init_evalution_policy(policy_state)
-                best_config = max(
-                    policy_state["remain_configs"], key=lambda x: x["local_mem"]
-                )
-                self.actions_change = self._get_action_change(best_config)
-                if len(self.actions_change) > 0:
+                if policy_state["change_counter"] == 0:
                     logger.info(
-                        f"===Predictive Policy=== Switching config to best fit config: {best_config}"  # noqa: E501
+                        "===Predictive Policy=== Action utilization has changed.we would wait for 1 call before evaluation."  # noqa: E501
                     )
-                    policy_state["phase"] = "action_switching"
-                    self.apply_actions_change()
+                    policy_state["change_counter"] = 1
+                else:
+                    self._init_evalution_policy(policy_state)
+                    best_config = max(
+                        policy_state["remain_configs"], key=lambda x: x["local_mem"]
+                    )
+                    self.actions_change = self._get_action_change(best_config)
+                    if len(self.actions_change) > 0:
+                        logger.info(
+                            f"===Predictive Policy=== Switching config to best fit config: {best_config}"  # noqa: E501
+                        )
+                        policy_state["phase"] = "action_switching"
+                        self.apply_actions_change()
         elif policy_state["phase"] == "action_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
@@ -648,6 +655,7 @@ class ActionsOptimizer:
                     "===Predictive Policy=== All actions change have been applied."
                 )
                 policy_state["phase"] = "pref"
+                policy_state["change_counter"] = 0
         policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Predictive"] = policy_state
 
