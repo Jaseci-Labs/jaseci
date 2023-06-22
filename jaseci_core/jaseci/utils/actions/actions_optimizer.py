@@ -573,7 +573,9 @@ class ActionsOptimizer:
         policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Auto"] = policy_state
 
-    def has_action_utilz_changed(prev_action_utilz, curr_action_utilz, threshold=0.01):
+    def has_action_utilz_changed(
+        self, prev_action_utilz, curr_action_utilz, threshold=0.01
+    ):
         """
         Check if the action utilization has changed by a certain threshold
         """
@@ -633,9 +635,9 @@ class ActionsOptimizer:
             logger.info(
                 f"===Predictive Policy=== in pref phase with cur_phase: {current_act_utilz},\nprev: {policy_state['prev_action_utilz']}"  # noqa: E501
             )
-            if len(
-                policy_state["prev_action_utilz"]
-            ) > 0 and self.has_action_utilz_changed(
+            if policy_state["prev_action_utilz"][
+                "total_call_count"
+            ] > 0 and self.has_action_utilz_changed(
                 prev_action_utilz=policy_state["prev_action_utilz"],
                 curr_action_utilz=current_act_utilz,
             ):
