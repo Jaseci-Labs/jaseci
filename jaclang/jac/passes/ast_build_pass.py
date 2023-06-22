@@ -2012,22 +2012,19 @@ class AstBuildPass(Pass):
         comprehension -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE
         comprehension -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE
         """
-        meta = {
-            "key_expr": None,
-            "out_expr": None,
-            "name": None,
-            "collection": None,
-            "conditional": None,
-        }
+        meta = {}
         if node.kid[2].name == "COLON":
             meta["key_expr"] = node.kid[1]
             meta["out_expr"] = node.kid[3]
             meta["name"] = node.kid[5]
             meta["collection"] = node.kid[7]
+            meta["conditional"] = None
         else:
+            meta["key_expr"] = None
             meta["out_expr"] = node.kid[1]
             meta["name"] = node.kid[3]
             meta["collection"] = node.kid[5]
+            meta["conditional"] = None
         if node.kid[-3].name == "KW_IF":
             meta["conditional"] = node.kid[-2]
         if len(node.kid) == 7:
