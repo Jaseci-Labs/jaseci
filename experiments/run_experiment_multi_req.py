@@ -13,9 +13,10 @@ import threading
 # Port forward
 # port_fowrward()
 app_freq_pairs = [
-    # ("discussion_analysis", 2),
+    ("discussion_analysis", 2),
     ("restaurant_chatbot", 3),
-    ("sentence_pairing", 4),
+    # ("sentence_pairing", 4),
+    # ("virtual_assistant", 1),
     # ("flow_analysis", 2),
 ]
 # Authenticate
@@ -38,7 +39,8 @@ no_local_config = [
 ]
 
 # all_policy_config = ["all_local", "auto", "all_remote"]
-all_policy_config = ["auto", "all_remote"]
+# all_policy_config = ["auto", "all_remote"]
+all_policy_config = ["all_remote"]
 APP_PATH = "/home/ubuntu/jaseci/jaseci_serv/jaseci_serv/base/example_jac"
 
 
@@ -67,6 +69,7 @@ app_to_actions = {
         "jac_nlp.bi_enc",
     ],
 }
+st_time = time.time()
 
 
 def make_walker_run_request(snt_id, headers, app_name, freq, experiment_duration):
@@ -133,6 +136,35 @@ def sent_reg(app_name, headers, mode):
                             headers=headers,
                             json=payload,
                         )
+            elif res.json()["action_status"]["mode"] != mode:
+                payload = {
+                    "config": f"{package}.config",
+                    "name": act_name,
+                }
+                res = requests.post(
+                    url=config.url + "/js_admin/jsorc_actions_config",
+                    headers=headers,
+                    json=payload,
+                )
+                if res.status_code == 200:
+                    payload = {
+                        "name": act_name,
+                        "mode": mode,
+                    }
+                res = requests.post(
+                    url=config.url + "/js_admin/jsorc_actions_load",
+                    headers=headers,
+                    json=payload,
+                )
+                while True:
+                    if res.json()["action_status"]["mode"] == payload["mode"]:
+                        break
+                    time.sleep(10)
+                    res = requests.post(
+                        url=config.url + "/js_admin/jsorc_actions_load",
+                        headers=headers,
+                        json=payload,
+                    )
             else:
                 print(
                     f"{act_name} already loaded: {res.json()['action_status']['mode']}"
@@ -141,6 +173,9 @@ def sent_reg(app_name, headers, mode):
             print(f"unalbe to get status for {act_name}: {res.text}")
             return None
     return sent_data.json()
+
+
+event = threading.Event()
 
 
 def run_experiments(
@@ -152,7 +187,7 @@ def run_experiments(
     perf_phase=100,
     policy_configs=None,
 ):
-    results = {}
+    global st_time
     mem = 4
     node_mem = [int(mem) * 1024]
     if policy_configs is None:
@@ -167,12 +202,14 @@ def run_experiments(
     action_modules = None
 
     def run_walker(app_name, freq, mode):
+        print(f"starting {app_name} now {time.time()-st_time}")
         sent_id = sent_reg(app_name, headers, mode)
         if sent_id is not None:
             print(sent_id)
             make_walker_run_request(
                 sent_id[0]["jid"], headers, app_name, freq, experiment_duration
             )
+            event.set()
 
     for app_name, freq in app_freq_pairs:
         if action_modules is None:
@@ -182,6 +219,7 @@ def run_experiments(
 
     for policy in policy_configs:
         tasks = []
+        results = {}
         try:
             if policy == "all_local" or policy == "all_remote":
                 policy_params = [{}]
@@ -208,7 +246,8 @@ def run_experiments(
                 requests.post(
                     url=config.url + "/js_admin/jsorc_trackact_start", headers=headers
                 )
-                for app_name, freq in app_freq_pairs:
+                st_time = time.time()
+                for i, (app_name, freq) in enumerate(app_freq_pairs):
                     if policy == "all_local":
                         if app_name not in no_local_config:
                             task = threading.Thread(
@@ -222,6 +261,9 @@ def run_experiments(
                         )
                         tasks.append(task)
                         task.start()
+                    if i < len(app_freq_pairs) - 1:
+                        event.wait(10)  # Wait for 60 seconds or until the event is set
+                        event.clear()  # Reset the event for the next thread
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -242,7 +284,7 @@ def run_experiments(
         if policy == "all_local" or policy == "all_remote":
             policy_str = policy
         else:
-            policy_str = f"{policy}-mem-{pparams['node_mem']}"
+            policy_str = f"{'evaluation'}-mem-{pparams['node_mem']}"
         results.setdefault(app_name, {})[policy_str] = {
             "walker_level": result.json(),
             "action_level": action_result.json(),
@@ -294,12 +336,21 @@ def run_experiments(
             f"{experiment_folder_name}/{app_name}/run_{run_number}",
             f"{app_name}-{4}.json",
         )
-        os.makedirs(
-            f"{experiment_folder_name}/{app_name}/run_{run_number}",
-            exist_ok=True,
-        )
-        with open(f_name, "w") as fp:
-            json.dump(results, fp, indent=4)
+        if os.path.exists(f_name):
+            print(f"file: {f_name} exists, updating")
+            with open(f_name, "r+") as fp:
+                file_data = json.load(fp)
+                file_data[app_name][policy_str] = results[app_name][policy_str]
+                fp.seek(0)
+                json.dump(file_data, fp, indent=4)
+        else:
+            os.makedirs(
+                f"{experiment_folder_name}/{app_name}/run_{run_number}",
+                exist_ok=True,
+            )
+            with open(f_name, "w") as fp:
+                json.dump(results, fp, indent=4)
+            print(f"File '{f_name}' created and updated successfully.")
 
 
 if __name__ == "__main__":
