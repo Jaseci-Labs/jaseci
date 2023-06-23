@@ -27,7 +27,6 @@ def pascal_to_snake(pascal_string: str) -> str:
 def jac_file_to_ast(mod_path: str) -> ast.AstNode:
     """Convert a Jac file to an AST."""
     from jaclang.jac.passes.ast_build_pass import AstBuildPass
-    from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
 
     lex = JacLexer()
     prse = JacParser()

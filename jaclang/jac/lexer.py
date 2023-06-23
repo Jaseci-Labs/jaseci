@@ -339,11 +339,8 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         """Tokenize the input."""
         return self.tokenize(ir)
 
-    def err_line(self) -> int:
-        """Line of curr err."""
-        return self.lineno
-
     def error(self, t: Token) -> None:
         """Raise an error for illegal characters."""
+        self.cur_line = self.lineno
         self.log_error(msg=f"Illegal character '{t.value[0]}'")
         self.index += 1

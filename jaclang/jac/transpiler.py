@@ -3,7 +3,6 @@ from jaclang.jac.parser import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes.ast_build_pass import AstBuildPass
 from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
-from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
 
 
 def transpile_jac_file(file_path: str) -> str:

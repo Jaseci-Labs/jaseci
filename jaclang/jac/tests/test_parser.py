@@ -4,6 +4,7 @@ import os
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.utils.test import TestCase
+from jaclang.jac.absyntree import AstNode
 
 
 class TestParser(TestCase):
@@ -44,7 +45,10 @@ class TestParser(TestCase):
         prse = JacParser(mod_path="", input_ir=lex)
         output = prse.ir
         self.assertFalse(prse.had_error)
-        self.assertGreater(len(str(output)), 1000)
+        if isinstance(output, AstNode):
+            self.assertGreater(len(str(output.to_dict())), 1000)
+        else:
+            self.fail("Output is not an AstNode.")
 
     def test_parsing_jac_cli(self) -> None:
         """Basic test for parsing."""

@@ -4,7 +4,6 @@ import inspect
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes.ast_build_pass import AstBuildPass
-from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
 from jaclang.utils.test import TestCase
 
 

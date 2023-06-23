@@ -18,6 +18,7 @@ class Transform(ABC):
         """Initialize pass."""
         self.logger = logging.getLogger(self.__class__.__module__)
         self.had_error = False
+        self.cur_line = 0
         self.mod_path = mod_path
         self.rel_mod_path = mod_path.replace(base_path, "")
         self.ir: IRType = self.transform(ir=input_ir)
@@ -27,19 +28,14 @@ class Transform(ABC):
         """Transform interface."""
         pass
 
-    @abstractmethod
-    def err_line(self) -> int:
-        """Get line number for error current line."""
-        pass
-
     def log_error(self, msg: str) -> None:
         """Pass Error."""
         self.had_error = True
-        self.logger.error(f"Mod {self.rel_mod_path}, Line {self.err_line()}, " + msg)
+        self.logger.error(f"Mod {self.rel_mod_path}, Line {self.cur_line}, " + msg)
 
     def log_warning(self, msg: str) -> None:
         """Pass Error."""
-        self.logger.warning(f"Mod {self.rel_mod_path}, Line {self.err_line()}, " + msg)
+        self.logger.warning(f"Mod {self.rel_mod_path}, Line {self.cur_line}, " + msg)
 
 
 class ABCLexerMeta(ABCMeta, LexerMeta):

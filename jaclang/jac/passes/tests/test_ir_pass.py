@@ -1,7 +1,6 @@
 """Test pass module."""
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
-from jaclang.jac.passes.ir_pass import Pass, parse_tree_to_ast as ptoa
 from jaclang.utils.test import TestCase
 
 
