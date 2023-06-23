@@ -4,12 +4,7 @@ import sys
 import types
 from os import path
 
-
-from jaclang.jac.parser import JacLexer
-from jaclang.jac.parser import JacParser
-from jaclang.jac.passes.ast_build_pass import AstBuildPass
-from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
-from jaclang.jac.passes.ir_pass import parse_tree_to_ast as ptoa
+from jaclang.jac.transpiler import transpile_jac_file
 
 
 def import_jac(target: str) -> types.ModuleType:
@@ -17,32 +12,24 @@ def import_jac(target: str) -> types.ModuleType:
     # Convert python import paths to directory paths
     target = path.join(*(target.split("."))) + ".jac"
 
+    # Get module name and package path
+    dir_path, file_name = path.split(target)
+    module_name = path.splitext(file_name)[0]
+    package_path = dir_path.replace(path.sep, ".")
+
     # Get the directory of the calling module
     frame = inspect.stack()[1]
     caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
+    target = path.normpath(path.join(caller_dir, target))
 
-    # Get the absolute path to the target module
-    target = path.join(caller_dir, target)
-
-    code_string = transpile_jac(target)
-
-    # Get the absolute path and normalize it
-    full_path = path.normpath(path.abspath(target))
-
-    # Split the path into directory and file
-    dir_path, file_name = path.split(full_path)
-
-    # Get the module name from the file name by removing the .py extension
-    module_name = path.splitext(file_name)[0]
-
-    # Get the package path from the directory by replacing path separators with dots
-    package_path = dir_path.replace(path.sep, ".")
+    # Transpile the Jac file
+    code_string = transpile_jac_file(target)
 
     # Create a module object
     module = types.ModuleType(module_name)
 
     # Set __file__ attribute
-    module.__file__ = full_path
+    module.__file__ = target
 
     # Execute the code in the context of the module's namespace
     exec(code_string, module.__dict__)
@@ -63,17 +50,3 @@ def import_jac(target: str) -> types.ModuleType:
 
     # Add the module to the calling context's global variables
     return module
-
-
-def transpile_jac(file_path: str) -> str:
-    """Convert a Jac file to an AST."""
-    lex = JacLexer()
-    prse = JacParser(cur_filename=file_path)
-    builder = AstBuildPass(mod_name=file_path)
-    pygen = BluePygenPass(mod_name=file_path)
-
-    with open(file_path) as file:
-        ptree = prse.parse(lex.tokenize(file.read()), filename=file_path)
-        ast = builder.run(node=ptoa(ptree if ptree else ()))
-        code = pygen.run(node=ast).meta["py_code"]
-        return code

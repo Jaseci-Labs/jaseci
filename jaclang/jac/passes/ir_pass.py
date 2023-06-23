@@ -36,8 +36,6 @@ class Pass:
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Run on exiting node."""
-        if type(node).__name__ == "KVPair":
-            print(pascal_to_snake(type(node).__name__))
         if isinstance(node, ast.Parse):
             if hasattr(self, f"exit_{node.name}"):
                 getattr(self, f"exit_{node.name}")(node)
@@ -73,6 +71,20 @@ class Pass:
             self.logger.warning(
                 f"Mod {self.mod_name}, Line {self.cur_node.line}, " + msg
             )
+
+
+class PrinterPass(Pass):
+    """Printer Pass for Jac AST."""
+
+    def enter_node(self, node: ast.AstNode) -> None:
+        """Run on entering node."""
+        print("Entering:", node)
+        super().enter_node(node)
+
+    def exit_node(self, node: ast.AstNode) -> None:
+        """Run on exiting node."""
+        super().exit_node(node)
+        print("Exiting:", node)
 
 
 def parse_tree_to_ast(
