@@ -1,15 +1,6 @@
-# type: ignore
 """Lexer for Jac language."""
-from abc import ABCMeta
-
-from jaclang.jac.transform import IRType, Transform
-from jaclang.utils.sly.lex import Lexer, LexerMeta, Token
-
-
-class ABCLexerMeta(ABCMeta, LexerMeta):
-    """Metaclass for Jac Lexer."""
-
-    pass
+from jaclang.jac.transform import ABCLexerMeta, IRType, Transform
+from jaclang.utils.sly.lex import Lexer, Token
 
 
 class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
@@ -169,14 +160,14 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
 
     # Ignored patterns
     ignore_ws = r"[ \t]+"
-    ignore_newline = r"[\r\n]+"
+    ignore_newline = r"[\r\n]+"  # type: ignore
     ignore_comment = r"/\*(.|\n|\r)*\*/"
     ignore_line_comment = r"//.*"
     ignore_py_comment = r"#.*"
 
     # Regular expression rules for tokens
     FLOAT = r"(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
-    DOC_STRING = r'"""[^"]*"""|\'\'\'[^\']*\'\'\''
+    DOC_STRING = r'"""[^"]*"""|\'\'\'[^\']*\'\'\''  # type: ignore
     FSTRING = r'f"[^"\r\n]*"|f\'[^\'\r\n]*\''
     STRING = r'"[^"\r\n]*"|\'[^\'\r\n]*\''
     BOOL = r"True|False"
@@ -190,65 +181,65 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
 
     # Keywords
-    NAME["str"] = "TYP_STRING"
-    NAME["int"] = "TYP_INT"
-    NAME["float"] = "TYP_FLOAT"
-    NAME["list"] = "TYP_LIST"
-    NAME["tuple"] = "TYP_TUPLE"
-    NAME["set"] = "TYP_SET"
-    NAME["dict"] = "TYP_DICT"
-    NAME["bool"] = "TYP_BOOL"
-    NAME["bytes"] = "TYP_BYTES"
-    NAME["object"] = "KW_OBJECT"
-    NAME["any"] = "TYP_ANY"
-    NAME["type"] = "TYP_TYPE"
-    NAME["node"] = "KW_NODE"
-    NAME["ignore"] = "KW_IGNORE"
-    NAME["visit"] = "KW_VISIT"
-    NAME["revisit"] = "KW_REVISIT"
-    NAME["spawn"] = "KW_SPAWN"
-    NAME["with"] = "KW_WITH"
-    NAME["entry"] = "KW_ENTRY"
-    NAME["exit"] = "KW_EXIT"
-    NAME["import"] = "KW_IMPORT"
-    NAME["include"] = "KW_INCLUDE"
-    NAME["from"] = "KW_FROM"
-    NAME["as"] = "KW_AS"
-    NAME["edge"] = "KW_EDGE"
-    NAME["walker"] = "KW_WALKER"
-    NAME["async"] = "KW_ASYNC"
-    NAME["sync"] = "KW_SYNC"
-    NAME["test"] = "KW_TEST"
-    NAME["assert"] = "KW_ASSERT"
-    NAME["and"] = "KW_AND"
-    NAME["or"] = "KW_OR"
-    NAME["if"] = "KW_IF"
-    NAME["elif"] = "KW_ELIF"
-    NAME["else"] = "KW_ELSE"
-    NAME["for"] = "KW_FOR"
-    NAME["to"] = "KW_TO"
-    NAME["by"] = "KW_BY"
-    NAME["while"] = "KW_WHILE"
-    NAME["continue"] = "KW_CONTINUE"
-    NAME["break"] = "KW_BREAK"
-    NAME["disengage"] = "KW_DISENGAGE"
-    NAME["yield"] = "KW_YIELD"
-    NAME["skip"] = "KW_SKIP"
-    NAME["report"] = "KW_REPORT"
-    NAME["return"] = "KW_RETURN"
-    NAME["del"] = "KW_DELETE"
-    NAME["try"] = "KW_TRY"
-    NAME["except"] = "KW_EXCEPT"
-    NAME["finally"] = "KW_FINALLY"
-    NAME["in"] = "KW_IN"
-    NAME["is"] = "KW_IS"
-    NAME["not"] = "NOT"
-    NAME["priv"] = "KW_PRIV"
-    NAME["pub"] = "KW_PUB"
-    NAME["prot"] = "KW_PROT"
-    NAME["has"] = "KW_HAS"
-    NAME["global"] = "KW_GLOBAL"
-    NAME["can"] = "KW_CAN"
+    NAME["str"] = "TYP_STRING"  # type: ignore
+    NAME["int"] = "TYP_INT"  # type: ignore
+    NAME["float"] = "TYP_FLOAT"  # type: ignore
+    NAME["list"] = "TYP_LIST"  # type: ignore
+    NAME["tuple"] = "TYP_TUPLE"  # type: ignore
+    NAME["set"] = "TYP_SET"  # type: ignore
+    NAME["dict"] = "TYP_DICT"  # type: ignore
+    NAME["bool"] = "TYP_BOOL"  # type: ignore
+    NAME["bytes"] = "TYP_BYTES"  # type: ignore
+    NAME["object"] = "KW_OBJECT"  # type: ignore
+    NAME["any"] = "TYP_ANY"  # type: ignore
+    NAME["type"] = "TYP_TYPE"  # type: ignore
+    NAME["node"] = "KW_NODE"  # type: ignore
+    NAME["ignore"] = "KW_IGNORE"  # type: ignore
+    NAME["visit"] = "KW_VISIT"  # type: ignore
+    NAME["revisit"] = "KW_REVISIT"  # type: ignore
+    NAME["spawn"] = "KW_SPAWN"  # type: ignore
+    NAME["with"] = "KW_WITH"  # type: ignore
+    NAME["entry"] = "KW_ENTRY"  # type: ignore
+    NAME["exit"] = "KW_EXIT"  # type: ignore
+    NAME["import"] = "KW_IMPORT"  # type: ignore
+    NAME["include"] = "KW_INCLUDE"  # type: ignore
+    NAME["from"] = "KW_FROM"  # type: ignore
+    NAME["as"] = "KW_AS"  # type: ignore
+    NAME["edge"] = "KW_EDGE"  # type: ignore
+    NAME["walker"] = "KW_WALKER"  # type: ignore
+    NAME["async"] = "KW_ASYNC"  # type: ignore
+    NAME["sync"] = "KW_SYNC"  # type: ignore
+    NAME["test"] = "KW_TEST"  # type: ignore
+    NAME["assert"] = "KW_ASSERT"  # type: ignore
+    NAME["and"] = "KW_AND"  # type: ignore
+    NAME["or"] = "KW_OR"  # type: ignore
+    NAME["if"] = "KW_IF"  # type: ignore
+    NAME["elif"] = "KW_ELIF"  # type: ignore
+    NAME["else"] = "KW_ELSE"  # type: ignore
+    NAME["for"] = "KW_FOR"  # type: ignore
+    NAME["to"] = "KW_TO"  # type: ignore
+    NAME["by"] = "KW_BY"  # type: ignore
+    NAME["while"] = "KW_WHILE"  # type: ignore
+    NAME["continue"] = "KW_CONTINUE"  # type: ignore
+    NAME["break"] = "KW_BREAK"  # type: ignore
+    NAME["disengage"] = "KW_DISENGAGE"  # type: ignore
+    NAME["yield"] = "KW_YIELD"  # type: ignore
+    NAME["skip"] = "KW_SKIP"  # type: ignore
+    NAME["report"] = "KW_REPORT"  # type: ignore
+    NAME["return"] = "KW_RETURN"  # type: ignore
+    NAME["del"] = "KW_DELETE"  # type: ignore
+    NAME["try"] = "KW_TRY"  # type: ignore
+    NAME["except"] = "KW_EXCEPT"  # type: ignore
+    NAME["finally"] = "KW_FINALLY"  # type: ignore
+    NAME["in"] = "KW_IN"  # type: ignore
+    NAME["is"] = "KW_IS"  # type: ignore
+    NAME["not"] = "NOT"  # type: ignore
+    NAME["priv"] = "KW_PRIV"  # type: ignore
+    NAME["pub"] = "KW_PUB"  # type: ignore
+    NAME["prot"] = "KW_PROT"  # type: ignore
+    NAME["has"] = "KW_HAS"  # type: ignore
+    NAME["global"] = "KW_GLOBAL"  # type: ignore
+    NAME["can"] = "KW_CAN"  # type: ignore
 
     # Special Arrow Tokens
     ARROW_L = r"<--"
@@ -343,11 +334,12 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         return t
 
     # Transform Implementations
-    def transform(self, ir: IRType) -> Token:
+    # -------------------------
+    def transform(self, ir: IRType) -> IRType:
         """Tokenize the input."""
         return self.tokenize(ir)
 
-    def err_line(self) -> None:
+    def err_line(self) -> int:
         """Line of curr err."""
         return self.lineno
 

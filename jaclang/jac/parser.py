@@ -1,14 +1,19 @@
 # type: ignore
 """Parser for Jac."""
-from jaclang.jac.errors import JacParseErrorMixIn
 from jaclang.jac.lexer import JacLexer
+from jaclang.jac.transform import ABCParserMeta, IRType, Transform
 from jaclang.utils.sly.yacc import Parser, YaccProduction
 
 _ = None  # For flake8 linting
 
 
-class JacParser(JacParseErrorMixIn, Parser):
+class JacParser(Parser, Transform, metaclass=ABCParserMeta):
     """Parser for Jac."""
+
+    def __init__(self, mod_path: str, input_ir: IRType, base_path: str = "") -> None:
+        """Initialize parser."""
+        Transform.__init__(self, mod_path, input_ir, base_path)
+        self.lineno = 0
 
     tokens = JacLexer.tokens
     debugfile = "parser.out"
@@ -1196,3 +1201,28 @@ class JacParser(JacParseErrorMixIn, Parser):
     def empty(self, p: YaccProduction) -> YaccProduction:
         """Empty rule."""
         return p
+
+    # Transform Implementations
+    # -------------------------
+    def transform(self, ir: IRType) -> IRType:
+        """Tokenize the input."""
+        return self.parse(ir)
+
+    def err_line(self) -> int:
+        """Line of curr err."""
+        return self.lineno
+
+    def error(self, p: YaccProduction) -> None:
+        """Improved error handling for Jac Parser."""
+        self.lineno = p.lineno if p else 0
+        if not p:
+            self.log_error("Escaping at end of File! Not Valid Jac!\n")
+            return
+        self.log_error(f'JParse Error, incorrect usage of "{p.value}" ({p.type})\n')
+
+        # Read ahead looking for a closing '}'
+        while True:
+            tok = next(self.tokens, None)  # type: ignore
+            if not tok or tok.type == "RBRACE":
+                break
+        self.restart()

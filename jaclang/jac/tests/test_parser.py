@@ -11,17 +11,13 @@ class TestParser(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
-        self.lex = JacLexer()
-        self.prse = JacParser()
         return super().setUp()
 
     def parse_micro(self, filename: str) -> None:
         """Parse micro jac file."""
-        self.prse.cur_file = filename
-        self.prse.parse(
-            self.lex.tokenize(self.load_fixture(f"micro/{filename}")), filename=filename
-        )
-        self.assertFalse(self.prse.had_error)
+        lex = JacLexer(mod_path="", input_ir=self.load_fixture(f"micro/{filename}")).ir
+        prse = JacParser(mod_path="", input_ir=lex)
+        self.assertFalse(prse.had_error)
 
     @classmethod
     def self_attach_micro_tests(cls) -> None:
@@ -44,27 +40,27 @@ class TestParser(TestCase):
 
     def test_basci_parsing(self) -> None:
         """Basic test for parsing."""
-        output = self.prse.parse(
-            self.lex.tokenize(self.load_fixture("fam.jac")), filename="fam.jac"
-        )
-        self.assertFalse(self.prse.had_error)
+        lex = JacLexer(mod_path="", input_ir=self.load_fixture("fam.jac")).ir
+        prse = JacParser(mod_path="", input_ir=lex)
+        output = prse.ir
+        self.assertFalse(prse.had_error)
         self.assertGreater(len(str(output)), 1000)
 
     def test_parsing_jac_cli(self) -> None:
         """Basic test for parsing."""
-        self.prse.parse(
-            self.lex.tokenize(self.load_fixture("../../../cli/jac_cli.jac")),
-            filename="jac_cli.jac",
-        )
-        self.assertFalse(self.prse.had_error)
+        lex = JacLexer(
+            mod_path="", input_ir=self.load_fixture("../../../cli/jac_cli.jac")
+        ).ir
+        prse = JacParser(mod_path="", input_ir=lex)
+        self.assertFalse(prse.had_error)
 
     def test_parsing_import_pass(self) -> None:
         """Basic test for parsing."""
-        self.prse.parse(
-            self.lex.tokenize(self.load_fixture("../../passes/import_pass.jac")),
-            filename="import_pass.jac",
-        )
-        self.assertFalse(self.prse.had_error)
+        lex = JacLexer(
+            mod_path="", input_ir=self.load_fixture("../../passes/import_pass.jac")
+        ).ir
+        prse = JacParser(mod_path="", input_ir=lex)
+        self.assertFalse(prse.had_error)
 
     def test_micro_jac_files_fully_tested(self) -> None:
         """Test that all micro jac files are fully tested."""
