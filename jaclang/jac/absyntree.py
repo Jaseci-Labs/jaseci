@@ -378,7 +378,7 @@ class Ability(OOPAccessNode):
         doc: Optional[DocString],
         decorators: Optional["Decorators"],
         access: Optional[Token],
-        signature: "FuncSignature | TypeSpec",
+        signature: "FuncSignature | TypeSpec | EventSignature",
         body: "CodeBlock",
         parent: Optional[AstNode],
         kid: List[AstNode],
@@ -445,7 +445,7 @@ class ArchBlock(AstNode):
 
     def __init__(
         self,
-        members: List["ArchHas | ArchCan | ArchCanDecl "],
+        members: List["ArchHas | Ability"],
         parent: Optional[AstNode],
         kid: List[AstNode],
         line: int,
@@ -528,48 +528,6 @@ class TypeSpec(AstNode):
         self.list_nest = list_nest
         self.dict_nest = dict_nest
         super().__init__(parent=parent, kid=kid, line=line)
-
-
-class ArchCan(OOPAccessNode):
-    """CanDS node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: Token,
-        doc: Optional[DocString],
-        access: Optional[Token],
-        signature: Optional["EventSignature | FuncSignature"],
-        body: "CodeBlock",
-        parent: Optional[AstNode],
-        kid: List[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize can statement node."""
-        self.name = name
-        self.doc = doc
-        self.signature = signature
-        self.body = body
-        super().__init__(access=access, parent=parent, kid=kid, line=line)
-
-
-class ArchCanDecl(OOPAccessNode):
-    """CanDS node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: Token,
-        doc: Optional[DocString],
-        access: Optional[Token],
-        signature: Optional["EventSignature | FuncSignature"],
-        parent: Optional[AstNode],
-        kid: List[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize can statement node."""
-        self.name = name
-        self.doc = doc
-        self.signature = signature
-        super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
 class EventSignature(AstNode):

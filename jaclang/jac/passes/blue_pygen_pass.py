@@ -350,38 +350,6 @@ class BluePygenPass(Pass):
             self.emit(node, node.typ.meta["py_code"])
 
     # NOTE: Incomplete for Jac Purple and Red
-    def exit_arch_can(self, node: ast.ArchCan) -> None:
-        """Sub objects.
-
-        name: Token,
-        doc: Optional[DocString],
-        access: Optional[Token],
-        signature: Optional[EventSignature | FuncSignature],
-        body: CodeBlock,
-        """
-        self.access_check(node)
-        if node.signature:  # Error for EventSignature in EventSignature
-            self.emit_ln(
-                node, f"def {node.name.value}{node.signature.meta['py_code']}:"
-            )
-        else:
-            self.emit_ln(node, f"def {node.name.value}():")
-        if node.doc:
-            self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
-
-    # NOTE: Incomplete for Jac Purple and Red
-    def exit_arch_can_decl(self, node: ast.ArchCanDecl) -> None:
-        """Sub objects.
-
-        name: Token,
-        doc: Optional[DocString],
-        access: Optional[Token],
-        signature: Optional[EventSignature | FuncSignature],
-        """
-        self.decl_def_warn()
-
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
 

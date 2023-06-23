@@ -356,8 +356,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Can statements
     # --------------
     @_(
-        "can_ds_ability",
-        "can_func_ability",
+        "ds_ability",
+        "ability",
     )
     def can_stmt(self, p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
@@ -366,21 +366,14 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "doc_tag KW_CAN access_tag NAME event_clause code_block",
         "doc_tag KW_CAN access_tag NAME event_clause SEMI",
+        "doc_tag decorators KW_CAN access_tag NAME event_clause code_block",
+        "doc_tag decorators KW_CAN access_tag NAME event_clause SEMI",
     )
-    def can_ds_ability(self, p: YaccProduction) -> YaccProduction:
+    def ds_ability(self, p: YaccProduction) -> YaccProduction:
         """Can statement rule."""
         return p
 
     @_(
-        "doc_tag KW_CAN access_tag NAME func_decl code_block",
-        "doc_tag KW_CAN access_tag NAME func_decl SEMI",
-    )
-    def can_func_ability(self, p: YaccProduction) -> YaccProduction:
-        """Can statement rule."""
-        return p
-
-    @_(
-        "empty",
         "KW_WITH KW_ENTRY",
         "KW_WITH KW_EXIT",
         "KW_WITH STAR_MUL KW_ENTRY",

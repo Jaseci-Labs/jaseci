@@ -446,10 +446,8 @@ class AstBuildPass(Pass):
             "name": node.kid[2],
             "body": node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
             "signature": node.kid[-2],
-            "is_func": False,
+            "is_func": type(node.kid[-2]) == ast.FuncSignature,
         }
-        if type(node.kid[-2]) == ast.FuncSignature:
-            meta["is_func"] = True
         replace_node(
             node,
             ast.Ability(
@@ -484,10 +482,8 @@ class AstBuildPass(Pass):
             "name": node.kid[3],
             "body": node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
             "signature": node.kid[-2],
-            "is_func": False,
+            "is_func": type(node.kid[-2]) == ast.FuncSignature,
         }
-        if type(node.kid[-2]) == ast.FuncSignature:
-            meta["is_func"] = True
         replace_node(
             node,
             ast.Ability(
@@ -734,54 +730,51 @@ class AstBuildPass(Pass):
     def exit_can_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        can_stmt -> can_func_ability
-        can_stmt -> can_ds_ability
+        can_stmt -> ability
+        can_stmt -> ds_ability
         """
         replace_node(node, node.kid[0])
 
-    def exit_can_ds_ability(self, node: ast.AstNode) -> None:
+    def exit_ds_ability(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        can_ds_ability -> doc_tag KW_CAN access_tag NAME event_clause SEMI
-        can_ds_ability -> doc_tag KW_CAN access_tag NAME event_clause code_block
+        ds_ability -> doc_tag decorators KW_CAN access_tag NAME event_clause SEMI
+        ds_ability -> doc_tag decorators KW_CAN access_tag NAME event_clause code_block
+        ds_ability -> doc_tag KW_CAN access_tag NAME event_clause SEMI
+        ds_ability -> doc_tag KW_CAN access_tag NAME event_clause code_block
         """
-        del node.kid[1]
-        if type(node.kid[-1]) == ast.Token and node.kid[-1].name == "SEMI":
-            del node.kid[-1]
-            replace_node(
-                node,
-                ast.ArchCanDecl(
-                    doc=node.kid[0],
-                    access=node.kid[1],
-                    name=node.kid[2],
-                    signature=node.kid[3],
-                    parent=node.parent,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        if type(node.kid[1]) == ast.Decorators:
+            del node.kid[2]
         else:
-            replace_node(
-                node,
-                ast.ArchCan(
-                    doc=node.kid[0],
-                    access=node.kid[1],
-                    name=node.kid[2],
-                    signature=node.kid[3],
-                    body=node.kid[4],
-                    parent=node.parent,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-
-    def exit_can_func_ability(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        can_func_ability -> doc_tag KW_CAN access_tag NAME func_decl SEMI
-        can_func_ability -> doc_tag KW_CAN access_tag NAME func_decl code_block
-        """
-        self.exit_can_ds_ability(node)
+            del node.kid[1]
+        meta = {
+            "doc": node.kid[0],
+            "decorators": node.kid[1] if type(node.kid[1]) == ast.Decorators else None,
+            "access": node.kid[2]
+            if type(node.kid[1]) == ast.Decorators
+            else node.kid[1],
+            "name": node.kid[3] if type(node.kid[1]) == ast.Decorators else node.kid[2],
+            "body": node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
+            "signature": node.kid[-2],
+            "is_func": False,
+        }
+        replace_node(
+            node,
+            ast.Ability(
+                doc=meta["doc"],
+                access=meta["access"],
+                name=meta["name"],
+                body=meta["body"],
+                signature=meta["signature"],
+                is_func=meta["is_func"],
+                decorators=meta["decorators"],
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+        if type(node.kid[-1]) == ast.Token:
+            del node.kid[-1]
 
     def exit_event_clause(self, node: ast.AstNode) -> None:
         """Grammar rule.
