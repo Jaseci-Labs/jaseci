@@ -14,13 +14,6 @@ class AstBuildPassTests(TestCaseMicroSuite):
         """Set up test."""
         return super().setUp()
 
-    def micro_suite_test(self, filename: str) -> None:
-        """Parse micro jac file."""
-        lex = JacLexer(mod_path="", input_ir=self.file_to_str(filename)).ir
-        prse = JacParser(mod_path="", input_ir=lex).ir
-        build_pass = AstBuildPass(mod_path="", input_ir=prse).ir
-        self.assertGreater(len(str(build_pass.to_dict())), 200)
-
     def test_no_typo_in_pass(self) -> None:
         """Test for enter/exit name diffs with parser."""
         from jaclang.jac.parser import JacParser
@@ -73,6 +66,13 @@ class AstBuildPassTests(TestCaseMicroSuite):
                 )
         for name in parser_func_names:
             self.assertIn(name, ast_build_func_names)
+
+    def micro_suite_test(self, filename: str) -> None:
+        """Parse micro jac file."""
+        lex = JacLexer(mod_path="", input_ir=self.file_to_str(filename)).ir
+        prse = JacParser(mod_path="", input_ir=lex).ir
+        build_pass = AstBuildPass(mod_path="", input_ir=prse).ir
+        self.assertGreater(len(str(build_pass.to_dict())), 200)
 
 
 AstBuildPassTests.self_attach_micro_tests()

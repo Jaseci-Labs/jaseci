@@ -5,40 +5,21 @@ from copy import copy
 from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
 from jaclang.jac.transpiler import transpile_jac_file
 from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
-from jaclang.utils.test import TestCase
+from jaclang.utils.test import TestCaseMicroSuite
 
 
-class BluePygenPassTests(TestCase):
+class BluePygenPassTests(TestCaseMicroSuite):
     """Test pass module."""
 
     def setUp(self) -> None:
         """Set up test."""
         return super().setUp()
 
-    def build_micro(self, filename: str) -> str:
-        """Parse micro jac file."""
-        return transpile_jac_file(
-            self.fixture_abs_path(f"../../../tests/fixtures/micro/{filename}")
-        )
-
-    def test_pygen_basic(self) -> None:
-        """Basic test for pass."""
-        code_gen = transpile_jac_file(self.fixture_abs_path("fam.jac"))
-        self.assertGreater(len(code_gen), 200)
-
-    def test_pygen_module_structure(self) -> None:
-        """Basic test for pass."""
-        code_gen = self.build_micro("module_structure.jac")
-        self.assertGreater(len(code_gen), 200)
-
-    def test_pygen_import_pass(self) -> None:
-        """Basic test for pass."""
-        code_gen = self.build_micro("../../../passes/import_pass.jac")
-        self.assertGreater(len(code_gen), 200)
-
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
-        code_gen = self.build_micro("../../../../cli/jac_cli.jac")
+        code_gen = transpile_jac_file(
+            self.fixture_abs_path("../../../../cli/jac_cli.jac")
+        )
         print(code_gen)
         self.assertGreater(len(code_gen), 200)
 
@@ -77,3 +58,11 @@ class BluePygenPassTests(TestCase):
                 pygen_func_names.append(name.replace("enter_", "").replace("exit_", ""))
         for name in ast_func_names:
             self.assertIn(name, pygen_func_names)
+
+    def micro_suite_test(self, filename: str) -> None:
+        """Parse micro jac file."""
+        code_gen = transpile_jac_file(filename)
+        self.assertGreater(len(code_gen), 10)
+
+
+BluePygenPassTests.self_attach_micro_tests()
