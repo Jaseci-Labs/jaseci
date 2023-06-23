@@ -3,7 +3,6 @@ import re
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacLexer
-from jaclang.jac.parser import JacParser
 
 
 def get_all_jac_keywords() -> str:
@@ -22,22 +21,6 @@ def pascal_to_snake(pascal_string: str) -> str:
     """Convert pascal case to snake case."""
     snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", pascal_string).lower()
     return snake_string
-
-
-def jac_file_to_ast(mod_path: str) -> ast.AstNode:
-    """Convert a Jac file to an AST."""
-    from jaclang.jac.passes.ast_build_pass import AstBuildPass
-
-    lex = JacLexer()
-    prse = JacParser()
-    builder = AstBuildPass(mod_name=mod_path)
-    prse.cur_file = mod_path
-    with open(mod_path) as file:
-        ptree = prse.parse(lex.tokenize(file), filename=mod_path)
-    if ptree:
-        return builder.run(node=ptoa(ptree))
-    else:
-        raise ValueError("Parsing of Jac file failed.")
 
 
 def get_ast_nodes_as_snake_case() -> list[str]:

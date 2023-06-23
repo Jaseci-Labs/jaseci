@@ -1,6 +1,7 @@
 """Test ast build pass module."""
 import inspect
 
+from jaclang.jac.absyntree import AstNode
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes.ast_build_pass import AstBuildPass
@@ -14,23 +15,17 @@ class AstBuildPassTests(TestCase):
         """Set up test."""
         return super().setUp()
 
-    def build_micro(self, filename: str) -> None:
+    def build_micro(self, filename: str) -> AstNode:
         """Parse micro jac file."""
-        lex = JacLexer(mod_path="", input_ir=self.load_fixture(f"../../../tests/fixtures/micro/{filename}")).ir
+        lex = JacLexer(
+            mod_path="",
+            input_ir=self.load_fixture(f"../../../tests/fixtures/micro/{filename}"),
+        ).ir
         prse = JacParser(mod_path="", input_ir=lex)
         lex = JacLexer(mod_path="", input_ir=self.load_fixture("fam.jac")).ir
         prse = JacParser(mod_path="", input_ir=lex).ir
-        build_pass =AstBuildPass(mod_path="", input_ir=prse).ir
+        build_pass = AstBuildPass(mod_path="", input_ir=prse).ir
         return build_pass
-
-    def test_ast_build_basic(self) -> None:
-        """Basic test for pass."""
-        ptree = self.prse.parse(
-            self.lex.tokenize(self.load_fixture("fam.jac")), filename="fam.jac"
-        )
-        self.builder.run(node=ptoa(ptree))
-        # build_pass = self.builder.run(node=ptoa(ptree))
-        # build_pass.print()
 
     def test_ast_build_module_structure(self) -> None:
         """Basic test for pass."""
@@ -73,6 +68,7 @@ class AstBuildPassTests(TestCase):
             if (
                 inspect.isfunction(value)
                 and value.__qualname__.split(".")[0] == JacParser.__name__
+                and name not in ["__init__", "error", "transform"]
             ):
                 parser_func_names.append(name)
         ast_build_func_names = []

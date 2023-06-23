@@ -14,7 +14,7 @@ class AstBuildPass(Pass):
         start -> DOC_STRING element_list
         """
         self.ir = ast.Module(
-            name=self.mod_name,
+            name=self.mod_path,
             doc=node.kid[0],
             body=node.kid[1],
             parent=None,

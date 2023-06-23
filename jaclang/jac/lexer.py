@@ -1,5 +1,7 @@
 """Lexer for Jac language."""
-from jaclang.jac.transform import ABCLexerMeta, IRType, Transform
+from typing import Generator
+
+from jaclang.jac.transform import ABCLexerMeta, Transform
 from jaclang.utils.sly.lex import Lexer, Token
 
 
@@ -9,6 +11,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     def __init__(self, mod_path: str, input_ir: str, base_path: str = "") -> None:
         """Initialize lexer."""
         Transform.__init__(self, mod_path, input_ir, base_path)
+        self.ir: Generator = self.ir
 
     tokens = {
         "FLOAT",
@@ -335,7 +338,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
 
     # Transform Implementations
     # -------------------------
-    def transform(self, ir: IRType) -> IRType:
+    def transform(self, ir: str) -> Generator:
         """Tokenize the input."""
         return self.tokenize(ir)
 

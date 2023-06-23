@@ -7,10 +7,13 @@ from jaclang.jac.utils import pascal_to_snake
 class Pass(Transform):
     """Abstract class for IR passes."""
 
-    def __init__(self, mod_path: str, input_ir: IRType, base_path: str = "") -> None:
+    def __init__(
+        self, mod_path: str, input_ir: ast.AstNode, base_path: str = ""
+    ) -> None:
         """Initialize parser."""
         Transform.__init__(self, mod_path, input_ir, base_path)
         self.cur_node = input_ir  # tracks current node during traversal
+        self.ir: ast.AstNode = self.ir
 
     def before_pass(self) -> None:
         """Run once before pass."""

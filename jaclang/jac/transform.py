@@ -1,6 +1,8 @@
 """Standardized transformation process and error interface."""
+import os
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Generator, Sequence, Union
+
 
 from jaclang.jac.absyntree import AstNode
 from jaclang.utils.log import logging
@@ -20,8 +22,10 @@ class Transform(ABC):
         self.had_error = False
         self.cur_line = 0
         self.mod_path = mod_path
-        self.rel_mod_path = mod_path.replace(base_path, "")
-        self.ir: IRType = self.transform(ir=input_ir)
+        self.rel_mod_path = (
+            mod_path.replace(base_path, "") if base_path else mod_path.split(os.sep)[-1]
+        )
+        self.ir = self.transform(ir=input_ir)
 
     @abstractmethod
     def transform(self, ir: IRType) -> IRType:

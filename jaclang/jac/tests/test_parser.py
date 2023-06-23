@@ -1,10 +1,10 @@
 """Tests for Jac parser."""
 import os
 
+from jaclang.jac.absyntree import AstNode
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.utils.test import TestCase
-from jaclang.jac.absyntree import AstNode
 
 
 class TestParser(TestCase):
@@ -14,7 +14,7 @@ class TestParser(TestCase):
         """Set up test."""
         return super().setUp()
 
-    def parse_micro(self, filename: str) -> None:
+    def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         lex = JacLexer(mod_path="", input_ir=self.load_fixture(f"micro/{filename}")).ir
         prse = JacParser(mod_path="", input_ir=lex)
@@ -29,7 +29,9 @@ class TestParser(TestCase):
                 ".jac"
             ):
                 method_name = f"test_micro_{filename.replace('.jac', '')}"
-                setattr(cls, method_name, lambda self, f=filename: self.parse_micro(f))
+                setattr(
+                    cls, method_name, lambda self, f=filename: self.micro_suite_test(f)
+                )
 
     def test_shift_reduce_conflict(self) -> None:
         """Test for shift reduce conflict."""

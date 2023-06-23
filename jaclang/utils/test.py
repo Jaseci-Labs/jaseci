@@ -19,5 +19,12 @@ class TestCase(_TestCase):
     def load_fixture(self, fixture: str) -> str:
         """Load fixture from fixtures directory."""
         fixture_src = inspect.getmodule(inspect.currentframe().f_back).__file__
-        with open(f"{os.path.dirname(fixture_src)}/fixtures/{fixture}", "r") as f:
+        fixture_path = os.path.join(os.path.dirname(fixture_src), "fixtures", fixture)
+        with open(fixture_path, "r") as f:
             return f.read()
+
+    def fixture_abs_path(self, fixture: str) -> str:
+        """Load fixture from fixtures directory."""
+        fixture_src = inspect.getmodule(inspect.currentframe().f_back).__file__
+        file_path = os.path.join(os.path.dirname(fixture_src), "fixtures", fixture)
+        return os.path.abspath(file_path)
