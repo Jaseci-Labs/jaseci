@@ -1248,11 +1248,11 @@ def parse_tree_to_ast(
                 parse_tree_to_ast(x, parent=ast_tree, lineno=lineno) for x in kids
             ]
         elif isinstance(tree, LexToken):
-            if tree.type == "FSTRING":
-                lineno = tree.lineno
-                tree = FStringParser().parse(FStringLexer().tokenize(tree.value))
-                return parse_tree_to_ast(tree, parent=parent, lineno=lineno)
-            else:
+            # if tree.type == "FSTRING":
+            #     lineno = tree.lineno
+            #     tree = FStringParser().parse(FStringLexer().tokenize(tree.value))
+            #     return parse_tree_to_ast(tree, parent=parent, lineno=lineno)
+            # else:
                 ast_tree = Token(
                     name=tree.type,
                     parent=parent,

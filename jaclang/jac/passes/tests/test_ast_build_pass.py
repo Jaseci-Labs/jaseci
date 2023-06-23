@@ -12,21 +12,15 @@ class AstBuildPassTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
-        self.lex = JacLexer()
-        self.prse = JacParser()
-        self.builder = AstBuildPass()
         return super().setUp()
 
     def build_micro(self, filename: str) -> None:
         """Parse micro jac file."""
-        self.prse.cur_file = filename
-        ptree = self.prse.parse(
-            self.lex.tokenize(
-                self.load_fixture(f"../../../tests/fixtures/micro/{filename}")
-            ),
-            filename=filename,
-        )
-        build_pass = self.builder.run(node=ptoa(ptree))
+        lex = JacLexer(mod_path="", input_ir=self.load_fixture(f"../../../tests/fixtures/micro/{filename}")).ir
+        prse = JacParser(mod_path="", input_ir=lex)
+        lex = JacLexer(mod_path="", input_ir=self.load_fixture("fam.jac")).ir
+        prse = JacParser(mod_path="", input_ir=lex).ir
+        build_pass =AstBuildPass(mod_path="", input_ir=prse).ir
         return build_pass
 
     def test_ast_build_basic(self) -> None:
