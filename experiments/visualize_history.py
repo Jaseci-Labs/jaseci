@@ -13,7 +13,7 @@ def roundup(x):
 def visualize_config_change(config_history, final_clock, fig_fname):
     # Group the configuration based on local vs remote
     # and plot scatter plots with different colors
-    module_list = list(config_history[1]["actions_state"].keys())
+    module_list = list(config_history[-1]["actions_state"].keys())
     y_values = {val: i + 1 for i, val in enumerate(module_list)}
     local_dots = {"x": [], "y": []}
     remote_dots = {"x": [], "y": []}

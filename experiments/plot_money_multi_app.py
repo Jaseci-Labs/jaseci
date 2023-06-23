@@ -18,9 +18,9 @@ TECH = [
 POLICIES = ["all_remote", "all_local", "evaluation"]
 
 ALL_CONFIG_APP = [
-    "sentence_pairing",
-    "discussion_analysis",
-    "restaurant_chatbot",
+    # "sentence_pairing",
+    # "discussion_analysis",
+    # "restaurant_chatbot",
 ]
 
 # Check if file name is provided
@@ -75,6 +75,7 @@ for app, data in app_run_results.items():
                 .get(app_key, {})
                 .get(metric, [])
             )
+            # print(eval_res)
             if "latency" in metric:
                 eval_res = all_remote / eval_res
             elif "throughput" in metric:
@@ -152,7 +153,7 @@ for app, data in app_run_results.items():
         plt.ylabel(f"{metric} Speedup (X)", fontsize=16)
         plt.xticks([r + barWidth for r in range(len(all_app))], all_app)
         plt.legend(fontsize=12)
-
+        plt.tight_layout()
         # Save the plot as PDF in the parent directory of the input file
         parent_directory = os.path.dirname(file_name)
         output_file = os.path.join(parent_directory, f"{app}-{metric}.pdf")

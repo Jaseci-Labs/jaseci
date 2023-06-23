@@ -12,7 +12,9 @@ import traceback
 # Port forward
 # port_fowrward()
 app_freq_pairs = [
-    # ("discussion_analysis", 2),
+    # ("virtual_assistant", 1),
+    # ("zeroshot_faq_bot", 1),
+    ("discussion_analysis", 2),
     ("restaurant_chatbot", 3),
     # ("sentence_pairing", 4),
     # ("flow_analysis", 2),
@@ -36,7 +38,7 @@ no_local_config = [
     "virtual_assistant",
 ]
 
-all_policy_config = ["all_local", "evaluation", "all_remote"]
+all_policy_config = ["all_remote"]
 APP_PATH = "/home/ubuntu/jaseci/jaseci_serv/jaseci_serv/base/example_jac"
 
 
@@ -66,28 +68,96 @@ app_to_actions = {
     ],
 }
 
+start_time = 0
+
+count = 0
+
 
 def make_walker_run_request(snt_id, headers, app_name, freq, experiment_duration):
+    global start_time, count
 
+    # Check if start time is not set
+    if start_time == 0:
+        start_time = time.time()
     # Define the payload for the walker run request
     payload = {"name": app_name, "ctx": {}, "snt": snt_id}
     # interval = 1 / freq
-    start_time = time.time()
     while (time.time() - start_time) < experiment_duration:
+        if count == 0:
+            if (time.time() - start_time) >= 100:
+                print(f"Returning after {(time.time() - start_time)} seconds")
+                start_time = time.time()
+                count = count + 1
+                return
+        elif count > 0:
+            if (time.time() - start_time) >= 100:
+
+                print(f"Returning after {(time.time() - start_time)} seconds")
+                start_time = time.time()
+                count = count + 1
+                return
         requests.post(url=config.url + "/js/walker_run", headers=headers, json=payload)
         # time.sleep(interval)  # Adjust the duration as needed
 
 
-def sent_reg(app_name, headers):
+def sent_reg(app_name, headers, mode):
     jac_file = os.path.join(APP_PATH, f"{app_name}.jac")
     jac_code = open(jac_file).read()
     payload = {"code": jac_code, "opt_level": 2, "name": app_name}
 
-    res = requests.post(
+    sent_data = requests.post(
         url=config.url + "/js/sentinel_register", headers=headers, json=payload
     )
-    # print(res.text)
-    return res.json()
+    # Load models that are not already loaded
+    for module in app_to_actions[app_name]:
+        package, act_name = module.split(".")
+        payload = {"name": act_name}
+        res = requests.post(
+            url=config.url + "/js_admin/jsorc_actions_status",
+            headers=headers,
+            json=payload,
+        )
+        if res.status_code == 200:
+            if (
+                res.json()["action_status"] is None
+                or res.json()["action_status"]["mode"] is None
+            ):
+                payload = {
+                    "config": f"{package}.config",
+                    "name": act_name,
+                }
+                res = requests.post(
+                    url=config.url + "/js_admin/jsorc_actions_config",
+                    headers=headers,
+                    json=payload,
+                )
+                if res.status_code == 200:
+                    payload = {
+                        "name": act_name,
+                        "mode": mode,
+                    }
+                    res = requests.post(
+                        url=config.url + "/js_admin/jsorc_actions_load",
+                        headers=headers,
+                        json=payload,
+                    )
+                    while True:
+                        if res.json()["action_status"]["mode"] == payload["mode"]:
+                            break
+                        time.sleep(10)
+                        res = requests.post(
+                            url=config.url + "/js_admin/jsorc_actions_load",
+                            headers=headers,
+                            json=payload,
+                        )
+            else:
+                print(
+                    f"{act_name} already loaded: {res.json()['action_status']['mode']}"
+                )
+        else:
+            print(f"unalbe to get status for {act_name}: {res.text}")
+            return None
+    return sent_data.json()
 
 
 def run_experiments(
@@ -99,7 +169,6 @@ def run_experiments(
     perf_phase=100,
     policy_configs=None,
 ):
-    results = {}
     mem = 4
     node_mem = [int(mem) * 1024]
     if policy_configs is None:
@@ -113,11 +182,13 @@ def run_experiments(
     }
     action_modules = None
 
-    def run_walker(app_name, freq):
-        sent_id = sent_reg(app_name, headers)
-        make_walker_run_request(
-            sent_id[0]["jid"], headers, app_name, freq, experiment_duration
-        )
+    def run_walker(app_name, freq, mode):
+        sent_id = sent_reg(app_name, headers, mode)
+        if sent_id is not None:
+            print(sent_id)
+            make_walker_run_request(
+                sent_id[0]["jid"], headers, app_name, freq, experiment_duration
+            )
 
     for app_name, freq in app_freq_pairs:
         if action_modules is None:
@@ -126,136 +197,40 @@ def run_experiments(
             action_modules = action_modules + app_to_actions[app_name]
 
     for policy in policy_configs:
+        results = {}
         try:
             if policy == "all_local" or policy == "all_remote":
                 policy_params = [{}]
+                jsorc_policy = "Default"
             else:
                 policy_params = [{"node_mem": nm} for nm in node_mem]
+                jsorc_policy = policy.capitalize()
             for pparams in policy_params:
                 pparams["eval_phase"] = eval_phase
                 pparams["perf_phase"] = perf_phase
-                for app_name, freq in app_freq_pairs:
-                    action_modules = app_to_actions[app_name]
-                    if policy == "all_local":
-                        if app_name in no_local_config:
-                            continue
-                        jsorc_policy = "Default"
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            payload = {
-                                "config": f"{package}.config",
-                                "name": module,
-                            }
-                            res = requests.post(
-                                url=config.url + "/js_admin/jsorc_actions_config",
-                                headers=headers,
-                                json=payload,
-                            )
-                            if res.status_code == 200:
-                                payload = {
-                                    "name": module,
-                                    "mode": "local",
-                                }
-                                res = requests.post(
-                                    url=config.url + "/js_admin/jsorc_actions_load",
-                                    headers=headers,
-                                    json=payload,
-                                )
-                    elif policy == "all_remote":
-                        jsorc_policy = "Default"
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            payload = {
-                                "config": f"{package}.config",
-                                "name": module,
-                            }
-                            res = requests.post(
-                                url=config.url + "/js_admin/jsorc_actions_config",
-                                headers=headers,
-                                json=payload,
-                            )
-                            if res.status_code == 200:
-                                payload = {
-                                    "name": module,
-                                    "mode": "remote",
-                                }
-                                res = requests.post(
-                                    url=config.url + "/js_admin/jsorc_actions_load",
-                                    headers=headers,
-                                    json=payload,
-                                )
-                                while True:
-                                    if (
-                                        res.json()["action_status"]["mode"]
-                                        == payload["mode"]
-                                    ):
-                                        break
-                                    time.sleep(10)
-                                    res = requests.post(
-                                        url=config.url + "/js_admin/jsorc_actions_load",
-                                        headers=headers,
-                                        json=payload,
-                                    )
-                    elif policy == "evaluation" or policy == "auto":
-                        jsorc_policy = policy.capitalize()
-                        # For JSORC mode, we start as remote everything
-                        for module in action_modules:
-                            package, module = module.split(".")
-                            payload = {
-                                "config": f"{package}.config",
-                                "name": module,
-                            }
-                            res = requests.post(
-                                url=config.url + "/js_admin/jsorc_actions_config",
-                                headers=headers,
-                                json=payload,
-                            )
-                            if res.status_code == 200:
-                                payload = {
-                                    "name": module,
-                                    "mode": "remote",
-                                }
-                                res = requests.post(
-                                    url=config.url + "/js_admin/jsorc_actions_load",
-                                    headers=headers,
-                                    json=payload,
-                                )
-                                while True:
-                                    if (
-                                        res.json()["action_status"]["mode"]
-                                        == payload["mode"]
-                                    ):
-                                        break
-                                    time.sleep(10)
-                                    res = requests.post(
-                                        url=config.url + "/js_admin/jsorc_actions_load",
-                                        headers=headers,
-                                        json=payload,
-                                    )
-                    else:
-                        print(f"Unrecognized policy {policy}")
-                        return
-                    payload = {
-                        "policy_name": jsorc_policy,
-                        "policy_params": pparams,
-                    }
-                res = requests.post(
+
+                payload = {
+                    "policy_name": jsorc_policy,
+                    "policy_params": pparams,
+                }
+                requests.post(
                     url=config.url + "/js_admin/jsorc_actionpolicy_set",
                     headers=headers,
                     json=payload,
                 )
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_benchmark_start", headers=headers
                 )
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_trackact_start", headers=headers
                 )
                 for app_name, freq in app_freq_pairs:
                     if policy == "all_local":
                         if app_name not in no_local_config:
-                            run_walker(app_name, freq)
+                            run_walker(app_name, freq, "local")
                     else:
-                        run_walker(app_name, freq)
+                        print(f"calling for {app_name}")
+                        run_walker(app_name, freq, "remote")
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -272,7 +247,7 @@ def run_experiments(
         if policy == "all_local" or policy == "all_remote":
             policy_str = policy
         else:
-            policy_str = f"{policy}-mem-{pparams['node_mem']}"
+            policy_str = f"evaluation-mem-{pparams['node_mem']}"
         results.setdefault(app_name, {})[policy_str] = {
             "walker_level": result.json(),
             "action_level": action_result.json(),
@@ -284,7 +259,7 @@ def run_experiments(
                     "mode": "local",
                     "retire_svc": True,
                 }
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_actions_unload", headers=headers
                 )
         elif policy == "all_remote":
@@ -295,7 +270,7 @@ def run_experiments(
                     "mode": "remote",
                     "retire_svc": False,
                 }
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_actions_unload", headers=headers
                 )
         else:
@@ -306,7 +281,7 @@ def run_experiments(
                     "mode": "remote",
                     "retire_svc": False,
                 }
-                res = requests.post(
+                requests.post(
                     url=config.url + "/js_admin/jsorc_actions_unload", headers=headers
                 )
         time.sleep(20)
@@ -314,7 +289,7 @@ def run_experiments(
             "policy_name": "Default",
             "policy_params": {},
         }
-        res = requests.post(
+        requests.post(
             url=config.url + "/js_admin/jsorc_actionpolicy_set",
             headers=headers,
             json=payload,
@@ -324,12 +299,27 @@ def run_experiments(
             f"{experiment_folder_name}/{app_name}/run_{run_number}",
             f"{app_name}-{4}.json",
         )
-        os.makedirs(
-            f"{experiment_folder_name}/{app_name}/run_{run_number}",
-            exist_ok=True,
-        )
-        with open(f_name, "w") as fp:
-            json.dump(results, fp, indent=4)
+        if os.path.exists(f_name):
+            print(f"file: {f_name} exists, updating")
+            with open(f_name, "r+") as fp:
+                file_data = json.load(fp)
+                if (
+                    policy == "evaluation"
+                    or policy == "adaptive"
+                    or policy == "predictive"
+                ):
+                    policy = "evaluation-mem-4096"
+                file_data[app_name][policy] = results[app_name][policy]
+                fp.seek(0)
+                json.dump(file_data, fp, indent=4)
+        else:
+            os.makedirs(
+                f"{experiment_folder_name}/{app_name}/run_{run_number}",
+                exist_ok=True,
+            )
+            with open(f_name, "w") as fp:
+                json.dump(results, fp, indent=4)
+            print(f"File '{f_name}' created and updated successfully.")
 
 
 if __name__ == "__main__":
