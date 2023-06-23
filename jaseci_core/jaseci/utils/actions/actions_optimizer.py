@@ -648,7 +648,7 @@ class ActionsOptimizer:
                 "call_threshold": 20,
             }
         logger.info(
-            f"===Predictive Policy=== walker_run len: {len(self.benchmark['requests']['walker_run'])}, \ncall_threshold: {policy_state['call_threshold']} "  # noqa: E501
+            f"===Predictive Policy=== walker_run len: {self.benchmark['requests']['walker_run']}, \ncall_threshold: {policy_state['call_threshold']} "  # noqa: E501
         )
         if (
             len(self.benchmark["requests"]["walker_run"])
