@@ -1,5 +1,5 @@
 """Transpilation pass for Jaseci Ast."""
-from typing import List
+from typing import List, Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import AstNode
@@ -11,12 +11,12 @@ class BluePygenPass(Pass):
 
     marked_incomplete: List[str] = []
 
-    def __init__(self, *args: list, **kwargs: dict) -> None:
+    def __init__(self, mod_name: str = "", ir: Optional[ast.AstNode] = None) -> None:
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
         self.cur_arch = None  # tracks current architype during transpilation
-        super().__init__(*args, **kwargs)
+        super().__init__(mod_name=mod_name, ir=ir)
 
     def enter_node(self, node: AstNode) -> None:
         """Enter node."""
