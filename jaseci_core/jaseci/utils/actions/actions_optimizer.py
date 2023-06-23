@@ -650,17 +650,17 @@ class ActionsOptimizer:
             logger.info(
                 f"===Predictive Policy=== walker_run len: {len(self.benchmark['requests']['walker_run'])}"  # noqa: E501
             )
-            if len(self.benchmark["requests"]["walker_run"]) % 20 == 0:
-                current_act_utilz = self._get_action_utilization()
-                best_config = self.get_module_config(current_act_utilz)
-                logger.info(
-                    f"===Predictive Policy=== best_config: {best_config}\n current_act_utilz: {current_act_utilz}"  # noqa: E501
-                )
-                return
-            else:
-                policy_state["prev_action_utilz"] = self._get_action_utilization()
-                self.policy_state["Predictive"] = policy_state
-                return
+        if len(self.benchmark["requests"]["walker_run"]) % 20 == 0:
+            current_act_utilz = self._get_action_utilization()
+            best_config = self.get_module_config(current_act_utilz)
+            logger.info(
+                f"===Predictive Policy=== best_config: {best_config}\n current_act_utilz: {current_act_utilz}"  # noqa: E501
+            )
+            return
+        else:
+            policy_state["prev_action_utilz"] = self._get_action_utilization()
+            self.policy_state["Predictive"] = policy_state
+            return
             # self._init_evalution_policy(policy_state)
             # best_config = max(
             #     policy_state["remain_configs"], key=lambda x: x["local_mem"]
