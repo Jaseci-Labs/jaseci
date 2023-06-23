@@ -256,10 +256,19 @@ class BluePygenPass(Pass):
         self.access_check(node)
         if node.decorators:
             self.emit_ln(node, node.decorators.meta["py_code"])
-        self.emit_ln(node, f"def {node.name.value}{node.signature.meta['py_code']}:")
+        if node.is_func:
+            self.emit_ln(
+                node, f"def {node.name.value}{node.signature.meta['py_code']}:"
+            )
+        else:
+            self.emit_ln(node, f"def {node.name.value}():")
+            self.ds_feature_warn()
         if node.doc:
             self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
-        self.emit(node, node.body.meta["py_code"], indent_delta=1)
+        if node.body:
+            self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        else:
+            self.decl_def_warn()
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_ability_def(self, node: ast.AbilityDef) -> None:

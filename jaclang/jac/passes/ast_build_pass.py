@@ -426,7 +426,6 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         ability -> ability_def
-        ability -> ability_decl_decor
         ability -> ability_decl
         """
         replace_node(node, node.kid[0])
@@ -434,11 +433,15 @@ class AstBuildPass(Pass):
     def exit_ability_decl(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        ability_decl -> ability_decl_decor
         ability_decl -> doc_tag KW_CAN access_tag NAME func_decl code_block
         ability_decl -> doc_tag KW_CAN access_tag NAME return_type_tag code_block
         ability_decl -> doc_tag KW_CAN access_tag NAME func_decl SEMI
         ability_decl -> doc_tag KW_CAN access_tag NAME return_type_tag SEMI
         """
+        if len(node.kid) == 1:
+            replace_node(node, node.kid[0])
+            return
         del node.kid[1]
         meta = {
             "doc": node.kid[0],

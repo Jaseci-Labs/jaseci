@@ -99,7 +99,7 @@ with entry {
 
     @interface.register
     can function_two(x: float, y: float) {
-        print(f"Function Two -> x: {x}, y: {y}")
+        print(f"Function Two -> x: {x}, y: {y}");
     }
 
     @interface.register
@@ -109,5 +109,5 @@ with entry {
 
     # Run CLI or Shell mode
     # interface.run_from_cli()
-    interface.run_shell()
+    interface.run_shell();
 }

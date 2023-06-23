@@ -1466,6 +1466,8 @@ ArchRefType = Union[
     WalkerRef,
 ]
 StmtType = Union[
+    Architype,
+    Ability,
     Assignment,
     ExprType,
     IfStmt,

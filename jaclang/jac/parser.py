@@ -85,7 +85,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     @_(
         "empty",
         "DOC_STRING",
-        "STRING",
     )
     def doc_tag(self, p: YaccProduction) -> YaccProduction:
         """Doc tag rule."""
@@ -218,7 +217,6 @@ class JacParser(JacParseErrorMixIn, Parser):
     # ----------------
     @_(
         "ability_decl",
-        "ability_decl_decor",
         "ability_def",
     )
     def ability(self, p: YaccProduction) -> YaccProduction:
@@ -230,6 +228,7 @@ class JacParser(JacParseErrorMixIn, Parser):
         "doc_tag KW_CAN access_tag NAME func_decl SEMI",
         "doc_tag KW_CAN access_tag NAME return_type_tag code_block",
         "doc_tag KW_CAN access_tag NAME func_decl code_block",
+        "ability_decl_decor",
     )
     def ability_decl(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
@@ -440,6 +439,8 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "architype_decl",
+        "ability_decl",
         "assignment SEMI",
         "static_assignment",
         "expression SEMI",
