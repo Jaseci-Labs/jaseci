@@ -1,4 +1,5 @@
 """Tests for Jac lexer."""
+from typing import Generator
 
 from jaclang.jac.lexer import JacLexer
 from jaclang.utils.test import TestCase
@@ -9,9 +10,11 @@ class TestLexer(TestCase):
 
     def test_lexer(self) -> None:
         """Basic test for lexer."""
-        lexer = JacLexer()
         tokens = []
-        for t in lexer.tokenize(self.load_fixture("lexer_fam.jac")):
+        ir = JacLexer(mod_path="", input_ir=self.load_fixture("lexer_fam.jac")).ir
+        if not isinstance(ir, Generator):
+            raise ValueError("Lexer did not return generator.")
+        for t in ir:
             tokens.append(t)
         self.assertEqual(tokens[0].type, "DOC_STRING")
         self.assertEqual(
@@ -37,9 +40,11 @@ class TestLexer(TestCase):
 
     def test_col_idxs(self) -> None:
         """Basic test for lexer."""
-        lexer = JacLexer()
         tokens = []
-        for t in lexer.tokenize(self.load_fixture("lexer_fam.jac")):
+        ir = JacLexer(mod_path="", input_ir=self.load_fixture("lexer_fam.jac")).ir
+        if not isinstance(ir, Generator):
+            raise ValueError("Lexer did not return generator.")
+        for t in ir:
             tokens.append((t.value, t.lineno, t.index - t.lineidx, t.end - t.lineidx))
         self.assertEqual(tokens[12], ("activity", 9, 16, 24))
         self.assertEqual(tokens[-3], ("outside_func", 59, 24, 36))

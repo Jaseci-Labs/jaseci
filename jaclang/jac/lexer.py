@@ -1,11 +1,23 @@
 # type: ignore
 """Lexer for Jac language."""
+from abc import ABCMeta
 
-from jaclang.utils.sly.lex import Lexer, Token
+from jaclang.jac.transform import IRType, Transform
+from jaclang.utils.sly.lex import Lexer, LexerMeta, Token
 
 
-class JacLexer(Lexer):
+class ABCLexerMeta(ABCMeta, LexerMeta):
+    """Metaclass for Jac Lexer."""
+
+    pass
+
+
+class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     """Jac Lexer."""
+
+    def __init__(self, mod_path: str, input_ir: str, base_path: str = "") -> None:
+        """Initialize lexer."""
+        Transform.__init__(self, mod_path, input_ir, base_path)
 
     tokens = {
         "FLOAT",
@@ -330,8 +342,16 @@ class JacLexer(Lexer):
         self.lineno += t.value.count("\r")
         return t
 
-    # Error handling rule
+    # Transform Implementations
+    def transform(self, ir: IRType) -> Token:
+        """Tokenize the input."""
+        return self.tokenize(ir)
+
+    def err_line(self) -> None:
+        """Line of curr err."""
+        return self.lineno
+
     def error(self, t: Token) -> None:
         """Raise an error for illegal characters."""
-        print(f"Illegal character '{t.value[0]}' at line {self.lineno}")
+        self.log_error(msg=f"Illegal character '{t.value[0]}'")
         self.index += 1

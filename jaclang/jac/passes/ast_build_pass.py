@@ -1,6 +1,4 @@
 """Ast build pass for Jaseci Ast."""
-from typing import Optional
-
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import replace_node
 from jaclang.jac.passes.ir_pass import Pass
@@ -8,10 +6,6 @@ from jaclang.jac.passes.ir_pass import Pass
 
 class AstBuildPass(Pass):
     """Jac Ast build pass."""
-
-    def __init__(self, mod_name: str = "", ir: Optional[ast.AstNode] = None) -> None:
-        """Initialize pass."""
-        super().__init__(mod_name=mod_name, ir=ir)
 
     def exit_start(self, node: ast.AstNode) -> None:
         """Grammar rule.

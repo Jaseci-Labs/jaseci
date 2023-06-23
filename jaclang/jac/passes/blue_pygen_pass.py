@@ -1,6 +1,4 @@
 """Transpilation pass for Jaseci Ast."""
-from typing import List, Optional
-
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import AstNode
 from jaclang.jac.passes.ir_pass import Pass
@@ -9,14 +7,13 @@ from jaclang.jac.passes.ir_pass import Pass
 class BluePygenPass(Pass):
     """Jac transpilation to python pass."""
 
-    marked_incomplete: List[str] = []
+    marked_incomplete: list[str] = []
 
-    def __init__(self, mod_name: str = "", ir: Optional[ast.AstNode] = None) -> None:
+    def before_pass(self) -> None:
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
         self.cur_arch = None  # tracks current architype during transpilation
-        super().__init__(mod_name=mod_name, ir=ir)
 
     def enter_node(self, node: AstNode) -> None:
         """Enter node."""
@@ -86,7 +83,7 @@ class BluePygenPass(Pass):
     def exit_elements(self, node: ast.Elements) -> None:
         """Sub objects.
 
-        elements: List[GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec],
+        elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec],
         """
         for i in node.elements:
             self.emit_ln(node, i.meta["py_code"])
@@ -164,14 +161,14 @@ class BluePygenPass(Pass):
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
 
-        path: List[Token],
+        path: list[Token],
         """
         self.emit(node, "".join([i.value for i in node.path]))
 
     def exit_module_items(self, node: ast.ModuleItems) -> None:
         """Sub objects.
 
-        items: List["ModuleItem"],
+        items: list["ModuleItem"],
         """
         self.emit(node, ", ".join([i.meta["py_code"] for i in node.items]))
 
@@ -229,7 +226,7 @@ class BluePygenPass(Pass):
     def exit_decorators(self, node: ast.Decorators) -> None:
         """Sub objects.
 
-        calls: List["ExprType"],
+        calls: list["ExprType"],
         """
         for i in node.calls:
             self.emit_ln(node, "@" + i.meta["py_code"])
@@ -237,7 +234,7 @@ class BluePygenPass(Pass):
     def exit_base_classes(self, node: ast.BaseClasses) -> None:
         """Sub objects.
 
-        base_classes: List[NameList],
+        base_classes: list[NameList],
         """
         self.emit(node, ", ".join([i.meta["py_code"] for i in node.base_classes]))
 
@@ -298,7 +295,7 @@ class BluePygenPass(Pass):
     def exit_arch_block(self, node: ast.ArchBlock) -> None:
         """Sub objects.
 
-        members: List["ArchHas | Ability"],
+        members: list["ArchHas | Ability"],
         """
         init_func = None
         for i in node.members:
@@ -332,7 +329,7 @@ class BluePygenPass(Pass):
     def exit_has_var_list(self, node: ast.HasVarList) -> None:
         """Sub objects.
 
-        vars: List[HasVar],
+        vars: list[HasVar],
         """
         for i in node.vars:
             self.emit_ln(node, i.meta["py_code"])
@@ -367,7 +364,7 @@ class BluePygenPass(Pass):
                 f"Dict[{node.list_nest.meta['py_code']}, {node.dict_nest.meta['py_code']}]",
             )
         elif node.list_nest:
-            self.emit(node, f"List[{node.list_nest.meta['py_code']}]")
+            self.emit(node, f"list[{node.list_nest.meta['py_code']}]")
         else:
             self.emit(node, node.typ.meta["py_code"])
 
@@ -383,7 +380,7 @@ class BluePygenPass(Pass):
     def exit_name_list(self, node: ast.NameList) -> None:
         """Sub objects.
 
-        names: List[Token],
+        names: list[Token],
         dotted: bool,
         """
         if node.dotted:
@@ -407,7 +404,7 @@ class BluePygenPass(Pass):
     def exit_func_params(self, node: ast.FuncParams) -> None:
         """Sub objects.
 
-        params: List["ParamVar"],
+        params: list["ParamVar"],
         """
         first_out = False
         for i in node.params:
@@ -436,7 +433,7 @@ class BluePygenPass(Pass):
     def exit_code_block(self, node: ast.CodeBlock) -> None:
         """Sub objects.
 
-        stmts: List["StmtType"],
+        stmts: list["StmtType"],
         """
         for i in node.stmts:
             self.emit_ln(node, i.meta["py_code"])
@@ -459,7 +456,7 @@ class BluePygenPass(Pass):
     def exit_else_ifs(self, node: ast.ElseIfs) -> None:
         """Sub objects.
 
-        elseifs: List[IfStmt],
+        elseifs: list[IfStmt],
         """
         for i in node.elseifs:
             self.emit_ln(node, f"elif {i.condition.meta['py_code']}:")
@@ -505,7 +502,7 @@ class BluePygenPass(Pass):
     def exit_except_list(self, node: ast.ExceptList) -> None:
         """Sub objects.
 
-        excepts: List[Except],
+        excepts: list[Except],
         """
         for i in node.excepts:
             self.emit_ln(node, i.meta["py_code"])
@@ -760,7 +757,7 @@ class BluePygenPass(Pass):
     def exit_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 
-        strings: List[Token],
+        strings: list[Token],
         """
         for string in node.strings:
             if type(string) == ast.Token:
@@ -769,7 +766,7 @@ class BluePygenPass(Pass):
     def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
 
-        values: List[ExprType],
+        values: list[ExprType],
         """
         self.emit(
             node, f"[{', '.join([value.meta['py_code'] for value in node.values])}]"
@@ -778,7 +775,7 @@ class BluePygenPass(Pass):
     def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
-        values: List[ExprType],
+        values: list[ExprType],
         """
         self.emit(
             node, f"{', '.join([value.meta['py_code'] for value in node.values])}"
@@ -787,7 +784,7 @@ class BluePygenPass(Pass):
     def exit_dict_val(self, node: ast.DictVal) -> None:
         """Sub objects.
 
-        kv_pairs: List["KVPair"],
+        kv_pairs: list["KVPair"],
         """
         self.emit(
             node,
@@ -897,7 +894,7 @@ class BluePygenPass(Pass):
     def exit_assignment_list(self, node: ast.AssignmentList) -> None:
         """Sub objects.
 
-        values: List[ExprType],
+        values: list[ExprType],
         """
         self.emit(
             node, f"{', '.join([value.meta['py_code'] for value in node.values])}"
@@ -1011,7 +1008,7 @@ class BluePygenPass(Pass):
     def exit_spawn_ctx(self, node: ast.SpawnCtx) -> None:
         """Sub objects.
 
-        spawns: List[Assignment],
+        spawns: list[Assignment],
         """
         self.ds_feature_warn()
 
@@ -1019,6 +1016,6 @@ class BluePygenPass(Pass):
     def exit_filter_ctx(self, node: ast.FilterCtx) -> None:
         """Sub objects.
 
-        compares: List[BinaryExpr],
+        compares: list[BinaryExpr],
         """
         self.ds_feature_warn()
