@@ -45,11 +45,17 @@ class BluePygenPassTests(TestCase):
         """Basic test for pass."""
         build_pass = self.build_micro("module_structure.jac")
         code_gen = self.codegen.run(node=build_pass)
-        self.assertGreater(len(str(code_gen.to_dict())), 200)
+        self.assertGreater(len(str(code_gen.meta["py_code"])), 200)
 
     def test_pygen_import_pass(self) -> None:
         """Basic test for pass."""
         build_pass = self.build_micro("../../../passes/import_pass.jac")
+        code_gen = self.codegen.run(node=build_pass)
+        self.assertGreater(len(str(code_gen.to_dict())), 200)
+
+    def test_pygen_jac_cli(self) -> None:
+        """Basic test for pass."""
+        build_pass = self.build_micro("../../../../cli/jac_cli.jac")
         code_gen = self.codegen.run(node=build_pass)
         print(code_gen.meta["py_code"])
         self.assertGreater(len(str(build_pass.to_dict())), 200)

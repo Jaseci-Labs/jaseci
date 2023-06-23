@@ -362,6 +362,8 @@ class AstBuildPass(Pass):
         """
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
+        else:
+            node.kid = [node.kid[1]]
         replace_node(
             node,
             ast.Decorators(
@@ -2036,7 +2038,7 @@ class AstBuildPass(Pass):
         dict_val -> LBRACE kv_pairs RBRACE
         dict_val -> LBRACE RBRACE
         """
-        if len(node.kid) == 3:
+        if len(node.kid) > 3:
             node.kid = node.kid[:-3]
         else:
             node.kid = []
@@ -2137,6 +2139,13 @@ class AstBuildPass(Pass):
         kv_pairs -> kv_pairs COMMA expression COLON expression
         kv_pairs -> expression COLON expression
         """
+        node = ast.KVPair(
+            key=node.kid[-3],
+            value=node.kid[-1],
+            parent=node.parent,
+            kid=node.kid,
+            line=node.line,
+        )
         if len(node.kid) == 3:
             if node.parent is not None:
                 node.parent.kid = [node] + node.parent.kid
@@ -2145,16 +2154,6 @@ class AstBuildPass(Pass):
             if node.parent is not None:
                 node.parent.kid = [node] + node.kid[:-5] + node.parent.kid
             node.kid = [node.kid[-3], node.kid[-1]]
-        replace_node(
-            node,
-            ast.KVPair(
-                key=node.kid[0],
-                value=node.kid[1],
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
 
     def exit_atomic_chain(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -2302,7 +2301,7 @@ class AstBuildPass(Pass):
         index_slice -> LSQUARE expression RSQUARE
         """
         if len(node.kid) == 3:
-            node.kid = node.kid[1]
+            node.kid = [node.kid[1]]
             replace_node(
                 node,
                 ast.IndexSlice(
