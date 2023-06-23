@@ -632,6 +632,21 @@ class ActionsOptimizer:
             print("Error occurred:", str(e))
             return {}
 
+    def get_walker_count(self):
+        """
+        Get the average latency of walkers
+        """
+        walker_runs = []
+        if "walker_run" in self.benchmark["requests"]:
+            for walker, times in self.benchmark["requests"]["walker_run"].items():
+                if walker == "_default_":
+                    continue
+                else:
+                    walker_runs.extend(times)
+            return len(walker_runs)
+        else:
+            return 0
+
     def _actionpolicy_predictive(self):
         logger.info("===Predictive Policy===")
         policy_state = self.policy_state["Predictive"]
@@ -648,12 +663,9 @@ class ActionsOptimizer:
                 "call_threshold": 20,
             }
         logger.info(
-            f"===Predictive Policy=== walker_run len: {self.benchmark['requests']['walker_run']}, \ncall_threshold: {policy_state['call_threshold']} "  # noqa: E501
+            f"===Predictive Policy=== walker_run len: {self.get_walker_count()}, \ncall_threshold: {policy_state['call_threshold']} "  # noqa: E501
         )
-        if (
-            len(self.benchmark["requests"]["walker_run"])
-            > policy_state["call_threshold"]
-        ):
+        if self.get_walker_count() > policy_state["call_threshold"]:
             current_act_utilz = self._get_action_utilization()
             best_config = self.get_module_config(current_act_utilz)
             logger.info(
