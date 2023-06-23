@@ -645,17 +645,23 @@ class ActionsOptimizer:
                 "prev_action_utilz": {},
                 "prev_avg_walker_lat": [],
                 "remain_configs": [],
-                "change_counter": 0,
+                "call_threshold": 20,
             }
             logger.info(
                 f"===Predictive Policy=== walker_run len: {len(self.benchmark['requests']['walker_run'])}"  # noqa: E501
             )
-        if len(self.benchmark["requests"]["walker_run"]) % 20 == 0:
+        if (
+            len(self.benchmark["requests"]["walker_run"])
+            > policy_state["call_threshold"]
+        ):
             current_act_utilz = self._get_action_utilization()
             best_config = self.get_module_config(current_act_utilz)
             logger.info(
                 f"===Predictive Policy=== best_config: {best_config}\n current_act_utilz: {current_act_utilz}"  # noqa: E501
             )
+            policy_state["call_threshold"] += 20
+            policy_state["prev_action_utilz"] = self._get_action_utilization()
+            self.policy_state["Predictive"] = policy_state
             return
         else:
             policy_state["prev_action_utilz"] = self._get_action_utilization()
