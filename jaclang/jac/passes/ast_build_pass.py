@@ -365,7 +365,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.Decorators(
-                decorators=node.kid, parent=node.parent, kid=node.kid, line=node.line
+                calls=node.kid, parent=node.parent, kid=node.kid, line=node.line
             ),
         )
 
@@ -426,23 +426,25 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         ability -> ability_def
+        ability -> ability_decl_decor
         ability -> ability_decl
-        ability -> ability_inline_spec
         """
         replace_node(node, node.kid[0])
 
-    def exit_ability_inline_spec(self, node: ast.AstNode) -> None:
+    def exit_ability_decl(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        ability_inline_spec -> doc_tag KW_CAN access_tag NAME func_decl code_block
-        ability_inline_spec -> doc_tag KW_CAN access_tag NAME return_type_tag code_block
+        ability_decl -> doc_tag KW_CAN access_tag NAME func_decl code_block
+        ability_decl -> doc_tag KW_CAN access_tag NAME return_type_tag code_block
+        ability_decl -> doc_tag KW_CAN access_tag NAME func_decl SEMI
+        ability_decl -> doc_tag KW_CAN access_tag NAME return_type_tag SEMI
         """
         del node.kid[1]
         meta = {
             "doc": node.kid[0],
             "access": node.kid[1],
             "name": node.kid[2],
-            "body": node.kid[-1],
+            "body": node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
             "signature": node.kid[-2],
             "is_func": False,
         }
@@ -457,42 +459,52 @@ class AstBuildPass(Pass):
                 body=meta["body"],
                 signature=meta["signature"],
                 is_func=meta["is_func"],
+                decorators=None,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
             ),
         )
+        if type(node.kid[-1]) == ast.Token:
+            del node.kid[-1]
 
-    def exit_ability_decl(self, node: ast.AstNode) -> None:
+    def exit_ability_decl_decor(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        ability_decl -> doc_tag KW_CAN access_tag NAME func_decl SEMI
-        ability_decl -> doc_tag KW_CAN access_tag NAME return_type_tag SEMI
+        ability_decl_decor -> doc_tag decorators KW_CAN access_tag NAME func_decl code_block
+        ability_decl_decor -> doc_tag decorators KW_CAN access_tag NAME return_type_tag code_block
+        ability_decl_decor -> doc_tag decorators KW_CAN access_tag NAME func_decl SEMI
+        ability_decl_decor -> doc_tag decorators KW_CAN access_tag NAME return_type_tag SEMI
         """
-        del node.kid[1]
-        del node.kid[-1]
+        del node.kid[2]
         meta = {
             "doc": node.kid[0],
-            "access": node.kid[1],
-            "name": node.kid[2],
-            "signature": node.kid[3],
+            "decorators": node.kid[1],
+            "access": node.kid[2],
+            "name": node.kid[3],
+            "body": node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
+            "signature": node.kid[-2],
             "is_func": False,
         }
-        if type(node.kid[-1]) == ast.FuncSignature:
+        if type(node.kid[-2]) == ast.FuncSignature:
             meta["is_func"] = True
         replace_node(
             node,
-            ast.AbilityDecl(
+            ast.Ability(
                 doc=meta["doc"],
                 access=meta["access"],
                 name=meta["name"],
+                body=meta["body"],
                 signature=meta["signature"],
                 is_func=meta["is_func"],
+                decorators=meta["decorators"],
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
             ),
         )
+        if type(node.kid[-1]) == ast.Token:
+            del node.kid[-1]
 
     def exit_ability_def(self, node: ast.AstNode) -> None:
         """Grammar rule.

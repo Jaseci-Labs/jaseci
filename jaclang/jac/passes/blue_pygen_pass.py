@@ -199,6 +199,8 @@ class BluePygenPass(Pass):
         body: "ArchBlock",
         """
         self.access_check(node)
+        if node.decorators:
+            self.emit_ln(node, node.decorators.meta["py_code"])
         if not node.base_classes:
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
@@ -246,27 +248,18 @@ class BluePygenPass(Pass):
         name: Token,
         is_func: bool,
         doc: Optional[DocString],
+        decorators: Optional["Decorators"],
         access: Optional[Token],
         signature: FuncSignature | TypeSpec,
         body: CodeBlock,
         """
         self.access_check(node)
+        if node.decorators:
+            self.emit_ln(node, node.decorators.meta["py_code"])
         self.emit_ln(node, f"def {node.name.value}{node.signature.meta['py_code']}:")
         if node.doc:
             self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit(node, node.body.meta["py_code"], indent_delta=1)
-
-    # NOTE: Incomplete for Jac Purple and Red
-    def exit_ability_decl(self, node: ast.AbilityDecl) -> None:
-        """Sub objects.
-
-        doc: Optional[DocString],
-        access: Optional[Token],
-        name: Token,
-        signature: FuncSignature | TypeSpec,
-        is_func: bool,
-        """
-        self.decl_def_warn()
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_ability_def(self, node: ast.AbilityDef) -> None:

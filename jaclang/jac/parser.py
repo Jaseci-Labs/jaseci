@@ -217,8 +217,8 @@ class JacParser(JacParseErrorMixIn, Parser):
     # Ability elements
     # ----------------
     @_(
-        "ability_inline_spec",
         "ability_decl",
+        "ability_decl_decor",
         "ability_def",
     )
     def ability(self, p: YaccProduction) -> YaccProduction:
@@ -226,18 +226,22 @@ class JacParser(JacParseErrorMixIn, Parser):
         return p
 
     @_(
+        "doc_tag KW_CAN access_tag NAME return_type_tag SEMI",
+        "doc_tag KW_CAN access_tag NAME func_decl SEMI",
         "doc_tag KW_CAN access_tag NAME return_type_tag code_block",
         "doc_tag KW_CAN access_tag NAME func_decl code_block",
     )
-    def ability_inline_spec(self, p: YaccProduction) -> YaccProduction:
+    def ability_decl(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
 
     @_(
-        "doc_tag KW_CAN access_tag NAME return_type_tag SEMI",
-        "doc_tag KW_CAN access_tag NAME func_decl SEMI",
+        "doc_tag decorators KW_CAN access_tag NAME return_type_tag SEMI",
+        "doc_tag decorators KW_CAN access_tag NAME func_decl SEMI",
+        "doc_tag decorators KW_CAN access_tag NAME return_type_tag code_block",
+        "doc_tag decorators KW_CAN access_tag NAME func_decl code_block",
     )
-    def ability_decl(self, p: YaccProduction) -> YaccProduction:
+    def ability_decl_decor(self, p: YaccProduction) -> YaccProduction:
         """Ability declaration rule."""
         return p
 

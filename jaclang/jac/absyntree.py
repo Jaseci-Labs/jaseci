@@ -376,6 +376,7 @@ class Ability(OOPAccessNode):
         name: Token,
         is_func: bool,
         doc: Optional[DocString],
+        decorators: Optional["Decorators"],
         access: Optional[Token],
         signature: "FuncSignature | TypeSpec",
         body: "CodeBlock",
@@ -387,30 +388,9 @@ class Ability(OOPAccessNode):
         self.name = name
         self.is_func = is_func
         self.doc = doc
+        self.decorators = decorators
         self.signature = signature
         self.body = body
-        super().__init__(access=access, parent=parent, kid=kid, line=line)
-
-
-class AbilityDecl(OOPAccessNode):
-    """AbilityDecl node type for Jac Ast."""
-
-    def __init__(
-        self,
-        doc: Optional[DocString],
-        access: Optional[Token],
-        name: Token,
-        signature: "FuncSignature | TypeSpec",
-        is_func: bool,
-        parent: Optional[AstNode],
-        kid: List[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize ability decl node."""
-        self.doc = doc
-        self.name = name
-        self.signature = signature
-        self.is_func = is_func
         super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
