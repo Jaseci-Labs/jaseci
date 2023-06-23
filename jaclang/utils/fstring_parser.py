@@ -1,3 +1,4 @@
+# type: ignore
 """Python Like F-String Parser."""
 from jaclang.utils.sly.lex import Lexer
 from jaclang.utils.sly.yacc import Parser, YaccProduction
@@ -21,19 +22,16 @@ class FStringLexer(Lexer):
 
     STRING_START = r"f\""
     STRING_END = r"\""
+    PIECE = r"[^\{\}\"]+|\{\{|\}\}"
     EXPR_START = r"(?<!\{)\{(?!\{)"
     EXPR_END = r"(?<!\})\}(?!\})"
-    PIECE = r"[^\{\}\"']+|\{\{|\}\}"
 
 
 class FStringParser(Parser):
     """Python Like F-String Parser."""
 
     tokens = FStringLexer.tokens
-
-    def __init__(self) -> None:
-        """Initialize the parser."""
-        self.names = {}
+    start = "fstring"
 
     @_("STRING_START parts STRING_END")
     def fstring(self, p: YaccProduction) -> YaccProduction:
@@ -44,6 +42,8 @@ class FStringParser(Parser):
         "parts expr",
         "parts PIECE",
         "PIECE",
+        "expr",
+        "fstring",
     )
     def parts(self, p: YaccProduction) -> YaccProduction:
         """Parts of the string both in string and in expression."""
@@ -65,6 +65,9 @@ if __name__ == "__main__":
         except EOFError:
             break
         if text:
+            tokens = lexer.tokenize(text)
+            for i in tokens:
+                print(i, end=", ")
             tokens = lexer.tokenize(text)
             result = parser.parse(tokens)
             print(result)

@@ -19,7 +19,13 @@ class TestCase(_TestCase):
 
     def load_fixture(self, fixture: str) -> str:
         """Load fixture from fixtures directory."""
-        fixture_src = inspect.getmodule(inspect.currentframe().f_back).__file__
+        frame = inspect.currentframe()
+        if frame is None or frame.f_back is None:
+            raise ValueError("Unable to get the previous stack frame.")
+        module = inspect.getmodule(frame.f_back)
+        if module is None or module.__file__ is None:
+            raise ValueError("Unable to determine the file of the module.")
+        fixture_src = module.__file__
         fixture_path = os.path.join(os.path.dirname(fixture_src), "fixtures", fixture)
         with open(fixture_path, "r") as f:
             return f.read()
@@ -30,8 +36,14 @@ class TestCase(_TestCase):
             return f.read()
 
     def fixture_abs_path(self, fixture: str) -> str:
-        """Load fixture from fixtures directory."""
-        fixture_src = inspect.getmodule(inspect.currentframe().f_back).__file__
+        """Get absolute path of a fixture from fixtures directory."""
+        frame = inspect.currentframe()
+        if frame is None or frame.f_back is None:
+            raise ValueError("Unable to get the previous stack frame.")
+        module = inspect.getmodule(frame.f_back)
+        if module is None or module.__file__ is None:
+            raise ValueError("Unable to determine the file of the module.")
+        fixture_src = module.__file__
         file_path = os.path.join(os.path.dirname(fixture_src), "fixtures", fixture)
         return os.path.abspath(file_path)
 
