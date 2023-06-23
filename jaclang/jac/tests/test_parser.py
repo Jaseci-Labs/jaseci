@@ -1,13 +1,11 @@
 """Tests for Jac parser."""
-import os
-
 from jaclang.jac.absyntree import AstNode
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
-from jaclang.utils.test import TestCase
+from jaclang.utils.test import TestCaseMicroSuite
 
 
-class TestParser(TestCase):
+class TestParser(TestCaseMicroSuite):
     """Test Jac self.prse."""
 
     def setUp(self) -> None:
@@ -16,22 +14,9 @@ class TestParser(TestCase):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        lex = JacLexer(mod_path="", input_ir=self.load_fixture(f"micro/{filename}")).ir
+        lex = JacLexer(mod_path="", input_ir=self.file_to_str(filename)).ir
         prse = JacParser(mod_path="", input_ir=lex)
         self.assertFalse(prse.had_error)
-
-    @classmethod
-    def self_attach_micro_tests(cls) -> None:
-        """Attach micro tests."""
-        directory = os.path.dirname(__file__) + "/fixtures/micro"
-        for filename in os.listdir(directory):
-            if os.path.isfile(os.path.join(directory, filename)) and filename.endswith(
-                ".jac"
-            ):
-                method_name = f"test_micro_{filename.replace('.jac', '')}"
-                setattr(
-                    cls, method_name, lambda self, f=filename: self.micro_suite_test(f)
-                )
 
     def test_shift_reduce_conflict(self) -> None:
         """Test for shift reduce conflict."""
@@ -67,14 +52,6 @@ class TestParser(TestCase):
         ).ir
         prse = JacParser(mod_path="", input_ir=lex)
         self.assertFalse(prse.had_error)
-
-    def test_micro_jac_files_fully_tested(self) -> None:
-        """Test that all micro jac files are fully tested."""
-        self.directory = os.path.dirname(__file__) + "/fixtures/micro"
-        for filename in os.listdir(self.directory):
-            if os.path.isfile(os.path.join(self.directory, filename)):
-                method_name = f"test_micro_{filename.replace('.jac', '')}"
-                self.assertIn(method_name, dir(self))
 
 
 TestParser.self_attach_micro_tests()

@@ -1,36 +1,24 @@
 """Test ast build pass module."""
 import inspect
 
-from jaclang.jac.absyntree import AstNode
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes.ast_build_pass import AstBuildPass
-from jaclang.utils.test import TestCase
+from jaclang.utils.test import TestCaseMicroSuite
 
 
-class AstBuildPassTests(TestCase):
+class AstBuildPassTests(TestCaseMicroSuite):
     """Test pass module."""
 
     def setUp(self) -> None:
         """Set up test."""
         return super().setUp()
 
-    def build_micro(self, filename: str) -> AstNode:
+    def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        lex = JacLexer(
-            mod_path="",
-            input_ir=self.load_fixture(f"../../../tests/fixtures/micro/{filename}"),
-        ).ir
-        prse = JacParser(mod_path="", input_ir=lex)
-        lex = JacLexer(mod_path="", input_ir=self.load_fixture("fam.jac")).ir
+        lex = JacLexer(mod_path="", input_ir=self.file_to_str(filename)).ir
         prse = JacParser(mod_path="", input_ir=lex).ir
         build_pass = AstBuildPass(mod_path="", input_ir=prse).ir
-        return build_pass
-
-    def test_ast_build_module_structure(self) -> None:
-        """Basic test for pass."""
-        build_pass = self.build_micro("module_structure.jac")
-        # build_pass.print()
         self.assertGreater(len(str(build_pass.to_dict())), 200)
 
     def test_no_typo_in_pass(self) -> None:
@@ -85,3 +73,6 @@ class AstBuildPassTests(TestCase):
                 )
         for name in parser_func_names:
             self.assertIn(name, ast_build_func_names)
+
+
+AstBuildPassTests.self_attach_micro_tests()
