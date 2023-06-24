@@ -1,13 +1,15 @@
 """Special importer for Jac files."""
 import inspect
 import sys
+import traceback
 import types
 from os import path
+from typing import Optional
 
 from jaclang.jac.transpiler import transpile_jac_file
 
 
-def import_jac(target: str) -> types.ModuleType:
+def import_jac(target: str) -> Optional[types.ModuleType]:
     """Import a module from a path."""
     # Convert python import paths to directory paths
     target = path.join(*(target.split("."))) + ".jac"
@@ -30,9 +32,15 @@ def import_jac(target: str) -> types.ModuleType:
 
     # Set __file__ attribute
     module.__file__ = target
+    module.__name__ = module_name
 
     # Execute the code in the context of the module's namespace
-    exec(code_string, module.__dict__)
+    try:
+        exec(code_string, module.__dict__)
+    except Exception as e:
+        traceback.print_exc()
+        print(f"Error in module {module_name}\nJac file: {target}\nError: {str(e)}")
+        return None
 
     # Register the module in sys.modules
     if package_path:
