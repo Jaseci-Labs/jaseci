@@ -880,14 +880,13 @@ class BluePygenPass(Pass):
         p_args: Optional[ExprList],
         p_kwargs: Optional[AssignmentList],
         """
-        if node.p_args:
-            if node.p_kwargs:
-                self.emit(
-                    node,
-                    f"{node.p_args.meta['py_code']}, {node.p_kwargs.meta['py_code']}",
-                )
-            else:
-                self.emit(node, f"{node.p_args.meta['py_code']}")
+        if node.p_args and node.p_kwargs:
+            self.emit(
+                node,
+                f"{node.p_args.meta['py_code']}, {node.p_kwargs.meta['py_code']}",
+            )
+        elif node.p_args:
+            self.emit(node, f"{node.p_args.meta['py_code']}")
         elif node.p_kwargs:
             self.emit(node, f"{node.p_kwargs.meta['py_code']}")
 

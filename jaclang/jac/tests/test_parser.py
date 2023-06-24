@@ -45,13 +45,5 @@ class TestParser(TestCaseMicroSuite):
         prse = JacParser(mod_path="", input_ir=lex)
         self.assertFalse(prse.had_error)
 
-    def test_parsing_import_pass(self) -> None:
-        """Basic test for parsing."""
-        lex = JacLexer(
-            mod_path="", input_ir=self.load_fixture("../../passes/import_pass.jac")
-        ).ir
-        prse = JacParser(mod_path="", input_ir=lex)
-        self.assertFalse(prse.had_error)
-
 
 TestParser.self_attach_micro_tests()

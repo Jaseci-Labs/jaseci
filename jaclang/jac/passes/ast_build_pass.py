@@ -2259,6 +2259,7 @@ class AstBuildPass(Pass):
                     ),
                 )
         else:
+            node.kid = [node.kid[0], node.kid[2]]
             replace_node(
                 node,
                 ast.ParamList(

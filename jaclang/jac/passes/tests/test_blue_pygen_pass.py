@@ -3,7 +3,7 @@ import inspect
 from copy import copy
 
 from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
-from jaclang.jac.transpiler import transpile_jac_file
+from jaclang.jac.transpiler import jac_file_to_final_pass, transpile_jac_file
 from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
 from jaclang.utils.test import TestCaseMicroSuite
 
@@ -17,11 +17,12 @@ class BluePygenPassTests(TestCaseMicroSuite):
 
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
-        code_gen = transpile_jac_file(
+        code_gen = jac_file_to_final_pass(
             self.fixture_abs_path("../../../../cli/jac_cli.jac")
         )
-        print(code_gen)
-        self.assertGreater(len(code_gen), 200)
+        print(code_gen.ir.meta["py_code"])
+        self.assertFalse(code_gen.had_error)
+        self.assertGreater(len(code_gen.ir.meta["py_code"]), 200)
 
     def test_no_typo_in_pass(self) -> None:
         """Test for enter/exit name diffs with parser."""

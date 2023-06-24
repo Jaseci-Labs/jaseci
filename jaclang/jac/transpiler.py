@@ -8,10 +8,7 @@ from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
 
 def transpile_jac_file(file_path: str) -> str:
     """Transpiler Jac file and return python code as string."""
-    code = BluePygenPass(
-        mod_path=file_path,
-        input_ir=jac_file_to_ast(file_path),
-    ).ir
+    code = jac_file_to_final_pass(file_path=file_path).ir
     if isinstance(code, ast.Module):
         return code.meta["py_code"]
     else:
@@ -27,3 +24,11 @@ def jac_file_to_ast(file_path: str) -> ast.AstNode:
         if not isinstance(ast_ret, ast.AstNode):
             raise ValueError("Parsing of Jac file failed.")
         return ast_ret
+
+
+def jac_file_to_final_pass(file_path: str) -> BluePygenPass:
+    """Convert a Jac file to an AST."""
+    return BluePygenPass(
+        mod_path=file_path,
+        input_ir=jac_file_to_ast(file_path),
+    )
