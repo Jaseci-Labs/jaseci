@@ -32,25 +32,26 @@ class FStringParser(Parser):
 
     tokens = FStringLexer.tokens
     start = "fstring"
+    debugfile = "fstrparser.out"
 
-    @_("STRING_START parts STRING_END")
+    @_("STRING_START fstr_parts STRING_END")
     def fstring(self, p: YaccProduction) -> YaccProduction:
         """Start rule for fstring."""
         return p
 
     @_(
-        "parts expr",
-        "parts PIECE",
+        "fstr_parts fstr_expr",
+        "fstr_parts PIECE",
         "PIECE",
-        "expr",
+        "fstr_expr",
         "fstring",
     )
-    def parts(self, p: YaccProduction) -> YaccProduction:
+    def fstr_parts(self, p: YaccProduction) -> YaccProduction:
         """Parts of the string both in string and in expression."""
         return p
 
-    @_("EXPR_START parts EXPR_END")
-    def expr(self, p: YaccProduction) -> YaccProduction:
+    @_("EXPR_START fstr_parts EXPR_END")
+    def fstr_expr(self, p: YaccProduction) -> YaccProduction:
         """Expressions rule."""
         return p
 

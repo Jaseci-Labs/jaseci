@@ -66,7 +66,7 @@ class BluePygenPass(Pass):
 
         name: str,
         """
-        self.error("Parse node should not be in this AST!!")
+        self.error(f"Parse node should not be in this AST!! {node.name}")
         raise ValueError("Parse node should not be in AST after being Built!!")
 
     def exit_module(self, node: ast.Module) -> None:
@@ -1018,3 +1018,14 @@ class BluePygenPass(Pass):
         compares: list[BinaryExpr],
         """
         self.ds_feature_warn()
+
+    def exit_f_string(self, node: ast.FString) -> None:
+        """Sub objects.
+
+        parts: list["Token | ExprType"],
+        """
+        for part in node.parts:
+            if type(part) == ast.Token:
+                self.emit(node, f"{part.value}")
+            else:
+                self.emit(node, f"{part.meta['py_code']}")

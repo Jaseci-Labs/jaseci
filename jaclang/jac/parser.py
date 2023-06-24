@@ -17,7 +17,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     def __init__(self, mod_path: str, input_ir: Generator, base_path: str = "") -> None:
         """Initialize parser."""
         Transform.__init__(self, mod_path, input_ir, base_path)
-        self.ir: AstNode = self.ir
+        self.ir_tup = self.ir
+        self.ir: AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
     debugfile = "parser.out"
@@ -27,7 +28,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "DOC_STRING element_list",
         "STRING element_list",
-        # "element_list",
+        # Workaround for fstrings, should make custom start rule
+        "expression",
     )
     def start(self, p: YaccProduction) -> YaccProduction:
         """Start rule."""
@@ -1210,7 +1212,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     # -------------------------
     def transform(self, ir: list) -> AstNode:
         """Tokenize the input."""
-        return parse_tree_to_ast(self.parse(ir))
+        return self.parse(ir)
 
     def error(self, p: YaccProduction) -> None:
         """Improved error handling for Jac Parser."""
@@ -1232,12 +1234,29 @@ def parse_tree_to_ast(
     tree: tuple, parent: Optional[AstNode] = None, lineno: int = 0
 ) -> AstNode:
     """Convert parser output to ast, also parses fstrings."""
+
+    def find_and_concat_fstr_pieces(tup: tuple) -> str:
+        result = ""
+        for item in tup:
+            if isinstance(item, tuple):
+                result += find_and_concat_fstr_pieces(item)
+            elif isinstance(item, LexToken) and item.type == "PIECE":
+                result += item.value
+        return result
+
     from jaclang.utils.fstring_parser import FStringLexer, FStringParser
     from jaclang.utils.sly.lex import Token as LexToken
 
     ast_tree: AstNode = None
     if not isinstance(tree, AstNode):
         if isinstance(tree, tuple):
+            if tree[0] == "fstr_expr":
+                tree = JacParser(
+                    mod_path="",
+                    input_ir=JacLexer(
+                        mod_path="", input_ir=find_and_concat_fstr_pieces(tree)
+                    ).ir,
+                ).ir_tup[2]
             kids = tree[2:]
             ast_tree = Parse(
                 name=tree[0],

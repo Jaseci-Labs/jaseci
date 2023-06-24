@@ -1429,6 +1429,21 @@ class FilterCtx(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
+class FString(AstNode):
+    """FString node type for Jac Ast."""
+
+    def __init__(
+        self,
+        parts: list["Token | ExprType"],
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize fstring expression node."""
+        self.parts = parts
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
 AtomType = Union[
     MultiString,
     ListVal,

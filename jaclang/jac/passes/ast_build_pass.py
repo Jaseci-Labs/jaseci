@@ -2768,3 +2768,46 @@ class AstBuildPass(Pass):
         empty -> <empty>
         """
         replace_node(node, None)
+
+    # FString Parser Rules
+    # --------------------
+
+    def exit_fstring(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        fstring -> STRING_START fstr_parts STRING_END
+        """
+        replace_node(node, node.kid[1])
+
+    def exit_fstr_parts(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        fstr_parts -> fstring
+        fstr_parts -> expression
+        fstr_parts -> PIECE
+        fstr_parts -> fstr_parts PIECE
+        fstr_parts -> fstr_parts expression
+        """
+        if len(node.kid) == 2:
+            node.kid = node.kid[0].kid + [node.kid[1]]
+        else:
+            node.kid = [node.kid[0]]
+        replace_node(
+            node,
+            ast.FString(
+                parts=node.kid,
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_fstr_expr(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        Should not exist; replaced with expression
+        """
+        self.error("fstr_expr should not exist in parse tree; replaced with expression")
+        raise ValueError(
+            "fstr_expr should not exist in parse tree; replaced with expression"
+        )

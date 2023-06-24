@@ -4,6 +4,7 @@ import inspect
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes.ast_build_pass import AstBuildPass
+from jaclang.utils.fstring_parser import FStringParser
 from jaclang.utils.test import TestCaseMicroSuite
 
 
@@ -19,10 +20,14 @@ class AstBuildPassTests(TestCaseMicroSuite):
         from jaclang.jac.parser import JacParser
 
         parser_func_names = []
-        for name, value in inspect.getmembers(JacParser):
+        for name, value in [
+            *inspect.getmembers(JacParser),
+            *inspect.getmembers(FStringParser),
+        ]:
             if (
                 inspect.isfunction(value)
-                and value.__qualname__.split(".")[0] == JacParser.__name__
+                and value.__qualname__.split(".")[0]
+                in [JacParser.__name__, FStringParser.__name__]
                 and name not in ["__init__", "error", "transform"]
             ):
                 parser_func_names.append(name)
