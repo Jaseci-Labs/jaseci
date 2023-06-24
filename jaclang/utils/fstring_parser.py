@@ -32,7 +32,6 @@ class FStringParser(Parser):
 
     tokens = FStringLexer.tokens
     start = "fstring"
-    debugfile = "fstrparser.out"
 
     @_("STRING_START fstr_parts STRING_END")
     def fstring(self, p: YaccProduction) -> YaccProduction:
