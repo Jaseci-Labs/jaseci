@@ -1235,7 +1235,7 @@ def parse_tree_to_ast(
     from jaclang.utils.fstring_parser import FStringLexer, FStringParser
     from jaclang.utils.sly.lex import Token as LexToken
 
-    ast_tree: Optional[AstNode] = None
+    ast_tree: AstNode = None
     if not isinstance(tree, AstNode):
         if isinstance(tree, tuple):
             kids = tree[2:]
@@ -1264,7 +1264,9 @@ def parse_tree_to_ast(
                     col_end=tree.end - tree.lineidx + 1,
                 )
         else:
-            raise ValueError(f"node must be AstNode or parser output tuple: {tree}")
+            raise ValueError(
+                f"node must be AstNode or parser output tuple: {type(tree)} {tree}"
+            )
     if not ast_tree:
         raise ValueError(f"node must be AstNode: {tree}")
     return ast_tree

@@ -25,19 +25,17 @@ class Pass(Transform):
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Run on entering node."""
-        if isinstance(node, ast.Parse):
-            if hasattr(self, f"enter_{node.name}"):
-                getattr(self, f"enter_{node.name}")(node)
-        elif hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
+        if hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
+        if isinstance(node, ast.Parse) and hasattr(self, f"enter_{node.name}"):
+            getattr(self, f"enter_{node.name}")(node)
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Run on exiting node."""
-        if isinstance(node, ast.Parse):
-            if hasattr(self, f"exit_{node.name}"):
-                getattr(self, f"exit_{node.name}")(node)
-        elif hasattr(self, f"exit_{pascal_to_snake(type(node).__name__)}"):
+        if hasattr(self, f"exit_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"exit_{pascal_to_snake(type(node).__name__)}")(node)
+        if isinstance(node, ast.Parse) and hasattr(self, f"exit_{node.name}"):
+            getattr(self, f"exit_{node.name}")(node)
 
     # Transform Implementations
     # -------------------------
