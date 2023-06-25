@@ -14,6 +14,7 @@ class AstNode:
         self.kid = kid if kid else []
         self.line = line
         self._sub_node_tab: dict[type[AstNode], list[AstNode]] = {}
+        self._typ: Optional[type] = None
         self.meta: dict[str, str] = {}
 
     def __str__(self) -> str:
@@ -81,6 +82,33 @@ class Token(AstNode):
         self.col_start = col_start
         self.col_end = col_end
         super().__init__(parent=parent, kid=kid, line=line)
+
+
+class Name(Token):
+    """Name node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        already_declared: bool,
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize name."""
+        self.already_declared = already_declared
+        super().__init__(
+            name=name,
+            value=value,
+            col_start=col_start,
+            col_end=col_end,
+            parent=parent,
+            kid=kid,
+            line=line,
+        )
 
 
 class Parse(AstNode):

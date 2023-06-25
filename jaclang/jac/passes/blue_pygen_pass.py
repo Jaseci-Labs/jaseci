@@ -1,6 +1,5 @@
 """Jac Blue pass for Jaseci Ast."""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.absyntree import AstNode
 from jaclang.jac.passes.ir_pass import Pass
 
 
@@ -13,7 +12,7 @@ class BluePygenPass(Pass):
         self.indent_level = 0
         self.cur_arch = None  # tracks current architype during transpilation
 
-    def enter_node(self, node: AstNode) -> None:
+    def enter_node(self, node: ast.AstNode) -> None:
         """Enter node."""
         if node:
             node.meta["py_code"] = ""
@@ -23,12 +22,12 @@ class BluePygenPass(Pass):
         """Return string for indent."""
         return " " * self.indent_size * (self.indent_level + indent_delta)
 
-    def emit_ln(self, node: AstNode, s: str, indent_delta: int = 0) -> None:
+    def emit_ln(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
         self.emit(node, s.strip().strip("\n"), indent_delta)
         self.emit(node, "\n")
 
-    def emit(self, node: AstNode, s: str, indent_delta: int = 0) -> None:
+    def emit(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
         node.meta["py_code"] += self.indent_str(indent_delta) + s.replace(
             "\n", "\n" + self.indent_str(indent_delta)

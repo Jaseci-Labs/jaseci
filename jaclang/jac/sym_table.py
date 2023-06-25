@@ -15,7 +15,9 @@ class Symbol:
 class SymbolTable:
     """Symbol Table."""
 
-    def __init__(self, parent: Optional["SymbolTable"] = None) -> None:
+    def __init__(
+        self, scope_name: str = "", parent: Optional["SymbolTable"] = None
+    ) -> None:
         """Initialize."""
         self.parent = parent
         self.table: dict[str, Symbol] = {}

@@ -13,10 +13,6 @@ def get_all_jac_keywords() -> str:
     return ret[:-1]
 
 
-if __name__ == "__main__":
-    print(get_all_jac_keywords())
-
-
 def pascal_to_snake(pascal_string: str) -> str:
     """Convert pascal case to snake case."""
     snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", pascal_string).lower()
@@ -96,3 +92,8 @@ def load_ast_and_print_pass_template() -> str:
     output = output.replace("ForwardRef('", "")
     output = output.replace("')", "")
     return output
+
+
+if __name__ == "__main__":
+    print(get_all_jac_keywords())
+    print(load_ast_and_print_pass_template())

@@ -2,7 +2,7 @@
 """Parser for Jac."""
 from typing import Generator, Optional
 
-from jaclang.jac.absyntree import AstNode, Parse, Token
+import jaclang.jac.absyntree as ast
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.transform import ABCParserMeta, Transform
 from jaclang.utils.sly.yacc import Parser, YaccProduction
@@ -20,7 +20,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Initialize parser."""
         Transform.__init__(self, mod_path, input_ir, base_path)
         self.ir_tup = self.ir
-        self.ir: AstNode = parse_tree_to_ast(self.ir)
+        self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
     debugfile = "parser.out"
@@ -1212,7 +1212,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     # Transform Implementations
     # -------------------------
-    def transform(self, ir: list) -> AstNode:
+    def transform(self, ir: list) -> ast.AstNode:
         """Tokenize the input."""
         return self.parse(ir)
 
@@ -1253,8 +1253,8 @@ JacParserExpr = fstr_sly_parser_hack()
 
 
 def parse_tree_to_ast(
-    tree: tuple, parent: Optional[AstNode] = None, lineno: int = 0
-) -> AstNode:
+    tree: tuple, parent: Optional[ast.AstNode] = None, lineno: int = 0
+) -> ast.AstNode:
     """Convert parser output to ast, also parses fstrings."""
 
     def find_and_concat_fstr_pieces(tup: tuple) -> str:
@@ -1269,8 +1269,8 @@ def parse_tree_to_ast(
     from jaclang.utils.fstring_parser import FStringLexer, FStringParser
     from jaclang.utils.sly.lex import Token as LexToken
 
-    ast_tree: AstNode = None
-    if not isinstance(tree, AstNode):
+    ast_tree: ast.AstNode = None
+    if not isinstance(tree, ast.AstNode):
         if isinstance(tree, tuple):
             if tree[0] == "fstr_expr":
                 tree = JacParserExpr(
@@ -1280,7 +1280,7 @@ def parse_tree_to_ast(
                     ).ir,
                 ).ir_tup[2]
             kids = tree[2:]
-            ast_tree = Parse(
+            ast_tree = ast.Parse(
                 name=tree[0],
                 parent=parent,
                 line=tree[1] if lineno == 0 else lineno,
@@ -1295,15 +1295,19 @@ def parse_tree_to_ast(
                 ftree = FStringParser().parse(FStringLexer().tokenize(tree.value))
                 return parse_tree_to_ast(ftree, parent=parent, lineno=lineno)
             else:
-                ast_tree = Token(
-                    name=tree.type,
-                    parent=parent,
-                    value=tree.value,
-                    kid=[],
-                    line=tree.lineno if lineno == 0 else lineno,
-                    col_start=tree.index - tree.lineidx + 1,
-                    col_end=tree.end - tree.lineidx + 1,
-                )
+                meta = {
+                    "name": tree.type,
+                    "parent": parent,
+                    "value": tree.value,
+                    "kid": [],
+                    "line": tree.lineno if lineno == 0 else lineno,
+                    "col_start": tree.index - tree.lineidx + 1,
+                    "col_end": tree.end - tree.lineidx + 1,
+                }
+                if tree.type == "NAME":
+                    ast_tree = ast.Name(already_declared=False, **meta)
+                else:
+                    ast_tree = ast.Token(**meta)
         else:
             raise ValueError(
                 f"node must be AstNode or parser output tuple: {type(tree)} {tree}"
