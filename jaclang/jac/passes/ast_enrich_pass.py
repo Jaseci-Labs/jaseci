@@ -14,6 +14,6 @@ class AstEnrichmentPass(Pass):
 
         members: list["ArchHas | Ability"],
         """
-        for i in node.kid:
-            if type(i) == ast.Ability:
-                i.is_attached = True
+        # Tags all function signatures whether method style or not
+        for i in self.get_all_sub_nodes(node, ast.FuncSignature):
+            i.is_arch_attached = True

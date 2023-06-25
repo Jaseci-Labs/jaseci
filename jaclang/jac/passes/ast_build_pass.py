@@ -17,6 +17,7 @@ class AstBuildPass(Pass):
             name=self.mod_path,
             doc=node.kid[0],
             body=node.kid[1],
+            mod_path=self.mod_path,
             parent=None,
             kid=node.kid,
             line=node.line,

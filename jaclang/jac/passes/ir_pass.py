@@ -1,7 +1,11 @@
 """Abstract class for IR Passes for Jac."""
+from typing import TypeVar
+
 import jaclang.jac.absyntree as ast
 from jaclang.jac.transform import IRType, Transform
 from jaclang.jac.utils import pascal_to_snake
+
+T = TypeVar("T", bound=ast.AstNode)
 
 
 class Pass(Transform):
@@ -11,6 +15,7 @@ class Pass(Transform):
         self, mod_path: str, input_ir: ast.AstNode, base_path: str = ""
     ) -> None:
         """Initialize parser."""
+        self.term_signal = False
         self.cur_node = input_ir  # tracks current node during traversal
         Transform.__init__(self, mod_path, input_ir, base_path)
 
@@ -36,6 +41,27 @@ class Pass(Transform):
         if isinstance(node, ast.Parse) and hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
 
+    def get_all_sub_nodes(
+        self, node: ast.AstNode, typ: type[T], brute_force: bool = False
+    ) -> list[T]:
+        """Get all sub nodes of type."""
+        result = []
+        # Assumes pass built the sub node table
+        if not node:
+            return result
+        elif len(node._sub_node_tab):
+            result.extend(node._sub_node_tab[typ] if typ in node._sub_node_tab else [])
+        elif len(node.kid):
+            if not brute_force:
+                raise ValueError(f"Node has no sub_node_tab. {node}")
+            # Brute force search if pass didn't build table
+            else:
+                for i in node.kid:
+                    if isinstance(i, typ):
+                        result.append(i)
+                    result.extend(self.get_all_sub_nodes(i, typ))
+        return result
+
     # Transform Implementations
     # -------------------------
     def transform(self, ir: IRType) -> IRType:
@@ -50,6 +76,8 @@ class Pass(Transform):
 
     def traverse(self, node: ast.AstNode) -> None:
         """Traverse tree."""
+        if self.term_signal:
+            return
         self.cur_node = node
         self.enter_node(node)
         for i in node.kid:

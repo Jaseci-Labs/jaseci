@@ -1,10 +1,10 @@
 """Transpilation functions."""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.parser import JacLexer
-from jaclang.jac.parser import JacParser
-from jaclang.jac.passes.ast_build_pass import AstBuildPass
+from jaclang.jac.ast_build import jac_file_to_ast
 from jaclang.jac.passes.ast_enrich_pass import AstEnrichmentPass
 from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
+from jaclang.jac.passes.import_pass import ImportPass
+from jaclang.jac.passes.sub_node_tab_pass import SubNodeTabPass
 
 
 def transpile_jac_file(file_path: str) -> str:
@@ -16,21 +16,20 @@ def transpile_jac_file(file_path: str) -> str:
         raise ValueError("Transpilation of Jac file failed.")
 
 
-def jac_file_to_ast(file_path: str) -> ast.AstNode:
+def pass_schedule(file_path: str) -> ast.AstNode:
     """Convert a Jac file to an AST."""
-    with open(file_path) as file:
-        lex = JacLexer(mod_path=file_path, input_ir=file.read()).ir
-        prse = JacParser(mod_path=file_path, input_ir=lex).ir
-        ast_ret = AstBuildPass(mod_path=file_path, input_ir=prse).ir
-        ast_ret = AstEnrichmentPass(mod_path=file_path, input_ir=ast_ret).ir
-        if not isinstance(ast_ret, ast.AstNode):
-            raise ValueError("Parsing of Jac file failed.")
-        return ast_ret
+    ast_ret = jac_file_to_ast(file_path=file_path)
+    ast_ret = SubNodeTabPass(mod_path=file_path, input_ir=ast_ret).ir
+    ast_ret = ImportPass(mod_path=file_path, input_ir=ast_ret).ir
+    ast_ret = AstEnrichmentPass(mod_path=file_path, input_ir=ast_ret).ir
+    if not isinstance(ast_ret, ast.AstNode):
+        raise ValueError("Parsing of Jac file failed.")
+    return ast_ret
 
 
 def jac_file_to_final_pass(file_path: str) -> BluePygenPass:
     """Convert a Jac file to an AST."""
     return BluePygenPass(
         mod_path=file_path,
-        input_ir=jac_file_to_ast(file_path),
+        input_ir=pass_schedule(file_path),
     )

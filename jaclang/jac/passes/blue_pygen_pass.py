@@ -247,7 +247,6 @@ class BluePygenPass(Pass):
         access: Optional[Token],
         signature: FuncSignature | TypeSpec,
         body: CodeBlock,
-        self.is_attached = False
         """
         self.access_check(node)
         if node.decorators:
@@ -392,9 +391,12 @@ class BluePygenPass(Pass):
 
         params: Optional[FuncParams],
         return_type: Optional[TypeSpec],
+        self.is_arch_attached = False
         """
-        self.emit(node, "(")
+        self.emit(node, "(self") if node.is_arch_attached else self.emit(node, "(")
         if node.params:
+            if node.is_arch_attached:
+                self.emit(node, ", ")
             self.emit(node, node.params.meta["py_code"])
         self.emit(node, ")")
         if node.return_type:

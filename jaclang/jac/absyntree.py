@@ -13,6 +13,7 @@ class AstNode:
         self.parent = parent
         self.kid = kid if kid else []
         self.line = line
+        self._sub_node_tab: dict[type[AstNode], list[AstNode]] = {}
         self.meta: dict[str, str] = {}
 
     def __str__(self) -> str:
@@ -107,6 +108,7 @@ class Module(AstNode):
         name: str,
         doc: Token,
         body: "Elements",
+        mod_path: str,
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
@@ -115,6 +117,7 @@ class Module(AstNode):
         self.name = name
         self.doc = doc
         self.body = body
+        self.mod_path = mod_path
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -256,6 +259,7 @@ class ModulePath(AstNode):
     ) -> None:
         """Initialize module path node."""
         self.path = path
+        self.path_str = ".".join([p.value for p in path])
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -387,7 +391,6 @@ class Ability(OOPAccessNode):
         """Initialize func arch node."""
         self.name = name
         self.is_func = is_func
-        self.is_attached = False
         self.doc = doc
         self.decorators = decorators
         self.signature = signature
@@ -578,6 +581,7 @@ class FuncSignature(AstNode):
     ) -> None:
         """Initialize method signature node."""
         self.params = params
+        self.is_arch_attached = False
         self.return_type = return_type
         super().__init__(parent=parent, kid=kid, line=line)
 
