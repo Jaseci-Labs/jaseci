@@ -1,13 +1,11 @@
-"""Transpilation pass for Jaseci Ast."""
+"""Jac Blue pass for Jaseci Ast."""
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import AstNode
 from jaclang.jac.passes.ir_pass import Pass
 
 
 class BluePygenPass(Pass):
-    """Jac transpilation to python pass."""
-
-    marked_incomplete: list[str] = []
+    """Jac blue transpilation to python pass."""
 
     def before_pass(self) -> None:
         """Initialize pass."""
@@ -249,6 +247,7 @@ class BluePygenPass(Pass):
         access: Optional[Token],
         signature: FuncSignature | TypeSpec,
         body: CodeBlock,
+        self.is_attached = False
         """
         self.access_check(node)
         if node.decorators:
@@ -760,8 +759,7 @@ class BluePygenPass(Pass):
         strings: list[Token],
         """
         for string in node.strings:
-            if type(string) == ast.Token:
-                self.emit(node, string.value)
+            self.emit(node, string.meta["py_code"])
 
     def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
@@ -819,14 +817,14 @@ class BluePygenPass(Pass):
         """
         partial = (
             f"{node.outk_expr.meta['py_code']}: {node.outv_expr.meta['py_code']} for "
-            f"{node.k_name.value} in {node.collection.meta['py_code']}"
+            f"{node.k_name.value}"
         )
         if node.v_name:
             partial += f", {node.v_name.value}"
         partial += f" in {node.collection.meta['py_code']}"
         if node.conditional:
             partial += f" if {node.conditional.meta['py_code']}"
-        self.emit(node, f"[{partial}]")
+        self.emit(node, f"{{{partial}}}")
 
     def exit_k_v_pair(self, node: ast.KVPair) -> None:
         """Sub objects.
@@ -1024,8 +1022,10 @@ class BluePygenPass(Pass):
 
         parts: list["Token | ExprType"],
         """
+        self.emit(node, 'f"')
         for part in node.parts:
-            if type(part) == ast.Token:
-                self.emit(node, f"{part.value}")
-            else:
+            if type(part) == ast.Token and part.name == "PIECE":
                 self.emit(node, f"{part.meta['py_code']}")
+            else:
+                self.emit(node, "{" + part.meta["py_code"] + "}")
+        self.emit(node, '"')

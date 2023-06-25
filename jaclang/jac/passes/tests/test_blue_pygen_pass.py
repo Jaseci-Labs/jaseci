@@ -1,6 +1,5 @@
 """Test ast build pass module."""
 import inspect
-from copy import copy
 
 from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
 from jaclang.jac.transpiler import jac_file_to_final_pass, transpile_jac_file
@@ -29,7 +28,7 @@ class BluePygenPassTests(TestCaseMicroSuite):
         ast_func_names = [
             x for x in ast_snakes() if x not in ["ast_node", "o_o_p_access_node"]
         ]
-        pygen_func_names = copy(BluePygenPass.marked_incomplete)
+        pygen_func_names = []
         for name, value in inspect.getmembers(BluePygenPass):
             if (
                 (name.startswith("enter_") or name.startswith("exit_"))
@@ -47,7 +46,7 @@ class BluePygenPassTests(TestCaseMicroSuite):
         ast_func_names = [
             x for x in ast_snakes() if x not in ["ast_node", "o_o_p_access_node"]
         ]
-        pygen_func_names = copy(BluePygenPass.marked_incomplete)
+        pygen_func_names = []
         for name, value in inspect.getmembers(BluePygenPass):
             if (
                 (name.startswith("enter_") or name.startswith("exit_"))

@@ -1970,9 +1970,9 @@ class AstBuildPass(Pass):
     def exit_multistring(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        multistring -> FSTRING multistring
+        multistring -> fstring multistring
         multistring -> STRING multistring
-        multistring -> FSTRING
+        multistring -> fstring
         multistring -> STRING
         """
         if len(node.kid) == 2:

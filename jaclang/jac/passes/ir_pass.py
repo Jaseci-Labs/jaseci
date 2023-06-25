@@ -11,9 +11,8 @@ class Pass(Transform):
         self, mod_path: str, input_ir: ast.AstNode, base_path: str = ""
     ) -> None:
         """Initialize parser."""
-        Transform.__init__(self, mod_path, input_ir, base_path)
         self.cur_node = input_ir  # tracks current node during traversal
-        self.ir: ast.AstNode = self.ir
+        Transform.__init__(self, mod_path, input_ir, base_path)
 
     def before_pass(self) -> None:
         """Run once before pass."""
@@ -46,7 +45,8 @@ class Pass(Transform):
             raise ValueError("Current node is not an AstNode.")
         self.traverse(ir)
         self.after_pass()
-        return self.ir
+        # Checks if self.ir is created during traversal
+        return self.ir if hasattr(self, "ir") else ir
 
     def traverse(self, node: ast.AstNode) -> None:
         """Traverse tree."""

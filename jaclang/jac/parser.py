@@ -1242,11 +1242,14 @@ def fstr_sly_parser_hack() -> Optional[dict]:
         )
         new_module_namespace = {}
         exec(new_module_data, new_module_namespace)
-        return new_module_namespace
+        return (
+            new_module_namespace["JacParser"]
+            if "JacParser" in new_module_namespace
+            else None
+        )
 
 
-if "__file__" in globals():
-    JacParserExpr = fstr_sly_parser_hack()["JacParser"]
+JacParserExpr = fstr_sly_parser_hack()
 
 
 def parse_tree_to_ast(

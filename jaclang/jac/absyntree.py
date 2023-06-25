@@ -387,6 +387,7 @@ class Ability(OOPAccessNode):
         """Initialize func arch node."""
         self.name = name
         self.is_func = is_func
+        self.is_attached = False
         self.doc = doc
         self.decorators = decorators
         self.signature = signature
@@ -1126,7 +1127,7 @@ class MultiString(AstNode):
 
     def __init__(
         self,
-        strings: list[Token],
+        strings: list["Token | FString"],
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
