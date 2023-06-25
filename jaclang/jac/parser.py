@@ -14,6 +14,8 @@ _ = None  # For flake8 linting
 class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     """Parser for Jac."""
 
+    start = "module"
+
     def __init__(self, mod_path: str, input_ir: Generator, base_path: str = "") -> None:
         """Initialize parser."""
         Transform.__init__(self, mod_path, input_ir, base_path)
@@ -29,9 +31,9 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "DOC_STRING element_list",
         "STRING element_list",
         # Workaround for fstrings, should make custom start rule
-        "expression",
+        # "expression",
     )
-    def start(self, p: YaccProduction) -> YaccProduction:
+    def module(self, p: YaccProduction) -> YaccProduction:
         """Start rule."""
         return p
 
@@ -1230,6 +1232,23 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         self.restart()
 
 
+def fstr_sly_parser_hack() -> Optional[dict]:
+    """Hack to allow fstrings in sly parser."""
+    if "__file__" in globals():
+        with open(__file__, "r") as file:
+            module_data = file.read()
+        new_module_data = module_data.replace(
+            'start = "module"', 'start = "expression"'
+        )
+        new_module_namespace = {}
+        exec(new_module_data, new_module_namespace)
+        return new_module_namespace
+
+
+if "__file__" in globals():
+    JacParserExpr = fstr_sly_parser_hack()["JacParser"]
+
+
 def parse_tree_to_ast(
     tree: tuple, parent: Optional[AstNode] = None, lineno: int = 0
 ) -> AstNode:
@@ -1251,7 +1270,7 @@ def parse_tree_to_ast(
     if not isinstance(tree, AstNode):
         if isinstance(tree, tuple):
             if tree[0] == "fstr_expr":
-                tree = JacParser(
+                tree = JacParserExpr(
                     mod_path="",
                     input_ir=JacLexer(
                         mod_path="", input_ir=find_and_concat_fstr_pieces(tree)

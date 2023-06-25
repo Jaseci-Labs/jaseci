@@ -7,11 +7,11 @@ from jaclang.jac.passes.ir_pass import Pass
 class AstBuildPass(Pass):
     """Jac Ast build pass."""
 
-    def exit_start(self, node: ast.AstNode) -> None:
+    def exit_module(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        start -> STRING element_list
-        start -> DOC_STRING element_list
+        module -> STRING element_list
+        module -> DOC_STRING element_list
         """
         self.ir = ast.Module(
             name=self.mod_path,
