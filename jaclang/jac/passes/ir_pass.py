@@ -2,7 +2,7 @@
 from typing import TypeVar
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.transform import IRType, Transform
+from jaclang.jac.transform import Transform
 from jaclang.jac.utils import pascal_to_snake
 
 T = TypeVar("T", bound=ast.AstNode)
@@ -64,7 +64,7 @@ class Pass(Transform):
 
     # Transform Implementations
     # -------------------------
-    def transform(self, ir: IRType) -> IRType:
+    def transform(self, ir: ast.AstNode) -> ast.AstNode:
         """Run pass."""
         self.before_pass()
         if not isinstance(ir, ast.AstNode):

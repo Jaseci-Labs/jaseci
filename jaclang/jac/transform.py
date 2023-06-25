@@ -1,7 +1,6 @@
 """Standardized transformation process and error interface."""
 import os
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Generator, Sequence, Union
 
 
 from jaclang.jac.absyntree import AstNode
@@ -10,13 +9,10 @@ from jaclang.utils.sly.lex import LexerMeta
 from jaclang.utils.sly.yacc import ParserMeta
 
 
-IRType = Union[AstNode, Generator, Sequence, str]
-
-
 class Transform(ABC):
     """Abstract class for IR passes."""
 
-    def __init__(self, mod_path: str, input_ir: IRType, base_path: str = "") -> None:
+    def __init__(self, mod_path: str, input_ir: AstNode, base_path: str = "") -> None:
         """Initialize pass."""
         self.logger = logging.getLogger(self.__class__.__module__)
         self.had_error = False
@@ -28,7 +24,7 @@ class Transform(ABC):
         self.ir = self.transform(ir=input_ir)
 
     @abstractmethod
-    def transform(self, ir: IRType) -> IRType:
+    def transform(self, ir: AstNode) -> AstNode:
         """Transform interface."""
         pass
 
