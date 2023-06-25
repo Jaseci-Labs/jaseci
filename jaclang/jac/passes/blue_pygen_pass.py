@@ -50,14 +50,6 @@ class BluePygenPass(Pass):
         """Warn about feature."""
         self.warning("Data spatial features not supported in bootstrap Jac.")
 
-    def exit_token(self, node: ast.Token) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        """
-        self.emit(node, node.value)
-
     def exit_parse(self, node: ast.Parse) -> None:
         """Sub objects.
 
@@ -65,6 +57,38 @@ class BluePygenPass(Pass):
         """
         self.error(f"Parse node should not be in this AST!! {node.name}")
         raise ValueError("Parse node should not be in AST after being Built!!")
+
+    def exit_token(self, node: ast.Token) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        """
+        self.emit(node, node.value)
+
+    def exit_name(self, node: ast.Name) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        already_declared: bool,
+        """
+        self.emit(node, node.value)
+
+    def exit_constant(self, node: ast.Constant) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        typ: type,
+        """
+        self.emit(node, node.value)
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.

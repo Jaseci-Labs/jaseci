@@ -1306,6 +1306,18 @@ def parse_tree_to_ast(
                 }
                 if tree.type == "NAME":
                     ast_tree = ast.Name(already_declared=False, **meta)
+                elif tree.type == "FLOAT":
+                    ast_tree = ast.Constant(typ=float, **meta)
+                elif tree.type in ["INT", "HEX", "BIN", "OCT"]:
+                    ast_tree = ast.Constant(typ=int, **meta)
+                elif tree.type in ["STRING", "FSTRING"]:
+                    ast_tree = ast.Constant(typ=str, **meta)
+                elif tree.type == "BOOL":
+                    ast_tree = ast.Constant(typ=bool, **meta)
+                elif tree.type == "NULL":
+                    ast_tree = ast.Constant(typ=type(None), **meta)
+                elif tree.type.startswith("TYP_"):
+                    ast_tree = ast.Constant(typ=type, **meta)
                 else:
                     ast_tree = ast.Token(**meta)
         else:

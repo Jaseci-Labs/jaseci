@@ -1,13 +1,13 @@
-"""Test ast build pass module."""
+"""Test type analyze pass module."""
 import inspect
 
-from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
-from jaclang.jac.transpiler import jac_file_to_final_pass, transpile_jac_file
+from jaclang.jac.passes.type_analyze_pass import TypeAnalyzePass
+from jaclang.jac.transpiler import jac_file_to_final_pass
 from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
 from jaclang.utils.test import TestCaseMicroSuite
 
 
-class BluePygenPassTests(TestCaseMicroSuite):
+class TypeAnalyzePassTests(TestCaseMicroSuite):
     """Test pass module."""
 
     def setUp(self) -> None:
@@ -29,13 +29,13 @@ class BluePygenPassTests(TestCaseMicroSuite):
             x for x in ast_snakes() if x not in ["ast_node", "o_o_p_access_node"]
         ]
         pygen_func_names = []
-        for name, value in inspect.getmembers(BluePygenPass):
+        for name, value in inspect.getmembers(TypeAnalyzePass):
             if (
                 (name.startswith("enter_") or name.startswith("exit_"))
                 and inspect.isfunction(value)
-                and not getattr(BluePygenPass.__base__, value.__name__, False)
+                and not getattr(TypeAnalyzePass.__base__, value.__name__, False)
                 and value.__qualname__.split(".")[0]
-                == BluePygenPass.__name__.replace("enter_", "").replace("exit_", "")
+                == TypeAnalyzePass.__name__.replace("enter_", "").replace("exit_", "")
             ):
                 pygen_func_names.append(name.replace("enter_", "").replace("exit_", ""))
         for name in pygen_func_names:
@@ -45,8 +45,9 @@ class BluePygenPassTests(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = transpile_jac_file(filename)
-        self.assertGreater(len(code_gen), 10)
+        ast = jac_file_to_final_pass(filename).ir
+        typed_ast = TypeAnalyzePass(mod_path=filename, input_ir=ast).ir
+        self.assertGreater(len(str(typed_ast.to_dict())), 10)
 
 
-BluePygenPassTests.self_attach_micro_tests()
+TypeAnalyzePassTests.self_attach_micro_tests()

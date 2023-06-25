@@ -258,7 +258,7 @@ class AstBuildPass(Pass):
         name_as_list -> NAME
         """
         this_item = None
-        if node.kid[0].is_type(ast.Token) and node.kid[0].name == "NAME":
+        if node.kid[0].is_type(ast.Name):
             this_item = ast.ModuleItem(
                 name=node.kid[0],
                 alias=node.kid[1] if len(node.kid) == 3 else None,
@@ -530,7 +530,7 @@ class AstBuildPass(Pass):
         sub_ability_spec -> doc_tag strict_arch_ref ability_ref code_block
         """
         meta = {"doc": node.kid[0]}
-        if node.kid[1].name == "NAME":
+        if type(node.kid[1]) == ast.NameList:
             meta["mod"] = node.kid[1]
             meta["arch"] = node.kid[2]
             meta["name"] = node.kid[3]

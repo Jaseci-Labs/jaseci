@@ -11,6 +11,12 @@ class TypeAnalyzePass(Pass):
         """Initialize pass."""
         self.sym_tab = SymbolTable("global")
 
+    def exit_parse(self, node: ast.Parse) -> None:
+        """Sub objects.
+
+        name: str,
+        """
+
     def exit_token(self, node: ast.Token) -> None:
         """Sub objects.
 
@@ -19,13 +25,25 @@ class TypeAnalyzePass(Pass):
         col_start: int,
         col_end: int,
         """
-        if node.name == "IDENTIFIER":
-            node.type = self.sym_tab.get_type(node.value)
 
-    def exit_parse(self, node: ast.Parse) -> None:
+    def exit_name(self, node: ast.Name) -> None:
         """Sub objects.
 
         name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        already_declared: bool,
+        """
+
+    def exit_constant(self, node: ast.Constant) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        typ: type,
         """
 
     def exit_module(self, node: ast.Module) -> None:
@@ -41,12 +59,6 @@ class TypeAnalyzePass(Pass):
         """Sub objects.
 
         elements: list['GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec'],
-        """
-
-    def exit_o_o_p_access_node(self, node: ast.OOPAccessNode) -> None:
-        """Sub objects.
-
-        access: Optional[Token],
         """
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:

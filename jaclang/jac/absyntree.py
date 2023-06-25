@@ -63,6 +63,21 @@ def replace_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
 # --------------------------
 
 
+class Parse(AstNode):
+    """Parse node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: str,
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize parse."""
+        self.name = name
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
 class Token(AstNode):
     """Token node type for Jac Ast."""
 
@@ -111,19 +126,31 @@ class Name(Token):
         )
 
 
-class Parse(AstNode):
-    """Parse node type for Jac Ast."""
+class Constant(Token):
+    """Constant node type for Jac Ast."""
 
     def __init__(
         self,
         name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        typ: type,
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
     ) -> None:
-        """Initialize parse."""
-        self.name = name
-        super().__init__(parent=parent, kid=kid, line=line)
+        """Initialize constant."""
+        super().__init__(
+            name=name,
+            value=value,
+            col_start=col_start,
+            col_end=col_end,
+            parent=parent,
+            kid=kid,
+            line=line,
+        )
+        self._typ = typ
 
 
 # AST Mid Level Node Types
