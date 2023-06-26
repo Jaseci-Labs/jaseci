@@ -612,7 +612,10 @@ class ActionsOptimizer:
                     elif module_name == "use":
                         module_name = "use_qa"
                     module_utilz[module_name] = module_utilz.get(module_name, 0) + utilz
-
+            # Store the history of all modules
+            self.module_history.extend(
+                y for y in set(module_utilz.keys()) if y not in self.module_history
+            )
             # Sort modules based on utilization in descending order
             ordered_modules = sorted(
                 module_utilz.items(), key=lambda x: x[1], reverse=True
@@ -623,15 +626,19 @@ class ActionsOptimizer:
             total_avail_mem = (node_mem - jaseci_runtime_mem) * NODE_MEM_THRESHOLD
             local_mem_requirement = 0
             config = {}
-            for module, _ in ordered_modules:
+            for module in self.module_history:
                 mem_req = int(
                     action_configs.get(module, {}).get("local_mem_requirement", 0)
                 )
-                if local_mem_requirement + mem_req > total_avail_mem:
-                    config[module] = "remote"
+                module_found = [(x, y) for x, y in ordered_modules if x == module]
+                if module_found:
+                    if local_mem_requirement + mem_req > total_avail_mem:
+                        config[module] = "remote"
+                    else:
+                        config[module] = "local"
+                        local_mem_requirement += mem_req
                 else:
-                    config[module] = "local"
-                    local_mem_requirement += mem_req
+                    config[module] = "remote"
 
             config["local_mem"] = local_mem_requirement
             return config
