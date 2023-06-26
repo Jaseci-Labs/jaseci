@@ -10,9 +10,11 @@ In this section displays all of the **string** methods available in Jaseci for m
 
 ### `upper`
 
-| Op          | Args | Description                        |
-| ----------- | ---- | ---------------------------------- |
-| .str::upper | none | Convert the string into uppercase. |
+|             |                                    |
+| ----------- | ---------------------------------- |
+| Op          | .str::upper                        |
+| Args        | None                               |
+| Description | Convert the string into uppercase. |
 
 **Example Usage**
 
@@ -34,9 +36,12 @@ walker init{
 
 ### `lower`
 
-| Op          | Args | Description                        |
-| ----------- | ---- | ---------------------------------- |
-| .str::lower | none | Convert the string into lowercase. |
+|             |                                    |
+| ----------- | ---------------------------------- |
+| Op          | .str::lower                        |
+| Args        | None                               |
+| Description | Convert the string into lowercase. |
+
 
 **Example Usage**
 
@@ -57,9 +62,11 @@ walker init{
 
 ### `title`
 
-| Op          | Args | Description                        |
-| ----------- | ---- | ---------------------------------- |
-| .str::title | none | Convert the string into camelcase. |
+|             |                                     |
+| ----------- | ----------------------------------- |
+| Op          | .str::title                         |
+| Args        | None                                |
+| Description | Convert the string into camel case. |
 
 **Example Usage**
 
@@ -80,9 +87,12 @@ walker init{
 
 ### `capitalize`
 
-| Op               | Args | Description                                                    |
-| ---------------- | ---- | -------------------------------------------------------------- |
-| .str::capitalize | none | The first letter of the string will be converted into Capital. |
+|             |                                                                |
+| ----------- | -------------------------------------------------------------- |
+| Op          | .str::capitalize                                               |
+| Args        | None                                                           |
+| Description | The first letter of the string will be converted into Capital. |
+
 
 **Example Usage**
 
@@ -102,9 +112,12 @@ walker init{
 ```
 
 ### `swap_case`
-| Op              | Args | Description |
-| --------------- | ---- | ----------- |
-| .str::swap_case | none |             |
+
+|             |                 |
+| ----------- | --------------- |
+| Op          | .str::swap_case |
+| Args        | None            |
+| Description |                 |
 
 **Example Usage**
 
@@ -125,9 +138,11 @@ walker init{
 
 ### `is_alnum`
 
-| Op             | Args | Description                                   |
-| -------------- | ---- | --------------------------------------------- |
-| .str::is_alnum | none | Return true if the string is alpha numerical. |
+|             |                                               |
+| ----------- | --------------------------------------------- |
+| Op          | .str::is_alnum                                |
+| Args        | None                                          |
+| Description | Return true if the string is alpha numerical. |
 
 **Example Usage**
 
@@ -148,9 +163,11 @@ walker init{
 
 ### `is_digit`
 
-| Op             | Args | Description                             |
-| -------------- | ---- | --------------------------------------- |
-| .str::is_digit | none | Returns true if string contains digits. |
+|             |                                         |
+| ----------- | --------------------------------------- |
+| Op          | .str::is_digit                          |
+| Args        | None                                    |
+| Description | Returns true if string contains digits. |
 
 **Example Usage**
 
@@ -171,9 +188,11 @@ walker init{
 
 ### `is_title`
 
-| Op             | Args | Description                                               |
-| -------------- | ---- | --------------------------------------------------------- |
-| .str::is_title | none | Return true if the first letter of the string is capital. |
+|             |                                                           |
+| ----------- | --------------------------------------------------------- |
+| Op          | .str::is_title                                            |
+| Args        | None                                                      |
+| Description | Return true if the first letter of the string is capital. |
 
 **Example Usage**
 
@@ -194,9 +213,11 @@ walker init{
 
 ### `is_upper`
 
-| Op             | Args | Description                                             |
-| -------------- | ---- | ------------------------------------------------------- |
-| .str::is_upper | none | Return true if all characters in the string is in Caps. |
+|             |                                                         |
+| ----------- | ------------------------------------------------------- |
+| Op          | .str::is_upper                                          |
+| Args        | None                                                    |
+| Description | Return true if all characters in the string is in Caps. |
 
 **Example Usage**
 
@@ -217,9 +238,11 @@ walker init{
 
 ### `is_lower`
 
-| Op             | Args | Description                                                   |
-| -------------- | ---- | ------------------------------------------------------------- |
-| .str::is_lower | none | Return true if all characters in the string is in lower case. |
+|             |                                                               |
+| ----------- | ------------------------------------------------------------- |
+| Op          | .str::is_lower                                                |
+| Args        | None                                                          |
+| Description | Return true if all characters in the string is in lower case. |
 
 **Example Usage**
 
@@ -240,9 +263,11 @@ walker init{
 
 ### `is_space`
 
-| Op             | Args | Description                                           |
-| -------------- | ---- | ----------------------------------------------------- |
-| .str::is_space | none | Return true if the string contains only white spaces. |
+|             |                                                       |
+| ----------- | ----------------------------------------------------- |
+| Op          | .str::is_space                                        |
+| Args        | None                                                  |
+| Description | Return true if the string contains only white spaces. |
 
 **Example Usage**
 
@@ -263,9 +288,11 @@ walker init{
 
 ### `load_json`
 
-| Op              | Args | Description |
-| --------------- | ---- | ----------- |
-| .str::load_json | none |             |
+|             |                 |
+| ----------- | --------------- |
+| Op          | .str::load_json |
+| Args        | None            |
+| Description |                 |
 
 **Example Usage**
 
@@ -282,9 +309,11 @@ walker init{
 
 ### `count`
 
-| Op          | Args               | Description                                                                                                             |
-| ----------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| .str::count | substr, start, end | Returns the number of occurrences of a sub-string in the given string. Start and end specify range of indices to search |
+|             |                                                                                                                         |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Op          | .str::count                                                                                                             |
+| Args        | substr, start, end                                                                                                      |
+| Description | Returns the number of occurrences of a sub-string in the given string. Start and end specify range of indices to search |
 
 **Example Usage**
 
@@ -305,9 +334,13 @@ walker init{
 
 ### `find`
 
-| Op         | Args               | Description                                                                                                                                       |
-| ---------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| .str::find | substr, start, end | Returns the index of first occurrence of the substring (if found). If not found, it returns -1. Start and end specify range of indices to search. |
+
+|             |                                                                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Op          | .str::find                                                                                                                                        |
+| Args        | substr, start, end                                                                                                                                |
+| Description | Returns the index of first occurrence of the substring (if found). If not found, it returns -1. Start and end specify range of indices to search. |
+
 
 **Example Usage**
 
@@ -329,9 +362,11 @@ walker init{
 
 ### `split`
 
-| Op          | Args                          | Description                                                                                                                                                   |
-| ----------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| .str::split | optional (separator,maxsplit) | Breaks up a string at the specified separator formaxsplit number of times and returns a list of strings. Default separators is ‘ ’ and maxsplit is unlimited. |
+|             |                                                                                                                                                               |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Op          | .str::split                                                                                                                                                   |
+| Args        | optional (separator,maxsplit)                                                                                                                                 |
+| Description | Breaks up a string at the specified separator formaxsplit number of times and returns a list of strings. Default separators is ‘ ’ and maxsplit is unlimited. |
 
 **Example Usage**
 
@@ -356,9 +391,12 @@ walker init{
 ```
 
 ### `join`
-| Op         | Args   | Description                                                                                            |
-| ---------- | ------ | ------------------------------------------------------------------------------------------------------ |
-| .str::join | params | Join elements of the sequence (params) separated by the string separator that calls the join function. |
+
+|             |                                                                                                        |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| Op          | .str::join                                                                                             |
+| Args        | params                                                                                                 |
+| Description | Join elements of the sequence (params) separated by the string separator that calls the join function. |
 
 **Example Usage**
 
@@ -379,10 +417,11 @@ walker init{
 
 ### `statswith`
 
-| Op               | Args   | Description                                                |
-| ---------------- | ------ | ---------------------------------------------------------- |
-| .str::startswith | params | Return true if the string starts with the given substring. |
-
+|             |                                                            |
+| ----------- | ---------------------------------------------------------- |
+| Op          | .str::startswith                                           |
+| Args        | params                                                     |
+| Description | Return true if the string starts with the given substring. |
 
 **Example Usage**
 
@@ -404,9 +443,11 @@ walker init{
 
 ### `endswith`
 
-| Op             | Args   | Description                                              |
-| -------------- | ------ | -------------------------------------------------------- |
-| .str::endswith | params | Return true if the string ends with the given substring. |
+|             |                                                          |
+| ----------- | -------------------------------------------------------- |
+| Op          | .str::endswith                                           |
+| Args        | params                                                   |
+| Description | Return true if the string ends with the given substring. |
 
 **Example Usage**
 
@@ -427,9 +468,11 @@ walker init{
 
 ### `replace`
 
-| Op            | Args   | Description                                  |
-| ------------- | ------ | -------------------------------------------- |
-| .str::replace | params | Replace the string with the given substring. |
+|             |                                              |
+| ----------- | -------------------------------------------- |
+| Op          | .str::replace                                |
+| Args        | params                                       |
+| Description | Replace the string with the given substring. |
 
 **Example Usage**
 
@@ -450,9 +493,11 @@ walker init{
 
 ### `strip`
 
-| Op          | Args     | Description                                                                                                                                   |
-| ----------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| .str::strip | optional | Removes any leading (spaces at the beginning) and trailing (spaces at the end) characters (space is the default leading character to remove). |
+|             |                                                                                                                                               |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Op          | .str::strip                                                                                                                                   |
+| Args        | optional                                                                                                                                      |
+| Description | Removes any leading (spaces at the beginning) and trailing (spaces at the end) characters (space is the default leading character to remove). |
 
 **Example Usage**
 
@@ -473,9 +518,11 @@ walker init{
 
 ### `lstrip`
 
-| Op           | Args     | Description                                                                                                  |
-| ------------ | -------- | ------------------------------------------------------------------------------------------------------------ |
-| .str::lstrip | optional | Removes any leading (spaces at the beginning) characters (space is the default leading character to remove). |
+|             |                                                                                                              |
+| ----------- | ------------------------------------------------------------------------------------------------------------ |
+| Op          | .str::lstrip                                                                                                 |
+| Args        | Optional                                                                                                     |
+| Description | Removes any leading (spaces at the beginning) characters (space is the default leading character to remove). |
 
 **Example Usage**
 
@@ -496,9 +543,11 @@ walker init{
 
 ### `rstrip`
 
-| Op           | Args     | Description                                                                                         |
-| ------------ | -------- | --------------------------------------------------------------------------------------------------- |
-| .str::rstrip | optional | Removes trailing (spaces at the end) characters (space is the default leading character to remove). |
+|             |                                                                                                     |
+| ----------- | --------------------------------------------------------------------------------------------------- |
+| Op          | .str::rstrip                                                                                        |
+| Args        | Optional                                                                                            |
+| Description | Removes trailing (spaces at the end) characters (space is the default leading character to remove). |
 
 **Example Usage**
 
