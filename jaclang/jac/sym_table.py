@@ -44,6 +44,29 @@ class SymbolTable:
             return self.parent.lookup(name, deep)
         return None
 
-    def set(self, name: str, symbol: Symbol) -> None:
+    def set(self, name: str, symbol: Symbol, fresh_only: bool = False) -> bool:
         """Set a variable in the symbol table."""
+        if fresh_only and name in self.tab:
+            return False
         self.tab[name] = symbol
+        return True
+
+    def update(
+        self,
+        name: str,
+        typ: Optional[type] = None,
+        def_line: Optional[int] = None,
+        def_node: Optional[ast.AstNode] = None,
+        access: Optional[str] = None,
+        deep: bool = False,
+    ) -> bool:
+        """Set a variable in the symbol table."""
+        if name in self.tab:
+            self.tab[name].typ = typ if typ else self.tab[name].typ
+            self.tab[name].def_line = def_line if def_line else self.tab[name].def_line
+            self.tab[name].def_node = def_node if def_node else self.tab[name].def_node
+            self.tab[name].access = access if access else self.tab[name].access
+            return True
+        elif deep and self.parent:
+            return self.parent.update(name, typ, def_line, def_node, access, deep)
+        return False

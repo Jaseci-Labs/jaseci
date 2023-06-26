@@ -16,9 +16,10 @@ class ImportPass(Pass):
         while run_again:
             run_again = False
             for i in self.get_all_sub_nodes(node, ast.Import, brute_force=True):
-                if i.lang.value == "jac":
+                if i.lang.value == "jac" and not i.sub_module:
                     run_again = True
-                    ast.replace_node(i, self.import_module(i, node.mod_path))
+                    i.kid.append(self.import_module(i, node.mod_path))
+                    i.sub_module = i.kid[-1]
             SubNodeTabPass(mod_path=node.mod_path, input_ir=node)
 
     def import_module(self, node: ast.Import, mod_path: str) -> ast.AstNode:

@@ -289,7 +289,7 @@ class Import(AstNode):
         self,
         lang: Name,
         path: "ModulePath",
-        alias: Optional[Token],
+        alias: Optional[Name],
         items: Optional["ModuleItems"],
         is_absorb: bool,  # For includes
         parent: Optional[AstNode],
@@ -302,6 +302,7 @@ class Import(AstNode):
         self.alias = alias
         self.items = items
         self.is_absorb = is_absorb
+        self.sub_module = None
         super().__init__(parent=parent, kid=kid, line=line)
 
 

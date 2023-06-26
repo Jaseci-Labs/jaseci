@@ -159,6 +159,7 @@ class BluePygenPass(Pass):
         alias: Optional[Token],
         items: Optional["ModuleItems"],
         is_absorb: bool,  # For includes
+        self.sub_module = None
         """
         if node.lang.value != "py":
             self.warning(

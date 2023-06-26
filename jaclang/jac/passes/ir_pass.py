@@ -88,16 +88,25 @@ class Pass(Transform):
     def error(self, msg: str) -> None:
         """Pass Error."""
         if not isinstance(self.cur_node, ast.AstNode):
-            raise ValueError("Current node is not an AstNode.")
+            self.ice("Current node is not an AstNode.")
         self.cur_line = self.cur_node.line
         self.log_error(f"{msg}")
 
     def warning(self, msg: str) -> None:
         """Pass Error."""
         if not isinstance(self.cur_node, ast.AstNode):
-            raise ValueError("Current node is not an AstNode.")
+            self.ice("Current node is not an AstNode.")
         self.cur_line = self.cur_node.line
         self.log_warning(f"{msg}")
+
+    def ice(self, msg: str) -> None:
+        """Pass Error."""
+        if isinstance(self.cur_node, ast.AstNode):
+            self.cur_line = self.cur_node.line
+        self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
+        raise RuntimeError(
+            f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"
+        )
 
 
 class PrinterPass(Pass):

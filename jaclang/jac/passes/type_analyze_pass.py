@@ -1,17 +1,18 @@
 """Type Analyze Pass."""
-from typing import Optional
+from types import ModuleType
+from typing import Any, Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.ir_pass import Pass
 from jaclang.jac.sym_table import Symbol, SymbolTable
 
 
-class TypeAnalyzePass(Pass):
+class TypeAnalyzePass(Pass, SymbolTable):
     """Type inference and checking pass."""
 
     def before_pass(self) -> None:
         """Initialize pass."""
-        self.cur_stab = SymbolTable(scope_name="global")
+        self.sym_tab = SymbolTable(scope_name="global")
 
     def exit_parse(self, node: ast.Parse) -> None:
         """Sub objects.
@@ -72,8 +73,12 @@ class TypeAnalyzePass(Pass):
         """
         if node.access:
             for i in self.get_all_sub_nodes(node, typ=ast.Assignment):
-                if isinstance(i.target, ast.Name):
-                    self.update_var_access(i.target, node.access.value)
+                if isinstance(i.target, ast.Name) and not self.sym_tab.update(
+                    i.target.value, access=node.access.value
+                ):
+                    self.ice(
+                        f"ICE: Variable {i.target.value} not seen as declared in pass {self.__class__.__name__}"
+                    )
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -102,14 +107,51 @@ class TypeAnalyzePass(Pass):
 
         lang: Name,
         path: ModulePath,
-        alias: Optional[Token],
+        alias: Optional[Name],
         items: Optional[ModuleItems],
         is_absorb: bool,
+        self.sub_module = None
         """
-        if node.lang.value == "jac":
-            raise ValueError(
-                f"Import node {node.path.path_str} should not be present in pass {self.__class__.__name__}"
-            )
+        if node.lang.value == "jac" and not node.sub_module:
+            self.ice(f"Jac module not loaded by pass {self.__class__.__name__}")
+        if node.items:
+            for i in node.items.items:
+                if i.alias:
+                    if not self.sym_tab.set(
+                        i.alias.value,
+                        symbol=Symbol(
+                            name=i.alias.value,
+                            typ=Any,  # TODO: Backpatch analysis for module itmes
+                            def_line=i.alias.line,
+                            def_node=node,
+                        ),
+                        fresh_only=True,
+                    ):
+                        self.already_defined_err(i.alias.value)
+                else:
+                    if not self.sym_tab.set(
+                        i.name.value,
+                        symbol=Symbol(
+                            name=i.name.value,
+                            typ=Any,  # TODO: Backpatch analysis for module itmes
+                            def_line=i.name.line,
+                            def_node=node,
+                        ),
+                        fresh_only=True,
+                    ):
+                        self.already_defined_err(i.name.value)
+        else:
+            if not self.sym_tab.set(
+                node.path.path[-1].value,
+                symbol=Symbol(
+                    name=node.path.path[-1].value,
+                    typ=ModuleType,
+                    def_line=node.path.path[-1].line,
+                    def_node=node,
+                ),
+                fresh_only=True,
+            ):
+                self.already_defined_err(node.path.path[-1].value)
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -663,9 +705,9 @@ class TypeAnalyzePass(Pass):
         access: Optional[str] = None,
     ) -> None:
         """Create a variable."""
-        exists = self.lookup_sym(name, deep=False)
-        if exists and typ and self.check_type_match(exists, def_node):
-            self.insert_sym(
+        exists = self.sym_tab.lookup(name=name.value, deep=False)
+        if exists and typ and self.assert_type_match(exists, def_node):
+            self.sym_tab.set(
                 name.value,
                 Symbol(
                     name=name.value,
@@ -679,21 +721,21 @@ class TypeAnalyzePass(Pass):
     # Checks and validations
     # ----------------------
 
-    def check_type_match(self, sym: Symbol, node: ast.AstNode) -> bool:
+    def assert_type_match(self, sym: Symbol, node: ast.AstNode) -> bool:
         """Check if two types match."""
         if isinstance(sym.typ, node._typ):
             return True
-        self.log_error(
+        self.error(
             f"Type mismatch, {sym.name} already defined on line "
             f"{sym.def_line} as {sym.typ} not compatible with"
             f"{node._typ} on line {node.line}!"
         )
         return False
 
-    def lookup_sym(self, name: ast.Name, deep: bool = True) -> Optional[Symbol]:
-        """Lookup a variable in the symbol table."""
-        return self.cur_stab.lookup(name.value, deep)
+    def not_defined_err(self, name: str) -> None:
+        """Check if a symbol is defined."""
+        self.error(f"Symbol {name} not defined!")
 
-    def insert_sym(self, name: str, sym: Symbol) -> None:
-        """Insert a variable into the symbol table."""
-        self.cur_stab.set(name, sym)
+    def already_defined_err(self, name: str) -> None:
+        """Check if a symbol is defined."""
+        self.error(f"Symbol {name} already in use in this scope!")
