@@ -11,15 +11,14 @@ class Symbol:
         self,
         name: str,
         typ: type,
-        def_line: int,
         def_node: ast.AstNode,
         access: Optional[str] = None,
     ) -> None:
         """Initialize."""
         self.name = name
         self.typ = typ
-        self.def_line = def_line
         self.def_node = def_node
+        self.def_line = def_node.line
         self.access = access
 
 

@@ -779,7 +779,7 @@ class BluePygenPass(Pass):
         else:
             self.emit(node, f"*{node.target.meta['py_code']}")
 
-    # NOTE: Incomplete for Jac Purple and Red  # TODO: Need to add support for fstrings
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 

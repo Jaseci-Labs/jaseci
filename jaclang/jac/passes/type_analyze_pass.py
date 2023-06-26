@@ -1,6 +1,6 @@
 """Type Analyze Pass."""
 from types import ModuleType
-from typing import Any, Optional
+from typing import Any
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.ir_pass import Pass
@@ -122,7 +122,6 @@ class TypeAnalyzePass(Pass, SymbolTable):
                         symbol=Symbol(
                             name=i.alias.value,
                             typ=Any,  # TODO: Backpatch analysis for module itmes
-                            def_line=i.alias.line,
                             def_node=node,
                         ),
                         fresh_only=True,
@@ -134,7 +133,6 @@ class TypeAnalyzePass(Pass, SymbolTable):
                         symbol=Symbol(
                             name=i.name.value,
                             typ=Any,  # TODO: Backpatch analysis for module itmes
-                            def_line=i.name.line,
                             def_node=node,
                         ),
                         fresh_only=True,
@@ -146,7 +144,6 @@ class TypeAnalyzePass(Pass, SymbolTable):
                 symbol=Symbol(
                     name=node.path.path[-1].value,
                     typ=ModuleType,
-                    def_line=node.path.path[-1].line,
                     def_node=node,
                 ),
                 fresh_only=True,
@@ -184,11 +181,19 @@ class TypeAnalyzePass(Pass, SymbolTable):
         body: Optional[ArchBlock],
         """
         node._typ = type
-        self.define_var(
-            name=node.name,
-            typ=type,
-            def_node=node,
-            access=node.access.value if node.access else None,
+        exists = self.sym_tab.lookup(name=node.name.value, deep=False)
+        # TODO: if exists and type(exists.def_node) == ast.ArchDef and not node.body: # This should be own pass
+        #     node.body = exists.def_node.body
+        if exists and not self.assert_type_match(sym=exists, node=node):
+            return
+        self.sym_tab.set(
+            node.name.value,
+            Symbol(
+                name=node.name.value,
+                typ=type,
+                def_node=node,
+                access=node.access.value if node.access else None,
+            ),
         )
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
@@ -693,30 +698,6 @@ class TypeAnalyzePass(Pass, SymbolTable):
 
         parts: list['Token | ExprType'],
         """
-
-    # Interface functions
-    # -------------------
-
-    def define_var(
-        self,
-        name: ast.Name,
-        def_node: ast.AstNode,
-        typ: Optional[type] = None,
-        access: Optional[str] = None,
-    ) -> None:
-        """Create a variable."""
-        exists = self.sym_tab.lookup(name=name.value, deep=False)
-        if exists and typ and self.assert_type_match(exists, def_node):
-            self.sym_tab.set(
-                name.value,
-                Symbol(
-                    name=name.value,
-                    typ=typ,
-                    def_line=name.line,
-                    def_node=def_node,
-                    access=access,
-                ),
-            )
 
     # Checks and validations
     # ----------------------
