@@ -602,6 +602,15 @@ class ActionsOptimizer:
             for module, utilz in curr_action_utilz.items():
                 if module != "total_call_count":
                     module_name = module.split(".")[0]
+                    act_name = module.split(".")[1]
+                    if module == "use" and act_name in [
+                        "encode",
+                        "text_similarity",
+                        "text_classify",
+                    ]:
+                        module = "use_enc"
+                    elif module == "use":
+                        module = "use_qa"
                     module_utilz[module_name] = module_utilz.get(module_name, 0) + utilz
 
             # Sort modules based on utilization in descending order
@@ -745,7 +754,7 @@ class ActionsOptimizer:
                     "===Predictive Policy=== All actions change have been applied."
                 )
                 policy_state["phase"] = "pref"
-                policy_state["call_threshold"] = 20
+                policy_state["call_threshold"] += 20
         policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Predictive"] = policy_state
 
