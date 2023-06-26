@@ -40,12 +40,7 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
 
     def test_jac_api_create_config(self):
         """Test API for creating a config"""
-        payload = {
-            "op": "config_set",
-            "name": "EMAIL_HOST_USER",
-            "value": "val1",
-            "do_check": False,
-        }
+        payload = {"op": "config_set", "name": "EMAIL_HOST_USER", "value": "val1"}
         res = self.client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )

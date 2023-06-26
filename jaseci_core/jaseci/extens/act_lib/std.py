@@ -86,8 +86,8 @@ def set_global(name: str, value, meta):
     mast = master_from_meta(meta)
     if not mast.is_master(super_check=True, silent=False):
         return False
-    mast.global_set(name, json.dumps(value))
-    return json.loads(mast.global_get(name)["value"])
+    mast.global_set(name, value)
+    return mast.global_get(name)
 
 
 @jaseci_action()
@@ -97,11 +97,7 @@ def get_global(name: str, meta):
     Param 1 - name
     """
     mast = master_from_meta(meta)
-    val = mast.global_get(name)["value"]
-    if val:
-        return json.loads(val)
-    else:
-        return None
+    return mast.global_get(name)
 
 
 @jaseci_action()

@@ -40,11 +40,11 @@ class ActionsApi:
                 config = json.loads(cur_config)
                 if file not in config["local"]:
                     config["local"].append(file)
-                    self.config_set("ACTION_SETS", json.dumps(config))
+                    self.config_set("ACTION_SETS", config)
             else:
                 self.config_set(
                     "ACTION_SETS",
-                    json.dumps({"local": [file], "remote": [], "module": []}),
+                    {"local": [file], "remote": [], "module": []},
                 )
         return {"success": success}
 
@@ -70,11 +70,11 @@ class ActionsApi:
                 config = json.loads(cur_config)
                 if url not in config["remote"]:
                     config["remote"].append(url)
-                    self.config_set("ACTION_SETS", json.dumps(config))
+                    self.config_set("ACTION_SETS", config)
             else:
                 self.config_set(
                     "ACTION_SETS",
-                    json.dumps({"local": [], "remote": [url], "module": []}),
+                    {"local": [], "remote": [url], "module": []},
                 )
         return {"success": success}
 
@@ -99,11 +99,11 @@ class ActionsApi:
                 config = json.loads(cur_config)
                 if mod not in config["module"]:
                     config["module"].append(mod)
-                    self.config_set("ACTION_SETS", json.dumps(config))
+                    self.config_set("ACTION_SETS", config)
             else:
                 self.config_set(
                     "ACTION_SETS",
-                    json.dumps({"local": [], "remote": [], "module": [mod]}),
+                    {"local": [], "remote": [], "module": [mod]},
                 )
         return {"success": success}
 

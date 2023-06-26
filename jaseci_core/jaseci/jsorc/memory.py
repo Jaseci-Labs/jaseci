@@ -14,12 +14,11 @@ class MemoryHook:
     """
 
     def __init__(self):
-        from jaseci.jsorc.live_actions import get_global_actions
-
-        self.mem = {"global": {}}
+        self.mem = {"global": {}, "config": {}}
         self._machine = None
         self.save_obj_list = set()
         self.save_glob_dict = {}
+        self.save_conf_dict = {}
 
     ####################################################
     #               COMMON GETTER/SETTER               #
@@ -97,13 +96,46 @@ class MemoryHook:
         if persist:
             self.destroy_glob_from_store(name)
 
-    # ----------------- SERVICE GLOB ----------------- #
+    # --------------------- CONF --------------------- #
 
-    def get_or_create_glob(self, name, val):
-        if not self.has_glob(name):
-            self.save_glob(name, dumps(val))
+    def get_conf(self, name):
+        """
+        Get config from session cache by id, then try store
+        """
+        return self.get_conf_from_store(name)
+
+    def has_conf(self, name):
+        """
+        Checks for config existance
+        """
+        return self.has_conf_in_store(name)
+
+    def resolve_conf(self, name, value):
+        """
+        Util function for returning config if exists otherwise save a new one and return
+        """
+        if not self.has_conf(name):
+            self.save_conf(name, dumps(value))
             self.commit()
-        return loads(self.get_glob(name))
+        return loads(self.get_conf(name))
+
+    def save_conf(self, name, value, persist=True):
+        """Save config to session cache, then to store"""
+        self.commit_conf_to_cache(name, value)
+
+        if persist:
+            self.save_conf_dict[name] = value
+
+    def list_conf(self):
+        """Lists all configs present"""
+        return self.list_conf_from_store()
+
+    def destroy_conf(self, name, persist=True):
+        """Destroy config from session cache then store"""
+        self.decommit_conf_from_cache(name)
+
+        if persist:
+            self.destroy_conf_from_store(name)
 
     ####################################################
     #        DATASOURCE METHOD (TO BE OVERRIDE)        #
@@ -157,6 +189,32 @@ class MemoryHook:
         """Get list of global config to externally hooked general store"""
         return list(self.mem["global"].keys())
 
+    # --------------------- CONF --------------------- #
+
+    def get_conf_from_store(self, name):
+        """
+        Get config from externally hooked general store by name
+        """
+        if name in self.mem["config"]:
+            return self.mem["config"][name]
+
+        return None
+
+    def has_conf_in_store(self, name):
+        """
+        Checks for config existance in store
+        """
+        return name in self.mem["config"]
+
+    def destroy_conf_from_store(self, name):
+        """Destroy config to externally hooked general store"""
+        if name in self.save_conf_dict:
+            self.save_conf_dict.pop(name)
+
+    def list_conf_from_store(self):
+        """Get list of config to externally hooked general store"""
+        return list(self.mem["config"].keys())
+
     ####################################################
     # ------------------ COMMITTER ------------------- #
     ####################################################
@@ -168,22 +226,35 @@ class MemoryHook:
 
             self.save_obj_list = set()
 
-            for i in self.save_glob_dict.keys():
-                self.commit_glob_to_cache(name=i, value=self.save_glob_dict[i])
+            for key, value in self.save_glob_dict.items():
+                self.commit_glob_to_cache(name=key, value=value)
 
             self.save_glob_dict = {}
+
+            for key, value in self.save_conf_dict.items():
+                self.commit_conf_to_cache(name=key, value=value)
+
+            self.save_conf_dict = {}
 
     ###################################################
     #   CACHE CONTROL (SHOULD NOT OVERRIDEN ON ORM)   #
     ###################################################
 
-    # -------------------- GLOBS -------------------- #
+    # -------------------- GLOB -------------------- #
 
     def commit_glob_to_cache(self, name, value):
         self.mem["global"][name] = value
 
     def decommit_glob_from_cache(self, name):
         self.mem["global"].pop(name)
+
+    # -------------------- CONF -------------------- #
+
+    def commit_conf_to_cache(self, name, value):
+        self.mem["config"][name] = value
+
+    def decommit_conf_from_cache(self, name):
+        self.mem["config"].pop(name)
 
     # --------------------- OBJ --------------------- #
 

@@ -1,9 +1,10 @@
 """
 Admin Global api functions as a mixin
 """
+from jaseci.utils.utils import manipulate_data
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.sentinel import Sentinel
-import uuid
+from json import dumps, loads
 
 
 class GlobalApi:
@@ -11,33 +12,89 @@ class GlobalApi:
     Admin global APIs
     """
 
+    @Interface.private_api(cli_args=["name"])
+    def global_get(self, name: str):
+        """
+        Get a global
+        """
+        glob = self._h.get_glob(name)
+
+        if isinstance(glob, (str, bytes, bytearray)):
+            try:
+                return loads(glob)
+            except Exception:
+                pass
+
+        return glob
+
     @Interface.admin_api(cli_args=["name"])
-    def global_set(self, name: str, value: str):
+    def global_set(self, name: str, value: str or dict or list or tuple):
         """
         Set a global
         """
-        ret = {"success": True}
-        if name == "GLOB_SENTINEL" or name in self._valid_configs:
-            ret["response"] = f"{name} is sacred!"
-            ret["success"] = False
-        else:
-            self._h.save_glob(name, value)
-            ret["response"] = f"Global variable '{name}' to '{value}' set!"
-        return ret
+        if name == "GLOB_SENTINEL":
+            return f"{name} is sacred!"
+
+        if not (value is None) and isinstance(value, (dict, list, tuple)):
+            value = dumps(value)
+
+        self._h.save_glob(name, value)
+        return [f"Global '{name}' to '{value}' set!"]
+
+    @Interface.admin_api(cli_args=["name"])
+    def global_update(
+        self,
+        name: str,
+        field_key: str or int or list or tuple,
+        field_value: str
+        or int
+        or float
+        or list
+        or dict
+        or bool
+        or tuple
+        or None,  # json serializable types
+    ):
+        """
+        Update a key-value of a global
+        """
+
+        glob = self._h.get_glob(name)
+        try:
+            glob = manipulate_data(glob, field_key, field_value)
+            self._h.save_glob(name, glob)
+            return [
+                f"Global '{name}' is updated with {field_key}:{field_value}. Current global value: {glob}"
+            ]
+        except Exception:
+            return [
+                f"Global {name} is not a dictionary or list. Uses global_set to set the value."
+            ]
+
+    @Interface.admin_api()
+    def global_list(self):
+        """
+        Check a global is present
+        """
+        return self._h.list_glob()
+
+    @Interface.admin_api(cli_args=["name"])
+    def global_exists(self, name: str):
+        """
+        Check a global is present
+        """
+        return self._h.has_glob(name)
 
     @Interface.admin_api(cli_args=["name"])
     def global_delete(self, name: str):
         """
         Delete a global
         """
-        ret = {"success": True}
-        if name == "GLOB_SENTINEL" or name in self._valid_configs:
-            ret["response"] = f"{name} is sacred!"
-            ret["success"] = False
-        else:
-            self._h.destroy_glob(name)
-            ret["response"] = f"Global {name} deleted."
-        return ret
+        if name == "GLOB_SENTINEL":
+            return f"{name} is sacred!"
+
+        self._h.destroy_glob(name)
+        return [f"{name} Deleted."]
 
     @Interface.admin_api()
     def global_sentinel_set(self, snt: Sentinel = None):

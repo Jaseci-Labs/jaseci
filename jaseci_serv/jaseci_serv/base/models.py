@@ -13,17 +13,12 @@ from django.db.models import Q
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.master import Master as CoreMaster
 from jaseci.prim.super_master import SuperMaster as CoreSuper
-from jaseci_serv.settings import JASECI_CONFIGS
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci_serv.base.jsorc import JsOrcApi
 
 
 @JsOrc.context(name="master", priority=1)
 class Master(CoreMaster):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._valid_configs += JASECI_CONFIGS
-
     def user_creator(self, name, password, other_fields: dict = {}, send_email=True):
         """
         Create a master instance and return root node master object
@@ -250,12 +245,18 @@ class JaseciObject(models.Model):
     j_rw_acc_ids = models.TextField(blank=True)
     jsci_obj = models.TextField(blank=True)
 
+    class Meta:
+        verbose_name_plural = "Jaseci Objects"
+
 
 class GlobalVars(models.Model):
     """Global configuration item"""
 
     name = models.CharField(max_length=31, unique=True)
     value = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name_plural = "Global Vars"
 
 
 def lookup_global_config(name, default=None):
@@ -264,3 +265,13 @@ def lookup_global_config(name, default=None):
         return GlobalVars.objects.get(name=name).value
     except GlobalVars.DoesNotExist:
         return default
+
+
+class ConfigVars(models.Model):
+    """Global configuration item"""
+
+    name = models.CharField(max_length=31, unique=True)
+    value = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name_plural = "Config Vars"

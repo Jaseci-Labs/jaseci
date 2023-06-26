@@ -150,16 +150,17 @@ class JsctlTest(TestCaseHelper, TestCase):
         self.call(
             f"sentinel register {os.path.dirname(__file__)}/zsb.jac -name zsb -set_active true"
         )
-        self.call('config set CONFIG_EXAMPLE -value "TEST" -do_check False')
-        self.call("config set APPLE -value Grape2 -do_check False")
-        self.call("config set APPLE_JSON -value '{\"test\":true}' -do_check False")
-        self.call('config set "Banana" -value "Grape" -do_check False')
-        self.call('config set "Pear" -value "Banana" -do_check False')
-        r = self.call("config get APPLE -do_check False")
+        self.call('global set CONFIG_EXAMPLE -value "TEST"')
+        self.call("global set APPLE -value Grape2")
+        self.call("global set APPLE_JSON -value '{\"test\":true}'")
+        self.call('global set "Banana" -value "Grape"')
+        self.call('global set "Pear" -value "Banana"')
+        r = self.call("global get APPLE")
         self.assertEqual(r.strip(), "Grape2")
-        r = self.call_cast("config list")
+        r = self.call_cast("global list")
 
-        self.assertEqual(len(r), 1)
+        # should now display everything
+        self.assertEqual(len(r), 5)
 
     def test_jsctl_default_snt_setting(self):
         """Tests that alias mapping api works"""

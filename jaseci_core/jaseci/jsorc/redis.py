@@ -96,11 +96,45 @@ class RedisHook(MemoryHook):
 
         return globs
 
+    # --------------------- CONF --------------------- #
+
+    def get_conf_from_store(self, name):
+        """
+        Get config from externally hooked general store by name
+        """
+        glob = super().get_conf_from_store(name)
+
+        if glob is None and self.redis.is_running():
+            glob = self.redis.hget("config", name)
+
+            if glob:
+                self.red_touch_count += 1
+                super().commit_conf_to_cache(name, glob)
+
+        return glob
+
+    def has_conf_in_store(self, name):
+        """
+        Checks for config existance in store
+        """
+        return super().has_conf_in_store(name) or (
+            self.redis.is_running() and self.redis.hexists("config", name)
+        )
+
+    def list_conf_from_store(self):
+        """Get list of config to externally hooked general store"""
+        globs = super().list_conf_from_store()
+
+        if not globs and self.redis.is_running():
+            globs = self.redis.hkeys("config")
+
+        return globs
+
     ###################################################
     #   CACHE CONTROL (SHOULD NOT OVERRIDEN ON ORM)   #
     ###################################################
 
-    # -------------------- GLOBS -------------------- #
+    # -------------------- GLOB -------------------- #
 
     def commit_glob_to_cache(self, name, value):
         super().commit_glob_to_cache(name, value)
@@ -112,6 +146,19 @@ class RedisHook(MemoryHook):
 
         if self.redis.is_running():
             self.redis.hdel("global", name)
+
+    # -------------------- CONF -------------------- #
+
+    def commit_conf_to_cache(self, name, value):
+        super().commit_conf_to_cache(name, value)
+        if self.redis.is_running():
+            self.redis.hset("config", name, value)
+
+    def decommit_conf_from_cache(self, name):
+        super().decommit_conf_from_cache(name)
+
+        if self.redis.is_running():
+            self.redis.hdel("config", name)
 
     # --------------------- OBJ --------------------- #
 

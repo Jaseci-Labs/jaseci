@@ -199,7 +199,9 @@ def unload_actionset(name):
 def load_preconfig_actions(hook):
     import json
 
-    action_preload = hook.resolve_glob("ACTION_SETS", None)
+    action_preload = hook.resolve_conf(
+        "ACTION_SETS", {"local": [], "remote": [], "module": []}
+    )
     if action_preload:
         try:
             action_preload = json.loads(action_preload)

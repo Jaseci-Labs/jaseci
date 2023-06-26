@@ -56,7 +56,7 @@ class ArchitypeTests(TestCaseHelper, TestCase):
         """
         mast = JsOrc.master()
         num_objs = len(mast._h.mem.keys())
-        self.assertEqual(num_objs, 2)
+        self.assertEqual(num_objs, 3)
         new_graph = Graph(m_id=mast._m_id, h=mast._h)
         sent = Sentinel(m_id=mast._m_id, h=mast._h)
         code = jtc.prog1
