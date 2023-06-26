@@ -1196,8 +1196,8 @@ class MultiString(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class ListVal(AstNode):
-    """ListVal node type for Jac Ast."""
+class ExprList(AstNode):
+    """ExprList node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1206,13 +1206,13 @@ class ListVal(AstNode):
         kid: list[AstNode],
         line: int,
     ) -> None:
-        """Initialize list value node."""
+        """Initialize expr value node."""
         self.values = values
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class ExprList(ListVal):
-    """ExprList node type for Jac Ast."""
+class ListVal(ExprList):
+    """ListVal node type for Jac Ast."""
 
 
 class DictVal(AstNode):
@@ -1346,8 +1346,19 @@ class ParamList(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class AssignmentList(ExprList):
+class AssignmentList(AstNode):
     """AssignmentList node type for Jac Ast."""
+
+    def __init__(
+        self,
+        values: list["Assignment"],
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize expr value node."""
+        self.values = values
+        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class IndexSlice(AstNode):

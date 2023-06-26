@@ -10,7 +10,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
 
     def __init__(self, mod_path: str, input_ir: str, base_path: str = "") -> None:
         """Initialize lexer."""
-        Transform.__init__(self, mod_path, input_ir, base_path)
+        Transform.__init__(self, mod_path, input_ir, base_path)  # type: ignore
         self.ir: Generator = self.ir
 
     tokens = {

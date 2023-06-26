@@ -916,7 +916,7 @@ class BluePygenPass(Pass):
     def exit_assignment_list(self, node: ast.AssignmentList) -> None:
         """Sub objects.
 
-        values: list[ExprType],
+        values: list[Assignment],
         """
         self.emit(
             node, f"{', '.join([value.meta['py_code'] for value in node.values])}"
