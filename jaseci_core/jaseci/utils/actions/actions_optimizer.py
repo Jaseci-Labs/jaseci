@@ -661,6 +661,7 @@ class ActionsOptimizer:
                 "prev_avg_walker_lat": [],
                 "remain_configs": [],
                 "call_threshold": 20,
+                "eval_completed": False,
             }
         logger.info(
             f"===Predictive Policy=== walker_run len: {self.get_walker_count()}, \ncall_threshold: {policy_state['call_threshold']} "  # noqa: E501
@@ -698,22 +699,29 @@ class ActionsOptimizer:
                 logger.info(
                     f"===Predictive Policy=== in pref phase with cur_phase: {current_act_utilz},\nprev: {policy_state['prev_action_utilz']}"  # noqa: E501
                 )
-                if (
-                    policy_state["prev_action_utilz"]["total_call_count"] > 0
-                    and current_act_utilz["total_call_count"] > 0
-                    and self.has_action_utilz_changed(
-                        prev_action_utilz=policy_state["prev_action_utilz"],
-                        curr_action_utilz=current_act_utilz,
+                if policy_state["eval_completed"] is False:
+                    best_config = self.get_module_config(current_act_utilz)
+                    logger.info(
+                        f"===Predictive Policy=== best fit config: {best_config}"
                     )
-                ):
-                    if policy_state["change_counter"] < 2:
+                    self.actions_change = self._get_action_change(best_config)
+                    if len(self.actions_change) > 0:
                         logger.info(
-                            f"===Predictive Policy=== Action utilization has changed, We would wait for {2-policy_state['change_counter']} call before evaluation."  # noqa: E501
+                            f"===Predictive Policy=== Switching config to best fit config: {best_config}"  # noqa: E501
                         )
-                        policy_state["change_counter"] += 1
-                        self.policy_state["Predictive"] = policy_state
-                        return
-                    else:
+                        policy_state["phase"] = "action_switching"
+                        self.apply_actions_change()
+                    policy_state["eval_completed"] = True
+                else:
+                    if (
+                        policy_state["prev_action_utilz"]["total_call_count"] > 0
+                        and current_act_utilz["total_call_count"] > 0
+                        and self.has_action_utilz_changed(
+                            prev_action_utilz=policy_state["prev_action_utilz"],
+                            curr_action_utilz=current_act_utilz,
+                        )
+                    ):
+
                         logger.info("===Predictive Policy=== start module change")
                         best_config = self.get_module_config(current_act_utilz)
                         logger.info(
@@ -737,7 +745,7 @@ class ActionsOptimizer:
                     "===Predictive Policy=== All actions change have been applied."
                 )
                 policy_state["phase"] = "pref"
-                policy_state["change_counter"] = 0
+                policy_state["call_threshold"] = 20
         policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Predictive"] = policy_state
 
