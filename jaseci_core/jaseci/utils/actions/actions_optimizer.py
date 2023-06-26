@@ -603,21 +603,20 @@ class ActionsOptimizer:
                 if module != "total_call_count":
                     module_name = module.split(".")[0]
                     act_name = module.split(".")[1]
-                    if module == "use" and act_name in [
+                    if module_name == "use" and act_name in [
                         "encode",
                         "text_similarity",
                         "text_classify",
                     ]:
-                        module = "use_enc"
-                    elif module == "use":
-                        module = "use_qa"
+                        module_name = "use_enc"
+                    elif module_name == "use":
+                        module_name = "use_qa"
                     module_utilz[module_name] = module_utilz.get(module_name, 0) + utilz
 
             # Sort modules based on utilization in descending order
             ordered_modules = sorted(
                 module_utilz.items(), key=lambda x: x[1], reverse=True
             )
-
             # Calculate the local memory requirement and determine module configuration
             node_mem = self.policy_params.get("node_mem", 999 * 1024)
             jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
