@@ -763,7 +763,6 @@ class ActionsOptimizer:
                 )
                 policy_state["phase"] = "pref"
                 policy_state["call_threshold"] += 20
-                policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Predictive"] = policy_state
 
     def _actionpolicy_evaluation(self):
