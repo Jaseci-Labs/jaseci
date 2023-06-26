@@ -310,7 +310,7 @@ class AstBuildPass(Pass):
             ast.Architype(
                 doc=node.kid[0],
                 decorators=node.kid[1] if len(node.kid) == 7 else None,
-                typ=node.kid[2] if len(node.kid) == 7 else node.kid[1],
+                arch_type=node.kid[2] if len(node.kid) == 7 else node.kid[1],
                 access=node.kid[3] if len(node.kid) == 7 else node.kid[2],
                 name=node.kid[4] if len(node.kid) == 7 else node.kid[3],
                 base_classes=node.kid[5] if len(node.kid) == 7 else node.kid[4],
@@ -711,7 +711,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.TypeSpec(
-                typ=meta["typ"],
+                spec_type=meta["typ"],
                 list_nest=meta["list_nest"],
                 dict_nest=meta["dict_nest"],
                 parent=node.parent,
@@ -1177,7 +1177,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.Except(
-                    typ=node.kid[0],
+                    ex_type=node.kid[0],
                     name=None,
                     body=node.kid[1],
                     parent=node.parent,
@@ -1190,7 +1190,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.Except(
-                    typ=node.kid[0],
+                    ex_type=node.kid[0],
                     name=node.kid[1],
                     body=node.kid[2],
                     parent=node.parent,
@@ -1492,7 +1492,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.VisitStmt(
-                typ=meta["typ"],
+                vis_type=meta["typ"],
                 target=meta["target"],
                 else_body=meta["else_body"],
                 parent=node.parent,

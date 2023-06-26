@@ -388,7 +388,7 @@ class BluePygenPass(Pass):
         elif node.list_nest:
             self.emit(node, f"list[{node.list_nest.meta['py_code']}]")
         else:
-            self.emit(node, node.typ.meta["py_code"])
+            self.emit(node, node.spec_type.meta["py_code"])
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_event_signature(self, node: ast.EventSignature) -> None:
@@ -518,10 +518,10 @@ class BluePygenPass(Pass):
         """
         if node.name:
             self.emit_ln(
-                node, f"except {node.typ.meta['py_code']} as {node.name.value}:"
+                node, f"except {node.ex_type.meta['py_code']} as {node.name.value}:"
             )
         else:
-            self.emit_ln(node, f"except {node.typ.meta['py_code']}:")
+            self.emit_ln(node, f"except {node.ex_type.meta['py_code']}:")
         self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
     def exit_except_list(self, node: ast.ExceptList) -> None:

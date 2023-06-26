@@ -1,7 +1,9 @@
 """Type Analyze Pass."""
+from typing import Optional
+
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.ir_pass import Pass
-from jaclang.jac.sym_table import SymbolTable
+from jaclang.jac.sym_table import Symbol, SymbolTable
 
 
 class TypeAnalyzePass(Pass):
@@ -9,7 +11,7 @@ class TypeAnalyzePass(Pass):
 
     def before_pass(self) -> None:
         """Initialize pass."""
-        self.sym_tab = SymbolTable(ir_pass=self, scope_name="global")
+        self.cur_stab = SymbolTable(scope_name="global")
 
     def exit_parse(self, node: ast.Parse) -> None:
         """Sub objects.
@@ -71,7 +73,7 @@ class TypeAnalyzePass(Pass):
         if node.access:
             for i in self.get_all_sub_nodes(node, typ=ast.Assignment):
                 if isinstance(i.target, ast.Name):
-                    self.sym_tab.update_var_access(i.target, node.access.value)
+                    self.update_var_access(i.target, node.access.value)
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -132,16 +134,18 @@ class TypeAnalyzePass(Pass):
         """Sub objects.
 
         name: Name,
-        typ: Token,
+        arch_type: Token,
         doc: Optional[DocString],
         decorators: Optional[Decorators],
         access: Optional[Token],
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
-        self.sym_tab.define_var(
+        node._typ = type
+        self.define_var(
             name=node.name,
-            typ=eval(node.typ.value),
+            typ=type,
+            def_node=node,
             access=node.access.value if node.access else None,
         )
 
@@ -647,3 +651,49 @@ class TypeAnalyzePass(Pass):
 
         parts: list['Token | ExprType'],
         """
+
+    # Interface functions
+    # -------------------
+
+    def define_var(
+        self,
+        name: ast.Name,
+        def_node: ast.AstNode,
+        typ: Optional[type] = None,
+        access: Optional[str] = None,
+    ) -> None:
+        """Create a variable."""
+        exists = self.lookup_sym(name, deep=False)
+        if exists and typ and self.check_type_match(exists, def_node):
+            self.insert_sym(
+                name.value,
+                Symbol(
+                    name=name.value,
+                    typ=typ,
+                    def_line=name.line,
+                    def_node=def_node,
+                    access=access,
+                ),
+            )
+
+    # Checks and validations
+    # ----------------------
+
+    def check_type_match(self, sym: Symbol, node: ast.AstNode) -> bool:
+        """Check if two types match."""
+        if isinstance(sym.typ, node._typ):
+            return True
+        self.log_error(
+            f"Type mismatch, {sym.name} already defined on line "
+            f"{sym.def_line} as {sym.typ} not compatible with"
+            f"{node._typ} on line {node.line}!"
+        )
+        return False
+
+    def lookup_sym(self, name: ast.Name, deep: bool = True) -> Optional[Symbol]:
+        """Lookup a variable in the symbol table."""
+        return self.cur_stab.lookup(name.value, deep)
+
+    def insert_sym(self, name: str, sym: Symbol) -> None:
+        """Insert a variable into the symbol table."""
+        self.cur_stab.set(name, sym)

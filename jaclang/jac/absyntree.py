@@ -14,7 +14,7 @@ class AstNode:
         self.kid = kid if kid else []
         self.line = line
         self._sub_node_tab: dict[type[AstNode], list[AstNode]] = {}
-        self._typ: Optional[type] = None
+        self._typ: type = type(None)
         self.meta: dict[str, str] = {}
 
     def __str__(self) -> str:
@@ -359,7 +359,7 @@ class Architype(OOPAccessNode):
     def __init__(
         self,
         name: Name,
-        typ: Token,
+        arch_type: Token,
         doc: Optional[DocString],
         decorators: Optional["Decorators"],
         access: Optional[Token],
@@ -371,7 +371,7 @@ class Architype(OOPAccessNode):
     ) -> None:
         """Initialize object arch node."""
         self.name = name
-        self.typ = typ
+        self.arch_type = arch_type
         self.doc = doc
         self.decorators = decorators
         self.base_classes = base_classes
@@ -580,7 +580,7 @@ class TypeSpec(AstNode):
 
     def __init__(
         self,
-        typ: "Token | NameList",
+        spec_type: "Token | NameList",
         list_nest: "TypeSpec",  # needed for lists
         dict_nest: "TypeSpec",  # needed for dicts
         parent: Optional[AstNode],
@@ -588,7 +588,7 @@ class TypeSpec(AstNode):
         line: int,
     ) -> None:
         """Initialize type spec node."""
-        self.typ = typ
+        self.spec_type = spec_type
         self.list_nest = list_nest
         self.dict_nest = dict_nest
         super().__init__(parent=parent, kid=kid, line=line)
@@ -787,7 +787,7 @@ class Except(AstNode):
 
     def __init__(
         self,
-        typ: "ExprType",
+        ex_type: "ExprType",
         name: Optional[Token],
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -795,7 +795,7 @@ class Except(AstNode):
         line: int,
     ) -> None:
         """Initialize except node."""
-        self.typ = typ
+        self.ex_type = ex_type
         self.name = name
         self.body = body
         super().__init__(parent=parent, kid=kid, line=line)
@@ -1021,7 +1021,7 @@ class VisitStmt(AstNode):
 
     def __init__(
         self,
-        typ: Optional[Token],
+        vis_type: Optional[Token],
         target: Optional["ExprType"],
         else_body: Optional["ElseStmt"],
         parent: Optional[AstNode],
@@ -1029,7 +1029,7 @@ class VisitStmt(AstNode):
         line: int,
     ) -> None:
         """Initialize visit statement node."""
-        self.typ = typ
+        self.vis_type = vis_type
         self.target = target
         self.else_body = else_body
         super().__init__(parent=parent, kid=kid, line=line)

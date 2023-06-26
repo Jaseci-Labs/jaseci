@@ -2,16 +2,24 @@
 from typing import Optional
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.passes.ir_pass import Pass
 
 
 class Symbol:
     """Symbol."""
 
-    def __init__(self, typ: type, def_line: int, access: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        typ: type,
+        def_line: int,
+        def_node: ast.AstNode,
+        access: Optional[str] = None,
+    ) -> None:
         """Initialize."""
+        self.name = name
         self.typ = typ
         self.def_line = def_line
+        self.def_node = def_node
         self.access = access
 
 
@@ -20,39 +28,22 @@ class SymbolTable:
 
     def __init__(
         self,
-        ir_pass: Pass,
         scope_name: str = "",
         parent: Optional["SymbolTable"] = None,
     ) -> None:
         """Initialize."""
-        self._pass = ir_pass
         self.scope_name = scope_name
         self.parent = parent
         self.tab: dict[str, Symbol] = {}
 
-    def define_var(
-        self, name: ast.Name, typ: type, access: Optional[str] = None
-    ) -> None:
-        """Create a variable."""
-        var_name = name.value
-        if (
-            var_name in self.tab
-            and self.tab[var_name].typ
-            and not isinstance(typ, self.tab[var_name].typ)
-        ):
-            self._pass.log_error(
-                f"Variable {var_name} already defined on line "
-                f"{self.tab[var_name].def_line} as {self.tab[var_name].typ} "
-                f"but now being defined as {typ} on line {name.line}"
-            )
-            return
-        self.tab[var_name] = Symbol(typ=typ, def_line=name.line, access=None)
+    def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
+        """Lookup a variable in the symbol table."""
+        if name in self.tab:
+            return self.tab[name]
+        if deep and self.parent:
+            return self.parent.lookup(name, deep)
+        return None
 
-    def update_var_access(self, name: ast.Name, access: str) -> None:
-        """Update a variable's access."""
-        var_name = name.value
-        if var_name not in self.tab:
-            raise ValueError(
-                f"Variable {var_name} on line {name.line} not in symbol table"
-            )
-        self.tab[var_name].access = access
+    def set(self, name: str, symbol: Symbol) -> None:
+        """Set a variable in the symbol table."""
+        self.tab[name] = symbol
