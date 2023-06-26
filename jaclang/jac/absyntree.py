@@ -234,7 +234,7 @@ class Test(AstNode):
 
     def __init__(
         self,
-        name: Token,
+        name: Name,
         doc: Optional["DocString"],
         description: Token,
         body: "CodeBlock",
@@ -287,7 +287,7 @@ class Import(AstNode):
 
     def __init__(
         self,
-        lang: Token,
+        lang: Name,
         path: "ModulePath",
         alias: Optional[Token],
         items: Optional["ModuleItems"],
@@ -341,7 +341,7 @@ class ModuleItem(AstNode):
 
     def __init__(
         self,
-        name: Token,
+        name: Name,
         alias: Optional[Token],
         parent: Optional[AstNode],
         kid: list[AstNode],
@@ -358,7 +358,7 @@ class Architype(OOPAccessNode):
 
     def __init__(
         self,
-        name: Token,
+        name: Name,
         typ: Token,
         doc: Optional[DocString],
         decorators: Optional["Decorators"],
@@ -435,7 +435,7 @@ class Ability(OOPAccessNode):
 
     def __init__(
         self,
-        name: Token,
+        name: Name,
         is_func: bool,
         doc: Optional[DocString],
         decorators: Optional["Decorators"],
@@ -483,7 +483,7 @@ class AbilitySpec(AstNode):
     def __init__(
         self,
         doc: Optional[DocString],
-        name: Token,
+        name: Name,
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         mod: Optional["NameList"],
         signature: Optional["FuncSignature"],
@@ -559,8 +559,9 @@ class HasVar(AstNode):
 
     def __init__(
         self,
-        name: Token,
+        name: Name,
         type_tag: "TypeSpec",
+        mutable: bool,
         value: Optional["ExprType"],
         parent: Optional[AstNode],
         kid: list[AstNode],
@@ -569,6 +570,7 @@ class HasVar(AstNode):
         """Initialize has var node."""
         self.name = name
         self.type_tag = type_tag
+        self.mutable = mutable
         self.value = value
         super().__init__(parent=parent, kid=kid, line=line)
 
@@ -664,7 +666,7 @@ class ParamVar(AstNode):
 
     def __init__(
         self,
-        name: Token,
+        name: Name,
         unpack: Optional[Token],
         type_tag: "TypeSpec",
         value: Optional["ExprType"],
@@ -840,7 +842,7 @@ class InForStmt(AstNode):
 
     def __init__(
         self,
-        name: Token,
+        name: Name,
         collection: "ExprType",
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -859,8 +861,8 @@ class DictForStmt(AstNode):
 
     def __init__(
         self,
-        k_name: Token,
-        v_name: Token,
+        k_name: Name,
+        v_name: Name,
         collection: "ExprType",
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -1086,6 +1088,7 @@ class Assignment(AstNode):
         is_static: bool,
         target: "AtomType",
         value: "ExprType",
+        mutable: bool,
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
@@ -1094,6 +1097,7 @@ class Assignment(AstNode):
         self.is_static = is_static
         self.target = target
         self.value = value
+        self.mutable = mutable
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -1239,7 +1243,7 @@ class ListCompr(AstNode):
     def __init__(
         self,
         out_expr: "ExprType",
-        name: Token,
+        name: Name,
         collection: "ExprType",
         conditional: Optional["ExprType"],
         parent: Optional[AstNode],
@@ -1261,7 +1265,7 @@ class DictCompr(AstNode):
         self,
         outk_expr: "ExprType",
         outv_expr: "ExprType",
-        k_name: Token,
+        k_name: Name,
         v_name: Optional[Token],
         collection: "ExprType",
         conditional: Optional["ExprType"],
@@ -1386,7 +1390,7 @@ class GlobalRef(AstNode):
 
     def __init__(
         self,
-        name: Token,
+        name: Name,
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,

@@ -645,17 +645,24 @@ class AstBuildPass(Pass):
     def exit_typed_has_clause(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        typed_has_clause -> KW_FREEZE NAME type_tag EQ expression
+        typed_has_clause -> KW_FREEZE NAME type_tag
         typed_has_clause -> NAME type_tag EQ expression
         typed_has_clause -> NAME type_tag
         """
-        if len(node.kid) == 4:
-            del node.kid[2]
+        if node.kid[-2].name == "EQ":
+            del node.kid[-2]
+        frozen = False
+        if node.kid[0].name == "KW_FREEZE":
+            frozen = True
+            del node.kid[0]
         replace_node(
             node,
             ast.HasVar(
                 name=node.kid[0],
                 type_tag=node.kid[1],
                 value=node.kid[2] if len(node.kid) == 3 else None,
+                mutable=not frozen,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
@@ -1560,8 +1567,10 @@ class AstBuildPass(Pass):
     def exit_assignment(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        assignment -> KW_FREEZE atom EQ expression
         assignment -> atom EQ expression
         """
+        frozen = len(node.kid) == 4
         node.kid = [node.kid[-3], node.kid[-1]]
         replace_node(
             node,
@@ -1569,6 +1578,7 @@ class AstBuildPass(Pass):
                 is_static=False,
                 target=node.kid[0],
                 value=node.kid[1],
+                mutable=not frozen,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,

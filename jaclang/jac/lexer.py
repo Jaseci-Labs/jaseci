@@ -34,9 +34,10 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "TYP_DICT",
         "TYP_BOOL",
         "TYP_BYTES",
-        "KW_OBJECT",
         "TYP_ANY",
         "TYP_TYPE",
+        "KW_FREEZE",
+        "KW_OBJECT",
         "KW_NODE",
         "KW_IGNORE",
         "KW_VISIT",
@@ -193,9 +194,10 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NAME["dict"] = "TYP_DICT"  # type: ignore
     NAME["bool"] = "TYP_BOOL"  # type: ignore
     NAME["bytes"] = "TYP_BYTES"  # type: ignore
-    NAME["object"] = "KW_OBJECT"  # type: ignore
     NAME["any"] = "TYP_ANY"  # type: ignore
     NAME["type"] = "TYP_TYPE"  # type: ignore
+    NAME["freeze"] = "KW_FREEZE"  # type: ignore
+    NAME["object"] = "KW_OBJECT"  # type: ignore
     NAME["node"] = "KW_NODE"  # type: ignore
     NAME["ignore"] = "KW_IGNORE"  # type: ignore
     NAME["visit"] = "KW_VISIT"  # type: ignore

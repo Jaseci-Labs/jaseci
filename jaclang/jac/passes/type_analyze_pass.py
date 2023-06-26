@@ -76,7 +76,7 @@ class TypeAnalyzePass(Pass):
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         doc: Optional[DocString],
         description: Token,
         body: CodeBlock,
@@ -98,7 +98,7 @@ class TypeAnalyzePass(Pass):
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
 
-        lang: Token,
+        lang: Name,
         path: ModulePath,
         alias: Optional[Token],
         items: Optional[ModuleItems],
@@ -118,7 +118,7 @@ class TypeAnalyzePass(Pass):
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         alias: Optional[Token],
         """
 
@@ -131,7 +131,7 @@ class TypeAnalyzePass(Pass):
     def exit_architype(self, node: ast.Architype) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         typ: Token,
         doc: Optional[DocString],
         decorators: Optional[Decorators],
@@ -139,7 +139,11 @@ class TypeAnalyzePass(Pass):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
-        self.sym_tab.define_var(node.name, node.typ, node)
+        self.sym_tab.define_var(
+            name=node.name,
+            typ=eval(node.typ.value),
+            access=node.access.value if node.access else None,
+        )
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
@@ -165,7 +169,7 @@ class TypeAnalyzePass(Pass):
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         is_func: bool,
         doc: Optional[DocString],
         decorators: Optional[Decorators],
@@ -187,7 +191,7 @@ class TypeAnalyzePass(Pass):
         """Sub objects.
 
         doc: Optional[DocString],
-        name: Token,
+        name: Name,
         arch: ObjectRef | NodeRef | EdgeRef | WalkerRef,
         mod: Optional[NameList],
         signature: Optional[FuncSignature],
@@ -211,7 +215,7 @@ class TypeAnalyzePass(Pass):
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         type_tag: TypeSpec,
         value: Optional[ExprType],
         """
@@ -260,7 +264,7 @@ class TypeAnalyzePass(Pass):
     def exit_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         unpack: Optional[Token],
         type_tag: TypeSpec,
         value: Optional[ExprType],
@@ -333,7 +337,7 @@ class TypeAnalyzePass(Pass):
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         collection: ExprType,
         body: CodeBlock,
         """
@@ -341,8 +345,8 @@ class TypeAnalyzePass(Pass):
     def exit_dict_for_stmt(self, node: ast.DictForStmt) -> None:
         """Sub objects.
 
-        k_name: Token,
-        v_name: Token,
+        k_name: Name,
+        v_name: Name,
         collection: ExprType,
         body: CodeBlock,
         """
@@ -499,7 +503,7 @@ class TypeAnalyzePass(Pass):
         """Sub objects.
 
         out_expr: ExprType,
-        name: Token,
+        name: Name,
         collection: ExprType,
         conditional: Optional[ExprType],
         """
@@ -509,7 +513,7 @@ class TypeAnalyzePass(Pass):
 
         outk_expr: ExprType,
         outv_expr: ExprType,
-        k_name: Token,
+        k_name: Name,
         v_name: Optional[Token],
         collection: ExprType,
         conditional: Optional[ExprType],
@@ -560,7 +564,7 @@ class TypeAnalyzePass(Pass):
     def exit_global_ref(self, node: ast.GlobalRef) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         """
 
     def exit_here_ref(self, node: ast.HereRef) -> None:
@@ -578,31 +582,31 @@ class TypeAnalyzePass(Pass):
     def exit_node_ref(self, node: ast.NodeRef) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         """
 
     def exit_edge_ref(self, node: ast.EdgeRef) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         """
 
     def exit_walker_ref(self, node: ast.WalkerRef) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         """
 
     def exit_object_ref(self, node: ast.ObjectRef) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         """
 
     def exit_ability_ref(self, node: ast.AbilityRef) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         """
 
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:

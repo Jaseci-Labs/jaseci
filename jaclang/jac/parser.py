@@ -319,6 +319,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "NAME type_tag",
         "NAME type_tag EQ expression",
+        "KW_FREEZE NAME type_tag",
+        "KW_FREEZE NAME type_tag EQ expression",
     )
     def typed_has_clause(self, p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
@@ -645,7 +647,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     # Expression rules (precedence built into grammar)
     # ------------------------------------------------
-    @_("atom EQ expression")
+    @_(
+        "atom EQ expression",
+        "KW_FREEZE atom EQ expression",
+    )
     def assignment(self, p: YaccProduction) -> YaccProduction:
         """Rule for assignment statement."""
         return p
