@@ -9,7 +9,7 @@ class TypeAnalyzePass(Pass):
 
     def before_pass(self) -> None:
         """Initialize pass."""
-        self.sym_tab = SymbolTable("global")
+        self.sym_tab = SymbolTable(ir_pass=self, scope_name="global")
 
     def exit_parse(self, node: ast.Parse) -> None:
         """Sub objects.
@@ -68,6 +68,10 @@ class TypeAnalyzePass(Pass):
         access: Optional[Token],
         assignments: AssignmentList,
         """
+        if node.access:
+            for i in self.get_all_sub_nodes(node, typ=ast.Assignment):
+                if isinstance(i.target, ast.Name):
+                    self.sym_tab.update_var_access(i.target, node.access.value)
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -100,6 +104,10 @@ class TypeAnalyzePass(Pass):
         items: Optional[ModuleItems],
         is_absorb: bool,
         """
+        if node.lang.value == "jac":
+            raise ValueError(
+                f"Import node {node.path.path_str} should not be present in pass {self.__class__.__name__}"
+            )
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -131,6 +139,7 @@ class TypeAnalyzePass(Pass):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
+        self.sym_tab.define_var(node.name, node.typ, node)
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.

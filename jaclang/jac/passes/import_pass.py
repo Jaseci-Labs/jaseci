@@ -16,14 +16,16 @@ class ImportPass(Pass):
         while run_again:
             run_again = False
             for i in self.get_all_sub_nodes(node, ast.Import, brute_force=True):
-                if i.lang == "jac":
+                if i.lang.value == "jac":
                     run_again = True
-                    ast.replace_node(node, self.import_module(i, node.mod_path))
+                    ast.replace_node(i, self.import_module(i, node.mod_path))
             SubNodeTabPass(mod_path=node.mod_path, input_ir=node)
 
     def import_module(self, node: ast.Import, mod_path: str) -> ast.AstNode:
         """Import a module."""
         target = path.normpath(
-            path.join(path.dirname(mod_path, *(node.path.path_str.split(".")))) + ".jac"
+            path.join(path.dirname(mod_path), *(node.path.path_str.split("."))) + ".jac"
         )
+        if not path.exists(target):
+            raise FileNotFoundError(f"Could not find module {target}")
         return jac_file_to_ast(target)

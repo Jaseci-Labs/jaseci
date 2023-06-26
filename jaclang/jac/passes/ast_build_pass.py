@@ -10,17 +10,20 @@ class AstBuildPass(Pass):
     def exit_module(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        module -> STRING element_list
         module -> DOC_STRING element_list
+        module -> DOC_STRING
         """
-        self.ir = ast.Module(
-            name=self.mod_path,
-            doc=node.kid[0],
-            body=node.kid[1],
-            mod_path=self.mod_path,
-            parent=None,
-            kid=node.kid,
-            line=node.line,
+        self.ir = replace_node(
+            node,
+            ast.Module(
+                name=self.mod_path,
+                doc=node.kid[0],
+                body=node.kid[1] if len(node.kid) == 2 else None,
+                mod_path=self.mod_path,
+                parent=None,
+                kid=node.kid,
+                line=node.line,
+            ),
         )
 
     def exit_element_list(self, node: ast.AstNode) -> None:

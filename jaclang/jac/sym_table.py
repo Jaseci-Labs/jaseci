@@ -26,6 +26,7 @@ class SymbolTable:
     ) -> None:
         """Initialize."""
         self._pass = ir_pass
+        self.scope_name = scope_name
         self.parent = parent
         self.tab: dict[str, Symbol] = {}
 
@@ -45,6 +46,13 @@ class SymbolTable:
                 f"but now being defined as {typ} on line {name.line}"
             )
             return
-        self.tab[var_name] = Symbol(
-            typ=typ, def_line=self.tab[var_name].def_line, access=None
-        )
+        self.tab[var_name] = Symbol(typ=typ, def_line=name.line, access=None)
+
+    def update_var_access(self, name: ast.Name, access: str) -> None:
+        """Update a variable's access."""
+        var_name = name.value
+        if var_name not in self.tab:
+            raise ValueError(
+                f"Variable {var_name} on line {name.line} not in symbol table"
+            )
+        self.tab[var_name].access = access

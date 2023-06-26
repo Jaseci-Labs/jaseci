@@ -28,8 +28,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     # All mighty start rule
     # ---------------------
     @_(
+        "DOC_STRING",
         "DOC_STRING element_list",
-        "STRING element_list",
         # Workaround for fstrings, should make custom start rule
         # "expression",
     )

@@ -97,7 +97,7 @@ class Pass(Transform):
         if not isinstance(self.cur_node, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
         self.cur_line = self.cur_node.line
-        self.log_error(f"{msg}")
+        self.log_warning(f"{msg}")
 
 
 class PrinterPass(Pass):

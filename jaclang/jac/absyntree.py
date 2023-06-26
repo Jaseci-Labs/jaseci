@@ -56,6 +56,9 @@ def replace_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
         node.parent.kid[node.parent.kid.index(node)] = new_node
     if new_node:
         new_node.parent = node.parent
+        for i in new_node.kid:
+            if i:
+                i.parent = new_node
     return new_node
 
 
@@ -162,7 +165,7 @@ class Module(AstNode):
         self,
         name: str,
         doc: Token,
-        body: "Elements",
+        body: Optional["Elements"],
         mod_path: str,
         parent: Optional[AstNode],
         kid: list[AstNode],

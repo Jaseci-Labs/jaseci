@@ -2029,33 +2029,36 @@ class Parser(metaclass=ParserMeta):
                 "%s:%d: Symbol %r used, but not defined as a token or a rule\n"
                 % (prod.file, prod.line, sym)
             )
+        if cls.debugfile:
+            unused_terminals = grammar.unused_terminals()
+            if unused_terminals:
+                unused_str = "{" + ",".join(unused_terminals) + "}"
+                cls.log.warning(
+                    f'Token{"(s)" if len(unused_terminals) >1 else ""} {unused_str} defined, but not used'
+                )
 
-        unused_terminals = grammar.unused_terminals()
-        if unused_terminals:
-            unused_str = "{" + ",".join(unused_terminals) + "}"
-            cls.log.warning(
-                f'Token{"(s)" if len(unused_terminals) >1 else ""} {unused_str} defined, but not used'
-            )
+            unused_rules = grammar.unused_rules()
+            for prod in unused_rules:
+                cls.log.warning(
+                    "%s:%d: Rule %r defined, but not used",
+                    prod.file,
+                    prod.line,
+                    prod.name,
+                )
 
-        unused_rules = grammar.unused_rules()
-        for prod in unused_rules:
-            cls.log.warning(
-                "%s:%d: Rule %r defined, but not used", prod.file, prod.line, prod.name
-            )
+            if len(unused_terminals) == 1:
+                cls.log.warning("There is 1 unused token")
+            if len(unused_terminals) > 1:
+                cls.log.warning("There are %d unused tokens", len(unused_terminals))
 
-        if len(unused_terminals) == 1:
-            cls.log.warning("There is 1 unused token")
-        if len(unused_terminals) > 1:
-            cls.log.warning("There are %d unused tokens", len(unused_terminals))
+            if len(unused_rules) == 1:
+                cls.log.warning("There is 1 unused rule")
+            if len(unused_rules) > 1:
+                cls.log.warning("There are %d unused rules", len(unused_rules))
 
-        if len(unused_rules) == 1:
-            cls.log.warning("There is 1 unused rule")
-        if len(unused_rules) > 1:
-            cls.log.warning("There are %d unused rules", len(unused_rules))
-
-        unreachable = grammar.find_unreachable()
-        for u in unreachable:
-            cls.log.warning("Symbol %r is unreachable", u)
+            unreachable = grammar.find_unreachable()
+            for u in unreachable:
+                cls.log.warning("Symbol %r is unreachable", u)
 
         if len(undefined_symbols) == 0:
             infinite = grammar.infinite_cycles()

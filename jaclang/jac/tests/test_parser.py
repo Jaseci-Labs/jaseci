@@ -16,7 +16,7 @@ class TestParser(TestCaseMicroSuite):
         """Parse micro jac file."""
         lex = JacLexer(mod_path="", input_ir=self.file_to_str(filename)).ir
         prse = JacParser(mod_path="", input_ir=lex)
-        self.assertFalse(prse.had_error)
+        self.assertFalse(prse.errors_had)
 
     def test_shift_reduce_conflict(self) -> None:
         """Test for shift reduce conflict."""
@@ -31,7 +31,7 @@ class TestParser(TestCaseMicroSuite):
         lex = JacLexer(mod_path="", input_ir=self.load_fixture("fam.jac")).ir
         prse = JacParser(mod_path="", input_ir=lex)
         output = prse.ir
-        self.assertFalse(prse.had_error)
+        self.assertFalse(prse.errors_had)
         if isinstance(output, AstNode):
             self.assertGreater(len(str(output.to_dict())), 1000)
         else:
@@ -43,7 +43,7 @@ class TestParser(TestCaseMicroSuite):
             mod_path="", input_ir=self.load_fixture("../../../cli/jac_cli.jac")
         ).ir
         prse = JacParser(mod_path="", input_ir=lex)
-        self.assertFalse(prse.had_error)
+        self.assertFalse(prse.errors_had)
 
 
 TestParser.self_attach_micro_tests()

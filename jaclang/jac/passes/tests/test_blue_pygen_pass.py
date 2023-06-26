@@ -20,7 +20,7 @@ class BluePygenPassTests(TestCaseMicroSuite):
             self.fixture_abs_path("../../../../cli/jac_cli.jac")
         )
         print(code_gen.ir.meta["py_code"])
-        self.assertFalse(code_gen.had_error)
+        self.assertFalse(code_gen.errors_had)
         self.assertGreater(len(code_gen.ir.meta["py_code"]), 200)
 
     def test_pass_ast_complete(self) -> None:

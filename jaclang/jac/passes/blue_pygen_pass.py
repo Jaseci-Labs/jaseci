@@ -98,7 +98,8 @@ class BluePygenPass(Pass):
         body: "Elements",
         """
         self.emit_ln(node, node.doc.value)
-        self.emit(node, node.body.meta["py_code"])
+        if node.body:
+            self.emit(node, node.body.meta["py_code"])
         self.ir = node
 
     def exit_elements(self, node: ast.Elements) -> None:
