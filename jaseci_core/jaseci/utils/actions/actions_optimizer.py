@@ -753,6 +753,7 @@ class ActionsOptimizer:
                             )
                             policy_state["phase"] = "action_switching"
                             self.apply_actions_change()
+                policy_state["prev_action_utilz"] = self._get_action_utilization()
         elif policy_state["phase"] == "action_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
@@ -762,7 +763,7 @@ class ActionsOptimizer:
                 )
                 policy_state["phase"] = "pref"
                 policy_state["call_threshold"] += 20
-        policy_state["prev_action_utilz"] = self._get_action_utilization()
+                policy_state["prev_action_utilz"] = self._get_action_utilization()
         self.policy_state["Predictive"] = policy_state
 
     def _actionpolicy_evaluation(self):
