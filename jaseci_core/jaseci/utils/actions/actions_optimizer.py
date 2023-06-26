@@ -48,6 +48,7 @@ class ActionsOptimizer:
         self.policy_params = {}
         self.policy_state = {}
         self.last_eval_configs = []
+        self.module_history = []
 
     def kube_create(self, config):
         kube = JsOrc.svc("kube").poke(cast=KubeService)
