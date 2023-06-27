@@ -1242,9 +1242,10 @@ def fstr_sly_parser_hack() -> Optional[dict]:
     if "__file__" in globals():
         with open(__file__, "r") as file:
             module_data = file.read()
+
         new_module_data = module_data.replace(
             'start = "module"', 'start = "expression"'
-        )
+        ).replace('debugfile = "parser.out"', "")
         new_module_namespace = {}
         exec(new_module_data, new_module_namespace)
         return (

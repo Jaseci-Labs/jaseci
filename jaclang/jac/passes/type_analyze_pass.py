@@ -161,6 +161,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
 
         name: Name,
         alias: Optional[Token],
+        self.body: Optional[AstNode] = None
         """
 
     def exit_module_items(self, node: ast.ModuleItems) -> None:

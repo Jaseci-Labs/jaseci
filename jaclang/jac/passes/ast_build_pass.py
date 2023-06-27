@@ -1,4 +1,6 @@
 """Ast build pass for Jaseci Ast."""
+from os import path
+
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import replace_node
 from jaclang.jac.passes.ir_pass import Pass
@@ -13,13 +15,15 @@ class AstBuildPass(Pass):
         module -> DOC_STRING element_list
         module -> DOC_STRING
         """
+        mod_name = self.mod_path.split(path.sep)[-1].split(".")[0]
         self.ir = replace_node(
             node,
             ast.Module(
-                name=self.rel_mod_path,
+                name=mod_name,
                 doc=node.kid[0],
                 body=node.kid[1] if len(node.kid) == 2 else None,
                 mod_path=self.mod_path,
+                is_imported=False,
                 parent=None,
                 kid=node.kid,
                 line=node.line,

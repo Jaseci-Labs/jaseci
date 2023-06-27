@@ -62,6 +62,14 @@ def replace_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
     return new_node
 
 
+def append_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
+    """Replace node with new_node."""
+    node.kid.append(new_node)
+    if new_node:
+        new_node.parent = node
+    return new_node
+
+
 # AST Parse Level Node Types
 # --------------------------
 
@@ -167,6 +175,7 @@ class Module(AstNode):
         doc: Token,
         body: Optional["Elements"],
         mod_path: str,
+        is_imported: bool,
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
@@ -176,6 +185,7 @@ class Module(AstNode):
         self.doc = doc
         self.body = body
         self.mod_path = mod_path
+        self.is_imported = False
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -295,6 +305,7 @@ class Import(AstNode):
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
+        sub_module: Optional["Module"] = None,
     ) -> None:
         """Initialize import node."""
         self.lang = lang
@@ -302,7 +313,7 @@ class Import(AstNode):
         self.alias = alias
         self.items = items
         self.is_absorb = is_absorb
-        self.sub_module = None
+        self.sub_module = sub_module
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -347,10 +358,12 @@ class ModuleItem(AstNode):
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
+        body: Optional[AstNode] = None,
     ) -> None:
         """Initialize module item node."""
         self.name = name
         self.alias = alias
+        self.body = body
         super().__init__(parent=parent, kid=kid, line=line)
 
 

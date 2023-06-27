@@ -16,6 +16,7 @@ class Pass(Transform):
     ) -> None:
         """Initialize parser."""
         self.term_signal = False
+        self.prune_signal = False
         self.cur_node = input_ir  # tracks current node during traversal
         Transform.__init__(self, mod_path, input_ir, base_path)
 
@@ -40,6 +41,14 @@ class Pass(Transform):
             getattr(self, f"exit_{pascal_to_snake(type(node).__name__)}")(node)
         if isinstance(node, ast.Parse) and hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
+
+    def term_traverse(self) -> None:
+        """Terminate traversal."""
+        self.term_signal = True
+
+    def prune_traverse(self) -> None:
+        """Prune traversal."""
+        self.prune_signal = True
 
     def get_all_sub_nodes(
         self, node: ast.AstNode, typ: type[T], brute_force: bool = False
@@ -80,9 +89,12 @@ class Pass(Transform):
             return
         self.cur_node = node
         self.enter_node(node)
-        for i in node.kid:
-            if i:
-                self.traverse(i)
+        if not self.prune_signal:
+            for i in node.kid:
+                if i:
+                    self.traverse(i)
+        else:
+            self.prune_signal = False
         self.exit_node(node)
 
     def error(self, msg: str) -> None:

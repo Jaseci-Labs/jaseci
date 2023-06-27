@@ -1,4 +1,4 @@
-"""Type Analyze Pass."""
+"""Connect Decls and Defs in AST."""
 from types import ModuleType
 from typing import Any
 
@@ -7,8 +7,8 @@ from jaclang.jac.passes.ir_pass import Pass
 from jaclang.jac.sym_table import Symbol, SymbolTable
 
 
-class TypeAnalyzePass(Pass, SymbolTable):
-    """Type inference and checking pass."""
+class DeclDefMatchPass(Pass, SymbolTable):
+    """Decls and Def matching pass."""
 
     def before_pass(self) -> None:
         """Initialize pass."""
