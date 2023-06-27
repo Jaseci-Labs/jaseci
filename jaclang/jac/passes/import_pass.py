@@ -2,7 +2,7 @@
 from os import path
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.ast_build import jac_file_to_ast
+from jaclang.jac.ast_build import jac_file_to_ast_pass
 from jaclang.jac.passes.ir_pass import Pass
 from jaclang.jac.passes.sub_node_tab_pass import SubNodeTabPass
 
@@ -55,10 +55,10 @@ class ImportPass(Pass):
             return self.import_table[target]
         if not path.exists(target):
             self.error(f"Could not find module {target}")
-        mod = jac_file_to_ast(
+        mod = jac_file_to_ast_pass(
             path.join(*(node.path.path_str.split("."))) + ".jac",
             base_dir=path.dirname(mod_path),
-        )
+        ).ir
         if isinstance(mod, ast.Module):
             self.import_table[target] = mod
             mod.is_imported = True

@@ -1,10 +1,24 @@
 """Transpilation functions."""
+from typing import Type, TypeVar
+
 import jaclang.jac.absyntree as ast
-from jaclang.jac.ast_build import jac_file_to_ast
-from jaclang.jac.passes.ast_enrich_pass import AstEnrichmentPass
+from jaclang.jac.ast_build import jac_file_to_ast_pass
 from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
+from jaclang.jac.passes.decl_def_match_pass import DeclDefMatchPass
 from jaclang.jac.passes.import_pass import ImportPass
+from jaclang.jac.passes.ir_pass import Pass
 from jaclang.jac.passes.sub_node_tab_pass import SubNodeTabPass
+from jaclang.jac.passes.type_analyze_pass import TypeAnalyzePass
+
+pass_schedule = [
+    SubNodeTabPass,
+    ImportPass,
+    DeclDefMatchPass,
+    TypeAnalyzePass,
+    BluePygenPass,
+]
+
+T = TypeVar("T", bound=Pass)
 
 
 def transpile_jac_file(file_path: str, base_dir: str) -> str:
@@ -16,24 +30,17 @@ def transpile_jac_file(file_path: str, base_dir: str) -> str:
         raise ValueError("Transpilation of Jac file failed.")
 
 
-def pass_schedule(file_path: str, base_dir: str) -> ast.AstNode:
+def jac_file_to_pass(file_path: str, base_dir: str, target: Type[T]) -> T:
     """Convert a Jac file to an AST."""
-    ast_ret = jac_file_to_ast(file_path, base_dir)
-    ast_ret = SubNodeTabPass(
-        mod_path=file_path, input_ir=ast_ret, base_path=base_dir
-    ).ir
-    ast_ret = ImportPass(mod_path=file_path, input_ir=ast_ret, base_path=base_dir).ir
-    ast_ret = AstEnrichmentPass(
-        mod_path=file_path, input_ir=ast_ret, base_path=base_dir
-    ).ir
-    if not isinstance(ast_ret, ast.AstNode):
-        raise ValueError("Parsing of Jac file failed.")
+    ast_ret = jac_file_to_ast_pass(file_path, base_dir)
+    for i in pass_schedule:
+        if i == target:
+            break
+        ast_ret = i(mod_path=file_path, input_ir=ast_ret.ir, base_path=base_dir)
+    ast_ret = target(mod_path=file_path, input_ir=ast_ret.ir, base_path=base_dir)
     return ast_ret
 
 
-def jac_file_to_final_pass(file_path: str, base_dir: str) -> BluePygenPass:
+def jac_file_to_final_pass(file_path: str, base_dir: str) -> Pass:
     """Convert a Jac file to an AST."""
-    return BluePygenPass(
-        mod_path=file_path,
-        input_ir=pass_schedule(file_path, base_dir),
-    )
+    return jac_file_to_pass(file_path, base_dir, target=BluePygenPass)
