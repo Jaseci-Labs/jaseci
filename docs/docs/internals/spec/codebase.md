@@ -113,6 +113,7 @@ plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_
 - Any time theres a change to the language validate the prism in docs
 - Need to think about deallocation with spawn commands
 - Null Ok only valid in proper expressions, not in type hints, or class inheritance for example
+- Need to mention Import system searches entire import tree for def/decl matches
 
 ### Roadmap and design principles
 

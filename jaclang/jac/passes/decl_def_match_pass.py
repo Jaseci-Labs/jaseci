@@ -1,10 +1,7 @@
 """Connect Decls and Defs in AST."""
-from types import ModuleType
-from typing import Any
-
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.ir_pass import Pass
-from jaclang.jac.sym_table import Symbol, SymbolTable
+from jaclang.jac.sym_table import DefDeclSymbol, SymbolTable
 
 
 class DeclDefMatchPass(Pass, SymbolTable):
@@ -14,48 +11,14 @@ class DeclDefMatchPass(Pass, SymbolTable):
         """Initialize pass."""
         self.sym_tab = SymbolTable(scope_name="global")
 
-    def exit_parse(self, node: ast.Parse) -> None:
-        """Sub objects.
-
-        name: str,
-        """
-
-    def exit_token(self, node: ast.Token) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        """
-
-    def exit_name(self, node: ast.Name) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        already_declared: bool,
-        """
-
-    def exit_constant(self, node: ast.Constant) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        typ: type,
-        """
-
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
 
         name: str,
         doc: Token,
-        body: Elements,
+        body: Optional[Elements],
         mod_path: str,
+        is_imported: bool,
         """
 
     def exit_elements(self, node: ast.Elements) -> None:
@@ -71,14 +34,19 @@ class DeclDefMatchPass(Pass, SymbolTable):
         access: Optional[Token],
         assignments: AssignmentList,
         """
-        if node.access:
-            for i in self.get_all_sub_nodes(node, typ=ast.Assignment):
-                if isinstance(i.target, ast.Name) and not self.sym_tab.update(
-                    i.target.value, access=node.access.value
-                ):
-                    self.ice(
-                        f"ICE: Variable {i.target.value} not seen as declared in pass {self.__class__.__name__}"
-                    )
+        for i in self.get_all_sub_nodes(node, ast.Assignment):
+            if type(i.target) != ast.Name:
+                self.ice("Only name targets should be possible to in global vars.")
+            else:
+                decl = self.sym_tab.lookup(i.target.value)
+                if decl:
+                    if decl.has_def:
+                        self.error(f"Name {i.target.value} already bound.")
+                    else:
+                        decl.has_def = True
+                        decl.other_node = i
+                        decl.node.body = i
+                        self.sym_tab.set(decl)
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -102,6 +70,18 @@ class DeclDefMatchPass(Pass, SymbolTable):
         value: Optional[Token],
         """
 
+    def enter_import(self, node: ast.Import) -> None:
+        """Sub objects.
+
+        lang: Name,
+        path: ModulePath,
+        alias: Optional[Name],
+        items: Optional[ModuleItems],
+        is_absorb: bool,
+        sub_module: Optional[Module],
+        """
+        self.sym_tab = self.sym_tab.push(node.path.path_str)
+
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
 
@@ -110,45 +90,22 @@ class DeclDefMatchPass(Pass, SymbolTable):
         alias: Optional[Name],
         items: Optional[ModuleItems],
         is_absorb: bool,
-        self.sub_module = None
+        sub_module: Optional[Module],
         """
-        if node.lang.value == "jac" and not node.sub_module:
-            self.ice(f"Jac module not loaded by pass {self.__class__.__name__}")
-        if node.items:
-            for i in node.items.items:
-                if i.alias:
-                    if not self.sym_tab.set(
-                        i.alias.value,
-                        symbol=Symbol(
-                            name=i.alias.value,
-                            typ=Any,  # TODO: Backpatch analysis for module itmes
-                            def_node=node,
-                        ),
-                        fresh_only=True,
-                    ):
-                        self.already_defined_err(i.alias.value)
-                else:
-                    if not self.sym_tab.set(
-                        i.name.value,
-                        symbol=Symbol(
-                            name=i.name.value,
-                            typ=Any,  # TODO: Backpatch analysis for module itmes
-                            def_node=node,
-                        ),
-                        fresh_only=True,
-                    ):
-                        self.already_defined_err(i.name.value)
-        else:
-            if not self.sym_tab.set(
-                node.path.path[-1].value,
-                symbol=Symbol(
-                    name=node.path.path[-1].value,
-                    typ=ModuleType,
-                    def_node=node,
-                ),
-                fresh_only=True,
-            ):
-                self.already_defined_err(node.path.path[-1].value)
+        if self.sym_tab.parent:  # now treat imported items as global
+            parent = self.sym_tab.parent
+            if node.items:
+                for i in node.items.items:
+                    name = i.alias if i.alias else i.name
+                    decl = parent.lookup(name.value)
+                    if decl:
+                        if decl.has_def:
+                            self.error(f"Name {name.value} already bound.")
+                        else:
+                            decl.has_def = True
+                            decl.other_node = i
+                            decl.node.body = i
+                            self.sym_tab.set(decl)
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -161,7 +118,14 @@ class DeclDefMatchPass(Pass, SymbolTable):
 
         name: Name,
         alias: Optional[Token],
+        body: Optional[AstNode],
         """
+        if self.sym_tab.lookup(node.name.value):
+            self.error(f"Name {node.name.value} already exists in scope.")
+        else:
+            self.sym_tab.set(
+                DefDeclSymbol(name=node.name.value, node=node, has_decl=True)
+            )
 
     def exit_module_items(self, node: ast.ModuleItems) -> None:
         """Sub objects.
@@ -180,21 +144,6 @@ class DeclDefMatchPass(Pass, SymbolTable):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
-        node._typ = type
-        exists = self.sym_tab.lookup(name=node.name.value, deep=False)
-        # TODO: if exists and type(exists.def_node) == ast.ArchDef and not node.body: # This should be own pass
-        #     node.body = exists.def_node.body
-        if exists and not self.assert_type_match(sym=exists, node=node):
-            return
-        self.sym_tab.set(
-            node.name.value,
-            Symbol(
-                name=node.name.value,
-                typ=type,
-                def_node=node,
-                access=node.access.value if node.access else None,
-            ),
-        )
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
@@ -268,6 +217,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
 
         name: Name,
         type_tag: TypeSpec,
+        mutable: bool,
         value: Optional[ExprType],
         """
 
@@ -280,7 +230,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
     def exit_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
-        typ: Token | NameList,
+        spec_type: Token | NameList,
         list_nest: TypeSpec,
         dict_nest: TypeSpec,
         """
@@ -359,7 +309,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
     def exit_except(self, node: ast.Except) -> None:
         """Sub objects.
 
-        typ: ExprType,
+        ex_type: ExprType,
         name: Optional[Token],
         body: CodeBlock,
         """
@@ -461,7 +411,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
-        typ: Optional[Token],
+        vis_type: Optional[Token],
         target: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
@@ -488,6 +438,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         is_static: bool,
         target: AtomType,
         value: ExprType,
+        mutable: bool,
         """
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
@@ -532,13 +483,13 @@ class DeclDefMatchPass(Pass, SymbolTable):
         strings: list['Token | FString'],
         """
 
-    def exit_list_val(self, node: ast.ListVal) -> None:
+    def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
         values: list['ExprType'],
         """
 
-    def exit_expr_list(self, node: ast.ExprList) -> None:
+    def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
 
         values: list['ExprType'],
@@ -602,7 +553,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
     def exit_assignment_list(self, node: ast.AssignmentList) -> None:
         """Sub objects.
 
-        values: list['ExprType'],
+        values: list['Assignment'],
         """
 
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
@@ -698,25 +649,3 @@ class DeclDefMatchPass(Pass, SymbolTable):
 
         parts: list['Token | ExprType'],
         """
-
-    # Checks and validations
-    # ----------------------
-
-    def assert_type_match(self, sym: Symbol, node: ast.AstNode) -> bool:
-        """Check if two types match."""
-        if isinstance(sym.typ, node._typ):
-            return True
-        self.error(
-            f"Type mismatch, {sym.name} already defined on line "
-            f"{sym.def_line} as {sym.typ} not compatible with"
-            f"{node._typ} on line {node.line}!"
-        )
-        return False
-
-    def not_defined_err(self, name: str) -> None:
-        """Check if a symbol is defined."""
-        self.error(f"Symbol {name} not defined!")
-
-    def already_defined_err(self, name: str) -> None:
-        """Check if a symbol is defined."""
-        self.error(f"Symbol {name} already in use in this scope!")

@@ -10,6 +10,10 @@ from jaclang.jac.passes.sub_node_tab_pass import SubNodeTabPass
 class ImportPass(Pass):
     """Jac statically imports all modules."""
 
+    def before_pass(self) -> None:
+        """Run once before pass."""
+        self.import_table = {}
+
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
         self.term_traverse()  # Turns off auto traversal for deliberate traversal
@@ -46,6 +50,9 @@ class ImportPass(Pass):
         target = path.normpath(
             path.join(path.dirname(mod_path), *(node.path.path_str.split("."))) + ".jac"
         )
+        if target in self.import_table:
+            self.warning(f"Circular import detected, module {target} already imported.")
+            return self.import_table[target]
         if not path.exists(target):
             self.error(f"Could not find module {target}")
         mod = jac_file_to_ast(
@@ -53,7 +60,9 @@ class ImportPass(Pass):
             base_dir=path.dirname(mod_path),
         )
         if isinstance(mod, ast.Module):
+            self.import_table[target] = mod
             mod.is_imported = True
         else:
             self.error(f"Module {target} is not a valid Jac module.")
+            raise Exception(f"Module {target} is not a valid Jac module.")
         return mod

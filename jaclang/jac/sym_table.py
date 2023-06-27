@@ -1,5 +1,6 @@
 """Jac Symbol Table."""
-from typing import Optional
+from typing import Optional, TypeVar
+
 
 import jaclang.jac.absyntree as ast
 
@@ -10,20 +11,57 @@ class Symbol:
     def __init__(
         self,
         name: str,
-        typ: type,
-        def_node: ast.AstNode,
-        access: Optional[str] = None,
+        node: ast.AstNode,
     ) -> None:
         """Initialize."""
         self.name = name
+        self.node = node
+        self.def_line = node.line
+
+
+T = TypeVar("T", bound=Symbol)
+
+
+class TypedSymbol(Symbol):
+    """Typed Symbol."""
+
+    def __init__(
+        self,
+        name: str,
+        typ: type,
+        node: ast.AstNode,
+        access: Optional[str] = None,
+    ) -> None:
+        """Initialize."""
         self.typ = typ
-        self.def_node = def_node
-        self.def_line = def_node.line
         self.access = access
+        super().__init__(name, node)
+
+
+class DefDeclSymbol(Symbol):
+    """DefDecl Symbol."""
+
+    def __init__(
+        self,
+        name: str,
+        node: ast.AstNode,
+        other_node: Optional[ast.AstNode] = None,
+        has_def: bool = False,
+        has_decl: bool = False,
+    ) -> None:
+        """Initialize."""
+        self.other_node = other_node
+        self.has_def = has_def
+        self.has_decl = has_decl
+        super().__init__(name, node)
 
 
 class SymbolTable:
-    """Symbol Table."""
+    """Symbol Table.
+
+    Functions as a stack by default, can create a separate table in pass
+    if keeping track of multiple scopes is necessary.
+    """
 
     def __init__(
         self,
@@ -33,9 +71,9 @@ class SymbolTable:
         """Initialize."""
         self.scope_name = scope_name
         self.parent = parent
-        self.tab: dict[str, Symbol] = {}
+        self.tab: dict = {}
 
-    def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
+    def lookup(self, name: str, deep: bool = True) -> Optional[T]:
         """Lookup a variable in the symbol table."""
         if name in self.tab:
             return self.tab[name]
@@ -43,29 +81,22 @@ class SymbolTable:
             return self.parent.lookup(name, deep)
         return None
 
-    def set(self, name: str, symbol: Symbol, fresh_only: bool = False) -> bool:
+    def set(self, sym: T, fresh_only: bool = False) -> bool:
         """Set a variable in the symbol table."""
-        if fresh_only and name in self.tab:
+        if fresh_only and sym.name in self.tab:
             return False
-        self.tab[name] = symbol
+        self.tab[sym.name] = sym
         return True
 
-    def update(
-        self,
-        name: str,
-        typ: Optional[type] = None,
-        def_line: Optional[int] = None,
-        def_node: Optional[ast.AstNode] = None,
-        access: Optional[str] = None,
-        deep: bool = False,
-    ) -> bool:
+    def update(self, sym: T, deep: bool = False) -> bool:
         """Set a variable in the symbol table."""
-        if name in self.tab:
-            self.tab[name].typ = typ if typ else self.tab[name].typ
-            self.tab[name].def_line = def_line if def_line else self.tab[name].def_line
-            self.tab[name].def_node = def_node if def_node else self.tab[name].def_node
-            self.tab[name].access = access if access else self.tab[name].access
+        if sym.name in self.tab:
+            self.tab[sym.name] = T
             return True
         elif deep and self.parent:
-            return self.parent.update(name, typ, def_line, def_node, access, deep)
+            return self.parent.update(sym)
         return False
+
+    def push(self, scope_name: str = "") -> "SymbolTable":
+        """Push a new scope onto the symbol table."""
+        return SymbolTable(scope_name, self)

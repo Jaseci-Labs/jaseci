@@ -4,7 +4,7 @@ from typing import Any
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.ir_pass import Pass
-from jaclang.jac.sym_table import Symbol, SymbolTable
+from jaclang.jac.sym_table import SymbolTable, TypedSymbol
 
 
 class TypeAnalyzePass(Pass, SymbolTable):
@@ -74,7 +74,12 @@ class TypeAnalyzePass(Pass, SymbolTable):
         if node.access:
             for i in self.get_all_sub_nodes(node, typ=ast.Assignment):
                 if isinstance(i.target, ast.Name) and not self.sym_tab.update(
-                    i.target.value, access=node.access.value
+                    TypedSymbol(
+                        name=i.target.value,
+                        access=node.access.value,
+                        node=i,
+                        typ=i._typ,
+                    )
                 ):
                     self.ice(
                         f"ICE: Variable {i.target.value} not seen as declared in pass {self.__class__.__name__}"
@@ -118,33 +123,30 @@ class TypeAnalyzePass(Pass, SymbolTable):
             for i in node.items.items:
                 if i.alias:
                     if not self.sym_tab.set(
-                        i.alias.value,
-                        symbol=Symbol(
+                        TypedSymbol(
                             name=i.alias.value,
                             typ=Any,  # TODO: Backpatch analysis for module itmes
-                            def_node=node,
+                            node=node,
                         ),
                         fresh_only=True,
                     ):
                         self.already_defined_err(i.alias.value)
                 else:
                     if not self.sym_tab.set(
-                        i.name.value,
-                        symbol=Symbol(
+                        TypedSymbol(
                             name=i.name.value,
                             typ=Any,  # TODO: Backpatch analysis for module itmes
-                            def_node=node,
+                            node=node,
                         ),
                         fresh_only=True,
                     ):
                         self.already_defined_err(i.name.value)
         else:
             if not self.sym_tab.set(
-                node.path.path[-1].value,
-                symbol=Symbol(
+                TypedSymbol(
                     name=node.path.path[-1].value,
                     typ=ModuleType,
-                    def_node=node,
+                    node=node,
                 ),
                 fresh_only=True,
             ):
@@ -188,11 +190,10 @@ class TypeAnalyzePass(Pass, SymbolTable):
         if exists and not self.assert_type_match(sym=exists, node=node):
             return
         self.sym_tab.set(
-            node.name.value,
-            Symbol(
+            TypedSymbol(
                 name=node.name.value,
                 typ=type,
-                def_node=node,
+                node=node,
                 access=node.access.value if node.access else None,
             ),
         )
@@ -703,7 +704,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
     # Checks and validations
     # ----------------------
 
-    def assert_type_match(self, sym: Symbol, node: ast.AstNode) -> bool:
+    def assert_type_match(self, sym: TypedSymbol, node: ast.AstNode) -> bool:
         """Check if two types match."""
         if isinstance(sym.typ, node._typ):
             return True
