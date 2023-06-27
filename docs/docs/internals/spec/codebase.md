@@ -128,3 +128,16 @@ plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_
 - Get docstring to live outsie
 - :: should turn into |> for self calls on abilities
 - Lets have a left sizded pipe
+
+### Notes for jac-lang about page
+
+About
+
+Jac is a programming language that is a love letter to Python, computers, programming, code etc. Its designed to fun, useful, and a home language for tinkering as well as scaling production codebases. In one way, Jac's dna has elemenets a bit like like what typescript is to javascript, what rust is to c, and what scala/kotlin is to java, in that it trys to make existing things just better, cleaner and more fun. It also has elements of what c++'s OOP was to c, or fortrans functions were to assembly code, in bringing new kinds of higher level abstractions to help coders think and be more productive. I really want to build this for me (as a new home langauge), and I want to build this for you.
+
+I hope this language brings joy and the love of programming to whomever uses it.
+
+My background
+
+I'm a computer enthusiast who happens to be a comp sci prof, tech entreprenuer, avid coder, gamer, etc. I want to bring these perspectives to bear.
+
