@@ -19,7 +19,7 @@ class TypeAnalyzePassTests(TestCaseMicroSuite):
         code_gen = jac_file_to_final_pass(
             "../../../../cli/jac_cli.jac", self.fixture_abs_path("")
         )
-        print(code_gen.ir.meta["py_code"])
+        # print(code_gen.ir.meta["py_code"])
         self.assertFalse(code_gen.errors_had)
         self.assertGreater(len(code_gen.ir.meta["py_code"]), 200)
 

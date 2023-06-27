@@ -92,20 +92,19 @@ class DeclDefMatchPass(Pass, SymbolTable):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
-        if self.sym_tab.parent:  # now treat imported items as global
-            parent = self.sym_tab.parent
-            if node.items:
-                for i in node.items.items:
-                    name = i.alias if i.alias else i.name
-                    decl = parent.lookup(name.value)
-                    if decl:
-                        if decl.has_def:
-                            self.error(f"Name {name.value} already bound.")
-                        else:
-                            decl.has_def = True
-                            decl.other_node = i
-                            decl.node.body = i
-                            self.sym_tab.set(decl)
+        if not self.sym_tab.parent:
+            self.error("Import should have a parent sym_table sope.")
+        self.sym_tab = self.sym_tab.pop()
+        if node.items:  # now treat imported items as global
+            for i in node.items.items:
+                name = i.alias if i.alias else i.name
+                decl = self.sym_tab.lookup(name.value)
+                if decl:
+                    self.error(f"Name {name.value} already bound.")
+                else:
+                    self.sym_tab.set(
+                        DefDeclSymbol(name=name.value, node=i, has_def=True)
+                    )
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.

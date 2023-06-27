@@ -19,7 +19,12 @@ class AstNode:
 
     def __str__(self) -> str:
         """Return string representation of node."""
-        return f"{str(type(self).__name__)}->[{self.line},{len(self.kid)} kids]"
+        kid = vars(self).copy()
+        del kid["parent"]
+        return (
+            f"{str(type(self).__name__)}->[{self.line},{len(self.kid)} kids]:"
+            f"{pprint.pformat(kid, indent=2, depth=1)}"
+        )
 
     def __repr__(self) -> str:
         """Return string representation of node."""

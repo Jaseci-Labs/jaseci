@@ -1,4 +1,5 @@
 """Jac Symbol Table."""
+import pprint
 from typing import Optional, TypeVar
 
 
@@ -17,6 +18,14 @@ class Symbol:
         self.name = name
         self.node = node
         self.def_line = node.line
+
+    def pretty_print(self) -> str:
+        """Pretty print the symbol."""
+        return pprint.pformat(vars(self), indent=2)
+
+    def __repr__(self) -> str:
+        """Representation for printing Symbols."""
+        return f"{self.pretty_print()}"
 
 
 T = TypeVar("T", bound=Symbol)
@@ -100,3 +109,20 @@ class SymbolTable:
     def push(self, scope_name: str = "") -> "SymbolTable":
         """Push a new scope onto the symbol table."""
         return SymbolTable(scope_name, self)
+
+    def pop(self) -> "SymbolTable":
+        """Pop the current scope off the symbol table."""
+        return self.parent if self.parent else self
+
+    def pretty_print(self) -> str:
+        """Pretty print the symbol table and return the result as a string."""
+        output = f"Scope: {self.scope_name}\n"
+        output += pprint.pformat(self.tab)
+        if self.parent:
+            output += f"\nParent Scope: {self.parent.scope_name}\n"
+            output += self.parent.pretty_print()
+        return output
+
+    def __repr__(self) -> str:
+        """Return the symbol table as a string."""
+        return self.pretty_print()

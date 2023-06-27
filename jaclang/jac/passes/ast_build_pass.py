@@ -268,7 +268,7 @@ class AstBuildPass(Pass):
         if node.kid[0].is_type(ast.Name):
             this_item = ast.ModuleItem(
                 name=node.kid[0],
-                alias=node.kid[1] if len(node.kid) == 3 else None,
+                alias=node.kid[2] if len(node.kid) == 3 else None,
                 parent=node.parent,
                 kid=[node.kid[0], node.kid[2]] if len(node.kid) == 3 else [node.kid[0]],
                 line=node.line,
