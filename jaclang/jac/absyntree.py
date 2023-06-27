@@ -37,7 +37,7 @@ class AstNode:
             "kid": [x.to_dict() for x in self.kid if x],
             "line": self.line,
         }
-        if type(self) == Token:
+        if isinstance(self, Token):
             ret["name"] = self.name
             ret["value"] = self.value
         return ret
