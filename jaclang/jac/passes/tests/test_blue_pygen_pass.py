@@ -17,7 +17,7 @@ class BluePygenPassTests(TestCaseMicroSuite):
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_final_pass(
-            self.fixture_abs_path("../../../../cli/jac_cli.jac")
+            "../../../../cli/jac_cli.jac", self.fixture_abs_path("")
         )
         print(code_gen.ir.meta["py_code"])
         self.assertFalse(code_gen.errors_had)
@@ -45,7 +45,7 @@ class BluePygenPassTests(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = transpile_jac_file(filename)
+        code_gen = transpile_jac_file(filename, "")
         self.assertGreater(len(code_gen), 10)
 
 

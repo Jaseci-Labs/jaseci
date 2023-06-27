@@ -22,16 +22,15 @@ def import_jac(target: str) -> Optional[types.ModuleType]:
     # Get the directory of the calling module
     frame = inspect.stack()[1]
     caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
-    target = path.normpath(path.join(caller_dir, target))
 
     # Transpile the Jac file
-    code_string = transpile_jac_file(target)
+    code_string = transpile_jac_file(file_path=target, base_dir=caller_dir)
 
     # Create a module object
     module = types.ModuleType(module_name)
 
     # Set __file__ attribute
-    module.__file__ = target
+    module.__file__ = path.normpath(path.join(caller_dir, target))
     module.__name__ = module_name
 
     # Execute the code in the context of the module's namespace

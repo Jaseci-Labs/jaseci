@@ -29,4 +29,7 @@ class ImportPass(Pass):
         )
         if not path.exists(target):
             raise FileNotFoundError(f"Could not find module {target}")
-        return jac_file_to_ast(target)
+        return jac_file_to_ast(
+            path.join(*(node.path.path_str.split("."))) + ".jac",
+            base_dir=path.dirname(mod_path),
+        )

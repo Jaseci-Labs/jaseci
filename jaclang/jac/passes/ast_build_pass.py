@@ -16,7 +16,7 @@ class AstBuildPass(Pass):
         self.ir = replace_node(
             node,
             ast.Module(
-                name=self.mod_path,
+                name=self.rel_mod_path,
                 doc=node.kid[0],
                 body=node.kid[1] if len(node.kid) == 2 else None,
                 mod_path=self.mod_path,
