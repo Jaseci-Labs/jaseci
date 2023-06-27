@@ -53,7 +53,9 @@ class AstBuildPassTests(TestCaseMicroSuite):
         lex = JacLexer(mod_path="", input_ir=self.file_to_str(filename)).ir
         prse = JacParser(mod_path="", input_ir=lex).ir
         build_pass = AstBuildPass(mod_path="", input_ir=prse).ir
-        self.assertGreater(len(str(build_pass.to_dict())), 200)
+        self.assertIsNotNone(build_pass)
+        if build_pass:
+            self.assertGreater(len(str(build_pass.to_dict())), 200)
 
 
 AstBuildPassTests.self_attach_micro_tests()
