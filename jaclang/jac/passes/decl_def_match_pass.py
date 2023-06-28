@@ -143,6 +143,11 @@ class DeclDefMatchPass(Pass, SymbolTable):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
+        # if no body, check for def
+        #    if no def, register as decl
+        # if complete register as def
+        # nota: can allow static overriding perhaps?
+        # note: if arch has not body ok, imports body is the arch itself
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
