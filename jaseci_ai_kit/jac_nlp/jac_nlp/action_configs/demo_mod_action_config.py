@@ -26,7 +26,7 @@ DEMO_MOD_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone -b action_policy https://github.com/Jaseci-Labs/jaseci.git; cd jaseci; cd jaseci_core; source install.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[demo_mod]; uvicorn jac_nlp.demo_mod:serv_actions --host 0.0.0.0 --port 80;"
+                "prod_up": "git clone -b action_policy https://github.com/Jaseci-Labs/jaseci.git; uvicorn jac_nlp.demo_mod:serv_actions --host 0.0.0.0 --port 80;"
                 # "prod_up": "uvicorn jac_nlp.demo_mod:serv_actions --host 0.0.0.0 --port 80"
             },
         },
