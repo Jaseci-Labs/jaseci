@@ -21,7 +21,7 @@ object Interface {
     can create_parser() -> ArgumentParser {
         parser = ArgumentParser();
         parser.add_argument("base",
-                            choices = [f.__name__ for f in functions],
+                            choices = [f.__name__ for f in :h:functions],
                             help = "The function to run");
 
         for func in :h:functions {
@@ -61,8 +61,8 @@ object ShellCmd:cmd.Cmd {
     has prompt: str = "> ",
         reg: Interface;
 
-    can init(registry: Interface, *args: list, **kwargs: dict) {
-        :h::o:cmd.Cmd.__init__(*args, **kwargs);
+    can init(registry: Interface) {
+        :o:cmd.Cmd.__init__(:h:);
         :h:reg = registry;
     }
 

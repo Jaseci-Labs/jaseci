@@ -208,8 +208,8 @@ class DeclDefMatchPass(Pass, SymbolTable):
         members: list['ArchHas | Ability'],
         """
         # Tags all function signatures whether method style or not
-        for i in self.get_all_sub_nodes(node, ast.FuncSignature):
-            i.is_arch_attached = True
+        for i in self.get_all_sub_nodes(node, ast.Ability):
+            i.arch_attached = node
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.

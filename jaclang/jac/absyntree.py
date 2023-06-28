@@ -464,6 +464,7 @@ class Ability(OOPAccessNode):
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
+        arch_attached: Optional["ArchBlock"] = None,
     ) -> None:
         """Initialize func arch node."""
         self.name = name
@@ -472,6 +473,7 @@ class Ability(OOPAccessNode):
         self.decorators = decorators
         self.signature = signature
         self.body = body
+        self.arch_attached = arch_attached
         super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
@@ -660,7 +662,6 @@ class FuncSignature(AstNode):
     ) -> None:
         """Initialize method signature node."""
         self.params = params
-        self.is_arch_attached = False
         self.return_type = return_type
         super().__init__(parent=parent, kid=kid, line=line)
 

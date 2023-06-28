@@ -37,6 +37,7 @@ build
 *Zone.Identifier
 .DS_Store
 parser.out
+codegen_output*
 
 *.rdb
 node_modules
