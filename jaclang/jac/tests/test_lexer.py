@@ -1,7 +1,7 @@
 """Tests for Jac lexer."""
 from typing import Generator
 
-from jaclang.jac.lexer import JacLexer
+from jaclang.jac.lexer import JacLexer, Tokens
 from jaclang.utils.test import TestCase
 
 
@@ -48,3 +48,12 @@ class TestLexer(TestCase):
             tokens.append((t.value, t.lineno, t.index - t.lineidx, t.end - t.lineidx))
         self.assertEqual(tokens[12], ("activity", 9, 16, 24))
         self.assertEqual(tokens[-3], ("outside_func", 59, 24, 36))
+
+    def test_enum_matches_lexer_toks(self) -> None:
+        """Test that enum stays synced with lexer."""
+        for token in JacLexer.tokens:
+            self.assertIn(token, Tokens.__members__)
+        for token in Tokens:
+            self.assertIn(token.name, JacLexer.tokens)
+        for token in Tokens:
+            self.assertIn(token.value, JacLexer.tokens)

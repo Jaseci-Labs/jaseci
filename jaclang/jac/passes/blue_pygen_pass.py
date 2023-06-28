@@ -1,6 +1,7 @@
 """Jac Blue pass for Jaseci Ast."""
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import INIT_FUNC
+from jaclang.jac.lexer import Tokens as Tok
 from jaclang.jac.passes.ir_pass import Pass
 
 
@@ -748,6 +749,8 @@ class BluePygenPass(Pass):
                 node,
                 f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
             )
+        elif node.op.name == Tok.PIPE_FWD:
+            pass
         else:
             self.error(
                 f"Binary operator {node.op.value} not supported in bootstrap Jac"

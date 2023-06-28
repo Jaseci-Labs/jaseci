@@ -3,6 +3,7 @@ from os import path
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import replace_node
+from jaclang.jac.lexer import Tokens as Tok
 from jaclang.jac.passes.ir_pass import Pass
 
 
@@ -276,11 +277,11 @@ class AstBuildPass(Pass):
             node.kid = [this_item]
         else:
             this_item = ast.ModuleItem(
-                name=node.kid[-3] if node.kid[-2].name == "KW_AS" else node.kid[-1],
-                alias=node.kid[-1] if node.kid[-2].name == "KW_AS" else None,
+                name=node.kid[-3] if node.kid[-2].name == Tok.KW_AS else node.kid[-1],
+                alias=node.kid[-1] if node.kid[-2].name == Tok.KW_AS else None,
                 parent=node.parent,
                 kid=[node.kid[-3], node.kid[-1]]
-                if node.kid[-2].name == "KW_AS"
+                if node.kid[-2].name == Tok.KW_AS
                 else [node.kid[-1]],
                 line=node.line,
             )
@@ -654,10 +655,10 @@ class AstBuildPass(Pass):
         typed_has_clause -> NAME type_tag EQ expression
         typed_has_clause -> NAME type_tag
         """
-        if node.kid[-2].name == "EQ":
+        if node.kid[-2].name == Tok.EQ:
             del node.kid[-2]
         frozen = False
-        if node.kid[0].name == "KW_FREEZE":
+        if node.kid[0].name == Tok.KW_FREEZE:
             frozen = True
             del node.kid[0]
         replace_node(
@@ -907,7 +908,7 @@ class AstBuildPass(Pass):
         param_var -> NAME type_tag
         """
         meta = {"unpack": None, "value": None}
-        if node.kid[-2].name == "EQ":
+        if node.kid[-2].name == Tok.EQ:
             del node.kid[-2]
             meta["value"] = node.kid[-1]
         if node.kid[0].name != "NAME":
@@ -1226,7 +1227,7 @@ class AstBuildPass(Pass):
         for_stmt -> KW_FOR NAME KW_IN expression code_block
         for_stmt -> KW_FOR assignment KW_TO expression KW_BY expression code_block
         """
-        if node.kid[2].name == "KW_TO":
+        if node.kid[2].name == Tok.KW_TO:
             node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[6]]
             replace_node(
                 node,
@@ -1240,7 +1241,7 @@ class AstBuildPass(Pass):
                     line=node.line,
                 ),
             )
-        elif node.kid[2].name == "KW_IN":
+        elif node.kid[2].name == Tok.KW_IN:
             node.kid = [node.kid[1], node.kid[3], node.kid[4]]
             replace_node(
                 node,
@@ -1476,7 +1477,7 @@ class AstBuildPass(Pass):
         visit_stmt -> KW_VISIT expression SEMI
         """
         meta = {"typ": None, "else_body": None}
-        if node.kid[-1].name == "SEMI":
+        if node.kid[-1].name == Tok.SEMI:
             if len(node.kid) == 4:
                 node.kid = [node.kid[1], node.kid[2]]
                 meta["typ"] = node.kid[0]
@@ -1514,7 +1515,7 @@ class AstBuildPass(Pass):
         revisit_stmt -> KW_REVISIT SEMI
         """
         meta = {"hops": None, "else_body": None}
-        if node.kid[-1].name == "SEMI":
+        if node.kid[-1].name == Tok.SEMI:
             if len(node.kid) == 3:
                 node.kid = [node.kid[1]]
                 meta["hops"] = node.kid[0]
@@ -1832,7 +1833,7 @@ class AstBuildPass(Pass):
             replace_node(node, node.kid[0])
         else:
             node.kid = [node.kid[-1]]
-            if node.kid[0].name == "STAR_MUL":
+            if node.kid[0].name == Tok.STAR_MUL:
                 replace_node(
                     node,
                     ast.UnpackExpr(
@@ -2076,7 +2077,7 @@ class AstBuildPass(Pass):
             "collection": node.kid[5],
             "conditional": None,
         }
-        if node.kid[-3].name == "KW_IF":
+        if node.kid[-3].name == Tok.KW_IF:
             meta["conditional"] = node.kid[-2]
         if len(node.kid) == 7:
             node.kid = [node.kid[1], node.kid[3], node.kid[5]]
@@ -2109,13 +2110,13 @@ class AstBuildPass(Pass):
             "k_name": node.kid[5],
             "conditional": None,
         }
-        if node.kid[6].name == "COMMA":
+        if node.kid[6].name == Tok.COMMA:
             meta["v_name"] = node.kid[7]
             meta["collection"] = node.kid[9]
         else:
             meta["v_name"] = None
             meta["collection"] = node.kid[7]
-        if node.kid[-3].name == "KW_IF":
+        if node.kid[-3].name == Tok.KW_IF:
             meta["conditional"] = node.kid[-2]
         if len(node.kid) == 9:
             node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7]]

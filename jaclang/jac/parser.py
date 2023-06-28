@@ -1191,7 +1191,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "LPAREN EQ filter_compare_list RPAREN",
+        "LBRACE EQ filter_compare_list RBRACE",
     )
     def filter_ctx(self, p: YaccProduction) -> YaccProduction:
         """Filter context rule."""
