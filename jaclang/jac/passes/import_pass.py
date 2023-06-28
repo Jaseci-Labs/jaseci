@@ -16,7 +16,7 @@ class ImportPass(Pass):
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
-        self.term_traverse()  # Turns off auto traversal for deliberate traversal
+        self.terminate()  # Turns off auto traversal for deliberate traversal
         self.run_again = True
         while self.run_again:
             self.run_again = False

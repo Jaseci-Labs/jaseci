@@ -22,6 +22,13 @@ class BluePygenPassTests(TestCaseMicroSuite):
         with open("codegen_output.py", "w") as f:
             f.write(code_gen.ir.meta["py_code"])
 
+        # print(code_gen.ir.meta["py_code"])
+        self.assertFalse(code_gen.errors_had)
+        self.assertGreater(len(code_gen.ir.meta["py_code"]), 200)
+
+    def test_pipe_operator(self) -> None:
+        """Basic test for pass."""
+        code_gen = jac_file_to_final_pass("codegentext.jac", self.fixture_abs_path(""))
         print(code_gen.ir.meta["py_code"])
         self.assertFalse(code_gen.errors_had)
         self.assertGreater(len(code_gen.ir.meta["py_code"]), 200)

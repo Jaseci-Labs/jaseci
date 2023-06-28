@@ -15,7 +15,7 @@ class AstNode:
         self.line = line
         self._sub_node_tab: dict[type[AstNode], list[AstNode]] = {}
         self._typ: type = type(None)
-        self.meta: dict[str, str] = {}
+        self.meta: dict = {}
 
     def __str__(self) -> str:
         """Return string representation of node."""

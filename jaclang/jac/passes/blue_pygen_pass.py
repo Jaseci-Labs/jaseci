@@ -750,7 +750,22 @@ class BluePygenPass(Pass):
                 f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
             )
         elif node.op.name == Tok.PIPE_FWD:
-            pass
+            self.emit(node, f"{node.right.meta['py_code']}({node.left.meta['py_code']}")
+            paren_count = (
+                node.meta["pipe_chain_count"] if "pipe_chain_count" in node.meta else 1
+            )
+            if (
+                type(node.parent) == ast.BinaryExpr
+                and node.parent.op.name == Tok.PIPE_FWD
+            ):
+                node.parent.meta["pipe_chain_count"] = paren_count + 1
+            else:
+                self.emit(node, ")" * paren_count)
+
+        elif node.op.name == Tok.PIPE_BKWD:
+            self.emit(
+                node, f"{node.left.meta['py_code']}({node.right.meta['py_code']})"
+            )
         else:
             self.error(
                 f"Binary operator {node.op.value} not supported in bootstrap Jac"

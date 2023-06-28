@@ -42,11 +42,11 @@ class Pass(Transform):
         if isinstance(node, ast.Parse) and hasattr(self, f"exit_{node.name}"):
             getattr(self, f"exit_{node.name}")(node)
 
-    def term_traverse(self) -> None:
+    def terminate(self) -> None:
         """Terminate traversal."""
         self.term_signal = True
 
-    def prune_traverse(self) -> None:
+    def prune(self) -> None:
         """Prune traversal."""
         self.prune_signal = True
 
@@ -83,10 +83,10 @@ class Pass(Transform):
         # Checks if self.ir is created during traversal
         return self.ir if hasattr(self, "ir") else ir
 
-    def traverse(self, node: ast.AstNode) -> None:
+    def traverse(self, node: ast.AstNode) -> ast.AstNode:
         """Traverse tree."""
         if self.term_signal:
-            return
+            return node
         self.cur_node = node
         self.enter_node(node)
         if not self.prune_signal:
@@ -96,6 +96,7 @@ class Pass(Transform):
         else:
             self.prune_signal = False
         self.exit_node(node)
+        return node
 
     def error(self, msg: str) -> None:
         """Pass Error."""
