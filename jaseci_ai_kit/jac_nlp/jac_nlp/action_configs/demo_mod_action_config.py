@@ -60,7 +60,7 @@ DEMO_MOD_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "demo-mod",
-                                "image": "jaseci/jac-nlp:1.4.0.21",
+                                "image": "jaseci/jac-nlp:1.4.0.22",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
