@@ -29,9 +29,14 @@ class BluePygenPassTests(TestCaseMicroSuite):
     def test_pipe_operator(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_final_pass("codegentext.jac", self.fixture_abs_path(""))
-        print(code_gen.ir.meta["py_code"])
         self.assertFalse(code_gen.errors_had)
-        self.assertGreater(len(code_gen.ir.meta["py_code"]), 200)
+        self.assertIn(
+            'say((dump(print(len)))({"name": "value"}))', code_gen.ir.meta["py_code"]
+        )
+        self.assertIn(
+            '{"name": "value"}(len(print(print(print))))', code_gen.ir.meta["py_code"]
+        )
+        self.assertIn("a = (5 + 10) * 2", code_gen.ir.meta["py_code"])
 
     def test_pass_ast_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""

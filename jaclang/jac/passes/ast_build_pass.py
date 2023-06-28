@@ -1956,7 +1956,17 @@ class AstBuildPass(Pass):
         atom -> atom_literal
         """
         if len(node.kid) == 3:
-            replace_node(node, node.kid[1])
+            node.kid = [node.kid[0], node.kid[1]]
+            replace_node(
+                node,
+                ast.UnaryExpr(
+                    op=node.kid[0],
+                    operand=node.kid[1],
+                    parent=node.parent,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
         else:
             replace_node(node, node.kid[0])
 

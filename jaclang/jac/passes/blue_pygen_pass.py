@@ -791,6 +791,8 @@ class BluePygenPass(Pass):
         """
         if node.op.value in ["-", "~", "+"]:
             self.emit(node, f"{node.op.value}{node.operand.meta['py_code']}")
+        if node.op.value == "(":  # Parenthesis reuses unary expr
+            self.emit(node, f"({node.operand.meta['py_code']})")
         elif node.op.value == "not":
             self.emit(node, f"not {node.operand.meta['py_code']}")
         else:
