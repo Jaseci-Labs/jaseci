@@ -21,6 +21,7 @@ MODULES = [
     "sentiment",
     "paraphraser",
     "dolly",
+    "demo_mod",
 ]
 
 
