@@ -90,7 +90,9 @@ class PrometheusService(JsOrc.CommonService):
 
         for node_name in node_names:
             res[node_name]["disk_write_bytes"] = disk_write.get(node_name, 0)
-
+        mem = self.memory.total_bytes()
+        for node_name in node_names:
+            res[node_name]["total_bytes"] = mem.get(node_name, 0)
         return res
 
     def pod_info(
