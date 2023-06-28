@@ -51,20 +51,28 @@ DEMO_MOD_ACTION_CONFIG = {
                                     "name": "demo-mod-up",
                                     "defaultMode": 420,
                                 },
-                            }
+                            },
+                            {
+                                "name": "jac-nlp-volume",
+                                "persistentVolumeClaim": {"claimName": "jac-nlp-pvc"},
+                            },
                         ],
                         "containers": [
                             {
                                 "name": "demo-mod",
-                                "image": "jaseci/jac-nlp:1.4.0.22",
+                                "image": "jaseci/jac-nlp:1.4.0.21",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "1Gi"},
-                                    "requests": {"memory": "1Gi"},
+                                    "limits": {"memory": "2Gi"},
+                                    "requests": {"memory": "2Gi"},
                                 },
                                 "volumeMounts": [
-                                    {"name": "prod-script", "mountPath": "/script"}
+                                    {"name": "prod-script", "mountPath": "/script"},
+                                    {
+                                        "name": "jac-nlp-volume",
+                                        "mountPath": "/root/.jaseci/models/",
+                                    },
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",
