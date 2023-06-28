@@ -6,7 +6,7 @@ description: Methods available in Jaseci for manipulating dictionaries.
 
 # Dictionaries
 
-In this section below, displays all of the **Dictionary** methods available in Jaseci for manipulating dictionaries. These methods provide a comprehensive and efficient way to work with dictionaries in your application.
+In this section below, displays all of the **Dictionary** methods available in Jaseci for manipulating dictionaries. These methods provide a comprehensive and efficient way to work with dictionaries in Jac program.
 
 ### `items`
 
