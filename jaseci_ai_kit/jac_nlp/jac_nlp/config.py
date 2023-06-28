@@ -12,6 +12,7 @@ from .action_configs.use_enc_action_config import USE_ENC_ACTION_CONFIG
 from .action_configs.use_qa_action_config import USE_QA_ACTION_CONFIG
 from .action_configs.zs_classifier_action_config import ZS_CLASSIFIER_ACTION_CONFIG
 from .action_configs.sentiment_action_config import SENTIMENT_ACTION_CONFIG
+from .action_configs.demo_mod_action_config import DEMO_MOD_ACTION_CONFIG
 
 ACTION_CONFIGS = {
     "bart_sum": BART_SUM_ACTION_CONFIG,
@@ -28,4 +29,5 @@ ACTION_CONFIGS = {
     "use_qa": USE_QA_ACTION_CONFIG,
     "zs_classifier": ZS_CLASSIFIER_ACTION_CONFIG,
     "sentiment": SENTIMENT_ACTION_CONFIG,
+    "demo_mod": DEMO_MOD_ACTION_CONFIG,
 }

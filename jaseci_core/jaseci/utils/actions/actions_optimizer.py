@@ -621,18 +621,27 @@ class ActionsOptimizer:
             ordered_modules = sorted(
                 module_utilz.items(), key=lambda x: x[1], reverse=True
             )
+            logger.info(f"ordered modules utilization: {ordered_modules}")
+            curr_mod_ordered_list = [x[0] for x in ordered_modules]
+            # Sort the module history based on the order of modules
+            all_mod_ordered_list = sorted(
+                self.module_history,
+                key=lambda x: curr_mod_ordered_list.index(x)
+                if x in curr_mod_ordered_list
+                else len(curr_mod_ordered_list),
+            )
+
             # Calculate the local memory requirement and determine module configuration
             node_mem = self.policy_params.get("node_mem", 999 * 1024)
             jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
             total_avail_mem = (node_mem - jaseci_runtime_mem) * NODE_MEM_THRESHOLD
             local_mem_requirement = 0
             config = {}
-            for module in self.module_history:
+            for module in all_mod_ordered_list:
                 mem_req = int(
                     action_configs.get(module, {}).get("local_mem_requirement", 0)
                 )
-                module_found = [(x, y) for x, y in ordered_modules if x == module]
-                if module_found:
+                if module in curr_mod_ordered_list:
                     if local_mem_requirement + mem_req > total_avail_mem:
                         config[module] = "remote"
                     else:
