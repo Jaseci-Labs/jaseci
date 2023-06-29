@@ -6,7 +6,7 @@ setup(
     version="0.0.1",
     description="A Pygments lexer for the Jac programming language.",
     py_modules=["jac_syntax_highlighter"],
-    install_requires=["pygments" "mkdocs", "mkdocs-material"],
+    install_requires=["pygments", "mkdocs", "mkdocs-material"],
     entry_points="""
         [pygments.lexers]
         jaclexer = jac_syntax_highlighter:JacLexer
