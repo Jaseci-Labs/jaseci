@@ -1,0 +1,25 @@
+site_name: The Jac Programming Language
+site_url: https://jac-lang.org
+nav:
+    - ~$: 'index.md'
+    - ~/why$: 'about.md'
+    - ~/spec$: 'spec.md'
+    - ~/docs$: 'docs.md'
+    - ~/blog$: 'blog.md'
+    - ~/github$: https://github.com/Jaseci-Labs/jaclang
+
+
+theme:
+    name: 'material'
+    palette:
+        primary: 'brown'
+        accent: 'orange'
+    font:
+        text: 'Coming Soon'
+        code: 'Roboto Mono'
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/mastodon
+      link: https://fosstodon.org/@squidfunk
+copyright: Copyright &copy; 2023 - 20XX Jac Hackers Everwhere

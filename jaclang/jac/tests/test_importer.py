@@ -15,7 +15,7 @@ class TestLoader(TestCase):
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
         h = jac_import("fixtures.hello_world")
-        self.assertEqual(h.hello(), "Hello World!")
+        self.assertEqual(h.hello(), "Hello World!")  # type: ignore
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
