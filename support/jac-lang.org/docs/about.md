@@ -8,7 +8,7 @@ The scope of this iteration of Jac is massive, but with discipline and hard work
 
 ## Where Are We today
 
-Jac doesn't have a big backing company (yet), or a team of coders working under me, or vast resources to fund this project like many successful languages have had. What I do have is a deep reservoir of determination and few brilliant coders around me who are commited to the vision and excited to see where it goes.
+Jac doesn't have a big backing company (yet), or a team of coders working under my management, or vast resources to fund the project as many successful languages have had. What I do have is a deep reservoir of determination and few brilliant coders around me who are commited to the vision and excited to see where it goes.
 
 We're very open and welcoming of anyone who might be open to catch the Jac bug. If you're interested in being part of this ambitious project, please feel free to reach out. We'd love to hear from you. We have a journey ahead of us, but with dedication and collaboration, we're confident we can make Jac a beloved part of every coder's toolkit.
 

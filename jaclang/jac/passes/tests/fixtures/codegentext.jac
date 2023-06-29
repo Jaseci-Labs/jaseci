@@ -8,5 +8,3 @@ with entry {
 with entry {
     {"name": "value"} <| len <| print  <| print  <| print;
 }
-
-

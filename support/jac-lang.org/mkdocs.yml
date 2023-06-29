@@ -8,15 +8,26 @@ nav:
     - ~/blog$: 'blog.md'
     - ~/github$: https://github.com/Jaseci-Labs/jaclang
 
-
 theme:
     name: 'material'
     palette:
         primary: 'brown'
         accent: 'orange'
     font:
-        text: 'Coming Soon'
+        text: 'Short Stack'
         code: 'Roboto Mono'
+    features:
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
 extra:
   generator: false
   social:
