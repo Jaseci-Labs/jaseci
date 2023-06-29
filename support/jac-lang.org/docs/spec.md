@@ -1300,6 +1300,11 @@ This is the implementation of the command line interface tool for the
 Jac languages. It's built with the Jac language V2 via bootstraping and
 represents the first such production Jac program.
 """
+#* This is 
+A Multiline
+Comment *#
+
+# This is a single line comment
 
 import:py from argparse, ArgumentParser as ArgParser;
 
