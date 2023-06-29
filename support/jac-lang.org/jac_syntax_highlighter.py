@@ -47,7 +47,7 @@ class JacLexer(RegexLexer):
     """
 
     name = "Jac"
-    url = "http://www.python.org"
+    url = "http://www.jac-lang.org"
     aliases = ["jac"]
     filenames = ["*.jac"]
     mimetypes = [
@@ -114,8 +114,11 @@ class JacLexer(RegexLexer):
             (r"\\", Text),
             include("keywords"),
             include("soft-keywords"),
-            (r"(def)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
-            (r"(class)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
+            (r"(can)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
+            (r"(object)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
+            (r"(walker)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
+            (r"(node)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
+            (r"(edge)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(from)((?:\s|\\\s)+)", bygroups(Keyword.Namespace, Text), "fromimport"),
             (r"(import)((?:\s|\\\s)+)", bygroups(Keyword.Namespace, Text), "import"),
             include("expr"),

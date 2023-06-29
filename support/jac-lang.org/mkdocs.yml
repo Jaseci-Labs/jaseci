@@ -24,9 +24,15 @@ markdown_extensions:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
+      pygments_style: 'autumn'
+      noclasses: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+
+
+extra_css:
+  - extra.css
 
 extra:
   generator: false
