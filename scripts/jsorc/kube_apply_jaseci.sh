@@ -1,8 +1,7 @@
 echo "Deploying using namespace: $1"
-sed "s/\$j{namespace}/$1/" jaseci-template > tmp.jaseci.yaml
 
 env_vars=""
-declare -A keyword_args=( [POSTGRES_HOST]="jaseci-db" [DBNAME]="postgres" [JSORC_DB_REGEN]="\"true\"" [REDIS_HOST]="jaseci-redis")
+declare -A keyword_args=( [template]="jaseci-template" [POSTGRES_HOST]="jaseci-db" [DBNAME]="postgres" [JSORC_DB_REGEN]="\"true\"" [REDIS_HOST]="jaseci-redis")
 
 for ARGUMENT in "${@:2}"
 do
@@ -11,13 +10,18 @@ do
     keyword_args[$KEY]="${ARGUMENT:$KEY_LENGTH+1}"
 done
 
+file_name="${keyword_args[template]}"
+unset keyword_args["template"]
+
+sed "s/\$j{namespace}/$1/" $file_name > tmp-$file_name.yaml
+
 for key in ${!keyword_args[@]}
 do
     env_vars="${env_vars}\n            - name: ${key}\n              value: ${keyword_args[$key]}\n"
 done
 
-sed -i "s/\$j{env_vars}/${env_vars}/" tmp.jaseci.yaml
+sed -i "s/\$j{env_vars}/${env_vars}/" tmp-$file_name.yaml
 
-kubectl apply -f tmp.jaseci.yaml
+kubectl apply -f tmp-$file_name.yaml
 
-echo "tmp.jaseci.yaml file will not be deleted for debugging"
+echo "tmp-$file_name.yaml file will not be deleted for debugging"
