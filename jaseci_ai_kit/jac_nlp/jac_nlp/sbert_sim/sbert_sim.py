@@ -215,4 +215,5 @@ def get_train_config():
 if __name__ == "__main__":
     from jaseci.jsorc.remote_actions import launch_server
 
+    setup()
     launch_server(port=8000)
