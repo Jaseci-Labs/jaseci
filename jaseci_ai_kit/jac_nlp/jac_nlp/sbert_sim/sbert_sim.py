@@ -24,21 +24,22 @@ training_config: Dict = {
     ),
     "model_name": "bert-base-uncased",
 }
-MODEL_BASE_PATH = str(model_base_path("jac_nlp/sbert_sim"))
+
+SBERT_SIM_ROOT = str(model_base_path("jac_nlp/sbert_sim"))
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
 def setup(model_name="all-mpnet-base-v2"):
     global model
-    os.makedirs(MODEL_BASE_PATH, exist_ok=True)
+    os.makedirs(SBERT_SIM_ROOT, exist_ok=True)
     if all(
-        os.path.isfile(os.path.join(MODEL_BASE_PATH, f_name))
+        os.path.isfile(os.path.join(SBERT_SIM_ROOT, f_name))
         for f_name in ["pytorch_model.bin"]
     ):
-        model = SentenceTransformer(MODEL_BASE_PATH)
+        model = SentenceTransformer(SBERT_SIM_ROOT)
     else:
         model = SentenceTransformer(model_name)
-        model.save(MODEL_BASE_PATH)
+        model.save(SBERT_SIM_ROOT)
 
 
 def create_model(model_name="bert-base-uncased", max_seq_length=256):
