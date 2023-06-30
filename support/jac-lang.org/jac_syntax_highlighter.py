@@ -109,7 +109,7 @@ class JacLexer(RegexLexer):
                 bygroups(Whitespace, String.Affix, String.Doc),
             ),
             (r"\A#!.+$", Comment.Hashbang),
-            (r'#\*(.|\n|\r)*\*#', Comment.Multiline),
+            (r"#\*(.|\n|\r)*\*#", Comment.Multiline),
             (r"#.*$", Comment.Single),
             (r"\\\n", Text),
             (r"\\", Text),
@@ -121,8 +121,12 @@ class JacLexer(RegexLexer):
             (r"(node)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(edge)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(test)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
-            (r"(from)((?:\s|\\\s)+)", bygroups(Keyword.Namespace, Text), "fromimport"),
-            (r"(import)((?:\s|\\\s)+)", bygroups(Keyword.Namespace, Text), "import"),
+            # (r"(from)((?:\s|\\\s)+)", bygroups(Keyword.Namespace, Text), "fromimport"),
+            (
+                r"(import|include)(:)(jac|py)((?:\s|\\\s)+)",
+                bygroups(Keyword.Namespace, Operator, Text, Text),
+                "import",
+            ),
             include("expr"),
         ],
         "expr": [
@@ -217,7 +221,10 @@ class JacLexer(RegexLexer):
             ),
             (r"[^\S\n]+", Text),
             include("numbers"),
-            (r"(in|is|and|or|not|to|by|:g:|:global:|:h:|:here:|:iv:|:vistor:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)\b", Operator.Word),
+            (
+                r"(in|is|and|or|not|to|by|:g:|:global:|:h:|:here:|:iv:|:vistor:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)\b",
+                Operator.Word,
+            ),
             (r"\?:|\?|:\+:|!=|==|<<|>>|:=|[-~+/*%=<>&^|.]", Operator),
             (r"[]{}:(),;[]", Punctuation),
             include("expr-keywords"),
@@ -259,8 +266,8 @@ class JacLexer(RegexLexer):
             (
                 words(
                     (
-                        #"async for",
-                        #"await",
+                        # "async for",
+                        # "await",
                         "else",
                         "for",
                         "if",
@@ -268,7 +275,6 @@ class JacLexer(RegexLexer):
                         "yield",
                         # "yield from",
                         # -----
-                        
                     ),
                     suffix=r"\b",
                 ),
@@ -305,14 +311,13 @@ class JacLexer(RegexLexer):
                         "as",
                         "with",
                         # -----
-                        "freeze", 
+                        "freeze",
                         "ignore",
                         "visit",
                         "revisit",
                         "spawn",
                         "entry",
                         "exit",
-                        "include",
                         "disengage",
                         "skip",
                         # "sync",
