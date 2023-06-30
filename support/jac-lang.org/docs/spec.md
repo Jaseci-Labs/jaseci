@@ -27,7 +27,7 @@ A --> B
 A --> C
 A --> D
 A --> E
-B --> F["General Structure of a Jac Module"]
+B --> F["Jac Module Structure"]
 B --> G["Code Organization Principles"]
 C --> H["Python-Jac Mappings"]
 D --> I["New Features in Jac"]
