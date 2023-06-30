@@ -1,3 +1,4 @@
 :root>* {
-    --md-code-bg-color: #ececec;
+    /* --md-code-bg-color: #ececec; */
+    --md-code-hl-operator-color: #b68500;
 }

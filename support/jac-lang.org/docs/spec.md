@@ -16,6 +16,24 @@ The specification begins with a discussion of the general structure of a Jac mod
 
 Following the introduction, the document is divided into three main parts: The Blue Pill, The Purple Pill, and The Red Pill specifications.
 
+```mermaid
+graph TB
+A["Structure of the Document"]
+B["Jac Module Overview"]
+C["The Blue Pill Specification"]
+D["The Purple Pill Specification"]
+E["The Red Pill Specification"]
+A --> B
+A --> C
+A --> D
+A --> E
+B --> F["General Structure of a Jac Module"]
+B --> G["Code Organization Principles"]
+C --> H["Python-Jac Mappings"]
+D --> I["New Features in Jac"]
+E --> J["Data Spatial Programming Features"]
+```
+
 ### Jac Module Overview
 
 In the first section we examine the diverse set of constructs that make up a Jac module (.jac file). We also touch on a number of key high level design decisions and thought processes for how code is organized to be Jactastic!

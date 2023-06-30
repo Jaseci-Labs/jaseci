@@ -25,11 +25,14 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
       pygments_style: 'autumn'
-      noclasses: true
+      #noclasses: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
-
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
 extra_css:
   - extra.css
