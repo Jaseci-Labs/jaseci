@@ -166,8 +166,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     # Ignored patterns
     ignore_ws = r"[ \t]+"
     ignore_newline = r"[\r\n]+"  # type: ignore
-    ignore_comment = r"/\*(.|\n|\r)*\*/"
-    ignore_line_comment = r"//.*"
+    ignore_comment = r"#\*(.|\n|\r)*\*#"
     ignore_py_comment = r"#.*"
 
     # Regular expression rules for tokens

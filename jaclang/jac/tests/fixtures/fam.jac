@@ -1,9 +1,8 @@
 # This is a comment
-// This is also a commment
-/*
+#*
 This is multi line comment
 Many styles!
-*/
+*#
 """
 These are doc strings and can be used as comments
 Use them to document your code

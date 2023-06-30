@@ -25,7 +25,7 @@ class TestLexer(TestCase):
                 tokens[10].index,
                 tokens[10].end,
             ],
-            ["KW_FROM", "from", 9, 166, 170],
+            ["KW_FROM", "from", 9, 140, 144],
         )
         self.assertEqual(
             [
@@ -35,7 +35,7 @@ class TestLexer(TestCase):
                 tokens[-1].index,
                 tokens[-1].end,
             ],
-            ["RBRACE", "}", 61, 1422, 1423],
+            ["RBRACE", "}", 61, 1396, 1397],
         )
 
     def test_col_idxs(self) -> None:
