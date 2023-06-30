@@ -1719,6 +1719,8 @@ class Interp(VirtualMachine):
     def call_ability(self, nd, name, act_list):
         ability = act_list.get_obj_by_name(name)
         try:
+            ability.j_master = self.j_master
+            ability._mast = self._mast
             ability.run_ability(here=nd, visitor=self._jac_scope.visitor())
         except Exception as e:
             self.rt_error(f"Internal Exception: {e}", ability._cur_jac_ast)
