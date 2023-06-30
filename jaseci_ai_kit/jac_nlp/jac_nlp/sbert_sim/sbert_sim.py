@@ -212,8 +212,9 @@ def get_train_config():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+setup()
+
 if __name__ == "__main__":
     from jaseci.jsorc.remote_actions import launch_server
 
-    setup()
     launch_server(port=8000)
