@@ -2,7 +2,7 @@ site_name: The Jac Programming Language
 site_url: https://jac-lang.org
 nav:
     - ~$: 'index.md'
-    - ~/why$: 'about.md'
+    - ~/why$: 'why.md'
     - ~/spec$: 'spec.md'
     - ~/docs$: 'docs.md'
     - ~/blog$: 'blog.md'
@@ -27,12 +27,13 @@ markdown_extensions:
       pygments_style: 'autumn'
       #noclasses: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path: ['.', './docs/code']
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
+          # format: !!python/name:pymdownx.superfences.fence_code_format
 
 extra_css:
   - extra.css
@@ -43,3 +44,7 @@ extra:
     - icon: fontawesome/brands/mastodon
       link: https://fosstodon.org/@squidfunk
 copyright: Copyright &copy; 2023 - 20XX Jac Hackers Everwhere
+
+plugins:
+  - search
+  - open-in-new-tab

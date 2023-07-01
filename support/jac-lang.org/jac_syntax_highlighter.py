@@ -109,7 +109,7 @@ class JacLexer(RegexLexer):
                 bygroups(Whitespace, String.Affix, String.Doc),
             ),
             (r"\A#!.+$", Comment.Hashbang),
-            (r"#\*(.|\n|\r)*\*#", Comment.Multiline),
+            (r"#\*(.|\n|\r)*?\*#", Comment.Multiline),
             (r"#.*$", Comment.Single),
             (r"\\\n", Text),
             (r"\\", Text),

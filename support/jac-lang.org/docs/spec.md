@@ -14,7 +14,7 @@ The document is organized into several distinct parts, each covering a different
 
 The specification begins with a discussion of the general structure of a Jac module and an overview of code organization principles. This section will provide a broad understanding of how Jac programs are structured and organized.
 
-Following the introduction, the document is divided into three main parts: The Blue Pill, The Purple Pill, and The Red Pill specifications.
+Following the overview, the document is further divided into three main parts: The Blue Pill, The Purple Pill, and The Red Pill specifications.
 
 ```mermaid
 graph TB
@@ -38,6 +38,8 @@ E --> J["Data Spatial Programming Features"]
 
 In the first section we examine the diverse set of constructs that make up a Jac module (.jac file). We also touch on a number of key high level design decisions and thought processes for how code is organized to be Jactastic!
 
+If you're a Python hacker that just wants to see how to utilize Jac quickly, jump to Blue, the overview covers many new concepts that are part of the langauge that may feel like a lot.
+
 ### The Blue Pill Specification
 
 The Blue Pill section covers the features of Jac that have a direct one-to-one mapping with Python. This section aims to illustrate how typical Python solutions can be implemented in a 'Jactastic' way. By examining these parallels, Python programmers transitioning to Jac can gain a deeper understanding of Jac’s unique characteristics, while leveraging their existing knowledge of Python.
@@ -52,19 +54,14 @@ The Red Pill section provides a thorough examination of the language features re
 
 By exploring each of these sections, readers can gain a thorough understanding of Jac, its similarities and differences with Python, its innovative features, and the benefits of data spatial programming.
 
-## General Overview of a Jac Module
+## General Overview of a Jac
 
-A Jac module, at its core, is a logical and functional unit of code organization in the Jac programming language. Similar to Python, a Jac module contains definitions for elements such as variables, functions, and object types (classes), and can be imported and utilized in other modules, enhancing the reusability of code. However, Jac takes a step further with its innovative enhanced programming models and additional constructs.
+A Jac module, at its core, is a logical and functional unit of code organization in the Jac programming language and is semantically equivilant to the notion of a Python Module. The  module contains definitions for elements such as variables, functions, and object types (classes), and can be imported and utilized in other modules. However, Jac reimagines a few traditional constructs and incorporates a number of new constructs and semantics in realizing its innovative data spatial programming model. The language also brings a fresh take for annotation and documentation, fostering readable and maintainable code.
 
-In a Jac module, along with the core constructs (variables, functions, and classes, etc), you will find more advanced Jac-specific features, such as data spatial constructs and enhanced object-oriented structures. The language also offers rich support for annotation and documentation, fostering readable and maintainable code.
+As we delve into the details, bear in mind that though we will be elevating a 'pythonic' coding style to a 'jactastic' way of thinking, Jac's core principle is that of "python-complete" interoperability. Jac views the pythonic and the jactastic as a continuum that the language must support. A benefit to Jac users is this also means they can, automatically inherit the rich ecosystem of Python libraries and frameworks, thus providing programmers with a diverse set of tools for various application domains. Jac's "standard library" is all of Python, and a Jac object is always perfectly representable as a Python object.
 
-Code organization in a Jac module goes beyond 'Pythonic' to follow a 'Jactastic' way of structuring the code, which leverages the syntactical simplicity of Python while introducing new principles to cater to Jac's innovative features. One of the distinctive elements is the use of data spatial programming constructs, a feature unique to Jac, allowing developers to express intricate data relations in a more intuitive and efficient manner.
+Lets jump in.
 
-In addition to traditional control flow statements, Jac modules utilize data spatial statements, extending the control flow capabilities to graph centric, in-situ, data spatial programming. These data spatial constructs allow programmers to handle complex data structures and their relationships in a fundamentally different way that is more efficient than regular programming structures.
-
-Finally, Jac modules, due to their core principle of "python-complete" interoperability, support seamless integration with Python modules. This allows Jac to inherit the rich ecosystem of Python libraries and frameworks, thus providing programmers with a diverse set of tools for various application domains.
-
-Later, as we move into the pill specifications, we will delve deeper into the features and advantages of Jac, starting with its similarities with Python (The Blue Pill), then introducing its new and advanced features (The Purple Pill), and finally the constructs of its unique data spatial programming model (The Red Pill).
 ### Code Organization
 
 In the Jac programming language, the fundamental organizational unit of code is the "module". Each Jac module is a coherent assembly of various elements in a source file. The complete set of these element include the four core object Architypes of the language, as well additional elements.
@@ -111,43 +108,7 @@ Beyond the key architypes, a Jac module incorporates several additional element 
 The following code example shows all elements that form a Jac module.
 
 ```jac
-"""
-A
-Docstring
-"""
-
-global ver = "0.0.1";  # global variable
-
-import:jac .utils;  # import a module
-import:py os; # import a python module
-include:jac .mod_defs;  # includes a file
-
-object mytype {}  # define a new type
-
-node mynode:this:that {}  # define a new node
-
-edge parent {}  # define a new edge
-
-walker travelor {  # define a new walker
-    can say_hello;
-}
-
-:walker:travelor:ability:say_hello {
-    "Hello" |> print;  # |> is a pipe forward operator
-}
-
-can myablty -> int {} # define a data spacial freestyle ability
-
-can myfunc() -> None {} # define a function
-
-with entry {
-    # module level freestyle code
-}
-
-test mytest
-"A test of my functionality" {
-   # test code here
-}
+--8<-- "module_structure.jac"
 ```
 
 ### Emphasizing Declarations and Definitions in Jac
@@ -1318,7 +1279,7 @@ This is the implementation of the command line interface tool for the
 Jac languages. It's built with the Jac language V2 via bootstraping and
 represents the first such production Jac program.
 """
-#* This is 
+#* This is
 A Multiline
 Comment *#
 

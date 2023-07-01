@@ -23,9 +23,9 @@ node mynode:this:that {}  # define a new node
 edge parent {}  # define a new edge
 
 """
-Doc strings can only appear before
-a declaration of an element,
-and should target users, Use comments otherwise
+Doc strings can only
+appear before
+a declaration and should target users
 """
 walker travelor {  # define a new walker
     can say_hello;
