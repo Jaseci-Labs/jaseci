@@ -239,6 +239,7 @@ def get_global_actions():
                 "webtool",
                 "url",
                 "regex",
+                "maths",
             ]:
                 if name[0] not in glob_act_group:
                     glob_act_group[name[0]] = {}

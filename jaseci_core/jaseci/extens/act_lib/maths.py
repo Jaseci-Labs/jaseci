@@ -5,11 +5,13 @@ from jaseci.jsorc.live_actions import jaseci_action
 
 @jaseci_action()
 def ceil(x):
+    # return int
     return math.ceil(x)
 
 
 @jaseci_action()
 def comb(n, k):
+    # return int
     return math.comb(n, k)
 
 

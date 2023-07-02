@@ -9,11 +9,24 @@ Return the ceiling of x, the smallest integer greater than or equal to x. If x i
 Jac Example:
 
 ```jac
-walker search{
+walker init{
     can math.ceil;
     _float = 123.45;
 
     report math.search(_float);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    124
+  ],
+  "final_node": "urn:uuid:41800be0-01b4-4658-b49d-48b3623d40cf",
+  "yielded": false
 }
 ```
 
@@ -24,8 +37,25 @@ Return the number of ways to choose k items from n items without repetition and 
 Jac Example:
 
 ```jac
-walker search{
-    can math.comb;
+walker init{
+    can maths.comb;
+    n = 100;
+    k = 2;
+
+    report maths.comb(n,k);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    4950
+  ],
+  "final_node": "urn:uuid:0d970260-4e00-475e-a9ef-58dcf159e670",
+  "yielded": false
 }
 ```
 
@@ -36,8 +66,25 @@ Return a float with the magnitude (absolute value) of x but the sign of y.
 Jac Example:
 
 ```jac
-walker search{
-    can math.copysign;
+walker init{
+    can maths.copysign;
+    x = 100;
+    y = -2;
+
+    report maths.copysign(x,y);
+}
+```
+
+Expected Output:
+
+```
+{
+  "success": true,
+  "report": [
+    -100.0
+  ],
+  "final_node": "urn:uuid:b170034a-d289-4b4a-b300-3575430e238e",
+  "yielded": false
 }
 ```
 
@@ -45,9 +92,55 @@ walker search{
 
 Return the absolute value of x.
 
+Jac Example:
+
+```jac
+walker init{
+    can maths.fabs;
+    x = 10;
+
+    report maths.fabs(x);
+}
+```
+
+Expected Output
+```json
+{
+  "success": true,
+  "report": [
+    10.0
+  ],
+  "final_node": "urn:uuid:d72a7dac-b9ad-4589-8829-fa1cad9fa732",
+  "yielded": false
+}
+```
+
 ## Factorial
 
 Return n factorial as an integer.
+
+Jac Program:
+
+```jac
+walker init{
+    can maths.factorial;
+    x = 10;
+
+    report maths.factorial(x);
+}
+```
+
+Expected Output:
+```json
+{
+  "success": true,
+  "report": [
+    3628800
+  ],
+  "final_node": "urn:uuid:08f1c327-3b35-411e-b132-0ec24256c948",
+  "yielded": false
+}
+```
 
 ## Floor
 
