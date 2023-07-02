@@ -412,9 +412,9 @@ class BluePygenPass(Pass):
         dotted: bool,
         """
         if node.dotted:
-            self.emit(node, ".".join([i.value for i in node.names]))
+            self.emit(node, ".".join([i.meta["py_code"] for i in node.names]))
         else:
-            self.emit(node, ", ".join([i.value for i in node.names]))
+            self.emit(node, ", ".join([i.meta["py_code"] for i in node.names]))
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
@@ -424,9 +424,7 @@ class BluePygenPass(Pass):
         self.is_arch_attached = False
         """
         if node.params:
-            if (type(node.parent) == ast.Ability and node.parent.arch_attached) or (
-                type(node.parent) == ast.AbilitySpec
-            ):
+            if type(node.parent) == ast.Ability and node.parent.arch_attached:
                 self.emit(node, ", ")
             self.emit(node, node.params.meta["py_code"])
         self.emit(node, ")")
@@ -975,10 +973,7 @@ class BluePygenPass(Pass):
 
         name: Optional[Token],
         """
-        if node.name:
-            self.emit(node, f"self.{node.name.value}")
-        else:
-            self.emit(node, "self")
+        self.emit(node, "self")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_visitor_ref(self, node: ast.VisitorRef) -> None:
