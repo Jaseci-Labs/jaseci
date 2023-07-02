@@ -309,19 +309,6 @@ class BluePygenPass(Pass):
         self.decl_def_warn()
 
     # NOTE: Incomplete for Jac Purple and Red
-    def exit_ability_spec(self, node: ast.AbilitySpec) -> None:
-        """Sub objects.
-
-        doc: Optional[DocString],
-        name: Token,
-        arch: ObjectRef | NodeRef | EdgeRef | WalkerRef,
-        mod: Optional["NameList"],
-        signature: Optional[FuncSignature],
-        body: CodeBlock,
-        """
-        self.decl_def_warn()
-
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_block(self, node: ast.ArchBlock) -> None:
         """Sub objects.
 

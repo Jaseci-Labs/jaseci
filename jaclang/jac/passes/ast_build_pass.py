@@ -52,7 +52,6 @@ class AstBuildPass(Pass):
     def exit_element(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        element -> sub_ability_spec
         element -> ability
         element -> architype
         element -> include_stmt
@@ -66,8 +65,10 @@ class AstBuildPass(Pass):
     def exit_global_var(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        global_var -> doc_tag KW_FREEZE access_tag assignment_list SEMI
         global_var -> doc_tag KW_GLOBAL access_tag assignment_list SEMI
         """
+        is_frozen = node.kid[1].name == Tok.KW_FREEZE
         node.kid = [node.kid[0], node.kid[2], node.kid[3]]
         replace_node(
             node,
@@ -75,6 +76,7 @@ class AstBuildPass(Pass):
                 doc=node.kid[0],
                 access=node.kid[1],
                 assignments=node.kid[2],
+                is_frozen=is_frozen,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
@@ -412,7 +414,9 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         dotted_name -> dotted_name DOT NAME
+        dotted_name -> dotted_name DOT all_refs
         dotted_name -> NAME
+        dotted_name -> all_refs
         """
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
@@ -427,6 +431,16 @@ class AstBuildPass(Pass):
             ),
         )
 
+    def exit_all_refs(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        all_refs -> global_ref
+        all_refs -> visitor_ref
+        all_refs -> here_ref
+        all_refs -> arch_ref
+        """
+        replace_node(node, node.kid[0])
+
     def exit_ability(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
@@ -440,9 +454,9 @@ class AstBuildPass(Pass):
 
         ability_decl -> ability_decl_decor
         ability_decl -> doc_tag KW_CAN access_tag NAME func_decl code_block
-        ability_decl -> doc_tag KW_CAN access_tag NAME return_type_tag code_block
+        ability_decl -> doc_tag KW_CAN access_tag NAME event_clause code_block
         ability_decl -> doc_tag KW_CAN access_tag NAME func_decl SEMI
-        ability_decl -> doc_tag KW_CAN access_tag NAME return_type_tag SEMI
+        ability_decl -> doc_tag KW_CAN access_tag NAME event_clause SEMI
         """
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
@@ -513,15 +527,18 @@ class AstBuildPass(Pass):
     def exit_ability_def(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        ability_def -> doc_tag dotted_name ability_ref code_block
-        ability_def -> doc_tag ability_ref code_block
+        ability_def -> doc_tag dotted_name ability_ref func_decl code_block
+        ability_def -> doc_tag ability_ref func_decl code_block
+        ability_def -> doc_tag dotted_name ability_ref event_clause code_block
+        ability_def -> doc_tag ability_ref event_clause code_block
         """
         replace_node(
             node,
             ast.AbilityDef(
                 doc=node.kid[0],
-                mod=node.kid[1] if len(node.kid) == 4 else None,
+                target=node.kid[1] if len(node.kid) == 4 else None,
                 ability=node.kid[2] if len(node.kid) == 4 else node.kid[1],
+                signature=node.kid[-2],
                 body=node.kid[-1],
                 parent=node.parent,
                 kid=node.kid,
@@ -529,300 +546,40 @@ class AstBuildPass(Pass):
             ),
         )
 
-    def exit_sub_ability_spec(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        sub_ability_spec -> doc_tag dotted_name strict_arch_ref ability_ref func_decl code_block
-        sub_ability_spec -> doc_tag dotted_name strict_arch_ref ability_ref code_block
-        sub_ability_spec -> doc_tag strict_arch_ref ability_ref func_decl code_block
-        sub_ability_spec -> doc_tag strict_arch_ref ability_ref code_block
-        """
-        meta = {"doc": node.kid[0]}
-        if type(node.kid[1]) == ast.NameList:
-            meta["mod"] = node.kid[1]
-            meta["arch"] = node.kid[2]
-            meta["name"] = node.kid[3]
-            if type(node.kid[4]) == ast.FuncSignature:
-                meta["signature"] = node.kid[4]
-                meta["body"] = node.kid[5]
-            else:
-                meta["signature"] = None
-                meta["body"] = node.kid[4]
-        else:
-            meta["mod"] = None
-            meta["arch"] = node.kid[1]
-            meta["name"] = node.kid[2]
-            if type(node.kid[3]) == ast.FuncSignature:
-                meta["signature"] = node.kid[3]
-                meta["body"] = node.kid[4]
-            else:
-                meta["signature"] = None
-                meta["body"] = node.kid[3]
-        replace_node(
-            node,
-            ast.AbilitySpec(
-                doc=meta["doc"],
-                mod=meta["mod"],
-                arch=meta["arch"],
-                name=meta["name"],
-                signature=meta["signature"],
-                body=meta["body"],
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_member_block(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        member_block -> LBRACE member_stmt_list RBRACE
-        member_block -> LBRACE RBRACE
-        """
-        if len(node.kid) == 3:
-            ret = replace_node(node, node.kid[1])
-            node = ret if ret else node
-        else:
-            node.kid = []
-        replace_node(
-            node,
-            ast.ArchBlock(
-                members=node.kid,
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_member_stmt_list(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        member_stmt_list -> member_stmt_list member_stmt
-        member_stmt_list -> member_stmt
-        """
-        if len(node.kid) == 2:
-            node.kid = node.kid[0].kid + [node.kid[1]]
-
-    def exit_member_stmt(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        member_stmt -> can_stmt
-        member_stmt -> has_stmt
-        """
-        replace_node(node, node.kid[0])
-
-    def exit_has_stmt(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        has_stmt -> doc_tag KW_HAS access_tag has_assign_clause SEMI
-        """
-        node.kid = [node.kid[0], node.kid[2], node.kid[3]]
-        replace_node(
-            node,
-            ast.ArchHas(
-                doc=node.kid[0],
-                access=node.kid[1],
-                vars=node.kid[2],
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_has_assign_clause(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        has_assign_clause -> has_assign_clause COMMA typed_has_clause
-        has_assign_clause -> typed_has_clause
-        """
-        if len(node.kid) == 3:
-            node.kid = node.kid[0].kid + [node.kid[2]]
-        replace_node(
-            node,
-            ast.HasVarList(
-                vars=node.kid,
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_typed_has_clause(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        typed_has_clause -> KW_FREEZE NAME type_tag EQ expression
-        typed_has_clause -> KW_FREEZE NAME type_tag
-        typed_has_clause -> NAME type_tag EQ expression
-        typed_has_clause -> NAME type_tag
-        """
-        if node.kid[-2].name == Tok.EQ:
-            del node.kid[-2]
-        frozen = False
-        if node.kid[0].name == Tok.KW_FREEZE:
-            frozen = True
-            del node.kid[0]
-        replace_node(
-            node,
-            ast.HasVar(
-                name=node.kid[0],
-                type_tag=node.kid[1],
-                value=node.kid[2] if len(node.kid) == 3 else None,
-                mutable=not frozen,
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_type_tag(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        type_tag -> COLON type_name
-        """
-        replace_node(node, node.kid[1])
-
-    def exit_return_type_tag(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        return_type_tag -> RETURN_HINT type_name
-        return_type_tag -> empty
-        """
-        if len(node.kid) == 2:
-            replace_node(node, node.kid[1])
-        else:
-            replace_node(node, None)
-
-    def exit_type_name(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
-        type_name -> TYP_LIST LSQUARE type_name RSQUARE
-        type_name -> dotted_name
-        type_name -> NULL
-        type_name -> builtin_type
-        """
-        meta = {
-            "typ": node.kid[0],
-            "list_nest": None,
-            "dict_nest": None,
-        }
-        if len(node.kid) == 4:
-            node.kid = [node.kid[0], node.kid[2]]
-            meta["list_nest"] = node.kid[1]
-        elif len(node.kid) == 6:
-            node.kid = [node.kid[0], node.kid[2], node.kid[4]]
-            meta["list_nest"] = node.kid[1]
-            meta["dict_nest"] = node.kid[2]
-        replace_node(
-            node,
-            ast.TypeSpec(
-                spec_type=meta["typ"],
-                list_nest=meta["list_nest"],
-                dict_nest=meta["dict_nest"],
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_builtin_type(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        builtin_type -> TYP_TYPE
-        builtin_type -> TYP_ANY
-        builtin_type -> TYP_BOOL
-        builtin_type -> TYP_DICT
-        builtin_type -> TYP_SET
-        builtin_type -> TYP_TUPLE
-        builtin_type -> TYP_LIST
-        builtin_type -> TYP_FLOAT
-        builtin_type -> TYP_INT
-        builtin_type -> TYP_BYTES
-        builtin_type -> TYP_STRING
-        """
-        replace_node(node, node.kid[0])
-
-    def exit_can_stmt(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        can_stmt -> ability
-        can_stmt -> ds_ability
-        """
-        replace_node(node, node.kid[0])
-
-    def exit_ds_ability(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        ds_ability -> doc_tag decorators KW_CAN access_tag NAME event_clause SEMI
-        ds_ability -> doc_tag decorators KW_CAN access_tag NAME event_clause code_block
-        ds_ability -> doc_tag KW_CAN access_tag NAME event_clause SEMI
-        ds_ability -> doc_tag KW_CAN access_tag NAME event_clause code_block
-        """
-        if type(node.kid[1]) == ast.Decorators:
-            del node.kid[2]
-        else:
-            del node.kid[1]
-        meta = {
-            "doc": node.kid[0],
-            "decorators": node.kid[1] if type(node.kid[1]) == ast.Decorators else None,
-            "access": node.kid[2]
-            if type(node.kid[1]) == ast.Decorators
-            else node.kid[1],
-            "name": node.kid[3] if type(node.kid[1]) == ast.Decorators else node.kid[2],
-            "body": node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
-            "signature": node.kid[-2],
-            "is_func": False,
-        }
-        replace_node(
-            node,
-            ast.Ability(
-                doc=meta["doc"],
-                access=meta["access"],
-                name=meta["name"],
-                body=meta["body"],
-                signature=meta["signature"],
-                is_func=meta["is_func"],
-                decorators=meta["decorators"],
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-        if type(node.kid[-1]) == ast.Token:
-            del node.kid[-1]
-
     def exit_event_clause(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        event_clause -> KW_WITH name_list KW_EXIT
-        event_clause -> KW_WITH name_list KW_ENTRY
-        event_clause -> KW_WITH STAR_MUL KW_EXIT
-        event_clause -> KW_WITH STAR_MUL KW_ENTRY
-        event_clause -> KW_WITH KW_EXIT
-        event_clause -> KW_WITH KW_ENTRY
-        event_clause -> empty
+        event_clause -> KW_WITH name_list KW_EXIT return_type_tag
+        event_clause -> KW_WITH name_list KW_ENTRY return_type_tag
+        event_clause -> KW_WITH STAR_MUL KW_EXIT return_type_tag
+        event_clause -> KW_WITH STAR_MUL KW_ENTRY return_type_tag
+        event_clause -> KW_WITH KW_EXIT return_type_tag
+        event_clause -> KW_WITH KW_ENTRY return_type_tag
+        event_clause -> return_type_tag
         """
         if len(node.kid) == 1:
-            replace_node(node, None)
-        elif len(node.kid) == 2:
-            node.kid = [node.kid[1]]
+            replace_node(node, node.kid[0])
+        elif len(node.kid) == 3:
+            node.kid = node.kid[1:]
             replace_node(
                 node,
                 ast.EventSignature(
                     event=node.kid[0],
                     arch_tag_info=None,
+                    return_type=node.kid[-1],
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
                 ),
             )
         else:
-            node.kid = [node.kid[1], node.kid[2]]
+            node.kid = node.kid[1:]
             replace_node(
                 node,
                 ast.EventSignature(
                     event=node.kid[1],
                     arch_tag_info=node.kid[0],
+                    return_type=node.kid[-1],
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
@@ -832,8 +589,8 @@ class AstBuildPass(Pass):
     def exit_name_list(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        name_list -> name_list COMMA NAME
-        name_list -> NAME
+        name_list -> name_list COMMA dotted_name
+        name_list -> dotted_name
         """
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
@@ -930,6 +687,171 @@ class AstBuildPass(Pass):
                 line=node.line,
             ),
         )
+
+    def exit_member_block(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        member_block -> LBRACE member_stmt_list RBRACE
+        member_block -> LBRACE RBRACE
+        """
+        if len(node.kid) == 3:
+            ret = replace_node(node, node.kid[1])
+            node = ret if ret else node
+        else:
+            node.kid = []
+        replace_node(
+            node,
+            ast.ArchBlock(
+                members=node.kid,
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_member_stmt_list(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        member_stmt_list -> member_stmt_list member_stmt
+        member_stmt_list -> member_stmt
+        """
+        if len(node.kid) == 2:
+            node.kid = node.kid[0].kid + [node.kid[1]]
+
+    def exit_member_stmt(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        member_stmt -> ability
+        member_stmt -> has_stmt
+        """
+        replace_node(node, node.kid[0])
+
+    def exit_has_stmt(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        has_stmt -> doc_tag KW_FREEZE access_tag has_assign_clause SEMI
+        has_stmt -> doc_tag KW_HAS access_tag has_assign_clause SEMI
+        """
+        is_frozen = node.kid[1].name == Tok.KW_FREEZE
+        node.kid = [node.kid[0], node.kid[2], node.kid[3]]
+        replace_node(
+            node,
+            ast.ArchHas(
+                doc=node.kid[0],
+                access=node.kid[1],
+                vars=node.kid[2],
+                is_frozen=is_frozen,
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_has_assign_clause(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        has_assign_clause -> has_assign_clause COMMA typed_has_clause
+        has_assign_clause -> typed_has_clause
+        """
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+        replace_node(
+            node,
+            ast.HasVarList(
+                vars=node.kid,
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_typed_has_clause(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        typed_has_clause -> NAME type_tag EQ expression
+        typed_has_clause -> NAME type_tag
+        """
+        if node.kid[-2].name == Tok.EQ:
+            del node.kid[-2]
+        replace_node(
+            node,
+            ast.HasVar(
+                name=node.kid[0],
+                type_tag=node.kid[1],
+                value=node.kid[2] if len(node.kid) == 3 else None,
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_type_tag(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        type_tag -> COLON type_name
+        """
+        replace_node(node, node.kid[1])
+
+    def exit_return_type_tag(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        return_type_tag -> RETURN_HINT type_name
+        return_type_tag -> empty
+        """
+        if len(node.kid) == 2:
+            replace_node(node, node.kid[1])
+        else:
+            replace_node(node, None)
+
+    def exit_type_name(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
+        type_name -> TYP_LIST LSQUARE type_name RSQUARE
+        type_name -> dotted_name
+        type_name -> NULL
+        type_name -> builtin_type
+        """
+        meta = {
+            "typ": node.kid[0],
+            "list_nest": None,
+            "dict_nest": None,
+        }
+        if len(node.kid) == 4:
+            node.kid = [node.kid[0], node.kid[2]]
+            meta["list_nest"] = node.kid[1]
+        elif len(node.kid) == 6:
+            node.kid = [node.kid[0], node.kid[2], node.kid[4]]
+            meta["list_nest"] = node.kid[1]
+            meta["dict_nest"] = node.kid[2]
+        replace_node(
+            node,
+            ast.TypeSpec(
+                spec_type=meta["typ"],
+                list_nest=meta["list_nest"],
+                dict_nest=meta["dict_nest"],
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_builtin_type(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        builtin_type -> TYP_TYPE
+        builtin_type -> TYP_ANY
+        builtin_type -> TYP_BOOL
+        builtin_type -> TYP_DICT
+        builtin_type -> TYP_SET
+        builtin_type -> TYP_TUPLE
+        builtin_type -> TYP_LIST
+        builtin_type -> TYP_FLOAT
+        builtin_type -> TYP_INT
+        builtin_type -> TYP_BYTES
+        builtin_type -> TYP_STRING
+        """
+        replace_node(node, node.kid[0])
 
     def exit_code_block(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -1946,11 +1868,8 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         atom -> edge_op_ref
-        atom -> arch_ref
+        atom -> all_refs
         atom -> atomic_chain
-        atom -> visitor_ref
-        atom -> here_ref
-        atom -> global_ref
         atom -> LPAREN expression RPAREN
         atom -> atom_collection
         atom -> atom_literal
@@ -2369,59 +2288,29 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         here_ref -> HERE_OP
-        here_ref -> HERE_OP NAME
         """
-        if len(node.kid) == 2:
-            node.kid = [node.kid[-1]]
-            replace_node(
-                node,
-                ast.HereRef(
-                    name=node.kid[-1],
-                    parent=node.parent,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        else:
-            node.kid = []
-            replace_node(
-                node,
-                ast.HereRef(
-                    name=None,
-                    parent=node.parent,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        replace_node(
+            node,
+            ast.HereRef(
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_visitor_ref(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
         visitor_ref -> VISITOR_OP
-        visitor_ref -> VISITOR_OP NAME
         """
-        if len(node.kid) == 2:
-            node.kid = [node.kid[-1]]
-            replace_node(
-                node,
-                ast.VisitorRef(
-                    name=node.kid[-1],
-                    parent=node.parent,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        else:
-            node.kid = []
-            replace_node(
-                node,
-                ast.VisitorRef(
-                    name=None,
-                    parent=node.parent,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        replace_node(
+            node,
+            ast.VisitorRef(
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_arch_ref(self, node: ast.AstNode) -> None:
         """Grammar rule.

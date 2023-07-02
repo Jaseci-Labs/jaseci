@@ -14,7 +14,7 @@ object Interface {
     has functions: list[callable] = [];
 
     can register(func: callable) -> callable {
-        :h:functions.append(func);
+        <h>.functions.append(func);
         return func;
     }
 
@@ -24,7 +24,7 @@ object Interface {
                             choices = [f.__name__ for f in functions],
                             help = "The function to run");
 
-        for func in :h:functions {
+        for func in <h>.functions {
             sig = inspect.signature(func);
             for name, param in sig.parameters.items() {
                 kwargs = {};
@@ -41,9 +41,9 @@ object Interface {
     }
 
     can run_from_cli() {
-        parser = :h:create_parser();
+        parser = <h>.create_parser();
         args = parser.parse_args();
-        for f in :h:functions {
+        for f in <h>.functions {
             if f.__name__ == args.base {
                 func = f; break;
             }
@@ -62,16 +62,16 @@ object ShellCmd:cmd.Cmd {
         reg: Interface;
 
     can init(registry: Interface, *args: list, **kwargs: dict) {
-        :h::o:cmd.Cmd.__init__(*args, **kwargs);
-        :h:reg = registry;
+        <h>:o:cmd.Cmd.__init__(*args, **kwargs);
+        <h>.reg = registry;
     }
 
     can default(line: str) {
         args = line.split();
-        parser = :h:reg.create_parser();
+        parser = <h>.reg.create_parser();
         try {
             parsed_args = parser.parse_args(args);
-            for f in :h:reg.functions {
+            for f in <h>.reg.functions {
                 if f.__name__ == parsed_args.base {
                     func = f; break;
                 }

@@ -222,7 +222,7 @@ class JacLexer(RegexLexer):
             (r"[^\S\n]+", Text),
             include("numbers"),
             (
-                r"(in|is|and|or|not|to|by|:g:|:global:|:h:|:here:|:iv:|:vistor:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)\b",
+                r"(in|is|and|or|not|to|by|:g:|:global:|<h>|<here>|<v>|<visitor>|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)\b",
                 Operator.Word,
             ),
             (r"\?:|\?|:\+:|!=|==|<<|>>|:=|[-~+/*%=<>&^|.]", Operator),

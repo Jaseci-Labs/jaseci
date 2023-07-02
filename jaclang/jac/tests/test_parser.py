@@ -14,8 +14,8 @@ class TestParser(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        lex = JacLexer(mod_path="", input_ir=self.file_to_str(filename)).ir
-        prse = JacParser(mod_path="", input_ir=lex)
+        lex = JacLexer(mod_path=filename, input_ir=self.file_to_str(filename)).ir
+        prse = JacParser(mod_path=filename, input_ir=lex)
         self.assertFalse(prse.errors_had)
 
     def test_shift_reduce_conflict(self) -> None:
@@ -28,8 +28,8 @@ class TestParser(TestCaseMicroSuite):
 
     def test_basci_parsing(self) -> None:
         """Basic test for parsing."""
-        lex = JacLexer(mod_path="", input_ir=self.load_fixture("fam.jac")).ir
-        prse = JacParser(mod_path="", input_ir=lex)
+        lex = JacLexer(mod_path="fam.jac", input_ir=self.load_fixture("fam.jac")).ir
+        prse = JacParser(mod_path="fam.jac", input_ir=lex)
         output = prse.ir
         self.assertFalse(prse.errors_had)
         if isinstance(output, AstNode):
@@ -40,9 +40,10 @@ class TestParser(TestCaseMicroSuite):
     def test_parsing_jac_cli(self) -> None:
         """Basic test for parsing."""
         lex = JacLexer(
-            mod_path="", input_ir=self.load_fixture("../../../cli/jac_cli.jac")
+            mod_path="../../../cli/jac_cli.jac",
+            input_ir=self.load_fixture("../../../cli/jac_cli.jac"),
         ).ir
-        prse = JacParser(mod_path="", input_ir=lex)
+        prse = JacParser(mod_path="../../../cli/jac_cli.jac", input_ir=lex)
         self.assertFalse(prse.errors_had)
 
 

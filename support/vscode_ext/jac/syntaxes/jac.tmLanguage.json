@@ -192,6 +192,9 @@
 							"include": "#builtin-types"
 						},
 						{
+							"include": "#statement-keyword"
+						},
+						{
 							"name": "entity.name.function.jac",
 							"match": "(?x)\n  \\b ([[:alpha:]_]\\w*) \\b\n"
 						}
@@ -236,13 +239,33 @@
 		"comments": {
 			"patterns": [
 				{
+					"include": "#c_style_block_comment"
+				},
+				{
 					"include": "#py_style_comment"
 				},
 				{
 					"include": "#js_style_comment"
-				},
+				}
+			]
+		},
+		"c_style_block_comment": {
+			"name": "comment.block.jac",
+			"begin": "(#\\*)",
+			"beginCaptures": {
+				"1": {
+					"name": "punctuation.definition.comment.begin.jac"
+				}
+			},
+			"end": "(\\*#)",
+			"endCaptures": {
+				"1": {
+					"name": "punctuation.definition.comment.end.jac"
+				}
+			},
+			"patterns": [
 				{
-					"include": "#c_style_block_comment"
+					"include": "#codetags"
 				}
 			]
 		},
@@ -270,26 +293,6 @@
 				}
 			},
 			"end": "(?=\\n)",
-			"patterns": [
-				{
-					"include": "#codetags"
-				}
-			]
-		},
-		"c_style_block_comment": {
-			"name": "comment.block.jac",
-			"begin": "(\\/\\*)",
-			"beginCaptures": {
-				"1": {
-					"name": "punctuation.definition.comment.begin.jac"
-				}
-			},
-			"end": "(\\*\\/)",
-			"endCaptures": {
-				"1": {
-					"name": "punctuation.definition.comment.end.jac"
-				}
-			},
 			"patterns": [
 				{
 					"include": "#codetags"
@@ -1226,7 +1229,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(:g:|:global:|:h:|:here:|:v:|:visitor:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
+					"begin": "(:g:|:global:|<h>|<here>|<v>|<visitor>|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
 					"end": "((?=:| )|;)",
 					"beginCaptures": {
 						"1": {

@@ -200,7 +200,7 @@ class Elements(AstNode):
     def __init__(
         self,
         elements: list[
-            "GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec"
+            "GlobalVars | Test | ModuleCode | Import | Architype | Ability "
         ],
         parent: Optional[AstNode],
         kid: list[AstNode],
@@ -234,6 +234,7 @@ class GlobalVars(OOPAccessNode):
         doc: Optional["DocString"],
         access: Optional[Token],
         assignments: "AssignmentList",
+        is_frozen: bool,
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
@@ -241,6 +242,7 @@ class GlobalVars(OOPAccessNode):
         """Initialize global var node."""
         self.doc = doc
         self.assignments = assignments
+        self.is_frozen = is_frozen
         super().__init__(access=access, parent=parent, kid=kid, line=line)
 
 
@@ -483,8 +485,9 @@ class AbilityDef(AstNode):
     def __init__(
         self,
         doc: Optional[DocString],
-        mod: Optional["NameList"],
+        target: Optional["NameList"],
         ability: "AbilityRef",
+        signature: "FuncSignature | EventSignature",
         body: "CodeBlock",
         parent: Optional[AstNode],
         kid: list[AstNode],
@@ -492,126 +495,10 @@ class AbilityDef(AstNode):
     ) -> None:
         """Initialize ability def node."""
         self.doc = doc
-        self.mod = mod
+        self.target = target
         self.ability = ability
-        self.body = body
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class AbilitySpec(AstNode):
-    """AbilitySpec node type for Jac Ast."""
-
-    def __init__(
-        self,
-        doc: Optional[DocString],
-        name: Name,
-        arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
-        mod: Optional["NameList"],
-        signature: Optional["FuncSignature"],
-        body: "CodeBlock",
-        parent: Optional[AstNode],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize arch block node."""
-        self.doc = doc
-        self.name = name
-        self.arch = arch
-        self.mod = mod
         self.signature = signature
         self.body = body
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class ArchBlock(AstNode):
-    """ArchBlock node type for Jac Ast."""
-
-    def __init__(
-        self,
-        members: list["ArchHas | Ability"],
-        parent: Optional[AstNode],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize arch block node."""
-        self.members = members
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class ArchHas(OOPAccessNode):
-    """HasStmt node type for Jac Ast."""
-
-    counter: int = 1
-
-    def __init__(
-        self,
-        doc: Optional[DocString],
-        access: Optional[Token],
-        vars: "HasVarList",
-        parent: Optional[AstNode],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize has statement node."""
-        self.doc = doc
-        self.vars = vars
-        self.h_id = ArchHas.counter
-        ArchHas.counter += 1
-        super().__init__(access=access, parent=parent, kid=kid, line=line)
-
-
-class HasVarList(AstNode):
-    """HasVarList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        vars: list["HasVar"],
-        parent: Optional[AstNode],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize has var list node."""
-        self.vars = vars
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class HasVar(AstNode):
-    """HasVar node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: Name,
-        type_tag: "TypeSpec",
-        mutable: bool,
-        value: Optional["ExprType"],
-        parent: Optional[AstNode],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize has var node."""
-        self.name = name
-        self.type_tag = type_tag
-        self.mutable = mutable
-        self.value = value
-        super().__init__(parent=parent, kid=kid, line=line)
-
-
-class TypeSpec(AstNode):
-    """TypeSpec node type for Jac Ast."""
-
-    def __init__(
-        self,
-        spec_type: "Token | NameList",
-        list_nest: "TypeSpec",  # needed for lists
-        dict_nest: "TypeSpec",  # needed for dicts
-        parent: Optional[AstNode],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize type spec node."""
-        self.spec_type = spec_type
-        self.list_nest = list_nest
-        self.dict_nest = dict_nest
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -622,6 +509,7 @@ class EventSignature(AstNode):
         self,
         event: Token,
         arch_tag_info: Optional["NameList | Token"],
+        return_type: Optional["TypeSpec"],
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
@@ -629,6 +517,7 @@ class EventSignature(AstNode):
         """Initialize event signature node."""
         self.event = event
         self.arch_tag_info = arch_tag_info
+        self.return_type = return_type
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -637,7 +526,7 @@ class NameList(AstNode):
 
     def __init__(
         self,
-        names: list[Token],
+        names: list["Token|GlobalRef|VisitorRef|HereRef|ArchRefType|Name"],
         dotted: bool,
         parent: Optional[AstNode],
         kid: list[AstNode],
@@ -655,7 +544,7 @@ class FuncSignature(AstNode):
     def __init__(
         self,
         params: Optional["FuncParams"],
-        return_type: Optional[TypeSpec],
+        return_type: Optional["TypeSpec"],
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
@@ -699,6 +588,98 @@ class ParamVar(AstNode):
         self.unpack = unpack
         self.type_tag = type_tag
         self.value = value
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ArchBlock(AstNode):
+    """ArchBlock node type for Jac Ast."""
+
+    def __init__(
+        self,
+        members: list["ArchHas | Ability"],
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize arch block node."""
+        self.members = members
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ArchHas(OOPAccessNode):
+    """HasStmt node type for Jac Ast."""
+
+    counter: int = 1
+
+    def __init__(
+        self,
+        doc: Optional[DocString],
+        access: Optional[Token],
+        vars: "HasVarList",
+        is_frozen: bool,
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize has statement node."""
+        self.doc = doc
+        self.vars = vars
+        self.is_frozen = is_frozen
+        self.h_id = ArchHas.counter
+        ArchHas.counter += 1
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
+
+
+class HasVarList(AstNode):
+    """HasVarList node type for Jac Ast."""
+
+    def __init__(
+        self,
+        vars: list["HasVar"],
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize has var list node."""
+        self.vars = vars
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class HasVar(AstNode):
+    """HasVar node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: Name,
+        type_tag: "TypeSpec",
+        value: Optional["ExprType"],
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize has var node."""
+        self.name = name
+        self.type_tag = type_tag
+        self.value = value
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class TypeSpec(AstNode):
+    """TypeSpec node type for Jac Ast."""
+
+    def __init__(
+        self,
+        spec_type: "Token | NameList",
+        list_nest: "TypeSpec",  # needed for lists
+        dict_nest: "TypeSpec",  # needed for dicts
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize type spec node."""
+        self.spec_type = spec_type
+        self.list_nest = list_nest
+        self.dict_nest = dict_nest
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -1425,13 +1406,11 @@ class HereRef(AstNode):
 
     def __init__(
         self,
-        name: Optional[Token],
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
     ) -> None:
         """Initialize here reference expression node."""
-        self.name = name
         super().__init__(parent=parent, kid=kid, line=line)
 
 

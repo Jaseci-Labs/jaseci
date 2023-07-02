@@ -30,8 +30,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "DOC_STRING",
         "DOC_STRING element_list",
-        # Workaround for fstrings, should make custom start rule
-        # "expression",
     )
     def module(self, p: YaccProduction) -> YaccProduction:
         """Start rule."""
@@ -57,13 +55,15 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "include_stmt",
         "architype",
         "ability",
-        "sub_ability_spec",
     )
     def element(self, p: YaccProduction) -> YaccProduction:
         """Element rule."""
         return p
 
-    @_("doc_tag KW_GLOBAL access_tag assignment_list SEMI")
+    @_(
+        "doc_tag KW_GLOBAL access_tag assignment_list SEMI",
+        "doc_tag KW_FREEZE access_tag assignment_list SEMI",
+    )
     def global_var(self, p: YaccProduction) -> YaccProduction:
         """Global variable rule."""
         return p
@@ -219,11 +219,23 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
+        "all_refs",
         "NAME",
+        "dotted_name DOT all_refs",
         "dotted_name DOT NAME",
     )
     def dotted_name(self, p: YaccProduction) -> YaccProduction:
         """Strict arch reference rule."""
+        return p
+
+    @_(
+        "arch_ref",
+        "here_ref",
+        "visitor_ref",
+        "global_ref",
+    )
+    def all_refs(self, p: YaccProduction) -> YaccProduction:
+        """All reference rules."""
         return p
 
     # Ability elements
@@ -237,9 +249,9 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag KW_CAN access_tag NAME return_type_tag SEMI",
+        "doc_tag KW_CAN access_tag NAME event_clause SEMI",
         "doc_tag KW_CAN access_tag NAME func_decl SEMI",
-        "doc_tag KW_CAN access_tag NAME return_type_tag code_block",
+        "doc_tag KW_CAN access_tag NAME event_clause code_block",
         "doc_tag KW_CAN access_tag NAME func_decl code_block",
         "ability_decl_decor",
     )
@@ -248,9 +260,9 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag decorators KW_CAN access_tag NAME return_type_tag SEMI",
+        "doc_tag decorators KW_CAN access_tag NAME event_clause SEMI",
         "doc_tag decorators KW_CAN access_tag NAME func_decl SEMI",
-        "doc_tag decorators KW_CAN access_tag NAME return_type_tag code_block",
+        "doc_tag decorators KW_CAN access_tag NAME event_clause code_block",
         "doc_tag decorators KW_CAN access_tag NAME func_decl code_block",
     )
     def ability_decl_decor(self, p: YaccProduction) -> YaccProduction:
@@ -258,21 +270,62 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag ability_ref code_block",
-        "doc_tag dotted_name ability_ref code_block",
+        "doc_tag ability_ref event_clause code_block",
+        "doc_tag dotted_name ability_ref event_clause code_block",
+        "doc_tag ability_ref func_decl code_block",
+        "doc_tag dotted_name ability_ref func_decl code_block",
     )
     def ability_def(self, p: YaccProduction) -> YaccProduction:
-        """Architype definition rule."""
+        """Ability rule."""
         return p
 
     @_(
-        "doc_tag strict_arch_ref ability_ref code_block",
-        "doc_tag strict_arch_ref ability_ref func_decl code_block",
-        "doc_tag dotted_name strict_arch_ref ability_ref code_block",
-        "doc_tag dotted_name strict_arch_ref ability_ref func_decl code_block",
+        "return_type_tag",
+        "KW_WITH KW_ENTRY return_type_tag",
+        "KW_WITH KW_EXIT return_type_tag",
+        "KW_WITH STAR_MUL KW_ENTRY return_type_tag",
+        "KW_WITH STAR_MUL KW_EXIT return_type_tag",
+        "KW_WITH name_list KW_ENTRY return_type_tag",
+        "KW_WITH name_list KW_EXIT return_type_tag",
     )
-    def sub_ability_spec(self, p: YaccProduction) -> YaccProduction:
-        """Ability rule."""
+    def event_clause(self, p: YaccProduction) -> YaccProduction:
+        """Event clause rule."""
+        return p
+
+    @_(
+        "dotted_name",
+        "name_list COMMA dotted_name",
+    )
+    def name_list(self, p: YaccProduction) -> YaccProduction:
+        """Name list rule."""
+        return p
+
+    @_(
+        "LPAREN RPAREN return_type_tag",
+        "LPAREN func_decl_param_list RPAREN return_type_tag",
+    )
+    def func_decl(self, p: YaccProduction) -> YaccProduction:
+        """Func declaration parameter rule."""
+        return p
+
+    @_(
+        "param_var",
+        "func_decl_param_list COMMA param_var",
+    )
+    def func_decl_param_list(self, p: YaccProduction) -> YaccProduction:
+        """Func declaration parameters list rule."""
+        return p
+
+    @_(
+        "NAME type_tag",
+        "NAME type_tag EQ expression",
+        "STAR_MUL NAME type_tag",
+        "STAR_MUL NAME type_tag EQ expression",
+        "STAR_POW NAME type_tag",
+        "STAR_POW NAME type_tag EQ expression",
+    )
+    def param_var(self, p: YaccProduction) -> YaccProduction:
+        """Parameter variable rule rule."""
         return p
 
     # Attribute blocks
@@ -295,7 +348,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "has_stmt",
-        "can_stmt",
+        "ability",
     )
     def member_stmt(self, p: YaccProduction) -> YaccProduction:
         """Attribute statement rule."""
@@ -303,7 +356,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     # Has statements
     # --------------
-    @_("doc_tag KW_HAS access_tag has_assign_clause SEMI")
+    @_(
+        "doc_tag KW_HAS access_tag has_assign_clause SEMI",
+        "doc_tag KW_FREEZE access_tag has_assign_clause SEMI",
+    )
     def has_stmt(self, p: YaccProduction) -> YaccProduction:
         """Has statement rule."""
         return p
@@ -319,8 +375,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "NAME type_tag",
         "NAME type_tag EQ expression",
-        "KW_FREEZE NAME type_tag",
-        "KW_FREEZE NAME type_tag EQ expression",
     )
     def typed_has_clause(self, p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
@@ -367,74 +421,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Any type rule."""
         return p
 
-    # Can statements
-    # --------------
-    @_(
-        "ds_ability",
-        "ability",
-    )
-    def can_stmt(self, p: YaccProduction) -> YaccProduction:
-        """Can statement rule."""
-        return p
-
-    @_(
-        "doc_tag KW_CAN access_tag NAME event_clause code_block",
-        "doc_tag KW_CAN access_tag NAME event_clause SEMI",
-        "doc_tag decorators KW_CAN access_tag NAME event_clause code_block",
-        "doc_tag decorators KW_CAN access_tag NAME event_clause SEMI",
-    )
-    def ds_ability(self, p: YaccProduction) -> YaccProduction:
-        """Can statement rule."""
-        return p
-
-    @_(
-        "KW_WITH KW_ENTRY",
-        "KW_WITH KW_EXIT",
-        "KW_WITH STAR_MUL KW_ENTRY",
-        "KW_WITH STAR_MUL KW_EXIT",
-        "KW_WITH name_list KW_ENTRY",
-        "KW_WITH name_list KW_EXIT",
-    )
-    def event_clause(self, p: YaccProduction) -> YaccProduction:
-        """Event clause rule."""
-        return p
-
-    @_(
-        "NAME",
-        "name_list COMMA NAME",
-    )
-    def name_list(self, p: YaccProduction) -> YaccProduction:
-        """Name list rule."""
-        return p
-
-    @_(
-        "LPAREN RPAREN return_type_tag",
-        "LPAREN func_decl_param_list RPAREN return_type_tag",
-    )
-    def func_decl(self, p: YaccProduction) -> YaccProduction:
-        """Func declaration parameter rule."""
-        return p
-
-    @_(
-        "param_var",
-        "func_decl_param_list COMMA param_var",
-    )
-    def func_decl_param_list(self, p: YaccProduction) -> YaccProduction:
-        """Func declaration parameters list rule."""
-        return p
-
-    @_(
-        "NAME type_tag",
-        "NAME type_tag EQ expression",
-        "STAR_MUL NAME type_tag",
-        "STAR_MUL NAME type_tag EQ expression",
-        "STAR_POW NAME type_tag",
-        "STAR_POW NAME type_tag EQ expression",
-    )
-    def param_var(self, p: YaccProduction) -> YaccProduction:
-        """Parameter variable rule rule."""
-        return p
-
+    # Codeblock statements
+    # --------------------
     @_(
         "LBRACE RBRACE",
         "LBRACE statement_list RBRACE",
@@ -443,8 +431,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Code block rule."""
         return p
 
-    # Codeblock statements
-    # --------------------
     @_(
         "statement_list statement",
         "statement",
@@ -886,11 +872,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "atom_literal",
         "atom_collection",
         "LPAREN expression RPAREN",
-        "global_ref",
-        "here_ref",
-        "visitor_ref",
         "atomic_chain",
-        "arch_ref",
+        "all_refs",
         "edge_op_ref",
     )
     def atom(self, p: YaccProduction) -> YaccProduction:
@@ -1053,18 +1036,12 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Global reference rule."""
         return p
 
-    @_(
-        "HERE_OP NAME",
-        "HERE_OP",
-    )
+    @_("HERE_OP")
     def here_ref(self, p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
         return p
 
-    @_(
-        "VISITOR_OP NAME",
-        "VISITOR_OP",
-    )
+    @_("VISITOR_OP")
     def visitor_ref(self, p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
         return p

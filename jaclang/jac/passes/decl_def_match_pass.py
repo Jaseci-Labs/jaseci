@@ -191,17 +191,6 @@ class DeclDefMatchPass(Pass, SymbolTable):
         body: CodeBlock,
         """
 
-    def exit_ability_spec(self, node: ast.AbilitySpec) -> None:
-        """Sub objects.
-
-        doc: Optional[DocString],
-        name: Name,
-        arch: ObjectRef | NodeRef | EdgeRef | WalkerRef,
-        mod: Optional[NameList],
-        signature: Optional[FuncSignature],
-        body: CodeBlock,
-        """
-
     def exit_arch_block(self, node: ast.ArchBlock) -> None:
         """Sub objects.
 

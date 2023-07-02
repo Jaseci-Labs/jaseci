@@ -3,8 +3,8 @@ site_url: https://jac-lang.org
 nav:
     - ~$: 'index.md'
     - ~/why$: 'why.md'
-    - ~/spec$: 'spec.md'
-    - ~/docs$: 'docs.md'
+    - ~/tour$: 'tour.md'
+    - ~/book$: 'book.md'
     - ~/blog$: 'blog.md'
     - ~/github$: https://github.com/Jaseci-Labs/jaclang
 

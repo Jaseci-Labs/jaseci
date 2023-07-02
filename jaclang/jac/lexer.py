@@ -166,7 +166,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     # Ignored patterns
     ignore_ws = r"[ \t]+"
     ignore_newline = r"[\r\n]+"  # type: ignore
-    ignore_comment = r"#\*(.|\n|\r)*\*#"
+    ignore_comment = r"#\*(.|\n|\r)*?\*#"  # type: ignore
     ignore_py_comment = r"#.*"
 
     # Regular expression rules for tokens
@@ -264,8 +264,8 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
 
     # Just special
     GLOBAL_OP = r":g:|:global:"
-    HERE_OP = r":h:|:here:"
-    VISITOR_OP = r":v:|:visitor:"
+    HERE_OP = r"<h>|<here>"
+    VISITOR_OP = r"<v>|<visitor>"
     WALKER_OP = r":w:|:walker:"
     NODE_OP = r":n:|:node:"
     EDGE_OP = r":e:|:edge:"
@@ -330,6 +330,12 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     def ignore_newline(self, t: Token) -> Token:
         """Increment line number."""
         self.lineno += len(t.value)
+        return t
+
+    def ignore_comment(self, t: Token) -> Token:  # noqa: N802
+        """Add docstring to lexer."""
+        self.lineno += t.value.count("\n")
+        self.lineno += t.value.count("\r")
         return t
 
     def DOC_STRING(self, t: Token) -> Token:  # noqa: N802
