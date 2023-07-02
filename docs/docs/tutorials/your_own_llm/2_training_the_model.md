@@ -11,6 +11,8 @@ we will be fine-tuning Dolly v2, a pre-existing language model, using the Alpaca
 To initiate the training process, we will utilize the Jaseci platform and execute the following command:
 
 ```bash
+# Action module need to be loaded if not already loaded (check it using actions list)
+jaseci> actions load module jac_nlp.llm
 jascei> actions call llm.train -ctx '{"data_file": "dataset.json", "output_dir": "output"}'
 ```
 
