@@ -10,10 +10,10 @@ Jac Example:
 
 ```jac
 walker init{
-    can math.ceil;
+    can maths.ceil;
     _float = 123.45;
 
-    report math.search(_float);
+    report maths.ceil(_float);
 }
 ```
 
@@ -146,15 +146,114 @@ Expected Output:
 
 Return the floor of x, the largest integer less than or equal to x.
 
+Jac Program:
+```jac
+walker init{
+    can maths.floor;
+    _float = 10.5;
+
+    report maths.floor(_float);
+}
+```
+Expected output:
+
+```json
+{
+  "success": true,
+  "report": [
+    10
+  ],
+  "final_node": "urn:uuid:558001f2-7a27-4799-be46-6aa93e23cd79",
+  "yielded": false
+}
+```
+
 ## Fmod
+
+Expected Output:
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.fmod;
+    x = 100;
+    y = 3;
+
+    report maths.fmod(x,y);
+}
+```
+
+```json
+{
+  "success": true,
+  "report": [
+    1.0
+  ],
+  "final_node": "urn:uuid:0ac023fb-a855-4784-bb1b-9596a450bc38",
+  "yielded": false
+}
+```
 
 ## Frexp
 
 Return the mantissa and exponent of x as the pair (m, e).
 
+Example Jac:
+
+```jac
+walker init{
+    can maths.frexp;
+    x = 100;
+
+    report maths.frexp(x);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    [
+      0.78125,
+      7
+    ]
+  ],
+  "final_node": "urn:uuid:0be8e1a4-6961-4f63-a1c1-dd5ece2db5d2",
+  "yielded": false
+}
+```
+
 ## Fsum
 
 Return an accurate floating point sum of values in the iterable.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.fsum;
+    x = [1,2,4,5,6];
+
+    report maths.fsum(x);
+}
+
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    18.0
+  ],
+  "final_node": "urn:uuid:780cdac0-b704-4233-ae2d-516f055e6f55",
+  "yielded": false
+}
+```
 
 ## Gcd
 
@@ -180,6 +279,30 @@ Return True if x is a NaN (not a number), and False otherwise.
 
 Return the integer square root of the nonnegative integer n. This is the floor of the exact square root of n, or equivalently the greatest integer a such that a² ≤ n.
 
+Example Jac:
+
+```jac
+walker init{
+    can maths.isqrt;
+    x = 9;
+
+    report maths.isqrt(x);
+}
+
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    3
+  ],
+  "final_node": "urn:uuid:35170582-7023-4686-ae08-222a54d0e92a",
+  "yielded": false
+}
+```
 ## lcm
 
 Return the least common multiple of the specified integer arguments.
@@ -188,17 +311,118 @@ Return the least common multiple of the specified integer arguments.
 
 Return x * (2**i).
 
+Example Jac:
+
+```jac
+walker init{
+    can maths.ldexp;
+    x = 9;
+    i = 2;
+
+    report maths.ldexp(x,i);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    36.0
+  ],
+  "final_node": "urn:uuid:462546a4-4534-4101-8f61-78d9ee4cf8a5",
+  "yielded": false
+}
+```
+
 ## modf
 
 Return the fractional and integer parts of x. Both results carry the sign of x and are floats.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.modf;
+    x = 9;
+
+    report maths.modf(x);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    [
+      0.0,
+      9.0
+    ]
+  ],
+  "final_node": "urn:uuid:eb4e1dfa-0972-4cbe-804e-1a682f4b4572",
+  "yielded": false
+}
+```
 
 ## nextafter
 
 Return the next floating-point value after x towards y.
 
+Example Jac:
+
+```jac
+walker init{
+    can maths.nextafter;
+    x = 9;
+    y = 3;
+
+    report maths.nextafter(x,y);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    8.999999999999998
+  ],
+  "final_node": "urn:uuid:f4080344-882b-4c56-aa6f-f20ec8fd3469",
+  "yielded": false
+}
+```
+
 ## perm
 
 Return the number of ways to choose k items from n items without repetition and with order.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.perm;
+    x = 23;
+
+    report maths.perm(x);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    25852016738884976640000
+  ],
+  "final_node": "urn:uuid:ebf16935-cd09-40d4-b956-abf43a62a215",
+  "yielded": false
+}
+```
 
 ## Prod
 

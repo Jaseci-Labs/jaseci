@@ -126,7 +126,7 @@ def nextafter(x, y):
 @jaseci_action()
 def perm(n, k=None):
     # return int
-    return math.perm(n, k=None)
+    return math.perm(n, k)
 
 
 @jaseci_action()
