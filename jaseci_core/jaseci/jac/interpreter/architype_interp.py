@@ -18,8 +18,8 @@ class ArchitypeInterp(Interp):
     def run_architype(self, jac_ast):
         """
         architype:
-            KW_NODE NAME (COLON NAME)* attr_block
-            | KW_EDGE NAME (COLON NAME)* attr_block
+            KW_NODE NAME sub_name* attr_block
+            | KW_EDGE NAME sub_name* attr_block
             | KW_TYPE NAME struct_block
             | KW_GRAPH NAME graph_block
             | KW_ASYNC? KW_WALKER NAME namespaces? walker_block;
@@ -77,7 +77,9 @@ class ArchitypeInterp(Interp):
                 parent=self.parent(),
                 is_async=self.is_async,
             )
-            if kid[2].name == "namespaces":
+            if kid[2].name == "namespaces" or (
+                len(kid) > 3 and kid[3].name == "namespaces"
+            ):
                 item.namespaces = self.run_namespaces(jac_ast.kid[2])
             self.build_object_with_supers(item, kid[-1])
         elif jac_ast.name == "graph_block":  # usedi n jac tests
@@ -136,15 +138,18 @@ class ArchitypeInterp(Interp):
 
     def run_has_assign(self, jac_ast, obj):
         """
-        has_assign: KW_PRIVATE? KW_ANCHOR? (NAME | NAME EQ expression);
+        has_assign:
+            KW_PRIVATE? KW_ANCHOR? NAME type_hint? (EQ expression)?;
         """
         kid = self.set_cur_ast(jac_ast)
         while kid[0].name in ["KW_PRIVATE", "KW_ANCHOR"]:
             kid = kid[1:]
         var_name = kid[0].token_text()
         var_val = None  # jac's null
-        if len(kid) > 1:
-            self.run_expression(kid[2])
+        while len(kid) and kid[0].name in ["NAME", "type_hint", "EQ"]:
+            kid = kid[1:]
+        if len(kid):
+            self.run_expression(kid[0])
             var_val = self.pop().value
         if isinstance(obj, dict):
             obj[var_name] = var_val
@@ -152,7 +157,7 @@ class ArchitypeInterp(Interp):
         elif var_name not in obj.context.keys() or obj.j_type != "walker":
             JacValue(
                 self, ctx=obj, name=var_name, value=var_val, create_mode=True
-            ).write(kid[0], force=True)
+            ).write(jac_ast, force=True)
 
     def run_struct_block(self, jac_ast):
         """

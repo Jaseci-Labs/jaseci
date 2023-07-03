@@ -119,15 +119,14 @@ class WalkerInterp(Interp):
 
     def run_take_action(self, jac_ast):
         """
-        take_action:
-            KW_TAKE (COLON NAME)? expression (SEMI | else_stmt);
+        take_action: KW_TAKE sub_name? expression (SEMI | else_stmt);
         """
         kid = self.set_cur_ast(jac_ast)
         style = "b"
-        if kid[1].name == "COLON":
-            style = kid[2].token_text()
+        if kid[1].name == "sub_name":
+            style = self.run_sub_name(kid[1])
             kid = kid[2:]
-        self.run_expression(kid[1])
+        self.run_expression(kid[0])
         result = self.pop().value
         before = len(self.next_node_ids)
         if isinstance(result, Node):
@@ -147,10 +146,10 @@ class WalkerInterp(Interp):
             else:
                 self.rt_error(f"{style} is invalid take operation", kid[0])
         elif result:
-            self.rt_error(f"{result} is not destination type (i.e., nodes)", kid[1])
+            self.rt_error(f"{result} is not destination type (i.e., nodes)", kid[0])
         after = len(self.next_node_ids)
-        if before >= after and kid[2].name == "else_stmt":
-            self.run_else_stmt(kid[2])
+        if before >= after and kid[-1].name == "else_stmt":
+            self.run_else_stmt(kid[-1])
         after = len(self.next_node_ids)
 
     def run_disengage_action(self, jac_ast):

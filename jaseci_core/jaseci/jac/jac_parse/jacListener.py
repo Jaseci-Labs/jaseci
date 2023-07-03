@@ -185,6 +185,14 @@ class jacListener(ParseTreeListener):
     def exitHas_assign(self, ctx: jacParser.Has_assignContext):
         pass
 
+    # Enter a parse tree produced by jacParser#type_hint.
+    def enterType_hint(self, ctx: jacParser.Type_hintContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#type_hint.
+    def exitType_hint(self, ctx: jacParser.Type_hintContext):
+        pass
+
     # Enter a parse tree produced by jacParser#can_stmt.
     def enterCan_stmt(self, ctx: jacParser.Can_stmtContext):
         pass
@@ -359,6 +367,14 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#report_action.
     def exitReport_action(self, ctx: jacParser.Report_actionContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#sub_name.
+    def enterSub_name(self, ctx: jacParser.Sub_nameContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#sub_name.
+    def exitSub_name(self, ctx: jacParser.Sub_nameContext):
         pass
 
     # Enter a parse tree produced by jacParser#walker_action.
