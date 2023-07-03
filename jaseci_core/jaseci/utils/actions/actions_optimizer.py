@@ -13,19 +13,94 @@ from jaseci.jsorc.live_actions import (
     live_actions,
     action_configs,
 )
-
+from itertools import islice
 import requests
 import copy
 import time
 from collections import OrderedDict
 from functools import cmp_to_key
 
+from jaseci.extens.svc.prome_svc import PrometheusService
 from .actions_state import ActionsState
 
 POLICIES = ["Default", "Evaluation", "Adaptive", "Predictive"]
 THRESHOLD = 0.2
 NODE_MEM_THRESHOLD = 0.75
 WINDOW_SIZE = 4
+STATIC_USED_MEM = 375  # MB
+
+
+def prome():
+    return JsOrc.svc("prome").poke(PrometheusService)
+
+
+def get_node_mem_usage(
+    node_name,
+    namespace: str = "jac-exp",
+    exclude_prom: bool = False,
+    timestamp: int = 0,
+    duration: int = 0,
+):
+    """
+    Get the memory usage of a node
+    """
+    prome_svc = prome()
+    resp = prome_svc.info(
+        namespace=namespace,
+        exclude_prom=exclude_prom,
+        timestamp=timestamp,
+        duration=duration,
+    ).node
+    if node_name is None:
+        # Return 1st node mem utilization
+        return list(islice(resp.items(), 1))[0][-1]["total_bytes"] / 1048576
+    else:
+        # Return node mem utilization for the given node
+        return resp[node_name]["total_bytes"] / 1048576
+
+
+def get_pod_mem_usage(
+    pod_name: str = None,
+    namespace: str = "jac-exp",
+    exclude_prom: bool = False,
+    timestamp: int = 0,
+    duration: int = 0,
+):
+    """
+    Get the memory usage of a pod
+    """
+    prome_svc = prome()
+    resp = prome_svc.info(
+        namespace=namespace,
+        exclude_prom=exclude_prom,
+        timestamp=timestamp,
+        duration=duration,
+    ).pod
+    # Filter out prometheus, db, redis, grafana
+    filtered_data = {
+        node: values
+        for node, values in resp.items()
+        if "prometheus" not in node
+        and "db" not in node
+        and "redis" not in node
+        and "grafana" not in node
+    }
+    pod_mem_utilization = {}
+    # Get the memory utilization of each pod
+    for node, values in filtered_data.items():
+        pod_name_parts = node.split("-")
+        module_name = "-".join(pod_name_parts[:-2])
+        mem_utilization_bytes = values["mem_utilization_bytes"]
+        mem_utilization_mb = (
+            mem_utilization_bytes / 1048576
+        )  # Convert bytes to megabytes
+        pod_mem_utilization[module_name] = mem_utilization_mb
+    if pod_name is None:
+        # Return all pod mem utilization
+        return pod_mem_utilization
+    else:
+        # Return pod mem utilization for the given pod
+        return pod_mem_utilization[pod_name]
 
 
 class ActionsOptimizer:
@@ -280,8 +355,16 @@ class ActionsOptimizer:
             logger.error(f"Unrecognized policy {self.policy}")
 
     def _init_evalution_policy(self, policy_state):
-        # 999 is just really large memory size so everything can fits in local
-        node_mem = self.policy_params.get("node_mem", 999 * 1024)
+
+        node_mem = get_node_mem_usage()
+        if node_mem is None:
+            logger.error(
+                "node_mem is None through prometheus, initializing with policy_params"
+            )
+            node_mem = self.policy_params.get("node_mem", 999 * 1024)
+        logger.info(f"===node memory===\nnode_mem: {node_mem}")
+
+        logger.info(f"===node memory===\nnode_mem: {node_mem}")
         jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
         # Initialize configs to eval
         actions = self.actions_state.get_active_actions()
@@ -294,9 +377,15 @@ class ActionsOptimizer:
                     c = copy.deepcopy(con)
                     c[act] = m
                     if m == "local":
-                        local_mem_requirement = action_configs[act][
-                            "local_mem_requirement"
-                        ]
+                        local_mem_requirement = get_pod_mem_usage(pod_name=act)
+                        if local_mem_requirement is None:
+                            logger.error(
+                                f"""local_mem_requirement is None for action: {act}
+                                through prometheus, initializing with action config"""
+                            )
+                            local_mem_requirement = action_configs[act][
+                                "local_mem_requirement"
+                            ]
                         c["local_mem"] = c["local_mem"] + local_mem_requirement
                         if c["local_mem"] < (
                             (node_mem - jaseci_runtime_mem) * NODE_MEM_THRESHOLD
