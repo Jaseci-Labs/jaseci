@@ -26,7 +26,7 @@ SBERT_SIM_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "git clone -b action_policy https://github.com/Jaseci-Labs/jaseci.git; cd jaseci; cd jaseci_core; source install.sh; cd ../jaseci_ai_kit/jac_nlp; pip install -e .[sbert_sim]; uvicorn jac_nlp.sbert_sim:serv_actions --host 0.0.0.0 --port 80;"
+                "prod_up": "uvicorn jac_nlp.sbert_sim:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {
@@ -59,7 +59,7 @@ SBERT_SIM_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "sbert-sim",
-                                "image": "jaseci/jac-nlp:1.4.0.21",
+                                "image": "jaseci/jac-nlp:1.4.1.4",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
