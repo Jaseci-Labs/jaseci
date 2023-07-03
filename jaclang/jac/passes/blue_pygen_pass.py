@@ -783,10 +783,12 @@ class BluePygenPass(Pass):
         """
         if node.op.value in ["-", "~", "+"]:
             self.emit(node, f"{node.op.value}{node.operand.meta['py_code']}")
-        if node.op.value == "(":  # Parenthesis reuses unary expr
+        if node.op.value == "(":  # (expression) reuses unary expr
             self.emit(node, f"({node.operand.meta['py_code']})")
         elif node.op.value == "not":
             self.emit(node, f"not {node.operand.meta['py_code']}")
+        elif node.op.name == Tok.PIPE_FWD:
+            self.emit(node, f"{node.operand.meta['py_code']}()")
         else:
             self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
 

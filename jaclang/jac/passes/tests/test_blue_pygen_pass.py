@@ -32,6 +32,7 @@ class BluePygenPassTests(TestCaseMicroSuite):
         self.assertFalse(code_gen.errors_had)
         self.assertIn("self.func(*args, **kwargs)", code_gen.ir.meta["py_code"])
         self.assertIn("inspect.signature(func)", code_gen.ir.meta["py_code"])
+        self.assertIn("self.registry.items()", code_gen.ir.meta["py_code"])
 
     def test_pass_ast_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""

@@ -17,10 +17,23 @@ class Command:
 class CommandRegistry:
     def __init__(self):
         self._registry = {}
+        self.parser = argparse.ArgumentParser(prog="CLI")
+        self.subparsers = self.parser.add_subparsers(title="commands", dest="command")
 
     def register(self, func):
+        name = func.__name__
         command = Command(func)
-        self._registry[func.__name__] = command
+        self._registry[name] = command
+        command_parser = self.subparsers.add_parser(name)
+        for param_name, param in command.sig.parameters.items():
+            if param.default is param.empty:
+                command_parser.add_argument(
+                    f"--{param_name}", required=True, type=param.annotation
+                )
+            else:
+                command_parser.add_argument(
+                    f"--{param_name}", default=param.default, type=param.annotation
+                )
         return command
 
     def get(self, name):
@@ -43,27 +56,6 @@ def bar(a: float = 4, b: int = 3, c: str = "hello") -> str:
     return f"Bar result: {a}, {b}, {c}"
 
 
-class ArgumentParserFactory:
-    @staticmethod
-    def create():
-        parser = argparse.ArgumentParser(prog="CLI")
-        subparsers = parser.add_subparsers(title="commands", dest="command")
-
-        for name, command in command_registry.items():
-            command_parser = subparsers.add_parser(name)
-            for param_name, param in command.sig.parameters.items():
-                if param.default is param.empty:
-                    command_parser.add_argument(
-                        f"--{param_name}", required=True, type=param.annotation
-                    )
-                else:
-                    command_parser.add_argument(
-                        f"--{param_name}", default=param.default, type=param.annotation
-                    )
-
-        return parser
-
-
 class CommandShell(cmd.Cmd):
     intro = "Welcome to the shell. Type help or ? to list commands.\n"
     prompt = "(command) "
@@ -74,7 +66,7 @@ class CommandShell(cmd.Cmd):
 
     def default(self, line):
         try:
-            args = vars(ArgumentParserFactory.create().parse_args(line.split()))
+            args = vars(command_registry.parser.parse_args(line.split()))
             command = command_registry.get(args["command"])
             if command:
                 args.pop("command")
@@ -85,7 +77,7 @@ class CommandShell(cmd.Cmd):
 
 
 def main():
-    parser = ArgumentParserFactory.create()
+    parser = command_registry.parser
     args = parser.parse_args()
     command = command_registry.get(args.command)
     if command:
