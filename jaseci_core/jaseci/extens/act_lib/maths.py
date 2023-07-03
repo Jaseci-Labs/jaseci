@@ -58,38 +58,7 @@ def fsum(iterable: list):
     return math.fsum(iterable)
 
 
-@jaseci_action()
-def gcd(args: list):
-    # todo
-    args = tuple(args)
-    return math.gcd(*args)
-
-
-@jaseci_action()
-def isclose(a, b):
-    # todo
-    return math.isclose(a, b, rel_tol=1e-09, abs_tol=0.0)
-
-
-@jaseci_action()
-def isfinite(x):
-    # return boolean
-    # todo
-    return math.isfinite(x)
-
-
-@jaseci_action()
-def isinf(x):
-    # return boolean
-    # todo
-    return math.isinf(x)
-
-
-@jaseci_action()
-def isnan(x):
-    # return boolean
-    # todo
-    return math.isnan(x)
+# todo gcd,isclose,isfinite,isinf,isnan
 
 
 @jaseci_action()
@@ -98,10 +67,7 @@ def isqrt(n):
     return math.isqrt(n)
 
 
-@jaseci_action()
-def lcm(args: list):
-    # todo
-    return math.lcm(*args)
+# todo lcm
 
 
 @jaseci_action()
@@ -129,10 +95,7 @@ def perm(n, k=None):
     return math.perm(n, k)
 
 
-@jaseci_action()
-def prod(iterable, args, start=1):
-    # todo
-    return math.prod(iterable, *args, start=1)
+# todo prod
 
 
 @jaseci_action()
@@ -153,29 +116,4 @@ def ulp(x):
     return math.ulp(x)
 
 
-# power and logs
-
-
-@jaseci_action()
-def cbrt(x):
-    return math.cbrt(x)
-
-
-@jaseci_action()
-def exp(x):
-    return math.exp(x)
-
-
-@jaseci_action()
-def exp2(x):
-    return math.exp2(x)
-
-
-@jaseci_action()
-def expm1(x):
-    return math.expm1(x)
-
-
-@jaseci_action()
-def log(x, base):
-    return math.log(x, base)
+# todo power and logs

@@ -255,26 +255,6 @@ Expected Output:
 }
 ```
 
-## Gcd
-
-Return the greatest common divisor of the specified integer arguments.
-
-## isclose
-
-Return True if the values a and b are close to each other and False otherwise.
-
-## isfinite
-
-Return True if x is neither an infinity nor a NaN, and False otherwise.
-
-## isinf
-
-Return True if x is a positive or negative infinity, and False otherwise.
-
-## isnan
-
-Return True if x is a NaN (not a number), and False otherwise.
-
 ## isqrt
 
 Return the integer square root of the nonnegative integer n. This is the floor of the exact square root of n, or equivalently the greatest integer a such that a² ≤ n.
@@ -303,9 +283,6 @@ Expected Output:
   "yielded": false
 }
 ```
-## lcm
-
-Return the least common multiple of the specified integer arguments.
 
 ## ldexp
 
@@ -423,20 +400,3 @@ Expected Output:
   "yielded": false
 }
 ```
-
-## Prod
-
-Calculate the product of all the elements in the input iterable.
-
-## remainder
-
-Calculate the remainder
-
-## trunc
-
-Return x with the fractional part removed, leaving the integer part.
-
-## ulp
-
-Return the value of the least significant bit of the float x:
-
