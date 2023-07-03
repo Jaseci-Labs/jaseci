@@ -377,7 +377,9 @@ class ActionsOptimizer:
                     c = copy.deepcopy(con)
                     c[act] = m
                     if m == "local":
-                        local_mem_requirement = get_pod_mem_usage(pod_name=act)
+                        local_mem_requirement = get_pod_mem_usage(
+                            pod_name=act.replace("_", "-")
+                        )
                         if local_mem_requirement is None:
                             logger.error(
                                 f"""local_mem_requirement is None for action: {act}
