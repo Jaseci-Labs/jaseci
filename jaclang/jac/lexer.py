@@ -117,6 +117,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "KW_GLOBAL",
         "COMMA",
         "KW_CAN",
+        "KW_STATIC",
         "PLUS",
         "MINUS",
         "STAR_MUL",
@@ -245,6 +246,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NAME["has"] = "KW_HAS"  # type: ignore
     NAME["global"] = "KW_GLOBAL"  # type: ignore
     NAME["can"] = "KW_CAN"  # type: ignore
+    NAME["static"] = "KW_STATIC"  # type: ignore
 
     # Special Arrow Tokens
     ARROW_L = r"<--"
@@ -464,6 +466,7 @@ class Tokens(str, Enum):
     KW_GLOBAL = "KW_GLOBAL"
     COMMA = "COMMA"
     KW_CAN = "KW_CAN"
+    KW_STATIC = "KW_STATIC"
     PLUS = "PLUS"
     MINUS = "MINUS"
     STAR_MUL = "STAR_MUL"

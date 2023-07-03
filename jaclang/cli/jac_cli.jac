@@ -63,6 +63,7 @@ object CommandRegistry {
 }
 
 object CommandShell:cmd.Cmd {
+
 }
 
 with entry {

@@ -460,7 +460,7 @@ class Ability(OOPAccessNode):
         decorators: Optional["Decorators"],
         access: Optional[Token],
         signature: "FuncSignature | TypeSpec | EventSignature",
-        body: "CodeBlock",
+        body: Optional["CodeBlock"],
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
@@ -612,6 +612,7 @@ class ArchHas(OOPAccessNode):
     def __init__(
         self,
         doc: Optional[DocString],
+        is_static: bool,
         access: Optional[Token],
         vars: "HasVarList",
         is_frozen: bool,
@@ -621,6 +622,7 @@ class ArchHas(OOPAccessNode):
     ) -> None:
         """Initialize has statement node."""
         self.doc = doc
+        self.is_static = is_static
         self.vars = vars
         self.is_frozen = is_frozen
         self.h_id = ArchHas.counter

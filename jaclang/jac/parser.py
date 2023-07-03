@@ -357,11 +357,19 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     # Has statements
     # --------------
     @_(
-        "doc_tag KW_HAS access_tag has_assign_clause SEMI",
-        "doc_tag KW_FREEZE access_tag has_assign_clause SEMI",
+        "doc_tag static_tag KW_HAS access_tag has_assign_clause SEMI",
+        "doc_tag static_tag KW_FREEZE access_tag has_assign_clause SEMI",
     )
     def has_stmt(self, p: YaccProduction) -> YaccProduction:
         """Has statement rule."""
+        return p
+
+    @_(
+        "empty",
+        "KW_STATIC",
+    )
+    def static_tag(self, p: YaccProduction) -> YaccProduction:
+        """KW_Static tag rule."""
         return p
 
     @_(

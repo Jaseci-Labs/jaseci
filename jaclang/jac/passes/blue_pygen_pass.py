@@ -350,7 +350,8 @@ class BluePygenPass(Pass):
         vars: HasVarList,
         self.h_id = HasVar.counter
         """
-        self.emit_ln(node, f"def has_{node.h_id}(self):")
+        if not node.is_static:
+            self.emit_ln(node, f"def has_{node.h_id}(self):")
         if node.doc:
             self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         self.emit_ln(node, node.vars.meta["py_code"], indent_delta=1)

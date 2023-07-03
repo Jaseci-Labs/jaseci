@@ -139,7 +139,6 @@ class AstBuildPass(Pass):
     def exit_doc_tag(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        doc_tag -> STRING
         doc_tag -> DOC_STRING
         doc_tag -> empty
         """
@@ -462,23 +461,15 @@ class AstBuildPass(Pass):
             replace_node(node, node.kid[0])
             return
         del node.kid[1]
-        meta = {
-            "doc": node.kid[0],
-            "access": node.kid[1],
-            "name": node.kid[2],
-            "body": node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
-            "signature": node.kid[-2],
-            "is_func": type(node.kid[-2]) == ast.FuncSignature,
-        }
         replace_node(
             node,
             ast.Ability(
-                doc=meta["doc"],
-                access=meta["access"],
-                name=meta["name"],
-                body=meta["body"],
-                signature=meta["signature"],
-                is_func=meta["is_func"],
+                doc=node.kid[0],
+                access=node.kid[1],
+                name=node.kid[2],
+                body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
+                signature=node.kid[-2],
+                is_func=type(node.kid[-2]) == ast.FuncSignature,
                 decorators=None,
                 parent=node.parent,
                 kid=node.kid,
@@ -497,25 +488,16 @@ class AstBuildPass(Pass):
         ability_decl_decor -> doc_tag decorators KW_CAN access_tag NAME return_type_tag SEMI
         """
         del node.kid[2]
-        meta = {
-            "doc": node.kid[0],
-            "decorators": node.kid[1],
-            "access": node.kid[2],
-            "name": node.kid[3],
-            "body": node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
-            "signature": node.kid[-2],
-            "is_func": type(node.kid[-2]) == ast.FuncSignature,
-        }
         replace_node(
             node,
             ast.Ability(
-                doc=meta["doc"],
-                access=meta["access"],
-                name=meta["name"],
-                body=meta["body"],
-                signature=meta["signature"],
-                is_func=meta["is_func"],
-                decorators=meta["decorators"],
+                doc=node.kid[0],
+                decorators=node.kid[1],
+                access=node.kid[2],
+                name=node.kid[3],
+                body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
+                signature=node.kid[-2],
+                is_func=type(node.kid[-2]) == ast.FuncSignature,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
@@ -729,23 +711,32 @@ class AstBuildPass(Pass):
     def exit_has_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        has_stmt -> doc_tag KW_FREEZE access_tag has_assign_clause SEMI
-        has_stmt -> doc_tag KW_HAS access_tag has_assign_clause SEMI
+        has_stmt -> doc_tag static_tag KW_FREEZE access_tag has_assign_clause SEMI
+        has_stmt -> doc_tag static_tag KW_HAS access_tag has_assign_clause SEMI
         """
-        is_frozen = node.kid[1].name == Tok.KW_FREEZE
-        node.kid = [node.kid[0], node.kid[2], node.kid[3]]
+        is_frozen = node.kid[2].name == Tok.KW_FREEZE
+        node.kid = [node.kid[0], node.kid[1], node.kid[3], node.kid[4]]
         replace_node(
             node,
             ast.ArchHas(
                 doc=node.kid[0],
-                access=node.kid[1],
-                vars=node.kid[2],
+                is_static=node.kid[1],
+                access=node.kid[2],
+                vars=node.kid[3],
                 is_frozen=is_frozen,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
             ),
         )
+
+    def exit_static_tag(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        static_tag -> KW_STATIC
+        static_tag -> empty
+        """
+        replace_node(node, node.kid[0] if len(node.kid) else None)
 
     def exit_has_assign_clause(self, node: ast.AstNode) -> None:
         """Grammar rule.
