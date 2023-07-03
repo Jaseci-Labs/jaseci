@@ -35,7 +35,7 @@ def prome():
 
 
 def get_node_mem_usage(
-    node_name,
+    node_name: str = None,
     namespace: str = "jac-exp",
     exclude_prom: bool = False,
     timestamp: int = 0,
