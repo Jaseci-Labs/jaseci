@@ -119,6 +119,7 @@ class BluePygenPass(Pass):
         doc: Optional["DocString"],
         access: Optional[Token],
         assignments: "AssignmentList",
+        is_frozen: bool,
         """
         self.access_check(node)
         self.emit_ln(node, node.assignments.meta["py_code"])
