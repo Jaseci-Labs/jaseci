@@ -1474,19 +1474,8 @@ class ConnectOp(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class SpawnCtx(AstNode):
+class SpawnCtx(ParamList):
     """SpawnCtx node type for Jac Ast."""
-
-    def __init__(
-        self,
-        spawns: list[Assignment],
-        parent: Optional[AstNode],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize spawn context expression node."""
-        self.spawns = spawns
-        super().__init__(parent=parent, kid=kid, line=line)
 
 
 class FilterCtx(AstNode):

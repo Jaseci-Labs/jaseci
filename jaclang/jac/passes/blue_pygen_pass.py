@@ -581,7 +581,7 @@ class BluePygenPass(Pass):
         """
         self.emit_ln(
             node,
-            f"for {node.k_name.value}, {node.v_name.value} in {node.collection.meta['py_code']}.items():",
+            f"for {node.k_name.value}, {node.v_name.value} in {node.collection.meta['py_code']}:",
         )
         self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
@@ -735,6 +735,12 @@ class BluePygenPass(Pass):
                 node,
                 f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
             )
+        elif node.op.name == Tok.PIPE_FWD and type(node.left) == ast.SpawnCtx:
+            self.emit(
+                node, f"{node.right.meta['py_code']}({node.left.meta['py_code']})"
+            )
+        elif node.op.name == Tok.PIPE_FWD and type(node.right) == ast.SpawnCtx:
+            self.ds_feature_warn()
         elif node.op.name == Tok.PIPE_FWD:
             self.emit(node, f"{node.right.meta['py_code']}({node.left.meta['py_code']}")
             paren_count = (
@@ -1049,13 +1055,28 @@ class BluePygenPass(Pass):
         """
         self.ds_feature_warn()
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_spawn_ctx(self, node: ast.SpawnCtx) -> None:
         """Sub objects.
 
-        spawns: list[Assignment],
+        p_args: Optional[ExprList],
+        p_kwargs: Optional["AssignmentList"],
         """
-        self.ds_feature_warn()
+        single_arg = True
+        single_kwarg = True
+        if node.p_args:
+            for arg in node.p_args.values:
+                if single_arg:
+                    self.emit(node, f"{arg.meta['py_code']}")
+                    single_arg = False
+                else:
+                    self.emit(node, f", {arg.meta['py_code']}")
+        if node.p_kwargs:
+            for kwarg in node.p_kwargs.values:
+                if single_kwarg:
+                    self.emit(node, f"{kwarg.meta['py_code']}")
+                    single_kwarg = False
+                else:
+                    self.emit(node, f", {kwarg.meta['py_code']}")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_filter_ctx(self, node: ast.FilterCtx) -> None:

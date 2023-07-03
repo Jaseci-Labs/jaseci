@@ -1,102 +1,101 @@
+# type: ignore
 # flake8: noqa
+import argparse
 import inspect
-from argparse import ArgumentParser, ArgumentError
 import cmd
-from typing import Callable, List
 
 
-class Interface:
+class Command:
+    def __init__(self, func):
+        self.func = func
+        self.sig: inspect.Signature = inspect.signature(func)
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+
+class CommandRegistry:
     def __init__(self):
-        self.functions: List[Callable] = []
+        self._registry = {}
 
-    def register(self, func: Callable) -> Callable:
-        self.functions.append(func)
-        return func
+    def register(self, func):
+        command = Command(func)
+        self._registry[func.__name__] = command
+        return command
 
-    def create_parser(self) -> ArgumentParser:
-        parser = ArgumentParser()
-        parser.add_argument(
-            "base",
-            choices=[f.__name__ for f in self.functions],
-            help="The function to run",
-        )
-        for func in self.functions:
-            sig = inspect.signature(func)
-            for name, param in sig.parameters.items():
-                kwargs = {}
-                if param.default == inspect.Parameter.empty:
-                    kwargs = {"required": True}
+    def get(self, name):
+        return self._registry.get(name)
+
+    def items(self):
+        return self._registry.items()
+
+
+command_registry = CommandRegistry()
+
+
+@command_registry.register
+def foo(a: int = 4, b: str = "hello") -> str:
+    return f"Foo result: {a}, {b}"
+
+
+@command_registry.register
+def bar(a: float = 4, b: int = 3, c: str = "hello") -> str:
+    return f"Bar result: {a}, {b}, {c}"
+
+
+class ArgumentParserFactory:
+    @staticmethod
+    def create():
+        parser = argparse.ArgumentParser(prog="CLI")
+        subparsers = parser.add_subparsers(title="commands", dest="command")
+
+        for name, command in command_registry.items():
+            command_parser = subparsers.add_parser(name)
+            for param_name, param in command.sig.parameters.items():
+                if param.default is param.empty:
+                    command_parser.add_argument(
+                        f"--{param_name}", required=True, type=param.annotation
+                    )
                 else:
-                    kwargs = {"default": param.default}
-                parser.add_argument(f"--{func.__name__}.{name}", **kwargs)
+                    command_parser.add_argument(
+                        f"--{param_name}", default=param.default, type=param.annotation
+                    )
+
         return parser
 
-    def run_from_cli(self):
-        parser = self.create_parser()
-        args = parser.parse_args()
-        func = None
-        for f in self.functions:
-            if f.__name__ == args.base:
-                func = f
-                break
-        if func is not None:
-            func_args = {
-                k.split(".")[1]: v
-                for k, v in vars(args).items()
-                if k.startswith(func.__name__)
-            }
-            func(**func_args)
 
-    def run_shell(self):
-        ShellCmd(self).cmdloop()
+class CommandShell(cmd.Cmd):
+    intro = "Welcome to the shell. Type help or ? to list commands.\n"
+    prompt = "(command) "
 
-
-class ShellCmd(cmd.Cmd):
-    def __init__(self, registry: Interface):
-        super().__init__()
-        self.prompt: str = "> "
-        self.reg: Interface = registry
-
-    def default(self, line: str):
-        args = line.split()
-        parser = self.reg.create_parser()
-        try:
-            parsed_args = parser.parse_args(args)
-            func = None
-            for f in self.reg.functions:
-                if f.__name__ == parsed_args.base:
-                    func = f
-                    break
-            if func is not None:
-                func_args = {
-                    k.split(".")[1]: v
-                    for k, v in vars(parsed_args).items()
-                    if k.startswith(func.__name__)
-                }
-                func(**func_args)
-        except ArgumentError as e:
-            print(f"Error: {str(e)}")
-
-    def do_quit(self, arg: str) -> bool:
+    def do_exit(self, arg):
+        "Exit the shell."
         return True
 
-
-interface = Interface()
-
-
-@interface.register
-def function_one(a: int, b: str, c: bool = False):
-    print(f"Function One -> a: {a}, b: {b}, c: {c}")
-
-
-@interface.register
-def function_two(x: float, y: float):
-    print(f"Function Two -> x: {x}, y: {y}")
+    def default(self, line):
+        try:
+            args = vars(ArgumentParserFactory.create().parse_args(line.split()))
+            command = command_registry.get(args["command"])
+            if command:
+                args.pop("command")
+                result = command(**args)
+                print(result)
+        except Exception as e:
+            print(str(e))
 
 
-@interface.register
-def function_three(name: str, age: int, country: str = "Unknown"):
-    print(f"Function Three -> name: {name}, age: {age}, country: {country}")
+def main():
+    parser = ArgumentParserFactory.create()
+    args = parser.parse_args()
+    command = command_registry.get(args.command)
+    if command:
+        kwargs = vars(args)
+        kwargs.pop("command")
+        result = command(**kwargs)
+        print(result)
+    else:
+        CommandShell().cmdloop()
 
 
-interface.run_shell()
+if __name__ == "__main__":
+    main()

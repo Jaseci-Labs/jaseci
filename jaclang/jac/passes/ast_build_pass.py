@@ -1754,15 +1754,14 @@ class AstBuildPass(Pass):
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
         else:
-            node.kid = [node.kid[-1]]
             if node.kid[0].name == Tok.STAR_MUL:
                 replace_node(
                     node,
                     ast.UnpackExpr(
-                        target=node.kid[0],
+                        target=node.kid[-1],
                         is_dict=False,
                         parent=node.parent,
-                        kid=node.kid,
+                        kid=[node.kid[-1]],
                         line=node.line,
                     ),
                 )
@@ -1770,10 +1769,10 @@ class AstBuildPass(Pass):
                 replace_node(
                     node,
                     ast.UnpackExpr(
-                        target=node.kid[0],
+                        target=node.kid[-1],
                         is_dict=True,
                         parent=node.parent,
-                        kid=node.kid,
+                        kid=[node.kid[-1]],
                         line=node.line,
                     ),
                 )
@@ -2648,10 +2647,11 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.SpawnCtx(
-                spawns=node.kid[1].kid,
-                parent=node.kid[1].parent,
+                p_args=node.kid[1].p_args,
+                p_kwargs=node.kid[1].p_kwargs,
+                parent=node.parent,
                 kid=node.kid[1].kid,
-                line=node.kid[1].line,
+                line=node.line,
             ),
         )
 

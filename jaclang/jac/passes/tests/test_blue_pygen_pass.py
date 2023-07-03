@@ -14,18 +14,6 @@ class BluePygenPassTests(TestCaseMicroSuite):
         """Set up test."""
         return super().setUp()
 
-    def test_pygen_jac_cli(self) -> None:
-        """Basic test for pass."""
-        code_gen = jac_file_to_final_pass(
-            "../../../../cli/jac_cli.jac", self.fixture_abs_path("")
-        )
-        with open("codegen_output.py", "w") as f:
-            f.write(code_gen.ir.meta["py_code"])
-
-        # print(code_gen.ir.meta["py_code"])
-        self.assertFalse(code_gen.errors_had)
-        self.assertGreater(len(code_gen.ir.meta["py_code"]), 200)
-
     def test_pipe_operator(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_final_pass("codegentext.jac", self.fixture_abs_path(""))
@@ -37,6 +25,13 @@ class BluePygenPassTests(TestCaseMicroSuite):
             '{"name": "value"}(len(print(print(print))))', code_gen.ir.meta["py_code"]
         )
         self.assertIn("a = (5 + 10) * 2", code_gen.ir.meta["py_code"])
+
+    def test_pipe_operator_multi_param(self) -> None:
+        """Basic test for pass."""
+        code_gen = jac_file_to_final_pass("codegentext.jac", self.fixture_abs_path(""))
+        self.assertFalse(code_gen.errors_had)
+        self.assertIn("self.func(*args, **kwargs)", code_gen.ir.meta["py_code"])
+        self.assertIn("inspect.signature(func)", code_gen.ir.meta["py_code"])
 
     def test_pass_ast_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""

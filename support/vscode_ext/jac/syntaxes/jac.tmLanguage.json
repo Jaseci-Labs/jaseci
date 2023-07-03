@@ -22,6 +22,9 @@
 					"include": "#architype_refdef"
 				},
 				{
+					"include": "#has"
+				},
+				{
 					"include": "#ability"
 				},
 				{
@@ -196,6 +199,58 @@
 						},
 						{
 							"name": "entity.name.function.jac",
+							"match": "(?x)\n  \\b ([[:alpha:]_]\\w*) \\b\n"
+						}
+					]
+				}
+			]
+		},
+		"has": {
+			"patterns": [
+				{
+					"name": "meta.property.jac",
+					"begin": "(?x)\\s*(has)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\(||\\n))",
+					"end": "(?=\\)|{)|;",
+					"beginCaptures": {
+						"1": {
+							"name": "storage.type.function.jac"
+						}
+					},
+					"endCaptures": {
+						"1": {
+							"name": "punctuation.section.function.begin.jac"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"name": "punctuation.separator.jac",
+							"match": ","
+						},
+						{
+							"include": "#general"
+						},
+						{
+							"match": "(?x)\n  ([[:alpha:]_]\\w*)\n    \\s* (?: (:) )\n",
+							"captures": {
+								"1": {
+									"name": "variable.parameter.language.jac"
+								},
+								"2": {
+									"name": "punctuation.separator.parameters.jac"
+								}
+							}
+						},
+						{
+							"include": "#builtin-types"
+						},
+						{
+							"include": "#statement-keyword"
+						},
+						{
+							"name": "entity.name.type.property.jac",
 							"match": "(?x)\n  \\b ([[:alpha:]_]\\w*) \\b\n"
 						}
 					]
@@ -520,7 +575,7 @@
 				},
 				{
 					"name": "storage.type.class.jac",
-					"match": "\\b(?<!\\.)(class)\\b"
+					"match": "\\b(?<!\\.)(object|node|edge|walker|test)\\b"
 				},
 				{
 					"name": "storage.type.has.jac",
@@ -1996,7 +2051,7 @@
 			}
 		},
 		"special-variables": {
-			"match": "(?x)(<h>|<here>|<v>|<visitor>)",
+			"match": "(?x)(<h>|<here>|<v>|<visitor>|\\|>)",
 			"captures": {
 				"1": {
 					"name": "variable.language.special.self.jac"

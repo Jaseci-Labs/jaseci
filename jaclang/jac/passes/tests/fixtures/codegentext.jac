@@ -8,3 +8,8 @@ with entry {
 with entry {
     {"name": "value"} <| len <| print  <| print  <| print;
 }
+
+with entry {
+    {*args, **kwargs} |> <h>.func;
+    <h>.sig = func |> inspect.signature;
+}

@@ -9,7 +9,7 @@ from typing import Optional
 from jaclang.jac.transpiler import transpile_jac_file
 
 
-def import_jac(target: str) -> Optional[types.ModuleType]:
+def import_jac(target: str, save_file: bool = False) -> Optional[types.ModuleType]:
     """Import a module from a path."""
     # Convert python import paths to directory paths
     target = path.join(*(target.split("."))) + ".jac"
@@ -25,6 +25,9 @@ def import_jac(target: str) -> Optional[types.ModuleType]:
 
     # Transpile the Jac file
     code_string = transpile_jac_file(file_path=target, base_dir=caller_dir)
+    if save_file:
+        with open(path.join(dir_path, module_name + ".py"), "w") as f:
+            f.write(code_string)
 
     # Create a module object
     module = types.ModuleType(module_name)
