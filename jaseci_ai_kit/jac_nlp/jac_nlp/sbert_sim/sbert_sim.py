@@ -25,21 +25,21 @@ training_config: Dict = {
     "model_name": "bert-base-uncased",
 }
 
-SBERT_SIM_ROOT = str(model_base_path("jac_nlp/sbert_sim"))
+MODEL_BASE_PATH = str(model_base_path("jac_nlp/sbert_sim"))
 
 
 @jaseci_action(act_group=["sbert_sim"], allow_remote=True)
 def setup(model_name="all-mpnet-base-v2"):
     global model
-    os.makedirs(SBERT_SIM_ROOT, exist_ok=True)
+    os.makedirs(MODEL_BASE_PATH, exist_ok=True)
     if all(
-        os.path.isfile(os.path.join(SBERT_SIM_ROOT, f_name))
+        os.path.isfile(os.path.join(MODEL_BASE_PATH, f_name))
         for f_name in ["pytorch_model.bin"]
     ):
-        model = SentenceTransformer(SBERT_SIM_ROOT)
+        model = SentenceTransformer(MODEL_BASE_PATH)
     else:
         model = SentenceTransformer(model_name)
-        model.save(SBERT_SIM_ROOT)
+        model.save(MODEL_BASE_PATH)
 
 
 def create_model(model_name="bert-base-uncased", max_seq_length=256):
@@ -211,8 +211,6 @@ def get_train_config():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-setup()
 
 if __name__ == "__main__":
     from jaseci.jsorc.remote_actions import launch_server
