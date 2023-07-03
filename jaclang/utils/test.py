@@ -54,7 +54,7 @@ class TestCaseMicroSuite(ABC, TestCase):
     @classmethod
     def self_attach_micro_tests(cls) -> None:
         """Attach micro tests."""
-        directory = os.path.dirname(__file__) + "/../jac/tests/fixtures/micro"
+        directory = os.path.dirname(__file__) + "/../../examples/micro"
         for filename in os.listdir(directory):
             if os.path.isfile(os.path.join(directory, filename)) and filename.endswith(
                 ".jac"
@@ -67,7 +67,7 @@ class TestCaseMicroSuite(ABC, TestCase):
 
         def test_micro_jac_files_fully_tested(self) -> None:  # noqa: ANN001
             """Test that all micro jac files are fully tested."""
-            self.directory = os.path.dirname(__file__) + "/../jac/tests/fixtures/micro"
+            self.directory = os.path.dirname(__file__) + "/../../examples/micro"
             for filename in os.listdir(self.directory):
                 if os.path.isfile(os.path.join(self.directory, filename)):
                     method_name = f"test_micro_{filename.replace('.jac', '')}"

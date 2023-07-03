@@ -25,10 +25,9 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
       pygments_style: 'autumn'
-      #noclasses: true
   - pymdownx.inlinehilite
   - pymdownx.snippets:
-      base_path: ['.', './docs/code']
+      base_path: ['.', '../../examples/micro']
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

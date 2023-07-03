@@ -1996,7 +1996,7 @@
 			}
 		},
 		"special-variables": {
-			"match": "(?x)(:h:|:here:|:v:|:visitor:)",
+			"match": "(?x)(<h>|<here>|<v>|<visitor>)",
 			"captures": {
 				"1": {
 					"name": "variable.language.special.self.jac"
