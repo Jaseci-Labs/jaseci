@@ -25,7 +25,7 @@ from .actions_state import ActionsState
 
 POLICIES = ["Default", "Evaluation", "Adaptive", "Predictive"]
 THRESHOLD = 0.2
-NODE_MEM_THRESHOLD = 0.75
+NODE_MEM_THRESHOLD = 0.8
 WINDOW_SIZE = 4
 STATIC_USED_MEM = 375  # MB
 
@@ -363,9 +363,15 @@ class ActionsOptimizer:
             )
             node_mem = self.policy_params.get("node_mem", 999 * 1024)
         logger.info(f"===node memory===\nnode_mem: {node_mem}")
-
-        logger.info(f"===node memory===\nnode_mem: {node_mem}")
-        jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
+        # get jaseci runtime memory
+        jaseci_runtime_mem = get_pod_mem_usage("jaseci")
+        if jaseci_runtime_mem is None:
+            logger.error(
+                "jaseci_runtime_mem is None through prometheus, initializing with policy_params"  # noqa: E501
+            )
+            jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
+        # calculate the memory available in node for local modules
+        avl_node_mem = (node_mem - jaseci_runtime_mem) * NODE_MEM_THRESHOLD
         # Initialize configs to eval
         actions = self.actions_state.get_active_actions()
         # construct list of possible configurations
@@ -388,16 +394,17 @@ class ActionsOptimizer:
                             local_mem_requirement = action_configs[act][
                                 "local_mem_requirement"
                             ]
-                        c["local_mem"] = c["local_mem"] + local_mem_requirement
-                        if c["local_mem"] < (
-                            (node_mem - jaseci_runtime_mem) * NODE_MEM_THRESHOLD
-                        ):
+                        c["local_mem"] = c["local_mem"] + (
+                            local_mem_requirement - STATIC_USED_MEM
+                        )
+                        if c["local_mem"] < avl_node_mem:
                             new_configs.append(dict(c))
                         else:
                             logger.info(
                                 f"""config dropped for memory constraint: {c},
-                                \n\tcurrent node memory: {node_mem}
-                                \n\tavailable memory: {((node_mem-jaseci_runtime_mem)  * NODE_MEM_THRESHOLD)-c['local_mem'] }"""  # noqa: E501
+                                \n\tcurrent node memory: {avl_node_mem}
+                                \n\t memory requirement: {c["local_mem"]}
+                                \n\tmemory deficit: { avl_node_mem-c['local_mem'] }"""
                             )
                     else:
                         new_configs.append(dict(c))
