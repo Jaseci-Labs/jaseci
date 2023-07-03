@@ -268,13 +268,14 @@ class BluePygenPass(Pass):
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         is_func: bool,
         doc: Optional[DocString],
         decorators: Optional["Decorators"],
         access: Optional[Token],
-        signature: FuncSignature | TypeSpec,
-        body: CodeBlock,
+        signature: "FuncSignature | TypeSpec | EventSignature",
+        body: Optional["CodeBlock"],
+        arch_attached: Optional["ArchBlock"] = None,
         """
         self.access_check(node)
         if node.decorators:
@@ -289,7 +290,10 @@ class BluePygenPass(Pass):
                     node, f"def {node.name.value}({node.signature.meta['py_code']}:"
                 )
         else:
-            self.emit_ln(node, f"def {node.name.value}():")
+            if node.arch_attached:
+                self.emit_ln(node, f"def {node.name.value}(self):")
+            else:
+                self.emit_ln(node, f"def {node.name.value}():")
             self.ds_feature_warn()
         if node.doc:
             self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
@@ -346,15 +350,20 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         doc: Optional[DocString],
+        is_static: bool,
         access: Optional[Token],
-        vars: HasVarList,
-        self.h_id = HasVar.counter
+        vars: "HasVarList",
+        is_frozen: bool,
         """
-        if not node.is_static:
+        if node.is_static:
+            if node.doc:
+                self.emit_ln(node, node.doc.meta["py_code"])
+            self.emit_ln(node, node.vars.meta["py_code"].replace("self.", ""))
+        else:
             self.emit_ln(node, f"def has_{node.h_id}(self):")
-        if node.doc:
-            self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
-        self.emit_ln(node, node.vars.meta["py_code"], indent_delta=1)
+            if node.doc:
+                self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+            self.emit_ln(node, node.vars.meta["py_code"], indent_delta=1)
 
     def exit_has_var_list(self, node: ast.HasVarList) -> None:
         """Sub objects.
@@ -969,7 +978,7 @@ class BluePygenPass(Pass):
                 f"[{node.start.meta['py_code']}:{node.stop.meta['py_code']}]",
             )
         else:
-            self.emit(node, f"[{node.start.meta['py_code']}:]")
+            self.emit(node, f"[{node.start.meta['py_code']}]")
 
     def exit_global_ref(self, node: ast.GlobalRef) -> None:
         """Sub objects.
@@ -1075,7 +1084,7 @@ class BluePygenPass(Pass):
                     self.emit(node, f", {arg.meta['py_code']}")
         if node.p_kwargs:
             for kwarg in node.p_kwargs.values:
-                if single_kwarg:
+                if single_arg and single_kwarg:
                     self.emit(node, f"{kwarg.meta['py_code']}")
                     single_kwarg = False
                 else:

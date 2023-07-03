@@ -41,14 +41,14 @@ object CommandRegistry {
         cmd = func |> Command;
         <h>.registry[name] = cmd;
         cmd_parser = name |> <h>.sub_parsers.add_parser;
-        for param_name, param in |> command.sig.parameters.items {
+        for param_name, param in |> cmd.sig.parameters.items {
             if param.default is param.empty {
                 {f"--{param_name}", required=True, type=param.annotation}
-                    |> command_parser.add_argument;
+                    |> cmd_parser.add_argument;
             }
             else {
                 {f"--{param_name}", default=param.default, type=param.annotation}
-                    |> command_parser.add_argument;
+                    |> cmd_parser.add_argument;
             }
         }
     }
@@ -63,6 +63,31 @@ object CommandRegistry {
 }
 
 object CommandShell:cmd.Cmd {
+    static has intro: str = "Welcome to the Jac CLI!",
+               prompt: str = "jac> ";
+    has cmd_reg: CommandRegistry;
+
+    can init (cmd_reg: CommandRegistry) {
+        <h>.cmd_reg = cmd_reg;
+    }
+
+    can do_exit(arg: list) -> bool {
+        return True;
+    }
+
+    can default(line: str) {
+        try {
+            args = |> line.split |> <h>.cmd_reg.parser.parse_args |> vars;
+            command = args["command"] |> <h>.cmd_reg.get;
+            if command {
+                args.pop("command");
+                **args |> command.call |> print;
+            }
+        }
+        except Exception as e {
+            e |> print;
+        }
+    }
 
 }
 
@@ -78,6 +103,17 @@ with entry {
     @command_registry.register
     can bar(a: float = 4, b: int = 3, c: str = "hello") -> str {
         return f"Bar result: {a}, {b}, {c}";
+    }
+
+    parser = command_registry.parser;
+    args = |> parser.parse_args |> vars;
+    command = args["command"] |> command_registry.get;
+    if command {
+        args.pop("command");
+        **args |> command.call |> print;
+    }
+    else {
+        shell = |> CommandShell(command_registry).cmdloop;
     }
 }
 
