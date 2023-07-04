@@ -28,3 +28,5 @@ class DeclDefMatchPassTests(TestCase):
         self.assertFalse(state.errors_had)
         self.assertIn("Test.say_hi", state.sym_tab.tab)
         self.assertIsNotNone(state.sym_tab.tab["Test.say_hi"].node.body)
+        self.assertIn("Test.init", state.sym_tab.tab)
+        self.assertIsNotNone(state.sym_tab.tab["Test.init"].node.body)
