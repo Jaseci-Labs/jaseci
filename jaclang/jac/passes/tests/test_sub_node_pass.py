@@ -5,7 +5,7 @@ from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCase
 
 
-class BluePygenPassTests(TestCase):
+class SubNodePassTests(TestCase):
     """Test pass module."""
 
     def setUp(self) -> None:
@@ -19,7 +19,6 @@ class BluePygenPassTests(TestCase):
             base_dir=self.fixture_abs_path(""),
             target=SubNodeTabPass,
         )
-        print(type(code_gen))
         for i in code_gen.ir.kid[1].kid:
             for k, v in i._sub_node_tab.items():
                 for n in v:

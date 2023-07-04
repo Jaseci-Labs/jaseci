@@ -19,7 +19,7 @@ object Command {
     }
 
     can call(*args: list, **kwargs: dict) {
-        {*args, **kwargs} |> <h>.func;
+        return {*args, **kwargs} |> <h>.func;
     }
 }
 
@@ -43,11 +43,11 @@ object CommandRegistry {
         cmd_parser = name |> <h>.sub_parsers.add_parser;
         for param_name, param in |> cmd.sig.parameters.items {
             if param.default is param.empty {
-                {f"--{param_name}", required=True, type=param.annotation}
+                {f"-{param_name}", required=True, type=param.annotation}
                     |> cmd_parser.add_argument;
             }
             else {
-                {f"--{param_name}", default=param.default, type=param.annotation}
+                {f"-{param_name}", default=param.default, type=param.annotation}
                     |> cmd_parser.add_argument;
             }
         }
