@@ -25,7 +25,7 @@ from .actions_state import ActionsState
 
 POLICIES = ["Default", "Evaluation", "Adaptive", "Predictive"]
 THRESHOLD = 0.2
-NODE_MEM_THRESHOLD = 0.8
+# NODE_MEM_THRESHOLD = 0.8
 WINDOW_SIZE = 4
 STATIC_USED_MEM = 375  # MB
 
@@ -371,7 +371,7 @@ class ActionsOptimizer:
             )
             jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
         # calculate the memory available in node for local modules
-        avl_node_mem = (node_mem - jaseci_runtime_mem) * NODE_MEM_THRESHOLD
+        avl_node_mem = node_mem - jaseci_runtime_mem  # * NODE_MEM_THRESHOLD
         # Initialize configs to eval
         actions = self.actions_state.get_active_actions()
         # construct list of possible configurations
@@ -730,17 +730,31 @@ class ActionsOptimizer:
             )
 
             # Calculate the local memory requirement and determine module configuration
-            node_mem = self.policy_params.get("node_mem", 999 * 1024)
-            jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
-            total_avail_mem = (node_mem - jaseci_runtime_mem) * NODE_MEM_THRESHOLD
+            node_mem = get_node_mem_usage()
+            if node_mem is None:
+                logger.error(
+                    "node_mem is None through prometheus, initializing with policy_params"  # noqa: E501
+                )
+                node_mem = self.policy_params.get("node_mem", 999 * 1024)
+            logger.info(f"===node memory===\nnode_mem: {node_mem}")
+            # get jaseci runtime memory
+            jaseci_runtime_mem = get_pod_mem_usage("jaseci")
+            if jaseci_runtime_mem is None:
+                logger.error(
+                    "jaseci_runtime_mem is None through prometheus, initializing with policy_params"  # noqa: E501
+                )
+                jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
+            # calculate the memory available in node for local modules
+            avl_node_mem = node_mem - jaseci_runtime_mem  # * NODE_MEM_THRESHOLD
             local_mem_requirement = 0
             config = {}
             for module in all_mod_ordered_list:
-                mem_req = int(
-                    action_configs.get(module, {}).get("local_mem_requirement", 0)
-                )
+                # mem_req = int(
+                #     action_configs.get(module, {}).get("local_mem_requirement", 0)
+                # )
+                mem_req = get_pod_mem_usage(pod_name=module.replace("_", "-"))
                 if module in curr_mod_ordered_list:
-                    if local_mem_requirement + mem_req > total_avail_mem:
+                    if local_mem_requirement + mem_req > avl_node_mem:
                         config[module] = "remote"
                     else:
                         config[module] = "local"
