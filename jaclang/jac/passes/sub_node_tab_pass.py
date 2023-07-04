@@ -1,4 +1,6 @@
 """Subnode Table building pass."""
+from copy import copy
+
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.ir_pass import Pass
 
@@ -21,7 +23,7 @@ class SubNodeTabPass(Pass):
                 if k in node._sub_node_tab:
                     node._sub_node_tab[k].extend(v)
                 else:
-                    node._sub_node_tab[k] = v
+                    node._sub_node_tab[k] = copy(v)
             if type(i) in node._sub_node_tab:
                 node._sub_node_tab[type(i)].append(i)
             else:

@@ -20,7 +20,7 @@ class ImportPass(Pass):
         self.run_again = True
         while self.run_again:
             self.run_again = False
-            for i in self.get_all_sub_nodes(node, ast.Import, brute_force=True):
+            for i in self.get_all_sub_nodes(node, ast.Import):
                 if i.lang.value == "jac" and not i.sub_module:
                     self.run_again = True
                     ast.append_node(i, self.import_module(i, node.mod_path))

@@ -14,6 +14,13 @@ class BluePygenPassTests(TestCaseMicroSuite):
         """Set up test."""
         return super().setUp()
 
+    def test_jac_cli(self) -> None:
+        """Basic test for pass."""
+        code_gen = jac_file_to_final_pass(
+            file_path="../../../../cli/jac_cli.jac", base_dir=self.fixture_abs_path("")
+        )
+        self.assertFalse(code_gen.errors_had)
+
     def test_pipe_operator(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_final_pass("codegentext.jac", self.fixture_abs_path(""))

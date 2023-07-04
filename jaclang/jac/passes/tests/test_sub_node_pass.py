@@ -1,0 +1,27 @@
+"""Test sub node pass module."""
+
+from jaclang.jac.passes.sub_node_tab_pass import SubNodeTabPass
+from jaclang.jac.transpiler import jac_file_to_pass
+from jaclang.utils.test import TestCase
+
+
+class BluePygenPassTests(TestCase):
+    """Test pass module."""
+
+    def setUp(self) -> None:
+        """Set up test."""
+        return super().setUp()
+
+    def test_sub_node_pass(self) -> None:
+        """Basic test for pass."""
+        code_gen = jac_file_to_pass(
+            file_path="../../../../cli/jac_cli.jac",
+            base_dir=self.fixture_abs_path(""),
+            target=SubNodeTabPass,
+        )
+        print(type(code_gen))
+        for i in code_gen.ir.kid[1].kid:
+            for k, v in i._sub_node_tab.items():
+                for n in v:
+                    self.assertIn(n, code_gen.get_all_sub_nodes(i, k, brute_force=True))
+        self.assertFalse(code_gen.errors_had)
