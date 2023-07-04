@@ -1,1 +1,1 @@
-"""CLI for Jaclang."""
+"""CLI for jaclang."""

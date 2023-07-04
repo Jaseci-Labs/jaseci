@@ -90,22 +90,12 @@ object CommandShell:cmd.Cmd {
         }
     }
 
+
 }
 
-with entry {
-    command_registry = |> CommandRegistry;
+global command_registry = |> CommandRegistry;
 
-    @command_registry.register
-    can foo(a: int = 4, b: str = "hello") -> str {
-        return f"Foo result: {a}, {b}";
-    }
-
-
-    @command_registry.register
-    can bar(a: float = 4, b: int = 3, c: str = "hello") -> str {
-        return f"Bar result: {a}, {b}, {c}";
-    }
-
+can run {
     parser = command_registry.parser;
     args = |> parser.parse_args;
     command = args.command |> command_registry.get;
@@ -119,3 +109,13 @@ with entry {
     }
 }
 
+@command_registry.register
+can foo(a: int = 4, b: str = "hello") -> str {
+    return f"Foo result: {a}, {b}";
+}
+
+
+@command_registry.register
+can bar(a: float = 4, b: int = 3, c: str = "hello") -> str {
+    return f"Bar result: {a}, {b}, {c}";
+}
