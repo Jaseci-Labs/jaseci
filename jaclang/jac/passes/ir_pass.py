@@ -95,6 +95,7 @@ class Pass(Transform):
                     self.traverse(i)
         else:
             self.prune_signal = False
+        self.cur_node = node
         self.exit_node(node)
         return node
 
