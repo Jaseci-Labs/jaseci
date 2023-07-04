@@ -518,8 +518,8 @@ class AstBuildPass(Pass):
             node,
             ast.AbilityDef(
                 doc=node.kid[0],
-                target=node.kid[1] if len(node.kid) == 4 else None,
-                ability=node.kid[2] if len(node.kid) == 4 else node.kid[1],
+                target=node.kid[1] if len(node.kid) == 5 else None,
+                ability=node.kid[2] if len(node.kid) == 5 else node.kid[1],
                 signature=node.kid[-2],
                 body=node.kid[-1],
                 parent=node.parent,

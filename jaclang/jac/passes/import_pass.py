@@ -16,6 +16,7 @@ class ImportPass(Pass):
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
+        self.cur_node = node
         self.terminate()  # Turns off auto traversal for deliberate traversal
         self.run_again = True
         while self.run_again:
@@ -38,6 +39,7 @@ class ImportPass(Pass):
         is_absorb: bool,
         self.sub_module = None
         """
+        self.cur_node = node
         if node.alias and node.sub_module:
             node.sub_module.name = node.alias.value
         # Items matched during def/decl pass
@@ -51,7 +53,7 @@ class ImportPass(Pass):
             path.join(path.dirname(mod_path), *(node.path.path_str.split("."))) + ".jac"
         )
         if target in self.import_table:
-            self.warning(f"Circular import detected, module {target} already imported.")
+            # self.warning(f"Circular import detected, module {target} already imported.")
             return self.import_table[target]
         if not path.exists(target):
             self.error(f"Could not find module {target}")

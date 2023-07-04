@@ -38,9 +38,7 @@ class BluePygenPass(Pass):
     def access_check(self, node: ast.OOPAccessNode) -> None:
         """Check if node uses access."""
         if node.access:
-            self.warning(
-                f"Line {node.line}, Access specifiers not supported in bootstrap Jac."
-            )
+            self.warning("Access specifiers not supported in bootstrap Jac.")
 
     def decl_def_warn(self) -> None:
         """Warn about declaration."""
@@ -133,7 +131,7 @@ class BluePygenPass(Pass):
         description: Token,
         body: "CodeBlock",
         """
-        self.warning(f"Line {node.line}, Test feature not supported in bootstrap Jac.")
+        self.warning("Test feature not supported in bootstrap Jac.")
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
@@ -164,12 +162,15 @@ class BluePygenPass(Pass):
         is_absorb: bool,  # For includes
         self.sub_module = None
         """
-        if node.lang.value != "py":
-            self.warning(
-                f"Line {node.line}, Importing non-python modules not supported in bootstrap Jac."
-            )
         if node.is_absorb:
-            self.warning(f"Line {node.line}, Includes not supported in bootstrap Jac.")
+            self.emit_ln(
+                node,
+                f"from {node.path.meta['py_code']} import *",
+            )
+            if node.items:
+                self.warning(
+                    "Includes import * in target module into current namespace."
+                )
         if not node.items:
             if not node.alias:
                 self.emit_ln(node, f"import {node.path.meta['py_code']}")

@@ -45,7 +45,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
                     else:
                         decl.has_def = True
                         decl.other_node = i
-                        decl.node.body = i
+                        decl.node.body = i  # TODO: I dont think this line makes sense
                         self.sym_tab.set(decl)
 
     def exit_test(self, node: ast.Test) -> None:
@@ -80,7 +80,8 @@ class DeclDefMatchPass(Pass, SymbolTable):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
-        self.sym_tab = self.sym_tab.push(node.path.path_str)
+        if not node.is_absorb:
+            self.sym_tab = self.sym_tab.push(node.path.path_str)
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -92,9 +93,10 @@ class DeclDefMatchPass(Pass, SymbolTable):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
-        if not self.sym_tab.parent:
-            self.error("Import should have a parent sym_table sope.")
-        self.sym_tab = self.sym_tab.pop()
+        if not node.is_absorb and not self.sym_tab.parent:
+            self.ice("Import should have a parent sym_table scope.")
+        elif not node.is_absorb:
+            self.sym_tab = self.sym_tab.pop()
         if node.items:  # now treat imported items as global
             for i in node.items.items:
                 name = i.alias if i.alias else i.name
@@ -176,22 +178,72 @@ class DeclDefMatchPass(Pass, SymbolTable):
         name: Name,
         is_func: bool,
         doc: Optional[DocString],
-        decorators: Optional[Decorators],
+        decorators: Optional["Decorators"],
         access: Optional[Token],
-        signature: FuncSignature | TypeSpec | EventSignature,
-        body: CodeBlock,
+        signature: "FuncSignature | TypeSpec | EventSignature",
+        body: Optional["CodeBlock"],
+        arch_attached: Optional["ArchBlock"] = None,
         """
+        name = (
+            f"{node.arch_attached.parent.name.value}.{node.name.value}"
+            if node.arch_attached
+            else node.name.value
+        )
+        decl = self.sym_tab.lookup(name)
+        if decl and decl.has_decl:
+            self.error(
+                f"Ability bound with name {name} already defined on Line {decl.node.line}."
+            )
+        elif decl and decl.has_def:
+            decl.has_decl = True
+            decl.node = node
+            decl.node.body = (
+                decl.other_node.body
+                if type(decl.other_node) == ast.AbilityDef
+                else self.ice("Expected node of type AbilityDef in symbol table.")
+            )
+            ast.append_node(decl.node, decl.other_node)
+            self.sym_tab.set(decl)
+        else:
+            decl = DefDeclSymbol(name=name, node=node, has_decl=True)
+            if node.body:
+                decl.has_def = True
+                decl.other_node = node
+            self.sym_tab.set(decl)
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
 
         doc: Optional[DocString],
-        mod: Optional[NameList],
-        ability: AbilityRef,
-        body: CodeBlock,
+        target: Optional["NameList"],
+        ability: "AbilityRef",
+        signature: "FuncSignature | EventSignature",
+        body: "CodeBlock",
         """
+        name = node.ability.name.value
+        if node.target:
+            owner = node.target.names[-1]
+            if not isinstance(owner, ast.ArchRefType):
+                self.error("Expected reference to Architype!")
+                owner = ""
+            else:
+                owner = owner.name.value
+            name = f"{owner}.{name}"
+        decl = self.sym_tab.lookup(name)
+        if decl and decl.has_def:
+            self.error(
+                f"Ability bound with name {name} already defined on Line {decl.other_node.line}."
+            )
+        elif decl and decl.has_decl:
+            decl.has_def = True
+            decl.other_node = node
+            decl.node.body = decl.other_node.body
+            ast.append_node(decl.node, decl.other_node)
+            self.sym_tab.set(decl)
+        else:
+            self.sym_tab.set(DefDeclSymbol(name=name, other_node=node, has_def=True))
 
-    def exit_arch_block(self, node: ast.ArchBlock) -> None:
+    def enter_arch_block(self, node: ast.ArchBlock) -> None:
         """Sub objects.
 
         members: list['ArchHas | Ability'],

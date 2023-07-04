@@ -17,7 +17,6 @@ class Symbol:
         """Initialize."""
         self.name = name
         self.node = node
-        self.def_line = node.line
 
     def pretty_print(self) -> str:
         """Pretty print the symbol."""
@@ -53,7 +52,7 @@ class DefDeclSymbol(Symbol):
     def __init__(
         self,
         name: str,
-        node: ast.AstNode,
+        node: Optional[ast.AstNode] = None,
         other_node: Optional[ast.AstNode] = None,
         has_def: bool = False,
         has_decl: bool = False,

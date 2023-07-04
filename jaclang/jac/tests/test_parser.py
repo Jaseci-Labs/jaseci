@@ -40,10 +40,10 @@ class TestParser(TestCaseMicroSuite):
     def test_parsing_jac_cli(self) -> None:
         """Basic test for parsing."""
         lex = JacLexer(
-            mod_path="../../../cli/jac_cli.jac",
-            input_ir=self.load_fixture("../../../cli/jac_cli.jac"),
+            mod_path="../../../cli/cli.jac",
+            input_ir=self.load_fixture("../../../cli/cli.jac"),
         ).ir
-        prse = JacParser(mod_path="../../../cli/jac_cli.jac", input_ir=lex)
+        prse = JacParser(mod_path="../../../cli/cli.jac", input_ir=lex)
         self.assertFalse(prse.errors_had)
 
 

@@ -699,7 +699,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
             return True
         self.error(
             f"Type mismatch, {sym.name} already defined on line "
-            f"{sym.def_line} as {sym.typ} not compatible with"
+            f"{sym.node.line} as {sym.typ} not compatible with"
             f"{node._typ} on line {node.line}!"
         )
         return False
