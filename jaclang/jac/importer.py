@@ -56,7 +56,7 @@ def import_jac(target: str, save_file: bool = False) -> Optional[types.ModuleTyp
         # Set the module as an attribute of the package
         setattr(sys.modules[package_path], module_name, module)
 
-    sys.modules[package_path + "." + module_name] = module
+    sys.modules[module_name] = module
 
     # Add the module to the calling context's global variables
     return module

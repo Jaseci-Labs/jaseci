@@ -10,9 +10,13 @@ setup(
     packages=find_packages(include=["jaclang", "jaclang.*"]),
     install_requires=[],
     package_data={
-        "": ["*.ini"],
+        "": ["*.ini", "*.jac"],
     },
-    entry_points={},
+    entry_points={
+        "console_scripts": [
+            "jac = jaclang.cli:cli.run",
+        ]
+    },
     author="Jason Mars",
     author_email="jason@jaseci.org",
     url="https://github.com/Jaseci-Labs/jaclang",
