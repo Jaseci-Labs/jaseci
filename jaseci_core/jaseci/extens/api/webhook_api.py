@@ -27,24 +27,26 @@ class WebhookApi:
             stripe_service.get_event(_raw_req_ctx, _req_ctx["headers"])
 
             payload_obj = req_body.get("data").get("object")
+            payload_meta = payload_obj.get("metadata")
+
             customer_id = payload_obj.get("customer")
+            customer_meta = (
+                stripe.Customer.retrieve(id=customer_id).get("metadata")
+                if customer_id
+                else {}
+            )
 
-            if customer_id:
-                customer = stripe.Customer.retrieve(id=customer_id)
-                metadata = customer.get("metadata")
-            else:
-                metadata = payload_obj.get("metadata")
-
-            master_id = metadata.get("master")
+            master_id = payload_meta.get("master") or customer_meta.get("master")
             master = self._h.get_obj(master_id, master_id)
 
-            node_id = metadata.get("node")
+            node_id = payload_meta.get("node") or customer_meta.get("node")
             if not node_id:
                 node_id = master.active_gph_id
             node = self._h.get_obj(master_id, node_id)
 
             sentinel_id = (
-                metadata.get("sentinel")
+                payload_meta.get("sentinel")
+                or customer_meta.get("sentinel")
                 or master.active_snt_id
                 or self._h.get_glob("GLOB_SENTINEL")
             )
