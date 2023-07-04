@@ -9,7 +9,9 @@ from typing import Optional
 from jaclang.jac.transpiler import transpile_jac_file
 
 
-def import_jac(target: str, save_file: bool = False) -> Optional[types.ModuleType]:
+def import_jac(
+    target: str, base_path: Optional[str] = None, save_file: bool = False
+) -> Optional[types.ModuleType]:
     """Import a module from a path."""
     # Convert python import paths to directory paths
     target = path.join(*(target.split("."))) + ".jac"
@@ -21,7 +23,9 @@ def import_jac(target: str, save_file: bool = False) -> Optional[types.ModuleTyp
 
     # Get the directory of the calling module
     frame = inspect.stack()[1]
-    caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
+    caller_dir = path.dirname(
+        base_path if base_path else path.abspath(frame[0].f_code.co_filename)
+    )
 
     # Transpile the Jac file
     code_string = transpile_jac_file(file_path=target, base_dir=caller_dir)
