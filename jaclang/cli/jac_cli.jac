@@ -54,7 +54,7 @@ object CommandRegistry {
     }
 
     can get(name: str) -> Command {
-        return <h>.registry[name];
+        return name |> <h>.registry.get;
     }
 
     can items -> dict[str, Command] {
@@ -69,6 +69,7 @@ object CommandShell:cmd.Cmd {
 
     can init (cmd_reg: CommandRegistry) {
         <h>.cmd_reg = cmd_reg;
+        <h> |> cmd.Cmd.__init__;
     }
 
     can do_exit(arg: list) -> bool {
@@ -106,10 +107,11 @@ with entry {
     }
 
     parser = command_registry.parser;
-    args = |> parser.parse_args |> vars;
-    command = args["command"] |> command_registry.get;
+    args = |> parser.parse_args;
+    command = args.command |> command_registry.get;
     if command {
-        args.pop("command");
+        args = args |> vars;
+        "command" |> args.pop;
         **args |> command.call |> print;
     }
     else {
