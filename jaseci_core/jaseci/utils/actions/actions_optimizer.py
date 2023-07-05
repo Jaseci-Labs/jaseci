@@ -694,10 +694,17 @@ class ActionsOptimizer:
 
         return False
 
-    def get_module_config(self, curr_action_utilz):
+    def get_module_config(self, curr_action_utilz, prev_best_config):
         try:
             # Calculate the total utilization of each module
             module_utilz = {}
+            if "local" in prev_best_config.values():
+                unload_list = [
+                    name for name, mod in prev_best_config.items() if mod == "local"
+                ]
+            for mod in unload_list:
+                self.unload_action_module(mod)
+
             for module, utilz in curr_action_utilz.items():
                 if module != "total_call_count":
                     module_name = module.split(".")[0]
@@ -813,7 +820,9 @@ class ActionsOptimizer:
                     f"===Predictive Policy=== in pref phase with cur_phase: {current_act_utilz},\nprev: {policy_state['prev_action_utilz']}"  # noqa: E501
                 )
                 if policy_state["eval_completed"] is False:
-                    best_config = self.get_module_config(current_act_utilz)
+                    best_config = self.get_module_config(
+                        current_act_utilz, policy_state["prev_best_config"]
+                    )
                     logger.info(
                         f"===Predictive Policy=== best fit config: {best_config}"
                     )
@@ -824,6 +833,7 @@ class ActionsOptimizer:
                         )
                         policy_state["phase"] = "action_switching"
                         self.apply_actions_change()
+                    policy_state["prev_best_config"] = best_config
                     policy_state["eval_completed"] = True
                 else:
                     if (
