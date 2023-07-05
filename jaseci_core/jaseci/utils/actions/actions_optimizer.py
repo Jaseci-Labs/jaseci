@@ -702,9 +702,9 @@ class ActionsOptimizer:
                 unload_list = [
                     name for name, mod in prev_best_config.items() if mod == "local"
                 ]
-            for mod in unload_list:
-                self.unload_action_module(mod)
-
+            if unload_list:
+                for mod in unload_list:
+                    self.unload_action_module(mod)
             for module, utilz in curr_action_utilz.items():
                 if module != "total_call_count":
                     module_name = module.split(".")[0]
