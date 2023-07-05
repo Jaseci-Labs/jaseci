@@ -1,6 +1,6 @@
 """Abstract class for IR Passes for Jac."""
 import pprint
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 from jaclang.core.edge import EdgeDir
 
@@ -41,10 +41,6 @@ class AstNode:
             ret["name"] = self.name
             ret["value"] = self.value
         return ret
-
-    def is_type(self, typ: Type["AstNode"]) -> bool:
-        """Check if node is of type."""
-        return type(self) == typ
 
     def print(self, depth: Optional[int] = None) -> None:
         """Print ast."""
@@ -671,7 +667,8 @@ class TypeSpec(AstNode):
         self,
         spec_type: "Token | NameList",
         list_nest: "TypeSpec",  # needed for lists
-        dict_nest: "TypeSpec",  # needed for dicts
+        dict_nest: "TypeSpec",  # needed for dicts, uses list_nest as key
+        null_ok: bool,
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
@@ -680,6 +677,7 @@ class TypeSpec(AstNode):
         self.spec_type = spec_type
         self.list_nest = list_nest
         self.dict_nest = dict_nest
+        self.null_ok = null_ok
         super().__init__(parent=parent, kid=kid, line=line)
 
 
@@ -1374,8 +1372,9 @@ class IndexSlice(AstNode):
 
     def __init__(
         self,
-        start: "ExprType",
+        start: Optional["ExprType"],
         stop: Optional["ExprType"],
+        is_range: bool,
         parent: Optional[AstNode],
         kid: list[AstNode],
         line: int,
@@ -1383,6 +1382,7 @@ class IndexSlice(AstNode):
         """Initialize index slice expression node."""
         self.start = start
         self.stop = stop
+        self.is_range = is_range
         super().__init__(parent=parent, kid=kid, line=line)
 
 

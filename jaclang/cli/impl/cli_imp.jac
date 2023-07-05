@@ -23,11 +23,13 @@
     cmd_parser = name |> <h>.sub_parsers.add_parser;
     for param_name, param in |> cmd.sig.parameters.items {
         if param.default is param.empty {
-            {f"-{param_name}", required=True, type=param.annotation}
+            {f"-{param_name[:1]}", f"--{param_name}",
+            required=True, type=param.annotation}
                 |> cmd_parser.add_argument;
         }
         else {
-            {f"-{param_name}", default=param.default, type=param.annotation}
+            {f"-{param_name[:1]}", f"--{param_name}",
+            default=param.default, type=param.annotation}
                 |> cmd_parser.add_argument;
         }
     }
@@ -57,7 +59,10 @@
         command = args["command"] |> <h>.cmd_reg.get;
         if command {
             args.pop("command");
-            **args |> command.call |> print;
+            ret = **args |> command.call;
+            if ret {
+                ret |> print;
+            }
         }
     }
     except Exception as e {
@@ -65,3 +70,19 @@
     }
 }
 
+:a:start_cli {
+    parser = command_registry.parser;
+    args = |> parser.parse_args;
+    command = args.command |> command_registry.get;
+    if command {
+        args = args |> vars;
+        "command" |> args.pop;
+        ret = **args |> command.call;
+        if ret {
+            ret |> print;
+        }
+    }
+    else {
+        shell = |> CommandShell(command_registry).cmdloop;
+    }
+}

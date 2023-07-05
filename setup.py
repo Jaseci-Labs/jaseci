@@ -14,7 +14,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "jac = jaclang.cli:cli.run",
+            "jac = jaclang.cli:cli.start_cli",
         ]
     },
     author="Jason Mars",

@@ -407,6 +407,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "dotted_name",
         "TYP_LIST LSQUARE type_name RSQUARE",
         "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
+        "type_name NULL_OK",
     )
     def type_name(self, p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
@@ -1034,6 +1035,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "LSQUARE expression RSQUARE",
         "LSQUARE expression COLON expression RSQUARE",
+        "LSQUARE expression COLON RSQUARE",
+        "LSQUARE COLON expression RSQUARE",
     )
     def index_slice(self, p: YaccProduction) -> YaccProduction:
         """Index/slice rule."""

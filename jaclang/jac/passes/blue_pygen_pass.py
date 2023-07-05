@@ -212,7 +212,7 @@ class BluePygenPass(Pass):
         name: Token,
         alias: Optional[Token],
         """
-        if type(node.alias) == ast.Token:
+        if node.alias:
             self.emit(node, node.name.value + " as " + node.alias.value)
         else:
             self.emit(node, node.name.value)
@@ -801,7 +801,7 @@ class BluePygenPass(Pass):
         """
         if node.op.value in ["-", "~", "+"]:
             self.emit(node, f"{node.op.value}{node.operand.meta['py_code']}")
-        if node.op.value == "(":  # (expression) reuses unary expr
+        elif node.op.value == "(":  # (expression) reuses unary expr
             self.emit(node, f"({node.operand.meta['py_code']})")
         elif node.op.value == "not":
             self.emit(node, f"not {node.operand.meta['py_code']}")
@@ -980,13 +980,16 @@ class BluePygenPass(Pass):
         start: ExprType,
         stop: Optional[ExprType],
         """
-        if node.stop:
+        if node.is_range:
             self.emit(
                 node,
-                f"[{node.start.meta['py_code']}:{node.stop.meta['py_code']}]",
+                f"[{node.start.meta['py_code'] if node.start else ''}:"
+                f"{node.stop.meta['py_code'] if node.stop else ''}]",
             )
-        else:
+        elif node.start:
             self.emit(node, f"[{node.start.meta['py_code']}]")
+        else:
+            self.ice("Something went horribly wrong.")
 
     def exit_global_ref(self, node: ast.GlobalRef) -> None:
         """Sub objects.

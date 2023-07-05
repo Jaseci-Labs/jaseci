@@ -31,6 +31,7 @@ object CommandRegistry {
     can items -> dict[str, Command];
 }
 
+
 object CommandShell:cmd.Cmd {
     static has intro: str = "Welcome to the Jac CLI!",
                prompt: str = "jac> ";
@@ -43,16 +44,4 @@ object CommandShell:cmd.Cmd {
 
 global command_registry = |> CommandRegistry;
 
-can run {
-    parser = command_registry.parser;
-    args = |> parser.parse_args;
-    command = args.command |> command_registry.get;
-    if command {
-        args = args |> vars;
-        "command" |> args.pop;
-        **args |> command.call |> print;
-    }
-    else {
-        shell = |> CommandShell(command_registry).cmdloop;
-    }
-}
+can start_cli;

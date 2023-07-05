@@ -267,7 +267,7 @@ class AstBuildPass(Pass):
         name_as_list -> NAME
         """
         this_item = None
-        if node.kid[0].is_type(ast.Name):
+        if type(node.kid[0]) == ast.Name:
             this_item = ast.ModuleItem(
                 name=node.kid[0],
                 alias=node.kid[2] if len(node.kid) == 3 else None,
@@ -797,35 +797,51 @@ class AstBuildPass(Pass):
     def exit_type_name(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        type_name -> type_name NULL_OK
         type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
         type_name -> TYP_LIST LSQUARE type_name RSQUARE
         type_name -> dotted_name
         type_name -> NULL
         type_name -> builtin_type
         """
-        meta = {
-            "typ": node.kid[0],
-            "list_nest": None,
-            "dict_nest": None,
-        }
-        if len(node.kid) == 4:
-            node.kid = [node.kid[0], node.kid[2]]
-            meta["list_nest"] = node.kid[1]
-        elif len(node.kid) == 6:
-            node.kid = [node.kid[0], node.kid[2], node.kid[4]]
-            meta["list_nest"] = node.kid[1]
-            meta["dict_nest"] = node.kid[2]
-        replace_node(
-            node,
-            ast.TypeSpec(
-                spec_type=meta["typ"],
-                list_nest=meta["list_nest"],
-                dict_nest=meta["dict_nest"],
-                parent=node.parent,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
+        if len(node.kid) == 2:
+            replace_node(
+                node,
+                ast.TypeSpec(
+                    spec_type=node.kid[0].spec_type,
+                    list_nest=node.kid[0].list_nest,
+                    dict_nest=node.kid[0].dict_nest,
+                    null_ok=True,
+                    parent=node.parent,
+                    kid=node.kid[0].kid,
+                    line=node.kid[0].line,
+                ),
+            )
+        else:
+            meta = {
+                "typ": node.kid[0],
+                "list_nest": None,
+                "dict_nest": None,
+            }
+            if len(node.kid) == 4:
+                node.kid = [node.kid[0], node.kid[2]]
+                meta["list_nest"] = node.kid[1]
+            elif len(node.kid) == 6:
+                node.kid = [node.kid[0], node.kid[2], node.kid[4]]
+                meta["list_nest"] = node.kid[1]
+                meta["dict_nest"] = node.kid[2]
+            replace_node(
+                node,
+                ast.TypeSpec(
+                    spec_type=meta["typ"],
+                    list_nest=meta["list_nest"],
+                    dict_nest=meta["dict_nest"],
+                    null_ok=False,
+                    parent=node.parent,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
 
     def exit_builtin_type(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -2230,6 +2246,8 @@ class AstBuildPass(Pass):
     def exit_index_slice(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        index_slice -> LSQUARE COLON expression RSQUARE
+        index_slice -> LSQUARE expression COLON RSQUARE
         index_slice -> LSQUARE expression COLON expression RSQUARE
         index_slice -> LSQUARE expression RSQUARE
         """
@@ -2240,11 +2258,30 @@ class AstBuildPass(Pass):
                 ast.IndexSlice(
                     start=node.kid[0],
                     stop=None,
+                    is_range=False,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,
                 ),
             )
+        elif len(node.kid) == 4:
+            start = node.kid[1] if type(node.kid[1]) != ast.Token else None
+            stop = node.kid[2] if type(node.kid[2]) != ast.Token else None
+            node.kid = [start if start else stop]
+            if not isinstance(node.kid[0], ast.AstNode):
+                self.ice("Somethings wrong with the parser.")
+            else:
+                replace_node(
+                    node,
+                    ast.IndexSlice(
+                        start=start,
+                        stop=stop,
+                        is_range=True,
+                        parent=node.parent,
+                        kid=[node.kid[0]],
+                        line=node.line,
+                    ),
+                )
         else:
             node.kid = [node.kid[1], node.kid[3]]
             replace_node(
@@ -2252,6 +2289,7 @@ class AstBuildPass(Pass):
                 ast.IndexSlice(
                     start=node.kid[0],
                     stop=node.kid[1],
+                    is_range=True,
                     parent=node.parent,
                     kid=node.kid,
                     line=node.line,

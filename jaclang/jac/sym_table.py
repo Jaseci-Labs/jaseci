@@ -12,7 +12,7 @@ class Symbol:
     def __init__(
         self,
         name: str,
-        node: ast.AstNode,
+        node: Optional[ast.AstNode] = None,
     ) -> None:
         """Initialize."""
         self.name = name
