@@ -1,7 +1,7 @@
 """Test for base classes."""
 
-import:jac from imps, test_glob as mine;
-include:jac imps;
+import:jac from impl.imps, test_glob as mine;
+include:jac impl.imps;
 
 object Test {
     can init;

@@ -49,16 +49,13 @@ class ImportPass(Pass):
 
     def import_module(self, node: ast.Import, mod_path: str) -> ast.AstNode:
         """Import a module."""
-        from jaclang.jac.importer import import_jac
-
         target = path.normpath(
             path.join(path.dirname(mod_path), *(node.path.path_str.split("."))) + ".jac"
         )
         if target in self.import_table:
             # self.warning(f"Circular import detected, module {target} already imported.")
             return self.import_table[target]
-        # this import assumes running, not compiling
-        import_jac(target=node.path.path_str, base_path=mod_path)
+
         if not path.exists(target):
             self.error(f"Could not find module {target}")
         mod = jac_file_to_ast_pass(

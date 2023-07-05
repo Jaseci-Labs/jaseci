@@ -21,6 +21,12 @@ def import_jac(
     module_name = path.splitext(file_name)[0]
     package_path = dir_path.replace(path.sep, ".")
 
+    # If module already loaded in sys return it
+    if package_path and f"{package_path}.{module_name}" in sys.modules:
+        return sys.modules[f"{package_path}.{module_name}"]
+    elif not package_path and module_name in sys.modules:
+        return sys.modules[module_name]
+
     # Get the directory of the calling module
     frame = inspect.stack()[1]
     caller_dir = path.dirname(
@@ -59,8 +65,9 @@ def import_jac(
 
         # Set the module as an attribute of the package
         setattr(sys.modules[package_path], module_name, module)
-
-    sys.modules[module_name] = module
+        sys.modules[f"{package_path}.{module_name}"] = module
+    else:
+        sys.modules[module_name] = module
 
     # Add the module to the calling context's global variables
     return module

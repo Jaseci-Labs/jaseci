@@ -98,6 +98,7 @@ class BluePygenPass(Pass):
         body: "Elements",
         """
         self.emit_ln(node, node.doc.value)
+        self.emit_ln(node, "from jaclang import jac_import as __jac_import__")
         if node.body:
             self.emit(node, node.body.meta["py_code"])
         self.ir = node
@@ -162,6 +163,12 @@ class BluePygenPass(Pass):
         is_absorb: bool,  # For includes
         self.sub_module = None
         """
+        if node.lang.value == "jac":  # injects module into sys.modules
+            # this import assumes running, not compiling
+            self.emit_ln(
+                node,
+                f"__jac_import__(target='{node.path.meta['py_code']}', base_path=__file__)",
+            )
         if node.is_absorb:
             self.emit_ln(
                 node,

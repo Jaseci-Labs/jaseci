@@ -8,7 +8,7 @@ import:py inspect;
 import:py argparse;
 import:py cmd;
 
-include:jac cli_imp;
+include:jac impl.cli_imp;
 
 
 object Command {
