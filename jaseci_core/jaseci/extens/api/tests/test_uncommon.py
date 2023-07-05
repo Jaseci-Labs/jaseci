@@ -6,6 +6,62 @@ class UncommonImplementationTest(CoreTest):
 
     fixture_src = __file__
 
+    def test_overrided_action_ability(self):
+        self.call(
+            self.smast,
+            ["sentinel_register", {"code": self.load_jac("action_override.jac")}],
+        )
+
+        reports = self.call(self.smast, ["walker_run", {"name": "check"}])["report"]
+        keys = [
+            "log",
+            "out",
+            "js_input",
+            "input",
+            "js_round",
+            "round",
+            "err",
+            "sleep",
+            "sort_by_col",
+            "time_now",
+            "set_global",
+            "get_global",
+            "actload_local",
+            "actload_remote",
+            "actload_module",
+            "destroy_global",
+            "set_perms",
+            "get_perms",
+            "grant_perms",
+            "revoke_perms",
+            "get_report",
+            "clear_report",
+            "log_activity",
+        ]
+        for key in keys:
+            # node tester - testing first report: std should be the default
+            self.assertIsInstance(reports[0][key], dict)
+            self.assertEqual(reports[0][key]["name"], f"std.{key}")
+            self.assertEqual(reports[0][key]["kind"], "ability")
+
+            # walker check - tester report: std should be the default
+            self.assertIsInstance(reports[3][key], dict)
+            self.assertEqual(reports[3][key]["name"], f"std.{key}")
+            self.assertEqual(reports[3][key]["kind"], "ability")
+
+            # node tester - testing after std.set_global = 1
+            # all actions should be the same except std.set_global
+            if key != "set_global":
+                self.assertIsInstance(reports[1][key], dict)
+                self.assertEqual(reports[1][key]["name"], f"std.{key}")
+                self.assertEqual(reports[1][key]["kind"], "ability")
+
+        self.assertIsInstance(reports[1]["set_global"], int)
+        self.assertEqual(reports[1]["set_global"], 1)
+
+        # node tester - testing third report: std set to 1
+        self.assertEqual(reports[2], 1)
+
     def test_node_ability_from_global_sentinel(self):
         self.call(self.mast, ["graph_create", {}])
 
