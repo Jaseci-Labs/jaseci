@@ -4,21 +4,9 @@ Jac language. It's built with the Jac language via bootstraping and
 represents the first such production Jac program.
 """
 import:py from os, path;
-import:jac from cli, command_registry as cmd_reg;
+import:jac from cli, cmd_registry as cmd_reg;
 
-# include:jac impl.cmds_imp;
-
-@cmd_reg.register
-can load(filename: str) {
-    if filename.endswith(".jac"){
-        [base, mod] = path.split(filename);
-        mod=mod[:-4];
-        __jac_import__(target=mod, base_path=base);
-    }
-}
+include:jac impl.cmds_impl;
 
 @cmd_reg.register
-can build() {
-    return f"Bar result: {a}, {b}, {c}";
-}
-
+can load(filename: str);

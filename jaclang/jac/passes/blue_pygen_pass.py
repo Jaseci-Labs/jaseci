@@ -35,16 +35,9 @@ class BluePygenPass(Pass):
             "\n", "\n" + self.indent_str(indent_delta)
         )
 
-    def access_check(self, node: ast.OOPAccessNode) -> None:
-        """Check if node uses access."""
-        if node.access:
-            self.warning("Access specifiers not supported in bootstrap Jac.")
-
-    def decl_def_warn(self) -> None:
+    def decl_def_missing(self) -> None:
         """Warn about declaration."""
-        self.warning(
-            "Separate declarations and definitions not supported in bootstrap Jac."
-        )
+        self.error("Unable to find definition for this declaration.")
 
     def ds_feature_warn(self) -> None:
         """Warn about feature."""
@@ -120,7 +113,6 @@ class BluePygenPass(Pass):
         assignments: "AssignmentList",
         is_frozen: bool,
         """
-        self.access_check(node)
         self.emit_ln(node, node.assignments.meta["py_code"])
 
     # NOTE: Incomplete for Jac Purple and Red
@@ -229,7 +221,6 @@ class BluePygenPass(Pass):
         base_classes: "BaseClasses",
         body: "ArchBlock",
         """
-        self.access_check(node)
         if node.decorators:
             self.emit_ln(node, node.decorators.meta["py_code"])
         if not node.base_classes:
@@ -244,9 +235,8 @@ class BluePygenPass(Pass):
         if node.body:
             self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
         else:
-            self.decl_def_warn()
+            self.decl_def_missing()
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
 
@@ -255,7 +245,6 @@ class BluePygenPass(Pass):
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
         """
-        self.decl_def_warn()
 
     def exit_decorators(self, node: ast.Decorators) -> None:
         """Sub objects.
@@ -285,7 +274,6 @@ class BluePygenPass(Pass):
         body: Optional["CodeBlock"],
         arch_attached: Optional["ArchBlock"] = None,
         """
-        self.access_check(node)
         if node.decorators:
             self.emit_ln(node, node.decorators.meta["py_code"])
         if node.is_func:
@@ -302,15 +290,13 @@ class BluePygenPass(Pass):
                 self.emit_ln(node, f"def {node.name.value}(self):")
             else:
                 self.emit_ln(node, f"def {node.name.value}():")
-            self.ds_feature_warn()
         if node.doc:
             self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
         if node.body:
             self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
         else:
-            self.decl_def_warn()
+            self.decl_def_missing()
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
 
@@ -319,7 +305,6 @@ class BluePygenPass(Pass):
         ability: AbilityRef,
         body: CodeBlock,
         """
-        self.decl_def_warn()
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_block(self, node: ast.ArchBlock) -> None:

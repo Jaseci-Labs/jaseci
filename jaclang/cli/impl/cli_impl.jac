@@ -71,9 +71,9 @@
 }
 
 :a:start_cli {
-    parser = command_registry.parser;
+    parser = cmd_registry.parser;
     args = |> parser.parse_args;
-    command = args.command |> command_registry.get;
+    command = args.command |> cmd_registry.get;
     if command {
         args = args |> vars;
         "command" |> args.pop;
@@ -83,6 +83,6 @@
         }
     }
     else {
-        shell = |> CommandShell(command_registry).cmdloop;
+        shell = |> CommandShell(cmd_registry).cmdloop;
     }
 }

@@ -7,8 +7,7 @@ represents the first such production Jac program.
 import:py inspect;
 import:py argparse;
 import:py cmd;
-
-include:jac impl.cli_imp;
+include:jac impl.cli_impl;
 
 
 object Command {
@@ -42,6 +41,6 @@ object CommandShell:cmd.Cmd {
     can default(line: str);
 }
 
-global command_registry = |> CommandRegistry;
+global cmd_registry = |> CommandRegistry;
 
 can start_cli;
