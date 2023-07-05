@@ -7,9 +7,9 @@ object MyObj {
 }
 
 :o:MyObj:a:init {
-        here.a = a;
+        <h>.a = a;
 }
 
 :o:MyObj:a:set_a {
-        here.a = val;
+        <h>.a = val;
 }

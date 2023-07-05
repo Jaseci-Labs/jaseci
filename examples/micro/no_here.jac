@@ -4,10 +4,10 @@ object MyObj {
     has a: int;
 
     can init(a: int) -> None {
-        here.a = a;
+        <h>.a = a;
     }
 
     can set_a(val: int) -> None {
-        here.a = val;
+        <h>.a = val;
     }
 }

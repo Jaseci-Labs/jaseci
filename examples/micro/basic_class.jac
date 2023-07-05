@@ -5,12 +5,12 @@ object Person {
     has:pub name: str;
 
     can:priv init(name: str, age: int) -> None {
-        here.name = name;
-        here.age = age;
+        <h>.name = name;
+        <h>.age = age;
     }
 
     can:pub greet() -> None {  # public is default if `pub` is not specified
-        print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
+        print("Hello, my name is ", <h>.name, " and I'm ", <h>.age, " years old.");
     }
 }
 

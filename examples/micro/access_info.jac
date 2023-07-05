@@ -3,9 +3,9 @@
 object MyObj {
     has:prot a: int;
     can:priv init(a: int) -> None {
-        here.a = a;
+        <h>.a = a;
     }
     can:pub set_a(val: int) -> None {
-        here.a = val;
+        <h>.a = val;
     }
 }

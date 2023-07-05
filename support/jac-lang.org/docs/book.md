@@ -197,23 +197,7 @@ By blending the best aspects of static and dynamic typing, along with the potent
 
 ##### Minimal Code Example
 ```jac
-"""Type hints aren't that much work."""
-
-can foo(a: int, b: str) -> int {
-    c = a + (b|>int);  # no type hint needed here
-    return c;
-}
-
-object Bar {
-    has a_list: list[int] = [1, 2, 3];
-    has b_list: list[str] = ["5", "6", "7"];
-
-    can init() -> None {
-        for i in here.b_list {
-            foo(5, i) |> print;
-        }
-    }
-}
+--8<-- "type_hints.jac"
 ```
 #### Improving on the class `self` reference
 
@@ -227,19 +211,7 @@ Furthermore, Jac's approach aligns better with other object-oriented languages, 
 
 ##### Minimal Code Example
 ```jac
-"""Not focusing on the self is cleaner."""
-
-object MyObj {
-    has a: int;
-
-    can init(a: int) -> None {
-        here.a = a;
-    }
-
-    can set_a(val: int) -> None {
-        here.a = val;
-    }
-}
+--8<-- "no_here.jac"
 ```
 
 #### OOP Access Modifiers
@@ -256,17 +228,7 @@ By transitioning from Python's underscore convention to the use of explicit keyw
 
 ##### Minimal Code Example
 ```jac
-"""No more `_` and `__` for access/visibility directives."""
-
-object MyObj {
-    prot: has a: int;
-    priv: can init(a: int) -> None {
-        here.a = a;
-    }
-    pub: can set_a(val: int) -> None {
-        here.a = val;
-    }
-}
+--8<-- "access_info.jac"
 ```
 
 #### Definitions and Declarations
@@ -278,21 +240,7 @@ Jac introduces a distinction between declarations and definitions, directly addr
 This approach is particularly beneficial in large projects where different team members may be working on different parts of a class or function. With the separation of declarations and definitions, developers can quickly understand the interface of a class or function without having to navigate through the implementation details. This leads to a better collaborative environment and more efficient development process.
 ##### Minimal Code Example
 ```jac
-"""Modified for separate defs/decls."""
-
-object MyObj {
-    prot: has a: int;
-    priv: can init(a: int) -> None;
-    pub: can set_a(val: int) -> None;
-}
-
-:o:MyObj:a:init {
-        here.a = a;
-}
-
-:o:MyObj:a:set_a {
-        here.a = val;
-}
+--8<-- "separate_defs.jac"
 ```
 ### Realizing Pythonic implemenations in a Jactastic way
 
@@ -314,29 +262,7 @@ This introduction of `include` alongside `import` promotes ease of use and clean
 #### Minimal Code Example
 
 ```jac
-"""You can import python modules freely."""
-
-import:py random;
-import:py from math, sqrt as square_root;  # list of as clauses comes at end
-import:py datetime as dt;
-include:jac .main_defs;  # includes are useful when brigning definitions into scope
-import:jac from .lib, jactastic;
-
-with entry {  # code that executes on module load or script run
-    random_number = random.randint(1, 10);
-    print("Random number:", random_number);
-    # or, f"Random Number: {random_number}" |> print;
-
-    s_root = square_root(16);
-    print("Square root:", s_root);
-    # or, f"Square root: {s_root}" |> print;
-
-    current_time = dt.datetime.now();
-    print("Current time:", current_time);
-    # or, f"Current time: {current_time}" |> print;
-
-    jactastic.Jactastic() |> print;
-}
+--8<-- "imports.jac"
 ```
 
 ### Global Variables in Jac
@@ -353,19 +279,7 @@ This addition strengthens Jac's philosophy of explicitness and intentionality. I
 #### Minimal Code Example
 
 ```jac
-"""Globals are explicitly defined."""
-
-global age = 25, temperature = 98.6, name = "John Doe";
-global fruits = ["apple", "banana", "orange"];
-global person = {"name": "Alice", "age": 30, "city": "New York"};
-
-can print_globs() -> None {
-    age = 30;
-    fruits = ["pear", "grape", "kiwi"];
-    print(:g:age, temperature, name);  # :g:<name> references global vs local
-    :global:fruits |> print;  # :g: and :global: are equivalent
-    person |> print;
-}
+--8<-- "globals.jac"
 ```
 
 ### Module Level Free Coding in Jac
@@ -378,49 +292,7 @@ In Jac, even though the language permits free code, caution is strongly encourag
 
 #### Minimal Code Example
 ```jac
-"""Organized free coding at module level."""
-
-object Obj1 {
-    has var: int;
-    can init {
-        here.var = 1;
-    }
-}
-
-# with entry {  # allowed but discouraged
-#    o1 = spawn Obj1; o1::init;
-# }
-
-object Obj2 {
-    has var: int;
-    can init {
-        here.var = 2;
-    }
-}
-
-# with entry {  # allowed but discouraged
-#     o2 = spawn Obj2; o2::init;
-# }
-
-object Obj3 {
-    has var: int;
-    can init {
-        here.var = 3;
-    }
-}
-
-# with entry {  # allowed but discouraged
-#     o3 = spawn Obj1; o3::init;
-# }
-
-with entry {
-    o1 = spawn Obj1; o1::init;
-    o2 = spawn Obj2; o2::init;
-    o3 = spawn Obj3; o3::init;
-    print(o1.var);
-    print(o2.var);
-    print(o3.var);
-}
+--8<-- "free_code.jac"
 ```
 ### Functions in Jac
 
@@ -437,19 +309,7 @@ It is important to note that unlike Python, Jac does not support returning multi
 #### Minimal Code Example
 
 ```jac
-"""Functions in Jac."""
-
-can factorial(n: int) -> int {
-    if n == 0 { return 1; }
-    else { return n * factorial(n-1); }
-}
-
-can factorial_recount(n: int) -> int {
-    has count = 0;  # static variable, state kept between calls
-    count += 1 |> print;  # += is a walrus style operator in Jac
-    if n == 0 { return 1; }
-    else { return n * factorial(n-1); }
-}
+--8<-- "func.jac"
 ```
 ### Classes in Jac
 
@@ -464,26 +324,7 @@ Jac introduces a robust system of access modifiers, unlike Python which relies o
 
 
 ```jac
-"""Basic class implementation and spawning example."""
-
-object Person {
-    prot: has age: int;  # no need ot use `_age`
-    pub: has name: str;
-
-    priv: can init(name: str, age: int) -> None {
-        here.name = name;
-        here.age = age;
-    }
-
-    pub: can greet() -> None {  # public is default if `pub` is not specified
-        print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
-    }
-}
-
-with entry {
-    my_guy = Person("John", 42);
-    my_guy.greet();
-}
+--8<-- "basic_class.jac"
 ```
 
 In this example, we have a `Person` object with two properties: `name` and `age`. The `prot` keyword before `age` indicates that `age` is a protected property (only visible to it's class members and sub class members). Similarly, the `pub` keyword before `name` indicates that `name` is a public property (can be accessed via `.name` everywhere).
@@ -497,24 +338,7 @@ Next, we have the `greet` method, which is a public method as denoted by the `pu
 By switching from `self` to `here`, and from `__init__` to `init`, Jac brings a cleaner and more straightforward syntax for defining and initializing objects. With the introduction of access modifiers (`priv`, `prot` and `pub`), Jac provides a more robust system than `_` and `__` for encapsulating properties and methods within an object, aligning closer to other languages such as C++, Java, and C#. At the same time its all optional and up to the developer if they'd like a more pythonic less pedantic style ot implementation as per:
 
 ```jac
-"""A bit more chill approach."""
-
-object Person {
-    has age: int, name: str;
-
-    can init(name: str, age: int) -> None {
-        here.name = name;
-        here.age = age;
-    }
-
-    can greet() -> None {
-        print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
-    }
-}
-
-with entry {
-    Person("John", 42).greet();
-}
+--8<-- "basic_class_pylike.jac"
 ```
 #### Inheritance
 
@@ -523,23 +347,7 @@ Inheritance is a fundamental principle of object-oriented programming that allow
 Similar to Python, Jac allows for both single and multiple inheritance. Here's how you might define a simple single inheritance scenario:
 
 ```jac
-"""Super simple example of inheritance."""
-
-object Parent {
-    can init() -> None {
-        # Parent initialization
-    }
-    can speak() -> None {
-        # Parent speaking
-    }
-}
-
-object Child:Parent {
-    can init() -> None {
-        # Child initialization
-        :o:Parent.init();  # Initialize parent, :o: is alias for :object:
-    }
-}
+--8<-- "class_inherit.jac"
 ```
 
 In this example, `Child` is a subclass of `Parent` and inherits all properties and methods of `Parent`. This means instances of `Child` can also invoke the `speak()` method.
@@ -547,44 +355,7 @@ In this example, `Child` is a subclass of `Parent` and inherits all properties a
 Multiple inheritance, a concept where a class can inherit from more than one superclass, is also supported:
 
 ```jac
-"""Example of multiple inheritance."""
-
-object Parent {
-    can init() -> None {
-        # Parent initialization
-    }
-    can speak() -> None {
-        # Parent speaking
-    }
-}
-
-object Mom:Parent {
-    can init() -> None {
-        # Mom initialization
-        :o:Parent.init();
-    }
-    can calm() -> None {
-        # Mom speaking
-    }
-}
-
-object Dad:Parent {
-    can init() -> None {
-        # Dad initialization
-        :o:Parent.init();
-    }
-    can excite() -> None {
-        # Dad speaking
-    }
-}
-
-object Child:Mom:Dad { #Child inherits from Mom and Dad
-    can init() -> None {
-        # Child initialization
-        :o:Mom.init();
-        :o:Dad.init();
-    }
-}
+--8<-- "class_multi_inherit.jac"
 ```
 
 In this case, `Child` is a subclass of both `Mom` and `Dad` and inherits all their methods. Therefore, instances of `Child` can invoke both `calm()` and `excite()` methods.
@@ -611,34 +382,7 @@ The `raise` keyword is used to trigger an exception manually and can be followed
 #### Minimal Code Example
 
 ```jac
-"""Exception example in Jac."""
-
-can divide_numbers(a: float, b: float) -> float {
-    try {
-        result = a / b;
-    }
-    except ZeroDivisionError as e {
-        print("Error: Cannot divide by zero!", e);
-        result = None;
-        raise;  # Re-raise the exception
-    }
-    finally {
-        print("Division operation completed.");
-    }
-    return result;
-}
-
-with entry {
-    try {
-        numerator = int(input("Enter the numerator: "));
-        denominator = int(input("Enter the denominator: "));
-        result = divide_numbers(numerator, denominator);
-        print("Result:", result);
-    }
-    except ValueError {
-        print("Error: Invalid input! Please enter valid integers.");
-    }
-}
+--8<-- "exceptions.jac"
 ```
 
 ### Code Statements amd Expressions in Jac
@@ -742,66 +486,7 @@ new_dict2 = {i: i * i for i in range(10) if i % 2 == 0}
 
 #### An Mega Code Example
 ```jac
-"""A mega example of a bunch of statements and expressions."""
-
-
-can example_function(numbers: list[int]) -> int {
-    """
-    This function takes a list of numbers and returns a generator of even numbers.
-    """
-    # multi string
-    print("this function processes the provided list."
-          "It then yields the even numbers."
-          "It will stop once an even number greater than 20 is found.");
-
-    # assignments and expressions
-    counter = 0;
-    even_numbers = [];
-
-    # for loop and comprehension
-    for number in [i+1 for i in numbers] {
-        # walrus operation (assignment expressions, appears Python 3.8 and later, and Jac!)
-        # if (result := number % 2) == 0 {  # Python compaitble version
-        if (result %= 2) == 0 { # Jac improved version
-            even_numbers.append(number);
-            counter += 1;
-            # assert
-            assert counter <= len(numbers), "Counter should not exceed the length of the list";
-            # yield
-            yield f"Even number {counter}: {number}";  # f-string
-            # if-elif-else
-            if number > 20 {
-                print("Encountered even number greater than 20, breaking loop");
-                break;  # break
-            }
-            elif number == 20 {
-                print("Encountered 20, skipping this number");
-                continue;  # continue
-            }
-        }
-        else {
-            print(f"{number} is not an even number");
-        }
-    }
-
-    # while loop
-    while len(even_numbers) > 0 {
-        # delete
-        del even_numbers[0];
-    }
-
-    print("All done!");
-}
-
-# testing the function
-with entry {
-    # iteration for loop
-    for i=1 to i == 5 by i+=1 {
-        for result in example_function([1, 2, 3, 4, 5, 21, 22, 23, 24]) {
-            print(result);
-        }
-    }
-}
+--8<-- "bunch_of_statements.jac"
 ```
 
 

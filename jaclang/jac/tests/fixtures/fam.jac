@@ -22,14 +22,14 @@ node location {
         visited+=1;
         for i in activities {
             i.duration = visitor.duration;
-            if here.name not in visitor.passport {
+            if <h>.name not in visitor.passport {
                 if i.name == "Hiking" {
                     for j=0 to j<3 by j+=1 {
                         i.duration += 1;
                     }
                     i.duration += 1;
                 }
-                visitor.passport.append(here.name);
+                visitor.passport.append(<h>.name);
                }
         }
     }
@@ -49,7 +49,7 @@ walker tourist {
         a = b <+[:g:edget:e:myedge|>{a=1}]+ c;
         a = here +[:g:edget:e:myedge|>{a=1}]+> spawn :g:stuff:n:tourist;
         :g:stuff:w:tourist |> here;
-        report here.activities;
+        report <h>.activities;
     }
 
     can do_something(app: int =Actvy) -> Actvy {
