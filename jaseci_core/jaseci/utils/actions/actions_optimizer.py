@@ -736,7 +736,6 @@ class ActionsOptimizer:
                     "node_mem is None through prometheus, initializing with policy_params"  # noqa: E501
                 )
                 node_mem = self.policy_params.get("node_mem", 999 * 1024)
-            logger.info(f"===node memory===\nnode_mem: {node_mem}")
             # get jaseci runtime memory
             jaseci_runtime_mem = get_pod_mem_usage("jaseci")
             if jaseci_runtime_mem is None:
@@ -746,6 +745,9 @@ class ActionsOptimizer:
                 jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
             # calculate the memory available in node for local modules
             avl_node_mem = node_mem - jaseci_runtime_mem  # * NODE_MEM_THRESHOLD
+            logger.info(
+                f"===Predictive Policy=== avl_node_mem: {avl_node_mem}, node_mem: {node_mem}"  # noqa: E501
+            )
             local_mem_requirement = 0
             config = {}
             for module in all_mod_ordered_list:
