@@ -56,19 +56,45 @@ By exploring each of these sections, readers can gain a thorough understanding o
 
 ## General Overview of a Jac
 
-A Jac module, at its core, is a logical and functional unit of code organization in the Jac programming language and is semantically equivilant to the notion of a Python Module. The  module contains definitions for elements such as variables, functions, and object types (classes), and can be imported and utilized in other modules. However, Jac reimagines a few traditional constructs and incorporates a number of new constructs and semantics in realizing its innovative data spatial programming model. The language also brings a fresh take for annotation and documentation, fostering readable and maintainable code.
+Jac programs are organized as a set of modules. A Jac module, at its core, is a logical and functional unit of code organization in the Jac programming language and semantically maps to the notion of a Python Module. The  module contains definitions for elements such as global variables, functions, and object types (classes), and can be imported and utilized in other modules. However, Jac reimagines a few traditional constructs and incorporates a number of new constructs and semantics in realizing its innovative data spatial programming model. The language also brings a fresh take for annotation and documentation, fostering readable and maintainable code.
 
-As we delve into the details, bear in mind that though we will be elevating a 'pythonic' coding style to a 'jactastic' way of thinking, Jac's core principle is that of "python-complete" interoperability. Jac views the pythonic and the jactastic as a continuum that the language must support. A benefit to Jac users is this also means they can, automatically inherit the rich ecosystem of Python libraries and frameworks, thus providing programmers with a diverse set of tools for various application domains. Jac's "standard library" is all of Python, and a Jac object is always perfectly representable as a Python object.
+As we delve into the details, bear in mind that though we will be elevating a 'pythonic' coding style to a 'jactastic' way of thinking, Jac's core principle is that of "python-complete" interoperability. Jac views the pythonic and the jactastic as a continuum that the language must support. A benefit to Jac users is that this also means they automatically inherit the rich ecosystem of Python libraries and frameworks, thus providing programmers with a diverse set of tools for various application domains. Jac's target bytecode is Python. All python libraries are Jac libraries, and a Jac object always maps to a Python object.
 
 Lets jump in.
 
 ### Code Organization
 
-In the Jac programming language, the fundamental organizational unit of code is the "module". Each Jac module is a coherent assembly of various elements in a source file. The complete set of these element include the four core object Architypes of the language, as well additional elements.
+In the Jac programming language, the fundamental organizational unit of code is the "module". Each Jac module is a coherent assembly of various elements in a source file. The complete set of these element include the following.
 
-#### Architypes
+#### Module Elements
 
-The term "architype" is a distinct concept in the data spatial programming paradigm. It is introduced to represents the notion that there can be several categories of classes, each carrying unique semantics. Every other OOP language we are aware of has a singular notion of a "class", so we use "architype" for brevity. In Jac, an architype can take one of the following forms:
+The comprehensive array of potential elements within a Jac module encompasses:
+
+1. **Docstring**: This is a string literal that resides as the inaugural statement in a module. A docstring, the sole *mandatory* element, functions for documentation and clarifies the operations performed by the affiliated code.
+
+1. **Import Directives**: These directives import other modules or elements from other modules, providing an avenue to adopt functionalities encapsulated in different modules. Import directives promote code reusability and modular design.
+
+1. **Include Directives**: Occasionally, there's a necessity to directly integrate code into the prevailing namespace, as with definitions matching their declarations. To this end, `include` has been incorporated. Note, however, that with `import`, all entities—classes, functions, variables, and the like—from the imported module are housed under that module's namespace, effectively preventing collision.
+
+1. **Function-style Abilities**: These are quintessential functions that replicate the standard Python `def` style function (augmented with a jactastic `can`), inclusive of input parameters and yielding a value.
+
+1. **Data-spatial Abilities**: Akin to functions but with a unique data-spatial bend, these execute and yield values like functions, yet instead of accepting parameters, data-spatial abilities operate on the requisite data and apply a duck typing approach to their execution. They can be conceptualized as portable computation units dispatched to data elements, spawnable on any type, such as objects, dictionaries, lists, etc.
+
+1. **Module Level Codeblocks**: Code situated at the module level is executable code not enclosed within a function or class. This code executes when the module is imported or initiated as a script, making it perfect for initializing module-level variables or executing setup tasks. A note of caution: its usage should be limited to enhance code readability and maintainability. Explicit specification of this with a module-level `with entry {}` directive is also enforced.
+
+1. **Global Variables**: These can be declared and defined within a module, and are accessible throughout the module's scope. Yet, Jac's design philosophy mildly discourages heavy reliance on global variables, advocating for improved modularity, encapsulation, code readability, and codebase scalability. Overuse may lead to tightly coupled, less maintainable code.
+    1. Note: Though Jac allows for the declaration of global variables, developers are encouraged to use this feature sparingly. Overreliance may result in hard-to-debug, complex code that lacks modularity, impacting the scalability of the codebase. Instead, the Jac language supports encapsulation and modular design via its architype and abilities system, promoting a cleaner, more maintainable, and scalable code.
+
+1. **Test Definitions**: In alignment with software development best practices, Jac modules may include test definitions. These tests offer an automated method to verify the behavior of architypes, abilities, and other module components. They form an integral part of the development cycle, supporting continuous validation and confident refactoring of code. Test definitions can be structured as unit tests for individual components, integration tests for interoperability verification, and end-to-end tests to validate system-wide behavior.
+
+1. **Architype Declarations**: An "architype" in the data-spatial programming paradigm is a type of class carrying unique semantics. It's a progression of the conventional "class" concept in Object-Oriented Programming. In Jac, an architype could manifest as traditional classes (Object Types), structures defining nodes in the data space (Node Types), instances of relationships between nodes (Edge Types), or agents traversing the graph data space (Walker Types), each possessing specific properties and relationships.
+
+1. **Detached Definitions**: If an ability or architype is declared but not defined, their definitions can appear separately within the module file. This allows for a clear distinction between the declaration and implementation of architypes and abilities, offering flexibility in the organization of the module content and potentially enhancing code readability and beauty. It's also useful when the implementation of an architype or ability is large or complex, allowing for the separation of interface and implementation details within the module.
+
+
+#### Architype elements
+
+The term "architype" is a distinct concept introduced with the data spatial programming paradigm. It represents the notion that there can be several categories of classes, each carrying unique semantics. Every other OOP language we are aware of has a singular notion of a "class", so we use "architype" for brevity. In Jac, an architype can take one of the following forms:
 
 1. **Object Types**: Traditional classes, as seen in Object-Oriented Programming (OOP), form the core primitive that Jac's other architypes build upon. Objects encapsulate data and the operations that can be performed on that data, but does not inherently harbor or encode relationships with other objects.
 
@@ -80,28 +106,7 @@ The term "architype" is a distinct concept in the data spatial programming parad
 
 (intrigued? hop to the red pill for more. scared? check out the blue pill. neither? read on.)
 
-#### Additional Module Elements
 
-Beyond the key architypes, a Jac module incorporates several additional element components, the complete list includes:
-
-1. **Import Directives**: Import directives provide the mechanism for reusing code across different modules. They enable a module to incorporate functionalities defined in other modules, fostering code reusability and modularity.
-
-1. **Include Directives**: Sometimes it is be useful to include code directly into the current namespace as with the definitions that correspond to declarations. We have added `include` for these purposes. Do note that, with `import`, all classes, functions, variables, etc from the imported module come under that modules namespace. This is great for avoiding collisions.
-
-1. **Functions**: Traditional functions, these represent the basic standard python `def` style function which can include input parameters and return a value.
-
-1. **Module Level Free-Style Code**:  "Free Style" code at the module level refers to executable code that is not encapsulated within a function or class. This code is executed when the module is imported or run as a script, making it ideal for initializing module-level variables or running setup tasks.
-    1. Note: However, we recommended to limit its usage to improve readability and maintainability of the code. We also enforce explicit specification of this with a module level `with entry {}` directive.
-
-1. **Abilities Definitions**: Abilities can manifest as either traditional OOP-style methods or data spatial-specific abilities. These abilities give object types, node types, edge types, and walker types the capacity to perform tasks or computations.
-
-1. **Freestyle Abilities**: Freestyle Abilities are like functions but with a data-spatial twist. They execute and return values like function however instead of taking parameters, freestyle abilitys are sent to the data they need to process and leverage a duck typing philosophy to their execution. They can be thought of as mobile computation units that are dispatched to data elements, and the can be spawned on any type including, objects, dictionaries, lists, etc.
-
-
-1. **Global Variable Definitions**: Global variables can be declared and defined within a module. These are accessible throughout the module's scope. However, Jac's design philosophy mildly discourages extensive reliance on globals. This discouragement stems from a desire to enhance modularity and encapsulation, promote code readability, and support codebase scalability. Overuse of global variables can lead to tightly coupled, less maintainable code.
-    1. Note: While Jac provides the ability to declare global variables, developers are urged to exercise this power sparingly. Overdependence on global variables often results in code that is hard to debug, difficult to understand, and not modular, reducing the scalability of the codebase. Instead, the Jac language promotes encapsulation and modular design through its architype and abilities system, leading to cleaner, more maintainable, and scalable code.
-
-1. **Test Definitions**: In line with best practices for software development, Jac modules can contain test definitions. These tests provide an automated way to validate the behavior of architypes, abilities, and other components within a module. They form a key part of the development cycle, enabling continuous validation and refactoring of code with confidence. Test definitions can be structured in a variety of ways, including unit tests for individual components, integration tests to verify interoperability, and end-to-end tests to validate system-wide behavior.
 
 #### Minimal Code Example
 
@@ -111,7 +116,7 @@ The following code example shows all elements that form a Jac module.
 --8<-- "module_structure.jac"
 ```
 
-### Emphasizing Declarations and Definitions in Jac
+### Emphasizing the Separation of Declarations and Definitions
 
 In the pursuit of more organized, scalable, and readable codebases, the Jac programming language revives the distinction between ability declarations and definitions. This approach is a deviation from Python, which do not explicitly separate method definitions from their declarations.
 
@@ -119,29 +124,12 @@ In Jac, a declaration refers to announcing the existence and signature of an abi
 #### Minimal Code Example
 `main.jac`
 ```jac
-import:jac .defs
-
-walker travelor {
-    can say_hello with entry;  # data spatial ability declared
-    can say_whatever(msg: str);  # traditional method declared
-
-    # inline ability definition (python only supports this)
-    can say_goodbye {
-        "Goodbye" |> print;
-    }
-}
+--8<-- "decl_defs_split.jac"
 ```
 
 `defs.jac`
 ```jac
-:walker:travelor:ability:say_hello {
-    "Hello" |> print;  # |> is a pipe forward operator
-}
-
-# :w: and :a: are aliases for :walker: and :ability:
-:w:travelor:a:say_whatever(msg: str) {
-    msg |> print;
-}
+--8<-- "decl_defs_imp.jac"
 ```
 
 The benefits of this separation are manifold:
@@ -196,19 +184,7 @@ That being said, Jac acknowledges the value of the Python's black package, a cod
 ##### Minimal Code Example
 
 ```jac
-"""Same functionality 3 white space styles."""
-
-with entry { "hello" |> len |> print; }  # more concise
-
-with entry {  # a bit more python like
-    a = "hello" |> len;
-    a |> print;
-}
-
-with entry {  # very pythonic
-    a = "hello";
-    b = len(a);
-    print(b); }
+--8<-- "whitespace.jac"
 ```
 
 #### Type System
