@@ -1,10 +1,10 @@
 ---
 sidebar_position: 3
 description: Full Spec of Jac Language
-title: Jac Language Specification
+title: Jac Language
 ---
 
-# Jac Programming Language Specification
+# The Jac Programming Language
 
 This document serves a dual purpose. It provides an introductory guide to understanding the Jac programming language and also offers a full specification of its features, conventions, and best practices.
 
