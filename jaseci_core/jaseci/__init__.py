@@ -29,6 +29,7 @@ def load_standard():
     import jaseci.extens.act_lib.url  # noqa
     import jaseci.extens.act_lib.stripe  # noqa
     import jaseci.extens.act_lib.regex  # noqa
+    import jaseci.extens.act_lib.maths  # noqa
 
 
 load_standard()
