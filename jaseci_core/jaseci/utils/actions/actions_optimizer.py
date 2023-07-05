@@ -375,7 +375,7 @@ class ActionsOptimizer:
         # Initialize configs to eval
         actions = self.actions_state.get_active_actions()
         # construct list of possible configurations
-        all_configs = [{"local_mem": jaseci_runtime_mem}]
+        all_configs = [{"local_mem": 0}]
         for act in actions:
             new_configs = []
             for con in all_configs:
