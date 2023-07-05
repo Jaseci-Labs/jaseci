@@ -35,17 +35,25 @@ class WebhookApi:
             else:
                 metadata = payload_obj.get("metadata")
 
-            master_id = metadata.get("master_id")
+            master_id = metadata.get("master")
             master = self._h.get_obj(master_id, master_id)
 
             node_id = metadata.get("node")
             if not node_id:
                 node_id = master.active_gph_id
-
             node = self._h.get_obj(master_id, node_id)
 
-            global_snt_id = self._h.get_glob("GLOB_SENTINEL")
-            global_snt = self._h.get_obj(master_id, global_snt_id)
+            sentinel_id = (
+                metadata.get("sentinel")
+                or master.active_snt_id
+                or self._h.get_glob("GLOB_SENTINEL")
+            )
+            sentinel = self._h.get_obj(
+                master_id,
+                self._h.get_glob("GLOB_SENTINEL")
+                if sentinel_id == "global"
+                else sentinel_id,
+            )
 
             payload = {"event": req_body}
             self.seek_committer(master)
@@ -53,7 +61,7 @@ class WebhookApi:
             wlk = stripe_service.get_walker(req_body["type"])
 
             return master.walker_run(
-                name=wlk, nd=node, ctx=payload, _req_ctx=_req_ctx, snt=global_snt
+                name=wlk, nd=node, ctx=payload, _req_ctx=_req_ctx, snt=sentinel
             )
         else:
             raise HTTPException(
