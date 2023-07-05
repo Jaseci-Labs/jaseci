@@ -251,7 +251,14 @@ def get_global_actions():
                     value=i,
                     persist=False,
                 )
-    return glob_act_group
+
+    # second layer copy and this will use the same Ability object
+    # deepcopy will be much expensive and will also use new Ability Objects
+    temp_glob_act_group = {}
+    for key, value in glob_act_group.items():
+        temp_glob_act_group[key] = value.copy()
+
+    return temp_glob_act_group
 
 
 def unload_remote_actions(url):

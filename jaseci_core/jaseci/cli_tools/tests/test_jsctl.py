@@ -418,8 +418,14 @@ class JsctlTest(TestCaseHelper, TestCase):
             f"sentinel register "
             f"{os.path.dirname(__file__)}/graph_can.jac -name gc -set_active true"
         )
-        r = self.call("walker run go")
+        r = self.call("walker run go1")
         self.assertEqual(r.split()[0], "2020-01-01T00:00:00")
+        r = self.call("walker run go2")
+        self.assertEqual(r.split()[0], "2020-07-01T00:00:00")
+        r = self.call("walker run go3")
+        self.assertEqual(r.split()[0], "2020-01-01T00:00:00")
+        self.assertEqual(r.split()[1], "2020-07-01T00:00:00")
+        self.assertEqual(r.split()[2], "2020-07-10T00:00:00")
 
     def test_jsctl_action_call(self):
         self.call(f"actions load local {self.infer_loc}")
@@ -512,8 +518,8 @@ class JsctlTest(TestCaseHelper, TestCase):
             f"sentinel register "
             f"{os.path.dirname(__file__)}/graph_can.jac -name gc -set_active true"
         )
-        r = self.call("walker run go -profiling true")
-        self.assertIn("walker::go", r)
+        r = self.call("walker run go1 -profiling true")
+        self.assertIn("walker::go1", r)
         self.assertIn("cumtime", r)
         self.assertIn("cum_time", r)
 

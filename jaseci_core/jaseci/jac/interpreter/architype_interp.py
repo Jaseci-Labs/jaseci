@@ -174,6 +174,9 @@ class ArchitypeInterp(Interp):
         kid = self.set_cur_ast(jac_ast)
         root_name = self.run_has_root(kid[1])
         try:
+            for ability in self.get_all_abilities().obj_list():
+                self._jac_scope.add_action(ability)
+
             self.run_code_block(kid[4])
         except Exception as e:
             self.rt_error(f"Internal Exception: {e}", self._cur_jac_ast)
