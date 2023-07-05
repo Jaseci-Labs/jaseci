@@ -698,13 +698,13 @@ class ActionsOptimizer:
         try:
             # Calculate the total utilization of each module
             module_utilz = {}
-            if "local" in prev_best_config.values():
+            if prev_best_config and "local" in prev_best_config.values():
                 unload_list = [
                     name for name, mod in prev_best_config.items() if mod == "local"
                 ]
-            if unload_list:
-                for mod in unload_list:
-                    self.unload_action_module(mod)
+                if unload_list:
+                    for mod in unload_list:
+                        self.unload_action_module(mod)
             for module, utilz in curr_action_utilz.items():
                 if module != "total_call_count":
                     module_name = module.split(".")[0]
@@ -821,7 +821,7 @@ class ActionsOptimizer:
                 )
                 if policy_state["eval_completed"] is False:
                     best_config = self.get_module_config(
-                        current_act_utilz, policy_state["prev_best_config"]
+                        current_act_utilz, policy_state.get("prev_best_config", None)
                     )
                     logger.info(
                         f"===Predictive Policy=== best fit config: {best_config}"
@@ -846,7 +846,10 @@ class ActionsOptimizer:
                     ):
 
                         logger.info("===Predictive Policy=== start module change")
-                        best_config = self.get_module_config(current_act_utilz)
+                        best_config = self.get_module_config(
+                            current_act_utilz,
+                            policy_state.get("prev_best_config", None),
+                        )
                         logger.info(
                             f"===Predictive Policy=== best fit config: {best_config}"
                         )
