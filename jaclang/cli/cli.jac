@@ -1,7 +1,7 @@
 """
 This is the implementation of the command line interface tool for the
 Jac language. It's built with the Jac language via bootstraping and
-represents the first such production Jac program.
+represents the first such complete Jac program.
 """
 
 import:py inspect;

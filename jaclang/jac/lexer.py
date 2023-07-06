@@ -39,6 +39,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "TYP_TYPE",
         "KW_FREEZE",
         "KW_OBJECT",
+        "KW_ENUM",
         "KW_NODE",
         "KW_IGNORE",
         "KW_VISIT",
@@ -156,6 +157,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "NODE_OP",
         "EDGE_OP",
         "OBJECT_OP",
+        "ENUM_OP",
         "ABILITY_OP",
         "SPAWN_OP",
         "ELVIS_OP",
@@ -199,6 +201,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NAME["type"] = "TYP_TYPE"  # type: ignore
     NAME["freeze"] = "KW_FREEZE"  # type: ignore
     NAME["object"] = "KW_OBJECT"  # type: ignore
+    NAME["enum"] = "KW_ENUM"  # type: ignore
     NAME["node"] = "KW_NODE"  # type: ignore
     NAME["ignore"] = "KW_IGNORE"  # type: ignore
     NAME["visit"] = "KW_VISIT"  # type: ignore
@@ -272,6 +275,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NODE_OP = r":n:|:node:"
     EDGE_OP = r":e:|:edge:"
     OBJECT_OP = r":o:|:object:"
+    ENUM_OP = r":enum:"
     ABILITY_OP = r":a:|:ability:"
     SPAWN_OP = r":\+:"
     RETURN_HINT = r"->"
@@ -388,6 +392,7 @@ class Tokens(str, Enum):
     TYP_TYPE = "TYP_TYPE"
     KW_FREEZE = "KW_FREEZE"
     KW_OBJECT = "KW_OBJECT"
+    KW_ENUM = "KW_ENUM"
     KW_NODE = "KW_NODE"
     KW_IGNORE = "KW_IGNORE"
     KW_VISIT = "KW_VISIT"
@@ -505,6 +510,7 @@ class Tokens(str, Enum):
     NODE_OP = "NODE_OP"
     EDGE_OP = "EDGE_OP"
     OBJECT_OP = "OBJECT_OP"
+    ENUM_OP = "ENUM_OP"
     ABILITY_OP = "ABILITY_OP"
     SPAWN_OP = "SPAWN_OP"
     ELVIS_OP = "ELVIS_OP"

@@ -930,6 +930,9 @@ Method abilities are reminiscent of traditional class methods in other programmi
 ### Cross Invocation Persistence
 ### The Sentinel
 
+### Notes
+
+* Introduce <root> along with <here> and <visitor>, <here> is <root> for all non ds code points
 ## Real World Examples
 
 ### Jac's own command line tool written in Jac

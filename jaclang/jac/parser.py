@@ -55,6 +55,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "include_stmt",
         "architype",
         "ability",
+        "enum",
     )
     def element(self, p: YaccProduction) -> YaccProduction:
         """Element rule."""
@@ -327,6 +328,59 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     )
     def param_var(self, p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
+        return p
+
+    # Enum elements
+    # ----------------
+    @_(
+        "enum_decl",
+        "enum_def",
+    )
+    def enum(self, p: YaccProduction) -> YaccProduction:
+        """Enum rule."""
+        return p
+
+    @_(
+        "doc_tag KW_ENUM access_tag NAME SEMI",
+        "doc_tag KW_ENUM access_tag NAME enum_block",
+        "doc_tag decorators KW_ENUM access_tag NAME SEMI",
+        "doc_tag decorators KW_ENUM access_tag NAME enum_block",
+    )
+    def enum_decl(self, p: YaccProduction) -> YaccProduction:
+        """Enum decl rule."""
+        return p
+
+    @_(
+        "doc_tag enum_ref enum_block",
+        "doc_tag dotted_name enum_ref enum_block",
+    )
+    def enum_def(self, p: YaccProduction) -> YaccProduction:
+        """Enum def rule."""
+        return p
+
+    @_(
+        "LBRACE RBRACE",
+        "LBRACE enum_op_list RBRACE",
+    )
+    def enum_block(self, p: YaccProduction) -> YaccProduction:
+        """Enum block rule."""
+        return p
+
+    @_(
+        "NAME",
+        "enum_op_assign",
+        "enum_op_list COMMA NAME",
+        "enum_op_list COMMA enum_op_assign",
+    )
+    def enum_op_list(self, p: YaccProduction) -> YaccProduction:
+        """Enum op list rule."""
+        return p
+
+    @_(
+        "NAME EQ expression",
+    )
+    def enum_op_assign(self, p: YaccProduction) -> YaccProduction:
+        """Enum op assign rule."""
         return p
 
     # Attribute blocks
@@ -1077,11 +1131,9 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     # Architype reference rules
     # -------------------------
     @_(
-        "node_ref",
-        "edge_ref",
-        "walker_ref",
-        "object_ref",
+        "strict_arch_ref",
         "ability_ref",
+        "enum_ref",
     )
     def arch_ref(self, p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
@@ -1114,6 +1166,11 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_("OBJECT_OP NAME")
     def object_ref(self, p: YaccProduction) -> YaccProduction:
+        """Object type reference rule."""
+        return p
+
+    @_("ENUM_OP NAME")
+    def enum_ref(self, p: YaccProduction) -> YaccProduction:
         """Object type reference rule."""
         return p
 
