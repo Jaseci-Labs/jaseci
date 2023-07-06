@@ -88,7 +88,8 @@ class JacActionsTests(TestCaseHelper, TestCase):
         app = jra.serv_actions()
         assert len(app.__dict__["router"].__dict__["on_startup"]) == 1
 
-    def test_load_action_module(self):
+    def test_load_single_action_module(self):
+        """Test loading a single action module"""
         summarize_jac_code = """
             walker test_summarize {
                 can cl_summer.summarize;
@@ -121,6 +122,8 @@ class JacActionsTests(TestCaseHelper, TestCase):
         # ret = self.call(self.mast, ["walker_run", {"name": "test_summarize"}])
         # print(ret)
 
-    def test_unload_action_module(self):
-        load_module_actions("jac_nlp.cl_summer")
-        unload_module("jac_nlp.cl_summer")
+    # Test loading the same action module again shouldn't create a new subprocess. You might need to access the act_procs variables in live_actions.py to for some of these test cases.:w
+
+    # Test loading multiple different action modules
+
+    # Test loading and unloading and loading again
