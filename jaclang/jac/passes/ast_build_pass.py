@@ -444,9 +444,15 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         ability -> ability_def
+        ability -> KW_ASYNC ability_decl
         ability -> ability_decl
         """
-        replace_node(node, node.kid[0])
+        if len(node.kid) == 2:
+            new_node = replace_node(node, node.kid[1])
+            if type(new_node) == ast.Ability:
+                new_node.is_async = True
+        else:
+            replace_node(node, node.kid[0])
 
     def exit_ability_decl(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -470,6 +476,7 @@ class AstBuildPass(Pass):
                 body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
                 signature=node.kid[-2],
                 is_func=type(node.kid[-2]) == ast.FuncSignature,
+                is_async=False,
                 decorators=None,
                 parent=node.parent,
                 kid=node.kid,
@@ -498,6 +505,7 @@ class AstBuildPass(Pass):
                 body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
                 signature=node.kid[-2],
                 is_func=type(node.kid[-2]) == ast.FuncSignature,
+                is_async=False,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
@@ -894,6 +902,7 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         statement -> walker_stmt
+        statement -> await_stmt SEMI
         statement -> yield_stmt SEMI
         statement -> return_stmt SEMI
         statement -> report_stmt SEMI
@@ -901,6 +910,7 @@ class AstBuildPass(Pass):
         statement -> ctrl_stmt SEMI
         statement -> assert_stmt SEMI
         statement -> raise_stmt SEMI
+        statement -> with_ctx_stmt
         statement -> while_stmt
         statement -> for_stmt
         statement -> try_stmt
@@ -908,6 +918,8 @@ class AstBuildPass(Pass):
         statement -> expression SEMI
         statement -> static_assignment
         statement -> assignment SEMI
+        statement -> ability_decl
+        statement -> architype_decl
         """
         replace_node(node, node.kid[0])
 
@@ -1215,6 +1227,59 @@ class AstBuildPass(Pass):
             ),
         )
 
+    def exit_with_stmt(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        KW_WITH expr_as_list code_block
+        """
+        node.kid = [node.kid[1], node.kid[2]]
+        replace_node(
+            node,
+            ast.WithStmt(
+                exprs=node.kid[0],
+                body=node.kid[1],
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_expr_as_list(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        expr_as_list -> expr_as_list COMMA expression KW_AS NAME
+        expr_as_list -> expr_as_list COMMA NAME
+        expr_as_list -> expression KW_AS NAME
+        expr_as_list -> expression
+        """
+        this_item = None
+        if type(node.kid[0]) != ast.ExprAsItemList:
+            this_item = ast.ExprAsItem(
+                expr=node.kid[0],
+                alias=node.kid[2] if len(node.kid) == 3 else None,
+                parent=node.parent,
+                kid=[node.kid[0], node.kid[2]] if len(node.kid) == 3 else [node.kid[0]],
+                line=node.line,
+            )
+            node.kid = [this_item]
+        else:
+            this_item = ast.ExprAsItem(
+                expr=node.kid[-3] if node.kid[-2].name == Tok.KW_AS else node.kid[-1],
+                alias=node.kid[-1] if node.kid[-2].name == Tok.KW_AS else None,
+                parent=node.parent,
+                kid=[node.kid[-3], node.kid[-1]]
+                if node.kid[-2].name == Tok.KW_AS
+                else [node.kid[-1]],
+                line=node.line,
+            )
+            node.kid = node.kid[0].kid + [this_item]
+        replace_node(
+            node,
+            ast.ExprAsItemList(
+                items=node.kid, parent=node.parent, kid=node.kid, line=node.line
+            ),
+        )
+
     def exit_raise_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
@@ -1373,7 +1438,6 @@ class AstBuildPass(Pass):
     def exit_walker_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        walker_stmt -> sync_stmt SEMI
         walker_stmt -> disengage_stmt SEMI
         walker_stmt -> revisit_stmt
         walker_stmt -> visit_stmt
@@ -1482,15 +1546,15 @@ class AstBuildPass(Pass):
             ),
         )
 
-    def exit_sync_stmt(self, node: ast.AstNode) -> None:
+    def exit_await_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        sync_stmt -> KW_SYNC expression
+        await_stmt -> KW_AWAIT expression
         """
         node.kid = [node.kid[1]]
         replace_node(
             node,
-            ast.SyncStmt(
+            ast.AwaitStmt(
                 target=node.kid[0],
                 parent=node.parent,
                 kid=node.kid,

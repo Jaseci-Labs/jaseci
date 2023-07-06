@@ -400,6 +400,26 @@ class TypeAnalyzePass(Pass, SymbolTable):
         body: CodeBlock,
         """
 
+    def exit_with_stmt(self, node: ast.WithStmt) -> None:
+        """Sub objects.
+
+        exprs: "ExprAsItemList",
+        body: "CodeBlock",
+        """
+
+    def exit_expr_as_item_list(self, node: ast.ExprAsItemList) -> None:
+        """Sub objects.
+
+        items: list["ExprAsItem"],
+        """
+
+    def exit_expr_as_item(self, node: ast.ExprAsItem) -> None:
+        """Sub objects.
+
+        expr: "ExprType",
+        alias: Optional[Token],
+        """
+
     def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.
 
@@ -467,7 +487,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
 
-    def exit_sync_stmt(self, node: ast.SyncStmt) -> None:
+    def exit_await_stmt(self, node: ast.AwaitStmt) -> None:
         """Sub objects.
 
         target: ExprType,

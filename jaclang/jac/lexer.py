@@ -54,7 +54,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "KW_EDGE",
         "KW_WALKER",
         "KW_ASYNC",
-        "KW_SYNC",
+        "KW_AWAIT",
         "KW_TEST",
         "KW_ASSERT",
         "COLON",
@@ -214,7 +214,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NAME["edge"] = "KW_EDGE"  # type: ignore
     NAME["walker"] = "KW_WALKER"  # type: ignore
     NAME["async"] = "KW_ASYNC"  # type: ignore
-    NAME["sync"] = "KW_SYNC"  # type: ignore
+    NAME["await"] = "KW_AWAIT"  # type: ignore
     NAME["test"] = "KW_TEST"  # type: ignore
     NAME["assert"] = "KW_ASSERT"  # type: ignore
     NAME["and"] = "KW_AND"  # type: ignore
@@ -403,7 +403,7 @@ class Tokens(str, Enum):
     KW_EDGE = "KW_EDGE"
     KW_WALKER = "KW_WALKER"
     KW_ASYNC = "KW_ASYNC"
-    KW_SYNC = "KW_SYNC"
+    KW_AWAIT = "KW_AWAIT"
     KW_TEST = "KW_TEST"
     KW_ASSERT = "KW_ASSERT"
     COLON = "COLON"

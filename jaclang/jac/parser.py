@@ -242,6 +242,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     # ----------------
     @_(
         "ability_decl",
+        "KW_ASYNC ability_decl",
         "ability_def",
     )
     def ability(self, p: YaccProduction) -> YaccProduction:
@@ -458,6 +459,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "try_stmt",
         "for_stmt",
         "while_stmt",
+        "with_stmt",
         "raise_stmt SEMI",
         "assert_stmt SEMI",
         "ctrl_stmt SEMI",
@@ -465,6 +467,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "report_stmt SEMI",
         "return_stmt SEMI",
         "yield_stmt SEMI",
+        "await_stmt SEMI",
         "walker_stmt",
     )
     def statement(self, p: YaccProduction) -> YaccProduction:
@@ -541,6 +544,21 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """While statement rule."""
         return p
 
+    @_("KW_WITH expr_as_list code_block")
+    def with_stmt(self, p: YaccProduction) -> YaccProduction:
+        """With statement rule."""
+        return p
+
+    @_(
+        "expression",
+        "expression KW_AS NAME",
+        "expr_as_list COMMA NAME",
+        "expr_as_list COMMA expression KW_AS NAME",
+    )
+    def expr_as_list(self, p: YaccProduction) -> YaccProduction:
+        """Name as list rule."""
+        return p
+
     @_(
         "KW_RAISE",
         "KW_RAISE expression",
@@ -599,7 +617,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "visit_stmt",
         "revisit_stmt",
         "disengage_stmt SEMI",
-        "sync_stmt SEMI",
     )
     def walker_stmt(self, p: YaccProduction) -> YaccProduction:
         """Walker statement rule."""
@@ -635,8 +652,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Disengage statement rule."""
         return p
 
-    @_("KW_SYNC expression")
-    def sync_stmt(self, p: YaccProduction) -> YaccProduction:
+    @_("KW_AWAIT expression")
+    def await_stmt(self, p: YaccProduction) -> YaccProduction:
         """Sync statement rule."""
         return p
 

@@ -14,3 +14,7 @@ with entry {
     <h>.sig = func |> inspect.signature;
     |> <h>.registry.items;
 }
+
+with entry {
+    with open("file.txt") as f, open("file2.txt") as f {}
+}

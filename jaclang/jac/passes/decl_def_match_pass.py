@@ -474,7 +474,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
 
-    def exit_sync_stmt(self, node: ast.SyncStmt) -> None:
+    def exit_await_stmt(self, node: ast.AwaitStmt) -> None:
         """Sub objects.
 
         target: ExprType,

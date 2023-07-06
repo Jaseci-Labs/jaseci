@@ -41,6 +41,21 @@ class BluePygenPassTests(TestCaseMicroSuite):
         self.assertIn("inspect.signature(func)", code_gen.ir.meta["py_code"])
         self.assertIn("self.registry.items()", code_gen.ir.meta["py_code"])
 
+    def test_with_stmt(self) -> None:
+        """Basic test for pass."""
+        code_gen = jac_file_to_final_pass("codegentext.jac", self.fixture_abs_path(""))
+        self.assertFalse(code_gen.errors_had)
+        self.assertIn(
+            'with open("file.txt") as f, open("file2.txt") as f:',
+            code_gen.ir.meta["py_code"],
+        )
+
+    def test_empty_codeblock(self) -> None:
+        """Basic test for pass."""
+        code_gen = jac_file_to_final_pass("codegentext.jac", self.fixture_abs_path(""))
+        self.assertFalse(code_gen.errors_had)
+        self.assertIn("pass", code_gen.ir.meta["py_code"])
+
     def test_pass_ast_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""
         ast_func_names = [

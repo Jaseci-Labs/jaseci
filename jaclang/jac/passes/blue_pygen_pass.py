@@ -471,6 +471,8 @@ class BluePygenPass(Pass):
 
         stmts: list["StmtType"],
         """
+        if len(node.stmts) == 0:
+            self.emit_ln(node, "pass")
         for i in node.stmts:
             self.emit_ln(node, i.meta["py_code"])
 
@@ -599,6 +601,33 @@ class BluePygenPass(Pass):
         self.emit_ln(node, f"while {node.condition.meta['py_code']}:")
         self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
 
+    def exit_with_stmt(self, node: ast.WithStmt) -> None:
+        """Sub objects.
+
+        exprs: "ExprAsItemList",
+        body: "CodeBlock",
+        """
+        self.emit_ln(node, f"with {node.exprs.meta['py_code']}:")
+        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+
+    def exit_expr_as_item_list(self, node: ast.ExprAsItemList) -> None:
+        """Sub objects.
+
+        items: list["ExprAsItem"],
+        """
+        self.emit(node, ", ".join([i.meta["py_code"] for i in node.items]))
+
+    def exit_expr_as_item(self, node: ast.ExprAsItem) -> None:
+        """Sub objects.
+
+        expr: "ExprType",
+        alias: Optional[Token],
+        """
+        if node.alias:
+            self.emit(node, node.expr.meta["py_code"] + " as " + node.alias.value)
+        else:
+            self.emit(node, node.expr.meta["py_code"])
+
     def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.
 
@@ -703,7 +732,7 @@ class BluePygenPass(Pass):
         self.ds_feature_warn()
 
     # NOTE: Incomplete for Jac Purple and Red
-    def exit_sync_stmt(self, node: ast.SyncStmt) -> None:
+    def exit_await_stmt(self, node: ast.AwaitStmt) -> None:
         """Sub objects.
 
         target: ExprType,

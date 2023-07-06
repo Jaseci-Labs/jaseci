@@ -452,6 +452,7 @@ class Ability(OOPAccessNode):
         self,
         name: Name,
         is_func: bool,
+        is_async: bool,
         doc: Optional[DocString],
         decorators: Optional["Decorators"],
         access: Optional[Token],
@@ -465,6 +466,7 @@ class Ability(OOPAccessNode):
         """Initialize func arch node."""
         self.name = name
         self.is_func = is_func
+        self.is_async = is_async
         self.doc = doc
         self.decorators = decorators
         self.signature = signature
@@ -893,6 +895,55 @@ class WhileStmt(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
+class WithStmt(AstNode):
+    """WithStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        exprs: "ExprAsItemList",
+        body: "CodeBlock",
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize with statement node."""
+        self.exprs = exprs
+        self.body = body
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ExprAsItemList(AstNode):
+    """ExprAsItemList node type for Jac Ast."""
+
+    def __init__(
+        self,
+        items: list["ExprAsItem"],
+        parent: Optional[AstNode],
+        kid: list["ExprAsItem"],
+        line: int,
+    ) -> None:
+        """Initialize module items node."""
+        self.items = items
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class ExprAsItem(AstNode):
+    """ExprAsItem node type for Jac Ast."""
+
+    def __init__(
+        self,
+        expr: "ExprType",
+        alias: Optional[Name],
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize module item node."""
+        self.expr = expr
+        self.alias = alias
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
 class RaiseStmt(AstNode):
     """RaiseStmt node type for Jac Ast."""
 
@@ -1064,8 +1115,8 @@ class DisengageStmt(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
-class SyncStmt(AstNode):
-    """SyncStmt node type for Jac Ast."""
+class AwaitStmt(AstNode):
+    """AwaitStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1557,6 +1608,7 @@ StmtType = Union[
     InForStmt,
     DictForStmt,
     WhileStmt,
+    WithStmt,
     RaiseStmt,
     AssertStmt,
     CtrlStmt,
@@ -1564,7 +1616,7 @@ StmtType = Union[
     ReportStmt,
     ReturnStmt,
     YieldStmt,
-    SyncStmt,
+    AwaitStmt,
     DisengageStmt,
     RevisitStmt,
     VisitStmt,
