@@ -130,3 +130,18 @@ class MathsTests(CoreTest):
     def test_ulp(self, ret):
         ret = ret["report"][0]
         self.assertEqual(ret, 3.552713678800501e-15)
+
+    @jac_testcase("maths.jac", "cubert_test")
+    def test_cubert(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 3.0)
+
+    @jac_testcase("maths.jac", "exp_test")
+    def test_exp(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 532048240601.79865)
+
+    @jac_testcase("maths.jac", "log_test")
+    def test_log(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 1.4313637641589871)

@@ -672,3 +672,82 @@ Expected Jac:
   "yielded": false
 }
 ```
+
+## cubert
+
+Return the cube root of x.
+
+Example Jac:
+```jac
+walker init{
+    can maths.cubert;
+    x = 27;
+
+    report maths.cubert(x);
+}
+```
+
+Expected Output:
+```json
+{
+  "success": true,
+  "report": [
+    3.0
+  ],
+  "final_node": "urn:uuid:d29addf8-3867-4bd3-8860-304335f261a1",
+  "yielded": false
+}
+```
+
+## exp
+
+Return e raised to the power x, where e = 2.718281… is the base of natural logarithms. This is usually more accurate than math.e ** x or pow(math.e, x).
+
+Example Jac:
+```jac
+walker init{
+    can maths.exp;
+    x = 27;
+
+    report maths.exp(x);
+}
+```
+
+Expected Output:
+```json
+{
+  "success": true,
+  "report": [
+    532048240601.79865
+  ],
+  "final_node": "urn:uuid:961e2e5b-97e3-4b4c-b1c9-e441d58e1207",
+  "yielded": false
+}
+```
+
+## log
+
+With one argument, return the natural logarithm of x (to base e).
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.log;
+    value = 27;
+    base = 10;
+
+    report maths.log(value,base);
+}
+```
+
+```json
+{
+  "success": true,
+  "report": [
+    1.4313637641589871
+  ],
+  "final_node": "urn:uuid:ecef5737-69d4-432c-bc96-726e3a5418d2",
+  "yielded": false
+}
+```

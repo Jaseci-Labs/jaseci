@@ -172,5 +172,26 @@ walker ulp_test{
     report maths.ulp(x);
 }
 
+walker cubert_test{
+    can maths.cubert;
+    x = 27;
+
+    report maths.cubert(x);
+}
+
+walker exp_test{
+    can maths.exp;
+    x = 27;
+
+    report maths.exp(x);
+}
+
+walker log_test{
+    can maths.log;
+    value = 27;
+    base = 10;
+
+    report maths.log(value,base);
+}
 
 

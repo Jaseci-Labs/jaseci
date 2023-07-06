@@ -150,4 +150,19 @@ def ulp(x):
     return math.ulp(x)
 
 
-# todo power and logs
+@jaseci_action()
+def cubert(x):
+    # return float
+    return x ** (1 / 3)
+
+
+@jaseci_action()
+def exp(x):
+    # return float
+    return math.exp(x)
+
+
+@jaseci_action()
+def log(x, base):
+    # return float
+    return math.log(x, base)
