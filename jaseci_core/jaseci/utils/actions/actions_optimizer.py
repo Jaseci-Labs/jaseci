@@ -124,6 +124,7 @@ class ActionsOptimizer:
         self.policy_state = {}
         self.last_eval_configs = []
         self.module_history = []
+        self.avl_node_mem = 0
 
     def kube_create(self, config):
         kube = JsOrc.svc("kube").poke(cast=KubeService)
@@ -371,7 +372,7 @@ class ActionsOptimizer:
             )
             jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
         # calculate the memory available in node for local modules
-        avl_node_mem = node_mem - jaseci_runtime_mem  # * NODE_MEM_THRESHOLD
+        self.avl_node_mem = node_mem - jaseci_runtime_mem  # * NODE_MEM_THRESHOLD
         # Initialize configs to eval
         actions = self.actions_state.get_active_actions()
         # construct list of possible configurations
@@ -397,14 +398,14 @@ class ActionsOptimizer:
                         c["local_mem"] = c["local_mem"] + (
                             local_mem_requirement - STATIC_USED_MEM
                         )
-                        if c["local_mem"] < avl_node_mem:
+                        if c["local_mem"] < self.avl_node_mem:
                             new_configs.append(dict(c))
                         else:
                             logger.info(
                                 f"""config dropped for memory constraint: {c},
-                                \n\tcurrent node memory: {avl_node_mem}
+                                \n\tcurrent node memory: {self.avl_node_mem}
                                 \n\t memory requirement: {c["local_mem"]}
-                                \n\tmemory deficit: { avl_node_mem-c['local_mem'] }"""
+                                \n\tmemory deficit {self.avl_node_mem-c['local_mem']}"""
                             )
                     else:
                         new_configs.append(dict(c))
@@ -698,13 +699,13 @@ class ActionsOptimizer:
         try:
             # Calculate the total utilization of each module
             module_utilz = {}
-            if prev_best_config and "local" in prev_best_config.values():
-                unload_list = [
-                    name for name, mod in prev_best_config.items() if mod == "local"
-                ]
-                if unload_list:
-                    for mod in unload_list:
-                        self.unload_action_module(mod)
+            # if prev_best_config and "local" in prev_best_config.values():
+            #     unload_list = [
+            #         name for name, mod in prev_best_config.items() if mod == "local"
+            #     ]
+            #     if unload_list:
+            #         for mod in unload_list:
+            #             self.unload_action_module(mod)
             for module, utilz in curr_action_utilz.items():
                 if module != "total_call_count":
                     module_name = module.split(".")[0]
@@ -751,10 +752,13 @@ class ActionsOptimizer:
                 )
                 jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
             # calculate the memory available in node for local modules
-            avl_node_mem = node_mem - jaseci_runtime_mem  # * NODE_MEM_THRESHOLD
-            logger.info(
-                f"===Predictive Policy=== avl_node_mem: {avl_node_mem}, node_mem: {node_mem}"  # noqa: E501
-            )
+            if self.avl_node_mem == 0:
+                self.avl_node_mem = (
+                    node_mem - jaseci_runtime_mem
+                )  # * NODE_MEM_THRESHOLD
+                logger.info(
+                    f"===Predictive Policy=== avl_node_mem: {self.avl_node_mem}, node_mem: {node_mem}"  # noqa: E501
+                )
             local_mem_requirement = 0
             config = {}
             for module in all_mod_ordered_list:
@@ -763,7 +767,7 @@ class ActionsOptimizer:
                 # )
                 mem_req = get_pod_mem_usage(pod_name=module.replace("_", "-"))
                 if module in curr_mod_ordered_list:
-                    if local_mem_requirement + mem_req > avl_node_mem:
+                    if local_mem_requirement + mem_req > self.avl_node_mem:
                         config[module] = "remote"
                     else:
                         config[module] = "local"
