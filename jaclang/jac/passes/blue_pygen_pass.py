@@ -106,11 +106,7 @@ class BluePygenPass(Pass):
         elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec],
         """
         for i in node.elements:
-            if type(i) != ast.GlobalVars:
-                self.emit_ln(node, i.meta["py_code"])
-        for i in node.elements:
-            if type(i) == ast.GlobalVars:
-                self.emit_ln(node, i.meta["py_code"])
+            self.emit_ln(node, i.meta["py_code"])
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -150,10 +146,9 @@ class BluePygenPass(Pass):
 
         value: Optional[Token],
         """
-        if type(node.value) == ast.Token:
+        if node.value:
             self.emit_ln(node, node.value.value)
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
 
@@ -165,7 +160,6 @@ class BluePygenPass(Pass):
         self.sub_module = None
         """
         if node.lang.value == "jac":  # injects module into sys.modules
-            # this import assumes running, not compiling
             self.emit_ln(
                 node,
                 f"__jac_import__(target='{node.path.meta['py_code']}', base_path=__file__)",
@@ -315,7 +309,6 @@ class BluePygenPass(Pass):
         body: CodeBlock,
         """
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_block(self, node: ast.ArchBlock) -> None:
         """Sub objects.
 
@@ -717,7 +710,6 @@ class BluePygenPass(Pass):
         """
         self.ds_feature_warn()
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 

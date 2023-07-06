@@ -10,10 +10,6 @@ import:py cmd;
 include:jac impl.cli_impl;
 
 
-global cmd_registry = |> CommandRegistry;
-can start_cli;
-
-
 object Command {
     has func: callable,
         sig: inspect.Signature;
@@ -44,3 +40,7 @@ object CommandShell:cmd.Cmd {
     can do_exit(arg: list) -> bool;
     can default(line: str);
 }
+
+
+global cmd_registry = |> CommandRegistry;
+can start_cli;
