@@ -79,7 +79,7 @@ walker get_gen_day {
                 new.order = latest_day.order;
                 new.ll_version = latest_day.ll_version;
                 spawn latest_day walker::carry_forward(parent=new);
-                for i=0 to i<new.order.length by i+=1:
+                if new.order: for i=0 to i<new.order.length by i+=1:
                     new.order[i] = &(spawn new.order[i] walker::past_to_now);
                 take new;
             }
@@ -230,7 +230,7 @@ walker carry_forward {
         if(new_workette.is_ritual): new_workette.status="open";
         spawn -[parent]-> node::workette
             walker::carry_forward(parent=new_workette);
-        for i=0 to i<new_workette.order.length by i+=1:
+        if new_workette.order: for i=0 to i<new_workette.order.length by i+=1:
             new_workette.order[i] = &(spawn new_workette.order[i]
                                       walker::past_to_now);
     }

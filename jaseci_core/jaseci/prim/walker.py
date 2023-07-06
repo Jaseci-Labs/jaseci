@@ -15,6 +15,7 @@ from jaseci.utils.utils import (
 from jaseci.prim.element import Element
 from jaseci.prim.obj_mixins import Anchored
 from jaseci.utils.id_list import IdList
+from jaseci.jac.machine.machine_state import TryException
 from jaseci.jac.interpreter.walker_interp import WalkerInterp
 import uuid
 import hashlib
@@ -171,8 +172,8 @@ class Walker(Element, WalkerInterp, Anchored):
         try:
             while self.step() and not self.yielded:
                 pass
-        except Exception as e:
-            self.rt_error(f"Internal Exception: {e}", self._cur_jac_ast)
+        except Exception:
+            report_ret["success"] = False
             report_ret["stack_trace"] = exc_stack_as_str_list()
 
         self.save()
@@ -190,6 +191,10 @@ class Walker(Element, WalkerInterp, Anchored):
         if len(self.runtime_errors):
             report_ret["errors"] = self.runtime_errors
             report_ret["success"] = False
+        if len(self.runtime_stack_trace):
+            report_ret["stack_trace"] = (
+                report_ret.get("stack_trace", []) + self.runtime_stack_trace
+            )
         if profiling:
             self.profile["jac"] = format_jac_profile(self.get_master()._jac_profile)
             calls, graph = perf_test_stop(pr)
