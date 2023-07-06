@@ -341,10 +341,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag KW_ENUM access_tag NAME SEMI",
-        "doc_tag KW_ENUM access_tag NAME enum_block",
-        "doc_tag decorators KW_ENUM access_tag NAME SEMI",
-        "doc_tag decorators KW_ENUM access_tag NAME enum_block",
+        "doc_tag KW_ENUM access_tag NAME inherited_archs SEMI",
+        "doc_tag KW_ENUM access_tag NAME inherited_archs enum_block",
+        "doc_tag decorators KW_ENUM access_tag NAME inherited_archs SEMI",
+        "doc_tag decorators KW_ENUM access_tag NAME inherited_archs enum_block",
     )
     def enum_decl(self, p: YaccProduction) -> YaccProduction:
         """Enum decl rule."""
@@ -360,7 +360,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "LBRACE RBRACE",
-        "LBRACE enum_op_list RBRACE",
+        "LBRACE enum_stmt_list RBRACE",
     )
     def enum_block(self, p: YaccProduction) -> YaccProduction:
         """Enum block rule."""
@@ -369,10 +369,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "NAME",
         "enum_op_assign",
-        "enum_op_list COMMA NAME",
-        "enum_op_list COMMA enum_op_assign",
+        "enum_stmt_list COMMA NAME",
+        "enum_stmt_list COMMA enum_op_assign",
     )
-    def enum_op_list(self, p: YaccProduction) -> YaccProduction:
+    def enum_stmt_list(self, p: YaccProduction) -> YaccProduction:
         """Enum op list rule."""
         return p
 

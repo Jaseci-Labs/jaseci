@@ -52,6 +52,7 @@ class AstBuildPass(Pass):
     def exit_element(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        element -> enum
         element -> ability
         element -> architype
         element -> include_stmt
@@ -672,6 +673,125 @@ class AstBuildPass(Pass):
                 type_tag=meta["type_tag"],
                 unpack=meta["unpack"],
                 value=meta["value"],
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_enum(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        enum -> enum_def
+        enum -> enum_decl
+        """
+        replace_node(node, node.kid[0])
+
+    def exit_enum_decl(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        enum_decl -> doc_tag decorators KW_ENUM access_tag NAME inherited_archs enum_block
+        enum_decl -> doc_tag decorators KW_ENUM access_tag NAME inherited_archs SEMI
+        enum_decl -> doc_tag KW_ENUM access_tag NAME inherited_archs enum_block
+        enum_decl -> doc_tag KW_ENUM access_tag NAME inherited_archs SEMI
+        """
+        if type(node.kid[1]) == ast.Token:
+            del node.kid[1]
+            replace_node(
+                node,
+                ast.Enum(
+                    doc=node.kid[0],
+                    decorators=None,
+                    access=node.kid[1],
+                    name=node.kid[2],
+                    base_classes=node.kid[3],
+                    body=node.kid[-1] if type(node.kid[-1]) == ast.EnumBlock else None,
+                    parent=node.parent,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
+        else:
+            replace_node(
+                node,
+                ast.Enum(
+                    doc=node.kid[0],
+                    decorators=node.kid[1],
+                    access=node.kid[2],
+                    name=node.kid[3],
+                    base_classes=node.kid[4],
+                    body=node.kid[-1] if type(node.kid[-1]) == ast.EnumBlock else None,
+                    parent=node.parent,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
+        if type(node.kid[-1]) == ast.Token:
+            del node.kid[-1]
+
+    def exit_enum_def(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        enum_def -> doc_tag dotted_name enum_ref enum_block
+        enum_def -> doc_tag enum_ref enum_block
+        """
+        replace_node(
+            node,
+            ast.EnumDef(
+                doc=node.kid[0],
+                mod=node.kid[1] if len(node.kid) == 4 else None,
+                body=node.kid[-1],
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_enum_block(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        enum_block -> LBRACE enum_stmt_list RBRACE
+        enum_block -> LBRACE RBRACE
+        """
+        if len(node.kid) == 3:
+            ret = replace_node(node, node.kid[1])
+            node = ret if ret else node
+        else:
+            node.kid = []
+        replace_node(
+            node,
+            ast.EnumBlock(
+                stmts=node.kid,
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_enum_stmt_list(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        enum_stmt_list -> enum_stmt_list COMMA enum_op_assign
+        enum_stmt_list -> enum_stmt_list COMMA NAME
+        enum_stmt_list -> enum_op_assign
+        enum_stmt_list -> NAME
+        """
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+
+    def exit_enum_op_assign(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        enum_op_assign -> NAME EQ expression
+        """
+        del node.kid[1]
+        replace_node(
+            node,
+            ast.Assignment(
+                target=node.kid[0],
+                value=node.kid[1],
+                mutable=False,
+                is_static=False,
                 parent=node.parent,
                 kid=node.kid,
                 line=node.line,
@@ -2482,6 +2602,22 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ObjectRef(
+                name=node.kid[-1],
+                parent=node.parent,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_enum_ref(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        object_ref -> ENUM_OP NAME
+        """
+        node.kid = [node.kid[-1]]
+        replace_node(
+            node,
+            ast.EnumRef(
                 name=node.kid[-1],
                 parent=node.parent,
                 kid=node.kid,

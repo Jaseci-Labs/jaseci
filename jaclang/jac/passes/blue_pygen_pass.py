@@ -466,6 +466,31 @@ class BluePygenPass(Pass):
         else:
             self.emit(node, f"{node.name.value}: {node.type_tag.meta['py_code']}")
 
+    def exit_enum(self, node: ast.Enum) -> None:
+        """Sub objects.
+
+        name: Name,
+        doc: Optional[DocString],
+        decorators: Optional[Decorators],
+        access: Optional[Token],
+        base_classes: BaseClasses,
+        body: Optional[EnumBlock],
+        """
+
+    def exit_enum_def(self, node: ast.EnumDef) -> None:
+        """Sub objects.
+
+        doc: Optional[DocString],
+        mod: Optional[NameList],
+        body: EnumBlock,
+        """
+
+    def exit_enum_block(self, node: ast.EnumBlock) -> None:
+        """Sub objects.
+
+        stmts: list['Name|Assignment'],
+        """
+
     def exit_code_block(self, node: ast.CodeBlock) -> None:
         """Sub objects.
 
@@ -1058,6 +1083,12 @@ class BluePygenPass(Pass):
         name: Token,
         """
         self.emit(node, f"{node.name.value}")
+
+    def exit_enum_ref(self, node: ast.EnumRef) -> None:
+        """Sub objects.
+
+        name: Name,
+        """
 
     def exit_ability_ref(self, node: ast.AbilityRef) -> None:
         """Sub objects.

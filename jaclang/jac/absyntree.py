@@ -587,6 +587,64 @@ class ParamVar(AstNode):
         super().__init__(parent=parent, kid=kid, line=line)
 
 
+class Enum(OOPAccessNode):
+    """Enum node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: Name,
+        doc: Optional[DocString],
+        decorators: Optional["Decorators"],
+        access: Optional[Token],
+        base_classes: "BaseClasses",
+        body: Optional["EnumBlock"],
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize object arch node."""
+        self.name = name
+        self.doc = doc
+        self.decorators = decorators
+        self.base_classes = base_classes
+        self.body = body
+        super().__init__(access=access, parent=parent, kid=kid, line=line)
+
+
+class EnumDef(AstNode):
+    """EnumDef node type for Jac Ast."""
+
+    def __init__(
+        self,
+        doc: Optional[DocString],
+        mod: Optional["NameList"],
+        body: "EnumBlock",
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize arch def node."""
+        self.doc = doc
+        self.mod = mod
+        self.body = body
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
+class EnumBlock(AstNode):
+    """EnumBlock node type for Jac Ast."""
+
+    def __init__(
+        self,
+        stmts: list["Name|Assignment"],
+        parent: Optional[AstNode],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize enum block node."""
+        self.stmts = stmts
+        super().__init__(parent=parent, kid=kid, line=line)
+
+
 class ArchBlock(AstNode):
     """ArchBlock node type for Jac Ast."""
 
@@ -1485,6 +1543,10 @@ class ObjectRef(GlobalRef):
     """ObjectRef node type for Jac Ast."""
 
 
+class EnumRef(GlobalRef):
+    """EnumRef node type for Jac Ast."""
+
+
 class AbilityRef(GlobalRef):
     """AbilityRef node type for Jac Ast."""
 
@@ -1576,6 +1638,7 @@ AtomType = Union[
     WalkerRef,
     ObjectRef,
     AbilityRef,
+    EnumRef,
     EdgeOpRef,
     SpawnCtx,
     FilterCtx,
@@ -1592,6 +1655,7 @@ ExprType = Union[
 
 ArchRefType = Union[
     ObjectRef,
+    EnumRef,
     AbilityRef,
     NodeRef,
     EdgeRef,
