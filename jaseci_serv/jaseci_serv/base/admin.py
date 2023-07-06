@@ -60,3 +60,12 @@ class GlobalVarsAdmin(admin.ModelAdmin):
 
 
 admin.site.register(models.GlobalVars, GlobalVarsAdmin)
+
+
+class ConfigVarsAdmin(admin.ModelAdmin):
+    ordering = ["name"]
+    list_display = ("name", "value")
+    search_fields = ["name", "value"]
+
+
+admin.site.register(models.ConfigVars, ConfigVarsAdmin)

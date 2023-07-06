@@ -75,7 +75,7 @@ class JsOrc:
 
         if cls.db_check():
             hook = cls.hook()
-            config = hook.get_or_create_glob("JSORC_CONFIG", config)
+            config = hook.resolve_conf("JSORC_CONFIG", config)
 
         cls._config = config
         cls._backoff_interval = max(5, config.get("backoff_interval", 10))
@@ -228,10 +228,10 @@ class JsOrc:
         if cls.db_check():
             hook = cls.hook(use_proxy=instance["proxy"])
 
-            config = hook.get_or_create_glob(instance["config"], config)
+            config = hook.resolve_conf(instance["config"], config)
 
             manifest = (
-                hook.get_or_create_glob(instance["manifest"], manifest)
+                hook.resolve_conf(instance["manifest"], manifest)
                 if instance["manifest"]
                 else {}
             )
@@ -484,7 +484,7 @@ class JsOrc:
                 if service.manifest and kube.is_running():
                     try:
                         manifest = kube.resolve_manifest(
-                            hook.get_or_create_glob(
+                            hook.resolve_conf(
                                 service.source["manifest"], service.manifest
                             ),
                             *cls.overrided_namespace(
@@ -492,7 +492,7 @@ class JsOrc:
                             ),
                         )
 
-                        rmhists: dict = hook.get_or_create_glob(
+                        rmhists: dict = hook.resolve_conf(
                             "RESOLVED_MANIFEST_HISTORY", {}
                         )
 

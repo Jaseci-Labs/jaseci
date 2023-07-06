@@ -16,6 +16,7 @@ import functools
 import traceback
 import inspect
 import unittest
+from json import dumps, loads
 from time import time
 from pathlib import Path
 from pprint import pformat
@@ -376,3 +377,35 @@ def model_base_path(cache_dir: Union[str, Path]) -> Path:
     else:
         model_cache = cache_dir
     return model_cache
+
+
+def manipulate_data(data, field_key, value):
+    data = loads(data)
+    keys = []
+    if isinstance(field_key, int):
+        keys = [field_key]
+    elif isinstance(field_key, list):
+        keys = field_key
+        field_key = ".".join(field_key)
+    elif isinstance(field_key, tuple):
+        keys = list(field_key)
+        field_key = ".".join(field_key)
+    else:
+        keys = field_key.split(".")
+
+    target = data
+    key_length = len(keys)
+    while key_length:
+        key = keys.pop(0)
+        if key_length == 1:
+            if isinstance(target, list):
+                target[int(key)] = value
+            else:
+                target[key] = value
+        elif key_length > 1:
+            if isinstance(target, list):
+                target = target[int(key)]
+            else:
+                target = target[key]
+        key_length = len(keys)
+    return dumps(data)

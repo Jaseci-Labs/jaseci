@@ -27,10 +27,11 @@ class OrmHook(RedisHook):
     """
 
     def __init__(self):
-        from jaseci_serv.base.models import GlobalVars, JaseciObject
+        from jaseci_serv.base.models import GlobalVars, JaseciObject, ConfigVars
 
         self.objects = JaseciObject.objects
         self.globs = GlobalVars.objects
+        self.confs = ConfigVars.objects
         self.db_touch_count = 0
         super().__init__()
 
@@ -150,6 +151,68 @@ class OrmHook(RedisHook):
         except OperationalError as e:
             logger.error(f"Operation failed due to {e}")
 
+    # --------------------- CONF --------------------- #
+
+    def get_conf_from_store(self, name):
+        """
+        Get config from externally hooked general store by name
+        """
+
+        conf = super().get_conf_from_store(name)
+        if conf is None:
+            try:
+                conf = self.confs.get(name=name).value
+                self.db_touch_count += 1
+            except ObjectDoesNotExist:
+                logger.error(
+                    str(f"Config {name} does not exist in Django ORM!"), exc_info=True
+                )
+                return None
+            except OperationalError as e:
+                logger.error(f"Operation failed due to {e}")
+                return None
+
+            super().commit_conf_to_cache(name, conf)
+            return conf
+        return conf
+
+    def has_conf_in_store(self, name):
+        """
+        Checks for config existance in store
+        """
+        ret = super().has_conf_in_store(name)
+
+        if not ret:
+            try:
+                return self.confs.filter(name=name).count() > 0
+            except OperationalError as e:
+                logger.error(f"Operation failed due to {e}")
+                logger.error(name)
+
+        return ret
+
+    def list_conf_from_store(self):
+        """Get list of config to externally hooked general store"""
+        confs = super().list_conf_from_store()
+
+        if not confs:
+            try:
+                return [entry["name"] for entry in self.confs.values("name")]
+            except OperationalError as e:
+                logger.error(f"Operation failed due to {e}")
+
+        return confs
+
+    def destroy_conf_from_store(self, name):
+        """Destroy config to externally hooked general store"""
+        super().destroy_glob_from_store(name)
+        try:
+            self.confs.get(name=name).delete()
+        except ObjectDoesNotExist:
+            pass
+        except OperationalError as e:
+            logger.error(f"Operation failed due to {e}")
+
     ####################################################
     #                    COMMITTER                     #
     ####################################################
@@ -172,6 +235,15 @@ class OrmHook(RedisHook):
         except OperationalError as e:
             logger.error(f"Operation failed due to {e}")
 
+    def commit_conf(self, name, value):
+        self.commit_glob_to_cache(name, value)
+        try:
+            item_from_db, created = self.confs.get_or_create(name=name)
+            item_from_db.value = value
+            item_from_db.save()
+        except OperationalError as e:
+            logger.error(f"Operation failed due to {e}")
+
     def commit(self, skip_cache=False):
         """Write through all saves to store"""
         for i in self.save_obj_list:
@@ -183,6 +255,10 @@ class OrmHook(RedisHook):
         for k, v in self.save_glob_dict.items():
             self.commit_glob(k, v)
         self.save_glob_dict = {}
+
+        for k, v in self.save_conf_dict.items():
+            self.commit_conf(k, v)
+        self.save_conf_dict = {}
 
 
 def map_assignment_of_matching_fields(dest, source):

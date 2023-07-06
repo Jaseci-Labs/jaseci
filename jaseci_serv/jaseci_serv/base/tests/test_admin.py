@@ -48,7 +48,7 @@ class AdminTests(TestCaseHelper, TestCase):
         url = reverse("admin:base_globalvars_changelist")
         res = self.client.get(url)
 
-        self.assertTrue("Global vars" in str(res.content))
+        self.assertTrue("Global Vars" in str(res.content))
         self.assertEqual(res.status_code, 200)
 
     def test_base_has_jaseci_objs(self):
@@ -56,5 +56,5 @@ class AdminTests(TestCaseHelper, TestCase):
         url = reverse("admin:base_jaseciobject_changelist")
         res = self.client.get(url)
 
-        self.assertTrue("Jaseci objects" in str(res.content))
+        self.assertTrue("Jaseci Objects" in str(res.content))
         self.assertEqual(res.status_code, 200)

@@ -35,16 +35,15 @@ class ActionsApi:
         """
         success = lact.load_local_actions(file, ctx=ctx)
         if success:
-            cur_config = self.config_get("ACTION_SETS")
-            if cur_config and (not isinstance(cur_config, list)):
-                config = json.loads(cur_config)
+            config = self.config_get("ACTION_SETS")
+            if config and (not isinstance(config, list)):
                 if file not in config["local"]:
                     config["local"].append(file)
-                    self.config_set("ACTION_SETS", json.dumps(config))
+                    self.config_set("ACTION_SETS", config)
             else:
                 self.config_set(
                     "ACTION_SETS",
-                    json.dumps({"local": [file], "remote": [], "module": []}),
+                    {"local": [file], "remote": [], "module": []},
                 )
         return {"success": success}
 
@@ -65,16 +64,15 @@ class ActionsApi:
         """
         success = lact.load_remote_actions(url, ctx=ctx)
         if success:
-            cur_config = self.config_get("ACTION_SETS")
-            if cur_config and (not isinstance(cur_config, list)):
-                config = json.loads(cur_config)
+            config = self.config_get("ACTION_SETS")
+            if config and (not isinstance(config, list)):
                 if url not in config["remote"]:
                     config["remote"].append(url)
-                    self.config_set("ACTION_SETS", json.dumps(config))
+                    self.config_set("ACTION_SETS", config)
             else:
                 self.config_set(
                     "ACTION_SETS",
-                    json.dumps({"local": [], "remote": [url], "module": []}),
+                    {"local": [], "remote": [url], "module": []},
                 )
         return {"success": success}
 
@@ -94,16 +92,15 @@ class ActionsApi:
         """
         success = lact.load_module_actions(mod, ctx=ctx)
         if success:
-            cur_config = self.config_get("ACTION_SETS")
-            if cur_config and (not isinstance(cur_config, list)):
-                config = json.loads(cur_config)
+            config = self.config_get("ACTION_SETS")
+            if config and (not isinstance(config, list)):
                 if mod not in config["module"]:
                     config["module"].append(mod)
-                    self.config_set("ACTION_SETS", json.dumps(config))
+                    self.config_set("ACTION_SETS", config)
             else:
                 self.config_set(
                     "ACTION_SETS",
-                    json.dumps({"local": [], "remote": [], "module": [mod]}),
+                    {"local": [], "remote": [], "module": [mod]},
                 )
         return {"success": success}
 

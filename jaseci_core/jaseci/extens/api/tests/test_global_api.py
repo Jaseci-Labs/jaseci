@@ -58,17 +58,17 @@ class GlobalApiTest(CoreTest):
         """Test setting global sentinel"""
         api = ["global_get", {"name": "apple"}]
         r = self.call(self.smast, api)
-        self.assertIsNone(r["value"])
-        api = ["global_set", {"name": "apple", "value": "56"}]
+        self.assertIsNone(r)
+        api = ["global_set", {"name": "apple", "value": 56}]
         r = self.call(self.smast, api)
         api = ["global_get", {"name": "apple"}]
         r = self.call(self.smast2, api)
-        self.assertEqual(r["value"], "56")
+        self.assertEqual(r, 56)
         api = ["global_delete", {"name": "apple"}]
         r = self.call(self.smast2, api)
         api = ["global_get", {"name": "apple"}]
         r = self.call(self.smast, api)
-        self.assertIsNone(r["value"])
+        self.assertIsNone(r)
 
     def test_user_create(self):
         """Test master create operation"""
