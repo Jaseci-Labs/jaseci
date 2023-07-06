@@ -12,6 +12,10 @@ class BluePygenPass(Pass):
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
+        self.preamble = ast.AstNode(parent=None, kid=[], line=0)
+        self.preamble.meta[
+            "py_code"
+        ] = "from jaclang import jac_import as __jac_import__\n"
         self.cur_arch = None  # tracks current architype during transpilation
 
     def enter_node(self, node: ast.AstNode) -> None:
@@ -91,7 +95,7 @@ class BluePygenPass(Pass):
         body: "Elements",
         """
         self.emit_ln(node, node.doc.value)
-        self.emit_ln(node, "from jaclang import jac_import as __jac_import__")
+        self.emit_ln(node, self.preamble.meta["py_code"])
         if node.body:
             self.emit(node, node.body.meta["py_code"])
         self.ir = node
@@ -108,7 +112,6 @@ class BluePygenPass(Pass):
             if type(i) == ast.GlobalVars:
                 self.emit_ln(node, i.meta["py_code"])
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
