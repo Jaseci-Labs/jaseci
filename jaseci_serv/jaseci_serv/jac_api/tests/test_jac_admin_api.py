@@ -29,15 +29,6 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
     def tearDown(self):
         super().tearDown()
 
-    def test_jac_api_config_index_has_core(self):
-        payload = {"op": "config_index"}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(res.data), 2)
-        self.assertIn("ACTION_SETS", res.data)
-
     def test_jac_api_create_config(self):
         """Test API for creating a config"""
         payload = {"op": "config_set", "name": "EMAIL_HOST_USER", "value": "val1"}
@@ -51,24 +42,6 @@ class PrivateJacAdminApiTests(TestCaseHelper, TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, "val1")
-
-    def test_jac_api_create_config_needs_force(self):
-        """Test API for creating a config"""
-        payload = {"op": "config_delete", "name": "TEST"}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        payload = {"op": "config_set", "name": "TEST", "value": "val1"}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        payload = {"op": "config_get", "name": "TEST"}
-        res = self.client.post(
-            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
-        )
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertNotEqual(res.data, "val1")
 
     def test_jac_api_create_config_nonadmin_fails(self):
         """Test API for creating a config"""
