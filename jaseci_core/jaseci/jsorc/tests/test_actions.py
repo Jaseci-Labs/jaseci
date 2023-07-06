@@ -101,7 +101,7 @@ class JacActionsTests(TestCaseHelper, TestCase):
                 report use.get_embedding("Today is a beautiful day.");
             }
         """
-        load_remote_actions("http://localhost:8001")
+        # load_remote_actions("http://localhost:8001")
         # load_module_actions("jac_nlp.cl_summer")
         load_module_actions("jac_nlp.cl_summer")
         sent = Sentinel(m_id=0, h=JsOrc.hook())
