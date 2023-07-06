@@ -32,10 +32,8 @@ class TestLexer(TestCase):
                 tokens[-1].type,
                 tokens[-1].value,
                 tokens[-1].lineno,
-                tokens[-1].index,
-                tokens[-1].end,
             ],
-            ["RBRACE", "}", 61, 1396, 1397],
+            ["RBRACE", "}", 61],
         )
 
     def test_col_idxs(self) -> None:

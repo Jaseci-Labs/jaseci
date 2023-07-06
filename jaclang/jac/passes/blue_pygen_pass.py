@@ -102,7 +102,11 @@ class BluePygenPass(Pass):
         elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec],
         """
         for i in node.elements:
-            self.emit_ln(node, i.meta["py_code"])
+            if type(i) != ast.GlobalVars:
+                self.emit_ln(node, i.meta["py_code"])
+        for i in node.elements:
+            if type(i) == ast.GlobalVars:
+                self.emit_ln(node, i.meta["py_code"])
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
@@ -113,6 +117,8 @@ class BluePygenPass(Pass):
         assignments: "AssignmentList",
         is_frozen: bool,
         """
+        if node.doc:
+            self.emit_ln(node, node.doc.meta["py_code"])
         self.emit_ln(node, node.assignments.meta["py_code"])
 
     # NOTE: Incomplete for Jac Purple and Red
@@ -133,7 +139,7 @@ class BluePygenPass(Pass):
         body: "CodeBlock",
         """
         if node.doc:
-            self.emit(node, node.doc.meta["py_code"])
+            self.emit_ln(node, node.doc.meta["py_code"])
         self.emit(node, node.body.meta["py_code"])
 
     def exit_doc_string(self, node: ast.DocString) -> None:
