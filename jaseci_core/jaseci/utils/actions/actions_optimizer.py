@@ -756,9 +756,9 @@ class ActionsOptimizer:
                 self.avl_node_mem = (
                     node_mem - jaseci_runtime_mem
                 )  # * NODE_MEM_THRESHOLD
-                logger.info(
-                    f"===Predictive Policy=== avl_node_mem: {self.avl_node_mem}, node_mem: {node_mem}"  # noqa: E501
-                )
+            logger.info(
+                f"===Predictive Policy=== avl_node_mem: {self.avl_node_mem}, node_mem: {node_mem}"  # noqa: E501
+            )
             local_mem_requirement = 0
             config = {}
             for module in all_mod_ordered_list:
