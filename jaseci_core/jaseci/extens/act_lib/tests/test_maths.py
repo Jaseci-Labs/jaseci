@@ -51,22 +51,40 @@ class MathsTests(CoreTest):
         ret = ret["report"][0]
         self.assertEqual(ret, 18.0)
 
-    # gcd todo
+    @jac_testcase("maths.jac", "gcd_test")
+    def test_gcd(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 1)
 
-    # isclose todo
+    @jac_testcase("maths.jac", "isclose_test")
+    def test_isclose(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, False)
 
-    # isfinite todo
+    @jac_testcase("maths.jac", "isfinite_test")
+    def test_isfinite(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, True)
 
-    # isinf todo
+    @jac_testcase("maths.jac", "isinf_test")
+    def test_isinf(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, False)
 
-    # isnan toto
+    @jac_testcase("maths.jac", "isnan_test")
+    def test_isnan(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, False)
 
     @jac_testcase("maths.jac", "isqrt_test")
     def test_isqrt(self, ret):
         ret = ret["report"][0]
         self.assertEqual(ret, 3)
 
-    # lcm todo
+    @jac_testcase("maths.jac", "lcm_test")
+    def test_lcm(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 420)
 
     @jac_testcase("maths.jac", "ldexp_test")
     def test_isqrt(self, ret):
@@ -87,3 +105,28 @@ class MathsTests(CoreTest):
     def test_perm(self, ret):
         ret = ret["report"][0]
         self.assertEqual(ret, 25852016738884976640000)
+
+    @jac_testcase("maths.jac", "prod_test")
+    def test_prod(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 120)
+
+    @jac_testcase("maths.jac", "remainder_test")
+    def test_remainder(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 3.0)
+
+    @jac_testcase("maths.jac", "trunc_test")
+    def test_trunc(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 23)
+
+    @jac_testcase("maths.jac", "trunc_test")
+    def test_trunc(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 23)
+
+    @jac_testcase("maths.jac", "ulp_test")
+    def test_ulp(self, ret):
+        ret = ret["report"][0]
+        self.assertEqual(ret, 3.552713678800501e-15)

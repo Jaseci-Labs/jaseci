@@ -254,7 +254,141 @@ Expected Output:
   "yielded": false
 }
 ```
+## GCD
 
+Return the greatest common divisor of the specified integer arguments.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.gcd;
+    _list = [1,2,34,5,6];
+
+    report maths.gcd(_list);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    1
+  ],
+  "final_node": "urn:uuid:611f0fd1-6506-4178-a8c9-7d47570ca12b",
+  "yielded": false
+}
+```
+
+## isclose
+
+Return True if the values a and b are close to each other and False otherwise.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.isclose;
+    a = 23;
+    b = 24;
+
+    report maths.isclose(a,b);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    false
+  ],
+  "final_node": "urn:uuid:3d8f257a-a82c-4da5-b262-60422100cccb",
+  "yielded": false
+}
+```
+
+## isfinite
+
+Return True if x is neither an infinity nor a NaN, and False otherwise.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.isfinite;
+    a = 0.0;
+
+    report maths.isfinite(a);
+}
+```
+
+Example Output:
+```json
+{
+  "success": true,
+  "report": [
+    true
+  ],
+  "final_node": "urn:uuid:399e10ae-bdfd-4590-be51-9e0ee935247c",
+  "yielded": false
+}
+```
+
+## isinf
+
+Return True if x is a positive or negative infinity, and False otherwise.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.isinf;
+    a = 0.0;
+
+    report maths.isinf(a);
+}
+```
+
+```json
+{
+  "success": true,
+  "report": [
+    false
+  ],
+  "final_node": "urn:uuid:5587a028-5487-4fcd-a701-b33c024e976e",
+  "yielded": false
+}
+```
+
+## isnan
+
+Return True if x is a NaN (not a number), and False otherwise.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.isnan;
+    a = 0.0;
+
+    report maths.isnan(a);
+}
+```
+
+```json
+{
+  "success": true,
+  "report": [
+    false
+  ],
+  "final_node": "urn:uuid:2aa812ad-2dc2-44c7-95b9-527efc7236c4",
+  "yielded": false
+}
+```
 ## isqrt
 
 Return the integer square root of the nonnegative integer n. This is the floor of the exact square root of n, or equivalently the greatest integer a such that a² ≤ n.
@@ -280,6 +414,32 @@ Expected Output:
     3
   ],
   "final_node": "urn:uuid:35170582-7023-4686-ae08-222a54d0e92a",
+  "yielded": false
+}
+```
+
+## lcm
+
+Return the least common multiple of the specified integer arguments.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.lcm;
+    _list = [1,2,3,4,5,7];
+
+    report maths.lcm(_list);
+}
+```
+
+```json
+{
+  "success": true,
+  "report": [
+    420
+  ],
+  "final_node": "urn:uuid:81e962fd-86c3-4ebe-8b3d-8410149a542a",
   "yielded": false
 }
 ```
@@ -397,6 +557,118 @@ Expected Output:
     25852016738884976640000
   ],
   "final_node": "urn:uuid:ebf16935-cd09-40d4-b956-abf43a62a215",
+  "yielded": false
+}
+```
+
+## Prod
+
+Calculate the product of all the elements in the input iterable.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.prod;
+    _list = [2,3,4,5];
+
+    report maths.prod(_list);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    120
+  ],
+  "final_node": "urn:uuid:140fbcc6-e845-4655-be46-0cb883f00d0c",
+  "yielded": false
+}
+```
+
+## remainder
+
+Calculate the remainder
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.remainder;
+    x = 23;
+    y = 3;
+
+    report maths.remainder(y,x);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    3.0
+  ],
+  "final_node": "urn:uuid:f23a45ca-d0a2-4b26-93dd-69d2662756cf",
+  "yielded": false
+}
+```
+
+## trunc
+
+Return x with the fractional part removed, leaving the integer part.
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.trunc;
+    x = 23.09;
+
+    report maths.trunc(x);
+}
+```
+
+Expected Output:
+
+```json
+{
+  "success": true,
+  "report": [
+    23
+  ],
+  "final_node": "urn:uuid:edf78eec-b246-4d06-923c-6e3c52944884",
+  "yielded": false
+}
+```
+
+## ulp
+
+Return the value of the least significant bit of the float x:
+
+Example Jac:
+
+```jac
+walker init{
+    can maths.ulp;
+    x = 23.09;
+
+    report maths.ulp(x);
+}
+```
+
+Expected Jac:
+```json
+{
+  "success": true,
+  "report": [
+    3.552713678800501e-15
+  ],
+  "final_node": "urn:uuid:34690881-4e35-4c6e-8368-073b34709b96",
   "yielded": false
 }
 ```

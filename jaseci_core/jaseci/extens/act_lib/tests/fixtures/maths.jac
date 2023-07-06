@@ -63,15 +63,41 @@ walker fsum_test{
     report maths.fsum(x);
 }
 
-## gcd todo
+walker gcd_test{
+    can maths.gcd;
+    _list = [1,2,34,5,6];
 
-## isclose todo
+    report maths.gcd(_list);
+}
 
-## isfinite todo
+walker isclose_test{
+    can maths.isclose;
+    a = 23;
+    b = 24;
 
-## isinf todo
+    report maths.isclose(a,b);
+}
 
-## isnan toto
+walker isfinite_test{
+    can maths.isfinite;
+    a = 0.0;
+
+    report maths.isfinite(a);
+}
+
+walker isinf_test{
+    can maths.isinf;
+    a = 0.0;
+
+    report maths.isinf(a);
+}
+
+walker isnan_test{
+    can maths.isnan;
+    a = 0.0;
+
+    report maths.isnan(a);
+}
 
 walker isqrt_test{
     can maths.isqrt;
@@ -80,7 +106,12 @@ walker isqrt_test{
     report maths.isqrt(x);
 }
 
-## lcm todo
+walker lcm_test{
+    can maths.lcm;
+    _list = [1,2,3,4,5,7];
+
+    report maths.lcm(_list);
+}
 
 walker ldexp_test{
     can maths.ldexp;
@@ -112,7 +143,34 @@ walker perm_test{
     report maths.perm(x);
 }
 
-## prod todo
+walker prod_test{
+    can maths.prod;
+    _list = [2,3,4,5];
+
+    report maths.prod(_list);
+}
+
+walker remainder_test{
+    can maths.remainder;
+    x = 23;
+    y = 3;
+
+    report maths.remainder(y,x);
+}
+
+walker trunc_test{
+    can maths.trunc;
+    x = 23.09;
+
+    report maths.trunc(x);
+}
+
+walker ulp_test{
+    can maths.ulp;
+    x = 23.09;
+
+    report maths.ulp(x);
+}
 
 
 
