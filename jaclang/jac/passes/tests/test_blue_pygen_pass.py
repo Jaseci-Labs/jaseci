@@ -56,6 +56,18 @@ class BluePygenPassTests(TestCaseMicroSuite):
         self.assertFalse(code_gen.errors_had)
         self.assertIn("pass", code_gen.ir.meta["py_code"])
 
+    def test_enum_gen(self) -> None:
+        """Basic test for pass."""
+        code_gen = jac_file_to_final_pass("codegentext.jac", self.fixture_abs_path(""))
+        self.assertFalse(code_gen.errors_had)
+        self.assertIn(
+            "from enum import Enum as __jac_Enum__, auto as __jac_auto__",
+            code_gen.ir.meta["py_code"],
+        )
+        self.assertIn("class Color(__jac_Enum__):", code_gen.ir.meta["py_code"])
+        self.assertIn("GREEN = __jac_auto__()", code_gen.ir.meta["py_code"])
+        self.assertIn("RED = 1", code_gen.ir.meta["py_code"])
+
     def test_pass_ast_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""
         ast_func_names = [

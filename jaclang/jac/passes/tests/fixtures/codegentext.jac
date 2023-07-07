@@ -18,3 +18,9 @@ with entry {
 with entry {
     with open("file.txt") as f, open("file2.txt") as f {}
 }
+
+enum Color {
+    RED = 1,
+    GREEN,
+    BLUE = 3
+}

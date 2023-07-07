@@ -13,9 +13,7 @@ class BluePygenPass(Pass):
         self.indent_size = 4
         self.indent_level = 0
         self.preamble = ast.AstNode(parent=None, kid=[], line=0)
-        self.preamble.meta[
-            "py_code"
-        ] = "from jaclang import jac_import as __jac_import__\n"
+        self.preamble.meta["py_code"] = ""
         self.cur_arch = None  # tracks current architype during transpilation
 
     def enter_node(self, node: ast.AstNode) -> None:
@@ -32,6 +30,11 @@ class BluePygenPass(Pass):
         """Emit code to node."""
         self.emit(node, s.strip().strip("\n"), indent_delta)
         self.emit(node, "\n")
+
+    def emit_ln_unique(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
+        """Emit code to node."""
+        if s not in node.meta["py_code"]:
+            self.emit_ln(node, s, indent_delta)
 
     def emit(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
@@ -160,6 +163,9 @@ class BluePygenPass(Pass):
         self.sub_module = None
         """
         if node.lang.value == "jac":  # injects module into sys.modules
+            self.emit_ln_unique(
+                self.preamble, "from jaclang import jac_import as __jac_import__"
+            )
             self.emit_ln(
                 node,
                 f"__jac_import__(target='{node.path.meta['py_code']}', base_path=__file__)",
@@ -226,7 +232,7 @@ class BluePygenPass(Pass):
         """
         if node.decorators:
             self.emit_ln(node, node.decorators.meta["py_code"])
-        if not node.base_classes:
+        if not len(node.base_classes.base_classes):
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
             self.emit_ln(
@@ -476,6 +482,25 @@ class BluePygenPass(Pass):
         base_classes: BaseClasses,
         body: Optional[EnumBlock],
         """
+        if node.doc:
+            self.emit_ln(node, node.doc.meta["py_code"])
+        if node.decorators:
+            self.emit_ln(node, node.decorators.meta["py_code"])
+        if len(node.base_classes.base_classes):
+            self.emit_ln(
+                node,
+                f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
+            )
+        else:
+            self.emit_ln_unique(
+                self.preamble,
+                "from enum import Enum as __jac_Enum__, auto as __jac_auto__",
+            )
+            self.emit_ln(node, f"class {node.name.value}(__jac_Enum__):")
+        if node.body:
+            self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        else:
+            self.decl_def_missing()
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -490,6 +515,11 @@ class BluePygenPass(Pass):
 
         stmts: list['Name|Assignment'],
         """
+        for i in node.stmts:
+            if type(i) == ast.Name:
+                self.emit_ln(node, i.meta["py_code"] + " = __jac_auto__()")
+            else:
+                self.emit_ln(node, i.meta["py_code"])
 
     def exit_code_block(self, node: ast.CodeBlock) -> None:
         """Sub objects.
@@ -1089,6 +1119,7 @@ class BluePygenPass(Pass):
 
         name: Name,
         """
+        self.emit(node, f"{node.name.value}")
 
     def exit_ability_ref(self, node: ast.AbilityRef) -> None:
         """Sub objects.

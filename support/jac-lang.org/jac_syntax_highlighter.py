@@ -116,6 +116,7 @@ class JacLexer(RegexLexer):
             include("keywords"),
             include("soft-keywords"),
             (r"(can)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
+            (r"(enum)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(object)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(walker)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(node)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
@@ -226,7 +227,7 @@ class JacLexer(RegexLexer):
                 Operator.Word,
             ),
             (
-                r"(:g:|:global:|<h>|<here>|<v>|<visitor>|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)",
+                r"(:g:|:global:|<h>|<here>|<v>|<visitor>|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:enum:|:a:|:ability:)",
                 Operator.Word,
             ),
             (r"\?:|\?|:\+:|!=|==|<<|>>|:=|[-~+/*%=<>&^|.]", Operator),
