@@ -2,3 +2,44 @@
 
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
+
+
+enum AccessMode {
+    READ_ONLY,
+    READ_WRITE,
+    PRIVATE
+}
+
+object Memory {
+    has index: dict[UUID, Element], save_queue: list[Element];
+
+    #* Main Accessors *#
+    can get_obj(caller_id: UUID, item_id: UUID, override: bool = False) -> Element?;
+    can has_obj(item_id: UUID) -> bool;
+    can save_obj(caller_id: UUID, item: Element);
+    can del_obj(caller_id: UUID, item: Element);
+
+    #* Utility Functions *#
+    can get_object_distribution -> dict;
+    can get_mem_size -> float;
+}
+
+object Element {
+    has __jac_owner_id: UUID,
+        __jac_memory: Memory,
+        __jac_jid: UUID,
+        __jac_persist: bool = False;
+
+    can init(owner_id: UUID, memory: Memory, jid: UUID, persist: bool = False);
+    can __jac_make_public_ro;
+    can __jac_make_public_rw;
+    can __jac_make_private;
+    can __jac_is_public_ro -> bool;
+    can __jac_is_public_rw -> bool;
+    can __jac_is_private -> bool;
+    can __jac_is_readable(caller_id: UUID) -> bool;
+    can __jac_is_writable(caller_id: UUID) -> bool;
+    can __jac_give_access(caller_id: UUID, read_write: bool = False);
+    can __jac_revoke_access(caller_id: UUID);
+    can __jac_get_access_mode -> AccessMode;
+}

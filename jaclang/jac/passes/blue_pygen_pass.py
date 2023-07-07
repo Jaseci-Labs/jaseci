@@ -1,6 +1,6 @@
 """Jac Blue pass for Jaseci Ast."""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.constant import INIT_FUNC
+from jaclang.jac.constant import INIT_FUNC, JAC_LANG_IMP
 from jaclang.jac.lexer import Tokens as Tok
 from jaclang.jac.passes.ir_pass import Pass
 
@@ -162,7 +162,7 @@ class BluePygenPass(Pass):
         is_absorb: bool,  # For includes
         self.sub_module = None
         """
-        if node.lang.value == "jac":  # injects module into sys.modules
+        if node.lang.value == JAC_LANG_IMP:  # injects module into sys.modules
             self.emit_ln_unique(
                 self.preamble, "from jaclang import jac_import as __jac_import__"
             )
