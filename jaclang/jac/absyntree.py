@@ -617,6 +617,7 @@ class EnumDef(AstNode):
     def __init__(
         self,
         doc: Optional[DocString],
+        enum: "EnumRef",
         mod: Optional["NameList"],
         body: "EnumBlock",
         parent: Optional[AstNode],
@@ -624,6 +625,7 @@ class EnumDef(AstNode):
         line: int,
     ) -> None:
         """Initialize arch def node."""
+        self.enum = enum
         self.doc = doc
         self.mod = mod
         self.body = body

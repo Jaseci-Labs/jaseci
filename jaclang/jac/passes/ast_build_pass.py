@@ -739,6 +739,7 @@ class AstBuildPass(Pass):
             node,
             ast.EnumDef(
                 doc=node.kid[0],
+                enum=node.kid[-2],
                 mod=node.kid[1] if len(node.kid) == 4 else None,
                 body=node.kid[-1],
                 parent=node.parent,

@@ -1,6 +1,7 @@
 """Implementation for Jac's Element Abstractions"""
 import:py sys;
 
+
 :enum:AccessMode {
     READ_ONLY,
     READ_WRITE,
@@ -55,11 +56,11 @@ import:py sys;
             dist[t] = 1;
         }
     }
-    return dist
+    return dist;
 }
 
 :object:Memory:ability:get_mem_size -> float {
-    return <here>.index |> sys.getsizeof / 1024.0;
+    return (<here>.index |> sys.getsizeof) / 1024.0;
 }
 
 :object:Element:ability:init
@@ -120,7 +121,7 @@ import:py sys;
     }
     else {
         caller_id |> <here>.ro_access.add;
-        caller_id |> add .> ro_access .> <here>;
+        # caller_id |> add .> ro_access .> <here>;
     }
 }
 
@@ -128,4 +129,8 @@ import:py sys;
 (caller_id: UUID) {
     caller_id |> <here>.ro_access.discard;
     caller_id |> <here>.rw_access.discard;
+}
+
+with entry {
+    "Loaded correctly" |> print;
 }

@@ -24,12 +24,12 @@
     for param_name, param in |> cmd.sig.parameters.items {
         if param.default is param.empty {
             {f"-{param_name[:1]}", f"--{param_name}",
-            required=True, type=param.annotation}
+            required=True, type=param.annotation|>eval}
                 |> cmd_parser.add_argument;
         }
         else {
             {f"-{param_name[:1]}", f"--{param_name}",
-            default=param.default, type=param.annotation}
+            default=param.default, type=param.annotation|>eval}
                 |> cmd_parser.add_argument;
         }
     }

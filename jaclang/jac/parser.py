@@ -23,7 +23,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
-    debugfile = "parser.out"
+    # debugfile = "parser.out"
 
     # All mighty start rule
     # ---------------------
@@ -1389,9 +1389,7 @@ def parse_tree_to_ast(
                 else:
                     ast_tree = ast.Token(**meta)
         else:
-            raise ValueError(
-                f"node must be AstNode or parser output tuple: {type(tree)} {tree}"
-            )
+            raise ValueError("Syntax Error encountered while parsing Jac program.")
     if not ast_tree:
         raise ValueError(f"node must be AstNode: {tree}")
     return ast_tree

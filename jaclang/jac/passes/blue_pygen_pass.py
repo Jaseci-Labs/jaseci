@@ -13,7 +13,7 @@ class BluePygenPass(Pass):
         self.indent_size = 4
         self.indent_level = 0
         self.preamble = ast.AstNode(parent=None, kid=[], line=0)
-        self.preamble.meta["py_code"] = ""
+        self.preamble.meta["py_code"] = "from __future__ import annotations\n"
         self.cur_arch = None  # tracks current architype during transpilation
 
     def enter_node(self, node: ast.AstNode) -> None:
@@ -401,7 +401,7 @@ class BluePygenPass(Pass):
         if node.dict_nest:
             self.emit(
                 node,
-                f"Dict[{node.list_nest.meta['py_code']}, {node.dict_nest.meta['py_code']}]",
+                f"dict[{node.list_nest.meta['py_code']}, {node.dict_nest.meta['py_code']}]",
             )
         elif node.list_nest:
             self.emit(node, f"list[{node.list_nest.meta['py_code']}]")
@@ -815,7 +815,10 @@ class BluePygenPass(Pass):
         """
         if node.op.value in [
             *["+", "-", "*", "/", "%", "**"],
-            *["//", "&", "|", "^", "<<", ">>"],
+            *["+=", "-=", "*=", "/=", "%=", "**="],
+            *[">>", "<<", ">>=", "<<="],
+            *["//=", "&=", "|=", "^=", "~="],
+            *["//", "&", "|", "^"],
             *[">", "<", ">=", "<=", "==", "!="],
             *["and", "or", "in", "not in", "is", "is not"],
         ]:

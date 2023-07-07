@@ -7,6 +7,7 @@ from os import path
 from typing import Optional
 
 from jaclang.jac.transpiler import transpile_jac_file
+from jaclang.jac.utils import add_line_numbers
 
 
 def import_jac(
@@ -51,7 +52,11 @@ def import_jac(
         exec(code_string, module.__dict__)
     except Exception as e:
         traceback.print_exc()
-        print(f"Error in module {module_name}\nJac file: {target}\nError: {str(e)}")
+        print(
+            f"Error in module {module_name}\nJac file: {target}\n"
+            f"Error: {str(e)}\nIR:\n{add_line_numbers(code_string)}"
+        )
+
         return None
 
     # Register the module in sys.modules
