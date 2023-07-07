@@ -59,7 +59,7 @@ TEXT_SEG_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "text-seg",
-                                "image": "jaseci/jac-nlp:1.4.0.21",
+                                "image": "jaseci/jac-nlp:1.4.1.4",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

@@ -51,7 +51,7 @@ T5_SUM_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "t5-sum",
-                                "image": "jaseci/jac-nlp:latest",
+                                "image": "jaseci/jac-nlp:1.4.1.4",
                                 "command": ["bash", "-c", "source script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
