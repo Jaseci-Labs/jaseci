@@ -69,12 +69,13 @@ class Ability(Element, JacCode, Interp):
             logger.info(f"got func {func}")
             args = inspect.getfullargspec(func)
             logger.info(f"got getfullargspec {args}")
-            logger.info(
-                "================================================================"
-            )
+            logger.info(f"got param_list {param_list}")
+
             self.do_auto_conversions(args, param_list)
             args = args[0] + args[4]
-
+            logger.info(f"got getfullargspec {args}")
+            logger.info(f"got param_list {param_list}")
+            logger.info("============================================================")
             hook = scope.parent._h
             action_manager = JsOrc.get("action_manager", ActionManager)
             action_manager.pre_action_call_hook()
