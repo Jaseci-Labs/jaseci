@@ -15,6 +15,7 @@ from jaseci.jac.ir.jac_code import JacCode
 from jaseci.jac.interpreter.interp import Interp
 from jaseci.jac.machine.jac_scope import JacScope
 from jaseci.utils.utils import logger
+import inspect
 
 
 class Ability(Element, JacCode, Interp):
@@ -67,6 +68,23 @@ class Ability(Element, JacCode, Interp):
                 f"============================== run_action ==================="
             )
             logger.info(f"got func {func}")
+            logger.info(f"got func {func.__module__}")
+            logger.info(f"got func {func.__name__}")
+            logger.info(f"got func {func.__qualname__}")
+            logger.info(f"got func {func.__annotations__}")
+            logger.info(f"got func {func.__defaults__}")
+            logger.info(f"got func {func.__kwdefaults__}")
+            logger.info(f"got func {func.__doc__}")
+            logger.info(f"got func {func.__dict__}")
+            logger.info(f"got func {func.__code__}")
+            logger.info(f"got func {func.__closure__}")
+            logger.info(f"inspect: {inspect.signature(func).parameters}")
+            logger.info(f"inspect: {inspect.signature(func).return_annotation}")
+
+            logger.info(f"inspect:{inspect.getsource(func)}")
+            logger.info(f"inspect:{inspect.getsourcefile(func)}")
+            logger.info(f"inspect:{inspect.getfile(func)}")
+            logger.info(f"inspect:{inspect.getmodule(func)}")
             args = inspect.getfullargspec(func)
             logger.info(f"got getfullargspec {args}")
             logger.info(f"got param_list {param_list}")
