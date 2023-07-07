@@ -3,12 +3,9 @@
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 
+include:jac impl.element_impl;
 
-enum AccessMode {
-    READ_ONLY,
-    READ_WRITE,
-    PRIVATE
-}
+enum AccessMode;
 
 object Memory {
     has index: dict[UUID, Element], save_queue: list[Element];
@@ -24,11 +21,19 @@ object Memory {
     can get_mem_size -> float;
 }
 
+object ElementMetaData {
+    has jid: UUID = uuid4(),
+        timestamp: datetime = datetime.now(),
+        persist: bool = False,
+        access_mode: AccessMode = AccessMode.PRIVATE,
+        rw_access: set = |> set,
+        ro_access: set = |> set,
+        owner_id: UUID,
+        mem: Memory;
+}
+
 object Element {
-    has __jac_owner_id: UUID,
-        __jac_memory: Memory,
-        __jac_jid: UUID,
-        __jac_persist: bool = False;
+    has __jinfo: ElementMetaData;
 
     can init(owner_id: UUID, memory: Memory, jid: UUID, persist: bool = False);
     can __jac_make_public_ro;
@@ -41,5 +46,4 @@ object Element {
     can __jac_is_writable(caller_id: UUID) -> bool;
     can __jac_give_access(caller_id: UUID, read_write: bool = False);
     can __jac_revoke_access(caller_id: UUID);
-    can __jac_get_access_mode -> AccessMode;
 }
