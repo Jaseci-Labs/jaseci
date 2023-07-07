@@ -63,8 +63,15 @@ class Ability(Element, JacCode, Interp):
         # logger.info(f"run_action reader acquire in {time.time()-before_lock}")
         try:
             func = live_actions[action_name]
-            # logger.info(f"got func {func}")
+            logger.info(
+                f"============================== run_action ==================="
+            )
+            logger.info(f"got func {func}")
             args = inspect.getfullargspec(func)
+            logger.info(f"got getfullargspec {args}")
+            logger.info(
+                "================================================================"
+            )
             self.do_auto_conversions(args, param_list)
             args = args[0] + args[4]
 
