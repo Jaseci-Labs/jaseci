@@ -68,14 +68,15 @@ class Ability(Element, JacCode, Interp):
                 f"============================== run_action ==================="
             )
             logger.info(f"Name: {self.name}")
-            # Get the caller's frame
-            caller_frame = inspect.currentframe().f_back.f_back
-            caller_module = inspect.getmodule(caller_frame)
-            if caller_module is not None:
-                caller_module_name = caller_module.__name__
-                caller_module_file = caller_module.__file__
-                logger.info(f"Caller Module Name:{caller_module_name}")
-                logger.info(f"Caller Module File: {caller_module_file}")
+            module_name = inspect.getmodule(func).__name__
+            function_name = func.__name__
+            function_signature = inspect.signature(func)
+
+            logger.info("Action Details:")
+            logger.info(f"Action Name: {action_name}")
+            logger.info(f"Module Name: {module_name}")
+            logger.info(f"Function Name: {function_name}")
+            logger.info(f"Function Signature: {function_signature}")
             args = inspect.getfullargspec(func)
 
             self.do_auto_conversions(args, param_list)
