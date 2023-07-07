@@ -67,32 +67,19 @@ class Ability(Element, JacCode, Interp):
             logger.info(
                 f"============================== run_action ==================="
             )
-            logger.info(f"got func {func}")
-            logger.info(f"got func {func.__module__}")
-            logger.info(f"got func {func.__name__}")
-            logger.info(f"got func {func.__qualname__}")
-            logger.info(f"got func {func.__annotations__}")
-            logger.info(f"got func {func.__defaults__}")
-            logger.info(f"got func {func.__kwdefaults__}")
-            logger.info(f"got func {func.__doc__}")
-            logger.info(f"got func {func.__dict__}")
-            logger.info(f"got func {func.__code__}")
-            logger.info(f"got func {func.__closure__}")
-            logger.info(f"inspect: {inspect.signature(func).parameters}")
-            logger.info(f"inspect: {inspect.signature(func).return_annotation}")
-
-            logger.info(f"inspect:{inspect.getsource(func)}")
-            logger.info(f"inspect:{inspect.getsourcefile(func)}")
-            logger.info(f"inspect:{inspect.getfile(func)}")
-            logger.info(f"inspect:{inspect.getmodule(func)}")
+            logger.info(f"Name: {self.name}")
+            # Get the caller's frame
+            caller_frame = inspect.currentframe().f_back.f_back
+            caller_module = inspect.getmodule(caller_frame)
+            if caller_module is not None:
+                caller_module_name = caller_module.__name__
+                caller_module_file = caller_module.__file__
+                logger.info("Caller Module Name:", caller_module_name)
+                logger.info("Caller Module File:", caller_module_file)
             args = inspect.getfullargspec(func)
-            logger.info(f"got getfullargspec {args}")
-            logger.info(f"got param_list {param_list}")
 
             self.do_auto_conversions(args, param_list)
             args = args[0] + args[4]
-            logger.info(f"got getfullargspec {args}")
-            logger.info(f"got param_list {param_list}")
             logger.info("============================================================")
             hook = scope.parent._h
             action_manager = JsOrc.get("action_manager", ActionManager)
