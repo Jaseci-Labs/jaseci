@@ -65,37 +65,37 @@ import:py sys;
 
 :object:Element:ability:init
 (owner_id: UUID, memory: Memory, jid: UUID, persist: bool = False) {
-    <here>.__jinfo.owner_id = owner_id;
-    <here>.__jinfo.memory = memory;
-    <here>.__jinfo.id = jid;
-    <here>.__jinfo._persist = persist;
+    <here>.jinfo.owner_id = owner_id;
+    <here>.jinfo.memory = memory;
+    <here>.jinfo.id = jid;
+    <here>.jinfo._persist = persist;
 }
 
-:object:Element:ability:__jac_make_public_ro {
-    <here>.__jinfo.access_mode = AccessMode.READ_ONLY;
+:object:Element:ability:make_public_ro {
+    <here>.jinfo.access_mode = AccessMode.READ_ONLY;
 }
 
-:object:Element:ability:__jac_make_public_rw {
-    <here>.__jinfo.access_mode = AccessMode.READ_WRITE;
+:object:Element:ability:make_public_rw {
+    <here>.jinfo.access_mode = AccessMode.READ_WRITE;
 }
 
-:object:Element:ability:__jac_make_private {
-    <here>.__jinfo.access_mode = AccessMode.PRIVATE;
+:object:Element:ability:make_private {
+    <here>.jinfo.access_mode = AccessMode.PRIVATE;
 }
 
-:object:Element:ability:__jac_is_public_ro -> bool {
-    return <here>.__jinfo.access_mode == AccessMode.READ_ONLY;
+:object:Element:ability:is_public_ro -> bool {
+    return <here>.jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
-:object:Element:ability:__jac_is_public_rw -> bool {
-    return <here>.__jinfo.access_mode == AccessMode.READ_WRITE;
+:object:Element:ability:is_public_rw -> bool {
+    return <here>.jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
-:object:Element:ability:__jac_is_private -> bool {
-    return <here>.__jinfo.access_mode == AccessMode.PRIVATE;
+:object:Element:ability:is_private -> bool {
+    return <here>.jinfo.access_mode == AccessMode.PRIVATE;
 }
 
-:object:Element:ability:__jac_is_readable
+:object:Element:ability:is_readable
 (caller_id: UUID) -> bool{
     return (
             caller_id == <here>.owner_id
@@ -105,7 +105,7 @@ import:py sys;
         );
 }
 
-:object:Element:ability:__jac_is_writable
+:object:Element:ability:is_writable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <here>.owner_id
@@ -114,7 +114,7 @@ import:py sys;
         );
 }
 
-:object:Element:ability:__jac_give_access
+:object:Element:ability:give_access
 (caller_id: UUID, read_write: bool = False) {
     if read_write {
         caller_id |> <here>.rw_access.add;
@@ -125,7 +125,7 @@ import:py sys;
     }
 }
 
-:object:Element:ability:__jac_revoke_access
+:object:Element:ability:revoke_access
 (caller_id: UUID) {
     caller_id |> <here>.ro_access.discard;
     caller_id |> <here>.rw_access.discard;

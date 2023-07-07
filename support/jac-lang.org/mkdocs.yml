@@ -4,6 +4,7 @@ nav:
     - ~$: 'index.md'
     - ~/why$: 'why.md'
     - ~/tour$: 'tour.md'
+    - ~/example$: 'example.md'
     - ~/book$: 'book.md'
     - ~/blog$: 'blog.md'
     - ~/github$: https://github.com/Jaseci-Labs/jaclang
@@ -27,7 +28,7 @@ markdown_extensions:
       pygments_style: 'autumn'
   - pymdownx.inlinehilite
   - pymdownx.snippets:
-      base_path: ['.', '../../examples/micro']
+      base_path: ['.', '../../examples']
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

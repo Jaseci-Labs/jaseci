@@ -1,10 +1,10 @@
-"""Jaseci's object abstraction."""
+"""Jac's object abstraction."""
 from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
 
-from jaclang.core.memory import Memory
+from examples.memory import Memory
 
 
 class AccessMode(Enum):
@@ -16,7 +16,7 @@ class AccessMode(Enum):
 
 
 class Element:
-    """Base class for every object in Jaseci."""
+    """Base class for every object in Jac."""
 
     def __init__(
         self,

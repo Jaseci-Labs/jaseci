@@ -1057,7 +1057,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "atom DOT NAME",
-        "atom DOT_FWD NAME",
+        "NAME DOT_FWD atom",
         "atom DOT_BKWD NAME",
         "atom index_slice",
         "atom arch_ref",
@@ -1068,7 +1068,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "atom NULL_OK DOT NAME",
-        "atom NULL_OK DOT_FWD NAME",
+        "NAME NULL_OK DOT_FWD atom",
         "atom NULL_OK DOT_BKWD NAME",
         "atom NULL_OK index_slice",
         "atom NULL_OK arch_ref",

@@ -34,17 +34,17 @@ object ElementMetaData {
 }
 
 object Element {
-    has __jinfo: ElementMetaData;
+    has jinfo: ElementMetaData;
 
     can init(owner_id: UUID, memory: Memory, jid: UUID, persist: bool = False);
-    can __jac_make_public_ro;
-    can __jac_make_public_rw;
-    can __jac_make_private;
-    can __jac_is_public_ro -> bool;
-    can __jac_is_public_rw -> bool;
-    can __jac_is_private -> bool;
-    can __jac_is_readable(caller_id: UUID) -> bool;
-    can __jac_is_writable(caller_id: UUID) -> bool;
-    can __jac_give_access(caller_id: UUID, read_write: bool = False);
-    can __jac_revoke_access(caller_id: UUID);
+    can make_public_ro;
+    can make_public_rw;
+    can make_private;
+    can is_public_ro -> bool;
+    can is_public_rw -> bool;
+    can is_private -> bool;
+    can is_readable(caller_id: UUID) -> bool;
+    can is_writable(caller_id: UUID) -> bool;
+    can give_access(caller_id: UUID, read_write: bool = False);
+    can revoke_access(caller_id: UUID);
 }

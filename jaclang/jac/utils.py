@@ -22,7 +22,7 @@ def pascal_to_snake(pascal_string: str) -> str:
 def add_line_numbers(s: str) -> str:
     """Add line numbers to a string."""
     lines = s.split("\n")
-    return "\n".join(f"{i+1}: {line}" for i, line in enumerate(lines))
+    return "\n".join(f"{i+1}: \t{line}" for i, line in enumerate(lines))
 
 
 def get_ast_nodes_as_snake_case() -> list[str]:

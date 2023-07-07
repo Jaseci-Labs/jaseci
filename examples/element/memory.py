@@ -1,4 +1,4 @@
-"""Element memory class for Jaseci."""
+"""Element memory class for Jac."""
 import sys
 from typing import Optional, TypeVar
 from uuid import UUID
@@ -8,7 +8,7 @@ Element = TypeVar("Element")
 
 
 class Memory:
-    """Memory class for Jaseci."""
+    """Memory class for Jac."""
 
     def __init__(self) -> None:
         """Initialize memory."""

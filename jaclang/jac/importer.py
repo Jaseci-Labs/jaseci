@@ -47,6 +47,7 @@ def import_jac(
     module.__file__ = path.normpath(path.join(caller_dir, target))
     module.__name__ = module_name
 
+    print(add_line_numbers(code_string))
     # Execute the code in the context of the module's namespace
     try:
         exec(code_string, module.__dict__)

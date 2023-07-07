@@ -1,8 +1,15 @@
 """Abstract class for IR Passes for Jac."""
 import pprint
+from enum import Enum as Enumer, auto
 from typing import Optional, Union
 
-from jaclang.core.edge import EdgeDir
+
+class EdgeDir(Enumer):
+    """Edge direction indicator."""
+
+    IN = auto()
+    OUT = auto()
+    BOTH = auto()
 
 
 class AstNode:
