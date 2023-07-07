@@ -97,7 +97,7 @@ class JsorcLoadTest:
         jac_code = open(jac_file).read()
         # TODO: remove this once opt_level bug is fixed
         payload = {"op": "sentinel_register", "code": jac_code, "opt_level": 2}
-        self.sauth_client.post(
+        res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 
@@ -107,7 +107,7 @@ class JsorcLoadTest:
             "policy_name": policy_name,
             "policy_params": policy_params,
         }
-        self.sauth_client.post(
+        res = self.sauth_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
 
@@ -168,20 +168,19 @@ class JsorcLoadTest:
                 "zeroshot_faq_bot": ["jac_nlp.text_seg", "jac_nlp.use_qa"],
                 "sentence_pairing": ["jac_nlp.sbert_sim", "jac_nlp.bi_enc"],
                 "discussion_analysis": ["jac_nlp.bi_enc", "jac_nlp.cl_summer"],
-                # "discussion_analysis": ["jac_nlp.bi_enc"],
                 "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
                 "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
                 "virtual_assistant": [
-                    # "jac_nlp.text_seg",
+                    "jac_nlp.text_seg",
                     "jac_nlp.bi_enc",
                     "jac_nlp.tfm_ner",
                     "jac_nlp.sbert_sim",
                     "jac_nlp.use_qa",
                 ],
                 "flow_analysis": [
-                    "jac_nlp.sbert_sim",
+                    "jac_nlp.text_seg",
                     "jac_nlp.tfm_ner",
-                    "jac_nlp.use_qa",
+                    "jac_nlp.use_enc",
                 ],
                 "weather_and_time_assitance": [
                     "jac_speech.vc_tts",
@@ -233,7 +232,7 @@ class JsorcLoadTest:
                         self.start_actions_tracking()
                         start_ts = time.time()
                         while (time.time() - start_ts) < experiment_duration:
-                            self.run_walker(app)
+                            res = self.run_walker(app)
                         result = self.stop_benchmark()
                         action_result = self.stop_actions_tracking()
                         if policy == "all_local" or policy == "all_remote":
@@ -257,14 +256,12 @@ class JsorcLoadTest:
                             for module in action_modules:
                                 package, module = module.split(".")
                                 self.unload_action(
-                                    module, mode="remote", retire_svc=False
+                                    module, mode="remote", retire_svc=True
                                 )
                         else:
                             for module in action_modules:
                                 package, module = module.split(".")
-                                self.unload_action(
-                                    module, mode="auto", retire_svc=False
-                                )
+                                self.unload_action(module, mode="auto", retire_svc=True)
                         sleep(10)
             self.set_jsorc_actionpolicy("Default", policy_params={})
             path = "/root/.jaseci/models/exp_results/"

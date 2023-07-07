@@ -17,8 +17,6 @@ from jaseci.jsorc.live_actions import (
 import requests
 import copy
 import time
-from collections import OrderedDict
-from functools import cmp_to_key
 
 from .actions_state import ActionsState
 
@@ -113,7 +111,6 @@ class ActionsOptimizer:
 
         if cur_state["mode"] == "remote" and cur_state["remote"]["status"] == "READY":
             # Check if there is already a remote action loaded
-            logger.info("Already load as remote")
             return True
 
         url = self.actions_state.get_remote_url(name)
@@ -130,12 +127,11 @@ class ActionsOptimizer:
                 cur_state = self.actions_state.get_state(name)
 
         if cur_state["remote"]["status"] == "READY":
+            if unload_existing:
+                self.unload_action_module(name)
             load_remote_actions(url)
             self.action_prep(name)
             self.actions_state.remote_action_loaded(name)
-            if unload_existing:
-                res = self.unload_action_module(name)
-                logger.info(f"Unload action module {name} {res}")
             return True
 
         return False
@@ -145,27 +141,26 @@ class ActionsOptimizer:
         Load an action module
         """
         cur_state = self.actions_state.get_state(name)
+        logger.info(cur_state)
         if cur_state is None:
             cur_state = self.actions_state.init_state(name)
 
         if cur_state["mode"] == "module":
-            logger.info(f"{name} already loaded as module.")
+            logger.info("ALREADY A MODULE LOADED")
             # Check if there is already a local action loaded
-            return True
+            return
 
         if name not in action_configs:
-            return False
+            return
 
         module = action_configs[name]["module"]
         loaded_module = action_configs[name]["loaded_module"]
-        res = load_module_actions(module, loaded_module)
-        if not res:
-            return False
-        self.action_prep(name)
-        self.actions_state.module_action_loaded(name, module, loaded_module)
         if unload_existing:
             self.unload_action_remote(name)
-        return True
+
+        load_module_actions(module, loaded_module)
+        self.action_prep(name)
+        self.actions_state.module_action_loaded(name, module, loaded_module)
 
     def unload_action_auto(self, name):
         """
@@ -188,8 +183,8 @@ class ActionsOptimizer:
         if cur_state is None:
             return False, "Action is not loaded."
 
-        # if cur_state["mode"] != "module":
-        #     return False, "Action is not loaded as module."
+        if cur_state["mode"] != "module":
+            return False, "Action is not loaded as module."
 
         module_name = cur_state["module"]["name"]
         loaded_module = cur_state["module"]["loaded_module"]
@@ -268,10 +263,10 @@ class ActionsOptimizer:
             return
         elif self.policy == "Evaluation":
             self._actionpolicy_evaluation()
-        # if len(self.actions_change) > 0:
-        #     self.apply_actions_change()
+        if len(self.actions_change) > 0:
+            self.apply_actions_change()
 
-    def _init_evaluation_policy(self, policy_state):
+    def _init_evalution_policy(self, policy_state):
         # 999 is just really large memory size so everything can fits in local
         node_mem = self.policy_params.get("node_mem", 999 * 1024)
         jaseci_runtime_mem = self.policy_params.get("jaseci_runtime_mem", 300)
@@ -299,35 +294,7 @@ class ActionsOptimizer:
                     else:
                         new_configs.append(dict(c))
             all_configs = list(new_configs)
-
-        def get_config_distance(config1, config2):
-            num_changes = 0
-            for key in config1.keys():
-                if config1[key] != config2[key]:
-                    num_changes += 1
-            return num_changes
-
-        # Sort the configurations based on the minimum changes between each configuration
-        sorted_configurations = [all_configs[0]]  # Start with the first configuration
-
-        while len(sorted_configurations) < len(all_configs):
-            min_distance = float("inf")
-            min_config = None
-
-            for config in all_configs:
-                if config not in sorted_configurations:
-                    # distance = min(
-                    #     get_config_distance(config, sorted_config)
-                    #     for sorted_config in sorted_configurations
-                    # )
-                    distance = get_config_distance(sorted_configurations[-1], config)
-                    if distance < min_distance:
-                        min_distance = distance
-                        min_config = config
-
-            sorted_configurations.append(min_config)
-        logger.info(f"config selected for evaluation: {sorted_configurations}")
-        policy_state["remain_configs"] = sorted_configurations
+        policy_state["remain_configs"] = all_configs
 
     def _actionpolicy_evaluation(self):
         """
@@ -370,11 +337,11 @@ class ActionsOptimizer:
                 policy_state["cur_phase"] = 0
                 policy_state["cur_config"] = None
                 if len(policy_state["remain_configs"]) == 0:
-                    self._init_evaluation_policy(policy_state)
+                    self._init_evalution_policy(policy_state)
         if policy_state["phase"] == "eval":
             # In evaluation phase
             if policy_state["cur_config"] is None:
-                self._init_evaluation_policy(policy_state)
+                self._init_evalution_policy(policy_state)
 
                 # This is the start of evaluation period
                 policy_state["cur_config"] = policy_state["remain_configs"][0]
@@ -391,7 +358,6 @@ class ActionsOptimizer:
                     )
                     policy_state["phase"] = "eval_switching"
                     self.benchmark["active"] = False
-                    self.apply_actions_change()
             else:
                 if policy_state["cur_phase"] >= policy_state["eval_phase"]:
                     # The eval phase for the current configuration is complete
@@ -399,7 +365,7 @@ class ActionsOptimizer:
                     if "walker_run" not in self.benchmark["requests"]:
                         # meaning no incoming requests during this period.
                         # stay in this phase
-                        logger.info("===Evaluation Policy=== No walkers were executed")
+                        logger.info(f"===Evaluation Policy=== No walkers were executed")
                         self.policy_state["Evaluation"] = policy_state
                         return
 
@@ -422,110 +388,38 @@ class ActionsOptimizer:
                     # check if all configs have been evaluated
                     if len(policy_state["remain_configs"]) == 0:
                         # best config is the one with the fastest walker latency during the evaluation period
-                        logger.info(f"===Evaluation Policy=== Evaluation phase over.")
-                        best_config = copy.deepcopy(
-                            min(
-                                policy_state["past_configs"],
-                                key=lambda x: x["avg_walker_lat"],
-                            )
+                        logger.info(f"===Evaluation Policy=== Evaluation phase over. ")
+                        best_config = min(
+                            policy_state["past_configs"],
+                            key=lambda x: x["avg_walker_lat"],
                         )
-                        prev_best_config = None
-                        for config in policy_state["past_configs"]:
-                            if all(
-                                [
-                                    config[act]
-                                    == policy_state["prev_best_config"][act]["mode"]
-                                    for act in config.keys()
-                                    if act in action_configs.keys()
-                                ]
-                            ):
-                                prev_best_config = config
-                        # caluculate the decrease in % for the new configuration
-                        lat_decrease_pct = (
-                            prev_best_config["avg_walker_lat"]
-                            - best_config["avg_walker_lat"]
-                        ) / prev_best_config["avg_walker_lat"]
                         # Switch the system to the best config
                         del best_config["avg_walker_lat"]
                         self.actions_change = self._get_action_change(best_config)
-                        if len(self.last_eval_configs) == 0:
+
+                        # ADAPTIVE: if the selected best config is the same config as the previous best one, double the performance period
+                        if all(
+                            [
+                                best_config[act]
+                                == policy_state["prev_best_config"][act]["mode"]
+                                for act in best_config.keys()
+                                if act in action_configs.keys()
+                            ]
+                        ):
+                            policy_state["perf_phase"] *= 2
                             logger.info(
-                                f"best_config : {best_config}\nprev_best_config : {policy_state['prev_best_config']}"
+                                f"===Evaluation Policy=== Best config is the same as previous one. Doubling performance phase to {policy_state['perf_phase']}"
                             )
-                            # ADAPTIVE: if the selected best config is the same config as the previous best one, double the performance period
-                            if (
-                                all(
-                                    [
-                                        best_config[act]
-                                        == policy_state["prev_best_config"][act]["mode"]
-                                        for act in best_config.keys()
-                                        if act in action_configs.keys()
-                                    ]
-                                )
-                                and lat_decrease_pct > THRESHOLD
-                            ):
-                                policy_state["perf_phase"] *= 2
-                                logger.info(
-                                    f"===Evaluation Policy=== Best config is the same as previous one. Doubling performance phase to {policy_state['perf_phase']}"
-                                )
-                        else:
-                            total_lat = 0
-                            if len(self.last_eval_configs) == len(
-                                policy_state["past_configs"]
-                            ):
-                                for prev_config, curr_config in zip(
-                                    self.last_eval_configs, policy_state["past_configs"]
-                                ):
-                                    prev_key = {
-                                        key: val
-                                        for key, val in prev_config.items()
-                                        if key not in ["local_mem", "avg_walker_lat"]
-                                    }
-                                    curr_key = {
-                                        key: val
-                                        for key, val in curr_config.items()
-                                        if key not in ["local_mem", "avg_walker_lat"]
-                                    }
-                                    if curr_key == prev_key and all(
-                                        value == "local" for value in curr_key.values()
-                                    ):
-                                        logger.info("Skipping the local configs")
-                                        continue
-                                    elif curr_key == prev_key:
-                                        total_lat += (
-                                            prev_config["avg_walker_lat"]
-                                            - curr_config["avg_walker_lat"]
-                                        ) / prev_config["avg_walker_lat"]
-                                if (
-                                    abs(total_lat / (len(self.last_eval_configs) - 1))
-                                    > THRESHOLD
-                                ):
-                                    logger.info(
-                                        f"===Evaluation Policy=== The latency has changed for current config w.r.t previous config, skipping for now"
-                                    )
-                                else:
-                                    policy_state["perf_phase"] *= 3
-                                    logger.info(
-                                        f"===Evaluation Policy=== All current config has same latency as previous one. Doubling performance phase to {policy_state['perf_phase']} "
-                                    )
-                        self.last_eval_configs = copy.deepcopy(
-                            policy_state["past_configs"]
-                        )
+
                         policy_state["phase"] = "perf"
                         policy_state["cur_config"] = None
                         policy_state["past_configs"] = []
                         policy_state["cur_phase"] = 0
-                        del best_config["local_mem"]
-                        temp_config = {}
-                        for module, mode in best_config.items():
-                            temp_config[module] = {"mode": mode}
-                        policy_state["prev_best_config"] = copy.deepcopy(temp_config)
                         self.benchmark["requests"] = {}
                         self.benchmark["active"] = True
                         logger.info(
                             f"===Evaluation Policy=== Evaluation phase over. Selected best config as {best_config}"
                         )
-                        self.apply_actions_change()
                     else:
                         next_config = policy_state["remain_configs"][0]
                         del policy_state["remain_configs"][0]
@@ -539,12 +433,13 @@ class ActionsOptimizer:
                             )
                             policy_state["phase"] = "eval_switching"
                             self.benchmark["active"] = False
-                            self.apply_actions_change()
-
+                        else:
+                            policy_state["phase"] = "eval"
+                            self.benchmark["active"] = True
                         logger.info(
                             f"===Evaluation Policy=== Switching to next config to evaluate {next_config}"
                         )
-        if policy_state["phase"] == "eval_switching":
+        elif policy_state["phase"] == "eval_switching":
             # in the middle of switching between configs for evaluation
             if len(self.actions_change) == 0:
                 # this means all actions change have been applied, start evaluation phase
@@ -560,19 +455,7 @@ class ActionsOptimizer:
     def _get_action_change(self, new_action_state):
         """
         Given a new desired action state and the current action_state tracking, return the change set
-        Prioritize any module to remote switch first to avoid situation where linux OOM kill the subprocess first
         """
-
-        def change_to_remote_first(item1, item2):
-            if "to_remote" in item1[1] and "to_remote" in item2[1]:
-                return 0
-            elif "to_remote" in item1[1]:
-                return 1
-            elif "to_remote" in item2[1]:
-                return -1
-            else:
-                return 0
-
         change_state = {}
         for name, new_state in new_action_state.items():
             if name not in action_configs.keys():
@@ -587,49 +470,41 @@ class ActionsOptimizer:
                     f"{cur['mode'] if cur['mode'] is not None else ''}_to_{new_state}"
                 )
                 change_state[name] = change_str
-        sorted_change_state = OrderedDict(
-            sorted(change_state.items(), key=cmp_to_key(change_to_remote_first))
-        )
-
-        return sorted_change_state
+        return change_state
 
     def apply_actions_change(self):
         """
         Apply any action configuration changes
         """
-        actions_change = copy.deepcopy(self.actions_change)
+        actions_change = dict(self.actions_change)
         # For now, to_* and *_to_* are the same logic
         # But this might change down the line
         for name, change_type in actions_change.items():
             logger.info(f"==Actions Optimizer== Changing {name} {change_type}")
-            loaded = False
             if change_type in ["to_local", "_to_local", "_to_module", "to_module"]:
                 # Switching from no action loaded to local
-                loaded = self.load_action_module(name)
+                self.load_action_module(name)
+                del self.actions_change[name]
             elif change_type == "to_remote":
                 loaded = self.load_action_remote(name)
+                if loaded:
+                    del self.actions_change[name]
             elif change_type == "local_to_remote" or change_type == "module_to_remote":
-                loaded = self.load_action_remote(name, unload_existing=True)
+                # loaded = self.load_action_remote(name, unload_existing=True)
+                loaded = self.load_action_remote(name)
+                if loaded:
+                    del self.actions_change[name]
             elif change_type == "remote_to_local" or change_type == "remote_to_module":
-                loaded = self.load_action_module(name, unload_existing=False)
-            if loaded:
-                logger.info(
-                    f"==Actions Optimizer== Changing {name} {change_type} success"
-                )
+                # self.load_action_module(name, unload_existing=True)
+                self.load_action_module(name)
                 del self.actions_change[name]
-                if len(actions_change) > 0 and self.actions_history["active"]:
-                    # Summarize action stats during this period and add to previous state
-                    self.summarize_action_calls()
-                    self.actions_history["history"].append(
-                        {
-                            "ts": time.time(),
-                            "actions_state": self.actions_state.get_all_state(),
-                        }
-                    )
-            else:
-                logger.info(
-                    f"==Actions Optimizer== Changing {name} {change_type} failure"
-                )
+
+        if len(actions_change) > 0 and self.actions_history["active"]:
+            # Summarize action stats during this period and add to previous state
+            self.summarize_action_calls()
+            self.actions_history["history"].append(
+                {"ts": time.time(), "actions_state": self.actions_state.get_all_state()}
+            )
 
     def summarize_action_calls(self):
         actions_summary = {}
