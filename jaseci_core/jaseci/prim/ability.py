@@ -74,8 +74,8 @@ class Ability(Element, JacCode, Interp):
             if caller_module is not None:
                 caller_module_name = caller_module.__name__
                 caller_module_file = caller_module.__file__
-                logger.info("Caller Module Name:", caller_module_name)
-                logger.info("Caller Module File:", caller_module_file)
+                logger.info(f"Caller Module Name:{caller_module_name}")
+                logger.info(f"Caller Module File: {caller_module_file}")
             args = inspect.getfullargspec(func)
 
             self.do_auto_conversions(args, param_list)
