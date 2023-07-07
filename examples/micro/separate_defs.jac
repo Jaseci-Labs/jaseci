@@ -1,9 +1,9 @@
 """Modified for separate defs/decls."""
 
 object MyObj {
-    has:prot a: int;
-    can:priv init(a: int) -> None;
-    can:pub set_a(val: int) -> None;
+    has:protected a: int;
+    can:private init(a: int) -> None;
+    can:public set_a(val: int) -> None;
 }
 
 :o:MyObj:a:init {

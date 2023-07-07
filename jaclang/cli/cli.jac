@@ -14,15 +14,15 @@ object Command {
     has func: callable,
         sig: inspect.Signature;
 
-    can:priv init(func: callable);
+    can:private init(func: callable);
     can call(*args: list, **kwargs: dict);
 }
 
 
 object CommandRegistry {
-    has:priv registry: dict[str, Command],
+    has:private registry: dict[str, Command],
              sub_parsers: argparse._SubParsersActionp;
-    has:pub parser: argparse.ArgumentParser;
+    has:public parser: argparse.ArgumentParser;
 
     can init;
     can register(func: callable);

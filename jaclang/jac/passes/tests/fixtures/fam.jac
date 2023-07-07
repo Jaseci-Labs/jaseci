@@ -8,14 +8,14 @@ Use them to document your code
 import:jac .stuff;
 import:py from .activity, Activity as Actvy;
 
-node:priv location {
-    has:priv x: int, y: int, name: str;
-    has:prot activities: list[Activity];
+node:private location {
+    has:private x: int, y: int, name: str;
+    has:protected activities: list[Activity];
     has intro: str = "Welcome";
     has visited: int = 0;
 
 
-    can:priv record with tourist entry {
+    can:private record with tourist entry {
         visited+=1;
         for i in activities {
             i.duration = visitor.duration;

@@ -567,11 +567,11 @@
 				},
 				{
 					"name": "keyword.control.flow.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    async | continue | entry | exit | del | assert | break | finally | for\n    | from | elif | else | if | except | pass | raise\n    | return | try | while | with\n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    async | await | continue | entry | exit | del | assert | break | finally | for\n    | from | elif | else | if | except | pass | raise\n    | return | try | while | with\n  )\\b\n"
 				},
 				{
 					"name": "storage.modifier.declaration.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    priv|prot|pub|static|freeze\n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    private|protected|public|static|freeze\n  )\\b\n"
 				},
 				{
 					"name": "storage.type.class.jac",

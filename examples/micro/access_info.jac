@@ -1,11 +1,11 @@
 """No more `_` and `__` for access/visibility directives."""
 
 object MyObj {
-    has:prot a: int;
-    can:priv init(a: int) -> None {
+    has:protected a: int;
+    can:private init(a: int) -> None {
         <h>.a = a;
     }
-    can:pub set_a(val: int) -> None {
+    can:public set_a(val: int) -> None {
         <h>.a = val;
     }
 }
