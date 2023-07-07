@@ -13,11 +13,13 @@ import threading
 # Port forward
 # port_fowrward()
 app_freq_pairs = [
-    ("discussion_analysis", 2),
-    ("restaurant_chatbot", 3),
+    ("zeroshot_faq_bot", 1),
+    ("flow_analysis", 2),
+    # ("discussion_analysis", 2),
+    # ("disc_analysis", 2),
+    # ("restaurant_chatbot", 3),
     # ("sentence_pairing", 4),
     # ("virtual_assistant", 1),
-    # ("flow_analysis", 2),
 ]
 # Authenticate
 token = authenticate()
@@ -30,6 +32,7 @@ all_experiments = [
     "zeroshot_faq_bot",
     "flow_analysis",
     "virtual_assistant",
+    "disc_analysis",
 ]
 no_local_config = [
     "flight_chatbot",
@@ -48,7 +51,7 @@ app_to_actions = {
     "zeroshot_faq_bot": ["jac_nlp.text_seg", "jac_nlp.use_qa"],
     "sentence_pairing": ["jac_nlp.sbert_sim", "jac_nlp.bi_enc"],
     "discussion_analysis": ["jac_nlp.bi_enc", "jac_nlp.cl_summer"],
-    # "discussion_analysis": ["jac_nlp.bi_enc"],
+    "disc_analysis": ["jac_nlp.sbert_sim", "jac_nlp.cl_summer"],
     "flight_chatbot": ["jac_nlp.use_qa", "jac_nlp.ent_ext"],
     "restaurant_chatbot": ["jac_nlp.bi_enc", "jac_nlp.tfm_ner"],
     "virtual_assistant": [
@@ -262,7 +265,7 @@ def run_experiments(
                         tasks.append(task)
                         task.start()
                     if i < len(app_freq_pairs) - 1:
-                        event.wait(10)  # Wait for 60 seconds or until the event is set
+                        event.wait(150)  # Wait for 60 seconds or until the event is set
                         event.clear()  # Reset the event for the next thread
         except Exception as e:
             print(e)
@@ -340,7 +343,13 @@ def run_experiments(
             print(f"file: {f_name} exists, updating")
             with open(f_name, "r+") as fp:
                 file_data = json.load(fp)
-                file_data[app_name][policy_str] = results[app_name][policy_str]
+                if (
+                    policy == "evaluation"
+                    or policy == "adaptive"
+                    or policy == "predictive"
+                ):
+                    policy = "evaluation-mem-4096"
+                file_data[app_name][policy] = results[app_name][policy]
                 fp.seek(0)
                 json.dump(file_data, fp, indent=4)
         else:

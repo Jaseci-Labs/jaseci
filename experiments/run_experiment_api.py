@@ -14,10 +14,10 @@ import traceback
 app_freq_pairs = [
     # ("virtual_assistant", 1),
     # ("zeroshot_faq_bot", 1),
-    ("discussion_analysis", 2),
-    ("restaurant_chatbot", 3),
+    # ("discussion_analysis", 2),
+    # ("restaurant_chatbot", 3),
     # ("sentence_pairing", 4),
-    # ("flow_analysis", 2),
+    ("flow_analysis", 2),
 ]
 # Authenticate
 token = authenticate()
@@ -84,13 +84,17 @@ def make_walker_run_request(snt_id, headers, app_name, freq, experiment_duration
     # interval = 1 / freq
     while (time.time() - start_time) < experiment_duration:
         if count == 0:
-            if (time.time() - start_time) >= 100:
+            if (time.time() - start_time) >= int(
+                experiment_duration / len(app_freq_pairs)
+            ):
                 print(f"Returning after {(time.time() - start_time)} seconds")
                 start_time = time.time()
                 count = count + 1
                 return
         elif count > 0:
-            if (time.time() - start_time) >= 100:
+            if (time.time() - start_time) >= int(
+                experiment_duration / len(app_freq_pairs)
+            ):
 
                 print(f"Returning after {(time.time() - start_time)} seconds")
                 start_time = time.time()
@@ -150,6 +154,35 @@ def sent_reg(app_name, headers, mode):
                             headers=headers,
                             json=payload,
                         )
+            elif res.json()["action_status"]["mode"] != mode:
+                payload = {
+                    "config": f"{package}.config",
+                    "name": act_name,
+                }
+                res = requests.post(
+                    url=config.url + "/js_admin/jsorc_actions_config",
+                    headers=headers,
+                    json=payload,
+                )
+                if res.status_code == 200:
+                    payload = {
+                        "name": act_name,
+                        "mode": mode,
+                    }
+                res = requests.post(
+                    url=config.url + "/js_admin/jsorc_actions_load",
+                    headers=headers,
+                    json=payload,
+                )
+                while True:
+                    if res.json()["action_status"]["mode"] == payload["mode"]:
+                        break
+                    time.sleep(10)
+                    res = requests.post(
+                        url=config.url + "/js_admin/jsorc_actions_load",
+                        headers=headers,
+                        json=payload,
+                    )
             else:
                 print(
                     f"{act_name} already loaded: {res.json()['action_status']['mode']}"
