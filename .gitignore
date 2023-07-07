@@ -10,6 +10,7 @@ venv
 
 # Distribution / packaging
 .Python
+play/
 build/
 develop-eggs/
 dist/
