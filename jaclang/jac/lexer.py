@@ -61,6 +61,8 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "COLON",
         "PIPE_FWD",
         "PIPE_BKWD",
+        "DOT_FWD",
+        "DOT_BKWD",
         "LBRACE",
         "RBRACE",
         "SEMI",
@@ -307,6 +309,8 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     WALRUS_EQ = r":="
     PIPE_FWD = r"\|>"
     PIPE_BKWD = r"<\|"
+    DOT_FWD = r"\.>"
+    DOT_BKWD = r"<\."
     COLON = r":"
     LBRACE = r"{"
     RBRACE = r"}"
@@ -414,6 +418,8 @@ class Tokens(str, Enum):
     COLON = "COLON"
     PIPE_FWD = "PIPE_FWD"
     PIPE_BKWD = "PIPE_BKWD"
+    DOT_FWD = "DOT_FWD"
+    DOT_BKWD = "DOT_BKWD"
     LBRACE = "LBRACE"
     RBRACE = "RBRACE"
     SEMI = "SEMI"

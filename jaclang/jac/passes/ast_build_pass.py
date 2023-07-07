@@ -2303,14 +2303,21 @@ class AstBuildPass(Pass):
         atomic_chain_unsafe -> atom arch_ref
         atomic_chain_unsafe -> atom index_slice
         atomic_chain_unsafe -> atom DOT NAME
+        atomic_chain_unsafe -> atom DOT_FWD NAME
+        atomic_chain_unsafe -> atom DOT_BKWD NAME
         """
+        target = node.kid[0]
+        right = node.kid[-1]
+        if type(node.kid[1]) == ast.Token and node.kid[1].name == Tok.DOT_FWD:
+            target = node.kid[-1]
+            right = node.kid[0]
         if len(node.kid) == 3:
             del node.kid[1]
         replace_node(
             node,
             ast.AtomTrailer(
-                target=node.kid[0],
-                right=node.kid[1],
+                target=target,
+                right=right,
                 null_ok=False,
                 parent=node.parent,
                 kid=node.kid,
@@ -2324,15 +2331,21 @@ class AstBuildPass(Pass):
         atomic_chain_safe -> atom NULL_OK arch_ref
         atomic_chain_safe -> atom NULL_OK index_slice
         atomic_chain_safe -> atom NULL_OK DOT NAME
+        atomic_chain_safe -> atom NULL_OK DOT_FWD NAME
+        atomic_chain_safe -> atom NULL_OK DOT_BKWD NAME
         """
-        del node.kid[1]
+        target = node.kid[0]
+        right = node.kid[-1]
+        if type(node.kid[1]) == ast.Token and node.kid[1].name == Tok.DOT_FWD:
+            target = node.kid[-1]
+            right = node.kid[0]
         if len(node.kid) == 3:
             del node.kid[1]
         replace_node(
             node,
             ast.AtomTrailer(
-                target=node.kid[0],
-                right=node.kid[1],
+                target=target,
+                right=right,
                 null_ok=True,
                 parent=node.parent,
                 kid=node.kid,
