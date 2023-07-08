@@ -159,7 +159,7 @@ class AstBuildPass(Pass):
     def exit_import_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        import_stmt -> KW_IMPORT sub_name KW_FROM import_path COMMA name_as_list SEMI
+        import_stmt -> KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
         import_stmt -> KW_IMPORT sub_name import_path KW_AS NAME SEMI
         import_stmt -> KW_IMPORT sub_name import_path SEMI
         """
@@ -259,13 +259,13 @@ class AstBuildPass(Pass):
         if len(node.kid) > 2:
             node.kid = node.kid[0].kid + [node.kid[1], node.kid[2]]
 
-    def exit_name_as_list(self, node: ast.AstNode) -> None:
+    def exit_import_items(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        name_as_list -> name_as_list COMMA NAME KW_AS NAME
-        name_as_list -> name_as_list COMMA NAME
-        name_as_list -> NAME KW_AS NAME
-        name_as_list -> NAME
+        import_items -> import_items COMMA NAME KW_AS NAME
+        import_items -> import_items COMMA NAME
+        import_items -> NAME KW_AS NAME
+        import_items -> NAME
         """
         this_item = None
         if type(node.kid[0]) == ast.Name:
@@ -434,10 +434,25 @@ class AstBuildPass(Pass):
     def exit_all_refs(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        all_refs -> global_ref
-        all_refs -> visitor_ref
-        all_refs -> here_ref
-        all_refs -> arch_ref
+        all_refs -> named_refs
+        all_refs -> special_refs
+        """
+        replace_node(node, node.kid[0])
+
+    def exit_named_refs(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        named_refs -> NAME
+        named_refs -> arch_ref
+        named_refs -> global_ref
+        """
+        replace_node(node, node.kid[0])
+
+    def exit_special_refs(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        special_refs -> here_ref
+        special_refs -> visitor_ref
         """
         replace_node(node, node.kid[0])
 

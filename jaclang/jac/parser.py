@@ -23,7 +23,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
-    # debugfile = "parser.out"
+    debugfile = "parser.out"
 
     # All mighty start rule
     # ---------------------
@@ -109,7 +109,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "KW_IMPORT sub_name import_path SEMI",
         "KW_IMPORT sub_name import_path KW_AS NAME SEMI",
-        "KW_IMPORT sub_name KW_FROM import_path COMMA name_as_list SEMI",
+        "KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI",
     )
     def import_stmt(self, p: YaccProduction) -> YaccProduction:
         """Import rule."""
@@ -146,12 +146,12 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "NAME",
-        "NAME KW_AS NAME",
-        "name_as_list COMMA NAME",
-        "name_as_list COMMA NAME KW_AS NAME",
+        "named_refs",
+        "named_refs KW_AS NAME",
+        "import_items COMMA named_refs",
+        "import_items COMMA named_refs KW_AS NAME",
     )
-    def name_as_list(self, p: YaccProduction) -> YaccProduction:
+    def import_items(self, p: YaccProduction) -> YaccProduction:
         """Name as list rule."""
         return p
 
@@ -221,21 +221,34 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "all_refs",
-        "NAME",
         "dotted_name DOT all_refs",
-        "dotted_name DOT NAME",
     )
     def dotted_name(self, p: YaccProduction) -> YaccProduction:
         """Strict arch reference rule."""
         return p
 
     @_(
-        "arch_ref",
-        "here_ref",
-        "visitor_ref",
-        "global_ref",
+        "named_refs",
+        "special_refs",
     )
     def all_refs(self, p: YaccProduction) -> YaccProduction:
+        """All reference rules."""
+        return p
+
+    @_(
+        "NAME",
+        "arch_ref",
+        "global_ref",
+    )
+    def named_refs(self, p: YaccProduction) -> YaccProduction:
+        """All reference rules."""
+        return p
+
+    @_(
+        "here_ref",
+        "visitor_ref",
+    )
+    def special_refs(self, p: YaccProduction) -> YaccProduction:
         """All reference rules."""
         return p
 
@@ -969,7 +982,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "multistring",
         "BOOL",
         "NULL",
-        "NAME",
         "builtin_type",
     )
     def atom_literal(self, p: YaccProduction) -> YaccProduction:
@@ -1056,9 +1068,9 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "atom DOT NAME",
-        "NAME DOT_FWD atom",
-        "atom DOT_BKWD NAME",
+        "atom DOT all_refs",
+        "atom DOT_FWD all_refs",
+        "atom DOT_BKWD all_refs",
         "atom index_slice",
         "atom arch_ref",
     )
@@ -1067,9 +1079,9 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "atom NULL_OK DOT NAME",
-        "NAME NULL_OK DOT_FWD atom",
-        "atom NULL_OK DOT_BKWD NAME",
+        "atom NULL_OK DOT all_refs",
+        "atom NULL_OK DOT_FWD all_refs",
+        "atom NULL_OK DOT_BKWD all_refs",
         "atom NULL_OK index_slice",
         "atom NULL_OK arch_ref",
     )

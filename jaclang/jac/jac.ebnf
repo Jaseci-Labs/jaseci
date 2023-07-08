@@ -20,12 +20,12 @@ test = [DOC_STRING], KW_TEST, NAME, multistring, code_block;
 
 mod_code = [DOC_STRING], KW_WITH, KW_ENTRY, code_block;
 
-import_stmt = KW_IMPORT, sub_name, (KW_FROM, import_path, COMMA, name_as_list, SEMI | import_path, KW_AS, NAME, SEMI | import_path, SEMI);
+import_stmt = KW_IMPORT, sub_name, (KW_FROM, import_path, COMMA, import_items, SEMI | import_path, KW_AS, NAME, SEMI | import_path, SEMI);
 include_stmt = KW_INCLUDE, sub_name, import_path, SEMI;
 import_path = (import_path_prefix, import_path_tail | import_path_prefix);
 import_path_prefix = DOT, DOT, NAME | DOT, NAME | NAME;
 import_path_tail = import_path_tail, DOT, NAME | DOT, NAME;
-name_as_list = (name_as_list, COMMA, (NAME, KW_AS, NAME | NAME) | NAME, KW_AS, NAME | NAME);
+import_items = (import_items, COMMA, (NAME, KW_AS, NAME | NAME) | NAME, KW_AS, NAME | NAME);
 architype = architype_def | architype_decl;
 architype_decl = [DOC_STRING], (decorators | ε), arch_type, [access_tag], NAME, inherited_archs, (member_block | SEMI);
 architype_def = [DOC_STRING], (dotted_name | ε), strict_arch_ref, member_block;

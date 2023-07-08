@@ -1,6 +1,4 @@
 """Implementation for Jac's Element Abstractions"""
-import:py sys;
-
 
 :enum:AccessMode {
     READ_ONLY,
@@ -120,8 +118,7 @@ import:py sys;
         caller_id |> <here>.rw_access.add;
     }
     else {
-        caller_id |> <here>.ro_access.add;
-        caller_id |> add.>ro_access.><here>;
+        caller_id |> add .> ro_access .> <here>;
     }
 }
 

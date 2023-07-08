@@ -1,1 +1,0 @@
-"""Sentinel class for Jaseci."""

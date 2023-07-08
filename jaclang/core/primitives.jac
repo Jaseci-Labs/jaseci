@@ -3,7 +3,9 @@
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 
+include:jac impl.memory_impl;
 include:jac impl.element_impl;
+
 
 enum AccessMode;
 
@@ -48,3 +50,16 @@ object Element {
     can __jac_give_access(caller_id: UUID, read_write: bool = False);
     can __jac_revoke_access(caller_id: UUID);
 }
+
+object Object:Element {}
+
+object Node:Object {}
+
+object Edge:Object {}
+
+object Walker:Object {}
+
+object Ability:Element {}
+
+object Master:Element {}
+
