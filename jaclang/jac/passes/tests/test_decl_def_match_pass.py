@@ -30,3 +30,11 @@ class DeclDefMatchPassTests(TestCase):
         self.assertIsNotNone(state.sym_tab.tab["Test.say_hi"].node.body)
         self.assertIn("Test.init", state.sym_tab.tab)
         self.assertIsNotNone(state.sym_tab.tab["Test.init"].node.body)
+
+    def test_collision_error_correct(self) -> None:
+        """Basic test for multi defs."""
+        state = jac_file_to_pass(
+            "decls.jac", self.fixture_abs_path(""), DeclDefMatchPass
+        )
+        print(state.errors_had)
+        self.assertTrue(state.errors_had)

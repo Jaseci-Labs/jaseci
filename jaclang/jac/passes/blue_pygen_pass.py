@@ -42,9 +42,11 @@ class BluePygenPass(Pass):
             "\n", "\n" + self.indent_str(indent_delta)
         )
 
-    def decl_def_missing(self) -> None:
+    def decl_def_missing(self, decl: str = "this") -> None:
         """Warn about declaration."""
-        self.error("Unable to find definition for this declaration.")
+        self.error(
+            f"Unable to find definition for {decl} declaration. Perhaps there's an `include` missing?"
+        )
 
     def ds_feature_warn(self) -> None:
         """Warn about feature."""
@@ -244,7 +246,7 @@ class BluePygenPass(Pass):
         if node.body:
             self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
         else:
-            self.decl_def_missing()
+            self.decl_def_missing(node.name.meta["py_code"])
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
@@ -304,7 +306,7 @@ class BluePygenPass(Pass):
         if node.body:
             self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
         else:
-            self.decl_def_missing()
+            self.decl_def_missing(node.name.value)
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
@@ -500,7 +502,7 @@ class BluePygenPass(Pass):
         if node.body:
             self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
         else:
-            self.decl_def_missing()
+            self.decl_def_missing(node.name.meta["py_code"])
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
