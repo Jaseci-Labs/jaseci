@@ -441,7 +441,7 @@ class ArchDef(AstNode):
         self,
         doc: Optional[DocString],
         mod: Optional["NameList"],
-        arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
+        arch: "ArchRef",
         body: "ArchBlock",
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -528,7 +528,7 @@ class AbilityDef(AstNode):
         self,
         doc: Optional[DocString],
         target: Optional["NameList"],
-        ability: "AbilityRef",
+        ability: "ArchRef",
         signature: "FuncSignature | EventSignature",
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -570,7 +570,7 @@ class NameList(AstNode):
 
     def __init__(
         self,
-        names: list["Token|GlobalRef|VisitorRef|HereRef|ArchRefType|Name"],
+        names: list["Token|SpecialVarRef|ArchRef|Name"],
         dotted: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -672,7 +672,7 @@ class EnumDef(AstNode):
     def __init__(
         self,
         doc: Optional[DocString],
-        enum: "EnumRef",
+        enum: "ArchRef",
         mod: Optional["NameList"],
         body: "EnumBlock",
         parent: Optional[AstNode],
@@ -1519,7 +1519,7 @@ class AtomTrailer(AstNode):
     def __init__(
         self,
         target: "AtomType",
-        right: "IndexSlice | ArchRefType | Token",
+        right: "IndexSlice | ArchRef | Token",
         null_ok: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1605,12 +1605,13 @@ class IndexSlice(AstNode):
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-class GlobalRef(AstNode):
+class ArchRef(AstNode):
     """GlobalRef node type for Jac Ast."""
 
     def __init__(
         self,
         name: Name,
+        arch: Token,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1618,49 +1619,24 @@ class GlobalRef(AstNode):
     ) -> None:
         """Initialize global reference expression node."""
         self.name = name
+        self.arch = arch
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-class HereRef(AstNode):
+class SpecialVarRef(AstNode):
     """HereRef node type for Jac Ast."""
 
     def __init__(
         self,
+        var: Token,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
         line: int,
     ) -> None:
-        """Initialize here reference expression node."""
+        """Initialize special var reference expression node."""
+        self.var = var
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
-
-
-class VisitorRef(HereRef):
-    """VisitorRef node type for Jac Ast."""
-
-
-class NodeRef(GlobalRef):
-    """NodeRef node type for Jac Ast."""
-
-
-class EdgeRef(GlobalRef):
-    """EdgeRef node type for Jac Ast."""
-
-
-class WalkerRef(GlobalRef):
-    """WalkerRef node type for Jac Ast."""
-
-
-class ObjectRef(GlobalRef):
-    """ObjectRef node type for Jac Ast."""
-
-
-class EnumRef(GlobalRef):
-    """EnumRef node type for Jac Ast."""
-
-
-class AbilityRef(GlobalRef):
-    """AbilityRef node type for Jac Ast."""
 
 
 class EdgeOpRef(AstNode):
@@ -1746,15 +1722,6 @@ AtomType = Union[
     ListCompr,
     DictCompr,
     AtomTrailer,
-    GlobalRef,
-    HereRef,
-    VisitorRef,
-    NodeRef,
-    EdgeRef,
-    WalkerRef,
-    ObjectRef,
-    AbilityRef,
-    EnumRef,
     EdgeOpRef,
     SpawnCtx,
     FilterCtx,
@@ -1769,14 +1736,7 @@ ExprType = Union[
     AtomType,
 ]
 
-ArchRefType = Union[
-    ObjectRef,
-    EnumRef,
-    AbilityRef,
-    NodeRef,
-    EdgeRef,
-    WalkerRef,
-]
+
 StmtType = Union[
     Architype,
     Ability,

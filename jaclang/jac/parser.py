@@ -238,7 +238,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "NAME",
         "arch_ref",
-        "global_ref",
     )
     def named_refs(self, p: YaccProduction) -> YaccProduction:
         """All reference rules."""
@@ -247,6 +246,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "here_ref",
         "visitor_ref",
+        "root_ref",
     )
     def special_refs(self, p: YaccProduction) -> YaccProduction:
         """All reference rules."""
@@ -1129,11 +1129,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Index/slice rule."""
         return p
 
-    @_("GLOBAL_OP NAME")
-    def global_ref(self, p: YaccProduction) -> YaccProduction:
-        """Global reference rule."""
-        return p
-
     @_("HERE_OP")
     def here_ref(self, p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
@@ -1144,12 +1139,18 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Global reference rule."""
         return p
 
+    @_("ROOT_OP")
+    def root_ref(self, p: YaccProduction) -> YaccProduction:
+        """Global reference rule."""
+        return p
+
     # Architype reference rules
     # -------------------------
     @_(
         "strict_arch_ref",
         "ability_ref",
         "enum_ref",
+        "global_ref",
     )
     def arch_ref(self, p: YaccProduction) -> YaccProduction:
         """Architype reference rule."""
@@ -1193,6 +1194,11 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_("ABILITY_OP NAME")
     def ability_ref(self, p: YaccProduction) -> YaccProduction:
         """Ability reference rule."""
+        return p
+
+    @_("GLOBAL_OP NAME")
+    def global_ref(self, p: YaccProduction) -> YaccProduction:
+        """Global reference rule."""
         return p
 
     # Node / Edge reference and connection rules

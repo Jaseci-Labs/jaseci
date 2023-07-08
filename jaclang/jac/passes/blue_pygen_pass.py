@@ -1084,72 +1084,24 @@ class BluePygenPass(Pass):
         else:
             self.ice("Something went horribly wrong.")
 
-    def exit_global_ref(self, node: ast.GlobalRef) -> None:
+    def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Sub objects.
 
-        name: Token,
+        var: Token,
         """
-        self.emit(node, f"{node.name.value}")
-
-    def exit_here_ref(self, node: ast.HereRef) -> None:
-        """Sub objects.
-
-        name: Optional[Token],
-        """
-        self.emit(node, "self")
+        if node.var.name == Tok.HERE_OP:
+            self.emit(node, "self")
+        else:
+            self.ds_feature_warn()
 
     # NOTE: Incomplete for Jac Purple and Red
-    def exit_visitor_ref(self, node: ast.VisitorRef) -> None:
-        """Sub objects.
-
-        name: Optional[Token],
-        """
-        self.ds_feature_warn()
-
-    # NOTE: Incomplete for Jac Purple and Red
-    def exit_node_ref(self, node: ast.NodeRef) -> None:
-        """Sub objects.
-
-        name: Token,
-        """
-        self.ds_feature_warn()
-
-    # NOTE: Incomplete for Jac Purple and Red
-    def exit_edge_ref(self, node: ast.EdgeRef) -> None:
-        """Sub objects.
-
-        name: Token,
-        """
-        self.ds_feature_warn()
-
-    # NOTE: Incomplete for Jac Purple and Red
-    def exit_walker_ref(self, node: ast.WalkerRef) -> None:
-        """Sub objects.
-
-        name: Token,
-        """
-        self.ds_feature_warn()
-
-    def exit_object_ref(self, node: ast.ObjectRef) -> None:
-        """Sub objects.
-
-        name: Token,
-        """
-        self.emit(node, f"{node.name.value}")
-
-    def exit_enum_ref(self, node: ast.EnumRef) -> None:
+    def exit_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
 
         name: Name,
+        arch: Token,
         """
-        self.emit(node, f"{node.name.value}")
-
-    def exit_ability_ref(self, node: ast.AbilityRef) -> None:
-        """Sub objects.
-
-        name: Token,
-        """
-        self.emit(node, f"{node.name.value}")
+        self.emit(node, f"self.{node.name.value}")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:

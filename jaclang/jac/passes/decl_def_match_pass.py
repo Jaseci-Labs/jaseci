@@ -164,14 +164,14 @@ class DeclDefMatchPass(Pass, SymbolTable):
 
         doc: Optional[DocString],
         target: Optional["NameList"],
-        ability: "AbilityRef",
+        ability: "ArchRef",
         signature: "FuncSignature | EventSignature",
         body: "CodeBlock",
         """
         name = node.ability.name.value
         if node.target:
             owner = node.target.names[-1]
-            if not isinstance(owner, ast.ArchRefType):
+            if not isinstance(owner, ast.ArchRef):
                 self.error("Expected reference to Architype!")
                 owner = ""
             else:

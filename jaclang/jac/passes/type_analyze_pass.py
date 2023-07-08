@@ -648,58 +648,16 @@ class TypeAnalyzePass(Pass, SymbolTable):
         stop: Optional[ExprType],
         """
 
-    def exit_global_ref(self, node: ast.GlobalRef) -> None:
+    def exit_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
 
         name: Name,
         """
 
-    def exit_here_ref(self, node: ast.HereRef) -> None:
+    def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Sub objects.
 
         name: Optional[Token],
-        """
-
-    def exit_visitor_ref(self, node: ast.VisitorRef) -> None:
-        """Sub objects.
-
-        name: Optional[Token],
-        """
-
-    def exit_node_ref(self, node: ast.NodeRef) -> None:
-        """Sub objects.
-
-        name: Name,
-        """
-
-    def exit_edge_ref(self, node: ast.EdgeRef) -> None:
-        """Sub objects.
-
-        name: Name,
-        """
-
-    def exit_walker_ref(self, node: ast.WalkerRef) -> None:
-        """Sub objects.
-
-        name: Name,
-        """
-
-    def exit_object_ref(self, node: ast.ObjectRef) -> None:
-        """Sub objects.
-
-        name: Name,
-        """
-
-    def exit_enum_ref(self, node: ast.EnumRef) -> None:
-        """Sub objects.
-
-        name: Name,
-        """
-
-    def exit_ability_ref(self, node: ast.AbilityRef) -> None:
-        """Sub objects.
-
-        name: Name,
         """
 
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:

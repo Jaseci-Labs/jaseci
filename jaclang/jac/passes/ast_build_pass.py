@@ -2641,11 +2641,11 @@ class AstBuildPass(Pass):
 
         global_ref -> GLOBAL_OP NAME
         """
-        node.kid = [node.kid[-1]]
         replace_node(
             node,
-            ast.GlobalRef(
+            ast.ArchRef(
                 name=node.kid[-1],
+                arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2660,7 +2660,8 @@ class AstBuildPass(Pass):
         """
         replace_node(
             node,
-            ast.HereRef(
+            ast.SpecialVarRef(
+                var=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2675,7 +2676,24 @@ class AstBuildPass(Pass):
         """
         replace_node(
             node,
-            ast.VisitorRef(
+            ast.SpecialVarRef(
+                var=node.kid[0],
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_root_ref(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        root_ref -> ROOT_OP
+        """
+        replace_node(
+            node,
+            ast.SpecialVarRef(
+                var=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2709,11 +2727,11 @@ class AstBuildPass(Pass):
 
         node_ref -> NODE_OP NAME
         """
-        node.kid = [node.kid[-1]]
         replace_node(
             node,
-            ast.NodeRef(
+            ast.ArchRef(
                 name=node.kid[-1],
+                arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2726,11 +2744,11 @@ class AstBuildPass(Pass):
 
         edge_ref -> EDGE_OP NAME
         """
-        node.kid = [node.kid[-1]]
         replace_node(
             node,
-            ast.EdgeRef(
+            ast.ArchRef(
                 name=node.kid[-1],
+                arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2743,11 +2761,11 @@ class AstBuildPass(Pass):
 
         walker_ref -> WALKER_OP NAME
         """
-        node.kid = [node.kid[-1]]
         replace_node(
             node,
-            ast.WalkerRef(
+            ast.ArchRef(
                 name=node.kid[-1],
+                arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2760,11 +2778,11 @@ class AstBuildPass(Pass):
 
         object_ref -> OBJECT_OP NAME
         """
-        node.kid = [node.kid[-1]]
         replace_node(
             node,
-            ast.ObjectRef(
+            ast.ArchRef(
                 name=node.kid[-1],
+                arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2777,11 +2795,11 @@ class AstBuildPass(Pass):
 
         object_ref -> ENUM_OP NAME
         """
-        node.kid = [node.kid[-1]]
         replace_node(
             node,
-            ast.EnumRef(
+            ast.ArchRef(
                 name=node.kid[-1],
+                arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2794,11 +2812,11 @@ class AstBuildPass(Pass):
 
         ability_ref -> ABILITY_OP NAME
         """
-        node.kid = [node.kid[-1]]
         replace_node(
             node,
-            ast.AbilityRef(
+            ast.ArchRef(
                 name=node.kid[-1],
+                arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,

@@ -155,6 +155,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "GLOBAL_OP",
         "HERE_OP",
         "VISITOR_OP",
+        "ROOT_OP",
         "WALKER_OP",
         "NODE_OP",
         "EDGE_OP",
@@ -273,6 +274,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     GLOBAL_OP = r":g:|:global:"
     HERE_OP = r"<h>|<here>"
     VISITOR_OP = r"<v>|<visitor>"
+    ROOT_OP = r"<r>|<root>"
     WALKER_OP = r":w:|:walker:"
     NODE_OP = r":n:|:node:"
     EDGE_OP = r":e:|:edge:"
@@ -512,6 +514,7 @@ class Tokens(str, Enum):
     GLOBAL_OP = "GLOBAL_OP"
     HERE_OP = "HERE_OP"
     VISITOR_OP = "VISITOR_OP"
+    ROOT_OP = "ROOT_OP"
     WALKER_OP = "WALKER_OP"
     NODE_OP = "NODE_OP"
     EDGE_OP = "EDGE_OP"
