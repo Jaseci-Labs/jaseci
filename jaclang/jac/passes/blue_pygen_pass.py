@@ -12,7 +12,7 @@ class BluePygenPass(Pass):
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
-        self.preamble = ast.AstNode(parent=None, kid=[], line=0)
+        self.preamble = ast.AstNode(parent=None, mod_link=None, kid=[], line=0)
         self.preamble.meta["py_code"] = "from __future__ import annotations\n"
         self.cur_arch = None  # tracks current architype during transpilation
 

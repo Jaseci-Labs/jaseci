@@ -10,26 +10,40 @@ from jaclang.jac.passes.ir_pass import Pass
 class AstBuildPass(Pass):
     """Jac Ast build pass."""
 
-    def exit_module(self, node: ast.AstNode) -> None:
+    def enter_module(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
         module -> DOC_STRING element_list
         module -> DOC_STRING
         """
         mod_name = self.mod_path.split(path.sep)[-1].split(".")[0]
-        self.ir = replace_node(
-            node,
-            ast.Module(
-                name=mod_name,
-                doc=node.kid[0],
-                body=node.kid[1] if len(node.kid) == 2 else None,
-                mod_path=self.mod_path,
-                is_imported=False,
-                parent=None,
-                kid=node.kid,
-                line=node.line,
-            ),
+        mod = ast.Module(
+            name=mod_name,
+            doc=node.kid[0],
+            body=node.kid[1] if len(node.kid) == 2 else None,
+            mod_path=self.mod_path,
+            rel_mod_path=self.rel_mod_path,
+            is_imported=False,
+            parent=None,
+            mod_link=None,
+            kid=node.kid,
+            line=node.line,
         )
+        mod.mod_link = mod
+        self.mod_link = mod
+        self.ir = replace_node(node, mod)
+
+    def exit_module(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        module -> DOC_STRING element_list
+        module -> DOC_STRING
+        """
+        if type(self.ir) == ast.Module:
+            self.ir.doc = node.kid[0]
+            self.ir.body = node.kid[1] if len(node.kid) == 2 else None
+        else:
+            self.ice("Self IR should be module!")
 
     def exit_element_list(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -44,6 +58,7 @@ class AstBuildPass(Pass):
             ast.Elements(
                 elements=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -79,6 +94,7 @@ class AstBuildPass(Pass):
                 assignments=node.kid[2],
                 is_frozen=is_frozen,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -115,6 +131,7 @@ class AstBuildPass(Pass):
                 description=node.kid[2],
                 body=node.kid[3],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -132,6 +149,7 @@ class AstBuildPass(Pass):
                 doc=node.kid[0],
                 body=node.kid[1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -149,6 +167,7 @@ class AstBuildPass(Pass):
                 ast.DocString(
                     value=node.kid[0],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -189,6 +208,7 @@ class AstBuildPass(Pass):
                 items=meta["items"],
                 is_absorb=meta["is_absorb"],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -217,6 +237,7 @@ class AstBuildPass(Pass):
                 items=meta["items"],
                 is_absorb=meta["is_absorb"],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -237,6 +258,7 @@ class AstBuildPass(Pass):
             ast.ModulePath(
                 path=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -273,6 +295,7 @@ class AstBuildPass(Pass):
                 name=node.kid[0],
                 alias=node.kid[2] if len(node.kid) == 3 else None,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=[node.kid[0], node.kid[2]] if len(node.kid) == 3 else [node.kid[0]],
                 line=node.line,
             )
@@ -282,6 +305,7 @@ class AstBuildPass(Pass):
                 name=node.kid[-3] if node.kid[-2].name == Tok.KW_AS else node.kid[-1],
                 alias=node.kid[-1] if node.kid[-2].name == Tok.KW_AS else None,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=[node.kid[-3], node.kid[-1]]
                 if node.kid[-2].name == Tok.KW_AS
                 else [node.kid[-1]],
@@ -291,7 +315,11 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ModuleItems(
-                items=node.kid, parent=node.parent, kid=node.kid, line=node.line
+                items=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
             ),
         )
 
@@ -323,6 +351,7 @@ class AstBuildPass(Pass):
                 base_classes=node.kid[5] if len(node.kid) == 7 else node.kid[4],
                 body=node.kid[-1] if type(node.kid[-1]) == ast.ArchBlock else None,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -344,6 +373,7 @@ class AstBuildPass(Pass):
                 arch=node.kid[2] if len(node.kid) == 4 else node.kid[1],
                 body=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -372,7 +402,11 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.Decorators(
-                calls=node.kid, parent=node.parent, kid=node.kid, line=node.line
+                calls=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
             ),
         )
 
@@ -391,6 +425,7 @@ class AstBuildPass(Pass):
             ast.BaseClasses(
                 base_classes=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -426,6 +461,7 @@ class AstBuildPass(Pass):
                 names=node.kid,
                 dotted=True,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -495,6 +531,7 @@ class AstBuildPass(Pass):
                 is_async=False,
                 decorators=None,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -523,6 +560,7 @@ class AstBuildPass(Pass):
                 is_func=type(node.kid[-2]) == ast.FuncSignature,
                 is_async=False,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -547,6 +585,7 @@ class AstBuildPass(Pass):
                 signature=node.kid[-2],
                 body=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -574,6 +613,7 @@ class AstBuildPass(Pass):
                     arch_tag_info=None,
                     return_type=node.kid[-1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -587,6 +627,7 @@ class AstBuildPass(Pass):
                     arch_tag_info=node.kid[0],
                     return_type=node.kid[-1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -606,6 +647,7 @@ class AstBuildPass(Pass):
                 names=node.kid,
                 dotted=False,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -625,6 +667,7 @@ class AstBuildPass(Pass):
                     params=None,
                     return_type=node.kid[0],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -637,6 +680,7 @@ class AstBuildPass(Pass):
                     params=node.kid[0],
                     return_type=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -655,6 +699,7 @@ class AstBuildPass(Pass):
             ast.FuncParams(
                 params=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -689,6 +734,7 @@ class AstBuildPass(Pass):
                 unpack=meta["unpack"],
                 value=meta["value"],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -722,6 +768,7 @@ class AstBuildPass(Pass):
                     base_classes=node.kid[3],
                     body=node.kid[-1] if type(node.kid[-1]) == ast.EnumBlock else None,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -737,6 +784,7 @@ class AstBuildPass(Pass):
                     base_classes=node.kid[4],
                     body=node.kid[-1] if type(node.kid[-1]) == ast.EnumBlock else None,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -758,6 +806,7 @@ class AstBuildPass(Pass):
                 mod=node.kid[1] if len(node.kid) == 4 else None,
                 body=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -779,6 +828,7 @@ class AstBuildPass(Pass):
             ast.EnumBlock(
                 stmts=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -809,6 +859,7 @@ class AstBuildPass(Pass):
                 mutable=False,
                 is_static=False,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -830,6 +881,7 @@ class AstBuildPass(Pass):
             ast.ArchBlock(
                 members=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -869,6 +921,7 @@ class AstBuildPass(Pass):
                 vars=node.kid[3],
                 is_frozen=is_frozen,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -895,6 +948,7 @@ class AstBuildPass(Pass):
             ast.HasVarList(
                 vars=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -915,6 +969,7 @@ class AstBuildPass(Pass):
                 type_tag=node.kid[1],
                 value=node.kid[2] if len(node.kid) == 3 else None,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -957,6 +1012,7 @@ class AstBuildPass(Pass):
                     dict_nest=node.kid[0].dict_nest,
                     null_ok=True,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid[0].kid,
                     line=node.kid[0].line,
                 ),
@@ -982,6 +1038,7 @@ class AstBuildPass(Pass):
                     dict_nest=meta["dict_nest"],
                     null_ok=False,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1020,6 +1077,7 @@ class AstBuildPass(Pass):
             ast.CodeBlock(
                 stmts=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1077,6 +1135,7 @@ class AstBuildPass(Pass):
                     elseifs=None,
                     else_body=None,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1091,6 +1150,7 @@ class AstBuildPass(Pass):
                     elseifs=node.kid[2],
                     else_body=None,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1105,6 +1165,7 @@ class AstBuildPass(Pass):
                     elseifs=None,
                     else_body=node.kid[2],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1119,6 +1180,7 @@ class AstBuildPass(Pass):
                     elseifs=node.kid[2],
                     else_body=node.kid[3],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1136,6 +1198,7 @@ class AstBuildPass(Pass):
             elseifs=None,
             else_body=None,
             parent=node.parent,
+            mod_link=self.mod_link,
             kid=[node.kid[-2], node.kid[-1]],
             line=node.line,
         )
@@ -1148,6 +1211,7 @@ class AstBuildPass(Pass):
             ast.ElseIfs(
                 elseifs=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1164,6 +1228,7 @@ class AstBuildPass(Pass):
             ast.ElseStmt(
                 body=node.kid[0],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1186,6 +1251,7 @@ class AstBuildPass(Pass):
                     excepts=None,
                     finally_body=None,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1199,6 +1265,7 @@ class AstBuildPass(Pass):
                     excepts=node.kid[1],
                     finally_body=None,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1212,6 +1279,7 @@ class AstBuildPass(Pass):
                     excepts=None,
                     finally_body=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1225,6 +1293,7 @@ class AstBuildPass(Pass):
                     excepts=node.kid[1],
                     finally_body=node.kid[2],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1243,6 +1312,7 @@ class AstBuildPass(Pass):
             ast.ExceptList(
                 excepts=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1263,6 +1333,7 @@ class AstBuildPass(Pass):
                     name=None,
                     body=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1276,6 +1347,7 @@ class AstBuildPass(Pass):
                     name=node.kid[1],
                     body=node.kid[2],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1292,6 +1364,7 @@ class AstBuildPass(Pass):
             ast.FinallyStmt(
                 body=node.kid[0],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1314,6 +1387,7 @@ class AstBuildPass(Pass):
                     count_by=node.kid[2],
                     body=node.kid[3],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1327,6 +1401,7 @@ class AstBuildPass(Pass):
                     collection=node.kid[1],
                     body=node.kid[2],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1341,6 +1416,7 @@ class AstBuildPass(Pass):
                     collection=node.kid[2],
                     body=node.kid[3],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1358,6 +1434,7 @@ class AstBuildPass(Pass):
                 condition=node.kid[0],
                 body=node.kid[1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1375,6 +1452,7 @@ class AstBuildPass(Pass):
                 exprs=node.kid[0],
                 body=node.kid[1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1394,6 +1472,7 @@ class AstBuildPass(Pass):
                 expr=node.kid[0],
                 alias=node.kid[2] if len(node.kid) == 3 else None,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=[node.kid[0], node.kid[2]] if len(node.kid) == 3 else [node.kid[0]],
                 line=node.line,
             )
@@ -1403,6 +1482,7 @@ class AstBuildPass(Pass):
                 expr=node.kid[-3] if node.kid[-2].name == Tok.KW_AS else node.kid[-1],
                 alias=node.kid[-1] if node.kid[-2].name == Tok.KW_AS else None,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=[node.kid[-3], node.kid[-1]]
                 if node.kid[-2].name == Tok.KW_AS
                 else [node.kid[-1]],
@@ -1412,7 +1492,11 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ExprAsItemList(
-                items=node.kid, parent=node.parent, kid=node.kid, line=node.line
+                items=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
             ),
         )
 
@@ -1429,6 +1513,7 @@ class AstBuildPass(Pass):
                 ast.RaiseStmt(
                     cause=None,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1440,6 +1525,7 @@ class AstBuildPass(Pass):
                 ast.RaiseStmt(
                     cause=node.kid[0],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1459,6 +1545,7 @@ class AstBuildPass(Pass):
                     condition=node.kid[0],
                     error_msg=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1471,6 +1558,7 @@ class AstBuildPass(Pass):
                     condition=node.kid[0],
                     error_msg=None,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1488,6 +1576,7 @@ class AstBuildPass(Pass):
             ast.CtrlStmt(
                 ctrl=node.kid[0],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1504,6 +1593,7 @@ class AstBuildPass(Pass):
             ast.DeleteStmt(
                 target=node.kid[0],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1520,6 +1610,7 @@ class AstBuildPass(Pass):
             ast.ReportStmt(
                 expr=node.kid[0],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1538,6 +1629,7 @@ class AstBuildPass(Pass):
                 ast.ReturnStmt(
                     expr=None,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1549,6 +1641,7 @@ class AstBuildPass(Pass):
                 ast.ReturnStmt(
                     expr=node.kid[0],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1566,6 +1659,7 @@ class AstBuildPass(Pass):
             ast.YieldStmt(
                 expr=node.kid[0],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1592,6 +1686,7 @@ class AstBuildPass(Pass):
             ast.IgnoreStmt(
                 target=node.kid[0],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1630,6 +1725,7 @@ class AstBuildPass(Pass):
                 target=meta["target"],
                 else_body=meta["else_body"],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1662,6 +1758,7 @@ class AstBuildPass(Pass):
                 hops=meta["hops"],
                 else_body=meta["else_body"],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1677,6 +1774,7 @@ class AstBuildPass(Pass):
             node,
             ast.DisengageStmt(
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1693,6 +1791,7 @@ class AstBuildPass(Pass):
             ast.AwaitStmt(
                 target=node.kid[0],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1714,6 +1813,7 @@ class AstBuildPass(Pass):
                 value=node.kid[1],
                 mutable=not frozen,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -1742,6 +1842,7 @@ class AstBuildPass(Pass):
                     op=node.kid[1],
                     right=node.kid[2],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1764,6 +1865,7 @@ class AstBuildPass(Pass):
                     condition=node.kid[1],
                     else_value=node.kid[2],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1856,6 +1958,7 @@ class AstBuildPass(Pass):
                     op=node.kid[0],
                     operand=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1907,6 +2010,7 @@ class AstBuildPass(Pass):
                     op=node.kid[0],
                     operand=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1946,6 +2050,7 @@ class AstBuildPass(Pass):
                 ast.SpawnObjectExpr(
                     target=node.kid[0],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -1968,6 +2073,7 @@ class AstBuildPass(Pass):
                         target=node.kid[-1],
                         is_dict=False,
                         parent=node.parent,
+                        mod_link=self.mod_link,
                         kid=[node.kid[-1]],
                         line=node.line,
                     ),
@@ -1979,6 +2085,7 @@ class AstBuildPass(Pass):
                         target=node.kid[-1],
                         is_dict=True,
                         parent=node.parent,
+                        mod_link=self.mod_link,
                         kid=[node.kid[-1]],
                         line=node.line,
                     ),
@@ -1998,6 +2105,7 @@ class AstBuildPass(Pass):
                     op=node.kid[0],
                     operand=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2020,6 +2128,7 @@ class AstBuildPass(Pass):
                     op=node.kid[0],
                     operand=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2088,6 +2197,7 @@ class AstBuildPass(Pass):
                     op=node.kid[0],
                     operand=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2136,6 +2246,7 @@ class AstBuildPass(Pass):
             ast.MultiString(
                 strings=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2157,6 +2268,7 @@ class AstBuildPass(Pass):
             ast.ListVal(
                 values=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2175,6 +2287,7 @@ class AstBuildPass(Pass):
             ast.ExprList(
                 values=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2195,6 +2308,7 @@ class AstBuildPass(Pass):
             ast.DictVal(
                 kv_pairs=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2226,6 +2340,7 @@ class AstBuildPass(Pass):
                 collection=meta["collection"],
                 conditional=meta["conditional"],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2276,6 +2391,7 @@ class AstBuildPass(Pass):
                 collection=meta["collection"],
                 conditional=meta["conditional"],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2291,6 +2407,7 @@ class AstBuildPass(Pass):
             key=node.kid[-3],
             value=node.kid[-1],
             parent=node.parent,
+            mod_link=self.mod_link,
             kid=node.kid,
             line=node.line,
         )
@@ -2335,6 +2452,7 @@ class AstBuildPass(Pass):
                 right=right,
                 null_ok=False,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2363,6 +2481,7 @@ class AstBuildPass(Pass):
                 right=right,
                 null_ok=True,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2379,6 +2498,7 @@ class AstBuildPass(Pass):
                 target=node.kid[0],
                 params=node.kid[1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2410,6 +2530,7 @@ class AstBuildPass(Pass):
                         p_args=node.kid[0],
                         p_kwargs=None,
                         parent=node.parent,
+                        mod_link=self.mod_link,
                         kid=node.kid,
                         line=node.line,
                     ),
@@ -2421,6 +2542,7 @@ class AstBuildPass(Pass):
                         p_args=None,
                         p_kwargs=node.kid[0],
                         parent=node.parent,
+                        mod_link=self.mod_link,
                         kid=node.kid,
                         line=node.line,
                     ),
@@ -2433,6 +2555,7 @@ class AstBuildPass(Pass):
                     p_args=node.kid[0],
                     p_kwargs=node.kid[1],
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2451,6 +2574,7 @@ class AstBuildPass(Pass):
             ast.AssignmentList(
                 values=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2473,6 +2597,7 @@ class AstBuildPass(Pass):
                     stop=None,
                     is_range=False,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2491,6 +2616,7 @@ class AstBuildPass(Pass):
                         stop=stop,
                         is_range=True,
                         parent=node.parent,
+                        mod_link=self.mod_link,
                         kid=[node.kid[0]],
                         line=node.line,
                     ),
@@ -2504,6 +2630,7 @@ class AstBuildPass(Pass):
                     stop=node.kid[1],
                     is_range=True,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2520,6 +2647,7 @@ class AstBuildPass(Pass):
             ast.GlobalRef(
                 name=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2534,6 +2662,7 @@ class AstBuildPass(Pass):
             node,
             ast.HereRef(
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2548,6 +2677,7 @@ class AstBuildPass(Pass):
             node,
             ast.VisitorRef(
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2585,6 +2715,7 @@ class AstBuildPass(Pass):
             ast.NodeRef(
                 name=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2601,6 +2732,7 @@ class AstBuildPass(Pass):
             ast.EdgeRef(
                 name=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2617,6 +2749,7 @@ class AstBuildPass(Pass):
             ast.WalkerRef(
                 name=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2633,6 +2766,7 @@ class AstBuildPass(Pass):
             ast.ObjectRef(
                 name=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2649,6 +2783,7 @@ class AstBuildPass(Pass):
             ast.EnumRef(
                 name=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2665,6 +2800,7 @@ class AstBuildPass(Pass):
             ast.AbilityRef(
                 name=node.kid[-1],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2692,6 +2828,7 @@ class AstBuildPass(Pass):
                     filter_cond=node.kid[1],
                     edge_dir=ast.EdgeDir.OUT,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2703,6 +2840,7 @@ class AstBuildPass(Pass):
                     filter_cond=None,
                     edge_dir=ast.EdgeDir.OUT,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2721,6 +2859,7 @@ class AstBuildPass(Pass):
                     filter_cond=node.kid[1],
                     edge_dir=ast.EdgeDir.IN,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2732,6 +2871,7 @@ class AstBuildPass(Pass):
                     filter_cond=None,
                     edge_dir=ast.EdgeDir.IN,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2750,6 +2890,7 @@ class AstBuildPass(Pass):
                     filter_cond=node.kid[1],
                     edge_dir=ast.EdgeDir.BOTH,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2761,6 +2902,7 @@ class AstBuildPass(Pass):
                     filter_cond=None,
                     edge_dir=ast.EdgeDir.BOTH,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2789,6 +2931,7 @@ class AstBuildPass(Pass):
                     filter_cond=node.filter_cond,
                     edge_dir=node.edge_dir,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2807,6 +2950,7 @@ class AstBuildPass(Pass):
                     spawn=node.kid[1],
                     edge_dir=ast.EdgeDir.OUT,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2818,6 +2962,7 @@ class AstBuildPass(Pass):
                     spawn=None,
                     edge_dir=ast.EdgeDir.OUT,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2836,6 +2981,7 @@ class AstBuildPass(Pass):
                     spawn=node.kid[1],
                     edge_dir=ast.EdgeDir.IN,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2847,6 +2993,7 @@ class AstBuildPass(Pass):
                     spawn=None,
                     edge_dir=ast.EdgeDir.IN,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2865,6 +3012,7 @@ class AstBuildPass(Pass):
                     spawn=node.kid[1],
                     edge_dir=ast.EdgeDir.BOTH,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2876,6 +3024,7 @@ class AstBuildPass(Pass):
                     spawn=None,
                     edge_dir=ast.EdgeDir.BOTH,
                     parent=node.parent,
+                    mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
@@ -2892,6 +3041,7 @@ class AstBuildPass(Pass):
             ast.FilterCtx(
                 compares=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2908,6 +3058,7 @@ class AstBuildPass(Pass):
                 p_args=node.kid[1].p_args,
                 p_kwargs=node.kid[1].p_kwargs,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid[1].kid,
                 line=node.line,
             ),
@@ -2933,6 +3084,7 @@ class AstBuildPass(Pass):
                 left=node.kid[0],
                 right=node.kid[2],
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
@@ -2973,6 +3125,7 @@ class AstBuildPass(Pass):
             ast.FString(
                 parts=node.kid,
                 parent=node.parent,
+                mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),

@@ -1367,6 +1367,7 @@ def parse_tree_to_ast(
             ast_tree = ast.Parse(
                 name=tree[0],
                 parent=parent,
+                mod_link=None,
                 line=tree[1] if lineno == 0 else lineno,
                 kid=[],
             )
@@ -1382,6 +1383,7 @@ def parse_tree_to_ast(
                 meta = {
                     "name": tree.type,
                     "parent": parent,
+                    "mod_link": None,
                     "value": tree.value,
                     "kid": [],
                     "line": tree.lineno if lineno == 0 else lineno,

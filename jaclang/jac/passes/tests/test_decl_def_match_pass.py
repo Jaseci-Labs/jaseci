@@ -36,5 +36,8 @@ class DeclDefMatchPassTests(TestCase):
         state = jac_file_to_pass(
             "decls.jac", self.fixture_abs_path(""), DeclDefMatchPass
         )
-        print(state.errors_had)
         self.assertTrue(state.errors_had)
+        self.assertIn("/impl/defs2.jac", state.errors_had[0])
+        self.assertIn("/impl/defs1.jac", state.errors_had[0])
+        self.assertIn("/impl/defs2.jac", state.errors_had[1])
+        self.assertIn("/impl/defs1.jac", state.errors_had[1])

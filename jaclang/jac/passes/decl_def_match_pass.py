@@ -139,7 +139,8 @@ class DeclDefMatchPass(Pass, SymbolTable):
         decl = self.sym_tab.lookup(name)
         if decl and decl.has_decl:
             self.error(
-                f"Ability bound with name {name} already defined on Line {decl.node.line}."
+                f"Ability bound with name {name} already defined on "
+                f"Line {decl.node.line} in {decl.node.mod_link.rel_mod_path}."
             )
         elif decl and decl.has_def:
             decl.has_decl = True
@@ -179,7 +180,8 @@ class DeclDefMatchPass(Pass, SymbolTable):
         decl = self.sym_tab.lookup(name)
         if decl and decl.has_def:
             self.error(
-                f"Ability bound with name {name} already defined on Line {decl.other_node.line}."
+                f"Ability bound with name {name} already defined on "
+                f"Line {decl.other_node.line} in {decl.other_node.mod_link.rel_mod_path}."
             )
         elif decl and decl.has_decl:
             decl.has_def = True
