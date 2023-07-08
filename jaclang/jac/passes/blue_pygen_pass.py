@@ -1100,7 +1100,7 @@ class BluePygenPass(Pass):
 
         var: Token,
         """
-        if node.var.name == Tok.HERE_OP:
+        if node.var.name == Tok.SELF_OP:
             self.emit(node, "self")
         else:
             self.ds_feature_warn()

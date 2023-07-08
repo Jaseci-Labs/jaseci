@@ -10,9 +10,9 @@ with entry {
 }
 
 with entry {
-    {*args, **kwargs} |> <h>.func;
-    <h>.sig = func |> inspect.signature;
-    |> <h>.registry.items;
+    {*args, **kwargs} |> <s>.func;
+    <s>.sig = func |> inspect.signature;
+    |> <s>.registry.items;
 }
 
 with entry {
