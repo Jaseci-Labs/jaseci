@@ -2888,7 +2888,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.EdgeOpRef(
                     filter_cond=node.kid[1],
-                    edge_dir=ast.EdgeDir.BOTH,
+                    edge_dir=ast.EdgeDir.ANY,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -2900,7 +2900,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.EdgeOpRef(
                     filter_cond=None,
-                    edge_dir=ast.EdgeDir.BOTH,
+                    edge_dir=ast.EdgeDir.ANY,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -2911,7 +2911,6 @@ class AstBuildPass(Pass):
     def exit_connect_op(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        connect_op -> connect_any
         connect_op -> connect_from
         connect_op -> connect_to
         """
@@ -2999,36 +2998,36 @@ class AstBuildPass(Pass):
                 ),
             )
 
-    def exit_connect_any(self, node: ast.AstNode) -> None:
-        """Grammar rule.
+    # def exit_connect_any(self, node: ast.AstNode) -> None:
+    #     """Grammar rule.
 
-        connect_any -> CARROW_L_p1 expression CARROW_R_p2
-        connect_any -> CARROW_BI
-        """
-        if len(node.kid) == 3:
-            replace_node(
-                node,
-                ast.ConnectOp(
-                    spawn=node.kid[1],
-                    edge_dir=ast.EdgeDir.BOTH,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        else:
-            replace_node(
-                node,
-                ast.ConnectOp(
-                    spawn=None,
-                    edge_dir=ast.EdgeDir.BOTH,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+    #     connect_any -> CARROW_L_p1 expression CARROW_R_p2
+    #     connect_any -> CARROW_BI
+    #     """
+    #     if len(node.kid) == 3:
+    #         replace_node(
+    #             node,
+    #             ast.ConnectOp(
+    #                 spawn=node.kid[1],
+    #                 edge_dir=ast.EdgeDir.ANY,
+    #                 parent=node.parent,
+    #                 mod_link=self.mod_link,
+    #                 kid=node.kid,
+    #                 line=node.line,
+    #             ),
+    #         )
+    #     else:
+    #         replace_node(
+    #             node,
+    #             ast.ConnectOp(
+    #                 spawn=None,
+    #                 edge_dir=ast.EdgeDir.ANY,
+    #                 parent=node.parent,
+    #                 mod_link=self.mod_link,
+    #                 kid=node.kid,
+    #                 line=node.line,
+    #             ),
+    #         )
 
     def exit_filter_ctx(self, node: ast.AstNode) -> None:
         """Grammar rule.

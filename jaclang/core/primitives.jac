@@ -53,11 +53,18 @@ object Element {
 
 object Object:Element {}
 
-object Node:Object {}
+object Node:Object {
+    has __j_edges: list[Edge];
+}
 
-object Edge:Object {}
+object Edge:Object {
+    has __j_source: Node, __j_target: Node;
+}
 
-object Walker:Object {}
+object Walker:Object {
+    has __j_path: list[Node],
+        __j_next: Node?;
+}
 
 object Ability:Element {}
 

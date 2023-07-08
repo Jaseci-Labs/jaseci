@@ -1233,7 +1233,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "connect_to",
         "connect_from",
-        "connect_any",
+        # "connect_any",
     )
     def connect_op(self, p: YaccProduction) -> YaccProduction:
         """Connect operator rule."""
@@ -1260,13 +1260,13 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Connect from rule."""
         return p
 
-    @_(
-        "CARROW_BI",
-        "CARROW_L_p1 expression CARROW_R_p2",
-    )
-    def connect_any(self, p: YaccProduction) -> YaccProduction:
-        """Connect any rule."""
-        return p
+    # @_(
+    #     "CARROW_BI",
+    #     "CARROW_L_p1 expression CARROW_R_p2",
+    # )
+    # def connect_any(self, p: YaccProduction) -> YaccProduction:
+    #     """Connect any rule."""
+    #     return p
 
     @_(
         "LBRACE EQ filter_compare_list RBRACE",

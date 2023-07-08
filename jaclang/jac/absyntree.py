@@ -11,7 +11,7 @@ class EdgeDir(Enumer):
 
     IN = auto()
     OUT = auto()
-    BOTH = auto()
+    ANY = auto()
 
 
 class AstNode:

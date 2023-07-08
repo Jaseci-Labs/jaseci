@@ -133,7 +133,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         """
         name = (
             f"{node.arch_attached.parent.name.value}.{node.name.value}"
-            if node.arch_attached
+            if node.arch_attached and type(node.arch_attached.parent) == ast.Architype
             else node.name.value
         )
         decl = self.sym_tab.lookup(name)

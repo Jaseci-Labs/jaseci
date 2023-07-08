@@ -147,7 +147,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "ARROW_R_p2",
         "CARROW_L",
         "CARROW_R",
-        "CARROW_BI",
+        # "CARROW_BI",
         "CARROW_L_p1",
         "CARROW_L_p2",
         "CARROW_R_p1",
@@ -263,7 +263,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     ARROW_R_p2 = r"]->"
     CARROW_L = r"<\+\+"
     CARROW_R = r"\+\+>"
-    CARROW_BI = r"<\+\+>"
+    # CARROW_BI = r"<\+\+>"
     CARROW_L_p1 = r"<\+\["
     CARROW_R_p2 = r"]\+>"
     CARROW_L_p2 = r"]\+"
@@ -504,7 +504,7 @@ class Tokens(str, Enum):
     ARROW_R_p2 = "ARROW_R_p2"
     CARROW_L = "CARROW_L"
     CARROW_R = "CARROW_R"
-    CARROW_BI = "CARROW_BI"
+    # CARROW_BI = "CARROW_BI"
     CARROW_L_p1 = "CARROW_L_p1"
     CARROW_L_p2 = "CARROW_L_p2"
     CARROW_R_p1 = "CARROW_R_p1"
