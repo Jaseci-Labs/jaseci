@@ -1,26 +1,26 @@
 """Implemenation for Jac's command line interface."""
 
 :o:Command:a:init(func: callable) {
-    <h>.func = func;
-    <h>.sig = func |> inspect.signature;
+    <s>.func = func;
+    <s>.sig = func |> inspect.signature;
 }
 
 :o:Command:a:call(*args: list, **kwargs: dict) {
-    return {*args, **kwargs} |> <h>.func;
+    return {*args, **kwargs} |> <s>.func;
 }
 
 :o:CommandRegistry:a:init {
-    <h>.registry = {};
-    <h>.parser = {prog="CLI"} |> argparse.ArgumentParser;
-    <h>.sub_parsers = {title="commands", dest="command"}
-        |> <h>.parser.add_subparsers;
+    <s>.registry = {};
+    <s>.parser = {prog="CLI"} |> argparse.ArgumentParser;
+    <s>.sub_parsers = {title="commands", dest="command"}
+        |> <s>.parser.add_subparsers;
 }
 
 :o:CommandRegistry:a:register(func: callable) {
     name = func.__name__;
     cmd = func |> Command;
-    <h>.registry[name] = cmd;
-    cmd_parser = name |> <h>.sub_parsers.add_parser;
+    <s>.registry[name] = cmd;
+    cmd_parser = name |> <s>.sub_parsers.add_parser;
     for param_name, param in |> cmd.sig.parameters.items {
         if param.default is param.empty {
             {f"-{param_name[:1]}", f"--{param_name}",
@@ -36,17 +36,17 @@
 }
 
 :o:CommandRegistry:a:get(name: str) -> Command {
-    return name |> <h>.registry.get;
+    return name |> <s>.registry.get;
 }
 
 :o:CommandRegistry:a:items -> dict[str, Command] {
-    return |> <h>.registry.items;
+    return |> <s>.registry.items;
 }
 
 
 :o:CommandShell:a:init (cmd_reg: CommandRegistry) {
-    <h>.cmd_reg = cmd_reg;
-    <h> |> cmd.Cmd.__init__;
+    <s>.cmd_reg = cmd_reg;
+    <s> |> cmd.Cmd.__init__;
 }
 
 :o:CommandShell:a:do_exit(arg: list) -> bool {
@@ -55,8 +55,8 @@
 
 :o:CommandShell:a:default(line: str) {
     try {
-        args = |> line.split |> <h>.cmd_reg.parser.parse_args |> vars;
-        command = args["command"] |> <h>.cmd_reg.get;
+        args = |> line.split |> <s>.cmd_reg.parser.parse_args |> vars;
+        command = args["command"] |> <s>.cmd_reg.get;
         if command {
             args.pop("command");
             ret = **args |> command.call;
