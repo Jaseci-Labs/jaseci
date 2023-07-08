@@ -227,13 +227,13 @@ class BluePygenPass(Pass):
     def exit_architype(self, node: ast.Architype) -> None:
         """Sub objects.
 
-        name: Token,
-        typ: Token,
+        name: Name,
+        arch_type: Token,
         doc: Optional[DocString],
-        decorators: Optional["ExprList"],
+        decorators: Optional["Decorators"],
         access: Optional[Token],
         base_classes: "BaseClasses",
-        body: "ArchBlock",
+        body: Optional["ArchBlock"],
         """
         if node.decorators:
             self.emit_ln(node, node.decorators.meta["py_code"])
