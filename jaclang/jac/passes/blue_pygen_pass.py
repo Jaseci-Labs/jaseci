@@ -16,6 +16,9 @@ class BluePygenPass(Pass):
         self.preamble.meta["py_code"] = "from __future__ import annotations\n"
         self.cur_arch = None  # tracks current architype during transpilation
 
+        # Special Ops
+        self.elvis = "__jac_elvis = lambda a, b: a if a is not None else b\n"
+
     def enter_node(self, node: ast.AstNode) -> None:
         """Enter node."""
         if node:
@@ -821,7 +824,7 @@ class BluePygenPass(Pass):
             *[">>", "<<", ">>=", "<<="],
             *["//=", "&=", "|=", "^=", "~="],
             *["//", "&", "|", "^"],
-            *[">", "<", ">=", "<=", "==", "!="],
+            *[">", "<", ">=", "<=", "==", "!=", ":="],
             *["and", "or", "in", "not in", "is", "is not"],
         ]:
             self.emit(
@@ -850,6 +853,12 @@ class BluePygenPass(Pass):
         elif node.op.name == Tok.PIPE_BKWD:
             self.emit(
                 node, f"{node.left.meta['py_code']}({node.right.meta['py_code']})"
+            )
+        elif node.op.name == Tok.ELVIS_OP:
+            self.emit_ln_unique(self.preamble, self.elvis)
+            self.emit(
+                node,
+                f"__jac_elvis({node.left.meta['py_code']}, {node.right.meta['py_code']})",
             )
         else:
             self.error(
@@ -993,21 +1002,30 @@ class BluePygenPass(Pass):
         right: IndexSlice | ArchRefType | Token,
         null_ok: bool,
         """
-        if type(node.right) == ast.IndexSlice:
-            self.emit(
-                node,
-                f"{node.target.meta['py_code']}{node.right.meta['py_code']}",
-            )
-        elif type(node.right) == ast.Token:
-            self.emit(
-                node,
-                f"{node.target.meta['py_code']}.{node.right.value}",
-            )
+        if node.null_ok:
+            if type(node.right) == ast.IndexSlice:
+                self.emit(
+                    node,
+                    f"{node.target.meta['py_code']}{node.right.meta['py_code']} "
+                    f"if {node.target.meta['py_code']} is not None else None",
+                )
+            else:
+                self.emit(
+                    node,
+                    f"{node.target.meta['py_code']}.{node.right.meta['py_code']} "
+                    f"if {node.target.meta['py_code']} is not None else None",
+                )
         else:
-            self.emit(
-                node,
-                f"{node.target.meta['py_code']}.{node.right.meta['py_code']}",
-            )
+            if type(node.right) == ast.IndexSlice:
+                self.emit(
+                    node,
+                    f"{node.target.meta['py_code']}{node.right.meta['py_code']}",
+                )
+            else:
+                self.emit(
+                    node,
+                    f"{node.target.meta['py_code']}.{node.right.meta['py_code']}",
+                )
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_func_call(self, node: ast.FuncCall) -> None:
