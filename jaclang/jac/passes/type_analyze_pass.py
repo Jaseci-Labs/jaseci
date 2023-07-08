@@ -290,6 +290,13 @@ class TypeAnalyzePass(Pass, SymbolTable):
         dotted: bool,
         """
 
+    def exit_type_list(self, node: ast.NameList) -> None:
+        """Sub objects.
+
+        names: list[Token],
+        dotted: bool,
+        """
+
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
 
@@ -341,6 +348,13 @@ class TypeAnalyzePass(Pass, SymbolTable):
         """Sub objects.
 
         stmts: list['StmtType'],
+        """
+
+    def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
+        """Sub objects.
+
+        type_ctx: TypeList,
+        body: CodeBlock,
         """
 
     def exit_if_stmt(self, node: ast.IfStmt) -> None:

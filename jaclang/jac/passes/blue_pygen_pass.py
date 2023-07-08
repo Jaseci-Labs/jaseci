@@ -424,13 +424,17 @@ class BluePygenPass(Pass):
     def exit_name_list(self, node: ast.NameList) -> None:
         """Sub objects.
 
+        names: list[all_refs],
+        """
+        self.emit(node, ".".join([i.meta["py_code"] for i in node.names]))
+
+    def exit_type_list(self, node: ast.TypeList) -> None:
+        """Sub objects.
+
         names: list[Token],
         dotted: bool,
         """
-        if node.dotted:
-            self.emit(node, ".".join([i.meta["py_code"] for i in node.names]))
-        else:
-            self.emit(node, ", ".join([i.meta["py_code"] for i in node.names]))
+        # self.emit(node, ", ".join([i.meta["py_code"] for i in node.types]))
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
@@ -549,6 +553,14 @@ class BluePygenPass(Pass):
             self.emit_ln(node, node.elseifs.meta["py_code"])
         if node.else_body:
             self.emit_ln(node, node.else_body.meta["py_code"])
+
+    def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
+        """Sub objects.
+
+        type_ctx: TypeList,
+        body: CodeBlock,
+        """
+        self.ds_feature_warn()
 
     def exit_else_ifs(self, node: ast.ElseIfs) -> None:
         """Sub objects.

@@ -571,7 +571,6 @@ class NameList(AstNode):
     def __init__(
         self,
         names: list["Token|SpecialVarRef|ArchRef|Name"],
-        dotted: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -579,7 +578,22 @@ class NameList(AstNode):
     ) -> None:
         """Initialize name list node."""
         self.names = names
-        self.dotted = dotted
+        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+
+class TypeList(AstNode):
+    """TypeList node type for Jac Ast."""
+
+    def __init__(
+        self,
+        types: list["TypeSpec"],
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize type list node."""
+        self.types = types
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
@@ -820,6 +834,24 @@ class CodeBlock(AstNode):
     ) -> None:
         """Initialize code block node."""
         self.stmts = stmts
+        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+
+class TypedCtxBlock(AstNode):
+    """TypedCtxBlock node type for Jac Ast."""
+
+    def __init__(
+        self,
+        type_ctx: TypeList,
+        body: CodeBlock,
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize typed context block node."""
+        self.type_ctx = type_ctx
+        self.body = body
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 

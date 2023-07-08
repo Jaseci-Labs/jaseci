@@ -300,18 +300,18 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "KW_WITH KW_EXIT return_type_tag",
         "KW_WITH STAR_MUL KW_ENTRY return_type_tag",
         "KW_WITH STAR_MUL KW_EXIT return_type_tag",
-        "KW_WITH name_list KW_ENTRY return_type_tag",
-        "KW_WITH name_list KW_EXIT return_type_tag",
+        "KW_WITH type_list KW_ENTRY return_type_tag",
+        "KW_WITH type_list KW_EXIT return_type_tag",
     )
     def event_clause(self, p: YaccProduction) -> YaccProduction:
         """Event clause rule."""
         return p
 
     @_(
-        "dotted_name",
-        "name_list COMMA dotted_name",
+        "type_name",
+        "type_list COMMA type_name",
     )
-    def name_list(self, p: YaccProduction) -> YaccProduction:
+    def type_list(self, p: YaccProduction) -> YaccProduction:
         """Name list rule."""
         return p
 
@@ -519,6 +519,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "architype_decl",
         "ability_decl",
+        "typed_ctx_block",
         "assignment SEMI",
         "static_assignment",
         "expression SEMI",
@@ -539,6 +540,11 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     )
     def statement(self, p: YaccProduction) -> YaccProduction:
         """Statement rule."""
+        return p
+
+    @_("RETURN_HINT type_list code_block")
+    def typed_ctx_block(self, p: YaccProduction) -> YaccProduction:
+        """Typed context block rule."""
         return p
 
     @_(

@@ -448,9 +448,7 @@ class AstBuildPass(Pass):
     def exit_dotted_name(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        dotted_name -> dotted_name DOT NAME
         dotted_name -> dotted_name DOT all_refs
-        dotted_name -> NAME
         dotted_name -> all_refs
         """
         if len(node.kid) == 3:
@@ -459,7 +457,6 @@ class AstBuildPass(Pass):
             node,
             ast.NameList(
                 names=node.kid,
-                dotted=True,
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -594,8 +591,8 @@ class AstBuildPass(Pass):
     def exit_event_clause(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        event_clause -> KW_WITH name_list KW_EXIT return_type_tag
-        event_clause -> KW_WITH name_list KW_ENTRY return_type_tag
+        event_clause -> KW_WITH type_list KW_EXIT return_type_tag
+        event_clause -> KW_WITH type_list KW_ENTRY return_type_tag
         event_clause -> KW_WITH STAR_MUL KW_EXIT return_type_tag
         event_clause -> KW_WITH STAR_MUL KW_ENTRY return_type_tag
         event_clause -> KW_WITH KW_EXIT return_type_tag
@@ -633,19 +630,18 @@ class AstBuildPass(Pass):
                 ),
             )
 
-    def exit_name_list(self, node: ast.AstNode) -> None:
+    def exit_type_list(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        name_list -> name_list COMMA dotted_name
-        name_list -> dotted_name
+        type_list -> type_list COMMA dotted_name
+        type_list -> dotted_name
         """
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
         replace_node(
             node,
-            ast.NameList(
-                names=node.kid,
-                dotted=False,
+            ast.TypeList(
+                types=node.kid,
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -1116,6 +1112,24 @@ class AstBuildPass(Pass):
         statement -> architype_decl
         """
         replace_node(node, node.kid[0])
+
+    def exit_typed_ctx_block(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        typed_ctx_block -> RETURN_HINT type_list code_block
+        """
+        del node.kid[0]
+        replace_node(
+            node,
+            ast.TypedCtxBlock(
+                type_ctx=node.kid[0],
+                body=node.kid[1],
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_if_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
