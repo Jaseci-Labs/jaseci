@@ -245,7 +245,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "here_ref",
-        "visitor_ref",
+        "self_ref",
         "root_ref",
     )
     def special_refs(self, p: YaccProduction) -> YaccProduction:
@@ -1134,8 +1134,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Global reference rule."""
         return p
 
-    @_("VISITOR_OP")
-    def visitor_ref(self, p: YaccProduction) -> YaccProduction:
+    @_("SELF_OP")
+    def self_ref(self, p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
         return p
 

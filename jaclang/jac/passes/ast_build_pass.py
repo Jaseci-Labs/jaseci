@@ -488,7 +488,7 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         special_refs -> here_ref
-        special_refs -> visitor_ref
+        special_refs -> self_ref
         """
         replace_node(node, node.kid[0])
 
@@ -2669,10 +2669,10 @@ class AstBuildPass(Pass):
             ),
         )
 
-    def exit_visitor_ref(self, node: ast.AstNode) -> None:
+    def exit_self_ref(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        visitor_ref -> VISITOR_OP
+        self_ref -> SELF_OP
         """
         replace_node(
             node,

@@ -275,7 +275,6 @@ class BluePygenPass(Pass):
         """
         self.emit(node, ", ".join([i.meta["py_code"] for i in node.base_classes]))
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
