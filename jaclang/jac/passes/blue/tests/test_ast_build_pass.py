@@ -3,7 +3,7 @@ import inspect
 
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
-from jaclang.jac.passes import AstBuildPass
+from jaclang.jac.passes.blue import AstBuildPass
 from jaclang.utils.fstring_parser import FStringParser
 from jaclang.utils.test import TestCaseMicroSuite
 

@@ -1,7 +1,7 @@
 """Test ast build pass module."""
 import inspect
 
-from jaclang.jac.passes import BluePygenPass
+from jaclang.jac.passes.blue import BluePygenPass
 from jaclang.jac.transpiler import jac_file_to_final_pass, transpile_jac_file
 from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
 from jaclang.utils.test import TestCaseMicroSuite
@@ -17,7 +17,7 @@ class BluePygenPassTests(TestCaseMicroSuite):
     def test_jac_cli(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_final_pass(
-            file_path="../../../../cli/cli.jac", base_dir=self.fixture_abs_path("")
+            file_path="../../../../../cli/cli.jac", base_dir=self.fixture_abs_path("")
         )
         self.assertFalse(code_gen.errors_had)
 

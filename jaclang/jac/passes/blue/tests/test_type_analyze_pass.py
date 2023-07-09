@@ -1,7 +1,7 @@
 """Test type analyze pass module."""
 import inspect
 
-from jaclang.jac.passes import TypeAnalyzePass
+from jaclang.jac.passes.blue import TypeAnalyzePass
 from jaclang.jac.transpiler import jac_file_to_final_pass
 from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
 from jaclang.utils.test import TestCaseMicroSuite
@@ -17,7 +17,7 @@ class TypeAnalyzePassTests(TestCaseMicroSuite):
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_final_pass(
-            "../../../../cli/cli.jac", self.fixture_abs_path("")
+            "../../../../../cli/cli.jac", self.fixture_abs_path("")
         )
         # print(code_gen.ir.meta["py_code"])
         self.assertFalse(code_gen.errors_had)

@@ -3,7 +3,7 @@ from os import path
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
-from jaclang.jac.passes import SubNodeTabPass
+from jaclang.jac.passes.blue import SubNodeTabPass
 
 
 class ImportPass(Pass):
