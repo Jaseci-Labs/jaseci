@@ -1,7 +1,7 @@
 """Test ast build pass module."""
 import inspect
 
-from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
+from jaclang.jac.passes import BluePygenPass
 from jaclang.jac.transpiler import jac_file_to_final_pass, transpile_jac_file
 from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
 from jaclang.utils.test import TestCaseMicroSuite

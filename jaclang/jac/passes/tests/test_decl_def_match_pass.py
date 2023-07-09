@@ -1,5 +1,5 @@
 """Test pass module."""
-from jaclang.jac.passes.decl_def_match_pass import DeclDefMatchPass
+from jaclang.jac.passes import DeclDefMatchPass
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCase
 

@@ -4,7 +4,7 @@ from os import path
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import replace_node
 from jaclang.jac.lexer import Tokens as Tok
-from jaclang.jac.passes.ir_pass import Pass
+from jaclang.jac.passes import Pass
 
 
 class AstBuildPass(Pass):

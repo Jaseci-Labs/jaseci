@@ -1,7 +1,7 @@
 """Test type analyze pass module."""
 import inspect
 
-from jaclang.jac.passes.type_analyze_pass import TypeAnalyzePass
+from jaclang.jac.passes import TypeAnalyzePass
 from jaclang.jac.transpiler import jac_file_to_final_pass
 from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
 from jaclang.utils.test import TestCaseMicroSuite

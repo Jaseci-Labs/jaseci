@@ -3,7 +3,7 @@ from types import ModuleType
 from typing import Any
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.passes.ir_pass import Pass
+from jaclang.jac.passes import Pass
 from jaclang.jac.sym_table import SymbolTable, TypedSymbol
 
 

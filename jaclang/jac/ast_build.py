@@ -3,8 +3,8 @@ from os import path
 
 from jaclang.jac.parser import JacLexer
 from jaclang.jac.parser import JacParser
-from jaclang.jac.passes.ast_build_pass import AstBuildPass
-from jaclang.jac.passes.ir_pass import Pass
+from jaclang.jac.passes import AstBuildPass
+from jaclang.jac.passes import Pass
 
 
 def jac_file_to_ast_pass(file_path: str, base_dir: str) -> Pass:

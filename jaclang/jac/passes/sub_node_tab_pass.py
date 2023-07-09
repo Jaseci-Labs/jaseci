@@ -2,7 +2,7 @@
 from copy import copy
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.passes.ir_pass import Pass
+from jaclang.jac.passes import Pass
 
 
 class SubNodeTabPass(Pass):

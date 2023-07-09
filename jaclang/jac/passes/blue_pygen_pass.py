@@ -2,7 +2,7 @@
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import INIT_FUNC, JAC_LANG_IMP
 from jaclang.jac.lexer import Tokens as Tok
-from jaclang.jac.passes.ir_pass import Pass
+from jaclang.jac.passes import Pass
 
 
 class BluePygenPass(Pass):

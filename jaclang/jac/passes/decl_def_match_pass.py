@@ -1,6 +1,6 @@
 """Connect Decls and Defs in AST."""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.passes.ir_pass import Pass
+from jaclang.jac.passes import Pass
 from jaclang.jac.sym_table import DefDeclSymbol, SymbolTable
 
 

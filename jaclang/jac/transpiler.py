@@ -3,12 +3,14 @@ from typing import Type, TypeVar
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.ast_build import jac_file_to_ast_pass
-from jaclang.jac.passes.blue_pygen_pass import BluePygenPass
-from jaclang.jac.passes.decl_def_match_pass import DeclDefMatchPass
-from jaclang.jac.passes.import_pass import ImportPass
-from jaclang.jac.passes.ir_pass import Pass
-from jaclang.jac.passes.sub_node_tab_pass import SubNodeTabPass
-from jaclang.jac.passes.type_analyze_pass import TypeAnalyzePass
+from jaclang.jac.passes import (
+    BluePygenPass,
+    DeclDefMatchPass,
+    ImportPass,
+    Pass,
+    SubNodeTabPass,
+    TypeAnalyzePass,
+)
 
 pass_schedule = [
     SubNodeTabPass,

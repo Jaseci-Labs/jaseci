@@ -2,9 +2,8 @@
 from os import path
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.ast_build import jac_file_to_ast_pass
-from jaclang.jac.passes.ir_pass import Pass
-from jaclang.jac.passes.sub_node_tab_pass import SubNodeTabPass
+from jaclang.jac.passes import Pass
+from jaclang.jac.passes import SubNodeTabPass
 
 
 class ImportPass(Pass):
@@ -49,6 +48,8 @@ class ImportPass(Pass):
 
     def import_module(self, node: ast.Import, mod_path: str) -> ast.AstNode:
         """Import a module."""
+        from jaclang.jac.ast_build import jac_file_to_ast_pass
+
         target = path.normpath(
             path.join(path.dirname(mod_path), *(node.path.path_str.split("."))) + ".jac"
         )
