@@ -11,9 +11,9 @@
 
 :o:CommandRegistry:a:init {
     <s>.registry = {};
-    <s>.parser = {prog="CLI"} |> argparse.ArgumentParser;
-    <s>.sub_parsers = {title="commands", dest="command"}
-        |> <s>.parser.add_subparsers;
+    <s>.parser = (prog="CLI") |> argparse.ArgumentParser;
+    <s>.sub_parsers =
+        (title="commands", dest="command") |> <s>.parser.add_subparsers;
 }
 
 :o:CommandRegistry:a:register(func: callable) {
@@ -23,13 +23,13 @@
     cmd_parser = name |> <s>.sub_parsers.add_parser;
     for param_name, param in |> cmd.sig.parameters.items {
         if param.default is param.empty {
-            {f"-{param_name[:1]}", f"--{param_name}",
-            required=True, type=param.annotation|>eval}
+            (f"-{param_name[:1]}", f"--{param_name}",
+            required=True, type=param.annotation|>eval)
                 |> cmd_parser.add_argument;
         }
         else {
-            {f"-{param_name[:1]}", f"--{param_name}",
-            default=param.default, type=param.annotation|>eval}
+            (f"-{param_name[:1]}", f"--{param_name}",
+            default=param.default, type=param.annotation|>eval)
                 |> cmd_parser.add_argument;
         }
     }

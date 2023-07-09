@@ -1463,6 +1463,30 @@ class ListVal(ExprList):
     """ListVal node type for Jac Ast."""
 
 
+class SetVal(ExprList):
+    """SetVal node type for Jac Ast."""
+
+
+class TupleVal(AstNode):
+    """TupleVal node type for Jac Ast."""
+
+    def __init__(
+        self,
+        first_expr: Optional["ExprType"],
+        exprs: Optional[ExprList],
+        assigns: Optional[AssignmentList],
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize tuple value node."""
+        self.first_expr = first_expr
+        self.exprs = exprs
+        self.assigns = assigns
+        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+
 class DictVal(AstNode):
     """ExprDict node type for Jac Ast."""
 
@@ -1479,7 +1503,7 @@ class DictVal(AstNode):
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-class ListCompr(AstNode):
+class InnerCompr(AstNode):
     """ListCompr node type for Jac Ast."""
 
     def __init__(
@@ -1488,6 +1512,9 @@ class ListCompr(AstNode):
         name: Name,
         collection: "ExprType",
         conditional: Optional["ExprType"],
+        is_list: bool,
+        is_gen: bool,
+        is_set: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1498,6 +1525,9 @@ class ListCompr(AstNode):
         self.name = name
         self.collection = collection
         self.conditional = conditional
+        self.is_list = is_list
+        self.is_gen = is_gen
+        self.is_set = is_set
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
@@ -1711,10 +1741,6 @@ class ConnectOp(AstNode):
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-class SpawnCtx(ParamList):
-    """SpawnCtx node type for Jac Ast."""
-
-
 class FilterCtx(AstNode):
     """FilterCtx node type for Jac Ast."""
 
@@ -1750,12 +1776,13 @@ class FString(AstNode):
 AtomType = Union[
     MultiString,
     ListVal,
+    TupleVal,
+    SetVal,
     DictVal,
-    ListCompr,
+    InnerCompr,
     DictCompr,
     AtomTrailer,
     EdgeOpRef,
-    SpawnCtx,
     FilterCtx,
 ]
 

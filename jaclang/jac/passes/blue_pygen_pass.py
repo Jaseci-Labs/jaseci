@@ -842,11 +842,11 @@ class BluePygenPass(Pass):
                 node,
                 f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
             )
-        elif node.op.name == Tok.PIPE_FWD and type(node.left) == ast.SpawnCtx:
-            self.emit(
-                node, f"{node.right.meta['py_code']}({node.left.meta['py_code']})"
-            )
-        elif node.op.name == Tok.PIPE_FWD and type(node.right) == ast.SpawnCtx:
+        elif node.op.name == Tok.PIPE_FWD and type(node.left) == ast.TupleVal:
+            params = node.left.meta["py_code"]
+            params = params.replace(",)", ")") if params[-2:] == ",)" else params
+            self.emit(node, f"{node.right.meta['py_code']}{params}")
+        elif node.op.name == Tok.PIPE_FWD and type(node.right) == ast.TupleVal:
             self.ds_feature_warn()
         elif node.op.name == Tok.PIPE_FWD:
             self.emit(node, f"{node.right.meta['py_code']}({node.left.meta['py_code']}")
@@ -942,6 +942,37 @@ class BluePygenPass(Pass):
             node, f"[{', '.join([value.meta['py_code'] for value in node.values])}]"
         )
 
+    def exit_set_val(self, node: ast.ListVal) -> None:
+        """Sub objects.
+
+        values: list[ExprType],
+        """
+        self.emit(
+            node, f"{{{', '.join([value.meta['py_code'] for value in node.values])}}}"
+        )
+
+    def exit_tuple_val(self, node: ast.TupleVal) -> None:
+        """Sub objects.
+
+        first_expr: Optional["ExprType"],
+        exprs: Optional[ExprList],
+        assigns: Optional[AssignmentList],
+        """
+        self.emit(node, "(")
+        if node.first_expr:
+            self.emit(node, f"{node.first_expr.meta['py_code']}")
+        if not node.exprs and not node.assigns:
+            self.emit(node, ",)")
+        if node.exprs:
+            self.emit(node, f", {node.exprs.meta['py_code']}")
+
+        if node.assigns:
+            if node.first_expr:
+                self.emit(node, f", {node.assigns.meta['py_code']}")
+            else:
+                self.emit(node, f"{node.assigns.meta['py_code']}")
+        self.emit(node, ")")
+
     def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
@@ -961,13 +992,16 @@ class BluePygenPass(Pass):
             f"{{{', '.join([kv_pair.meta['py_code'] for kv_pair in node.kv_pairs])}}}",
         )
 
-    def exit_list_compr(self, node: ast.ListCompr) -> None:
+    def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
         out_expr: "ExprType",
-        name: Token,
+        name: Name,
         collection: "ExprType",
         conditional: Optional["ExprType"],
+        is_list: bool,
+        is_gen: bool,
+        is_set: bool,
         """
         partial = (
             f"{node.out_expr.meta['py_code']} for {node.name.value} "
@@ -975,7 +1009,12 @@ class BluePygenPass(Pass):
         )
         if node.conditional:
             partial += f" if {node.conditional.meta['py_code']}"
-        self.emit(node, f"[{partial}]")
+        if node.is_list:
+            self.emit(node, f"[{partial}]")
+        elif node.is_set:
+            self.emit(node, f"{{{partial}}}")
+        elif node.is_gen:
+            self.emit(node, f"({partial})")
 
     def exit_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
@@ -1140,29 +1179,6 @@ class BluePygenPass(Pass):
         edge_dir: EdgeDir,
         """
         self.ds_feature_warn()
-
-    def exit_spawn_ctx(self, node: ast.SpawnCtx) -> None:
-        """Sub objects.
-
-        p_args: Optional[ExprList],
-        p_kwargs: Optional["AssignmentList"],
-        """
-        single_arg = True
-        single_kwarg = True
-        if node.p_args:
-            for arg in node.p_args.values:
-                if single_arg:
-                    self.emit(node, f"{arg.meta['py_code']}")
-                    single_arg = False
-                else:
-                    self.emit(node, f", {arg.meta['py_code']}")
-        if node.p_kwargs:
-            for kwarg in node.p_kwargs.values:
-                if single_arg and single_kwarg:
-                    self.emit(node, f"{kwarg.meta['py_code']}")
-                    single_kwarg = False
-                else:
-                    self.emit(node, f", {kwarg.meta['py_code']}")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_filter_ctx(self, node: ast.FilterCtx) -> None:

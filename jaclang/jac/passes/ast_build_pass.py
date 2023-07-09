@@ -1896,8 +1896,6 @@ class AstBuildPass(Pass):
     def exit_pipe(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        pipe -> spawn_ctx PIPE_FWD pipe
-        pipe -> pipe_back PIPE_FWD spawn_ctx
         pipe -> pipe_back PIPE_FWD filter_ctx
         pipe -> pipe_back PIPE_FWD pipe
         pipe -> pipe_back
@@ -1907,8 +1905,6 @@ class AstBuildPass(Pass):
     def exit_pipe_back(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        pipe_back -> spawn_ctx PIPE_BKWD pipe_back
-        pipe_back -> elvis_check PIPE_BKWD spawn_ctx
         pipe_back -> elvis_check PIPE_BKWD filter_ctx
         pipe_back -> elvis_check PIPE_BKWD pipe_back
         pipe_back -> elvis_check
@@ -2239,8 +2235,12 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         atom_collection -> dict_compr
+        atom_collection -> set_compr
+        atom_collection -> gen_compr
         atom_collection -> list_compr
         atom_collection -> dict_val
+        atom_collection -> set_val
+        atom_collection -> tuple_val
         atom_collection -> list_val
         """
         replace_node(node, node.kid[0])
@@ -2288,6 +2288,47 @@ class AstBuildPass(Pass):
             ),
         )
 
+    def exit_tuple_val(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        tuple_val -> LPAREN tuple_list RPAREN
+        tuple_val -> LPAREN RPAREN
+        """
+        if len(node.kid) > 2:
+            replace_node(node, node.kid[1])
+        else:
+            node.kid = []
+            replace_node(
+                node,
+                ast.TupleVal(
+                    first_expr=None,
+                    exprs=None,
+                    assigns=None,
+                    parent=node.parent,
+                    mod_link=self.mod_link,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
+
+    def exit_set_val(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        set_val -> LBRACE expr_list RBRACE
+        """
+        ret = replace_node(node, node.kid[1])
+        node = ret if ret else node
+        replace_node(
+            node,
+            ast.SetVal(
+                values=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
     def exit_expr_list(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
@@ -2300,6 +2341,49 @@ class AstBuildPass(Pass):
             node,
             ast.ExprList(
                 values=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_tuple_list(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        tuple_list -> expression COMMA expr_list COMMA assignment_list
+        tuple_list -> expression COMMA assignment_list
+        tuple_list -> assignment_list
+        tuple_list -> expression COMMA expr_list
+        tuple_list -> expression COMMA
+        """
+        first_expr = None
+        exprs = None
+        assigns = None
+        if len(node.kid) == 1:
+            assigns = node.kid[0]
+        elif len(node.kid) == 2:
+            del node.kid[1]
+            first_expr = node.kid[0]
+        elif len(node.kid) == 3:
+            del node.kid[1]
+            first_expr = node.kid[0]
+            if isinstance(node.kid[1], ast.ExprList):
+                exprs = node.kid[1]
+            else:
+                assigns = node.kid[1]
+        elif len(node.kid) == 5:
+            first_expr = node.kid[0]
+            exprs = node.kid[2]
+            assigns = node.kid[4]
+            del node.kid[3]
+            del node.kid[1]
+        replace_node(
+            node,
+            ast.TupleVal(
+                first_expr=first_expr,
+                exprs=exprs,
+                assigns=assigns,
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2331,28 +2415,64 @@ class AstBuildPass(Pass):
     def exit_list_compr(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        list_compr -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE
-        list_compr -> LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE
+        list_compr -> LSQUARE inner_compr RSQUARE
+        """
+        ret = replace_node(node, node.kid[1])
+        if type(ret) == ast.InnerCompr:
+            ret.is_list = True
+        else:
+            self.ice("Expected InnerCompr")
+
+    def exit_gen_compr(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        gen_compr -> LPAREN inner_compr RPAREN
+        """
+        ret = replace_node(node, node.kid[1])
+        if type(ret) == ast.InnerCompr:
+            ret.is_gen = True
+        else:
+            self.ice("Expected InnerCompr")
+
+    def exit_set_compr(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        set_compr -> LBRACE inner_compr RBRACE
+        """
+        ret = replace_node(node, node.kid[1])
+        if type(ret) == ast.InnerCompr:
+            ret.is_set = True
+        else:
+            self.ice("Expected InnerCompr")
+
+    def exit_inner_compr(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        inner_compr -> expression KW_FOR NAME KW_IN walrus_assign KW_IF expression
+        inner_compr -> expression KW_FOR NAME KW_IN walrus_assign
         """
         meta = {
-            "out_expr": node.kid[1],
-            "name": node.kid[3],
-            "collection": node.kid[5],
+            "out_expr": node.kid[0],
+            "name": node.kid[2],
+            "collection": node.kid[4],
             "conditional": None,
         }
-        if node.kid[-3].name == Tok.KW_IF:
-            meta["conditional"] = node.kid[-2]
-        if len(node.kid) == 7:
-            node.kid = [node.kid[1], node.kid[3], node.kid[5]]
-        elif len(node.kid) == 9:
-            node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7]]
+        if node.kid[-2].name == Tok.KW_IF:
+            meta["conditional"] = node.kid[-1]
+        if len(node.kid) == 5:
+            node.kid = [node.kid[0], node.kid[2], node.kid[4]]
+        elif len(node.kid) == 7:
+            node.kid = [node.kid[0], node.kid[2], node.kid[4], node.kid[6]]
         replace_node(
             node,
-            ast.ListCompr(
+            ast.InnerCompr(
                 out_expr=meta["out_expr"],
                 name=meta["name"],
                 collection=meta["collection"],
                 conditional=meta["conditional"],
+                is_list=False,
+                is_gen=False,
+                is_set=False,
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -3030,37 +3150,6 @@ class AstBuildPass(Pass):
                 ),
             )
 
-    # def exit_connect_any(self, node: ast.AstNode) -> None:
-    #     """Grammar rule.
-
-    #     connect_any -> CARROW_L_p1 expression CARROW_R_p2
-    #     connect_any -> CARROW_BI
-    #     """
-    #     if len(node.kid) == 3:
-    #         replace_node(
-    #             node,
-    #             ast.ConnectOp(
-    #                 spawn=node.kid[1],
-    #                 edge_dir=ast.EdgeDir.ANY,
-    #                 parent=node.parent,
-    #                 mod_link=self.mod_link,
-    #                 kid=node.kid,
-    #                 line=node.line,
-    #             ),
-    #         )
-    #     else:
-    #         replace_node(
-    #             node,
-    #             ast.ConnectOp(
-    #                 spawn=None,
-    #                 edge_dir=ast.EdgeDir.ANY,
-    #                 parent=node.parent,
-    #                 mod_link=self.mod_link,
-    #                 kid=node.kid,
-    #                 line=node.line,
-    #             ),
-    #         )
-
     def exit_filter_ctx(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
@@ -3074,23 +3163,6 @@ class AstBuildPass(Pass):
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_spawn_ctx(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        spawn_ctx -> LBRACE param_list RBRACE
-        """
-        replace_node(
-            node,
-            ast.SpawnCtx(
-                p_args=node.kid[1].p_args,
-                p_kwargs=node.kid[1].p_kwargs,
-                parent=node.parent,
-                mod_link=self.mod_link,
-                kid=node.kid[1].kid,
                 line=node.line,
             ),
         )

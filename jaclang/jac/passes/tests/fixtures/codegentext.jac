@@ -10,7 +10,7 @@ with entry {
 }
 
 with entry {
-    {*args, **kwargs} |> <s>.func;
+    (*args, **kwargs) |> <s>.func;
     <s>.sig = func |> inspect.signature;
     |> <s>.registry.items;
 }

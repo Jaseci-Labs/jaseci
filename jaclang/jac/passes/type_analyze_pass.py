@@ -588,6 +588,20 @@ class TypeAnalyzePass(Pass, SymbolTable):
         values: list['ExprType'],
         """
 
+    def exit_set_val(self, node: ast.ListVal) -> None:
+        """Sub objects.
+
+        values: list[ExprType],
+        """
+
+    def exit_tuple_val(self, node: ast.TupleVal) -> None:
+        """Sub objects.
+
+        first_expr: Optional["ExprType"],
+        exprs: Optional[ExprList],
+        assigns: Optional[AssignmentList],
+        """
+
     def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
@@ -600,13 +614,16 @@ class TypeAnalyzePass(Pass, SymbolTable):
         kv_pairs: list['KVPair'],
         """
 
-    def exit_list_compr(self, node: ast.ListCompr) -> None:
+    def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
-        out_expr: ExprType,
+        out_expr: "ExprType",
         name: Name,
-        collection: ExprType,
-        conditional: Optional[ExprType],
+        collection: "ExprType",
+        conditional: Optional["ExprType"],
+        is_list: bool,
+        is_gen: bool,
+        is_set: bool,
         """
 
     def exit_dict_compr(self, node: ast.DictCompr) -> None:
@@ -693,12 +710,6 @@ class TypeAnalyzePass(Pass, SymbolTable):
 
         spawn: Optional[ExprType],
         edge_dir: EdgeDir,
-        """
-
-    def exit_spawn_ctx(self, node: ast.SpawnCtx) -> None:
-        """Sub objects.
-
-        spawns: list[Assignment],
         """
 
     def exit_filter_ctx(self, node: ast.FilterCtx) -> None:

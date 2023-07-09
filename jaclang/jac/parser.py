@@ -23,7 +23,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
-    # debugfile = "parser.out"
+    debugfile = "parser.out"
 
     # All mighty start rule
     # ---------------------
@@ -757,8 +757,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "pipe_back",
         "pipe_back PIPE_FWD pipe",  # casting achieved here
         "pipe_back PIPE_FWD filter_ctx",  # for filtering lists of dicts/objs, etc.
-        "pipe_back PIPE_FWD spawn_ctx",  # for rapid assignments to collections, etc
-        "spawn_ctx PIPE_FWD pipe",  # for function calls
     )
     def pipe(self, p: YaccProduction) -> YaccProduction:
         """Pipe forward rule."""
@@ -768,8 +766,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "elvis_check",
         "elvis_check PIPE_BKWD pipe_back",
         "elvis_check PIPE_BKWD filter_ctx",
-        "elvis_check PIPE_BKWD spawn_ctx",
-        "spawn_ctx PIPE_BKWD pipe_back",
     )
     def pipe_back(self, p: YaccProduction) -> YaccProduction:
         """Pipe backward rule."""
@@ -996,8 +992,12 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "list_val",
+        "tuple_val",
+        "set_val",
         "dict_val",
         "list_compr",
+        "gen_compr",
+        "set_compr",
         "dict_compr",
     )
     def atom_collection(self, p: YaccProduction) -> YaccProduction:
@@ -1023,11 +1023,37 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
+        "LPAREN RPAREN",
+        "LPAREN tuple_list RPAREN",
+    )
+    def tuple_val(self, p: YaccProduction) -> YaccProduction:
+        """Tuple value rule."""
+        return p
+
+    @_(
+        "LBRACE expr_list RBRACE",
+    )
+    def set_val(self, p: YaccProduction) -> YaccProduction:
+        """Set value rule."""
+        return p
+
+    @_(
         "expression",
         "expr_list COMMA expression",
     )
     def expr_list(self, p: YaccProduction) -> YaccProduction:
         """Expression list rule."""
+        return p
+
+    @_(
+        "expression COMMA",
+        "expression COMMA expr_list",
+        "assignment_list",
+        "expression COMMA assignment_list",
+        "expression COMMA expr_list COMMA assignment_list",
+    )
+    def tuple_list(self, p: YaccProduction) -> YaccProduction:
+        """Tuple list rule."""
         return p
 
     @_(
@@ -1038,11 +1064,26 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Production for dictionary value rule."""
         return p
 
-    @_(
-        "LSQUARE expression KW_FOR NAME KW_IN walrus_assign RSQUARE",
-        "LSQUARE expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RSQUARE",
-    )
+    @_("LSQUARE inner_compr RSQUARE")
     def list_compr(self, p: YaccProduction) -> YaccProduction:
+        """Comprehension rule."""
+        return p
+
+    @_("LPAREN inner_compr RPAREN")
+    def gen_compr(self, p: YaccProduction) -> YaccProduction:
+        """Comprehension rule."""
+        return p
+
+    @_("LBRACE inner_compr RBRACE")
+    def set_compr(self, p: YaccProduction) -> YaccProduction:
+        """Comprehension rule."""
+        return p
+
+    @_(
+        "expression KW_FOR NAME KW_IN walrus_assign",
+        "expression KW_FOR NAME KW_IN walrus_assign KW_IF expression",
+    )
+    def inner_compr(self, p: YaccProduction) -> YaccProduction:
         """Comprehension rule."""
         return p
 
@@ -1272,24 +1313,9 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Connect from rule."""
         return p
 
-    # @_(
-    #     "CARROW_BI",
-    #     "CARROW_L_p1 expression CARROW_R_p2",
-    # )
-    # def connect_any(self, p: YaccProduction) -> YaccProduction:
-    #     """Connect any rule."""
-    #     return p
-
-    @_(
-        "LBRACE EQ filter_compare_list RBRACE",
-    )
+    @_("LPAREN EQ filter_compare_list RPAREN")
     def filter_ctx(self, p: YaccProduction) -> YaccProduction:
         """Filter context rule."""
-        return p
-
-    @_("LBRACE param_list RBRACE")
-    def spawn_ctx(self, p: YaccProduction) -> YaccProduction:
-        """Spawn context rule."""
         return p
 
     @_(
@@ -1328,7 +1354,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
 
 def fstr_sly_parser_hack() -> Optional[dict]:
-    """Hack to allow fstrings in sly parser."""
+    """Hack to map expression parser for fstrings in sly parser."""
     if "__file__" in globals():
         with open(__file__, "r") as file:
             module_data = file.read()
