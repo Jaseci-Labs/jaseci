@@ -29,10 +29,11 @@ def import_jac(
         return sys.modules[module_name]
 
     # Get the directory of the calling module
-    frame = inspect.stack()[1]
-    caller_dir = path.dirname(
-        base_path if base_path else path.abspath(frame[0].f_code.co_filename)
-    )
+    if base_path:
+        caller_dir = path.dirname(base_path) if not path.isdir(base_path) else base_path
+    else:
+        frame = inspect.stack()[1]
+        caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
 
     # Transpile the Jac file
     code_string = transpile_jac_file(file_path=target, base_dir=caller_dir)

@@ -6,7 +6,7 @@
 }
 
 :o:Command:a:call(*args: list, **kwargs: dict) {
-    return {*args, **kwargs} |> <s>.func;
+    return (*args, **kwargs) |> <s>.func;
 }
 
 :o:CommandRegistry:a:init {
@@ -33,6 +33,7 @@
                 |> cmd_parser.add_argument;
         }
     }
+    return func;
 }
 
 :o:CommandRegistry:a:get(name: str) -> Command {
