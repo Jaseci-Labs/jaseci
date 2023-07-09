@@ -19,7 +19,7 @@ class ImportPassPassTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cmds.load(self.fixture_abs_path("hello.jac"))
+        cmds.load(self.fixture_abs_path("hello.jac"))  # type: ignore
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
