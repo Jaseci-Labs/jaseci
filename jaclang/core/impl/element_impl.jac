@@ -72,7 +72,3 @@
     caller_id |> <self>.ro_access.discard;
     caller_id |> <self>.rw_access.discard;
 }
-
-with entry {
-    "Loaded correctly" |> print;
-}
