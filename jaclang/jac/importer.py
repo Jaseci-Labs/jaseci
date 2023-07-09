@@ -34,9 +34,10 @@ def import_jac(
     else:
         frame = inspect.stack()[1]
         caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
+    full_target = path.normpath(path.join(caller_dir, target))
 
     # Transpile the Jac file
-    code_string = transpile_jac_file(file_path=target, base_dir=caller_dir)
+    code_string = transpile_jac_file(file_path=full_target, base_dir=caller_dir)
     if save_file:
         with open(path.join(dir_path, module_name + ".py"), "w") as f:
             f.write(code_string)
@@ -45,7 +46,7 @@ def import_jac(
     module = types.ModuleType(module_name)
 
     # Set __file__ attribute
-    module.__file__ = path.normpath(path.join(caller_dir, target))
+    module.__file__ = full_target
     module.__name__ = module_name
 
     # print(add_line_numbers(code_string))
@@ -56,7 +57,7 @@ def import_jac(
     except Exception as e:
         traceback.print_exc()
         print(
-            f"Error in module {module_name}\nJac file: {target}\n"
+            f"Error in module {module_name}\nJac file: {full_target}\n"
             f"Error: {str(e)}\nIR:\n{add_line_numbers(code_string)}"
         )
 

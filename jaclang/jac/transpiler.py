@@ -33,6 +33,6 @@ def jac_file_to_pass(file_path: str, base_dir: str, target: Type[T]) -> T:
     return ast_ret
 
 
-def jac_file_to_final_pass(file_path: str, base_dir: str) -> Pass:
+def jac_file_to_final_pass(file_path: str, base_dir: str = "") -> Pass:
     """Convert a Jac file to an AST."""
     return jac_file_to_pass(file_path, base_dir, target=BluePygenPass)

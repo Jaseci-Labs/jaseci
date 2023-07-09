@@ -17,7 +17,7 @@ class TypeAnalyzePassTests(TestCaseMicroSuite):
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_final_pass(
-            "../../../../../cli/cli.jac", self.fixture_abs_path("")
+            self.fixture_abs_path("../../../../../cli/cli.jac")
         )
         # print(code_gen.ir.meta["py_code"])
         self.assertFalse(code_gen.errors_had)

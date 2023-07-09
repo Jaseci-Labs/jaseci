@@ -14,7 +14,7 @@ class DeclDefMatchPassTests(TestCase):
     def test_import_values_avail(self) -> None:
         """Basic test for pass."""
         state = jac_file_to_pass(
-            "base.jac", self.fixture_abs_path(""), DeclDefMatchPass
+            self.fixture_abs_path("base.jac"), "", DeclDefMatchPass
         )
         self.assertFalse(state.errors_had)
         self.assertIn("mine", state.sym_tab.tab)
@@ -23,7 +23,7 @@ class DeclDefMatchPassTests(TestCase):
     def test_ability_connected_to_decl(self) -> None:
         """Basic test for pass."""
         state = jac_file_to_pass(
-            "base.jac", self.fixture_abs_path(""), DeclDefMatchPass
+            self.fixture_abs_path("base.jac"), "", DeclDefMatchPass
         )
         self.assertFalse(state.errors_had)
         self.assertIn("Test.say_hi", state.sym_tab.tab)
@@ -34,7 +34,7 @@ class DeclDefMatchPassTests(TestCase):
     def test_collision_error_correct(self) -> None:
         """Basic test for multi defs."""
         state = jac_file_to_pass(
-            "decls.jac", self.fixture_abs_path(""), DeclDefMatchPass
+            self.fixture_abs_path("decls.jac"), "", DeclDefMatchPass
         )
         self.assertTrue(state.errors_had)
         self.assertIn("/impl/defs2.jac", state.errors_had[0])

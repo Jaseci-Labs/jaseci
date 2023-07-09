@@ -7,6 +7,7 @@ from .type_analyze_pass import TypeAnalyzePass
 from .blue_pygen_pass import BluePygenPass  # noqa: I100
 
 pass_schedule = [
+    AstBuildPass,
     SubNodeTabPass,
     ImportPass,
     DeclDefMatchPass,
