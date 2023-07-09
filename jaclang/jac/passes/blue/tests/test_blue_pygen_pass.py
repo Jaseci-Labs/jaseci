@@ -2,7 +2,7 @@
 import inspect
 
 from jaclang.jac.passes.blue import BluePygenPass
-from jaclang.jac.transpiler import jac_file_to_final_pass, transpile_jac_file
+from jaclang.jac.transpiler import jac_file_to_pass, transpile_jac_blue
 from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
 from jaclang.utils.test import TestCaseMicroSuite
 
@@ -16,14 +16,16 @@ class BluePygenPassTests(TestCaseMicroSuite):
 
     def test_jac_cli(self) -> None:
         """Basic test for pass."""
-        code_gen = jac_file_to_final_pass(
-            self.fixture_abs_path("../../../../../cli/cli.jac")
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path("../../../../../cli/cli.jac"), target=BluePygenPass
         )
         self.assertFalse(code_gen.errors_had)
 
     def test_pipe_operator(self) -> None:
         """Basic test for pass."""
-        code_gen = jac_file_to_final_pass(self.fixture_abs_path("codegentext.jac"))
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
+        )
         self.assertFalse(code_gen.errors_had)
         self.assertIn(
             'say((dump(print(len)))({"name": "value"}))', code_gen.ir.meta["py_code"]
@@ -35,7 +37,9 @@ class BluePygenPassTests(TestCaseMicroSuite):
 
     def test_pipe_operator_multi_param(self) -> None:
         """Basic test for pass."""
-        code_gen = jac_file_to_final_pass(self.fixture_abs_path("codegentext.jac"))
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
+        )
         self.assertFalse(code_gen.errors_had)
         self.assertIn("self.func(*args, **kwargs)", code_gen.ir.meta["py_code"])
         self.assertIn("inspect.signature(func)", code_gen.ir.meta["py_code"])
@@ -43,7 +47,9 @@ class BluePygenPassTests(TestCaseMicroSuite):
 
     def test_with_stmt(self) -> None:
         """Basic test for pass."""
-        code_gen = jac_file_to_final_pass(self.fixture_abs_path("codegentext.jac"))
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
+        )
         self.assertFalse(code_gen.errors_had)
         self.assertIn(
             'with open("file.txt") as f, open("file2.txt") as f:',
@@ -52,13 +58,17 @@ class BluePygenPassTests(TestCaseMicroSuite):
 
     def test_empty_codeblock(self) -> None:
         """Basic test for pass."""
-        code_gen = jac_file_to_final_pass(self.fixture_abs_path("codegentext.jac"))
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
+        )
         self.assertFalse(code_gen.errors_had)
         self.assertIn("pass", code_gen.ir.meta["py_code"])
 
     def test_enum_gen(self) -> None:
         """Basic test for pass."""
-        code_gen = jac_file_to_final_pass(self.fixture_abs_path("codegentext.jac"))
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
+        )
         self.assertFalse(code_gen.errors_had)
         self.assertIn(
             "from enum import Enum as __jac_Enum__, auto as __jac_auto__",
@@ -90,7 +100,7 @@ class BluePygenPassTests(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = transpile_jac_file(filename, "")
+        code_gen = transpile_jac_blue(filename, "")
         self.assertGreater(len(code_gen), 10)
 
 

@@ -6,7 +6,7 @@ import types
 from os import path
 from typing import Optional
 
-from jaclang.jac.transpiler import transpile_jac_file
+from jaclang.jac.transpiler import transpile_jac_blue
 from jaclang.jac.utils import add_line_numbers
 
 
@@ -37,7 +37,7 @@ def import_jac(
     full_target = path.normpath(path.join(caller_dir, target))
 
     # Transpile the Jac file
-    code_string = transpile_jac_file(file_path=full_target, base_dir=caller_dir)
+    code_string = transpile_jac_blue(file_path=full_target, base_dir=caller_dir)
     if save_file:
         with open(path.join(dir_path, module_name + ".py"), "w") as f:
             f.write(code_string)
