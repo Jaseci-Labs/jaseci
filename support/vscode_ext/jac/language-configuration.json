@@ -1,9 +1,9 @@
 {
     "comments": {
-        "lineComment": "//",
+        "lineComment": "#",
         "blockComment": [
-            "/*",
-            "*/"
+            "#*",
+            "*#"
         ],
         "inlineComment": "#"
     },

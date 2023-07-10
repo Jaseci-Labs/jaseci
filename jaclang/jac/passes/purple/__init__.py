@@ -12,6 +12,6 @@ __all__ = [
 
 
 pass_schedule = [
-    *pass_schedule,
+    *pass_schedule[:-1],
     PurplePygenPass,
 ]

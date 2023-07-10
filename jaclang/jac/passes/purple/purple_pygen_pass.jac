@@ -28,8 +28,8 @@ body: Optional["ArchBlock"],
     arch_type=nd.arch_type.name;
     arch_insert = "";
     if arch_type == Tok.KW_OBJECT {
-        (self.preamble, f"class {nd.name.meta['py_code']}({nd.base_classes.meta['py_code']}):")
-        |> <self>.emit_ln_unique;
+        # (self.preamble, f"class {nd.name.meta['py_code']}({nd.base_classes.meta['py_code']}):")
+        # |> <self>.emit_ln_unique;
     }
     elif arch_type == Tok.KW_NODE {}
     elif arch_type == Tok.KW_EDGE {}
