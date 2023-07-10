@@ -16,9 +16,15 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     start = "module"
 
-    def __init__(self, mod_path: str, input_ir: Generator, base_path: str = "") -> None:
+    def __init__(
+        self,
+        mod_path: str,
+        input_ir: Generator,
+        base_path: str = "",
+        prior: Optional[Transform] = None,
+    ) -> None:
         """Initialize parser."""
-        Transform.__init__(self, mod_path, input_ir, base_path)
+        Transform.__init__(self, mod_path, input_ir, base_path, prior)
         self.ir_tup = self.ir
         self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 

@@ -1,6 +1,9 @@
 """Standardized transformation process and error interface."""
+from __future__ import annotations
+
 import os
 from abc import ABC, ABCMeta, abstractmethod
+from typing import Optional
 
 
 from jaclang.jac.absyntree import AstNode
@@ -12,11 +15,17 @@ from jaclang.utils.sly.yacc import ParserMeta
 class Transform(ABC):
     """Abstract class for IR passes."""
 
-    def __init__(self, mod_path: str, input_ir: AstNode, base_path: str = "") -> None:
+    def __init__(
+        self,
+        mod_path: str,
+        input_ir: AstNode,
+        base_path: str = "",
+        prior: Optional[Transform] = None,
+    ) -> None:
         """Initialize pass."""
         self.logger = logging.getLogger(self.__class__.__module__)
-        self.errors_had = []
-        self.warnings_had = []
+        self.errors_had = [] if not prior else prior.errors_had
+        self.warnings_had = [] if not prior else prior.warnings_had
         self.cur_line = 0
         self.mod_path = mod_path
         self.rel_mod_path = (

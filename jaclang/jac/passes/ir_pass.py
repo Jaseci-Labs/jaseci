@@ -1,5 +1,5 @@
 """Abstract class for IR Passes for Jac."""
-from typing import TypeVar
+from typing import Optional, TypeVar
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.transform import Transform
@@ -12,13 +12,17 @@ class Pass(Transform):
     """Abstract class for IR passes."""
 
     def __init__(
-        self, mod_path: str, input_ir: ast.AstNode, base_path: str = ""
+        self,
+        mod_path: str,
+        input_ir: ast.AstNode,
+        base_path: str = "",
+        prior: Optional[Transform] = None,
     ) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
         self.cur_node = input_ir  # tracks current node during traversal
-        Transform.__init__(self, mod_path, input_ir, base_path)
+        Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
     def before_pass(self) -> None:
         """Run once before pass."""

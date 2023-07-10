@@ -9,9 +9,11 @@ from jaclang.utils.sly.lex import Lexer, Token
 class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     """Jac Lexer."""
 
-    def __init__(self, mod_path: str, input_ir: str, base_path: str = "") -> None:
+    def __init__(
+        self, mod_path: str, input_ir: str, base_path: str = "", prior: Transform = None
+    ) -> None:
         """Initialize lexer."""
-        Transform.__init__(self, mod_path, input_ir, base_path)  # type: ignore
+        Transform.__init__(self, mod_path, input_ir, base_path, prior)  # type: ignore
         self.ir: Generator = self.ir
 
     tokens = {

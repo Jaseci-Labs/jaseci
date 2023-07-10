@@ -12,11 +12,13 @@ from jaclang.jac.transform import Transform
 T = TypeVar("T", bound=Pass)
 
 
-def jac_file_to_ast_pass(file_path: str, base_dir: str) -> Transform:
+def jac_file_to_parse_tree(file_path: str, base_dir: str) -> Transform:
     """Convert a Jac file to an AST."""
     with open(file_path) as file:
-        lex = JacLexer(mod_path=file_path, input_ir=file.read(), base_path=base_dir).ir
-        prse = JacParser(mod_path=file_path, input_ir=lex, base_path=base_dir)
+        lex = JacLexer(mod_path=file_path, input_ir=file.read(), base_path=base_dir)
+        prse = JacParser(
+            mod_path=file_path, input_ir=lex.ir, base_path=base_dir, prior=lex
+        )
         return prse
 
 
@@ -54,10 +56,14 @@ def jac_file_to_pass(
     schedule: list[Type[T]] = pass_schedule,
 ) -> T:
     """Convert a Jac file to an AST."""
-    ast_ret = jac_file_to_ast_pass(file_path, base_dir)
+    ast_ret = jac_file_to_parse_tree(file_path, base_dir)
     for i in schedule:
         if i == target:
             break
-        ast_ret = i(mod_path=file_path, input_ir=ast_ret.ir, base_path=base_dir)
-    ast_ret = target(mod_path=file_path, input_ir=ast_ret.ir, base_path=base_dir)
+        ast_ret = i(
+            mod_path=file_path, input_ir=ast_ret.ir, base_path=base_dir, prior=ast_ret
+        )
+    ast_ret = target(
+        mod_path=file_path, input_ir=ast_ret.ir, base_path=base_dir, prior=ast_ret
+    )
     return ast_ret
