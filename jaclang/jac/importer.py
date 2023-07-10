@@ -10,7 +10,7 @@ from jaclang.jac.transpiler import transpile_jac_blue
 from jaclang.jac.utils import add_line_numbers
 
 
-def import_jac(
+def jac_blue_import(
     target: str, base_path: Optional[str] = None, save_file: bool = False
 ) -> Optional[types.ModuleType]:
     """Import a module from a path."""

@@ -16,9 +16,6 @@ class BluePygenPass(Pass):
         self.preamble.meta["py_code"] = "from __future__ import annotations\n"
         self.cur_arch = None  # tracks current architype during transpilation
 
-        # Special Ops
-        self.elvis = "__jac_elvis = lambda a, b: a if a is not None else b\n"
-
     def enter_node(self, node: ast.AstNode) -> None:
         """Enter node."""
         if node:
@@ -43,6 +40,19 @@ class BluePygenPass(Pass):
         """Emit code to node."""
         node.meta["py_code"] += self.indent_str(indent_delta) + s.replace(
             "\n", "\n" + self.indent_str(indent_delta)
+        )
+
+    def needs_jac_import(self) -> bool:
+        """Check if import is needed."""
+        self.emit_ln_unique(
+            self.preamble, "from jaclang import jac_blue_import as __jac_import__"
+        )
+
+    def needs_enum(self) -> bool:
+        """Check if enum is needed."""
+        self.emit_ln_unique(
+            self.preamble,
+            "from enum import Enum as __jac_Enum__, auto as __jac_auto__",
         )
 
     def decl_def_missing(self, decl: str = "this") -> None:
@@ -168,9 +178,7 @@ class BluePygenPass(Pass):
         self.sub_module = None
         """
         if node.lang.value == JAC_LANG_IMP:  # injects module into sys.modules
-            self.emit_ln_unique(
-                self.preamble, "from jaclang import jac_import as __jac_import__"
-            )
+            self.needs_jac_import()
             self.emit_ln(
                 node,
                 f"__jac_import__(target='{node.path.meta['py_code']}', base_path=__file__)",
@@ -506,10 +514,7 @@ class BluePygenPass(Pass):
                 f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
             )
         else:
-            self.emit_ln_unique(
-                self.preamble,
-                "from enum import Enum as __jac_Enum__, auto as __jac_auto__",
-            )
+            self.needs_enum()
             self.emit_ln(node, f"class {node.name.value}(__jac_Enum__):")
         if node.body:
             self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
@@ -872,10 +877,10 @@ class BluePygenPass(Pass):
                 node, f"{node.left.meta['py_code']}({node.right.meta['py_code']})"
             )
         elif node.op.name == Tok.ELVIS_OP:
-            self.emit_ln_unique(self.preamble, self.elvis)
             self.emit(
                 node,
-                f"__jac_elvis({node.left.meta['py_code']}, {node.right.meta['py_code']})",
+                f"(__jac_tmp := {node.left.meta['py_code']}) "
+                f"if __jac_tmp is not None else {node.right.meta['py_code']})",
             )
         else:
             self.error(

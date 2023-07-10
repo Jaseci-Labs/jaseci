@@ -1,7 +1,7 @@
 """Core primitives for Jaseci."""
-from jaclang import jac_import
+from jaclang import jac_blue_import
 
-prim = jac_import("primitives")
+prim = jac_blue_import("primitives")
 
 
 Object = prim.Object

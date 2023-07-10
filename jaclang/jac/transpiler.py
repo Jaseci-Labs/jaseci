@@ -26,9 +26,9 @@ def transpile_jac_blue(file_path: str, base_dir: str) -> str:
     """Transpiler Jac file and return python code as string."""
     code = jac_file_to_pass(
         file_path=file_path, base_dir=base_dir, target=BluePygenPass
-    ).ir
-    if isinstance(code, ast.Module):
-        return code.meta["py_code"]
+    )
+    if isinstance(code.ir, ast.Module):
+        return code.ir.meta["py_code"]
     else:
         raise ValueError("Transpilation of Jac file failed.")
 
@@ -42,9 +42,9 @@ def transpile_jac_purple(file_path: str, base_dir: str) -> str:
         base_dir=base_dir,
         target=PurplePygenPass,
         schedule=pass_schedule,
-    ).ir
-    if isinstance(code, ast.Module):
-        return code.meta["py_code"]
+    )
+    if isinstance(code.ir, ast.Module):
+        return code.ir.meta["py_code"]
     else:
         raise ValueError("Transpilation of Jac file failed.")
 

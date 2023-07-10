@@ -26,10 +26,14 @@ body: Optional["ArchBlock"],
         (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
     }
     arch_type=nd.arch_type.name;
-    if arch_type == Tok.KW_OBJECT {}
-    if arch_type == Tok.KW_NODE {}
-    if arch_type == Tok.KW_EDGE {}
-    if arch_type == Tok.KW_WALKER {}
+    arch_insert = "";
+    if arch_type == Tok.KW_OBJECT {
+        (self.preamble, f"class {nd.name.meta['py_code']}({nd.base_classes.meta['py_code']}):")
+        |> <self>.emit_ln_unique;
+    }
+    elif arch_type == Tok.KW_NODE {}
+    elif arch_type == Tok.KW_EDGE {}
+    elif arch_type == Tok.KW_WALKER {}
     if nd.base_classes.base_classes |> len {
         (nd, f"class {nd.name.meta['py_code']}({nd.base_classes.meta['py_code']}):")
         |> <self>.emit_ln;
