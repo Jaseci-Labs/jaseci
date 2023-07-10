@@ -288,6 +288,7 @@ class BluePygenPass(Pass):
 
         name: Name,
         is_func: bool,
+        is_async: bool,
         doc: Optional[DocString],
         decorators: Optional["Decorators"],
         access: Optional[Token],
