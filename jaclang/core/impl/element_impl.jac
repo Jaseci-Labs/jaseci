@@ -10,7 +10,6 @@
 (owner_id: UUID, memory: Memory, jid: UUID, persist: bool = False) {
     <self>.__jinfo.owner_id = owner_id;
     <self>.__jinfo.memory = memory;
-    <self>.__jinfo.id = jid;
     <self>.__jinfo._persist = persist;
 }
 

@@ -36,9 +36,9 @@ object ElementMetaData {
 }
 
 object Element {
-    has __jinfo: ElementMetaData;
+    has __jinfo: ElementMetaData = ElementMetaData();
 
-    can init(owner_id: UUID, memory: Memory, jid: UUID, persist: bool = False);
+    can init(owner_id: UUID, memory: Memory, persist: bool = False);
     can __jac_make_public_ro;
     can __jac_make_public_rw;
     can __jac_make_private;
@@ -51,7 +51,11 @@ object Element {
     can __jac_revoke_access(caller_id: UUID);
 }
 
-object Object:Element {}
+object Object:Element {
+    # can init {
+    #     :o:Element.init(owner_id, memory, persist);
+    # }
+}
 
 object Node:Object {
     has __j_edges: list[Edge];
@@ -70,3 +74,14 @@ object Ability:Element {}
 
 object Master:Element {}
 
+object ExecutionContext {
+    has master: Master,
+        memory: Memory;
+
+    can init(master: Master, memory: Memory) {
+        <self>.master = master;
+        <self>.memory = memory;
+    }
+}
+
+global exec_ctx = ExecutionContext((x:=Memory()), Master(None, x));

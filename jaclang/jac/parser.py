@@ -26,6 +26,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Initialize parser."""
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
         self.ir_tup = self.ir
+        if self.errors_had:
+            print(self.errors_had)
         self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
@@ -1013,8 +1015,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "STRING",
         "FSTRING",
-        "STRING multistring",
-        "FSTRING multistring",
+        "multistring STRING",
+        "multistring FSTRING",
     )
     def multistring(self, p: YaccProduction) -> YaccProduction:
         """Multistring rule."""
