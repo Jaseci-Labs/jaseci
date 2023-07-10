@@ -42,13 +42,13 @@ class BluePygenPass(Pass):
             "\n", "\n" + self.indent_str(indent_delta)
         )
 
-    def needs_jac_import(self) -> bool:
+    def needs_jac_import(self) -> None:
         """Check if import is needed."""
         self.emit_ln_unique(
             self.preamble, "from jaclang import jac_blue_import as __jac_import__"
         )
 
-    def needs_enum(self) -> bool:
+    def needs_enum(self) -> None:
         """Check if enum is needed."""
         self.emit_ln_unique(
             self.preamble,

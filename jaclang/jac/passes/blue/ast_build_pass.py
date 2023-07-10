@@ -1871,7 +1871,7 @@ class AstBuildPass(Pass):
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
         else:
-            node.kid = [node.kid[0], node.kid[1], node.kid[2]]
+            node.kid = [node.kid[0], node.kid[2], node.kid[4]]
             replace_node(
                 node,
                 ast.IfElseExpr(

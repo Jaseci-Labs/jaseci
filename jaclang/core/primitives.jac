@@ -24,6 +24,18 @@ object Memory {
     can get_mem_size -> float;
 }
 
+object ExecutionContext {
+    has master: Master,
+        memory: Memory;
+
+    can init(master: UUID, memory: Memory) {
+        <self>.master = master;
+        <self>.memory = memory;
+    }
+}
+
+global exec_ctx = ExecutionContext(Memory(), uuid4());
+
 object ElementMetaData {
     has jid: UUID = uuid4(),
         timestamp: datetime = datetime.now(),
@@ -31,14 +43,13 @@ object ElementMetaData {
         access_mode: AccessMode = AccessMode.PRIVATE,
         rw_access: set = |> set,
         ro_access: set = |> set,
-        owner_id: UUID,
-        mem: Memory;
+        owner_id: UUID = exec_ctx.master,
+        mem: Memory = exec_ctx.memory;
 }
 
 object Element {
     has __jinfo: ElementMetaData = ElementMetaData();
 
-    can init(owner_id: UUID, memory: Memory, persist: bool = False);
     can __jac_make_public_ro;
     can __jac_make_public_rw;
     can __jac_make_private;
@@ -51,11 +62,7 @@ object Element {
     can __jac_revoke_access(caller_id: UUID);
 }
 
-object Object:Element {
-    # can init {
-    #     :o:Element.init(owner_id, memory, persist);
-    # }
-}
+object Object:Element {}
 
 object Node:Object {
     has __j_edges: list[Edge];
@@ -73,15 +80,3 @@ object Walker:Object {
 object Ability:Element {}
 
 object Master:Element {}
-
-object ExecutionContext {
-    has master: Master,
-        memory: Memory;
-
-    can init(master: Master, memory: Memory) {
-        <self>.master = master;
-        <self>.memory = memory;
-    }
-}
-
-global exec_ctx = ExecutionContext((x:=Memory()), Master(None, x));

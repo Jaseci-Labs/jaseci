@@ -6,13 +6,6 @@
     PRIVATE
 }
 
-:object:Element:ability:init
-(owner_id: UUID, memory: Memory, jid: UUID, persist: bool = False) {
-    <self>.__jinfo.owner_id = owner_id;
-    <self>.__jinfo.memory = memory;
-    <self>.__jinfo._persist = persist;
-}
-
 :object:Element:ability:__jac_make_public_ro {
     <self>.__jinfo.access_mode = AccessMode.READ_ONLY;
 }
