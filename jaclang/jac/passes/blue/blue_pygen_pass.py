@@ -292,7 +292,7 @@ class BluePygenPass(Pass):
         doc: Optional[DocString],
         decorators: Optional["Decorators"],
         access: Optional[Token],
-        signature: "FuncSignature | TypeSpec | EventSignature",
+        signature: Optional["FuncSignature | TypeSpec | EventSignature"],
         body: Optional["CodeBlock"],
         arch_attached: Optional["ArchBlock"] = None,
         """
@@ -426,7 +426,8 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         event: Token,
-        arch_tag_info: Optional[NameList | Token],
+        arch_tag_info: Optional["TypeList | TypeSpec"],
+        return_type: Optional["TypeSpec"],
         """
         self.error("Event style abilities not supported in bootstrap Jac")
 

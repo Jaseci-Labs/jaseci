@@ -14,6 +14,7 @@ object PurplePygenPass:BluePygenPass {
 
     can exit_architype(nd: ast.Architype);
     can exit_ability(nd: ast.Ability);
+    can exit_event_signature(nd: ast.EventSignature);
 }
 
 :object:PurplePygenPass:ability:add_element_import
@@ -87,7 +88,7 @@ is_async: bool,
 doc: Optional[DocString],
 decorators: Optional["Decorators"],
 access: Optional[Token],
-signature: "FuncSignature | TypeSpec | EventSignature",
+signature: Optional["FuncSignature | TypeSpec | EventSignature"],
 body: Optional["CodeBlock"],
 arch_attached: Optional["ArchBlock"] = None,
 """
@@ -97,7 +98,7 @@ arch_attached: Optional["ArchBlock"] = None,
     if nd.decorators {
         (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
     }
-    if nd.is_func {
+    if (nd.signature|>type) in [ast.FuncSignature, ast.EventSignature] {
         if nd.arch_attached {
             (nd, f"def {nd.name.meta['py_code']}(self{nd.signature.meta['py_code']}:")
                 |> <self>.emit_ln;
@@ -119,5 +120,25 @@ arch_attached: Optional["ArchBlock"] = None,
         (nd, nd.body.meta["py_code"], indent_delta=1) |> <self>.emit_ln;
     } else {
         nd.name.meta["py_code"] |> <self>.decl_def_missing;
+    }
+}
+
+
+"""Sub objects.
+
+event: Token,
+arch_tag_info: Optional["TypeList | TypeSpec"],
+return_type: Optional["TypeSpec"],
+"""
+:object:PurplePygenPass:ability:exit_event_signature
+(nd: ast.EventSignature) {
+    if nd.arch_tag_info {
+        (nd, f"{nd.arch_tag_info.meta['py_code']})")
+            |> <self>.emit;
+    } else {
+        (nd, f")") |> <self>.emit;
+    }
+    if nd.return_type {
+        (nd, f" -> {nd.return_type.meta['py_code']}") |> <self>.emit;
     }
 }

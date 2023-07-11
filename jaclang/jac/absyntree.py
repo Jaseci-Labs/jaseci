@@ -499,7 +499,7 @@ class Ability(OOPAccessNode):
         doc: Optional[DocString],
         decorators: Optional["Decorators"],
         access: Optional[Token],
-        signature: "FuncSignature | TypeSpec | EventSignature",
+        signature: Optional["FuncSignature | TypeSpec | EventSignature"],
         body: Optional["CodeBlock"],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -551,7 +551,7 @@ class EventSignature(AstNode):
     def __init__(
         self,
         event: Token,
-        arch_tag_info: Optional["NameList | Token"],
+        arch_tag_info: Optional["TypeList | TypeSpec"],
         return_type: Optional["TypeSpec"],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
