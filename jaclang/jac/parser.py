@@ -482,6 +482,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "NULL",
         "dotted_name",
         "TYP_LIST LSQUARE type_name RSQUARE",
+        "TYP_TUPLE LSQUARE type_name RSQUARE",
+        "TYP_SET LSQUARE type_name RSQUARE",
         "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
         "type_name NULL_OK",
     )

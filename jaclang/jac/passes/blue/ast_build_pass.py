@@ -994,6 +994,8 @@ class AstBuildPass(Pass):
 
         type_name -> type_name NULL_OK
         type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
+        type_name -> TYP_SET LSQUARE type_name RSQUARE
+        type_name -> TYP_TUPLE LSQUARE type_name RSQUARE
         type_name -> TYP_LIST LSQUARE type_name RSQUARE
         type_name -> dotted_name
         type_name -> NULL
