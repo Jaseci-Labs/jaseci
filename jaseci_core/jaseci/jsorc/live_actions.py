@@ -113,7 +113,12 @@ def load_local_actions(file: str, ctx: dict = {}):
                     f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
                 )
                 logger.error(e)
-            return True
+            module_name = mod.__name__
+            if load_module_actions(module_name, ctx=ctx):
+                return True
+            else:
+                unload_module(module_name)
+                return False
     except Exception as e:
         logger.error(f"Cannot hot load local actions from {file}: {e}")
         return False

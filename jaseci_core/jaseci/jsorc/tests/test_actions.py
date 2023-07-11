@@ -5,11 +5,12 @@ import jaseci.jsorc.live_actions as jla
 import jaseci.jsorc.remote_actions as jra
 from jaseci.jsorc.live_actions import (
     gen_remote_func_hook,
-    load_module_actions,
+    # load_module_actions,
     # live_actions,
     # load_remote_actions,
     unload_module,
     act_procs,
+    load_local_actions,
 )
 
 # from jaseci.utils.test_core import CoreTest
@@ -25,6 +26,61 @@ class JacActionsTests(TestCaseHelper, TestCase):
 
     def tearDown(self):
         super().tearDown()
+
+    def test_load_unload_load_demo_test_module(self):
+        """Test loading, unloading, and loading again of a demo_test module"""
+        demo_test1_jac_code = """
+            walker test_demo {
+                can demo_test1.action1;
+                report demo_test.action1("Hello, world!");
+            }
+        """
+        demo_test2_jac_code = """
+            walker test_demo {
+                can demo_test2.action1;
+                report demo_test.action1("Hello, world!");
+            }
+        """
+        # Load the demo_test module
+        load_local_actions("./test_1/demo_test1.py")
+        # Store the initial number of subprocesses
+        initial_subprocess_count = len(act_procs)
+        # Perform tests for the action module
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
+        sent.register_code(demo_test1_jac_code)
+        root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
+        test_walker = sent.run_architype("test_demo")
+        test_walker.prime(root_node)
+        test_walker.run()
+
+        load_local_actions("./test_2/demo_test2.py")
+        # Assert that the number of subprocesses has increased
+        self.assertGreater(len(act_procs), initial_subprocess_count)
+        # Perform tests for the action module
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
+        sent.register_code(demo_test2_jac_code)
+        root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
+        test_walker = sent.run_architype("test_demo")
+        test_walker.prime(root_node)
+        test_walker.run()
+        # Unload the demo_test module
+        unload_module("test_1.demo_test1")
+
+        # Assert that the number of subprocesses has decreased
+        self.assertEqual(len(act_procs), initial_subprocess_count)
+        # Unload the demo_test module
+        unload_module("test_2.demo_test2")
+
+        # Assert that the number of subprocesses has decreased
+        self.assertLess(len(act_procs), initial_subprocess_count)
+        # Perform additional tests after unloading the module
+        # ...
+
+        # # Load the same demo_test module again
+        # load_module_actions("demo_test")
+
+        # # Assert that the number of subprocesses has increased
+        # self.assertGreater(len(jla.live_actions.act_procs), initial_subprocess_count)
 
     def test_remote_action_example(self):
         from typing import Union
@@ -93,177 +149,148 @@ class JacActionsTests(TestCaseHelper, TestCase):
 
     def test_load_single_action_module(self):
         """Test loading a single action module"""
-        summarize_jac_code = """
-            walker test_summarize {
-                can cl_summer.summarize;
-                report cl_summer.summarize("Today is a beautiful day.");
+        demo_test1_jac_code = """
+            walker test_demo {
+                can demo_test1.action1;
+                report demo_test.action1("Hello, world!");
             }
         """
-        # load_remote_actions("http://localhost:8001")
-        # load_module_actions("jac_nlp.cl_summer")
-        load_module_actions("jac_nlp.cl_summer")
+        # Load the demo_test module
+        load_local_actions("./test_1/demo_test1.py")
+        # Store the initial number of subprocesses
+        initial_subprocess_count = len(act_procs)
+        # Perform tests for the action module
         sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(summarize_jac_code)
+        sent.register_code(demo_test1_jac_code)
         root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_summarize")
+        test_walker = sent.run_architype("test_demo")
         test_walker.prime(root_node)
         test_walker.run()
-        print(test_walker.report)
-        # self.assertEqual(test_walker.report[0][0], "Today is a beautiful day.")
-        # self.call(
-        #     self.mast,
-        #     ["sentinel_register", {"code": self.load_jac("fixture/test_action.jac")}],
-        # )
+        # Unload the demo_test module
+        unload_module("test_1.demo_test1")
 
-        # ret = self.call(self.mast, ["walker_run", {"name": "test_summarize"}])
-        # print(ret)
+        # Assert that the number of subprocesses has decreased
+        self.assertLess(len(act_procs), initial_subprocess_count)
 
     def test_load_single_action_module_twice(self):
         """Test loading a single action module"""
-        summarize_jac_code = """
-            walker test_summarize {
-                can cl_summer.summarize;
-                report cl_summer.summarize("Today is a beautiful day.");
+        demo_test1_jac_code = """
+            walker test_demo {
+                can demo_test1.action1;
+                report demo_test.action1("Hello, world!");
             }
         """
 
-        # Load the action module
-        load_module_actions("jac_nlp.cl_summer")
-
+        # Load the demo_test module
+        load_local_actions("./test_1/demo_test1.py")
         # Store the initial number of subprocesses
         initial_subprocess_count = len(act_procs)
-
         # Perform tests for the action module
         sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(summarize_jac_code)
+        sent.register_code(demo_test1_jac_code)
         root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_summarize")
+        test_walker = sent.run_architype("test_demo")
         test_walker.prime(root_node)
         test_walker.run()
 
         # Load the same action module again
-        load_module_actions("jac_nlp.cl_summer")
+        load_local_actions("./test_1/demo_test1.py")
 
         # Assert that the number of subprocesses remains the same
         self.assertEqual(len(act_procs), initial_subprocess_count)
+        # Unload the demo_test module
+        unload_module("test_1.demo_test1")
 
     def test_load_multiple_action_modules(self):
-        """Test loading multiple different action modules"""
-        summarize_jac_code = """
-            walker test_summarize {
-                can cl_summer.summarize;
-                report cl_summer.summarize("Today is a beautiful day.");
+        """Test loading, unloading, and loading again of a demo_test module"""
+        demo_test1_jac_code = """
+            walker test_demo {
+                can demo_test1.action1;
+                report demo_test.action1("Hello, world!");
             }
         """
-        bi_enc_jac_code = """
-            walker test_bi_enc {
-                can bi_enc.get_context_emb;
-                report bi_enc.get_context_emb(["Today is a beautiful day."]);
+        demo_test2_jac_code = """
+            walker test_demo {
+                can demo_test2.action1;
+                report demo_test.action1("Hello, world!");
             }
         """
-        sentiment_jac_code = """
-            walker test_sentiment {
-                can sentiment.predict;
-                report sentiment.predict(["I'm feeling great!"]);
-            }
-        """
-
-        # Load the first action module
-        load_module_actions("jac_nlp.cl_summer")
-
+        # Load the demo_test module
+        load_local_actions("./test_1/demo_test1.py")
         # Store the initial number of subprocesses
         initial_subprocess_count = len(act_procs)
-
-        # Perform tests for the first action module
+        # Perform tests for the action module
         sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(summarize_jac_code)
+        sent.register_code(demo_test1_jac_code)
         root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_summarize")
+        test_walker = sent.run_architype("test_demo")
         test_walker.prime(root_node)
         test_walker.run()
 
-        # Load the second action module
-        load_module_actions("jac_nlp.sentiment")
-
+        load_local_actions("./test_2/demo_test2.py")
         # Assert that the number of subprocesses has increased
         self.assertGreater(len(act_procs), initial_subprocess_count)
-
-        # Perform tests for the second action module
+        # Perform tests for the action module
         sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(sentiment_jac_code)
+        sent.register_code(demo_test2_jac_code)
         root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_sentiment")
+        test_walker = sent.run_architype("test_demo")
         test_walker.prime(root_node)
         test_walker.run()
+        # Unload the demo_test module
+        unload_module("test_1.demo_test1")
 
-        # Load the third action module
-        load_module_actions("jac_nlp.bi_enc")
+        # Assert that the number of subprocesses has decreased
+        self.assertEqual(len(act_procs), initial_subprocess_count)
+        # Unload the demo_test module
+        unload_module("test_2.demo_test2")
 
-        # Assert that the number of subprocesses has increased again
-        self.assertGreater(len(act_procs), initial_subprocess_count)
-
-        # Perform tests for the third action module
-        sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(bi_enc_jac_code)
-        root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_bi_enc")
-        test_walker.prime(root_node)
-        test_walker.run()
-
-        # Unload the first action module
-        unload_module("jac_nlp.cl_summer")
-        # Unload the second action module
-        unload_module("jac_nlp.sentiment")
-        # Unload the thrid action module
-        unload_module("jac_nlp.bi_enc")
         # Assert that the number of subprocesses has decreased
         self.assertLess(len(act_procs), initial_subprocess_count)
 
     def test_load_unload_load_action_module(self):
         """Test loading, unloading, and loading again of an action module"""
-        summarize_jac_code = """
-            walker test_summarize {
-                can cl_summer.summarize;
-                report cl_summer.summarize("Today is a beautiful day.");
+        demo_test1_jac_code = """
+            walker test_demo {
+                can demo_test1.action1;
+                report demo_test.action1("Hello, world!");
             }
         """
 
-        # Load the action module
-        load_module_actions("jac_nlp.cl_summer")
-
+        # Load the demo_test module
+        load_local_actions("./test_1/demo_test1.py")
         # Store the initial number of subprocesses
         initial_subprocess_count = len(act_procs)
-
-        # Perform tests for the initial loaded module
+        # Perform tests for the action module
         sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(summarize_jac_code)
+        sent.register_code(demo_test1_jac_code)
         root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_summarize")
+        test_walker = sent.run_architype("test_demo")
         test_walker.prime(root_node)
         test_walker.run()
 
         # Unload the action module
-        unload_module("jac_nlp.cl_summer")
+        unload_module("test_1.demo_test1")
 
         # Assert that the number of subprocesses has decreased
         self.assertLess(len(act_procs), initial_subprocess_count)
 
-        # Load the same action module again
-        load_module_actions("jac_nlp.cl_summer")
+        # Load the demo_test module
+        load_local_actions("./test_1/demo_test1.py")
 
         # Assert that the number of subprocesses has increased
         self.assertEqual(len(act_procs), initial_subprocess_count)
 
-        # Perform tests after loading the module again
+        # Perform tests for the action module
         sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(summarize_jac_code)
+        sent.register_code(demo_test1_jac_code)
         root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_summarize")
+        test_walker = sent.run_architype("test_demo")
         test_walker.prime(root_node)
         test_walker.run()
 
         # Unload the module again
-        unload_module("jac_nlp.cl_summer")
+        unload_module("test_1.demo_test1")
 
         # Assert that the number of subprocesses has decreased again
         self.assertLess(len(act_procs), initial_subprocess_count)
