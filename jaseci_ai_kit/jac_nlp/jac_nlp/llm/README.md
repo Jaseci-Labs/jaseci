@@ -1,4 +1,7 @@
 # **Large Language Models (`llm`)**
+> **_NOTE:_**  This module only works with CUDA enabled devices. If you run into any bitsandbytes error, try checking the CUDA version of your device and replace the `libbitsandbytes_cpu.so` with `libbitsandbytes_cuda<version>.so` in `/home/<USER>/anaconda3/envs/llm/lib/python3.10/site-packages/bitsandbytes/` directory.
+```bash
+
 Large Language Models (`llm`) is a Jaseci module that allows you to generate text using large language models and also perform parameter efficient transfer learning using your own data.
 ## **Usecases**
 - Generate text using large language models.

@@ -1,4 +1,5 @@
 from jaseci.jsorc.live_actions import jaseci_action
+from jaseci.utils.utils import logger
 import torch
 from transformers import pipeline
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -40,12 +41,15 @@ def setup(
         load_in_8bit=True,
         **model_kwargs,
     )
+    logger.info("Model loaded")
     if lora_dir:
         model = PeftModel.from_pretrained(
             model, lora_dir, device_map="auto", torch_dtype=torch.float16
         )
+        logger.info("Lora loaded")
 
     pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer)
+    logger.info("Pipeline created")
 
 
 @jaseci_action(act_group=["llm"], allow_remote=True)
