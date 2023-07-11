@@ -1,7 +1,7 @@
 """First Jac pass bootstrapped in Jac"""
 import:py jaclang.jac.absyntree as ast;
 import:py from jaclang.jac.passes.blue, BluePygenPass;
-import:py from jaclang.core, Object, Node, Edge, Walker, Ability;
+import:py from jaclang.core, Object, Node, Edge, Walker;
 import:py from jaclang.jac.lexer, Tokens as Tok;
 import:py from jaclang.jac.constant, INIT_FUNC;
 
@@ -94,7 +94,6 @@ arch_attached: Optional["ArchBlock"] = None,
 """
 :object:PurplePygenPass:ability:exit_ability
 (nd: ast.Ability) {
-    "Ability" |> <self>.add_element_import;
     if nd.decorators {
         (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
     }
@@ -133,10 +132,10 @@ return_type: Optional["TypeSpec"],
 :object:PurplePygenPass:ability:exit_event_signature
 (nd: ast.EventSignature) {
     if nd.arch_tag_info {
-        (nd, f"{nd.arch_tag_info.meta['py_code']})")
+        (nd, f"__jac_here__: {nd.arch_tag_info.meta['py_code']})")
             |> <self>.emit;
     } else {
-        (nd, f")") |> <self>.emit;
+        (nd, f"__jac_here__)") |> <self>.emit;
     }
     if nd.return_type {
         (nd, f" -> {nd.return_type.meta['py_code']}") |> <self>.emit;

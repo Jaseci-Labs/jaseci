@@ -303,7 +303,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "return_type_tag",
         "KW_WITH KW_ENTRY return_type_tag",
         "KW_WITH KW_EXIT return_type_tag",
         "KW_WITH STAR_MUL KW_ENTRY return_type_tag",
@@ -324,6 +323,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
+        "return_type_tag",
         "LPAREN RPAREN return_type_tag",
         "LPAREN func_decl_param_list RPAREN return_type_tag",
     )

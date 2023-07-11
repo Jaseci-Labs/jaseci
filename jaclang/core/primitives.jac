@@ -77,6 +77,4 @@ object Walker:Object {
         __j_next: Node?;
 }
 
-object Ability:Element {}
-
 object Master:Element {}

@@ -597,7 +597,6 @@ class AstBuildPass(Pass):
         event_clause -> KW_WITH STAR_MUL KW_ENTRY return_type_tag
         event_clause -> KW_WITH KW_EXIT return_type_tag
         event_clause -> KW_WITH KW_ENTRY return_type_tag
-        event_clause -> return_type_tag
         """
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
@@ -654,8 +653,9 @@ class AstBuildPass(Pass):
 
         func_decl -> LPAREN func_decl_param_list RPAREN return_type_tag
         func_decl -> LPAREN RPAREN return_type_tag
+        func_decl -> return_type_tag
         """
-        if len(node.kid) == 3:
+        if len(node.kid) <= 3:
             node.kid = [node.kid[-1]]
             replace_node(
                 node,
