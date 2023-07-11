@@ -486,6 +486,8 @@ class AstBuildPass(Pass):
 
         special_refs -> here_ref
         special_refs -> self_ref
+        special_refs -> root_ref
+        special_refs -> super_ref
         """
         replace_node(node, node.kid[0])
 
@@ -2821,6 +2823,22 @@ class AstBuildPass(Pass):
             ),
         )
 
+    def exit_super_ref(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        super_ref -> SUPER_OP
+        """
+        replace_node(
+            node,
+            ast.SpecialVarRef(
+                var=node.kid[0],
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
     def exit_root_ref(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
@@ -3100,7 +3118,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.ConnectOp(
-                    spawn=node.kid[1],
+                    spwn=node.kid[1],
                     edge_dir=ast.EdgeDir.OUT,
                     parent=node.parent,
                     mod_link=self.mod_link,
@@ -3112,7 +3130,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.ConnectOp(
-                    spawn=None,
+                    spwn=None,
                     edge_dir=ast.EdgeDir.OUT,
                     parent=node.parent,
                     mod_link=self.mod_link,
@@ -3131,7 +3149,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.ConnectOp(
-                    spawn=node.kid[1],
+                    spwn=node.kid[1],
                     edge_dir=ast.EdgeDir.IN,
                     parent=node.parent,
                     mod_link=self.mod_link,
@@ -3143,7 +3161,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.ConnectOp(
-                    spawn=None,
+                    spwn=None,
                     edge_dir=ast.EdgeDir.IN,
                     parent=node.parent,
                     mod_link=self.mod_link,

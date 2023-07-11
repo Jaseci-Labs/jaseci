@@ -1728,7 +1728,7 @@ class ConnectOp(AstNode):
 
     def __init__(
         self,
-        spawn: Optional["ExprType"],
+        spwn: Optional["ExprType"],
         edge_dir: EdgeDir,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1736,7 +1736,7 @@ class ConnectOp(AstNode):
         line: int,
     ) -> None:
         """Initialize connect op reference expression node."""
-        self.spawn = spawn
+        self.spwn = spwn
         self.edge_dir = edge_dir
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 

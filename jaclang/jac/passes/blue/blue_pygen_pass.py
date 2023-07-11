@@ -283,6 +283,7 @@ class BluePygenPass(Pass):
         """
         self.emit(node, ", ".join([i.meta["py_code"] for i in node.base_classes]))
 
+    # NOTE: Incomplete for Jac Purple and Red
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
@@ -742,7 +743,7 @@ class BluePygenPass(Pass):
 
         ctrl: Token,
         """
-        if node.ctrl.value == "skip":
+        if node.ctrl.name == Tok.KW_SKIP:
             self.error("skip is not supported in bootstrap Jac")
         else:
             self.emit_ln(node, node.ctrl.value)
@@ -762,7 +763,6 @@ class BluePygenPass(Pass):
         """
         self.ds_feature_warn()
 
-    # NOTE: Incomplete for Jac Purple and Red  # Need to have validation that return type specified if return present
     def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
         """Sub objects.
 
@@ -1154,6 +1154,8 @@ class BluePygenPass(Pass):
         """
         if node.var.name == Tok.SELF_OP:
             self.emit(node, "self")
+        elif node.var.name == Tok.SUPER_OP:
+            self.emit(node, "super()")
         else:
             self.ds_feature_warn()
 

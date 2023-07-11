@@ -15,6 +15,9 @@ object PurplePygenPass:BluePygenPass {
     can exit_architype(nd: ast.Architype);
     can exit_ability(nd: ast.Ability);
     can exit_event_signature(nd: ast.EventSignature);
+    can exit_ctrl_stmt(nd: ast.CtrlStmt);
+    can exit_binary_expr(nd: ast.BinaryExpr);
+    can exit_connect_op(nd: ast.ConnectOp);
 }
 
 :object:PurplePygenPass:ability:add_element_import
@@ -140,4 +143,48 @@ return_type: Optional["TypeSpec"],
     if nd.return_type {
         (nd, f" -> {nd.return_type.meta['py_code']}") |> <self>.emit;
     }
+}
+
+
+"""Sub objects.
+
+ctrl: Token,
+"""
+:object:PurplePygenPass:ability:exit_ctrl_stmt
+(nd: ast.CtrlStmt) {
+
+}
+
+
+"""Sub objects.
+
+left: ExprType,
+right: ExprType,
+op: Token,
+"""
+:object:PurplePygenPass:ability:exit_binary_expr
+(nd: ast.BinaryExpr) {
+    if (nd.op.name|>type) == ast.ConnectOp {
+        (nd, f"{nd.left.meta['py_code']}.__jac_connect({nd.right.meta['py_code']})")
+            |> <self>.emit;
+    } else {
+        <super>.exit_binary_expr(nd);
+    }
+}
+
+
+"""Sub objects.
+
+spawn: Optional[ExprType],
+edge_dir: EdgeDir,
+"""
+:object:PurplePygenPass:ability:exit_connect_op
+(nd: ast.ConnectOp) {
+    # if nd.spwn {
+    #     (nd, f"spawn {nd.spawn.meta['py_code']}") |> <self>.emit;
+    # }
+    # if nd.edge_dir {
+    #     (nd, f" {nd.edge_dir.meta['py_code']}") |> <self>.emit;
+    # }
+    # (nd, f" {nd.meta['py_code']}") |> <self>.emit_ln;
 }
