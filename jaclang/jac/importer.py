@@ -38,7 +38,7 @@ def import_jac_module(
     code_string = transpiler_func(file_path=full_target, base_dir=caller_dir)
 
     # if save_file:
-    dev_dir = path.join(caller_dir, "_dev")
+    dev_dir = path.join(caller_dir, "__jac_gen__")
     makedirs(dev_dir, exist_ok=True)
     with open(path.join(dev_dir, module_name + ".py"), "w") as f:
         f.write(code_string)
