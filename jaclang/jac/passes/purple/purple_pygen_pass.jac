@@ -8,7 +8,7 @@ import:py from jaclang.jac.constant, INIT_FUNC;
 object PurplePygenPass:BluePygenPass {
 
     """ Addd arch import to the preamble """
-    can add_arch_import(arch: str);
+    can add_element_import(arch: str);
     """ Addd exec context import to the preamble """
     can add_exec_context();
 
@@ -16,7 +16,7 @@ object PurplePygenPass:BluePygenPass {
     can exit_ability(nd: ast.Ability);
 }
 
-:object:PurplePygenPass:ability:add_arch_import
+:object:PurplePygenPass:ability:add_element_import
 (arch: str) {
     (self.preamble, f"from jaclang.core import {arch} as __jac_{arch}__")
     |> <self>.emit_ln_unique;
@@ -48,19 +48,19 @@ body: Optional["ArchBlock"],
     arch_type=nd.arch_type.name;
     arch_insert = "";
     if arch_type == Tok.KW_OBJECT {
-        "Object" |> <self>.add_arch_import;
+        "Object" |> <self>.add_element_import;
         arch_insert = "__jac_Object__";
     }
     elif arch_type == Tok.KW_NODE {
-        "Node" |> <self>.add_arch_import;
+        "Node" |> <self>.add_element_import;
         arch_insert = "__jac_Node__";
     }
     elif arch_type == Tok.KW_EDGE {
-        "Edge" |> <self>.add_arch_import;
+        "Edge" |> <self>.add_element_import;
         arch_insert = "__jac_Edge__";
     }
     elif arch_type == Tok.KW_WALKER {
-        "Walker" |> <self>.add_arch_import;
+        "Walker" |> <self>.add_element_import;
         arch_insert = "__jac_Walker__";
     }
     if nd.base_classes.base_classes |> len {
@@ -93,6 +93,7 @@ arch_attached: Optional["ArchBlock"] = None,
 """
 :object:PurplePygenPass:ability:exit_ability
 (nd: ast.Ability) {
+    "Ability" |> <self>.add_element_import;
     if nd.decorators {
         (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
     }
