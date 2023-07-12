@@ -29,7 +29,7 @@ class BluePygenPass(Pass):
     def emit_ln(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
         self.emit(node, s.strip().strip("\n"), indent_delta)
-        self.emit(node, "\n")
+        self.emit(node, f"  #Jac Line: {node.line}\n")
 
     def emit_ln_unique(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""

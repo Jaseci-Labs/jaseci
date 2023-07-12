@@ -24,6 +24,19 @@ def add_line_numbers(s: str) -> str:
     lines = s.split("\n")
     return "\n".join(f"{i+1}: \t{line}" for i, line in enumerate(lines))
 
+def clip_code_section(s: str, target_line: int, line_range: int) -> str:
+    """Clip a section of code and highlight target line."""
+    lines = s.split('\n')
+    start = max(0, target_line - line_range - 1)
+    end = min(target_line + line_range, len(lines))
+    
+    result = []
+    for i in range(start, end):
+        line = lines[i]
+        if i == target_line - 1:
+            line = '*' + line
+        result.append(line)
+    return '\n'.join(result)
 
 def get_ast_nodes_as_snake_case() -> list[str]:
     """Get all AST nodes as snake case."""
