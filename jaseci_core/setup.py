@@ -23,7 +23,7 @@ setup(
         "flake8",
         "pep8-naming",
         "stripe",
-        "pydantic",
+        "pydantic==1.10.11",
         "docstring-parser",
         "prometheus_api_client==0.5.1",
         "prometheus-client==0.14.1",
