@@ -30,27 +30,35 @@ def setup():
 
     try:
         pipeline = spacy.load(SPACY_MODEL_PATH)
+        print(
+            f"Spacy Model found in jaseci cache location {SPACY_MODEL_PATH}, loading now.."
+        )
     except OSError:
+        print(
+            f"Spacy Model not found in the jaseci cache location {SPACY_MODEL_PATH}, downloading now.."
+        )
         spacy.cli.download(SPACY_MODEL_NAME)
         pipeline = spacy.load(SPACY_MODEL_NAME)
         pipeline.to_disk(SPACY_MODEL_PATH)
 
     if all(
         os.path.isfile(os.path.join(TFM_MODEL_PATH, file))
-        for file in ["config.json", "pytorch_model.bin"]
+        for file in ["vocab.json", "pytorch_model.bin"]
     ):
+        print(f"Model found in jaseci cache location {TFM_MODEL_PATH}, loading now..")
         tokenizer = AutoTokenizer.from_pretrained(TFM_MODEL_PATH, local_files_only=True)
         model = AutoModelForSequenceClassification.from_pretrained(
             TFM_MODEL_PATH, local_files_only=True
         )
     else:
+        print(
+            f"Text_Seg Model not found in the jaseci cache location {TFM_MODEL_PATH}, downloading now.."
+        )
         os.makedirs(TFM_MODEL_PATH, exist_ok=True)
-        tokenizer = AutoTokenizer.from_pretrained(
-            TFM_MODEL_NAME, cache_dir=TFM_MODEL_PATH
-        )
-        model = AutoModelForSequenceClassification.from_pretrained(
-            TFM_MODEL_NAME, cache_dir=TFM_MODEL_PATH
-        )
+        tokenizer = AutoTokenizer.from_pretrained(TFM_MODEL_NAME)
+        model = AutoModelForSequenceClassification.from_pretrained(TFM_MODEL_NAME)
+        tokenizer.save_vocabulary(TFM_MODEL_PATH)
+        model.save_pretrained(TFM_MODEL_PATH)
 
 
 def segmentation(text, threshold=0.85):

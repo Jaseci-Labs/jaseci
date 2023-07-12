@@ -56,7 +56,7 @@ ENT_EXT_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "ent-ext",
-                                "image": "jaseci/jac-nlp:1.4.0.18",
+                                "image": "jaseci/jac-nlp:1.4.0.21",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {

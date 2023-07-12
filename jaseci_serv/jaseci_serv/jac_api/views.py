@@ -3,7 +3,6 @@ from base64 import b64encode
 from io import BytesIO
 from tempfile import _TemporaryFileWrapper
 from time import time
-
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -105,18 +104,17 @@ class AbstractJacAPIView(APIView):
         # Add custom fields depending on the type of API
         if log_dict["api_name"] == "walker_run":
             log_dict["walker_name"] = self.cmd.get("name", "")
-            log_dict["success"] = (api_result.get("success", True),)
+            log_dict["success"] = api_result.get("success", True)
         try:
             api_result_str = json.dumps(api_result)[:OBJECT_LOG_LIMIT]
         except TypeError:
             api_result_str = str(api_result)[:OBJECT_LOG_LIMIT]
         log_dict["api_response"] = api_result_str
-
         log_dict["extra_fields"] = list(log_dict.keys())
-
         logger.info(log_str, extra=log_dict)
+
         JsOrc.get("action_manager", ActionManager).post_request_hook(
-            type(self).__name__, request, tot_time
+            type(self).__name__, request, tot_time, api_result
         )
 
     def proc_prime_ctx(self, request, req_data):

@@ -59,7 +59,7 @@ USE_QA_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "use-qa",
-                                "image": "jaseci/jac-nlp:1.4.0.18",
+                                "image": "jaseci/jac-nlp:1.4.0.21",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
