@@ -126,6 +126,7 @@ def chat(
     stop: Union[str, list] = None,
     presence_penalty: float = 0,
     frequency_penalty: float = 0,
+    **kwargs
 ):
     """
     Generate responses to a list of messages using OpenAI's GPT-3.5 model.
@@ -164,6 +165,7 @@ def chat(
         stop=stop,
         presence_penalty=presence_penalty,
         frequency_penalty=frequency_penalty,
+        **kwargs
     )
     response = [x.message for x in response.choices]
     return response
