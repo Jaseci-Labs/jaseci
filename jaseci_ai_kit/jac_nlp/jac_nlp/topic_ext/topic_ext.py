@@ -79,7 +79,7 @@ def keyword_extraction(
 ):
     if min_tokens > max_tokens:
         raise ValueError(
-            "The value of min_tokens shoul be less or equal than the value of max_tokens"
+            "The value of min_tokens should be less or equal than the value of max_tokens"
         )
 
     try:
@@ -92,7 +92,7 @@ def keyword_extraction(
         return keywords
     except ValueError as ve:
         print(
-            "Try decresing the value of n_words, The n_words should be less or equal to number of unique words in the sentence after removing stopwords"
+            "Try decreasing the value of n_words, The n_words should be less or equal to number of unique words in the sentence after removing stopwords"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
