@@ -117,6 +117,7 @@ class BluePygenPass(Pass):
         if node.body:
             self.emit(node, node.body.meta["py_code"])
         self.ir = node
+        self.ir.meta["py_code"]=self.ir.meta["py_code"].rstrip()
 
     def exit_elements(self, node: ast.Elements) -> None:
         """Sub objects.
