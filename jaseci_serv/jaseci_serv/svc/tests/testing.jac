@@ -1,11 +1,18 @@
+node a {
+    has val;
+}
+
+walker init {
+    root: take --> node::a else: take spawn here ++> node::a;
+    a: report here;
+}
+
 walker scheduled_walker {
-    with entry {
-        report true;
-    }
+    root: take --> node::a;
+    a: report here.val = true;
 }
 
 walker scheduled_sequence {
-    with entry {
-        report false;
-    }
+    root: take --> node::a;
+    a: report here.val = false;
 }

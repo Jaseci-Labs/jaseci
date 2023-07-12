@@ -11,9 +11,17 @@ from django.urls import reverse
 from django.test import TestCase
 from rest_framework.test import APIClient
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from jaseci_serv.base.models import JaseciObject
 
 
 class TaskServiceTest(TestCaseHelper, TestCase):
+    def assert_obj(self, val=None):
+        # check on db if committed
+        self.assertEqual(
+            val,
+            loads(JaseciObject.objects.get(jid=self.node_a).jsci_obj)["context"]["val"],
+        )
+
     def setUp(self):
         super().setUp()
         # First user is always super,
@@ -34,6 +42,13 @@ class TaskServiceTest(TestCaseHelper, TestCase):
         self.admin_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
+
+        payload = {"op": "walker_run", "name": "init"}
+        self.node_a = self.admin_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        ).data["report"][0]["jid"]
+
+        self.assert_obj()
 
         payload = {"op": "global_sentinel_set"}
         self.admin_client.post(
@@ -89,6 +104,7 @@ class TaskServiceTest(TestCaseHelper, TestCase):
 
         self.assertTrue(task_result["success"])
         self.assertEqual([True], task_result["report"])
+        self.assert_obj(True)
 
         res = self.admin_client.post(
             reverse(f'jac_api:{"get_scheduled_queues"}'),
@@ -261,6 +277,7 @@ class TaskServiceTest(TestCaseHelper, TestCase):
         self.assertEqual(
             "admin@jaseci.com", task_result["all_users"]["data"][1]["user"]
         )
+        self.assert_obj(False)
 
     @skip_without_redis
     def test_add_scheduled_sequence_via_user(self):
