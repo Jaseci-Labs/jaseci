@@ -1237,8 +1237,13 @@ class Interp(VirtualMachine):
             viable_nodes = self.visibility_prune(viable_nodes)
             if len(kid) > 1:
                 for i in viable_nodes.obj_list():
-                    if i.get_architype().is_instance(kid[-1].token_text()):
-                        result.add_obj(i)
+                    try:
+                        if i.get_architype().is_instance(kid[-1].token_text()):
+                            result.add_obj(i)
+                    except:
+                        self.rt_warn(
+                            f"Error occured while getting architype {i.name}. Skipping..."
+                        )
             else:
                 result += viable_nodes
         else:
