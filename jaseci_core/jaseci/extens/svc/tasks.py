@@ -71,7 +71,12 @@ class ScheduledWalker(Task):
             if not nd:
                 return f"{DEFAULT_MSG} Invalid Node!"
 
-            return mst.walker_run(wlk, nd, ctx, ctx, snt, False, False)
+            resp = mst.walker_run(wlk, nd, ctx, ctx, snt, False, False)
+
+            mst._h.commit_all_cache_sync()
+            mst._h.commit(True)
+
+            return resp
         except Exception as e:
             return f"{DEFAULT_MSG} Error occured: {e}"
 
@@ -202,8 +207,12 @@ class ScheduledSequence(Task):
 
         api = req.get("api")
         body = req.get("body", {})
+        resp = getattr(caller, f"{trigger_type}_interface_to_api")(body, api)
 
-        return getattr(caller, f"{trigger_type}_interface_to_api")(body, api)
+        caller._h.commit_all_cache_sync()
+        caller._h.commit(True)
+
+        return resp
 
     def run(self, **kwargs):
         requests = kwargs.get("requests")
