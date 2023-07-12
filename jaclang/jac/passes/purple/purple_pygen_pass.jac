@@ -178,18 +178,19 @@ op: Token,
 }
 
 
-# """Sub objects.
+"""Sub objects.
 
-# spawn: Optional[ExprType],
-# edge_dir: EdgeDir,
-# """
-# :object:PurplePygenPass:ability:exit_connect_op
-# (nd: ast.ConnectOp) {
-#     # if nd.spwn {
-#     #     (nd, f"spawn {nd.spawn.meta['py_code']}") |> <self>.emit;
-#     # }
-#     # if nd.edge_dir {
-#     #     (nd, f" {nd.edge_dir.meta['py_code']}") |> <self>.emit;
-#     # }
-#     # (nd, f" {nd.meta['py_code']}") |> <self>.emit_ln;
-# }
+spawn: Optional[ExprType],
+edge_dir: EdgeDir,
+"""
+:object:PurplePygenPass:ability:exit_connect_op
+(nd: ast.ConnectOp) {
+    "Edge" |> <self>.add_element_import;
+
+    if nd.spwn {
+        (nd, f"{nd.spawn.meta['py_code']}.__jac_as_dir(ast.EdgeDir.{nd.edge_dir.name})") |> <self>.emit;
+    } else {
+        (nd, f"Edge().__jac_as_dir(ast.EdgeDir.{nd.edge_dir.name})") |> <self>.emit;
+    }
+    (nd, f" {nd.meta['py_code']}") |> <self>.emit_ln;
+}
