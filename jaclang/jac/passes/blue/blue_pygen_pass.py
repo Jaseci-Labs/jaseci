@@ -1,6 +1,6 @@
 """Jac Blue pass for Jaseci Ast."""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.constant import INIT_FUNC, JAC_LANG_IMP
+from jaclang.jac.constant import Constants as C 
 from jaclang.jac.lexer import Tokens as Tok
 from jaclang.jac.passes import Pass
 
@@ -178,7 +178,7 @@ class BluePygenPass(Pass):
         is_absorb: bool,  # For includes
         self.sub_module = None
         """
-        if node.lang.value == JAC_LANG_IMP:  # injects module into sys.modules
+        if node.lang.value == C.JAC_LANG_IMP:  # injects module into sys.modules
             self.needs_jac_import()
             self.emit_ln(
                 node,
@@ -337,7 +337,7 @@ class BluePygenPass(Pass):
         """
         init_func = None
         for i in node.members:
-            if type(i) == ast.Ability and i.name.value == INIT_FUNC:
+            if type(i) == ast.Ability and i.name.value == C.INIT_FUNC:
                 init_func = i
         if init_func and init_func.is_func:
             self.emit_ln(
@@ -357,7 +357,7 @@ class BluePygenPass(Pass):
                 and init_func.signature.params
             ):
                 params = [x.name.value for x in init_func.signature.params.params]
-            self.emit_ln(node, f"self.{INIT_FUNC}({', '.join(params)})", indent_delta=1)
+            self.emit_ln(node, f"self.{C.INIT_FUNC}({', '.join(params)})", indent_delta=1)
         self.emit_ln(node, "super().__init__(*args, **kwargs)", indent_delta=1)
         for i in node.members:
             self.emit_ln(node, i.meta["py_code"])
@@ -462,7 +462,7 @@ class BluePygenPass(Pass):
         if (
             type(node.parent) == ast.Ability
             and node.parent.arch_attached
-            and node.parent.name.value == INIT_FUNC
+            and node.parent.name.value == C.INIT_FUNC
         ):
             self.emit(node, ", *args, **kwargs")
         self.emit(node, ")")

@@ -3,7 +3,7 @@ import:py jaclang.jac.absyntree as ast;
 import:py from jaclang.jac.passes.blue, BluePygenPass;
 import:py from jaclang.core, Object, Node, Edge, Walker;
 import:py from jaclang.jac.lexer, Tokens as Tok;
-import:py from jaclang.jac.constant, INIT_FUNC;
+import:py from jaclang.jac.constant, Constants as C;
 
 object PurplePygenPass:BluePygenPass {
 
@@ -27,7 +27,7 @@ object PurplePygenPass:BluePygenPass {
 }
 
 :object:PurplePygenPass:ability:add_exec_context {
-    (self.preamble, f"from jaclang.core import exec_ctx as __jac_exec_ctx")
+    (self.preamble, f"from jaclang.core import exec_ctx as {C.EXEC_CONTEXT}")
     |> <self>.emit_ln_unique;
 }
 
@@ -53,19 +53,19 @@ body: Optional["ArchBlock"],
     arch_insert = "";
     if arch_type == Tok.KW_OBJECT {
         "Object" |> <self>.add_element_import;
-        arch_insert = "__jac_Object__";
+        arch_insert = C.OBJECT_CLASS;
     }
     elif arch_type == Tok.KW_NODE {
         "Node" |> <self>.add_element_import;
-        arch_insert = "__jac_Node__";
+        arch_insert = C.NODE_CLASS;
     }
     elif arch_type == Tok.KW_EDGE {
         "Edge" |> <self>.add_element_import;
-        arch_insert = "__jac_Edge__";
+        arch_insert = C.EDGE_CLASS;
     }
     elif arch_type == Tok.KW_WALKER {
         "Walker" |> <self>.add_element_import;
-        arch_insert = "__jac_Walker__";
+        arch_insert = C.WALKER_CLASS;
     }
     if nd.base_classes.base_classes |> len {
         (nd, f"class {nd.name.meta['py_code']}"
@@ -135,10 +135,10 @@ return_type: Optional["TypeSpec"],
 :object:PurplePygenPass:ability:exit_event_signature
 (nd: ast.EventSignature) {
     if nd.arch_tag_info {
-        (nd, f"__jac_here__: {nd.arch_tag_info.meta['py_code']})")
+        (nd, f"{C.HERE}: {nd.arch_tag_info.meta['py_code']})")
             |> <self>.emit;
     } else {
-        (nd, f"__jac_here__)") |> <self>.emit;
+        (nd, f"{C.HERE})") |> <self>.emit;
     }
     if nd.return_type {
         (nd, f" -> {nd.return_type.meta['py_code']}") |> <self>.emit;
@@ -166,10 +166,10 @@ op: Token,
 (nd: ast.BinaryExpr) {
     if (nd.op.name|>type) == ast.ConnectOp {
         if(nd.op.spwn) {
-            (nd, f"{nd.left.meta['py_code']}.__jac_connect({nd.right.meta['py_code']}, {nd.op.meta['py_code']})")
+            (nd, f"{nd.left.meta['py_code']}.{C.CONNECT_NODE}({nd.right.meta['py_code']}, {nd.op.meta['py_code']})")
                 |> <self>.emit;
         } else {
-            (nd, f"{nd.left.meta['py_code']}.__jac_connect({nd.right.meta['py_code']})")
+            (nd, f"{nd.left.meta['py_code']}.{C.CONNECT_NODE}({nd.right.meta['py_code']})")
                 |> <self>.emit;
         }
     } else {
@@ -188,9 +188,9 @@ edge_dir: EdgeDir,
     "Edge" |> <self>.add_element_import;
 
     if nd.spwn {
-        (nd, f"{nd.spawn.meta['py_code']}.__jac_as_dir(ast.EdgeDir.{nd.edge_dir.name})") |> <self>.emit;
+        (nd, f"{nd.spwn.meta['py_code']}.{C.WITH_DIR}(ast.EdgeDir.{nd.edge_dir.name})") |> <self>.emit;
     } else {
-        (nd, f"Edge().__jac_as_dir(ast.EdgeDir.{nd.edge_dir.name})") |> <self>.emit;
+        (nd, f"Edge().{C.WITH_DIR}(ast.EdgeDir.{nd.edge_dir.name})") |> <self>.emit;
     }
     (nd, f" {nd.meta['py_code']}") |> <self>.emit_ln;
 }
