@@ -32,3 +32,20 @@ class UncommonImplementationTest(CoreTest):
         # before it will return the owner of the sentinel which is the super_master
         self.assertEqual("master", res["report"][0]["j_type"])
         self.assertEqual(1, len(res["report"][1]))
+
+    def test_existing_node_in_graph_but_not_in_sentinel(self):
+        self.call(
+            self.smast,
+            ["sentinel_register", {"code": self.load_jac("with_node_b.jac")}],
+        )
+
+        self.call(
+            self.smast,
+            ["sentinel_register", {"code": self.load_jac("without_node_b.jac")}],
+        )
+
+        res = self.call(self.smast, ["walker_run", {"name": "init"}])
+
+        self.assertTrue(res["success"])
+        self.assertEqual(1, len(res["report"]))
+        self.assertTrue("a", len(res["report"][0]["name"]))
