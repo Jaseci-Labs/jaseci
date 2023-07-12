@@ -1,0 +1,5 @@
+# langflow
+langchain
+openai
+chromadb
+tiktoken

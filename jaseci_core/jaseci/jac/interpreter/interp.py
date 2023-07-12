@@ -1237,8 +1237,13 @@ class Interp(VirtualMachine):
             viable_nodes = self.visibility_prune(viable_nodes)
             if len(kid) > 1:
                 for i in viable_nodes.obj_list():
-                    if i.get_architype().is_instance(kid[-1].token_text()):
-                        result.add_obj(i)
+                    try:
+                        if i.get_architype().is_instance(kid[-1].token_text()):
+                            result.add_obj(i)
+                    except:
+                        self.rt_warn(
+                            f"Error occured while getting architype {i.name}. Skipping..."
+                        )
             else:
                 result += viable_nodes
         else:
@@ -1719,6 +1724,8 @@ class Interp(VirtualMachine):
     def call_ability(self, nd, name, act_list):
         ability = act_list.get_obj_by_name(name)
         try:
+            ability.j_master = self.j_master
+            ability._mast = self._mast
             ability.run_ability(here=nd, visitor=self._jac_scope.visitor())
         except Exception as e:
             self.rt_error(f"Internal Exception: {e}", ability._cur_jac_ast)
