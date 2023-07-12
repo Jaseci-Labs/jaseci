@@ -5,11 +5,11 @@ walker test_transcribe_file {
 
 walker test_transcribe_url {
     can stt.transcribe;
-    report stt.transcribe(url="https://commons.wikimedia.org/wiki/File:MCPON%27s_speech_to_USS_George_Washington%27s_crew_(April_2022).mp3");
+    report stt.transcribe(url="https://audio-samples.github.io/samples/mp3/blizzard_unconditional/sample-0.mp3");
 }
 
 walker test_translate {
     can stt.translate;
-    report stt.translate(url="https://www.audio-lingua.eu/IMG/mp3/les_sports.mp3");
+    report stt.translate(url="https://audio-samples.github.io/samples/mp3/blizzard_unconditional/sample-0.mp3");
 }
 
