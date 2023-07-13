@@ -1,19 +1,16 @@
 from unittest import TestCase
+import os
+import sys
 from jaseci.utils.utils import TestCaseHelper
 from unittest.mock import patch
 import jaseci.jsorc.live_actions as jla
 import jaseci.jsorc.remote_actions as jra
 from jaseci.jsorc.live_actions import (
     gen_remote_func_hook,
-    # load_module_actions,
-    # live_actions,
-    # load_remote_actions,
+    load_module_actions,
     unload_module,
     act_procs,
-    load_local_actions,
 )
-
-# from jaseci.utils.test_core import CoreTest
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.prim.sentinel import Sentinel
 
@@ -22,67 +19,26 @@ class JacActionsTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
+        """
+        Set up the test case by adding necessary paths to sys.path.
+        """
+        files = ["test_1/demo_test1.py", "test_2/demo_test2.py"]
+        for file in files:
+            module_dir = os.path.dirname(os.path.dirname(os.path.realpath(file)))
+            if module_dir not in sys.path:
+                sys.path.append(module_dir)
         super().setUp()
 
     def tearDown(self):
+        """
+        Tear down the test case.
+        """
         super().tearDown()
 
-    def test_load_unload_load_demo_test_module(self):
-        """Test loading, unloading, and loading again of a demo_test module"""
-        demo_test1_jac_code = """
-            walker test_demo {
-                can demo_test1.action1;
-                report demo_test.action1("Hello, world!");
-            }
-        """
-        demo_test2_jac_code = """
-            walker test_demo {
-                can demo_test2.action1;
-                report demo_test.action1("Hello, world!");
-            }
-        """
-        # Load the demo_test module
-        load_local_actions("./test_1/demo_test1.py")
-        # Store the initial number of subprocesses
-        initial_subprocess_count = len(act_procs)
-        # Perform tests for the action module
-        sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(demo_test1_jac_code)
-        root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_demo")
-        test_walker.prime(root_node)
-        test_walker.run()
-
-        load_local_actions("./test_2/demo_test2.py")
-        # Assert that the number of subprocesses has increased
-        self.assertGreater(len(act_procs), initial_subprocess_count)
-        # Perform tests for the action module
-        sent = Sentinel(m_id=0, h=JsOrc.hook())
-        sent.register_code(demo_test2_jac_code)
-        root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
-        test_walker = sent.run_architype("test_demo")
-        test_walker.prime(root_node)
-        test_walker.run()
-        # Unload the demo_test module
-        unload_module("test_1.demo_test1")
-
-        # Assert that the number of subprocesses has decreased
-        self.assertEqual(len(act_procs), initial_subprocess_count)
-        # Unload the demo_test module
-        unload_module("test_2.demo_test2")
-
-        # Assert that the number of subprocesses has decreased
-        self.assertLess(len(act_procs), initial_subprocess_count)
-        # Perform additional tests after unloading the module
-        # ...
-
-        # # Load the same demo_test module again
-        # load_module_actions("demo_test")
-
-        # # Assert that the number of subprocesses has increased
-        # self.assertGreater(len(jla.live_actions.act_procs), initial_subprocess_count)
-
     def test_remote_action_example(self):
+        """
+        Test the generation of remote actions and their parameters.
+        """
         from typing import Union
 
         @jla.jaseci_action(
@@ -104,7 +60,6 @@ class JacActionsTests(TestCaseHelper, TestCase):
             pass
 
         jra.serv_actions()
-        print(jra.remote_actions)
         self.assertEqual(
             jra.remote_actions,
             {
@@ -121,10 +76,16 @@ class JacActionsTests(TestCaseHelper, TestCase):
         )
 
     def test_live_action_globals(self):
+        """
+        Test the availability of live actions in the global namespace.
+        """
         self.assertGreater(len(jla.live_actions), 25)
 
     @patch("requests.post")
     def test_remote_action_kwargs(self, mock_post):
+        """
+        Test the execution of remote actions with keyword arguments.
+        """
         remote_action = gen_remote_func_hook(
             url="https://example.com/api/v1/endpoint",
             act_name="example.action",
@@ -140,6 +101,10 @@ class JacActionsTests(TestCaseHelper, TestCase):
         assert kwargs["json"] == payload
 
     def test_setup_decorated_as_startup(self):
+        """
+        Test that an action decorated with 'allow_remote' is set as startup.
+        """
+
         @jla.jaseci_action(act_group=["ex"], allow_remote=True)
         def setup(param: str = ""):
             pass
@@ -148,15 +113,17 @@ class JacActionsTests(TestCaseHelper, TestCase):
         assert len(app.__dict__["router"].__dict__["on_startup"]) == 1
 
     def test_load_single_action_module(self):
-        """Test loading a single action module"""
+        """
+        Test loading a single action module.
+        """
         demo_test1_jac_code = """
             walker test_demo {
                 can demo_test1.action1;
-                report demo_test.action1("Hello, world!");
+                report demo_test1.action1("Hello, world!");
             }
         """
         # Load the demo_test module
-        load_local_actions("./test_1/demo_test1.py")
+        load_module_actions("test_1.demo_test1")
         # Store the initial number of subprocesses
         initial_subprocess_count = len(act_procs)
         # Perform tests for the action module
@@ -173,16 +140,18 @@ class JacActionsTests(TestCaseHelper, TestCase):
         self.assertLess(len(act_procs), initial_subprocess_count)
 
     def test_load_single_action_module_twice(self):
-        """Test loading a single action module"""
+        """
+        Test loading a single action module twice.
+        """
         demo_test1_jac_code = """
             walker test_demo {
                 can demo_test1.action1;
-                report demo_test.action1("Hello, world!");
+                report demo_test1.action1("Hello, world!");
             }
         """
 
         # Load the demo_test module
-        load_local_actions("./test_1/demo_test1.py")
+        load_module_actions("test_1.demo_test1")
         # Store the initial number of subprocesses
         initial_subprocess_count = len(act_procs)
         # Perform tests for the action module
@@ -194,7 +163,7 @@ class JacActionsTests(TestCaseHelper, TestCase):
         test_walker.run()
 
         # Load the same action module again
-        load_local_actions("./test_1/demo_test1.py")
+        load_module_actions("test_1.demo_test1")
 
         # Assert that the number of subprocesses remains the same
         self.assertEqual(len(act_procs), initial_subprocess_count)
@@ -202,21 +171,23 @@ class JacActionsTests(TestCaseHelper, TestCase):
         unload_module("test_1.demo_test1")
 
     def test_load_multiple_action_modules(self):
-        """Test loading, unloading, and loading again of a demo_test module"""
+        """
+        Test loading multiple action modules.
+        """
         demo_test1_jac_code = """
             walker test_demo {
                 can demo_test1.action1;
-                report demo_test.action1("Hello, world!");
+                report demo_test1.action1("Hello, world!");
             }
         """
         demo_test2_jac_code = """
             walker test_demo {
-                can demo_test2.action1;
-                report demo_test.action1("Hello, world!");
+                can demo_test2.action2;
+                report demo_test2.action2("Hello, world!");
             }
         """
         # Load the demo_test module
-        load_local_actions("./test_1/demo_test1.py")
+        load_module_actions("test_1.demo_test1")
         # Store the initial number of subprocesses
         initial_subprocess_count = len(act_procs)
         # Perform tests for the action module
@@ -227,7 +198,7 @@ class JacActionsTests(TestCaseHelper, TestCase):
         test_walker.prime(root_node)
         test_walker.run()
 
-        load_local_actions("./test_2/demo_test2.py")
+        load_module_actions("test_2.demo_test2")
         # Assert that the number of subprocesses has increased
         self.assertGreater(len(act_procs), initial_subprocess_count)
         # Perform tests for the action module
@@ -249,16 +220,18 @@ class JacActionsTests(TestCaseHelper, TestCase):
         self.assertLess(len(act_procs), initial_subprocess_count)
 
     def test_load_unload_load_action_module(self):
-        """Test loading, unloading, and loading again of an action module"""
+        """
+        Test loading, unloading, and loading again of an action module.
+        """
         demo_test1_jac_code = """
             walker test_demo {
                 can demo_test1.action1;
-                report demo_test.action1("Hello, world!");
+                report demo_test1.action1("Hello, world!");
             }
         """
 
         # Load the demo_test module
-        load_local_actions("./test_1/demo_test1.py")
+        load_module_actions("test_1.demo_test1")
         # Store the initial number of subprocesses
         initial_subprocess_count = len(act_procs)
         # Perform tests for the action module
@@ -276,7 +249,7 @@ class JacActionsTests(TestCaseHelper, TestCase):
         self.assertLess(len(act_procs), initial_subprocess_count)
 
         # Load the demo_test module
-        load_local_actions("./test_1/demo_test1.py")
+        load_module_actions("test_1.demo_test1")
 
         # Assert that the number of subprocesses has increased
         self.assertEqual(len(act_procs), initial_subprocess_count)
@@ -293,4 +266,53 @@ class JacActionsTests(TestCaseHelper, TestCase):
         unload_module("test_1.demo_test1")
 
         # Assert that the number of subprocesses has decreased again
+        self.assertLess(len(act_procs), initial_subprocess_count)
+
+    def test_load_action_module_same_act_group(self):
+        """
+        Test loading of an action module within the same act group.
+        """
+        demo_test1_jac_code = """
+        walker test_demo {
+                can demo_test2.action2;
+                report demo_test2.action2("Hello, world!");
+            }
+        """
+        demo_test2_jac_code = """
+            walker test_demo {
+                can demo_test2.action3;
+                report demo_test2.action3("Hello, world!");
+            }
+        """
+        # Load the demo_test module
+        load_module_actions("test_2.demo_test2")
+        # Store the initial number of subprocesses
+        initial_subprocess_count = len(act_procs)
+        # Perform tests for the action module
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
+        sent.register_code(demo_test1_jac_code)
+        root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
+        test_walker = sent.run_architype("test_demo")
+        test_walker.prime(root_node)
+        self.assertTrue(test_walker.run()["success"])
+
+        load_module_actions("test_2.demo_test3")
+        # Assert that the number of subprocesses has increased
+        self.assertGreater(len(act_procs), initial_subprocess_count)
+        # Perform tests for the action module
+        sent = Sentinel(m_id=0, h=JsOrc.hook())
+        sent.register_code(demo_test2_jac_code)
+        root_node = sent.arch_ids.get_obj_by_name("root", kind="node").run()
+        test_walker = sent.run_architype("test_demo")
+        test_walker.prime(root_node)
+        self.assertTrue(test_walker.run()["success"])
+        # Unload the demo_test module
+        unload_module("test_2.demo_test2")
+
+        # Assert that the number of subprocesses has decreased
+        self.assertEqual(len(act_procs), initial_subprocess_count)
+        # Unload the demo_test module
+        unload_module("test_2.demo_test3")
+
+        # Assert that the number of subprocesses has decreased
         self.assertLess(len(act_procs), initial_subprocess_count)

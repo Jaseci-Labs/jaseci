@@ -13,10 +13,7 @@ import os
 import sys
 import inspect
 import importlib
-import threading
-import gc
 import time
-import signal
 
 # a = 1
 # mutex = threading.Lock()
@@ -33,6 +30,7 @@ action_configs = {}  # {"module_name": {}, ...}
 act_procs = {}
 glob_act_group = {}  # {"group_name": {"act_name": action, ...}, ...}
 glob_act_hook = None
+action_lookup = {}
 
 
 def jaseci_action(act_group=None, aliases=list(), allow_remote=False):
@@ -110,15 +108,12 @@ def load_local_actions(file: str, ctx: dict = {}):
                     mod.setup(**ctx)
             except Exception as e:
                 logger.error(
-                    f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+                    f"""Cannot run set up for module {mod}. This could be because
+                    the module doesn't have a setup procedure for initialization,
+                     or wrong setup parameters are provided."""
                 )
                 logger.error(e)
-            module_name = mod.__name__
-            if load_module_actions(module_name, ctx=ctx):
-                return True
-            else:
-                unload_module(module_name)
-                return False
+            return True
     except Exception as e:
         logger.error(f"Cannot hot load local actions from {file}: {e}")
         return False
@@ -137,8 +132,9 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
             loaded_mod.setup(**ctx)
     except Exception as e:
         logger.error(
-            f"Cannot run set up for module {mod}.",
-            " This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided.",
+            f"""Cannot run set up for module {mod}.",
+            This could be because the module doesn't have a setup procedure
+            for initialization, or wrong setup parameters are provided."""
         )
         logger.error(e)
     # logger.info(f"return list of actions")
@@ -163,43 +159,36 @@ def action_handler(mod, ctx, in_q, out_q, terminate_event):
 
 
 def action_handler_wrapper(name, *args, **kwargs):
-    # module = action.split(".")[0]
-    # name = action.split(".")[1]
-    # logger.info(f"{os.getpid()}local action called for {name}")
-    module = name.split(".")[0]
-    act_name = name.split(".")[1]
-    # TODO: temporary hack
-    if module == "use" and act_name in [
-        "encode",
-        "text_similarity",
-        "text_classify",
-    ]:
-        module = "use_enc"
-    elif module == "use":
-        module = "use_qa"
+    module = action_lookup.get(name)
+    if module is None:
+        logger.info(f"No module found for action: {name}")
+        raise ValueError(f"No module found for action: {name}")
 
-    module = f"jac_nlp.{module}"
+    # logger.info(f"{os.getpid()} local action called for {name}")
 
-    # logger.info("put in_q")
+    # Increment the request count for the module
     act_procs[module]["reqs"] += 1
-    cnt = act_procs[module]["reqs"]
+    # cnt = act_procs[module]["reqs"]
     # logger.info(f"{module} reqs: {cnt}")
-    # logger.info(f"{os.getpid()}put in_q")
+
+    # Put the action into the input queue
     act_procs[module]["in_q"].put((name, args, kwargs))
 
     # logger.info(f"{os.getpid()}waiting on out_q")
     # TODO: Handle concurrent calls?
     try:
+        # Wait for the result from the output queue
         res = act_procs[module]["out_q"].get(timeout=ACTION_SUBPROC_TIMEOUT)[1]
     except Empty as e:
-        logger.info(f"action subprocess out_q timeout.")
+        logger.info("Action subprocess out_q timeout.")
         raise e
     except Exception as e:
         logger.info("Unknown exception caught.")
         raise e
 
+    # Decrement the request count for the module
     act_procs[module]["reqs"] -= 1
-    cnt = act_procs[module]["reqs"]
+    # cnt = act_procs[module]["reqs"]
     # logger.info(f"{module} reqs: {cnt}")
 
     return res
@@ -207,7 +196,7 @@ def action_handler_wrapper(name, *args, **kwargs):
 
 def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     logger.info(f"load module actions {mod}")
-    # If the module status is intialization, return False
+    # If the module status is initialization, return False
     if mod in act_procs and act_procs[mod]["status"] == "INITIALIZATION":
         logger.info("already in initialization")
         return False
@@ -218,16 +207,17 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         and act_procs[mod]["status"] == "READY"
         and not act_procs[mod]["terminate_event"].is_set()
     ):
-        logger.info(f"already loaded and ready")
+        logger.info("already loaded and ready")
         return True
 
-    # If module termination set to be True and no outstanding requests, we delete previously allocated queues and process
+    # If module termination is set to True and no outstanding requests,
+    # we delete previously allocated queues and process
     if (
         mod in act_procs
         and act_procs[mod]["terminate_event"].is_set()
         and act_procs[mod]["reqs"] == 0
     ):
-        logger.info(f"clearing existing queues etc.")
+        logger.info("clearing existing queues etc.")
         del act_procs[mod]["in_q"]
         del act_procs[mod]["out_q"]
         del act_procs[mod]["proc"]
@@ -242,7 +232,7 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
         "reqs": 0,
         "status": "INITIALIZATION",
     }
-    logger.info(f"init the process")
+    logger.info("init the process")
     act_procs[mod]["proc"] = mp_ctx.Process(
         target=action_handler,
         args=(
@@ -253,11 +243,11 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
             act_procs[mod]["terminate_event"],
         ),
     )
-    logger.info(f"start the process")
+    logger.info("start the process")
     act_procs[mod]["proc"].start()
 
-    # get the list of action back
-    logger.info(f"waiting on list of actions")
+    # Get the list of actions back
+    logger.info("waiting on list of actions")
     actions_list = act_procs[mod]["out_q"].get()
 
     # while actions_sem.acquire():
@@ -273,10 +263,12 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
     try:
         for act in actions_list:
             live_actions[act] = action_handler_wrapper
+            action_lookup[act] = mod
     finally:
         live_actions_lock.writer_release()
     logger.info(f"live_actions_lock writer release in {time.time()-before_lock}")
-    # module intialization completes, set process status as ready
+
+    # Module initialization completes, set process status as ready
     act_procs[mod]["status"] = "READY"
 
     return True
@@ -305,7 +297,10 @@ def load_module_actions(mod, loaded_module=None, ctx: dict = {}):
 #                 mod.setup(**ctx)
 #         except Exception as e:
 #             logger.error(
-#                 f"Cannot run set up for module {mod}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+#                 f"Cannot run set up for module {mod}.
+#                   This could be because the module doesn't
+#                   have a setup procedure for initialization,
+#                   or wrong setup parameters are provided."
 #             )
 #             logger.error(e)
 #         if mod:
@@ -506,7 +501,10 @@ def load_remote_actions(url, ctx: dict = {}):
                         live_actions[i](**ctx)
                     except Exception as e:
                         logger.error(
-                            f"Cannot run set up for remote action {i}. This could be because the module doesn't have a setup procedure for initialization, or wrong setup parameters are provided."
+                            f"""Cannot run set up for remote action {i}.
+                            This could be because the module doesn't have a setup
+                            procedure for initialization,
+                            or wrong setup parameters are provided."""
                         )
                         logger.error(e)
         finally:
