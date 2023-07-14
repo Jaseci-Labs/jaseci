@@ -64,24 +64,9 @@ class Ability(Element, JacCode, Interp):
         # logger.info(f"run_action reader acquire in {time.time()-before_lock}")
         try:
             func = live_actions[action_name]
-            logger.info(
-                f"============================== run_action ==================="
-            )
-            logger.info(f"Name: {self.name}")
-            module_name = inspect.getmodule(func).__name__
-            function_name = func.__name__
-            function_signature = inspect.signature(func)
-
-            logger.info("Action Details:")
-            logger.info(f"Action Name: {action_name}")
-            logger.info(f"Module Name: {module_name}")
-            logger.info(f"Function Name: {function_name}")
-            logger.info(f"Function Signature: {function_signature}")
             args = inspect.getfullargspec(func)
-
             self.do_auto_conversions(args, param_list)
             args = args[0] + args[4]
-            logger.info("============================================================")
             hook = scope.parent._h
             action_manager = JsOrc.get("action_manager", ActionManager)
             action_manager.pre_action_call_hook()
