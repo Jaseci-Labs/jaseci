@@ -11,7 +11,12 @@ Requires OpenAI API Key
 
 from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.utils.utils import logger
+from uuid import uuid4
+from json import dumps
 import openai
+from os import remove
+from glob import glob
+from openai.cli import FineTune
 from typing import Union
 
 
@@ -126,7 +131,7 @@ def chat(
     stop: Union[str, list] = None,
     presence_penalty: float = 0,
     frequency_penalty: float = 0,
-    **kwargs
+    **kwargs,
 ):
     """
     Generate responses to a list of messages using OpenAI's GPT-3.5 model.
@@ -165,7 +170,7 @@ def chat(
         stop=stop,
         presence_penalty=presence_penalty,
         frequency_penalty=frequency_penalty,
-        **kwargs
+        **kwargs,
     )
     response = [x.message for x in response.choices]
     return response
@@ -406,3 +411,79 @@ def variations_image(
         x.url if response_format == "url" else x.b64_json for x in response.data
     ]
     return response
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def generate_model(prompts: list, file_name=None, **kwargs):
+    """
+    Generates model using these format.
+    [
+        {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
+        {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
+        {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
+    ]
+    """
+    fname = file_name or str(uuid4())
+    full_fname = f"{fname}.jsonl"
+    with open(full_fname, "w") as file:
+        for prompt in prompts:
+            file.write(dumps(prompt) + "\n")
+
+    FineTune.prepare_data(FineTunePreparation(full_fname, True))
+
+    response = openai.FineTune.create(
+        training_file=FineTune._get_or_upload(f"{fname}_prepared.jsonl", False),
+        validation_file=FineTune._get_or_upload(f"{fname}.jsonl", False),
+        **kwargs,
+    )
+
+    for f in glob(f"{fname}*.jsonl"):
+        remove(f)
+
+    return response
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def fine_tune_list(*args, **kwargs):
+    return openai.FineTune.list(*args, **kwargs)
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def fine_tune_retrieve(id: str, *args, **kwargs):
+    return openai.FineTune.retrieve(id, *args, **kwargs)
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def fine_tune_cancel(id: str, *args, **kwargs):
+    return openai.FineTune.cancel(id, *args, **kwargs)
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def file_list(*args, **kwargs):
+    return openai.File.list(*args, **kwargs)
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def file_delete(id: str, *args, **kwargs):
+    return openai.File.delete(id, *args, **kwargs)
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def file_delete(id: str, *args, **kwargs):
+    return openai.File.delete(id, *args, **kwargs)
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def model_retrieve(id: str, *args, **kwargs):
+    return openai.Model.retrieve(id, *args, **kwargs)
+
+
+@jaseci_action(act_group=["openai"], allow_remote=True)
+def model_delete(id: str, *args, **kwargs):
+    return openai.Model.delete(id, *args, **kwargs)
+
+
+class FineTunePreparation:
+    def __init__(self, file, quiet=False):
+        self.file = file
+        self.quiet = quiet
