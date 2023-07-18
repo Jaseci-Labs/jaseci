@@ -39,7 +39,7 @@ setup(
         "lxml>=4.9.2, <4.10.0",
         "html5lib>=1.1, <1.2",
         "prettytable>=3.7.0, <3.8.0",
-        "apache-libcloud",
+        "apache-libcloud==3.7.0",
     ],
     package_data={
         "": ["*.ini", "*.yaml", "jac.g4", "VERSION"],

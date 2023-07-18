@@ -1709,20 +1709,21 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertTrue(res["success"])
         self.assertEqual({"sample": "sample"}, res["report"][0]["ctx"])
 
-    def test_multipart_with_additional_file(self):
+    def test_multipart_with_additional_files(self):
         """Test multipart with additional file"""
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
         self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
         with open(os.path.dirname(__file__) + "/test.json", "rb") as ctx, open(
             os.path.dirname(__file__) + "/test.json", "rb"
-        ) as ctx2:
+        ) as ctx2, open(os.path.dirname(__file__) + "/image.png", "rb") as ctx3:
             form = {
                 "name": "simple_with_file",
                 "ctx": ctx,
                 "nd": "active:graph",
                 "snt": "active:sentinel",
                 "fileTypeField": ctx2,
+                "binaryFile": ctx3,
             }
             res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
@@ -1739,7 +1740,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 "content_type": "application/json",
                 "field": "fileTypeField",
                 "absolute_name": f"{uuid}-test.json",
-                "absolute_path": f"{uuid}-test.json",
+                "absolute_path": f"/tmp/{uuid}-test.json",
                 "persist": False,
             },
             res["report"][3],
@@ -1748,6 +1749,11 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual({"sample": "sample"}, res["report"][5])
         self.assertEqual('b\'{"sample":"sample"}\'', res["report"][6])
         self.assertEqual("eyJzYW1wbGUiOiJzYW1wbGUifQ==", res["report"][7])
+
+        with open(os.path.dirname(__file__) + "/image.png", "rb") as img:
+            string_bytes = str(img.read())
+            self.assertEqual(string_bytes, res["report"][8])
+            self.assertEqual(string_bytes, res["report"][9])
 
     def test_multipart_custom_payload_with_additional_file(self):
         """Test multipart custom payload (non ctx format) with additional file"""
@@ -1776,7 +1782,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
                 "content_type": "application/json",
                 "field": "fileTypeField",
                 "absolute_name": f"{uuid}-test.json",
-                "absolute_path": f"{uuid}-test.json",
+                "absolute_path": f"/tmp/{uuid}-test.json",
                 "persist": False,
             },
             res["report"][2],
