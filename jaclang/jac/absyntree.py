@@ -252,7 +252,7 @@ class GlobalVars(OOPAccessNode):
 
     def __init__(
         self,
-        doc: Optional["DocString"],
+        doc: Optional["Token"],
         access: Optional[Token],
         assignments: "AssignmentList",
         is_frozen: bool,
@@ -276,7 +276,7 @@ class Test(AstNode):
     def __init__(
         self,
         name: Name,
-        doc: Optional["DocString"],
+        doc: Optional["Token"],
         description: Token,
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -297,7 +297,7 @@ class ModuleCode(AstNode):
 
     def __init__(
         self,
-        doc: Optional["DocString"],
+        doc: Optional["Token"],
         body: "CodeBlock",
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -307,22 +307,6 @@ class ModuleCode(AstNode):
         """Initialize test node."""
         self.doc = doc
         self.body = body
-        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
-
-
-class DocString(AstNode):
-    """DocString node type for Jac Ast."""
-
-    def __init__(
-        self,
-        value: Optional[Token],
-        parent: Optional[AstNode],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize docstring node."""
-        self.value = value
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
@@ -412,7 +396,7 @@ class Architype(OOPAccessNode):
         self,
         name: Name,
         arch_type: Token,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         decorators: Optional["Decorators"],
         access: Optional[Token],
         base_classes: "BaseClasses",
@@ -439,7 +423,7 @@ class ArchDef(AstNode):
 
     def __init__(
         self,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         mod: Optional["NameList"],
         arch: "ArchRef",
         body: "ArchBlock",
@@ -496,7 +480,7 @@ class Ability(OOPAccessNode):
         name: Name,
         is_func: bool,
         is_async: bool,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         decorators: Optional["Decorators"],
         access: Optional[Token],
         signature: Optional["FuncSignature | TypeSpec | EventSignature"],
@@ -526,7 +510,7 @@ class AbilityDef(AstNode):
 
     def __init__(
         self,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         target: Optional["NameList"],
         ability: "ArchRef",
         signature: "FuncSignature | EventSignature",
@@ -659,7 +643,7 @@ class Enum(OOPAccessNode):
     def __init__(
         self,
         name: Name,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         decorators: Optional["Decorators"],
         access: Optional[Token],
         base_classes: "BaseClasses",
@@ -685,7 +669,7 @@ class EnumDef(AstNode):
 
     def __init__(
         self,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         enum: "ArchRef",
         mod: Optional["NameList"],
         body: "EnumBlock",
@@ -741,7 +725,7 @@ class ArchHas(OOPAccessNode):
 
     def __init__(
         self,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         is_static: bool,
         access: Optional[Token],
         vars: "HasVarList",

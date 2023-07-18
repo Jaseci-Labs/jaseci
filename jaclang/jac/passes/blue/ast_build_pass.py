@@ -161,19 +161,7 @@ class AstBuildPass(Pass):
         doc_tag -> DOC_STRING
         doc_tag -> empty
         """
-        if node.kid[0]:
-            replace_node(
-                node,
-                ast.DocString(
-                    value=node.kid[0],
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        else:
-            replace_node(node, None)
+        replace_node(node, node.kid[0])
 
     def exit_import_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.

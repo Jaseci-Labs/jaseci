@@ -1,6 +1,6 @@
 """Jac Blue pass for Jaseci Ast."""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.constant import Constants as C 
+from jaclang.jac.constant import Constants as Con
 from jaclang.jac.lexer import Tokens as Tok
 from jaclang.jac.passes import Pass
 
@@ -117,7 +117,7 @@ class BluePygenPass(Pass):
         if node.body:
             self.emit(node, node.body.meta["py_code"])
         self.ir = node
-        self.ir.meta["py_code"]=self.ir.meta["py_code"].rstrip()
+        self.ir.meta["py_code"] = self.ir.meta["py_code"].rstrip()
 
     def exit_elements(self, node: ast.Elements) -> None:
         """Sub objects.
@@ -125,18 +125,18 @@ class BluePygenPass(Pass):
         elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec],
         """
         for i in node.elements:
-            self.emit_ln(node, i.meta["py_code"])
+            self.emit(node, i.meta["py_code"])
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
-        doc: Optional["DocString"],
+        doc: Optional["Token"],
         access: Optional[Token],
         assignments: "AssignmentList",
         is_frozen: bool,
         """
         if node.doc:
-            self.emit_ln(node, node.doc.meta["py_code"])
+            self.emit(node, node.doc.meta["py_code"])
         self.emit_ln(node, node.assignments.meta["py_code"])
 
     # NOTE: Incomplete for Jac Purple and Red
@@ -144,7 +144,7 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         name: Token,
-        doc: Optional["DocString"],
+        doc: Optional["Token"],
         description: Token,
         body: "CodeBlock",
         """
@@ -153,20 +153,12 @@ class BluePygenPass(Pass):
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
 
-        doc: Optional["DocString"],
+        doc: Optional["Token"],
         body: "CodeBlock",
         """
         if node.doc:
             self.emit_ln(node, node.doc.meta["py_code"])
         self.emit(node, node.body.meta["py_code"])
-
-    def exit_doc_string(self, node: ast.DocString) -> None:
-        """Sub objects.
-
-        value: Optional[Token],
-        """
-        if node.value:
-            self.emit_ln(node, node.value.value)
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -178,7 +170,7 @@ class BluePygenPass(Pass):
         is_absorb: bool,  # For includes
         self.sub_module = None
         """
-        if node.lang.value == C.JAC_LANG_IMP:  # injects module into sys.modules
+        if node.lang.value == Con.JAC_LANG_IMP:  # injects module into sys.modules
             self.needs_jac_import()
             self.emit_ln(
                 node,
@@ -238,7 +230,7 @@ class BluePygenPass(Pass):
 
         name: Name,
         arch_type: Token,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         decorators: Optional["Decorators"],
         access: Optional[Token],
         base_classes: "BaseClasses",
@@ -263,7 +255,7 @@ class BluePygenPass(Pass):
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
 
-        doc: Optional[DocString],
+        doc: Optional[Token],
         mod: Optional["NameList"],
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
@@ -291,7 +283,7 @@ class BluePygenPass(Pass):
         name: Name,
         is_func: bool,
         is_async: bool,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         decorators: Optional["Decorators"],
         access: Optional[Token],
         signature: Optional["FuncSignature | TypeSpec | EventSignature"],
@@ -324,7 +316,7 @@ class BluePygenPass(Pass):
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
 
-        doc: Optional[DocString],
+        doc: Optional[Token],
         mod: Optional["NameList"],
         ability: AbilityRef,
         body: CodeBlock,
@@ -337,7 +329,7 @@ class BluePygenPass(Pass):
         """
         init_func = None
         for i in node.members:
-            if type(i) == ast.Ability and i.name.value == C.INIT_FUNC:
+            if type(i) == ast.Ability and i.name.value == Con.INIT_FUNC:
                 init_func = i
         if init_func and init_func.is_func:
             self.emit_ln(
@@ -357,7 +349,9 @@ class BluePygenPass(Pass):
                 and init_func.signature.params
             ):
                 params = [x.name.value for x in init_func.signature.params.params]
-            self.emit_ln(node, f"self.{C.INIT_FUNC}({', '.join(params)})", indent_delta=1)
+            self.emit_ln(
+                node, f"self.{Con.INIT_FUNC}({', '.join(params)})", indent_delta=1
+            )
         self.emit_ln(node, "super().__init__(*args, **kwargs)", indent_delta=1)
         for i in node.members:
             self.emit_ln(node, i.meta["py_code"])
@@ -365,7 +359,7 @@ class BluePygenPass(Pass):
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
 
-        doc: Optional[DocString],
+        doc: Optional[Token],
         is_static: bool,
         access: Optional[Token],
         vars: "HasVarList",
@@ -462,7 +456,7 @@ class BluePygenPass(Pass):
         if (
             type(node.parent) == ast.Ability
             and node.parent.arch_attached
-            and node.parent.name.value == C.INIT_FUNC
+            and node.parent.name.value == Con.INIT_FUNC
         ):
             self.emit(node, ", *args, **kwargs")
         self.emit(node, ")")
@@ -502,7 +496,7 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         name: Name,
-        doc: Optional[DocString],
+        doc: Optional[Token],
         decorators: Optional[Decorators],
         access: Optional[Token],
         base_classes: BaseClasses,
@@ -528,7 +522,7 @@ class BluePygenPass(Pass):
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
 
-        doc: Optional[DocString],
+        doc: Optional[Token],
         mod: Optional[NameList],
         body: EnumBlock,
         """

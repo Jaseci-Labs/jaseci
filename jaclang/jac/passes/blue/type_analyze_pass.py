@@ -101,12 +101,6 @@ class TypeAnalyzePass(Pass, SymbolTable):
         body: CodeBlock,
         """
 
-    def exit_doc_string(self, node: ast.DocString) -> None:
-        """Sub objects.
-
-        value: Optional[Token],
-        """
-
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
 
