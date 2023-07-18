@@ -11,7 +11,7 @@ from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
 from jaclang.jac.utils import add_line_numbers, clip_code_section
 
 
-def fetch_jac_err_code_region(py_code: str, err_line: int, range: int = 3) -> str:
+def fetch_jac_err_code_region(py_code: str, err_line: int, range: int = 5) -> str:
     """Fetch the jac code region that caused the error."""
     jac_err_line = int(py_code.splitlines()[err_line].split()[-1])
     mod_index = int(py_code.splitlines()[err_line].split()[-2])
@@ -66,15 +66,15 @@ def import_jac_module(
         except_line = list(tb)[-1].lineno
 
         py_error_region = clip_code_section(
-            add_line_numbers(code_string), except_line, 3
+            add_line_numbers(code_string), except_line, 5
         )
 
         jac_error_region = fetch_jac_err_code_region(code_string, except_line)
 
         print(
             f"Error in module {module_name}\nJac file: {full_target}\n"
-            f"Error: {str(e)}\nPyCode:\n{py_error_region}\n"
-            f"JacCode (incorrect at the moment):\n{jac_error_region}\n"
+            f"Error: {str(e)}\nPyCode Snippet:\n{py_error_region}\n"
+            f"JacCode Snippet:\n{jac_error_region}\n"
         )
         return None
 
