@@ -6,8 +6,19 @@ import types
 from os import makedirs, path
 from typing import Callable, Optional
 
+from jaclang.jac.constant import Constants as Con
 from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
 from jaclang.jac.utils import add_line_numbers, clip_code_section
+
+
+def fetch_jac_err_code_region(py_code: str, err_line: int, range: int = 3) -> str:
+    """Fetch the jac code region that caused the error."""
+    jac_err_line = int(py_code.splitlines()[err_line].split()[-1])
+    mod_index = int(py_code.splitlines()[err_line].split()[-2])
+    mod_paths = py_code.split(Con.JAC_DEBUG_SPLITTER)[1].strip().splitlines()
+    with open(mod_paths[mod_index], "r") as file:
+        jac_code_string = file.read()
+    return clip_code_section(add_line_numbers(jac_code_string), jac_err_line, range)
 
 
 def import_jac_module(
@@ -36,8 +47,7 @@ def import_jac_module(
     full_target = path.normpath(path.join(caller_dir, target))
 
     code_string = transpiler_func(file_path=full_target, base_dir=caller_dir)
-    with open(full_target, "r") as file:
-        jac_code_string = file.read()
+
     # if save_file:
     dev_dir = path.join(caller_dir, "__jac_gen__")
     makedirs(dev_dir, exist_ok=True)
@@ -58,14 +68,13 @@ def import_jac_module(
         py_error_region = clip_code_section(
             add_line_numbers(code_string), except_line, 3
         )
-        jac_err_line = int(code_string.splitlines()[except_line].split()[-1])
-        jac_code_region = clip_code_section(
-            add_line_numbers(jac_code_string), jac_err_line, 3
-        )
+
+        jac_error_region = fetch_jac_err_code_region(code_string, except_line)
+
         print(
             f"Error in module {module_name}\nJac file: {full_target}\n"
             f"Error: {str(e)}\nPyCode:\n{py_error_region}\n"
-            f"JacCode (incorrect at the moment):\n{jac_code_region}\n"
+            f"JacCode (incorrect at the moment):\n{jac_error_region}\n"
         )
         return None
 

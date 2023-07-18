@@ -1,11 +1,13 @@
 """Constants across the project."""
 from enum import Enum
 
+
 class Constants(str, Enum):
     """Token constants for Jac."""
 
     INIT_FUNC = "init"
     JAC_LANG_IMP = "jac"
+    JAC_DEBUG_SPLITTER = "JAC DEBUG INFO"
 
     EXEC_CONTEXT = "__jac_exec_ctx__"
     HERE = "__jac_here__"
@@ -19,4 +21,3 @@ class Constants(str, Enum):
     def __str__(self) -> str:
         """Return the string representation of the token."""
         return self.value
-

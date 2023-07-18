@@ -11,7 +11,6 @@ class BluePygenPass(Pass):
     def before_pass(self) -> None:
         """Initialize pass."""
         self.indent_size = 4
-        self.indent_level = 0
         self.debuginfo = {"jac_mods": []}
         self.preamble = ast.AstNode(parent=None, mod_link=None, kid=[], line=0)
         self.preamble.meta["py_code"] = "from __future__ import annotations\n"
@@ -25,7 +24,7 @@ class BluePygenPass(Pass):
 
     def indent_str(self, indent_delta: int) -> str:
         """Return string for indent."""
-        return " " * self.indent_size * (self.indent_level + indent_delta)
+        return " " * self.indent_size * indent_delta
 
     def emit_ln(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
@@ -126,10 +125,10 @@ class BluePygenPass(Pass):
         self.emit(node, self.preamble.meta["py_code"])
         if node.body:
             self.emit(node, node.body.meta["py_code"])
-        self.emit(node, '""" JAC DEBUG INFO\n')
+        self.emit(node, f'""" {Con.JAC_DEBUG_SPLITTER}\n')
         for i in self.debuginfo["jac_mods"]:
-            self.emit(node, f"  {i}\n")
-        self.emit(node, 'JAC DEBUG INFO """\n')
+            self.emit(node, f"{i}\n")
+        self.emit(node, f'{Con.JAC_DEBUG_SPLITTER} """\n')
         self.ir = node
         self.ir.meta["py_code"] = self.ir.meta["py_code"].rstrip()
 
