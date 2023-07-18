@@ -2051,7 +2051,7 @@
 			}
 		},
 		"special-variables": {
-			"match": "(?x)(<h>|<here>|<s>|<self>|<r>|<root>)",
+			"match": "(?x)(<h>|<here>|<s>|<self>|<super>|<r>|<root>)",
 			"captures": {
 				"1": {
 					"name": "variable.language.special.self.jac"
