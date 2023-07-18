@@ -102,7 +102,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
         """Retrieve and return authenticated user"""
         return self.request.user
 
-    def put(self, request, *args, **kwargs):
+    def process_update(self, request, *args, **kwargs):
         user = request.user
         current_user = {
             "id": user.id,
@@ -133,6 +133,13 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
             elastic.app.doc_activity(activity)
 
         return response
+
+    def put(self, request, *args, **kwargs):
+        return self.process_update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return self.process_update(request, *args, **kwargs)
 
 
 class LogoutAllUsersView(APIView):
