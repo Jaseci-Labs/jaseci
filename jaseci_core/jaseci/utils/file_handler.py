@@ -29,7 +29,7 @@ class FileHandler:
         self.content_type = content_type or mimetypes.guess_type(name)[0]
         self.field = field
         self.absolute_name = f"{self.id}-{name}"
-        self.absolute_path = self.absolute_name
+        self.absolute_path = f"/tmp/{self.absolute_name}"
         self.persist = persist
         self.buffer = None
 
@@ -89,20 +89,20 @@ class FileHandler:
     #                     CONTROL                     #
     ###################################################
 
-    def read(self, offset: int = None) -> str:
+    def read(self, offset: int = None, mode: str = "r", encoding: str = None) -> str:
         if self.buffer:
             if offset != None:
                 self.buffer.seek(offset)
             content = self.buffer.read()
         else:
-            self.open()
+            self.open(mode, encoding)
             content = self.buffer.read()
             self.close()
 
         return content
 
     def open(
-        self, mode: str = "r", encoding: str = "utf-8", detached: bool = False, **kwargs
+        self, mode: str = "r", encoding: str = None, detached: bool = False, **kwargs
     ):
         if detached:
             return open(self.absolute_path, mode, encoding=encoding, **kwargs)
@@ -156,7 +156,7 @@ class FileHandler:
     ###################################################
 
     def to_bytes(self):
-        with self.open("rb", None, True) as buffer:
+        with self.open("rb", detached=True) as buffer:
             return buffer.read()
 
     def to_base64(self):

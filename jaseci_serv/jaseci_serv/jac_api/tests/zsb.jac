@@ -275,9 +275,9 @@ async walker simple_async {
 }
 
 walker simple_with_file {
-    has sample, fileTypeField;
+    has sample, fileTypeField, binaryFile;
 
-    can fh.attr, fh.read, fh.to_json, fh.to_base64, fh.to_bytes;
+    can fh.attr, fh.read, fh.to_json, fh.to_base64, fh.to_bytes, fh.open;
 
     with entry {
         report sample;
@@ -292,6 +292,10 @@ walker simple_with_file {
         report fh.to_json(fileTypeField[0]);
         report fh.to_bytes(fileTypeField[0]).str;
         report fh.to_base64(fileTypeField[0]);
+
+        fh.open(binaryFile[0], mode = "rb");
+        report fh.read(binaryFile[0], 0).str;
+        report fh.to_bytes(binaryFile[0]).str;
     }
 }
 
@@ -308,7 +312,7 @@ walker simple_custom_payload_with_file {
         uuid = global.info['request_context']["body"]["fileTypeField"][0];
         report uuid;
         report fh.attr(uuid);
-        report fh.read(uuid, 0);
+        report fh.read(uuid, 0, "r", "utf-8");
         report fh.to_json(uuid);
         report fh.to_bytes(uuid).str;
         report fh.to_base64(uuid);

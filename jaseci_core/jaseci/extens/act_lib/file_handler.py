@@ -66,9 +66,11 @@ def update(
 
 
 @jaseci_action(act_group=["fh"])
-def read(id: str, offset: int = None, meta: dict = {}):
+def read(
+    id: str, offset: int = None, mode: str = "r", encoding: str = None, meta: dict = {}
+):
     """temp"""
-    return meta["h"].get_file_handler(id).read(offset)
+    return meta["h"].get_file_handler(id).read(offset, mode, encoding)
 
 
 @jaseci_action(act_group=["fh"])
@@ -78,7 +80,7 @@ def seek(id: str, offset: int, whence: int = 0, meta: dict = {}):
 
 
 @jaseci_action(act_group=["fh"])
-def open(id: str, mode: str = "r", encoding: str = "utf-8", meta: dict = {}, **kwargs):
+def open(id: str, mode: str = "r", encoding: str = None, meta: dict = {}, **kwargs):
     """temp"""
     meta["h"].get_file_handler(id).open(mode, encoding, False, **kwargs)
 
@@ -175,7 +177,7 @@ def download(url: str, header: dict = {}, meta: dict = {}):
 
     with get(url, stream=True, headers=header) as res:
         res.raise_for_status()
-        tmp.open(mode="wb", encoding=None)
+        tmp.open("wb")
         for chunk in res.iter_content(chunk_size=8192):
             tmp.buffer.write(chunk)
         tmp.close()
