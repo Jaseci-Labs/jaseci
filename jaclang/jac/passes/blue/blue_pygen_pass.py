@@ -113,7 +113,7 @@ class BluePygenPass(Pass):
         body: "Elements",
         """
         self.emit_ln(node, node.doc.value)
-        self.emit_ln(node, self.preamble.meta["py_code"])
+        self.emit(node, self.preamble.meta["py_code"])
         if node.body:
             self.emit(node, node.body.meta["py_code"])
         self.ir = node
@@ -126,6 +126,7 @@ class BluePygenPass(Pass):
         """
         for i in node.elements:
             self.emit(node, i.meta["py_code"])
+            self.emit(node, "\n")
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -136,8 +137,8 @@ class BluePygenPass(Pass):
         is_frozen: bool,
         """
         if node.doc:
-            self.emit(node, node.doc.meta["py_code"])
-        self.emit_ln(node, node.assignments.meta["py_code"])
+            self.emit_ln(node, node.doc.value)
+        self.emit(node, node.assignments.meta["py_code"])
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_test(self, node: ast.Test) -> None:
@@ -157,7 +158,7 @@ class BluePygenPass(Pass):
         body: "CodeBlock",
         """
         if node.doc:
-            self.emit_ln(node, node.doc.meta["py_code"])
+            self.emit_ln(node, node.doc.value)
         self.emit(node, node.body.meta["py_code"])
 
     def exit_import(self, node: ast.Import) -> None:
@@ -237,7 +238,7 @@ class BluePygenPass(Pass):
         body: Optional["ArchBlock"],
         """
         if node.decorators:
-            self.emit_ln(node, node.decorators.meta["py_code"])
+            self.emit(node, node.decorators.meta["py_code"])
         if not len(node.base_classes.base_classes):
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
@@ -246,9 +247,9 @@ class BluePygenPass(Pass):
                 f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
             )
         if node.doc:
-            self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+            self.emit_ln(node, node.doc.value, indent_delta=1)
         if node.body:
-            self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+            self.emit(node, node.body.meta["py_code"], indent_delta=1)
         else:
             self.decl_def_missing(node.name.meta["py_code"])
 
@@ -291,7 +292,7 @@ class BluePygenPass(Pass):
         arch_attached: Optional["ArchBlock"] = None,
         """
         if node.decorators:
-            self.emit_ln(node, node.decorators.meta["py_code"])
+            self.emit(node, node.decorators.meta["py_code"])
         if node.is_func:
             if node.arch_attached:
                 self.emit_ln(
@@ -307,9 +308,9 @@ class BluePygenPass(Pass):
             else:
                 self.emit_ln(node, f"def {node.name.value}():")
         if node.doc:
-            self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+            self.emit_ln(node, node.doc.value, indent_delta=1)
         if node.body:
-            self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+            self.emit(node, node.body.meta["py_code"], indent_delta=1)
         else:
             self.decl_def_missing(node.name.value)
 
@@ -354,7 +355,8 @@ class BluePygenPass(Pass):
             )
         self.emit_ln(node, "super().__init__(*args, **kwargs)", indent_delta=1)
         for i in node.members:
-            self.emit_ln(node, i.meta["py_code"])
+            self.emit(node, i.meta["py_code"])
+            self.emit(node, "\n")
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -367,12 +369,12 @@ class BluePygenPass(Pass):
         """
         if node.is_static:
             if node.doc:
-                self.emit_ln(node, node.doc.meta["py_code"])
+                self.emit_ln(node, node.doc.value, indent_delta=1)
             self.emit_ln(node, node.vars.meta["py_code"].replace("self.", ""))
         else:
             self.emit_ln(node, f"def has_{node.h_id}(self):")
             if node.doc:
-                self.emit_ln(node, node.doc.meta["py_code"], indent_delta=1)
+                self.emit_ln(node, node.doc.value, indent_delta=1)
             self.emit_ln(node, node.vars.meta["py_code"], indent_delta=1)
 
     def exit_has_var_list(self, node: ast.HasVarList) -> None:
@@ -502,8 +504,6 @@ class BluePygenPass(Pass):
         base_classes: BaseClasses,
         body: Optional[EnumBlock],
         """
-        if node.doc:
-            self.emit_ln(node, node.doc.meta["py_code"])
         if node.decorators:
             self.emit_ln(node, node.decorators.meta["py_code"])
         if len(node.base_classes.base_classes):
@@ -514,6 +514,8 @@ class BluePygenPass(Pass):
         else:
             self.needs_enum()
             self.emit_ln(node, f"class {node.name.value}(__jac_Enum__):")
+        if node.doc:
+            self.emit_ln(node, node.doc.value, indent_delta=1)
         if node.body:
             self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
         else:

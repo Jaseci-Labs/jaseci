@@ -104,7 +104,7 @@ arch_attached: Optional["ArchBlock"] = None,
         if nd.arch_attached {
             (nd, f"def {nd.name.meta['py_code']}(self{nd.signature.meta['py_code']}:")
                 |> <self>.emit_ln;
-            (nd, "1/0", indent_delta=1) |> <self>.emit_ln;
+            (nd, "1/1", indent_delta=1) |> <self>.emit_ln;
         } else {
             (nd, f"def {nd.name.meta['py_code']}({nd.signature.meta['py_code']}:")
                 |> <self>.emit_ln;
