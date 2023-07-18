@@ -517,7 +517,7 @@ class BluePygenPass(Pass):
         if node.doc:
             self.emit_ln(node, node.doc.value, indent_delta=1)
         if node.body:
-            self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+            self.emit(node, node.body.meta["py_code"], indent_delta=1)
         else:
             self.decl_def_missing(node.name.meta["py_code"])
 
@@ -538,7 +538,7 @@ class BluePygenPass(Pass):
             if type(i) == ast.Name:
                 self.emit_ln(node, i.meta["py_code"] + " = __jac_auto__()")
             else:
-                self.emit_ln(node, i.meta["py_code"])
+                self.emit(node, i.meta["py_code"])
 
     def exit_code_block(self, node: ast.CodeBlock) -> None:
         """Sub objects.
@@ -548,7 +548,9 @@ class BluePygenPass(Pass):
         if len(node.stmts) == 0:
             self.emit_ln(node, "pass")
         for i in node.stmts:
-            self.emit_ln(node, i.meta["py_code"])
+            self.emit(node, i.meta["py_code"])
+            if len(i.meta["py_code"]) and i.meta["py_code"][-1] != "\n":
+                self.emit_ln(node, "\n")
 
     def exit_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
@@ -559,11 +561,12 @@ class BluePygenPass(Pass):
         else_body: Optional[ElseStmt],
         """
         self.emit_ln(node, f"if {node.condition.meta['py_code']}:")
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.emit(node, node.body.meta["py_code"], indent_delta=1)
+        self.emit(node, "\n")
         if node.elseifs:
-            self.emit_ln(node, node.elseifs.meta["py_code"])
+            self.emit(node, node.elseifs.meta["py_code"])
         if node.else_body:
-            self.emit_ln(node, node.else_body.meta["py_code"])
+            self.emit(node, node.else_body.meta["py_code"])
 
     def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
@@ -580,7 +583,8 @@ class BluePygenPass(Pass):
         """
         for i in node.elseifs:
             self.emit_ln(node, f"elif {i.condition.meta['py_code']}:")
-            self.emit_ln(node, i.body.meta["py_code"], indent_delta=1)
+            self.emit(node, i.body.meta["py_code"], indent_delta=1)
+            self.emit(node, "\n")
 
     def exit_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
@@ -588,7 +592,8 @@ class BluePygenPass(Pass):
         body: CodeBlock,
         """
         self.emit_ln(node, "else:")
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.emit(node, node.body.meta["py_code"], indent_delta=1)
+        self.emit(node, "\n")
 
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
