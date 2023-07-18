@@ -36,7 +36,7 @@ def import_jac_module(
     full_target = path.normpath(path.join(caller_dir, target))
 
     code_string = transpiler_func(file_path=full_target, base_dir=caller_dir)
-    with open(full_target, 'r') as file:
+    with open(full_target, "r") as file:
         jac_code_string = file.read()
     # if save_file:
     dev_dir = path.join(caller_dir, "__jac_gen__")
@@ -55,9 +55,13 @@ def import_jac_module(
         tb = traceback.extract_tb(e.__traceback__)
         except_line = list(tb)[-1].lineno
 
-        py_error_region = clip_code_section(add_line_numbers(code_string), except_line, 3)
+        py_error_region = clip_code_section(
+            add_line_numbers(code_string), except_line, 3
+        )
         jac_err_line = int(code_string.splitlines()[except_line].split()[-1])
-        jac_code_region = clip_code_section(add_line_numbers(jac_code_string), jac_err_line, 3)
+        jac_code_region = clip_code_section(
+            add_line_numbers(jac_code_string), jac_err_line, 3
+        )
         print(
             f"Error in module {module_name}\nJac file: {full_target}\n"
             f"Error: {str(e)}\nPyCode:\n{py_error_region}\n"

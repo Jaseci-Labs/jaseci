@@ -12,6 +12,7 @@ class BluePygenPass(Pass):
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
+        self.debuginfo = {"jac_mods": []}
         self.preamble = ast.AstNode(parent=None, mod_link=None, kid=[], line=0)
         self.preamble.meta["py_code"] = "from __future__ import annotations\n"
         self.cur_arch = None  # tracks current architype during transpilation
@@ -29,12 +30,21 @@ class BluePygenPass(Pass):
     def emit_ln(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
         self.emit(node, s.strip().strip("\n"), indent_delta)
-        self.emit(node, f"  #Jac Line: {node.line}\n")
+        self.emit(node, f"  # {self.get_mod_index(node)} {node.line}\n")
 
     def emit_ln_unique(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
         if s not in node.meta["py_code"]:
             self.emit_ln(node, s, indent_delta)
+
+    def get_mod_index(self, node: ast.AstNode) -> int:
+        """Get module index."""
+        path = node.mod_link.mod_path if node.mod_link else None
+        if not path:
+            return -1
+        if path not in self.debuginfo["jac_mods"]:
+            self.debuginfo["jac_mods"].append(path)
+        return self.debuginfo["jac_mods"].index(path)
 
     def emit(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
         """Emit code to node."""
@@ -116,6 +126,10 @@ class BluePygenPass(Pass):
         self.emit(node, self.preamble.meta["py_code"])
         if node.body:
             self.emit(node, node.body.meta["py_code"])
+        self.emit(node, '""" JAC DEBUG INFO\n')
+        for i in self.debuginfo["jac_mods"]:
+            self.emit(node, f"  {i}\n")
+        self.emit(node, 'JAC DEBUG INFO """\n')
         self.ir = node
         self.ir.meta["py_code"] = self.ir.meta["py_code"].rstrip()
 
