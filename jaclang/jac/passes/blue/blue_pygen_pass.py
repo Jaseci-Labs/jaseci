@@ -389,7 +389,7 @@ class BluePygenPass(Pass):
             self.emit_ln(node, f"def has_{node.h_id}(self):")
             if node.doc:
                 self.emit_ln(node, node.doc.value, indent_delta=1)
-            self.emit_ln(node, node.vars.meta["py_code"], indent_delta=1)
+            self.emit(node, node.vars.meta["py_code"], indent_delta=1)
 
     def exit_has_var_list(self, node: ast.HasVarList) -> None:
         """Sub objects.
