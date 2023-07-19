@@ -59,12 +59,12 @@ USE_ENC_ACTION_CONFIG = {
                         "containers": [
                             {
                                 "name": "use-enc",
-                                "image": "jaseci/jac-nlp:1.4.0.18",
+                                "image": "jaseci/jac-nlp:1.4.1.4",
                                 "command": ["bash", "-c", "source /script/prod_up"],
                                 "ports": [{"containerPort": 80, "protocol": "TCP"}],
                                 "resources": {
-                                    "limits": {"memory": "2Gi"},
-                                    "requests": {"memory": "2Gi"},
+                                    "limits": {"memory": "3Gi"},
+                                    "requests": {"memory": "3Gi"},
                                 },
                                 "volumeMounts": [
                                     {"name": "prod-script", "mountPath": "/script"},
