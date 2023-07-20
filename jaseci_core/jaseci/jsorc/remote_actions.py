@@ -9,7 +9,12 @@ from time import time
 import inspect
 import uvicorn
 import os
+import re
 
+var_args = re.compile(r"^\*[^\*]")
+var_kwargs = re.compile(r"^\*\*[^\*]")
+
+args_kwargs = (2, 4)
 remote_actions = {}
 registered_apis = []
 registered_endpoints = []
@@ -51,12 +56,15 @@ def serv_actions():
 def gen_api_service(app, func, act_group, aliases, caller_globals):
     """Helper for jaseci_action decorator"""
     # Construct list of action apis available
-    varnames = list(inspect.signature(func).parameters.keys())
     act_group = (
         [os.path.basename(inspect.getfile(func)).split(".")[0]]
         if act_group is None
         else act_group
     )
+    varnames = []
+    for param in inspect.signature(func).parameters.values():
+        varnames.append(str(param) if param.kind in args_kwargs else param.name)
+
     remote_actions[f"{'.'.join(act_group+[func.__name__])}"] = varnames
 
     # Need to get pydatic model for func signature for fastAPI post
@@ -64,19 +72,62 @@ def gen_api_service(app, func, act_group, aliases, caller_globals):
 
     # Keep only fields present in param list in base model
     keep_fields = {}
-    for i in model.__fields__.keys():
-        if i in varnames:
-            keep_fields[i] = model.__fields__[i]
+    for name in varnames:
+        if var_args.match(name):
+            keep_fields[name] = model.__fields__[name[1:]]
+            keep_fields[name].name = name
+            keep_fields[name].alias = name
+        elif var_kwargs.match(name):
+            keep_fields[name] = model.__fields__[name[2:]]
+            keep_fields[name].name = name
+            keep_fields[name].alias = name
+        else:
+            field = model.__fields__.get(name)
+            if field:
+                keep_fields[name] = field
     model.__fields__ = keep_fields
 
     # Create duplicate funtion for api endpoint and inject in call site globals
     @app.post(f"/{func.__name__}/")
     def new_func(params: model = model.construct()):
-        pl_peek = str(dict(params.__dict__))[:128]
+        params: dict = params.__dict__
+        pl_peek = str(params)[:128]
         logger.info(str(f"Incoming call to {func.__name__} with {pl_peek}"))
         start_time = time()
 
-        ret = validate_arguments(func)(**(params.__dict__))
+        args = []
+        kwargs = {}
+        fp1 = inspect.signature(func).parameters.values()
+        fp2 = list(fp1)
+
+        # try to process args
+        for param in fp1:
+            _param = str(param) if param.kind in args_kwargs else param.name
+            if _param in params:
+                fp2.remove(param)
+                if var_args.match(_param):
+                    for arg in params.get(_param) or []:
+                        args.append(arg)
+                    break
+                elif var_kwargs.match(_param):
+                    kwargs.update(params.get(_param) or {})
+                    break
+                args.append(params.get(_param))
+            else:
+                break
+
+        # try to process kwargs
+        for param in fp2:
+            param = str(param) if param.kind in args_kwargs else param.name
+            if param in params:
+                if var_kwargs.match(param):
+                    kwargs.update(params.get(param) or {})
+                    break
+                kwargs[param] = params.get(param)
+            else:
+                break
+
+        ret = validate_arguments(func)(*args, **kwargs)
         tot_time = time() - start_time
         logger.info(
             str(
