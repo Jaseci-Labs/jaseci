@@ -11,6 +11,10 @@ import sys
 import inspect
 import importlib
 import gc
+import re
+
+var_args = re.compile(r"^\*[^\*]")
+var_kwargs = re.compile(r"^\*\*[^\*]")
 
 live_actions = {}  # {"act.func": func_obj, ...}
 live_action_modules = {}  # {__module__: ["act.func1", "act.func2", ...], ...}
@@ -305,14 +309,32 @@ def gen_remote_func_hook(url, act_name, param_names):
 
     def func(*args, **kwargs):
         params = {}
-        for i in range(len(param_names)):
-            if i < len(args):
-                params[param_names[i]] = args[i]
+        _args = list(args)
+        _param_names: list = param_names.copy()
+
+        args_len = len(args)
+        for idx, name in enumerate(param_names):
+            if idx >= args_len or not _args:
+                break
+            _param_names.remove(name)
+            if var_args.match(name):
+                if _args:
+                    params[name] = _args
+                break
             else:
-                params[param_names[i]] = None
-        for i in kwargs.keys():
-            if i in param_names:
-                params[i] = kwargs[i]
+                params[name] = _args.pop(0)
+
+        for name in _param_names:
+            if var_args.match(name):
+                if _args:
+                    params[name] = _args
+            elif var_kwargs.match(name):
+                if kwargs:
+                    params[name] = kwargs
+                break
+            elif name in kwargs:
+                params[name] = kwargs.pop(name)
+
         # Remove any None-valued parameters to use the default value of the action def
         params = dict([(k, v) for k, v in params.items() if v is not None])
         act_url = f"{url.rstrip('/')}/{act_name.split('.')[-1]}"
