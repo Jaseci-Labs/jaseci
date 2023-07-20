@@ -19,6 +19,10 @@ theme:
         code: 'Roboto Mono'
     features:
     - content.code.copy
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.path
 
 markdown_extensions:
   - pymdownx.highlight:
