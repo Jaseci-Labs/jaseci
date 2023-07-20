@@ -198,6 +198,15 @@
 							"include": "#statement-keyword"
 						},
 						{
+							"include": "#architype_refdef"
+						},
+						{
+							"include": "#arch-reference"
+						},
+						{
+							"include": "#arch-var-reference"
+						},
+						{
 							"name": "entity.name.function.jac",
 							"match": "(?x)\n  \\b ([[:alpha:]_]\\w*) \\b\n"
 						}
@@ -372,6 +381,9 @@
 				},
 				{
 					"include": "#arch-reference"
+				},
+				{
+					"include": "#arch-var-reference"
 				},
 				{
 					"include": "#function-declaration"
@@ -1284,7 +1296,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(:g:|:global:|<h>|<here>|<s>|<self>|<super>|<r>|<root>|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:enum:|:a:|:ability:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
+					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:enum:|:a:|:ability:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
 					"end": "((?=:| )|;)",
 					"beginCaptures": {
 						"1": {
@@ -1304,6 +1316,18 @@
 							"include": "#class-inheritance"
 						}
 					]
+				}
+			]
+		},
+		"arch-var-reference": {
+			"patterns": [
+				{
+					"match": "(<h>|<here>|<s>|<self>|<super>|<r>|<root>)\\s*",
+					"captures": {
+						"1": {
+							"name": "storage.type.class.jac"
+						}
+					}
 				}
 			]
 		},

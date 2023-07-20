@@ -889,7 +889,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "spawn_op atom",
+        "spawn_object spawn_op unpack",
         "unpack",
     )
     def spawn_object(self, p: YaccProduction) -> YaccProduction:
@@ -914,6 +914,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
+        "spawn_op walrus_assign",
         "PIPE_FWD walrus_assign",
         "walrus_assign",
     )

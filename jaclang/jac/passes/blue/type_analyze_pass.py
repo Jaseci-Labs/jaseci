@@ -557,12 +557,6 @@ class TypeAnalyzePass(Pass, SymbolTable):
         op: Token,
         """
 
-    def exit_spawn_object_expr(self, node: ast.SpawnObjectExpr) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        """
-
     def exit_unpack_expr(self, node: ast.UnpackExpr) -> None:
         """Sub objects.
 

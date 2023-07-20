@@ -2041,22 +2041,9 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         spawn_object -> unpack
-        spawn_object -> spawn_op atom
+        spawn_object -> spawn_object spawn_op unpack
         """
-        if len(node.kid) == 1:
-            replace_node(node, node.kid[0])
-        else:
-            node.kid = [node.kid[1]]
-            replace_node(
-                node,
-                ast.SpawnObjectExpr(
-                    target=node.kid[0],
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        self.binary_op_helper(node)
 
     def exit_unpack(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -2119,8 +2106,9 @@ class AstBuildPass(Pass):
     def exit_ds_call(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        ds_call -> atom
-        ds_call -> PIPE_FWD atom
+        ds_call -> walrus_assign
+        ds_call -> PIPE_FWD walrus_assign
+        ds_call -> spawn_op walrus_assign
         """
         if len(node.kid) == 2:
             node.kid = [node.kid[0], node.kid[1]]

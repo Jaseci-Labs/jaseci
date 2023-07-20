@@ -1377,22 +1377,6 @@ class UnaryExpr(AstNode):
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-class SpawnObjectExpr(AstNode):
-    """ExprSpawnObject node type for Jac Ast."""
-
-    def __init__(
-        self,
-        target: "ExprType",
-        parent: Optional[AstNode],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize spawn object expression node."""
-        self.target = target
-        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
-
-
 class UnpackExpr(AstNode):
     """ExprUnpack node type for Jac Ast."""
 
@@ -1775,7 +1759,6 @@ ExprType = Union[
     BinaryExpr,
     IfElseExpr,
     UnpackExpr,
-    SpawnObjectExpr,
     AtomType,
 ]
 
