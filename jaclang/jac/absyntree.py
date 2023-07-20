@@ -1326,7 +1326,7 @@ class BinaryExpr(AstNode):
         self,
         left: "ExprType",
         right: "ExprType",
-        op: Token,
+        op: Token | DisconnectOp | ConnectOp,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],

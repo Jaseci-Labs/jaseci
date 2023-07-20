@@ -7,7 +7,7 @@ object Obj1 {
     }
 }
 
-# with entry {  # allowed but discouraged
+# with enter {  # allowed but discouraged
 #    o1 = spawn Obj1; o1::init;
 # }
 
@@ -18,7 +18,7 @@ object Obj2 {
     }
 }
 
-# with entry {  # allowed but discouraged
+# with enter {  # allowed but discouraged
 #     o2 = spawn Obj2; o2::init;
 # }
 
@@ -29,11 +29,11 @@ object Obj3 {
     }
 }
 
-# with entry {  # allowed but discouraged
+# with enter {  # allowed but discouraged
 #     o3 = spawn Obj1; o3::init;
 # }
 
-with entry {
+with enter {
     o1 = spawn Obj1; |> o1.init;
     o2 = spawn Obj2; |> o2.init;
     o3 = spawn Obj3; |> o3.init;

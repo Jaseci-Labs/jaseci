@@ -71,12 +71,16 @@ def import_jac_module(
 
         jac_error_region = fetch_jac_err_code_region(code_string, except_line)
 
-        print(
-            f"Error in module {module_name}\nJac file: {full_target}\n"
-            f"Error: {str(e)}\nPyCode Snippet:\n{py_error_region}\n"
+        e_str = (
+            f"\nError in module {module_name}\nJac file: {full_target}\n"
+            f"Error: {str(e)}\n"
+        )
+        snippet = (
+            f"PyCode Snippet:\n{py_error_region}\n"
             f"JacCode Snippet:\n{jac_error_region}\n"
         )
-        return None
+        print(e_str + snippet)
+        raise type(e)(str(e) + e_str) from None
 
     if package_path:
         parts = package_path.split(".")

@@ -15,7 +15,7 @@ node location {
     has visited: int = 0;
 
 
-    can record with tourist entry {
+    can record with tourist enter {
         visited+=1;
         for i in activities {
             i.duration = visitor.duration;

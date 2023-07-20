@@ -1,5 +1,5 @@
 """Hello World!"""
 
-with entry {
+with enter {
     "Hello World!" |> print;
 }

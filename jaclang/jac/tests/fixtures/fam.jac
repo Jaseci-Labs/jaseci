@@ -18,7 +18,7 @@ node location {
     has visited: int = 0;
 
 
-    can record with tourist entry {
+    can record with tourist enter {
         visited+=1;
         for i in activities {
             i.duration = visitor.duration;
@@ -47,8 +47,8 @@ walker tourist {
         a = <-[:g:edget:e:myedge|>(=a==1,b==2)]-;
         a = b +[:g:edget:e:myedge|>(a=1)]+> c;
         a = b <+[:g:edget:e:myedge|>(a=1)]+ c;
-        a = here +[:g:edget:e:myedge|>(a=1)]+> spawn :g:stuff:n:tourist;
-        :g:stuff:w:tourist |> here;
+        a = <here> +[:g:edget:e:myedge|>(a=1)]+> spawn :g:stuff:n:tourist;
+        :g:stuff:w:tourist |> <here>;
         report <h>.activities;
     }
 

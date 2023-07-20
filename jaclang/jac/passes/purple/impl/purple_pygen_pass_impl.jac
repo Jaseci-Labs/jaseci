@@ -149,7 +149,7 @@ op: Token,
 """
 :object:PurplePygenPass:ability:exit_binary_expr
 (nd: ast.BinaryExpr) {
-    if (nd.op.name|>type) == ast.ConnectOp {
+    if (nd.op|>type) == ast.ConnectOp {
         if(nd.op.spwn) {
             (nd, f"{nd.left.meta['py_code']}.{C.CONNECT_NODE}({nd.right.meta['py_code']}, {nd.op.meta['py_code']})")
                 |> <self>.emit;

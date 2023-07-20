@@ -15,7 +15,7 @@ can divide_numbers(a: float, b: float) -> float {
     return result;
 }
 
-with entry {
+with enter {
     try {
         numerator = int(input("Enter the numerator: "));
         denominator = int(input("Enter the denominator: "));

@@ -140,7 +140,7 @@ class AstBuildPass(Pass):
     def exit_mod_code(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        mod_code -> doc_tag KW_WITH KW_ENTRY code_block
+        mod_code -> doc_tag KW_WITH KW_ENTER code_block
         """
         node.kid = [node.kid[0], node.kid[-1]]
         replace_node(
@@ -582,11 +582,11 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         event_clause -> KW_WITH type_list KW_EXIT return_type_tag
-        event_clause -> KW_WITH type_list KW_ENTRY return_type_tag
+        event_clause -> KW_WITH type_list KW_ENTER return_type_tag
         event_clause -> KW_WITH STAR_MUL KW_EXIT return_type_tag
-        event_clause -> KW_WITH STAR_MUL KW_ENTRY return_type_tag
+        event_clause -> KW_WITH STAR_MUL KW_ENTER return_type_tag
         event_clause -> KW_WITH KW_EXIT return_type_tag
-        event_clause -> KW_WITH KW_ENTRY return_type_tag
+        event_clause -> KW_WITH KW_ENTER return_type_tag
         """
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
@@ -1679,7 +1679,7 @@ class AstBuildPass(Pass):
         walker_stmt -> visit_stmt
         walker_stmt -> ignore_stmt SEMI
         """
-        replace_node(node, node.kid[1])
+        replace_node(node, node.kid[0])
 
     def exit_ignore_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -1707,7 +1707,7 @@ class AstBuildPass(Pass):
         visit_stmt -> KW_VISIT expression SEMI
         """
         meta = {"typ": None, "else_body": None}
-        if node.kid[-1].name == Tok.SEMI:
+        if type(node.kid[-1]) != ast.ElseStmt:
             if len(node.kid) == 4:
                 node.kid = [node.kid[1], node.kid[2]]
                 meta["typ"] = node.kid[0]

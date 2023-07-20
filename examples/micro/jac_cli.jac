@@ -89,7 +89,7 @@ object ShellCmd:cmd.Cmd {
     }
 }
 
-with entry {
+with enter {
     interface = Interface();
 
     @interface.register

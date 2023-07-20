@@ -1,13 +1,13 @@
 """Same functionality 3 white space styles."""
 
-with entry { "hello" |> len |> print; }  # more concise
+with enter { "hello" |> len |> print; }  # more concise
 
-with entry {  # a bit more python like
+with enter {  # a bit more python like
     a = "hello" |> len;
     a |> print;
 }
 
-with entry {  # very pythonic
+with enter {  # very pythonic
     a = "hello";
     b = len(a);
     print(b); }

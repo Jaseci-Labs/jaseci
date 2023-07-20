@@ -14,7 +14,7 @@ object Person {
     }
 }
 
-with entry {
+with enter {
     my_guy = Person("John", 42);
     my_guy.greet();
 }

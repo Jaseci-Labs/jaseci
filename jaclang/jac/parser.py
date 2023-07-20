@@ -99,7 +99,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Test rule."""
         return p
 
-    @_("doc_tag KW_WITH KW_ENTRY code_block")
+    @_("doc_tag KW_WITH KW_ENTER code_block")
     def mod_code(self, p: YaccProduction) -> YaccProduction:
         """Module-level free code rule."""
         return p
@@ -304,11 +304,11 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "KW_WITH KW_ENTRY return_type_tag",
+        "KW_WITH KW_ENTER return_type_tag",
         "KW_WITH KW_EXIT return_type_tag",
-        "KW_WITH STAR_MUL KW_ENTRY return_type_tag",
+        "KW_WITH STAR_MUL KW_ENTER return_type_tag",
         "KW_WITH STAR_MUL KW_EXIT return_type_tag",
-        "KW_WITH type_list KW_ENTRY return_type_tag",
+        "KW_WITH type_list KW_ENTER return_type_tag",
         "KW_WITH type_list KW_EXIT return_type_tag",
     )
     def event_clause(self, p: YaccProduction) -> YaccProduction:

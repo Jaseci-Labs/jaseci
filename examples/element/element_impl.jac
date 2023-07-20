@@ -131,6 +131,6 @@ import:py sys;
     caller_id |> <here>.rw_access.discard;
 }
 
-with entry {
+with enter {
     "Loaded correctly" |> print;
 }

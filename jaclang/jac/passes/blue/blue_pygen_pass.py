@@ -855,9 +855,11 @@ class BluePygenPass(Pass):
 
         left: ExprType,
         right: ExprType,
-        op: Token,
+        op: Token | DisconnectOp | ConnectOp,
         """
-        if node.op.value in [
+        if type(node.op) in [ast.DisconnectOp, ast.ConnectOp]:
+            self.ds_feature_warn()
+        elif node.op.value in [
             *["+", "-", "*", "/", "%", "**"],
             *["+=", "-=", "*=", "/=", "%=", "**="],
             *[">>", "<<", ">>=", "<<="],

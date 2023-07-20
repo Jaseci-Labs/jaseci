@@ -1,21 +1,21 @@
 """Various samples to see code generated correctly"""
 
-with entry {
+with enter {
     a=(5+10)*2;
     {"name": "value"} |> (len |> print  |> dump)  |> say;
 }
 
-with entry {
+with enter {
     {"name": "value"} <| len <| print  <| print  <| print;
 }
 
-with entry {
+with enter {
     (*args, **kwargs) |> <s>.func;
     <s>.sig = func |> inspect.signature;
     |> <s>.registry.items;
 }
 
-with entry {
+with enter {
     with open("file.txt") as f, open("file2.txt") as f {}
 }
 

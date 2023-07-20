@@ -18,7 +18,7 @@ access_tag = COLON, access;
 
 test = [DOC_STRING], KW_TEST, NAME, multistring, code_block;
 
-mod_code = [DOC_STRING], KW_WITH, KW_ENTRY, code_block;
+mod_code = [DOC_STRING], KW_WITH, KW_ENTER, code_block;
 
 import_stmt = KW_IMPORT, sub_name, (KW_FROM, import_path, COMMA, import_items, SEMI | import_path, KW_AS, NAME, SEMI | import_path, SEMI);
 include_stmt = KW_INCLUDE, sub_name, import_path, SEMI;
@@ -40,7 +40,7 @@ ability = ability_def | ability_decl;
 ability_decl = ability_decl_decor | [DOC_STRING], (static_tag | ε), KW_CAN, [access_tag], NAME, (func_decl, [code_block] | event_clause, [code_block]);
 ability_decl_decor = [DOC_STRING], (KW_STATIC, decorators | decorators), KW_CAN, [access_tag], NAME, (func_decl, [code_block] | event_clause, [code_block]);
 ability_def = [DOC_STRING], (dotted_name | ε), ability_ref, (func_decl, code_block | event_clause, code_block);
-event_clause = KW_WITH, (STAR_MUL, (KW_EXIT | KW_ENTRY) | name_list, (KW_EXIT | KW_ENTRY) | KW_EXIT | KW_ENTRY), return_type_tag | return_type_tag;
+event_clause = KW_WITH, (STAR_MUL, (KW_EXIT | KW_ENTER) | name_list, (KW_EXIT | KW_ENTER) | KW_EXIT | KW_ENTER), return_type_tag | return_type_tag;
 static_tag = KW_STATIC | ε;
 name_list = name_list, COMMA, dotted_name | dotted_name;
 func_decl = LPAREN, (func_decl_param_list | ε), RPAREN, return_type_tag;

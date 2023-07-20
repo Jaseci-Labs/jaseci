@@ -13,6 +13,6 @@ object Person {
     }
 }
 
-with entry {
+with enter {
     Person("John", 42).greet();
 }

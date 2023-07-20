@@ -567,7 +567,7 @@
 				},
 				{
 					"name": "keyword.control.flow.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    async | await | continue | entry | exit | del | assert | break | finally | for\n    | from | elif | else | if | except | pass | raise\n    | return | try | while | with\n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    async | await | continue | enter | exit | del | assert | break | finally | for\n    | from | elif | else | if | except | pass | raise\n    | return | try | while | with | spawn | visit | disengage \n  )\\b\n"
 				},
 				{
 					"name": "storage.modifier.declaration.jac",
