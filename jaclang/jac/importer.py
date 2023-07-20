@@ -63,7 +63,9 @@ def import_jac_module(
     except Exception as e:
         traceback.print_exc()
         tb = traceback.extract_tb(e.__traceback__)
-        except_line = list(tb)[-1].lineno
+        except_line = (
+            e.end_lineno if isinstance(e, SyntaxError) else list(tb)[-1].lineno
+        )
 
         py_error_region = clip_code_section(
             add_line_numbers(code_string), except_line, 5

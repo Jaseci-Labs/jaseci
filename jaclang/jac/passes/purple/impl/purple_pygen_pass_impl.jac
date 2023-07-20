@@ -115,6 +115,9 @@ return_type: Optional["TypeSpec"],
 """
 :object:PurplePygenPass:ability:exit_event_signature
 (nd: ast.EventSignature) {
+    if (nd.parent|>type) == ast.Ability and nd.parent.arch_attached {
+        (nd, ", ") |> <self>.emit;
+    }
     if nd.arch_tag_info {
         (nd, f"{C.HERE}: {nd.arch_tag_info.meta['py_code']})")
             |> <self>.emit;

@@ -930,7 +930,7 @@ class BluePygenPass(Pass):
             self.emit(node, f"({node.operand.meta['py_code']})")
         elif node.op.value == "not":
             self.emit(node, f"not {node.operand.meta['py_code']}")
-        elif node.op.name in [Tok.PIPE_FWD, Tok.SPAWN_OP, Tok.KW_SPAWN]:
+        elif node.op.name == Tok.PIPE_FWD:
             self.emit(node, f"{node.operand.meta['py_code']}()")
         else:
             self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
