@@ -13,7 +13,7 @@ from jaclang.jac.utils import add_line_numbers, clip_code_section
 
 def fetch_jac_err_code_region(py_code: str, err_line: int, range: int = 5) -> str:
     """Fetch the jac code region that caused the error."""
-    jac_err_line = int(py_code.splitlines()[err_line].split()[-1])
+    jac_err_line = int(py_code.splitlines()[err_line - 1].split()[-1])
     mod_index = int(py_code.splitlines()[err_line].split()[-2])
     mod_paths = py_code.split(Con.JAC_DEBUG_SPLITTER)[1].strip().splitlines()
     with open(mod_paths[mod_index], "r") as file:
@@ -59,7 +59,8 @@ def import_jac_module(
     module.__name__ = module_name
 
     try:
-        exec(code_string, module.__dict__)
+        codeobj = compile(code_string, f"__jac_py_gen ({module.__file__})", "exec")
+        exec(codeobj, module.__dict__)
     except Exception as e:
         traceback.print_exc()
         tb = traceback.extract_tb(e.__traceback__)
@@ -72,17 +73,12 @@ def import_jac_module(
         )
 
         jac_error_region = fetch_jac_err_code_region(code_string, except_line)
-
-        e_str = (
-            f"\nError in module {module_name}\nJac file: {full_target}\n"
-            f"Error: {str(e)}\n"
-        )
         snippet = (
             f"PyCode Snippet:\n{py_error_region}\n"
             f"JacCode Snippet:\n{jac_error_region}\n"
         )
-        print(e_str + snippet)
-        raise type(e)(str(e) + e_str) from None
+        print(snippet)
+        raise e
 
     if package_path:
         parts = package_path.split(".")
