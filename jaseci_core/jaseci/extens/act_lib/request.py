@@ -118,7 +118,9 @@ def options(url: str, data: dict, header: dict):
 
 
 @jaseci_action()
-def multipart(url: str, files: list, header: dict, meta: dict):
+def multipart(
+    url: str, data: dict = {}, files: list = [], header: dict = {}, meta: dict = {}
+):
     """
     Issue request
     Param 1 - url
@@ -140,8 +142,7 @@ def multipart(url: str, files: list, header: dict, meta: dict):
             "using parameter `file` and `files` for array file",
         }
 
-    form_data = []
-
+    _files = []
     stream_to_be_close = []
 
     if files is not None:
@@ -149,14 +150,14 @@ def multipart(url: str, files: list, header: dict, meta: dict):
             file_handler = hook.get_file_handler(f)
             stream = file_handler.open("rb", None, True)
             stream_to_be_close.append(stream)
-            form_data.append(
+            _files.append(
                 (
                     file_handler.field or "file",
                     (file_handler.name, stream, file_handler.content_type),
                 )
             )
 
-    res = requests.post(url, files=form_data, headers=header)
+    res = requests.post(url, data=data, files=_files, headers=header)
     ret = {"status_code": res.status_code}
     try:
         ret["response"] = res.json()
