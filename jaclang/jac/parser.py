@@ -306,21 +306,11 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "KW_WITH KW_ENTER return_type_tag",
         "KW_WITH KW_EXIT return_type_tag",
-        "KW_WITH STAR_MUL KW_ENTER return_type_tag",
-        "KW_WITH STAR_MUL KW_EXIT return_type_tag",
-        "KW_WITH type_list KW_ENTER return_type_tag",
-        "KW_WITH type_list KW_EXIT return_type_tag",
+        "KW_WITH type_spec KW_ENTER return_type_tag",
+        "KW_WITH type_spec KW_EXIT return_type_tag",
     )
     def event_clause(self, p: YaccProduction) -> YaccProduction:
         """Event clause rule."""
-        return p
-
-    @_(
-        "type_spec",
-        "type_list COMMA type_spec",
-    )
-    def type_list(self, p: YaccProduction) -> YaccProduction:
-        """Name list rule."""
         return p
 
     @_(
@@ -479,16 +469,24 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
+        "single_type",
+        "type_spec NULL_OK",
+        "type_spec BW_OR single_type",
+    )
+    def type_spec(self, p: YaccProduction) -> YaccProduction:
+        """Type hint rule."""
+        return p
+
+    @_(
         "builtin_type",
         "NULL",
         "dotted_name",
-        "TYP_LIST LSQUARE type_spec RSQUARE",
-        "TYP_TUPLE LSQUARE type_spec RSQUARE",
-        "TYP_SET LSQUARE type_spec RSQUARE",
-        "TYP_DICT LSQUARE type_spec COMMA type_spec RSQUARE",
-        "type_spec NULL_OK",
+        "TYP_LIST LSQUARE single_type RSQUARE",
+        "TYP_TUPLE LSQUARE single_type RSQUARE",
+        "TYP_SET LSQUARE single_type RSQUARE",
+        "TYP_DICT LSQUARE single_type COMMA single_type RSQUARE",
     )
-    def type_spec(self, p: YaccProduction) -> YaccProduction:
+    def single_type(self, p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
         return p
 
@@ -553,7 +551,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Statement rule."""
         return p
 
-    @_("RETURN_HINT type_list code_block")
+    @_("RETURN_HINT type_spec code_block")
     def typed_ctx_block(self, p: YaccProduction) -> YaccProduction:
         """Typed context block rule."""
         return p

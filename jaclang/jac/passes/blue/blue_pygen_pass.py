@@ -415,6 +415,13 @@ class BluePygenPass(Pass):
                 node, f"self.{node.name.value}: {node.type_tag.meta['py_code']} = None"
             )
 
+    def exit_type_spec_list(self, node: ast.TypeSpecList) -> None:
+        """Sub objects.
+
+        types: list[TypeSpec],
+        """
+        self.emit(node, ", ".join([i.meta["py_code"] for i in node.types]))
+
     def exit_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
@@ -448,14 +455,6 @@ class BluePygenPass(Pass):
         names: list[all_refs],
         """
         self.emit(node, ".".join([i.meta["py_code"] for i in node.names]))
-
-    def exit_type_list(self, node: ast.TypeList) -> None:
-        """Sub objects.
-
-        names: list[Token],
-        dotted: bool,
-        """
-        # self.emit(node, ", ".join([i.meta["py_code"] for i in node.types]))
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.

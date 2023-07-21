@@ -40,7 +40,7 @@ walker tourist {
     has budget: int;
     has passport: list[str];
 
-    can make_visit with location, other exit {
+    can make_visit with location|other exit {
         b=:g:stuff:w:tourist;
         a = spawn :g:stuff:w:tourist;
         a = spawn :w:tourist;

@@ -262,6 +262,12 @@ class TypeAnalyzePass(Pass, SymbolTable):
         vars: list['HasVar'],
         """
 
+    def exit_type_spec_list(self, node: ast.TypeSpecList) -> None:
+        """Sub objects.
+
+        types: list[TypeSpec],
+        """
+
     def exit_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
@@ -278,13 +284,6 @@ class TypeAnalyzePass(Pass, SymbolTable):
         """
 
     def exit_name_list(self, node: ast.NameList) -> None:
-        """Sub objects.
-
-        names: list[Token],
-        dotted: bool,
-        """
-
-    def exit_type_list(self, node: ast.NameList) -> None:
         """Sub objects.
 
         names: list[Token],

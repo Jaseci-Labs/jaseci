@@ -535,7 +535,7 @@ class EventSignature(AstNode):
     def __init__(
         self,
         event: Token,
-        arch_tag_info: Optional["TypeList | TypeSpec"],
+        arch_tag_info: Optional[TypeSpecList],
         return_type: Optional["TypeSpec"],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -562,22 +562,6 @@ class NameList(AstNode):
     ) -> None:
         """Initialize name list node."""
         self.names = names
-        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
-
-
-class TypeList(AstNode):
-    """TypeList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        types: list["TypeSpec"],
-        parent: Optional[AstNode],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize type list node."""
-        self.types = types
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
@@ -783,6 +767,22 @@ class HasVar(AstNode):
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
+class TypeSpecList(AstNode):
+    """TypeSpecList node type for Jac Ast."""
+
+    def __init__(
+        self,
+        types: list[TypeSpec],
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize type list node."""
+        self.types = types
+        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+
 class TypeSpec(AstNode):
     """TypeSpec node type for Jac Ast."""
 
@@ -826,7 +826,7 @@ class TypedCtxBlock(AstNode):
 
     def __init__(
         self,
-        type_ctx: TypeList,
+        type_ctx: TypeSpecList,
         body: CodeBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],

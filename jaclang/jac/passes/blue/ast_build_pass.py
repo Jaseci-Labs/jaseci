@@ -581,10 +581,8 @@ class AstBuildPass(Pass):
     def exit_event_clause(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        event_clause -> KW_WITH type_list KW_EXIT return_type_tag
-        event_clause -> KW_WITH type_list KW_ENTER return_type_tag
-        event_clause -> KW_WITH STAR_MUL KW_EXIT return_type_tag
-        event_clause -> KW_WITH STAR_MUL KW_ENTER return_type_tag
+        event_clause -> KW_WITH type_spec KW_EXIT return_type_tag
+        event_clause -> KW_WITH type_spec KW_ENTER return_type_tag
         event_clause -> KW_WITH KW_EXIT return_type_tag
         event_clause -> KW_WITH KW_ENTER return_type_tag
         """
@@ -616,25 +614,6 @@ class AstBuildPass(Pass):
                     line=node.line,
                 ),
             )
-
-    def exit_type_list(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        type_list -> type_list COMMA dotted_name
-        type_list -> dotted_name
-        """
-        if len(node.kid) == 3:
-            node.kid = node.kid[0].kid + [node.kid[2]]
-        replace_node(
-            node,
-            ast.TypeList(
-                types=node.kid,
-                parent=node.parent,
-                mod_link=self.mod_link,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
 
     def exit_func_decl(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -980,55 +959,61 @@ class AstBuildPass(Pass):
     def exit_type_spec(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        type_spec -> type_spec BW_OR single_type
         type_spec -> type_spec NULL_OK
-        type_spec -> TYP_DICT LSQUARE type_spec COMMA type_spec RSQUARE
-        type_spec -> TYP_SET LSQUARE type_spec RSQUARE
-        type_spec -> TYP_TUPLE LSQUARE type_spec RSQUARE
-        type_spec -> TYP_LIST LSQUARE type_spec RSQUARE
-        type_spec -> dotted_name
-        type_spec -> NULL
-        type_spec -> builtin_type
+        type_spec -> single_type
         """
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
         if len(node.kid) == 2:
-            replace_node(
-                node,
-                ast.TypeSpec(
-                    spec_type=node.kid[0].spec_type,
-                    list_nest=node.kid[0].list_nest,
-                    dict_nest=node.kid[0].dict_nest,
-                    null_ok=True,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid[0].kid,
-                    line=node.kid[0].line,
-                ),
-            )
-        else:
-            meta = {
-                "typ": node.kid[0],
-                "list_nest": None,
-                "dict_nest": None,
-            }
-            if len(node.kid) == 4:
-                node.kid = [node.kid[0], node.kid[2]]
-                meta["list_nest"] = node.kid[1]
-            elif len(node.kid) == 6:
-                node.kid = [node.kid[0], node.kid[2], node.kid[4]]
-                meta["list_nest"] = node.kid[1]
-                meta["dict_nest"] = node.kid[2]
-            replace_node(
-                node,
-                ast.TypeSpec(
-                    spec_type=meta["typ"],
-                    list_nest=meta["list_nest"],
-                    dict_nest=meta["dict_nest"],
-                    null_ok=False,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+            node.kid[0].kid[0].null_ok = True
+            node.kid = node.kid[0].kid
+        replace_node(
+            node,
+            ast.TypeSpecList(
+                types=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
+
+    def exit_single_type(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        single_type -> TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
+        single_type -> TYP_SET LSQUARE single_type RSQUARE
+        single_type -> TYP_TUPLE LSQUARE single_type RSQUARE
+        single_type -> TYP_LIST LSQUARE single_type RSQUARE
+        single_type -> dotted_name
+        single_type -> NULL
+        """
+        meta = {
+            "typ": node.kid[0],
+            "list_nest": None,
+            "dict_nest": None,
+        }
+        if len(node.kid) == 4:
+            node.kid = [node.kid[0], node.kid[2]]
+            meta["list_nest"] = node.kid[1]
+        elif len(node.kid) == 6:
+            node.kid = [node.kid[0], node.kid[2], node.kid[4]]
+            meta["list_nest"] = node.kid[1]
+            meta["dict_nest"] = node.kid[2]
+        replace_node(
+            node,
+            ast.TypeSpec(
+                spec_type=meta["typ"],
+                list_nest=meta["list_nest"],
+                dict_nest=meta["dict_nest"],
+                null_ok=False,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_builtin_type(self, node: ast.AstNode) -> None:
         """Grammar rule.
