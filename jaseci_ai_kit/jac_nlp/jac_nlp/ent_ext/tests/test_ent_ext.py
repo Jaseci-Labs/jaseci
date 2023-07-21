@@ -4,14 +4,13 @@ import pytest
 import shutil
 from os import path
 
-pytest.skip(allow_module_level=True)
-
 
 class EntExtTest(CoreTest):
     fixture_src = __file__
     """
     Test Class for EntExt Module to test the functionality of api's
     """
+    pytest.skip(allow_module_level=True)
 
     @classmethod
     def setUpClass(cls):
