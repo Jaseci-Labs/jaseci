@@ -962,14 +962,14 @@ class AstBuildPass(Pass):
     def exit_type_tag(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        type_tag -> COLON type_name
+        type_tag -> COLON type_spec
         """
         replace_node(node, node.kid[1])
 
     def exit_return_type_tag(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        return_type_tag -> RETURN_HINT type_name
+        return_type_tag -> RETURN_HINT type_spec
         return_type_tag -> empty
         """
         if len(node.kid) == 2:
@@ -977,17 +977,17 @@ class AstBuildPass(Pass):
         else:
             replace_node(node, None)
 
-    def exit_type_name(self, node: ast.AstNode) -> None:
+    def exit_type_spec(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        type_name -> type_name NULL_OK
-        type_name -> TYP_DICT LSQUARE type_name COMMA type_name RSQUARE
-        type_name -> TYP_SET LSQUARE type_name RSQUARE
-        type_name -> TYP_TUPLE LSQUARE type_name RSQUARE
-        type_name -> TYP_LIST LSQUARE type_name RSQUARE
-        type_name -> dotted_name
-        type_name -> NULL
-        type_name -> builtin_type
+        type_spec -> type_spec NULL_OK
+        type_spec -> TYP_DICT LSQUARE type_spec COMMA type_spec RSQUARE
+        type_spec -> TYP_SET LSQUARE type_spec RSQUARE
+        type_spec -> TYP_TUPLE LSQUARE type_spec RSQUARE
+        type_spec -> TYP_LIST LSQUARE type_spec RSQUARE
+        type_spec -> dotted_name
+        type_spec -> NULL
+        type_spec -> builtin_type
         """
         if len(node.kid) == 2:
             replace_node(

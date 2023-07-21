@@ -316,8 +316,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "type_name",
-        "type_list COMMA type_name",
+        "type_spec",
+        "type_list COMMA type_spec",
     )
     def type_list(self, p: YaccProduction) -> YaccProduction:
         """Name list rule."""
@@ -465,14 +465,14 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Parameter variable rule rule."""
         return p
 
-    @_("COLON type_name")
+    @_("COLON type_spec")
     def type_tag(self, p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
         return p
 
     @_(
         "empty",
-        "RETURN_HINT type_name",
+        "RETURN_HINT type_spec",
     )
     def return_type_tag(self, p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
@@ -482,13 +482,13 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "builtin_type",
         "NULL",
         "dotted_name",
-        "TYP_LIST LSQUARE type_name RSQUARE",
-        "TYP_TUPLE LSQUARE type_name RSQUARE",
-        "TYP_SET LSQUARE type_name RSQUARE",
-        "TYP_DICT LSQUARE type_name COMMA type_name RSQUARE",
-        "type_name NULL_OK",
+        "TYP_LIST LSQUARE type_spec RSQUARE",
+        "TYP_TUPLE LSQUARE type_spec RSQUARE",
+        "TYP_SET LSQUARE type_spec RSQUARE",
+        "TYP_DICT LSQUARE type_spec COMMA type_spec RSQUARE",
+        "type_spec NULL_OK",
     )
-    def type_name(self, p: YaccProduction) -> YaccProduction:
+    def type_spec(self, p: YaccProduction) -> YaccProduction:
         """Type hint rule."""
         return p
 
