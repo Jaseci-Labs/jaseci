@@ -104,3 +104,22 @@ walker return_any_file_with_name {
         report:file = fh.update(uuid, name="jaseci_bible.pdf")["id"];
     }
 }
+
+walker manual_upload_file {
+    can request.multipart, fh.download;
+
+    with entry {
+        uuid = fh.download("https://github.com/Jaseci-Labs/jaseci/raw/main/support/bible/pdf/jaseci_bible.pdf");
+
+        request.multipart(
+            "https://sample/com",
+            data = {
+                "test": 1
+            },
+            files = [uuid],
+            header = {
+                "test": 2
+            }
+        );
+    }
+}

@@ -124,10 +124,9 @@ def multipart(
     """
     Issue request
     Param 1 - url
-    Param 3 - header
-    Param 3 - file (Optional) used for single file
-    Param 4 - files (Optional) used for multiple files
-    Note - file and files can't be None at the same time
+    Param 2 - data (Optional) used for request body
+    Param 3 - files (Optional) used for request files
+    Param 4 - header
 
     Return - response object
     """
