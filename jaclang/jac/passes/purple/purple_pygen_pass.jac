@@ -18,6 +18,7 @@ object PurplePygenPass:BluePygenPass {
     can exit_ability(nd: ast.Ability);
     can exit_event_signature(nd: ast.EventSignature);
     can exit_ctrl_stmt(nd: ast.CtrlStmt);
+    can exit_visit_stmt(nd: ast.VisitStmt);
     can exit_binary_expr(nd: ast.BinaryExpr);
     # can exit_connect_op(nd: ast.ConnectOp);
 }

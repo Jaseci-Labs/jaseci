@@ -13,6 +13,7 @@ class Constants(str, Enum):
     HERE = "__jac_here__"
     ROOT = "__jac_root__"
     CONNECT_NODE = "__jac_connect_node__"
+    WALKER_VISIT = "__jac_visit__"
     OBJECT_CLASS = "__jac_Object__"
     NODE_CLASS = "__jac_Node__"
     EDGE_CLASS = "__jac_Edge__"

@@ -809,9 +809,9 @@ class BluePygenPass(Pass):
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
-        typ: Optional[Token],
-        target: Optional[ExprType],
-        else_body: Optional[ElseStmt],
+        vis_type: Optional[Token],
+        target: Optional["ExprType"],
+        else_body: Optional["ElseStmt"],
         """
         self.ds_feature_warn()
 
@@ -897,8 +897,8 @@ class BluePygenPass(Pass):
         elif node.op.name == Tok.ELVIS_OP:
             self.emit(
                 node,
-                f"(__jac_tmp := {node.left.meta['py_code']}) "
-                f"if __jac_tmp is not None else {node.right.meta['py_code']})",
+                f"__jac_tmp "
+                f"if (__jac_tmp := ({node.left.meta['py_code']})) is not None else {node.right.meta['py_code']}",
             )
         else:
             self.error(
@@ -945,7 +945,6 @@ class BluePygenPass(Pass):
         else:
             self.emit(node, f"*{node.target.meta['py_code']}")
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 

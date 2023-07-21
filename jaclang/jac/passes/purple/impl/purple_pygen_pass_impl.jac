@@ -1,4 +1,5 @@
 """First Jac pass bootstrapped in Jac"""
+import:py from jaclang.jac.constant, Constants as C;
 
 :object:PurplePygenPass:ability:add_element_import
 (arch: str) {
@@ -143,6 +144,23 @@ ctrl: Token,
     }
 }
 
+"""Sub objects.
+
+vis_type: Optional[Token],
+target: Optional["ExprType"],
+else_body: Optional["ElseStmt"],
+"""
+:object:PurplePygenPass:ability:exit_visit_stmt
+(nd: ast.VisitStmt) {
+    vis_type = nd.vis_type?.value ?: "";
+    (nd, f"if not self.{C.WALKER_VISIT}({nd.target.meta['py_code']}): " )
+        |> <self>.emit_ln;
+    if nd.else_body {
+        (nd, nd.else_body.body.meta["py_code"], indent_delta=1) |> <self>.emit;
+    } else {
+        (nd, 'pass', indent_delta=1) |> <self>.emit_ln;
+    }
+}
 
 """Sub objects.
 
