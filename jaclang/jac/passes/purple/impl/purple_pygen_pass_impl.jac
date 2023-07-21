@@ -119,6 +119,7 @@ return_type: Optional["TypeSpec"],
         (nd, ", ") |> <self>.emit;
     }
     if nd.arch_tag_info {
+        (nd.arch_tag_info.types, nd.arch_tag_info.meta['py_code']) |> print;
         (nd, f"{C.HERE}: {nd.arch_tag_info.meta['py_code']})")
             |> <self>.emit;
     } else {

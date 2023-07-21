@@ -11,6 +11,7 @@ class Constants(str, Enum):
 
     EXEC_CONTEXT = "__jac_exec_ctx__"
     HERE = "__jac_here__"
+    ROOT = "__jac_root__"
     CONNECT_NODE = "__jac_connect_node__"
     OBJECT_CLASS = "__jac_Object__"
     NODE_CLASS = "__jac_Node__"

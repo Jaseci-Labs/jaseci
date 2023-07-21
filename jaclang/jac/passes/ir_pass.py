@@ -75,6 +75,15 @@ class Pass(Transform):
                     result.extend(self.get_all_sub_nodes(i, typ, brute_force))
         return result
 
+    def recalculate_parents(self, node: ast.AstNode) -> None:
+        """Recalculate parents."""
+        if not node:
+            return
+        for i in node.kid:
+            if i:
+                i.parent = node
+                self.recalculate_parents(i)
+
     # Transform Implementations
     # -------------------------
     def transform(self, ir: ast.AstNode) -> ast.AstNode:

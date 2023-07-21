@@ -966,8 +966,13 @@ class AstBuildPass(Pass):
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
         if len(node.kid) == 2:
-            node.kid[0].kid[0].null_ok = True
-            node.kid = node.kid[0].kid
+            if type(node.kid[0]) == ast.TypeSpecList:
+                node.kid[0].kid[0].null_ok = True
+                node.kid = node.kid[0].kid
+            elif type(node.kid[0]) == ast.TypeSpec:
+                node.kid[0].null_ok = True
+            else:
+                raise Exception(f"Invalid type spec{type(node.kid[0])}")
         replace_node(
             node,
             ast.TypeSpecList(
@@ -1091,7 +1096,7 @@ class AstBuildPass(Pass):
     def exit_typed_ctx_block(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        typed_ctx_block -> RETURN_HINT type_list code_block
+        typed_ctx_block -> RETURN_HINT type_spec code_block
         """
         del node.kid[0]
         replace_node(

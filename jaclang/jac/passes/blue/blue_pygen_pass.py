@@ -420,7 +420,7 @@ class BluePygenPass(Pass):
 
         types: list[TypeSpec],
         """
-        self.emit(node, ", ".join([i.meta["py_code"] for i in node.types]))
+        self.emit(node, "|".join([i.meta["py_code"] for i in node.types]))
 
     def exit_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
@@ -1164,8 +1164,12 @@ class BluePygenPass(Pass):
             self.emit(node, "self")
         elif node.var.name == Tok.SUPER_OP:
             self.emit(node, "super()")
+        elif node.var.name == Tok.ROOT_OP:
+            self.emit(node, Con.ROOT)
+        elif node.var.name == Tok.HERE_OP:
+            self.emit(node, Con.HERE)
         else:
-            self.ds_feature_warn()
+            self.ice("Special variable not handled.")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
