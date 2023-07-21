@@ -21,3 +21,13 @@ class Constants(str, Enum):
     def __str__(self) -> str:
         """Return the string representation of the token."""
         return self.value
+
+
+class Values(int, Enum):
+    """Token constants for Jac."""
+
+    JAC_ERROR_LINE_RANGE = 3
+
+    def __str__(self) -> str:
+        """Return the string representation of the token."""
+        return self.value

@@ -6,12 +6,14 @@ import types
 from os import makedirs, path
 from typing import Callable, Optional
 
-from jaclang.jac.constant import Constants as Con
+from jaclang.jac.constant import Constants as Con, Values as Val
 from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
 from jaclang.jac.utils import add_line_numbers, clip_code_section
 
 
-def fetch_jac_err_code_region(py_code: str, err_line: int, range: int = 5) -> str:
+def fetch_jac_err_code_region(
+    py_code: str, err_line: int, range: int = Val.JAC_ERROR_LINE_RANGE
+) -> str:
     """Fetch the jac code region that caused the error."""
     jac_err_line = int(py_code.splitlines()[err_line - 1].split()[-1])
     mod_index = int(py_code.splitlines()[err_line].split()[-2])
@@ -69,7 +71,7 @@ def import_jac_module(
         )
 
         py_error_region = clip_code_section(
-            add_line_numbers(code_string), except_line, 5
+            add_line_numbers(code_string), except_line, Val.JAC_ERROR_LINE_RANGE
         )
 
         jac_error_region = fetch_jac_err_code_region(code_string, except_line)
