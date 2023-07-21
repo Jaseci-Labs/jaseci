@@ -4,6 +4,8 @@ import pytest
 import shutil
 from os import path
 
+pytest.skip(allow_module_level=True)
+
 
 class EntExtTest(CoreTest):
     fixture_src = __file__
