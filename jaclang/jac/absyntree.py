@@ -2,16 +2,9 @@
 from __future__ import annotations
 
 import pprint
-from enum import Enum as Enumer, auto
 from typing import Optional, Union
 
-
-class EdgeDir(Enumer):
-    """Edge direction indicator."""
-
-    IN = auto()
-    OUT = auto()
-    ANY = auto()
+from jaclang.jac.constant import EdgeDir
 
 
 class AstNode:

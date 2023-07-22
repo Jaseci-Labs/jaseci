@@ -3,6 +3,7 @@ from os import path
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import replace_node
+from jaclang.jac.constant import EdgeDir
 from jaclang.jac.lexer import Tokens as Tok
 from jaclang.jac.passes import Pass
 
@@ -2962,7 +2963,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.EdgeOpRef(
                     filter_cond=node.kid[1],
-                    edge_dir=ast.EdgeDir.OUT,
+                    edge_dir=EdgeDir.OUT,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -2974,7 +2975,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.EdgeOpRef(
                     filter_cond=None,
-                    edge_dir=ast.EdgeDir.OUT,
+                    edge_dir=EdgeDir.OUT,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -2993,7 +2994,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.EdgeOpRef(
                     filter_cond=node.kid[1],
-                    edge_dir=ast.EdgeDir.IN,
+                    edge_dir=EdgeDir.IN,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -3005,7 +3006,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.EdgeOpRef(
                     filter_cond=None,
-                    edge_dir=ast.EdgeDir.IN,
+                    edge_dir=EdgeDir.IN,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -3024,7 +3025,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.EdgeOpRef(
                     filter_cond=node.kid[1],
-                    edge_dir=ast.EdgeDir.ANY,
+                    edge_dir=EdgeDir.ANY,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -3036,7 +3037,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.EdgeOpRef(
                     filter_cond=None,
-                    edge_dir=ast.EdgeDir.ANY,
+                    edge_dir=EdgeDir.ANY,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -3083,7 +3084,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.ConnectOp(
                     spwn=node.kid[1],
-                    edge_dir=ast.EdgeDir.OUT,
+                    edge_dir=EdgeDir.OUT,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -3095,7 +3096,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.ConnectOp(
                     spwn=None,
-                    edge_dir=ast.EdgeDir.OUT,
+                    edge_dir=EdgeDir.OUT,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -3114,7 +3115,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.ConnectOp(
                     spwn=node.kid[1],
-                    edge_dir=ast.EdgeDir.IN,
+                    edge_dir=EdgeDir.IN,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -3126,7 +3127,7 @@ class AstBuildPass(Pass):
                 node,
                 ast.ConnectOp(
                     spwn=None,
-                    edge_dir=ast.EdgeDir.IN,
+                    edge_dir=EdgeDir.IN,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,

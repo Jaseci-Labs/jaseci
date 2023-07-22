@@ -1,5 +1,5 @@
 """Constants across the project."""
-from enum import Enum
+from enum import Enum, auto
 
 
 class Constants(str, Enum):
@@ -23,6 +23,14 @@ class Constants(str, Enum):
     def __str__(self) -> str:
         """Return the string representation of the token."""
         return self.value
+
+
+class EdgeDir(Enum):
+    """Edge direction indicator."""
+
+    IN = auto()
+    OUT = auto()
+    ANY = auto()
 
 
 class Values(int, Enum):

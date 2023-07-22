@@ -171,13 +171,8 @@ op: Token,
 :object:PurplePygenPass:ability:exit_binary_expr
 (nd: ast.BinaryExpr) {
     if (nd.op|>type) == ast.ConnectOp {
-        if(nd.op.spwn) {
-            (nd, f"{nd.left.meta['py_code']}.{C.CONNECT_NODE}({nd.right.meta['py_code']}, {nd.op.meta['py_code']})")
-                |> <self>.emit;
-        } else {
-            (nd, f"{nd.left.meta['py_code']}.{C.CONNECT_NODE}({nd.right.meta['py_code']})")
-                |> <self>.emit;
-        }
+        (nd, f"{nd.left.meta['py_code']}.{C.CONNECT_NODE}({nd.right.meta['py_code']}, {nd.op.meta['py_code']})")
+            |> <self>.emit;
     } else {
         <super>.exit_binary_expr(nd);
     }
@@ -198,5 +193,6 @@ edge_dir: EdgeDir,
     } else {
         (nd, f"Edge().{C.WITH_DIR}(ast.EdgeDir.{nd.edge_dir.name})") |> <self>.emit;
     }
-    (nd, f" {nd.meta['py_code']}") |> <self>.emit_ln;
+    # ("HERE", nd.meta["py_code"]) |> print;
+    # (nd, f" {nd.meta['py_code']}") |> <self>.emit_ln;
 }
