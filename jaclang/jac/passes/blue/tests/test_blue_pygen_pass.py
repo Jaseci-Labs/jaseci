@@ -35,6 +35,16 @@ class BluePygenPassTests(TestCaseMicroSuite):
         )
         self.assertIn("a = (5 + 10) * 2", code_gen.ir.meta["py_code"])
 
+    def test_atomic_pipe_operator(self) -> None:
+        """Basic test for pass."""
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
+        )
+        self.assertFalse(code_gen.errors_had)
+        self.assertIn(
+            'say((dump(print)(len))({"name": "value"}))', code_gen.ir.meta["py_code"]
+        )
+
     def test_pipe_operator_multi_param(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_pass(

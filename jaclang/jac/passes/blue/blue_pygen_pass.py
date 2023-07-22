@@ -890,7 +890,22 @@ class BluePygenPass(Pass):
             else:
                 self.emit(node, ")" * paren_count)
 
-        elif node.op.name == Tok.PIPE_BKWD:
+        elif node.op.name in [Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
+            self.emit(node, f"{node.right.meta['py_code']}({node.left.meta['py_code']}")
+            paren_count = (
+                node.meta["a_pipe_chain_count"]
+                if "a_pipe_chain_count" in node.meta
+                else 1
+            )
+            if type(node.parent) == ast.BinaryExpr and node.parent.op.name in [
+                Tok.KW_SPAWN,
+                Tok.A_PIPE_FWD,
+            ]:
+                node.parent.meta["a_pipe_chain_count"] = paren_count + 1
+            else:
+                self.emit(node, ")" * paren_count)
+
+        elif node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]:
             self.emit(
                 node, f"{node.left.meta['py_code']}({node.right.meta['py_code']})"
             )
@@ -929,7 +944,7 @@ class BluePygenPass(Pass):
             self.emit(node, f"({node.operand.meta['py_code']})")
         elif node.op.value == "not":
             self.emit(node, f"not {node.operand.meta['py_code']}")
-        elif node.op.name == Tok.PIPE_FWD:
+        elif node.op.name in [Tok.PIPE_FWD, Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
             self.emit(node, f"{node.operand.meta['py_code']}()")
         else:
             self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
@@ -1177,7 +1192,7 @@ class BluePygenPass(Pass):
         name: Name,
         arch: Token,
         """
-        self.emit(node, f"self.{node.name.value}")
+        self.emit(node, f"{node.name.value}")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:

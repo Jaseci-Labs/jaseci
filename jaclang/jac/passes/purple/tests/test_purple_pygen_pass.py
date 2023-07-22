@@ -10,13 +10,14 @@ class PurplePygenPassTests(TestCaseMicroSuite):
         """Set up test."""
         return super().setUp()
 
-    # def test_simple_jac_red(self) -> None:
-    #     from jaclang import jac_purple_import
-    #     """Parse micro jac file."""
-    #     code_gen = jac_purple_import(
-    #         "micro.simple_walk", self.fixture_abs_path("../../../../../../examples/")
-    #     )
-    #     self.assertGreater(len(code_gen), 10)
+    def test_simple_jac_red(self) -> None:
+        """Parse micro jac file."""
+        from jaclang import jac_purple_import
+
+        code_gen = jac_purple_import(
+            "micro.simple_walk", self.fixture_abs_path("../../../../../../examples/")
+        )
+        self.assertGreater(len(code_gen), 10)
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
