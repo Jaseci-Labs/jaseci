@@ -765,7 +765,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "pipe_back",
         "pipe_back PIPE_FWD pipe",  # casting achieved here
-        "pipe_back PIPE_FWD filter_ctx",  # for filtering lists of dicts/objs, etc.
     )
     def pipe(self, p: YaccProduction) -> YaccProduction:
         """Pipe forward rule."""
@@ -774,7 +773,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "elvis_check",
         "elvis_check PIPE_BKWD pipe_back",
-        "elvis_check PIPE_BKWD filter_ctx",
     )
     def pipe_back(self, p: YaccProduction) -> YaccProduction:
         """Pipe backward rule."""
@@ -878,20 +876,29 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "spawn_object disconnect_op connect",
-        "spawn_object connect_op connect",
-        "spawn_object",
+        "atomic_pipe disconnect_op connect",
+        "atomic_pipe connect_op connect",
+        "atomic_pipe",
     )
     def connect(self, p: YaccProduction) -> YaccProduction:
         """Connect rule."""
         return p
 
     @_(
-        "spawn_object spawn_op unpack",
+        "atomic_pipe A_PIPE_FWD atomic_pipe_back",
+        "atomic_pipe KW_SPAWN atomic_pipe_back",  # For high level readability
+        "atomic_pipe_back",
+    )
+    def atomic_pipe(self, p: YaccProduction) -> YaccProduction:
+        """Pipe forward rule."""
+        return p
+
+    @_(
+        "atomic_pipe_back A_PIPE_BKWD unpack",
         "unpack",
     )
-    def spawn_object(self, p: YaccProduction) -> YaccProduction:
-        """Spawn object rule."""
+    def atomic_pipe_back(self, p: YaccProduction) -> YaccProduction:
+        """Pipe backward rule."""
         return p
 
     @_(
@@ -912,7 +919,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "spawn_op walrus_assign",
+        "KW_SPAWN walrus_assign",
+        "A_PIPE_FWD walrus_assign",
         "PIPE_FWD walrus_assign",
         "walrus_assign",
     )
@@ -963,14 +971,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Compare operator rule."""
         return p
 
-    @_(
-        "KW_SPAWN",
-        "SPAWN_OP",
-    )
-    def spawn_op(self, p: YaccProduction) -> YaccProduction:
-        """Spawn operator rule."""
-        return p
-
     # Atom rules
     # --------------------
     @_(
@@ -980,6 +980,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "atomic_chain",
         "all_refs",
         "edge_op_ref",
+        "filter_ctx",  # for filtering lists of dicts/objs, etc.
     )
     def atom(self, p: YaccProduction) -> YaccProduction:
         """Atom rule."""

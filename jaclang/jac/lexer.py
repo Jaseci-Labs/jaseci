@@ -149,7 +149,6 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "ARROW_R_p2",
         "CARROW_L",
         "CARROW_R",
-        # "CARROW_BI",
         "CARROW_L_p1",
         "CARROW_L_p2",
         "CARROW_R_p1",
@@ -165,7 +164,8 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "OBJECT_OP",
         "ENUM_OP",
         "ABILITY_OP",
-        "SPAWN_OP",
+        "A_PIPE_FWD",
+        "A_PIPE_BKWD",
         "ELVIS_OP",
         "RETURN_HINT",
         "NULL_OK",
@@ -267,7 +267,6 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     ARROW_R_p2 = r"]->"
     CARROW_L = r"<\+\+"
     CARROW_R = r"\+\+>"
-    # CARROW_BI = r"<\+\+>"
     CARROW_L_p1 = r"<\+\["
     CARROW_R_p2 = r"]\+>"
     CARROW_L_p2 = r"]\+"
@@ -285,7 +284,12 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     OBJECT_OP = r":o:|:object:"
     ENUM_OP = r":enum:"
     ABILITY_OP = r":a:|:ability:"
-    SPAWN_OP = r":>"
+    A_PIPE_FWD = r":>"
+    A_PIPE_BKWD = r"<:"
+    PIPE_FWD = r"\|>"
+    PIPE_BKWD = r"<\|"
+    DOT_FWD = r"\.>"
+    DOT_BKWD = r"<\."
     RETURN_HINT = r"->"
     ELVIS_OP = r"\?:"
     NULL_OK = r"\?"
@@ -313,10 +317,6 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NE = r"!="
     NOT = r"!"
     WALRUS_EQ = r":="
-    PIPE_FWD = r"\|>"
-    PIPE_BKWD = r"<\|"
-    DOT_FWD = r"\.>"
-    DOT_BKWD = r"<\."
     COLON = r":"
     LBRACE = r"{"
     RBRACE = r"}"
@@ -510,7 +510,6 @@ class Tokens(str, Enum):
     ARROW_R_p2 = "ARROW_R_p2"
     CARROW_L = "CARROW_L"
     CARROW_R = "CARROW_R"
-    # CARROW_BI = "CARROW_BI"
     CARROW_L_p1 = "CARROW_L_p1"
     CARROW_L_p2 = "CARROW_L_p2"
     CARROW_R_p1 = "CARROW_R_p1"
@@ -526,7 +525,8 @@ class Tokens(str, Enum):
     OBJECT_OP = "OBJECT_OP"
     ENUM_OP = "ENUM_OP"
     ABILITY_OP = "ABILITY_OP"
-    SPAWN_OP = "SPAWN_OP"
+    A_PIPE_FWD = "A_PIPE_FWD"
+    A_PIPE_BKWD = "A_PIPE_BKWD"
     ELVIS_OP = "ELVIS_OP"
     RETURN_HINT = "RETURN_HINT"
     NULL_OK = "NULL_OK"

@@ -2019,17 +2019,25 @@ class AstBuildPass(Pass):
     def exit_connect(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        connect -> spawn_object
-        connect -> spawn_object connect_op connect
-        connect -> spawn_object disconnect_op connect
+        connect -> atomic_pipe
+        connect -> atomic_pipe connect_op connect
+        connect -> atomic_pipe disconnect_op connect
         """
         self.binary_op_helper(node)
 
-    def exit_spawn_object(self, node: ast.AstNode) -> None:
+    def exit_atomic_pipe(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        spawn_object -> unpack
-        spawn_object -> spawn_object spawn_op unpack
+        atomic_pipe -> atomic_pipe_back
+        atomic_pipe -> atomic_pipe spawn_pipe_op atomic_pipe_back
+        """
+        self.binary_op_helper(node)
+
+    def exit_atomic_pipe_back(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        atomic_pipe -> unpack
+        atomic_pipe -> atomic_pipe_back A_PIPE_BKWD unpack
         """
         self.binary_op_helper(node)
 
@@ -2096,7 +2104,7 @@ class AstBuildPass(Pass):
 
         ds_call -> walrus_assign
         ds_call -> PIPE_FWD walrus_assign
-        ds_call -> spawn_op walrus_assign
+        ds_call -> spawn_pipe_op walrus_assign
         """
         if len(node.kid) == 2:
             node.kid = [node.kid[0], node.kid[1]]
@@ -2146,14 +2154,6 @@ class AstBuildPass(Pass):
         cmp_op -> GT
         cmp_op -> LT
         cmp_op -> EE
-        """
-        replace_node(node, node.kid[0])
-
-    def exit_spawn_op(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        spawn_op -> SPAWN_OP
-        spawn_op -> KW_SPAWN
         """
         replace_node(node, node.kid[0])
 
