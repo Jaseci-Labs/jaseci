@@ -4,14 +4,18 @@ import:py from jaclang.jac.constant, Constants as C;
 :object:PurplePygenPass:ability:add_element_import
 (arch: str) {
     (self.preamble, f"from jaclang.core import {arch} as __jac_{arch}__")
-    |> <self>.emit_ln_unique;
+        |> <self>.emit_ln_unique;
 }
 
 :object:PurplePygenPass:ability:add_exec_context {
     (self.preamble, f"from jaclang.core import exec_ctx as {C.EXEC_CONTEXT}")
-    |> <self>.emit_ln_unique;
+        |> <self>.emit_ln_unique;
 }
 
+:object:PurplePygenPass:ability:add_edge_directions {
+    (self.preamble, f"from jaclang.jac.constant import EdgeDir as {C.EDGE_DIR}")
+        |> <self>.emit_ln_unique;
+}
 
 """
 Sub objects.
@@ -187,12 +191,11 @@ edge_dir: EdgeDir,
 :object:PurplePygenPass:ability:exit_connect_op
 (nd: ast.ConnectOp) {
     "Edge" |> <self>.add_element_import;
+    |> <self>.add_edge_directions;
 
     if nd.spwn {
-        (nd, f"{nd.spwn.meta['py_code']}.{C.WITH_DIR}(ast.EdgeDir.{nd.edge_dir.name})") |> <self>.emit;
+        (nd, f"{nd.spwn.meta['py_code']}.{C.WITH_DIR}({C.EDGE_DIR}.{nd.edge_dir.name})") |> <self>.emit;
     } else {
-        (nd, f"Edge().{C.WITH_DIR}(ast.EdgeDir.{nd.edge_dir.name})") |> <self>.emit;
+        (nd, f"{C.EDGE_CLASS}().{C.WITH_DIR}({C.EDGE_DIR}.{nd.edge_dir.name})") |> <self>.emit;
     }
-    # ("HERE", nd.meta["py_code"]) |> print;
-    # (nd, f" {nd.meta['py_code']}") |> <self>.emit_ln;
 }

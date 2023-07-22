@@ -7,12 +7,19 @@ import:py from jaclang.jac.constant, Constants as C;
 
 include:jac impl.purple_pygen_pass_impl;
 
+"""
+This pass leverages data spacial lib to provide code
+gen for full Jac language. It is bootstrapped in Jac blue.
+"""
 object PurplePygenPass:BluePygenPass {
 
-    """ Addd arch import to the preamble """
+    #*
+    These add functions generate necessary imports
+    given code being generated.
+    *#
     can add_element_import(arch: str);
-    """ Addd exec context import to the preamble """
-    can add_exec_context();
+    can add_exec_context;
+    can add_edge_directions;
 
     can exit_architype(nd: ast.Architype);
     can exit_ability(nd: ast.Ability);

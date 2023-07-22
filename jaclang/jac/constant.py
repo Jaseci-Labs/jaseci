@@ -19,6 +19,7 @@ class Constants(str, Enum):
     EDGE_CLASS = "__jac_Edge__"
     WALKER_CLASS = "__jac_Walker__"
     WITH_DIR = "__jac_edge_with_dir__"
+    EDGE_DIR = "__jac_Edge_Dir__"
 
     def __str__(self) -> str:
         """Return the string representation of the token."""
