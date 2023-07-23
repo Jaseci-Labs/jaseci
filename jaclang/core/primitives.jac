@@ -32,6 +32,8 @@ object ExecutionContext {
         <self>.master = master;
         <self>.memory = memory;
     }
+
+    can get_root {}
 }
 
 global exec_ctx = ExecutionContext(Memory(), uuid4());

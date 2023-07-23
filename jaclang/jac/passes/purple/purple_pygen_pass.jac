@@ -3,7 +3,7 @@ import:py jaclang.jac.absyntree as ast;
 import:py from jaclang.jac.passes.blue, BluePygenPass;
 import:py from jaclang.core, Object, Node, Edge, Walker;
 import:py from jaclang.jac.lexer, Tokens as Tok;
-import:py from jaclang.jac.constant, Constants as C;
+
 
 include:jac impl.purple_pygen_pass_impl;
 
