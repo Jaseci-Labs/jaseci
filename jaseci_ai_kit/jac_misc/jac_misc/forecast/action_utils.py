@@ -31,3 +31,7 @@ def train_test_split(series, cuttoff, scale=True):
         return train_transformed, val_transformed
     else:
         return train, val
+
+
+def create_covariates(series):
+    pass

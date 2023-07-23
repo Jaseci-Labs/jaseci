@@ -10,7 +10,7 @@ def preprocess(time: list, variables: dict):
     try:
         global timeseries
         timeseries = create_series(time, variables)
-        return "time series data created"
+        return "Time series data created"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -21,7 +21,7 @@ def train_test_split(cuttoff: str, scale: bool):
         global train
         global validation
         train, validation = train_test_split(timeseries, cuttoff, scale)
-        return "train validation set created"
+        return "Train validation set created"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
