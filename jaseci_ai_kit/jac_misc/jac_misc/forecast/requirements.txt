@@ -1,3 +1,1 @@
 darts
-pyyaml==5.4.1
-optuna==2.0.0
