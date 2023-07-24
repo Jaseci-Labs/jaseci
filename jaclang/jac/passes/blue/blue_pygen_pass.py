@@ -912,8 +912,8 @@ class BluePygenPass(Pass):
         elif node.op.name == Tok.ELVIS_OP:
             self.emit(
                 node,
-                f"__jac_tmp "
-                f"if (__jac_tmp := ({node.left.meta['py_code']})) is not None else {node.right.meta['py_code']}",
+                f"{Con.JAC_TMP} "
+                f"if ({Con.JAC_TMP} := ({node.left.meta['py_code']})) is not None else {node.right.meta['py_code']}",
             )
         else:
             self.error(

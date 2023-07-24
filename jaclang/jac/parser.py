@@ -1130,6 +1130,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "atom DOT_BKWD all_refs",
         "atom index_slice",
         "atom arch_ref",
+        "atom edge_op_ref",
         "atom filter_compr",
     )
     def atomic_chain_unsafe(self, p: YaccProduction) -> YaccProduction:
@@ -1142,6 +1143,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "atom NULL_OK DOT_BKWD all_refs",
         "atom NULL_OK index_slice",
         "atom NULL_OK arch_ref",
+        "atom NULL_OK edge_op_ref",
         "atom NULL_OK filter_compr",
     )
     def atomic_chain_safe(self, p: YaccProduction) -> YaccProduction:

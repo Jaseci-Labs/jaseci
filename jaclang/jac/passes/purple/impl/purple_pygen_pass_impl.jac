@@ -185,7 +185,30 @@ op: Token,
 
 """Sub objects.
 
-spawn: Optional[ExprType],
+filter_type: Optional[ExprType],
+filter_cond: Optional[FilterCompr],
+edge_dir: EdgeDir,
+"""
+:object:PurplePygenPass:ability:exit_edge_op_ref
+(nd: ast.EdgeOpRef) {
+    (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.NODE_EDGES}()") |> <self>.emit;
+
+    if nd.filter_type {
+        (nd, f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})")
+            |> <self>.emit;
+    }
+    if nd.filter_cond {
+        (nd, f" {nd.filter_cond.meta['py_code']}")
+            |> <self>.emit;
+    }
+    (nd, f"]") |> <self>.emit;
+}
+
+
+"""Sub objects.
+
+conn_type: Optional[ExprType],
+conn_assign: Optional[AssignmentList],
 edge_dir: EdgeDir,
 """
 :object:PurplePygenPass:ability:exit_connect_op
@@ -193,9 +216,25 @@ edge_dir: EdgeDir,
     "Edge" |> <self>.add_element_import;
     |> <self>.add_edge_directions;
 
-    if nd.spwn {
-        (nd, f"{nd.spwn.meta['py_code']}.{C.WITH_DIR}({C.EDGE_DIR}.{nd.edge_dir.name})") |> <self>.emit;
+    if nd.conn_type {
+        (nd, f"{nd.conn_type.meta['py_code']}.{C.WITH_DIR}({C.EDGE_DIR}.{nd.edge_dir.name}") |> <self>.emit;
     } else {
-        (nd, f"{C.EDGE_CLASS}().{C.WITH_DIR}({C.EDGE_DIR}.{nd.edge_dir.name})") |> <self>.emit;
+        (nd, f"{C.EDGE_CLASS}().{C.WITH_DIR}({C.EDGE_DIR}.{nd.edge_dir.name}") |> <self>.emit;
     }
+    if nd.conn_assign {
+        (nd, f", {nd.conn_assign.meta['py_code']})") |> <self>.emit;
+    } else {
+        (nd, ")") |> <self>.emit;
+    }
+}
+
+"""Sub objects.
+
+conn_type: Optional[ExprType],
+conn_assign: Optional[AssignmentList],
+edge_dir: EdgeDir,
+"""
+:object:PurplePygenPass:ability:exit_disconnect_op
+(nd: ast.DisconnectOp) {
+
 }
