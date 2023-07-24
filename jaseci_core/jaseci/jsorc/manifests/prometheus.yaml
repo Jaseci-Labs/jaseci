@@ -31,21 +31,6 @@ metadata:
   annotations:
     {}
 ---
-# Source: prometheus/templates/node-exporter/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    component: "node-exporter"
-    app: prometheus
-    release: jaseci-prometheus
-    chart: prometheus-15.10.5
-    heritage: Helm
-  name: jaseci-prometheus-node-exporter
-  namespace: prometheus
-  annotations:
-    {}
----
 # Source: prometheus/templates/pushgateway/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -708,8 +693,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/instance: jaseci-prometheus
     app.kubernetes.io/version: "2.5.0"
-  name: jaseci-prometheus-kube-state-metrics
-  namespace: prometheus
+  name: jaseci-prometheus-kube-state-metrics-$j{ServiceAccount["jaseci-prometheus-kube-state-metrics"].metadata.namespace}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -729,8 +713,7 @@ metadata:
     release: jaseci-prometheus
     chart: prometheus-15.10.5
     heritage: Helm
-  name: jaseci-prometheus-alertmanager
-  namespace: prometheus
+  name: jaseci-prometheus-alertmanager-$j{ServiceAccount["jaseci-prometheus-alertmanager"].metadata.namespace}
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-alertmanager
@@ -750,8 +733,7 @@ metadata:
     release: jaseci-prometheus
     chart: prometheus-15.10.5
     heritage: Helm
-  name: jaseci-prometheus-pushgateway
-  namespace: prometheus
+  name: jaseci-prometheus-pushgateway-$j{ServiceAccount["jaseci-prometheus-pushgateway"].metadata.namespace}
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-pushgateway
@@ -771,8 +753,7 @@ metadata:
     release: jaseci-prometheus
     chart: prometheus-15.10.5
     heritage: Helm
-  name: jaseci-prometheus-server
-  namespace: prometheus
+  name: jaseci-prometheus-server-$j{ServiceAccount["jaseci-prometheus-server"].metadata.namespace}
 subjects:
   - kind: ServiceAccount
     name: jaseci-prometheus-server
@@ -835,32 +816,6 @@ spec:
   sessionAffinity: None
   type: "ClusterIP"
 ---
-# Source: prometheus/templates/node-exporter/svc.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    prometheus.io/scrape: "true"
-  labels:
-    component: "node-exporter"
-    app: prometheus
-    release: jaseci-prometheus
-    chart: prometheus-15.10.5
-    heritage: Helm
-  name: jaseci-prometheus-node-exporter
-  namespace: prometheus
-spec:
-  ports:
-    - name: metrics
-      port: 9100
-      protocol: TCP
-      targetPort: 9100
-  selector:
-    component: "node-exporter"
-    app: prometheus
-    release: jaseci-prometheus
-  type: "ClusterIP"
----
 # Source: prometheus/templates/pushgateway/service.yaml
 apiVersion: v1
 kind: Service
@@ -911,82 +866,6 @@ spec:
     release: jaseci-prometheus
   sessionAffinity: None
   type: "ClusterIP"
----
-# Source: prometheus/templates/node-exporter/daemonset.yaml
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  labels:
-    component: "node-exporter"
-    app: prometheus
-    release: jaseci-prometheus
-    chart: prometheus-15.10.5
-    heritage: Helm
-  name: jaseci-prometheus-node-exporter
-  namespace: prometheus
-spec:
-  selector:
-    matchLabels:
-      component: "node-exporter"
-      app: prometheus
-      release: jaseci-prometheus
-  updateStrategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        component: "node-exporter"
-        app: prometheus
-        release: jaseci-prometheus
-        chart: prometheus-15.10.5
-        heritage: Helm
-    spec:
-      serviceAccountName: jaseci-prometheus-node-exporter
-      containers:
-        - name: prometheus-node-exporter
-          image: "quay.io/prometheus/node-exporter:v1.3.1"
-          imagePullPolicy: "IfNotPresent"
-          args:
-            - --path.procfs=/host/proc
-            - --path.sysfs=/host/sys
-            - --path.rootfs=/host/root
-            - --web.listen-address=:9100
-          ports:
-            - name: metrics
-              containerPort: 9100
-              hostPort: 9100
-          resources:
-            {}
-          securityContext:
-            allowPrivilegeEscalation: false
-          volumeMounts:
-            - name: proc
-              mountPath: /host/proc
-              readOnly:  true
-            - name: sys
-              mountPath: /host/sys
-              readOnly: true
-            - name: root
-              mountPath: /host/root
-              mountPropagation: HostToContainer
-              readOnly: true
-      hostNetwork: true
-      hostPID: true
-      securityContext:
-        fsGroup: 65534
-        runAsGroup: 65534
-        runAsNonRoot: true
-        runAsUser: 65534
-      volumes:
-        - name: proc
-          hostPath:
-            path: /proc
-        - name: sys
-          hostPath:
-            path: /sys
-        - name: root
-          hostPath:
-            path: /
 ---
 # Source: prometheus/charts/kube-state-metrics/templates/deployment.yaml
 apiVersion: apps/v1
@@ -1299,3 +1178,206 @@ spec:
         - name: storage-volume
           persistentVolumeClaim:
             claimName: jaseci-prometheus-server
+
+# Source: https://grafana.com/docs/grafana/latest/setup-grafana/installation/kubernetes/
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jaseci-grafana-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+# Source: https://grafana.com/docs/grafana/latest/setup-grafana/installation/kubernetes/
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: jaseci-grafana
+  name: jaseci-grafana
+spec:
+  selector:
+    matchLabels:
+      app: jaseci-grafana
+  template:
+    metadata:
+      labels:
+        app: jaseci-grafana
+    spec:
+      securityContext:
+        fsGroup: 472
+        supplementalGroups:
+          - 0
+      containers:
+        - name: jaseci-grafana
+          image: grafana/grafana:9.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http-grafana
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /robots.txt
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 2
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 3000
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 250m
+              memory: 750Mi
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: jaseci-grafana-pv
+      volumes:
+        - name: jaseci-grafana-pv
+          persistentVolumeClaim:
+            claimName: jaseci-grafana-pvc
+# Source: https://grafana.com/docs/grafana/latest/setup-grafana/installation/kubernetes/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaseci-grafana
+spec:
+  ports:
+    - port: 3000
+      protocol: TCP
+      targetPort: http-grafana
+  selector:
+    app: jaseci-grafana
+  sessionAffinity: None
+  type: "ClusterIP"
+---
+# Source: prometheus/templates/node-exporter/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+  labels:
+    component: "node-exporter"
+    app: prometheus
+    release: jaseci-prometheus
+    chart: prometheus-15.10.5
+    heritage: Helm
+  name: jaseci-prometheus-node-exporter
+  namespace: jsorc-dedicated
+spec:
+  ports:
+    - name: metrics
+      port: 9100
+      protocol: TCP
+      targetPort: 9100
+  selector:
+    component: "node-exporter"
+    app: prometheus
+    release: jaseci-prometheus
+  type: "ClusterIP"
+---
+# Source: prometheus/templates/node-exporter/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    component: "node-exporter"
+    app: prometheus
+    release: jaseci-prometheus
+    chart: prometheus-15.10.5
+    heritage: Helm
+  name: jaseci-prometheus-node-exporter
+  namespace: jsorc-dedicated
+spec:
+  selector:
+    matchLabels:
+      component: "node-exporter"
+      app: prometheus
+      release: jaseci-prometheus
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        component: "node-exporter"
+        app: prometheus
+        release: jaseci-prometheus
+        chart: prometheus-15.10.5
+        heritage: Helm
+    spec:
+      serviceAccountName: jaseci-prometheus-node-exporter
+      containers:
+        - name: prometheus-node-exporter
+          image: "quay.io/prometheus/node-exporter:v1.3.1"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+            - --path.rootfs=/host/root
+            - --web.listen-address=:9100
+          ports:
+            - name: metrics
+              containerPort: 9100
+              hostPort: 9100
+          resources:
+            {}
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly:  true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+            - name: root
+              mountPath: /host/root
+              mountPropagation: HostToContainer
+              readOnly: true
+      hostNetwork: true
+      hostPID: true
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: root
+          hostPath:
+            path: /
+---
+# Source: prometheus/templates/node-exporter/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    component: "node-exporter"
+    app: prometheus
+    release: jaseci-prometheus
+    chart: prometheus-15.10.5
+    heritage: Helm
+  name: jaseci-prometheus-node-exporter
+  namespace: jsorc-dedicated
+  annotations:
+    {}

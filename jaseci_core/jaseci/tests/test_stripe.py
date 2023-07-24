@@ -43,6 +43,7 @@ class StripeTests(CoreTest):
         stripe.Invoice.retrieve = Mock()
         stripe.SubscriptionItem.create_usage_record = Mock()
         stripe.checkout.Session.create = Mock()
+        stripe.billing_portal.Session.create = Mock()
 
     @classmethod
     def tearDownClass(cls):
@@ -57,7 +58,7 @@ class StripeTests(CoreTest):
     @jac_testcase("stripe.jac", "create_product_price")
     def test_stripe_create_product_price(self, ret):
         stripe.Price.create.assert_called_once_with(
-            product="product1", unit_amount=12, currency="usd"
+            product="product1", unit_amount=12, currency="usd", recurring={}
         )
 
     @jac_testcase("stripe.jac", "product_list")
@@ -74,41 +75,37 @@ class StripeTests(CoreTest):
 
     @jac_testcase("stripe.jac", "get_customer")
     def test_stripe_get_customer(self, ret):
-        stripe.Customer.retrieve.assert_called_once_with(id="cus_NBsqL1C1GrrHYM")
+        stripe.Customer.retrieve.assert_called_once_with("cus_NBsqL1C1GrrHYM")
 
     @jac_testcase("stripe.jac", "attach_payment_method")
     def test_stripe_attach_payment_method(self, ret):
-        stripe.PaymentMethod.list.assert_called_once_with(
-            customer="cus_NBsqL1C1GrrHYM", type="card"
-        )
+        stripe.PaymentMethod.list.assert_called_once_with(customer="cus_NBsqL1C1GrrHYM")
 
         stripe.PaymentMethod.attach.assert_called_once_with(
-            payment_method="pm_1MN1iN2xToAoV8chTjvX94hm", customer="cus_NBsqL1C1GrrHYM"
+            "pm_1MN1iN2xToAoV8chTjvX94hm", customer="cus_NBsqL1C1GrrHYM"
         )
 
     @jac_testcase("stripe.jac", "detach_payment_method")
     def test_stripe_detach_payment_method(self, ret):
         stripe.PaymentMethod.detach.assert_called_once_with(
-            payment_method="pm_1MN1iN2xToAoV8chTjvX94hm"
+            "pm_1MN1iN2xToAoV8chTjvX94hm"
         )
 
     @jac_testcase("stripe.jac", "get_payment_methods")
     def test_stripe_get_payment_methods(self, ret):
-        stripe.PaymentMethod.list.assert_called_with(
-            customer="cus_NBsqL1C1GrrHYM", type="card"
-        )
+        stripe.PaymentMethod.list.assert_called_with(customer="cus_NBsqL1C1GrrHYM")
 
     @jac_testcase("stripe.jac", "update_default_payment_method")
     def test_stripe_update_default_payment_method(self, ret):
         stripe.Customer.modify.assert_called_with(
-            sid="cus_NBsqL1C1GrrHYM",
+            "cus_NBsqL1C1GrrHYM",
             invoice_settings={"default_payment_method": "pm_1MN1iN2xToAoV8chTjvX94hm"},
         )
 
     @jac_testcase("stripe.jac", "create_invoice")
     def test_stripe_create_invoice(self, ret):
         stripe.Customer.modify.assert_called_once_with(
-            sid="cus_NBsqL1C1GrrHYM",
+            "cus_NBsqL1C1GrrHYM",
             invoice_settings={"default_payment_method": "pm_1MN1iN2xToAoV8chTjvX94hm"},
         )
 
@@ -116,30 +113,25 @@ class StripeTests(CoreTest):
     def test_stripe_get_invoice_list(self, ret):
         stripe.Invoice.list.assert_called_once_with(
             customer="cus_NBsqL1C1GrrHYM",
-            limit=10,
             subscription="sub_1MTgMQCZO78n7fsZqu1dk6nD",
         )
 
     @jac_testcase("stripe.jac", "get_payment_intents")
     def test_stripe_get_payment_intents(self, ret):
-        stripe.PaymentIntent.list.assert_called_once_with(
-            customer="cus_NBsqL1C1GrrHYM", limit=10
-        )
+        stripe.PaymentIntent.list.assert_called_once_with(customer="cus_NBsqL1C1GrrHYM")
 
     @jac_testcase("stripe.jac", "create_payment_intents")
     def test_stripe_create_payment_intents(self, ret):
         stripe.PaymentIntent.create.assert_called_once_with(
-            customer="cus_NBsqL1C1GrrHYM",
             amount=12,
             currency="usd",
+            customer="cus_NBsqL1C1GrrHYM",
             payment_method_types=["card"],
         )
 
     @jac_testcase("stripe.jac", "get_customer_subscription")
     def test_stripe_get_customer_subscription(self, ret):
-        stripe.Subscription.list.assert_called_once_with(
-            customer="sub_1MTgMQCZO78n7fsZqu1dk6nD"
-        )
+        stripe.Subscription.list.assert_called_once_with(customer="customer_id")
 
     @jac_testcase("stripe.jac", "create_payment_method")
     def test_stripe_create_payment_method(self, ret):
@@ -172,19 +164,19 @@ class StripeTests(CoreTest):
     @jac_testcase("stripe.jac", "cancel_subscription")
     def test_stripe_cancel_subscription(self, ret):
         stripe.Subscription.delete.assert_called_once_with(
-            sid="sub_1MTgMQCZO78n7fsZqu1dk6nD"
+            "sub_1MTgMQCZO78n7fsZqu1dk6nD"
         )
 
     @jac_testcase("stripe.jac", "get_subscription")
     def test_stripe_get_subscription(self, ret):
         stripe.Subscription.retrieve.assert_called_once_with(
-            id="sub_1MTgMQCZO78n7fsZqu1dk6nD"
+            "sub_1MTgMQCZO78n7fsZqu1dk6nD"
         )
 
     @jac_testcase("stripe.jac", "update_subscription_item")
     def test_stripe_update_subscription_item(self, ret):
         stripe.Subscription.modify.assert_called_once_with(
-            sid="sub_1MTgMQCZO78n7fsZqu1dk6nD",
+            "sub_1MTgMQCZO78n7fsZqu1dk6nD",
             cancel_at_period_end=False,
             items=[
                 {
@@ -196,9 +188,7 @@ class StripeTests(CoreTest):
 
     @jac_testcase("stripe.jac", "get_invoice")
     def test_stripe_get_invoice(self, ret):
-        stripe.Invoice.retrieve.assert_called_once_with(
-            id="inv_1MTgMQCZO78n7fsZqu1dk6nD"
-        )
+        stripe.Invoice.retrieve.assert_called_once_with("inv_1MTgMQCZO78n7fsZqu1dk6nD")
 
     @jac_testcase("stripe.jac", "create_usage_report")
     def test_stripe_create_usage_report(self, ret):
@@ -208,7 +198,13 @@ class StripeTests(CoreTest):
     def test_stripe_create_checkout_session(self, ret):
         stripe.checkout.Session.create.assert_called_once_with(
             success_url="https://example.com/success",
-            cancel_url="https://example.com/cancel",
-            line_items=[{"price": "price_H5ggYwtDq4fbrJ", "quantity": 12}],
             mode="payment",
+            line_items=[{"price": "price_H5ggYwtDq4fbrJ", "quantity": 12}],
+            cancel_url="https://example.com/cancel",
+        )
+
+    @jac_testcase("stripe.jac", "create_billing_portal_session")
+    def test_stripe_create_billing_portal_session(self, ret):
+        stripe.billing_portal.Session.create.assert_called_once_with(
+            customer="cus_O7ECcoZCZFwinb", return_url="https://example.com/account"
         )

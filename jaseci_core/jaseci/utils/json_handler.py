@@ -60,7 +60,11 @@ def json_str_to_jsci_dict(input_str, parent_obj=None):
     except ValueError:
         logger.error(str(f"Invalid jsci_obj string {input_str} on {parent_obj.jid}"))
         obj_fields = {}
+    jsci_dict_normalize(obj_fields, parent_obj)
+    return obj_fields
+
+
+def jsci_dict_normalize(obj_fields, parent_obj):
     for i in obj_fields.keys():
         if str(i).endswith("_ids") and isinstance(obj_fields[i], list):
             obj_fields[i] = IdList(parent_obj=parent_obj, in_list=obj_fields[i])
-    return obj_fields

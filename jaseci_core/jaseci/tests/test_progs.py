@@ -11,7 +11,7 @@ from jaseci.jsorc.jsorc import JsOrc
 from jaseci.jsorc.jsorc_utils import State
 
 
-class JacTests(TestCaseHelper, TestCase):
+class ProgTests(TestCaseHelper, TestCase):
     """Unit tests for Jac language"""
 
     def setUp(self):
@@ -45,8 +45,13 @@ class JacTests(TestCaseHelper, TestCase):
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "aload"}
         )
-        report = report["report"]
-        self.assertEqual(report[0], False)
+        self.assertFalse(report["success"])
+        self.assertEqual(
+            [
+                "test:aload - line 3, col 33 - rule expr_list - Only super master can load actions."
+            ],
+            report["errors"],
+        )
 
     def test_globals(self):
         sent = Sentinel(m_id=0, h=JsOrc.hook())
@@ -329,7 +334,10 @@ class JacTests(TestCaseHelper, TestCase):
         )
 
         self.assertEqual(res["report"], [{"key1": "key1", "key2": 2}])
-        self.assertIn("Key is not str type : <class 'int'>!", res["errors"][0])
+        self.assertEqual(
+            "test:var_as_key_for_dict - line 42, col 16 - rule expression - Key is not str type : <class 'int'>!",
+            res["errors"][0],
+        )
 
     def test_list_pairwise(self):
         mast = JsOrc.master()
@@ -654,3 +662,41 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertTrue(res["success"])
         self.assertTrue(res["report"], [None, None])
         self.assertIsNone(res.get("errors"))
+
+    def test_json_casting(self):
+        mast = JsOrc.master()
+        mast.sentinel_register(name="test", code=jtp.json_casting, auto_run="")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "json_casting", "ctx": {}},
+        )
+
+        self.assertTrue(res["success"])
+        self.assertEqual(
+            res["report"],
+            ['{"test": 1}', {"test2": 2}],
+        )
+
+    def test_edge_to_node_casting(self):
+        mast = JsOrc.master()
+        mast.sentinel_register(name="test", code=jtp.edge_to_node_casting, auto_run="")
+
+        res = mast.general_interface_to_api(
+            api_name="walker_run",
+            params={"name": "edge_to_node_casting", "ctx": {}},
+        )
+
+        self.assertTrue(res["success"])
+
+        edges = res["report"][0]
+        self.assertEqual(1, len(edges))
+        self.assertEqual("edge", edges[0]["kind"])
+
+        nodes = res["report"][1]
+        self.assertEqual(2, len(nodes))
+
+        self.assertEqual(edges[0]["to_node_id"], nodes[0]["jid"])
+        self.assertEqual("a", nodes[0]["name"])
+        self.assertEqual(edges[0]["from_node_id"], nodes[1]["jid"])
+        self.assertEqual("root", nodes[1]["name"])

@@ -6,9 +6,11 @@ import traceback
 from fastapi import HTTPException
 import requests
 from bs4 import BeautifulSoup
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import model_base_path
+import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+BART_SUM_ROOT = model_base_path("jac_nlp/bart_sum")
 
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)
@@ -17,14 +19,20 @@ def setup(
     model: str = "philschmid/bart-large-cnn-samsum",
 ):
     global bart_tokenizer, bart_model
-    try:
+    os.makedirs(BART_SUM_ROOT, exist_ok=True)
+    if all(
+        os.path.isfile(os.path.join(BART_SUM_ROOT, f_name))
+        for f_name in ["vocab.json", "pytorch_model.bin", "config.json"]
+    ):
+        bart_tokenizer = BartTokenizer.from_pretrained(tokenizer, local_files_only=True)
+        bart_model = BartForConditionalGeneration.from_pretrained(
+            model, local_files_only=True
+        ).to(device)
+    else:
         bart_tokenizer = BartTokenizer.from_pretrained(tokenizer)
         bart_model = BartForConditionalGeneration.from_pretrained(model).to(device)
-        logger.info(f"{model} - model loaded successfully")
-    except Exception as e:
-        logger.error(
-            f"unable to load model: {model} and tokenize: {tokenizer}\nException: {e}"
-        )
+        bart_model.save_pretrained(BART_SUM_ROOT)
+        bart_tokenizer.save_vocabulary(BART_SUM_ROOT)
 
 
 @jaseci_action(act_group=["bart_sum"], allow_remote=True)

@@ -10,18 +10,19 @@ from jaseci.utils.utils import (
     logger,
     perf_test_start,
     perf_test_stop,
-    perf_test_to_b64,
     exc_stack_as_str_list,
 )
 from jaseci.prim.element import Element
 from jaseci.prim.obj_mixins import Anchored
 from jaseci.utils.id_list import IdList
+from jaseci.jac.machine.machine_state import TryException
 from jaseci.jac.interpreter.walker_interp import WalkerInterp
 import uuid
 import hashlib
 
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.task_svc import TaskService
+from jaseci.utils.utils import format_jac_profile
 
 
 class Walker(Element, WalkerInterp, Anchored):
@@ -40,6 +41,8 @@ class Walker(Element, WalkerInterp, Anchored):
         self.step_limit = 10000
         self.is_async = is_async
         self._to_await = False
+        if "persist" not in kwargs:  # Default walker persistence to is_async
+            kwargs["persist"] = is_async
         Element.__init__(self, **kwargs)
         WalkerInterp.__init__(self)
         Anchored.__init__(self)
@@ -120,8 +123,6 @@ class Walker(Element, WalkerInterp, Anchored):
 
     def prime(self, start_node, prime_ctx=None, request_ctx=None):
         """Place walker on node and get ready to step step"""
-        if not self.yielded:
-            self.clear_state()
         if not self.yielded or not len(self.next_node_ids):  # modus ponens
             self.next_node_ids.add_obj(start_node, push_front=True)
         if prime_ctx:
@@ -171,8 +172,8 @@ class Walker(Element, WalkerInterp, Anchored):
         try:
             while self.step() and not self.yielded:
                 pass
-        except Exception as e:
-            self.rt_error(f"Internal Exception: {e}", self._cur_jac_ast)
+        except Exception:
+            report_ret["success"] = False
             report_ret["stack_trace"] = exc_stack_as_str_list()
 
         self.save()
@@ -187,12 +188,21 @@ class Walker(Element, WalkerInterp, Anchored):
             report_ret["status_code"] = self.report_status
         if self.report_custom:
             report_ret["report_custom"] = self.report_custom
+        if self.report_file:
+            report_ret["report_file"] = self.report_file
+
         if len(self.runtime_errors):
             report_ret["errors"] = self.runtime_errors
             report_ret["success"] = False
+        if len(self.runtime_stack_trace):
+            report_ret["stack_trace"] = (
+                report_ret.get("stack_trace", []) + self.runtime_stack_trace
+            )
         if profiling:
-            self.profile["perf"] = perf_test_stop(pr)
-            self.profile["graph"] = perf_test_to_b64(pr)
+            self.profile["jac"] = format_jac_profile(self.get_master()._jac_profile)
+            calls, graph = perf_test_stop(pr)
+            self.profile["perf"] = calls
+            self.profile["graph"] = graph
             report_ret["profile"] = self.profile
 
         if self.for_queue():

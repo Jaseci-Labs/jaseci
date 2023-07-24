@@ -17,10 +17,16 @@ import traceback
 import inspect
 import unittest
 from time import time
-
+from pathlib import Path
 from pprint import pformat
-
+from typing import Union
 from jaseci.utils.log_utils import LimitedSlidingBuffer
+from jaseci.utils.gprof2dot import (
+    PstatsParser,
+    DotWriter,
+    Profile,
+    TEMPERATURE_COLORMAP,
+)
 
 LOGS_DIR = ".jaseci_logs/"
 
@@ -105,6 +111,15 @@ def print_stack_to_log():
 
 def exc_stack_as_str_list():
     return traceback.format_exception(*sys.exc_info())
+
+
+def generate_stack_as_str_list(error=None):
+    stack = traceback.format_stack()
+    stack.pop()  # format_stack
+    stack.pop()  # generate_stack_as_str_list
+    if error:
+        stack.append(error)
+    return stack
 
 
 uuid_re = re.compile(
@@ -219,35 +234,61 @@ def b64decode_str(code):
     return code
 
 
+class MyPstatsParser(PstatsParser):
+    def __init__(self, stats_obj):
+        self.stats = stats_obj
+        self.profile = Profile()
+        self.function_ids = {}
+
+
 def perf_test_start():
     perf_prof = cProfile.Profile()
     perf_prof.enable()
     return perf_prof
 
 
-def perf_test_stop(perf_prof, save_to_file=False):
+def perf_test_stop(perf_prof):
     perf_prof.disable()
-    if save_to_file:
-        perf_prof.dump_stats(f"{id(perf_prof)}.prof")
-    s = io.StringIO()
+    stats = pstats.Stats(perf_prof)
+    profile = MyPstatsParser(stats).parse()
+    profile.prune(
+        node_thres=0.01, edge_thres=0.002, paths="", color_nodes_by_selftime=False
+    )
+    graph_str = io.StringIO()
+    dot = DotWriter(graph_str)
+    dot.graph(profile, TEMPERATURE_COLORMAP)
+    calls_str = io.StringIO()
     sortby = pstats.SortKey.CUMULATIVE
-    ps = pstats.Stats(perf_prof, stream=s).sort_stats(sortby)
+    ps = pstats.Stats(perf_prof, stream=calls_str).sort_stats(sortby)
     ps.print_stats()
-    s = s.getvalue()
-    s = "ncalls" + s.split("ncalls")[-1]
-    s = "\n".join([",".join(line.rstrip().split(None, 5)) for line in s.split("\n")])
-    return s
+    calls_str = calls_str.getvalue()
+    calls_str = "ncalls" + calls_str.split("ncalls")[-1]
+    calls_str = "\n".join(
+        [",".join(line.rstrip().split(None, 5)) for line in calls_str.split("\n")]
+    )
+    return calls_str, graph_str.getvalue()
 
 
-def perf_test_to_b64(perf_prof, do_delete=True):
-    s = ""
-    fn = f"{id(perf_prof)}.prof"
-    if os.path.exists(fn):
-        with open(fn, "rb") as image_file:
-            s = base64.b64encode(image_file.read()).decode()
-        if do_delete:
-            os.remove(fn)
-    return s
+def format_jac_profile(jac_profile, sort_by="cum_time"):
+    """Format a JAC profile to a csv string"""
+    entries = []
+    for k in jac_profile.keys():
+        c = jac_profile[k]["calls"]
+        u = jac_profile[k]["u_calls"]
+        t = jac_profile[k]["tot_time"]
+        p = jac_profile[k]["cum_time"]
+        jac_profile[k]["avg_time"] = t / c
+        jac_profile[k]["per_call"] = p / c
+        jac_profile[k]["name"] = k
+        entries.append(jac_profile[k])
+    sorted_entries = sorted(entries, key=lambda x: x[sort_by], reverse=True)
+    csv = "name,calls,r_calls,avg_time,per_call,tot_time,cum_time\n"
+    for e in sorted_entries:
+        csv += (
+            f"{e['name']},{e['calls']},{e['calls']-e['u_calls']},"
+            + f"{e['avg_time']},{e['per_call']},{e['tot_time']},{e['cum_time']}\n"
+        )
+    return csv
 
 
 class TestCaseHelper:
@@ -331,3 +372,16 @@ def find_first_api(api_name, **api_endpoints):
         if api:
             return path, api
     raise InvalidApiException(f"api {api_name} is not existing!")
+
+
+cache_root = Path(Path.home(), ".jaseci/models")
+
+
+def model_base_path(cache_dir: Union[str, Path]) -> Path:
+    cache_dir = Path(cache_dir)
+
+    if not os.path.isabs(cache_dir):
+        model_cache = cache_root / cache_dir
+    else:
+        model_cache = cache_dir
+    return model_cache

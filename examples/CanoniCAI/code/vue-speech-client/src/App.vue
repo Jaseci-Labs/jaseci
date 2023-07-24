@@ -77,7 +77,7 @@
         }
         if (this.final_transcript !== '' && this.interim_transcript === '') {
           this.recognition.stop()
-          this.recognising = false 
+          this.recognising = false
           this.talk(this.final_transcript)
         }
       }
@@ -87,7 +87,7 @@
         const phrase = "Welcome. My name is " + this.selectedVoice + " and this is what I sound like"
         this.speak(phrase)
       },
-      startRecognition() { 
+      startRecognition() {
         if (!this.recognising) {
           this.final_transcript = ''
           this.response = ''

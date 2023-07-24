@@ -161,14 +161,6 @@ class jacListener(ParseTreeListener):
     def exitGraph_block(self, ctx: jacParser.Graph_blockContext):
         pass
 
-    # Enter a parse tree produced by jacParser#graph_block_spawn.
-    def enterGraph_block_spawn(self, ctx: jacParser.Graph_block_spawnContext):
-        pass
-
-    # Exit a parse tree produced by jacParser#graph_block_spawn.
-    def exitGraph_block_spawn(self, ctx: jacParser.Graph_block_spawnContext):
-        pass
-
     # Enter a parse tree produced by jacParser#has_root.
     def enterHas_root(self, ctx: jacParser.Has_rootContext):
         pass
@@ -535,6 +527,14 @@ class jacListener(ParseTreeListener):
 
     # Exit a parse tree produced by jacParser#atom_trailer.
     def exitAtom_trailer(self, ctx: jacParser.Atom_trailerContext):
+        pass
+
+    # Enter a parse tree produced by jacParser#ability_call.
+    def enterAbility_call(self, ctx: jacParser.Ability_callContext):
+        pass
+
+    # Exit a parse tree produced by jacParser#ability_call.
+    def exitAbility_call(self, ctx: jacParser.Ability_callContext):
         pass
 
     # Enter a parse tree produced by jacParser#ability_op.

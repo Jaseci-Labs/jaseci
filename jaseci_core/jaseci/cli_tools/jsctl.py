@@ -15,8 +15,10 @@ from jaseci import __version__
 from jaseci.prim.super_master import SuperMaster
 from jaseci.utils.utils import copy_func
 from .book_tools import Book, modifiedBook
+from jaseci.utils.file_handler import FileHandler
 from jaseci.utils.utils import logger, perf_test_start, perf_test_stop, find_first_api
 from jaseci.jsorc.jsorc import JsOrc
+from prettytable import PrettyTable
 
 session = None
 
@@ -101,6 +103,12 @@ def remote_api_call(payload, api_name):
     )
     if ret.status_code > 205:
         ret = f"Status Code Error {ret.status_code}\n{ret.json()}"
+    elif ret.headers.get("Content-Type", None) == "application/octet-stream":
+        file_handler = FileHandler.fromRequest(
+            ret.content, ret.headers.get("Content-Disposition")
+        )
+        session["master"]._h.add_file_handler(file_handler)
+        ret = file_handler.attr()
     else:
         ret = ret.json()
     return ret
@@ -110,6 +118,39 @@ def resolve_none_type(kwargs):
     for i in kwargs.keys():
         if kwargs[i] == "None":
             kwargs[i] = None
+
+
+def has_profile(output):
+    if isinstance(output, dict):
+        if "profile" in output.keys():
+            if "jac" in output["profile"].keys() and "perf" in output["profile"].keys():
+                return True
+    return False
+
+
+def gen_pretty_table(csv_str):
+    rows = csv_str.split("\n")
+    row_width = len(rows[0].split(","))
+    first_row = rows[0].split(",")
+    if first_row[2] == "percall":
+        first_row[2] = "percall_tot"
+    try:
+        table = PrettyTable(first_row)
+        for i in rows[1:]:
+            row = i.split(",")
+            if len(row) != row_width:
+                continue
+            table.add_row(row)
+        return table
+    except Exception as e:
+        click.echo(f"Something went wrong pretty printing profile: {e}")
+
+
+def pretty_profile(output):
+    click.echo("Jac Code Profile:")
+    click.echo(gen_pretty_table(output["profile"]["jac"]))
+    click.echo("\nInternal Jaseci Profile:")
+    click.echo(gen_pretty_table(output["profile"]["perf"]))
 
 
 def interface_api(api_name, is_public, is_cli_only, **kwargs):
@@ -137,12 +178,13 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
         out = session["master"].public_interface_to_api(kwargs, api_name)
     else:
         out = session["master"].general_interface_to_api(kwargs, api_name)
-    if (
-        isinstance(out, dict)
-        and "report_custom" in out.keys()
-        and out["report_custom"] is not None
-    ):
-        out = out["report_custom"]
+    d_out = out
+    if isinstance(out, dict):
+        if "report_custom" in out.keys() and out["report_custom"] is not None:
+            out = out["report_custom"]
+        elif "report_file" in out.keys() and out["report_file"] is not None:
+            out = session["master"]._h.get_file_handler(out["report_file"]).attr()
+
     if isinstance(out, dict) or isinstance(out, list):
         out = json.dumps(out, indent=2)
     click.echo(out)
@@ -153,6 +195,8 @@ def interface_api(api_name, is_public, is_cli_only, **kwargs):
     if not session["mem-only"]:
         with open(session["filename"], "wb") as f:
             pickle.dump(session, f)
+    if has_profile(d_out):
+        pretty_profile(d_out)
 
 
 def extract_api_tree():
@@ -384,20 +428,22 @@ def script(filename, profile, output):
         with open(output, "w") as f:
             f.write("Multi Command Script Output:\n")
     for i in cmds:
-        res = CliRunner(mix_stderr=False).invoke(jsctl, i.split())
+        res = CliRunner(mix_stderr=False).invoke(jsctl, i)
         click.echo(res.stdout)
         if output:
             with open(output, "a") as f:
                 f.write(f"Output for {i}:\n")
                 f.write(res.stdout)
     if profile:
-        perf = perf_test_stop(prof)
+        perf, graph = perf_test_stop(prof)
         click.echo(perf)
+        click.echo(graph)
     if output:
         with open(output, "a") as f:
             if profile:
                 f.write(f"\nProfile:\n")
                 f.write(perf)
+                f.write(graph)
         click.echo(f"[saved to {output}]")
 
 

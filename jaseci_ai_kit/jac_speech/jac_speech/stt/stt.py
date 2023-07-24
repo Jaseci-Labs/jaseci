@@ -83,7 +83,8 @@ def translate(
             audio_file = array_to_file(array)
         if not model.is_multilingual:
             raise Exception(
-                "Model is not multilingual. Setup with a multilingual model. Translation is not supported for English-only models."
+                """Model is not multilingual. Setup with a multilingual model.
+                Translation is not supported for English-only models."""
             )
         options = whisper.DecodingOptions(
             task="translate", fp16=True if DEVICE == "cuda" else False

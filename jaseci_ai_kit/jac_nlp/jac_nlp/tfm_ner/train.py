@@ -190,12 +190,20 @@ class NERDataMaker:
 def load_custom_model(model_path, train_dm=None):
     global model, tokenizer, data_collator
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForTokenClassification.from_pretrained(
-        model_path,
-        num_labels=len(train_dm.unique_entities),
-        id2label=train_dm.id2label,
-        label2id=train_dm.label2id,
-    )
+    if train_dm is None:
+        model = AutoModelForTokenClassification.from_pretrained(model_path)
+    else:
+        num_labels = len(train_dm.unique_entities)
+        id2label = train_dm.id2label
+        label2id = train_dm.label2id
+        model = AutoModelForTokenClassification.from_pretrained(
+            model_path,
+            num_labels=num_labels,
+            id2label=id2label,
+            label2id=label2id,
+            local_files_only=True,
+            ignore_mismatched_sizes=True,
+        )
     model.to(device)
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
@@ -206,34 +214,36 @@ def train_model(train_data, val_data, train_config):
         train_dm = NERDataMaker(train_data)
         train_ds = train_dm.as_hf_dataset(tokenizer=tokenizer)
         print(f"total Train examples = {len(train_data)}")
-    if len(val_data) != 0:
-        val_dm = NERDataMaker(val_data)
-        val_ds = val_dm.as_hf_dataset(tokenizer=tokenizer)
-        print(f"total validation examples = {len(val_dm)}")
-    else:
-        val_dm = train_dm
-        val_ds = train_ds
-    training_args = TrainingArguments(
-        output_dir="./results",
-        evaluation_strategy="epoch",
-        learning_rate=train_config["LEARNING_RATE"],
-        per_device_train_batch_size=train_config["TRAIN_BATCH_SIZE"],
-        per_device_eval_batch_size=train_config["VALID_BATCH_SIZE"],
-        num_train_epochs=train_config["EPOCHS"],
-        weight_decay=0.01,
-    )
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_ds,
-        eval_dataset=val_ds,
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-        compute_metrics=compute_metrics,
-        callbacks=None,
-    )
+        if len(val_data) != 0:
+            val_dm = NERDataMaker(val_data)
+            val_ds = val_dm.as_hf_dataset(tokenizer=tokenizer)
+            print(f"total validation examples = {len(val_dm)}")
+        else:
+            val_dm = train_dm
+            val_ds = train_ds
+        training_args = TrainingArguments(
+            output_dir="./results",
+            evaluation_strategy="epoch",
+            learning_rate=train_config["LEARNING_RATE"],
+            per_device_train_batch_size=train_config["TRAIN_BATCH_SIZE"],
+            per_device_eval_batch_size=train_config["VALID_BATCH_SIZE"],
+            num_train_epochs=train_config["EPOCHS"],
+            weight_decay=0.01,
+        )
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=train_ds,
+            eval_dataset=val_ds,
+            tokenizer=tokenizer,
+            data_collator=data_collator,
+            compute_metrics=compute_metrics,
+            callbacks=None,
+        )
 
-    trainer.train()
+        trainer.train()
+    else:
+        print("Training data not available")
 
 
 def save_custom_model(model_path):

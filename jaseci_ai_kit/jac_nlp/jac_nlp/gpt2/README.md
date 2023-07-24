@@ -1,6 +1,10 @@
+---
+title: Text Generation with Chat GPT2
+---
+
 # **GPT2 (`gpt2`)**
 
-Module `gp2` uses the OpenAI's `GPT-2-medium` to perform text genreation on a given text.
+Module `gp2` uses the OpenAI's `GPT-2-medium` to perform text generation on a given text.
 ## **Actions**
 ### generate
 The `generate` action allows you to generate text based on the input text you provide.

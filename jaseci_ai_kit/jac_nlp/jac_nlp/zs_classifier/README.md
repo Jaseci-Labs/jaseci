@@ -1,3 +1,7 @@
+---
+title: Zero Shot Text Classification
+---
+
 #  **ZeroShot Classfier (`zs_classifier`)**
 **`zs_classifier`** is a zeroshot text classification module build on top of flair library. It uses `tars-base` model for text classification
 

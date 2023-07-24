@@ -1,13 +1,35 @@
+import re
 from jaseci.jsorc.jsorc import JsOrc
+from jaseci.jsorc.jsorc_settings import JsOrcSettings
 from jaseci.extens.svc.kube_svc import KubeService
 from jaseci.utils.utils import logger, app_logger
-from requests import get, post
+from requests import get, post, put
 from datetime import datetime
 from copy import copy
 from base64 import b64encode
-import threading
-import queue
+import multiprocessing
 import logging.handlers
+
+LOG_QUEUES = {}
+
+
+def format_elastic_record(record):
+    # Strip out color code from message before sending to elastic
+    msg = record.getMessage()
+    msg = re.sub(r"\033\[[0-9]*m", "", msg)
+    ts = "%s.%03d" % (
+        logging.Formatter().formatTime(record, "%Y-%m-%dT%H:%M:%S"),
+        record.msecs,
+    )
+
+    elastic_record = {
+        "@timestamp": ts,
+        "message": msg,
+        "level": record.levelname,
+    }
+    extra_fields = record.__dict__.get("extra_fields", [])
+    elastic_record.update(dict([(k, record.__dict__[k]) for k in extra_fields]))
+    return elastic_record
 
 
 #################################################
@@ -22,58 +44,109 @@ class ElasticService(JsOrc.CommonService):
     ###################################################
 
     def run(self):
-        if not self.config.get("auth"):
-            kube = JsOrc.svc("kube", KubeService)
+        kube = JsOrc.svc("kube", KubeService)
+        if kube.is_running():
             elasticsearches = kube.resolve_manifest(
                 self.manifest, *JsOrc.overrided_namespace("elastic", self.manifest_type)
             ).get("Elasticsearch", [])
+
             if elasticsearches:
                 metadata: dict = elasticsearches["jaseci"]["metadata"]
-                auth = kube.get_secret(
-                    f'{metadata.get("name")}-es-elastic-user',
-                    "elastic",
+
+                cert = kube.get_secret(
+                    f'{metadata.get("name")}-es-http-certs-internal',
+                    "ca.crt",
                     metadata.get("namespace"),
                 )
-                self.config[
-                    "auth"
-                ] = f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
+
+                if cert:
+                    with open("elastic-certificate.crt", "w") as cert_file:
+                        cert_file.write(cert)
+
+                if not self.config.get("auth"):
+                    auth = kube.get_secret(
+                        f'{metadata.get("name")}-es-elastic-user',
+                        "elastic",
+                        metadata.get("namespace"),
+                    )
+                    self.config[
+                        "auth"
+                    ] = f'basic {b64encode(f"elastic:{auth}".encode()).decode()}'
 
         self.app = Elastic(self.config)
         self.app.health("timeout=1s")
 
     def post_run(self):
-        self.add_elastic_log_handler(logger, "core")
-        self.add_elastic_log_handler(app_logger, "app")
+        under_test = self.config.get("under_test", False)
+        if not under_test:
+            self.configure_elastic()
+        LOG_QUEUES["core"] = self.add_elastic_log_handler(logger, "core", under_test)
+        LOG_QUEUES["app"] = self.add_elastic_log_handler(app_logger, "app", under_test)
 
-    def add_elastic_log_handler(self, logger_instance, index):
+    def configure_elastic(self):
+        """
+        Configure elastic logging with desired configuration
+        - Data stream for core* and app* index pattern
+        - Index template with the data-streams-mappings component mapping rules
+            - @timestamp is converted to date field type
+            - text fields are converted as keywords for search
+        - An index lifecycle management (ILM) policy
+            - hot index for 7 days or 5GB max size
+            - delete indices older than 30 days
+        """
+        # Create the ILM policy
+        self.app.create_ilm_policy(
+            policy_name=self.config.get(
+                "ilm_policy_name", JsOrcSettings.ELASTIC_ILM_POLICY_NAME
+            ),
+            policy_config=self.config.get(
+                "ilm_policy", JsOrcSettings.ELASTIC_ILM_POLICY
+            ),
+            overwrite=False,
+        )
+
+        # Create index template and attach ILM policy
+        self.app.create_index_template(
+            template_name=self.config.get(
+                "index_template_name", JsOrcSettings.ELASTIC_INDEX_TEMPLATE_NAME
+            ),
+            template_config=self.config.get(
+                "index_template", JsOrcSettings.ELASTIC_INDEX_TEMPLATE
+            ),
+            overwrite=False,
+        )
+
+    def add_elastic_log_handler(self, logger_instance, index, under_test=False):
         has_queue_handler = any(
             isinstance(h, logging.handlers.QueueHandler)
             for h in logger_instance.handlers
         )
         if not has_queue_handler:
-            log_queue = queue.Queue()
+            log_queue = multiprocessing.Queue()
             queue_handler = logging.handlers.QueueHandler(log_queue)
             logger_instance.addHandler(queue_handler)
 
-            def elastic_log_worker():
+            def elastic_log_worker(elastic_index):
                 while True:
                     try:
                         record = log_queue.get()
                         if record is None:
                             break
-                        elastic_record = {
-                            "@timestamp": logging.Formatter().formatTime(
-                                record, "%Y-%m-%d %H:%M:%S"
-                            ),
-                            "message": record.getMessage(),
-                            "level": record.levelname,
-                        }
-                        self.app.doc(log=elastic_record, index=index)
+                        elastic_record = format_elastic_record(record)
+                        self.app.doc(log=elastic_record, index=elastic_index)
                     except Exception:
                         pass
 
-            worker_thread = threading.Thread(target=elastic_log_worker, daemon=True)
-            worker_thread.start()
+            # if under test, don't spawn the log worker process. Tests will validate two things:
+            # 1. logs are added to the log queue
+            # 2. format_elastic_record process the log properly and create the record for elastic
+            if not under_test:
+                worker_proc = multiprocessing.Process(
+                    target=elastic_log_worker, args=(index,)
+                )
+                worker_proc.start()
+
+            return log_queue
 
 
 class Elastic:
@@ -97,12 +170,18 @@ class Elastic:
 
     def _get(self, url: str, json: dict = None):
         return get(
-            f"{self.url}{url}", json=json, headers=self.headers, verify=False
+            f"{self.url}{url}",
+            json=json,
+            headers=self.headers,
+            verify="elastic-certificate.crt",
         ).json()
 
     def _post(self, url: str, json: dict = None):
         return post(
-            f"{self.url}{url}", json=json, headers=self.headers, verify=False
+            f"{self.url}{url}",
+            json=json,
+            headers=self.headers,
+            verify="elastic-certificate.crt",
         ).json()
 
     def post(self, url: str, body: dict, index: str = "", suffix: str = ""):
@@ -146,6 +225,52 @@ class Elastic:
 
     def reindex(self, body: dict, query: str = "pretty"):
         return self._post(f"/_reindex?{query}", body)
+
+    def create_ilm_policy(
+        self, policy_name: str, policy_config: dict, overwrite: bool = False
+    ):
+        if not overwrite:
+            res = get(
+                f"{self.url}/_ilm/policy/{policy_name}",
+                headers=self.headers,
+                verify="elastic-certificate.crt",
+            )
+            if res.status_code == 200 and policy_name in res.json():
+                # policy already exists
+                return False
+        res = put(
+            f"{self.url}/_ilm/policy/{policy_name}",
+            headers=self.headers,
+            json=policy_config,
+            verify="elastic-certificate.crt",
+        )
+        if res.status_code == 200:
+            return res.json()
+        else:
+            return False
+
+    def create_index_template(
+        self, template_name: str, template_config: dict, overwrite: bool = False
+    ):
+        if not overwrite:
+            res = get(
+                f"{self.url}/_index_template/{template_name}",
+                headers=self.headers,
+                verify="elastic-certificate.crt",
+            )
+            if res.status_code == 200 and template_name in res.json():
+                # policy already exists
+                return False
+        res = put(
+            f"{self.url}/_index_template/{template_name}",
+            headers=self.headers,
+            json=template_config,
+            verify="elastic-certificate.crt",
+        )
+        if res.status_code == 200:
+            return res.json()
+        else:
+            return False
 
     # standard methods
     def generate_from_meta(self, meta: dict, override: dict, action: str = None):

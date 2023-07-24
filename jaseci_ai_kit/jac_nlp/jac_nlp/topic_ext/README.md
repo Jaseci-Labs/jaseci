@@ -1,6 +1,10 @@
+---
+title: Topic Extraction
+---
+
 # Topic Extraction Model (topic_ext)
 
-Module `topic_ext` implemented for extracting topics from set of documents. This module accepts as input a set of documents and their associated class labels. You may use Jaseci `cluster` module to cluster document list to similar groups. This is an example code to demostrate `topic_ext` module.
+Module `topic_ext` implemented for extracting topics from set of documents. This module accepts as input a set of documents and their associated class labels. You may use Jaseci `cluster` module to cluster document list to similar groups. This is an example code to demonstrate `topic_ext` module.
 
 # **Walk through**
 
@@ -13,7 +17,7 @@ Module `topic_ext` implemented for extracting topics from set of documents. This
     ```
     actions load module jac_nlp.topic_ext
     ```
-3.  Load suplimentery modules in jac shell session
+3.  Load supplementary modules in jac shell session
     ```
     actions load module jac_nlp.use_enc
     actions load module jac_misc.cluster
@@ -21,7 +25,7 @@ Module `topic_ext` implemented for extracting topics from set of documents. This
 
 ## **2. Prepare text for clusters**
 
-In this section, we'll take raw text as input, encode it, cluser it and then out put a list of cluster labels associate with each text document.
+In this section, we'll take raw text as input, encode it, cluster it and then out put a list of cluster labels associate with each text document.
 
 ### **1. Load the text data**
 
@@ -69,7 +73,7 @@ walker init{
 }
 ```
 
-### **4. Cluster documents and get document lables**
+### **4. Cluster documents and get document labels**
 
 Use `cluster.get_cluster_labels` to get cluster labels.
 
@@ -281,7 +285,7 @@ Exepected output:
   "success": true,
   "report": [
     {
-      "0": "Countries Account Suppor",
+      "0": "Countries Account Support",
       "1": "Track Card Delivery: Track Card Processing Delivery",
       "2": "Waiting Week Card Still Coming",
       "3": "Send New Card to New Address"
@@ -313,7 +317,7 @@ walker init{
 }
 ```
 
-Exepected output:
+Expected output:
 
 ```json
 {

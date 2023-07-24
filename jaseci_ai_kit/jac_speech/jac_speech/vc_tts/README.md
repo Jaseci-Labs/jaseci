@@ -1,8 +1,12 @@
-# **Text to Speech with Voice Cloning (`vc_tts`)**
+---
+title: Text to Speech with Voice Cloning
+---
 
-| :warning: WARNING          |
-|:---------------------------|
-| This module requires strict dependencies. As a result, if you intend to use this with other modules, make sure to install it first. Otherwise, other modules will fail.|
+# Text to Speech with Voice Cloning (`vc_tts`)
+
+| :warning: WARNING                                                                                                                                                       |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| This module requires strict dependencies. As a result, if you intend to use this with other modules, make sure to install it first. Otherwise, other modules will fail. |
 
 Before loading the module install `espeak-ng` using the command `sudo apt-get install -y espeak-ng`.
 
@@ -20,7 +24,7 @@ Before loading the module install `espeak-ng` using the command `sudo apt-get in
 
 ## **2. Synthesize audio using jaseci `vc_tts` module.**
 
-In this section we will take an input raw text and will output the list of amplitude values of the synthesized audio. This can use to save or play the audio files using a necessary library in a preffered language.
+In this section we will take an input raw text and will output the list of amplitude values of the synthesized audio. This can use to save or play the audio files using a necessary library in a preferred language.
 
 To synthesize audios we can use the `synthesize` action in the `vc_tts` module.
 
@@ -61,7 +65,7 @@ In this section we will take an input raw text and an reference audio file will 
 
 
 1. input_text (str) : Input text string. The accepted language is only English in this version.
-2. reference_audio (str) : The file path to the reference audio to clone voice. This refference audio is currenlty accepted only in wav format.
+2. reference_audio (str) : The file path to the reference audio to clone voice. This reference audio is currently accepted only in wav format.
 3. save_path (str) :  If you want to save the generated audio in your file system, provide the output path here.
 
 Example Jac code

@@ -1,3 +1,7 @@
+---
+title: Entity Recognition with Bi-NER
+---
+
 #  **Bi-NER (`bi_ner`)**
 **`bi_ner`** is a arrangement of two encoder modules from BERT, it represents context and candidate separately using twin-structured encoders. You can train the module on custom data to behave accordingly. Let's take a deep dive into the training culture.
 
@@ -61,16 +65,16 @@ For this tutorial, we are going to `train and Predict` the `bi-ner` for `Named E
         **Parameter details**
         * `train`: will be used to train the Bi-NER on custom data
             * Input:
-                * `dataset` (Dict): dictionary of candidates and suportting contexts for each candidate
+                * `dataset` (Dict): dictionary of candidates and supporting contexts for each candidate
                 * `from_scratch` (bool): if set to true train the model from scratch otherwise trains incrementally
                 * `training_parameters` (Dict): dictionary of training parameters
             * Returns: text when model training is completed
-        * `infer`: will be used to predits the most suitable candidate for a provided context, takes text or embedding
+        * `infer`: will be used to predicts the most suitable candidate for a provided context, takes text or embedding
             * Input:
                 * `contexts` (string or list of strings): context which needs to be classified
             * Return: a dictionary of entities type and value with start and end index
 
-    **Steps for running `bi_ner.jac` programm**
+    **Steps for running `bi_ner.jac` program**
 
     4. Build `bi_ner.jac` by run cmd
         > jac build bi_ner.jac
@@ -78,9 +82,9 @@ For this tutorial, we are going to `train and Predict` the `bi-ner` for `Named E
         > sentinel set -snt active:sentinel -mode ir bi_ner.jir
 
     6. Calling walker `train` with `default parameter` for training `bi_ner` module by cmd
-        > walker run train </br>
-    7. Calling walker `predict` with `default parameter`  to get evalution
-        > walker run predict </br>
+        > walker run train
+    7. Calling walker `predict` with `default parameter`  to get evaluation
+        > walker run predict
 
 
     **Sample Input Data for Training**

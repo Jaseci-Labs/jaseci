@@ -29,6 +29,18 @@ class ObjectApi:
         return ret
 
     @Interface.private_api(cli_args=["obj"])
+    def object_set(
+        self, obj: Element, ctx: dict, depth: int = 0, detailed: bool = False
+    ):
+        """Update a field in an object."""
+        if "jid" in ctx:
+            del ctx["jid"]
+        for i in ctx.keys():
+            if i in dir(obj) and not callable(getattr(obj, i)):
+                setattr(obj, i, ctx[i])
+        return obj.serialize(deep=depth, detailed=detailed)
+
+    @Interface.private_api(cli_args=["obj"])
     def object_perms_get(self, obj: Element):
         """Returns object access mode for any Jaseci object."""
         return {"access": obj.j_access}

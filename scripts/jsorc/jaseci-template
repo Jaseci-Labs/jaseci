@@ -122,7 +122,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: jaseci-orc-rolebinding
+  name: jaseci-orc-rolebinding-$j{namespace}
   namespace: $j{namespace}
 subjects:
   - kind: ServiceAccount
@@ -153,13 +153,7 @@ metadata:
   namespace: $j{namespace}
 data:
   prod_up: |-
-    apt update; apt -y upgrade; apt -y install --no-install-recommends git g++;
-    git clone https://github.com/Jaseci-Labs/jaseci.git;
-    cd jaseci;
-    cd jaseci_core; source install.sh;
-    cd ../jaseci_serv; source install.sh;
-    cd /;
-    jsserv wait_for_db && jsserv makemigrations base &&
+    jsserv wait_for_db && jsserv makemigrations base && jsserv makemigrations jsx_oauth
     jsserv makemigrations && jsserv migrate;
     jsserv runserver 0.0.0.0:80;
 ---
@@ -182,7 +176,7 @@ spec:
       serviceAccountName: jaseci-account
       containers:
         - name: jaseci
-          image: python:3-slim
+          image: jaseci/jaseci:latest
           resources:
             requests:
               memory: "350Mi"
@@ -207,27 +201,7 @@ spec:
                 secretKeyRef:
                   name: jaseci-db-credentials
                   key: password
-
-            - name: POSTGRES_HOST
-              value: jaseci-db
-
-            - name: DBNAME
-              value: postgres
-
-            - name: JSORC_DB_REGEN
-              value: "true"
-
-            - name: REDIS_HOST
-              value: jaseci-redis
-
-            - name: PROME_HOST
-              value: jaseci-prometheus-server
-
-            - name: ELASTIC_HOST
-              value: jaseci-es-internal-http
-
 $j{env_vars}
-
           volumeMounts:
             - name: prod-script
               mountPath: /script

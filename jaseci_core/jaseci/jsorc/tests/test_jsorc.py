@@ -1,5 +1,5 @@
 from jaseci.jsorc.jsorc import JsOrc
-from jaseci.utils.test_core import CoreTest, skip_without_redis
+from jaseci.utils.test_core import CoreTest
 from unittest.mock import patch, Mock
 from kubernetes import config as kubernetes_config, client
 from jaseci.jsorc.jsorc_settings import JsOrcSettings
@@ -33,6 +33,7 @@ class MockKubeTest(CoreTest):
     def setUp(self, mock_config, mock_call_api):
         super().setUp()
         JsOrcSettings.KUBE_CONFIG["enabled"] = True
+        JsOrcSettings.KUBE_CONFIG["namespace"] = "jsorc-unit-test"
         JsOrcSettings.ELASTIC_CONFIG["enabled"] = True
         self.kube = JsOrc.svc("kube")
 

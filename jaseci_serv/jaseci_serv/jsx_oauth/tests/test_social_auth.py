@@ -1,12 +1,14 @@
 import jwt
 from time import time
+from datetime import datetime
 from rest_framework.test import APIClient
 from jaseci.utils.utils import TestCaseHelper
 from django.test import TestCase
-from allauth.socialaccount.models import SocialApp
+from knox.models import AuthToken
+from knox.settings import CONSTANTS
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from jaseci_serv.base.models import User
-from jaseci_serv.jsx_oauth.models import InternalClient
+from jaseci_serv.jsx_oauth.models import SocialApp
 
 mocked_access_token = "ya29.a0AX9GBdVvL b7JjkGJmFOy_oBhQC4jUdOKOjvpHGrcyFjCvWeqwW_1yTkWHJxA6jqEfXYkSzvwBCbq6XsA0o-fTDybsR9T8v8ilXM43IvqIQavWqxebTdjQo5ikPXDabrpJWQ3Uf1gMv1SfnwfeH6KdXxkGwPicaCgYKARwSARMSFQHUCsbCQepIVdu7SMuLZ5c-iI8Awg0163"
 mocked_refresh_token = "1//0evz2w3jKj1qUCgYIARAAGA4SNwF-L9IrCiih-u1fKn9ECfKNMtKTK-y6wNZWcTfN8FO1oLnws4QqHkZZn2GSC-GUirdnOORUDIc"
@@ -78,6 +80,25 @@ class SocialAuthTest(TestCaseHelper, TestCase):
 
         return google_app
 
+    def request_social_sign_in_with_expires_in(self, expires_in_query=""):
+        now = datetime.now()
+
+        token = self.client.post(
+            path=f"/auth/google/?{expires_in_query}",
+            data={"code": mocked_code},
+        ).data["token"]
+
+        auth_token = AuthToken.objects.get(
+            token_key=token[: CONSTANTS.TOKEN_KEY_LENGTH]
+        )
+
+        # convert to hour count if available
+        return (
+            int((auth_token.expiry - now).total_seconds() / 60 / 60)
+            if auth_token.expiry
+            else None
+        )
+
     def request_social_sign_in_with_multiple_provider(self, data):
         res = self.client.post(
             path="/auth/google/",
@@ -87,7 +108,7 @@ class SocialAuthTest(TestCaseHelper, TestCase):
         self.assertEqual(
             {
                 "non_field_errors": [
-                    "You have multiple google Social App. internal_client_id is required to associated it on one of those apps!"
+                    "You have multiple google Social App. app_id is required to associated it on one of those apps!"
                 ]
             },
             res,
@@ -129,7 +150,7 @@ class SocialAuthTest(TestCaseHelper, TestCase):
         self.assertEqual(created_user.is_activated, res["is_activated"])
         self.assertIsNotNone(created_user.get_master())
 
-        # getting token again should create another user
+        # getting token again should not create another user
         res = self.client.post(
             path="/auth/google/",
             data=data,
@@ -170,35 +191,34 @@ class SocialAuthTest(TestCaseHelper, TestCase):
 
         self.request_social_sign_in_with_multiple_provider(mocked_get_access_token())
 
-    def test_social_auth_flow_using_authorization_code_with_internal_client_id(self):
-        google_app = self.create_google_provider()
-
-        internal_client = InternalClient(social_app=google_app)
-        internal_client.save()
-
+    def test_social_auth_flow_using_authorization_code_with_app_id(self):
         self.request_social_sign_in(
-            {"internal_client_id": internal_client.client_id, "code": mocked_code}
+            {"app_id": self.create_google_provider().id, "code": mocked_code}
         )
 
-    def test_social_auth_flow_using_id_token_with_internal_client_id(self):
-        google_app = self.create_google_provider()
-
-        internal_client = InternalClient(social_app=google_app)
-        internal_client.save()
-
+    def test_social_auth_flow_using_id_token_with_app_id(self):
         self.request_social_sign_in(
             {
-                "internal_client_id": internal_client.client_id,
+                "app_id": self.create_google_provider().id,
                 "id_token": mocked_id_token,
             }
         )
 
-    def test_social_auth_flow_using_access_token_with_internal_client_id(self):
-        google_app = self.create_google_provider()
-
-        internal_client = InternalClient(social_app=google_app)
-        internal_client.save()
-
+    def test_social_auth_flow_using_access_token_with_app_id(self):
         data = mocked_get_access_token()
-        data["internal_client_id"] = internal_client.client_id
+        data["app_id"] = self.create_google_provider().id
         self.request_social_sign_in(data)
+
+    def test_social_auth_flow_with_expires_in_param(self):
+        # no expires_in_param: defaults to 12 hrs
+        self.assertEqual(12, self.request_social_sign_in_with_expires_in())
+
+        # expires_in: 24 hrs
+        self.assertEqual(
+            24, self.request_social_sign_in_with_expires_in("expires_in=24")
+        )
+
+        # no expiry
+        self.assertEqual(
+            None, self.request_social_sign_in_with_expires_in("expires_in=0")
+        )

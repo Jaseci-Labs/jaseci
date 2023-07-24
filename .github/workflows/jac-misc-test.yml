@@ -9,6 +9,7 @@ on:
     branches: [ main ]
     paths:
       - jaseci_ai_kit/jac_misc/**
+  workflow_dispatch:
 
 jobs:
   tests:

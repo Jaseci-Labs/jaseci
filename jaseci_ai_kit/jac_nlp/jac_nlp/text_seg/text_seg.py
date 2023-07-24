@@ -3,16 +3,54 @@ from fastapi import HTTPException
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 from jaseci.jsorc.live_actions import jaseci_action
+import os
+from jaseci.utils.utils import model_base_path
 
-# loading segmentation model from hugging face
-tokenizer = AutoTokenizer.from_pretrained("dennlinger/roberta-cls-consec")
-model = AutoModelForSequenceClassification.from_pretrained(
-    "dennlinger/roberta-cls-consec"
-)
-# Download the pretrained model pipeline
-spacy.cli.download("en_core_web_sm")
-# loading space model for sentence tokenization
-pipeline = spacy.load("en_core_web_sm")
+
+"""
+1. Get the path to the home directory
+2. Download the model to the jaseci/models directory
+"""
+
+
+TFM_MODEL_NAME = "dennlinger/roberta-cls-consec"
+SPACY_MODEL_NAME = "en_core_web_sm"
+MODEL_BASE_PATH = model_base_path("jac_nlp/text_seg")
+os.makedirs(MODEL_BASE_PATH, exist_ok=True)
+TFM_MODEL_PATH = os.path.join(MODEL_BASE_PATH, TFM_MODEL_NAME)
+SPACY_MODEL_PATH = os.path.join(MODEL_BASE_PATH, SPACY_MODEL_NAME)
+
+
+@jaseci_action(act_group=["text_seg"], allow_remote=True)
+def setup():
+    """
+    initialize tokenizer and model
+    """
+    global pipeline, tokenizer, model
+
+    try:
+        pipeline = spacy.load(SPACY_MODEL_PATH)
+    except OSError:
+        spacy.cli.download(SPACY_MODEL_NAME)
+        pipeline = spacy.load(SPACY_MODEL_NAME)
+        pipeline.to_disk(SPACY_MODEL_PATH)
+
+    if all(
+        os.path.isfile(os.path.join(TFM_MODEL_PATH, file))
+        for file in ["config.json", "pytorch_model.bin"]
+    ):
+        tokenizer = AutoTokenizer.from_pretrained(TFM_MODEL_PATH, local_files_only=True)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            TFM_MODEL_PATH, local_files_only=True
+        )
+    else:
+        os.makedirs(TFM_MODEL_PATH, exist_ok=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            TFM_MODEL_NAME, cache_dir=TFM_MODEL_PATH
+        )
+        model = AutoModelForSequenceClassification.from_pretrained(
+            TFM_MODEL_NAME, cache_dir=TFM_MODEL_PATH
+        )
 
 
 def segmentation(text, threshold=0.85):

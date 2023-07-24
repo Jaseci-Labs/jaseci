@@ -1,8 +1,17 @@
 from setuptools import setup, find_packages
 from os.path import join
 
-MODULES = ["pdf_ext", "translator", "cluster", "ph", "dmp"]
 
+MODULES = [
+    "pdf_ext",
+    "translator",
+    "cluster",
+    "ph",
+    "openai",
+    "huggingface",
+    "langchain",
+    "dmp"
+]
 
 def get_ver():
     with open(join("./jac_misc", "VERSION")) as version_file:
@@ -22,7 +31,11 @@ setup(
     name="jac_misc",
     version=get_ver(),
     packages=find_packages(include=["jac_misc", "jac_misc.*"]),
-    install_requires=["jaseci", "pytest>=7.0.1,<7.1", "pytest-order>=1.0.1,<1.1"],
+    install_requires=[
+        f"jaseci=={get_ver()}",
+        "pytest>=7.0.1,<7.1",
+        "pytest-order>=1.0.1,<1.1",
+    ],
     extras_require=get_extras_requires(),
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml", "requirements.txt", "*.jac"],

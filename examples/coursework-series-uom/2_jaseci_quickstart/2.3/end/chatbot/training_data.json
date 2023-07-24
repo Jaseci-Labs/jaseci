@@ -1,0 +1,15 @@
+{
+    "get_parents": [
+        "who are your parents?",
+        "Who are your mother and father?",
+        "Do you have any parents?",
+        "Tell me about your parents."
+    ],
+    "get_siblings": [
+        "who are your siblings?",
+        "Who are your brothers and sisters?",
+        "Do you have any brothers or sisters?",
+        "Tell me about your brothers and sisters.",
+        "Tell me about your siblings."
+    ]
+}
