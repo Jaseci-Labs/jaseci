@@ -113,6 +113,15 @@ def exc_stack_as_str_list():
     return traceback.format_exception(*sys.exc_info())
 
 
+def generate_stack_as_str_list(error=None):
+    stack = traceback.format_stack()
+    stack.pop()  # format_stack
+    stack.pop()  # generate_stack_as_str_list
+    if error:
+        stack.append(error)
+    return stack
+
+
 uuid_re = re.compile(
     "([a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89aAbB][a-f0-9]{3}-?[a-f0-9]{12})"
 )

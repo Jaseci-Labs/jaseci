@@ -5,7 +5,7 @@ This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
 from copy import copy
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import logger, exc_stack_as_str_list, generate_stack_as_str_list
 from jaseci.jsorc.live_actions import live_actions, load_preconfig_actions
 
 # from jaseci.actions.find_action import find_action
@@ -35,6 +35,7 @@ class MachineState:
         self.report_file = None
         self.request_context = None
         self.runtime_errors = []
+        self.runtime_stack_trace = []
         self.yielded_walkers_ids = IdList(self)
         self.ignore_node_ids = IdList(self)
         self._scope_stack = [None]
@@ -61,6 +62,7 @@ class MachineState:
         self.report_custom = None
         self.report_file = None
         self.runtime_errors = []
+        self.runtime_stack_trace = []
         self._scope_stack = [None]
         self._jac_scope = None
         self._loop_ctrl = None
@@ -159,7 +161,9 @@ class MachineState:
             name, create_mode=self._assign_mode if assign_mode is None else assign_mode
         )
         if val is None:
-            self.rt_error(f"Variable not defined - {name}", jac_ast)
+            self.rt_error(
+                f"Variable not defined - {name}", jac_ast or self._cur_jac_ast
+            )
             self.push(JacValue(self))
         else:
             self.push(val)
@@ -278,6 +282,7 @@ class MachineState:
             "col": jac_ast.loc[1],
             "name": self.name if hasattr(self, "name") else "blank",
             "rule": jac_ast.name,
+            "stack_trace": exc_stack_as_str_list(),
         }
 
     def rt_log_str(self, msg, jac_ast=None):
@@ -299,13 +304,39 @@ class MachineState:
         error = self.rt_log_str(error, jac_ast)
         logger.warning(str(error))
 
-    def rt_error(self, error, jac_ast=None):
+    def rt_error(self, error, jac_ast, append=False):
         """Prints runtime error to screen"""
-        if self._jac_try_mode:
-            raise Exception(error)
-        error = self.rt_log_str(error, jac_ast)
-        logger.error(str(error))
-        self.runtime_errors.append(error)
+
+        if isinstance(error, Exception):
+            if self._jac_try_mode:
+                self.jac_try_exception(error, jac_ast)
+            else:
+                if append:
+                    msg = self.rt_log_str(error, jac_ast)
+                    logger.error(msg)
+                    self.runtime_errors.append(msg)
+                raise error
+        else:
+            if self._jac_try_mode:
+                raise TryException(
+                    {
+                        "type": "RunTimeException",
+                        "mod": jac_ast.loc[2],
+                        "msg": error,
+                        "args": [],
+                        "line": jac_ast.loc[0],
+                        "col": jac_ast.loc[1],
+                        "name": self.name if hasattr(self, "name") else "blank",
+                        "rule": jac_ast.name,
+                        "stack_trace": generate_stack_as_str_list(error),
+                    }
+                )
+            else:
+                msg = self.rt_log_str(error, jac_ast)
+                logger.error(msg)
+                self.runtime_errors.append(msg)
+                error = Exception(error)
+                raise error
 
     def rt_info(self, msg, jac_ast=None):
         """Prints runtime info to screen"""

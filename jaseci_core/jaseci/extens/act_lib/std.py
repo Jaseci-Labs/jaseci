@@ -111,8 +111,9 @@ def actload_local(filename: str, meta):
     """
     mast = master_from_meta(meta)
     if not mast.is_master(super_check=True, silent=True):
-        meta["interp"].rt_error("Only super master can load actions.")
-        return False
+        meta["interp"].rt_error(
+            "Only super master can load actions.", meta["interp"]._cur_jac_ast
+        )
     return mast.actions_load_local(file=filename)["success"]
 
 
@@ -123,8 +124,9 @@ def actload_remote(url: str, meta):
     """
     mast = master_from_meta(meta)
     if not mast.is_master(super_check=True, silent=True):
-        meta["interp"].rt_error("Only super master can load actions.")
-        return False
+        meta["interp"].rt_error(
+            "Only super master can load actions.", meta["interp"]._cur_jac_ast
+        )
     return mast.actions_load_remote(url=url)["success"]
 
 
@@ -135,8 +137,9 @@ def actload_module(module: str, meta):
     """
     mast = master_from_meta(meta)
     if not mast.is_master(super_check=True, silent=True):
-        meta["interp"].rt_error("Only super master can load actions.")
-        return False
+        meta["interp"].rt_error(
+            "Only super master can load actions.", meta["interp"]._cur_jac_ast
+        )
     return mast.actions_load_module(mod=module)["success"]
 
 

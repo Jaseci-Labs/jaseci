@@ -226,10 +226,10 @@ global a = "test";
 walker global_actions {
     with entry {
         report global.a;
-        report global.b;
         report global.context;
         report global.info;
         report global.info['request_context'];
+        report global.b;
     }
 }
 

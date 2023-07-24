@@ -47,7 +47,7 @@ class Ability(Element, JacCode, Interp):
         self.run_code_block(self.get_jac_ast())
         self.pop_scope()
 
-    def run_action(self, param_list, scope, interp):
+    def run_action(self, param_list, scope, interp, jac_ast):
         """
         param_list should be passed as list of values to lib functions
         Also note that Jac stores preset_in_out as input/output list of hex
@@ -55,7 +55,7 @@ class Ability(Element, JacCode, Interp):
         """
         action_name = self.name
         if not interp.check_builtin_action(action_name):
-            interp.rt_error(f"Cannot execute {action_name} - Not Found")
+            interp.rt_error(f"Cannot execute {action_name} - Not Found", jac_ast)
             return None
         func = live_actions[action_name]
         args = inspect.getfullargspec(func)
@@ -84,15 +84,10 @@ class Ability(Element, JacCode, Interp):
                 params = str(inspect.signature(func))
                 interp.rt_error(
                     f"Invalid arguments {param_list} to action call {self.name}! Valid paramters are {params}.",
-                    interp._cur_jac_ast,
+                    jac_ast,
                 )
-                raise
             except Exception as e:
-                interp.rt_error(
-                    f"Execption within action call {self.name}! {e}",
-                    interp._cur_jac_ast,
-                )
-                raise
+                interp.rt_error(e, jac_ast, True)
         t = time.time() - ts
         action_manager.post_action_call_hook(action_name, t)
         return result
