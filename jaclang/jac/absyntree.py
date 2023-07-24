@@ -1667,7 +1667,8 @@ class EdgeOpRef(AstNode):
 
     def __init__(
         self,
-        filter_cond: Optional["ExprType"],
+        filter_type: Optional[ExprType],
+        filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1675,6 +1676,7 @@ class EdgeOpRef(AstNode):
         line: int,
     ) -> None:
         """Initialize edge op reference expression node."""
+        self.filter_type = filter_type
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
@@ -1689,7 +1691,8 @@ class ConnectOp(AstNode):
 
     def __init__(
         self,
-        spwn: Optional["ExprType"],
+        conn_type: Optional[ExprType],
+        conn_assign: Optional[AssignmentList],
         edge_dir: EdgeDir,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1697,12 +1700,13 @@ class ConnectOp(AstNode):
         line: int,
     ) -> None:
         """Initialize connect op reference expression node."""
-        self.spwn = spwn
+        self.conn_type = conn_type
+        self.conn_assign = conn_assign
         self.edge_dir = edge_dir
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-class FilterCtx(AstNode):
+class FilterCompr(AstNode):
     """FilterCtx node type for Jac Ast."""
 
     def __init__(
@@ -1744,7 +1748,7 @@ AtomType = Union[
     DictCompr,
     AtomTrailer,
     EdgeOpRef,
-    FilterCtx,
+    FilterCompr,
 ]
 
 ExprType = Union[

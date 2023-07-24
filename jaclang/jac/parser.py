@@ -980,7 +980,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "atomic_chain",
         "all_refs",
         "edge_op_ref",
-        "filter_ctx",  # for filtering lists of dicts/objs, etc.
     )
     def atom(self, p: YaccProduction) -> YaccProduction:
         """Atom rule."""
@@ -1131,6 +1130,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "atom DOT_BKWD all_refs",
         "atom index_slice",
         "atom arch_ref",
+        "atom filter_compr",
     )
     def atomic_chain_unsafe(self, p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
@@ -1142,6 +1142,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "atom NULL_OK DOT_BKWD all_refs",
         "atom NULL_OK index_slice",
         "atom NULL_OK arch_ref",
+        "atom NULL_OK filter_compr",
     )
     def atomic_chain_safe(self, p: YaccProduction) -> YaccProduction:
         """Atom trailer rule."""
@@ -1278,6 +1279,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "ARROW_R",
         "ARROW_R_p1 expression ARROW_R_p2",
+        "ARROW_R_p1 expression COLON filter_compare_list ARROW_R_p2",
     )
     def edge_to(self, p: YaccProduction) -> YaccProduction:
         """Edge to rule."""
@@ -1286,6 +1288,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "ARROW_L",
         "ARROW_L_p1 expression ARROW_L_p2",
+        "ARROW_L_p1 expression COLON filter_compare_list ARROW_L_p2",
     )
     def edge_from(self, p: YaccProduction) -> YaccProduction:
         """Edge from rule."""
@@ -1294,6 +1297,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "ARROW_BI",
         "ARROW_L_p1 expression ARROW_R_p2",
+        "ARROW_L_p1 expression COLON filter_compare_list ARROW_R_p2",
     )
     def edge_any(self, p: YaccProduction) -> YaccProduction:
         """Edge any rule."""
@@ -1302,7 +1306,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "connect_to",
         "connect_from",
-        # "connect_any",
     )
     def connect_op(self, p: YaccProduction) -> YaccProduction:
         """Connect operator rule."""
@@ -1316,6 +1319,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "CARROW_R",
         "CARROW_R_p1 expression CARROW_R_p2",
+        "CARROW_R_p1 expression COLON assignment_list CARROW_R_p2",
     )
     def connect_to(self, p: YaccProduction) -> YaccProduction:
         """Connect to rule."""
@@ -1324,13 +1328,14 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "CARROW_L",
         "CARROW_L_p1 expression CARROW_L_p2",
+        "CARROW_L_p1 expression COLON assignment_list CARROW_L_p2",
     )
     def connect_from(self, p: YaccProduction) -> YaccProduction:
         """Connect from rule."""
         return p
 
     @_("LPAREN EQ filter_compare_list RPAREN")
-    def filter_ctx(self, p: YaccProduction) -> YaccProduction:
+    def filter_compr(self, p: YaccProduction) -> YaccProduction:
         """Filter context rule."""
         return p
 

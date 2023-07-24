@@ -699,7 +699,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
         edge_dir: EdgeDir,
         """
 
-    def exit_filter_ctx(self, node: ast.FilterCtx) -> None:
+    def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
         compares: list[BinaryExpr],

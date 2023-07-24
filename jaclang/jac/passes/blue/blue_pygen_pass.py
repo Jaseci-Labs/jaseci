@@ -1222,7 +1222,7 @@ class BluePygenPass(Pass):
         self.ds_feature_warn()
 
     # NOTE: Incomplete for Jac Purple and Red
-    def exit_filter_ctx(self, node: ast.FilterCtx) -> None:
+    def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
         compares: list[BinaryExpr],

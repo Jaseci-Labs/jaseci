@@ -1877,7 +1877,7 @@ class AstBuildPass(Pass):
     def exit_pipe(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        pipe -> pipe_back PIPE_FWD filter_ctx
+        pipe -> pipe_back PIPE_FWD filter_compr
         pipe -> pipe_back PIPE_FWD pipe
         pipe -> pipe_back
         """
@@ -1886,7 +1886,7 @@ class AstBuildPass(Pass):
     def exit_pipe_back(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        pipe_back -> elvis_check PIPE_BKWD filter_ctx
+        pipe_back -> elvis_check PIPE_BKWD filter_compr
         pipe_back -> elvis_check PIPE_BKWD pipe_back
         pipe_back -> elvis_check
         """
@@ -2535,6 +2535,7 @@ class AstBuildPass(Pass):
     def exit_atomic_chain_unsafe(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        atomic_chain_unsafe -> atom filter_compr
         atomic_chain_unsafe -> atom arch_ref
         atomic_chain_unsafe -> atom index_slice
         atomic_chain_unsafe -> atom DOT NAME
@@ -2564,6 +2565,7 @@ class AstBuildPass(Pass):
     def exit_atomic_chain_safe(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        atomic_chain_safe -> atom NULL_OK filter_compr
         atomic_chain_safe -> atom NULL_OK arch_ref
         atomic_chain_safe -> atom NULL_OK index_slice
         atomic_chain_safe -> atom NULL_OK DOT NAME
@@ -2955,95 +2957,68 @@ class AstBuildPass(Pass):
     def exit_edge_to(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        edge_to -> ARROW_R_p1 expression ARROW_R_p2
-        edge_to -> ARROW_R
+        Rule 412   edge_to -> ARROW_R_p1 expression COLON filter_compare_list ARROW_R_p2
+        Rule 413   edge_to -> ARROW_R_p1 expression ARROW_R_p2
+        Rule 414   edge_to -> ARROW_R
         """
-        if len(node.kid) == 3:
-            replace_node(
-                node,
-                ast.EdgeOpRef(
-                    filter_cond=node.kid[1],
-                    edge_dir=EdgeDir.OUT,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        else:
-            replace_node(
-                node,
-                ast.EdgeOpRef(
-                    filter_cond=None,
-                    edge_dir=EdgeDir.OUT,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        ftype = node.kid[1] if len(node.kid) >= 3 else None
+        fcond = node.kid[3] if len(node.kid) >= 5 else None
+        replace_node(
+            node,
+            ast.EdgeOpRef(
+                filter_type=ftype,
+                filter_cond=fcond,
+                edge_dir=EdgeDir.OUT,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_edge_from(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        edge_from -> ARROW_L_p1 expression ARROW_L_p2
-        edge_from -> ARROW_L
+        Rule 415   edge_from -> ARROW_L_p1 expression COLON filter_compare_list ARROW_L_p2
+        Rule 416   edge_from -> ARROW_L_p1 expression ARROW_L_p2
+        Rule 417   edge_from -> ARROW_L
         """
-        if len(node.kid) == 3:
-            replace_node(
-                node,
-                ast.EdgeOpRef(
-                    filter_cond=node.kid[1],
-                    edge_dir=EdgeDir.IN,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        else:
-            replace_node(
-                node,
-                ast.EdgeOpRef(
-                    filter_cond=None,
-                    edge_dir=EdgeDir.IN,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        ftype = node.kid[1] if len(node.kid) >= 3 else None
+        fcond = node.kid[3] if len(node.kid) >= 5 else None
+        replace_node(
+            node,
+            ast.EdgeOpRef(
+                filter_type=ftype,
+                filter_cond=fcond,
+                edge_dir=EdgeDir.IN,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_edge_any(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        edge_any -> ARROW_L_p1 expression ARROW_R_p2
-        edge_any -> ARROW_BI
+        Rule 418   edge_any -> ARROW_L_p1 expression COLON filter_compare_list ARROW_R_p2
+        Rule 419   edge_any -> ARROW_L_p1 expression ARROW_R_p2
+        Rule 420   edge_any -> ARROW_BI
         """
-        if len(node.kid) == 3:
-            replace_node(
-                node,
-                ast.EdgeOpRef(
-                    filter_cond=node.kid[1],
-                    edge_dir=EdgeDir.ANY,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        else:
-            replace_node(
-                node,
-                ast.EdgeOpRef(
-                    filter_cond=None,
-                    edge_dir=EdgeDir.ANY,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        ftype = node.kid[1] if len(node.kid) >= 3 else None
+        fcond = node.kid[3] if len(node.kid) >= 5 else None
+        replace_node(
+            node,
+            ast.EdgeOpRef(
+                filter_type=ftype,
+                filter_cond=fcond,
+                edge_dir=EdgeDir.ANY,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_connect_op(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -3064,6 +3039,7 @@ class AstBuildPass(Pass):
             replace_node(
                 node,
                 ast.DisconnectOp(
+                    filter_type=node.filter_type,
                     filter_cond=node.filter_cond,
                     edge_dir=node.edge_dir,
                     parent=node.parent,
@@ -3076,74 +3052,56 @@ class AstBuildPass(Pass):
     def exit_connect_to(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        connect_to -> CARROW_R_p1 expression CARROW_R_p2
-        connect_to -> CARROW_R
+        Rule 424   connect_to -> CARROW_R_p1 expression COLON assignment_list CARROW_R_p2
+        Rule 425   connect_to -> CARROW_R_p1 expression CARROW_R_p2
+        Rule 426   connect_to -> CARROW_R
         """
-        if len(node.kid) == 3:
-            replace_node(
-                node,
-                ast.ConnectOp(
-                    spwn=node.kid[1],
-                    edge_dir=EdgeDir.OUT,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        else:
-            replace_node(
-                node,
-                ast.ConnectOp(
-                    spwn=None,
-                    edge_dir=EdgeDir.OUT,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        ctype = node.kid[1] if len(node.kid) >= 3 else None
+        cassig = node.kid[3] if len(node.kid) >= 5 else None
+        replace_node(
+            node,
+            ast.ConnectOp(
+                conn_type=ctype,
+                conn_assign=cassig,
+                edge_dir=EdgeDir.OUT,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_connect_from(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        connect_from -> CARROW_L_p1 expression CARROW_L_p2
-        connect_from -> CARROW_L
+        Rule 427   connect_from -> CARROW_L_p1 expression COLON assignment_list CARROW_L_p2
+        Rule 428   connect_from -> CARROW_L_p1 expression CARROW_L_p2
+        Rule 429   connect_from -> CARROW_L
         """
-        if len(node.kid) == 3:
-            replace_node(
-                node,
-                ast.ConnectOp(
-                    spwn=node.kid[1],
-                    edge_dir=EdgeDir.IN,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        else:
-            replace_node(
-                node,
-                ast.ConnectOp(
-                    spwn=None,
-                    edge_dir=EdgeDir.IN,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        ctype = node.kid[1] if len(node.kid) >= 3 else None
+        cassig = node.kid[3] if len(node.kid) >= 5 else None
+        replace_node(
+            node,
+            ast.ConnectOp(
+                conn_type=ctype,
+                conn_assign=cassig,
+                edge_dir=EdgeDir.IN,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
-    def exit_filter_ctx(self, node: ast.AstNode) -> None:
+    def exit_filter_compr(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        filter_ctx -> LPAREN EQ filter_compare_list RPAREN
+        filter_compr -> LPAREN EQ filter_compare_list RPAREN
         """
         node.kid = node.kid[:-4]
         replace_node(
             node,
-            ast.FilterCtx(
+            ast.FilterCompr(
                 compares=node.kid,
                 parent=node.parent,
                 mod_link=self.mod_link,
