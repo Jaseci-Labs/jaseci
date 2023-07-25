@@ -69,3 +69,27 @@
     caller_id |> <self>.ro_access.discard;
     caller_id |> <self>.rw_access.discard;
 }
+
+:object:Object:ability:_jac_on_enter
+(triggers: list) {
+    can decorator(func: callable) -> callable {
+        <self>._jac_ds_entry_funcs.append({'types': triggers, 'func': func});
+        can wrapper(*args: list, **kwargs: dict) -> callable {
+            return func(*args, **kwargs);
+        }
+        return wrapper;
+    }
+    return decorator;
+}
+
+:object:Object:ability:_jac_on_exit
+(triggers: list) {
+    can decorator(func: callable) -> callable {
+        <self>._jac_ds_exit_funcs.append({'types': triggers, 'func': func});
+        can wrapper(*args: list, **kwargs: dict) -> callable {
+            return func(*args, **kwargs);
+        }
+        return wrapper;
+    }
+    return decorator;
+}

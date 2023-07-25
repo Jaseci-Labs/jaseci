@@ -345,6 +345,7 @@ class BluePygenPass(Pass):
         for i in node.members:
             if type(i) == ast.Ability and i.name.value == Con.INIT_FUNC:
                 init_func = i
+                break
         if init_func and init_func.is_func:
             self.emit_ln(
                 node, f"def __init__(self{init_func.signature.meta['py_code']}:"
@@ -1091,14 +1092,14 @@ class BluePygenPass(Pass):
             if type(node.right) == ast.IndexSlice:
                 self.emit(
                     node,
-                    f"{node.target.meta['py_code']}{node.right.meta['py_code']} "
-                    f"if {node.target.meta['py_code']} is not None else None",
+                    f"({node.target.meta['py_code']}{node.right.meta['py_code']} "
+                    f"if {node.target.meta['py_code']} is not None else None)",
                 )
             else:
                 self.emit(
                     node,
-                    f"{node.target.meta['py_code']}.{node.right.meta['py_code']} "
-                    f"if {node.target.meta['py_code']} is not None else None",
+                    f"({node.target.meta['py_code']}.{node.right.meta['py_code']} "
+                    f"if {node.target.meta['py_code']} is not None else None)",
                 )
         else:
             if type(node.right) == ast.IndexSlice:

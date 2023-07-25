@@ -64,8 +64,15 @@ object Element {
 }
 
 object Object:Element {
+    static
     has _jac_ds_entry_funcs: list[dict]=[],
         _jac_ds_exit_funcs: list[dict]=[];
+
+    static
+    can _jac_on_enter(triggers: list[type]);
+
+    static
+    can _jac_on_exit(triggers: list[type]);
 }
 
 object Node:Object {

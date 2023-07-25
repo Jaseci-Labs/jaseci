@@ -26,19 +26,6 @@ class AstNode:
         self._typ: type = type(None)
         self.meta: dict = {}
 
-    # def __str__(self) -> str:
-    #     """Return string representation of node."""
-    #     kid = vars(self).copy()
-    #     del kid["parent"]
-    #     return (
-    #         f"{str(type(self).__name__)}->[{self.line},{len(self.kid)} kids]:"
-    #         f"{pprint.pformat(kid, indent=2, depth=1)}"
-    #     )
-
-    # def __repr__(self) -> str:
-    #     """Return string representation of node."""
-    #     return str(self)
-
     def to_dict(self) -> dict:
         """Return dict representation of node."""
         ret = {
@@ -390,10 +377,10 @@ class Architype(OOPAccessNode):
         name: Name,
         arch_type: Token,
         doc: Optional[Token],
-        decorators: Optional["Decorators"],
+        decorators: Optional[Decorators],
         access: Optional[Token],
-        base_classes: "BaseClasses",
-        body: Optional["ArchBlock"],
+        base_classes: BaseClasses,
+        body: Optional[ArchBlock],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],

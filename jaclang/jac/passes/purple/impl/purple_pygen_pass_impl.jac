@@ -82,14 +82,24 @@ arch_attached: Optional["ArchBlock"] = None,
 """
 :object:PurplePygenPass:ability:exit_ability
 (nd: ast.Ability) {
+    "Object" |> <self>.add_element_import;
     if nd.decorators {
         (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
     }
-    if (nd.signature|>type) in [ast.FuncSignature, ast.EventSignature] {
+    if nd.signature:>type in [ast.FuncSignature, ast.EventSignature] {
         if nd.arch_attached {
+            if nd.signature:>type == ast.EventSignature and
+                nd.signature.event.name == Tok.KW_ENTER {
+                type_list = nd.signature.arch_tag_info?.meta["py_code"] ?: "";
+                (nd, f"@{C.OBJECT_CLASS}._jac_on_enter([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
+            }
+            elif nd.signature:>type == ast.EventSignature and
+                nd.signature.event.name == Tok.KW_EXIT {
+                type_list = nd.signature.arch_tag_info?.meta["py_code"] ?: "";
+                (nd, f"@@{C.OBJECT_CLASS}._jac_on_exit([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
+            }
             (nd, f"def {nd.name.meta['py_code']}(self{nd.signature.meta['py_code']}:")
                 |> <self>.emit_ln;
-            # (nd, "1/0", indent_delta=1) |> <self>.emit_ln;
         } else {
             (nd, f"def {nd.name.meta['py_code']}({nd.signature.meta['py_code']}:")
                 |> <self>.emit_ln;
