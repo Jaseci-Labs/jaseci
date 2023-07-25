@@ -273,10 +273,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag KW_CAN access_tag NAME event_clause SEMI",
-        "doc_tag KW_CAN access_tag NAME func_decl SEMI",
-        "doc_tag KW_CAN access_tag NAME event_clause code_block",
-        "doc_tag KW_CAN access_tag NAME func_decl code_block",
+        "doc_tag static_tag KW_CAN access_tag NAME event_clause SEMI",
+        "doc_tag static_tag KW_CAN access_tag NAME func_decl SEMI",
+        "doc_tag static_tag KW_CAN access_tag NAME event_clause code_block",
+        "doc_tag static_tag KW_CAN access_tag NAME func_decl code_block",
         "ability_decl_decor",
     )
     def ability_decl(self, p: YaccProduction) -> YaccProduction:
@@ -284,10 +284,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag decorators KW_CAN access_tag NAME event_clause SEMI",
-        "doc_tag decorators KW_CAN access_tag NAME func_decl SEMI",
-        "doc_tag decorators KW_CAN access_tag NAME event_clause code_block",
-        "doc_tag decorators KW_CAN access_tag NAME func_decl code_block",
+        "doc_tag decorators static_tag KW_CAN access_tag NAME event_clause SEMI",
+        "doc_tag decorators static_tag KW_CAN access_tag NAME func_decl SEMI",
+        "doc_tag decorators static_tag KW_CAN access_tag NAME event_clause code_block",
+        "doc_tag decorators static_tag KW_CAN access_tag NAME func_decl code_block",
     )
     def ability_decl_decor(self, p: YaccProduction) -> YaccProduction:
         """Ability declaration rule."""

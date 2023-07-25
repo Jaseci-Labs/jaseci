@@ -71,9 +71,9 @@
 }
 
 :object:Object:ability:_jac_on_enter
-(triggers: list) {
+(cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
-        <self>._jac_ds_entry_funcs.append({'types': triggers, 'func': func});
+        cls._jac_ds_entry_funcs.append({'types': triggers, 'func': func});
         can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }
@@ -83,9 +83,9 @@
 }
 
 :object:Object:ability:_jac_on_exit
-(triggers: list) {
+(cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
-        <self>._jac_ds_exit_funcs.append({'types': triggers, 'func': func});
+        cls._jac_ds_exit_funcs.append({'types': triggers, 'func': func});
         can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }

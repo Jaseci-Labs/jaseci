@@ -498,21 +498,22 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         ability_decl -> ability_decl_decor
-        ability_decl -> doc_tag KW_CAN access_tag NAME func_decl code_block
-        ability_decl -> doc_tag KW_CAN access_tag NAME event_clause code_block
-        ability_decl -> doc_tag KW_CAN access_tag NAME func_decl SEMI
-        ability_decl -> doc_tag KW_CAN access_tag NAME event_clause SEMI
+        ability_decl -> doc_tag static_tag KW_CAN access_tag NAME func_decl code_block
+        ability_decl -> doc_tag static_tag KW_CAN access_tag NAME event_clause code_block
+        ability_decl -> doc_tag static_tag KW_CAN access_tag NAME func_decl SEMI
+        ability_decl -> doc_tag static_tag KW_CAN access_tag NAME event_clause SEMI
         """
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
             return
-        del node.kid[1]
+        del node.kid[2]
         replace_node(
             node,
             ast.Ability(
                 doc=node.kid[0],
-                access=node.kid[1],
-                name=node.kid[2],
+                access=node.kid[2],
+                is_static=node.kid[1],
+                name=node.kid[3],
                 body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
                 signature=node.kid[-2],
                 is_func=type(node.kid[-2]) == ast.FuncSignature,
@@ -530,19 +531,20 @@ class AstBuildPass(Pass):
     def exit_ability_decl_decor(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        ability_decl_decor -> doc_tag decorators KW_CAN access_tag NAME func_decl code_block
-        ability_decl_decor -> doc_tag decorators KW_CAN access_tag NAME return_type_tag code_block
-        ability_decl_decor -> doc_tag decorators KW_CAN access_tag NAME func_decl SEMI
-        ability_decl_decor -> doc_tag decorators KW_CAN access_tag NAME return_type_tag SEMI
+        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag NAME func_decl code_block
+        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag NAME event_clause code_block
+        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag NAME func_decl SEMI
+        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag NAME event_clause SEMI
         """
-        del node.kid[2]
+        del node.kid[3]
         replace_node(
             node,
             ast.Ability(
                 doc=node.kid[0],
                 decorators=node.kid[1],
-                access=node.kid[2],
-                name=node.kid[3],
+                is_static=node.kid[2],
+                access=node.kid[3],
+                name=node.kid[4],
                 body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
                 signature=node.kid[-2],
                 is_func=type(node.kid[-2]) == ast.FuncSignature,
@@ -2957,9 +2959,9 @@ class AstBuildPass(Pass):
     def exit_edge_to(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        Rule 412   edge_to -> ARROW_R_p1 expression COLON filter_compare_list ARROW_R_p2
-        Rule 413   edge_to -> ARROW_R_p1 expression ARROW_R_p2
-        Rule 414   edge_to -> ARROW_R
+        edge_to -> ARROW_R_p1 expression COLON filter_compare_list ARROW_R_p2
+        edge_to -> ARROW_R_p1 expression ARROW_R_p2
+        edge_to -> ARROW_R
         """
         ftype = node.kid[1] if len(node.kid) >= 3 else None
         fcond = node.kid[3] if len(node.kid) >= 5 else None
@@ -2979,9 +2981,9 @@ class AstBuildPass(Pass):
     def exit_edge_from(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        Rule 415   edge_from -> ARROW_L_p1 expression COLON filter_compare_list ARROW_L_p2
-        Rule 416   edge_from -> ARROW_L_p1 expression ARROW_L_p2
-        Rule 417   edge_from -> ARROW_L
+        edge_from -> ARROW_L_p1 expression COLON filter_compare_list ARROW_L_p2
+        edge_from -> ARROW_L_p1 expression ARROW_L_p2
+        edge_from -> ARROW_L
         """
         ftype = node.kid[1] if len(node.kid) >= 3 else None
         fcond = node.kid[3] if len(node.kid) >= 5 else None
@@ -3001,9 +3003,9 @@ class AstBuildPass(Pass):
     def exit_edge_any(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        Rule 418   edge_any -> ARROW_L_p1 expression COLON filter_compare_list ARROW_R_p2
-        Rule 419   edge_any -> ARROW_L_p1 expression ARROW_R_p2
-        Rule 420   edge_any -> ARROW_BI
+        edge_any -> ARROW_L_p1 expression COLON filter_compare_list ARROW_R_p2
+        edge_any -> ARROW_L_p1 expression ARROW_R_p2
+        edge_any -> ARROW_BI
         """
         ftype = node.kid[1] if len(node.kid) >= 3 else None
         fcond = node.kid[3] if len(node.kid) >= 5 else None
@@ -3052,9 +3054,9 @@ class AstBuildPass(Pass):
     def exit_connect_to(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        Rule 424   connect_to -> CARROW_R_p1 expression COLON assignment_list CARROW_R_p2
-        Rule 425   connect_to -> CARROW_R_p1 expression CARROW_R_p2
-        Rule 426   connect_to -> CARROW_R
+        connect_to -> CARROW_R_p1 expression COLON assignment_list CARROW_R_p2
+        connect_to -> CARROW_R_p1 expression CARROW_R_p2
+        connect_to -> CARROW_R
         """
         ctype = node.kid[1] if len(node.kid) >= 3 else None
         cassig = node.kid[3] if len(node.kid) >= 5 else None
@@ -3074,9 +3076,9 @@ class AstBuildPass(Pass):
     def exit_connect_from(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        Rule 427   connect_from -> CARROW_L_p1 expression COLON assignment_list CARROW_L_p2
-        Rule 428   connect_from -> CARROW_L_p1 expression CARROW_L_p2
-        Rule 429   connect_from -> CARROW_L
+        connect_from -> CARROW_L_p1 expression COLON assignment_list CARROW_L_p2
+        connect_from -> CARROW_L_p1 expression CARROW_L_p2
+        connect_from -> CARROW_L
         """
         ctype = node.kid[1] if len(node.kid) >= 3 else None
         cassig = node.kid[3] if len(node.kid) >= 5 else None

@@ -69,10 +69,10 @@ object Object:Element {
         _jac_ds_exit_funcs: list[dict]=[];
 
     static
-    can _jac_on_enter(triggers: list[type]);
+    can _jac_on_enter(cls: type, triggers: list[type]);
 
     static
-    can _jac_on_exit(triggers: list[type]);
+    can _jac_on_exit(cls: type, triggers: list[type]);
 }
 
 object Node:Object {

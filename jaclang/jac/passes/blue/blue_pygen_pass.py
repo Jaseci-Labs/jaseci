@@ -297,6 +297,7 @@ class BluePygenPass(Pass):
         name: Name,
         is_func: bool,
         is_async: bool,
+        is_static: bool,
         doc: Optional[Token],
         decorators: Optional["Decorators"],
         access: Optional[Token],
@@ -307,11 +308,13 @@ class BluePygenPass(Pass):
         if node.decorators:
             self.emit(node, node.decorators.meta["py_code"])
         if node.is_func:
-            if node.arch_attached:
+            if node.arch_attached and not node.is_static:
                 self.emit_ln(
                     node, f"def {node.name.value}(self{node.signature.meta['py_code']}:"
                 )
             else:
+                if node.arch_attached and node.is_static:
+                    self.emit_ln(node, "@classmethod")
                 self.emit_ln(
                     node, f"def {node.name.value}({node.signature.meta['py_code']}:"
                 )
@@ -465,7 +468,11 @@ class BluePygenPass(Pass):
         self.is_arch_attached = False
         """
         if node.params:
-            if type(node.parent) == ast.Ability and node.parent.arch_attached:
+            if (
+                type(node.parent) == ast.Ability
+                and node.parent.arch_attached
+                and not node.parent.is_static
+            ):
                 self.emit(node, ", ")
             self.emit(node, node.params.meta["py_code"])
         if (

@@ -460,6 +460,7 @@ class Ability(OOPAccessNode):
         name: Name,
         is_func: bool,
         is_async: bool,
+        is_static: bool,
         doc: Optional[Token],
         decorators: Optional["Decorators"],
         access: Optional[Token],
@@ -475,6 +476,7 @@ class Ability(OOPAccessNode):
         self.name = name
         self.is_func = is_func
         self.is_async = is_async
+        self.is_static = is_static
         self.doc = doc
         self.decorators = decorators
         self.signature = signature
