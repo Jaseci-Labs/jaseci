@@ -188,7 +188,6 @@ class ArchitypeInterp(Interp):
             return obj
         else:
             self.rt_error("Graph didn't produce root node!", kid[3])
-            return None
 
     def run_has_root(self, jac_ast):
         """

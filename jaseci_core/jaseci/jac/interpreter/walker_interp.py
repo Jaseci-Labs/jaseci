@@ -205,7 +205,6 @@ class WalkerInterp(Interp):
             result = act.run_action(param_list, self._jac_scope, self, jac_ast)
         except Exception as e:
             self.rt_error(e, jac_ast)
-            result = None
         if kid[-1].name == "expression":
             self.run_expression(kid[-1])
             dest = self.pop()

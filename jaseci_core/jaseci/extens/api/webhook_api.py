@@ -70,5 +70,5 @@ class WebhookApi:
             )
         else:
             raise HTTPException(
-                status_code=400, detail=str(type + " webhook is not yet supported")
+                status_code=400, detail=str(provider + " webhook is not yet supported")
             )
