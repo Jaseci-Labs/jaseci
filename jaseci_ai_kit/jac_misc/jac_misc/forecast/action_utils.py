@@ -76,7 +76,6 @@ def create_model(
     n_epochs=300,
     random_state=42,
 ):
-
     model = TFTModel(
         input_chunk_length=input_chunk,
         output_chunk_length=output_chunk,
