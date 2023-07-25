@@ -101,7 +101,6 @@ def create_model(
 
 
 def train_model(model, train_data, covariates):
-
     train_model = model.fit(train_data, future_covariates=covariates, verbose=True)
     return train_model
 
