@@ -164,7 +164,6 @@ class MachineState:
             self.rt_error(
                 f"Variable not defined - {name}", jac_ast or self._cur_jac_ast
             )
-            self.push(JacValue(self))
         else:
             self.push(val)
 
@@ -183,12 +182,10 @@ class MachineState:
         if dest.check_assignable(jac_ast):
             if not self.rt_check_type(dest.value, [Node, Edge], jac_ast):
                 self.rt_error("Copy fields only applies to nodes and edges", jac_ast)
-                self.push(dest)
             if dest.value.name != src.value.name:
                 self.rt_error(
                     f"Node/edge arch {dest.value} don't match {src.value}!", jac_ast
                 )
-                self.push(dest)
             for i in src.value.context.keys():
                 if i in dest.value.context.keys():
                     JacValue(
@@ -355,7 +352,6 @@ class MachineState:
             f"expecting {typ}",
             jac_ast,
         )
-        return False
 
     def get_info(self):
         return {

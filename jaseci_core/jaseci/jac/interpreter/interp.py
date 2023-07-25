@@ -221,8 +221,7 @@ class Interp(VirtualMachine):
                     self._loop_ctrl = None
                     break
                 if loops > self._loop_limit:
-                    self.rt_error("Hit loop limit, breaking...", kid[0])
-                    self._loop_ctrl = "break"
+                    self.rt_error(f"Hit loop limit [{self._loop_limit}]!", kid[0])
                 self.run_expression(kid[3])
         elif kid[3].name == "expression":
             var = self._jac_scope.get_live_var(kid[1].token_text(), create_mode=True)
@@ -240,8 +239,7 @@ class Interp(VirtualMachine):
                         self._loop_ctrl = None
                         break
                     if loops > self._loop_limit:
-                        self.rt_error("Hit loop limit, breaking...", kid[0])
-                        self._loop_ctrl = "break"
+                        self.rt_error(f"Hit loop limit [{self._loop_limit}]!", kid[0])
             else:
                 self.rt_error("Not a list/dict for iteration!", kid[3])
         else:
@@ -269,8 +267,7 @@ class Interp(VirtualMachine):
                         self._loop_ctrl = None
                         break
                     if loops > self._loop_limit:
-                        self.rt_error("Hit loop limit, breaking...", kid[0])
-                        self._loop_ctrl = "break"
+                        self.rt_error(f"Hit loop limit [{self._loop_limit}]!", kid[0])
             else:
                 self.rt_error("Not a list/dict for iteration!", kid[5])
         if self._loop_ctrl and self._loop_ctrl == "continue":
@@ -291,8 +288,7 @@ class Interp(VirtualMachine):
                 self._loop_ctrl = None
                 break
             if loops > self._loop_limit:
-                self.rt_error("Hit loop limit, breaking...", kid[0])
-                self._loop_ctrl = "break"
+                self.rt_error(f"Hit loop limit [{self._loop_limit}]!", kid[0])
             self.run_expression(kid[1])
         if self._loop_ctrl and self._loop_ctrl == "continue":
             self._loop_ctrl = None
@@ -625,17 +621,11 @@ class Interp(VirtualMachine):
                     # Add additional accessible fields
                     return JacValue(self, value=self.get_info())
                 else:
-                    self.rt_error(f"Global {kid[0].name} not yet", jac_ast)
-                    return JacValue(
-                        self,
-                    )
+                    self.rt_error(f"Global {kid[0].name} is not supported!", jac_ast)
             else:
                 token = kid[2].token_text()
                 if token not in self.parent().global_vars:
                     self.rt_error(f"Global not defined - {token}", kid[2])
-                    return JacValue(
-                        self,
-                    )
 
                 return JacValue(self, ctx=self.parent().global_vars, name=token)
 
@@ -803,7 +793,6 @@ class Interp(VirtualMachine):
                 return self.parent().arch_ids.get_obj_by_name(name=name, kind=kind)
             else:
                 self.rt_error(f"{name} is not a super arch of {base_arch.name}", kid[1])
-                return None
         else:
             return base_arch
 
@@ -838,7 +827,6 @@ class Interp(VirtualMachine):
                     return JacValue(self, value=nd)
 
         self.rt_error(f"{result.value} not valid reference", kid[1])
-        return result
 
     def run_built_in(self, jac_ast, atom_res):
         """
@@ -960,7 +948,6 @@ class Interp(VirtualMachine):
                 self.rt_error(
                     f"Cannot get keys of {atom_res}. " f"Not Dictionary!", kid[0]
                 )
-                return JacValue(self, value=[])
         elif len(kid) > 1 and kid[1].name == "name_list":
             filter_on = self.run_name_list(kid[1])
             d = atom_res.value
@@ -1032,7 +1019,6 @@ class Interp(VirtualMachine):
                 self.rt_error(
                     f"Cannot get length of {atom_res.value}. Not List!", kid[0]
                 )
-                return JacValue(self, value=0)
         else:
             if not self.rt_check_type(atom_res.value, [list], kid[0]):
                 return atom_res
@@ -1408,7 +1394,6 @@ class Interp(VirtualMachine):
                     f"Indicies must be an integer or string!",
                     kid[1],
                 )
-                return atom_res
             try:
                 return JacValue(self, ctx=atom_res.value, name=idx)
             except Exception as e:
@@ -1423,7 +1408,6 @@ class Interp(VirtualMachine):
                     "List slice range not valid. Indicies must be an integers!",
                     kid[1],
                 )
-                return atom_res
             try:
                 return JacValue(self, ctx=atom_res.value, name=idx, end=end)
             except Exception as e:
@@ -1663,7 +1647,6 @@ class Interp(VirtualMachine):
             return self.pop().value
         else:
             self.rt_error(f"{name} not present in object", kid[0])
-            return False
 
     def run_any_type(self, jac_ast):
         """
