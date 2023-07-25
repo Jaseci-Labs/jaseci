@@ -61,7 +61,7 @@ def import_jac_module(
     module.__name__ = module_name
 
     try:
-        codeobj = compile(code_string, f"__jac_py_gen ({module.__file__})", "exec")
+        codeobj = compile(code_string, f"_jac_py_gen ({module.__file__})", "exec")
         exec(codeobj, module.__dict__)
     except Exception as e:
         traceback.print_exc()

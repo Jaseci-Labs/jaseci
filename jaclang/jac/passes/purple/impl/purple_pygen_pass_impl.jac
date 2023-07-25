@@ -3,7 +3,7 @@ import:py from jaclang.jac.constant, Constants as C;
 
 :object:PurplePygenPass:ability:add_element_import
 (arch: str) {
-    (self.preamble, f"from jaclang.core import {arch} as __jac_{arch}__")
+    (self.preamble, f"from jaclang.core import {arch} as _jac_{arch}__")
         |> <self>.emit_ln_unique;
 }
 

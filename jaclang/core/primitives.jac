@@ -6,6 +6,7 @@ import:py from uuid, UUID, uuid4;
 include:jac impl.memory_impl;
 include:jac impl.exec_ctx_impl;
 include:jac impl.element_impl;
+include:jac impl.node_impl;
 
 
 enum AccessMode;
@@ -48,33 +49,40 @@ object ElementMetaData {
 }
 
 object Element {
-    has __jinfo: ElementMetaData = ElementMetaData();
+    has _jinfo: ElementMetaData = ElementMetaData();
 
-    can __jac_make_public_ro;
-    can __jac_make_public_rw;
-    can __jac_make_private;
-    can __jac_is_public_ro -> bool;
-    can __jac_is_public_rw -> bool;
-    can __jac_is_private -> bool;
-    can __jac_is_readable(caller_id: UUID) -> bool;
-    can __jac_is_writable(caller_id: UUID) -> bool;
-    can __jac_give_access(caller_id: UUID, read_write: bool = False);
-    can __jac_revoke_access(caller_id: UUID);
+    can _jac_make_public_ro;
+    can _jac_make_public_rw;
+    can _jac_make_private;
+    can _jac_is_public_ro -> bool;
+    can _jac_is_public_rw -> bool;
+    can _jac_is_private -> bool;
+    can _jac_is_readable(caller_id: UUID) -> bool;
+    can _jac_is_writable(caller_id: UUID) -> bool;
+    can _jac_give_access(caller_id: UUID, read_write: bool = False);
+    can _jac_revoke_access(caller_id: UUID);
 }
 
-object Object:Element {}
+object Object:Element {
+    has _jac_ds_entry_funcs: list[dict]=[],
+        _jac_ds_exit_funcs: list[dict]=[];
+}
 
 object Node:Object {
-    has __j_edges: list[Edge];
+    has _jac_edges: list[Edge];
+
+    can __call__(walk: Walker);
 }
 
 object Edge:Object {
-    has __j_source: Node, __j_target: Node;
+    has _jac_source: Node, _jac_target: Node;
 }
 
 object Walker:Object {
-    has __j_path: list[Node],
-        __j_next: Node?;
+    has _jac_path: list[Node],
+        _jac_next: list[Node];
+
+    can __call__(nd: Node);
 }
 
 object Master:Element {
