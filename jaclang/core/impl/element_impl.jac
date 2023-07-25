@@ -31,7 +31,7 @@
 }
 
 :object:Element:ability:__jac_is_readable
-(caller_id: UUID) -> bool{
+(caller_id: UUID) -> bool {
     return (
             caller_id == <self>.owner_id
             or |> <self>.is_public_read

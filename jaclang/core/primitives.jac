@@ -4,6 +4,7 @@ import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 
 include:jac impl.memory_impl;
+include:jac impl.exec_ctx_impl;
 include:jac impl.element_impl;
 
 
@@ -28,23 +29,20 @@ object ExecutionContext {
     has master: Master,
         memory: Memory;
 
-    can init(master: UUID, memory: Memory) {
-        <self>.master = master;
-        <self>.memory = memory;
-    }
+    can init(master: UUID, memory: Memory);
 
-    can get_root {}
+    can get_root() -> Node;
 }
 
-global exec_ctx = ExecutionContext(Memory(), uuid4());
+global exec_ctx = ExecutionContext(:>uuid4, Memory());
 
 object ElementMetaData {
-    has jid: UUID = uuid4(),
-        timestamp: datetime = datetime.now(),
+    has jid: UUID = :>uuid4,
+        timestamp: datetime = :>datetime.now,
         persist: bool = False,
         access_mode: AccessMode = AccessMode.PRIVATE,
-        rw_access: set = |> set,
-        ro_access: set = |> set,
+        rw_access: set = :>set,
+        ro_access: set = :>set,
         owner_id: UUID = exec_ctx.master,
         mem: Memory = exec_ctx.memory;
 }
@@ -79,4 +77,6 @@ object Walker:Object {
         __j_next: Node?;
 }
 
-object Master:Element {}
+object Master:Element {
+    has root_node: Node = Node();
+}
