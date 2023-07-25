@@ -70,7 +70,7 @@
 			"patterns": [
 				{
 					"name": "meta.property.jac",
-					"begin": "(?x)\\s*(global)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*\\n)",
+					"begin": "(?x)\\b(global)\\b(?=\\s*[[:alpha:]_]\\w*|\\s*\\n)",
 					"end": ";",
 					"beginCaptures": {
 						"1": {
@@ -105,7 +105,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(?x)\\s+(enum|object|node|edge|walker|test)\\s*(?=\\s+[[:alpha:]_]\\w*|\\s*({|;|\\n))",
+					"begin": "(?x)\\b(enum|object|node|edge|walker|test)\\b(?=\\s+[[:alpha:]_]\\w*|\\s*({|;|\\n))",
 					"end": "(?={)|;",
 					"beginCaptures": {
 						"1": {
@@ -168,7 +168,7 @@
 			"patterns": [
 				{
 					"name": "meta.function.jac",
-					"begin": "(?x)\\s+(can|with)\\s+(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\(||\\n))",
+					"begin": "(?x)\\b(can|with)\\b(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\(||\\n))",
 					"end": "(?=\\)|{)|;",
 					"beginCaptures": {
 						"1": {
@@ -218,7 +218,7 @@
 			"patterns": [
 				{
 					"name": "meta.property.jac",
-					"begin": "(?x)\\s+(has)\\s+(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\(||\\n))",
+					"begin": "(?x)\\b(has)\\b(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\(||\\n))",
 					"end": "(?=\\)|{)|;",
 					"beginCaptures": {
 						"1": {

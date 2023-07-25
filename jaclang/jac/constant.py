@@ -8,6 +8,7 @@ class Constants(str, Enum):
     INIT_FUNC = "init"
     JAC_LANG_IMP = "jac"
     JAC_DEBUG_SPLITTER = "JAC DEBUG INFO"
+    PATCH = "PATCH"
 
     JAC_TMP = "__jac_tmp"
     EXEC_CONTEXT = "__jac_exec_ctx__"

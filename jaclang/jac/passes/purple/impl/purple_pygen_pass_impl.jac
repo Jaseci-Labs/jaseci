@@ -157,7 +157,7 @@ else_body: Optional["ElseStmt"],
 :object:PurplePygenPass:ability:exit_visit_stmt
 (nd: ast.VisitStmt) {
     vis_type = nd.vis_type?.value ?: "";
-    (nd, f"if not self.{C.WALKER_VISIT}({nd.target.meta['py_code']}): " )
+    (nd, f"if not {C.EXEC_CONTEXT}.{C.WALKER_VISIT}({nd.target.meta['py_code']}): " )
         |> <self>.emit_ln;
     if nd.else_body {
         (nd, nd.else_body.body.meta["py_code"], indent_delta=1) |> <self>.emit;
@@ -191,17 +191,21 @@ edge_dir: EdgeDir,
 """
 :object:PurplePygenPass:ability:exit_edge_op_ref
 (nd: ast.EdgeOpRef) {
-    (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.NODE_EDGES}()") |> <self>.emit;
-
-    if nd.filter_type {
-        (nd, f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})")
+    if nd.filter_type and nd.filter_cond {
+        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.NODE_EDGES}()"
+            f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})"
+            f" and {nd.filter_cond.meta['py_code'].replace(C.PATCH, C.JAC_TMP)}]")
             |> <self>.emit;
     }
-    if nd.filter_cond {
-        (nd, f" {nd.filter_cond.meta['py_code']}")
+    elif nd.filter_type {
+        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.NODE_EDGES}()"
+            f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})]")
             |> <self>.emit;
     }
-    (nd, f"]") |> <self>.emit;
+    else {
+        (nd, f"{C.HERE}.{C.NODE_EDGES}()")
+            |> <self>.emit;
+    }
 }
 
 
