@@ -301,6 +301,11 @@ class MachineState:
         error = self.rt_log_str(error, jac_ast)
         logger.warning(str(error))
 
+    def rt_subtle_error(self, error, jac_ast=None):
+        error = self.rt_log_str(error, jac_ast)
+        logger.error(str(error))
+        self.runtime_errors.append(error)
+
     def rt_error(self, error, jac_ast, append=False):
         """Prints runtime error to screen"""
 
