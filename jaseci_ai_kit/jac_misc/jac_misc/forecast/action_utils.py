@@ -103,7 +103,6 @@ def train_model(
 # Model evaluation
 
 
-def eval_model(model, n, actual_series, val_series, num_samples=2):
-
+def evaluate(model, n, val_series, num_samples=2):
     pred_series = model.predict(n=n, num_samples=num_samples)
     return mape(val_series, pred_series)
