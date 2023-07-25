@@ -64,9 +64,7 @@ def normalize(data):
     return fitting, fitting.transform(data)
 
 
-def train_model(
-    train_data,
-    covariates,
+def create_model(
     input_chunk,
     output_chunk,
     hidden_size,
@@ -95,6 +93,14 @@ def train_model(
         # loss_fn=MSELoss(),
         random_state=random_state,
     )
+
+    return model
+
+
+# model training
+
+
+def train_model(model, train_data, covariates):
 
     train_model = model.fit(train_data, future_covariates=covariates, verbose=True)
     return train_model
