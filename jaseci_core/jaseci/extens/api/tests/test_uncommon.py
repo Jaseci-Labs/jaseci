@@ -102,6 +102,12 @@ class UncommonImplementationTest(CoreTest):
 
         res = self.call(self.smast, ["walker_run", {"name": "init"}])
 
-        self.assertTrue(res["success"])
-        self.assertEqual(1, len(res["report"]))
-        self.assertTrue("a", len(res["report"][0]["name"]))
+        self.assertFalse(res["success"])
+        self.assertEqual(["a", "a"], res["report"])
+        self.assertEqual(
+            [
+                "default:init - line 5, col 13 - rule edge_to - Unable to find architype for node:node:b from sentinel:generic:default",
+                "default:sample - line 6, col 18 - rule walker_ref - Unable to find architype for node:node:b from sentinel:generic:default",
+            ],
+            res["errors"],
+        )

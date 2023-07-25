@@ -61,7 +61,6 @@ class MachineState:
         self.report_status = None
         self.report_custom = None
         self.report_file = None
-        self.runtime_errors = []
         self.runtime_stack_trace = []
         self._scope_stack = [None]
         self._jac_scope = None

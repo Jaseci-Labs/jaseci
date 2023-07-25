@@ -2,10 +2,17 @@ node a {}
 
 walker init {
     root {
-        take --> node::a;
+        take -->;
+        spawn --> walker::sample;
     }
 
     a {
-        report here;
+        report here.info.name;
+    }
+}
+
+walker sample {
+    with entry {
+        report here.info.name;
     }
 }

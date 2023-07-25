@@ -141,13 +141,14 @@ class Sentinel(Element, JacCode, SentinelInterp):
             Element.destroy(arch)
             return ret
 
-    def get_arch_for(self, obj):
+    def get_arch_for(self, obj, interp=None):
         """Returns the architype that matches object"""
         ret = self.arch_ids.get_obj_by_name(name=obj.name, kind=obj.kind)
         if ret is None:
-            self.rt_subtle_error(
-                f"Unable to find architype for {obj.name}, {obj.kind}",
-                self._cur_jac_ast,
+            _interp = interp or self
+            _interp.rt_subtle_error(
+                f"Unable to find architype for {obj.j_type}:{obj.kind}:{obj.name} from {self.j_type}:{self.kind}:{self.name}",
+                _interp._cur_jac_ast,
             )
         return ret
 
