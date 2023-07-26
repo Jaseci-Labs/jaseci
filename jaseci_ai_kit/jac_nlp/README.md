@@ -25,10 +25,7 @@ The `jac_nlp` package contains a collection of state-of-the-art NLP models that 
       - [Actions](#actions-7)
       - [Example Jac Usage:](#example-jac-usage-7)
   - [Summarization Modules](#summarization-modules)
-    - [T5 Summarization (`t5_sum`)](#t5-summarization-t5_sum)
-      - [Actions](#actions-9)
-      - [Example Jac Usage:](#example-jac-usage-9)
-    - [Bart Summarization (`bart_sum`)](#bart-summarization-bart_sum)
+    - [Summarization (`summarization`)](#summarization-summarization)
       - [Actions](#actions-10)
       - [Example Jac Usage:](#example-jac-usage-10)
   - [Topic Modeling Modules](#topic-modeling-modules)
@@ -599,51 +596,15 @@ For a complete example visit [here](jac_nlp/text_seg/README.md)
 
 ## Summarization Modules
 
-###  T5 Summarization (`t5_sum`)
-`t5_sum` uses the T5 transformer model to perform abstractive summary on a body of text.
-
-#### Actions
-
-* `classify_text`: use the T5 model to summarize a body of text
-    * **Input**:
-        * `text` (string): text to summarize
-        * `min_length` (integer): the least amount of words you want returned from the model
-        * `max_length` (integer): the most amount of words you want returned from the model
-    * **Input datafile**
-    `**data.json**`
-        ```
-        {
-            "text": "The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has  previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that.",
-            "min_length": 30,
-            "max_length": 100
-        }
-        ```
-
-#### Example Jac Usage:
-```jac
-# Use the T5 model to summarize a given piece of text
-walker summarization {
-    can t5_sum.classify_text;
-    has data = "data.json";
-    data = file.load_json(data);
-    summarized_text = t5_sum.classify_text(
-        text = data["text"],
-        min_length = data["min_length"],
-        max_length = data["max_length"]
-        );
-    report summarized_text;
-}
-```
-
 For a complete example visit [here](jac_nlp/t5_sum/README.md)
 
-###  Bart Summarization (`bart_sum`)
+### Summarization (`summarization`)
 
-`bart_sum` uses the BART transformer model to perform abstractive summary on a body of text.
+`summarization` uses the BART transformer model to perform abstractive summary on a body of text.
 
 #### Actions
 
-There are 2 ways to use `bart_sum` module.
+There are 2 ways to use `summarization` module.
 1. Given a text, it will return the summary of the text.
 2. Given a web page url, it will return the summary of the web page.
 
@@ -661,15 +622,15 @@ Following example will return the summary of the a single text.
 
 ```jac
 walker test_summarize_single {
-    can bart_sum.summarize;
-    report bart_sum.summarize("There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.", 10);
+    can summarization.summarize;
+    report summarization.summarize("There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.", 10);
 }
 ```
 You can also pass a list of texts to get the summary of all the texts.
 ```jac
 walker test_summarize_batch {
-    can bart_sum.summarize;
-    report bart_sum.summarize(
+    can summarization.summarize;
+    report summarization.summarize(
         ["There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
         "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
         "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude."],
@@ -681,12 +642,12 @@ Following example will return the summary of the web page.
 
 ```jac
 walker test_summarize_url {
-    can bart_sum.summarize;
-    report bart_sum.summarize(null, "https://in.mashable.com/");
+    can summarization.summarize;
+    report summarization.summarize(null, "https://in.mashable.com/");
 }
 ```
 
-For a complete example visit [here](jac_nlp/bart_sum/README.md)
+For a complete example visit [here](jac_nlp/summarization/README.md)
 
 ## Topic Modeling Modules
 
