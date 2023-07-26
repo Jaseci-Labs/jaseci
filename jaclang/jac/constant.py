@@ -11,20 +11,20 @@ class Constants(str, Enum):
     PATCH = "PATCH"
 
     JAC_TMP = "_jac_tmp"
-    EXEC_CONTEXT = "_jac_exec_ctx__"
-    HERE = "_jac_here__"
+    EXEC_CONTEXT = "_jac_exec_ctx_"
+    HERE = "_jac_here_"
     ROOT = f"{EXEC_CONTEXT}.get_root()"
-    NODE_EDGES = "_jac_edges__"
-    EDGE_REF = "_jac_edge_ref__"
-    CONNECT_NODE = "_jac_connect_node__"
-    DISCONNECT_NODE = "_jac_disconnect_node__"
-    WALKER_VISIT = "_jac_visit__"
-    OBJECT_CLASS = "_jac_Object__"
-    NODE_CLASS = "_jac_Node__"
-    EDGE_CLASS = "_jac_Edge__"
-    WALKER_CLASS = "_jac_Walker__"
-    WITH_DIR = "_jac_edge_with_dir__"
-    EDGE_DIR = "_jac_Edge_Dir__"
+    NODE_EDGES = "_jac_edges_"
+    EDGE_REF = "_jac_edge_ref_"
+    CONNECT_NODE = "_jac_connect_node_"
+    DISCONNECT_NODE = "_jac_disconnect_node_"
+    WALKER_VISIT = "_jac_visit_"
+    OBJECT_CLASS = "_jac_Object_"
+    NODE_CLASS = "_jac_Node_"
+    EDGE_CLASS = "_jac_Edge_"
+    WALKER_CLASS = "_jac_Walker_"
+    WITH_DIR = "_jac_edge_with_dir_"
+    EDGE_DIR = "_jac_Edge_Dir_"
 
     def __str__(self) -> str:
         """Return the string representation of the token."""
@@ -43,7 +43,3 @@ class Values(int, Enum):
     """Token constants for Jac."""
 
     JAC_ERROR_LINE_RANGE = 3
-
-    def __str__(self) -> str:
-        """Return the string representation of the token."""
-        return self.value
