@@ -2,8 +2,21 @@
 
 :o:Node:a:__call__
 (walk: Walker) {
+    if not (walk, Walker) :> isinstance {
+        raise TypeError("Argument must be a Walker instance");
+    }
     walk(<self>);
 }
+
+:o:Edge:a:__call__
+(walk: Walker) {
+    if not (walk, Walker) :> isinstance {
+        raise TypeError("Argument must be a Walker instance");
+    }
+    walk(<self>);
+}
+
+
 
 :o:Walker:a:__call__
 (nd: Node) {

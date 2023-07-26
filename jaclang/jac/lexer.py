@@ -246,6 +246,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NAME["try"] = "KW_TRY"  # type: ignore
     NAME["except"] = "KW_EXCEPT"  # type: ignore
     NAME["finally"] = "KW_FINALLY"  # type: ignore
+    NAME["raise"] = "KW_RAISE"  # type: ignore
     NAME["in"] = "KW_IN"  # type: ignore
     NAME["is"] = "KW_IS"  # type: ignore
     NAME["not"] = "NOT"  # type: ignore

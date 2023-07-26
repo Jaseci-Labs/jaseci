@@ -63,15 +63,11 @@ object Element {
 }
 
 object Object:Element {
-    static
-    has _jac_ds_entry_funcs: list[dict]=[],
-        _jac_ds_exit_funcs: list[dict]=[];
+    static has _jac_ds_entry_funcs: list[dict]=[],
+               _jac_ds_exit_funcs: list[dict]=[];
 
-    static
-    can _jac_on_enter(cls: type, triggers: list[type]);
-
-    static
-    can _jac_on_exit(cls: type, triggers: list[type]);
+    static can _jac_on_enter(cls: type, triggers: list[type]);
+    static can _jac_on_exit(cls: type, triggers: list[type]);
 }
 
 object Node:Object {
@@ -81,7 +77,7 @@ object Node:Object {
 }
 
 object Edge:Object {
-    has _jac_source: Node, _jac_target: Node;
+    has _jac_source_: Node, _jac_target_: Node;
 }
 
 object Walker:Object {

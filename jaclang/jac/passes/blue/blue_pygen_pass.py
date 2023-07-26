@@ -879,7 +879,10 @@ class BluePygenPass(Pass):
                 node,
                 f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
             )
-        elif node.op.name == Tok.PIPE_FWD and type(node.left) == ast.TupleVal:
+        elif (
+            node.op.name in [Tok.PIPE_FWD, Tok.KW_SPAWN, Tok.A_PIPE_FWD]
+            and type(node.left) == ast.TupleVal
+        ):
             params = node.left.meta["py_code"]
             params = params.replace(",)", ")") if params[-2:] == ",)" else params
             self.emit(node, f"{node.right.meta['py_code']}{params}")

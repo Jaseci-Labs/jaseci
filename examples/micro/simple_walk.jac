@@ -4,7 +4,7 @@ node item {
     has value: int;
 }
 
-walker creator {
+walker Creator {
     has count: int = 0;
     can create with <root>|:n:item enter {
         <here> ++> spawn :n:item;
@@ -15,7 +15,7 @@ walker creator {
     }
 }
 
-walker walk {
+walker Walk {
     has count: int = 0;
     can skip_root with <root> enter { visit -->; }
     can step with :n:item enter {
@@ -30,6 +30,6 @@ walker walk {
 }
 
 with enter {
-    spawn :w:creator |> <root>;
-    spawn :w:walk |> <root>;
+    spawn :w:Creator |> <root>;
+    spawn :w:Walk |> <root>;
 }
