@@ -1223,11 +1223,13 @@ class VisitStmt(AstNode):
         mod_link: Optional[Module],
         kid: list[AstNode],
         line: int,
+        from_walker: bool = False,
     ) -> None:
         """Initialize visit statement node."""
         self.vis_type = vis_type
         self.target = target
         self.else_body = else_body
+        self.from_walker = from_walker
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 

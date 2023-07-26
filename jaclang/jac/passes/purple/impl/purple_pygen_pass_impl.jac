@@ -166,11 +166,13 @@ ctrl: Token,
 vis_type: Optional[Token],
 target: Optional["ExprType"],
 else_body: Optional["ElseStmt"],
+from_walker: bool = False,
 """
 :object:PurplePygenPass:ability:exit_visit_stmt
 (nd: ast.VisitStmt) {
     vis_type = nd.vis_type?.value ?: "";
-    (nd, f"if not {C.EXEC_CONTEXT}.{C.WALKER_VISIT}({nd.target.meta['py_code']}): " )
+    loc = f"{'self' if nd.from_walker else C.HERE}";
+    (nd, f"if not {loc}.{C.WALKER_VISIT}({nd.target.meta['py_code']}): " )
         |> <self>.emit_ln;
     if nd.else_body {
         (nd, nd.else_body.body.meta["py_code"], indent_delta=1) |> <self>.emit;
