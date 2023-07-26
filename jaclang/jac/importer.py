@@ -15,12 +15,15 @@ def fetch_jac_err_code_region(
     py_code: str, err_line: int, range: int = Val.JAC_ERROR_LINE_RANGE
 ) -> str:
     """Fetch the jac code region that caused the error."""
-    jac_err_line = int(py_code.splitlines()[err_line - 1].split()[-1])
-    mod_index = int(py_code.splitlines()[err_line].split()[-2])
-    mod_paths = py_code.split(Con.JAC_DEBUG_SPLITTER)[1].strip().splitlines()
-    with open(mod_paths[mod_index], "r") as file:
-        jac_code_string = file.read()
-    return clip_code_section(add_line_numbers(jac_code_string), jac_err_line, range)
+    try:
+        jac_err_line = int(py_code.splitlines()[err_line - 1].split()[-1])
+        mod_index = int(py_code.splitlines()[err_line].split()[-2])
+        mod_paths = py_code.split(Con.JAC_DEBUG_SPLITTER)[1].strip().splitlines()
+        with open(mod_paths[mod_index], "r") as file:
+            jac_code_string = file.read()
+        return clip_code_section(add_line_numbers(jac_code_string), jac_err_line, range)
+    except Exception:
+        return ""
 
 
 def import_jac_module(
