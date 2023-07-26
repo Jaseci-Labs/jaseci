@@ -3,41 +3,39 @@
 :o:Node:a:__call__
 (walk: Walker) {
     if not (walk, Walker) :> isinstance {
-        raise TypeError("Argument must be a Walker instance");
+        raise ("Argument must be a Walker instance") :> TypeError;
     }
-    walk(<self>);
+    <self> :> walk;
 }
 
 :o:Edge:a:__call__
 (walk: Walker) {
     if not (walk, Walker) :> isinstance {
-        raise TypeError("Argument must be a Walker instance");
+        raise ("Argument must be a Walker instance") :> TypeError;
     }
-    walk(<self>);
+    <self>._jac_target_ :> walk;
 }
-
-
 
 :o:Walker:a:__call__
 (nd: Node) {
     for i in nd._jac_ds_entry_funcs {
         if <self>:>type in i['types'] {
-            i['func'](nd, <self>);
+            (nd, <self>) :> i['func'];
         }
     }
     for i in <self>._jac_ds_entry_funcs {
         if nd:>type in i['types'] or nd in i['types'] {  # if nd==root direct chec
-            i['func'](<self>, nd);
+            (<self>, nd) :> i['func'];
         }
     }
     for i in <self>._jac_ds_exit_funcs {
         if nd:>type in i['types'] or nd in i['types'] {
-            i['func'](<self>, nd);
+            (<self>, nd) :> i['func'];
         }
     }
     for i in nd._jac_ds_exit_funcs {
         if <self>:>type in i['types'] {
-            i['func'](nd, <self>);
+            (nd, <self>) :> i['func'];
         }
     }
 }

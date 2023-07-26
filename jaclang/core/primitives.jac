@@ -71,7 +71,7 @@ object Object:Element {
 }
 
 object Node:Object {
-    has _jac_edges: list[Edge];
+    has _jac_edges_: list[Edge];
 
     can __call__(walk: Walker);
 }
