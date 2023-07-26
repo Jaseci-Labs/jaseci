@@ -23,7 +23,7 @@ class Constants(str, Enum):
     NODE_CLASS = "_jac_Node_"
     EDGE_CLASS = "_jac_Edge_"
     WALKER_CLASS = "_jac_Walker_"
-    WITH_DIR = "_jac_edge_with_dir_"
+    WITH_DIR = "_jac_apply_dir_"
     EDGE_DIR = "_jac_Edge_Dir_"
 
     def __str__(self) -> str:

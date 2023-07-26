@@ -2,11 +2,12 @@
 
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
+import:py from jaclang.jac.constant, EdgeDir;
 
 include:jac impl.memory_impl;
 include:jac impl.exec_ctx_impl;
 include:jac impl.element_impl;
-include:jac impl.node_impl;
+include:jac impl.arch_impl;
 
 
 enum AccessMode;
@@ -71,13 +72,19 @@ object Object:Element {
 }
 
 object Node:Object {
-    has _jac_edges_: list[Edge];
+    has _jac_edges_: list[Edge] = [];
 
     can __call__(walk: Walker);
+    can _jac_connect_node_(nd: Node, edg: Edge) -> Node;
 }
 
 object Edge:Object {
-    has _jac_source_: Node, _jac_target_: Node;
+    has _jac_source_: Node?,
+        _jac_target_: Node?,
+        _jac_dir_: EdgeDir?;
+
+    can _jac_apply_dir_(dir: EdgeDir) -> Edge;
+    can _jac_attach_(src: Node, trg: Node) -> Edge;
 }
 
 object Walker:Object {

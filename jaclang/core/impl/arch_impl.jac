@@ -8,12 +8,37 @@
     <self> :> walk;
 }
 
+:o:Node:a:_jac_connect_node_(nd: Node, edg: Edge) -> Node {
+    edg._jac_attach_(<self>, nd);
+    return <self>;
+}
+
 :o:Edge:a:__call__
 (walk: Walker) {
     if not (walk, Walker) :> isinstance {
         raise ("Argument must be a Walker instance") :> TypeError;
     }
     <self>._jac_target_ :> walk;
+}
+
+:o:Edge:a:_jac_apply_dir_
+(dir: EdgeDir) -> Edge {
+    <self>._jac_dir_ = dir;
+    return <self>;
+}
+
+:o:Edge:a:_jac_attach_
+(src: Node, trg: Node) -> Edge {
+    if <self>._jac_dir_ == EdgeDir.IN {
+        <self>._jac_source_ = trg;
+        <self>._jac_target_ = src;
+    } else {
+        <self>._jac_source_ = src;
+        <self>._jac_target_ = trg;
+    }
+    <self> :> src._jac_edges_.append;
+    <self> :> trg._jac_edges_.append;
+    return <self>;
 }
 
 :o:Walker:a:__call__
