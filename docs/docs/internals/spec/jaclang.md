@@ -76,7 +76,7 @@ Beyond the key architypes, a Jac module incorporates several additional element 
 1. **Functions**: Traditional functions, these represent the basic standard python `def` style function which can include input parameters and return a value.
 
 1. **Module Level Free-Style Code**:  "Free Style" code at the module level refers to executable code that is not encapsulated within a function or class. This code is executed when the module is imported or run as a script, making it ideal for initializing module-level variables or running setup tasks.
-    1. Note: However, we recommended to limit its usage to improve readability and maintainability of the code. We also enforce explicit specification of this with a module level `with enter {}` directive.
+    1. Note: However, we recommended to limit its usage to improve readability and maintainability of the code. We also enforce explicit specification of this with a module level `with entry {}` directive.
 
 1. **Abilities Definitions**: Abilities can manifest as either traditional OOP-style methods or data spatial-specific abilities. These abilities give object types, node types, edge types, and walker types the capacity to perform tasks or computations.
 
@@ -122,7 +122,7 @@ can myablty -> int {} # define a data spacial freestyle ability
 
 can myfunc() -> None {} # define a function
 
-with enter {
+with entry {
     # module level freestyle code
 }
 
@@ -143,7 +143,7 @@ In Jac, a declaration refers to announcing the existence and signature of an abi
 import:jac .defs
 
 walker travelor {
-    can say_hello with enter;  # data spatial ability declared
+    can say_hello with entry;  # data spatial ability declared
     can say_whatever(msg: str);  # traditional method declared
 
     # inline ability definition (python only supports this)
@@ -219,14 +219,14 @@ That being said, Jac acknowledges the value of the Python's black package, a cod
 ```jac
 """Same functionality 3 white space styles."""
 
-with enter { "hello" |> len |> print; }  # more concise
+with entry { "hello" |> len |> print; }  # more concise
 
-with enter {  # a bit more python like
+with entry {  # a bit more python like
     a = "hello" |> len;
     a |> print;
 }
 
-with enter {  # very pythonic
+with entry {  # very pythonic
     a = "hello";
     b = len(a);
     print(b); }
@@ -367,7 +367,7 @@ import:py datetime as dt;
 include:jac .main_defs;  # includes are useful when brigning definitions into scope
 import:jac from .lib, jactastic;
 
-with enter {  # code that executes on module load or script run
+with entry {  # code that executes on module load or script run
     random_number = random.randint(1, 10);
     print("Random number:", random_number);
     # or, f"Random Number: {random_number}" |> print;
@@ -415,11 +415,11 @@ can print_globs() -> None {
 
 ### Module Level Free Coding in Jac
 
-In Jac, the use of a `with enter {}` code block is designed to encapsulate free code. Free code is code that is not encapsulated within a function or method, allowing it to be executed at the global level of a program.
+In Jac, the use of a `with entry {}` code block is designed to encapsulate free code. Free code is code that is not encapsulated within a function or method, allowing it to be executed at the global level of a program.
 
-These `with enter {}` blocks can be utilized multiple times within a module, similar to how Python allows interspersed code statements along with functions and classes. Although Jac provides the flexibility of having multiple blocks, it is recommended to maintain a single `with enter {}` block for the sake of clarity and readability. An issue with Python is it does not dissuade excessive scattering of free code in a module that can lead to a fractured codebase, making the code harder to understand and maintain.
+These `with entry {}` blocks can be utilized multiple times within a module, similar to how Python allows interspersed code statements along with functions and classes. Although Jac provides the flexibility of having multiple blocks, it is recommended to maintain a single `with entry {}` block for the sake of clarity and readability. An issue with Python is it does not dissuade excessive scattering of free code in a module that can lead to a fractured codebase, making the code harder to understand and maintain.
 
-In Jac, even though the language permits free code, caution is strongly encouraged when deciding where and when to use these blocks. We view the `with enter {}` approach as an important improvement upon free code in pyton. It adds an additional layer of organization and readability. This results in a cleaner code base by providing a clear demarcation of code that is meant to be executed at the global level. This not only promotes the clarity of intention but also assists in maintaining a neat and tidy code structure. This is consistent with Jac's philosophy of facilitating clean, comprehensible code and explicit programming practices.
+In Jac, even though the language permits free code, caution is strongly encouraged when deciding where and when to use these blocks. We view the `with entry {}` approach as an important improvement upon free code in pyton. It adds an additional layer of organization and readability. This results in a cleaner code base by providing a clear demarcation of code that is meant to be executed at the global level. This not only promotes the clarity of intention but also assists in maintaining a neat and tidy code structure. This is consistent with Jac's philosophy of facilitating clean, comprehensible code and explicit programming practices.
 
 #### Minimal Code Example
 ```jac
@@ -432,7 +432,7 @@ object Obj1 {
     }
 }
 
-# with enter {  # allowed but discouraged
+# with entry {  # allowed but discouraged
 #    o1 = spawn Obj1; o1::init;
 # }
 
@@ -443,7 +443,7 @@ object Obj2 {
     }
 }
 
-# with enter {  # allowed but discouraged
+# with entry {  # allowed but discouraged
 #     o2 = spawn Obj2; o2::init;
 # }
 
@@ -454,11 +454,11 @@ object Obj3 {
     }
 }
 
-# with enter {  # allowed but discouraged
+# with entry {  # allowed but discouraged
 #     o3 = spawn Obj1; o3::init;
 # }
 
-with enter {
+with entry {
     o1 = spawn Obj1; o1::init;
     o2 = spawn Obj2; o2::init;
     o3 = spawn Obj3; o3::init;
@@ -525,7 +525,7 @@ object Person {
     }
 }
 
-with enter {
+with entry {
     my_guy = Person("John", 42);
     my_guy.greet();
 }
@@ -557,7 +557,7 @@ object Person {
     }
 }
 
-with enter {
+with entry {
     Person("John", 42).greet();
 }
 ```
@@ -673,7 +673,7 @@ can divide_numbers(a: float, b: float) -> float {
     return result;
 }
 
-with enter {
+with entry {
     try {
         numerator = int(input("Enter the numerator: "));
         denominator = int(input("Enter the denominator: "));
@@ -681,7 +681,7 @@ with enter {
         print("Result:", result);
     }
     except ValueError {
-        print("Error: Invalid input! Please enter valid integers.");
+        print("Error: Invalid input! Please entry valid integers.");
     }
 }
 ```
@@ -839,7 +839,7 @@ can example_function(numbers: list[int]) -> int {
 }
 
 # testing the function
-with enter {
+with entry {
     # iteration for loop
     for i=1 to i == 5 by i+=1 {
         for result in example_function([1, 2, 3, 4, 5, 21, 22, 23, 24]) {
@@ -1171,7 +1171,7 @@ can quack {
     duck.quack();
 }
 
-with enter {
+with entry {
     goose = spawn Goose;
     quack |> goose;
 }
@@ -1214,7 +1214,7 @@ can get_age with int {
     return here.age;
 }
 
-with enter {
+with entry {
     :a:get_age |> dict1; # returns 30
     :a:get_age |> person1; # returns 30
 }
@@ -1224,7 +1224,7 @@ In this scenario, `get_age` function is not concerned with the type of entity, o
 
 You can also reference items in a dictionary with as you would an object as per
 ```jac
-with enter {
+with entry {
    dict1.age = 31; # sets age to 31
 }
 ```
@@ -1405,7 +1405,7 @@ object JacCli {
     }
 }
 
-with enter {
+with entry {
     |> (:+: JacCli).cli;
 }
 ```

@@ -64,10 +64,10 @@ object Element {
 }
 
 object Object:Element {
-    static has _jac_ds_enter_funcs: list[dict]=[],
+    static has _jac_ds_entry_funcs: list[dict]=[],
                _jac_ds_exit_funcs: list[dict]=[];
 
-    static can _jac_on_enter(cls: type, triggers: list[type]);
+    static can _jac_on_entry(cls: type, triggers: list[type]);
     static can _jac_on_exit(cls: type, triggers: list[type]);
 }
 

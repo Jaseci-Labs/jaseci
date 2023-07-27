@@ -15,7 +15,7 @@ node:private location {
     has visited: int = 0;
 
 
-    can:private record with tourist enter {
+    can:private record with tourist entry {
         visited+=1;
         for i in activities {
             i.duration = visitor.duration;

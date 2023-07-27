@@ -80,7 +80,7 @@ The comprehensive array of potential elements within a Jac module encompasses:
 
 1. **Data-spatial Abilities**: Akin to functions but with a unique data-spatial bend, these execute and yield values like functions, yet instead of accepting parameters, data-spatial abilities operate on the requisite data and apply a duck typing approach to their execution. They can be conceptualized as portable computation units dispatched to data elements, spawnable on any type, such as objects, dictionaries, lists, etc.
 
-1. **Module Level Codeblocks**: Code situated at the module level is executable code not enclosed within a function or class. This code executes when the module is imported or initiated as a script, making it perfect for initializing module-level variables or executing setup tasks. A note of caution: its usage should be limited to enhance code readability and maintainability. Explicit specification of this with a module-level `with enter {}` directive is also enforced.
+1. **Module Level Codeblocks**: Code situated at the module level is executable code not enclosed within a function or class. This code executes when the module is imported or initiated as a script, making it perfect for initializing module-level variables or executing setup tasks. A note of caution: its usage should be limited to enhance code readability and maintainability. Explicit specification of this with a module-level `with entry {}` directive is also enforced.
 
 1. **Global Variables**: These can be declared and defined within a module, and are accessible throughout the module's scope. Yet, Jac's design philosophy mildly discourages heavy reliance on global variables, advocating for improved modularity, encapsulation, code readability, and codebase scalability. Overuse may lead to tightly coupled, less maintainable code.
     1. Note: Though Jac allows for the declaration of global variables, developers are encouraged to use this feature sparingly. Overreliance may result in hard-to-debug, complex code that lacks modularity, impacting the scalability of the codebase. Instead, the Jac language supports encapsulation and modular design via its architype and abilities system, promoting a cleaner, more maintainable, and scalable code.
@@ -284,11 +284,11 @@ This addition strengthens Jac's philosophy of explicitness and intentionality. I
 
 ### Module Level Free Coding in Jac
 
-In Jac, the use of a `with enter {}` code block is designed to encapsulate free code. Free code is code that is not encapsulated within a function or method, allowing it to be executed at the global level of a program.
+In Jac, the use of a `with entry {}` code block is designed to encapsulate free code. Free code is code that is not encapsulated within a function or method, allowing it to be executed at the global level of a program.
 
-These `with enter {}` blocks can be utilized multiple times within a module, similar to how Python allows interspersed code statements along with functions and classes. Although Jac provides the flexibility of having multiple blocks, it is recommended to maintain a single `with enter {}` block for the sake of clarity and readability. An issue with Python is it does not dissuade excessive scattering of free code in a module that can lead to a fractured codebase, making the code harder to understand and maintain.
+These `with entry {}` blocks can be utilized multiple times within a module, similar to how Python allows interspersed code statements along with functions and classes. Although Jac provides the flexibility of having multiple blocks, it is recommended to maintain a single `with entry {}` block for the sake of clarity and readability. An issue with Python is it does not dissuade excessive scattering of free code in a module that can lead to a fractured codebase, making the code harder to understand and maintain.
 
-In Jac, even though the language permits free code, caution is strongly encouraged when deciding where and when to use these blocks. We view the `with enter {}` approach as an important improvement upon free code in pyton. It adds an additional layer of organization and readability. This results in a cleaner code base by providing a clear demarcation of code that is meant to be executed at the global level. This not only promotes the clarity of intention but also assists in maintaining a neat and tidy code structure. This is consistent with Jac's philosophy of facilitating clean, comprehensible code and explicit programming practices.
+In Jac, even though the language permits free code, caution is strongly encouraged when deciding where and when to use these blocks. We view the `with entry {}` approach as an important improvement upon free code in pyton. It adds an additional layer of organization and readability. This results in a cleaner code base by providing a clear demarcation of code that is meant to be executed at the global level. This not only promotes the clarity of intention but also assists in maintaining a neat and tidy code structure. This is consistent with Jac's philosophy of facilitating clean, comprehensible code and explicit programming practices.
 
 #### Minimal Code Example
 ```jac
@@ -811,7 +811,7 @@ can quack {
     duck.quack();
 }
 
-with enter {
+with entry {
     goose = spawn Goose;
     quack |> goose;
 }
@@ -854,7 +854,7 @@ can get_age with int {
     return here.age;
 }
 
-with enter {
+with entry {
     :a:get_age |> dict1; # returns 30
     :a:get_age |> person1; # returns 30
 }
@@ -864,7 +864,7 @@ In this scenario, `get_age` function is not concerned with the type of entity, o
 
 You can also reference items in a dictionary with as you would an object as per
 ```jac
-with enter {
+with entry {
    dict1.age = 31; # sets age to 31
 }
 ```
@@ -1053,7 +1053,7 @@ object JacCli {
     }
 }
 
-with enter {
+with entry {
     |> (:+: JacCli).cli;
 }
 ```

@@ -70,10 +70,10 @@
     caller_id |> <self>.rw_access.discard;
 }
 
-:object:Object:ability:_jac_on_enter
+:object:Object:ability:_jac_on_entry
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
-        cls._jac_ds_enter_funcs.append({'types': triggers, 'func': func});
+        cls._jac_ds_entry_funcs.append({'types': triggers, 'func': func});
         can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }

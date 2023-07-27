@@ -6,7 +6,7 @@ node item {
 
 walker Creator {
     has count: int = 0;
-    can create with <root>|:n:item enter {
+    can create with <root>|:n:item entry {
         <here> ++> spawn :n:item;
         <self>.count += 1;
         if <self>.count < 10 {
@@ -17,8 +17,8 @@ walker Creator {
 
 walker Walk {
     has count: int = 0;
-    can skip_root with <root> enter { visit -->; }
-    can step with :n:item enter {
+    can skip_root with <root> entry { visit -->; }
+    can step with :n:item entry {
         <here>.value = <self>.count;
         <self>.count += 1;
         visit --> else {
@@ -30,7 +30,7 @@ walker Walk {
     }
 }
 
-with enter {
+with entry {
     spawn :w:Creator |> <root>;
     spawn :w:Walk |> <root>;
 }

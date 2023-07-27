@@ -71,13 +71,13 @@ import:py from jaclang.jac.constant, EdgeDir;
     while <self>._jac_next_ :> len {
         nd = 0 :> <self>._jac_next_.pop;
 
-        for i in nd._jac_ds_enter_funcs {
+        for i in nd._jac_ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == node_type and
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];
             }
         }
-        for i in <self>._jac_ds_enter_funcs {
+        for i in <self>._jac_ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == walker_type and
                 (nd:>type in i['types'] or nd in i['types']) {  # if nd==root direct chec
                 (<self>, nd) :> i['func'];

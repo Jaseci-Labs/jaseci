@@ -41,7 +41,7 @@ can myablty -> int {} # define a data spacial freestyle ability
 
 can myfunc() -> None {} # define a function
 
-with enter {
+with entry {
     # module level freestyle code
 }
 

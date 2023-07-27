@@ -52,7 +52,7 @@ can example_function(numbers: list[int]) -> int {
 }
 
 # testing the function
-with enter {
+with entry {
     # iteration for loop
     for i=1 to i == 5 by i+=1 {
         for result in example_function([1, 2, 3, 4, 5, 21, 22, 23, 24]) {

@@ -15,7 +15,7 @@ can divide_numbers(a: float, b: float) -> float {
     return result;
 }
 
-with enter {
+with entry {
     try {
         numerator = int(input("Enter the numerator: "));
         denominator = int(input("Enter the denominator: "));
@@ -23,6 +23,6 @@ with enter {
         print("Result:", result);
     }
     except ValueError {
-        print("Error: Invalid input! Please enter valid integers.");
+        print("Error: Invalid input! Please entry valid integers.");
     }
 }

@@ -8,6 +8,6 @@ object Test {
     can say_hi;
 }
 
-with enter {
+with entry {
     print(f"{mine}");
 }

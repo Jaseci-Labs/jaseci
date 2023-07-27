@@ -89,7 +89,7 @@ arch_attached: Optional["ArchBlock"] = None,
     if nd.signature:>type == ast.EventSignature and nd.arch_attached and
         nd.signature.event.name == Tok.KW_ENTER {
         type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
-        (nd, f"@{C.OBJECT_CLASS}._jac_on_enter([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
+        (nd, f"@{C.OBJECT_CLASS}._jac_on_entry([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
     }
     elif nd.signature:>type == ast.EventSignature and nd.arch_attached and
         nd.signature.event.name == Tok.KW_EXIT {

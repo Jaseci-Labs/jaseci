@@ -24,7 +24,7 @@ node location:super:blah {
     has visited: int = 0;
 
 
-    can record with tourist enter {
+    can record with tourist entry {
         visited+=1;
         for i in activities {
             i.duration = visitor.duration;
