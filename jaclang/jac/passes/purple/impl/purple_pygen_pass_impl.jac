@@ -1,5 +1,5 @@
 """First Jac pass bootstrapped in Jac"""
-import:py from jaclang.jac.constant, Constants as C;
+import:py from jaclang.jac.constant, Constants as C, EdgeDir;
 
 :object:PurplePygenPass:ability:add_element_import
 (arch: str) {
@@ -164,7 +164,7 @@ ctrl: Token,
 """Sub objects.
 
 vis_type: Optional[Token],
-target: Optional["ExprType"],
+target: ExprType,
 else_body: Optional["ElseStmt"],
 from_walker: bool = False,
 """
@@ -206,19 +206,22 @@ edge_dir: EdgeDir,
 """
 :object:PurplePygenPass:ability:exit_edge_op_ref
 (nd: ast.EdgeOpRef) {
+    edge_dir = f"{C.EDGE_DIR}.IN" if nd.edge_dir == EdgeDir.IN
+               else f"{C.EDGE_DIR}.OUT" if nd.edge_dir == EdgeDir.OUT
+               else f"{C.EDGE_DIR}.ANY";
     if nd.filter_type and nd.filter_cond {
-        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.NODE_EDGES}()"
+        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.EDGES_TO_NODE}({edge_dir})"
             f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})"
             f" and {nd.filter_cond.meta['py_code'].replace(C.PATCH, C.JAC_TMP)}]")
             |> <self>.emit;
     }
     elif nd.filter_type {
-        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.NODE_EDGES}()"
+        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.EDGES_TO_NODE}({edge_dir})"
             f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})]")
             |> <self>.emit;
     }
     else {
-        (nd, f"{C.HERE}.{C.NODE_EDGES}()")
+        (nd, f"{C.HERE}.{C.EDGES_TO_NODE}({edge_dir})")
             |> <self>.emit;
     }
 }

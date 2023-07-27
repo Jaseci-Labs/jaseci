@@ -14,7 +14,7 @@ class Constants(str, Enum):
     EXEC_CONTEXT = "_jac_exec_ctx_"
     HERE = "_jac_here_"
     ROOT = f"{EXEC_CONTEXT}.get_root()"
-    NODE_EDGES = "_jac_edges_"
+    EDGES_TO_NODE = "_jac_edges_to_nodes_"
     EDGE_REF = "_jac_edge_ref_"
     CONNECT_NODE = "_jac_connect_node_"
     DISCONNECT_NODE = "_jac_disconnect_node_"

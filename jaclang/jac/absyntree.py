@@ -1217,7 +1217,7 @@ class VisitStmt(AstNode):
     def __init__(
         self,
         vis_type: Optional[Token],
-        target: Optional["ExprType"],
+        target: ExprType,
         else_body: Optional["ElseStmt"],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
