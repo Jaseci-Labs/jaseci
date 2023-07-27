@@ -15,6 +15,7 @@ MODULES = [
     "paraphraser",
     "dolly",
     "llm",
+    "gen_emb",
 ]
 
 
