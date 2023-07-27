@@ -40,5 +40,5 @@ class GenerateEmbeddingTest(CoreTest):
     @classmethod
     def tearDownClass(cls):
         super(GenerateEmbeddingTest, cls).tearDownClass()
-        ret = unload_module("jac_nlp.gen_emb")
+        ret = unload_module("jac_nlp.gen_emb.gen_emb")
         assert ret is True
