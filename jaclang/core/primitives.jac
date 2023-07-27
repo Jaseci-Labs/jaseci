@@ -96,6 +96,7 @@ object Walker:Object {
 
     can __call__(nd: Node);
     can _jac_visit_(nds: list[Node]|list[Edge]);
+    can _jac_disengage_;
 }
 
 object Master:Element {

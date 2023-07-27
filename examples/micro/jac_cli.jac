@@ -53,7 +53,7 @@ object Interface {
     }
 
     can run_shell() {
-        ShellCmd(self).cmdloop();
+        ShellCmd(<self>).cmdloop();
     }
 }
 

@@ -3,17 +3,17 @@ import:py from jaclang.jac.constant, Constants as C, EdgeDir;
 
 :object:PurplePygenPass:ability:add_element_import
 (arch: str) {
-    (self.preamble, f"from jaclang.core import {arch} as _jac_{arch}_")
+    (<self>.preamble, f"from jaclang.core import {arch} as _jac_{arch}_")
         |> <self>.emit_ln_unique;
 }
 
 :object:PurplePygenPass:ability:add_exec_context {
-    (self.preamble, f"from jaclang.core import exec_ctx as {C.EXEC_CONTEXT}")
+    (<self>.preamble, f"from jaclang.core import exec_ctx as {C.EXEC_CONTEXT}")
         |> <self>.emit_ln_unique;
 }
 
 :object:PurplePygenPass:ability:add_edge_directions {
-    (self.preamble, f"from jaclang.jac.constant import EdgeDir as {C.EDGE_DIR}")
+    (<self>.preamble, f"from jaclang.jac.constant import EdgeDir as {C.EDGE_DIR}")
         |> <self>.emit_ln_unique;
 }
 
@@ -161,6 +161,7 @@ ctrl: Token,
     }
 }
 
+
 """Sub objects.
 
 vis_type: Optional[Token],
@@ -180,6 +181,17 @@ from_walker: bool = False,
         (nd, 'pass', indent_delta=1) |> <self>.emit_ln;
     }
 }
+
+
+"""Sub objects.
+from_walker: bool = False,
+"""
+:object:PurplePygenPass:ability:exit_disengage_stmt
+(nd: ast.VisitStmt) {
+    loc = f"{'self' if nd.from_walker else C.HERE}";
+    (nd, f"return {loc}.{C.DISENGAGE}()") |> <self>.emit_ln;
+}
+
 
 """Sub objects.
 

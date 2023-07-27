@@ -207,6 +207,8 @@ class DeclDefMatchPass(Pass, SymbolTable):
         ):
             for i in self.get_all_sub_nodes(node, ast.VisitStmt):
                 i.from_walker = True
+            for i in self.get_all_sub_nodes(node, ast.DisengageStmt):
+                i.from_walker = True
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.

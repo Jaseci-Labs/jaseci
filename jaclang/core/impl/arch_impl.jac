@@ -106,3 +106,7 @@ import:py from jaclang.jac.constant, EdgeDir;
     }
     return nds :> len;
 }
+
+:o:Walker:a:_jac_disengage_ {
+    <self>._jac_next_ = [];
+}

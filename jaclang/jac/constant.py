@@ -19,6 +19,7 @@ class Constants(str, Enum):
     CONNECT_NODE = "_jac_connect_node_"
     DISCONNECT_NODE = "_jac_disconnect_node_"
     WALKER_VISIT = "_jac_visit_"
+    DISENGAGE = "_jac_disengage_"
     OBJECT_CLASS = "_jac_Object_"
     NODE_CLASS = "_jac_Node_"
     EDGE_CLASS = "_jac_Edge_"
