@@ -141,7 +141,7 @@ class AstBuildPass(Pass):
     def exit_mod_code(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        mod_code -> doc_tag KW_WITH KW_ENTER code_block
+        mod_code -> doc_tag KW_WITH KW_ENTRY code_block
         """
         node.kid = [node.kid[0], node.kid[-1]]
         replace_node(
@@ -585,9 +585,9 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         event_clause -> KW_WITH type_spec KW_EXIT return_type_tag
-        event_clause -> KW_WITH type_spec KW_ENTER return_type_tag
+        event_clause -> KW_WITH type_spec KW_ENTRY return_type_tag
         event_clause -> KW_WITH KW_EXIT return_type_tag
-        event_clause -> KW_WITH KW_ENTER return_type_tag
+        event_clause -> KW_WITH KW_ENTRY return_type_tag
         """
         if len(node.kid) == 3:
             node.kid = node.kid[1:]

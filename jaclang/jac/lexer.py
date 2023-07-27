@@ -48,7 +48,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "KW_REVISIT",
         "KW_SPAWN",
         "KW_WITH",
-        "KW_ENTER",
+        "KW_ENTRY",
         "KW_EXIT",
         "KW_IMPORT",
         "KW_INCLUDE",
@@ -214,7 +214,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NAME["revisit"] = "KW_REVISIT"  # type: ignore
     NAME["spawn"] = "KW_SPAWN"  # type: ignore
     NAME["with"] = "KW_WITH"  # type: ignore
-    NAME["entry"] = "KW_ENTER"  # type: ignore
+    NAME["entry"] = "KW_ENTRY"  # type: ignore
     NAME["exit"] = "KW_EXIT"  # type: ignore
     NAME["import"] = "KW_IMPORT"  # type: ignore
     NAME["include"] = "KW_INCLUDE"  # type: ignore
@@ -410,7 +410,7 @@ class Tokens(str, Enum):
     KW_REVISIT = "KW_REVISIT"
     KW_SPAWN = "KW_SPAWN"
     KW_WITH = "KW_WITH"
-    KW_ENTER = "KW_ENTER"
+    KW_ENTRY = "KW_ENTRY"
     KW_EXIT = "KW_EXIT"
     KW_IMPORT = "KW_IMPORT"
     KW_INCLUDE = "KW_INCLUDE"

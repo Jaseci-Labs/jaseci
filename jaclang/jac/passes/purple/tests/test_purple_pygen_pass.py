@@ -24,8 +24,11 @@ class PurplePygenPassTests(TestCaseMicroSuite):
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
-        self.assertGreater(len(stdout_value), 10)
+        self.assertEqual(
+            stdout_value,
+            "Value: -1\nValue: 0\nValue: 1\nValue: 2\nValue: 3\nValue: 4"
+            "\nValue: 5\nValue: 6\nValue: 7\nFinal Value: 8\nDone walking.\n",
+        )
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
