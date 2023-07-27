@@ -104,4 +104,5 @@ import:py from jaclang.jac.constant, EdgeDir;
     for i in nds {
         i :> <self>._jac_next_.append;
     }
+    return nds :> len;
 }
