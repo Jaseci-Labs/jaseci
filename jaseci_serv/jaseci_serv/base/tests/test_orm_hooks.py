@@ -315,3 +315,56 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         cedge = snode.outbound_edges()[0]
         self.assertIn("a", cedge.context.keys())
         self.assertEqual(cedge.context["a"], "b")
+
+    def test_node_saves_on_traversing_graphs(self):
+        user = self.user
+        hook = user._h = JsOrc.hook()
+        gph = Graph(m_id=0, h=hook)
+        sent = Sentinel(m_id=0, h=gph._h)
+        sent.register_code(jtc.simple_graph)
+        test_walker = sent.run_architype("sample")
+        test_walker.prime(gph)
+        test_walker.run()
+
+        self.assertSetEqual(
+            set(
+                [
+                    "e::node",
+                    "a::node",
+                    "b::architype",
+                    "root::architype",
+                    "d::architype",
+                    "b::node",
+                    "basic::sentinel",
+                    "d::node",
+                    "c::node",
+                    "generic::architype",
+                    "a::architype",
+                    "c::architype",
+                    "root::graph",
+                    "e::architype",
+                    "sample::architype",
+                    "sample2::architype",
+                    "generic::architype",
+                ]
+            ),
+            set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
+        )
+
+        hook.commit()
+        hook.clear_cache()
+
+        test_walker = sent.run_architype("sample")
+        test_walker.prime(gph)
+        test_walker.run()
+
+        self.assertFalse(hook.save_obj_list)
+
+        test_walker = sent.run_architype("sample2")
+        test_walker.prime(gph)
+        test_walker.run()
+
+        self.assertSetEqual(
+            set(["d::node", "e::node"]),
+            set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
+        )

@@ -61,7 +61,7 @@ class Node(Element, Anchored):
                 edge.jid = v[2] if len(v) > 2 else uuid.uuid4().urn
                 edge.context = v[3] if len(v) > 3 else {}
                 edge.save()
-                self._fast_edge_ids.add_obj(edge)
+                self._fast_edge_ids.add_obj(edge, bypass=True)
 
     def smart_add_edge(self, obj):
         # make sure fast edges built

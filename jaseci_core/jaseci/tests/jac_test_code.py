@@ -1186,3 +1186,57 @@ struct_types = """
         report [a.basic.apple.apple, a.basic.apple.orange];
     }
     """
+
+
+simple_graph = """
+node a {
+    has val = 0;
+}
+
+node b {
+    has val = 0;
+}
+
+node c {
+    has val = 0;
+}
+
+node d {
+    has val = 0;
+}
+
+node e {
+    has val = 0;
+}
+
+walker sample {
+    root {
+        take --> node::a else: take spawn here ++> node::a;
+        take --> node::b else: take spawn here ++> node::b;
+    }
+
+    a {
+        take --> node::c else: take spawn here ++> node::c;
+    }
+
+    b {
+        take --> node::d else: take spawn here ++> node::d;
+    }
+
+    c {
+        take --> node::e else: take spawn here ++> node::e;
+    }
+}
+
+walker sample2 {
+    root {
+        take --> node::a;
+        take --> node::b;
+    }
+    a: take --> node::c;
+    b: take --> node::d;
+    c: take --> node::e;
+    d: here.val = 1;
+    e: here.val = 2;
+}
+"""

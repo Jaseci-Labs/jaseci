@@ -27,7 +27,9 @@ class IdList(list):
     def cache_reset(self):
         self.cached_objects = []
 
-    def add_obj(self, obj, push_front=False, allow_dups=False, silent=False):
+    def add_obj(
+        self, obj, push_front=False, allow_dups=False, silent=False, bypass=False
+    ):
         """Adds a obj obj to Jaseci object"""
         self.parent_obj.check_hooks_match(obj)
         if not allow_dups and obj.jid in self:
@@ -39,10 +41,12 @@ class IdList(list):
                 self.insert(0, obj.jid)
             else:
                 self.append(obj.jid)
-            if not obj.j_parent:
-                obj.j_parent = self.parent_obj.jid
-                self.save(obj)
-            self.save()
+
+            if not bypass:
+                if not obj.j_parent:
+                    obj.j_parent = self.parent_obj.jid
+                    self.save(obj)
+                self.save()
 
     def add_obj_list(self, obj_list, push_front=False, allow_dups=False, silent=False):
         self.cache_reset()
