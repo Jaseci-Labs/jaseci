@@ -11,21 +11,6 @@ from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
 from jaclang.jac.utils import add_line_numbers, clip_code_section
 
 
-def fetch_jac_err_code_region(
-    py_code: str, err_line: int, range: int = Val.JAC_ERROR_LINE_RANGE
-) -> str:
-    """Fetch the jac code region that caused the error."""
-    try:
-        jac_err_line = int(py_code.splitlines()[err_line - 1].split()[-1])
-        mod_index = int(py_code.splitlines()[err_line].split()[-2])
-        mod_paths = py_code.split(Con.JAC_DEBUG_SPLITTER)[1].strip().splitlines()
-        with open(mod_paths[mod_index], "r") as file:
-            jac_code_string = file.read()
-        return clip_code_section(add_line_numbers(jac_code_string), jac_err_line, range)
-    except Exception:
-        return ""
-
-
 def import_jac_module(
     transpiler_func: Callable,
     target: str,
@@ -62,6 +47,7 @@ def import_jac_module(
     module = types.ModuleType(module_name)
     module.__file__ = full_target
     module.__name__ = module_name
+    module.__dict__["_jac_pycodestring_"] = code_string
 
     try:
         codeobj = compile(code_string, f"_jac_py_gen ({module.__file__})", "exec")
@@ -69,20 +55,7 @@ def import_jac_module(
     except Exception as e:
         traceback.print_exc()
         tb = traceback.extract_tb(e.__traceback__)
-        except_line = (
-            e.end_lineno if isinstance(e, SyntaxError) else list(tb)[-1].lineno
-        )
-
-        py_error_region = clip_code_section(
-            add_line_numbers(code_string), except_line, Val.JAC_ERROR_LINE_RANGE
-        )
-
-        jac_error_region = fetch_jac_err_code_region(code_string, except_line)
-        snippet = (
-            f"PyCode Snippet:\n{py_error_region}\n"
-            f"JacCode Snippet:\n{jac_error_region}\n"
-        )
-        print(snippet)
+        handle_jac_error(code_string, e, tb)
         raise e
 
     if package_path:
@@ -98,6 +71,40 @@ def import_jac_module(
         sys.modules[module_name] = module
 
     return module
+
+
+def handle_jac_error(
+    code_string: str, e: Exception, tb: traceback.StackSummary
+) -> None:
+    """Handle Jac Error."""
+    except_line = e.end_lineno if isinstance(e, SyntaxError) else list(tb)[-1].lineno
+
+    if (
+        not isinstance(except_line, int)
+        or except_line == 0
+        or str(e).startswith("Jac Error:")
+    ):
+        return
+    traceback.print_exc()
+    py_error_region = clip_code_section(
+        add_line_numbers(code_string), except_line, Val.JAC_ERROR_LINE_RANGE
+    )
+    try:
+        jac_err_line = int(code_string.splitlines()[except_line - 1].split()[-1])
+        mod_index = int(code_string.splitlines()[except_line].split()[-2])
+        mod_paths = code_string.split(Con.JAC_DEBUG_SPLITTER)[1].strip().splitlines()
+        with open(mod_paths[mod_index], "r") as file:
+            jac_code_string = file.read()
+        jac_error_region = clip_code_section(
+            add_line_numbers(jac_code_string), jac_err_line, Val.JAC_ERROR_LINE_RANGE
+        )
+    except Exception:
+        jac_error_region = ""
+    snippet = (
+        f"JacCode Snippet:\n{jac_error_region}\n"
+        f"PyCode Snippet:\n{py_error_region}\n"
+    )
+    print(snippet)
 
 
 def jac_blue_import(

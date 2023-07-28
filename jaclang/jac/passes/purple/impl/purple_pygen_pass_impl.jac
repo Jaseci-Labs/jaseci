@@ -59,12 +59,14 @@ body: Optional["ArchBlock"],
     } else {
         (nd, f"class {nd.name.meta['py_code']}({arch_insert}):") |> <self>.emit_ln;
     }
+    <self>.indent_level += 1;
     if nd.doc {
-        (nd, nd.doc.meta["py_code"], indent_delta=1) |> <self>.emit_ln; }
+        (nd, nd.doc.meta["py_code"]) |> <self>.emit_ln; }
     if nd.body {
-        (nd, nd.body.meta["py_code"], indent_delta=1) |> <self>.emit_ln; }
+        (nd, nd.body.meta["py_code"]) |> <self>.emit_ln; }
     else {
         nd.name.meta["py_code"] |> <self>.decl_def_missing; }
+    <self>.indent_level -= 1;
 }
 
 
@@ -114,14 +116,20 @@ arch_attached: Optional["ArchBlock"] = None,
             (nd, f"def {nd.name.meta['py_code']}():") |> <self>.emit_ln;
         }
     }
+    <self>.indent_level += 1;
     if nd.doc {
-        (nd, nd.doc.meta["py_code"], indent_delta=1) |> <self>.emit_ln;
+        (nd, nd.doc.meta["py_code"]) |> <self>.emit_ln;
     }
     if nd.body {
-        (nd, nd.body.meta["py_code"], indent_delta=1) |> <self>.emit_ln;
+        (nd, "try:") |> <self>.emit_ln;
+        <self>.indent_level += 1;
+        (nd, nd.body.meta["py_code"]) |> <self>.emit_ln;
+        <self>.indent_level -= 1;
+        (nd) |> <self>.emit_jac_error_handler;
     } else {
         nd.name.meta["py_code"] |> <self>.decl_def_missing;
     }
+    <self>.indent_level -= 1;
 }
 
 
@@ -175,11 +183,13 @@ from_walker: bool = False,
     loc = f"{'self' if nd.from_walker else C.HERE}";
     (nd, f"if not {loc}.{C.WALKER_VISIT}({nd.target.meta['py_code']}): " )
         |> <self>.emit_ln;
+    <self>.indent_level += 1;
     if nd.else_body {
-        (nd, nd.else_body.body.meta["py_code"], indent_delta=1) |> <self>.emit;
+        (nd, nd.else_body.body.meta["py_code"]) |> <self>.emit;
     } else {
-        (nd, 'pass', indent_delta=1) |> <self>.emit_ln;
+        (nd, 'pass') |> <self>.emit_ln;
     }
+    <self>.indent_level -= 1;
 }
 
 

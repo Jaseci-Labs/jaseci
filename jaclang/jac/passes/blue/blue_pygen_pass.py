@@ -11,6 +11,7 @@ class BluePygenPass(Pass):
     def before_pass(self) -> None:
         """Initialize pass."""
         self.indent_size = 4
+        self.indent_level = 0
         self.debuginfo = {"jac_mods": []}
         self.preamble = ast.AstNode(parent=None, mod_link=None, kid=[], line=0)
         self.preamble.meta["py_code"] = "from __future__ import annotations\n"
@@ -22,19 +23,22 @@ class BluePygenPass(Pass):
             node.meta["py_code"] = ""
         return Pass.enter_node(self, node)
 
-    def indent_str(self, indent_delta: int) -> str:
+    def indent_str(self) -> str:
         """Return string for indent."""
-        return " " * self.indent_size * indent_delta
+        return " " * self.indent_size * self.indent_level
 
-    def emit_ln(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
+    def emit_ln(self, node: ast.AstNode, s: str) -> None:
         """Emit code to node."""
-        self.emit(node, s.strip().strip("\n"), indent_delta)
+        self.emit(node, s.strip().strip("\n"))
         self.emit(node, f"  # {self.get_mod_index(node)} {node.line}\n")
 
-    def emit_ln_unique(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
+    def emit_ln_unique(self, node: ast.AstNode, s: str) -> None:
         """Emit code to node."""
         if s not in node.meta["py_code"]:
-            self.emit_ln(node, s, indent_delta)
+            ilev = self.indent_level
+            self.indent_level = 0
+            self.emit_ln(node, s)
+            self.indent_level = ilev
 
     def get_mod_index(self, node: ast.AstNode) -> int:
         """Get module index."""
@@ -45,11 +49,13 @@ class BluePygenPass(Pass):
             self.debuginfo["jac_mods"].append(path)
         return self.debuginfo["jac_mods"].index(path)
 
-    def emit(self, node: ast.AstNode, s: str, indent_delta: int = 0) -> None:
+    def emit(self, node: ast.AstNode, s: str) -> None:
         """Emit code to node."""
-        node.meta["py_code"] += self.indent_str(indent_delta) + s.replace(
-            "\n", "\n" + self.indent_str(indent_delta)
+        node.meta["py_code"] += self.indent_str() + s.replace(
+            "\n", "\n" + self.indent_str()
         )
+        if "\n" in node.meta["py_code"]:
+            node.meta["py_code"] = node.meta["py_code"].rstrip(" ")
 
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
@@ -63,6 +69,20 @@ class BluePygenPass(Pass):
             self.preamble,
             "from enum import Enum as __jac_Enum__, auto as __jac_auto__",
         )
+
+    def emit_jac_error_handler(self, node: ast.AstNode) -> None:
+        """Emit error handler."""
+        self.emit_ln_unique(self.preamble, "import traceback as __jac_traceback__")
+        self.emit_ln_unique(
+            self.preamble, "from jaclang import handle_jac_error as __jac_error__"
+        )
+        self.emit_ln(node, "except Exception as e:")
+        self.indent_level += 1
+        # self.emit_ln(node, "__jac_traceback__.print_exc()")
+        self.emit_ln(node, "tb = __jac_traceback__.extract_tb(e.__traceback__)")
+        self.emit_ln(node, "__jac_error__(_jac_pycodestring_, e, tb)")
+        self.emit_ln(node, "raise e")
+        self.indent_level -= 1
 
     def decl_def_missing(self, decl: str = "this") -> None:
         """Warn about declaration."""
@@ -259,12 +279,14 @@ class BluePygenPass(Pass):
                 node,
                 f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
             )
+        self.indent_level += 1
         if node.doc:
-            self.emit_ln(node, node.doc.value, indent_delta=1)
+            self.emit_ln(node, node.doc.value)
         if node.body:
-            self.emit(node, node.body.meta["py_code"], indent_delta=1)
+            self.emit(node, node.body.meta["py_code"])
         else:
             self.decl_def_missing(node.name.meta["py_code"])
+        self.indent_level -= 1
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
@@ -307,7 +329,7 @@ class BluePygenPass(Pass):
         """
         if node.decorators:
             self.emit(node, node.decorators.meta["py_code"])
-        if node.is_func:
+        if node.signature and node.is_func:
             if node.arch_attached and not node.is_static:
                 self.emit_ln(
                     node, f"def {node.name.value}(self{node.signature.meta['py_code']}:"
@@ -323,12 +345,18 @@ class BluePygenPass(Pass):
                 self.emit_ln(node, f"def {node.name.value}(self):")
             else:
                 self.emit_ln(node, f"def {node.name.value}():")
+        self.indent_level += 1
         if node.doc:
-            self.emit_ln(node, node.doc.value, indent_delta=1)
+            self.emit_ln(node, node.doc.value)
         if node.body:
-            self.emit(node, node.body.meta["py_code"], indent_delta=1)
+            self.emit_ln(node, "try:")
+            self.indent_level += 1
+            self.emit(node, node.body.meta["py_code"])
+            self.indent_level -= 1
+            self.emit_jac_error_handler(node)
         else:
             self.decl_def_missing(node.name.value)
+        self.indent_level -= 1
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
@@ -349,17 +377,18 @@ class BluePygenPass(Pass):
             if type(i) == ast.Ability and i.name.value == Con.INIT_FUNC:
                 init_func = i
                 break
-        if init_func and init_func.is_func:
+        if init_func and init_func.signature and init_func.is_func:
             self.emit_ln(
                 node, f"def __init__(self{init_func.signature.meta['py_code']}:"
             )
         else:
             self.emit_ln(node, "def __init__(self, *args, **kwargs):")
-        self.emit_ln(node, '"""Init generated by Jac."""', indent_delta=1)
 
+        self.indent_level += 1
+        self.emit_ln(node, '"""Init generated by Jac."""')
         for i in node.members:
             if type(i) == ast.ArchHas and not i.is_static:
-                self.emit_ln(node, f"self.has_{i.h_id}()", indent_delta=1)
+                self.emit_ln(node, f"self.has_{i.h_id}()")
         if init_func:
             params = []
             if (
@@ -367,10 +396,9 @@ class BluePygenPass(Pass):
                 and init_func.signature.params
             ):
                 params = [x.name.value for x in init_func.signature.params.params]
-            self.emit_ln(
-                node, f"self.{Con.INIT_FUNC}({', '.join(params)})", indent_delta=1
-            )
-        self.emit_ln(node, "super().__init__(*args, **kwargs)", indent_delta=1)
+            self.emit_ln(node, f"self.{Con.INIT_FUNC}({', '.join(params)})")
+        self.emit_ln(node, "super().__init__(*args, **kwargs)")
+        self.indent_level -= 1
         for i in node.members:
             self.emit(node, i.meta["py_code"])
             self.emit(node, "\n")
@@ -386,13 +414,15 @@ class BluePygenPass(Pass):
         """
         if node.is_static:
             if node.doc:
-                self.emit_ln(node, node.doc.value, indent_delta=1)
+                self.emit_ln(node, node.doc.value)
             self.emit_ln(node, node.vars.meta["py_code"].replace("self.", ""))
         else:
             self.emit_ln(node, f"def has_{node.h_id}(self):")
+            self.indent_level += 1
             if node.doc:
-                self.emit_ln(node, node.doc.value, indent_delta=1)
-            self.emit(node, node.vars.meta["py_code"], indent_delta=1)
+                self.emit_ln(node, node.doc.value)
+            self.emit(node, node.vars.meta["py_code"])
+            self.indent_level -= 1
 
     def exit_has_var_list(self, node: ast.HasVarList) -> None:
         """Sub objects.
@@ -534,12 +564,14 @@ class BluePygenPass(Pass):
         else:
             self.needs_enum()
             self.emit_ln(node, f"class {node.name.value}(__jac_Enum__):")
+        self.indent_level += 1
         if node.doc:
-            self.emit_ln(node, node.doc.value, indent_delta=1)
+            self.emit_ln(node, node.doc.value)
         if node.body:
-            self.emit(node, node.body.meta["py_code"], indent_delta=1)
+            self.emit(node, node.body.meta["py_code"])
         else:
             self.decl_def_missing(node.name.meta["py_code"])
+        self.indent_level -= 1
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -581,7 +613,9 @@ class BluePygenPass(Pass):
         else_body: Optional[ElseStmt],
         """
         self.emit_ln(node, f"if {node.condition.meta['py_code']}:")
-        self.emit(node, node.body.meta["py_code"], indent_delta=1)
+        self.indent_level += 1
+        self.emit(node, node.body.meta["py_code"])
+        self.indent_level -= 1
         self.emit(node, "\n")
         if node.elseifs:
             self.emit(node, node.elseifs.meta["py_code"])
@@ -603,7 +637,9 @@ class BluePygenPass(Pass):
         """
         for i in node.elseifs:
             self.emit_ln(node, f"elif {i.condition.meta['py_code']}:")
-            self.emit(node, i.body.meta["py_code"], indent_delta=1)
+            self.indent_level += 1
+            self.emit(node, i.body.meta["py_code"])
+            self.indent_level -= 1
             self.emit(node, "\n")
 
     def exit_else_stmt(self, node: ast.ElseStmt) -> None:
@@ -612,7 +648,9 @@ class BluePygenPass(Pass):
         body: CodeBlock,
         """
         self.emit_ln(node, "else:")
-        self.emit(node, node.body.meta["py_code"], indent_delta=1)
+        self.indent_level += 1
+        self.emit(node, node.body.meta["py_code"])
+        self.indent_level -= 1
         self.emit(node, "\n")
 
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
@@ -623,7 +661,9 @@ class BluePygenPass(Pass):
         finally_body: Optional[FinallyStmt],
         """
         self.emit_ln(node, "try:")
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.indent_level += 1
+        self.emit_ln(node, node.body.meta["py_code"])
+        self.indent_level -= 1
         if node.excepts:
             self.emit_ln(node, node.excepts.meta["py_code"])
         if node.finally_body:
@@ -642,7 +682,9 @@ class BluePygenPass(Pass):
             )
         else:
             self.emit_ln(node, f"except {node.ex_type.meta['py_code']}:")
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.indent_level += 1
+        self.emit_ln(node, node.body.meta["py_code"])
+        self.indent_level -= 1
 
     def exit_except_list(self, node: ast.ExceptList) -> None:
         """Sub objects.
@@ -658,7 +700,9 @@ class BluePygenPass(Pass):
         body: CodeBlock,
         """
         self.emit_ln(node, "finally:")
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.indent_level += 1
+        self.emit_ln(node, node.body.meta["py_code"])
+        self.indent_level -= 1
 
     def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.
@@ -670,8 +714,10 @@ class BluePygenPass(Pass):
         """
         self.emit_ln(node, f"{node.iter.meta['py_code']}")
         self.emit_ln(node, f"while {node.condition.meta['py_code']}:")
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
-        self.emit_ln(node, f"{node.count_by.meta['py_code']}", indent_delta=1)
+        self.indent_level += 1
+        self.emit_ln(node, node.body.meta["py_code"])
+        self.emit_ln(node, f"{node.count_by.meta['py_code']}")
+        self.indent_level -= 1
 
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
@@ -683,7 +729,9 @@ class BluePygenPass(Pass):
         self.emit_ln(
             node, f"for {node.name.value} in {node.collection.meta['py_code']}:"
         )
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.indent_level += 1
+        self.emit_ln(node, node.body.meta["py_code"])
+        self.indent_level -= 1
 
     def exit_dict_for_stmt(self, node: ast.DictForStmt) -> None:
         """Sub objects.
@@ -697,7 +745,9 @@ class BluePygenPass(Pass):
             node,
             f"for {node.k_name.value}, {node.v_name.value} in {node.collection.meta['py_code']}:",
         )
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.indent_level += 1
+        self.emit_ln(node, node.body.meta["py_code"])
+        self.indent_level -= 1
 
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
@@ -706,7 +756,9 @@ class BluePygenPass(Pass):
         body: CodeBlock,
         """
         self.emit_ln(node, f"while {node.condition.meta['py_code']}:")
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.indent_level += 1
+        self.emit_ln(node, node.body.meta["py_code"])
+        self.indent_level -= 1
 
     def exit_with_stmt(self, node: ast.WithStmt) -> None:
         """Sub objects.
@@ -715,7 +767,9 @@ class BluePygenPass(Pass):
         body: "CodeBlock",
         """
         self.emit_ln(node, f"with {node.exprs.meta['py_code']}:")
-        self.emit_ln(node, node.body.meta["py_code"], indent_delta=1)
+        self.indent_level += 1
+        self.emit_ln(node, node.body.meta["py_code"])
+        self.indent_level -= 1
 
     def exit_expr_as_item_list(self, node: ast.ExprAsItemList) -> None:
         """Sub objects.
@@ -866,77 +920,91 @@ class BluePygenPass(Pass):
         """
         if type(node.op) in [ast.DisconnectOp, ast.ConnectOp]:
             self.ds_feature_warn()
-        elif node.op.value in [
-            *["+", "-", "*", "/", "%", "**"],
-            *["+=", "-=", "*=", "/=", "%=", "**="],
-            *[">>", "<<", ">>=", "<<="],
-            *["//=", "&=", "|=", "^=", "~="],
-            *["//", "&", "|", "^"],
-            *[">", "<", ">=", "<=", "==", "!=", ":="],
-            *["and", "or", "in", "not in", "is", "is not"],
-        ]:
-            self.emit(
-                node,
-                f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
-            )
-        elif (
-            node.op.name in [Tok.PIPE_FWD, Tok.KW_SPAWN, Tok.A_PIPE_FWD]
-            and type(node.left) == ast.TupleVal
-        ):
-            params = node.left.meta["py_code"]
-            params = params.replace(",)", ")") if params[-2:] == ",)" else params
-            self.emit(node, f"{node.right.meta['py_code']}{params}")
-        elif (
-            node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]
-            and type(node.right) == ast.TupleVal
-        ):
-            params = node.right.meta["py_code"]
-            params = params.replace(",)", ")") if params[-2:] == ",)" else params
-            self.emit(node, f"{node.left.meta['py_code']}{params}")
-        elif node.op.name == Tok.PIPE_FWD and type(node.right) == ast.TupleVal:
-            self.ds_feature_warn()
-        elif node.op.name == Tok.PIPE_FWD:
-            self.emit(node, f"{node.right.meta['py_code']}({node.left.meta['py_code']}")
-            paren_count = (
-                node.meta["pipe_chain_count"] if "pipe_chain_count" in node.meta else 1
-            )
-            if (
-                type(node.parent) == ast.BinaryExpr
-                and node.parent.op.name == Tok.PIPE_FWD
-            ):
-                node.parent.meta["pipe_chain_count"] = paren_count + 1
-            else:
-                self.emit(node, ")" * paren_count)
-
-        elif node.op.name in [Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
-            self.emit(node, f"{node.right.meta['py_code']}({node.left.meta['py_code']}")
-            paren_count = (
-                node.meta["a_pipe_chain_count"]
-                if "a_pipe_chain_count" in node.meta
-                else 1
-            )
-            if type(node.parent) == ast.BinaryExpr and node.parent.op.name in [
-                Tok.KW_SPAWN,
-                Tok.A_PIPE_FWD,
+        if type(node.op) == ast.Token:
+            if node.op.value in [
+                *["+", "-", "*", "/", "%", "**"],
+                *["+=", "-=", "*=", "/=", "%=", "**="],
+                *[">>", "<<", ">>=", "<<="],
+                *["//=", "&=", "|=", "^=", "~="],
+                *["//", "&", "|", "^"],
+                *[">", "<", ">=", "<=", "==", "!=", ":="],
+                *["and", "or", "in", "not in", "is", "is not"],
             ]:
-                node.parent.meta["a_pipe_chain_count"] = paren_count + 1
-            else:
-                self.emit(node, ")" * paren_count)
+                self.emit(
+                    node,
+                    f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
+                )
+            elif (
+                node.op.name in [Tok.PIPE_FWD, Tok.KW_SPAWN, Tok.A_PIPE_FWD]
+                and type(node.left) == ast.TupleVal
+            ):
+                params = node.left.meta["py_code"]
+                params = params.replace(",)", ")") if params[-2:] == ",)" else params
+                self.emit(node, f"{node.right.meta['py_code']}{params}")
+            elif (
+                node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]
+                and type(node.right) == ast.TupleVal
+            ):
+                params = node.right.meta["py_code"]
+                params = params.replace(",)", ")") if params[-2:] == ",)" else params
+                self.emit(node, f"{node.left.meta['py_code']}{params}")
+            elif node.op.name == Tok.PIPE_FWD and type(node.right) == ast.TupleVal:
+                self.ds_feature_warn()
+            elif node.op.name == Tok.PIPE_FWD:
+                self.emit(
+                    node, f"{node.right.meta['py_code']}({node.left.meta['py_code']}"
+                )
+                paren_count = (
+                    node.meta["pipe_chain_count"]
+                    if "pipe_chain_count" in node.meta
+                    else 1
+                )
+                if (
+                    type(node.parent) == ast.BinaryExpr
+                    and type(node.parent.op) == ast.Token
+                    and node.parent.op.name == Tok.PIPE_FWD
+                ):
+                    node.parent.meta["pipe_chain_count"] = paren_count + 1
+                else:
+                    self.emit(node, ")" * paren_count)
 
-        elif node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]:
-            self.emit(
-                node, f"{node.left.meta['py_code']}({node.right.meta['py_code']})"
-            )
-        elif node.op.name == Tok.ELVIS_OP:
-            self.emit(
-                node,
-                f"{Con.JAC_TMP} "
-                f"if ({Con.JAC_TMP} := ({node.left.meta['py_code']})) is not None else {node.right.meta['py_code']}",
-            )
-        else:
-            self.error(
-                f"Binary operator {node.op.value} not supported in bootstrap Jac"
-            )
+            elif node.op.name in [Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
+                self.emit(
+                    node, f"{node.right.meta['py_code']}({node.left.meta['py_code']}"
+                )
+                paren_count = (
+                    node.meta["a_pipe_chain_count"]
+                    if "a_pipe_chain_count" in node.meta
+                    else 1
+                )
+                if (
+                    type(node.parent) == ast.BinaryExpr
+                    and type(node.parent.op) == ast.Token
+                    and node.parent.op.name
+                    in [
+                        Tok.KW_SPAWN,
+                        Tok.A_PIPE_FWD,
+                    ]
+                ):
+                    node.parent.meta["a_pipe_chain_count"] = paren_count + 1
+                else:
+                    self.emit(node, ")" * paren_count)
+
+            elif node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]:
+                self.emit(
+                    node, f"{node.left.meta['py_code']}({node.right.meta['py_code']})"
+                )
+            elif node.op.name == Tok.ELVIS_OP:
+                self.emit(
+                    node,
+                    f"{Con.JAC_TMP} "
+                    f"if ({Con.JAC_TMP} := ({node.left.meta['py_code']})) is not None "
+                    f"else {node.right.meta['py_code']}",
+                )
+            else:
+                self.error(
+                    f"Binary operator {node.op.value} not supported in bootstrap Jac"
+                )
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
@@ -947,7 +1015,8 @@ class BluePygenPass(Pass):
         """
         self.emit(
             node,
-            f"{node.value.meta['py_code']} if {node.condition.meta['py_code']} else {node.else_value.meta['py_code']}",
+            f"{node.value.meta['py_code']} if {node.condition.meta['py_code']} "
+            f"else {node.else_value.meta['py_code']}",
         )
 
     def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
