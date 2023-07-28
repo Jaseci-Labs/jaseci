@@ -16,6 +16,7 @@ MODULES = [
     "paraphraser",
     "dolly",
     "llm",
+    "cl_summer",
 ]
 
 
