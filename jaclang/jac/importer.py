@@ -73,18 +73,12 @@ def import_jac_module(
     return module
 
 
-def handle_jac_error(
-    code_string: str, e: Exception, tb: traceback.StackSummary
-) -> None:
+def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary) -> str:
     """Handle Jac Error."""
     except_line = e.end_lineno if isinstance(e, SyntaxError) else list(tb)[-1].lineno
 
-    if (
-        not isinstance(except_line, int)
-        or except_line == 0
-        or str(e).startswith("Jac Error:")
-    ):
-        return
+    if not isinstance(except_line, int) or except_line == 0:
+        return ""
     traceback.print_exc()
     py_error_region = clip_code_section(
         add_line_numbers(code_string), except_line, Val.JAC_ERROR_LINE_RANGE
@@ -104,7 +98,7 @@ def handle_jac_error(
         f"JacCode Snippet:\n{jac_error_region}\n"
         f"PyCode Snippet:\n{py_error_region}\n"
     )
-    print(snippet)
+    return snippet
 
 
 def jac_blue_import(

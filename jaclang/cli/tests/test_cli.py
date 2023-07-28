@@ -26,3 +26,22 @@ class ImportPassPassTests(TestCase):
 
         # Assertions or verifications
         self.assertIn("Hello World!", stdout_value)
+
+    def test_jac_cli_err_output(self) -> None:
+        """Basic test for pass."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+
+        # Execute the function
+        try:
+            cmds.run(self.fixture_abs_path("err.jac"), entrypoint="speak", args=[])  # type: ignore
+        except Exception:
+            print("Error")
+
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        stdout_value = captured_output.getvalue()
+        # Assertions or verifications
+        self.assertIn("*4:", stdout_value)
+        self.assertIn("*7:", stdout_value)

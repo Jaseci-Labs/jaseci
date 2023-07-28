@@ -80,8 +80,13 @@ class BluePygenPass(Pass):
         self.indent_level += 1
         # self.emit_ln(node, "__jac_traceback__.print_exc()")
         self.emit_ln(node, "tb = __jac_traceback__.extract_tb(e.__traceback__)")
-        self.emit_ln(node, "__jac_error__(_jac_pycodestring_, e, tb)")
-        self.emit_ln(node, "raise e")
+        self.emit_ln(node, "__jac_tmp__ = __jac_error__(_jac_pycodestring_, e, tb)")
+        self.emit_ln(node, "print(__jac_tmp__)\nraise e")
+        self.emit_ln(
+            node,
+            "raise type(e)(str(e) + '\\nOriginal Snippet:\\n' + __jac_tmp__) "
+            "if 'Original Snippet:' not in str(e) else e",
+        )
         self.indent_level -= 1
 
     def decl_def_missing(self, decl: str = "this") -> None:
