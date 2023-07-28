@@ -31,7 +31,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
-    debugfile = "parser.out"
+    # debugfile = "parser.out"
 
     # All mighty start rule
     # ---------------------

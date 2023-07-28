@@ -116,35 +116,32 @@ class TypeAnalyzePass(Pass, SymbolTable):
         if node.items:
             for i in node.items.items:
                 if i.alias:
-                    if not self.sym_tab.set(
+                    self.sym_tab.set(
                         TypedSymbol(
                             name=i.alias.value,
                             typ=Any,  # TODO: Backpatch analysis for module itmes
                             node=node,
                         ),
                         fresh_only=True,
-                    ):
-                        self.already_defined_err(i.alias.value)
+                    )
                 else:
-                    if not self.sym_tab.set(
+                    self.sym_tab.set(
                         TypedSymbol(
                             name=i.name.value,
                             typ=Any,  # TODO: Backpatch analysis for module itmes
                             node=node,
                         ),
                         fresh_only=True,
-                    ):
-                        self.already_defined_err(i.name.value)
+                    )
         else:
-            if not self.sym_tab.set(
+            self.sym_tab.set(
                 TypedSymbol(
                     name=node.path.path[-1].value,
                     typ=ModuleType,
                     node=node,
                 ),
                 fresh_only=True,
-            ):
-                self.already_defined_err(node.path.path[-1].value)
+            )
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.

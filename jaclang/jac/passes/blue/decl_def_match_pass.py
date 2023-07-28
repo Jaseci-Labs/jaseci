@@ -73,9 +73,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
             for i in node.items.items:
                 name = i.alias if i.alias else i.name
                 decl = self.sym_tab.lookup(name.value)
-                if decl:
-                    self.error(f"Name {name.value} already bound.")
-                else:
+                if not decl:
                     self.sym_tab.set(
                         DefDeclSymbol(name=name.value, node=i, has_def=True)
                     )
@@ -87,9 +85,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         alias: Optional[Token],
         body: Optional[AstNode],
         """
-        if self.sym_tab.lookup(node.name.value):
-            self.error(f"Name {node.name.value} already exists in scope.")
-        else:
+        if not self.sym_tab.lookup(node.name.value):
             self.sym_tab.set(
                 DefDeclSymbol(name=node.name.value, node=node, has_decl=True)
             )
@@ -119,6 +115,20 @@ class DeclDefMatchPass(Pass, SymbolTable):
         arch: ObjectRef | NodeRef | EdgeRef | WalkerRef,
         body: ArchBlock,
         """
+
+    def enter_ability(self, node: ast.Ability) -> None:
+        """Sub objects.
+
+        name: Name,
+        is_func: bool,
+        doc: Optional[DocString],
+        decorators: Optional["Decorators"],
+        access: Optional[Token],
+        signature: "FuncSignature | TypeSpec | EventSignature",
+        body: Optional["CodeBlock"],
+        arch_attached: Optional["ArchBlock"] = None,
+        """
+        self.sym_tab = self.sym_tab.push(node.name.value)
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -159,6 +169,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
                 decl.has_def = True
                 decl.other_node = node
             self.sym_tab.set(decl)
+        self.sym_tab = self.sym_tab.pop()
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.

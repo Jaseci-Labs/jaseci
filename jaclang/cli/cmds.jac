@@ -9,3 +9,6 @@ include:jac impl.cmds_impl;
 
 @cmd_reg.register
 can load(filename: str);
+
+@cmd_reg.register
+can run(filename: str, entrypoint: str, args: list);
