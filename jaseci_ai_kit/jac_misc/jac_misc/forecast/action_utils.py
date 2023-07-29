@@ -48,23 +48,18 @@ def define_covariates(series, attribute1="year", attribute2="month"):
 
     covariates = covariates.astype(np.float32)
 
-    """# transform covariates (note: we fit the transformer on train split and can then transform the entire covariates series)
-    scaler_covs = Scaler()
-    scaler_covs.fit(covariates)
-    covariates_transformed = scaler_covs.transform(covariates)"""
-
     return covariates
 
 
-def normalize(data):
+def normalize(series):
 
     transformer = Scaler()
-    fitting = transformer.fit(data)
+    scaled_series = transformer.fit_transform(series)
 
-    return fitting, fitting.transform(data)
+    return scaled_series
 
 
-def create_model(
+def transformer_model(
     input_chunk,
     output_chunk,
     hidden_size,

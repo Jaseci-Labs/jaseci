@@ -2,7 +2,14 @@ from jaseci.jsorc.live_actions import jaseci_action
 from jaseci.jsorc.remote_actions import launch_server
 from fastapi import HTTPException
 
-from .action_utils import create_series, train_test_split
+from .action_utils import (
+    create_series,
+    train_test_split,
+    normalize,
+    transformer_model,
+    define_covariates,
+    train_model,
+)
 
 
 @jaseci_action(act_group=["forecast"], allow_remote=True)
@@ -27,8 +34,35 @@ def split(cuttoff: str, scale: bool):
 
 
 @jaseci_action(act_group=["forecast"], allow_remote=True)
-def create_model():
-    pass
+def scale():
+    try:
+        global timeseries
+        timeseries = normalize(timeseries)
+        return "Timeseries data scaled successfully!"
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["forecast"], allow_remote=True)
+def create_model(model_name: str, parameters: dict):
+    if model_name == "transformer":
+        # add error handling in this, check if dictionary keys,values exists
+        global model
+        model = transformer_model(
+            input_chunk=parameters.input_chunk,
+            output_chunk=parameters.output_chunk,
+            hidden_size=parameters.hidden_size,
+            quantiles=parameters.quantiles,
+        )
+        return "Model created successfully!"
+    else:
+        return "The model creation failed!, check the model name"
+
+
+@jaseci_action(act_group=["forecast"], allow_remote=True)
+def train(covariate1, covariate2):
+    covariates = define_covariates(timeseries, covariate1, covariate2)
+    train_model(model, timeseries, covariates)
 
 
 @jaseci_action(act_group=["forecast"], allow_remote=True)
