@@ -1551,7 +1551,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         ).data
 
         self.assertFalse(res["success"])
-        self.assertEqual(payload, res["report"][4]["body"])
+        self.assertEqual(payload, res["report"][3]["body"])
+        self.assertIn("Global not defined - b", res["errors"][0])
 
     def test_multipart_json_file(self):
         """Test multipart using json file as ctx parameter"""
@@ -1803,17 +1804,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        self.assertIn("in jac_try_exception", " ".join(res["stack_trace"]))
         self.assertIn(
-            "raise TryException(self.jac_exception(e, jac_ast))",
-            " ".join(res["stack_trace"]),
-        )
-        self.assertIn(
-            "jaseci.jac.machine.machine_state.TryException: ",
-            " ".join(res["stack_trace"]),
-        )
-        self.assertIn(
-            "zsb:walker_exception_no_try_else - line 6, col 20",
+            "zsb:walker_exception_no_try_else - line 6, col 19",
             res["errors"][0],
         )
 
@@ -1822,13 +1814,12 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        self.assertFalse("stack_trace" in res)
+        self.assertTrue("stack_trace" in res)
         self.assertEqual("walker_exception_with_try_else", res["report"][0]["name"])
         self.assertEqual(14, res["report"][0]["line"])
         self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else -"
-            " line 14, col 23 - rule atom_trailer - ",
+            "zsb:walker_exception_with_try_else - line 14, col 23 - rule ability_call - Invalid arguments {'args': ['invalidUrl'], 'kwargs': {}} to action call request.get! Valid paramters are (url: str, data: dict, header: dict).",
             res["errors"][0],
         )
 
@@ -1841,15 +1832,14 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        self.assertFalse("stack_trace" in res)
+        self.assertTrue("stack_trace" in res)
         self.assertEqual(
             "walker_exception_with_try_else_multiple_line", res["report"][0]["name"]
         )
         self.assertEqual(32, res["report"][0]["line"])
         self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else_multiple_line "
-            "- line 32, col 23 - rule atom_trailer - ",
+            "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule ability_call - Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant https://invalidUrl?",
             res["errors"][0],
         )
 

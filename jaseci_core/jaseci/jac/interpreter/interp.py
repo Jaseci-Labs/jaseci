@@ -361,6 +361,8 @@ class Interp(VirtualMachine):
                         f'{err["mod"]}:{err["name"]} - line {err["line"]}, '
                         + f'col {err["col"]} - rule {err["rule"]} - {err["msg"]}'
                     )
+                    for stk in err.get("stack_trace", []):
+                        self.runtime_stack_trace.append(stk)
             else:
                 self.rt_error("Invalid report attribute to set", kid[2])
         else:
@@ -402,7 +404,7 @@ class Interp(VirtualMachine):
                         dest, self.pop(), JsCmp[kid[1].kid[0].name], kid[0]
                     )
         except Exception as e:
-            self.jac_try_exception(e, jac_ast)
+            self.rt_error(e, jac_ast)
 
     def run_assignment(self, jac_ast):
         """
@@ -638,7 +640,7 @@ class Interp(VirtualMachine):
                 return JacValue(self, ctx=self.parent().global_vars, name=token)
 
         except Exception as e:
-            self.jac_try_exception(e, jac_ast)
+            self.rt_error(e, jac_ast)
 
     def run_atom(self, jac_ast):
         """
@@ -709,7 +711,7 @@ class Interp(VirtualMachine):
                 self.push(self.run_rule(kid[0]))
 
         except Exception as e:
-            self.jac_try_exception(e, jac_ast)
+            self.rt_error(e, jac_ast)
 
     def run_atom_trailer(self, jac_ast, atom_res):
         """
@@ -755,7 +757,7 @@ class Interp(VirtualMachine):
             elif kid[0].name == "ability_call":
                 return self.run_ability_call(kid[0], atom_res)
         except Exception as e:
-            self.jac_try_exception(e, jac_ast)
+            self.rt_error(e, jac_ast)
 
     def run_ability_call(self, jac_ast, atom_res):
         """
@@ -771,7 +773,9 @@ class Interp(VirtualMachine):
             if kid[1].name == "param_list":
                 param_list = self.run_param_list(kid[1]).value
             if isinstance(atom_res.value, Ability):
-                ret = atom_res.value.run_action(param_list, self._jac_scope, self)
+                ret = atom_res.value.run_action(
+                    param_list, self._jac_scope, self, jac_ast
+                )
                 return JacValue(self, value=ret)
             else:
                 self.rt_error("Unable to execute ability", kid[0])
@@ -798,7 +802,7 @@ class Interp(VirtualMachine):
             if name in base_arch.derived_types():
                 return self.parent().arch_ids.get_obj_by_name(name=name, kind=kind)
             else:
-                self.rt_error(f"{name} is not a super arch of {base_arch.name}")
+                self.rt_error(f"{name} is not a super arch of {base_arch.name}", kid[1])
                 return None
         else:
             return base_arch
@@ -1007,7 +1011,7 @@ class Interp(VirtualMachine):
                     if result:
                         return result
             except Exception as e:
-                self.rt_error(f"{e}", jac_ast)
+                self.rt_error(e, jac_ast)
             self.rt_error(f"Call to {op} is invalid.", jac_ast)
 
         return atom_res
@@ -1103,7 +1107,7 @@ class Interp(VirtualMachine):
                     if result:
                         return result
             except Exception as e:
-                self.rt_error(f"{e}", jac_ast)
+                self.rt_error(e, jac_ast)
             self.rt_error(f"Call to {op} is invalid.", jac_ast)
         return atom_res
 
@@ -1193,7 +1197,7 @@ class Interp(VirtualMachine):
                 if result:
                     return result
         except Exception as e:
-            self.rt_error(f"{e}", jac_ast)
+            self.rt_error(e, jac_ast)
         self.rt_error(f"Call to {str_op} is invalid.", jac_ast)
         return atom_res
 
@@ -1407,9 +1411,8 @@ class Interp(VirtualMachine):
                 return atom_res
             try:
                 return JacValue(self, ctx=atom_res.value, name=idx)
-            except Exception:
-                self.rt_error("List index out of range", kid[1])
-                return atom_res
+            except Exception as e:
+                self.rt_error(e, jac_ast, isinstance(e, (IndexError, AttributeError)))
         else:
             self.run_expression(kid[3])
             end = self.pop().value
@@ -1417,15 +1420,14 @@ class Interp(VirtualMachine):
                 end, [int], kid[3]
             ):
                 self.rt_error(
-                    "List slice range not valid. " "Indicies must be an integers!",
+                    "List slice range not valid. Indicies must be an integers!",
                     kid[1],
                 )
                 return atom_res
             try:
                 return JacValue(self, ctx=atom_res.value, name=idx, end=end)
-            except Exception:
-                self.rt_error("List slice out of range", kid[1])
-                return atom_res
+            except Exception as e:
+                self.rt_error(e, jac_ast, isinstance(e, (IndexError, AttributeError)))
 
     def run_dict_val(self, jac_ast):
         """
@@ -1778,5 +1780,7 @@ class Interp(VirtualMachine):
                     jac_ast,
                 )
             else:
-                self.rt_error(f"{e}", jac_ast)
+                self.rt_error(e, jac_ast)
             return
+        except Exception as e:
+            self.rt_error(e, jac_ast)

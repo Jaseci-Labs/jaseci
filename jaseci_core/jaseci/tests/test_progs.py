@@ -45,8 +45,13 @@ class ProgTests(TestCaseHelper, TestCase):
         report = mast.general_interface_to_api(
             api_name="walker_run", params={"name": "aload"}
         )
-        report = report["report"]
-        self.assertEqual(report[0], False)
+        self.assertFalse(report["success"])
+        self.assertEqual(
+            [
+                "test:aload - line 3, col 33 - rule expr_list - Only super master can load actions."
+            ],
+            report["errors"],
+        )
 
     def test_globals(self):
         sent = Sentinel(m_id=0, h=JsOrc.hook())
@@ -329,7 +334,10 @@ class ProgTests(TestCaseHelper, TestCase):
         )
 
         self.assertEqual(res["report"], [{"key1": "key1", "key2": 2}])
-        self.assertIn("Key is not str type : <class 'int'>!", res["errors"][0])
+        self.assertEqual(
+            "test:var_as_key_for_dict - line 42, col 16 - rule expression - Key is not str type : <class 'int'>!",
+            res["errors"][0],
+        )
 
     def test_list_pairwise(self):
         mast = JsOrc.master()

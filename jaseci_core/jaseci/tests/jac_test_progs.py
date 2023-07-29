@@ -545,14 +545,17 @@ check_dict_for_in_loop = """
     walker var_as_key_for_dict {
         with entry {
             key = "key1";
-            not_str_key = 1;
             testing = {
                 key: key,
-                "key2": 2,
-                not_str_key: not_str_key
+                "key2": 2
             };
 
             report testing;
+
+            not_str_key = 1;
+            testing = {
+                not_str_key: not_str_key
+            };
         }
     }
 """

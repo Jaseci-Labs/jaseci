@@ -421,7 +421,10 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        self.assertIn("Cannot get edges from 7.6", test_walker.runtime_errors[0])
+        self.assertEqual(
+            "basic:init - line 9, col 25 - rule any_type - Cannot get edges from 7.6. Type JAC_TYPE.FLOAT invalid",
+            test_walker.runtime_errors[0],
+        )
         self.assertIn(
             "Invalid cast of JAC_TYPE.STR to JAC_TYPE.INT",
             test_walker.runtime_errors[1],
@@ -566,11 +569,20 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[4], {"a": "b"})
         self.assertEqual(rep[5], [1, 2, 5, 6, 7, 8, 9])
         self.assertEqual(rep[6], [1, 2, 45, 33, 7, 8, 9])
-        self.assertEqual(rep[7], None)
         self.assertEqual(
-            rep[8], {"age": 32, "birthday": None, "name": "pete", "profession": None}
+            rep[7], {"age": 32, "birthday": None, "name": "pete", "profession": None}
         )
-        self.assertEqual(rep[9], True)
+        self.assertEqual(rep[8], True)
+
+        err = test_walker.runtime_errors
+        self.assertEqual(
+            err[0],
+            "basic:init - line 30, col 0 - rule report_action - Variable not defined - a",
+        )
+        self.assertEqual(
+            err[1],
+            "basic:init - line 33, col 0 - rule atom - Creating variable banana in graph element <class 'jaseci.prim.node.Node'> is not allowed, please define",
+        )
 
     def test_arbitrary_assign_on_element(self):
         sent = Sentinel(m_id=0, h=JsOrc.hook())
@@ -583,6 +595,11 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(
             rep[0], {"name": None, "age": None, "birthday": None, "profession": None}
         )
+        err = test_walker.runtime_errors
+        self.assertEqual(
+            err[0],
+            "basic:init - line 6, col 0 - rule atom - Creating variable apple in graph element <class 'jaseci.prim.node.Node'> is not allowed, please define",
+        )
 
     def test_try_else_stmts(self):
         sent = Sentinel(m_id=0, h=JsOrc.hook())
@@ -592,6 +609,7 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker.prime(gph)
         test_walker.run()
         rep = test_walker.report
+        rep[0].pop("stack_trace", None)  # remove stack_trace
         self.assertEqual(
             rep[0],
             {
@@ -608,6 +626,16 @@ class JacTests(TestCaseHelper, TestCase):
         self.assertEqual(rep[1], "dont need err")
         self.assertEqual(rep[2], None)
         self.assertEqual(rep[3], 2)
+
+        test_walker = sent.run_architype("sample")
+        test_walker.prime(gph)
+        resp = test_walker.run()
+
+        # exact line and error
+        self.assertEqual(
+            resp["errors"][0],
+            "basic:sample - line 23, col 29 - rule index_slice - Key test not found in object/dict.",
+        )
 
     def test_node_edge_same_name(self):
         sent = Sentinel(m_id=0, h=JsOrc.hook())
@@ -687,9 +715,10 @@ class JacTests(TestCaseHelper, TestCase):
         test_walker = sent.run_architype("init")
         test_walker.prime(gph)
         test_walker.run()
-        self.assertIn("List index out of range", test_walker.runtime_errors[0])
-        self.assertIn(" line ", test_walker.runtime_errors[0])
-        self.assertIn(" col ", test_walker.runtime_errors[0])
+        self.assertEqual(
+            "basic:init - line 4, col 0 - rule index_slice - list index out of range",
+            test_walker.runtime_errors[0],
+        )
 
     def test_root_type_nodes(self):
         sent = Sentinel(m_id=0, h=JsOrc.hook())

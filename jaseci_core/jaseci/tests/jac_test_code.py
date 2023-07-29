@@ -644,7 +644,11 @@ typecasts_error = """
         report (a+2);
         report (a+2).int;
         report (a+2).str;
-        report (a+2).edge;
+
+        try {
+            report (a+2).edge;
+        } else with error: report:error = error;
+
         report ("a+2").int.float;
 
         if(a.str.type == str and !(a.int.type == str)
@@ -818,8 +822,12 @@ destroy_and_misc = """
         a[2:4]=[45,33];
         report a;
         destroy a;
-        report a;
-        person1.banana=45;
+        try {
+            report a;
+        } else with error: report:error = error;
+        try {
+            person1.banana=45;
+        } else with error: report:error = error;
         report person1.context;
         report 'age' in person1.context;
     }
@@ -829,7 +837,10 @@ arbitrary_assign_on_element = """
     node person: has name, age, birthday, profession;
     walker init {
         some = spawn here ++> node::person;
-        some.apple = 45;
+        try {
+            some.apple = 45;
+        } else with error: report:error = error;
+
         report some.context;
     }
     """
@@ -846,6 +857,23 @@ try_else_stmts = """
         report a;
         try {a=2/1;}
         report a;
+    }
+
+    walker sample {
+        with entry {
+            try {
+                a = {};
+                b = {};
+
+                b.dict::update({
+                    "test2": 1,
+                    "test": a["test"]
+                });
+                report b;
+            } else with error {
+                report:error = error;
+            }
+        }
     }
     """
 

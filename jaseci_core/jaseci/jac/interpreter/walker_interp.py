@@ -202,9 +202,9 @@ class WalkerInterp(Interp):
         if kid[1].name == "param_list":
             param_list = self.run_param_list(kid[1]).value
         try:
-            result = act.run_action(param_list, self._jac_scope, self)
+            result = act.run_action(param_list, self._jac_scope, self, jac_ast)
         except Exception as e:
-            self.rt_error(f"Internal Exception: {e}", self._cur_jac_ast)
+            self.rt_error(e, jac_ast)
             result = None
         if kid[-1].name == "expression":
             self.run_expression(kid[-1])

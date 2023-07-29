@@ -1,4 +1,6 @@
 from jaseci.utils.test_core import CoreTest
+from unittest.mock import patch
+from io import BufferedReader
 
 
 class FileTest(CoreTest):
@@ -108,3 +110,22 @@ class FileTest(CoreTest):
             },
             reps,
         )
+
+    @patch("requests.post")
+    def test_manual_upload_file(self, mock_post):
+        self.call(
+            self.mast,
+            ["sentinel_register", {"code": self.load_jac("file.jac")}],
+        )
+
+        self.call_walker("manual_upload_file")
+        self.assertTrue(mock_post.called)
+        args, kwargs = mock_post.call_args
+        self.assertEqual(1, len(args))
+        self.assertEqual("https://sample/com", args[0])
+        self.assertEqual({"test": 1}, kwargs["data"])
+        self.assertEqual({"test": 2}, kwargs["headers"])
+        self.assertEqual("file", kwargs["files"][0][0])
+        self.assertEqual("tmp", kwargs["files"][0][1][0])
+        self.assertIsInstance(kwargs["files"][0][1][1], BufferedReader)
+        self.assertIsNone(kwargs["files"][0][1][2])

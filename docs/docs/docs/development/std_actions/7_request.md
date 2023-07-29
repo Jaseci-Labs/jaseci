@@ -4,9 +4,9 @@ Jaseci allows for in-code use of common  request methods.
 
 ### Get Request
 
-Make get request
-`url` : `string`  - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converted to json.
+Make get request \
+`url` : `string`  - url to where the request will be made \
+`data` : `dictionary` - data being sent that will be converted to json. \
 `header` : `dictionary` -  header data
 
 ```jac
@@ -15,10 +15,9 @@ response = request.get(url ,data , headers);
 
 ### Post Request
 
-Make post request.
-
-`url` : `string` - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converted to json.
+Make post request. \
+`url` : `string` - url to where the request will be made \
+`data` : `dictionary` - data being sent that will be converted to json. \
 `header` : `dictionary` -  header data
 
 ```jac
@@ -26,9 +25,9 @@ response = request.post(url ,data , headers);
 ```
 ### Put Request
 
-Make put request
-`url` : `string`  - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converted to json.
+Make put request \
+`url` : `string`  - url to where the request will be made \
+`data` : `dictionary` - data being sent that will be converted to json. \
 `header` : `dictionary` -  header data
 
 ```jac
@@ -37,10 +36,9 @@ response = request.put(url ,data , headers);
 
 ### Delete Request
 
-Make delete request.
-
-`url` : `string`  - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converted to json.
+Make delete request. \
+`url` : `string`  - url to where the request will be made \
+`data` : `dictionary` - data being sent that will be converted to json. \
 `header` : `dictionary` -  header data
 
 ```jac
@@ -49,9 +47,9 @@ response = request.delete(url ,data , headers);
 
 ### Head Request
 
-Make head request , returns header of  a get request alone.
-`url` : `string`  - url to where the request will be made.
-`data` : `dictionary` - data being sent that will be converted to json.
+Make head request , returns header of  a get request alone. \
+`url` : `string`  - url to where the request will be made. \
+`data` : `dictionary` - data being sent that will be converted to json. \
 `header` : `dictionary` -  header data.
 
 ```jac
@@ -60,10 +58,9 @@ response = request.head(url ,data , headers);
 
 ### Option Request
 
-Make options request , requests permitted communications options from a given url or server.
-
-`url` : `string`  - url to where the request will be made
-`data` : `dictionary` - data being sent that will be converted to json.
+Make options request , requests permitted communications options from a given url or server. \
+`url` : `string`  - url to where the request will be made \
+`data` : `dictionary` - data being sent that will be converted to json. \
 `header` : `dictionary` -  header data
 
 ```jac
@@ -72,25 +69,17 @@ response = request.get(url ,data , headers);
 
 ### File upload
 
-Used to upload a file or files
-`url` : `string`  - url to where the request will be made
-`file` : `single` base64 encoded file
-`files` : `list` of base64 encode files.
+Used to upload a file or files \
+`url` : `string`  - url to where the request will be made \
+`data` : `dictionary` - data being sent that will be converted to json or added to form data if you files. \
+`files` : `list` of uuid from file handler (fh.*). \
+\- field name for each file can be updated using fh.update(uuid, field = "yourfieldname") \
 `header` : `dictionary` -  header data
 
 ```jac
-response = request.multipart_base64(url ,file , headers);
+response = request.multipart(url , data, file, headers);
 ```
 
-### Download File
-
-`url` : `string`  - url to where the request will be made
-`header` : `dictionary` -  header data
-`encoding` : `string` - file format , default is utf-8
-
-```jac
-downloaded_file = request.file_download_base64(url,header,encoding);
-```
 ### An example Jac Application using the Requests Library
 
 So let's create a quick SIMPLE RESTFUL application example, a ToDo list app.

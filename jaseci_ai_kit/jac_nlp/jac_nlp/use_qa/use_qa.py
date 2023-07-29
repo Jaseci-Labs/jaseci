@@ -9,7 +9,7 @@ import os
 
 
 MODULE_URL = "https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/3"
-MODEL_BASE_PATH = model_base_path("jac_nlp/use_qa")
+MODEL_BASE_PATH = str(model_base_path("jac_nlp/use_qa"))
 
 
 @jaseci_action(act_group=["use"], allow_remote=True)
@@ -19,11 +19,15 @@ def setup():
     """
     global module
     try:
-        module = tf.saved_model.load(os.path.join(MODEL_BASE_PATH, "saved_model.pb"))
+        module = tf.saved_model.load(MODEL_BASE_PATH)
     except OSError:
         os.makedirs(MODEL_BASE_PATH, exist_ok=True)
         module = hub.load(MODULE_URL)
-        tf.saved_model.save(module, MODEL_BASE_PATH)
+        signatures = {
+            "question_encoder": module.signatures["question_encoder"],
+            "response_encoder": module.signatures["response_encoder"],
+        }
+        tf.saved_model.save(module, MODEL_BASE_PATH, signatures=signatures)
         tf.keras.backend.clear_session()
 
 
