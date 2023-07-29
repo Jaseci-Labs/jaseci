@@ -10,6 +10,7 @@ nav:
     - ~/github$: https://github.com/Jaseci-Labs/jaclang
 
 theme:
+    logo: 'assets/logo.png'
     name: 'material'
     palette:
         primary: 'brown'
