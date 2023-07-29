@@ -10,15 +10,19 @@ class TextForecastModule(CoreTest):
     @classmethod
     def setUpClass(cls):
         super(TextForecastModule, cls).setUpClass()
-        ret = load_module_actions("jac_misc.cluster")
+        ret = load_module_actions("jac_misc.forecast")
         assert ret == True
 
     @jac_testcase("forecast.jac", "test_preprocess")
     def test_preprocess(self, ret):
         self.assertEqual(ret["success"], True)
 
+    @jac_testcase("forecast.jac", "test_split")
+    def test_split(self, ret):
+        self.assertEqual(ret["success"], True)
+
     @classmethod
     def tearDownClass(cls):
         super(TextForecastModule, cls).tearDownClass()
-        ret = unload_module("jac_misc.cluster.cluster")
+        ret = unload_module("jac_misc.forecast.forecast")
         assert ret == True
