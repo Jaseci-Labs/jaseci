@@ -49,10 +49,10 @@ def create_model(model_name: str, parameters: dict):
         # add error handling in this, check if dictionary keys,values exists
         global model
         model = transformer_model(
-            input_chunk=parameters.input_chunk,
-            output_chunk=parameters.output_chunk,
-            hidden_size=parameters.hidden_size,
-            quantiles=parameters.quantiles,
+            input_chunk=parameters["input_chunk"],
+            output_chunk=parameters["output_chunk"],
+            hidden_size=parameters["hidden_size"],
+            quantiles=parameters["quantiles"],
         )
         return "Model created successfully!"
     else:

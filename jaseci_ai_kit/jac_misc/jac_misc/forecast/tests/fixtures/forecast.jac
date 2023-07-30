@@ -26,6 +26,11 @@ walker test_scale{
     forecast.preprocess(times,variables);
 
     report forecast.scale();
+}
 
+walker test_create_model{
+    can forecast.create_model;
+    has params_dict = {"input_chunk": 4, "output_chunk":1, "hidden_size":64, "quantiles":[0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]};
 
+    report forecast.create_model("transformer", params_dict);
 }

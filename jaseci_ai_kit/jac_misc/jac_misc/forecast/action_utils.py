@@ -38,24 +38,23 @@ def train_test_split(series, cuttoff, scale=True):
 
 
 def define_covariates(series, attribute1="year", attribute2="month"):
-    # create year and month covariate series
+    """
+    Create year and month covariate series.
+    """
     covariates = datetime_attribute_timeseries(
         series, attribute=attribute1, one_hot=False
     )
     covariates = covariates.stack(
         datetime_attribute_timeseries(series, attribute=attribute2, one_hot=False)
     )
-
     covariates = covariates.astype(np.float32)
 
     return covariates
 
 
 def normalize(series):
-
     transformer = Scaler()
     scaled_series = transformer.fit_transform(series)
-
     return scaled_series
 
 
@@ -71,7 +70,6 @@ def transformer_model(
     n_epochs=300,
     random_state=42,
 ):
-
     model = TFTModel(
         input_chunk_length=input_chunk,
         output_chunk_length=output_chunk,
@@ -83,7 +81,6 @@ def transformer_model(
         n_epochs=n_epochs,
         add_relative_index=False,
         add_encoders=None,
-        # QuantileRegression is set per default
         likelihood=QuantileRegression(quantiles=quantiles),
         # loss_fn=MSELoss(),
         random_state=random_state,
@@ -102,3 +99,7 @@ def train_model(model, train_data, covariates):
 def evaluate(model, n, val_series, num_samples=2):
     pred_series = model.predict(n=n, num_samples=num_samples)
     return mape(val_series, pred_series)
+
+
+def predict(model, n, num_samples=2):
+    pred_series = model.predict(n=n, num_samples=num_samples)
