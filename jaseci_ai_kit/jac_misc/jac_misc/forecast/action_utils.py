@@ -53,6 +53,7 @@ def define_covariates(series, attribute1="year", attribute2="month"):
 
 
 def normalize(series):
+    """ """
     transformer = Scaler()
     scaled_series = transformer.fit_transform(series)
     return scaled_series
@@ -70,6 +71,7 @@ def transformer_model(
     n_epochs=300,
     random_state=42,
 ):
+    """ """
     model = TFTModel(
         input_chunk_length=input_chunk,
         output_chunk_length=output_chunk,
@@ -91,15 +93,13 @@ def transformer_model(
 
 # model training
 def train_model(model, train_data, covariates):
+    """ """
     train_model = model.fit(train_data, future_covariates=covariates, verbose=True)
     return train_model
 
 
 # Model evaluation
-def evaluate(model, n, val_series, num_samples=2):
+def eval(model, n, val_series, num_samples=2):
+    """ """
     pred_series = model.predict(n=n, num_samples=num_samples)
     return mape(val_series, pred_series)
-
-
-def predict(model, n, num_samples=2):
-    pred_series = model.predict(n=n, num_samples=num_samples)

@@ -21,6 +21,28 @@ class TextForecastModule(CoreTest):
     def test_split(self, ret):
         self.assertEqual(ret["success"], True)
 
+    @jac_testcase("forecast.jac", "test_scale")
+    def test_scale(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @jac_testcase("forecast.jac", "test_create_model")
+    def test_create_model(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @jac_testcase("forecast.jac", "test_train")
+    def test_train(self, ret):
+        self.assertEqual(ret["success"], True)
+
+    @jac_testcase("forecast.jac", "test_evaluate")
+    def test_evaluate(self, ret):
+        self.assertEqual(ret["success"], True)
+        self.assertEqual(ret["report"][0], 2.5475096732037446)
+
+    @jac_testcase("forecast.jac", "test_predict")
+    def test_predict(self, ret):
+        self.assertEqual(ret["success"], True)
+        self.assertEqual(ret["report"][0], [[0.9422189593315125], [1.0299036502838135]])
+
     @classmethod
     def tearDownClass(cls):
         super(TextForecastModule, cls).tearDownClass()

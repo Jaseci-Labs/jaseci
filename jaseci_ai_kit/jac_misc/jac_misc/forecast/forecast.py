@@ -9,6 +9,7 @@ from .action_utils import (
     transformer_model,
     define_covariates,
     train_model,
+    eval,
 )
 
 
@@ -62,9 +63,22 @@ def create_model(model_name: str, parameters: dict):
 @jaseci_action(act_group=["forecast"], allow_remote=True)
 def train(covariate1, covariate2):
     covariates = define_covariates(timeseries, covariate1, covariate2)
-    train_model(model, timeseries, covariates)
+    global model
+    model = train_model(model, train, covariates)
 
 
 @jaseci_action(act_group=["forecast"], allow_remote=True)
-def forecast():
-    pass
+def evaluate(n: int, num_samples: int = 2):
+    try:
+        return eval(model, n, validation, num_samples=num_samples)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jaseci_action(act_group=["forecast"], allow_remote=True)
+def predict(n: int, num_samples: int = 2):
+    try:
+        pred_series = model.predict(n=n, num_samples=num_samples)
+        return pred_series.values().tolist()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
