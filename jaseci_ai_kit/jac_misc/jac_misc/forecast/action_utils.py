@@ -71,7 +71,9 @@ def transformer_model(
     n_epochs=300,
     random_state=42,
 ):
-    """ """
+    """
+    Creating the transformer model
+    """
     model = TFTModel(
         input_chunk_length=input_chunk,
         output_chunk_length=output_chunk,
@@ -93,13 +95,17 @@ def transformer_model(
 
 # model training
 def train_model(model, train_data, covariates):
-    """ """
+    """
+    Training the model
+    """
     train_model = model.fit(train_data, future_covariates=covariates, verbose=True)
     return train_model
 
 
 # Model evaluation
 def eval(model, n, val_series, num_samples=2):
-    """ """
+    """
+    Evaluate the trained model with validation data.
+    """
     pred_series = model.predict(n=n, num_samples=num_samples)
     return mape(val_series, pred_series)
