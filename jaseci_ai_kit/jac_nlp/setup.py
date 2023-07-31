@@ -3,25 +3,20 @@ from os.path import join
 
 MODULES = [
     "bart_sum",
-    "cl_summer",
-    "ent_ext",
-    # "fast_enc",
     "sbert_sim",
     "t5_sum",
     "text_seg",
     "tfm_ner",
     "use_enc",
     "use_qa",
-    "zs_classifier",
     "bi_enc",
     "topic_ext",
     "gpt2",
-    "bi_ner",
-    "gpt3",
     "sentiment",
     "paraphraser",
     "dolly",
     "llm",
+    "cl_summer",
 ]
 
 
