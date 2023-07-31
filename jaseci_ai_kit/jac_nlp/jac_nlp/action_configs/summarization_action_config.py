@@ -1,6 +1,6 @@
-BART_SUM_ACTION_CONFIG = {
-    "module": "jac_nlp.bart_sum",
-    "loaded_module": "jac_nlp.bart_sum.bart_sum",
+SUMMARIZATION_ACTION_CONFIG = {
+    "module": "jac_nlp.summarization",
+    "loaded_module": "jac_nlp.summarization.summarization",
     "local_mem_requirement": 2100,
     "remote": {
         "Service": {
@@ -26,7 +26,7 @@ BART_SUM_ACTION_CONFIG = {
                 "creationTimestamp": None,
             },
             "data": {
-                "prod_up": "uvicorn jac_nlp.bart_sum:serv_actions --host 0.0.0.0 --port 80"
+                "prod_up": "uvicorn jac_nlp.summarization:serv_actions --host 0.0.0.0 --port 80"
             },
         },
         "Deployment": {

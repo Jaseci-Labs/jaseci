@@ -2,9 +2,8 @@ from setuptools import setup, find_packages
 from os.path import join
 
 MODULES = [
-    "bart_sum",
+    "summarization",
     "sbert_sim",
-    "t5_sum",
     "text_seg",
     "tfm_ner",
     "use_enc",
