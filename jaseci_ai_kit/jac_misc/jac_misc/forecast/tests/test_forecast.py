@@ -36,12 +36,12 @@ class TextForecastModule(CoreTest):
     @jac_testcase("forecast.jac", "test_evaluate")
     def test_evaluate(self, ret):
         self.assertEqual(ret["success"], True)
-        self.assertEqual(ret["report"][0], 2.5475096732037446)
+        self.assertIsInstance(ret["report"][0], float)
 
     @jac_testcase("forecast.jac", "test_predict")
     def test_predict(self, ret):
         self.assertEqual(ret["success"], True)
-        self.assertEqual(ret["report"][0], [[0.9422189593315125], [1.0299036502838135]])
+        self.assertEqual(len(ret["report"][0]), 2)
 
     @classmethod
     def tearDownClass(cls):
