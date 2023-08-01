@@ -4,7 +4,6 @@ import stripe as s
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.utils.utils import logger
 from jaseci.extens.svc.stripe_svc import StripeService
-from datetime import datetime
 from jaseci.jsorc.live_actions import jaseci_action
 
 
@@ -169,13 +168,22 @@ def invoice_retrieve(invoice_id: str, **kwargs):
 
 
 @jaseci_action()
+def subscription_item_list_usage_record_summaries(subscription_item_id: str, **kwargs):
+    """Create usage record"""
+
+    return stripe().SubscriptionItem.list_usage_record_summaries(
+        subscription_item_id, **kwargs
+    )
+
+
+@jaseci_action()
 def subscription_item_create_usage_record(
     subscription_item_id: str, quantity: int, **kwargs
 ):
     """Create usage record"""
 
     return stripe().SubscriptionItem.create_usage_record(
-        subscription_item_id, quantity=quantity, timestamp=datetime.now(), **kwargs
+        subscription_item_id, quantity=quantity, timestamp="now", **kwargs
     )
 
 
