@@ -10,14 +10,27 @@ The idea behind the abstraction of `skip` in the context of a walkers code block
 >
 > Node/edge abilities also support the usage of the skip directive. The skip merely decides not to use the remaining steps of that `ability` itself in this context.
 
-Lets change the `init` walker of [example](../abstractions/walkers.md#walkers-navigating-graphs-example) to demonstrate how the `skip` command works;
-
-**Example:**
+Following example demonstrate how the `skip` command works;
 
 ```jac
-.
-.
-.
+node plain: has number;
+
+## defining the graph
+graph example {
+    has anchor head;
+    spawn {
+        n=[];
+        for i=0 to i<7 by i+=1 {
+            n.l::append(spawn node::plain(number=i+1));
+        }
+
+        n[0] ++> n[1] ++> n[2];
+        n[1] ++> n[3];
+        n[0] ++> n[4] ++> n[5];
+        n[4] ++> n[6];
+        head=n[0];
+        }
+    }
 
 #init walker traversing
 walker init {
@@ -34,7 +47,7 @@ walker init {
 }
 ```
 
-**Output:**
+Expected Output:
 
 ```
 1

@@ -72,8 +72,21 @@ class MailService(JsOrc.CommonService):
             )
 
             if migrate:
-                self.config["migrate"] = False
-                hook.save_glob("MAIL_CONFIG", dumps(self.config))
+                hook.save_glob(
+                    "MAIL_CONFIG",
+                    dumps(
+                        {
+                            **{
+                                "enabled": self.enabled,
+                                "quiet": self.quiet,
+                                "automated": self.automated,
+                            },
+                            **self.config,
+                            "migrate": False,
+                        }
+                    ),
+                )
+                hook.commit()
 
     ###################################################
     #                     CLEANER                     #

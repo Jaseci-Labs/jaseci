@@ -20,6 +20,8 @@ MODULES = [
     "gpt3",
     "sentiment",
     "paraphraser",
+    "dolly",
+    "llm",
 ]
 
 
@@ -41,7 +43,11 @@ setup(
     name="jac_nlp",
     version=get_ver(),
     packages=find_packages(include=["jac_nlp", "jac_nlp.*"]),
-    install_requires=["jaseci", "pytest>=7.0.1,<7.1", "pytest-order>=1.0.1,<1.1"],
+    install_requires=[
+        f"jaseci=={get_ver()}",
+        "pytest>=7.0.1,<7.1",
+        "pytest-order>=1.0.1,<1.1",
+    ],
     extras_require=get_extras_requires(),
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml", "requirements.txt", "*.jac"],

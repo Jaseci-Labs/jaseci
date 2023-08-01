@@ -21,7 +21,9 @@ class StdLibTest(CoreTest):
         ret = self.call(self.mast, ["walker_run", {"name": "internal_lib"}])
         self.assertEqual(len(ret["report"]), 1)
         self.assertTrue(
-            ret["report"][0].startswith("ncalls,tottime,percall,cumtime,percall,")
+            ret["report"][0]["calls"].startswith(
+                "ncalls,tottime,percall,cumtime,percall,"
+            )
         )
 
     def test_rand_float_round(self):

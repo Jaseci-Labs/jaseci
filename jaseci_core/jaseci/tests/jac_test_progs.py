@@ -545,14 +545,17 @@ check_dict_for_in_loop = """
     walker var_as_key_for_dict {
         with entry {
             key = "key1";
-            not_str_key = 1;
             testing = {
                 key: key,
-                "key2": 2,
-                not_str_key: not_str_key
+                "key2": 2
             };
 
             report testing;
+
+            not_str_key = 1;
+            testing = {
+                not_str_key: not_str_key
+            };
         }
     }
 """
@@ -743,6 +746,29 @@ walker a {
         a2 = null;
         te = spawn here walker::b(b1 = a1, b2 = a2);
         te = spawn here ++> node::c(c1=a1, c2=a2);
+    }
+}
+"""
+
+json_casting = """
+walker json_casting {
+    with entry {
+        report {"test": 1}.str;
+        report '{"test2": 2}'.dict;
+    }
+}
+"""
+
+edge_to_node_casting = """
+node a {}
+
+walker edge_to_node_casting {
+    root {
+        spawn here ++> node::a;
+        edges = --> node::a.edge;
+        report edges;
+        report edges.node;
+        report edges[0].node;
     }
 }
 """

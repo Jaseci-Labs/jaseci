@@ -5,7 +5,7 @@ This interpreter should be inhereted from the class that manages state
 referenced through self.
 """
 from copy import copy
-from jaseci.utils.utils import logger
+from jaseci.utils.utils import logger, exc_stack_as_str_list, generate_stack_as_str_list
 from jaseci.jsorc.live_actions import live_actions, load_preconfig_actions
 
 # from jaseci.actions.find_action import find_action
@@ -19,23 +19,25 @@ from jaseci.prim.edge import Edge
 from jaseci.prim.node import Node
 from jaseci.jac.machine.jac_value import JacValue
 from jaseci.jac.jsci_vm.op_codes import JsCmp
+import time
 
 
 class MachineState:
     """Shared interpreter class across both sentinels and walkers"""
 
-    def __init__(self, parent_override=None, caller=None):
+    recur_detect_set = []
+    profile_stack = [None]
+
+    def __init__(self):
         self.report = []
         self.report_status = None
         self.report_custom = None
+        self.report_file = None
         self.request_context = None
         self.runtime_errors = []
+        self.runtime_stack_trace = []
         self.yielded_walkers_ids = IdList(self)
         self.ignore_node_ids = IdList(self)
-        self._parent_override = parent_override
-        if not isinstance(self, Element) and caller:
-            self._m_id = caller._m_id
-            self._h = caller._h
         self._scope_stack = [None]
         self._jac_scope = None
         self._relevant_edges = []
@@ -46,35 +48,101 @@ class MachineState:
         self._loop_limit = 10000
         self._cur_jac_ast = Ast("none")
         self._write_candidate = None
+        self._mast = self.get_master()
+
         self.inform_hook()
 
     def inform_hook(self):
         if hasattr(self, "_h"):
             self._h._machine = self
 
-    def parent(self):  # parent here is always a sentinel
-        if self._parent_override:
-            return self._parent_override
-        else:
-            return Element.parent(self)
-
     def reset(self):
         self.report = []
         self.report_status = None
         self.report_custom = None
+        self.report_file = None
         self.runtime_errors = []
+        self.runtime_stack_trace = []
         self._scope_stack = [None]
         self._jac_scope = None
         self._loop_ctrl = None
         self._stopped = None
 
     def push_scope(self, scope: JacScope):
+        self.profile_pause()
         self._scope_stack.append(scope)
         self._jac_scope = scope
+        MachineState.profile_stack.append(self._jac_scope)
+        self.profile_in()
+        MachineState.recur_detect_set.append(self.call_name())
 
     def pop_scope(self):
+        MachineState.recur_detect_set.remove(self.call_name())
+        self.profile_out()
         self._scope_stack.pop()
         self._jac_scope = self._scope_stack[-1]
+        MachineState.profile_stack.pop()
+        self.profile_unpause()
+
+    def profile_in(self):
+        if self._mast and self._mast._profiling:
+            self._jac_scope._start_time = time.time()
+            self._jac_scope._cum_start_time = time.time()
+
+    def profile_out(self):
+        # profile_jac_scope = MachineState.profile_stack[-1]  # refactor and clean
+        if self._mast and self._mast._profiling:
+            name = self.call_name()
+            if name not in self._mast._jac_profile:
+                self._mast._jac_profile[name] = {
+                    "calls": 1,
+                    "u_calls": 0 if name in MachineState.recur_detect_set else 1,
+                    "tot_time": self._jac_scope._total_time
+                    + (time.time() - self._jac_scope._start_time),
+                    "cum_time": 0
+                    if name in MachineState.recur_detect_set
+                    else time.time() - self._jac_scope._cum_start_time,
+                }
+            else:
+                c = self._mast._jac_profile[name]["calls"]
+                u = self._mast._jac_profile[name]["u_calls"]
+                t = self._mast._jac_profile[name]["tot_time"]
+                p = self._mast._jac_profile[name]["cum_time"]
+                self._mast._jac_profile[name]["calls"] = c + 1
+                self._mast._jac_profile[name]["u_calls"] = (
+                    u if name in MachineState.recur_detect_set else u + 1
+                )
+                self._mast._jac_profile[name][
+                    "tot_time"
+                ] += self._jac_scope._total_time + (
+                    time.time() - self._jac_scope._start_time
+                )
+
+                self._mast._jac_profile[name]["cum_time"] = (
+                    p
+                    if name in MachineState.recur_detect_set
+                    else (p + time.time() - self._jac_scope._cum_start_time)
+                )
+
+    def call_name(self):
+        return f"{self.kind}::{self.name}:{self._jac_scope.name}"
+
+    def profile_pause(self):
+        _jac_scope = MachineState.profile_stack[-1]  # refactor and clean
+        if self._mast and self._mast._profiling and _jac_scope:
+            _jac_scope._total_time += time.time() - _jac_scope._start_time
+            _jac_scope._start_time = 0
+
+    def profile_unpause(self):
+        _jac_scope = MachineState.profile_stack[-1]  # refactor and clean
+        if self._mast and self._mast._profiling and _jac_scope:
+            _jac_scope._start_time = time.time()
+
+    def here(self):
+        return self._scope_stack[-1].here() if self._scope_stack[-1] else None
+
+    def visitor(self):
+        return self._scope_stack[-1].visitor() if self._scope_stack[-1] else None
 
     def set_cur_ast(self, jac_ast):
         self._cur_jac_ast = jac_ast
@@ -93,7 +161,9 @@ class MachineState:
             name, create_mode=self._assign_mode if assign_mode is None else assign_mode
         )
         if val is None:
-            self.rt_error(f"Variable not defined - {name}", jac_ast)
+            self.rt_error(
+                f"Variable not defined - {name}", jac_ast or self._cur_jac_ast
+            )
             self.push(JacValue(self))
         else:
             self.push(val)
@@ -147,6 +217,8 @@ class MachineState:
             self.report_status = mach.report_status
         if mach.report_custom:
             self.report_custom = mach.report_custom
+        if mach.report_file:
+            self.report_file = mach.report_file
         self.runtime_errors += mach.runtime_errors
 
     def obj_set_to_jac_set(self, obj_set):
@@ -164,7 +236,7 @@ class MachineState:
         """
         ret = JacSet()
         if not location:
-            location = self.current_node
+            location = self.here()
         for i in edge_set.obj_list():
             ret.add_obj(i.opposing_node(location))
         return ret
@@ -210,6 +282,7 @@ class MachineState:
             "col": jac_ast.loc[1],
             "name": self.name if hasattr(self, "name") else "blank",
             "rule": jac_ast.name,
+            "stack_trace": exc_stack_as_str_list(),
         }
 
     def rt_log_str(self, msg, jac_ast=None):
@@ -231,13 +304,39 @@ class MachineState:
         error = self.rt_log_str(error, jac_ast)
         logger.warning(str(error))
 
-    def rt_error(self, error, jac_ast=None):
+    def rt_error(self, error, jac_ast, append=False):
         """Prints runtime error to screen"""
-        if self._jac_try_mode:
-            raise Exception(error)
-        error = self.rt_log_str(error, jac_ast)
-        logger.error(str(error))
-        self.runtime_errors.append(error)
+
+        if isinstance(error, Exception):
+            if self._jac_try_mode:
+                self.jac_try_exception(error, jac_ast)
+            else:
+                if append:
+                    msg = self.rt_log_str(error, jac_ast)
+                    logger.error(msg)
+                    self.runtime_errors.append(msg)
+                raise error
+        else:
+            if self._jac_try_mode:
+                raise TryException(
+                    {
+                        "type": "RunTimeException",
+                        "mod": jac_ast.loc[2],
+                        "msg": error,
+                        "args": [],
+                        "line": jac_ast.loc[0],
+                        "col": jac_ast.loc[1],
+                        "name": self.name if hasattr(self, "name") else "blank",
+                        "rule": jac_ast.name,
+                        "stack_trace": generate_stack_as_str_list(error),
+                    }
+                )
+            else:
+                msg = self.rt_log_str(error, jac_ast)
+                logger.error(msg)
+                self.runtime_errors.append(msg)
+                error = Exception(error)
+                raise error
 
     def rt_info(self, msg, jac_ast=None):
         """Prints runtime info to screen"""
@@ -263,6 +362,7 @@ class MachineState:
             "report": copy(self.report),
             "report_status": self.report_status,
             "report_custom": self.report_custom,
+            "report_file": self.report_file,
             "request_context": self.request_context,
             "runtime_errors": self.runtime_errors,
         }

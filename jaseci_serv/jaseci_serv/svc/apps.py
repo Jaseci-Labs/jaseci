@@ -8,5 +8,7 @@ class CoreApiConfig(AppConfig):
     name = "jaseci_serv.svc"
 
     def ready(self):
+        from .task_svc import TaskService  # noqa
+
         if os.environ.get("RUN_MAIN"):
             JsOrc.run()

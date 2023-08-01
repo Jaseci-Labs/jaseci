@@ -59,6 +59,7 @@ def setup():
         tokenizer.save_vocabulary(active_model_path)
         model.save_pretrained(active_model_path)
         del model, tokenizer
+    load_custom_model(MODEL_BASE_PATH)
 
     m_config_fname = os.path.join(active_model_path, "model_config.json")
     t_config_fname = os.path.join(active_model_path, "train_config.json")

@@ -1,5 +1,5 @@
 
-# Create AWS EKS Infrastructure for Jaseci using Terraform #
+# Create AWS EKS Infrastructure for Jaseci using Terraform
 
 ## Preparation #
 

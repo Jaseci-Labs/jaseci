@@ -168,7 +168,10 @@ class JacValue:
                     or self.name not in self.is_element.get_architype().has_vars
                 )
             ):
-                self.parent.rt_error(f"Key {self.name} not found in object/dict.")
+                self.parent.rt_error(
+                    f"Key {self.name} not found in object/dict.",
+                    self.parent._cur_jac_ast,
+                )
         else:
             return None
 

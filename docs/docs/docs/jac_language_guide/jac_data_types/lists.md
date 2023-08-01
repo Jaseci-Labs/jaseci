@@ -10,9 +10,11 @@ In this section you will find all of the list methods available in Jaseci for ma
 
 ### `max`
 
-| Op         | Args | Description                            |
-| ---------- | ---- | -------------------------------------- |
-| .list::max | none | Returns the maximum value of the list. |
+|             |                                        |
+| ----------- | -------------------------------------- |
+| Op          | .list::max                             |
+| Args        | None                                   |
+| Description | Returns the maximum value of the list. |
 
 **Example Usage**
 
@@ -33,9 +35,11 @@ walker init{
 
 ### `min`
 
-| Op         | Args | Description                            |
-| ---------- | ---- | -------------------------------------- |
-| .list::min | none | Returns the minimum value of the list. |
+|             |                                        |
+| ----------- | -------------------------------------- |
+| Op          | .list::min                             |
+| Args        | None                                   |
+| Description | Returns the minimum value of the list. |
 
 **Example Usage**
 
@@ -55,9 +59,11 @@ walker init{
 ```
 ### `idx_of_max`
 
-| Op                | Args | Description                                         |
-| ----------------- | ---- | --------------------------------------------------- |
-| .list::idx_of_max | none | Returns the index of the maximum value of the list. |
+|             |                                                     |
+| ----------- | --------------------------------------------------- |
+| Op          | .list::idx_of_max                                   |
+| Args        | None                                                |
+| Description | Returns the index of the maximum value of the list. |
 
 **Example Usage**
 
@@ -76,10 +82,11 @@ walker init{
   ]
 ```
 
-### `idx_of_min`
-| Op                | Args | Description                                         |
-| ----------------- | ---- | --------------------------------------------------- |
-| .list::idx_of_min | none | Returns the index of the minimum value of the list. |
+|             |                                                     |
+| ----------- | --------------------------------------------------- |
+| Op          | .list::idx_of_min                                   |
+| Args        | None                                                |
+| Description | Returns the index of the minimum value of the list. |
 
 **Example Usage**
 
@@ -100,9 +107,11 @@ walker init{
 
 ### `copy`
 
-| Op          | Args | Description                        |
-| ----------- | ---- | ---------------------------------- |
-| .list::copy | none | Returns a shallow copy of the list |
+|             |                                     |
+| ----------- | ----------------------------------- |
+| Op          | .list::copy                         |
+| Args        | None                                |
+| Description | Returns a shallow copy of the list. |
 
 **Example Usage**
 
@@ -123,9 +132,12 @@ walker init{
 
 ### `deepcopy`
 
-| Op              | Args | Description                     |
-| --------------- | ---- | ------------------------------- |
-| .list::deepcopy | none | Returns a deep copy of the list |
+|             |                                  |
+| ----------- | -------------------------------- |
+| Op          | .list::deepcopy                  |
+| Args        | None                             |
+| Description | Returns a deep copy of the list. |
+
 
 **Example Usage**
 
@@ -146,9 +158,11 @@ walker init{
 
 ### `sort`
 
-| Op          | Args | Description                                    |
-| ----------- | ---- | ---------------------------------------------- |
-| .list::sort | none | Sort the values in the list in assending order |
+|             |                                                |
+| ----------- | ---------------------------------------------- |
+| Op          | .list::sort                                    |
+| Args        | None                                           |
+| Description | Sort the values in the list in ascending order |
 
 **Example Usage**
 
@@ -169,9 +183,12 @@ walker init{
 ```
 
 ### `reverse`
-| Op             | Args | Description                    |
-| -------------- | ---- | ------------------------------ |
-| .list::reverse | none | Reverse the items in the list. |
+
+|             |                                |
+| ----------- | ------------------------------ |
+| Op          | .list::reverse                 |
+| Args        | None                           |
+| Description | Reverse the items in the list. |
 
 **Example Usage**
 
@@ -193,9 +210,11 @@ walker init{
 
 ### `clear`
 
-| Op           | Args | Description                      |
-| ------------ | ---- | -------------------------------- |
-| .list::clear | none | Clear all the values in the list |
+|             |                                   |
+| ----------- | --------------------------------- |
+| Op          | .list::clear                      |
+| Args        | None                              |
+| Description | Clear all the values in the list. |
 
 **Example Usage**
 
@@ -217,9 +236,11 @@ walker init{
 
 ### `pop`
 
-| Op         | Args     | Description                       |
-| ---------- | -------- | --------------------------------- |
-| .list::pop | optional | Pops the last item from the list. |
+|             |                                   |
+| ----------- | --------------------------------- |
+| Op          | .list::pop                        |
+| Args        | Optional                          |
+| Description | Pops the last item from the list. |
 
 **Example Usage**
 
@@ -241,9 +262,11 @@ walker init{
 
 ### `index`
 
-| Op           | Args            | Description                           |
-| ------------ | --------------- | ------------------------------------- |
-| .list::index | value from list | Returns the index of the given value. |
+|             |                                      |
+| ----------- | ------------------------------------ |
+| Op          | .list::index                         |
+| Args        | Item from the list                   |
+| Description | Returns the index of the given item. |
 
 **Example Usage**
 
@@ -264,9 +287,12 @@ walker init{
 
 ### `append`
 
-| Op            | Args        | Description                             |
-| ------------- | ----------- | --------------------------------------- |
-| .list::append | a new value | Append an new value in the end of list. |
+|             |                                        |
+| ----------- | -------------------------------------- |
+| Op          | .list::append                          |
+| Args        | A new item                             |
+| Description | Append an new item in the end of list. |
+
 
 **Example Usage**
 
@@ -288,10 +314,11 @@ walker init{
 
 ### `extend`
 
-| Op            | Args           | Description                                            |
-| ------------- | -------------- | ------------------------------------------------------ |
-| .list::extend | list of values | Concat list of values to the end of the existing list. |
-
+|             |                                                        |
+| ----------- | ------------------------------------------------------ |
+| Op          | .list::extend                                          |
+| Args        | List of items                                          |
+| Description | Concat list of values to the end of the existing list. |
 
 **Example Usage**
 
@@ -313,9 +340,11 @@ walker init{
 
 ### `insert`
 
-| Op            | Args        | Description                                        |
-| ------------- | ----------- | -------------------------------------------------- |
-| .list::insert | index,value | Insert given value at the given index of the list. |
+|             |                                                    |
+| ----------- | -------------------------------------------------- |
+| Op          | .list::insert                                      |
+| Args        | index,value                                        |
+| Description | Insert given value at the given index of the list. |
 
 **Example Usage**
 
@@ -336,9 +365,13 @@ walker init{
 ```
 
 ### `remove`
-| Op            | Args  | Description                                                                                                       |
-| ------------- | ----- | ----------------------------------------------------------------------------------------------------------------- |
-| .list::remove | value | Remove the given value from the list. (If there are duplicates of the same value this removes only the first one) |
+
+|             |                                                                                                                   |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| Op          | .list::remove                                                                                                     |
+| Args        | Item from the list                                                                                                |
+| Description | Remove the given value from the list. (If there are duplicates of the same value this removes only the first one) |
+
 
 **Example Usage**
 
@@ -358,9 +391,12 @@ walker init{
 ```
 
 ### `count`
-| Op           | Args  | Description                                          |
-| ------------ | ----- | ---------------------------------------------------- |
-| .list::count | value | Returns the number of occurences of the given value. |
+
+|             |                                                       |
+| ----------- | ----------------------------------------------------- |
+| Op          | .list::count                                          |
+| Args        | value                                                 |
+| Description | Returns the number of occurrences of the given value. |
 
 
 **Example Usage**
@@ -382,9 +418,11 @@ walker init{
 
 ### `pairwise`
 
-| Op              | Args | Description                                              |
-| --------------- | ---- | -------------------------------------------------------- |
-| .list::pairwise | none | Return successive overlapping pairs taken from the list. |
+|             |                                                          |
+| ----------- | -------------------------------------------------------- |
+| Op          | .list::pairwise                                          |
+| Args        | None                                                     |
+| Description | Return successive overlapping pairs taken from the list. |
 
 **Example Usage**
 
@@ -414,10 +452,11 @@ walker init{
 
 ### `unique`
 
-| Op            | Args | Description                                     |
-| ------------- | ---- | ----------------------------------------------- |
-| .list::unique | none | Return sorted list of unique items from a list. |
-
+|             |                                                 |
+| ----------- | ----------------------------------------------- |
+| Op          | .list::unique                                   |
+| Args        | None                                            |
+| Description | Return sorted list of unique items from a list. |
 
 **Example Usage**
 

@@ -85,4 +85,4 @@ helm install nginx-ingress ingress-nginx/ingress-nginx
 
 ### New Changes in AWS EKS 1.24+
 
-In some cases of AWS EKS 1.24 , Persistent Volume may not come up dynamically and we need to install CSI Driver for the same. Please follow this [link](https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/install.md) to install CSI Driver in your Cluster 
+In some cases of AWS EKS 1.24 , Persistent Volume may not come up dynamically and we need to install CSI Driver for the same. Please follow this [link](https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/install.md) to install CSI Driver in your Cluster

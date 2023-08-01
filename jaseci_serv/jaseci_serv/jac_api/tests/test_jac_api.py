@@ -1283,12 +1283,41 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertTrue(res.data["success"])
 
     def test_jac_admin_master_allusers(self):
-        """Test API for creating a graph"""
+        """Test API for getting all users information"""
         payload = {}
         res = self.sclient.post(
             reverse("jac_api:master_allusers"), payload, format="json"
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_jac_admin_master_allusers_last_login(self):
+        """Test API for getting user information include last login time"""
+        payload = {
+            "op": "master_create",
+            "name": "test@gmail.com",
+            "other_fields": {
+                "password": "abcd1234@#$%",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        res = self.client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        login_client = APIClient()
+        payload = {"email": "test@gmail.com", "password": "abcd1234@#$%"}
+        res = login_client.post(reverse("user_api:token"), payload)
+
+        res = self.sclient.post(
+            reverse("jac_api:master_allusers"), payload, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        for i in res.json()["data"]:
+            if i["user"] == "test@gmail.com":
+                self.assertIsNotNone(i["last_login"])
+                return
+            self.fail("Test user does not exist in master_allusers response.")
 
     def test_jac_admin_master_allusers_search(self):
         """Test API for searching users"""
@@ -1417,6 +1446,56 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         )
         self.assertEqual(user_gph_id, res.data[0]["jid"])
 
+    def test_master_become_unbecome(self):
+        """Test that admin retains its privilege after become and unbecome a non-admin user"""
+
+        # check admin privilege
+        payload = {"op": "master_allusers"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertTrue("data" in res.json())
+
+        # become a non-admin user
+        payload = {
+            "op": "user_create",
+            "name": "yo@gmail.com",
+            "other_fields": {
+                "password": "yoyoyoyoyoyo",
+                "name": "",
+                "is_activated": True,
+            },
+        }
+        public_client = APIClient()
+        res = public_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        non_admin_user_id = res.json()["user"]["jid"]
+        payload = {"op": "master_become", "mast": non_admin_user_id}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        # check no admin privilege
+        payload = {"op": "master_allusers"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertFalse(res.json()["success"])
+
+        # unbecome
+        payload = {"op": "master_unbecome"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+
+        # check admin privilege is back
+        payload = {"op": "master_allusers"}
+        res = self.sclient.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertTrue("data" in res.json())
+
     def test_jac_report_custom(self):
         """Test API for running a walker"""
         payload = {"op": "graph_create"}
@@ -1472,7 +1551,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         ).data
 
         self.assertFalse(res["success"])
-        self.assertEqual(payload, res["report"][4]["body"])
+        self.assertEqual(payload, res["report"][3]["body"])
+        self.assertIn("Global not defined - b", res["errors"][0])
 
     def test_multipart_json_file(self):
         """Test multipart using json file as ctx parameter"""
@@ -1630,34 +1710,51 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertTrue(res["success"])
         self.assertEqual({"sample": "sample"}, res["report"][0]["ctx"])
 
-    def test_multipart_with_additional_file(self):
+    def test_multipart_with_additional_files(self):
         """Test multipart with additional file"""
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
         self.client.post(reverse(f'jac_api:{payload["op"]}'), payload, format="json")
         with open(os.path.dirname(__file__) + "/test.json", "rb") as ctx, open(
             os.path.dirname(__file__) + "/test.json", "rb"
-        ) as ctx2:
+        ) as ctx2, open(os.path.dirname(__file__) + "/image.png", "rb") as ctx3:
             form = {
                 "name": "simple_with_file",
                 "ctx": ctx,
                 "nd": "active:graph",
                 "snt": "active:sentinel",
                 "fileTypeField": ctx2,
+                "binaryFile": ctx3,
             }
             res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
-        default_file = [
-            {
-                "name": "test.json",
-                "base64": "eyJzYW1wbGUiOiJzYW1wbGUifQ==",
-                "content-type": "application/json",
-            }
-        ]
-
         self.assertTrue(res["success"])
-        self.assertEqual(default_file, res["report"][0])
-        self.assertEqual(default_file, res["report"][1])
+        self.assertEqual("sample", res["report"][0])
+        self.assertTrue(res["report"][1])
+
+        uuid = res["report"][2]
+
+        self.assertEqual(
+            {
+                "id": f"{uuid}",
+                "name": "test.json",
+                "content_type": "application/json",
+                "field": "fileTypeField",
+                "absolute_name": f"{uuid}-test.json",
+                "absolute_path": f"/tmp/{uuid}-test.json",
+                "persist": False,
+            },
+            res["report"][3],
+        )
+        self.assertEqual('{"sample":"sample"}', res["report"][4])
+        self.assertEqual({"sample": "sample"}, res["report"][5])
+        self.assertEqual('b\'{"sample":"sample"}\'', res["report"][6])
+        self.assertEqual("eyJzYW1wbGUiOiJzYW1wbGUifQ==", res["report"][7])
+
+        with open(os.path.dirname(__file__) + "/image.png", "rb") as img:
+            string_bytes = str(img.read())
+            self.assertEqual(string_bytes, res["report"][8])
+            self.assertEqual(string_bytes, res["report"][9])
 
     def test_multipart_custom_payload_with_additional_file(self):
         """Test multipart custom payload (non ctx format) with additional file"""
@@ -1674,16 +1771,27 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             }
             res = self.client.post(reverse(f'jac_api:{"walker_run"}'), data=form).data
 
-        default_file = [
-            {
-                "name": "test.json",
-                "base64": "eyJzYW1wbGUiOiJzYW1wbGUifQ==",
-                "content-type": "application/json",
-            }
-        ]
-
         self.assertTrue(res["success"])
-        self.assertEqual(default_file, res["report"][2])
+        self.assertTrue(res["report"][0])
+
+        uuid = res["report"][1]
+
+        self.assertEqual(
+            {
+                "id": f"{uuid}",
+                "name": "test.json",
+                "content_type": "application/json",
+                "field": "fileTypeField",
+                "absolute_name": f"{uuid}-test.json",
+                "absolute_path": f"/tmp/{uuid}-test.json",
+                "persist": False,
+            },
+            res["report"][2],
+        )
+        self.assertEqual('{"sample":"sample"}', res["report"][3])
+        self.assertEqual({"sample": "sample"}, res["report"][4])
+        self.assertEqual('b\'{"sample":"sample"}\'', res["report"][5])
+        self.assertEqual("eyJzYW1wbGUiOiJzYW1wbGUifQ==", res["report"][6])
 
     def test_try_catch(self):
         """Test try catch triggers"""
@@ -1696,17 +1804,8 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        self.assertIn("in jac_try_exception", " ".join(res["stack_trace"]))
         self.assertIn(
-            "raise TryException(self.jac_exception(e, jac_ast))",
-            " ".join(res["stack_trace"]),
-        )
-        self.assertIn(
-            "jaseci.jac.machine.machine_state.TryException: ",
-            " ".join(res["stack_trace"]),
-        )
-        self.assertIn(
-            "zsb:walker_exception_no_try_else - line 6, col 20",
+            "zsb:walker_exception_no_try_else - line 6, col 19",
             res["errors"][0],
         )
 
@@ -1715,13 +1814,12 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        self.assertFalse("stack_trace" in res)
+        self.assertTrue("stack_trace" in res)
         self.assertEqual("walker_exception_with_try_else", res["report"][0]["name"])
         self.assertEqual(14, res["report"][0]["line"])
         self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else -"
-            " line 14, col 23 - rule atom_trailer - ",
+            "zsb:walker_exception_with_try_else - line 14, col 23 - rule ability_call - Invalid arguments {'args': ['invalidUrl'], 'kwargs': {}} to action call request.get! Valid paramters are (url: str, data: dict, header: dict).",
             res["errors"][0],
         )
 
@@ -1734,15 +1832,14 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
-        self.assertFalse("stack_trace" in res)
+        self.assertTrue("stack_trace" in res)
         self.assertEqual(
             "walker_exception_with_try_else_multiple_line", res["report"][0]["name"]
         )
         self.assertEqual(32, res["report"][0]["line"])
         self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else_multiple_line "
-            "- line 32, col 23 - rule atom_trailer - ",
+            "zsb:walker_exception_with_try_else_multiple_line - line 32, col 23 - rule ability_call - Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant https://invalidUrl?",
             res["errors"][0],
         )
 

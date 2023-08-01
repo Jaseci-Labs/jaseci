@@ -226,10 +226,10 @@ global a = "test";
 walker global_actions {
     with entry {
         report global.a;
-        report global.b;
         report global.context;
         report global.info;
         report global.info['request_context'];
+        report global.b;
     }
 }
 
@@ -275,28 +275,47 @@ async walker simple_async {
 }
 
 walker simple_with_file {
-    has fileTypeField;
+    has sample, fileTypeField, binaryFile;
+
+    can fh.attr, fh.read, fh.to_json, fh.to_base64, fh.to_bytes, fh.open;
 
     with entry {
-        report global.info['request_context']["body"]["ctx"]["fileTypeField"];
-        report fileTypeField;
+        report sample;
+
+        if fileTypeField and global.info['request_context']["body"]["ctx"]["fileTypeField"] {
+            report true;
+        }
+
+        report fileTypeField[0];
+        report fh.attr(fileTypeField[0]);
+        report fh.read(fileTypeField[0], 0);
+        report fh.to_json(fileTypeField[0]);
+        report fh.to_bytes(fileTypeField[0]).str;
+        report fh.to_base64(fileTypeField[0]);
+
+        fh.open(binaryFile[0], mode = "rb");
+        report fh.read(binaryFile[0], 0).str;
+        report fh.to_bytes(binaryFile[0]).str;
     }
 }
 
 walker simple_custom_payload_with_file {
     has fileTypeField;
 
+    can fh.attr, fh.read, fh.to_json, fh.to_base64, fh.to_bytes;
+
     with entry {
-
-        if not(fileTypeField) {
+        if not fileTypeField and not global.info['request_context']["body"]["ctx"] {
             report true;
         }
 
-        if not(global.info['request_context']["body"]["ctx"]) {
-            report true;
-        }
-
-        report global.info['request_context']["body"]["fileTypeField"];
+        uuid = global.info['request_context']["body"]["fileTypeField"][0];
+        report uuid;
+        report fh.attr(uuid);
+        report fh.read(uuid, 0, "r", "utf-8");
+        report fh.to_json(uuid);
+        report fh.to_bytes(uuid).str;
+        report fh.to_base64(uuid);
     }
 }
 

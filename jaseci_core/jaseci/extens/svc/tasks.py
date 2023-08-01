@@ -11,7 +11,7 @@ DEFAULT_MSG = "Skipping scheduled walker!"
 
 
 class Queue(Task):
-    def run(self, wlk, nd, args):
+    def run(self, wlk: str, nd: str, args):
         hook = JsOrc.hook()
 
         wlk = hook.get_obj_from_store(wlk)
@@ -34,7 +34,7 @@ class ScheduledWalker(Task):
     def get_obj(self, jid):
         return self.hook.get_obj_from_store(jid)
 
-    def run(self, name, ctx, nd=None, snt=None, mst=None):
+    def run(self, mst, wlk="init", ctx: dict = {}, nd: str = None, snt: str = None):
         self.hook = JsOrc.hook()
 
         if mst:
@@ -71,7 +71,12 @@ class ScheduledWalker(Task):
             if not nd:
                 return f"{DEFAULT_MSG} Invalid Node!"
 
-            return mst.walker_run(name, nd, ctx, ctx, snt, False, False)
+            resp = mst.walker_run(wlk, nd, ctx, ctx, snt, False, False)
+
+            mst._h.commit_all_cache_sync()
+            mst._h.commit(True)
+
+            return resp
         except Exception as e:
             return f"{DEFAULT_MSG} Error occured: {e}"
 
@@ -202,10 +207,14 @@ class ScheduledSequence(Task):
 
         api = req.get("api")
         body = req.get("body", {})
+        resp = getattr(caller, f"{trigger_type}_interface_to_api")(body, api)
 
-        return getattr(caller, f"{trigger_type}_interface_to_api")(body, api)
+        caller._h.commit_all_cache_sync()
+        caller._h.commit(True)
 
-    def run(self, *args, **kwargs):
+        return resp
+
+    def run(self, **kwargs):
         requests = kwargs.get("requests")
         persistence = kwargs.get("persistence", {})
         container = kwargs.get("container", {"current": persistence})

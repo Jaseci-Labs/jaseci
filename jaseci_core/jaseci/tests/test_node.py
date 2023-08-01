@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from jaseci.prim.architype import Architype
-from jaseci.prim import action
+from jaseci.prim import ability
 from jaseci.prim.edge import Edge
 from jaseci.prim.node import Node
 from jaseci.jsorc.jsorc import JsOrc
@@ -52,18 +52,15 @@ class NodeTests(TestCaseHelper, TestCase):
     def test_add_entry_action_to_node_and_destroy(self):
         """Test connecting and disconnecting etc of nodes"""
         node1 = Architype(m_id=0, h=JsOrc.hook())
-        act = action.Action(m_id=0, h=node1._h, name="yeah dude", value="SUP")
-        node1.entry_action_ids.add_obj(act)
-        self.assertEqual(
-            node1.entry_action_ids.get_obj_by_name("yeah dude").value, "SUP"
-        )
-        self.assertEqual(len(node1.entry_action_ids), 1)
-        self.assertTrue(node1.entry_action_ids.has_obj_by_name("yeah dude"))
-        self.assertFalse(node1.entry_action_ids.has_obj_by_name("yeah  dude"))
+        act = ability.Ability(m_id=0, h=node1._h, name="yeah dude")
+        node1.entry_ability_ids.add_obj(act)
+        self.assertEqual(len(node1.entry_ability_ids), 1)
+        self.assertTrue(node1.entry_ability_ids.has_obj_by_name("yeah dude"))
+        self.assertFalse(node1.entry_ability_ids.has_obj_by_name("yeah  dude"))
 
-        node1.entry_action_ids.destroy_obj_by_name(name="yeah dude")
-        self.assertEqual(len(node1.entry_action_ids), 0)
-        self.assertFalse(node1.entry_action_ids.has_obj_by_name("yeah dude"))
+        node1.entry_ability_ids.destroy_obj_by_name(name="yeah dude")
+        self.assertEqual(len(node1.entry_ability_ids), 0)
+        self.assertFalse(node1.entry_ability_ids.has_obj_by_name("yeah dude"))
 
     def test_adding_and_removing_from_hdnodes(self):
         """Test adding nodes and removing them from HDGDs"""

@@ -24,7 +24,7 @@ class Master(CoreMaster):
         super().__init__(*args, **kwargs)
         self._valid_configs += JASECI_CONFIGS
 
-    def user_creator(self, name, password, other_fields: dict = {}):
+    def user_creator(self, name, password, other_fields: dict = {}, send_email=True):
         """
         Create a master instance and return root node master object
 
@@ -42,6 +42,7 @@ class Master(CoreMaster):
             else SuperUserSerializer(data=data)
         )
         if serializer.is_valid(raise_exception=False):
+            serializer._send_email = send_email
             mas = serializer.save().get_master()
             mas._h = self._h
             return mas
@@ -134,6 +135,9 @@ class SuperMaster(Master, JsOrcApi, CoreSuper):
                     "created_date": i.time_created.isoformat(),
                     "is_activated": i.is_activated,
                     "is_superuser": i.is_superuser,
+                    "last_login": i.last_login.isoformat()
+                    if i.last_login is not None
+                    else "",
                 }
             )
         ret = {"total": total, "data": filtered_users}

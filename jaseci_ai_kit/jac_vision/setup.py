@@ -22,7 +22,11 @@ setup(
     name="jac_vision",
     version=get_ver(),
     packages=find_packages(include=["jac_vision", "jac_vision.*"]),
-    install_requires=["jaseci", "pytest>=7.0.1,<7.1", "pytest-order>=1.0.1,<1.1"],
+    install_requires=[
+        f"jaseci=={get_ver()}",
+        "pytest>=7.0.1,<7.1",
+        "pytest-order>=1.0.1,<1.1",
+    ],
     extras_require=get_extras_requires(),
     package_data={
         "": ["*.json", "*.cfg", "VERSION", "*.yaml", "requirements.txt", "*.jac"],

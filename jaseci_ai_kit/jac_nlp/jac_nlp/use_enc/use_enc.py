@@ -9,7 +9,7 @@ from jaseci.utils.utils import model_base_path
 
 
 MODULE_URL = "https://tfhub.dev/google/universal-sentence-encoder/4"
-MODEL_BASE_PATH = model_base_path("jac_nlp/use_enc")
+MODEL_BASE_PATH = str(model_base_path("jac_nlp/use_enc"))
 
 
 @jaseci_action(act_group=["use"], allow_remote=True)
@@ -19,7 +19,7 @@ def setup():
     """
     global module
     try:
-        module = tf.saved_model.load(os.path.join(MODEL_BASE_PATH, "saved_model.pb"))
+        module = tf.saved_model.load(MODEL_BASE_PATH)
     except OSError:
         os.makedirs(MODEL_BASE_PATH, exist_ok=True)
         module = hub.load(MODULE_URL)

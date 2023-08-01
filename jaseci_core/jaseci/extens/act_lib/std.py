@@ -11,6 +11,7 @@ from jaseci.extens.svc.elastic_svc import Elastic
 
 import sys
 import json
+import time
 
 
 @jaseci_action()
@@ -47,6 +48,12 @@ def err(*args):
     """Standard built in for printing to stderr"""
     args = [json_out(jwv(x)) for x in args]
     print(*args, file=sys.stderr)
+
+
+@jaseci_action()
+def sleep(secs: float):
+    """Standard built in for sleep"""
+    return time.sleep(secs)
 
 
 @jaseci_action()
@@ -104,8 +111,9 @@ def actload_local(filename: str, meta):
     """
     mast = master_from_meta(meta)
     if not mast.is_master(super_check=True, silent=True):
-        meta["interp"].rt_error("Only super master can load actions.")
-        return False
+        meta["interp"].rt_error(
+            "Only super master can load actions.", meta["interp"]._cur_jac_ast
+        )
     return mast.actions_load_local(file=filename)["success"]
 
 
@@ -116,8 +124,9 @@ def actload_remote(url: str, meta):
     """
     mast = master_from_meta(meta)
     if not mast.is_master(super_check=True, silent=True):
-        meta["interp"].rt_error("Only super master can load actions.")
-        return False
+        meta["interp"].rt_error(
+            "Only super master can load actions.", meta["interp"]._cur_jac_ast
+        )
     return mast.actions_load_remote(url=url)["success"]
 
 
@@ -128,8 +137,9 @@ def actload_module(module: str, meta):
     """
     mast = master_from_meta(meta)
     if not mast.is_master(super_check=True, silent=True):
-        meta["interp"].rt_error("Only super master can load actions.")
-        return False
+        meta["interp"].rt_error(
+            "Only super master can load actions.", meta["interp"]._cur_jac_ast
+        )
     return mast.actions_load_module(mod=module)["success"]
 
 
