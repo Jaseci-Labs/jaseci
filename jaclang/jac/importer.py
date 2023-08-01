@@ -1,5 +1,6 @@
 """Special Imports for Jac Code."""
 import inspect
+import marshal
 import sys
 import traceback
 import types
@@ -36,12 +37,18 @@ def import_jac_module(
         caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
     full_target = path.normpath(path.join(caller_dir, target))
 
-    code_string = transpiler_func(file_path=full_target, base_dir=caller_dir)
-
-    # if save_file:
     dev_dir = path.join(caller_dir, "__jac_gen__")
     makedirs(dev_dir, exist_ok=True)
-    with open(path.join(dev_dir, module_name + ".py"), "w") as f:
+    py_file_path = path.join(dev_dir, module_name + ".py")
+    if path.exists(py_file_path) and path.getmtime(py_file_path) > path.getmtime(
+        full_target
+    ):
+        with open(py_file_path, "r") as f:
+            code_string = f.read()
+    else:
+        code_string = transpiler_func(file_path=full_target, base_dir=caller_dir)
+
+    with open(py_file_path, "w") as f:
         f.write(code_string)
 
     module = types.ModuleType(module_name)
@@ -49,8 +56,17 @@ def import_jac_module(
     module.__name__ = module_name
     module.__dict__["_jac_pycodestring_"] = code_string
 
-    try:
+    if path.exists(py_file_path + "c") and path.getmtime(
+        py_file_path + "c"
+    ) > path.getmtime(full_target):
+        with open(py_file_path + "c", "rb") as f:
+            codeobj = marshal.load(f)
+    else:
         codeobj = compile(code_string, f"_jac_py_gen ({module.__file__})", "exec")
+        with open(py_file_path + "c", "wb") as f:
+            marshal.dump(codeobj, f)
+
+    try:
         exec(codeobj, module.__dict__)
     except Exception as e:
         traceback.print_exc()
@@ -76,7 +92,6 @@ def import_jac_module(
 def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary) -> str:
     """Handle Jac Error."""
     except_line = e.end_lineno if isinstance(e, SyntaxError) else list(tb)[-1].lineno
-
     if not isinstance(except_line, int) or except_line == 0:
         return ""
     traceback.print_exc()

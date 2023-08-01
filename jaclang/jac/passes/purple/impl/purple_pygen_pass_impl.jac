@@ -128,7 +128,7 @@ arch_attached: Optional["ArchBlock"] = None,
     if nd.body {
         (nd, "try:") |> <self>.emit_ln;
         <self>.indent_level += 1;
-        (nd, nd.body.meta["py_code"]) |> <self>.emit_ln;
+        (nd, nd.body.meta["py_code"]) |> <self>.emit;
         <self>.indent_level -= 1;
         (nd) |> <self>.emit_jac_error_handler;
     } else {
