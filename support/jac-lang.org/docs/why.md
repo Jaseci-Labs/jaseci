@@ -13,6 +13,6 @@ Jac doesn't have a big backing company (yet), nor a team of paid coders in a com
 
 We're very open and welcoming of anyone who might be open to catching the Jac bug. If you're interested in being part of this project and learn more, please feel free to reach out. We'd love to hear from you. We have a journey ahead of us, but with dedication and collaboration, we're confident we can make Jac a beloved part of every coder's toolkit.
 
-## About Me
+## About Jac's Creator
 
 Hello, I'm Jason Mars, the creator of Jac and it's data spatial programming model. I'm a computer enthusiast, a comp. sci. prof, a tech entrepreneur, an avid coder, a gamer, etc. I aim to bring the insights I've gain through these roles to the creation of Jac to make it useful, practical, and beautiful, oh and FUN!!
