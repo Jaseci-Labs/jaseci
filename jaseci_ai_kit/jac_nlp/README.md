@@ -10,9 +10,6 @@ The `jac_nlp` package contains a collection of state-of-the-art NLP models that 
     - [USE QA (`use_qa`)](#use-qa-use_qa)
       - [Actions](#actions-1)
       - [Example Jac Usage:](#example-jac-usage-1)
-    - [FastText Encoder (`fast_enc`)](#fasttext-encoder-fast_enc)
-      - [Actions](#actions-2)
-      - [Example Jac Usage:](#example-jac-usage-2)
     - [BI-Encoder (`bi_enc`)](#bi-encoder-bi_enc)
       - [Actions](#actions-3)
       - [Example Jac Usage:](#example-jac-usage-3)
@@ -20,9 +17,6 @@ The `jac_nlp` package contains a collection of state-of-the-art NLP models that 
       - [Actions](#actions-4)
       - [Example Jac Usage:](#example-jac-usage-4)
   - [Named Entity Recognition Models](#named-entity-recognition-models)
-    - [Entity Extraction (`ent_ext` and `lstm_ner`)](#entity-extraction-ent_ext-and-lstm_ner)
-      - [Actions](#actions-5)
-      - [Example Jac Usage:](#example-jac-usage-5)
     - [Entity Extraction Using Transformers (`tfm_ner`)](#entity-extraction-using-transformers-tfm_ner)
       - [Actions](#actions-6)
       - [Example Jac Usage:](#example-jac-usage-6)
@@ -34,10 +28,7 @@ The `jac_nlp` package contains a collection of state-of-the-art NLP models that 
     - [Summarizer (`cl_summer`)](#summarizer-cl_summer)
       - [Actions](#actions-8)
       - [Example Jac Usage](#example-jac-usage-8)
-    - [T5 Summarization (`t5_sum`)](#t5-summarization-t5_sum)
-      - [Actions](#actions-9)
-      - [Example Jac Usage:](#example-jac-usage-9)
-    - [Bart Summarization (`bart_sum`)](#bart-summarization-bart_sum)
+    - [Summarization (`summarization`)](#summarization-summarization)
       - [Actions](#actions-10)
       - [Example Jac Usage:](#example-jac-usage-10)
   - [Topic Modeling Modules](#topic-modeling-modules)
@@ -202,50 +193,6 @@ walker use_qa_example {
 
 For a complete example visit [here](jac_nlp/use_qa/README.md)
 
-### FastText Encoder (`fast_enc`)
-
-#### Actions
-
-`fast_enc` module uses the facebook's fasttext -- efficient learning of word representations and sentence classification.
-
-* `train`: used to train the Bi-Encoder for custom input
-    * Input:
-        * `traindata` (Dict): dictionary of candidates and suportting contexts for each candidate
-        * `train_with_existing` (bool): if set to true train the model from scratch otherwise trains incrementally
-* `predict`: predits the most suitable candidate for a provided context, takes text or embedding
-    * Input:
-        * `sentences` (list of strings): list of sentences the needs to be classified
-    * Return: a dictionary of sentence, predicted intent and probability
-* `save_model`:
-    * Input
-        * `model_path` (string): the path to save model
-    * Returns: "[Saved model at] : <model_path>" if model successfully saved
-* `load_model`:
-    * Input
-        * `model_path` (string): the path to save model
-    * Returns: "[loaded model from] : <model_path>" if model successfully loaded
-
-
-#### Example Jac Usage:
-
-```jac
-# Train and inference with a fasttext classifier
-walker fast_enc_example {
-    has train_file = "fast_enc_train.json";
-    has train_with_existing = false;
-    has test_sentence=  ["what's going on ?"];
-    can fast_enc.train,fast_enc.predict;
-
-    # Training the model
-    train_data = file.load_json(train_file);
-    fast_enc.train(traindata=train_data,train_with_existing=false);
-
-    # Getting inference from the model
-    resp_data=fast_enc.predict(sentences=test_sentence);
-    std.out(resp_data);
-}
-```
-For a complete example visit [here](jac_nlp/fast_enc/README.md)
 
 ### BI-Encoder (`bi_enc`)
 `bi_enc`  module can be used for intent classification, it takes contexts and candidates, to predict the best suitable candidate for each context. You can train the module on custom data to behave accordingly.
@@ -491,154 +438,6 @@ For a complete example visit [here](jac_nlp/sbert_sim/README.md)
 
 ## Named Entity Recognition Models
 
-### Entity Extraction (`ent_ext` and `lstm_ner`)
-
-`ent_ext` module uses Flair named entity recognition architecture. Can either be used zero-shot or trained.
-
-#### Actions
-
-* `train`: used to train the Flair-based NER model
-    * Input:
-        * `train_data`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context.
-        ```
-        [
-            {
-                "context": "EU rejects German call to boycott British lamb",
-                "entities": [
-                    {
-                        "entity_value": "EU",
-                        "entity_type": "ORG",
-                        "start_index": 0,
-                        "end_index": 2
-                    },
-                    {
-                        "entity_value": "German",
-                        "entity_type": "MISC",
-                        "start_index": 11,
-                        "end_index": 17
-                    },
-                    {
-                        "entity_value": "British",
-                        "entity_type": "MISC",
-                        "start_index": 34,
-                        "end_index": 41
-                    }
-                ]
-            }
-        ]
-        ```
-        * `val_data`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
-        ```
-        [
-            {
-                "context": "CRICKET LEICESTERSHIRE TAKE OVER AT TOP AFTER INNINGS VICTORY",
-                "entities": [
-                    {
-                        "entity_value": "LEICESTERSHIRE",
-                        "entity_type": "ORG",
-                        "start_index": 8,
-                        "end_index": 22
-                    }
-                ]
-            }
-        ]
-        ```
-        * `test_data`: (List(Dict)): a list of dictionaries containing contexts and list of entities in each context
-        ```
-        [
-            {
-                "context": "The former Soviet republic was playing in an Asian Cup finals tie for the first time",
-                "entities": [
-                    {
-                        "entity_value": "Soviet",
-                        "entity_type": "MISC",
-                        "start_index": 11,
-                        "end_index": 17
-                    },
-                    {
-                        "entity_value": "Asian",
-                        "entity_type": "MISC",
-                        "start_index": 45,
-                        "end_index": 50
-                    },
-                    {
-                        "entity_value": "Asian",
-                        "entity_type": "MISC",
-                        "start_index": 45,
-                        "end_index": 50
-                    }
-                ]
-            }
-        ]
-        ```
-        * `train_params`: (Dict): dictionary of training parameters to modify the training behaviour
-        ```
-        {
-            "num_epoch": 20,
-            "batch_size": 16,
-            "LR": 0.01
-        }
-        ```
-* `entity_detection`: detects all availabe entities from the provided context
-    * Input:
-        * `text` (string): context to detect entities.
-        * `ner_labels`(list of strings): List of entities, e.g. ["LOC","PER"]
-    * Return: a list of dictionary entities containing entity_text, entity_value, conf_score and index
-* `save_model`:
-    * Input
-        * `model_path` (string): the path to save model
-    * Returns: "[Saved model at] : <model_path>" if model successfully saved
-* `load_model`:
-    * Input
-        * `model_path` (string): the path to save model
-    * Returns: "[loaded model from] : <model_path>" if model successfully loaded
-* `set_config`:
-    * Input
-        * `ner_model`: pretrained or basic model to be loaded, provide the exact name of the model, available options are:
-            * `Pre-trained LSTM / GRU` : ["ner", "ner-fast","ner-large"]
-            * `Huggingface model` : all available models that can be intialized with AutoModel
-            * `None` : for load a RNN model from scratch
-        * `model_type`: type of model to be loaded, available options are :
-            * `TRFMODEL` : for huggingface models
-            * `LSTM` or `GRU` : RNN models
-    * Returns: "Config setup is complete." if model successfully loaded
-    *
-#### Example Jac Usage:
-
-```jac
-# Train and inference with an entity extraction model
-walker ent_ext_example {
-
-    has train_file = "train_data.json";
-    has val_file = "val_data.json";
-    has test_file = "test_data.json";
-    has from_scratch = true;
-    has num_train_epochs = 20;
-    has batch_size = 8;
-    has learning_rate = 0.02;
-    can ent_ext.entity_detection, ent_ext.train;
-    train_data = file.load_json(train_file);
-    val_data = file.load_json(val_file);
-    test_data = file.load_json(test_file);
-
-    # Training the model
-    ent_ext.train(
-        train_data = train_data,
-        val_data = val_data,
-        test_data = test_data,
-        train_params = {
-            "num_epoch": num_train_epochs,
-            "batch_size": batch_size,
-            "LR": learning_rate
-            });
-
-    # Getting inference from the model
-    resp_data = ent_ext.entity_detection(text="book a flight from kolkata to delhi",ner_labels= ["LOC"]);
-    std.out(resp_data);
-}
-```
-
-For a complete example visit [here](jac_nlp/ent_ext/README.md)
 
 ### Entity Extraction Using Transformers (`tfm_ner`)
 
@@ -799,7 +598,6 @@ walker text_seg_example {
 For a complete example visit [here](jac_nlp/text_seg/README.md)
 
 ## Summarization Modules
-
 ### Summarizer (`cl_summer`)
 
 `cl_summer` uses the sumy summarizer to create extractive summary.
@@ -831,7 +629,6 @@ walker cl_summer_example {
     has sent_count = 5;
     has summarizer_type = "LsaSummarizer";
     can cl_summer.summarize;
-
     # Getting Extractive summary from text
     train_data = file.load_json(text_file);
     resp_data = cl_summer.summarize(
@@ -850,7 +647,6 @@ walker cl_summer_example {
     has summarizer_type = "LsaSummarizer";
     has url="https://in.mashable.com/";
     can cl_summer.summarize;
-
     # Getting Extractive summary from URL
     resp_data_url = cl_summer.summarize(
         text="none",
@@ -864,51 +660,14 @@ walker cl_summer_example {
 
 For a complete example visit [here](jac_nlp/cl_summer/README.md)
 
-###  T5 Summarization (`t5_sum`)
-`t5_sum` uses the T5 transformer model to perform abstractive summary on a body of text.
+
+### Summarization (`summarization`)
+
+`summarization` uses the BART transformer model to perform abstractive summary on a body of text.
 
 #### Actions
 
-* `classify_text`: use the T5 model to summarize a body of text
-    * **Input**:
-        * `text` (string): text to summarize
-        * `min_length` (integer): the least amount of words you want returned from the model
-        * `max_length` (integer): the most amount of words you want returned from the model
-    * **Input datafile**
-    `**data.json**`
-        ```
-        {
-            "text": "The US has passed the peak on new coronavirus cases, President Donald Trump said and predicted that some states would reopen this month. The US has over 637,000 confirmed Covid-19 cases and over 30,826 deaths, the highest for any country in the world. At the daily White House coronavirus briefing on Wednesday, Trump said new guidelines to reopen the country would be announced on Thursday after he speaks to governors. We'll be the comeback kids, all of us, he said. We want to get our country back. The Trump administration has  previously fixed May 1 as a possible date to reopen the world's largest economy, but the president said some states may be able to return to normalcy earlier than that.",
-            "min_length": 30,
-            "max_length": 100
-        }
-        ```
-
-#### Example Jac Usage:
-```jac
-# Use the T5 model to summarize a given piece of text
-walker summarization {
-    can t5_sum.classify_text;
-    has data = "data.json";
-    data = file.load_json(data);
-    summarized_text = t5_sum.classify_text(
-        text = data["text"],
-        min_length = data["min_length"],
-        max_length = data["max_length"]
-        );
-    report summarized_text;
-}
-```
-
-For a complete example visit [here](jac_nlp/t5_sum/README.md)
-
-###  Bart Summarization (`bart_sum`)
-
-`bart_sum` uses the BART transformer model to perform abstractive summary on a body of text.
-
-#### Actions
-
-There are 2 ways to use `bart_sum` module.
+There are 2 ways to use `summarization` module.
 1. Given a text, it will return the summary of the text.
 2. Given a web page url, it will return the summary of the web page.
 
@@ -926,15 +685,15 @@ Following example will return the summary of the a single text.
 
 ```jac
 walker test_summarize_single {
-    can bart_sum.summarize;
-    report bart_sum.summarize("There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.", 10);
+    can summarization.summarize;
+    report summarization.summarize("There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.", 10);
 }
 ```
 You can also pass a list of texts to get the summary of all the texts.
 ```jac
 walker test_summarize_batch {
-    can bart_sum.summarize;
-    report bart_sum.summarize(
+    can summarization.summarize;
+    report summarization.summarize(
         ["There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
         "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude.",
         "There was once a king of Scotland whose name was Robert Bruce. He needed to be both brave and wise because the times in which he lived were wild and rude."],
@@ -946,12 +705,12 @@ Following example will return the summary of the web page.
 
 ```jac
 walker test_summarize_url {
-    can bart_sum.summarize;
-    report bart_sum.summarize(null, "https://in.mashable.com/");
+    can summarization.summarize;
+    report summarization.summarize(null, "https://in.mashable.com/");
 }
 ```
 
-For a complete example visit [here](jac_nlp/bart_sum/README.md)
+For a complete example visit [here](jac_nlp/summarization/README.md)
 
 ## Topic Modeling Modules
 
