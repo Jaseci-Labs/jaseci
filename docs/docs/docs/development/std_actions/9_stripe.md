@@ -278,6 +278,14 @@ stripe.subscription_delete(subscription_id: "subs_id"):
 stripe.invoice_retrieve(invoice_id: "invoice_id"):
 ```
 ---
+## stripe.**`subscription_item_list_usage_record_summaries`**
+> **`Docs`:** \
+> https://stripe.com/docs/api/usage_records/subscription_item_summary_list
+##### **`HOW TO TRIGGER`**
+```js
+stripe.subscription_item_list_usage_record_summaries(subscription_item_id: "subscription_item_id"):
+```
+---
 ## stripe.**`subscription_item_create_usage_record`**
 > **`Docs`:** \
 > https://stripe.com/docs/api/usage_records/create

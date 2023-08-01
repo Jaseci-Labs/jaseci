@@ -25,7 +25,8 @@ class WebhookApi:
 
             # to be updated
             stripe_service.get_event(
-                self._h.get_file_handler(_req_ctx["raw"]), _req_ctx["headers"]
+                self._h.get_file_handler(_req_ctx["raw"]).to_bytes(),
+                _req_ctx["headers"],
             )
 
             payload_obj = req_body.get("data").get("object")
