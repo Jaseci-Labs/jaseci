@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 import warnings
-from pathlib import Path
 from typing import Dict, List, Optional
 
 from fastapi import HTTPException
@@ -59,7 +58,7 @@ def setup():
         tokenizer.save_vocabulary(active_model_path)
         model.save_pretrained(active_model_path)
         del model, tokenizer
-    load_custom_model(MODEL_BASE_PATH)
+    load_custom_model(active_model_path)
 
     m_config_fname = os.path.join(active_model_path, "model_config.json")
     t_config_fname = os.path.join(active_model_path, "train_config.json")
@@ -77,7 +76,7 @@ def extract_entity(text: str = None):
         if isinstance(data, list):
             return data
         else:
-            return "No active model found. Please train or load model first before inference."
+            return "No active model found. Please train or load model first before inference."  # noqa
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -98,7 +97,7 @@ def train(
     if mode not in AVAILABLE_MODES:
         st = {
             "Status": "training failed",
-            "Error": f"Invalid training mode: {mode}. Available modes: {available_modes}",
+            "Error": f"Invalid training mode: {mode}. Available modes: {AVAILABLE_MODES}",  # noqa
         }
         raise HTTPException(status_code=400, detail=st)
     if mode == "default":
@@ -122,9 +121,7 @@ def train(
         logger.info("Model training completed.")
         return save_model()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail="Error encountered during training."
-        )
+        raise HTTPException(status_code=500, detail=f"Error encountered: {e}.")
 
 
 @jaseci_action(act_group=["tfm_ner"], allow_remote=True)
@@ -186,7 +183,6 @@ def set_train_config(training_parameters: Dict = None):
 
         return "Config setup is complete."
     except Exception as e:
-        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
