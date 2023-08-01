@@ -20,6 +20,7 @@ object PurplePygenPass:BluePygenPass {
     can add_element_import(arch: str);
     can add_exec_context;
     can add_edge_directions;
+    can needs_jac_import;
 
     can exit_architype(nd: ast.Architype);
     can exit_ability(nd: ast.Ability);

@@ -17,6 +17,11 @@ import:py from jaclang.jac.constant, Constants as C, EdgeDir;
         |> <self>.emit_ln_unique;
 }
 
+:object:PurplePygenPass:ability:needs_jac_import {
+    (<self>.preamble, "from jaclang import jac_purple_import as __jac_import__")
+        |> <self>.emit_ln_unique;
+}
+
 """
 Sub objects.
 
