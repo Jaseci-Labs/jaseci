@@ -141,3 +141,76 @@ My background
 
 I'm a computer enthusiast who happens to be a comp sci prof, tech entreprenuer, avid coder, gamer, etc. I want to bring these perspectives to bear.
 
+
+You are the creator of a new programming language that runs on top of python and writing the getting started page documentation, generate the gettign started markdown file covering the points.
+
+First install using pip `pip install jaclang`
+
+You'll have a script called jac that you can use to load and run `.jac` files, examples:
+`jac load -f sample.jac` loads the sample jac module then exits
+`jac run -f smaple.jac -e my_func` will load sample.jac and run the my_func function. we consider this function the entrypoint for execution in jac
+
+to import jac into existing python modules you can use some library functions in jaclang
+
+examples:
+
+```
+"""CLI for jaclang."""
+from jaclang import jac_purple_import as jac_import
+
+cli = jac_import("cli")
+cmds = jac_import("cmds")
+
+cli.cmd_registry = cmds.cmd_reg  # type: ignore
+```
+
+cli and cmds are modules that are imported similar to `import cli` or `import cmds` as in python, this is the code for cli.jac
+
+```
+"""
+This is the implementation of the command line interface tool for the
+Jac language. It's built with the Jac language via bootstraping and
+represents the first such complete Jac program.
+"""
+
+import:py inspect;
+import:py argparse;
+import:py cmd;
+include:jac impl.cli_impl;
+
+
+object Command {
+    has func: callable,
+        sig: inspect.Signature;
+
+    can:private init(func: callable);
+    can call(*args: list, **kwargs: dict);
+}
+
+
+object CommandRegistry {
+    has:private registry: dict[str, Command],
+             sub_parsers: argparse._SubParsersActionp;
+    has:public parser: argparse.ArgumentParser;
+
+    can init;
+    can register(func: callable);
+    can get(name: str) -> Command;
+    can items -> dict[str, Command];
+}
+
+
+object CommandShell:cmd.Cmd {
+    static has intro: str = "Welcome to the Jac CLI!",
+               prompt: str = "jac> ";
+    has cmd_reg: CommandRegistry;
+
+    can init (cmd_reg: CommandRegistry);
+    can do_exit(arg: list) -> bool;
+    can default(line: str);
+}
+
+
+global cmd_registry = |> CommandRegistry;
+can start_cli;
+```
