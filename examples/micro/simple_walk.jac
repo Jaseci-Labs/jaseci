@@ -7,7 +7,7 @@ node item {
 walker Creator {
     has count: int = 0;
     can create with <root>|:n:item entry {
-        <here> ++> spawn :n:item;
+        <here> ++> :> :n:item;
         <self>.count += 1;
         if <self>.count < 10 {
             visit -->;
@@ -31,8 +31,8 @@ walker Walk {
 }
 
 can test_run {
-    spawn :w:Creator |> <root>;
-    spawn :w:Walk |> <root>;
+    :> :w:Creator |> <root>;
+    :> :w:Walk |> <root>;
 }
 
 with entry {

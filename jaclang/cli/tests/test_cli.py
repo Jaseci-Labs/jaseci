@@ -42,6 +42,7 @@ class ImportPassPassTests(TestCase):
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
+        # print(stdout_value)
         # Assertions or verifications
         self.assertIn("*4:", stdout_value)
-        self.assertIn("*8:", stdout_value)
+        self.assertIn("*7:", stdout_value)
