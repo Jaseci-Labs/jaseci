@@ -30,7 +30,11 @@ walker Walk {
     }
 }
 
-with entry {
+can test_run {
     spawn :w:Creator |> <root>;
     spawn :w:Walk |> <root>;
+}
+
+with entry {
+    |> test_run;
 }
