@@ -86,7 +86,7 @@ class Master(CoreMaster):
         """
         info = self.serialize(detailed=detailed)
         if detailed:
-            for user in get_user_model().objects.filter(email=info["name"])[0:1]:
+            for user in get_user_model().objects.filter(master=info["jid"])[0:1]:
                 info["__meta__"] = {
                     "id": user.id,
                     "jid": user.master.urn,
