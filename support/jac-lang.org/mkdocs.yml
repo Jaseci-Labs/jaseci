@@ -5,14 +5,19 @@ nav:
     # - ~/tour$: 'tour.md'
     # - ~/example$: 'example.md'
     - ~/start$: 'start.md'
-    - ~/why$: 'why.md'
+    - ~/learn$:
+      - 'learn/learn.md'
+      - 'learn/py_to_jac_example.md'
     - ~/book$:
       - book/main.md
       - book/general.md
       - book/blue.md
       - book/purple.md
       - book/red.md
+
+    - ~/why$: 'why.md'
     - ~/blog$: 'blog.md'
+    - ~/roadmap$: 'roadmap.md'
     - ~/github$: https://github.com/Jaseci-Labs/jaclang
 
 theme:
