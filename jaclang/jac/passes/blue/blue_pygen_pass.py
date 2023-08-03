@@ -81,7 +81,7 @@ class BluePygenPass(Pass):
         # self.emit_ln(node, "__jac_traceback__.print_exc()")
         self.emit_ln(node, "tb = __jac_traceback__.extract_tb(e.__traceback__)")
         self.emit_ln(node, "__jac_tmp__ = __jac_error__(_jac_pycodestring_, e, tb)")
-        self.emit_ln(node, "print(__jac_tmp__)\nraise e")
+        # self.emit_ln(node, "print(__jac_tmp__)\nraise e")
         self.emit_ln(
             node,
             "raise type(e)(str(e) + '\\nOriginal Snippet:\\n' + __jac_tmp__) "
