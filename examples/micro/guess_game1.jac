@@ -43,7 +43,7 @@ object GuessTheNumberGame:Game {
             print("Too low!");
         } else {
             print("Congratulations! You guessed correctly.");
-            self.attempts = 0;  // end the game
+            self.attempts = 0;  # end the game
         }
 
         self.attempts -= 1;

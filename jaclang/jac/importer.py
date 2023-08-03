@@ -16,7 +16,7 @@ def import_jac_module(
     transpiler_func: Callable,
     target: str,
     base_path: Optional[str] = None,
-    save_file: bool = False,
+    cachable: bool = False,
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     target = path.join(*(target.split("."))) + ".jac"
@@ -40,8 +40,10 @@ def import_jac_module(
     dev_dir = path.join(caller_dir, "__jac_gen__")
     makedirs(dev_dir, exist_ok=True)
     py_file_path = path.join(dev_dir, module_name + ".py")
-    if path.exists(py_file_path) and path.getmtime(py_file_path) > path.getmtime(
-        full_target
+    if (
+        cachable
+        and path.exists(py_file_path)
+        and path.getmtime(py_file_path) > path.getmtime(full_target)
     ):
         with open(py_file_path, "r") as f:
             code_string = f.read()
@@ -56,9 +58,11 @@ def import_jac_module(
     module.__name__ = module_name
     module.__dict__["_jac_pycodestring_"] = code_string
 
-    if path.exists(py_file_path + "c") and path.getmtime(
-        py_file_path + "c"
-    ) > path.getmtime(full_target):
+    if (
+        cachable
+        and path.exists(py_file_path + "c")
+        and path.getmtime(py_file_path + "c") > path.getmtime(full_target)
+    ):
         with open(py_file_path + "c", "rb") as f:
             codeobj = marshal.load(f)
     else:

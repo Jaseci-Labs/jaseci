@@ -1358,7 +1358,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     # -------------------------
     def transform(self, ir: list) -> ast.AstNode:
         """Tokenize the input."""
-        return self.parse(ir)
+        ir = self.parse(ir)
+        if self.errors_had:
+            exit()
+        return ir
 
     def error(self, p: YaccProduction) -> None:
         """Improved error handling for Jac Parser."""
