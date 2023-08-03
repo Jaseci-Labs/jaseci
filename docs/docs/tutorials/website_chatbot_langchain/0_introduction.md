@@ -3,7 +3,9 @@ sidebar_position: 0
 title: Introduction
 description: Introduction to Langchain and Langflow
 ---
-# What is Langchain?
+
+## What is Langchain?
+
 LangChain is a framework for developing applications powered by language models.
 
 It enables applications that are:
@@ -22,12 +24,14 @@ We have integrate langchain to jaseci as part of the jaseci ai kit's Jac Miscell
 ```shell
 pip install jac_misc[langchain]
 ```
+
 The module comes with few off the shelf chains that you can use to build your own chatbot and also the ability to use langflow output JSON to build your own custom chains.
 
-# What is Langflow?
+## What is Langflow?
+
 Langflow is a UI for LangChain, designed with react-flow to provide an effortless way to experiment and prototype flows.
 
-<img width="100%" src="https://github.com/logspace-ai/langflow/blob/main/img/langflow-demo.gif?raw=true"></a>
+<img width="100%" src="https://github.com/logspace-ai/langflow/blob/main/img/langflow-demo.gif?raw=true"></img>
 
 ## 📦 Installation
 
@@ -70,5 +74,6 @@ langflow # or langflow --help
 
 You can also check it out on [HuggingFace Spaces](https://huggingface.co/spaces/Logspace/Langflow) and run it in your browser! You can even clone it and have your own copy of Langflow to play with.
 
-# Creating a Chatbot using Langchain and Langflow
+## Creating a Chatbot using Langchain and Langflow
+
 In this tutorial, we will be creating a chatbot that can answer questions about the a given website. We will be using Langflow to create the flow and Langchain to create the chatbot.
