@@ -1322,7 +1322,7 @@
 		"arch-var-reference": {
 			"patterns": [
 				{
-					"match": "(<h>|<here>|<s>|<self>|<super>|<r>|<root>)\\s*",
+					"match": "(<h>|<here>|<s>|<self>|<i>|<init>|<super>|<r>|<root>)\\s*",
 					"captures": {
 						"1": {
 							"name": "storage.type.class.jac"
@@ -2075,7 +2075,7 @@
 			}
 		},
 		"special-variables": {
-			"match": "(?x)(<h>|<here>|<s>|<self>|<super>|<r>|<root>)",
+			"match": "(?x)(<h>|<here>|<s>|<self>|<i>|<init>|<super>|<r>|<root>)",
 			"captures": {
 				"1": {
 					"name": "variable.language.special.self.jac"

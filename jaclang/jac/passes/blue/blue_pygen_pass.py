@@ -1,7 +1,7 @@
 """Jac Blue pass for Jaseci Ast."""
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con
-from jaclang.jac.lexer import Tokens as Tok
+from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 
 
@@ -332,24 +332,28 @@ class BluePygenPass(Pass):
         body: Optional["CodeBlock"],
         arch_attached: Optional["ArchBlock"] = None,
         """
+        ability_name = node.py_resolve_name()
+        if not ability_name:
+            self.ice("Ability name should be resolvable.")
+            return
         if node.decorators:
             self.emit(node, node.decorators.meta["py_code"])
         if node.signature and node.is_func:
             if node.arch_attached and not node.is_static:
                 self.emit_ln(
-                    node, f"def {node.name.value}(self{node.signature.meta['py_code']}:"
+                    node, f"def {ability_name}(self{node.signature.meta['py_code']}:"
                 )
             else:
                 if node.arch_attached and node.is_static:
                     self.emit_ln(node, "@classmethod")
                 self.emit_ln(
-                    node, f"def {node.name.value}({node.signature.meta['py_code']}:"
+                    node, f"def {ability_name}({node.signature.meta['py_code']}:"
                 )
         else:
             if node.arch_attached:
-                self.emit_ln(node, f"def {node.name.value}(self):")
+                self.emit_ln(node, f"def {ability_name}(self):")
             else:
-                self.emit_ln(node, f"def {node.name.value}():")
+                self.emit_ln(node, f"def {ability_name}():")
         self.indent_level += 1
         if node.doc:
             self.emit_ln(node, node.doc.value)
@@ -360,7 +364,7 @@ class BluePygenPass(Pass):
             self.indent_level -= 1
             self.emit_jac_error_handler(node)
         else:
-            self.decl_def_missing(node.name.value)
+            self.decl_def_missing(ability_name)
         self.indent_level -= 1
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
@@ -379,7 +383,7 @@ class BluePygenPass(Pass):
         """
         init_func = None
         for i in node.members:
-            if type(i) == ast.Ability and i.name.value == Con.INIT_FUNC:
+            if type(i) == ast.Ability and i.py_resolve_name() == "__init__":
                 init_func = i
                 break
         has_members = [
@@ -522,7 +526,7 @@ class BluePygenPass(Pass):
         if (
             type(node.parent) == ast.Ability
             and node.parent.arch_attached
-            and node.parent.name.value == Con.INIT_FUNC
+            and node.parent.py_resolve_name() == "__init__"
         ):
             self.emit(node, ", *args, **kwargs")
         self.emit(node, ")")
@@ -1275,14 +1279,9 @@ class BluePygenPass(Pass):
 
         var: Token,
         """
-        if node.var.name == Tok.SELF_OP:
-            self.emit(node, "self")
-        elif node.var.name == Tok.SUPER_OP:
-            self.emit(node, "super()")
-        elif node.var.name == Tok.ROOT_OP:
-            self.emit(node, Con.ROOT)
-        elif node.var.name == Tok.HERE_OP:
-            self.emit(node, Con.HERE)
+        name = node.py_resolve_name()
+        if name:
+            self.emit(node, name)
         else:
             self.ice("Special variable not handled.")
 

@@ -31,7 +31,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
-    # debugfile = "parser.out"
+    debugfile = "parser.out"
 
     # All mighty start rule
     # ---------------------
@@ -252,10 +252,11 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "here_ref",
-        "self_ref",
-        "super_ref",
-        "root_ref",
+        "HERE_OP",
+        "SELF_OP",
+        "SUPER_OP",
+        "ROOT_OP",
+        "INIT_OP",
     )
     def special_refs(self, p: YaccProduction) -> YaccProduction:
         """All reference rules."""
@@ -273,10 +274,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag static_tag KW_CAN access_tag NAME event_clause SEMI",
-        "doc_tag static_tag KW_CAN access_tag NAME func_decl SEMI",
-        "doc_tag static_tag KW_CAN access_tag NAME event_clause code_block",
-        "doc_tag static_tag KW_CAN access_tag NAME func_decl code_block",
+        "doc_tag static_tag KW_CAN access_tag all_refs event_clause SEMI",
+        "doc_tag static_tag KW_CAN access_tag all_refs func_decl SEMI",
+        "doc_tag static_tag KW_CAN access_tag all_refs event_clause code_block",
+        "doc_tag static_tag KW_CAN access_tag all_refs func_decl code_block",
         "ability_decl_decor",
     )
     def ability_decl(self, p: YaccProduction) -> YaccProduction:
@@ -284,10 +285,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag decorators static_tag KW_CAN access_tag NAME event_clause SEMI",
-        "doc_tag decorators static_tag KW_CAN access_tag NAME func_decl SEMI",
-        "doc_tag decorators static_tag KW_CAN access_tag NAME event_clause code_block",
-        "doc_tag decorators static_tag KW_CAN access_tag NAME func_decl code_block",
+        "doc_tag decorators static_tag KW_CAN access_tag all_refs event_clause SEMI",
+        "doc_tag decorators static_tag KW_CAN access_tag all_refs func_decl SEMI",
+        "doc_tag decorators static_tag KW_CAN access_tag all_refs event_clause code_block",
+        "doc_tag decorators static_tag KW_CAN access_tag all_refs func_decl code_block",
     )
     def ability_decl_decor(self, p: YaccProduction) -> YaccProduction:
         """Ability declaration rule."""
@@ -1188,26 +1189,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     )
     def index_slice(self, p: YaccProduction) -> YaccProduction:
         """Index/slice rule."""
-        return p
-
-    @_("HERE_OP")
-    def here_ref(self, p: YaccProduction) -> YaccProduction:
-        """Global reference rule."""
-        return p
-
-    @_("SELF_OP")
-    def self_ref(self, p: YaccProduction) -> YaccProduction:
-        """Global reference rule."""
-        return p
-
-    @_("SUPER_OP")
-    def super_ref(self, p: YaccProduction) -> YaccProduction:
-        """Global reference rule."""
-        return p
-
-    @_("ROOT_OP")
-    def root_ref(self, p: YaccProduction) -> YaccProduction:
-        """Global reference rule."""
         return p
 
     # Architype reference rules

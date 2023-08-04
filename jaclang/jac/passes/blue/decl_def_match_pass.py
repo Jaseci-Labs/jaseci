@@ -1,6 +1,6 @@
 """Connect Decls and Defs in AST."""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.lexer import Tokens as Tok
+from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 from jaclang.jac.sym_table import DefDeclSymbol, SymbolTable
 
@@ -119,16 +119,23 @@ class DeclDefMatchPass(Pass, SymbolTable):
     def enter_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
-        name: Name,
+        name_ref: Name | SpecialVarRef | ArchRef,
         is_func: bool,
-        doc: Optional[DocString],
+        is_async: bool,
+        is_static: bool,
+        doc: Optional[Token],
         decorators: Optional["Decorators"],
         access: Optional[Token],
-        signature: "FuncSignature | TypeSpec | EventSignature",
+        signature: Optional["FuncSignature | TypeSpec | EventSignature"],
         body: Optional["CodeBlock"],
+
         arch_attached: Optional["ArchBlock"] = None,
         """
-        self.sym_tab = self.sym_tab.push(node.name.value)
+        name = node.py_resolve_name()
+        if not name:
+            self.ice("Ability name should be resolvable.")
+        else:
+            self.sym_tab = self.sym_tab.push(name)
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -142,10 +149,14 @@ class DeclDefMatchPass(Pass, SymbolTable):
         body: Optional["CodeBlock"],
         arch_attached: Optional["ArchBlock"] = None,
         """
+        ability_name = node.py_resolve_name()
+        if not ability_name:
+            self.ice("Ability name should be resolvable.")
+            return
         name = (
-            f"{node.arch_attached.parent.name.value}.{node.name.value}"
+            f"{node.arch_attached.parent.name.value}.{ability_name}"
             if node.arch_attached and type(node.arch_attached.parent) == ast.Architype
-            else node.name.value
+            else ability_name
         )
         decl = self.sym_tab.lookup(name)
         if decl and decl.has_decl:

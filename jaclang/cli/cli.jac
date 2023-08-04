@@ -14,7 +14,7 @@ object Command {
     has func: callable,
         sig: inspect.Signature;
 
-    can:private init(func: callable);
+    can:private <init>(func: callable);
     can call(*args: list, **kwargs: dict);
 }
 
@@ -24,7 +24,7 @@ object CommandRegistry {
              sub_parsers: argparse._SubParsersActionp;
     has:public parser: argparse.ArgumentParser;
 
-    can init;
+    can <init>;
     can register(func: callable);
     can get(name: str) -> Command;
     can items -> dict[str, Command];
@@ -36,7 +36,7 @@ object CommandShell:cmd.Cmd {
                prompt: str = "jac> ";
     has cmd_reg: CommandRegistry;
 
-    can init (cmd_reg: CommandRegistry);
+    can <init>(cmd_reg: CommandRegistry);
     can do_exit(arg: list) -> bool;
     can default(line: str);
 }
