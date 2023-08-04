@@ -131,11 +131,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
 
         arch_attached: Optional["ArchBlock"] = None,
         """
-        name = node.py_resolve_name()
-        if not name:
-            self.ice("Ability name should be resolvable.")
-        else:
-            self.sym_tab = self.sym_tab.push(name)
+        self.sym_tab = self.sym_tab.push(node.py_resolve_name())
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -150,9 +146,6 @@ class DeclDefMatchPass(Pass, SymbolTable):
         arch_attached: Optional["ArchBlock"] = None,
         """
         ability_name = node.py_resolve_name()
-        if not ability_name:
-            self.ice("Ability name should be resolvable.")
-            return
         name = (
             f"{node.arch_attached.parent.name.value}.{ability_name}"
             if node.arch_attached and type(node.arch_attached.parent) == ast.Architype
@@ -191,14 +184,14 @@ class DeclDefMatchPass(Pass, SymbolTable):
         signature: "FuncSignature | EventSignature",
         body: "CodeBlock",
         """
-        name = node.ability.name.value
+        name = node.ability.py_resolve_name()
         if node.target:
             owner = node.target.names[-1]
             if not isinstance(owner, ast.ArchRef):
                 self.error("Expected reference to Architype!")
                 owner = ""
             else:
-                owner = owner.name.value
+                owner = owner.py_resolve_name()
             name = f"{owner}.{name}"
         decl = self.sym_tab.lookup(name)
         if decl and decl.has_def:
@@ -268,12 +261,12 @@ class DeclDefMatchPass(Pass, SymbolTable):
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
 
-        doc: Optional[DocString],
-        enum: "EnumRef",
-        mod: Optional["NameList"],
-        body: "EnumBlock",
+        doc: Optional[Token],
+        enum: ArchRef,
+        mod: Optional[NameList],
+        body: EnumBlock,
         """
-        name = node.enum.name.value
+        name = node.enum.py_resolve_name()
         decl = self.sym_tab.lookup(name)
         if decl and decl.has_def:
             self.error(

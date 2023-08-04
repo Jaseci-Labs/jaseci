@@ -31,7 +31,7 @@ object ExecutionContext {
     has master: Master,
         memory: Memory;
 
-    can init(master: UUID, memory: Memory);
+    can <init>(master: UUID, memory: Memory);
     can get_root() -> Node;
 }
 

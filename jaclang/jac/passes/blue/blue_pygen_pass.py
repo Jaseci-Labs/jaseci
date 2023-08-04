@@ -333,9 +333,6 @@ class BluePygenPass(Pass):
         arch_attached: Optional["ArchBlock"] = None,
         """
         ability_name = node.py_resolve_name()
-        if not ability_name:
-            self.ice("Ability name should be resolvable.")
-            return
         if node.decorators:
             self.emit(node, node.decorators.meta["py_code"])
         if node.signature and node.is_func:
@@ -1279,11 +1276,7 @@ class BluePygenPass(Pass):
 
         var: Token,
         """
-        name = node.py_resolve_name()
-        if name:
-            self.emit(node, name)
-        else:
-            self.ice("Special variable not handled.")
+        self.emit(node, node.py_resolve_name())
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
@@ -1292,7 +1285,7 @@ class BluePygenPass(Pass):
         name: Name,
         arch: Token,
         """
-        self.emit(node, f"{node.name.value}")
+        self.emit(node, node.py_resolve_name())
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:

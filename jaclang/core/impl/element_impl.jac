@@ -6,7 +6,7 @@
     PRIVATE
 }
 
-:object:Element:ability:init
+:object:Element:ability:<init>
 (_jac_exec_ctx: ExecutionContext) {
     <self>.__jinfo = _jac_exec_ctx :> ExecutionContext;
 }

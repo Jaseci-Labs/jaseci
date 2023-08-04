@@ -1238,7 +1238,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Object type reference rule."""
         return p
 
-    @_("ABILITY_OP NAME")
+    @_(
+        "ABILITY_OP NAME",
+        "ABILITY_OP special_refs",  # only <init> is valid for now
+    )
     def ability_ref(self, p: YaccProduction) -> YaccProduction:
         """Ability reference rule."""
         return p
@@ -1341,6 +1344,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Tokenize the input."""
         ir = self.parse(ir)
         if self.errors_had:
+            print(self.errors_had)
             exit()
         return ir
 

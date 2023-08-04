@@ -2760,7 +2760,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2798,7 +2798,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2815,7 +2815,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2832,7 +2832,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2849,7 +2849,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2866,7 +2866,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2878,12 +2878,13 @@ class AstBuildPass(Pass):
     def exit_ability_ref(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        ability_ref -> ABILITY_OP special_refs
         ability_ref -> ABILITY_OP NAME
         """
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
