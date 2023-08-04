@@ -337,7 +337,7 @@ class BluePygenPass(Pass):
             return
         if node.decorators:
             self.emit(node, node.decorators.meta["py_code"])
-        if node.signature and node.is_func:
+        if type(node.signature) in [ast.FuncSignature, ast.EventSignature]:
             if node.arch_attached and not node.is_static:
                 self.emit_ln(
                     node, f"def {ability_name}(self{node.signature.meta['py_code']}:"

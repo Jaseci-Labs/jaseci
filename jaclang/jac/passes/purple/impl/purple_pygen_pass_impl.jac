@@ -1,5 +1,5 @@
 """First Jac pass bootstrapped in Jac"""
-import:py from jaclang.jac.constant, Constants as C, EdgeDir;
+import:py from jaclang.jac.constant, Constants as C, EdgeDir, Tokens as Tok;
 
 :object:PurplePygenPass:ability:add_element_import
 (arch: str) {
@@ -90,8 +90,9 @@ arch_attached: Optional["ArchBlock"] = None,
 :object:PurplePygenPass:ability:exit_ability
 (nd: ast.Ability) {
     "Object" |> <self>.add_element_import;
-    if nd.decorators {
-        (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
+    ability_name = nd.py_resolve_name();
+    if nd.arch_attached and ability_name == "__init__" {
+        return;
     }
     if nd.signature:>type == ast.EventSignature and nd.arch_attached and
         nd.signature.event.name == Tok.KW_ENTRY {
@@ -103,38 +104,7 @@ arch_attached: Optional["ArchBlock"] = None,
         type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
         (nd, f"@{C.OBJECT_CLASS}._jac_on_exit([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
     }
-    if nd.signature:>type in [ast.FuncSignature, ast.EventSignature] {
-        if nd.arch_attached and not nd.is_static {
-            (nd, f"def {nd.name.meta['py_code']}(self{nd.signature.meta['py_code']}:")
-                |> <self>.emit_ln;
-        } else {
-            if nd.arch_attached and nd.is_static {
-                (nd, f"@classmethod") |> <self>.emit_ln;
-            }
-            (nd, f"def {nd.name.meta['py_code']}({nd.signature.meta['py_code']}:")
-                |> <self>.emit_ln;
-        }
-    } else {
-        if nd.arch_attached {
-            (nd, f"def {nd.name.meta['py_code']}(self):") |> <self>.emit_ln;
-        } else {
-            (nd, f"def {nd.name.meta['py_code']}():") |> <self>.emit_ln;
-        }
-    }
-    <self>.indent_level += 1;
-    if nd.doc {
-        (nd, nd.doc.meta["py_code"]) |> <self>.emit_ln;
-    }
-    if nd.body {
-        (nd, "try:") |> <self>.emit_ln;
-        <self>.indent_level += 1;
-        (nd, nd.body.meta["py_code"]) |> <self>.emit;
-        <self>.indent_level -= 1;
-        (nd) |> <self>.emit_jac_error_handler;
-    } else {
-        nd.name.meta["py_code"] |> <self>.decl_def_missing;
-    }
-    <self>.indent_level -= 1;
+    (nd) |> <super>.exit_ability;
 }
 
 
