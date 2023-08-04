@@ -40,6 +40,7 @@ body: Optional["ArchBlock"],
         (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
     }
     arch_type=nd.arch_type.name;
+    arch_name=nd.name.meta['py_code']
     arch_insert = "";
     if arch_type == Tok.KW_OBJECT {
         "Object" |> <self>.add_element_import;
@@ -58,11 +59,11 @@ body: Optional["ArchBlock"],
         arch_insert = C.WALKER_CLASS;
     }
     if nd.base_classes.base_classes |> len {
-        (nd, f"class {nd.name.meta['py_code']}"
-             f"({nd.base_classes.meta['py_code']}, {arch_insert}):")
+        (nd, f"class {arch_name}"
+             f"({arch_insert}, {nd.base_classes.meta['py_code']}):")
             |> <self>.emit_ln;
     } else {
-        (nd, f"class {nd.name.meta['py_code']}({arch_insert}):") |> <self>.emit_ln;
+        (nd, f"class {arch_name}({arch_insert}):") |> <self>.emit_ln;
     }
     <self>.indent_level += 1;
     if nd.doc {
@@ -89,18 +90,19 @@ arch_attached: Optional["ArchBlock"] = None,
 """
 :object:PurplePygenPass:ability:exit_ability
 (nd: ast.Ability) {
-    "Object" |> <self>.add_element_import;
     ability_name = nd.py_resolve_name();
     if nd.arch_attached and ability_name == "__init__" {
         return;
     }
     if nd.signature:>type == ast.EventSignature and nd.arch_attached and
         nd.signature.event.name == Tok.KW_ENTRY {
+        "Object" |> <self>.add_element_import;
         type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
         (nd, f"@{C.OBJECT_CLASS}._jac_on_entry([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
     }
     elif nd.signature:>type == ast.EventSignature and nd.arch_attached and
         nd.signature.event.name == Tok.KW_EXIT {
+        "Object" |> <self>.add_element_import;
         type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
         (nd, f"@{C.OBJECT_CLASS}._jac_on_exit([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
     }
