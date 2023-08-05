@@ -45,4 +45,4 @@ class ImportPassPassTests(TestCase):
         # print(stdout_value)
         # Assertions or verifications
         self.assertIn("*4:", stdout_value)
-        self.assertIn("*7:", stdout_value)
+        self.assertIn("*9:", stdout_value)

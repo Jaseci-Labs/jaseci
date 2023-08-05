@@ -5,6 +5,8 @@ import:py from jaclang.jac.constant, Constants as C, EdgeDir, Tokens as Tok;
 (arch: str) {
     (<self>.preamble, f"from jaclang.core import {arch} as _jac_{arch}_")
         |> <self>.emit_ln_unique;
+    (<self>.preamble, f"from jaclang.core import make_architype as _jac_make_architype_")
+        |> <self>.emit_ln_unique;
 }
 
 :object:PurplePygenPass:ability:add_exec_context {
@@ -40,30 +42,33 @@ body: Optional["ArchBlock"],
         (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
     }
     arch_type=nd.arch_type.name;
-    arch_name=nd.name.meta['py_code']
     arch_insert = "";
     if arch_type == Tok.KW_OBJECT {
         "Object" |> <self>.add_element_import;
         arch_insert = C.OBJECT_CLASS;
+        (nd, f"@_jac_make_architype_({arch_insert})") |> <self>.emit_ln;
     }
     elif arch_type == Tok.KW_NODE {
         "Node" |> <self>.add_element_import;
         arch_insert = C.NODE_CLASS;
+        (nd, f"@_jac_make_architype_({arch_insert})") |> <self>.emit_ln;
     }
     elif arch_type == Tok.KW_EDGE {
         "Edge" |> <self>.add_element_import;
         arch_insert = C.EDGE_CLASS;
+        (nd, f"@_jac_make_architype_({arch_insert})") |> <self>.emit_ln;
     }
     elif arch_type == Tok.KW_WALKER {
         "Walker" |> <self>.add_element_import;
         arch_insert = C.WALKER_CLASS;
+        (nd, f"@_jac_make_architype_({arch_insert})") |> <self>.emit_ln;
     }
     if nd.base_classes.base_classes |> len {
-        (nd, f"class {arch_name}"
-             f"({arch_insert}, {nd.base_classes.meta['py_code']}):")
+        (nd, f"class {nd.name.meta['py_code']}"
+             f"({nd.base_classes.meta['py_code']}):")
             |> <self>.emit_ln;
     } else {
-        (nd, f"class {arch_name}({arch_insert}):") |> <self>.emit_ln;
+        (nd, f"class {nd.name.meta['py_code']}:") |> <self>.emit_ln;
     }
     <self>.indent_level += 1;
     if nd.doc {

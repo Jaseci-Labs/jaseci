@@ -102,3 +102,15 @@ object Walker:Object {
 object Master:Element {
     has root_node: Node = Node();
 }
+
+can make_architype(base_class: type) -> type {
+    can class_decorator(cls: type) -> type {
+        # Check if cls is a subclass of base_class
+        if not issubclass(cls, base_class) {
+            # If it's not, create a new class with the same name that inherits from both cls and base_class
+            cls = type(cls.__name__, (cls, base_class), {});
+        }
+        return cls;
+    }
+    return class_decorator;
+}
