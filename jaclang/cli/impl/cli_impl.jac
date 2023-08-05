@@ -1,6 +1,6 @@
 """Implemenation for Jac's command line interface."""
 
-:o:Command:a:init(func: callable) {
+:o:Command:a:<init>(func: callable) {
     <s>.func = func;
     <s>.sig = func |> inspect.signature;
 }
@@ -9,7 +9,7 @@
     return (*args, **kwargs) |> <s>.func;
 }
 
-:o:CommandRegistry:a:init {
+:o:CommandRegistry:a:<init> {
     <s>.registry = {};
     <s>.parser = (prog="CLI") |> argparse.ArgumentParser;
     <s>.sub_parsers =
@@ -49,9 +49,9 @@
 }
 
 
-:o:CommandShell:a:init (cmd_reg: CommandRegistry) {
+:o:CommandShell:a:<init>(cmd_reg: CommandRegistry) {
     <s>.cmd_reg = cmd_reg;
-    <s> |> cmd.Cmd.__init__;
+    <s> |> cmd.Cmd.<init>;
 }
 
 :o:CommandShell:a:do_exit(arg: list) -> bool {

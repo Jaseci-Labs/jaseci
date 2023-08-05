@@ -4,7 +4,7 @@ from os import path
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import replace_node
 from jaclang.jac.constant import EdgeDir
-from jaclang.jac.lexer import Tokens as Tok
+from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 
 
@@ -466,19 +466,28 @@ class AstBuildPass(Pass):
 
         named_refs -> NAME
         named_refs -> arch_ref
-        named_refs -> global_ref
         """
         replace_node(node, node.kid[0])
 
     def exit_special_refs(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        special_refs -> here_ref
-        special_refs -> self_ref
-        special_refs -> root_ref
-        special_refs -> super_ref
+        special_refs -> INIT_OP
+        special_refs -> ROOT_OP
+        special_refs -> SUPER_OP
+        special_refs -> SELF_OP
+        special_refs -> HERE_OP
         """
-        replace_node(node, node.kid[0])
+        replace_node(
+            node,
+            ast.SpecialVarRef(
+                var=node.kid[0],
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_ability(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -498,10 +507,10 @@ class AstBuildPass(Pass):
         """Grammar rule.
 
         ability_decl -> ability_decl_decor
-        ability_decl -> doc_tag static_tag KW_CAN access_tag NAME func_decl code_block
-        ability_decl -> doc_tag static_tag KW_CAN access_tag NAME event_clause code_block
-        ability_decl -> doc_tag static_tag KW_CAN access_tag NAME func_decl SEMI
-        ability_decl -> doc_tag static_tag KW_CAN access_tag NAME event_clause SEMI
+        ability_decl -> doc_tag static_tag KW_CAN access_tag all_refs func_decl code_block
+        ability_decl -> doc_tag static_tag KW_CAN access_tag all_refs event_clause code_block
+        ability_decl -> doc_tag static_tag KW_CAN access_tag all_refs func_decl SEMI
+        ability_decl -> doc_tag static_tag KW_CAN access_tag all_refs event_clause SEMI
         """
         if len(node.kid) == 1:
             replace_node(node, node.kid[0])
@@ -513,7 +522,7 @@ class AstBuildPass(Pass):
                 doc=node.kid[0],
                 access=node.kid[2],
                 is_static=node.kid[1],
-                name=node.kid[3],
+                name_ref=node.kid[3],
                 body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
                 signature=node.kid[-2],
                 is_func=type(node.kid[-2]) == ast.FuncSignature,
@@ -531,10 +540,10 @@ class AstBuildPass(Pass):
     def exit_ability_decl_decor(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag NAME func_decl code_block
-        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag NAME event_clause code_block
-        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag NAME func_decl SEMI
-        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag NAME event_clause SEMI
+        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag all_refs func_decl code_block
+        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag all_refs event_clause code_block
+        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag all_refs func_decl SEMI
+        ability_decl_decor -> doc_tag decorators static_tag KW_CAN access_tag all_refs event_clause SEMI
         """
         del node.kid[3]
         replace_node(
@@ -544,7 +553,7 @@ class AstBuildPass(Pass):
                 decorators=node.kid[1],
                 is_static=node.kid[2],
                 access=node.kid[3],
-                name=node.kid[4],
+                name_ref=node.kid[4],
                 body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
                 signature=node.kid[-2],
                 is_func=type(node.kid[-2]) == ast.FuncSignature,
@@ -2751,72 +2760,8 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
-                parent=node.parent,
-                mod_link=self.mod_link,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_here_ref(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        here_ref -> HERE_OP
-        """
-        replace_node(
-            node,
-            ast.SpecialVarRef(
-                var=node.kid[0],
-                parent=node.parent,
-                mod_link=self.mod_link,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_self_ref(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        self_ref -> SELF_OP
-        """
-        replace_node(
-            node,
-            ast.SpecialVarRef(
-                var=node.kid[0],
-                parent=node.parent,
-                mod_link=self.mod_link,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_super_ref(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        super_ref -> SUPER_OP
-        """
-        replace_node(
-            node,
-            ast.SpecialVarRef(
-                var=node.kid[0],
-                parent=node.parent,
-                mod_link=self.mod_link,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
-
-    def exit_root_ref(self, node: ast.AstNode) -> None:
-        """Grammar rule.
-
-        root_ref -> ROOT_OP
-        """
-        replace_node(
-            node,
-            ast.SpecialVarRef(
-                var=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2853,7 +2798,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2870,7 +2815,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2887,7 +2832,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2904,7 +2849,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2921,7 +2866,7 @@ class AstBuildPass(Pass):
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -2933,12 +2878,13 @@ class AstBuildPass(Pass):
     def exit_ability_ref(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        ability_ref -> ABILITY_OP special_refs
         ability_ref -> ABILITY_OP NAME
         """
         replace_node(
             node,
             ast.ArchRef(
-                name=node.kid[-1],
+                name_ref=node.kid[-1],
                 arch=node.kid[0],
                 parent=node.parent,
                 mod_link=self.mod_link,

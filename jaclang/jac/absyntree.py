@@ -4,7 +4,8 @@ from __future__ import annotations
 import pprint
 from typing import Optional, Union
 
-from jaclang.jac.constant import EdgeDir
+from jaclang.jac.constant import Constants as Con, EdgeDir
+from jaclang.jac.constant import Tokens as Tok
 
 
 class AstNode:
@@ -404,9 +405,9 @@ class ArchDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        mod: Optional["NameList"],
-        arch: "ArchRef",
-        body: "ArchBlock",
+        mod: Optional[NameList],
+        arch: ArchRef,
+        body: ArchBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -457,23 +458,23 @@ class Ability(OOPAccessNode):
 
     def __init__(
         self,
-        name: Name,
+        name_ref: Name | SpecialVarRef | ArchRef,
         is_func: bool,
         is_async: bool,
         is_static: bool,
         doc: Optional[Token],
-        decorators: Optional["Decorators"],
+        decorators: Optional[Decorators],
         access: Optional[Token],
-        signature: Optional["FuncSignature | TypeSpec | EventSignature"],
-        body: Optional["CodeBlock"],
+        signature: Optional[FuncSignature | TypeSpec | EventSignature],
+        body: Optional[CodeBlock],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
         line: int,
-        arch_attached: Optional["ArchBlock"] = None,
+        arch_attached: Optional[ArchBlock] = None,
     ) -> None:
         """Initialize func arch node."""
-        self.name = name
+        self.name_ref = name_ref
         self.is_func = is_func
         self.is_async = is_async
         self.is_static = is_static
@@ -486,6 +487,15 @@ class Ability(OOPAccessNode):
             access=access, parent=parent, mod_link=mod_link, kid=kid, line=line
         )
 
+    def py_resolve_name(self) -> str:
+        """Resolve name."""
+        if type(self.name_ref) == Name:
+            return self.name_ref.value
+        elif (type(self.name_ref) == SpecialVarRef) or (type(self.name_ref) == ArchRef):
+            return self.name_ref.py_resolve_name()
+        else:
+            raise NotImplementedError
+
 
 class AbilityDef(AstNode):
     """AbilityDef node type for Jac Ast."""
@@ -493,10 +503,10 @@ class AbilityDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        target: Optional["NameList"],
-        ability: "ArchRef",
-        signature: "FuncSignature | EventSignature",
-        body: "CodeBlock",
+        target: Optional[NameList],
+        ability: ArchRef,
+        signature: FuncSignature | EventSignature,
+        body: CodeBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -636,9 +646,9 @@ class EnumDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        enum: "ArchRef",
-        mod: Optional["NameList"],
-        body: "EnumBlock",
+        enum: ArchRef,
+        mod: Optional[NameList],
+        body: EnumBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1626,7 +1636,7 @@ class ArchRef(AstNode):
 
     def __init__(
         self,
-        name: Name,
+        name_ref: Name | SpecialVarRef,
         arch: Token,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1634,9 +1644,18 @@ class ArchRef(AstNode):
         line: int,
     ) -> None:
         """Initialize global reference expression node."""
-        self.name = name
+        self.name_ref = name_ref
         self.arch = arch
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+    def py_resolve_name(self) -> str:
+        """Resolve name."""
+        if type(self.name_ref) == Name:
+            return self.name_ref.value
+        elif type(self.name_ref) == SpecialVarRef:
+            return self.name_ref.py_resolve_name()
+        else:
+            raise NotImplementedError
 
 
 class SpecialVarRef(AstNode):
@@ -1653,6 +1672,21 @@ class SpecialVarRef(AstNode):
         """Initialize special var reference expression node."""
         self.var = var
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+    def py_resolve_name(self) -> str:
+        """Resolve name."""
+        if self.var.name == Tok.SELF_OP:
+            return "self"
+        elif self.var.name == Tok.SUPER_OP:
+            return "super()"
+        elif self.var.name == Tok.ROOT_OP:
+            return Con.ROOT
+        elif self.var.name == Tok.HERE_OP:
+            return Con.HERE
+        elif self.var.name == Tok.INIT_OP:
+            return "__init__"
+        else:
+            raise NotImplementedError("ICE: Special var reference not implemented")
 
 
 class EdgeOpRef(AstNode):

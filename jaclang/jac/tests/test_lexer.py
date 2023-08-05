@@ -1,7 +1,8 @@
 """Tests for Jac lexer."""
 from typing import Generator
 
-from jaclang.jac.lexer import JacLexer, Tokens
+from jaclang.jac.constant import Tokens
+from jaclang.jac.lexer import JacLexer
 from jaclang.utils.test import TestCase
 
 
