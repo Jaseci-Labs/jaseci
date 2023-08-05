@@ -108,7 +108,7 @@ can make_architype(base_class: type) -> type {
         # Check if cls is a subclass of base_class
         if not issubclass(cls, base_class) {
             # If it's not, create a new class with the same name that inherits from both cls and base_class
-            cls = type(cls.__name__, (cls, base_class), {});
+            cls = type(cls.__name__, (base_class, cls), {});
         }
         return cls;
     }

@@ -5,7 +5,7 @@ import:py random;
 A generic Game base class.
 """
 object Game {
-    can init(attempts: int) {
+    can <init>(attempts: int) {
         <self>.attempts = attempts;
     }
 
