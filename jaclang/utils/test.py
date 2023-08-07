@@ -65,6 +65,17 @@ class TestCaseMicroSuite(ABC, TestCase):
                     cls, method_name, lambda self, f=file_path: self.micro_suite_test(f)
                 )
 
+        directory = os.path.dirname(__file__) + "/../../examples/guess_game"
+        for filename in os.listdir(directory):
+            if os.path.isfile(os.path.join(directory, filename)) and filename.endswith(
+                ".jac"
+            ):
+                method_name = f"test_gg_{filename.replace('.jac', '')}"
+                file_path = os.path.join(directory, filename)
+                setattr(
+                    cls, method_name, lambda self, f=file_path: self.micro_suite_test(f)
+                )
+
         def test_micro_jac_files_fully_tested(self) -> None:  # noqa: ANN001
             """Test that all micro jac files are fully tested."""
             self.directory = os.path.dirname(__file__) + "/../../examples/micro"
