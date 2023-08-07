@@ -9,7 +9,7 @@ object Game {
         won: bool = False;
 
     can play {
-        raise NotImplementedError("Subclasses must implement this method.");
+        raise "Subclasses must implement this method." |> NotImplementedError;
     }
 }
 
@@ -18,41 +18,41 @@ A number guessing game. The player must guess a number between 1 and 100.
 """
 object GuessTheNumberGame:Game {
     has attempts: int = 10,
-        correct_number: int = random.randint(1, 100);
+        correct_number: int = (1, 100) |> random.randint;
 
     can play {
         while self.attempts > 0 {
-            guess = input("Guess a number between 1 and 100: ");
-            if guess.isdigit() {
-                <self>.process_guess(int(guess));
+            guess = "Guess a number between 1 and 100: " |> input;
+            if |> guess.isdigit {
+                guess |> int |> <self>.process_guess;
             } else {
-                print("That's not a valid number! Try again.");
+                "That's not a valid number! Try again." |> print;
             }
         }
 
         if not <self>.won {
-            print("Sorry, you didn't guess the number. Better luck next time!");
+            "Sorry, you didn't guess the number. Better luck next time!" |> print;
         }
     }
 
     can process_guess(guess: int) {
         if guess > <self>.correct_number {
-            print("Too high!");
+            "Too high!" |> print;
         } elif guess < <self>.correct_number {
-            print("Too low!");
+            "Too low!" |> print;
         } else {
-            print("Congratulations! You guessed correctly.");
+            "Congratulations! You guessed correctly." |> print;
             <self>.attempts = 0;  # end the game
             <self>.won = True;
         }
 
         <self>.attempts -= 1;
-        print(f"You have {<self>.attempts} attempts left.");
+        f"You have {<self>.attempts} attempts left." |> print;
     }
 }
 
 # Run the game
 with entry {
-    game = GuessTheNumberGame();
-    game.play();
+    game = |> GuessTheNumberGame;
+    |> game.play;
 }

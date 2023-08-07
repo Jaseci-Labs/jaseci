@@ -7,6 +7,7 @@ A generic Game base class.
 object Game {
     can <init>(attempts: int) {
         <self>.attempts = attempts;
+        <self>.won = False;
     }
 
     can play() {
@@ -24,7 +25,7 @@ object GuessTheNumberGame:Game {
     }
 
     can play() {
-        while self.attempts > 0 {
+        while <self>.attempts > 0 {
             guess = input("Guess a number between 1 and 100: ");
             if guess.isdigit() {
                 <self>.process_guess(int(guess));
@@ -33,21 +34,24 @@ object GuessTheNumberGame:Game {
             }
         }
 
-        print("Sorry, you didn't guess the number. Better luck next time!");
+        if not <self>.won {
+            print("Sorry, you didn't guess the number. Better luck next time!");
+        }
     }
 
     can process_guess(guess: int) {
-        if guess > self.correct_number {
+        if guess > <self>.correct_number {
             print("Too high!");
-        } elif guess < self.correct_number {
+        } elif guess < <self>.correct_number {
             print("Too low!");
         } else {
             print("Congratulations! You guessed correctly.");
-            self.attempts = 0;  # end the game
+            <self>.attempts = 0;  # end the game
+            <self>.won = True;
         }
 
-        self.attempts -= 1;
-        print(f"You have {self.attempts} attempts left.");
+        <self>.attempts -= 1;
+        print(f"You have {<self>.attempts} attempts left.");
     }
 }
 
