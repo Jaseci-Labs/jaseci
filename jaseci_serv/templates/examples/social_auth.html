@@ -145,4 +145,18 @@ var request = $.ajax({
     });
     {% endif %}
 {% endif %}
+
+{% if provider == "google" %}
+socket = new WebSocket(`ws://${window.location.host}/ws/socket-server/276a40aec1dffc48a25463c3e2545473b45a663364adf3a2f523b903aa254c9f`)
+{% else %}
+socket = new WebSocket(`ws://${window.location.host}/ws/socket-server/anonymous`)
+{% endif %}
+socket.onmessage = (event) => {
+    console.log(event)
+}
+
+function notify-server() {
+    socket.send(JSON.stringify({"message": "test"}))
+}
+
 </script>
