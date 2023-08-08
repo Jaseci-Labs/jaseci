@@ -31,6 +31,17 @@ class DeclDefMatchPassTests(TestCase):
         self.assertIn("Test.init", state.sym_tab.tab)
         self.assertIsNotNone(state.sym_tab.tab["Test.init"].node.body)
 
+    def test_ability_connected_to_decl_post(self) -> None:
+        """Basic test for pass."""
+        state = jac_file_to_pass(
+            self.fixture_abs_path("base2.jac"), "", DeclDefMatchPass
+        )
+        self.assertFalse(state.errors_had)
+        self.assertIn("Test.say_hi", state.sym_tab.tab)
+        self.assertIsNotNone(state.sym_tab.tab["Test.say_hi"].node.body)
+        self.assertIn("Test.init", state.sym_tab.tab)
+        self.assertIsNotNone(state.sym_tab.tab["Test.init"].node.body)
+
     def test_collision_error_correct(self) -> None:
         """Basic test for multi defs."""
         state = jac_file_to_pass(

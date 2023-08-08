@@ -145,6 +145,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         body: Optional["CodeBlock"],
         arch_attached: Optional["ArchBlock"] = None,
         """
+        self.sym_tab = self.sym_tab.pop()
         ability_name = node.py_resolve_name()
         name = (
             f"{node.arch_attached.parent.name.value}.{ability_name}"
@@ -173,7 +174,17 @@ class DeclDefMatchPass(Pass, SymbolTable):
                 decl.has_def = True
                 decl.other_node = node
             self.sym_tab.set(decl)
-        self.sym_tab = self.sym_tab.pop()
+
+    def enter_ability_def(self, node: ast.AbilityDef) -> None:
+        """Sub objects.
+
+        doc: Optional[DocString],
+        target: Optional["NameList"],
+        ability: "ArchRef",
+        signature: "FuncSignature | EventSignature",
+        body: "CodeBlock",
+        """
+        self.sym_tab = self.sym_tab.push(node.ability.py_resolve_name())
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
@@ -184,6 +195,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         signature: "FuncSignature | EventSignature",
         body: "CodeBlock",
         """
+        self.sym_tab = self.sym_tab.pop()
         name = node.ability.py_resolve_name()
         if node.target:
             owner = node.target.names[-1]
@@ -216,6 +228,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         # Tags all function signatures whether method style or not
         for i in self.get_all_sub_nodes(node, ast.Ability):
             i.arch_attached = node
+        # Tags all function signatures whether method style or event style
         if (
             type(node.parent) == ast.Architype
             and node.parent.arch_type.name == Tok.KW_WALKER
