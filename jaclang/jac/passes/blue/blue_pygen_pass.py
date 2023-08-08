@@ -150,7 +150,7 @@ class BluePygenPass(Pass):
         self.emit(node, self.preamble.meta["py_code"])
         if node.body:
             self.emit(node, node.body.meta["py_code"])
-        self.emit(node, f'""" {Con.JAC_DEBUG_SPLITTER}\n')
+        self.emit(node, f'r""" {Con.JAC_DEBUG_SPLITTER}\n')
         for i in self.debuginfo["jac_mods"]:
             self.emit(node, f"{i}\n")
         self.emit(node, f'{Con.JAC_DEBUG_SPLITTER} """\n')

@@ -61,6 +61,7 @@ class Tokens(str, Enum):
     OCT = "OCT"
     NULL = "NULL"
     NAME = "NAME"
+    KWESC_NAME = "KWESC_NAME"
     TYP_STRING = "TYP_STRING"
     TYP_INT = "TYP_INT"
     TYP_FLOAT = "TYP_FLOAT"

@@ -37,6 +37,14 @@ class TestParser(TestCaseMicroSuite):
         else:
             self.fail("Output is not an AstNode.")
 
+    def test_parsing_keyword_escape(self) -> None:
+        """Basic test for parsing."""
+        lex = JacLexer(mod_path="kwesc.jac", input_ir=self.load_fixture("kwesc.jac")).ir
+        prse = JacParser(mod_path="kwesc.jac", input_ir=lex)
+        output = prse.ir
+        self.assertFalse(prse.errors_had)
+        self.assertIn("'name': 'KWESC_NAME', 'value': 'walker'", str(output.to_dict()))
+
     def test_parsing_jac_cli(self) -> None:
         """Basic test for parsing."""
         lex = JacLexer(

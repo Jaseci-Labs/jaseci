@@ -453,6 +453,14 @@ class AstBuildPass(Pass):
             ),
         )
 
+    def exit_esc_name(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        esc_name -> KWESC_NAME
+        esc_name -> NAME
+        """
+        replace_node(node, node.kid[0])
+
     def exit_all_refs(self, node: ast.AstNode) -> None:
         """Grammar rule.
 

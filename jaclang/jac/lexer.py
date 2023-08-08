@@ -9,7 +9,11 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     """Jac Lexer."""
 
     def __init__(
-        self, mod_path: str, input_ir: str, base_path: str = "", prior: Transform = None
+        self,
+        mod_path: str,
+        input_ir: str,
+        base_path: str = "",
+        prior: Transform | None = None,
     ) -> None:
         """Initialize lexer."""
         Transform.__init__(self, mod_path, input_ir, base_path, prior)  # type: ignore
@@ -27,6 +31,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "OCT",
         "NULL",
         "NAME",
+        "KWESC_NAME",
         "TYP_STRING",
         "TYP_INT",
         "TYP_FLOAT",
@@ -191,6 +196,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     OCT = r"0[oO][0-7_]+"
     INT = r"[0-9][0-9_]*"
     NULL = r"None"
+    KWESC_NAME = r"<>[a-zA-Z_][a-zA-Z0-9_]*"
     NAME = r"[a-zA-Z_][a-zA-Z0-9_]*"
 
     # Keywords

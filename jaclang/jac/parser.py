@@ -137,17 +137,17 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "NAME",
-        "DOT NAME",
-        "DOT DOT NAME",
+        "esc_name",
+        "DOT esc_name",
+        "DOT DOT esc_name",
     )
     def import_path_prefix(self, p: YaccProduction) -> YaccProduction:
         """Import path prefix rule."""
         return p
 
     @_(
-        "DOT NAME",
-        "import_path_tail DOT NAME",
+        "DOT esc_name",
+        "import_path_tail DOT esc_name",
     )
     def import_path_tail(self, p: YaccProduction) -> YaccProduction:
         """Import path tail rule."""
@@ -236,6 +236,14 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
+        "NAME",
+        "KWESC_NAME",
+    )
+    def esc_name(self, p: YaccProduction) -> YaccProduction:
+        """Escaped name rule."""
+        return p
+
+    @_(
         "named_refs",
         "special_refs",
     )
@@ -244,7 +252,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "NAME",
+        "esc_name",
         "arch_ref",
     )
     def named_refs(self, p: YaccProduction) -> YaccProduction:
@@ -449,8 +457,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "NAME type_tag",
-        "NAME type_tag EQ expression",
+        "esc_name type_tag",
+        "esc_name type_tag EQ expression",
     )
     def typed_has_clause(self, p: YaccProduction) -> YaccProduction:
         """Parameter variable rule rule."""
@@ -1228,7 +1236,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Walker reference rule."""
         return p
 
-    @_("OBJECT_OP NAME")
+    @_("OBJECT_OP esc_name")
     def object_ref(self, p: YaccProduction) -> YaccProduction:
         """Object type reference rule."""
         return p
@@ -1239,14 +1247,14 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "ABILITY_OP NAME",
+        "ABILITY_OP esc_name",
         "ABILITY_OP special_refs",  # only <init> is valid for now
     )
     def ability_ref(self, p: YaccProduction) -> YaccProduction:
         """Ability reference rule."""
         return p
 
-    @_("GLOBAL_OP NAME")
+    @_("GLOBAL_OP esc_name")
     def global_ref(self, p: YaccProduction) -> YaccProduction:
         """Global reference rule."""
         return p
@@ -1326,8 +1334,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "NAME cmp_op expression",
-        "filter_compare_list COMMA NAME cmp_op expression",
+        "esc_name cmp_op expression",
+        "filter_compare_list COMMA esc_name cmp_op expression",
     )
     def filter_compare_list(self, p: YaccProduction) -> YaccProduction:
         """Filter comparison list rule."""
@@ -1440,6 +1448,9 @@ def parse_tree_to_ast(
                     "col_end": tree.end - tree.lineidx + 1,
                 }
                 if tree.type == "NAME":
+                    ast_tree = ast.Name(already_declared=False, **meta)
+                elif tree.type == "KWESC_NAME":
+                    meta["value"] = meta["value"].replace("<>", "")
                     ast_tree = ast.Name(already_declared=False, **meta)
                 elif tree.type == "FLOAT":
                     ast_tree = ast.Constant(typ=float, **meta)
