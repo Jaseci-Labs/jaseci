@@ -62,6 +62,7 @@ class ElasticService(JsOrc.CommonService):
                 if cert:
                     with open("elastic-certificate.crt", "w") as cert_file:
                         cert_file.write(cert)
+                    self.config["verifier"] = "elastic-certificate.crt"
 
                 if not self.config.get("auth"):
                     auth = kube.get_secret(
@@ -168,12 +169,14 @@ class Elastic:
         if config["auth"]:
             self.headers["Authorization"] = config["auth"]
 
+        self.verifier = config.get("verifier")
+
     def _get(self, url: str, json: dict = None):
         return get(
             f"{self.url}{url}",
             json=json,
             headers=self.headers,
-            verify="elastic-certificate.crt",
+            verify=self.verifier,
         ).json()
 
     def _post(self, url: str, json: dict = None):
@@ -181,7 +184,7 @@ class Elastic:
             f"{self.url}{url}",
             json=json,
             headers=self.headers,
-            verify="elastic-certificate.crt",
+            verify=self.verifier,
         ).json()
 
     def post(self, url: str, body: dict, index: str = "", suffix: str = ""):
@@ -233,7 +236,7 @@ class Elastic:
             res = get(
                 f"{self.url}/_ilm/policy/{policy_name}",
                 headers=self.headers,
-                verify="elastic-certificate.crt",
+                verify=self.verifier,
             )
             if res.status_code == 200 and policy_name in res.json():
                 # policy already exists
@@ -242,7 +245,7 @@ class Elastic:
             f"{self.url}/_ilm/policy/{policy_name}",
             headers=self.headers,
             json=policy_config,
-            verify="elastic-certificate.crt",
+            verify=self.verifier,
         )
         if res.status_code == 200:
             return res.json()
@@ -256,7 +259,7 @@ class Elastic:
             res = get(
                 f"{self.url}/_index_template/{template_name}",
                 headers=self.headers,
-                verify="elastic-certificate.crt",
+                verify=self.verifier,
             )
             if res.status_code == 200 and template_name in res.json():
                 # policy already exists
@@ -265,7 +268,7 @@ class Elastic:
             f"{self.url}/_index_template/{template_name}",
             headers=self.headers,
             json=template_config,
-            verify="elastic-certificate.crt",
+            verify=self.verifier,
         )
         if res.status_code == 200:
             return res.json()
