@@ -2,14 +2,15 @@
 import:py random;
 
 
-node turn {
-    can check with GuessGame entry;
-}
 
 walker GuessGame {
     has correct_number: int = (1, 100) |> random.randint;
     can start_game with <root> entry;
     can process_guess(guess: int);
+}
+
+node turn {
+    can check with GuessGame entry;
 }
 
 :node:turn:ability:check {
