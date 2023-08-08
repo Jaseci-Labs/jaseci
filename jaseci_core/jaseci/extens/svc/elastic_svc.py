@@ -132,6 +132,21 @@ class ElasticService(JsOrc.CommonService):
                     try:
                         record = log_queue.get()
                         if record is None:
+                            # This is temporary
+                            # for debugging purposes
+                            from datetime import datetime
+
+                            self.app.doc(
+                                {
+                                    "@timestamp": datetime.now().strftime(
+                                        "%Y-%m-%dT%H:%M:%S"
+                                    ),
+                                    "message": f"Stopping process for {elastic_index}",
+                                    "level": "SYSTEM",
+                                },
+                                index=elastic_index,
+                            )
+                            # end of temporary code
                             break
                         elastic_record = format_elastic_record(record)
                         self.app.doc(log=elastic_record, index=elastic_index)
