@@ -73,10 +73,9 @@ def import_jac_module(
     try:
         exec(codeobj, module.__dict__)
     except Exception as e:
-        traceback.print_exc()
         tb = traceback.extract_tb(e.__traceback__)
-        handle_jac_error(code_string, e, tb)
-        raise e
+        err = handle_jac_error(code_string, e, tb)
+        raise type(e)(str(e) + "\nOriginal Snippet:\n" + err)
 
     if package_path:
         parts = package_path.split(".")
@@ -89,7 +88,6 @@ def import_jac_module(
         sys.modules[f"{package_path}.{module_name}"] = module
     else:
         sys.modules[module_name] = module
-
     return module
 
 
@@ -98,7 +96,6 @@ def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary)
     except_line = e.end_lineno if isinstance(e, SyntaxError) else list(tb)[-1].lineno
     if not isinstance(except_line, int) or except_line == 0:
         return ""
-    traceback.print_exc()
     py_error_region = clip_code_section(
         add_line_numbers(code_string), except_line, Val.JAC_ERROR_LINE_RANGE
     )
