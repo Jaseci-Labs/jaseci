@@ -17,7 +17,7 @@ def is_valid(url: str = ""):
     """
     try:
         url_response = validators.url(url)
-        if isinstance(url_response, validators.ValidationFailure):
+        if isinstance(url_response, validators.ValidationError):
             return False
     except:
         return False
