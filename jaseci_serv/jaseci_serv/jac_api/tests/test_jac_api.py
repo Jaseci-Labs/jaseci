@@ -1804,8 +1804,9 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         ).data
 
+        self.assertTrue("stack_trace" in res)
         self.assertIn(
-            "zsb:walker_exception_no_try_else - line 6, col 19",
+            "zsb:walker_exception_no_try_else - line 6, col 19 - rule ability_call - Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant https://invalidUrl?",
             res["errors"][0],
         )
 
@@ -1819,7 +1820,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(14, res["report"][0]["line"])
         self.assertEqual(23, res["report"][0]["col"])
         self.assertIn(
-            "zsb:walker_exception_with_try_else - line 14, col 23 - rule ability_call - Invalid arguments {'args': ['invalidUrl'], 'kwargs': {}} to action call request.get! Valid paramters are (url: str, data: dict, header: dict).",
+            "zsb:walker_exception_with_try_else - line 14, col 23 - rule ability_call - Invalid URL 'invalidUrl': No scheme supplied. Perhaps you meant https://invalidUrl?",
             res["errors"][0],
         )
 
