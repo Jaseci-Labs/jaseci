@@ -31,7 +31,7 @@ setup(
         "pytest",
         "pytest-xdist",
         "pytest-cov",
-        "validators",
+        "validators==0.21.2",
         "psycopg2-binary==2.9.5",
         "pygls",
         "mock",
