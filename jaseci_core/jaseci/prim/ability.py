@@ -80,12 +80,6 @@ class Ability(Element, JacCode, Interp):
         else:
             try:
                 result = func(*param_list["args"], **param_list["kwargs"])
-            except TypeError as e:
-                params = str(inspect.signature(func))
-                interp.rt_error(
-                    f"Invalid arguments {param_list} to action call {self.name}! Valid paramters are {params}.",
-                    jac_ast,
-                )
             except Exception as e:
                 interp.rt_error(e, jac_ast, True)
         t = time.time() - ts
