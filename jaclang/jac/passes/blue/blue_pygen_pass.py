@@ -84,9 +84,10 @@ class BluePygenPass(Pass):
         # self.emit_ln(node, "print(__jac_tmp__)\nraise e")
         self.emit_ln(
             node,
-            "raise type(e)(str(e) + '\\nOriginal Snippet:\\n' + __jac_tmp__) "
+            "e = type(e)(str(e) + '\\nOriginal Snippet:\\n' + __jac_tmp__) "
             "if 'Original Snippet:' not in str(e) else e",
         )
+        self.emit_ln(node, "raise e")
         self.indent_level -= 1
 
     def decl_def_missing(self, decl: str = "this") -> None:

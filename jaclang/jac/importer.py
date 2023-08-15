@@ -75,7 +75,7 @@ def import_jac_module(
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         err = handle_jac_error(code_string, e, tb)
-        raise type(e)(str(e) + "\nOriginal Snippet:\n" + err)
+        raise type(e)(str(e) + "\n" + err)
 
     if package_path:
         parts = package_path.split(".")
@@ -101,15 +101,15 @@ def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary)
     )
     try:
         jac_err_line = int(code_string.splitlines()[except_line - 1].split()[-1])
-        mod_index = int(code_string.splitlines()[except_line].split()[-2])
+        mod_index = int(code_string.splitlines()[except_line - 1].split()[-2])
         mod_paths = code_string.split(Con.JAC_DEBUG_SPLITTER)[1].strip().splitlines()
         with open(mod_paths[mod_index], "r") as file:
             jac_code_string = file.read()
         jac_error_region = clip_code_section(
             add_line_numbers(jac_code_string), jac_err_line, Val.JAC_ERROR_LINE_RANGE
         )
-    except Exception:
-        jac_error_region = ""
+    except Exception as e:
+        jac_error_region = str(e)
     snippet = (
         f"JacCode Snippet:\n{jac_error_region}\n"
         f"PyCode Snippet:\n{py_error_region}\n"

@@ -23,9 +23,9 @@ node turn {
 }
 
 :walker:GuessGame:ability:start_game {
-    a = <here> ++> turn;
+    a = <here> ++> :> turn;
     for i=0 to i<10 by i+=1 {
-        a = a ++> turn;
+        a = a ++> :> turn;
     }
     visit -->;
 }
