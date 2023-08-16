@@ -12,6 +12,15 @@ from jaclang.utils.sly.lex import LexerMeta
 from jaclang.utils.sly.yacc import ParserMeta
 
 
+class TransformError(Exception):
+    """Error during transformation."""
+
+    def __init__(self, message: str, errors: list[str]) -> None:
+        """Initialize error."""
+        super().__init__(message)
+        self.errors = errors
+
+
 class Transform(ABC):
     """Abstract class for IR passes."""
 
