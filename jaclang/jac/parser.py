@@ -4,7 +4,7 @@ from typing import Generator, Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.lexer import JacLexer
-from jaclang.jac.transform import ABCParserMeta, Transform, TransformError
+from jaclang.jac.transform import ABCParserMeta, Transform
 from jaclang.utils.sly.yacc import Parser, YaccProduction
 
 
@@ -1353,9 +1353,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         ir = self.parse(ir)
         if self.errors_had:
             print(self.errors_had)
-            raise TransformError(
-                "Error in parsing, see above for details.", errors=self.errors_had
-            )
+            raise self.gen_exception("Error in parsing, see above for details.")
         return ir
 
     def error(self, p: YaccProduction) -> None:

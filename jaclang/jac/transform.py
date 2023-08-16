@@ -15,10 +15,11 @@ from jaclang.utils.sly.yacc import ParserMeta
 class TransformError(Exception):
     """Error during transformation."""
 
-    def __init__(self, message: str, errors: list[str]) -> None:
+    def __init__(self, message: str, errors: list[str], warnings: list[str]) -> None:
         """Initialize error."""
         super().__init__(message)
         self.errors = errors
+        self.warnings = warnings
 
 
 class Transform(ABC):
@@ -58,6 +59,12 @@ class Transform(ABC):
         msg = f"Mod {self.rel_mod_path}: Line {self.cur_line}, " + msg
         self.warnings_had.append(msg)
         self.logger.warning(msg)
+
+    def gen_exception(
+        self, msg: str = "Error in parsing, see above for details."
+    ) -> None:
+        """Raise error."""
+        raise TransformError(msg, self.errors_had, self.warnings_had)
 
 
 class ABCLexerMeta(ABCMeta, LexerMeta):
