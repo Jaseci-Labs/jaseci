@@ -26,7 +26,7 @@ class UserApi:
         global_init: str = "",
         global_init_ctx: dict = {},
         other_fields: dict = {},
-        send_email: bool = False,
+        send_email: bool = True,
     ):
         """
         Create a new user (master object)
