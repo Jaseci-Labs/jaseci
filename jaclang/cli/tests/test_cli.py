@@ -36,8 +36,8 @@ class ImportPassPassTests(TestCase):
         # Execute the function
         try:
             cmds.run(self.fixture_abs_path("err.jac"), entrypoint="speak", args=[])  # type: ignore
-        except Exception:
-            print("Error")
+        except Exception as e:
+            print(f"Error: {e}")
 
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
