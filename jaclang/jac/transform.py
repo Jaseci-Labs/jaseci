@@ -62,9 +62,9 @@ class Transform(ABC):
 
     def gen_exception(
         self, msg: str = "Error in parsing, see above for details."
-    ) -> None:
+    ) -> TransformError:
         """Raise error."""
-        raise TransformError(msg, self.errors_had, self.warnings_had)
+        return TransformError(msg, self.errors_had, self.warnings_had)
 
 
 class ABCLexerMeta(ABCMeta, LexerMeta):
