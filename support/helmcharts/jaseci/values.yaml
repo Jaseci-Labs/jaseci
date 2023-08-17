@@ -9,7 +9,7 @@ image:
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   db:
-    repository: postgres:alpine
+    repository: postgres:14-alpine
     port: 5432
     storage: 10Gi
   redis:
