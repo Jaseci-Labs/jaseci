@@ -24,6 +24,12 @@ def download(file: str, provider: str = None, container: str = None, meta: dict 
 
 
 @jaseci_action()
+def cdn_url(file: str, provider: str = None, container: str = None, **kwargs):
+    """temp"""
+    return storage().cdn_url(file, provider, container, **kwargs)
+
+
+@jaseci_action()
 def delete(file: str, provider: str = None, container: str = None):
     """temp"""
     return storage().delete(file, provider, container)
