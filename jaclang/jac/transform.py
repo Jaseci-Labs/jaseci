@@ -61,7 +61,7 @@ class Transform(ABC):
         self.logger.warning(msg)
 
     def gen_exception(
-        self, msg: str = "Error in parsing, see above for details."
+        self, msg: str = "Error in code transform, see above for details."
     ) -> TransformError:
         """Raise error."""
         return TransformError(msg, self.errors_had, self.warnings_had)

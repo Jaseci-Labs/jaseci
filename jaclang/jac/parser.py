@@ -26,9 +26,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Initialize parser."""
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
         self.ir_tup = self.ir
-        if self.errors_had:
-            print(self.errors_had)
-        self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
+        if not self.errors_had:
+            self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
     # debugfile = "parser.out"
@@ -1351,9 +1350,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     def transform(self, ir: list) -> ast.AstNode:
         """Tokenize the input."""
         ir = self.parse(ir)
-        if self.errors_had:
-            print(self.errors_had)
-            raise self.gen_exception("Error in parsing, see above for details.")
         return ir
 
     def error(self, p: YaccProduction) -> None:

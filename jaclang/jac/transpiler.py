@@ -30,7 +30,7 @@ def transpile_jac_blue(file_path: str, base_dir: str) -> str:
     if isinstance(code.ir, ast.Module):
         return code.ir.meta["py_code"]
     else:
-        raise ValueError("Transpilation of Jac file failed.")
+        raise code.gen_exception("Transpilation of Jac file failed.")
 
 
 def transpile_jac_purple(file_path: str, base_dir: str) -> str:
@@ -46,7 +46,7 @@ def transpile_jac_purple(file_path: str, base_dir: str) -> str:
     if isinstance(code.ir, ast.Module):
         return code.ir.meta["py_code"]
     else:
-        raise ValueError("Transpilation of Jac file failed.")
+        raise code.gen_exception("Transpilation of Jac file failed.")
 
 
 def jac_file_to_pass(

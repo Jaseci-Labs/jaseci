@@ -88,6 +88,9 @@ class Pass(Transform):
     # -------------------------
     def transform(self, ir: ast.AstNode) -> ast.AstNode:
         """Run pass."""
+        # Only performs passes on proper ASTs
+        if not isinstance(ir, ast.AstNode):
+            return ir
         self.before_pass()
         if not isinstance(ir, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
