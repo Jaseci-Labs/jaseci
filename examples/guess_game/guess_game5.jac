@@ -1,8 +1,6 @@
 """A Number Guessing Game"""
 import:py random;
 
-
-
 walker GuessGame {
     has correct_number: int = (1, 100) |> random.randint;
     can start_game with <root> entry;
@@ -42,6 +40,6 @@ node turn {
 }
 
 # # Run the game
-with entry {
+can run_game {
     |> GuessGame |> <root>;
 }
