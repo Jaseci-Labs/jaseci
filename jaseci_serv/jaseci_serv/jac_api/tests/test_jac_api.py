@@ -1,9 +1,12 @@
 import base64
 import json
 
+from unittest.mock import MagicMock, Mock
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from jaseci.utils.test_core import skip_without_redis
+from jaseci.jsorc.jsorc import JsOrc
+from jaseci_serv.svc.mail_svc import MailService
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -270,6 +273,11 @@ class PublicJacApiTests(TestCaseHelper, TestCase):
 
 class PrivateJacApiTests(TestCaseHelper, TestCase):
     """Test the authorized user node API"""
+
+    def __init__(self, *args, **kwargs):
+        JsOrc.settings("MAIL_CONFIG")["enabled"] = True
+        MailService.connect = MagicMock(return_value=Mock())
+        super().__init__(*args, **kwargs)
 
     def setUp(self):
         super().setUp()
@@ -1005,6 +1013,7 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         self.assertEqual(len(res.data), 3)
 
     def test_public_user_create_global_init(self):
+        mail_svc = JsOrc.svc("mail").app
         public_client = APIClient()
         zsb_file = open(os.path.dirname(__file__) + "/zsb.jac").read()
         payload = {"op": "sentinel_register", "name": "zsb", "code": zsb_file}
@@ -1016,21 +1025,80 @@ class PrivateJacApiTests(TestCaseHelper, TestCase):
         res = self.sclient.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
+
+        name = "yo@gmail.com"
+        other_fields = {
+            "password": "yoyoyoyoyoyo",
+            "name": "",
+            "is_activated": True,
+        }
+
         payload = {
             "op": "user_create",
-            "name": "yo@gmail.com",
+            "name": name,
             "global_init": "init",
-            "other_fields": {
-                "password": "yoyoyoyoyoyo",
-                "name": "",
-                "is_activated": True,
-            },
+            "other_fields": other_fields,
         }
         res = public_client.post(
             reverse(f'jac_api:{payload["op"]}'), payload, format="json"
         )
         self.assertEqual(res.data["success"], True)
         self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
+        self.assertFalse(
+            mail_svc.send_activation_email.called
+        )  # no email, already activated
+
+        mail_svc.reset_mock()
+        payload["name"] = "a" + name
+        other_fields["is_activated"] = False
+        res = public_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(res.data["success"], True)
+        self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
+        self.assertTrue(
+            mail_svc.send_activation_email.called
+        )  # with email, not yet activated
+        self.assertEqual(
+            mail_svc.send_activation_email.call_args[0],
+            (
+                "ayo@gmail.com",
+                "YXlvQGdtYWlsLmNvbQ==",
+                "http://testserver/user/activate/YXlvQGdtYWlsLmNvbQ==",
+            ),
+        )
+
+        mail_svc.reset_mock()
+        payload["name"] = "b" + name
+        payload["send_email"] = False
+        res = public_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(res.data["success"], True)
+        self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
+        self.assertFalse(
+            mail_svc.send_activation_email.called
+        )  # have bypass email sending
+
+        mail_svc.reset_mock()
+        payload["name"] = "c" + name
+        payload["send_email"] = True
+        res = public_client.post(
+            reverse(f'jac_api:{payload["op"]}'), payload, format="json"
+        )
+        self.assertEqual(res.data["success"], True)
+        self.assertEqual(res.data["global_init"]["auto_run_result"]["success"], True)
+        self.assertTrue(
+            mail_svc.send_activation_email.called
+        )  # same as default with email sending
+        self.assertEqual(
+            mail_svc.send_activation_email.call_args[0],
+            (
+                "cyo@gmail.com",
+                "Y3lvQGdtYWlsLmNvbQ==",
+                "http://testserver/user/activate/Y3lvQGdtYWlsLmNvbQ==",
+            ),
+        )
 
     def test_public_user_create_save_through(self):
         public_client = APIClient()
