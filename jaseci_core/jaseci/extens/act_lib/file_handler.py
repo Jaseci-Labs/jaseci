@@ -1,6 +1,8 @@
 """Built in actions for Jaseci"""
 import mimetypes
-
+import magic
+from os import path
+from urllib.parse import urlparse
 from requests import get
 from jaseci.jsorc.live_actions import jaseci_action
 
@@ -172,14 +174,16 @@ def download(url: str, header: dict = {}, meta: dict = {}):
     """Standard built in for download file from url"""
     from jaseci.utils.file_handler import FileHandler
 
-    tmp = FileHandler("tmp")
+    tmp = FileHandler(path.basename(urlparse(url).path) or "file")
     meta["h"].add_file_handler(tmp)
 
     with get(url, stream=True, headers=header) as res:
         res.raise_for_status()
-        tmp.open("wb")
+        tmp.open("wb+")
         for chunk in res.iter_content(chunk_size=8192):
             tmp.buffer.write(chunk)
+
+        tmp.content_type = magic.from_buffer(tmp.read(0), mime=True)
         tmp.close()
 
     return tmp.id
