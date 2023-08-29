@@ -8,7 +8,7 @@ walker GuessGame {
 }
 
 node turn {
-    can check with GuessGame entry;
+    can check with :w:GuessGame entry;
 }
 
 :node:turn:ability:check {
@@ -21,9 +21,10 @@ node turn {
 }
 
 :walker:GuessGame:ability:start_game {
-    a = <here> ++> :> turn;
+    end = <here>;
     for i=0 to i<10 by i+=1 {
-        a = a ++> :> turn;
+        end ++> (end := (:> turn));
+        print(end);
     }
     visit -->;
 }
@@ -40,6 +41,6 @@ node turn {
 }
 
 # # Run the game
-can run_game {
+with entry {
     |> GuessGame |> <root>;
 }
