@@ -1,4 +1,5 @@
 from jaseci.jsorc.jsorc import JsOrc
+from jaseci.utils.utils import logger, ColCodes as Cc
 from jaseci_serv.jsx_oauth.models import PROVIDERS_MAPPING, SocialLoginProvider
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
@@ -17,8 +18,12 @@ from rest_framework import serializers
 from allauth.socialaccount.helpers import complete_social_login
 from requests.exceptions import HTTPError
 from enum import Enum
+from time import time
+from json import dumps
 
 from .models import SocialApp
+
+OBJECT_LOG_LIMIT = 5 * 1024 * 1024
 
 
 class LoginType(Enum):
@@ -186,6 +191,8 @@ class JSXSocialLoginView(SocialLoginView):
 
     def post(self, request, *args, **kwargs):
         self.request = request
+        self.request_log()
+
         self.callback_url = self.get_callback_url(request)
         self.serializer = self.get_serializer(data=self.request.data)
         self.serializer.is_valid(raise_exception=True)
@@ -208,12 +215,71 @@ class JSXSocialLoginView(SocialLoginView):
             request=self.request, username=self.user.email, password=self.user.password
         )
         login_type = data.get("type")
-        return Response(
-            {
-                "email": auth_user.email if auth_user else self.user.email,
-                "token": token,
-                "exp": instance.expiry,
-                "type": login_type.name,
-                "details": login_type.value,
-            }
+        resp = {
+            "email": auth_user.email if auth_user else self.user.email,
+            "token": token,
+            "exp": instance.expiry,
+            "type": login_type.name,
+            "details": login_type.value,
+        }
+
+        self.response_log(resp)
+        return Response(resp)
+
+    def request_log(self):
+        request = self.request
+        request.start_time = time()
+        pl_peek = str(dict(request.data))[:256]
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
+        extra = {"query": request.GET, "data": request.POST}
+        extra["extra_fields"] = list(extra.keys())
+
+        logger.info(
+            f"Incoming call to {Cc.TG}{type(self).__name__}{Cc.EC} with {pl_peek} via {user_agent}",
+            extra=extra,
         )
+
+    def response_log(self, resp):
+        request = self.request
+        master = self.user.get_master()
+        hook = master._h
+
+        tot_time = time() - request.start_time
+        save_count = len(hook.save_obj_list)
+        touch_count = len(hook.mem.keys())
+        db_touches = hook.db_touch_count
+        red_touches = hook.red_touch_count
+        touch_kb = hook.mem_size()
+
+        res_peek = str(resp)[:256]
+        log_str = str(
+            f"API call from {Cc.TG}{master.name}{Cc.EC}:{master.jid}"
+            f" to {Cc.TG}{type(self).__name__}{Cc.EC}"
+            f" completed in {Cc.TY}{tot_time:.3f} seconds{Cc.EC}"
+            f" touched {Cc.TY}{touch_count}{Cc.EC} mem /"
+            f" {Cc.TY}{red_touches}{Cc.EC} redis /"
+            f" {Cc.TY}{db_touches}{Cc.EC} db "
+            f" ({Cc.TY}{touch_kb:.1f}kb{Cc.EC}) and"
+            f" saving {Cc.TY}{save_count}{Cc.EC} objects."
+            f" Response: {res_peek}."
+        )
+
+        log_dict = {
+            "api_name": type(self).__name__,
+            "request_latency": tot_time,
+            "objects_touched": touch_count,
+            "redis_touches": red_touches,
+            "db_touches": db_touches,
+            "objects_touched_size": touch_kb,
+            "objects_saved": save_count,
+            "caller_name": master.name,
+            "caller_jid": master.jid,
+        }
+        try:
+            api_result_str = dumps(resp)[:OBJECT_LOG_LIMIT]
+        except TypeError:
+            api_result_str = str(resp)[:OBJECT_LOG_LIMIT]
+        log_dict["api_response"] = api_result_str
+        log_dict["extra_fields"] = list(log_dict.keys())
+
+        logger.info(log_str, extra=log_dict)
