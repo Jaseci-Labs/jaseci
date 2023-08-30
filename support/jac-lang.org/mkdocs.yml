@@ -8,6 +8,7 @@ nav:
     - ~/learn$:
       - 'learn/learn.md'
       - 'learn/py_to_jac_example.md'
+      - 'learn/contrib.md'
     - ~/book$:
       - book/main.md
       - book/general.md
