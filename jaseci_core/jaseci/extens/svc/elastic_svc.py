@@ -81,8 +81,12 @@ class ElasticService(JsOrc.CommonService):
         under_test = self.config.get("under_test", False)
         if not under_test:
             self.configure_elastic()
-        LOG_QUEUES["core"] = self.add_elastic_log_handler(logger, "core", under_test)
-        LOG_QUEUES["app"] = self.add_elastic_log_handler(app_logger, "app", under_test)
+        LOG_QUEUES["core"] = self.add_elastic_log_handler(
+            logger, self.config.get("core_log_index") or "core", under_test
+        )
+        LOG_QUEUES["app"] = self.add_elastic_log_handler(
+            app_logger, self.config.get("app_log_index") or "app", under_test
+        )
 
     def configure_elastic(self):
         """
