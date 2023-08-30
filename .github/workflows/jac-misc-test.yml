@@ -49,6 +49,8 @@ jobs:
       run: |
         cd jaseci_ai_kit/jac_misc
         pip install -e .[all]
+        pip install darts==0.24.0
+        pip install jaseci
 
     - name: Verify jac_misc installation
       run: |

@@ -9,6 +9,7 @@ MODULES = [
     "openai",
     "huggingface",
     "langchain",
+    "forecast",
 ]
 
 
