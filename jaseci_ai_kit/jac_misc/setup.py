@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 from os.path import join
 
+
 MODULES = [
     "pdf_ext",
     "translator",
@@ -9,8 +10,8 @@ MODULES = [
     "openai",
     "huggingface",
     "langchain",
+    "dmp"
 ]
-
 
 def get_ver():
     with open(join("./jac_misc", "VERSION")) as version_file:

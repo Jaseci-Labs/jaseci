@@ -11,7 +11,7 @@ class TextClusterModule(CoreTest):
     def setUpClass(cls):
         super(TextClusterModule, cls).setUpClass()
         ret = load_module_actions("jac_misc.cluster")
-        assert ret == True
+        assert ret is True
 
     @jac_testcase("cluster.jac", "test_umap")
     def test_umap(self, ret):
@@ -33,4 +33,4 @@ class TextClusterModule(CoreTest):
     def tearDownClass(cls):
         super(TextClusterModule, cls).tearDownClass()
         ret = unload_module("jac_misc.cluster.cluster")
-        assert ret == True
+        assert ret is True

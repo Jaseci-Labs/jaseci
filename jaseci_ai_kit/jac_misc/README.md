@@ -11,6 +11,15 @@ The `jac_misc` package contains a collection of miscellaneous models that can be
   - [PDF Extractor Modules](#pdf-extractor-modules)
     - [Actions](#actions-2)
     - [Example Jac Usage](#example-jac-usage-2)
+  - [Diff-Match-Patch Modules](#diff-match-patch-modules)
+    - [Actions](#actions-3)
+      - [Diff](#diff)
+      - [Example Jac Usage](#example-jac-usage-3)
+      - [Match](#match)
+      - [Example Jac Usage](#example-jac-usage-4)
+      - [Patch](#patch)
+      - [Example Jac Usage](#example-jac-usage-5)
+
 
 ## Clustering Modules
 
@@ -144,3 +153,135 @@ walker pdf_ext_example {
 ```
 
 For a complete example visit [here](jac_misc/pdf_ext/README.md)
+
+## Diff Match Patch Modules
+
+Module `dmp` provides an action library piggybacking off of Google's `diff-match-patch` library to provide diffing, matching, and patching functionality.
+
+### Actions
+
+#### Diff
+
+* `get_diff`: Computes a list of differences between two texts
+  * Input
+    * `text1`(String): gets the first text to be compared
+    * `text2`(String): gets the second text to be compared
+    * `timeout`(Float) = 1.0: provides the timeout value in seconds (0 for no timeout)
+  * Returns: a list of differences between text1 and text2
+
+* `semantic_clean`: Cleans a list of differences to make it human-readable
+  * Input
+    * `diff`(List): list of differences between two texts
+  * Returns: A human-readable list of differences with coincidental differences removed
+
+* `efficient_clean`: Cleans a list of differences to make it efficiently processed by a machine
+  * Input
+    * `diff`:(List): list of differences between two texts
+    * `cost`:(Integer) = 4: cost of adding extra characters to a diff
+  * Returns: A machine-efficient list of differences between two texts
+
+* `get_lvsht`: Calculates the levenshtein distance of a difference list
+  * Input:
+    * `diff`(List): a list of differences between two texts
+  * Returns: an integer representing the number of inserted, deleted, or substitutde characters in a difference list
+
+* `get_html`: Converts a difference list into an HTML text block
+  * Input:
+    * `diff`(List): a list of differences between two texts
+  * Returns: a text block of HTML code displaying the difference list
+
+#### Example Jac Usage
+
+```jac
+  walker diff_example {
+    has first_text = "Good dog";
+    has second_text = "Bad dog";
+    can diff.get_diff;
+    can diff.semantic_clean;
+    can diff.get_html;
+
+    # Getting the list of differences
+    diff_list = diff.get_diff(first_text, second_text);
+    diff_list = diff.semantic_clean(diff_list);
+    diff_html = diff.get_html(diff_list);
+    std.out(diff_html);
+  }
+```
+
+#### Match
+
+* `get_match`
+  * Input:
+    * `text`(String): text to search for a match in
+    * `pattern`(String): the pattern to search for within the text
+    * `loc`(Integer): the starting location (character index) at which to start the search
+    * `dist`(Integer) = 1000: the distance (in characters) to search for a match around the starting location
+    * `threshold`(Float) = 0.5: the threshold for how accurate a match is (multiplied by distance)
+  * Returns: the character index of the best found match or -1 if no valid match is found
+
+#### Example Jac Usage
+
+```jac
+walker match_example {
+  has search_text = "abc123abc";
+  has search_pattern = "abc";
+  has location = 4;
+  can match.get_match;
+
+  match_idx = match.get_match(search_text, search_pattern, location);
+  std.out(match_idx);
+}
+```
+
+#### Patch
+
+* `get_patch`
+  * Input
+    * `text1`(String): first text to compare
+    * `text2`(String): second text to compare  
+    OR
+    * `diff`(List): a list of differences between two texts  
+    OR
+    * `text1`(String): first text document
+    * `diff`(List): a list of differences between text1 and another text
+  * Returns: a list of patches to synchronzie two texts
+
+* `get_text`
+  * Input
+    * `patch`(List): a list of patches
+  * Returns: a text block of patches formatted similarly to GNU diff/patch
+
+* `text_to_patch`
+  * Input
+    * `text`(String)
+  * Returns: a list of patches converted from GNU diff/patch text format
+
+* `apply`
+  * Input
+    * `patch`(List): the list of patches to apply
+    * `text1`(String): the text to attempt to apply the patches to
+    * `threshold`(Float) = 0.5: the delete threshold to determine how closely text must match in a major deletion. Must be between 0 and 1 inclusive.
+
+#### Example Jac Usage
+
+```jac
+walker patch_example {
+  has first_text = "Good dog goes for a walk";
+  has second_text = "Bad dog barks at other dogs on a walk";
+  can patch.get_patch;
+  can patch.get_text;
+  can patch.text_to_patch;
+  can patch.apply;
+
+  patch_list = patch.get_patch(first_text, second_text);
+  # Meaningless patch -> text -> patch conversion
+  patch_text = patch.get_text(patch_list);
+  patch_list = patch.text_to_patch(patch_text);
+  patched_text = patch.apply(patch_list, first_text);
+  std.out(patched_text);
+}
+```
+
+For a complete example visit [here](jac_misc/dmp/README.md)
+
+
