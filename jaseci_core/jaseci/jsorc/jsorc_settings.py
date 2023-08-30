@@ -172,6 +172,8 @@ class JsOrcSettings:
         "auth": os.getenv("ELASTIC_AUTH"),
         "common_index": f"{KUBE_NAMESPACE}-common",
         "activity_index": f"{KUBE_NAMESPACE}-activity",
+        "core_log_index": "core",
+        "app_log_index": "app",
         "ilm_policy_name": ELASTIC_ILM_POLICY_NAME,
         "ilm_policy": ELASTIC_ILM_POLICY,
         "index_template_name": ELASTIC_INDEX_TEMPLATE_NAME,
