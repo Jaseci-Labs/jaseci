@@ -156,13 +156,15 @@ class Interp(VirtualMachine):
         self._jac_try_mode += 1
         try:
             self.run_code_block(kid[1])
+            self._jac_try_mode -= 1
         except TryException as e:
+            self._jac_try_mode -= 1
             if len(kid) > 2:
                 self.run_else_from_try(kid[2], e.ref)
         except Exception as e:
+            self._jac_try_mode -= 1
             if len(kid) > 2:
                 self.run_else_from_try(kid[2], self.jac_exception(e, kid[2]))
-        self._jac_try_mode -= 1
 
     def run_else_from_try(self, jac_ast, jac_ex):
         """
