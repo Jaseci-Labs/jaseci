@@ -6,7 +6,7 @@ title: JEP 2 - Co-design and Interoperability With Netron
 ### JEP 2 - Co-design and Interoperability With Netron
 ---
 #### Details
-| Author      | Type | Quick Description | 
+| Author      | Type | Quick Description |
 | ----------- | ------ | ------ |
 | Jason Mars | Technical | Jaseci Graph Adherence to Netron's Standard |
 

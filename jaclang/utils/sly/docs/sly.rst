@@ -886,7 +886,7 @@ it is to enclose one more more symbols in [ ] like this::
 In this case, the value of ``p.item`` is set to ``None`` if the value wasn't supplied.
 Otherwise, it will have the value returned by the ``item`` rule below.
 
-You can also encode repetitions.  For example, a common construction is a 
+You can also encode repetitions.  For example, a common construction is a
 list of comma separated expressions.  To parse that, you could write::
 
     @_('expr { COMMA expr }')
@@ -895,8 +895,8 @@ list of comma separated expressions.  To parse that, you could write::
 
 In this example, the ``{ COMMA expr }`` represents zero or more repetitions
 of a rule.  The value of all symbols inside is now a list.  So, ``p.expr1``
-is a list of all expressions matched.   Note, when duplicate symbol names 
-appear in a rule, they are distinguished by appending a numeric index as shown. 
+is a list of all expressions matched.   Note, when duplicate symbol names
+appear in a rule, they are distinguished by appending a numeric index as shown.
 
 Dealing With Ambiguous Grammars
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,1 +1,1 @@
-"""Various fixtures for testing"""
+"""Various fixtures for testing."""

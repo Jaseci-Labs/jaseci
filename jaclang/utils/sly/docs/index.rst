@@ -23,11 +23,11 @@ commonly used to write parsers and compilers.  Parsing is
 based on the same LALR(1) algorithm used by many yacc tools.
 Here are a few notable features:
 
- -  SLY provides *very* extensive error reporting and diagnostic 
+ -  SLY provides *very* extensive error reporting and diagnostic
     information to assist in parser construction.  The original
     implementation was developed for instructional purposes.  As
     a result, the system tries to identify the most common types
-    of errors made by novice users.  
+    of errors made by novice users.
 
  -  SLY provides full support for empty productions, error recovery,
     precedence specifiers, and moderately ambiguous grammars.
@@ -39,12 +39,12 @@ Here are a few notable features:
  -  SLY can be used to build parsers for "real" programming languages.
     Although it is not ultra-fast due to its Python implementation,
     SLY can be used to parse grammars consisting of several hundred
-    rules (as might be found for a language like C).  
+    rules (as might be found for a language like C).
 
 SLY originates from the PLY project (http://www.dabeaz.com/ply/index.html).
 However, it's been modernized a bit.  In fact, don't expect any code
-previously written for PLY to work. That said, most of the things 
-that were possible in PLY are also possible in SLY. 
+previously written for PLY to work. That said, most of the things
+that were possible in PLY are also possible in SLY.
 
 An Example
 ==========
@@ -146,7 +146,7 @@ expressions and store variables::
                 break
             if text:
                 parser.parse(lexer.tokenize(text))
- 
+
 
 More Documentation
 ==================

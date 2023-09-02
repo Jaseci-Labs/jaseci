@@ -6,7 +6,7 @@ title: Template
 ### JEP X - Title...
 ---
 #### Details
-| Author      | Type | Quick Description | 
+| Author      | Type | Quick Description |
 | ----------- | ------ | ------ |
 |  |  |  |
 

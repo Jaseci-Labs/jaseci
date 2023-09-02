@@ -6,7 +6,7 @@ title: JEP 3 - Ability to Easily Traverse and Reference Nodes
 ### JEP 3 - Ability to Easily Traverse and Reference Nodes
 ---
 #### Details
-| Author      | Type | Quick Description | 
+| Author      | Type | Quick Description |
 | ----------- | ------ | ------ |
 | Chandra | Technical | Ability to Easily Traverse and Reference Nodes |
 
@@ -19,7 +19,7 @@ For example, suppose you have a graph with nodes representing people and edges r
 ```jac
 walker find_people {
     has name;
-    person_node = node::person(name=="chandra"); 
+    person_node = node::person(name=="chandra");
     std.out(person_node.name); // chandra
     // this will return the reference to the node with name "chandra". doesnt matter where it is in the graph.'
     // whether it is connected to the current node or not. This can be done because we have a complete graph. with generic bidirectional edge between every node.
