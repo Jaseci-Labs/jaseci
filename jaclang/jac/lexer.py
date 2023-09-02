@@ -351,18 +351,18 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     LSQUARE = r"\["
     RSQUARE = r"\]"
 
-    def ignore_newline(self, t: Token) -> Token:
+    def ignore_newline(self, t: Token) -> Token:  # noqa
         """Increment line number."""
         self.lineno += len(t.value)
         return t
 
-    def ignore_comment(self, t: Token) -> Token:  # noqa: N802
+    def ignore_comment(self, t: Token) -> Token:  # noqa
         """Add docstring to lexer."""
         self.lineno += t.value.count("\n")
         self.lineno += t.value.count("\r")
         return t
 
-    def DOC_STRING(self, t: Token) -> Token:  # noqa: N802
+    def DOC_STRING(self, t: Token) -> Token:  # noqa
         """Add docstring to lexer."""
         self.lineno += t.value.count("\n")
         self.lineno += t.value.count("\r")
