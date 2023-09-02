@@ -20,7 +20,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         assignments: AssignmentList,
         """
         for i in self.get_all_sub_nodes(node, ast.Assignment):
-            if type(i.target) != ast.Name:
+            if not isinstance(i.target, ast.Name):
                 self.ice("Only name targets should be possible to in global vars.")
             else:
                 decl = self.sym_tab.lookup(i.target.value)
@@ -149,7 +149,8 @@ class DeclDefMatchPass(Pass, SymbolTable):
         ability_name = node.py_resolve_name()
         name = (
             f"{node.arch_attached.parent.name.value}.{ability_name}"
-            if node.arch_attached and type(node.arch_attached.parent) == ast.Architype
+            if node.arch_attached
+            and isinstance(node.arch_attached.parent, ast.Architype)
             else ability_name
         )
         decl = self.sym_tab.lookup(name)
@@ -163,7 +164,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
             decl.node = node
             decl.node.body = (
                 decl.other_node.body
-                if type(decl.other_node) == ast.AbilityDef
+                if isinstance(decl.other_node, ast.AbilityDef)
                 else self.ice("Expected node of type AbilityDef in symbol table.")
             )
             ast.append_node(decl.node, decl.other_node)
@@ -230,7 +231,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
             i.arch_attached = node
         # Tags all function signatures whether method style or event style
         if (
-            type(node.parent) == ast.Architype
+            isinstance(node.parent, ast.Architype)
             and node.parent.arch_type.name == Tok.KW_WALKER
         ):
             for i in self.get_all_sub_nodes(node, ast.VisitStmt):
@@ -259,7 +260,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
             decl.node = node
             decl.node.body = (
                 decl.other_node.body
-                if type(decl.other_node) == ast.EnumDef
+                if isinstance(decl.other_node, ast.EnumDef)
                 else self.ice("Expected node of type EnumDef in symbol table.")
             )
             ast.append_node(decl.node, decl.other_node)
