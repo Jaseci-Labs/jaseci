@@ -1,4 +1,4 @@
-name: Pre-commit checks
+name: Linting and Pre-commit checks
 
 on:
   pull_request:
