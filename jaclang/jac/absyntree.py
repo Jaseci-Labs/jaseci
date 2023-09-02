@@ -489,9 +489,9 @@ class Ability(OOPAccessNode):
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
-        if type(self.name_ref) == Name:
+        if isinstance(self.name_ref, Name):
             return self.name_ref.value
-        elif (type(self.name_ref) == SpecialVarRef) or (type(self.name_ref) == ArchRef):
+        elif isinstance(self.name_ref, (SpecialVarRef, ArchRef)):
             return self.name_ref.py_resolve_name()
         else:
             raise NotImplementedError
@@ -1650,9 +1650,9 @@ class ArchRef(AstNode):
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
-        if type(self.name_ref) == Name:
+        if isinstance(self.name_ref, Name):
             return self.name_ref.value
-        elif type(self.name_ref) == SpecialVarRef:
+        elif isinstance(self.name_ref, SpecialVarRef):
             return self.name_ref.py_resolve_name()
         else:
             raise NotImplementedError

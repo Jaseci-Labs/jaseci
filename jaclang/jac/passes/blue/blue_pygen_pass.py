@@ -338,10 +338,7 @@ class BluePygenPass(Pass):
             return
         if node.decorators:
             self.emit(node, node.decorators.meta["py_code"])
-        if (
-            type(node.signature) == ast.FuncSignature
-            or type(node.signature) == ast.EventSignature
-        ):
+        if isinstance(node.signature, (ast.FuncSignature, ast.EventSignature)):
             if node.arch_attached and not node.is_static:
                 self.emit_ln(
                     node, f"def {ability_name}(self{node.signature.meta['py_code']}:"
@@ -385,7 +382,7 @@ class BluePygenPass(Pass):
         members: list["ArchHas | Ability"],
         """
         has_members = [
-            i for i in node.members if type(i) == ast.ArchHas and not i.is_static
+            i for i in node.members if isinstance(i, ast.ArchHas) and not i.is_static
         ]
         if has_members:
             self.emit_ln(node, "def __jac_has(self):")
@@ -396,7 +393,7 @@ class BluePygenPass(Pass):
 
         init_func = None
         for i in node.members:
-            if type(i) == ast.Ability and i.py_resolve_name() == "__init__":
+            if isinstance(i, ast.Ability) and i.py_resolve_name() == "__init__":
                 init_func = i
                 break
         if init_func and init_func.signature:
@@ -515,14 +512,14 @@ class BluePygenPass(Pass):
         """
         if node.params:
             if (
-                type(node.parent) == ast.Ability
+                isinstance(node.parent, ast.Ability)
                 and node.parent.arch_attached
                 and not node.parent.is_static
             ):
                 self.emit(node, ", ")
             self.emit(node, node.params.meta["py_code"])
         if (
-            type(node.parent) == ast.Ability
+            isinstance(node.parent, ast.Ability)
             and node.parent.arch_attached
             and node.parent.py_resolve_name() == "__init__"
         ):
@@ -603,7 +600,7 @@ class BluePygenPass(Pass):
         stmts: list['Name|Assignment'],
         """
         for i in node.stmts:
-            if type(i) == ast.Name:
+            if isinstance(i, ast.Name):
                 self.emit_ln(node, i.meta["py_code"] + " = __jac_auto__()")
             else:
                 self.emit(node, i.meta["py_code"])
@@ -934,9 +931,9 @@ class BluePygenPass(Pass):
         right: ExprType,
         op: Token | DisconnectOp | ConnectOp,
         """
-        if type(node.op) in [ast.DisconnectOp, ast.ConnectOp]:
+        if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
             self.ds_feature_warn()
-        if type(node.op) == ast.Token:
+        if isinstance(node.op, ast.Token):
             if node.op.value in [
                 *["+", "-", "*", "/", "%", "**"],
                 *["+=", "-=", "*=", "/=", "%=", "**="],
@@ -950,21 +947,21 @@ class BluePygenPass(Pass):
                     node,
                     f"{node.left.meta['py_code']} {node.op.value} {node.right.meta['py_code']}",
                 )
-            elif (
-                node.op.name in [Tok.PIPE_FWD, Tok.KW_SPAWN, Tok.A_PIPE_FWD]
-                and type(node.left) == ast.TupleVal
-            ):
+            elif node.op.name in [
+                Tok.PIPE_FWD,
+                Tok.KW_SPAWN,
+                Tok.A_PIPE_FWD,
+            ] and isinstance(node.left, ast.TupleVal):
                 params = node.left.meta["py_code"]
                 params = params.replace(",)", ")") if params[-2:] == ",)" else params
                 self.emit(node, f"{node.right.meta['py_code']}{params}")
-            elif (
-                node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]
-                and type(node.right) == ast.TupleVal
+            elif node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD] and isinstance(
+                node.right, ast.TupleVal
             ):
                 params = node.right.meta["py_code"]
                 params = params.replace(",)", ")") if params[-2:] == ",)" else params
                 self.emit(node, f"{node.left.meta['py_code']}{params}")
-            elif node.op.name == Tok.PIPE_FWD and type(node.right) == ast.TupleVal:
+            elif node.op.name == Tok.PIPE_FWD and isinstance(node.right, ast.TupleVal):
                 self.ds_feature_warn()
             elif node.op.name == Tok.PIPE_FWD:
                 self.emit(
@@ -976,8 +973,8 @@ class BluePygenPass(Pass):
                     else 1
                 )
                 if (
-                    type(node.parent) == ast.BinaryExpr
-                    and type(node.parent.op) == ast.Token
+                    isinstance(node.parent, ast.BinaryExpr)
+                    and isinstance(node.parent.op, ast.Token)
                     and node.parent.op.name == Tok.PIPE_FWD
                 ):
                     node.parent.meta["pipe_chain_count"] = paren_count + 1
@@ -994,8 +991,8 @@ class BluePygenPass(Pass):
                     else 1
                 )
                 if (
-                    type(node.parent) == ast.BinaryExpr
-                    and type(node.parent.op) == ast.Token
+                    isinstance(node.parent, ast.BinaryExpr)
+                    and isinstance(node.parent.op, ast.Token)
                     and node.parent.op.name
                     in [
                         Tok.KW_SPAWN,
@@ -1191,7 +1188,7 @@ class BluePygenPass(Pass):
         null_ok: bool,
         """
         if node.null_ok:
-            if type(node.right) == ast.IndexSlice:
+            if isinstance(node.right, ast.IndexSlice):
                 self.emit(
                     node,
                     f"({node.target.meta['py_code']}{node.right.meta['py_code']} "
@@ -1204,7 +1201,7 @@ class BluePygenPass(Pass):
                     f"if {node.target.meta['py_code']} is not None else None)",
                 )
         else:
-            if type(node.right) == ast.IndexSlice:
+            if isinstance(node.right, ast.IndexSlice):
                 self.emit(
                     node,
                     f"{node.target.meta['py_code']}{node.right.meta['py_code']}",
@@ -1330,7 +1327,7 @@ class BluePygenPass(Pass):
         """
         self.emit(node, 'f"')
         for part in node.parts:
-            if type(part) == ast.Token and part.name == "PIECE":
+            if isinstance(part, ast.Token) and part.name == "PIECE":
                 self.emit(node, f"{part.meta['py_code']}")
             else:
                 self.emit(node, "{" + part.meta["py_code"] + "}")

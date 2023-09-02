@@ -40,7 +40,7 @@ class AstBuildPass(Pass):
         module -> DOC_STRING element_list
         module -> DOC_STRING
         """
-        if type(self.ir) == ast.Module:
+        if isinstance(self.ir, ast.Module):
             self.ir.doc = node.kid[0]
             self.ir.body = node.kid[1] if len(node.kid) == 2 else None
         else:
@@ -279,7 +279,7 @@ class AstBuildPass(Pass):
         import_items -> NAME
         """
         this_item = None
-        if type(node.kid[0]) == ast.Name:
+        if isinstance(node.kid[0], ast.Name):
             this_item = ast.ModuleItem(
                 name=node.kid[0],
                 alias=node.kid[2] if len(node.kid) == 3 else None,
@@ -338,14 +338,14 @@ class AstBuildPass(Pass):
                 access=node.kid[3] if len(node.kid) == 7 else node.kid[2],
                 name=node.kid[4] if len(node.kid) == 7 else node.kid[3],
                 base_classes=node.kid[5] if len(node.kid) == 7 else node.kid[4],
-                body=node.kid[-1] if type(node.kid[-1]) == ast.ArchBlock else None,
+                body=node.kid[-1] if isinstance(node.kid[-1], ast.ArchBlock) else None,
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
                 line=node.line,
             ),
         )
-        if type(node.kid[-1]) == ast.Token:
+        if isinstance(node.kid[-1], ast.Token):
             del node.kid[-1]
 
     def exit_architype_def(self, node: ast.AstNode) -> None:
@@ -506,7 +506,7 @@ class AstBuildPass(Pass):
         """
         if len(node.kid) == 2:
             new_node = replace_node(node, node.kid[1])
-            if type(new_node) == ast.Ability:
+            if isinstance(new_node, ast.Ability):
                 new_node.is_async = True
         else:
             replace_node(node, node.kid[0])
@@ -531,9 +531,9 @@ class AstBuildPass(Pass):
                 access=node.kid[2],
                 is_static=node.kid[1],
                 name_ref=node.kid[3],
-                body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
+                body=node.kid[-1] if isinstance(node.kid[-1], ast.CodeBlock) else None,
                 signature=node.kid[-2],
-                is_func=type(node.kid[-2]) == ast.FuncSignature,
+                is_func=isinstance(node.kid[-2], ast.FuncSignature),
                 is_async=False,
                 decorators=None,
                 parent=node.parent,
@@ -542,7 +542,7 @@ class AstBuildPass(Pass):
                 line=node.line,
             ),
         )
-        if type(node.kid[-1]) == ast.Token:
+        if isinstance(node.kid[-1], ast.Token):
             del node.kid[-1]
 
     def exit_ability_decl_decor(self, node: ast.AstNode) -> None:
@@ -562,9 +562,9 @@ class AstBuildPass(Pass):
                 is_static=node.kid[2],
                 access=node.kid[3],
                 name_ref=node.kid[4],
-                body=node.kid[-1] if type(node.kid[-1]) == ast.CodeBlock else None,
+                body=node.kid[-1] if isinstance(node.kid[-1], ast.CodeBlock) else None,
                 signature=node.kid[-2],
-                is_func=type(node.kid[-2]) == ast.FuncSignature,
+                is_func=isinstance(node.kid[-2], ast.FuncSignature),
                 is_async=False,
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -572,7 +572,7 @@ class AstBuildPass(Pass):
                 line=node.line,
             ),
         )
-        if type(node.kid[-1]) == ast.Token:
+        if isinstance(node.kid[-1], ast.Token):
             del node.kid[-1]
 
     def exit_ability_def(self, node: ast.AstNode) -> None:
@@ -739,7 +739,7 @@ class AstBuildPass(Pass):
         enum_decl -> doc_tag KW_ENUM access_tag NAME inherited_archs enum_block
         enum_decl -> doc_tag KW_ENUM access_tag NAME inherited_archs SEMI
         """
-        if type(node.kid[1]) == ast.Token:
+        if isinstance(node.kid[1], ast.Token):
             del node.kid[1]
             replace_node(
                 node,
@@ -749,7 +749,9 @@ class AstBuildPass(Pass):
                     access=node.kid[1],
                     name=node.kid[2],
                     base_classes=node.kid[3],
-                    body=node.kid[-1] if type(node.kid[-1]) == ast.EnumBlock else None,
+                    body=node.kid[-1]
+                    if isinstance(node.kid[-1], ast.EnumBlock)
+                    else None,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
@@ -765,14 +767,16 @@ class AstBuildPass(Pass):
                     access=node.kid[2],
                     name=node.kid[3],
                     base_classes=node.kid[4],
-                    body=node.kid[-1] if type(node.kid[-1]) == ast.EnumBlock else None,
+                    body=node.kid[-1]
+                    if isinstance(node.kid[-1], ast.EnumBlock)
+                    else None,
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
                     line=node.line,
                 ),
             )
-        if type(node.kid[-1]) == ast.Token:
+        if isinstance(node.kid[-1], ast.Token):
             del node.kid[-1]
 
     def exit_enum_def(self, node: ast.AstNode) -> None:
@@ -986,10 +990,10 @@ class AstBuildPass(Pass):
         if len(node.kid) == 3:
             node.kid = node.kid[0].kid + [node.kid[2]]
         if len(node.kid) == 2:
-            if type(node.kid[0]) == ast.TypeSpecList:
+            if isinstance(node.kid[0], ast.TypeSpecList):
                 node.kid[0].kid[0].null_ok = True
                 node.kid = node.kid[0].kid
-            elif type(node.kid[0]) == ast.TypeSpec:
+            elif isinstance(node.kid[0], ast.TypeSpec):
                 node.kid[0].null_ok = True
             else:
                 raise Exception(f"Invalid type spec{type(node.kid[0])}")
@@ -1154,7 +1158,7 @@ class AstBuildPass(Pass):
                     line=node.line,
                 ),
             )
-        elif len(node.kid) == 4 and type(node.kid[3]) == ast.ElseIfs:
+        elif len(node.kid) == 4 and isinstance(node.kid[3], ast.ElseIfs):
             node.kid = [node.kid[1], node.kid[2], node.kid[3]]
             replace_node(
                 node,
@@ -1270,7 +1274,7 @@ class AstBuildPass(Pass):
                     line=node.line,
                 ),
             )
-        elif len(node.kid) == 3 and type(node.kid[2]) == ast.ExceptList:
+        elif len(node.kid) == 3 and isinstance(node.kid[2], ast.ExceptList):
             node.kid = [node.kid[1], node.kid[2]]
             replace_node(
                 node,
@@ -1481,7 +1485,7 @@ class AstBuildPass(Pass):
         expr_as_list -> expression
         """
         this_item = None
-        if type(node.kid[0]) != ast.ExprAsItemList:
+        if not isinstance(node.kid[0], ast.ExprAsItemList):
             this_item = ast.ExprAsItem(
                 expr=node.kid[0],
                 alias=node.kid[2] if len(node.kid) == 3 else None,
@@ -1715,7 +1719,7 @@ class AstBuildPass(Pass):
         visit_stmt -> KW_VISIT expression SEMI
         """
         meta = {"typ": None, "else_body": None}
-        if type(node.kid[-1]) != ast.ElseStmt:
+        if not isinstance(node.kid[-1], ast.ElseStmt):
             if len(node.kid) == 4:
                 node.kid = [node.kid[1], node.kid[2]]
                 meta["typ"] = node.kid[0]
@@ -2406,7 +2410,7 @@ class AstBuildPass(Pass):
         list_compr -> LSQUARE inner_compr RSQUARE
         """
         ret = replace_node(node, node.kid[1])
-        if type(ret) == ast.InnerCompr:
+        if isinstance(ret, ast.InnerCompr):
             ret.is_list = True
         else:
             self.ice("Expected InnerCompr")
@@ -2417,7 +2421,7 @@ class AstBuildPass(Pass):
         gen_compr -> LPAREN inner_compr RPAREN
         """
         ret = replace_node(node, node.kid[1])
-        if type(ret) == ast.InnerCompr:
+        if isinstance(ret, ast.InnerCompr):
             ret.is_gen = True
         else:
             self.ice("Expected InnerCompr")
@@ -2428,7 +2432,7 @@ class AstBuildPass(Pass):
         set_compr -> LBRACE inner_compr RBRACE
         """
         ret = replace_node(node, node.kid[1])
-        if type(ret) == ast.InnerCompr:
+        if isinstance(ret, ast.InnerCompr):
             ret.is_set = True
         else:
             self.ice("Expected InnerCompr")
@@ -2563,7 +2567,7 @@ class AstBuildPass(Pass):
         """
         target = node.kid[0]
         right = node.kid[-1]
-        if type(node.kid[1]) == ast.Token and node.kid[1].name == Tok.DOT_FWD:
+        if isinstance(node.kid[1], ast.Token) and node.kid[1].name == Tok.DOT_FWD:
             target = node.kid[-1]
             right = node.kid[0]
         if len(node.kid) == 3:
@@ -2593,7 +2597,7 @@ class AstBuildPass(Pass):
         """
         target = node.kid[0]
         right = node.kid[-1]
-        if type(node.kid[1]) == ast.Token and node.kid[1].name == Tok.DOT_FWD:
+        if isinstance(node.kid[1], ast.Token) and node.kid[1].name == Tok.DOT_FWD:
             target = node.kid[-1]
             right = node.kid[0]
         if len(node.kid) == 3:
@@ -2647,7 +2651,7 @@ class AstBuildPass(Pass):
         param_list -> expr_list
         """
         if len(node.kid) == 1:
-            if type(node.kid[0]) == ast.ExprList:
+            if isinstance(node.kid[0], ast.ExprList):
                 replace_node(
                     node,
                     ast.ParamList(
@@ -2727,8 +2731,8 @@ class AstBuildPass(Pass):
                 ),
             )
         elif len(node.kid) == 4:
-            start = node.kid[1] if type(node.kid[1]) != ast.Token else None
-            stop = node.kid[2] if type(node.kid[2]) != ast.Token else None
+            start = node.kid[1] if type(node.kid[1]) is not ast.Token else None
+            stop = node.kid[2] if type(node.kid[2]) is not ast.Token else None
             node.kid = [start if start else stop]
             if not isinstance(node.kid[0], ast.AstNode):
                 self.ice("Somethings wrong with the parser.")
@@ -2991,7 +2995,7 @@ class AstBuildPass(Pass):
         """
         ret = replace_node(node, node.kid[1])
         node = ret if ret else node
-        if type(node) == ast.EdgeOpRef:
+        if isinstance(node, ast.EdgeOpRef):
             replace_node(
                 node,
                 ast.DisconnectOp(
