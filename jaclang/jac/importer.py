@@ -16,7 +16,7 @@ def import_jac_module(
     transpiler_func: Callable,
     target: str,
     base_path: Optional[str] = None,
-    cachable: bool = False,
+    cachable: bool = True,
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     target = path.join(*(target.split("."))) + ".jac"
@@ -49,9 +49,8 @@ def import_jac_module(
             code_string = f.read()
     else:
         code_string = transpiler_func(file_path=full_target, base_dir=caller_dir)
-
-    with open(py_file_path, "w") as f:
-        f.write(code_string)
+        with open(py_file_path, "w") as f:
+            f.write(code_string)
 
     module = types.ModuleType(module_name)
     module.__file__ = full_target
@@ -118,14 +117,14 @@ def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary)
 
 
 def jac_blue_import(
-    target: str, base_path: Optional[str] = None, save_file: bool = False
+    target: str, base_path: Optional[str] = None, cachable: bool = True
 ) -> Optional[types.ModuleType]:
     """Jac Blue Imports."""
-    return import_jac_module(transpile_jac_blue, target, base_path, save_file)
+    return import_jac_module(transpile_jac_blue, target, base_path, cachable)
 
 
 def jac_purple_import(
-    target: str, base_path: Optional[str] = None, save_file: bool = False
+    target: str, base_path: Optional[str] = None, cachable: bool = True
 ) -> Optional[types.ModuleType]:
     """Jac Purple Imports."""
-    return import_jac_module(transpile_jac_purple, target, base_path, save_file)
+    return import_jac_module(transpile_jac_purple, target, base_path, cachable)
