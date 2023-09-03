@@ -76,24 +76,28 @@ import:py from jaclang.jac.constant, EdgeDir;
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];
             }
+            if <self>._jac_disengaged_ {return;}
         }
         for i in <self>._jac_ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == walker_type and
                 (nd:>type in i['types'] or nd in i['types']) {  # if nd==root direct chec
                 (<self>, nd) :> i['func'];
             }
+            if <self>._jac_disengaged_ {return;}
         }
         for i in <self>._jac_ds_exit_funcs {
             if i['func'].__qualname__.split(".")[0] == walker_type and
             (nd:>type in i['types'] or nd in i['types']) {
                 (<self>, nd) :> i['func'];
             }
+            if <self>._jac_disengaged_ {return;}
         }
         for i in nd._jac_ds_exit_funcs {
             if i['func'].__qualname__.split(".")[0] == node_type and
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];
             }
+            if <self>._jac_disengaged_ {return;}
         }
         nd :> <self>._jac_path_.append;
     }
@@ -109,4 +113,5 @@ import:py from jaclang.jac.constant, EdgeDir;
 
 :o:Walker:a:_jac_disengage_ {
     <self>._jac_next_ = [];
+    <self>._jac_disengaged_ = True;
 }

@@ -1701,11 +1701,13 @@ class EdgeOpRef(AstNode):
         mod_link: Optional[Module],
         kid: list[AstNode],
         line: int,
+        from_walker: bool = False,
     ) -> None:
         """Initialize edge op reference expression node."""
         self.filter_type = filter_type
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
+        self.from_walker = from_walker
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 

@@ -1,6 +1,5 @@
 """Connect Decls and Defs in AST."""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 from jaclang.jac.sym_table import DefDeclSymbol, SymbolTable
 
@@ -229,15 +228,6 @@ class DeclDefMatchPass(Pass, SymbolTable):
         # Tags all function signatures whether method style or not
         for i in self.get_all_sub_nodes(node, ast.Ability):
             i.arch_attached = node
-        # Tags all function signatures whether method style or event style
-        if (
-            isinstance(node.parent, ast.Architype)
-            and node.parent.arch_type.name == Tok.KW_WALKER
-        ):
-            for i in self.get_all_sub_nodes(node, ast.VisitStmt):
-                i.from_walker = True
-            for i in self.get_all_sub_nodes(node, ast.DisengageStmt):
-                i.from_walker = True
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.

@@ -207,25 +207,27 @@ op: Token,
 filter_type: Optional[ExprType],
 filter_cond: Optional[FilterCompr],
 edge_dir: EdgeDir,
+from_walker: bool = False,
 """
 :object:PurplePygenPass:ability:exit_edge_op_ref
 (nd: ast.EdgeOpRef) {
+    loc = C.HERE if nd.from_walker else 'self';
     edge_dir = f"{C.EDGE_DIR}.IN" if nd.edge_dir == EdgeDir.IN
                else f"{C.EDGE_DIR}.OUT" if nd.edge_dir == EdgeDir.OUT
                else f"{C.EDGE_DIR}.ANY";
     if nd.filter_type and nd.filter_cond {
-        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.EDGES_TO_NODE}({edge_dir})"
+        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {loc}.{C.EDGES_TO_NODE}({edge_dir})"
             f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})"
             f" and {nd.filter_cond.meta['py_code'].replace(C.PATCH, C.JAC_TMP)}]")
             |> <self>.emit;
     }
     elif nd.filter_type {
-        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {C.HERE}.{C.EDGES_TO_NODE}({edge_dir})"
+        (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {loc}.{C.EDGES_TO_NODE}({edge_dir})"
             f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})]")
             |> <self>.emit;
     }
     else {
-        (nd, f"{C.HERE}.{C.EDGES_TO_NODE}({edge_dir})")
+        (nd, f"{loc}.{C.EDGES_TO_NODE}({edge_dir})")
             |> <self>.emit;
     }
 }

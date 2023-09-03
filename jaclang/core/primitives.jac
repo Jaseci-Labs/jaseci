@@ -92,7 +92,8 @@ object Edge:Object {
 
 object Walker:Object {
     has _jac_path_: list[Node] = [],
-        _jac_next_: list[Node] = [];
+        _jac_next_: list[Node] = [],
+        _jac_disengaged_: bool = False;
 
     can __call__(nd: Node);
     can _jac_visit_(nds: list[Node]|list[Edge]);
