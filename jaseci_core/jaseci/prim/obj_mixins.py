@@ -16,22 +16,33 @@ class Anchored:
     def __init__(self):
         self.context = {}
 
-    def get_architype(self):
+    def get_architype(self, interp=None):
         arch = self.get_arch_from_cache()  # Optimization
         if arch and id(arch._h) == id(self._h):
             return arch
-        arch = (
-            self._h._machine.parent().get_arch_for(self)
-            if self._h._machine is not None
-            and self._h._machine.parent() is not None
-            and self._h._machine.parent().j_type == "sentinel"
-            else None
-        )
-        mast = self.get_master()
-        if arch is None and mast.active_snt() is not None:
-            arch = mast.active_snt().get_arch_for(self)
-        elif arch is None and self.parent() and self.parent().j_type == "sentinel":
-            arch = self.parent().get_arch_for(self)
+
+        # Initial checking is from current machine parent
+        sent_cur = None
+        arch = None
+        if self._h._machine is not None:
+            sent_cur = self._h._machine.parent()
+            if sent_cur is not None and sent_cur.j_type == "sentinel":
+                arch = sent_cur.get_arch_for(self, interp=interp)
+
+        # secondary checking if machine sentinel return arch None
+        # it will ignore the check if the machine sentinel is equal to the secondary sentinel to avoid duplicate checking
+        if arch is None:
+            mast = self.get_master()
+            for sent in [mast.active_snt, self.parent]:
+                sent_bak = sent()
+                if (
+                    sent_bak is not None
+                    and sent_bak != sent_cur
+                    and sent_bak.j_type == "sentinel"
+                ):
+                    arch = sent_bak.get_arch_for(self, interp=interp)
+                    break
+
         self.cache_arch(arch)
         return arch
 

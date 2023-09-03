@@ -1259,6 +1259,7 @@ class Interp(VirtualMachine):
             self.rt_error(f"No walker {name} exists!", kid[-1])
         else:
             wlk._to_await = to_await
+            wlk._cur_jac_ast = jac_ast
         return wlk
 
     def run_graph_ref(self, jac_ast):

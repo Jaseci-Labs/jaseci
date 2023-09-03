@@ -132,17 +132,19 @@ class WalkerInterp(Interp):
         before = len(self.next_node_ids)
         if isinstance(result, Node):
             if style in ["b", "bfs"]:
-                self.next_node_ids.add_obj(result, allow_dups=True)
+                self.next_node_ids.add_obj(result, allow_dups=True, interp=self)
             elif style in ["d", "dfs"]:
-                self.next_node_ids.add_obj(result, push_front=True, allow_dups=True)
+                self.next_node_ids.add_obj(
+                    result, push_front=True, allow_dups=True, interp=self
+                )
             else:
                 self.rt_error(f"{style} is invalid take operation", kid[0])
         elif isinstance(result, JacSet):
             if style in ["b", "bfs"]:
-                self.next_node_ids.add_obj_list(result, allow_dups=True)
+                self.next_node_ids.add_obj_list(result, allow_dups=True, interp=self)
             elif style in ["d", "dfs"]:
                 self.next_node_ids.add_obj_list(
-                    result, push_front=True, allow_dups=True
+                    result, push_front=True, allow_dups=True, interp=self
                 )
             else:
                 self.rt_error(f"{style} is invalid take operation", kid[0])
