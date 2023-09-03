@@ -18,6 +18,7 @@ node turn {
     } else {
         "That's not a valid number! Try again." |> print;
     }
+    visit -->;
 }
 
 :walker:GuessGame:ability:start_game {

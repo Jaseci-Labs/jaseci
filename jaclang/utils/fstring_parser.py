@@ -66,8 +66,10 @@ if __name__ == "__main__":
             break
         if text:
             tokens = lexer.tokenize(text)
+            print("Tokens:")
             for i in tokens:
                 print(i, end=", ")
             tokens = lexer.tokenize(text)
             result = parser.parse(tokens)
+            print("\nParse Result:")
             print(result)

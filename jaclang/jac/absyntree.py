@@ -201,7 +201,7 @@ class Elements(AstNode):
 
     def __init__(
         self,
-        elements: list["GlobalVars|Test|ModuleCode|Import|Architype|Ability"],
+        elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],

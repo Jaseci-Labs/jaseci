@@ -162,7 +162,7 @@ from_walker: bool = False,
 :object:PurplePygenPass:ability:exit_visit_stmt
 (nd: ast.VisitStmt) {
     vis_type = nd.vis_type?.value ?: "";
-    loc = f"{'self' if nd.from_walker else C.HERE}";
+    loc = 'self' if nd.from_walker else C.HERE;
     (nd, f"if not {loc}.{C.WALKER_VISIT}({nd.target.meta['py_code']}): " )
         |> <self>.emit_ln;
     <self>.indent_level += 1;
@@ -180,7 +180,7 @@ from_walker: bool = False,
 """
 :object:PurplePygenPass:ability:exit_disengage_stmt
 (nd: ast.VisitStmt) {
-    loc = f"{'self' if nd.from_walker else C.HERE}";
+    loc = 'self' if nd.from_walker else C.HERE;
     (nd, f"return {loc}.{C.DISENGAGE}()") |> <self>.emit_ln;
 }
 

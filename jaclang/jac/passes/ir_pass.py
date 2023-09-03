@@ -95,9 +95,10 @@ class Pass(Transform):
         if not isinstance(ir, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
         self.traverse(ir)
-        self.after_pass()
         # Checks if self.ir is created during traversal
-        return self.ir if hasattr(self, "ir") else ir
+        self.ir = self.ir if hasattr(self, "ir") else ir
+        self.after_pass()
+        return self.ir
 
     def traverse(self, node: ast.AstNode) -> ast.AstNode:
         """Traverse tree."""
