@@ -67,9 +67,9 @@ import:py from jaclang.jac.constant, EdgeDir;
     <self>._jac_path_ = [];
     <self>._jac_next_ = [nd];
     walker_type = <self>.__class__.__name__;
-    node_type = nd.__class__.__name__;
     while <self>._jac_next_ :> len {
         nd = 0 :> <self>._jac_next_.pop;
+        node_type = nd.__class__.__name__;
 
         for i in nd._jac_ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == node_type and

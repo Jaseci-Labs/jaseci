@@ -919,29 +919,29 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "BW_AND ds_call",
-        "ds_call",
+        "BW_AND walrus_assign",
+        "walrus_assign",
     )
     def ref(self, p: YaccProduction) -> YaccProduction:
         """Unpack rule."""
         return p
 
     @_(
-        "KW_SPAWN walrus_assign",
-        "A_PIPE_FWD walrus_assign",
-        "PIPE_FWD walrus_assign",
-        "walrus_assign",
-    )
-    def ds_call(self, p: YaccProduction) -> YaccProduction:
-        """Unpack rule."""
-        return p
-
-    @_(
-        "atom",
-        "atom walrus_op walrus_assign",
+        "ds_call",
+        "ds_call walrus_op walrus_assign",
     )
     def walrus_assign(self, p: YaccProduction) -> YaccProduction:
         """Walrus assignment rule."""
+        return p
+
+    @_(
+        "KW_SPAWN atom",
+        "A_PIPE_FWD atom",
+        "PIPE_FWD atom",
+        "atom",
+    )
+    def ds_call(self, p: YaccProduction) -> YaccProduction:
+        """Unpack rule."""
         return p
 
     @_(

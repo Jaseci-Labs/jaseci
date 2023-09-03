@@ -117,14 +117,14 @@ def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary)
 
 
 def jac_blue_import(
-    target: str, base_path: Optional[str] = None, cachable: bool = True
+    target: str, base_path: Optional[str] = None, cachable: bool = False
 ) -> Optional[types.ModuleType]:
     """Jac Blue Imports."""
     return import_jac_module(transpile_jac_blue, target, base_path, cachable)
 
 
 def jac_purple_import(
-    target: str, base_path: Optional[str] = None, cachable: bool = True
+    target: str, base_path: Optional[str] = None, cachable: bool = False
 ) -> Optional[types.ModuleType]:
     """Jac Purple Imports."""
     return import_jac_module(transpile_jac_purple, target, base_path, cachable)

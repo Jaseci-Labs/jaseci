@@ -23,8 +23,7 @@ node turn {
 :walker:GuessGame:ability:start_game {
     end = <here>;
     for i=0 to i<10 by i+=1 {
-        end ++> (end := (:> turn));
-        print(end);
+        end ++> end := :> turn;
     }
     visit -->;
 }
