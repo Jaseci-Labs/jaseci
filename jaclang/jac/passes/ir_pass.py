@@ -116,13 +116,15 @@ class Pass(Transform):
         self.exit_node(node)
         return node
 
-    def update_code_loc(self) -> None:
+    def update_code_loc(self, node: Optional[ast.AstNode] = None) -> None:
         """Update code location."""
-        if not isinstance(self.cur_node, ast.AstNode):
+        if node is None:
+            node = self.cur_node
+        if not isinstance(node, ast.AstNode):
             self.ice("Current node is not an AstNode.")
-        self.cur_line = self.cur_node.line
-        if self.cur_node.mod_link:
-            self.rel_mod_path = self.cur_node.mod_link.rel_mod_path
+        self.cur_line = node.line
+        if node.mod_link:
+            self.rel_mod_path = node.mod_link.rel_mod_path
 
     def error(self, msg: str) -> None:
         """Pass Error."""
