@@ -63,13 +63,14 @@ class ImportPass(Pass):
 
         if not path.exists(target):
             self.error(f"Could not find module {target}")
-        mod = jac_file_to_pass(
+        mod_pass = jac_file_to_pass(
             file_path=target, base_dir=base_dir, target=AstBuildPass
-        ).ir
+        )
+        mod = mod_pass.ir
         if isinstance(mod, ast.Module):
             self.import_table[target] = mod
             mod.is_imported = True
         else:
             self.error(f"Module {target} is not a valid Jac module.")
-            raise Exception(f"Module {target} is not a valid Jac module.")
+            raise mod_pass.gen_exception(f"Module {target} is not a valid Jac module.")
         return mod
