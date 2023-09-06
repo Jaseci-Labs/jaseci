@@ -823,7 +823,7 @@ class BluePygenPass(Pass):
         ctrl: Token,
         """
         if node.ctrl.name == Tok.KW_SKIP:
-            self.error("skip is not supported in bootstrap Jac")
+            self.ds_feature_warn()
         else:
             self.emit_ln(node, node.ctrl.value)
 
