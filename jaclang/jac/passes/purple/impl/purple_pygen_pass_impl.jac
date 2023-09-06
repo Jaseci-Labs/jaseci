@@ -193,10 +193,15 @@ op: Token,
 """
 :object:PurplePygenPass:ability:exit_binary_expr
 (nd: ast.BinaryExpr) {
-    if (nd.op|>type) == ast.ConnectOp {
+    if (nd.op:>type) == ast.ConnectOp {
         (nd, f"{nd.left.meta['py_code']}.{C.CONNECT_NODE}({nd.right.meta['py_code']}, {nd.op.meta['py_code']})")
             |> <self>.emit;
-    } else {
+    } elif (nd.op:>type) == ast.DisconnectOp {
+        <self>.ds_feature_warn(); # TODO: Implement
+    } elif nd.op.name == Tok.PIPE_FWD and isinstance(nd.right, ast.TupleVal) {
+        <self>.ds_feature_warn(); # TODO: Implement
+    }
+    else {
         <super>.exit_binary_expr(nd);
     }
 }
