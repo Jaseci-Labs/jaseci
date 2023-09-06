@@ -2720,6 +2720,7 @@ class AstBuildPass(Pass):
                     ),
                 )
             else:
+                node.kid = [node.kid[1]]
                 replace_node(
                     node,
                     ast.IndexSlice(
@@ -2732,7 +2733,6 @@ class AstBuildPass(Pass):
                         line=node.line,
                     ),
                 )
-                node.kid = [node.kid[1]]
         elif len(node.kid) == 4:
             start = node.kid[1] if type(node.kid[1]) is not ast.Token else None
             stop = node.kid[2] if type(node.kid[2]) is not ast.Token else None
