@@ -1,11 +1,11 @@
 """Implementations for the jac command line interface."""
-import:py from os, path;
+import:py os;
 import:py shutil;
 
 """Load a .jac file and return the entrypoint function."""
 :a:load(filename: str) {
     if filename.endswith(".jac"){
-        [base, mod] = path.split(filename);
+        [base, mod] = os.path.split(filename);
         base = './' if not base else base;
         mod=mod[:-4];
         __jac_import__(target=mod, base_path=base);
@@ -17,7 +17,7 @@ import:py shutil;
 """Run the entrypoint of the given .jac file."""
 :a:run(filename: str, entrypoint: str, args: list) {
     if filename.endswith(".jac"){
-        [base, mod] = path.split(filename);
+        [base, mod] = os.path.split(filename);
         base = './' if not base else base;
         mod=mod[:-4];
         mod = __jac_import__(target=mod, base_path=base);
@@ -32,34 +32,14 @@ import:py shutil;
     current_dir = os.getcwd();
     jac_gen = "__jac_gen__";
     py_cache = "__pycache__";
-    for root, dirs, files in os.walk(current_directory, topdown=True) {
-        for folder_name in dirs[:]{
-            if folder_name == target_dir or folder_name == py_cache{
-                shutil.rmtree(os.path.join(root, folder_name));
-                dirs.remove(folder_name);
+    for root, dirs, files in os.walk(current_dir, topdown=True) {
+        for folder_name in dirs[:] {
+            if folder_name == jac_gen or folder_name == py_cache {
+                folder_to_remove = os.path.join(root, folder_name);
+                shutil.rmtree(folder_to_remove);
+                print(f"Removed folder: {folder_to_remove}");
             }
         }
     }
+    print("Done cleaning.");
 }
-
-#* Pure python implementation of clean:
-import os
-import shutil
-
-
-def clean():
-    current_directory = os.getcwd()  # Get the current working directory
-    jac_gen = "__jac_gen__"
-    py_cache = "__pycache__"
-    for root, dirs, files in os.walk(current_directory, topdown=False):
-        for folder_name in dirs[:]:
-            if folder_name == jac_gen or folder_name == py_cache:
-                folder_to_remove = os.path.join(root, folder_name)
-                shutil.rmtree(folder_to_remove)
-                print(f"Removed folder: {folder_to_remove}")
-
-    print("Done cleaning.")
-
-
-clean()
-*#
