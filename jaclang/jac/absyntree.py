@@ -1467,7 +1467,7 @@ class InnerCompr(AstNode):
     def __init__(
         self,
         out_expr: ExprType,
-        name: Name,
+        name_list: NameList,
         collection: ExprType,
         conditional: Optional[ExprType],
         is_list: bool,
@@ -1480,7 +1480,7 @@ class InnerCompr(AstNode):
     ) -> None:
         """Initialize comprehension expression node."""
         self.out_expr = out_expr
-        self.name = name
+        self.name_list = name_list
         self.collection = collection
         self.conditional = conditional
         self.is_list = is_list
@@ -1496,8 +1496,7 @@ class DictCompr(AstNode):
         self,
         outk_expr: ExprType,
         outv_expr: ExprType,
-        k_name: Name,
-        v_name: Optional[Token],
+        name_list: NameList,
         collection: ExprType,
         conditional: Optional[ExprType],
         parent: Optional[AstNode],
@@ -1508,8 +1507,7 @@ class DictCompr(AstNode):
         """Initialize comprehension expression node."""
         self.outk_expr = outk_expr
         self.outv_expr = outv_expr
-        self.k_name = k_name
-        self.v_name = v_name
+        self.name_list = name_list
         self.collection = collection
         self.conditional = conditional
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)

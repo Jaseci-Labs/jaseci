@@ -1120,16 +1120,17 @@ class BluePygenPass(Pass):
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
-        out_expr: "ExprType",
-        name: Name,
-        collection: "ExprType",
-        conditional: Optional["ExprType"],
+        out_expr: ExprType,
+        name_list: NameList,
+        collection: ExprType,
+        conditional: Optional[ExprType],
         is_list: bool,
         is_gen: bool,
         is_set: bool,
         """
+        names = node.name_list.meta["py_code"]
         partial = (
-            f"{node.out_expr.meta['py_code']} for {node.name.value} "
+            f"{node.out_expr.meta['py_code']} for {names} "
             f"in {node.collection.meta['py_code']}"
         )
         if node.conditional:
@@ -1144,19 +1145,17 @@ class BluePygenPass(Pass):
     def exit_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
 
-        outk_expr: "ExprType",
-        outv_expr: "ExprType",
-        k_name: Token,
-        v_name: Optional[Token],
-        collection: "ExprType",
-        conditional: Optional["ExprType"],
+        outk_expr: ExprType,
+        outv_expr: ExprType,
+        name_list: NameList,
+        collection: ExprType,
+        conditional: Optional[ExprType],
         """
+        names = node.name_list.meta["py_code"]
         partial = (
             f"{node.outk_expr.meta['py_code']}: {node.outv_expr.meta['py_code']} for "
-            f"{node.k_name.value}"
+            f"{names}"
         )
-        if node.v_name:
-            partial += f", {node.v_name.value}"
         partial += f" in {node.collection.meta['py_code']}"
         if node.conditional:
             partial += f" if {node.conditional.meta['py_code']}"

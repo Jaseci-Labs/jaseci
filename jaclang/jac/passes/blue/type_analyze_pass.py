@@ -431,6 +431,12 @@ class TypeAnalyzePass(Pass, SymbolTable):
         body: CodeBlock,
         """
 
+    def exit_name_list(self, node: ast.NameList) -> None:
+        """Sub objects.
+
+        names: list[Name],
+        """
+
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
 
