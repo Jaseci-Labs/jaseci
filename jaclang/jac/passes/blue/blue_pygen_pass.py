@@ -1265,7 +1265,7 @@ class BluePygenPass(Pass):
         """
         self.emit(node, node.py_resolve_name())
 
-    # NOTE: Incomplete for Jac Purple and Red
+    # NOTE: Incomplete for Jac Purple and Red (maybe for global)
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
 
@@ -1301,7 +1301,7 @@ class BluePygenPass(Pass):
         """
         self.ds_feature_warn()
 
-    # NOTE: Incomplete for Jac Purple and Red
+    # NOTE: Incomplete for Jac Purple and Red (to consider)
     def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
