@@ -2704,38 +2704,35 @@ class AstBuildPass(Pass):
         index_slice -> LSQUARE expression COLON expression RSQUARE
         index_slice -> LSQUARE expression RSQUARE
         """
-        if (
-            len(node.kid) == 3
-            and isinstance(node.kid[1], ast.Token)
-            and node.kid[1].name == Tok.COLON
-        ):
-            node.kid = []
-            replace_node(
-                node,
-                ast.IndexSlice(
-                    start=None,
-                    stop=None,
-                    is_range=True,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
-        elif len(node.kid) == 3:
-            node.kid = [node.kid[1]]
-            replace_node(
-                node,
-                ast.IndexSlice(
-                    start=node.kid[0],
-                    stop=None,
-                    is_range=False,
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+        if len(node.kid) == 3:
+            if isinstance(node.kid[1], ast.Token) and node.kid[1].name == Tok.COLON:
+                node.kid = []
+                replace_node(
+                    node,
+                    ast.IndexSlice(
+                        start=None,
+                        stop=None,
+                        is_range=True,
+                        parent=node.parent,
+                        mod_link=self.mod_link,
+                        kid=node.kid,
+                        line=node.line,
+                    ),
+                )
+            else:
+                replace_node(
+                    node,
+                    ast.IndexSlice(
+                        start=node.kid[0],
+                        stop=None,
+                        is_range=False,
+                        parent=node.parent,
+                        mod_link=self.mod_link,
+                        kid=node.kid,
+                        line=node.line,
+                    ),
+                )
+                node.kid = [node.kid[1]]
         elif len(node.kid) == 4:
             start = node.kid[1] if type(node.kid[1]) is not ast.Token else None
             stop = node.kid[2] if type(node.kid[2]) is not ast.Token else None
