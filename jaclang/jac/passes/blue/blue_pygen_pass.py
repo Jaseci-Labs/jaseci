@@ -298,7 +298,7 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         doc: Optional[Token],
-        mod: Optional["NameList"],
+        mod: Optional["DottedNameList"],
         arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
         body: "ArchBlock",
         """
@@ -314,7 +314,7 @@ class BluePygenPass(Pass):
     def exit_base_classes(self, node: ast.BaseClasses) -> None:
         """Sub objects.
 
-        base_classes: list[NameList],
+        base_classes: list[DottedNameList],
         """
         self.emit(node, ", ".join([i.meta["py_code"] for i in node.base_classes]))
 
@@ -371,7 +371,7 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         doc: Optional[Token],
-        mod: Optional["NameList"],
+        mod: Optional["DottedNameList"],
         ability: AbilityRef,
         body: CodeBlock,
         """
@@ -472,7 +472,7 @@ class BluePygenPass(Pass):
     def exit_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
-        typ: "Token | NameList",
+        typ: "Token | DottedNameList",
         list_nest: TypeSpec,
         dict_nest: TypeSpec,
         """
@@ -496,7 +496,7 @@ class BluePygenPass(Pass):
         """
         self.error("Event style abilities not supported in bootstrap Jac")
 
-    def exit_name_list(self, node: ast.NameList) -> None:
+    def exit_dotted_name_list(self, node: ast.DottedNameList) -> None:
         """Sub objects.
 
         names: list[all_refs],
@@ -590,7 +590,7 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         doc: Optional[Token],
-        mod: Optional[NameList],
+        mod: Optional[DottedNameList],
         body: EnumBlock,
         """
 
@@ -735,32 +735,22 @@ class BluePygenPass(Pass):
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        name: Token,
+        name_list: Token,
         collection: ExprType,
         body: CodeBlock,
         """
-        self.emit_ln(
-            node, f"for {node.name.value} in {node.collection.meta['py_code']}:"
-        )
+        names = node.name_list.meta["py_code"]
+        self.emit_ln(node, f"for {names} in {node.collection.meta['py_code']}:")
         self.indent_level += 1
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
 
-    def exit_dict_for_stmt(self, node: ast.DictForStmt) -> None:
+    def exit_name_list(self, node: ast.NameList) -> None:
         """Sub objects.
 
-        k_name: Token,
-        v_name: Token,
-        collection: ExprType,
-        body: CodeBlock,
+        names: list[Name],
         """
-        self.emit_ln(
-            node,
-            f"for {node.k_name.value}, {node.v_name.value} in {node.collection.meta['py_code']}:",
-        )
-        self.indent_level += 1
-        self.emit_ln(node, node.body.meta["py_code"])
-        self.indent_level -= 1
+        self.emit(node, ",".join([i.meta["py_code"] for i in node.names]))
 
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.

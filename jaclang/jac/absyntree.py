@@ -405,7 +405,7 @@ class ArchDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        mod: Optional[NameList],
+        mod: Optional[DottedNameList],
         arch: ArchRef,
         body: ArchBlock,
         parent: Optional[AstNode],
@@ -426,7 +426,7 @@ class Decorators(AstNode):
 
     def __init__(
         self,
-        calls: list["ExprType"],
+        calls: list[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -442,7 +442,7 @@ class BaseClasses(AstNode):
 
     def __init__(
         self,
-        base_classes: list["NameList"],
+        base_classes: list[DottedNameList],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -503,7 +503,7 @@ class AbilityDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        target: Optional[NameList],
+        target: Optional[DottedNameList],
         ability: ArchRef,
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
@@ -541,12 +541,12 @@ class EventSignature(AstNode):
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-class NameList(AstNode):
-    """NameList node type for Jac Ast."""
+class DottedNameList(AstNode):
+    """DottedNameList node type for Jac Ast."""
 
     def __init__(
         self,
-        names: list["Token|SpecialVarRef|ArchRef|Name"],
+        names: list[Token | SpecialVarRef | ArchRef | Name],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -599,7 +599,7 @@ class ParamVar(AstNode):
         name: Name,
         unpack: Optional[Token],
         type_tag: "TypeSpec",
-        value: Optional["ExprType"],
+        value: Optional[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -647,7 +647,7 @@ class EnumDef(AstNode):
         self,
         doc: Optional[Token],
         enum: ArchRef,
-        mod: Optional[NameList],
+        mod: Optional[DottedNameList],
         body: EnumBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -746,7 +746,7 @@ class HasVar(AstNode):
         self,
         name: Name,
         type_tag: "TypeSpec",
-        value: Optional["ExprType"],
+        value: Optional[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -780,7 +780,7 @@ class TypeSpec(AstNode):
 
     def __init__(
         self,
-        spec_type: Token | NameList,
+        spec_type: Token | DottedNameList,
         list_nest: TypeSpec,  # needed for lists
         dict_nest: TypeSpec,  # needed for dicts, uses list_nest as key
         null_ok: bool,
@@ -836,7 +836,7 @@ class IfStmt(AstNode):
 
     def __init__(
         self,
-        condition: "ExprType",
+        condition: ExprType,
         body: "CodeBlock",
         elseifs: Optional["ElseIfs"],
         else_body: Optional["ElseStmt"],
@@ -926,7 +926,7 @@ class Except(AstNode):
 
     def __init__(
         self,
-        ex_type: "ExprType",
+        ex_type: ExprType,
         name: Optional[Token],
         body: "CodeBlock",
         parent: Optional[AstNode],
@@ -963,8 +963,8 @@ class IterForStmt(AstNode):
     def __init__(
         self,
         iter: "Assignment",
-        condition: "ExprType",
-        count_by: "ExprType",
+        condition: ExprType,
+        count_by: ExprType,
         body: "CodeBlock",
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -984,40 +984,34 @@ class InForStmt(AstNode):
 
     def __init__(
         self,
-        name: Name,
-        collection: "ExprType",
-        body: "CodeBlock",
+        name_list: NameList,
+        collection: ExprType,
+        body: CodeBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
         line: int,
     ) -> None:
         """Initialize in for node."""
-        self.name = name
+        self.name_list = name_list
         self.collection = collection
         self.body = body
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-class DictForStmt(AstNode):
-    """DictForStmt node type for Jac Ast."""
+class NameList(AstNode):
+    """NameList node type for Jac Ast."""
 
     def __init__(
         self,
-        k_name: Name,
-        v_name: Name,
-        collection: "ExprType",
-        body: "CodeBlock",
+        names: list[Name],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
         line: int,
     ) -> None:
-        """Initialize dict for node."""
-        self.k_name = k_name
-        self.v_name = v_name
-        self.collection = collection
-        self.body = body
+        """Initialize name list node."""
+        self.names = names
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
@@ -1026,7 +1020,7 @@ class WhileStmt(AstNode):
 
     def __init__(
         self,
-        condition: "ExprType",
+        condition: ExprType,
         body: "CodeBlock",
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1078,7 +1072,7 @@ class ExprAsItem(AstNode):
 
     def __init__(
         self,
-        expr: "ExprType",
+        expr: ExprType,
         alias: Optional[Name],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1096,7 +1090,7 @@ class RaiseStmt(AstNode):
 
     def __init__(
         self,
-        cause: Optional["ExprType"],
+        cause: Optional[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1112,8 +1106,8 @@ class AssertStmt(AstNode):
 
     def __init__(
         self,
-        condition: "ExprType",
-        error_msg: Optional["ExprType"],
+        condition: ExprType,
+        error_msg: Optional[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1146,7 +1140,7 @@ class DeleteStmt(AstNode):
 
     def __init__(
         self,
-        target: "ExprType",
+        target: ExprType,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1162,7 +1156,7 @@ class ReportStmt(AstNode):
 
     def __init__(
         self,
-        expr: "ExprType",
+        expr: ExprType,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1178,7 +1172,7 @@ class ReturnStmt(AstNode):
 
     def __init__(
         self,
-        expr: Optional["ExprType"],
+        expr: Optional[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1194,7 +1188,7 @@ class YieldStmt(AstNode):
 
     def __init__(
         self,
-        expr: Optional["ExprType"],
+        expr: Optional[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1210,7 +1204,7 @@ class IgnoreStmt(AstNode):
 
     def __init__(
         self,
-        target: "ExprType",
+        target: ExprType,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1248,7 +1242,7 @@ class RevisitStmt(AstNode):
 
     def __init__(
         self,
-        hops: Optional["ExprType"],
+        hops: Optional[ExprType],
         else_body: Optional["ElseStmt"],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1282,7 +1276,7 @@ class AwaitStmt(AstNode):
 
     def __init__(
         self,
-        target: "ExprType",
+        target: ExprType,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1300,7 +1294,7 @@ class Assignment(AstNode):
         self,
         is_static: bool,
         target: "AtomType",
-        value: "ExprType",
+        value: ExprType,
         mutable: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1320,8 +1314,8 @@ class BinaryExpr(AstNode):
 
     def __init__(
         self,
-        left: "ExprType",
-        right: "ExprType",
+        left: ExprType,
+        right: ExprType,
         op: Token | DisconnectOp | ConnectOp,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1341,8 +1335,8 @@ class IfElseExpr(AstNode):
     def __init__(
         self,
         condition: "BinaryExpr | IfElseExpr",
-        value: "ExprType",
-        else_value: "ExprType",
+        value: ExprType,
+        else_value: ExprType,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1360,7 +1354,7 @@ class UnaryExpr(AstNode):
 
     def __init__(
         self,
-        operand: "ExprType",
+        operand: ExprType,
         op: Token,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1378,7 +1372,7 @@ class UnpackExpr(AstNode):
 
     def __init__(
         self,
-        target: "ExprType",
+        target: ExprType,
         is_dict: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1412,7 +1406,7 @@ class ExprList(AstNode):
 
     def __init__(
         self,
-        values: list["ExprType"],
+        values: list[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1436,7 +1430,7 @@ class TupleVal(AstNode):
 
     def __init__(
         self,
-        first_expr: Optional["ExprType"],
+        first_expr: Optional[ExprType],
         exprs: Optional[ExprList],
         assigns: Optional[AssignmentList],
         parent: Optional[AstNode],
@@ -1472,10 +1466,10 @@ class InnerCompr(AstNode):
 
     def __init__(
         self,
-        out_expr: "ExprType",
+        out_expr: ExprType,
         name: Name,
-        collection: "ExprType",
-        conditional: Optional["ExprType"],
+        collection: ExprType,
+        conditional: Optional[ExprType],
         is_list: bool,
         is_gen: bool,
         is_set: bool,
@@ -1500,12 +1494,12 @@ class DictCompr(AstNode):
 
     def __init__(
         self,
-        outk_expr: "ExprType",
-        outv_expr: "ExprType",
+        outk_expr: ExprType,
+        outv_expr: ExprType,
         k_name: Name,
         v_name: Optional[Token],
-        collection: "ExprType",
-        conditional: Optional["ExprType"],
+        collection: ExprType,
+        conditional: Optional[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1526,8 +1520,8 @@ class KVPair(AstNode):
 
     def __init__(
         self,
-        key: "ExprType",
-        value: "ExprType",
+        key: ExprType,
+        value: ExprType,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1616,8 +1610,8 @@ class IndexSlice(AstNode):
 
     def __init__(
         self,
-        start: Optional["ExprType"],
-        stop: Optional["ExprType"],
+        start: Optional[ExprType],
+        stop: Optional[ExprType],
         is_range: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1798,7 +1792,6 @@ StmtType = Union[
     TryStmt,
     IterForStmt,
     InForStmt,
-    DictForStmt,
     WhileStmt,
     WithStmt,
     RaiseStmt,

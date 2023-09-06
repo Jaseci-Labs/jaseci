@@ -1,5 +1,6 @@
 """Implementations for the jac command line interface."""
-import:py from os, path, shutil;
+import:py from os, path;
+import:py shutil;
 
 """Load a .jac file and return the entrypoint function."""
 :a:load(filename: str) {
@@ -30,8 +31,8 @@ import:py from os, path, shutil;
 :a:clean() {
     current_dir = os.getcwd();
     jac_gen = "__jac_gen__";
-    py_cache = "__pycache__"
-    for root,dirs, files in os.walk(current_directory, topdown=True){
+    py_cache = "__pycache__";
+    for root, dirs, files in os.walk(current_directory, topdown=True) {
         for folder_name in dirs[:]{
             if folder_name == target_dir or folder_name == py_cache{
                 shutil.rmtree(os.path.join(root, folder_name));
