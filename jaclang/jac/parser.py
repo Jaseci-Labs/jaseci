@@ -622,11 +622,18 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "KW_FOR assignment KW_TO expression KW_BY expression code_block",
-        "KW_FOR NAME KW_IN expression code_block",
-        "KW_FOR NAME COMMA NAME KW_IN expression code_block",
+        "KW_FOR name_list KW_IN expression code_block",
     )
     def for_stmt(self, p: YaccProduction) -> YaccProduction:
         """For statement rule."""
+        return p
+
+    @_(
+        "NAME",
+        "name_list COMMA NAME",
+    )
+    def name_list(self, p: YaccProduction) -> YaccProduction:
+        """List of names."""
         return p
 
     @_("KW_WHILE expression code_block")
@@ -1098,18 +1105,16 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "expression KW_FOR NAME KW_IN walrus_assign",
-        "expression KW_FOR NAME KW_IN walrus_assign KW_IF expression",
+        "expression KW_FOR name_list KW_IN walrus_assign",
+        "expression KW_FOR name_list KW_IN walrus_assign KW_IF expression",
     )
     def inner_compr(self, p: YaccProduction) -> YaccProduction:
         """Comprehension rule."""
         return p
 
     @_(
-        "LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE",
-        "LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE",
-        "LBRACE expression COLON expression KW_FOR NAME COMMA NAME KW_IN walrus_assign RBRACE",
-        "LBRACE expression COLON expression KW_FOR NAME COMMA NAME KW_IN walrus_assign KW_IF expression RBRACE",
+        "LBRACE expression COLON expression KW_FOR name_list KW_IN walrus_assign RBRACE",
+        "LBRACE expression COLON expression KW_FOR name_list KW_IN walrus_assign KW_IF expression RBRACE",
     )
     def dict_compr(self, p: YaccProduction) -> YaccProduction:
         """Comprehension rule."""
@@ -1193,6 +1198,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "LSQUARE expression COLON expression RSQUARE",
         "LSQUARE expression COLON RSQUARE",
         "LSQUARE COLON expression RSQUARE",
+        "LSQUARE COLON RSQUARE",
     )
     def index_slice(self, p: YaccProduction) -> YaccProduction:
         """Index/slice rule."""

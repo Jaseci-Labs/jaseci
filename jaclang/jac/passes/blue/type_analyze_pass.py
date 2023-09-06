@@ -194,7 +194,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
         """Sub objects.
 
         doc: Optional[DocString],
-        mod: Optional[NameList],
+        mod: Optional[DottedNameList],
         arch: ObjectRef | NodeRef | EdgeRef | WalkerRef,
         body: ArchBlock,
         """
@@ -208,7 +208,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
     def exit_base_classes(self, node: ast.BaseClasses) -> None:
         """Sub objects.
 
-        base_classes: list['NameList'],
+        base_classes: list['DottedNameList'],
         """
 
     def exit_ability(self, node: ast.Ability) -> None:
@@ -227,7 +227,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
         """Sub objects.
 
         doc: Optional[DocString],
-        mod: Optional[NameList],
+        mod: Optional[DottedNameList],
         ability: AbilityRef,
         body: CodeBlock,
         """
@@ -286,7 +286,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
     def exit_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
-        typ: Token | NameList,
+        typ: Token | DottedNameList,
         list_nest: TypeSpec,
         dict_nest: TypeSpec,
         """
@@ -295,10 +295,10 @@ class TypeAnalyzePass(Pass, SymbolTable):
         """Sub objects.
 
         event: Token,
-        arch_tag_info: Optional[NameList | Token],
+        arch_tag_info: Optional[DottedNameList | Token],
         """
 
-    def exit_name_list(self, node: ast.NameList) -> None:
+    def exit_dotted_name_list(self, node: ast.DottedNameList) -> None:
         """Sub objects.
 
         names: list[Token],
@@ -342,7 +342,7 @@ class TypeAnalyzePass(Pass, SymbolTable):
         """Sub objects.
 
         doc: Optional[DocString],
-        mod: Optional[NameList],
+        mod: Optional[DottedNameList],
         body: EnumBlock,
         """
 
@@ -431,13 +431,10 @@ class TypeAnalyzePass(Pass, SymbolTable):
         body: CodeBlock,
         """
 
-    def exit_dict_for_stmt(self, node: ast.DictForStmt) -> None:
+    def exit_name_list(self, node: ast.NameList) -> None:
         """Sub objects.
 
-        k_name: Name,
-        v_name: Name,
-        collection: ExprType,
-        body: CodeBlock,
+        names: list[Name],
         """
 
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:

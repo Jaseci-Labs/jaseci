@@ -444,7 +444,7 @@ class AstBuildPass(Pass):
             node.kid = node.kid[0].kid + [node.kid[2]]
         replace_node(
             node,
-            ast.NameList(
+            ast.DottedNameList(
                 names=node.kid,
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -1391,8 +1391,7 @@ class AstBuildPass(Pass):
     def exit_for_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        for_stmt -> KW_FOR NAME COMMA NAME KW_IN expression code_block
-        for_stmt -> KW_FOR NAME KW_IN expression code_block
+        for_stmt -> KW_FOR name_list KW_IN expression code_block
         for_stmt -> KW_FOR assignment KW_TO expression KW_BY expression code_block
         """
         if node.kid[2].name == Tok.KW_TO:
@@ -1410,12 +1409,12 @@ class AstBuildPass(Pass):
                     line=node.line,
                 ),
             )
-        elif node.kid[2].name == Tok.KW_IN:
+        else:
             node.kid = [node.kid[1], node.kid[3], node.kid[4]]
             replace_node(
                 node,
                 ast.InForStmt(
-                    name=node.kid[0],
+                    name_list=node.kid[0],
                     collection=node.kid[1],
                     body=node.kid[2],
                     parent=node.parent,
@@ -1424,21 +1423,25 @@ class AstBuildPass(Pass):
                     line=node.line,
                 ),
             )
-        else:
-            node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[6]]
-            replace_node(
-                node,
-                ast.DictForStmt(
-                    k_name=node.kid[0],
-                    v_name=node.kid[1],
-                    collection=node.kid[2],
-                    body=node.kid[3],
-                    parent=node.parent,
-                    mod_link=self.mod_link,
-                    kid=node.kid,
-                    line=node.line,
-                ),
-            )
+
+    def exit_name_list(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        dotted_name -> name_list COMMA NAME
+        dotted_name -> NAME
+        """
+        if len(node.kid) == 3:
+            node.kid = node.kid[0].kid + [node.kid[2]]
+        replace_node(
+            node,
+            ast.NameList(
+                names=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_while_stmt(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -2440,12 +2443,12 @@ class AstBuildPass(Pass):
     def exit_inner_compr(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        inner_compr -> expression KW_FOR NAME KW_IN walrus_assign KW_IF expression
-        inner_compr -> expression KW_FOR NAME KW_IN walrus_assign
+        inner_compr -> expression KW_FOR name_list KW_IN walrus_assign KW_IF expression
+        inner_compr -> expression KW_FOR name_list KW_IN walrus_assign
         """
         meta = {
             "out_expr": node.kid[0],
-            "name": node.kid[2],
+            "name_list": node.kid[2],
             "collection": node.kid[4],
             "conditional": None,
         }
@@ -2459,7 +2462,7 @@ class AstBuildPass(Pass):
             node,
             ast.InnerCompr(
                 out_expr=meta["out_expr"],
-                name=meta["name"],
+                name_list=meta["name_list"],
                 collection=meta["collection"],
                 conditional=meta["conditional"],
                 is_list=False,
@@ -2475,45 +2478,29 @@ class AstBuildPass(Pass):
     def exit_dict_compr(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        dict_compr -> LBRACE expression COLON expression KW_FOR NAME COMMA NAME KW_IN walrus_assign KW_IF expression RBRACE # noqa
-        dict_compr -> LBRACE expression COLON expression KW_FOR NAME COMMA NAME KW_IN walrus_assign RBRACE
-        dict_compr -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign KW_IF expression RBRACE
-        dict_compr -> LBRACE expression COLON expression KW_FOR NAME KW_IN walrus_assign RBRACE
+        dict_compr -> LBRACE expression COLON expression KW_FOR name_list KW_IN walrus_assign KW_IF expression RBRACE
+        dict_compr -> LBRACE expression COLON expression KW_FOR name_list KW_IN walrus_assign RBRACE
         """
         meta = {
             "outk_expr": node.kid[1],
             "outv_expr": node.kid[3],
-            "k_name": node.kid[5],
+            "name_list": node.kid[5],
             "conditional": None,
+            "collection": node.kid[7],
         }
-        if node.kid[6].name == Tok.COMMA:
-            meta["v_name"] = node.kid[7]
-            meta["collection"] = node.kid[9]
-        else:
-            meta["v_name"] = None
-            meta["collection"] = node.kid[7]
+
         if node.kid[-3].name == Tok.KW_IF:
             meta["conditional"] = node.kid[-2]
         if len(node.kid) == 9:
             node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7]]
         elif len(node.kid) == 11:
             node.kid = [node.kid[1], node.kid[3], node.kid[5], node.kid[7], node.kid[9]]
-        elif len(node.kid) == 13:
-            node.kid = [
-                node.kid[1],
-                node.kid[3],
-                node.kid[5],
-                node.kid[7],
-                node.kid[9],
-                node.kid[11],
-            ]
         replace_node(
             node,
             ast.DictCompr(
                 outk_expr=meta["outk_expr"],
                 outv_expr=meta["outv_expr"],
-                k_name=meta["k_name"],
-                v_name=meta["v_name"],
+                name_list=meta["name_list"],
                 collection=meta["collection"],
                 conditional=meta["conditional"],
                 parent=node.parent,
@@ -2711,12 +2698,31 @@ class AstBuildPass(Pass):
     def exit_index_slice(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        index_slice -> LSQUARE COLON RSQUARE
         index_slice -> LSQUARE COLON expression RSQUARE
         index_slice -> LSQUARE expression COLON RSQUARE
         index_slice -> LSQUARE expression COLON expression RSQUARE
         index_slice -> LSQUARE expression RSQUARE
         """
-        if len(node.kid) == 3:
+        if (
+            len(node.kid) == 3
+            and isinstance(node.kid[1], ast.Token)
+            and node.kid[1].name == Tok.COLON
+        ):
+            node.kid = []
+            replace_node(
+                node,
+                ast.IndexSlice(
+                    start=None,
+                    stop=None,
+                    is_range=True,
+                    parent=node.parent,
+                    mod_link=self.mod_link,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
+        elif len(node.kid) == 3:
             node.kid = [node.kid[1]]
             replace_node(
                 node,

@@ -17,9 +17,17 @@ class TransformError(Exception):
 
     def __init__(self, message: str, errors: list[str], warnings: list[str]) -> None:
         """Initialize error."""
-        super().__init__(message)
         self.errors = errors
         self.warnings = warnings
+        if len(errors):
+            message += "\nErrors:"
+            for i in self.errors:
+                message += "\n" + i
+        if len(warnings):
+            message += "\nWarnings:"
+            for i in self.warnings:
+                message += "\n" + i
+        super().__init__(message)
 
 
 class Transform(ABC):

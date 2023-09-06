@@ -12,3 +12,6 @@ can load(filename: str);
 
 @cmd_reg.register
 can run(filename: str, entrypoint: str, args: list);
+
+@cmd_reg.register
+can clean();

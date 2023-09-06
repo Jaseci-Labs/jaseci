@@ -110,7 +110,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         """Sub objects.
 
         doc: Optional[DocString],
-        mod: Optional[NameList],
+        mod: Optional[DottedNameList],
         arch: ObjectRef | NodeRef | EdgeRef | WalkerRef,
         body: ArchBlock,
         """
@@ -179,7 +179,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         """Sub objects.
 
         doc: Optional[DocString],
-        target: Optional["NameList"],
+        target: Optional["DottedNameList"],
         ability: "ArchRef",
         signature: "FuncSignature | EventSignature",
         body: "CodeBlock",
@@ -190,7 +190,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
         """Sub objects.
 
         doc: Optional[DocString],
-        target: Optional["NameList"],
+        target: Optional["DottedNameList"],
         ability: "ArchRef",
         signature: "FuncSignature | EventSignature",
         body: "CodeBlock",
@@ -267,7 +267,7 @@ class DeclDefMatchPass(Pass, SymbolTable):
 
         doc: Optional[Token],
         enum: ArchRef,
-        mod: Optional[NameList],
+        mod: Optional[DottedNameList],
         body: EnumBlock,
         """
         name = node.enum.py_resolve_name()
