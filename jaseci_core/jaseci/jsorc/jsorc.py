@@ -84,7 +84,7 @@ class JsOrc:
     @classmethod
     def run(cls):
         if not cls.__running__:
-            cls.__running__ == True
+            cls.__running__ = True
             cls.configure()
             cls.push_interval(1)
 

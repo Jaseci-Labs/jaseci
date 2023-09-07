@@ -17,6 +17,7 @@ from jaseci.extens.api.jac_api import JacApi
 from jaseci.extens.api.user_api import UserApi
 from jaseci.extens.api.queue_api import QueueApi
 from jaseci.extens.api.webhook_api import WebhookApi
+from jaseci.extens.api.health_api import HealthApi
 from jaseci.jsorc.jsorc import JsOrc
 
 
@@ -35,6 +36,7 @@ class Master(
     UserApi,
     QueueApi,
     WebhookApi,
+    HealthApi,
 ):
     """Main class for master functions for user"""
 
