@@ -3,8 +3,9 @@ from jaclang import jac_blue_import
 from jaclang.jac.passes.blue import pass_schedule
 
 
-purple = jac_blue_import("purple_pygen_pass", "analize_pass")
-AnalizePass = purple.AnalizePass  # type: ignore
+purple = jac_blue_import("purple_pygen_pass")
+analyze = jac_blue_import("analyze_pass")
+AnalizePass = analyze.AnalyzePass  # type: ignore
 PurplePygenPass = purple.PurplePygenPass  # type: ignore
 
 __all__ = [
