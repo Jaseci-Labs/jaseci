@@ -9,6 +9,7 @@ AnalyzePass = analyze.AnalyzePass  # type: ignore
 PurplePygenPass = purple.PurplePygenPass  # type: ignore
 
 __all__ = [
+    "AnalyzePass",
     "PurplePygenPass",
 ]
 
