@@ -1782,6 +1782,7 @@ ExprType = Union[
 
 
 StmtType = Union[
+    Import,
     Architype,
     Ability,
     Assignment,
@@ -1805,10 +1806,3 @@ StmtType = Union[
     VisitStmt,
     IgnoreStmt,
 ]
-
-
-# Test the function
-if __name__ == "__main__":
-    from jaclang.jac.utils import load_ast_and_print_pass_template
-
-    print(load_ast_and_print_pass_template())

@@ -14,4 +14,7 @@ can load(filename: str);
 can run(filename: str, entrypoint: str, args: list);
 
 @cmd_reg.register
-can clean();
+can ast_tool(tool: str);
+
+@cmd_reg.register
+can clean;

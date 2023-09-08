@@ -3,7 +3,7 @@ import inspect
 
 from jaclang.jac.passes.blue import BluePygenPass
 from jaclang.jac.transpiler import jac_file_to_pass, transpile_jac_blue
-from jaclang.jac.utils import get_ast_nodes_as_snake_case as ast_snakes
+from jaclang.utils.helpers import get_ast_nodes_as_snake_case as ast_snakes
 from jaclang.utils.test import TestCaseMicroSuite
 
 

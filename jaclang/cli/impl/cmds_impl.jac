@@ -3,7 +3,8 @@ import:py os;
 import:py shutil;
 
 """Load a .jac file and return the entrypoint function."""
-:a:load(filename: str) {
+:a:load
+(filename: str) {
     if filename.endswith(".jac"){
         [base, mod] = os.path.split(filename);
         base = './' if not base else base;
@@ -15,7 +16,8 @@ import:py shutil;
 }
 
 """Run the entrypoint of the given .jac file."""
-:a:run(filename: str, entrypoint: str, args: list) {
+:a:run
+(filename: str, entrypoint: str, args: list) {
     if filename.endswith(".jac"){
         [base, mod] = os.path.split(filename);
         base = './' if not base else base;
@@ -27,8 +29,18 @@ import:py shutil;
     }
 }
 
+:a:ast_tool
+(tool: str) {
+    import:py from jaclang.utils.lang_tools, AstTool;
+    if(hasattr(AstTool, tool)){
+        print(getattr(AstTool(), tool)());
+    } else {
+        print(f"Ast tool {tool} not found.");
+    }
+}
+
 """Remove the __jac_gen__ , __pycache__ folders from the current directory recursevely."""
-:a:clean() {
+:a:clean {
     current_dir = os.getcwd();
     jac_gen = "__jac_gen__";
     py_cache = "__pycache__";

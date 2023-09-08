@@ -3,7 +3,7 @@ from typing import Optional, TypeVar
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.transform import Transform
-from jaclang.jac.utils import pascal_to_snake
+from jaclang.utils.helpers import pascal_to_snake
 
 T = TypeVar("T", bound=ast.AstNode)
 
