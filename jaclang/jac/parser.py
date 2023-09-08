@@ -534,6 +534,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
+        "import_stmt",
         "architype_decl",
         "ability_decl",
         "typed_ctx_block",

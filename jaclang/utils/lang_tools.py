@@ -4,6 +4,7 @@ import inspect
 import sys
 
 import jaclang.jac.absyntree as ast
+from jaclang.jac.parser import JacLexer
 from jaclang.utils.helpers import pascal_to_snake
 
 
@@ -12,15 +13,11 @@ class AstTool:
 
     def __init__(self) -> None:
         """Initialize."""
-        self.ast_classes = self.get_ast_classes()
-
-    def get_ast_classes(self) -> list[type]:
-        """Analyze ast module."""
         module = sys.modules[ast.__name__]
         source_code = inspect.getsource(module)
         classes = inspect.getmembers(module, inspect.isclass)
         ast_node_classes = [cls for _, cls in classes if issubclass(cls, ast.AstNode)]
-        return sorted(
+        self.ast_classes = sorted(
             ast_node_classes, key=lambda cls: source_code.find(f"class {cls.__name__}")
         )
 
@@ -70,6 +67,13 @@ class AstTool:
             .replace("')", "")
         )
         return output
+
+    def jac_keywords(self) -> str:
+        """Get all Jac keywords as an or string."""
+        ret = ""
+        for k in JacLexer._remapping["NAME"].keys():
+            ret += f"{k}|"
+        return ret[:-1]
 
     def mermaid_md_doc(self) -> str:
         """Generate mermaid markdown doc."""
