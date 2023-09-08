@@ -2,7 +2,7 @@
 import:py jaclang.jac.absyntree as ast;
 
 import:py from jaclang.jac.passes, Pass;
-import:py from jaclang.jac.constant, Tok;
+import:py from jaclang.jac.constant, Tokens as Tok;
 
 object AnalyzePass:Pass{
     can exit_arch_block(nd:ast.ArchBlock){
