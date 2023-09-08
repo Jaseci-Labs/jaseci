@@ -1,5 +1,5 @@
 """Tests for Jac utils."""
-from jaclang.jac.utils import load_ast_and_print_pass_template
+from jaclang.utils.helpers import load_ast_and_print_pass_template
 from jaclang.utils.test import TestCase
 
 

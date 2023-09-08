@@ -9,7 +9,7 @@ from typing import Callable, Optional
 
 from jaclang.jac.constant import Constants as Con, Values as Val
 from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
-from jaclang.jac.utils import add_line_numbers, clip_code_section
+from jaclang.utils.helpers import add_line_numbers, clip_code_section
 
 
 def import_jac_module(
