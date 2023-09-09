@@ -42,5 +42,5 @@ node turn {
 
 # # Run the game
 with entry {
-    |> GuessGame |> <root>;
+    :> GuessGame :> <root>;
 }

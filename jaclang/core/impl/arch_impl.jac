@@ -1,7 +1,7 @@
 """Implementation for Jac's Element Abstractions"""
 import:py from jaclang.jac.constant, EdgeDir;
 
-:o:Node:a:__call__
+:object:Node:ability:__call__
 (walk: Walker) {
     if not (walk, Walker) :> isinstance {
         raise ("Argument must be a Walker instance") :> TypeError;
@@ -9,13 +9,13 @@ import:py from jaclang.jac.constant, EdgeDir;
     <self> :> walk;
 }
 
-:o:Node:a:_jac_connect_node_
+:object:Node:ability:_jac_connect_node_
 (nd: Node, edg: Edge) -> Node {
     (<self>, nd) :> edg._jac_attach_;
     return <self>;
 }
 
-:o:Node:a:_jac_edges_to_nodes_
+:object:Node:ability:_jac_edges_to_nodes_
 (dir: EdgeDir) -> list[Node] {
     ret_nodes = [];
     if dir in [EdgeDir.OUT, EdgeDir.ANY] {
@@ -31,7 +31,7 @@ import:py from jaclang.jac.constant, EdgeDir;
     return ret_nodes;
 }
 
-:o:Edge:a:__call__
+:object:Edge:ability:__call__
 (walk: Walker) {
     if not (walk, Walker) :> isinstance {
         raise ("Argument must be a Walker instance") :> TypeError;
@@ -39,13 +39,13 @@ import:py from jaclang.jac.constant, EdgeDir;
     <self>._jac_target_ :> walk;
 }
 
-:o:Edge:a:_jac_apply_dir_
+:object:Edge:ability:_jac_apply_dir_
 (dir: EdgeDir) -> Edge {
     <self>._jac_dir_ = dir;
     return <self>;
 }
 
-:o:Edge:a:_jac_attach_
+:object:Edge:ability:_jac_attach_
 (src: Node, trg: Node) -> Edge {
     if <self>._jac_dir_ == EdgeDir.IN {
         <self>._jac_source_ = trg;
@@ -62,7 +62,7 @@ import:py from jaclang.jac.constant, EdgeDir;
     return <self>;
 }
 
-:o:Walker:a:__call__
+:object:Walker:ability:__call__
 (nd: Node) {
     <self>._jac_path_ = [];
     <self>._jac_next_ = [nd];
@@ -103,7 +103,7 @@ import:py from jaclang.jac.constant, EdgeDir;
     }
 }
 
-:o:Walker:a:_jac_visit_
+:object:Walker:ability:_jac_visit_
 (nds: list[Node]|list[Edge]) {
     for i in nds {
         i :> <self>._jac_next_.append;
@@ -111,7 +111,7 @@ import:py from jaclang.jac.constant, EdgeDir;
     return nds :> len;
 }
 
-:o:Walker:a:_jac_disengage_ {
+:object:Walker:ability:_jac_disengage_ {
     <self>._jac_next_ = [];
     <self>._jac_disengaged_ = True;
 }
