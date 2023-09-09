@@ -1,578 +1,489 @@
 ```mermaid
-classDiagram
-AstNode --> mod_link: Optional[Module]
+graph TD
 ```
 ```mermaid
-classDiagram
-Parse --> name: str
-Parse --> mod_link: Optional[Module]
+graph TD
+Parse -->|str| name
 ```
 ```mermaid
-classDiagram
-Token --> name: str
-Token --> value: str
-Token --> col_start: int
-Token --> col_end: int
-Token --> mod_link: Optional[Module]
+graph TD
+Token -->|str| name
+Token -->|str| value
+Token -->|int| col_start
+Token -->|int| col_end_
 ```
 ```mermaid
-classDiagram
-Name --> name: str
-Name --> value: str
-Name --> col_start: int
-Name --> col_end: int
-Name --> already_declared: bool
-Name --> mod_link: Optional[Module]
+graph TD
+Name -->|str| name
+Name -->|str| value
+Name -->|int| col_start
+Name -->|int| col_end_
+Name -->|bool| already_declared
 ```
 ```mermaid
-classDiagram
-Constant --> name: str
-Constant --> value: str
-Constant --> col_start: int
-Constant --> col_end: int
-Constant --> typ: type
-Constant --> mod_link: Optional[Module]
+graph TD
+Constant -->|str| name
+Constant -->|str| value
+Constant -->|int| col_start
+Constant -->|int| col_end_
+Constant -->|type| typ
 ```
 ```mermaid
-classDiagram
-Module --> name: str
-Module --> doc: Token
-Module --> body: Optional['Elements']
-Module --> mod_path: str
-Module --> rel_mod_path: str
-Module --> is_imported: bool
-Module --> mod_link: Optional[Module]
+graph TD
+Module -->|str| name
+Module -->|Token| doc
+Module -.->|'Elements'| body
+Module -->|str| mod_path
+Module -->|str| rel_mod_path
+Module -->|bool| is_imported
 ```
 ```mermaid
-classDiagram
-Elements --> elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability]
-Elements --> mod_link: Optional[Module]
+graph TD
+Elements -->|list[GlobalVars | Test | ModuleCode | Import | Architype | Ability]| elements
 ```
 ```mermaid
-classDiagram
-OOPAccessNode --> access: Optional[Token]
-OOPAccessNode --> mod_link: Optional[Module]
+graph TD
+OOPAccessNode -.->|Token| access
 ```
 ```mermaid
-classDiagram
-GlobalVars --> doc: Optional['Token']
-GlobalVars --> access: Optional[Token]
-GlobalVars --> assignments: 'AssignmentList'
-GlobalVars --> is_frozen: bool
-GlobalVars --> mod_link: Optional[Module]
+graph TD
+GlobalVars -.->|'Token'| doc
+GlobalVars -.->|Token| access
+GlobalVars -->|'AssignmentList'| assignments
+GlobalVars -->|bool| is_frozen
 ```
 ```mermaid
-classDiagram
-Test --> name: Name
-Test --> doc: Optional['Token']
-Test --> description: Token
-Test --> body: 'CodeBlock'
-Test --> mod_link: Optional[Module]
+graph TD
+Test -->|Name| name
+Test -.->|'Token'| doc
+Test -->|Token| description
+Test -->|'CodeBlock'| body
 ```
 ```mermaid
-classDiagram
-ModuleCode --> doc: Optional['Token']
-ModuleCode --> body: 'CodeBlock'
-ModuleCode --> mod_link: Optional[Module]
+graph TD
+ModuleCode -.->|'Token'| doc
+ModuleCode -->|'CodeBlock'| body
 ```
 ```mermaid
-classDiagram
-Import --> lang: Name
-Import --> path: 'ModulePath'
-Import --> alias: Optional[Name]
-Import --> items: Optional['ModuleItems']
-Import --> is_absorb: bool
-Import --> mod_link: Optional[Module]
-Import --> sub_module: Optional['Module']
+graph TD
+Import -->|Name| lang
+Import -->|'ModulePath'| path
+Import -.->|Name| alias
+Import -.->|'ModuleItems'| items
+Import -->|bool| is_absorb
+Import -.->|'Module'| sub_module
 ```
 ```mermaid
-classDiagram
-ModulePath --> path: list[Token]
-ModulePath --> mod_link: Optional[Module]
+graph TD
+ModulePath -->|list[Token]| path
 ```
 ```mermaid
-classDiagram
-ModuleItem --> name: Name
-ModuleItem --> alias: Optional[Token]
-ModuleItem --> mod_link: Optional[Module]
-ModuleItem --> body: Optional[AstNode]
+graph TD
+ModuleItem -->|Name| name
+ModuleItem -.->|Token| alias
+ModuleItem -.->|AstNode| body
 ```
 ```mermaid
-classDiagram
-ModuleItems --> items: list['ModuleItem']
-ModuleItems --> mod_link: Optional[Module]
+graph TD
+ModuleItems -->|list['ModuleItem']| items
 ```
 ```mermaid
-classDiagram
-Architype --> name: Name
-Architype --> arch_type: Token
-Architype --> doc: Optional[Token]
-Architype --> decorators: Optional[Decorators]
-Architype --> access: Optional[Token]
-Architype --> base_classes: BaseClasses
-Architype --> body: Optional[ArchBlock]
-Architype --> mod_link: Optional[Module]
+graph TD
+Architype -->|Name| name
+Architype -->|Token| arch_type
+Architype -.->|Token| doc
+Architype -.->|Decorators| decorators
+Architype -.->|Token| access
+Architype -->|BaseClasses| base_classes
+Architype -.->|ArchBlock| body
 ```
 ```mermaid
-classDiagram
-ArchDef --> doc: Optional[Token]
-ArchDef --> mod: Optional[DottedNameList]
-ArchDef --> arch: ArchRef
-ArchDef --> body: ArchBlock
-ArchDef --> mod_link: Optional[Module]
+graph TD
+ArchDef -.->|Token| doc
+ArchDef -.->|DottedNameList| mod
+ArchDef -->|ArchRef| arch
+ArchDef -->|ArchBlock| body
 ```
 ```mermaid
-classDiagram
-Decorators --> calls: list[ExprType]
-Decorators --> mod_link: Optional[Module]
+graph TD
+Decorators -->|list[ExprType]| calls
 ```
 ```mermaid
-classDiagram
-BaseClasses --> base_classes: list[DottedNameList]
-BaseClasses --> mod_link: Optional[Module]
+graph TD
+BaseClasses -->|list[DottedNameList]| base_classes
 ```
 ```mermaid
-classDiagram
-Ability --> name_ref: Name | SpecialVarRef | ArchRef
-Ability --> is_func: bool
-Ability --> is_async: bool
-Ability --> is_static: bool
-Ability --> doc: Optional[Token]
-Ability --> decorators: Optional[Decorators]
-Ability --> access: Optional[Token]
-Ability --> signature: Optional[FuncSignature | TypeSpec | EventSignature]
-Ability --> body: Optional[CodeBlock]
-Ability --> mod_link: Optional[Module]
-Ability --> arch_attached: Optional[ArchBlock]
+graph TD
+Ability -->|Name | SpecialVarRef | ArchRef| name_ref
+Ability -->|bool| is_func
+Ability -->|bool| is_async
+Ability -->|bool| is_static
+Ability -.->|Token| doc
+Ability -.->|Decorators| decorators
+Ability -.->|Token| access
+Ability -.->|FuncSignature | TypeSpec | EventSignature| signature
+Ability -.->|CodeBlock| body
+Ability -.->|ArchBlock| arch_attached
 ```
 ```mermaid
-classDiagram
-AbilityDef --> doc: Optional[Token]
-AbilityDef --> target: Optional[DottedNameList]
-AbilityDef --> ability: ArchRef
-AbilityDef --> signature: FuncSignature | EventSignature
-AbilityDef --> body: CodeBlock
-AbilityDef --> mod_link: Optional[Module]
+graph TD
+AbilityDef -.->|Token| doc
+AbilityDef -.->|DottedNameList| target
+AbilityDef -->|ArchRef| ability
+AbilityDef -->|FuncSignature | EventSignature| signature
+AbilityDef -->|CodeBlock| body
 ```
 ```mermaid
-classDiagram
-EventSignature --> event: Token
-EventSignature --> arch_tag_info: Optional[TypeSpecList]
-EventSignature --> return_type: Optional['TypeSpec']
-EventSignature --> mod_link: Optional[Module]
+graph TD
+EventSignature -->|Token| event
+EventSignature -.->|TypeSpecList| arch_tag_info
+EventSignature -.->|'TypeSpec'| return_type
 ```
 ```mermaid
-classDiagram
-DottedNameList --> names: list[Token | SpecialVarRef | ArchRef | Name]
-DottedNameList --> mod_link: Optional[Module]
+graph TD
+DottedNameList -->|list[Token | SpecialVarRef | ArchRef | Name]| names
 ```
 ```mermaid
-classDiagram
-FuncSignature --> params: Optional['FuncParams']
-FuncSignature --> return_type: Optional['TypeSpec']
-FuncSignature --> mod_link: Optional[Module]
+graph TD
+FuncSignature -.->|'FuncParams'| params
+FuncSignature -.->|'TypeSpec'| return_type
 ```
 ```mermaid
-classDiagram
-FuncParams --> params: list['ParamVar']
-FuncParams --> mod_link: Optional[Module]
+graph TD
+FuncParams -->|list['ParamVar']| params
 ```
 ```mermaid
-classDiagram
-ParamVar --> name: Name
-ParamVar --> unpack: Optional[Token]
-ParamVar --> type_tag: 'TypeSpec'
-ParamVar --> value: Optional[ExprType]
-ParamVar --> mod_link: Optional[Module]
+graph TD
+ParamVar -->|Name| name
+ParamVar -.->|Token| unpack
+ParamVar -->|'TypeSpec'| type_tag
+ParamVar -.->|ExprType| value
 ```
 ```mermaid
-classDiagram
-Enum --> name: Name
-Enum --> doc: Optional[Token]
-Enum --> decorators: Optional['Decorators']
-Enum --> access: Optional[Token]
-Enum --> base_classes: 'BaseClasses'
-Enum --> body: Optional['EnumBlock']
-Enum --> mod_link: Optional[Module]
+graph TD
+Enum -->|Name| name
+Enum -.->|Token| doc
+Enum -.->|'Decorators'| decorators
+Enum -.->|Token| access
+Enum -->|'BaseClasses'| base_classes
+Enum -.->|'EnumBlock'| body
 ```
 ```mermaid
-classDiagram
-EnumDef --> doc: Optional[Token]
-EnumDef --> enum: ArchRef
-EnumDef --> mod: Optional[DottedNameList]
-EnumDef --> body: EnumBlock
-EnumDef --> mod_link: Optional[Module]
+graph TD
+EnumDef -.->|Token| doc
+EnumDef -->|ArchRef| enum
+EnumDef -.->|DottedNameList| mod
+EnumDef -->|EnumBlock| body
 ```
 ```mermaid
-classDiagram
-EnumBlock --> stmts: list['Name|Assignment']
-EnumBlock --> mod_link: Optional[Module]
+graph TD
+EnumBlock -->|list['Name|Assignment']| stmts
 ```
 ```mermaid
-classDiagram
-ArchBlock --> members: list['ArchHas | Ability']
-ArchBlock --> mod_link: Optional[Module]
+graph TD
+ArchBlock -->|list['ArchHas | Ability']| members
 ```
 ```mermaid
-classDiagram
-ArchHas --> doc: Optional[Token]
-ArchHas --> is_static: bool
-ArchHas --> access: Optional[Token]
-ArchHas --> vars: 'HasVarList'
-ArchHas --> is_frozen: bool
-ArchHas --> mod_link: Optional[Module]
+graph TD
+ArchHas -.->|Token| doc
+ArchHas -->|bool| is_static
+ArchHas -.->|Token| access
+ArchHas -->|'HasVarList'| vars
+ArchHas -->|bool| is_frozen
 ```
 ```mermaid
-classDiagram
-HasVar --> name: Name
-HasVar --> type_tag: 'TypeSpec'
-HasVar --> value: Optional[ExprType]
-HasVar --> mod_link: Optional[Module]
+graph TD
+HasVar -->|Name| name
+HasVar -->|'TypeSpec'| type_tag
+HasVar -.->|ExprType| value
 ```
 ```mermaid
-classDiagram
-HasVarList --> vars: list['HasVar']
-HasVarList --> mod_link: Optional[Module]
+graph TD
+HasVarList -->|list['HasVar']| vars
 ```
 ```mermaid
-classDiagram
-TypeSpec --> spec_type: Token | DottedNameList
-TypeSpec --> list_nest: TypeSpec
-TypeSpec --> dict_nest: TypeSpec
-TypeSpec --> null_ok: bool
-TypeSpec --> mod_link: Optional[Module]
+graph TD
+TypeSpec -->|Token | DottedNameList| spec_type
+TypeSpec -->|TypeSpec| list_nest
+TypeSpec -->|TypeSpec| dict_nest
+TypeSpec -->|bool| null_ok
 ```
 ```mermaid
-classDiagram
-TypeSpecList --> types: list[TypeSpec]
-TypeSpecList --> mod_link: Optional[Module]
+graph TD
+TypeSpecList -->|list[TypeSpec]| types
 ```
 ```mermaid
-classDiagram
-CodeBlock --> stmts: list[StmtType]
-CodeBlock --> mod_link: Optional[Module]
+graph TD
+CodeBlock -->|list[StmtType]| stmts
 ```
 ```mermaid
-classDiagram
-TypedCtxBlock --> type_ctx: TypeSpecList
-TypedCtxBlock --> body: CodeBlock
-TypedCtxBlock --> mod_link: Optional[Module]
+graph TD
+TypedCtxBlock -->|TypeSpecList| type_ctx
+TypedCtxBlock -->|CodeBlock| body
 ```
 ```mermaid
-classDiagram
-IfStmt --> condition: ExprType
-IfStmt --> body: 'CodeBlock'
-IfStmt --> elseifs: Optional['ElseIfs']
-IfStmt --> else_body: Optional['ElseStmt']
-IfStmt --> mod_link: Optional[Module]
+graph TD
+IfStmt -->|ExprType| condition
+IfStmt -->|'CodeBlock'| body
+IfStmt -.->|'ElseIfs'| elseifs
+IfStmt -.->|'ElseStmt'| else_body
 ```
 ```mermaid
-classDiagram
-ElseIfs --> elseifs: list['IfStmt']
-ElseIfs --> mod_link: Optional[Module]
+graph TD
+ElseIfs -->|list['IfStmt']| elseifs
 ```
 ```mermaid
-classDiagram
-ElseStmt --> body: 'CodeBlock'
-ElseStmt --> mod_link: Optional[Module]
+graph TD
+ElseStmt -->|'CodeBlock'| body
 ```
 ```mermaid
-classDiagram
-TryStmt --> body: 'CodeBlock'
-TryStmt --> excepts: Optional['ExceptList']
-TryStmt --> finally_body: Optional['FinallyStmt']
-TryStmt --> mod_link: Optional[Module]
+graph TD
+TryStmt -->|'CodeBlock'| body
+TryStmt -.->|'ExceptList'| excepts
+TryStmt -.->|'FinallyStmt'| finally_body
 ```
 ```mermaid
-classDiagram
-Except --> ex_type: ExprType
-Except --> name: Optional[Token]
-Except --> body: 'CodeBlock'
-Except --> mod_link: Optional[Module]
+graph TD
+Except -->|ExprType| ex_type
+Except -.->|Token| name
+Except -->|'CodeBlock'| body
 ```
 ```mermaid
-classDiagram
-ExceptList --> excepts: list['Except']
-ExceptList --> mod_link: Optional[Module]
+graph TD
+ExceptList -->|list['Except']| excepts
 ```
 ```mermaid
-classDiagram
-FinallyStmt --> body: 'CodeBlock'
-FinallyStmt --> mod_link: Optional[Module]
+graph TD
+FinallyStmt -->|'CodeBlock'| body
 ```
 ```mermaid
-classDiagram
-IterForStmt --> iter: 'Assignment'
-IterForStmt --> condition: ExprType
-IterForStmt --> count_by: ExprType
-IterForStmt --> body: 'CodeBlock'
-IterForStmt --> mod_link: Optional[Module]
+graph TD
+IterForStmt -->|'Assignment'| iter
+IterForStmt -->|ExprType| condition
+IterForStmt -->|ExprType| count_by
+IterForStmt -->|'CodeBlock'| body
 ```
 ```mermaid
-classDiagram
-InForStmt --> name_list: NameList
-InForStmt --> collection: ExprType
-InForStmt --> body: CodeBlock
-InForStmt --> mod_link: Optional[Module]
+graph TD
+InForStmt -->|NameList| name_list
+InForStmt -->|ExprType| collection
+InForStmt -->|CodeBlock| body
 ```
 ```mermaid
-classDiagram
-NameList --> names: list[Name]
-NameList --> mod_link: Optional[Module]
+graph TD
+NameList -->|list[Name]| names
 ```
 ```mermaid
-classDiagram
-WhileStmt --> condition: ExprType
-WhileStmt --> body: 'CodeBlock'
-WhileStmt --> mod_link: Optional[Module]
+graph TD
+WhileStmt -->|ExprType| condition
+WhileStmt -->|'CodeBlock'| body
 ```
 ```mermaid
-classDiagram
-WithStmt --> exprs: 'ExprAsItemList'
-WithStmt --> body: 'CodeBlock'
-WithStmt --> mod_link: Optional[Module]
+graph TD
+WithStmt -->|'ExprAsItemList'| exprs
+WithStmt -->|'CodeBlock'| body
 ```
 ```mermaid
-classDiagram
-ExprAsItem --> expr: ExprType
-ExprAsItem --> alias: Optional[Name]
-ExprAsItem --> mod_link: Optional[Module]
+graph TD
+ExprAsItem -->|ExprType| expr
+ExprAsItem -.->|Name| alias
 ```
 ```mermaid
-classDiagram
-ExprAsItemList --> items: list['ExprAsItem']
-ExprAsItemList --> mod_link: Optional[Module]
+graph TD
+ExprAsItemList -->|list['ExprAsItem']| items
 ```
 ```mermaid
-classDiagram
-RaiseStmt --> cause: Optional[ExprType]
-RaiseStmt --> mod_link: Optional[Module]
+graph TD
+RaiseStmt -.->|ExprType| cause
 ```
 ```mermaid
-classDiagram
-AssertStmt --> condition: ExprType
-AssertStmt --> error_msg: Optional[ExprType]
-AssertStmt --> mod_link: Optional[Module]
+graph TD
+AssertStmt -->|ExprType| condition
+AssertStmt -.->|ExprType| error_msg
 ```
 ```mermaid
-classDiagram
-CtrlStmt --> ctrl: Token
-CtrlStmt --> mod_link: Optional[Module]
+graph TD
+CtrlStmt -->|Token| ctrl
 ```
 ```mermaid
-classDiagram
-DeleteStmt --> target: ExprType
-DeleteStmt --> mod_link: Optional[Module]
+graph TD
+DeleteStmt -->|ExprType| target
 ```
 ```mermaid
-classDiagram
-ReportStmt --> expr: ExprType
-ReportStmt --> mod_link: Optional[Module]
+graph TD
+ReportStmt -->|ExprType| expr
 ```
 ```mermaid
-classDiagram
-ReturnStmt --> expr: Optional[ExprType]
-ReturnStmt --> mod_link: Optional[Module]
+graph TD
+ReturnStmt -.->|ExprType| expr
 ```
 ```mermaid
-classDiagram
-YieldStmt --> expr: Optional[ExprType]
-YieldStmt --> mod_link: Optional[Module]
+graph TD
+YieldStmt -.->|ExprType| expr
 ```
 ```mermaid
-classDiagram
-IgnoreStmt --> target: ExprType
-IgnoreStmt --> mod_link: Optional[Module]
+graph TD
+IgnoreStmt -->|ExprType| target
 ```
 ```mermaid
-classDiagram
-VisitStmt --> vis_type: Optional[Token]
-VisitStmt --> target: ExprType
-VisitStmt --> else_body: Optional['ElseStmt']
-VisitStmt --> mod_link: Optional[Module]
-VisitStmt --> from_walker: bool
+graph TD
+VisitStmt -.->|Token| vis_type
+VisitStmt -->|ExprType| target
+VisitStmt -.->|'ElseStmt'| else_body
+VisitStmt -->|bool| from_walker
 ```
 ```mermaid
-classDiagram
-RevisitStmt --> hops: Optional[ExprType]
-RevisitStmt --> else_body: Optional['ElseStmt']
-RevisitStmt --> mod_link: Optional[Module]
+graph TD
+RevisitStmt -.->|ExprType| hops
+RevisitStmt -.->|'ElseStmt'| else_body
 ```
 ```mermaid
-classDiagram
-DisengageStmt --> mod_link: Optional[Module]
-DisengageStmt --> from_walker: bool
+graph TD
+DisengageStmt -->|bool| from_walker
 ```
 ```mermaid
-classDiagram
-AwaitStmt --> target: ExprType
-AwaitStmt --> mod_link: Optional[Module]
+graph TD
+AwaitStmt -->|ExprType| target
 ```
 ```mermaid
-classDiagram
-Assignment --> is_static: bool
-Assignment --> target: 'AtomType'
-Assignment --> value: ExprType
-Assignment --> mutable: bool
-Assignment --> mod_link: Optional[Module]
+graph TD
+Assignment -->|bool| is_static
+Assignment -->|'AtomType'| target
+Assignment -->|ExprType| value
+Assignment -->|bool| mutable
 ```
 ```mermaid
-classDiagram
-BinaryExpr --> left: ExprType
-BinaryExpr --> right: ExprType
-BinaryExpr --> op: Token | DisconnectOp | ConnectOp
-BinaryExpr --> mod_link: Optional[Module]
+graph TD
+BinaryExpr -->|ExprType| left
+BinaryExpr -->|ExprType| right
+BinaryExpr -->|Token | DisconnectOp | ConnectOp| op
 ```
 ```mermaid
-classDiagram
-IfElseExpr --> condition: 'BinaryExpr | IfElseExpr'
-IfElseExpr --> value: ExprType
-IfElseExpr --> else_value: ExprType
-IfElseExpr --> mod_link: Optional[Module]
+graph TD
+IfElseExpr -->|'BinaryExpr | IfElseExpr'| condition
+IfElseExpr -->|ExprType| value
+IfElseExpr -->|ExprType| else_value
 ```
 ```mermaid
-classDiagram
-UnaryExpr --> operand: ExprType
-UnaryExpr --> op: Token
-UnaryExpr --> mod_link: Optional[Module]
+graph TD
+UnaryExpr -->|ExprType| operand
+UnaryExpr -->|Token| op
 ```
 ```mermaid
-classDiagram
-UnpackExpr --> target: ExprType
-UnpackExpr --> is_dict: bool
-UnpackExpr --> mod_link: Optional[Module]
+graph TD
+UnpackExpr -->|ExprType| target
+UnpackExpr -->|bool| is_dict
 ```
 ```mermaid
-classDiagram
-MultiString --> strings: list['Token | FString']
-MultiString --> mod_link: Optional[Module]
+graph TD
+MultiString -->|list['Token | FString']| strings
 ```
 ```mermaid
-classDiagram
-ExprList --> values: list[ExprType]
-ExprList --> mod_link: Optional[Module]
+graph TD
+ExprList -->|list[ExprType]| values
 ```
 ```mermaid
-classDiagram
-ListVal --> values: list[ExprType]
-ListVal --> mod_link: Optional[Module]
+graph TD
+ListVal -->|list[ExprType]| values
 ```
 ```mermaid
-classDiagram
-SetVal --> values: list[ExprType]
-SetVal --> mod_link: Optional[Module]
+graph TD
+SetVal -->|list[ExprType]| values
 ```
 ```mermaid
-classDiagram
-TupleVal --> first_expr: Optional[ExprType]
-TupleVal --> exprs: Optional[ExprList]
-TupleVal --> assigns: Optional[AssignmentList]
-TupleVal --> mod_link: Optional[Module]
+graph TD
+TupleVal -.->|ExprType| first_expr
+TupleVal -.->|ExprList| exprs
+TupleVal -.->|AssignmentList| assigns
 ```
 ```mermaid
-classDiagram
-DictVal --> kv_pairs: list['KVPair']
-DictVal --> mod_link: Optional[Module]
+graph TD
+DictVal -->|list['KVPair']| kv_pairs
 ```
 ```mermaid
-classDiagram
-InnerCompr --> out_expr: ExprType
-InnerCompr --> name_list: NameList
-InnerCompr --> collection: ExprType
-InnerCompr --> conditional: Optional[ExprType]
-InnerCompr --> is_list: bool
-InnerCompr --> is_gen: bool
-InnerCompr --> is_set: bool
-InnerCompr --> mod_link: Optional[Module]
+graph TD
+InnerCompr -->|ExprType| out_expr
+InnerCompr -->|NameList| name_list
+InnerCompr -->|ExprType| collection
+InnerCompr -.->|ExprType| conditional
+InnerCompr -->|bool| is_list
+InnerCompr -->|bool| is_gen
+InnerCompr -->|bool| is_set
 ```
 ```mermaid
-classDiagram
-DictCompr --> outk_expr: ExprType
-DictCompr --> outv_expr: ExprType
-DictCompr --> name_list: NameList
-DictCompr --> collection: ExprType
-DictCompr --> conditional: Optional[ExprType]
-DictCompr --> mod_link: Optional[Module]
+graph TD
+DictCompr -->|ExprType| outk_expr
+DictCompr -->|ExprType| outv_expr
+DictCompr -->|NameList| name_list
+DictCompr -->|ExprType| collection
+DictCompr -.->|ExprType| conditional
 ```
 ```mermaid
-classDiagram
-KVPair --> key: ExprType
-KVPair --> value: ExprType
-KVPair --> mod_link: Optional[Module]
+graph TD
+KVPair -->|ExprType| key
+KVPair -->|ExprType| value
 ```
 ```mermaid
-classDiagram
-AtomTrailer --> target: 'AtomType'
-AtomTrailer --> right: 'IndexSlice | ArchRef | Token'
-AtomTrailer --> null_ok: bool
-AtomTrailer --> mod_link: Optional[Module]
+graph TD
+AtomTrailer -->|'AtomType'| target
+AtomTrailer -->|'IndexSlice | ArchRef | Token'| right
+AtomTrailer -->|bool| null_ok
 ```
 ```mermaid
-classDiagram
-FuncCall --> target: 'AtomType'
-FuncCall --> params: Optional['ParamList']
-FuncCall --> mod_link: Optional[Module]
+graph TD
+FuncCall -->|'AtomType'| target
+FuncCall -.->|'ParamList'| params
 ```
 ```mermaid
-classDiagram
-ParamList --> p_args: Optional[ExprList]
-ParamList --> p_kwargs: Optional['AssignmentList']
-ParamList --> mod_link: Optional[Module]
+graph TD
+ParamList -.->|ExprList| p_args
+ParamList -.->|'AssignmentList'| p_kwargs
 ```
 ```mermaid
-classDiagram
-AssignmentList --> values: list['Assignment']
-AssignmentList --> mod_link: Optional[Module]
+graph TD
+AssignmentList -->|list['Assignment']| values
 ```
 ```mermaid
-classDiagram
-IndexSlice --> start: Optional[ExprType]
-IndexSlice --> stop: Optional[ExprType]
-IndexSlice --> is_range: bool
-IndexSlice --> mod_link: Optional[Module]
+graph TD
+IndexSlice -.->|ExprType| start
+IndexSlice -.->|ExprType| stop
+IndexSlice -->|bool| is_range
 ```
 ```mermaid
-classDiagram
-ArchRef --> name_ref: Name | SpecialVarRef
-ArchRef --> arch: Token
-ArchRef --> mod_link: Optional[Module]
+graph TD
+ArchRef -->|Name | SpecialVarRef| name_ref
+ArchRef -->|Token| arch
 ```
 ```mermaid
-classDiagram
-SpecialVarRef --> var: Token
-SpecialVarRef --> mod_link: Optional[Module]
+graph TD
+SpecialVarRef -->|Token| var
 ```
 ```mermaid
-classDiagram
-EdgeOpRef --> filter_type: Optional[ExprType]
-EdgeOpRef --> filter_cond: Optional[FilterCompr]
-EdgeOpRef --> edge_dir: EdgeDir
-EdgeOpRef --> mod_link: Optional[Module]
-EdgeOpRef --> from_walker: bool
+graph TD
+EdgeOpRef -.->|ExprType| filter_type
+EdgeOpRef -.->|FilterCompr| filter_cond
+EdgeOpRef -->|EdgeDir| edge_dir
+EdgeOpRef -->|bool| from_walker
 ```
 ```mermaid
-classDiagram
-DisconnectOp --> filter_type: Optional[ExprType]
-DisconnectOp --> filter_cond: Optional[FilterCompr]
-DisconnectOp --> edge_dir: EdgeDir
-DisconnectOp --> mod_link: Optional[Module]
-DisconnectOp --> from_walker: bool
+graph TD
+DisconnectOp -.->|ExprType| filter_type
+DisconnectOp -.->|FilterCompr| filter_cond
+DisconnectOp -->|EdgeDir| edge_dir
+DisconnectOp -->|bool| from_walker
 ```
 ```mermaid
-classDiagram
-ConnectOp --> conn_type: Optional[ExprType]
-ConnectOp --> conn_assign: Optional[AssignmentList]
-ConnectOp --> edge_dir: EdgeDir
-ConnectOp --> mod_link: Optional[Module]
+graph TD
+ConnectOp -.->|ExprType| conn_type
+ConnectOp -.->|AssignmentList| conn_assign
+ConnectOp -->|EdgeDir| edge_dir
 ```
 ```mermaid
-classDiagram
-FilterCompr --> compares: list[BinaryExpr]
-FilterCompr --> mod_link: Optional[Module]
+graph TD
+FilterCompr -->|list[BinaryExpr]| compares
 ```
 ```mermaid
-classDiagram
-FString --> parts: list['Token | ExprType']
-FString --> mod_link: Optional[Module]
+graph TD
+FString -->|list['Token | ExprType']| parts
 ```
 
