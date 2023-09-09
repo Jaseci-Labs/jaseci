@@ -22,14 +22,17 @@ class AstKidInfo:
 class AstNodeInfo:
     """Meta data about AST nodes."""
 
-    def __init__(self, class_link: type) -> None:
+    type_map: dict[str, type] = {}
+
+    def __init__(self, cls: type) -> None:
         """Initialize."""
-        self.class_link = class_link
-        self.process(class_link)
+        self.cls = cls
+        self.process(cls)
 
     def process(self, cls: type) -> None:
         """Process AstNode class."""
         self.class_name = cls.__name__
+        AstNodeInfo.type_map[self.class_name] = cls
         self.class_name_snake = pascal_to_snake(cls.__name__)
         self.init_sig = inspect.signature(cls.__init__)
         self.kids: list[AstKidInfo] = []
@@ -101,6 +104,12 @@ class AstTool:
             ret += f"{k}|"
         return ret[:-1]
 
-    def mermaid_md_doc(self) -> str:
+    def md_doc(self) -> str:
         """Generate mermaid markdown doc."""
-        return "need to implement"
+        output = ""
+        for cls in self.ast_classes:
+            output += "```mermaid\nclassDiagram\n"
+            for kid in cls.kids:
+                output += f"{cls.class_name} --> {kid.name}: {kid.typ} \n"
+            output += "```\n"
+        return output
