@@ -2,10 +2,48 @@
 
 import inspect
 import sys
+from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacLexer
 from jaclang.utils.helpers import pascal_to_snake
+
+
+class AstKidInfo:
+    """Information about a kid."""
+
+    def __init__(self, name: str, typ: str, default: Optional[str] = None) -> None:
+        """Initialize."""
+        self.name = name
+        self.typ = typ
+        self.default = default
+
+
+class AstNodeInfo:
+    """Meta data about AST nodes."""
+
+    def __init__(self, class_link: type) -> None:
+        """Initialize."""
+        self.class_link = class_link
+        self.process(class_link)
+
+    def process(self, cls: type) -> None:
+        """Process AstNode class."""
+        self.class_name = cls.__name__
+        self.class_name_snake = pascal_to_snake(cls.__name__)
+        self.init_sig = inspect.signature(cls.__init__)
+        self.kids: list[AstKidInfo] = []
+        for param_name, param in self.init_sig.parameters.items():
+            if param_name not in ["self", "parent", "kid", "line"]:
+                param_type = (
+                    param.annotation
+                    if param.annotation != inspect.Parameter.empty
+                    else "Any"
+                )
+                param_default = (
+                    param.default if param.default != inspect.Parameter.empty else None
+                )
+                self.kids.append(AstKidInfo(param_name, param_type, param_default))
 
 
 class AstTool:
@@ -16,9 +54,12 @@ class AstTool:
         module = sys.modules[ast.__name__]
         source_code = inspect.getsource(module)
         classes = inspect.getmembers(module, inspect.isclass)
-        ast_node_classes = [cls for _, cls in classes if issubclass(cls, ast.AstNode)]
+        ast_node_classes = [
+            AstNodeInfo(cls) for _, cls in classes if issubclass(cls, ast.AstNode)
+        ]
         self.ast_classes = sorted(
-            ast_node_classes, key=lambda cls: source_code.find(f"class {cls.__name__}")
+            ast_node_classes,
+            key=lambda cls: source_code.find(f"class {cls.class_name}"),
         )
 
     def pass_template(self) -> str:
@@ -31,30 +72,15 @@ class AstTool:
             output += "\n    " + to_append
 
         for cls in self.ast_classes:
-            class_name = cls.__name__
-            snake_case_name = pascal_to_snake(class_name)
-
-            emit(f"def exit_{snake_case_name}(self, node: ast.{class_name}) -> None:\n")
+            emit(
+                f"def exit_{cls.class_name_snake}(self, node: ast.{cls.class_name}) -> None:\n"
+            )
             emit('    """Sub objects.\n')
 
-            init_func = cls.__init__
-            init_signature = inspect.signature(init_func)
-
-            for param_name, param in init_signature.parameters.items():
-                if param_name not in ["self", "parent", "kid", "line"]:
-                    param_type = (
-                        param.annotation
-                        if param.annotation != inspect.Parameter.empty
-                        else "Any"
-                    )
-                    param_default = (
-                        param.default
-                        if param.default != inspect.Parameter.empty
-                        else None
-                    )
-                    emit(
-                        f"    {param_name}: {param_type}{' ='+param_default if param_default else ''},"
-                    )
+            for kid in cls.kids:
+                emit(
+                    f"    {kid.name}: {kid.typ}{' ='+kid.default if kid.default else ''},"
+                )
 
             emit('    """\n')
         output = (
