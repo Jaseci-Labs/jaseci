@@ -44,130 +44,6 @@ class AstNode:
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
 
 
-# Utiliiy functions
-# -----------------
-
-
-def replace_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
-    """Replace node with new_node."""
-    if node.parent:
-        node.parent.kid[node.parent.kid.index(node)] = new_node
-    if new_node:
-        new_node.parent = node.parent
-        for i in new_node.kid:
-            if i:
-                i.parent = new_node
-    return new_node
-
-
-def append_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
-    """Replace node with new_node."""
-    node.kid.append(new_node)
-    if new_node:
-        new_node.parent = node
-    return new_node
-
-
-# AST Parse Level Node Types
-# --------------------------
-
-
-class Parse(AstNode):
-    """Parse node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: str,
-        parent: Optional[AstNode],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize parse."""
-        self.name = name
-        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
-
-
-class Token(AstNode):
-    """Token node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        parent: Optional[AstNode],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize token."""
-        self.name = name
-        self.value = value
-        self.col_start = col_start
-        self.col_end = col_end
-        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
-
-
-class Name(Token):
-    """Name node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        already_declared: bool,
-        parent: Optional[AstNode],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize name."""
-        self.already_declared = already_declared
-        super().__init__(
-            name=name,
-            value=value,
-            col_start=col_start,
-            col_end=col_end,
-            parent=parent,
-            mod_link=mod_link,
-            kid=kid,
-            line=line,
-        )
-
-
-class Constant(Token):
-    """Constant node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        typ: type,
-        parent: Optional[AstNode],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-        line: int,
-    ) -> None:
-        """Initialize constant."""
-        super().__init__(
-            name=name,
-            value=value,
-            col_start=col_start,
-            col_end=col_end,
-            parent=parent,
-            mod_link=mod_link,
-            kid=kid,
-            line=line,
-        )
-        self._typ = typ
-
-
 # AST Mid Level Node Types
 # --------------------------
 class Module(AstNode):
@@ -1806,3 +1682,126 @@ StmtType = Union[
     VisitStmt,
     IgnoreStmt,
 ]
+
+# AST Parse-Tree Node Types
+# --------------------------
+
+
+class Parse(AstNode):
+    """Parse node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: str,
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize parse."""
+        self.name = name
+        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+
+class Token(AstNode):
+    """Token node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize token."""
+        self.name = name
+        self.value = value
+        self.col_start = col_start
+        self.col_end = col_end
+        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+
+class Name(Token):
+    """Name node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        already_declared: bool,
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize name."""
+        self.already_declared = already_declared
+        super().__init__(
+            name=name,
+            value=value,
+            col_start=col_start,
+            col_end=col_end,
+            parent=parent,
+            mod_link=mod_link,
+            kid=kid,
+            line=line,
+        )
+
+
+class Constant(Token):
+    """Constant node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        typ: type,
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize constant."""
+        super().__init__(
+            name=name,
+            value=value,
+            col_start=col_start,
+            col_end=col_end,
+            parent=parent,
+            mod_link=mod_link,
+            kid=kid,
+            line=line,
+        )
+        self._typ = typ
+
+
+# Utiliiy functions
+# -----------------
+
+
+def replace_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
+    """Replace node with new_node."""
+    if node.parent:
+        node.parent.kid[node.parent.kid.index(node)] = new_node
+    if new_node:
+        new_node.parent = node.parent
+        for i in new_node.kid:
+            if i:
+                i.parent = new_node
+    return new_node
+
+
+def append_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
+    """Replace node with new_node."""
+    node.kid.append(new_node)
+    if new_node:
+        new_node.parent = node
+    return new_node

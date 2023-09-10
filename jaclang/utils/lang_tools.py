@@ -31,8 +31,9 @@ class AstNodeInfo:
 
     def process(self, cls: type) -> None:
         """Process AstNode class."""
-        self.class_name = cls.__name__
-        AstNodeInfo.type_map[self.class_name] = cls
+        self.name = cls.__name__
+        self.doc = cls.__doc__
+        AstNodeInfo.type_map[self.name] = cls
         self.class_name_snake = pascal_to_snake(cls.__name__)
         self.init_sig = inspect.signature(cls.__init__)
         self.kids: list[AstKidInfo] = []
@@ -62,7 +63,7 @@ class AstTool:
         ]
         self.ast_classes = sorted(
             ast_node_classes,
-            key=lambda cls: source_code.find(f"class {cls.class_name}"),
+            key=lambda cls: source_code.find(f"class {cls.name}"),
         )
 
     def pass_template(self) -> str:
@@ -76,7 +77,7 @@ class AstTool:
 
         for cls in self.ast_classes:
             emit(
-                f"def exit_{cls.class_name_snake}(self, node: ast.{cls.class_name}) -> None:\n"
+                f"def exit_{cls.class_name_snake}(self, node: ast.{cls.name}) -> None:\n"
             )
             emit('    """Sub objects.\n')
 
@@ -108,14 +109,21 @@ class AstTool:
         """Generate mermaid markdown doc."""
         output = ""
         for cls in self.ast_classes:
-            output += "```mermaid\ngraph TD\n"
+            if not len(cls.kids):
+                continue
+            output += f"## {cls.name}\n"
+            output += "```mermaid\nflowchart LR\n"
             for kid in cls.kids:
                 if "_end" in kid.name:
                     kid.name = kid.name.replace("_end", "_end_")
-                if "Optional" in kid.typ:
-                    typ = kid.typ.replace("Optional[", "").replace("]", "")
-                    output += f"{cls.class_name} -.->|{typ}| {kid.name}\n"
-                else:
-                    output += f"{cls.class_name} -->|{kid.typ}| {kid.name}\n"
-            output += "```\n"
+                arrow = "-.->" if "Optional" in kid.typ else "-->"
+                typ = (
+                    kid.typ.replace("Optional[", "")
+                    .replace("]", "")
+                    .replace("|", ",")
+                    .replace("list[", "list - ")
+                )
+                output += f"{cls.name} {arrow}|{typ}| {kid.name}\n"
+            output += "```\n\n"
+            output += f"{cls.doc} \n\n"
         return output
