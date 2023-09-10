@@ -18,7 +18,6 @@ nav:
       - book/red.md
 
     - ~/why$: 'why.md'
-    - ~/blog$: 'blog.md'
     - ~/roadmap$: 'roadmap.md'
     - ~/github$: https://github.com/Jaseci-Labs/jaclang
 
