@@ -1673,58 +1673,8 @@ class FString(AstNode):
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-AtomType = Union[
-    MultiString,
-    ListVal,
-    TupleVal,
-    SetVal,
-    DictVal,
-    InnerCompr,
-    DictCompr,
-    AtomTrailer,
-    EdgeOpRef,
-    FilterCompr,
-]
-
-ExprType = Union[
-    UnaryExpr,
-    BinaryExpr,
-    IfElseExpr,
-    UnpackExpr,
-    AtomType,
-]
-
-
-StmtType = Union[
-    Import,
-    Architype,
-    Ability,
-    Assignment,
-    ExprType,
-    IfStmt,
-    TryStmt,
-    IterForStmt,
-    InForStmt,
-    WhileStmt,
-    WithStmt,
-    RaiseStmt,
-    AssertStmt,
-    CtrlStmt,
-    DeleteStmt,
-    ReportStmt,
-    ReturnStmt,
-    YieldStmt,
-    AwaitStmt,
-    DisengageStmt,
-    RevisitStmt,
-    VisitStmt,
-    IgnoreStmt,
-]
-
 # AST Parse-Tree Node Types
 # --------------------------
-
-
 class Parse(AstNode):
     """Parse node type for Jac Ast."""
 
@@ -1819,6 +1769,59 @@ class Constant(Token):
             line=line,
         )
         self._typ = typ
+
+
+# Aggregate Types
+# ----------------
+
+
+AtomType = Union[
+    MultiString,
+    ListVal,
+    TupleVal,
+    SetVal,
+    DictVal,
+    InnerCompr,
+    DictCompr,
+    AtomTrailer,
+    EdgeOpRef,
+    FilterCompr,
+]
+
+ExprType = Union[
+    UnaryExpr,
+    BinaryExpr,
+    IfElseExpr,
+    UnpackExpr,
+    AtomType,
+]
+
+
+StmtType = Union[
+    Import,
+    Architype,
+    Ability,
+    Assignment,
+    ExprType,
+    IfStmt,
+    TryStmt,
+    IterForStmt,
+    InForStmt,
+    WhileStmt,
+    WithStmt,
+    RaiseStmt,
+    AssertStmt,
+    CtrlStmt,
+    DeleteStmt,
+    ReportStmt,
+    ReturnStmt,
+    YieldStmt,
+    AwaitStmt,
+    DisengageStmt,
+    RevisitStmt,
+    VisitStmt,
+    IgnoreStmt,
+]
 
 
 # Utiliiy functions
