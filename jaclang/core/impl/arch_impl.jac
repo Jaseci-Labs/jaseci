@@ -101,14 +101,26 @@ import:py from jaclang.jac.constant, EdgeDir;
         }
         nd :> <self>._jac_path_.append;
     }
+    <self>._jac_ignore_=[];
 }
 
 :object:Walker:ability:_jac_visit_
-(nds: list[Node]|list[Edge]) {
-    for i in nds {
-        i :> <self>._jac_next_.append;
-    }
-    return nds :> len;
+(nds: list[Node]|list[Edge]|Node|Edge) {
+    if isinstance(nds, list) {
+        for i in nds {
+            if(i not in <self>._jac_ignore_) { i :> <self>._jac_next_.append; }
+        }
+    } elif nds not in <self>._jac_ignore_ { nds :> <self>._jac_next_.append; }
+    return len(nds) if isinstance(nds, list) else 1;
+}
+
+:object:Walker:ability:_jac_ignore_
+(nds: list[Node]|list[Edge]|Node|Edge) {
+    if isinstance(nds, list) {
+        for i in nds {
+            i :> <self>._jac_ignore_.append;
+        }
+    } else { nds :> <self>._jac_ignore_.append; }
 }
 
 :object:Walker:ability:_jac_disengage_ {

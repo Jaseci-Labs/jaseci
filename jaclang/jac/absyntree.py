@@ -1085,9 +1085,11 @@ class IgnoreStmt(AstNode):
         mod_link: Optional[Module],
         kid: list[AstNode],
         line: int,
+        from_walker: bool = False,
     ) -> None:
         """Initialize ignore statement node."""
         self.target = target
+        self.from_walker = from_walker
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 

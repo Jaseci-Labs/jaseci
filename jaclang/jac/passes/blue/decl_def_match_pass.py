@@ -1,6 +1,7 @@
 """Connect Decls and Defs in AST."""
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
+from jaclang.jac.passes.blue import SubNodeTabPass
 from jaclang.jac.sym_table import DefDeclSymbol, SymbolTable
 
 
@@ -10,6 +11,10 @@ class DeclDefMatchPass(Pass, SymbolTable):
     def before_pass(self) -> None:
         """Initialize pass."""
         self.sym_tab = SymbolTable(scope_name="global")
+
+    def after_pass(self) -> None:
+        """Rebuild sub node table."""
+        self.ir = SubNodeTabPass(mod_path=self.mod_path, input_ir=self.ir).ir
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.

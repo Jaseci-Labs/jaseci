@@ -26,7 +26,7 @@ object PurplePygenPass:BluePygenPass {
     can exit_event_signature(nd: ast.EventSignature);
     can exit_ctrl_stmt(nd: ast.CtrlStmt);
     can exit_report_stmt(nd: ast.ReportStmt) {} # TODO: Implement
-    can exit_ignore_stmt(nd: ast.IgnoreStmt) {} # TODO: Implement
+    can exit_ignore_stmt(nd: ast.IgnoreStmt);
     can exit_visit_stmt(nd: ast.VisitStmt);
     can exit_revisit_stmt(nd: ast.RevisitStmt) {} # TODO: Implement
     can exit_await_stmt(nd: ast.AwaitStmt) {} # TODO: Implement

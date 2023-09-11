@@ -154,6 +154,19 @@ ctrl: Token,
 
 """Sub objects.
 
+ctrl: Token,
+"""
+:object:PurplePygenPass:ability:exit_ignore_stmt
+(nd: ast.IgnoreStmt) {
+    vis_type = nd.vis_type?.value ?: "";
+    loc = 'self' if nd.from_walker else C.HERE;
+    (nd, f"{loc}.{C.WALKER_IGNORE}({nd.target.meta['py_code']})" )
+        |> <self>.emit_ln;
+}
+
+
+"""Sub objects.
+
 vis_type: Optional[Token],
 target: ExprType,
 else_body: Optional["ElseStmt"],

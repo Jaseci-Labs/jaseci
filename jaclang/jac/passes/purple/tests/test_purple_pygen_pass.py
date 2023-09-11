@@ -37,8 +37,8 @@ class PurplePygenPassTests(TestCaseMicroSuite):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_purple_import(
-            "guess_game.guess_game_test",
-            self.fixture_abs_path("../../../../../../examples/"),
+            "guess_game",
+            self.fixture_abs_path("./"),
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
