@@ -1189,54 +1189,56 @@ struct_types = """
 
 
 simple_graph = """
-node a {
-    has val = 0;
-}
-
-node b {
-    has val = 0;
-}
-
-node c {
-    has val = 0;
-}
-
-node d {
-    has val = 0;
-}
-
-node e {
-    has val = 0;
-}
+node a1 {has val = 0;}
+node a2 {has val = 0;}
+node a3 {has val = 0;}
+node b1 {has val = 0;}
+node b2 {has val = 0;}
+edge e1 {has val = 0;}
+edge e2 {has val = 0;}
+edge e3 {has val = 0;}
 
 walker sample {
     root {
-        take --> node::a else: take spawn here ++> node::a;
-        take --> node::b else: take spawn here ++> node::b;
+        take --> node::a1 else: take spawn here +[e1]+> node::a1;
+        take --> node::b1 else: take spawn here ++> node::b1;
     }
 
-    a {
-        take --> node::c else: take spawn here ++> node::c;
+    a1: take --> node::a2 else {
+        report --> node::a2;
+        report -[e2]-> node::a2;
+        take spawn here +[e2]+> node::a2;
     }
-
-    b {
-        take --> node::d else: take spawn here ++> node::d;
-    }
-
-    c {
-        take --> node::e else: take spawn here ++> node::e;
-    }
+    a2: take --> node::a3 else: take spawn here +[e3]+> node::a3;
+    b1: take --> node::b2 else: take spawn here ++> node::b2;
 }
 
 walker sample2 {
     root {
-        take --> node::a;
-        take --> node::b;
+        take --> node::a1;
+        take --> node::b1;
     }
-    a: take --> node::c;
-    b: take --> node::d;
-    c: take --> node::e;
-    d: here.val = 1;
-    e: here.val = 2;
+    a1: take --> node::a2;
+    a2: take --> node::a3;
+    a3: here.val = 1;
+    b1: take --> node::b2;
+    b2: here.val = 1;
+}
+
+walker sample3 {
+    root {
+        take --> node::a1;
+        take --> node::b1;
+    }
+    a1 {
+        -[e2]->.edge[0].val = 1;
+        take --> node::a2;
+    }
+    a2 {
+        take --> node::a3;
+        here not --> node::a3;
+    }
+    a3: here.val = 2;
+    b1: take --> node::b2;
 }
 """

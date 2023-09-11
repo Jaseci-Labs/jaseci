@@ -329,22 +329,26 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         self.assertSetEqual(
             set(
                 [
-                    "e::node",
-                    "a::node",
-                    "b::architype",
-                    "root::architype",
-                    "d::architype",
-                    "b::node",
                     "basic::sentinel",
-                    "d::node",
-                    "c::node",
-                    "generic::architype",
-                    "a::architype",
-                    "c::architype",
                     "root::graph",
-                    "e::architype",
+                    "a1::node",
+                    "a2::node",
+                    "a3::node",
+                    "b1::node",
+                    "b2::node",
+                    "root::architype",
+                    "a1::architype",
+                    "a2::architype",
+                    "a3::architype",
+                    "b1::architype",
+                    "b2::architype",
+                    "e1::architype",
+                    "e2::architype",
+                    "e3::architype",
+                    "generic::architype",
                     "sample::architype",
                     "sample2::architype",
+                    "sample3::architype",
                     "generic::architype",
                 ]
             ),
@@ -365,6 +369,31 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         test_walker.run()
 
         self.assertSetEqual(
-            set(["d::node", "e::node"]),
+            set(["b2::node", "a3::node"]),
+            set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
+        )
+
+        hook.commit()
+        hook.clear_cache()
+
+        test_walker = sent.run_architype("sample3")
+        test_walker.prime(gph)
+        test_walker.run()
+
+        self.assertSetEqual(
+            set(["a1::node", "a2::node", "a3::node"]),
+            set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
+        )
+
+        hook.commit()
+        hook.clear_cache()
+
+        test_walker = sent.run_architype("sample3")
+        test_walker.prime(gph)
+        test_walker.run()
+
+        # no a2::node and a3::node since it was already disconnected
+        self.assertSetEqual(
+            set(["a1::node"]),
             set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
         )

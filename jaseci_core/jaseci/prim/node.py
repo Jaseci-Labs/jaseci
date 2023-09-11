@@ -60,7 +60,10 @@ class Node(Element, Anchored):
                 edge.bidirected = v[1] == BI
                 edge.jid = v[2] if len(v) > 2 else uuid.uuid4().urn
                 edge.context = v[3] if len(v) > 3 else {}
-                edge.save()
+                # old `edge.save()` might be confusing
+                # this line doesn't mean it has to be saved on db
+                # it only needs to be available on cache (memory, redis)
+                self._h.commit_obj_to_cache(edge, True)
                 self._fast_edge_ids.add_obj(edge, bypass=True)
 
     def smart_add_edge(self, obj):
