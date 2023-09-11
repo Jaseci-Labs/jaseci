@@ -52,18 +52,22 @@ class Node(Element, Anchored):
         for k in self.fast_edges.keys():
             for v in self.fast_edges[k]:
                 link_order = [v[0], self.jid] if v[1] == FROM else [self.jid, v[0]]
-                edge = Edge(
-                    m_id=self._m_id, h=self._h, kind="edge", name=k, auto_save=False
-                )
-                edge.from_node_id = link_order[0]
-                edge.to_node_id = link_order[1]
-                edge.bidirected = v[1] == BI
-                edge.jid = v[2] if len(v) > 2 else uuid.uuid4().urn
-                edge.context = v[3] if len(v) > 3 else {}
-                # old `edge.save()` might be confusing
-                # this line doesn't mean it has to be saved on db
-                # it only needs to be available on cache (memory, redis)
-                self._h.commit_obj_to_cache(edge, True)
+                edge = self._h.get_obj(self._m_id, v[2])
+                if edge:
+                    v[3] = edge.context
+                else:
+                    edge = Edge(
+                        m_id=self._m_id, h=self._h, kind="edge", name=k, auto_save=False
+                    )
+                    edge.from_node_id = link_order[0]
+                    edge.to_node_id = link_order[1]
+                    edge.bidirected = v[1] == BI
+                    edge.jid = v[2] if len(v) > 2 else uuid.uuid4().urn
+                    edge.context = v[3] if len(v) > 3 else {}
+                    # old `edge.save()` might be confusing
+                    # this line doesn't mean it has to be saved on db
+                    # it only needs to be available on cache (memory, redis)
+                    self._h.commit_obj_to_cache(edge, True)
                 self._fast_edge_ids.add_obj(edge, bypass=True)
 
     def smart_add_edge(self, obj):

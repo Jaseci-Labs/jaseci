@@ -392,8 +392,110 @@ class OrmPrivateTests(TestCaseHelper, TestCase):
         test_walker.prime(gph)
         test_walker.run()
 
-        # no a2::node and a3::node since it was already disconnected
+        # no a3::node since it was already disconnected
         self.assertSetEqual(
-            set(["a1::node"]),
+            set(["a1::node", "a2::node"]),
             set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
         )
+
+    def test_node_saves_on_fast_edges(self):
+        user = self.user
+        hook = user._h = JsOrc.hook()
+        gph = Graph(m_id=0, h=hook)
+        sent = Sentinel(m_id=0, h=gph._h)
+        sent.register_code(jtc.simple_graph2)
+        test_walker = sent.run_architype("sample")
+        test_walker.prime(gph)
+        a1 = test_walker.run()["report"][0]["jid"]
+
+        # initial trigger
+        self.assertSetEqual(
+            set(
+                [
+                    "basic::sentinel",
+                    "root::graph",
+                    "a1::node",
+                    "root::architype",
+                    "a1::architype",
+                    "e1::architype",
+                    "generic::architype",
+                    "sample::architype",
+                    "sample2::architype",
+                    "sample3::architype",
+                    "sample4::architype",
+                    "sample5::architype",
+                    "sample6::architype",
+                    "generic::architype",
+                ]
+            ),
+            set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
+        )
+
+        hook.commit()
+        hook.clear_cache()
+
+        # trigger change value from node::a1
+        a1 = hook.get_obj(0, a1)
+        test_walker = sent.run_architype("sample2")
+        test_walker.prime(a1)
+        reps = test_walker.run()["report"]
+
+        self.assertEqual([4, 4], reps)
+        self.assertSetEqual(
+            set(["a1::node", "root::graph"]),
+            set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
+        )
+
+        hook.commit()
+        hook.clear_cache()
+
+        # trigger report value from graph::root
+        test_walker = sent.run_architype("sample3")
+        test_walker.prime(gph)
+        reps = test_walker.run()["report"]
+
+        self.assertEqual([4, 4], reps)
+        self.assertFalse(hook.save_obj_list)
+
+        # trigger change value from graph::root
+        test_walker = sent.run_architype("sample4")
+        test_walker.prime(gph)
+        reps = test_walker.run()["report"]
+
+        self.assertEqual([6, 6], reps)
+        self.assertSetEqual(
+            set(["a1::node", "root::graph"]),
+            set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
+        )
+
+        hook.commit()
+        hook.clear_cache()
+
+        # trigger report value from node::a1
+        test_walker = sent.run_architype("sample5")
+        test_walker.prime(a1)
+        reps = test_walker.run()["report"]
+
+        self.assertEqual([6, 6], reps)
+        self.assertFalse(hook.save_obj_list)
+
+        # trigger change value from graph::root without accessing node::a1
+        test_walker = sent.run_architype("sample6")
+        test_walker.prime(gph)
+        test_walker.run()
+
+        self.assertSetEqual(
+            set(["a1::node", "root::graph"]),
+            set([item.name + "::" + item.j_type for item in hook.save_obj_list]),
+        )
+
+        hook.commit()
+        hook.clear_cache()
+
+        # read node::a1 without accessing graph::root
+        test_walker = sent.run_architype("sample6")
+        test_walker.prime(a1)
+        reps = test_walker.run()["report"]
+
+        self.assertEqual([8], reps)
+        self.assertFalse(hook.save_obj_list)

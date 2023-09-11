@@ -108,6 +108,8 @@ class Edge(Element, Anchored):
             self._persist = False
             if self.from_node_id:
                 self.from_node().save()
+            if self.to_node_id:
+                self.to_node().save()
         super().save()
 
     def destroy(self):

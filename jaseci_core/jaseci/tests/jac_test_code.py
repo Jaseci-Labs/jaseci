@@ -1242,3 +1242,52 @@ walker sample3 {
     b1: take --> node::b2;
 }
 """
+
+simple_graph2 = """
+node a1 {has val = 0;}
+edge e1 {has val = 0;}
+
+walker sample {
+    root: report spawn here <+[e1]+ node::a1;
+}
+
+walker sample2 {
+    root: report <-[e1]- node::a1.edge[0].val;
+    a1 {
+        --> node::root.edge[0].val = 4;
+        report -[e1]->.edge[0].val;
+        take --> node::root;
+    }
+}
+
+walker sample3 {
+    root {
+        report <-[e1]- node::a1.edge[0].val;
+        take <-[e1]- node::a1;
+    }
+
+    a1: report -[e1]->.edge[0].val;
+}
+
+walker sample4 {
+    root {
+        <-- node::a1.edge[0].val = 6;
+        report <-[e1]- node::a1.edge[0].val;
+        take <-[e1]- node::a1;
+    }
+    a1: report -[e1]-> node::root.edge[0].val;
+}
+
+walker sample5 {
+    root: report <-[e1]-.edge[0].val;
+    a1 {
+        report -[e1]-> node::root.edge[0].val;
+        take -[e1]-> node::root;
+    }
+}
+
+walker sample6 {
+    root: <-[e1]- node::a1.edge[0].val = 8;
+    a1: report --> node::root.edge[0].val;
+}
+"""
