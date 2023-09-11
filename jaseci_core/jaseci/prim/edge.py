@@ -103,8 +103,11 @@ class Edge(Element, Anchored):
         """
         Write self through hook to persistent storage
         """
+
         if self.is_fast():
             self._persist = False
+            if self.from_node_id:
+                self.from_node().save()
         super().save()
 
     def destroy(self):
