@@ -1085,15 +1085,29 @@ class IgnoreStmt(AstNode):
         mod_link: Optional[Module],
         kid: list[AstNode],
         line: int,
-        from_walker: bool = False,
     ) -> None:
         """Initialize ignore statement node."""
         self.target = target
+        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+
+class WalkerStmtOnlyNode(AstNode):
+    """WalkerStmtOnlyNode node type for Jac Ast."""
+
+    def __init__(
+        self,
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+        from_walker: bool = False,
+    ) -> None:
+        """Initialize walker statement only node."""
         self.from_walker = from_walker
         super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
-class VisitStmt(AstNode):
+class VisitStmt(WalkerStmtOnlyNode):
     """VisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -1111,11 +1125,16 @@ class VisitStmt(AstNode):
         self.vis_type = vis_type
         self.target = target
         self.else_body = else_body
-        self.from_walker = from_walker
-        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+        super().__init__(
+            parent=parent,
+            mod_link=mod_link,
+            kid=kid,
+            line=line,
+            from_walker=from_walker,
+        )
 
 
-class RevisitStmt(AstNode):
+class RevisitStmt(WalkerStmtOnlyNode):
     """ReVisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -1126,14 +1145,21 @@ class RevisitStmt(AstNode):
         mod_link: Optional[Module],
         kid: list[AstNode],
         line: int,
+        from_walker: bool = False,
     ) -> None:
         """Initialize revisit statement node."""
         self.hops = hops
         self.else_body = else_body
-        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+        super().__init__(
+            parent=parent,
+            mod_link=mod_link,
+            kid=kid,
+            line=line,
+            from_walker=from_walker,
+        )
 
 
-class DisengageStmt(AstNode):
+class DisengageStmt(WalkerStmtOnlyNode):
     """DisengageStmt node type for Jac Ast."""
 
     def __init__(
@@ -1145,8 +1171,13 @@ class DisengageStmt(AstNode):
         from_walker: bool = False,
     ) -> None:
         """Initialize disengage statement node."""
-        self.from_walker = from_walker
-        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+        super().__init__(
+            parent=parent,
+            mod_link=mod_link,
+            kid=kid,
+            line=line,
+            from_walker=from_walker,
+        )
 
 
 class AwaitStmt(AstNode):
@@ -1559,7 +1590,7 @@ class SpecialVarRef(AstNode):
             raise NotImplementedError("ICE: Special var reference not implemented")
 
 
-class EdgeOpRef(AstNode):
+class EdgeOpRef(WalkerStmtOnlyNode):
     """EdgeOpRef node type for Jac Ast."""
 
     def __init__(
@@ -1577,8 +1608,13 @@ class EdgeOpRef(AstNode):
         self.filter_type = filter_type
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
-        self.from_walker = from_walker
-        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+        super().__init__(
+            parent=parent,
+            mod_link=mod_link,
+            kid=kid,
+            line=line,
+            from_walker=from_walker,
+        )
 
 
 class DisconnectOp(EdgeOpRef):

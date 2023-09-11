@@ -91,7 +91,9 @@ class BluePygenPassTests(TestCaseMicroSuite):
     def test_pass_ast_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""
         ast_func_names = [
-            x for x in ast_snakes() if x not in ["ast_node", "o_o_p_access_node"]
+            x
+            for x in ast_snakes()
+            if x not in ["ast_node", "o_o_p_access_node", "walker_stmt_only_node"]
         ]
         pygen_func_names = []
         for name, value in inspect.getmembers(BluePygenPass):
