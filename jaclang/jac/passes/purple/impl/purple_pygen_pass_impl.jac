@@ -155,10 +155,10 @@ ctrl: Token,
 """Sub objects.
 
 ctrl: Token,
+from_walker: bool = False,
 """
 :object:PurplePygenPass:ability:exit_ignore_stmt
 (nd: ast.IgnoreStmt) {
-    vis_type = nd.vis_type?.value ?: "";
     loc = 'self' if nd.from_walker else C.HERE;
     (nd, f"{loc}.{C.WALKER_IGNORE}({nd.target.meta['py_code']})" )
         |> <self>.emit_ln;

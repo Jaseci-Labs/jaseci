@@ -31,11 +31,11 @@ object ExecutionContext {
     has master: Master,
         memory: Memory;
 
-    can <init>(master: UUID, memory: Memory);
+    can <init>(master: UUID = :>uuid4, memory: Memory = Memory());
     can get_root() -> Node;
 }
 
-global exec_ctx = ExecutionContext(:>uuid4, Memory());
+global exec_ctx = ExecutionContext();
 
 object ElementMetaData {
     has jid: UUID = :>uuid4,
@@ -93,7 +93,7 @@ object Edge:Object {
 object Walker:Object {
     has _jac_path_: list[Node] = [],
         _jac_next_: list[Node] = [],
-        _jac_ignore_: list[Node] = [],
+        _jac_ignores_: list[Node] = [],
         _jac_disengaged_: bool = False;
 
     can __call__(nd: Node);
