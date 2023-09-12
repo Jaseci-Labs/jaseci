@@ -1,84 +1,66 @@
-<!-- # Jac Declarations vs. Definitions (compared to Python)
+# Separation of Declarations and Definitions in C++ vs Python
 
-In C++, when writing code, there's often a separation between the **declaration** of a function, variable, or class, and its **definition**. This provides a way to organize code in large projects and enables the use of separate compilation units. Let's understand this concept better.
+Jac has support to handle the concept of separating declarations and definitions differently than Python. This feature was introduced to the Jac language to drastically improve readability and maintainability of code bases (especially large ones!).  This tutorial will explain the differences and provide working code examples to illustrate them.
 
-## 1. C++ Declarations and Definitions
+## Jac Declarations and Definitions
 
-### 1.1 Declarations
+In Jac, you are able to separate declarations (which specifies what something *looks* like, i.e., the interface of a function) from definitions (which specifies what something *does*, i.e., the body of a function).
 
-In C++, a declaration tells the compiler that a certain entity exists, possibly specifying its type, but it doesn't allocate storage or assign a value to it.
+### Functions (Abilities)
 
-For example, here's a function declaration:
+In Jac:
 
-```cpp
-void printHello(); // function declaration
+1. **Declaration** - Specifies the function's name, return type, and its parameters. Does not provide the function body.
+2. **Definition** - Provides the actual body of the function.
+
+For instance:
+
+```jac
+--8<-- "examples/micro/decl_defs.jac:3:12"
 ```
 
-Here's a variable declaration:
+### Classes and Methods
 
-```cpp
-extern int x; // variable declaration without definition
+The same concept applies to classes and their member methods.
+
+```jac
+--8<-- "examples/micro/decl_defs.jac:14:25"
 ```
 
-### 1.2 Definitions
+### Pythonic Combining of Decl/Defs
 
-The definition, on the other hand, allocates storage and can also assign values. It's where the actual implementation of a function or method resides.
+Jac also support the traditional pythonic style of combined declarations and definitions.
 
-Function definition:
-
-```cpp
-void printHello() {
-    std::cout << "Hello, World!" << std::endl; // function definition
-}
+```jac
+--8<-- "examples/micro/decl_defs.jac:28:42"
 ```
 
-Variable definition:
+At first glance, one might conclude the pythonic style is more readable and easy to understand. However next we'll look at the implications of this design decision.
+## Complex Real-World Example
 
-```cpp
-int x = 10; // variable definition with assignment
+Let’s look at a complex example using some code from Jac's compiler. Here we will take a look at the implementation of a pass of the Jac compiler that was written in Jac. This class is implemented across two files, one with the relevant declarations and the other with its definitions.
+
+### Declarations in its Own File
+
+
+
+First lets look at the declarations
+
+**jaclang/jac/passes/purple/purple_pygen_pass.jac**
+```jac
+--8<-- "jaclang/jac/passes/purple/purple_pygen_pass.jac"
 ```
 
-### 1.3 Separate Compilation
-
-In large C++ projects, the separation of declarations and definitions allows for "separate compilation". This means that source code can be split into multiple files, with declarations typically residing in header files (`.h` or `.hpp`) and definitions in source files (`.cpp`). This aids in modular programming and faster compilation times.
-
-**hello.h**
-```cpp
-// declaration
-void printHello();
+### Definitions in Separate File
+```jac
+--8<-- "jaclang/jac/passes/purple/impl/purple_pygen_pass_impl.jac"
 ```
 
-**hello.cpp**
-```cpp
-#include <iostream>
-#include "hello.h"
-
-// definition
-void printHello() {
-    std::cout << "Hello, World!" << std::endl;
-}
-```
-
-## 2. Python: A Contrast
-
-Python doesn't have this strict separation between declarations and definitions due to its interpreted nature and dynamic typing. When you define a function or a class in Python, you're both declaring and defining it.
-
+### Comparison with Python
 ```python
-def say_hello():
-    print("Hello, World!")
+--8<-- "jaclang/jac/passes/blue/decl_def_match_pass.py"
 ```
 
-## 3. Comparison
+## Wrap-up
 
-| Feature                   | C++                                     | Python                               |
-|---------------------------|-----------------------------------------|--------------------------------------|
-| Declaration & Definition  | Separate (especially in large projects) | Typically Combined                   |
-| Type specification        | Mandatory for static types              | Optional (dynamic typing)            |
-| Compilation               | Compiled Language                       | Interpreted Language                 |
-| Code Organization         | Header and Source Files                 | Modules and Scripts                  |
-
----
-
-### Conclusion
-
-C++ provides a clear distinction between declarations and definitions, which aids in code organization, modularity, and separate compilation. On the other hand, Python, being an interpreted and dynamically-typed language, doesn't emphasize this separation, leading to a more concise but potentially less structured codebase in large projects. Both approaches have their merits and cater to different needs and scenarios. -->
+ Jac provides support for disconnected declarations and definitions as it enhances code readability and maintainability by providing a clear organizational structure to a codebase. Declarations, often placed in separate module files, serve as a concise interface, allowing developers to quickly grasp the functionality without delving into implementation details. Meanwhile, definitions encapsulate the actual logic, ensuring that changes to the logic do not necessitate modifications to the interface. This separation makes the code more modular, simplifying collaborations, facilitating code reviews, and allowing for more manageable compilation units in larger projects.

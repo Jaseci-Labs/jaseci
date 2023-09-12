@@ -31,10 +31,11 @@ theme:
     logo: 'assets/logo.png'
     name: 'material'
     palette:
-        primary: 'brown'
+        scheme: 'slate'
+        primary: 'black'
         accent: 'orange'
     font:
-        text: 'Short Stack'
+        text: 'Roboto'
         code: 'Roboto Mono'
     features:
     - content.code.copy
@@ -51,7 +52,7 @@ markdown_extensions:
       pygments_style: 'autumn'
   - pymdownx.inlinehilite
   - pymdownx.snippets:
-      base_path: ['.', '../../examples']
+      base_path: ['.', '../../']
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
