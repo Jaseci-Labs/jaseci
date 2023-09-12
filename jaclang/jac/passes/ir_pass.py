@@ -125,6 +125,7 @@ class Pass(Transform):
         self.cur_line = node.line
         if node.mod_link:
             self.rel_mod_path = node.mod_link.rel_mod_path
+            self.mod_path = node.mod_link.mod_path
 
     def error(self, msg: str) -> None:
         """Pass Error."""

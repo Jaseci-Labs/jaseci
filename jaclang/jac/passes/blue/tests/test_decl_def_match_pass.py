@@ -48,7 +48,7 @@ class DeclDefMatchPassTests(TestCase):
             self.fixture_abs_path("decls.jac"), "", DeclDefMatchPass
         )
         self.assertTrue(state.errors_had)
-        self.assertIn("/impl/defs2.jac", state.errors_had[0])
-        self.assertIn("/impl/defs1.jac", state.errors_had[0])
-        self.assertIn("/impl/defs2.jac", state.errors_had[1])
-        self.assertIn("/impl/defs1.jac", state.errors_had[1])
+        self.assertIn("/impl/defs2.jac", str(state.errors_had[0]))
+        self.assertIn("/impl/defs1.jac", str(state.errors_had[0]))
+        self.assertIn("/impl/defs2.jac", str(state.errors_had[1]))
+        self.assertIn("/impl/defs1.jac", str(state.errors_had[1]))

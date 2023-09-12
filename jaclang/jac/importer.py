@@ -110,6 +110,7 @@ def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary)
     except Exception as e:
         jac_error_region = str(e)
     snippet = (
+        f"{Con.JAC_ERROR_PREAMBLE}\n"
         f"JacCode Snippet:\n{jac_error_region}\n"
         f"PyCode Snippet:\n{py_error_region}\n"
     )

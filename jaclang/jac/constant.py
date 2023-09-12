@@ -7,6 +7,7 @@ class Constants(str, Enum):
 
     JAC_LANG_IMP = "jac"
     JAC_DEBUG_SPLITTER = "JAC DEBUG INFO"
+    JAC_ERROR_PREAMBLE = "Jac error originates from..."
     PATCH = "PATCH"
 
     JAC_TMP = "_jac_tmp"

@@ -18,7 +18,7 @@ import:py shutil;
 """Run the entrypoint of the given .jac file."""
 :a:run
 (filename: str, entrypoint: str, args: list) {
-    if filename.endswith(".jac"){
+    if filename.endswith(".jac") {
         [base, mod] = os.path.split(filename);
         base = './' if not base else base;
         mod=mod[:-4];
