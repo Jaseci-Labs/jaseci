@@ -147,15 +147,15 @@ var request = $.ajax({
 {% endif %}
 
 {% if provider == "google" %}
-socket = new WebSocket(`ws://${window.location.host}/ws/socket-server/276a40aec1dffc48a25463c3e2545473b45a663364adf3a2f523b903aa254c9f`)
+socket = new WebSocket(`ws://${window.location.host}/ws/socket-server/f8e9b218aff5e16b0b06f458dde7c15af9e77a3feb8b6d7ebbfa3e1da7ae7d63`)
 {% else %}
 socket = new WebSocket(`ws://${window.location.host}/ws/socket-server/anonymous`)
 {% endif %}
 socket.onmessage = (event) => {
-    console.log(event)
+    console.log(event);
 }
 
-function notify-server() {
+function notify_server() {
     socket.send(JSON.stringify({"message": "test"}))
 }
 
