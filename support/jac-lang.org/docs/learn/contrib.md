@@ -1,4 +1,4 @@
-# Codebase Guide
+# Contrib and Codebase Guide
 
 ## General Setup and Information
 

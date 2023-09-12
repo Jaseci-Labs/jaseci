@@ -7,15 +7,21 @@ nav:
     - ~/start$: 'start.md'
     - ~/learn$:
       - 'learn/learn.md'
-      - 'learn/py_to_jac_example.md'
-      - 'learn/contrib.md'
-      - 'learn/ast_doc.md'
-    - ~/book$:
-      - book/main.md
-      - book/general.md
-      - book/blue.md
-      - book/purple.md
-      - book/red.md
+      - ~/for_coders:
+        - 'learn/coders/defs_decls.md'
+      - ~/for_noobs:
+        - 'learn/contrib.md'
+      - ~/for_contributors:
+        - 'learn/contrib.md'
+      - ~/w.i.p$:
+        - 'learn/py_to_jac_example.md'
+        - 'learn/ast_doc.md'
+        - ~/book$:
+          - book/main.md
+          - book/general.md
+          - book/blue.md
+          - book/purple.md
+          - book/red.md
 
     - ~/why$: 'why.md'
     - ~/roadmap$: 'roadmap.md'

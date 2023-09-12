@@ -1,3 +1,3 @@
-# Jac Tutorials
+# Learn Jac
 
-A set of useful tutorials to get started.
+This section is the primary location to learn all about Jac and how to use it!
