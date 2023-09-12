@@ -84,8 +84,8 @@ class BluePygenPass(Pass):
         # self.emit_ln(node, "print(__jac_tmp__)\nraise e")
         self.emit_ln(
             node,
-            "e = type(e)(str(e) + '\\nOriginal Snippet:\\n' + __jac_tmp__) "
-            "if 'Original Snippet:' not in str(e) else e",
+            "e.args = (f'{e.args[0]}\\nOriginal Snippet:\\n' + __jac_tmp__,) + e.args[1:] "
+            "if 'Original Snippet:' not in str(e) else e.args",
         )
         self.emit_ln(node, "raise e")
         self.indent_level -= 1
