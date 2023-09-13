@@ -11,7 +11,7 @@ pass_schedule = [
     SubNodeTabPass,
     ImportPass,
     DeclDefMatchPass,
-    TypeAnalyzePass,
+    # TypeAnalyzePass,
     BluePygenPass,
 ]
 
