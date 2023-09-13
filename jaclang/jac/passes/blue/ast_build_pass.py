@@ -2705,7 +2705,7 @@ class AstBuildPass(Pass):
         index_slice -> LSQUARE expression RSQUARE
         """
         if len(node.kid) == 3:
-            if isinstance(node.kid[1], ast.Token) and node.kid[1].name == Tok.COLON:
+            if hasattr(node.kid[1], "name") and node.kid[1].name == Tok.COLON:
                 node.kid = []
                 replace_node(
                     node,

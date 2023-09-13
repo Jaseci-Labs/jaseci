@@ -59,7 +59,10 @@ class AstTool:
         source_code = inspect.getsource(module)
         classes = inspect.getmembers(module, inspect.isclass)
         ast_node_classes = [
-            AstNodeInfo(cls) for _, cls in classes if issubclass(cls, ast.AstNode)
+            AstNodeInfo(cls)
+            for _, cls in classes
+            if issubclass(cls, ast.AstNode)
+            and cls.__name__ not in ["AstNode", "OOPAccessNode", "WalkerStmtOnlyNode"]
         ]
         self.ast_classes = sorted(
             ast_node_classes,
