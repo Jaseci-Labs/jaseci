@@ -1,7 +1,7 @@
 """Ast build pass for Jaseci Ast."""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.absyntree import SymbolTable
 from jaclang.jac.passes import Pass
+from jaclang.jac.symtable import Symbol, SymbolTable
 
 
 class SymTabBuildPass(Pass):
@@ -10,6 +10,15 @@ class SymTabBuildPass(Pass):
     def before_pass(self) -> None:
         """Before pass."""
         self.cur_sym_tab = SymbolTable()
+
+    def register_unique_name(self, name: str, typ: str, node: ast.AstNode) -> None:
+        """Register unique name."""
+        if not self.cur_sym_tab.insert(Symbol(name, node), fresh_only=True):
+            original = self.cur_sym_tab.lookup(name)
+            self.error(
+                f"Name used for {typ} '{name}' already declared "
+                f"on line {original.decl.line if original else self.ice()}",
+            )
 
     def enter_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -53,13 +62,14 @@ class SymTabBuildPass(Pass):
         body: CodeBlock,
         sym_tab: Optional[SymbolTable],
         """
+        self.register_unique_name(node.name.name, "test", node)
         self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
 
     def enter_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
 
-        doc: Optional['Token'],
+        doc: Optional[Token],
         body: 'CodeBlock',
         sym_tab: Optional[SymbolTable],
         """
@@ -70,12 +80,12 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         lang: Name,
-        path: 'ModulePath',
+        path: ModulePath,
         alias: Optional[Name],
-        items: Optional['ModuleItems'],
+        items: Optional[ModuleItems],
         is_absorb: bool,
         sym_tab: Optional[SymbolTable],
-        sub_module: Optional['Module'],
+        sub_module: Optional[Module],
         """
         node.sym_tab = self.cur_sym_tab
 

@@ -197,9 +197,9 @@ class Import(AstNode):
     def __init__(
         self,
         lang: Name,
-        path: "ModulePath",
+        path: ModulePath,
         alias: Optional[Name],
-        items: Optional["ModuleItems"],
+        items: Optional[ModuleItems],
         is_absorb: bool,  # For includes
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -226,7 +226,7 @@ class ModulePath(AstNode):
 
     def __init__(
         self,
-        path: list[Token],
+        path: list[Name],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -246,10 +246,10 @@ class ModuleItems(AstNode):
 
     def __init__(
         self,
-        items: list["ModuleItem"],
+        items: list[ModuleItem],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
-        kid: list["ModuleItem"],
+        kid: list[ModuleItem],
         line: int,
         sym_tab: Optional[SymbolTable] = None,
     ) -> None:
@@ -975,10 +975,10 @@ class IterForStmt(AstNode):
 
     def __init__(
         self,
-        iter: "Assignment",
+        iter: Assignment,
         condition: ExprType,
         count_by: ExprType,
-        body: "CodeBlock",
+        body: CodeBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],

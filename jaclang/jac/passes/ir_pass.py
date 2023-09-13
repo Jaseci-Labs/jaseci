@@ -137,7 +137,7 @@ class Pass(Transform):
         self.update_code_loc()
         self.log_warning(f"{msg}")
 
-    def ice(self, msg: str) -> None:
+    def ice(self, msg: str = "Something went horribly wrong!") -> None:
         """Pass Error."""
         if isinstance(self.cur_node, ast.AstNode):
             self.cur_line = self.cur_node.line

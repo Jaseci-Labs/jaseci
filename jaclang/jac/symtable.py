@@ -13,8 +13,8 @@ class Symbol:
     def __init__(
         self,
         name: str,
+        decl: ast.AstNode,
         typ: Optional[type] = None,
-        decl: Optional[ast.AstNode] = None,
         defn: Optional[list[ast.AstNode]] = None,
         uses: Optional[list[ast.AstNode]] = None,
     ) -> None:
