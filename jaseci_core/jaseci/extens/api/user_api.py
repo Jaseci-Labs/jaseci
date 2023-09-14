@@ -144,8 +144,19 @@ class UserApi:
         pass
 
     @Interface.private_api()
-    def user_get(self, name: str, detailed: bool = False):
+    def user_search(
+        self,
+        name: str,
+        detailed: bool = False,
+        create_if_not_exist: bool = False,
+        password: str = "",
+        global_init: str = "",
+        global_init_ctx: dict = {},
+        other_fields: dict = {},
+        send_email: bool = True,
+    ):
         """
-        Return a user
+        Search for user and returns its master jid.
+        Create new one if the user doesn't already exist, optionally.
         """
         pass
