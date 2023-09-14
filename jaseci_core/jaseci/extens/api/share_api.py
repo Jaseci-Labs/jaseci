@@ -30,16 +30,21 @@ class ShareApi:
             caller_id=self.id, item_id=receiver, override=True
         )
 
-        # Grant the necessary permission to the new user
-        self.object_perms_grant(obj, receiver_mast, read_only=read_only)
+        for obj in objs:
+            # Grant the necessary permission to the new user
+            self.object_perms_grant(obj, receiver_mast, read_only=read_only)
 
-        # Have the receiver receiving the object
-        receiver_mast.incoming[str(obj.id)] = [obj, self]
-        receiver_mast.save()
+            # Have the receiver receiving the object
+            receiver_mast.incoming[str(obj.id)] = [obj, self]
+            receiver_mast.save()
 
-        self.outgoing[str(obj.id)] = [obj, receiver]
+            self.outgoing[str(obj.id)] = [obj, receiver]
 
-        return {"object": str(obj), "sharer": str(self), "receiver": str(receiver_mast)}
+        return {
+            "objects": [str(obj) for obj in objs],
+            "sharer": str(self),
+            "receiver": str(receiver_mast),
+        }
 
     @Interface.private_api()
     def retrieve_shared_object(self, obj_id: str, copy: bool = True):
