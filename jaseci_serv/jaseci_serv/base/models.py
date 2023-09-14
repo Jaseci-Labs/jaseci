@@ -146,7 +146,7 @@ class SuperMaster(Master, JsOrcApi, CoreSuper):
 
         return ret
 
-    @Interface.admin_api()
+    @Interface.private_api()
     def user_search(
         self,
         name: str,
@@ -179,6 +179,8 @@ class SuperMaster(Master, JsOrcApi, CoreSuper):
                     other_fields=other_fields,
                     send_email=send_email,
                 )
+            else:
+                return f"User {name} not found."
         except Exception:
             return None
 
