@@ -142,3 +142,10 @@ class UserApi:
         Permanently delete master with given id
         """
         pass
+
+    @Interface.private_api()
+    def user_get(self, name: str, detailed: bool = False):
+        """
+        Return a user
+        """
+        pass

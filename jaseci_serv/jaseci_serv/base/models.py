@@ -9,6 +9,8 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
+
 
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.master import Master as CoreMaster
@@ -143,6 +145,42 @@ class SuperMaster(Master, JsOrcApi, CoreSuper):
         ret = {"total": total, "data": filtered_users}
 
         return ret
+
+    @Interface.admin_api()
+    def user_search(
+        self,
+        name: str,
+        detailed: bool = False,
+        create_if_not_exist: bool = False,
+        password: str = "",
+        global_init: str = "",
+        global_init_ctx: dict = {},
+        other_fields: dict = {},
+        send_email: bool = True,
+    ):
+        """
+        Search for user and returns its master jid.
+        Create new one if the user doesn't already exist
+        """
+        try:
+            return (
+                get_user_model()
+                .objects.get(email=name)
+                .get_master()
+                .master_self(detailed=detailed)
+            )
+        except ObjectDoesNotExist:
+            if create_if_not_exist:
+                return self.user_create(
+                    name=name,
+                    password=password,
+                    global_init=global_init,
+                    global_init_ctx=global_init_ctx,
+                    other_fields=other_fields,
+                    send_email=send_email,
+                )
+        except Exception:
+            return None
 
 
 class UserManager(BaseUserManager):
