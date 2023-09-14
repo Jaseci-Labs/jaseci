@@ -65,11 +65,11 @@ class ShareApi:
         """
         Get the incoming objects
         """
-        return self.incoming.keys()
+        return list(self.incoming.keys())
 
     @Interface.private_api()
     def share_get_outgoings(self):
         """
         Get the list of outgoing objects
         """
-        return self.outgoing.keys()
+        return list(self.outgoing.keys())
