@@ -34,11 +34,14 @@ class ShareApi:
             # Grant the necessary permission to the new user
             self.object_perms_grant(obj, receiver_mast, read_only=read_only)
 
+            obj.save()
             # Have the receiver receiving the object
             receiver_mast.incoming[str(obj.id)] = [obj, self]
-            receiver_mast.save()
 
             self.outgoing[str(obj.id)] = [obj, receiver]
+
+        receiver_mast.save()
+        self.save()
 
         return {
             "objects": [str(obj) for obj in objs],
@@ -54,9 +57,9 @@ class ShareApi:
         try:
             obj, _ = self.incoming.pop(obj_id)
             if copy:
-                return obj.duplicate()
-            else:
-                return obj
+                obj = obj.duplicate()
+            self.save()
+            return obj
         except Exception:
             return None
 
