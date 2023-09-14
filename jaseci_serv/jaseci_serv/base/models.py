@@ -100,6 +100,44 @@ class Master(CoreMaster):
                 }
         return info
 
+    @Interface.private_api()
+    def user_search(
+        self,
+        name: str,
+        detailed: bool = False,
+        create_if_not_exist: bool = False,
+        password: str = "",
+        global_init: str = "",
+        global_init_ctx: dict = {},
+        other_fields: dict = {},
+        send_email: bool = True,
+    ):
+        """
+        Search for user and returns its master jid.
+        Create new one if the user doesn't already exist
+        """
+        try:
+            return (
+                get_user_model()
+                .objects.get(email=name)
+                .get_master()
+                .master_self(detailed=detailed)
+            )
+        except ObjectDoesNotExist:
+            if create_if_not_exist:
+                return self.user_create(
+                    name=name,
+                    password=password,
+                    global_init=global_init,
+                    global_init_ctx=global_init_ctx,
+                    other_fields=other_fields,
+                    send_email=send_email,
+                )
+            else:
+                return f"User {name} not found."
+        except Exception as e:
+            return {"error": str(e)}
+
 
 @JsOrc.context(name="super_master", priority=1)
 class SuperMaster(Master, JsOrcApi, CoreSuper):
@@ -145,44 +183,6 @@ class SuperMaster(Master, JsOrcApi, CoreSuper):
         ret = {"total": total, "data": filtered_users}
 
         return ret
-
-    @Interface.private_api()
-    def user_search(
-        self,
-        name: str,
-        detailed: bool = False,
-        create_if_not_exist: bool = False,
-        password: str = "",
-        global_init: str = "",
-        global_init_ctx: dict = {},
-        other_fields: dict = {},
-        send_email: bool = True,
-    ):
-        """
-        Search for user and returns its master jid.
-        Create new one if the user doesn't already exist
-        """
-        try:
-            return (
-                get_user_model()
-                .objects.get(email=name)
-                .get_master()
-                .master_self(detailed=detailed)
-            )
-        except ObjectDoesNotExist:
-            if create_if_not_exist:
-                return self.user_create(
-                    name=name,
-                    password=password,
-                    global_init=global_init,
-                    global_init_ctx=global_init_ctx,
-                    other_fields=other_fields,
-                    send_email=send_email,
-                )
-            else:
-                return f"User {name} not found."
-        except Exception:
-            return None
 
 
 class UserManager(BaseUserManager):
