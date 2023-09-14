@@ -34,6 +34,19 @@ class SymTabBuildPass(Pass):
         self.cur_sym_tab = SymbolTable()
         node.sym_tab = self.cur_sym_tab
 
+    def exit_module(self, node: ast.Module) -> None:
+        """Sub objects.
+
+        name: str,
+        doc: Token,
+        body: Optional['Elements'],
+        mod_path: str,
+        rel_mod_path: str,
+        is_imported: bool,
+        sym_tab: Optional[SymbolTable],
+        """
+        self.cur_sym_tab = self.cur_sym_tab.parent
+
     def enter_elements(self, node: ast.Elements) -> None:
         """Sub objects.
 
@@ -62,9 +75,20 @@ class SymTabBuildPass(Pass):
         body: CodeBlock,
         sym_tab: Optional[SymbolTable],
         """
-        self.register_unique_name(node.name.name, "test", node)
+        self.register_unique_name(node.name.value, "test", node)
         self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
+
+    def exit_test(self, node: ast.Test) -> None:
+        """Sub objects.
+
+        name: Name,
+        doc: Optional[Token],
+        description: Token,
+        body: CodeBlock,
+        sym_tab: Optional[SymbolTable],
+        """
+        self.cur_sym_tab = self.cur_sym_tab.parent
 
     def enter_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
@@ -127,8 +151,23 @@ class SymTabBuildPass(Pass):
         body: Optional[ArchBlock],
         sym_tab: Optional[SymbolTable],
         """
+        self.register_unique_name(node.name.value, "architype", node)
         self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
+
+    def exit_architype(self, node: ast.Architype) -> None:
+        """Sub objects.
+
+        name: Name,
+        arch_type: Token,
+        doc: Optional[Token],
+        decorators: Optional[Decorators],
+        access: Optional[Token],
+        base_classes: BaseClasses,
+        body: Optional[ArchBlock],
+        sym_tab: Optional[SymbolTable],
+        """
+        self.cur_sym_tab = self.cur_sym_tab.parent
 
     def enter_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
@@ -172,8 +211,26 @@ class SymTabBuildPass(Pass):
         sym_tab: Optional[SymbolTable],
         arch_attached: Optional[ArchBlock],
         """
+        self.register_unique_name(node.py_resolve_name(), "ability", node)
         self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
+
+    def exit_ability(self, node: ast.Ability) -> None:
+        """Sub objects.
+
+        name_ref: Name | SpecialVarRef | ArchRef,
+        is_func: bool,
+        is_async: bool,
+        is_static: bool,
+        doc: Optional[Token],
+        decorators: Optional[Decorators],
+        access: Optional[Token],
+        signature: Optional[FuncSignature | TypeSpec | EventSignature],
+        body: Optional[CodeBlock],
+        sym_tab: Optional[SymbolTable],
+        arch_attached: Optional[ArchBlock],
+        """
+        self.cur_sym_tab = self.cur_sym_tab.parent
 
     def enter_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
@@ -244,6 +301,7 @@ class SymTabBuildPass(Pass):
         body: Optional['EnumBlock'],
         sym_tab: Optional[SymbolTable],
         """
+        self.register_unique_name(node.name.value, "enum", node)
         self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
 

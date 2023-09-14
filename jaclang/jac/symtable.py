@@ -31,7 +31,7 @@ class SymbolTable:
 
     def __init__(self, parent: Optional[SymbolTable] = None) -> None:
         """Initialize."""
-        self.parent = parent
+        self.parent = parent if parent else self
         self.tab: dict[str, Symbol] = {}
 
     def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
