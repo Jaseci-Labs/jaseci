@@ -36,9 +36,9 @@ class ShareApi:
 
             obj.save()
             # Have the receiver receiving the object
-            receiver_mast.incoming[str(obj.id)] = [obj, self]
+            receiver_mast.incoming[str(obj.id)] = str(self)
 
-            self.outgoing[str(obj.id)] = [obj, receiver]
+            self.outgoing[str(obj.id)] = str(receiver)
 
         receiver_mast.save()
         self.save()
@@ -55,7 +55,8 @@ class ShareApi:
         Retrieve a shared object from the incoming list and remove it from the list
         """
         try:
-            obj, _ = self.incoming.pop(obj_id)
+            self.incoming.pop(obj_id)
+            obj = self._h.get_obj(caller_id=self.id, item_id=obj_id)
             if copy:
                 obj = obj.duplicate()
             self.save()
