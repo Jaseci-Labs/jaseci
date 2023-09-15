@@ -9,7 +9,6 @@ from jaseci.utils.json_handler import JaseciJsonDecoder, jsci_dict_normalize
 from jaseci.jsorc.memory import MemoryHook
 from jaseci.jsorc.jsorc import JsOrc
 from jaseci.extens.svc.redis_svc import RedisService
-from jaseci.utils.utils import logger
 
 
 #################################################

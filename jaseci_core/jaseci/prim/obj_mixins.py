@@ -163,18 +163,13 @@ class Sharable:
 
     def give_access(self, m, read_only=True):
         """Give access to a master (user)"""
-        logger.info("=========in give access")
         if not m.is_master():
             logger.error(f"{m} is not master!")
             return False
-        logger.info("=========in give access 2")
-        logger.info(m)
         if read_only and m.jid not in self.j_r_acc_ids:
             self.j_r_acc_ids.add_obj(m)
         elif m.jid not in self.j_rw_acc_ids:
             self.j_rw_acc_ids.add_obj(m)
-        logger.info(self.j_r_acc_ids)
-        logger.info(self.j_rw_acc_ids)
         return True
 
     def remove_access(self, m):

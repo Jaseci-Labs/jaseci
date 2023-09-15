@@ -3,7 +3,6 @@ Object sharing APIs
 """
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.element import Element
-from jaseci.utils.utils import logger
 
 
 class ShareApi:
@@ -33,15 +32,9 @@ class ShareApi:
 
         for obj in objs:
             # Grant the necessary permission to the new user
-            logger.info("=======calling object perms grant")
             self.object_perms_grant(obj, receiver_mast, read_only=read_only)
-            logger.info("=======calling object perms grant")
-
-            logger.info("before_save")
-            logger.info(obj.j_r_acc_ids)
             obj.save()
-            logger.info("after_save")
-            logger.info(obj.j_r_acc_ids)
+
             # Have the receiver receiving the object
             receiver_mast.incoming[str(obj.id)] = str(self)
 
