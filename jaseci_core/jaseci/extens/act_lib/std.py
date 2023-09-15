@@ -229,3 +229,8 @@ def log_activity(
     activity = elastic.generate_from_meta(meta, log, action)
 
     return elastic.doc_activity(activity, query, suffix)
+
+
+@jaseci_action()
+def clear_cache(all: bool = True, meta: dict = {}):
+    meta["h"].clear_cache(all)

@@ -118,16 +118,14 @@ class JsOrcApi:
         """
 
         # will throw exception if not existing
-        svc = JsOrc.svc(name)
+        return JsOrc.svc(name).info()
 
-        return {
-            "enabled": svc.enabled,
-            "automated": svc.automated,
-            "quiet": svc.quiet,
-            "state": svc.state.name,
-            "config": svc.config,
-            "error": str(svc.error) if svc.error else None,
-        }
+    @Interface.admin_api(cli_args=["name"])
+    def service_config_set(self, name: str, config: dict):
+        """
+        Set a service config
+        """
+        return JsOrc.svc_conf_set(name, config, self._h)
 
     @Interface.admin_api(cli_args=["name"])
     def service_refresh(self, name: str):

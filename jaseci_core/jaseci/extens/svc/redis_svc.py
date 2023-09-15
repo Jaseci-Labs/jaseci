@@ -49,9 +49,12 @@ class RedisService(JsOrc.CommonService):
     #                     CLEANER                     #
     ###################################################
 
-    def clear(self):
+    def clear(self, all=True):
         if self.is_running():
-            self.app.flushdb()
+            if all:
+                self.app.flushall()
+            else:
+                self.app.flushdb()
 
     # ---------------- PROXY EVENTS ----------------- #
 
