@@ -3,6 +3,7 @@ Object api as a mixin
 """
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.element import Element
+from jaseci.utils.utils import logger
 
 
 class ObjectApi:
@@ -74,6 +75,7 @@ class ObjectApi:
     @Interface.private_api(cli_args=["obj"])
     def object_perms_grant(self, obj: Element, mast: Element, read_only: bool = False):
         """Grants another user permissions to access a Jaseci object."""
+        logger.info("===========grants========")
         granted = obj.give_access(mast, read_only=read_only)
         ret = {"success": granted}
         if granted:

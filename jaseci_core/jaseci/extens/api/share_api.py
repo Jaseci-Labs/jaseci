@@ -3,6 +3,7 @@ Object sharing APIs
 """
 from jaseci.extens.api.interface import Interface
 from jaseci.prim.element import Element
+from jaseci.utils.utils import logger
 
 
 class ShareApi:
@@ -27,14 +28,20 @@ class ShareApi:
         # Get the master by id
         # use get_obj with override
         receiver_mast = self._h.get_obj(
-            caller_id=self.id, item_id=receiver, override=True
+            caller_id=self.jid, item_id=receiver, override=True
         )
 
         for obj in objs:
             # Grant the necessary permission to the new user
+            logger.info("=======calling object perms grant")
             self.object_perms_grant(obj, receiver_mast, read_only=read_only)
+            logger.info("=======calling object perms grant")
 
+            logger.info("before_save")
+            logger.info(obj.j_r_acc_ids)
             obj.save()
+            logger.info("after_save")
+            logger.info(obj.j_r_acc_ids)
             # Have the receiver receiving the object
             receiver_mast.incoming[str(obj.id)] = str(self)
 
@@ -50,17 +57,13 @@ class ShareApi:
         }
 
     @Interface.private_api()
-    def retrieve_shared_object(self, obj_id: str, copy: bool = True):
+    def share_remove_incoming(self, obj_id: str):
         """
-        Retrieve a shared object from the incoming list and remove it from the list
+        Remove an item from the incoming list
         """
         try:
             self.incoming.pop(obj_id)
-            obj = self._h.get_obj(caller_id=self.id, item_id=obj_id)
-            if copy:
-                obj = obj.duplicate()
-            self.save()
-            return obj
+            return True
         except Exception:
             return None
 

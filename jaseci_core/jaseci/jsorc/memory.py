@@ -119,7 +119,6 @@ class MemoryHook:
         """
         if item_id in self.mem:
             return self.mem[item_id]
-
         return None
 
     def has_obj_in_store(self, item_id):
