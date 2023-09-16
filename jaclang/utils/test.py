@@ -65,6 +65,17 @@ class TestCaseMicroSuite(ABC, TestCase):
                     cls, method_name, lambda self, f=file_path: self.micro_suite_test(f)
                 )
 
+        directory = os.path.dirname(__file__) + "/../../examples/manual_code"
+        for filename in os.listdir(directory):
+            if os.path.isfile(os.path.join(directory, filename)) and filename.endswith(
+                ".jac"
+            ):
+                method_name = f"test_micro_{filename.replace('.jac', '')}"
+                file_path = os.path.join(directory, filename)
+                setattr(
+                    cls, method_name, lambda self, f=file_path: self.micro_suite_test(f)
+                )
+
         directory = os.path.dirname(__file__) + "/../../examples/guess_game"
         for filename in os.listdir(directory):
             if os.path.isfile(os.path.join(directory, filename)) and filename.endswith(

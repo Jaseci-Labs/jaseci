@@ -11,8 +11,8 @@ Jac's builds upon Python much like Typescript or Elm builds upon Javascript. How
 
 Jac doesn't have a big backing company (yet), nor a team of paid coders in a company, nor vast resources to fund the project as many successful languages have had. What is guaranteed is the fact that there's a deep reservoir of determination in Jac's creator, and a couple brilliant coders around Jac who are committed to the vision and excited to see what the future holds.
 
-We're very open and welcoming of anyone who might be open to catching the Jac bug. If you're interested in being part of this project and learn more, please feel free to reach out. We'd love to hear from you. We have a journey ahead of us, but with dedication and collaboration, we're confident we can make Jac a beloved part of every coder's toolkit.
+We're very open and welcoming of anyone who might be open to catching the Jac bug. If you're interested in being part of this project and learn more, please feel free to reach out. We'd love to hear from you. We have quite a journey ahead of us, but with dedication and collaboration, we're confident we can make Jac a beloved part of every coder's toolkit.
 
 ## About Jac's Creator
 
-Hello, I'm Jason Mars, the lead creator and BDFL of Jac and it's data spatial programming model. I'm a computer enthusiast, a comp. sci. prof, a tech entrepreneur, an avid coder, a gamer, etc. I aim to bring the insights I've gain through these roles to the creation of Jac to make it useful, practical, and beautiful, oh and FUN!!
+Hello, I'm Jason Mars, the creator and BDFL (for now at least) of Jac and it's data spatial programming model. I'm a computer enthusiast, a comp. sci. prof, a tech entrepreneur, an avid coder, a gamer, etc. I aim to bring the insights I've gain through these roles to the creation of Jac to make it useful, practical, and beautiful, oh and FUN!!

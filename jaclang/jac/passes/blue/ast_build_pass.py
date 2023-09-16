@@ -141,20 +141,37 @@ class AstBuildPass(Pass):
     def exit_mod_code(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
+        mod_code -> doc_tag KW_WITH KW_ENTRY sub_name code_block
         mod_code -> doc_tag KW_WITH KW_ENTRY code_block
         """
-        node.kid = [node.kid[0], node.kid[-1]]
-        replace_node(
-            node,
-            ast.ModuleCode(
-                doc=node.kid[0],
-                body=node.kid[1],
-                parent=node.parent,
-                mod_link=self.mod_link,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
+        if len(node.kid) == 5:
+            node.kid = [node.kid[0], node.kid[-2], node.kid[-1]]
+            replace_node(
+                node,
+                ast.ModuleCode(
+                    doc=node.kid[0],
+                    name=node.kid[1],
+                    body=node.kid[2],
+                    parent=node.parent,
+                    mod_link=self.mod_link,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
+        else:
+            node.kid = [node.kid[0], node.kid[-1]]
+            replace_node(
+                node,
+                ast.ModuleCode(
+                    doc=node.kid[0],
+                    name=None,
+                    body=node.kid[1],
+                    parent=node.parent,
+                    mod_link=self.mod_link,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
 
     def exit_doc_tag(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -530,6 +547,7 @@ class AstBuildPass(Pass):
                 doc=node.kid[0],
                 access=node.kid[2],
                 is_static=node.kid[1],
+                is_abstract=False,
                 name_ref=node.kid[3],
                 body=node.kid[-1] if isinstance(node.kid[-1], ast.CodeBlock) else None,
                 signature=node.kid[-2],
@@ -560,6 +578,7 @@ class AstBuildPass(Pass):
                 doc=node.kid[0],
                 decorators=node.kid[1],
                 is_static=node.kid[2],
+                is_abstract=False,
                 access=node.kid[3],
                 name_ref=node.kid[4],
                 body=node.kid[-1] if isinstance(node.kid[-1], ast.CodeBlock) else None,
@@ -597,6 +616,65 @@ class AstBuildPass(Pass):
                 line=node.line,
             ),
         )
+
+    def exit_abstract_ability(self, node: ast.AstNode) -> None:
+        """Grammar rule.
+
+        abstract_ability -> doc_tag decorators static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI
+        abstract_ability -> doc_tag decorators static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI
+        abstract_ability -> doc_tag static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI
+        abstract_ability -> doc_tag static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI
+        """
+        if isinstance(node.kid[1], ast.Decorators):
+            del node.kid[3]
+            replace_node(
+                node,
+                ast.Ability(
+                    doc=node.kid[0],
+                    decorators=node.kid[1],
+                    is_static=node.kid[2],
+                    is_abstract=True,
+                    access=node.kid[3],
+                    name_ref=node.kid[4],
+                    body=node.kid[-1]
+                    if isinstance(node.kid[-1], ast.CodeBlock)
+                    else None,
+                    signature=node.kid[-2],
+                    is_func=isinstance(node.kid[-2], ast.FuncSignature),
+                    is_async=False,
+                    parent=node.parent,
+                    mod_link=self.mod_link,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
+            if isinstance(node.kid[-1], ast.Token):
+                del node.kid[-1]
+        else:
+            del node.kid[2]
+            replace_node(
+                node,
+                ast.Ability(
+                    doc=node.kid[0],
+                    access=node.kid[2],
+                    is_static=node.kid[1],
+                    is_abstract=False,
+                    name_ref=node.kid[3],
+                    body=node.kid[-1]
+                    if isinstance(node.kid[-1], ast.CodeBlock)
+                    else None,
+                    signature=node.kid[-2],
+                    is_func=isinstance(node.kid[-2], ast.FuncSignature),
+                    is_async=False,
+                    decorators=None,
+                    parent=node.parent,
+                    mod_link=self.mod_link,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
+            if isinstance(node.kid[-1], ast.Token):
+                del node.kid[-1]
 
     def exit_event_clause(self, node: ast.AstNode) -> None:
         """Grammar rule.

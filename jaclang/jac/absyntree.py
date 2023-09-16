@@ -175,8 +175,9 @@ class ModuleCode(AstNode):
 
     def __init__(
         self,
-        doc: Optional["Token"],
-        body: "CodeBlock",
+        doc: Optional[Token],
+        name: Optional[Name],
+        body: CodeBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -185,6 +186,7 @@ class ModuleCode(AstNode):
     ) -> None:
         """Initialize test node."""
         self.doc = doc
+        self.name = name
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
@@ -390,6 +392,7 @@ class Ability(OOPAccessNode):
         is_func: bool,
         is_async: bool,
         is_static: bool,
+        is_abstract: bool,
         doc: Optional[Token],
         decorators: Optional[Decorators],
         access: Optional[Token],
@@ -407,6 +410,7 @@ class Ability(OOPAccessNode):
         self.is_func = is_func
         self.is_async = is_async
         self.is_static = is_static
+        self.is_abstract = is_abstract
         self.doc = doc
         self.decorators = decorators
 

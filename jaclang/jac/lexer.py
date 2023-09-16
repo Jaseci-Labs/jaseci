@@ -44,6 +44,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "TYP_ANY",
         "TYP_TYPE",
         "KW_FREEZE",
+        "KW_ABSTRACT",
         "KW_OBJECT",
         "KW_ENUM",
         "KW_NODE",
@@ -211,7 +212,8 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     NAME["bytes"] = "TYP_BYTES"  # type: ignore
     NAME["any"] = "TYP_ANY"  # type: ignore
     NAME["type"] = "TYP_TYPE"  # type: ignore
-    NAME["freeze"] = "KW_FREEZE"  # type: ignore
+    NAME["froz"] = "KW_FREEZE"  # type: ignore
+    NAME["abstract"] = "KW_ABSTRACT"  # type: ignore
     NAME["object"] = "KW_OBJECT"  # type: ignore
     NAME["enum"] = "KW_ENUM"  # type: ignore
     NAME["node"] = "KW_NODE"  # type: ignore

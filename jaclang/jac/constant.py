@@ -76,6 +76,7 @@ class Tokens(str, Enum):
     TYP_ANY = "TYP_ANY"
     TYP_TYPE = "TYP_TYPE"
     KW_FREEZE = "KW_FREEZE"
+    KW_ABSTRACT = "KW_ABSTRACT"
     KW_OBJECT = "KW_OBJECT"
     KW_ENUM = "KW_ENUM"
     KW_NODE = "KW_NODE"
