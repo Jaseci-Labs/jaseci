@@ -193,12 +193,20 @@ class BluePygenPass(Pass):
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
 
-        doc: Optional["Token"],
-        body: "CodeBlock",
+        doc: Optional[Token],
+        name: Optional[Name],
+        body: CodeBlock,
+
         """
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        self.emit(node, node.body.meta["py_code"])
+        if node.name:
+            self.emit_ln(node, f"if __name__ == '{node.name.meta['py_code']}':")
+            self.indent_level += 1
+            self.emit(node, node.body.meta["py_code"])
+            self.indent_level -= 1
+        else:
+            self.emit(node, node.body.meta["py_code"])
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.

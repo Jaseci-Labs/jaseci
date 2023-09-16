@@ -36,7 +36,7 @@ object Shape {
 }
 
 
-object Circle(Shape) {
+object Circle:Shape {
     """Circle class inherits from Shape."""
 
     can <init>(radius: float) {
@@ -54,24 +54,25 @@ with entry {c = Circle(RADIUS);}  # Global also works here
 
 with entry:__main__ { # TODO: add name == option abstract feature
     # To run the program functionality
-    print(f"Area of a circle with radius 5: {calculate_area(RADIUS)}")
-    print(f"Area of a {c.shape_type.value} with radius 5: {c.area()}")
-
+    print(f"Area of a circle with radius 5: {calculate_area(RADIUS)}");
+    print(f"Area of a {c.shape_type.value} with radius 5: {c.area()}");
 }
 
-# TODO: Make tests works
-test calculate_area {
+test calculate_area
+"Tests for the calculate_area function." {
     expected_area = 78.53981633974483;
     assertAlmostEqual(calculate_area(RADIUS), expected_area);
 }
 
-test circle_area {
+test circle_area
+"Tests for the area method of the Circle class." {
     c = Circle(RADIUS);
     expected_area = 78.53981633974483;
     assertAlmostEqual(c.area(), expected_area);
 }
 
-test circle_type {
+test circle_type
+"Tests for the shape_type attribute of the Circle class." {
     c = Circle(RADIUS);
     assertEqual(c.shape_type, ShapeType.CIRCLE);
 }

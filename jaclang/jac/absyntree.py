@@ -175,8 +175,9 @@ class ModuleCode(AstNode):
 
     def __init__(
         self,
-        doc: Optional["Token"],
-        body: "CodeBlock",
+        doc: Optional[Token],
+        name: Optional[Name],
+        body: CodeBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -185,6 +186,7 @@ class ModuleCode(AstNode):
     ) -> None:
         """Initialize test node."""
         self.doc = doc
+        self.name = name
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab

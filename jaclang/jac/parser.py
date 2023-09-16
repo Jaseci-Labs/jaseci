@@ -98,7 +98,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Test rule."""
         return p
 
-    @_("doc_tag KW_WITH KW_ENTRY code_block")
+    @_(
+        "doc_tag KW_WITH KW_ENTRY code_block",
+        "doc_tag KW_WITH KW_ENTRY sub_name code_block",
+    )
     def mod_code(self, p: YaccProduction) -> YaccProduction:
         """Module-level free code rule."""
         return p
