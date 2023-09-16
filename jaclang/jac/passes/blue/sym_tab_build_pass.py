@@ -283,7 +283,20 @@ class SymTabBuildPass(Pass):
             single=True,
         ):
             self.already_declared_err(ability_name, "ability def", collide)
+        self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
+
+    def exit_ability_def(self, node: ast.AbilityDef) -> None:
+        """Sub objects.
+
+        doc: Optional[Token],
+        target: Optional[DottedNameList],
+        ability: ArchRef,
+        signature: FuncSignature | EventSignature,
+        body: CodeBlock,
+        sym_tab: Optional[SymbolTable],
+        """
+        self.cur_sym_tab = self.cur_sym_tab.parent
 
     def enter_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
