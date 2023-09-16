@@ -1,10 +1,19 @@
 """Jac Symbol Table."""
 from __future__ import annotations
 
+from enum import Enum
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import jaclang.jac.absyntree as ast
+
+
+class SymbolHitType(Enum):
+    """Symbol types."""
+
+    DECL = "decl"
+    DEFN = "defn"
+    USE = "use"
 
 
 class Symbol:
@@ -13,8 +22,8 @@ class Symbol:
     def __init__(
         self,
         name: str,
-        decl: ast.AstNode,
         typ: Optional[type] = None,
+        decl: Optional[ast.AstNode] = None,
         defn: Optional[list[ast.AstNode]] = None,
         uses: Optional[list[ast.AstNode]] = None,
     ) -> None:
@@ -42,12 +51,44 @@ class SymbolTable:
             return self.parent.lookup(name, deep)
         return None
 
-    def insert(self, sym: Symbol, fresh_only: bool = False) -> bool:
-        """Set a variable in the symbol table."""
-        if fresh_only and sym.name in self.tab:
-            return False
-        self.tab[sym.name] = sym
-        return True
+    def insert(
+        self,
+        name: str,
+        sym_hit: SymbolHitType,
+        node: ast.AstNode,
+        single: bool = False,
+    ) -> Optional[ast.AstNode]:
+        """Set a variable in the symbol table.
+
+        Returns original symbol single check fails.
+        """
+        if single:
+            if (
+                sym_hit == SymbolHitType.DECL
+                and name in self.tab
+                and self.tab[name].decl
+            ):
+                return self.tab[name].decl
+            elif (
+                sym_hit == SymbolHitType.DEFN
+                and name in self.tab
+                and len(self.tab[name].defn)
+            ):
+                return self.tab[name].defn[-1]
+            elif (
+                sym_hit == SymbolHitType.USE
+                and name in self.tab
+                and len(self.tab[name].uses)
+            ):
+                return self.tab[name].uses[-1]
+        if name not in self.tab:
+            self.tab[name] = Symbol(name=name)
+        if sym_hit == SymbolHitType.DECL:
+            self.tab[name].decl = node
+        elif sym_hit == SymbolHitType.DEFN:
+            self.tab[name].defn.append(node)
+        elif sym_hit == SymbolHitType.USE:
+            self.tab[name].uses.append(node)
 
     def push_scope(self) -> SymbolTable:
         """Push a new scope onto the symbol table."""

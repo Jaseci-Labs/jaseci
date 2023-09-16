@@ -1,7 +1,7 @@
 """Ast build pass for Jaseci Ast."""
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
-from jaclang.jac.symtable import Symbol, SymbolTable
+from jaclang.jac.symtable import SymbolHitType, SymbolTable
 
 
 class SymTabBuildPass(Pass):
@@ -11,14 +11,20 @@ class SymTabBuildPass(Pass):
         """Before pass."""
         self.cur_sym_tab = SymbolTable()
 
-    def register_unique_name(self, name: str, typ: str, node: ast.AstNode) -> None:
-        """Register unique name."""
-        if not self.cur_sym_tab.insert(Symbol(name, node), fresh_only=True):
-            original = self.cur_sym_tab.lookup(name)
-            self.error(
-                f"Name used for {typ} '{name}' already declared "
-                f"on line {original.decl.line if original else self.ice()}",
-            )
+    def already_declared_err(self, name: str, typ: str, original: ast.AstNode) -> None:
+        """Already declared error."""
+        self.error(
+            f"Name used for {typ} '{name}' already declared on line {original.line}"
+        )
+
+    def resolve_ability_symtab_name(self, node: ast.Ability) -> str:
+        """Resolve ability name in symbol table."""
+        return (
+            f"{node.arch_attached.parent.name.value}.{node.py_resolve_name()}"
+            if node.arch_attached
+            and isinstance(node.arch_attached.parent, ast.Architype)
+            else node.py_resolve_name()
+        )
 
     def enter_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -75,7 +81,13 @@ class SymTabBuildPass(Pass):
         body: CodeBlock,
         sym_tab: Optional[SymbolTable],
         """
-        self.register_unique_name(node.name.value, "test", node)
+        if collide := self.cur_sym_tab.insert(
+            name=node.name.value,
+            sym_hit=SymbolHitType.DECL,
+            node=node,
+            single=True,
+        ):
+            self.already_declared_err(node.name.value, "test", collide)
         self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
 
@@ -151,7 +163,13 @@ class SymTabBuildPass(Pass):
         body: Optional[ArchBlock],
         sym_tab: Optional[SymbolTable],
         """
-        self.register_unique_name(node.name.value, "architype", node)
+        if collide := self.cur_sym_tab.insert(
+            name=node.name.value,
+            sym_hit=SymbolHitType.DECL,
+            node=node,
+            single=True,
+        ):
+            self.already_declared_err(node.name.value, "architype", collide)
         self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
 
@@ -211,7 +229,14 @@ class SymTabBuildPass(Pass):
         sym_tab: Optional[SymbolTable],
         arch_attached: Optional[ArchBlock],
         """
-        self.register_unique_name(node.py_resolve_name(), "ability", node)
+        ability_name = self.resolve_ability_symtab_name(node)
+        if collide := self.cur_sym_tab.insert(
+            name=ability_name,
+            sym_hit=SymbolHitType.DECL,
+            node=node,
+            single=True,
+        ):
+            self.already_declared_err(ability_name, "ability", collide)
         self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
 
@@ -242,6 +267,22 @@ class SymTabBuildPass(Pass):
         body: CodeBlock,
         sym_tab: Optional[SymbolTable],
         """
+        ability_name = node.ability.py_resolve_name()
+        if node.target:
+            owner = node.target.names[-1]
+            if not isinstance(owner, ast.ArchRef):
+                self.error("Expected reference to Architype!")
+                owner = ""
+            else:
+                owner = owner.py_resolve_name()
+            ability_name = f"{owner}.{ability_name}"
+        if collide := self.cur_sym_tab.insert(
+            name=ability_name,
+            sym_hit=SymbolHitType.DEFN,
+            node=node,
+            single=True,
+        ):
+            self.already_declared_err(ability_name, "ability def", collide)
         node.sym_tab = self.cur_sym_tab
 
     def enter_event_signature(self, node: ast.EventSignature) -> None:
@@ -301,7 +342,13 @@ class SymTabBuildPass(Pass):
         body: Optional['EnumBlock'],
         sym_tab: Optional[SymbolTable],
         """
-        self.register_unique_name(node.name.value, "enum", node)
+        if collide := self.cur_sym_tab.insert(
+            name=node.name.value,
+            sym_hit=SymbolHitType.DECL,
+            node=node,
+            single=True,
+        ):
+            self.already_declared_err(node.name.value, "enum", collide)
         self.cur_sym_tab = self.cur_sym_tab.push_scope()
         node.sym_tab = self.cur_sym_tab
 
