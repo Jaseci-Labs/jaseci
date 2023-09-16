@@ -93,7 +93,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Permission tag rule."""
         return p
 
-    @_("doc_tag KW_TEST NAME multistring code_block")
+    @_(
+        "doc_tag KW_TEST NAME code_block",
+        "doc_tag KW_TEST code_block",
+    )
     def test(self, p: YaccProduction) -> YaccProduction:
         """Test rule."""
         return p

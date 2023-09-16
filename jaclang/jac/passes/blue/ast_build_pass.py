@@ -121,22 +121,36 @@ class AstBuildPass(Pass):
     def exit_test(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        test -> doc_tag KW_TEST NAME multistring code_block
+        test -> doc_tag KW_TEST code_block
+        test -> doc_tag KW_TEST NAME code_block
         """
         del node.kid[1]
-        replace_node(
-            node,
-            ast.Test(
-                doc=node.kid[0],
-                name=node.kid[1],
-                description=node.kid[2],
-                body=node.kid[3],
-                parent=node.parent,
-                mod_link=self.mod_link,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
+        if len(node.kid) == 3:
+            replace_node(
+                node,
+                ast.Test(
+                    doc=node.kid[0],
+                    name=node.kid[1],
+                    body=node.kid[2],
+                    parent=node.parent,
+                    mod_link=self.mod_link,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
+        else:
+            replace_node(
+                node,
+                ast.Test(
+                    doc=node.kid[0],
+                    name=None,
+                    body=node.kid[1],
+                    parent=node.parent,
+                    mod_link=self.mod_link,
+                    kid=node.kid,
+                    line=node.line,
+                ),
+            )
 
     def exit_mod_code(self, node: ast.AstNode) -> None:
         """Grammar rule.

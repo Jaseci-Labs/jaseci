@@ -150,9 +150,8 @@ class Test(AstNode):
 
     def __init__(
         self,
-        name: Name,
+        name: Optional[Name],
         doc: Optional[Token],
-        description: Token,
         body: CodeBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -163,7 +162,6 @@ class Test(AstNode):
         """Initialize test node."""
         self.doc = doc
         self.name = name
-        self.description = description
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab

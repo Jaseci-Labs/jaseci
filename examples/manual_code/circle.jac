@@ -5,7 +5,7 @@ This module demonstrates a simple circle class and a function to calculate the a
 import:py math;
 
 # Module-level global
-global RADIUS = 5;
+global RAD = 5;
 
 """Function to calculate the area of a circle."""
 can calculate_area(radius: float) -> float {
@@ -50,29 +50,17 @@ object Circle:Shape {
     }
 }
 
-with entry {c = Circle(RADIUS);}  # Global also works here
+with entry {c = Circle(RAD);}  # Global also works here
 
 with entry:__main__ { # TODO: add name == option abstract feature
     # To run the program functionality
-    print(f"Area of a circle with radius 5: {calculate_area(RADIUS)}");
+    print(f"Area of a circle with radius 5: {calculate_area(RAD)}");
     print(f"Area of a {c.shape_type.value} with radius 5: {c.area()}");
 }
 
-test calculate_area
-"Tests for the calculate_area function." {
-    expected_area = 78.53981633974483;
-    assertAlmostEqual(calculate_area(RADIUS), expected_area);
-}
 
-test circle_area
-"Tests for the area method of the Circle class." {
-    c = Circle(RADIUS);
-    expected_area = 78.53981633974483;
-    assertAlmostEqual(c.area(), expected_area);
-}
+global expected_area = 78.53981633974483;
 
-test circle_type
-"Tests for the shape_type attribute of the Circle class." {
-    c = Circle(RADIUS);
-    assertEqual(c.shape_type, ShapeType.CIRCLE);
-}
+test calculate_area { check.AlmostEqual(calculate_area(RAD), expected_area); }
+test circle_area { c = Circle(RAD); check.AlmostEqual(c.area(), expected_area); }
+test circle_type { c = Circle(RAD); check.Equal(c.shape_type, ShapeType.CIRCLE); }

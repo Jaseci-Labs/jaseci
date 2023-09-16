@@ -45,7 +45,7 @@ with entry {
     # module level freestyle code
 }
 
-test mytest
-"A test of my functionality" {
+"""A test of my functionality"""
+test mytest {
    # test code here
 }

@@ -7,7 +7,7 @@ import math
 import unittest
 
 # Module-level global
-RADIUS = 5
+RAD = 5
 
 
 def calculate_area(radius: float) -> float:
@@ -51,16 +51,12 @@ class Circle(Shape):
         return math.pi * self.radius * self.radius
 
 
-c = Circle(RADIUS)
+c = Circle(RAD)
 
 if __name__ == "__main__":
     # To run the program functionality
-    print(
-        f"Area of a circle with radius {RADIUS} using function: {calculate_area(RADIUS)}"
-    )
-    print(
-        f"Area of a {c.shape_type.value} with radius {RADIUS} using class: {c.area()}"
-    )
+    print(f"Area of a circle with radius {RAD} using function: {calculate_area(RAD)}")
+    print(f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}")
 
     # Uncomment the next line if you want to run the unit tests
     # run_tests()
@@ -70,13 +66,13 @@ if __name__ == "__main__":
 class TestShapesFunctions(unittest.TestCase):
     def test_calculate_area(self):
         expected_area = 78.53981633974483
-        self.assertAlmostEqual(calculate_area(RADIUS), expected_area)
+        self.assertAlmostEqual(calculate_area(RAD), expected_area)
 
     def test_circle_area(self):
-        c = Circle(RADIUS)
+        c = Circle(RAD)
         expected_area = 78.53981633974483
         self.assertAlmostEqual(c.area(), expected_area)
 
     def test_circle_type(self):
-        c = Circle(RADIUS)
+        c = Circle(RAD)
         self.assertEqual(c.shape_type, ShapeType.CIRCLE)

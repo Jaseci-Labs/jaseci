@@ -8,6 +8,8 @@ from jaclang.jac.passes import Pass
 class BluePygenPass(Pass):
     """Jac blue transpilation to python pass."""
 
+    TEST_COUNT = 0
+
     def before_pass(self) -> None:
         """Initialize pass."""
         self.indent_size = 4
@@ -179,16 +181,36 @@ class BluePygenPass(Pass):
             self.emit_ln(node, node.doc.value)
         self.emit(node, node.assignments.meta["py_code"])
 
-    # NOTE: Incomplete for Jac Purple and Red
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
 
-        name: Token,
-        doc: Optional["Token"],
-        description: Token,
-        body: "CodeBlock",
+        name: Optional[Name],
+        doc: Optional[Token],
+        body: CodeBlock,
         """
-        self.warning("Test feature not supported in bootstrap Jac.")
+        if node.name:
+            test_name = node.name.value
+        else:
+            test_name = f"_jac_t{self.TEST_COUNT}"
+            self.TEST_COUNT += 1
+        test_code = "import unittest as __jac_unittest__\n"
+        test_code += "__jac_tc__ = __jac_unittest__.TestCase()\n"
+        test_code += "__jac_suite__ = __jac_unittest__.TestSuite()\n"
+        test_code += "class __jac_check:\n"
+        test_code += "    def __getattr__(self, name):\n"
+        test_code += "        return getattr(__jac_tc__, 'assert'+name)"
+        self.emit_ln_unique(self.preamble, test_code)
+        self.emit_ln(node, f"def test_{test_name}():")
+        self.indent_level += 1
+        if node.doc:
+            self.emit_ln(node, node.doc.value)
+        self.emit_ln(node, "check = __jac_check()")
+        self.emit_ln(node, node.body.meta["py_code"])
+        self.indent_level -= 1
+        self.emit_ln(
+            node,
+            f"__jac_suite__.addTest(__jac_unittest__.FunctionTestCase(test_{test_name}))",
+        )
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
