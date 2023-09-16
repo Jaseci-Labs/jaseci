@@ -658,7 +658,7 @@ class AstBuildPass(Pass):
                     doc=node.kid[0],
                     access=node.kid[2],
                     is_static=node.kid[1],
-                    is_abstract=False,
+                    is_abstract=True,
                     name_ref=node.kid[3],
                     body=node.kid[-1]
                     if isinstance(node.kid[-1], ast.CodeBlock)

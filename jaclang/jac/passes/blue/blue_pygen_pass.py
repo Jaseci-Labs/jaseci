@@ -330,15 +330,16 @@ class BluePygenPass(Pass):
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
-        name: Name,
+        name_ref: Name | SpecialVarRef | ArchRef,
         is_func: bool,
         is_async: bool,
         is_static: bool,
+        is_abstract: bool,
         doc: Optional[Token],
-        decorators: Optional["Decorators"],
+        decorators: Optional[Decorators],
         access: Optional[Token],
-        signature: Optional["FuncSignature | TypeSpec | EventSignature"],
-        body: Optional["CodeBlock"],
+        signature: Optional[FuncSignature | TypeSpec | EventSignature],
+        body: Optional[CodeBlock],
         arch_attached: Optional["ArchBlock"] = None,
         """
         ability_name = node.py_resolve_name()
@@ -372,9 +373,7 @@ class BluePygenPass(Pass):
             self.indent_level -= 1
             self.emit_jac_error_handler(node)
         elif node.is_abstract:
-            self.indent_level += 1
             self.emit_ln(node, "pass")
-            self.indent_level -= 1
         else:
             self.decl_def_missing(ability_name)
         self.indent_level -= 1
