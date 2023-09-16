@@ -19,8 +19,8 @@ Below we have the demonstration of a class to calculate the area of a circle.
 
 """Enum for shape types"""
 enum ShapeType {
-    CIRCLE = "Circle";
-    UNKNOWN = "Unknown";
+    CIRCLE = "Circle",
+    UNKNOWN = "Unknown"
 }
 
 """Base class for a shape."""
@@ -32,7 +32,7 @@ object Shape {
     }
 
     """Abstract method to calculate the area of a shape."""
-    can area:abs -> float {} #TODO: add abstract feature
+    can area -> float abstract;
 }
 
 

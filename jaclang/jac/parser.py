@@ -30,7 +30,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
             self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
-    # debugfile = "parser.out"
+    debugfile = "parser.out"
 
     # All mighty start rule
     # ---------------------
@@ -312,6 +312,16 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
+        "doc_tag static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI",
+        "doc_tag static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI",
+        "doc_tag decorators static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI",
+        "doc_tag decorators static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI",
+    )
+    def abstract_ability(self, p: YaccProduction) -> YaccProduction:
+        """Abstract ability rule."""
+        return p
+
+    @_(
         "KW_WITH KW_ENTRY return_type_tag",
         "KW_WITH KW_EXIT return_type_tag",
         "KW_WITH type_spec KW_ENTRY return_type_tag",
@@ -424,6 +434,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "has_stmt",
         "ability",
+        "abstract_ability",
     )
     def member_stmt(self, p: YaccProduction) -> YaccProduction:
         """Attribute statement rule."""

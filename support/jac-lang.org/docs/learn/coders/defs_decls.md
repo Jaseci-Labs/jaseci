@@ -52,11 +52,14 @@ First lets look at the declarations
 ```
 
 ### Definitions in Separate File
+**jaclang/jac/passes/purple/impl/purple_pygen_pass_impl.jac**
 ```jac
 --8<-- "jaclang/jac/passes/purple/impl/purple_pygen_pass_impl.jac"
 ```
 
 ### Comparison with Python
+
+Now lets take a look at a similar pass written in pure python. This is pep8 compliant python following a large number of recommended conventions. Experience its readability in seeing the interface of the class. (point: reading the interface and implementation together is not nice on the eyes.)
 ```python
 --8<-- "jaclang/jac/passes/blue/decl_def_match_pass.py"
 ```
