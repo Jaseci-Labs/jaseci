@@ -1,6 +1,7 @@
 """Implementations for the jac command line interface."""
 import:py os;
 import:py shutil;
+import:py unittest;
 
 """Load a .jac file and return the entrypoint function."""
 :a:run
@@ -24,6 +25,20 @@ import:py shutil;
         mod=mod[:-4];
         mod = __jac_import__(target=mod, base_path=base);
         :> ((mod, entrypoint) :> getattr );
+    } else {
+        "Not a .jac file." :> print;
+    }
+}
+
+"""Load a .jac file and return the entrypoint function."""
+:a:<>test
+(filename: str) {
+    if filename.endswith(".jac"){
+        [base, mod] = os.path.split(filename);
+        base = './' if not base else base;
+        mod=mod[:-4];
+        mod = __jac_import__(target=mod, base_path=base);
+        unittest.TextTestRunner().run(mod.__jac_suite__);
     } else {
         "Not a .jac file." :> print;
     }

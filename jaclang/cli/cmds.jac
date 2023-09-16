@@ -14,6 +14,9 @@ can run(filename: str);
 can enter(filename: str, entrypoint: str, args: list);
 
 @cmd_reg.register
+can <>test(filename: str);
+
+@cmd_reg.register
 can ast_tool(tool: str);
 
 @cmd_reg.register
