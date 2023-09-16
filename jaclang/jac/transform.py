@@ -24,7 +24,7 @@ class Alert:
 
     def __str__(self) -> str:
         """Return string representation of alert."""
-        return f"{self.mod}: Line {self.line}, {self.msg}"
+        return f"{self.mod}, line {self.line}: {self.msg}"
 
 
 class TransformError(Exception):

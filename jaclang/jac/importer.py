@@ -17,6 +17,7 @@ def import_jac_module(
     target: str,
     base_path: Optional[str] = None,
     cachable: bool = True,
+    override_name: Optional[str] = None,
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     target = path.join(*(target.split("."))) + ".jac"
@@ -54,7 +55,7 @@ def import_jac_module(
 
     module = types.ModuleType(module_name)
     module.__file__ = full_target
-    module.__name__ = module_name
+    module.__name__ = override_name if override_name else module_name
     module.__dict__["_jac_pycodestring_"] = code_string
 
     if (
@@ -65,7 +66,12 @@ def import_jac_module(
         with open(py_file_path + "c", "rb") as f:
             codeobj = marshal.load(f)
     else:
-        codeobj = compile(code_string, f"_jac_py_gen ({module.__file__})", "exec")
+        try:
+            codeobj = compile(code_string, f"_jac_py_gen ({module.__file__})", "exec")
+        except Exception as e:
+            tb = traceback.extract_tb(e.__traceback__)
+            err = handle_jac_error(code_string, e, tb)
+            raise type(e)(str(e) + "\n" + err)
         with open(py_file_path + "c", "wb") as f:
             marshal.dump(codeobj, f)
 
@@ -118,14 +124,24 @@ def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary)
 
 
 def jac_blue_import(
-    target: str, base_path: Optional[str] = None, cachable: bool = True
+    target: str,
+    base_path: Optional[str] = None,
+    cachable: bool = True,
+    override_name: Optional[str] = None,
 ) -> Optional[types.ModuleType]:
     """Jac Blue Imports."""
-    return import_jac_module(transpile_jac_blue, target, base_path, cachable)
+    return import_jac_module(
+        transpile_jac_blue, target, base_path, cachable, override_name
+    )
 
 
 def jac_purple_import(
-    target: str, base_path: Optional[str] = None, cachable: bool = True
+    target: str,
+    base_path: Optional[str] = None,
+    cachable: bool = True,
+    override_name: Optional[str] = None,
 ) -> Optional[types.ModuleType]:
     """Jac Purple Imports."""
-    return import_jac_module(transpile_jac_purple, target, base_path, cachable)
+    return import_jac_module(
+        transpile_jac_purple, target, base_path, cachable, override_name
+    )

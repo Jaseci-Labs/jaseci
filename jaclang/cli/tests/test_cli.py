@@ -19,7 +19,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cmds.load(self.fixture_abs_path("hello.jac"))  # type: ignore
+        cmds.run(self.fixture_abs_path("hello.jac"))  # type: ignore
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -35,7 +35,7 @@ class JacCliTests(TestCase):
 
         # Execute the function
         try:
-            cmds.run(self.fixture_abs_path("err.jac"), entrypoint="speak", args=[])  # type: ignore
+            cmds.enter(self.fixture_abs_path("err.jac"), entrypoint="speak", args=[])  # type: ignore
         except Exception as e:
             print(f"Error: {e}")
 
@@ -55,7 +55,7 @@ class JacCliTests(TestCase):
 
         # Execute the function
         try:
-            cmds.run(self.fixture_abs_path("err2.jac"), entrypoint="speak", args=[])  # type: ignore
+            cmds.enter(self.fixture_abs_path("err2.jac"), entrypoint="speak", args=[])  # type: ignore
         except Exception as e:
             print(f"Error: {e}")
 

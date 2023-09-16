@@ -371,6 +371,10 @@ class BluePygenPass(Pass):
             self.emit(node, node.body.meta["py_code"])
             self.indent_level -= 1
             self.emit_jac_error_handler(node)
+        elif node.is_abstract:
+            self.indent_level += 1
+            self.emit_ln(node, "pass")
+            self.indent_level -= 1
         else:
             self.decl_def_missing(ability_name)
         self.indent_level -= 1
@@ -611,7 +615,7 @@ class BluePygenPass(Pass):
             if isinstance(i, ast.Name):
                 self.emit_ln(node, i.meta["py_code"] + " = __jac_auto__()")
             else:
-                self.emit(node, i.meta["py_code"])
+                self.emit_ln(node, i.meta["py_code"])
 
     def exit_code_block(self, node: ast.CodeBlock) -> None:
         """Sub objects.

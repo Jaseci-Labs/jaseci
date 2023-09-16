@@ -3,20 +3,20 @@ import:py os;
 import:py shutil;
 
 """Load a .jac file and return the entrypoint function."""
-:a:load
+:a:run
 (filename: str) {
     if filename.endswith(".jac"){
         [base, mod] = os.path.split(filename);
         base = './' if not base else base;
         mod=mod[:-4];
-        __jac_import__(target=mod, base_path=base);
+        __jac_import__(target=mod, base_path=base, override_name="__main__");
     } else {
         "Not a .jac file." :> print;
     }
 }
 
 """Run the entrypoint of the given .jac file."""
-:a:run
+:a:enter
 (filename: str, entrypoint: str, args: list) {
     if filename.endswith(".jac") {
         [base, mod] = os.path.split(filename);

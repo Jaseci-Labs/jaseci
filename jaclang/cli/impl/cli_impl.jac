@@ -21,20 +21,37 @@
     cmd = func |> Command;
     <s>.registry[name] = cmd;
     cmd_parser = name |> <s>.sub_parsers.add_parser;
+    param_items = cmd.sig.parameters.items;
+    first = True;
     for param_name, param in |> cmd.sig.parameters.items {
         if param_name == "args" {
             ('args', nargs=argparse.REMAINDER)
                 |> cmd_parser.add_argument;
         }
         elif param.default is param.empty {
-            (f"-{param_name[:1]}", f"--{param_name}",
-            required=True, type=param.annotation|>eval)
-                |> cmd_parser.add_argument;
+            if first {
+                first = False;
+                (f"{param_name}", type=param.annotation|>eval)
+                    |> cmd_parser.add_argument;
+            }
+            else {
+                (f"-{param_name[:1]}", f"--{param_name}",
+                required=True, type=param.annotation|>eval)
+                    |> cmd_parser.add_argument;
+            }
+
         }
         else {
-            (f"-{param_name[:1]}", f"--{param_name}",
-            default=param.default, type=param.annotation|>eval)
-                |> cmd_parser.add_argument;
+            if first {
+                first = False;
+                (f"{param_name}", default=param.default, type=param.annotation|>eval)
+                    |> cmd_parser.add_argument;
+            }
+            else {
+                (f"-{param_name[:1]}", f"--{param_name}",
+                default=param.default, type=param.annotation|>eval)
+                    |> cmd_parser.add_argument;
+            }
         }
     }
     return func;

@@ -1,4 +1,4 @@
-# Getting Started with JacLang
+# Getting Started with the Jac Programming Language
 
 Welcome to JacLang, a unique and powerful programming language that runs on top of Python. To get you started, this guide will walk you through the process of installation, running Jac files, and importing Jac into existing Python modules.
 
