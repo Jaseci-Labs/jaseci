@@ -13,7 +13,7 @@ class JacCliTests(TestCase):
         """Set up test."""
         return super().setUp()
 
-    def test_jac_cli_load(self) -> None:
+    def test_jac_cli_run(self) -> None:
         """Basic test for pass."""
         captured_output = io.StringIO()
         sys.stdout = captured_output

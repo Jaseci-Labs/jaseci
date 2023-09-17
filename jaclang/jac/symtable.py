@@ -34,6 +34,10 @@ class Symbol:
         self.defn: list[ast.AstNode] = defn if defn else []
         self.uses: list[ast.AstNode] = uses if uses else []
 
+    def __repr__(self) -> str:
+        """Repr."""
+        return f"Symbol({self.name}, {self.typ}, {self.decl}, {self.defn}, {self.uses})"
+
 
 class SymbolTable:
     """Symbol Table."""
@@ -42,6 +46,12 @@ class SymbolTable:
         """Initialize."""
         self.parent = parent if parent else self
         self.tab: dict[str, Symbol] = {}
+
+    def get_parent(self) -> SymbolTable:
+        """Get parent."""
+        # if self.parent == self:
+        #     raise Exception("No parent")
+        return self.parent
 
     def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
         """Lookup a variable in the symbol table."""

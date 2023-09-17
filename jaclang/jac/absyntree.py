@@ -1398,7 +1398,7 @@ class Assignment(AstNode):
     def __init__(
         self,
         is_static: bool,
-        target: "AtomType",
+        target: AtomType,
         value: ExprType,
         mutable: bool,
         parent: Optional[AstNode],

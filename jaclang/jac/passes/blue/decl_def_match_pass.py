@@ -16,35 +16,35 @@ class DeclDefMatchPass(Pass, SymbolTable):
         """Rebuild sub node table."""
         self.ir = SubNodeTabPass(mod_path=self.mod_path, input_ir=self.ir).ir
 
-    def exit_global_vars(self, node: ast.GlobalVars) -> None:
-        """Sub objects.
+    # def exit_global_vars(self, node: ast.GlobalVars) -> None:
+    #     """Sub objects.
 
-        doc: Optional[DocString],
-        access: Optional[Token],
-        assignments: AssignmentList,
-        """
-        for i in self.get_all_sub_nodes(node, ast.Assignment):
-            if not isinstance(i.target, ast.Name):
-                self.ice("Only name targets should be possible to in global vars.")
-            else:
-                decl = self.sym_tab.lookup(i.target.value)
-                if decl:
-                    if decl.has_def:
-                        self.error(f"Name {i.target.value} already bound.")
-                    else:
-                        decl.has_def = True
-                        decl.other_node = i
-                        decl.node.body = i  # TODO: I dont think this line makes sense
-                        self.sym_tab.set(decl)
+    #     doc: Optional[DocString],
+    #     access: Optional[Token],
+    #     assignments: AssignmentList,
+    #     """
+    #     # for i in self.get_all_sub_nodes(node, ast.Assignment):
+    #     #     if not isinstance(i.target, ast.Name):
+    #     #         self.ice("Only name targets should be possible to in global vars.")
+    #     #     else:
+    #     #         decl = self.sym_tab.lookup(i.target.value)
+    #     #         if decl:
+    #     #             if decl.has_def:
+    #     #                 self.error(f"Name {i.target.value} already bound.")
+    #     #             else:
+    #     #                 decl.has_def = True
+    #     #                 decl.other_node = i
+    #     #                 decl.node.body = i  # TODO: I dont think this line makes sense
+    #     #                 self.sym_tab.set(decl)
 
-    def exit_test(self, node: ast.Test) -> None:
-        """Sub objects.
+    # def exit_test(self, node: ast.Test) -> None:
+    #     """Sub objects.
 
-        name: Name,
-        doc: Optional[DocString],
-        description: Token,
-        body: CodeBlock,
-        """
+    #     name: Name,
+    #     doc: Optional[DocString],
+    #     description: Token,
+    #     body: CodeBlock,
+    #     """
 
     def enter_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -56,8 +56,8 @@ class DeclDefMatchPass(Pass, SymbolTable):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
-        if not node.is_absorb:
-            self.sym_tab = self.sym_tab.push(node.path.path_str)
+        # if not node.is_absorb:
+        #     self.sym_tab = self.sym_tab.push(node.path.path_str)
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -69,18 +69,18 @@ class DeclDefMatchPass(Pass, SymbolTable):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
-        if not node.is_absorb and not self.sym_tab.parent:
-            self.ice("Import should have a parent sym_table scope.")
-        elif not node.is_absorb:
-            self.sym_tab = self.sym_tab.pop()
-        if node.items:  # now treat imported items as global
-            for i in node.items.items:
-                name = i.alias if i.alias else i.name
-                decl = self.sym_tab.lookup(name.value)
-                if not decl:
-                    self.sym_tab.set(
-                        DefDeclSymbol(name=name.value, node=i, has_def=True)
-                    )
+        # if not node.is_absorb and not self.sym_tab.parent:
+        #     self.ice("Import should have a parent sym_table scope.")
+        # elif not node.is_absorb:
+        #     self.sym_tab = self.sym_tab.pop()
+        # if node.items:  # now treat imported items as global
+        #     for i in node.items.items:
+        #         name = i.alias if i.alias else i.name
+        #         decl = self.sym_tab.lookup(name.value)
+        #         if not decl:
+        #             self.sym_tab.set(
+        #                 DefDeclSymbol(name=name.value, node=i, has_def=True)
+        #             )
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
