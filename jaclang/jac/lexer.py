@@ -14,8 +14,10 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         input_ir: str,
         base_path: str = "",
         prior: Transform | None = None,
+        fstr_override: bool = False,
     ) -> None:
         """Initialize lexer."""
+        self.fstr_override = fstr_override
         Transform.__init__(self, mod_path, input_ir, base_path, prior)  # type: ignore
         self.ir: Generator = self.ir
 
@@ -375,6 +377,26 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     def transform(self, ir: str) -> Generator:
         """Tokenize the input."""
         return self.tokenize(ir)
+
+    def tokenize(self, text: str) -> Generator:
+        """Tokenize override for no module level docstring."""
+        has_doc_string_start = False
+        for tok in super().tokenize(text):
+            if (
+                tok.type != "DOC_STRING"
+                and not has_doc_string_start
+                and not self.fstr_override
+            ):
+                dtok = Token()
+                dtok.type = "DOC_STRING"
+                dtok.value = '""""""'
+                dtok.lineno = 1
+                dtok.lineidx = 0
+                dtok.index = 0
+                dtok.end = 0
+                yield dtok
+            has_doc_string_start = True
+            yield tok
 
     def error(self, t: Token) -> None:
         """Raise an error for illegal characters."""

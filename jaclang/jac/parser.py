@@ -1437,7 +1437,9 @@ def parse_tree_to_ast(
                 tree = JacParserExpr(
                     mod_path="",
                     input_ir=JacLexer(
-                        mod_path="", input_ir=find_and_concat_fstr_pieces(tree)
+                        mod_path="",
+                        input_ir=find_and_concat_fstr_pieces(tree),
+                        fstr_override=True,
                     ).ir,
                 ).ir_tup[2]
             kids = tree[2:]

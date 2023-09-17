@@ -1,5 +1,4 @@
 """
-(Module docstring are Required in a valid Jac)
 This module demonstrates a simple circle class and a function to calculate the area of a circle.
 """
 import:py math;
@@ -54,8 +53,8 @@ with entry {c = Circle(RAD);}  # Global also works here
 
 with entry:__main__ { # TODO: add name == option abstract feature
     # To run the program functionality
-    print(f"Area of a circle with radius 5: {calculate_area(RAD)}");
-    print(f"Area of a {c.shape_type.value} with radius 5: {c.area()}");
+    print(f"Area of a circle with radius {RAD} using function: {calculate_area(RAD)}");
+    print(f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}");
 }
 
 
