@@ -46,12 +46,16 @@ theme:
     - navigation.path
 
 markdown_extensions:
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
       pygments_style: 'autumn'
   - pymdownx.inlinehilite
+  # - codehilite:
+  #     linenums: true
   - pymdownx.snippets:
       base_path: ['.', '../../']
   - pymdownx.superfences:

@@ -22,3 +22,47 @@ Ok now lets jump into learning Jac!
 ## Modules in Jac
 
 We start this journey top down. Lets look at a simple but complete program in python and the Jac version.
+
+=== "Jac (circle.jac)"
+    ```jac linenums="1"
+    --8<-- "examples/manual_code/circle.jac"
+    ```
+=== "Python (circle.py)"
+    ```python linenums="1"
+    --8<-- "examples/manual_code/circle.py"
+    ```
+
+Now lets break it down!
+
+### Docstrings, Imports, and Globals
+
+=== "circle.jac"
+    ```jac linenums="1"
+    --8<-- "examples/manual_code/circle.jac::8"
+    ```
+=== "circle.py"
+    ```python linenums="1"
+    --8<-- "examples/manual_code/circle.py::10"
+    ```
+
+### Functions / Abilities
+
+=== "circle.jac"
+    ```jac linenums="10"
+    --8<-- "examples/manual_code/circle.jac:10:13"
+    ```
+=== "circle.py"
+    ```python linenums="13"
+    --8<-- "examples/manual_code/circle.py:13:15"
+    ```
+
+### Multiline Comments
+
+=== "circle.jac"
+    ```jac linenums="15"
+    --8<-- "examples/manual_code/circle.jac:15:18"
+    ```
+=== "circle.py"
+    ```python linenums="18"
+    --8<-- "examples/manual_code/circle.py:18:22"
+    ```

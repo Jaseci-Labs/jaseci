@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # run_tests()
 
 
-# Unit tests below, bad practice in python to have unit tests in the same file as the code
+# Unit Tests!
 class TestShapesFunctions(unittest.TestCase):
     def test_calculate_area(self):
         expected_area = 78.53981633974483

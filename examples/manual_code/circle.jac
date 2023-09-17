@@ -1,5 +1,6 @@
 """
-This module demonstrates a simple circle class and a function to calculate the area of a circle.
+This module demonstrates a simple circle class and a function to calculate
+the area of a circle in all of Jac's glory.
 """
 import:py math;
 
@@ -57,9 +58,8 @@ with entry:__main__ { # TODO: add name == option abstract feature
     print(f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}");
 }
 
-
+# Unit Tests!
 global expected_area = 78.53981633974483;
-
 test calculate_area { check.AlmostEqual(calculate_area(RAD), expected_area); }
 test circle_area { c = Circle(RAD); check.AlmostEqual(c.area(), expected_area); }
 test circle_type { c = Circle(RAD); check.Equal(c.shape_type, ShapeType.CIRCLE); }
