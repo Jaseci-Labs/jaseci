@@ -45,6 +45,14 @@ class TestParser(TestCaseMicroSuite):
         self.assertFalse(prse.errors_had)
         self.assertIn("'name': 'KWESC_NAME', 'value': 'walker'", str(output.to_dict()))
 
+    def test_no_mod_doc(self) -> None:
+        """Basic test for parsing."""
+        lex = JacLexer(
+            mod_path="mod_doc_test.jac", input_ir=self.load_fixture("mod_doc_test.jac")
+        ).ir
+        prse = JacParser(mod_path="mod_doc_test.jac", input_ir=lex)
+        self.assertFalse(prse.errors_had)
+
     def test_parsing_jac_cli(self) -> None:
         """Basic test for parsing."""
         lex = JacLexer(
