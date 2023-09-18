@@ -57,7 +57,7 @@ The term "architype" is a distinct concept introduced with the data spatial prog
 The following code example shows all elements that form a Jac module.
 
 ```jac
---8<-- "micro/module_structure.jac"
+--8<-- "examples/micro/module_structure.jac"
 ```
 
 ### Emphasizing the Separation of Declarations and Definitions
@@ -68,12 +68,12 @@ In Jac, a declaration refers to announcing the existence and signature of an abi
 #### Minimal Code Example
 `main.jac`
 ```jac
---8<-- "micro/decl_defs_split.jac"
+--8<-- "examples/micro/decl_defs_split.jac"
 ```
 
 `defs.jac`
 ```jac
---8<-- "micro/decl_defs_imp.jac"
+--8<-- "examples/micro/decl_defs_imp.jac"
 ```
 
 The benefits of this separation are manifold:

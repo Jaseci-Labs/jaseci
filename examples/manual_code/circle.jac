@@ -35,9 +35,8 @@ object Shape {
     can area -> float abstract;
 }
 
+"""Circle class inherits from Shape."""
 object Circle:Shape {
-    """Circle class inherits from Shape."""
-
     can <init>(radius: float) {
         <super>.<init>(ShapeType.CIRCLE);
         self.radius = radius;
@@ -51,7 +50,7 @@ object Circle:Shape {
 
 with entry {c = Circle(RAD);}  # Global also works here
 
-with entry:__main__ { # TODO: add name == option abstract feature
+with entry:__main__ {
     # To run the program functionality
     print(f"Area of a circle with radius {RAD} using function: {calculate_area(RAD)}");
     print(f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}");

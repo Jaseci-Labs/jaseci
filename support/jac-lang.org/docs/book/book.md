@@ -113,7 +113,7 @@ The term "architype" is a distinct concept introduced with the data spatial prog
 The following code example shows all elements that form a Jac module.
 
 ```jac
---8<-- "micro/module_structure.jac"
+--8<-- "examples/micro/module_structure.jac"
 ```
 
 ### Emphasizing the Separation of Declarations and Definitions
@@ -124,12 +124,12 @@ In Jac, a declaration refers to announcing the existence and signature of an abi
 #### Minimal Code Example
 `main.jac`
 ```jac
---8<-- "micro/decl_defs_split.jac"
+--8<-- "examples/micro/decl_defs_split.jac"
 ```
 
 `defs.jac`
 ```jac
---8<-- "micro/decl_defs_imp.jac"
+--8<-- "examples/micro/decl_defs_imp.jac"
 ```
 
 The benefits of this separation are manifold:
@@ -184,7 +184,7 @@ That being said, Jac acknowledges the value of the Python's black package, a cod
 ##### Minimal Code Example
 
 ```jac
---8<-- "micro/whitespace.jac"
+--8<-- "examples/micro/whitespace.jac"
 ```
 
 #### Type System
@@ -197,7 +197,7 @@ By blending the best aspects of static and dynamic typing, along with the potent
 
 ##### Minimal Code Example
 ```jac
---8<-- "micro/type_hints.jac"
+--8<-- "examples/micro/type_hints.jac"
 ```
 #### Improving on the class `self` reference
 
@@ -211,7 +211,7 @@ Furthermore, Jac's approach aligns better with other object-oriented languages, 
 
 ##### Minimal Code Example
 ```jac
---8<-- "micro/no_here.jac"
+--8<-- "examples/micro/no_here.jac"
 ```
 
 #### OOP Access Modifiers
@@ -228,7 +228,7 @@ By transitioning from Python's underscore convention to the use of explicit keyw
 
 ##### Minimal Code Example
 ```jac
---8<-- "micro/access_info.jac"
+--8<-- "examples/micro/access_info.jac"
 ```
 
 #### Definitions and Declarations
@@ -240,7 +240,7 @@ Jac introduces a distinction between declarations and definitions, directly addr
 This approach is particularly beneficial in large projects where different team members may be working on different parts of a class or function. With the separation of declarations and definitions, developers can quickly understand the interface of a class or function without having to navigate through the implementation details. This leads to a better collaborative environment and more efficient development process.
 ##### Minimal Code Example
 ```jac
---8<-- "micro/separate_defs.jac"
+--8<-- "examples/micro/separate_defs.jac"
 ```
 ### Realizing Pythonic implemenations in a Jactastic way
 
@@ -262,7 +262,7 @@ This introduction of `include` alongside `import` promotes ease of use and clean
 #### Minimal Code Example
 
 ```jac
---8<-- "micro/imports.jac"
+--8<-- "examples/micro/imports.jac"
 ```
 
 ### Global Variables in Jac
@@ -279,7 +279,7 @@ This addition strengthens Jac's philosophy of explicitness and intentionality. I
 #### Minimal Code Example
 
 ```jac
---8<-- "micro/globals.jac"
+--8<-- "examples/micro/globals.jac"
 ```
 
 ### Module Level Free Coding in Jac
@@ -292,7 +292,7 @@ In Jac, even though the language permits free code, caution is strongly encourag
 
 #### Minimal Code Example
 ```jac
---8<-- "micro/free_code.jac"
+--8<-- "examples/micro/free_code.jac"
 ```
 ### Functions in Jac
 
@@ -309,7 +309,7 @@ It is important to note that unlike Python, Jac does not support returning multi
 #### Minimal Code Example
 
 ```jac
---8<-- "micro/func.jac"
+--8<-- "examples/micro/func.jac"
 ```
 ### Classes in Jac
 
@@ -324,7 +324,7 @@ Jac introduces a robust system of access modifiers, unlike Python which relies o
 
 
 ```jac
---8<-- "micro/basic_class.jac"
+--8<-- "examples/micro/basic_class.jac"
 ```
 
 In this example, we have a `Person` object with two properties: `name` and `age`. The `prot` keyword before `age` indicates that `age` is a protected property (only visible to it's class members and sub class members). Similarly, the `pub` keyword before `name` indicates that `name` is a public property (can be accessed via `.name` everywhere).
@@ -338,7 +338,7 @@ Next, we have the `greet` method, which is a public method as denoted by the `pu
 By switching from `self` to `here`, and from `__init__` to `init`, Jac brings a cleaner and more straightforward syntax for defining and initializing objects. With the introduction of access modifiers (`priv`, `prot` and `pub`), Jac provides a more robust system than `_` and `__` for encapsulating properties and methods within an object, aligning closer to other languages such as C++, Java, and C#. At the same time its all optional and up to the developer if they'd like a more pythonic less pedantic style ot implementation as per:
 
 ```jac
---8<-- "micro/basic_class_pylike.jac"
+--8<-- "examples/micro/basic_class_pylike.jac"
 ```
 #### Inheritance
 
@@ -347,7 +347,7 @@ Inheritance is a fundamental principle of object-oriented programming that allow
 Similar to Python, Jac allows for both single and multiple inheritance. Here's how you might define a simple single inheritance scenario:
 
 ```jac
---8<-- "micro/class_inherit.jac"
+--8<-- "examples/micro/class_inherit.jac"
 ```
 
 In this example, `Child` is a subclass of `Parent` and inherits all properties and methods of `Parent`. This means instances of `Child` can also invoke the `speak()` method.
@@ -355,7 +355,7 @@ In this example, `Child` is a subclass of `Parent` and inherits all properties a
 Multiple inheritance, a concept where a class can inherit from more than one superclass, is also supported:
 
 ```jac
---8<-- "micro/class_multi_inherit.jac"
+--8<-- "examples/micro/class_multi_inherit.jac"
 ```
 
 In this case, `Child` is a subclass of both `Mom` and `Dad` and inherits all their methods. Therefore, instances of `Child` can invoke both `calm()` and `excite()` methods.
@@ -382,7 +382,7 @@ The `raise` keyword is used to trigger an exception manually and can be followed
 #### Minimal Code Example
 
 ```jac
---8<-- "micro/exceptions.jac"
+--8<-- "examples/micro/exceptions.jac"
 ```
 
 ### Code Statements amd Expressions in Jac
@@ -486,7 +486,7 @@ new_dict2 = {i: i * i for i in range(10) if i % 2 == 0}
 
 #### An Mega Code Example
 ```jac
---8<-- "micro/bunch_of_statements.jac"
+--8<-- "examples/micro/bunch_of_statements.jac"
 ```
 
 
