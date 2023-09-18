@@ -68,3 +68,58 @@ Now lets break it down!
     ```python linenums="18"
     --8<-- "examples/manual_code/circle.py:18:22"
     ```
+
+### Enumeration
+
+=== "circle.jac"
+    ```jac linenums="20"
+    --8<-- "examples/manual_code/circle.jac:20:24"
+    ```
+=== "circle.py"
+    ```python linenums="25"
+    --8<-- "examples/manual_code/circle.py:25:29"
+    ```
+
+### Shape Class
+
+=== "circle.jac"
+    ```jac linenums="27"
+    --8<-- "examples/manual_code/circle.jac:27:36"
+    ```
+=== "circle.py"
+    ```python linenums="32"
+    --8<-- "examples/manual_code/circle.py:32:40"
+    ```
+
+### Circle Class
+
+=== "circle.jac"
+    ```jac linenums="38"
+    --8<-- "examples/manual_code/circle.jac:38:50"
+    ```
+=== "circle.py"
+    ```python linenums="43"
+    --8<-- "examples/manual_code/circle.py:43:52"
+    ```
+
+### Script handling
+
+=== "circle.jac"
+    ```jac linenums="52"
+    --8<-- "examples/manual_code/circle.jac:52:58"
+    ```
+=== "circle.py"
+    ```python linenums="55"
+    --8<-- "examples/manual_code/circle.py:55:63"
+    ```
+
+### Tests
+
+=== "circle.jac"
+    ```jac linenums="60"
+    --8<-- "examples/manual_code/circle.jac:60:64"
+    ```
+=== "circle.py"
+    ```python linenums="66"
+    --8<-- "examples/manual_code/circle.py:66:79"
+    ```

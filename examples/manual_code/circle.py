@@ -22,8 +22,9 @@ Below we have the demonstration of a class to calculate the area of a circle.
 """
 
 
-# Enum for shape types
 class ShapeType(Enum):
+    """Enum for shape types"""
+
     CIRCLE = "Circle"
     UNKNOWN = "Unknown"
 
@@ -35,7 +36,7 @@ class Shape:
         self.shape_type = shape_type
 
     def area(self) -> float:
-        """Returns the area of the shape."""
+        """Abstract method to calculate the area of a shape."""
         pass
 
 

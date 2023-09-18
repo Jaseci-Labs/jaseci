@@ -35,7 +35,6 @@ object Shape {
     can area -> float abstract;
 }
 
-
 object Circle:Shape {
     """Circle class inherits from Shape."""
 
