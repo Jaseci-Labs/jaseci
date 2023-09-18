@@ -119,8 +119,8 @@ This is the way to import from enum. Any language level keyword can be escaped b
 ### Shape Class
 
 === "circle.jac"
-    ```jac linenums="27"
-    --8<-- "examples/manual_code/circle.jac:27:36"
+    ```jac linenums="26"
+    --8<-- "examples/manual_code/circle.jac:26:32"
     ```
 === "circle.py"
     ```python linenums="32"
@@ -132,8 +132,8 @@ This is an example of a Shape class in Jac. A couple things to note here.
 ### Circle Class
 
 === "circle.jac"
-    ```jac linenums="38"
-    --8<-- "examples/manual_code/circle.jac:38:50"
+    ```jac linenums="34"
+    --8<-- "examples/manual_code/circle.jac:34:45"
     ```
 === "circle.py"
     ```python linenums="43"
@@ -143,8 +143,8 @@ This is an example of a Shape class in Jac. A couple things to note here.
 ### Script handling
 
 === "circle.jac"
-    ```jac linenums="51"
-    --8<-- "examples/manual_code/circle.jac:51:58"
+    ```jac linenums="47"
+    --8<-- "examples/manual_code/circle.jac:47:53"
     ```
 === "circle.py"
     ```python linenums="55"
@@ -154,8 +154,8 @@ This is an example of a Shape class in Jac. A couple things to note here.
 ### Tests
 
 === "circle.jac"
-    ```jac linenums="60"
-    --8<-- "examples/manual_code/circle.jac:60:64"
+    ```jac linenums="55"
+    --8<-- "examples/manual_code/circle.jac:55:59"
     ```
 === "circle.py"
     ```python linenums="66"
