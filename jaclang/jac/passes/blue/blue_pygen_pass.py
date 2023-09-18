@@ -370,9 +370,15 @@ class BluePygenPass(Pass):
         if node.decorators:
             self.emit(node, node.decorators.meta["py_code"])
         if isinstance(node.signature, (ast.FuncSignature, ast.EventSignature)):
+            if "->" in node.signature.meta["py_code"]:
+                node.signature.meta["py_code"] = node.signature.meta["py_code"].replace(
+                    " ->", ") ->"
+                )
+            else:
+                node.signature.meta["py_code"] += ")"
             if node.arch_attached and not node.is_static:
                 self.emit_ln(
-                    node, f"def {ability_name}(self{node.signature.meta['py_code']}:"
+                    node, f"def {ability_name}(self,{node.signature.meta['py_code']}:"
                 )
             else:
                 if node.arch_attached and node.is_static:
@@ -414,40 +420,55 @@ class BluePygenPass(Pass):
 
         members: list["ArchHas | Ability"],
         """
-        has_members = [
-            i for i in node.members if isinstance(i, ast.ArchHas) and not i.is_static
-        ]
-        if has_members:
-            self.emit_ln(node, "def __jac_has(self):")
-            self.indent_level += 1
-            for i in has_members:
-                self.emit_ln(node, f"self._jac_has_{i.h_id}()")
-            self.indent_level -= 1
-
         init_func = None
         for i in node.members:
             if isinstance(i, ast.Ability) and i.py_resolve_name() == "__init__":
                 init_func = i
                 break
-        if init_func and init_func.signature:
-            if init_func.decorators:
-                self.emit(node, init_func.decorators.meta["py_code"])
-            self.emit_ln(
-                node, f"def __init__(self{init_func.signature.meta['py_code']}:"
-            )
-        else:
-            self.emit_ln(node, "def __init__(self, *args, **kwargs):")
+        static_has_members = [
+            i for i in node.members if isinstance(i, ast.ArchHas) and i.is_static
+        ]
+        for i in static_has_members:
+            self.emit(node, i.meta["py_code"])
+            self.emit(node, "\n")
+
+        if init_func and init_func.decorators:
+            self.emit(node, init_func.decorators.meta["py_code"])
+        self.emit_ln(node, "def __init__(self,")
         self.indent_level += 1
+        if has_members := [
+            i for i in node.members if isinstance(i, ast.ArchHas) and not i.is_static
+        ]:
+            for i in has_members:
+                for j in i.vars.vars:
+                    self.emit_ln(node, f"{j.name.value} = None,")
+        if init_func and init_func.signature:
+            if "->" in init_func.signature.meta["py_code"]:
+                init_func.signature.meta["py_code"] = init_func.signature.meta[
+                    "py_code"
+                ].split("->")[0]
+            if len(init_func.signature.meta["py_code"]):
+                self.emit_ln(node, f"{init_func.signature.meta['py_code']},")
+        self.emit_ln(node, " *args, **kwargs):")
         if not init_func:
             self.emit_ln(node, "super().__init__(*args, **kwargs)")
-        if has_members:
-            self.emit_ln(node, "self.__jac_has()")
+        for i in has_members:
+            for j in i.vars.vars:
+                if j.value:
+                    self.emit_ln(
+                        node,
+                        f"self.{j.name.value} = {j.value.meta['py_code']} if {j.name.value} is "
+                        f"None else {j.name.value}",
+                    )
+                else:
+                    self.emit_ln(node, f"self.{j.name.value} = {j.name.value}")
         if init_func and init_func.body:
             self.emit(node, f"{init_func.body.meta['py_code']}")
         self.indent_level -= 1
         for i in node.members:
-            self.emit(node, i.meta["py_code"])
-            self.emit(node, "\n")
+            if i not in has_members + static_has_members:
+                self.emit(node, i.meta["py_code"])
+                self.emit(node, "\n")
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -458,17 +479,7 @@ class BluePygenPass(Pass):
         vars: "HasVarList",
         is_frozen: bool,
         """
-        if node.is_static:
-            if node.doc:
-                self.emit_ln(node, node.doc.value)
-            self.emit_ln(node, node.vars.meta["py_code"].replace("self.", ""))
-        else:
-            self.emit_ln(node, f"def _jac_has_{node.h_id}(self):")
-            self.indent_level += 1
-            if node.doc:
-                self.emit_ln(node, node.doc.value)
-            self.emit(node, node.vars.meta["py_code"])
-            self.indent_level -= 1
+        self.emit(node, node.vars.meta["py_code"])
 
     def exit_has_var_list(self, node: ast.HasVarList) -> None:
         """Sub objects.
@@ -488,11 +499,11 @@ class BluePygenPass(Pass):
         if node.value:
             self.emit(
                 node,
-                f"self.{node.name.value}: {node.type_tag.meta['py_code']} = {node.value.meta['py_code']}",
+                f"{node.name.value}: {node.type_tag.meta['py_code']} = {node.value.meta['py_code']}",
             )
         else:
             self.emit(
-                node, f"self.{node.name.value}: {node.type_tag.meta['py_code']} = None"
+                node, f"{node.name.value}: {node.type_tag.meta['py_code']} = None"
             )
 
     def exit_type_spec_list(self, node: ast.TypeSpecList) -> None:
@@ -544,20 +555,7 @@ class BluePygenPass(Pass):
         self.is_arch_attached = False
         """
         if node.params:
-            if (
-                isinstance(node.parent, ast.Ability)
-                and node.parent.arch_attached
-                and not node.parent.is_static
-            ):
-                self.emit(node, ", ")
             self.emit(node, node.params.meta["py_code"])
-        if (
-            isinstance(node.parent, ast.Ability)
-            and node.parent.arch_attached
-            and node.parent.py_resolve_name() == "__init__"
-        ):
-            self.emit(node, ", *args, **kwargs")
-        self.emit(node, ")")
         if node.return_type:
             self.emit(node, f" -> {node.return_type.meta['py_code']}")
 

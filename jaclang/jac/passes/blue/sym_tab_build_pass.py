@@ -48,7 +48,7 @@ class SymTabBuildPass(Pass):
         if other_nodes:
             for i in other_nodes:
                 mod_path = i.mod_link.rel_mod_path if i.mod_link else self.ice()
-                err_msg += f", {mod_path}, line {i.line}"
+                err_msg += f", also see {mod_path}, line {i.line}"
         self.error(err_msg)
 
     def enter_module(self, node: ast.Module) -> None:

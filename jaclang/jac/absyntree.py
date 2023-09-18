@@ -688,14 +688,12 @@ class ArchBlock(AstNode):
 class ArchHas(OOPAccessNode):
     """HasStmt node type for Jac Ast."""
 
-    counter: int = 1
-
     def __init__(
         self,
         doc: Optional[Token],
         is_static: bool,
         access: Optional[Token],
-        vars: "HasVarList",
+        vars: HasVarList,
         is_frozen: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -708,8 +706,6 @@ class ArchHas(OOPAccessNode):
         self.is_static = is_static
         self.vars = vars
         self.is_frozen = is_frozen
-        self.h_id = ArchHas.counter
-        ArchHas.counter += 1
         super().__init__(
             access=access,
             parent=parent,
