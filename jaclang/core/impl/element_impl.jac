@@ -99,7 +99,7 @@
         # Check if cls is a subclass of base_class
         if not issubclass(cls, base_class) {
             # If it's not, create a new class with the same name that inherits from both cls and base_class
-            cls = type(cls.__name__, (base_class, cls), {});
+            cls = type(cls.__name__, (cls, base_class), {});
             # original_init = cls.__init__;
             # can new_init(self: cls, *args: list, **kwargs: dict) -> None {
             #     base_class.__init__(<self>, *args, **kwargs);

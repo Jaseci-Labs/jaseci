@@ -448,9 +448,9 @@ class BluePygenPass(Pass):
                 ].split("->")[0]
             if len(init_func.signature.meta["py_code"]):
                 self.emit_ln(node, f"{init_func.signature.meta['py_code']},")
-        self.emit_ln(node, "  **kwargs):")
+        self.emit_ln(node, " *args, **kwargs):")
         if not init_func:
-            self.emit_ln(node, "super().__init__( **kwargs)")
+            self.emit_ln(node, "super().__init__(*args, **kwargs)")
         for i in has_members:
             for j in i.vars.vars:
                 self.emit_ln(node, f"self.{j.name.value} = {j.name.value}")
@@ -471,9 +471,7 @@ class BluePygenPass(Pass):
         vars: "HasVarList",
         is_frozen: bool,
         """
-        if node.doc:
-            self.emit_ln(node, node.doc.value)
-        self.emit_ln(node, node.vars.meta["py_code"])
+        self.emit(node, node.vars.meta["py_code"])
 
     def exit_has_var_list(self, node: ast.HasVarList) -> None:
         """Sub objects.
@@ -481,7 +479,10 @@ class BluePygenPass(Pass):
         vars: list[HasVar],
         """
         for i in node.vars:
-            self.emit_ln(node, i.meta["py_code"] + ",")
+            if isinstance(node.parent, ast.ArchHas) and node.parent.is_static:
+                self.emit_ln(node, i.meta["py_code"])
+            else:
+                self.emit_ln(node, i.meta["py_code"] + ",")
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
