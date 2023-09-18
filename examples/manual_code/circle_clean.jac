@@ -12,8 +12,6 @@ can main_run;
 """Base class for a shape."""
 object Shape {
     has shape_type: ShapeType;
-
-    can <init>(shape_type: ShapeType);
     can area -> float abstract;
 }
 

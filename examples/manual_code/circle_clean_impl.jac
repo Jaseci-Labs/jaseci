@@ -10,11 +10,6 @@
     return math.pi * radius * radius;
 }
 
-:object:Shape:ability:<init>
-(shape_type: ShapeType) {
-    <self>.shape_type = shape_type;
-}
-
 :object:Circle:ability:<init>
 (radius: float) {
     <super>.<init>(ShapeType.CIRCLE);

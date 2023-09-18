@@ -32,6 +32,10 @@ class DeclDefMatchPass(Pass):
             if not node.sym_tab:
                 return self.ice("Expected symbol table on node.")
             adef = node.sym_tab.lookup(name, sym_hit=SymbolHitType.DEFN)
+            if adef and node.is_abstract:
+                return self.error(
+                    f"Abstract ability {name} should not have a definition."
+                )
             if (
                 not adef
                 or not len(adef.defn)
