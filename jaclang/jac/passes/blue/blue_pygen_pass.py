@@ -414,6 +414,9 @@ class BluePygenPass(Pass):
 
         members: list["ArchHas | Ability"],
         """
+        # static_has_members = [
+        #     i for i in node.members if isinstance(i, ast.ArchHas) and i.is_static
+        # ]
         has_members = [
             i for i in node.members if isinstance(i, ast.ArchHas) and not i.is_static
         ]
@@ -467,7 +470,7 @@ class BluePygenPass(Pass):
             self.indent_level += 1
             if node.doc:
                 self.emit_ln(node, node.doc.value)
-            self.emit(node, node.vars.meta["py_code"])
+            self.emit(node, "self." + node.vars.meta["py_code"])
             self.indent_level -= 1
 
     def exit_has_var_list(self, node: ast.HasVarList) -> None:
@@ -488,11 +491,11 @@ class BluePygenPass(Pass):
         if node.value:
             self.emit(
                 node,
-                f"self.{node.name.value}: {node.type_tag.meta['py_code']} = {node.value.meta['py_code']}",
+                f"{node.name.value}: {node.type_tag.meta['py_code']} = {node.value.meta['py_code']}",
             )
         else:
             self.emit(
-                node, f"self.{node.name.value}: {node.type_tag.meta['py_code']} = None"
+                node, f"{node.name.value}: {node.type_tag.meta['py_code']} = None"
             )
 
     def exit_type_spec_list(self, node: ast.TypeSpecList) -> None:
