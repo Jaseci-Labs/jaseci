@@ -13,7 +13,9 @@ pip install jaclang
 Validate Jac works.
 
 ```bash
-echo "with entry { print('hello world'); } > test.jac; jac load -f test.jac; rm test.jac;"
+echo "with entry { print('hello world'); }" > test.jac;
+jac run test.jac;
+rm test.jac;"
 ```
 
 If that command prints `hello world`, Jac is working.

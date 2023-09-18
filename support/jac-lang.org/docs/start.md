@@ -24,12 +24,12 @@ Here's how you can use `jac`:
 
 - To simply load a sample Jac module and exit, run:
     ```bash
-    jac load -f sample.jac
+    jac run sample.jac
     ```
 
 - To load a sample Jac module and execute a particular function (considered the entrypoint for execution in Jac), run:
     ```bash
-    jac run -f sample.jac -e my_func
+    jac enter sample.jac -e my_func
     ```
 
 Now Try it with this example jac program with both load and calling `test_run`
