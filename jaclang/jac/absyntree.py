@@ -693,7 +693,7 @@ class ArchHas(OOPAccessNode):
         doc: Optional[Token],
         is_static: bool,
         access: Optional[Token],
-        vars: "HasVarList",
+        vars: HasVarList,
         is_frozen: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],

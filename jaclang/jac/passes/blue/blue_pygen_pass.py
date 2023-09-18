@@ -446,10 +446,11 @@ class BluePygenPass(Pass):
                 init_func.signature.meta["py_code"] = init_func.signature.meta[
                     "py_code"
                 ].split("->")[0]
-            self.emit_ln(node, f"{init_func.signature.meta['py_code']},")
-        self.emit_ln(node, " *args, **kwargs):")
+            if len(init_func.signature.meta["py_code"]):
+                self.emit_ln(node, f"{init_func.signature.meta['py_code']},")
+        self.emit_ln(node, "  **kwargs):")
         if not init_func:
-            self.emit_ln(node, "super().__init__(*args, **kwargs)")
+            self.emit_ln(node, "super().__init__( **kwargs)")
         for i in has_members:
             for j in i.vars.vars:
                 self.emit_ln(node, f"self.{j.name.value} = {j.name.value}")
@@ -457,8 +458,9 @@ class BluePygenPass(Pass):
             self.emit(node, f"{init_func.body.meta['py_code']}")
         self.indent_level -= 1
         for i in node.members:
-            self.emit(node, i.meta["py_code"])
-            self.emit(node, "\n")
+            if i not in has_members + static_has_members:
+                self.emit(node, i.meta["py_code"])
+                self.emit(node, "\n")
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.

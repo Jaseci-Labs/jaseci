@@ -22,6 +22,7 @@ class Pass(Transform):
         self.term_signal = False
         self.prune_signal = False
         self.cur_node = input_ir  # tracks current node during traversal
+        self.ir = input_ir
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
     def before_pass(self) -> None:
@@ -127,14 +128,14 @@ class Pass(Transform):
             self.rel_mod_path = node.mod_link.rel_mod_path
             self.mod_path = node.mod_link.mod_path
 
-    def error(self, msg: str) -> None:
+    def error(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
-        self.update_code_loc()
+        self.update_code_loc(node_override)
         self.log_error(f"{msg}")
 
-    def warning(self, msg: str) -> None:
+    def warning(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
-        self.update_code_loc()
+        self.update_code_loc(node_override)
         self.log_warning(f"{msg}")
 
     def ice(self, msg: str = "Something went horribly wrong!") -> None:

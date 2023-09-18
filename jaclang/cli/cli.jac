@@ -14,7 +14,7 @@ object Command {
     has func: callable,
         sig: inspect.Signature;
 
-    can:private <init>(func: callable);
+    can:private <init>;
     can call(*args: list, **kwargs: dict);
 }
 
@@ -36,7 +36,7 @@ object CommandShell:cmd.Cmd {
                prompt: str = "jac> ";
     has cmd_reg: CommandRegistry;
 
-    can <init>(cmd_reg: CommandRegistry);
+    can <init>;
     can do_exit(arg: list) -> bool;
     can default(line: str);
 }
