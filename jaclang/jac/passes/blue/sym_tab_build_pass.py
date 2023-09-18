@@ -1,4 +1,6 @@
 """Ast build pass for Jaseci Ast."""
+from typing import Optional
+
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
 from jaclang.jac.symtable import SymbolHitType, SymbolTable
@@ -30,13 +32,24 @@ class SymTabBuildPass(Pass):
         """Sync node to scope."""
         node.sym_tab = self.cur_scope()
 
-    def already_declared_err(self, name: str, typ: str, original: ast.AstNode) -> None:
+    def already_declared_err(
+        self,
+        name: str,
+        typ: str,
+        original: ast.AstNode,
+        other_nodes: Optional[list[ast.AstNode]] = None,
+    ) -> None:
         """Already declared error."""
         mod_path = original.mod_link.rel_mod_path if original.mod_link else self.ice()
-        self.error(
+        err_msg = (
             f"Name used for {typ} '{name}' already declared at "
             f"{mod_path}, line {original.line}"
         )
+        if other_nodes:
+            for i in other_nodes:
+                mod_path = i.mod_link.rel_mod_path if i.mod_link else self.ice()
+                err_msg += f", {mod_path}, line {i.line}"
+        self.error(err_msg)
 
     def resolve_ability_symtab_name(self, node: ast.Ability) -> str:
         """Resolve ability name in symbol table."""
@@ -201,14 +214,15 @@ class SymTabBuildPass(Pass):
                         node=v.decl if v.decl else v.defn[-1],
                         single=True,
                     ):
-                        self.cur_node = (
-                            v.decl
-                            if v.decl
-                            else v.defn[-1]
-                            if len(v.defn)
-                            else self.cur_node
-                        )  # TODO: ALSO CHECK WITH INTELLIE ADD TO OUTPUT INSTEAD OF REPLACING CURR NODE
-                        self.already_declared_err(k, "include item", collide)
+                        other_node = (
+                            v.decl if v.decl else v.defn[-1] if len(v.defn) else None
+                        )
+                        if other_node:
+                            self.already_declared_err(
+                                k, "include item", collide, [other_node]
+                            )
+                        else:
+                            self.already_declared_err(k, "include item", collide)
         self.sync_node_to_scope(node)
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
