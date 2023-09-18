@@ -433,6 +433,14 @@ class Ability(OOPAccessNode):
         else:
             raise NotImplementedError
 
+    def resolve_ability_symtab_name(self) -> str:
+        """Resolve ability name in symbol table."""
+        return (
+            f"{self.arch_attached.parent.name.value}.{self.py_resolve_name()}"
+            if self.arch_attached and isinstance(self.arch_attached.parent, Architype)
+            else self.py_resolve_name()
+        )
+
 
 class AbilityDef(AstNode):
     """AbilityDef node type for Jac Ast."""
@@ -459,6 +467,19 @@ class AbilityDef(AstNode):
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
+
+    def py_resolve_name(self) -> str:
+        """Resolve name."""
+        ability_name = self.ability.py_resolve_name()
+        if self.target:
+            owner = self.target.names[-1]
+            if isinstance(owner, ArchRef):
+                owner = owner.py_resolve_name()
+                ability_name = f"{owner}.{ability_name}"
+                return ability_name
+            raise Exception("Invalid AST: Expected reference to Architype!")
+        else:
+            return ability_name
 
 
 class EventSignature(AstNode):
@@ -1398,7 +1419,7 @@ class Assignment(AstNode):
     def __init__(
         self,
         is_static: bool,
-        target: "AtomType",
+        target: AtomType,
         value: ExprType,
         mutable: bool,
         parent: Optional[AstNode],
