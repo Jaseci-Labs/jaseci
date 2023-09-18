@@ -367,15 +367,7 @@ class SymTabBuildPass(Pass):
         body: CodeBlock,
         sym_tab: Optional[SymbolTable],
         """
-        ability_name = node.ability.py_resolve_name()
-        if node.target:
-            owner = node.target.names[-1]
-            if not isinstance(owner, ast.ArchRef):
-                self.error("Expected reference to Architype!")
-                owner = ""
-            else:
-                owner = owner.py_resolve_name()
-            ability_name = f"{owner}.{ability_name}"
+        ability_name = node.py_resolve_name()
         if collide := self.cur_scope().insert(
             name=ability_name,
             sym_hit=SymbolHitType.DEFN,
@@ -464,6 +456,19 @@ class SymTabBuildPass(Pass):
             self.already_declared_err(node.name.value, "enum", collide)
         self.push_scope()
         self.sync_node_to_scope(node)
+
+    def exit_enum(self, node: ast.Enum) -> None:
+        """Sub objects.
+
+        name: Name,
+        doc: Optional[Token],
+        decorators: Optional['Decorators'],
+        access: Optional[Token],
+        base_classes: 'BaseClasses',
+        body: Optional['EnumBlock'],
+        sym_tab: Optional[SymbolTable],
+        """
+        self.pop_scope()
 
     def enter_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.

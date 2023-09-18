@@ -460,6 +460,19 @@ class AbilityDef(AstNode):
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
 
+    def py_resolve_name(self) -> str:
+        """Resolve name."""
+        ability_name = self.ability.py_resolve_name()
+        if self.target:
+            owner = self.target.names[-1]
+            if isinstance(owner, ArchRef):
+                owner = owner.py_resolve_name()
+                ability_name = f"{owner}.{ability_name}"
+                return ability_name
+            raise Exception("Invalid AST: Expected reference to Architype!")
+        else:
+            return ability_name
+
 
 class EventSignature(AstNode):
     """EventSignature node type for Jac Ast."""
