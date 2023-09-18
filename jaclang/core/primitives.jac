@@ -28,10 +28,9 @@ object Memory {
 }
 
 object ExecutionContext {
-    has master: Master,
-        memory: Memory;
+    has master: Master = :>uuid4,
+        memory: Memory = Memory();
 
-    can <init>(master: UUID = :>uuid4, memory: Memory = Memory());
     can get_root() -> Node;
 }
 

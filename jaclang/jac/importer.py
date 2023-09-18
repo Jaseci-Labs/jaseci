@@ -108,15 +108,18 @@ def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary)
         jac_err_line = int(code_string.splitlines()[except_line - 1].split()[-1])
         mod_index = int(code_string.splitlines()[except_line - 1].split()[-2])
         mod_paths = code_string.split(Con.JAC_DEBUG_SPLITTER)[1].strip().splitlines()
-        with open(mod_paths[mod_index], "r") as file:
+        target_mod = mod_paths[mod_index]
+        with open(target_mod, "r") as file:
             jac_code_string = file.read()
         jac_error_region = clip_code_section(
             add_line_numbers(jac_code_string), jac_err_line, Val.JAC_ERROR_LINE_RANGE
         )
     except Exception as e:
         jac_error_region = str(e)
+        target_mod = ""
     snippet = (
         f"{Con.JAC_ERROR_PREAMBLE}\n"
+        f"{target_mod}\n"
         f"JacCode Snippet:\n{jac_error_region}\n"
         f"PyCode Snippet:\n{py_error_region}\n"
     )
