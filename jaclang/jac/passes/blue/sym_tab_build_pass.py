@@ -18,7 +18,7 @@ class SymTabBuildPass(Pass):
         if fresh:
             self.cur_sym_tab.append(SymbolTable())
         else:
-            self.cur_sym_tab.append(self.cur_sym_tab[-1].push_scope())
+            self.cur_sym_tab.append(self.cur_scope().push_scope())
 
     def pop_scope(self) -> None:
         """Pop scope."""
@@ -50,15 +50,6 @@ class SymTabBuildPass(Pass):
                 mod_path = i.mod_link.rel_mod_path if i.mod_link else self.ice()
                 err_msg += f", {mod_path}, line {i.line}"
         self.error(err_msg)
-
-    def resolve_ability_symtab_name(self, node: ast.Ability) -> str:
-        """Resolve ability name in symbol table."""
-        return (
-            f"{node.arch_attached.parent.name.value}.{node.py_resolve_name()}"
-            if node.arch_attached
-            and isinstance(node.arch_attached.parent, ast.Architype)
-            else node.py_resolve_name()
-        )
 
     def enter_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -134,8 +125,8 @@ class SymTabBuildPass(Pass):
             )
         ):
             self.already_declared_err(node.name.value, "test", collide)
-        self.push_scope()
         self.sync_node_to_scope(node)
+        self.push_scope()
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -155,8 +146,8 @@ class SymTabBuildPass(Pass):
         body: 'CodeBlock',
         sym_tab: Optional[SymbolTable],
         """
-        self.push_scope()
         self.sync_node_to_scope(node)
+        self.push_scope()
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
@@ -270,8 +261,8 @@ class SymTabBuildPass(Pass):
             single=True,
         ):
             self.already_declared_err(node.name.value, "architype", collide)
-        self.push_scope()
         self.sync_node_to_scope(node)
+        self.push_scope()
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Sub objects.
@@ -329,7 +320,7 @@ class SymTabBuildPass(Pass):
         sym_tab: Optional[SymbolTable],
         arch_attached: Optional[ArchBlock],
         """
-        ability_name = self.resolve_ability_symtab_name(node)
+        ability_name = node.resolve_ability_symtab_name()
         if collide := self.cur_scope().insert(
             name=ability_name,
             sym_hit=SymbolHitType.DECL,
@@ -337,8 +328,8 @@ class SymTabBuildPass(Pass):
             single=True,
         ):
             self.already_declared_err(ability_name, "ability", collide)
-        self.push_scope()
         self.sync_node_to_scope(node)
+        self.push_scope()
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -375,8 +366,8 @@ class SymTabBuildPass(Pass):
             single=True,
         ):
             self.already_declared_err(ability_name, "ability def", collide)
-        self.push_scope()
         self.sync_node_to_scope(node)
+        self.push_scope()
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
@@ -454,8 +445,8 @@ class SymTabBuildPass(Pass):
             single=True,
         ):
             self.already_declared_err(node.name.value, "enum", collide)
-        self.push_scope()
         self.sync_node_to_scope(node)
+        self.push_scope()
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.
@@ -479,7 +470,27 @@ class SymTabBuildPass(Pass):
         body: EnumBlock,
         sym_tab: Optional[SymbolTable],
         """
+        ability_name = node.enum.py_resolve_name()
+        if collide := self.cur_scope().insert(
+            name=ability_name,
+            sym_hit=SymbolHitType.DEFN,
+            node=node,
+            single=True,
+        ):
+            self.already_declared_err(ability_name, "enum def", collide)
         self.sync_node_to_scope(node)
+        self.push_scope()
+
+    def exit_enum_def(self, node: ast.EnumDef) -> None:
+        """Sub objects.
+
+        doc: Optional[Token],
+        enum: ArchRef,
+        mod: Optional[DottedNameList],
+        body: EnumBlock,
+        sym_tab: Optional[SymbolTable],
+        """
+        self.pop_scope()
 
     def enter_enum_block(self, node: ast.EnumBlock) -> None:
         """Sub objects.
@@ -495,6 +506,8 @@ class SymTabBuildPass(Pass):
         members: list['ArchHas | Ability'],
         sym_tab: Optional[SymbolTable],
         """
+        for i in self.get_all_sub_nodes(node, ast.Ability):
+            i.arch_attached = node
         self.sync_node_to_scope(node)
 
     def enter_arch_has(self, node: ast.ArchHas) -> None:

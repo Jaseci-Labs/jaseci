@@ -433,6 +433,14 @@ class Ability(OOPAccessNode):
         else:
             raise NotImplementedError
 
+    def resolve_ability_symtab_name(self) -> str:
+        """Resolve ability name in symbol table."""
+        return (
+            f"{self.arch_attached.parent.name.value}.{self.py_resolve_name()}"
+            if self.arch_attached and isinstance(self.arch_attached.parent, Architype)
+            else self.py_resolve_name()
+        )
+
 
 class AbilityDef(AstNode):
     """AbilityDef node type for Jac Ast."""
