@@ -9,3 +9,6 @@ import:py from uuid, UUID, uuid4;
     return <self>.master.root_node;
 }
 
+:object:ExecutionContext:a:reset {
+    <self>.<init>();
+}

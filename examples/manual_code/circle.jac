@@ -27,10 +27,6 @@ enum ShapeType {
 object Shape {
     has shape_type: ShapeType;
 
-    can <init>(shape_type: ShapeType) {
-        <self>.shape_type = shape_type;
-    }
-
     """Abstract method to calculate the area of a shape."""
     can area -> float abstract;
 }

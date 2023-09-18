@@ -13,7 +13,7 @@ class PurplePygenPassTests(TestCaseMicroSuite):
 
     def setUp(self) -> None:
         """Set up test."""
-        core.exec_ctx = core.prim.ExecutionContext()
+        core.exec_ctx.reset()
         return super().setUp()
 
     def test_simple_jac_red(self) -> None:

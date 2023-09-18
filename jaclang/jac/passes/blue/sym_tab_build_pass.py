@@ -203,7 +203,7 @@ class SymTabBuildPass(Pass):
                         name=k,
                         sym_hit=SymbolHitType.DECL if v.decl else SymbolHitType.DEFN,
                         node=v.decl if v.decl else v.defn[-1],
-                        single=False,
+                        single=True,
                     ):
                         other_node = (
                             v.decl if v.decl else v.defn[-1] if len(v.defn) else None

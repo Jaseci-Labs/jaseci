@@ -31,6 +31,7 @@ object ExecutionContext {
     has master: Master = :>uuid4,
         memory: Memory = Memory();
 
+    can reset;
     can get_root() -> Node;
 }
 
