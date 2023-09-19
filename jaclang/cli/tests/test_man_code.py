@@ -50,7 +50,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cmds.run(self.fixture_abs_path("../../../../examples/manual_code/circle_clean.jac"))  # type: ignore
+        cmds.run(self.fixture_abs_path("../../../../examples/manual_code/circle_clean_impl.jac"))  # type: ignore
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -62,15 +62,15 @@ class JacCliTests(TestCase):
             stdout_value,
         )
 
-    # def test_clean_circle_jac_test(self) -> None:
-    #     """Basic test for pass."""
-    #     captured_output = io.StringIO()
-    #     sys.stderr = captured_output
+    def test_clean_circle_jac_test(self) -> None:
+        """Basic test for pass."""
+        captured_output = io.StringIO()
+        sys.stderr = captured_output
 
-    #     # Execute the function
-    #     cmds.test(self.fixture_abs_path("../../../../examples/manual_code/circle_clean.jac"))  # type: ignore
+        # Execute the function
+        cmds.test(self.fixture_abs_path("../../../../examples/manual_code/circle_clean_impl.jac"))  # type: ignore
 
-    #     sys.stderr = sys.__stderr__
-    #     stderr_value = captured_output.getvalue()
-    #     # Assertions or verifications
-    #     self.assertIn("Ran 3 tests", stderr_value)
+        sys.stderr = sys.__stderr__
+        stderr_value = captured_output.getvalue()
+        # Assertions or verifications
+        self.assertIn("Ran 3 tests", stderr_value)

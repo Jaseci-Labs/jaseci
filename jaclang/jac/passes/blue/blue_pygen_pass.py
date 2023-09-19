@@ -8,8 +8,6 @@ from jaclang.jac.passes import Pass
 class BluePygenPass(Pass):
     """Jac blue transpilation to python pass."""
 
-    TEST_COUNT = 0
-
     def before_pass(self) -> None:
         """Initialize pass."""
         self.indent_size = 4
@@ -188,11 +186,7 @@ class BluePygenPass(Pass):
         doc: Optional[Token],
         body: CodeBlock,
         """
-        if node.name:
-            test_name = node.name.value
-        else:
-            test_name = f"_jac_t{self.TEST_COUNT}"
-            self.TEST_COUNT += 1
+        test_name = node.name.value
         test_code = "import unittest as __jac_unittest__\n"
         test_code += "__jac_tc__ = __jac_unittest__.TestCase()\n"
         test_code += "__jac_suite__ = __jac_unittest__.TestSuite()\n"
@@ -320,8 +314,6 @@ class BluePygenPass(Pass):
             self.emit_ln(node, node.doc.value)
         if node.body:
             self.emit(node, node.body.meta["py_code"])
-        else:
-            self.decl_def_missing(node.name.meta["py_code"])
         self.indent_level -= 1
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
@@ -402,8 +394,6 @@ class BluePygenPass(Pass):
             self.emit_jac_error_handler(node)
         elif node.is_abstract:
             self.emit_ln(node, "pass")
-        else:
-            self.decl_def_missing(ability_name)
         self.indent_level -= 1
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
@@ -613,8 +603,6 @@ class BluePygenPass(Pass):
             self.emit_ln(node, node.doc.value)
         if node.body:
             self.emit(node, node.body.meta["py_code"])
-        else:
-            self.decl_def_missing(node.name.meta["py_code"])
         self.indent_level -= 1
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
