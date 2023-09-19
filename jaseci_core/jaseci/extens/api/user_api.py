@@ -149,14 +149,17 @@ class UserApi:
         name: str,
         detailed: bool = False,
         create_if_not_exist: bool = False,
-        password: str = "",
-        global_init: str = "",
-        global_init_ctx: dict = {},
-        other_fields: dict = {},
-        send_email: bool = True,
+        create_fields: dict = {},
     ):
         """
         Search for user and returns its master jid.
         Create new one if the user doesn't already exist, optionally.
+        create_fields will be forwarded to the user create endpoint, including
+            password
+            global_init
+            global_init_ctx
+            other_fields
+            send_email
+        See the user_create API for more details.
         """
         pass

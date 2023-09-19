@@ -106,15 +106,18 @@ class Master(CoreMaster):
         name: str,
         detailed: bool = False,
         create_if_not_exist: bool = False,
-        password: str = "",
-        global_init: str = "",
-        global_init_ctx: dict = {},
-        other_fields: dict = {},
-        send_email: bool = True,
+        create_fields: dict = {},
     ):
         """
         Search for user and returns its master jid.
-        Create new one if the user doesn't already exist
+        Create new one if the user doesn't already exist, optionally.
+        create_fields will be forwarded to the user create endpoint, including
+            password
+            global_init
+            global_init_ctx
+            other_fields
+            send_email
+        See the user_create API for more details.
         """
         try:
             return (
@@ -127,11 +130,11 @@ class Master(CoreMaster):
             if create_if_not_exist:
                 return self.user_create(
                     name=name,
-                    password=password,
-                    global_init=global_init,
-                    global_init_ctx=global_init_ctx,
-                    other_fields=other_fields,
-                    send_email=send_email,
+                    password=create_fields.get("password", ""),
+                    global_init=create_fields.get("global_init", ""),
+                    global_init_ctx=create_fields.get("global_init_ctx", {}),
+                    other_fields=create_fields.get("other_fields", {}),
+                    send_email=create_fields.get("send_email", True),
                 )
             else:
                 return f"User {name} not found."
