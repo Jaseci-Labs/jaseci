@@ -19,7 +19,7 @@ jobs:
         python-version: 3.11
 
     - name: Install pre-commit
-      run: pip install pre-commit
+      run: pip install pre-commit pytest
 
     - name: Run pre-commit hooks
       run: pre-commit run --all-files
