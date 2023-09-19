@@ -314,8 +314,6 @@ class BluePygenPass(Pass):
             self.emit_ln(node, node.doc.value)
         if node.body:
             self.emit(node, node.body.meta["py_code"])
-        else:
-            self.decl_def_missing(node.name.meta["py_code"])
         self.indent_level -= 1
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
@@ -396,8 +394,6 @@ class BluePygenPass(Pass):
             self.emit_jac_error_handler(node)
         elif node.is_abstract:
             self.emit_ln(node, "pass")
-        else:
-            self.decl_def_missing(ability_name)
         self.indent_level -= 1
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
@@ -607,8 +603,6 @@ class BluePygenPass(Pass):
             self.emit_ln(node, node.doc.value)
         if node.body:
             self.emit(node, node.body.meta["py_code"])
-        else:
-            self.decl_def_missing(node.name.meta["py_code"])
         self.indent_level -= 1
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
