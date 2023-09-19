@@ -24,6 +24,3 @@ object Circle:Shape {
 
 # Radius of the demo circle
 global RAD = 5, c = Circle(RAD);
-
-"""Here we run the main program."""
-with entry:__main__ { main_run();}

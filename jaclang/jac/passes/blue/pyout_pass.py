@@ -30,7 +30,7 @@ class PyOutPass(Pass):
             or not node.meta["py_code"]
         ):
             return
-        dir_name, file_name = os.path.split(self.mod_path)
+        dir_name, file_name = os.path.split(node.mod_path)
         base_name, _ = os.path.splitext(file_name)
         file_name = f"{base_name}.py"
         os.makedirs(os.path.join(dir_name, self.gen_dir), exist_ok=True)
