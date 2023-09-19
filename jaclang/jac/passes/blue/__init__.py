@@ -6,6 +6,7 @@ from .sym_tab_build_pass import SymTabBuildPass  # noqa: I100
 from .decl_def_match_pass import DeclDefMatchPass  # noqa: I100
 from .semantic_check_pass import SemanticCheckPass  # noqa: I100
 from .blue_pygen_pass import BluePygenPass  # noqa: I100
+from .pyout_pass import PyOutPass  # noqa: I100
 
 pass_schedule = [
     AstBuildPass,
@@ -25,4 +26,5 @@ __all__ = [
     "DeclDefMatchPass",
     "SemanticCheckPass",
     "BluePygenPass",
+    "PyOutPass",
 ]

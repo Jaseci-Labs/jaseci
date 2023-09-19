@@ -8,11 +8,21 @@ if TYPE_CHECKING:
     import jaclang.jac.absyntree as ast
 
 
+class SymbolType(Enum):
+    """Symbol types."""
+
+    VAR = "var"
+    ABILITY = "ability"
+    ARCH = "arch"
+    HAS = "field"
+
+
 class SymbolHitType(Enum):
     """Symbol types."""
 
     DECL = "decl"
     DEFN = "defn"
+    DECL_DEFN = "decl_defn"
     USE = "use"
 
 
@@ -22,6 +32,7 @@ class Symbol:
     def __init__(
         self,
         name: str,
+        sym_type: SymbolType,
         typ: Optional[type] = None,
         decl: Optional[ast.AstNode] = None,
         defn: Optional[list[ast.AstNode]] = None,
@@ -29,6 +40,7 @@ class Symbol:
     ) -> None:
         """Initialize."""
         self.name = name
+        self.sym_type = sym_type
         self.typ = typ
         self.decl = decl
         self.defn: list[ast.AstNode] = defn if defn else []
@@ -36,7 +48,10 @@ class Symbol:
 
     def __repr__(self) -> str:
         """Repr."""
-        return f"Symbol({self.name}, {self.typ}, {self.decl}, {self.defn}, {self.uses})"
+        return (
+            f"Symbol({self.name}, {self.sym_type}, {self.typ}, "
+            f"{self.decl}, {self.defn}, {self.uses})"
+        )
 
 
 class SymbolTable:
@@ -46,6 +61,7 @@ class SymbolTable:
         """Initialize."""
         self.name = name
         self.parent = parent if parent else self
+        self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
 
     def has_parent(self) -> bool:
@@ -76,6 +92,7 @@ class SymbolTable:
     def insert(
         self,
         name: str,
+        sym_type: SymbolType,
         sym_hit: SymbolHitType,
         node: ast.AstNode,
         single: bool = False,
@@ -86,13 +103,13 @@ class SymbolTable:
         """
         if single:
             if (
-                sym_hit == SymbolHitType.DECL
+                sym_hit in [SymbolHitType.DECL, SymbolHitType.DECL_DEFN]
                 and name in self.tab
                 and self.tab[name].decl
             ):
                 return self.tab[name].decl
             elif (
-                sym_hit == SymbolHitType.DEFN
+                sym_hit in [SymbolHitType.DEFN, SymbolHitType.DECL_DEFN]
                 and name in self.tab
                 and len(self.tab[name].defn)
             ):
@@ -104,17 +121,22 @@ class SymbolTable:
             ):
                 return self.tab[name].uses[-1]
         if name not in self.tab:
-            self.tab[name] = Symbol(name=name)
+            self.tab[name] = Symbol(name=name, sym_type=sym_type)
         if sym_hit == SymbolHitType.DECL:
             self.tab[name].decl = node
         elif sym_hit == SymbolHitType.DEFN:
             self.tab[name].defn.append(node)
+        elif sym_hit == SymbolHitType.DECL_DEFN:
+            self.tab[name].defn.append(node)
+            if not self.tab[name].decl:
+                self.tab[name].decl = node
         elif sym_hit == SymbolHitType.USE:
             self.tab[name].uses.append(node)
 
     def push_scope(self, name: str) -> SymbolTable:
         """Push a new scope onto the symbol table."""
-        return SymbolTable(name, self)
+        self.kid.append(SymbolTable(name, self))
+        return self.kid[-1]
 
     def __repr__(self) -> str:
         """Repr."""
