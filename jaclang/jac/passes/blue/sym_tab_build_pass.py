@@ -11,14 +11,14 @@ class SymTabBuildPass(Pass):
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.cur_sym_tab: list[SymbolTable] = [SymbolTable()]
+        self.cur_sym_tab: list[SymbolTable] = []
 
-    def push_scope(self, fresh: bool = False) -> None:
+    def push_scope(self, name: str, fresh: bool = False) -> None:
         """Push scope."""
         if fresh:
-            self.cur_sym_tab.append(SymbolTable())
+            self.cur_sym_tab.append(SymbolTable(name))
         else:
-            self.cur_sym_tab.append(self.cur_scope().push_scope())
+            self.cur_sym_tab.append(self.cur_scope().push_scope(name))
 
     def pop_scope(self) -> None:
         """Pop scope."""
@@ -62,7 +62,7 @@ class SymTabBuildPass(Pass):
         is_imported: bool,
         sym_tab: Optional[SymbolTable],
         """
-        self.push_scope(fresh=True)
+        self.push_scope(node.name, fresh=True)
         self.sync_node_to_scope(node)
 
     def exit_module(self, node: ast.Module) -> None:
@@ -126,7 +126,7 @@ class SymTabBuildPass(Pass):
         ):
             self.already_declared_err(node.name.value, "test", collide)
         self.sync_node_to_scope(node)
-        self.push_scope()
+        self.push_scope(node.name.value)
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -143,11 +143,11 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         doc: Optional[Token],
-        body: 'CodeBlock',
-        sym_tab: Optional[SymbolTable],
+        name: Optional[Name],
+        body: CodeBlock,
         """
         self.sync_node_to_scope(node)
-        self.push_scope()
+        self.push_scope("module_code")
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
@@ -262,7 +262,7 @@ class SymTabBuildPass(Pass):
         ):
             self.already_declared_err(node.name.value, "architype", collide)
         self.sync_node_to_scope(node)
-        self.push_scope()
+        self.push_scope(node.name.value)
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Sub objects.
@@ -329,7 +329,7 @@ class SymTabBuildPass(Pass):
         ):
             self.already_declared_err(ability_name, "ability", collide)
         self.sync_node_to_scope(node)
-        self.push_scope()
+        self.push_scope(ability_name)
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -367,7 +367,7 @@ class SymTabBuildPass(Pass):
         ):
             self.already_declared_err(ability_name, "ability def", collide)
         self.sync_node_to_scope(node)
-        self.push_scope()
+        self.push_scope(ability_name)
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
@@ -446,7 +446,7 @@ class SymTabBuildPass(Pass):
         ):
             self.already_declared_err(node.name.value, "enum", collide)
         self.sync_node_to_scope(node)
-        self.push_scope()
+        self.push_scope(node.name.value)
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.
@@ -479,7 +479,7 @@ class SymTabBuildPass(Pass):
         ):
             self.already_declared_err(ability_name, "enum def", collide)
         self.sync_node_to_scope(node)
-        self.push_scope()
+        self.push_scope(ability_name)
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.

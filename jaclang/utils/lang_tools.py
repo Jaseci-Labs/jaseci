@@ -38,7 +38,14 @@ class AstNodeInfo:
         self.init_sig = inspect.signature(cls.__init__)
         self.kids: list[AstKidInfo] = []
         for param_name, param in self.init_sig.parameters.items():
-            if param_name not in ["self", "parent", "kid", "line", "mod_link"]:
+            if param_name not in [
+                "self",
+                "parent",
+                "kid",
+                "line",
+                "mod_link",
+                "sym_tab",
+            ]:
                 param_type = (
                     param.annotation
                     if param.annotation != inspect.Parameter.empty

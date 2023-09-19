@@ -148,9 +148,11 @@ class GlobalVars(OOPAccessNode):
 class Test(AstNode):
     """Test node type for Jac Ast."""
 
+    TEST_COUNT = 0
+
     def __init__(
         self,
-        name: Optional[Name],
+        name: Name | Token,
         doc: Optional[Token],
         body: CodeBlock,
         parent: Optional[AstNode],
@@ -161,7 +163,24 @@ class Test(AstNode):
     ) -> None:
         """Initialize test node."""
         self.doc = doc
-        self.name = name
+        Test.TEST_COUNT += 1 if isinstance(name, Token) else 0
+        self.name: Name = (  # for auto generated test names
+            name
+            if isinstance(name, Name)
+            else Name(
+                name="NAME",
+                value=f"test_{Test.TEST_COUNT}",
+                col_start=name.col_start,
+                col_end=name.col_end,
+                line=name.line,
+                already_declared=False,
+                parent=name.parent,
+                mod_link=name.mod_link,
+                kid=name.kid,
+                sym_tab=name.sym_tab,
+            )
+        )
+        kid[1] = self.name
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab

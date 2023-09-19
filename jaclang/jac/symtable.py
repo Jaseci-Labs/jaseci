@@ -42,8 +42,9 @@ class Symbol:
 class SymbolTable:
     """Symbol Table."""
 
-    def __init__(self, parent: Optional[SymbolTable] = None) -> None:
+    def __init__(self, name: str, parent: Optional[SymbolTable] = None) -> None:
         """Initialize."""
+        self.name = name
         self.parent = parent if parent else self
         self.tab: dict[str, Symbol] = {}
 
@@ -111,6 +112,13 @@ class SymbolTable:
         elif sym_hit == SymbolHitType.USE:
             self.tab[name].uses.append(node)
 
-    def push_scope(self) -> SymbolTable:
+    def push_scope(self, name: str) -> SymbolTable:
         """Push a new scope onto the symbol table."""
-        return SymbolTable(self)
+        return SymbolTable(name, self)
+
+    def __repr__(self) -> str:
+        """Repr."""
+        out = f"{self.name}:\n"
+        for k, v in self.tab.items():
+            out += f"    {k}: {v}\n"
+        return out

@@ -1,4 +1,6 @@
 """Enum for shape types"""
+include:jac circle_clean;
+
 :enum:ShapeType {
     CIRCLE = "Circle",
     UNKNOWN = "Unknown"

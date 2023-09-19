@@ -63,6 +63,7 @@ class DeclDefMatchPass(Pass):
             name = node.name.value
             if not node.sym_tab:
                 return self.ice("Expected symbol table on node.")
+            print(node.sym_tab)
             adef = node.sym_tab.lookup(name, sym_hit=SymbolHitType.DEFN)
             if (
                 not adef
@@ -76,3 +77,14 @@ class DeclDefMatchPass(Pass):
             ast.append_node(adef.decl, adef.defn[-1])
             adef.decl.body = adef.defn[-1].body
             adef.decl.sym_tab = adef.defn[-1].sym_tab
+
+    def exit_enum_def(self, node: ast.EnumDef) -> None:
+        """Sub objects.
+
+        doc: Optional[Token],
+        enum: ArchRef,
+        mod: Optional[DottedNameList],
+        body: EnumBlock,
+        sym_tab: Optional[SymbolTable],
+        """
+        print(node.sym_tab)

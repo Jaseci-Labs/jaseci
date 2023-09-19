@@ -8,8 +8,6 @@ from jaclang.jac.passes import Pass
 class BluePygenPass(Pass):
     """Jac blue transpilation to python pass."""
 
-    TEST_COUNT = 0
-
     def before_pass(self) -> None:
         """Initialize pass."""
         self.indent_size = 4
@@ -188,11 +186,7 @@ class BluePygenPass(Pass):
         doc: Optional[Token],
         body: CodeBlock,
         """
-        if node.name:
-            test_name = node.name.value
-        else:
-            test_name = f"_jac_t{self.TEST_COUNT}"
-            self.TEST_COUNT += 1
+        test_name = node.name.value
         test_code = "import unittest as __jac_unittest__\n"
         test_code += "__jac_tc__ = __jac_unittest__.TestCase()\n"
         test_code += "__jac_suite__ = __jac_unittest__.TestSuite()\n"
