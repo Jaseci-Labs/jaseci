@@ -54,6 +54,6 @@ with entry:__main__ {
 
 # Unit Tests!
 global expected_area = 78.53981633974483;
-test calculate_area { check.AlmostEqual(calculate_area(RAD), expected_area); }
+test calc_area { check.AlmostEqual(calculate_area(RAD), expected_area); }
 test circle_area { c = Circle(RAD); check.AlmostEqual(c.area(), expected_area); }
 test circle_type { c = Circle(RAD); check.Equal(c.shape_type, ShapeType.CIRCLE); }

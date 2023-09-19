@@ -1268,9 +1268,13 @@ class BluePygenPass(Pass):
 
         values: list[Assignment],
         """
-        self.emit(
-            node, f"{', '.join([value.meta['py_code'] for value in node.values])}"
-        )
+        if isinstance(node.parent, ast.GlobalVars):
+            for i in node.values:
+                self.emit_ln(node, i.meta["py_code"])
+        else:
+            self.emit(
+                node, f"{', '.join([value.meta['py_code'] for value in node.values])}"
+            )
 
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
