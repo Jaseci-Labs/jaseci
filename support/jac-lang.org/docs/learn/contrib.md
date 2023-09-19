@@ -17,6 +17,7 @@ Once you checked out the repo, you should run
 # Install pre-commit
 pip3 install pre-commit
 pre-commit install
+pre-commit install --hook-type pre-push
 ```
 
 > Note
