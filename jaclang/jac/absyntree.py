@@ -326,7 +326,7 @@ class Architype(OOPAccessNode):
         name: Name,
         arch_type: Token,
         doc: Optional[Token],
-        decorators: list[Decorator],
+        decorators: Optional[Decorators],
         access: Optional[Token],
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
@@ -359,7 +359,7 @@ class ArchDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        target: list[ArchRef],
+        target: ArchRefChain,
         body: ArchBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -376,12 +376,12 @@ class ArchDef(AstNode):
         )
 
 
-class Decorator(AstNode):
+class Decorators(AstNode):
     """Decorators node type for Jac Ast."""
 
     def __init__(
         self,
-        call: ExprType,
+        calls: list[ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -389,7 +389,7 @@ class Decorator(AstNode):
         sym_tab: Optional[SymbolTable] = None,
     ) -> None:
         """Initialize decorators node."""
-        self.call = call
+        self.calls = calls
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
@@ -419,13 +419,13 @@ class Ability(OOPAccessNode):
 
     def __init__(
         self,
-        name_ref: Name | SpecialVarRef | ArchRef,
+        name_ref: Name | SpecialVarRef,
         is_func: bool,
         is_async: bool,
         is_static: bool,
         is_abstract: bool,
         doc: Optional[Token],
-        decorators: list[Decorator],
+        decorators: Optional[Decorators],
         access: Optional[Token],
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
@@ -481,7 +481,7 @@ class AbilityDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        target: list[ArchRef],
+        target: ArchRefChain,
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
         parent: Optional[AstNode],
@@ -498,19 +498,6 @@ class AbilityDef(AstNode):
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
-
-    def py_resolve_name(self) -> str:
-        """Resolve name."""
-        ability_name = self.ability.py_resolve_name()
-        if self.target:
-            owner = self.target.names[-1]
-            if isinstance(owner, ArchRef):
-                owner = owner.py_resolve_name()
-                ability_name = f"{owner}.{ability_name}"
-                return ability_name
-            raise Exception("Invalid AST: Expected reference to Architype!")
-        else:
-            return ability_name
 
 
 class EventSignature(AstNode):
@@ -541,7 +528,7 @@ class DottedNameList(AstNode):
 
     def __init__(
         self,
-        names: list[Token | SpecialVarRef | ArchRef | Name],
+        names: list[Token | SpecialVarRef | Name],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -553,6 +540,29 @@ class DottedNameList(AstNode):
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
+
+
+class ArchRefChain(AstNode):
+    """Arch ref list node type for Jac Ast."""
+
+    def __init__(
+        self,
+        archs: list[ArchRef],
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+        sym_tab: Optional[SymbolTable] = None,
+    ) -> None:
+        """Initialize name list ."""
+        self.archs = archs
+        super().__init__(
+            parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
+        )
+
+    def py_resolve_name(self) -> str:
+        """Resolve name."""
+        return ".".join([x.py_resolve_name() for x in self.archs])
 
 
 class FuncSignature(AstNode):
@@ -627,7 +637,7 @@ class Enum(OOPAccessNode):
         self,
         name: Name,
         doc: Optional[Token],
-        decorators: list[Decorator],
+        decorators: Optional[Decorators],
         access: Optional[Token],
         base_classes: "BaseClasses",
         body: Optional["EnumBlock"],
@@ -659,7 +669,7 @@ class EnumDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        target: list[ArchRef],
+        target: ArchRefChain,
         body: EnumBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -1724,8 +1734,8 @@ class AtomTrailer(AstNode):
 
     def __init__(
         self,
-        target: "AtomType",
-        right: "IndexSlice | ArchRef | Token",
+        target: AtomType,
+        right: IndexSlice | ArchRef | Token,
         null_ok: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -2163,9 +2173,14 @@ def replace_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
     return new_node
 
 
-def append_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
+def append_node(
+    node: AstNode, new_node: Optional[AstNode], front: bool = False
+) -> AstNode | None:
     """Replace node with new_node."""
-    node.kid.append(new_node)
+    if front:
+        node.kid.insert(0, new_node)
+    else:
+        node.kid.append(new_node)
     if new_node:
         new_node.parent = node
     return new_node

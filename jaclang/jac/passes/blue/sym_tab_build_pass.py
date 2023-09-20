@@ -319,7 +319,7 @@ class SymTabBuildPass(Pass):
         """
         self.pop_scope()
 
-    def enter_decorators(self, node: ast.Decorators) -> None:
+    def enter_decorator(self, node: ast.Decorators) -> None:
         """Sub objects.
 
         calls: list[ExprType],
@@ -389,13 +389,11 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         doc: Optional[Token],
-        target: Optional[DottedNameList],
-        ability: ArchRef,
+        target: ArchRefChain,
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
-        sym_tab: Optional[SymbolTable],
         """
-        ability_name = node.py_resolve_name()
+        ability_name = node.target.py_resolve_name()
         if collide := self.cur_scope().insert(
             name=ability_name,
             sym_type=St.ABILITY,
@@ -504,12 +502,10 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         doc: Optional[Token],
-        enum: ArchRef,
-        mod: Optional[DottedNameList],
+        target: list[ArchRef],
         body: EnumBlock,
-        sym_tab: Optional[SymbolTable],
         """
-        name = node.enum.py_resolve_name()
+        name = node.target.py_resolve_name()
         if collide := self.cur_scope().insert(
             name=name,
             sym_type=St.ARCH,

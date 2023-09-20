@@ -2,7 +2,7 @@
 from os import path
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.absyntree import replace_node
+from jaclang.jac.absyntree import append_node, replace_node
 from jaclang.jac.constant import EdgeDir
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
@@ -381,9 +381,18 @@ class AstBuildPass(Pass):
         else:
             dec = node.kid[0]
             new_node = replace_node(node, node.kid[1])
-            if isinstance(new_node, ast.Architype):
-                new_node.decorators.insert(0, dec)
-                new_node.kid.insert(0, dec)
+            if isinstance(new_node, ast.Architype) and new_node.decorators:
+                new_node.decorators.calls.insert(0, dec)
+                append_node(new_node.decorators, dec, front=True)
+            elif isinstance(new_node, ast.Architype):
+                new_node.decorators = ast.Decorators(
+                    calls=[dec],
+                    parent=new_node,
+                    mod_link=self.mod_link,
+                    kid=[dec],
+                    line=node.line,
+                )
+                append_node(new_node, new_node.decorators, front=True)
             else:
                 self.ice("Expected node to be architype!")
 
@@ -397,7 +406,7 @@ class AstBuildPass(Pass):
             node,
             ast.Architype(
                 doc=None,
-                decorators=[],
+                decorators=None,
                 arch_type=node.kid[0],
                 access=node.kid[1],
                 name=node.kid[2],
@@ -421,7 +430,7 @@ class AstBuildPass(Pass):
             node,
             ast.ArchDef(
                 doc=None,
-                target=node.kid[0].kid,
+                target=node.kid[0],
                 body=node.kid[1],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -440,22 +449,12 @@ class AstBuildPass(Pass):
         """
         replace_node(node, node.kid[0])
 
-    def exit_decorators(self, node: ast.AstNode) -> None:
+    def exit_decorator(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        decorators -> DECOR_OP atom
+        decorator -> DECOR_OP atom
         """
-        node.kid = [node.kid[1]]
-        replace_node(
-            node,
-            ast.Decorator(
-                call=node.kid[0],
-                parent=node.parent,
-                mod_link=self.mod_link,
-                kid=node.kid,
-                line=node.line,
-            ),
-        )
+        replace_node(node, node.kid[1])
 
     def exit_inherited_archs(self, node: ast.AstNode) -> None:
         """Grammar rule.
@@ -574,7 +573,7 @@ class AstBuildPass(Pass):
             node,
             ast.Enum(
                 doc=None,
-                decorators=[],
+                decorators=None,
                 access=node.kid[0],
                 name=node.kid[1],
                 base_classes=node.kid[2],
@@ -597,7 +596,7 @@ class AstBuildPass(Pass):
             node,
             ast.EnumDef(
                 doc=None,
-                target=node.kid[0].kid,
+                target=node.kid[0],
                 body=node.kid[-1],
                 parent=node.parent,
                 mod_link=self.mod_link,
@@ -674,9 +673,18 @@ class AstBuildPass(Pass):
         elif len(node.kid) == 2:
             dec = node.kid[0]
             new_node = replace_node(node, node.kid[1])
-            if isinstance(new_node, ast.Ability):
-                new_node.decorators.insert(0, dec)
-                new_node.kid.insert(0, dec)
+            if isinstance(new_node, ast.Ability) and new_node.decorators:
+                new_node.decorators.calls.insert(0, dec)
+                append_node(new_node.decorators, dec, front=True)
+            elif isinstance(new_node, ast.Ability):
+                new_node.decorators = ast.Decorators(
+                    calls=[dec],
+                    parent=new_node,
+                    mod_link=self.mod_link,
+                    kid=[dec],
+                    line=node.line,
+                )
+                append_node(new_node, new_node.decorators, front=True)
             else:
                 self.ice("Expected node to be ability!")
         else:
@@ -703,7 +711,7 @@ class AstBuildPass(Pass):
                 signature=node.kid[-2],
                 is_func=isinstance(node.kid[-2], ast.FuncSignature),
                 is_async=False,
-                decorators=[],
+                decorators=None,
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -723,7 +731,7 @@ class AstBuildPass(Pass):
             node,
             ast.AbilityDef(
                 doc=None,
-                target=node.kid[0].kid,
+                target=node.kid[0],
                 signature=node.kid[-2],
                 body=node.kid[-1],
                 parent=node.parent,
@@ -753,7 +761,7 @@ class AstBuildPass(Pass):
                 signature=node.kid[-1],
                 is_func=isinstance(node.kid[-1], ast.FuncSignature),
                 is_async=False,
-                decorators=[],
+                decorators=None,
                 parent=node.parent,
                 mod_link=self.mod_link,
                 kid=node.kid,
@@ -2848,7 +2856,7 @@ class AstBuildPass(Pass):
         """
         replace_node(node, node.kid[0])
 
-    def arch_or_ability_chain(self, node: ast.AstNode) -> None:
+    def exit_arch_or_ability_chain(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
         Rule 396   arch_or_ability_chain -> arch_or_ability_chain ability_ref
@@ -2858,8 +2866,18 @@ class AstBuildPass(Pass):
         """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
+        replace_node(
+            node,
+            ast.ArchRefChain(
+                archs=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
-    def abil_to_arch_chain(self, node: ast.AstNode) -> None:
+    def exit_abil_to_arch_chain(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
         Rule 400   abil_to_arch_chain -> arch_or_ability_chain arch_ref
@@ -2867,8 +2885,18 @@ class AstBuildPass(Pass):
         """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
+        replace_node(
+            node,
+            ast.ArchRefChain(
+                archs=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
-    def arch_to_abil_chain(self, node: ast.AstNode) -> None:
+    def exit_arch_to_abil_chain(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
         Rule 402   arch_to_abil_chain -> arch_or_ability_chain ability_ref
@@ -2876,8 +2904,18 @@ class AstBuildPass(Pass):
         """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
+        replace_node(
+            node,
+            ast.ArchRefChain(
+                archs=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
-    def arch_to_enum_chain(self, node: ast.AstNode) -> None:
+    def exit_arch_to_enum_chain(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
         Rule 404   arch_to_enum_chain -> arch_or_ability_chain enum_ref
@@ -2885,6 +2923,16 @@ class AstBuildPass(Pass):
         """
         if len(node.kid) == 2:
             node.kid = node.kid[0].kid + [node.kid[1]]
+        replace_node(
+            node,
+            ast.ArchRefChain(
+                archs=node.kid,
+                parent=node.parent,
+                mod_link=self.mod_link,
+                kid=node.kid,
+                line=node.line,
+            ),
+        )
 
     def exit_node_ref(self, node: ast.AstNode) -> None:
         """Grammar rule.
