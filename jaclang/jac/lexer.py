@@ -190,7 +190,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     # Regular expression rules for tokens
     FLOAT = r"(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
     DOC_STRING = r'"""(.|\n|\r)*?"""|\'\'\'(.|\n|\r)*?\'\'\''  # type: ignore
-    PYNLINE = r"<python>(.|\n|\r)*?<python>"  # type: ignore
+    PYNLINE = r"::py::(.|\n|\r)*?::py::"  # type: ignore
     FSTRING = r'f"[^"\r\n]*"|f\'[^\'\r\n]*\''
     STRING = r'"[^"\r\n]*"|\'[^\'\r\n]*\''
     BOOL = r"True|False"

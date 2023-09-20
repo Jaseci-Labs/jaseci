@@ -97,6 +97,22 @@ class Elements(AstNode):
         )
 
 
+class PyInlineCode(AstNode):
+    """Inline Python code node type for Jac Ast."""
+
+    def __init__(
+        self,
+        code: Token,
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize inline python code node."""
+        self.code = code
+        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
+
+
 class OOPAccessNode(AstNode):
     """OOPAccessNode node type for Jac Ast."""
 

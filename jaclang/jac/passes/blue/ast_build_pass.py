@@ -68,16 +68,36 @@ class AstBuildPass(Pass):
     def exit_element(self, node: ast.AstNode) -> None:
         """Grammar rule.
 
-        element -> enum
-        element -> ability
-        element -> architype
-        element -> include_stmt
-        element -> import_stmt
-        element -> mod_code
-        element -> test
-        element -> global_var
+        Rule 5     element -> PYNLINE
+        Rule 6     element -> doc_tag ability
+        Rule 7     element -> doc_tag architype
+        Rule 8     element -> include_stmt
+        Rule 9     element -> import_stmt
+        Rule 10    element -> doc_tag mod_code
+        Rule 11    element -> doc_tag test
+        Rule 12    element -> doc_tag global_var
         """
-        replace_node(node, node.kid[0])
+        if len(node.kid) == 2:
+            doc = node.kid[0]
+            new_node = replace_node(node, node.kid[1])
+            if new_node and hasattr(new_node, "doc"):
+                new_node.doc = doc  # type: ignore
+                new_node.kid = [doc, *new_node.kid]
+            else:
+                self.ice("Expected node to have doc attribute!")
+        elif isinstance(node.kid[0], ast.Token) and node.kid[0].name == Tok.PYNLINE:
+            replace_node(
+                node,
+                ast.PyInlineCode(
+                    code=node.kid[0],
+                    kid=node.kid,
+                    parent=node.parent,
+                    mod_link=self.mod_link,
+                    line=node.line,
+                ),
+            )
+        else:
+            replace_node(node, node.kid[0])
 
     def exit_global_var(self, node: ast.AstNode) -> None:
         """Grammar rule.

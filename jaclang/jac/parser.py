@@ -3,8 +3,10 @@
 from typing import Generator, Optional
 
 import jaclang.jac.absyntree as ast
+from jaclang.jac.constant import Constants as Con
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.transform import ABCParserMeta, Transform
+from jaclang.utils.helpers import dedent_code_block
 from jaclang.utils.sly.yacc import Parser, YaccProduction
 
 
@@ -529,10 +531,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "import_stmt",
-        "architype",
-        "ability",
-        "DOC_STRING architype",
-        "DOC_STRING ability",
+        "doc_tag architype",
+        "doc_tag ability",
         "typed_ctx_block",
         "assignment SEMI",
         "static_assignment",
@@ -1480,6 +1480,11 @@ def parse_tree_to_ast(
                     ast_tree = ast.Constant(typ=type(None), **meta)
                 elif tree.type.startswith("TYP_"):
                     ast_tree = ast.Constant(typ=type, **meta)
+                elif tree.type == "PYNLINE":
+                    ast_tree = ast.Token(**meta)
+                    ast_tree.value = dedent_code_block(
+                        ast_tree.value.replace(f"{Con.PYNLINE}", "")
+                    )
                 else:
                     ast_tree = ast.Token(**meta)
         else:
