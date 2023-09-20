@@ -55,22 +55,21 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     # Element types
     # -------------
     @_(
-        "global_var",
-        "test",
-        "mod_code",
+        "doc_tag global_var",
+        "doc_tag test",
+        "doc_tag mod_code",
         "import_stmt",
         "include_stmt",
-        "architype",
-        "ability",
-        "enum",
+        "doc_tag architype",
+        "doc_tag ability",
     )
     def element(self, p: YaccProduction) -> YaccProduction:
         """Element rule."""
         return p
 
     @_(
-        "doc_tag KW_GLOBAL access_tag assignment_list SEMI",
-        "doc_tag KW_FREEZE access_tag assignment_list SEMI",
+        "KW_GLOBAL access_tag assignment_list SEMI",
+        "KW_FREEZE access_tag assignment_list SEMI",
     )
     def global_var(self, p: YaccProduction) -> YaccProduction:
         """Global variable rule."""
@@ -94,16 +93,16 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag KW_TEST NAME code_block",
-        "doc_tag KW_TEST code_block",
+        "KW_TEST NAME code_block",
+        "KW_TEST code_block",
     )
     def test(self, p: YaccProduction) -> YaccProduction:
         """Test rule."""
         return p
 
     @_(
-        "doc_tag KW_WITH KW_ENTRY code_block",
-        "doc_tag KW_WITH KW_ENTRY sub_name code_block",
+        "KW_WITH KW_ENTRY code_block",
+        "KW_WITH KW_ENTRY sub_name code_block",
     )
     def mod_code(self, p: YaccProduction) -> YaccProduction:
         """Module-level free code rule."""
@@ -173,6 +172,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "architype_decl",
         "architype_def",
+        "enum",
+        "decorator architype",
     )
     def architype(self, p: YaccProduction) -> YaccProduction:
         """Architype rule."""
@@ -180,9 +181,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "arch_type access_tag NAME inherited_archs SEMI",
-        "decorators arch_type access_tag NAME inherited_archs SEMI",
         "arch_type access_tag NAME inherited_archs member_block",
-        "decorators arch_type access_tag NAME inherited_archs member_block",
     )
     def architype_decl(self, p: YaccProduction) -> YaccProduction:
         """Architype declaration rule."""
@@ -203,11 +202,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Arch type rule."""
         return p
 
-    @_(
-        "DECOR_OP atom",
-        "decorators DECOR_OP atom",
-    )
-    def decorators(self, p: YaccProduction) -> YaccProduction:
+    @_("DECOR_OP atom")
+    def decorator(self, p: YaccProduction) -> YaccProduction:
         """Python style decorator rule."""
         return p
 
@@ -255,7 +251,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "esc_name",
-        # "arch_ref",
+        "global_ref",
     )
     def named_refs(self, p: YaccProduction) -> YaccProduction:
         """All reference rules."""
@@ -272,12 +268,61 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """All reference rules."""
         return p
 
+    # Enum elements
+    # ----------------
+    @_(
+        "enum_decl",
+        "enum_def",
+    )
+    def enum(self, p: YaccProduction) -> YaccProduction:
+        """Enum rule."""
+        return p
+
+    @_(
+        "KW_ENUM access_tag NAME inherited_archs SEMI",
+        "KW_ENUM access_tag NAME inherited_archs enum_block",
+    )
+    def enum_decl(self, p: YaccProduction) -> YaccProduction:
+        """Enum decl rule."""
+        return p
+
+    @_("enum_ref enum_block")
+    def enum_def(self, p: YaccProduction) -> YaccProduction:
+        """Enum def rule."""
+        return p
+
+    @_(
+        "LBRACE RBRACE",
+        "LBRACE enum_stmt_list RBRACE",
+    )
+    def enum_block(self, p: YaccProduction) -> YaccProduction:
+        """Enum block rule."""
+        return p
+
+    @_(
+        "NAME",
+        "enum_op_assign",
+        "enum_stmt_list COMMA NAME",
+        "enum_stmt_list COMMA enum_op_assign",
+    )
+    def enum_stmt_list(self, p: YaccProduction) -> YaccProduction:
+        """Enum op list rule."""
+        return p
+
+    @_(
+        "NAME EQ expression",
+    )
+    def enum_op_assign(self, p: YaccProduction) -> YaccProduction:
+        """Enum op assign rule."""
+        return p
+
     # Ability elements
     # ----------------
     @_(
         "ability_decl",
         "KW_ASYNC ability_decl",
         "ability_def",
+        "decorator ability",
     )
     def ability(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
@@ -288,20 +333,9 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "static_tag KW_CAN access_tag all_refs func_decl SEMI",
         "static_tag KW_CAN access_tag all_refs event_clause code_block",
         "static_tag KW_CAN access_tag all_refs func_decl code_block",
-        "ability_decl_decor",
     )
     def ability_decl(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
-        return p
-
-    @_(
-        "decorators static_tag KW_CAN access_tag all_refs event_clause SEMI",
-        "decorators static_tag KW_CAN access_tag all_refs func_decl SEMI",
-        "decorators static_tag KW_CAN access_tag all_refs event_clause code_block",
-        "decorators static_tag KW_CAN access_tag all_refs func_decl code_block",
-    )
-    def ability_decl_decor(self, p: YaccProduction) -> YaccProduction:
-        """Ability declaration rule."""
         return p
 
     @_(
@@ -315,8 +349,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI",
         "static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI",
-        "decorators static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI",
-        "decorators static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI",
     )
     def abstract_ability(self, p: YaccProduction) -> YaccProduction:
         """Abstract ability rule."""
@@ -361,58 +393,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Parameter variable rule rule."""
         return p
 
-    # Enum elements
-    # ----------------
-    @_(
-        "enum_decl",
-        "enum_def",
-    )
-    def enum(self, p: YaccProduction) -> YaccProduction:
-        """Enum rule."""
-        return p
-
-    @_(
-        "KW_ENUM access_tag NAME inherited_archs SEMI",
-        "KW_ENUM access_tag NAME inherited_archs enum_block",
-        "decorators KW_ENUM access_tag NAME inherited_archs SEMI",
-        "decorators KW_ENUM access_tag NAME inherited_archs enum_block",
-    )
-    def enum_decl(self, p: YaccProduction) -> YaccProduction:
-        """Enum decl rule."""
-        return p
-
-    @_(
-        "enum_ref enum_block",
-    )
-    def enum_def(self, p: YaccProduction) -> YaccProduction:
-        """Enum def rule."""
-        return p
-
-    @_(
-        "LBRACE RBRACE",
-        "LBRACE enum_stmt_list RBRACE",
-    )
-    def enum_block(self, p: YaccProduction) -> YaccProduction:
-        """Enum block rule."""
-        return p
-
-    @_(
-        "NAME",
-        "enum_op_assign",
-        "enum_stmt_list COMMA NAME",
-        "enum_stmt_list COMMA enum_op_assign",
-    )
-    def enum_stmt_list(self, p: YaccProduction) -> YaccProduction:
-        """Enum op list rule."""
-        return p
-
-    @_(
-        "NAME EQ expression",
-    )
-    def enum_op_assign(self, p: YaccProduction) -> YaccProduction:
-        """Enum op assign rule."""
-        return p
-
     # Attribute blocks
     # ----------------
     @_(
@@ -432,9 +412,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "has_stmt",
-        "ability",
-        "abstract_ability",
+        "doc_tag has_stmt",
+        "doc_tag architype",
+        "doc_tag ability",
+        "doc_tag abstract_ability",
     )
     def member_stmt(self, p: YaccProduction) -> YaccProduction:
         """Attribute statement rule."""
@@ -548,7 +529,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "import_stmt",
         "architype",
         "ability",
-        "enum",
         "typed_ctx_block",
         "assignment SEMI",
         "static_assignment",
@@ -1155,7 +1135,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "atom DOT_FWD all_refs",
         "atom DOT_BKWD all_refs",
         "atom index_slice",
-        "atom arch_ref",
         "atom edge_op_ref",
         "atom filter_compr",
     )
@@ -1168,7 +1147,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "atom NULL_OK DOT_FWD all_refs",
         "atom NULL_OK DOT_BKWD all_refs",
         "atom NULL_OK index_slice",
-        "atom NULL_OK arch_ref",
         "atom NULL_OK edge_op_ref",
         "atom NULL_OK filter_compr",
     )
@@ -1219,16 +1197,6 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     # Architype reference rules
     # -------------------------
-    @_(
-        "strict_arch_ref",
-        "ability_ref",
-        "enum_ref",
-        "global_ref",
-    )
-    def arch_ref(self, p: YaccProduction) -> YaccProduction:
-        """Architype reference rule."""
-        return p
-
     @_(
         "node_ref",
         "edge_ref",
