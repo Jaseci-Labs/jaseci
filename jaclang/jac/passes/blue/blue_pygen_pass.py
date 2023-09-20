@@ -224,6 +224,13 @@ class BluePygenPass(Pass):
         else:
             self.emit(node, node.body.meta["py_code"])
 
+    def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
+        """Sub objects.
+
+        code: Token,
+        """
+        self.emit_ln(node, node.code.value)
+
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
 
@@ -536,6 +543,13 @@ class BluePygenPass(Pass):
         names: list[all_refs],
         """
         self.emit(node, ".".join([i.meta["py_code"] for i in node.names]))
+
+    def exit_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
+        """Sub objects.
+
+        archs: list[ArchRef],
+        """
+        self.emit(node, ".".join([i.meta["py_code"] for i in node.archs]))
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.

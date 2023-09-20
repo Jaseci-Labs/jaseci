@@ -296,7 +296,7 @@ class SymTabBuildPass(Pass):
         body: ArchBlock,
         sym_tab: Optional[SymbolTable],
         """
-        name = node.arch.py_resolve_name()
+        name = node.target.py_resolve_name()
         if collide := self.cur_scope().insert(
             name=name,
             sym_type=St.ARCH,
