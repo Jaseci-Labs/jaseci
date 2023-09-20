@@ -30,7 +30,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
             self.ir: ast.AstNode = parse_tree_to_ast(self.ir)
 
     tokens = JacLexer.tokens
-    # debugfile = "parser.out"
+    debugfile = "parser.out"
 
     # All mighty start rule
     # ---------------------
@@ -179,19 +179,16 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag arch_type access_tag NAME inherited_archs SEMI",
-        "doc_tag decorators arch_type access_tag NAME inherited_archs SEMI",
-        "doc_tag arch_type access_tag NAME inherited_archs member_block",
-        "doc_tag decorators arch_type access_tag NAME inherited_archs member_block",
+        "arch_type access_tag NAME inherited_archs SEMI",
+        "decorators arch_type access_tag NAME inherited_archs SEMI",
+        "arch_type access_tag NAME inherited_archs member_block",
+        "decorators arch_type access_tag NAME inherited_archs member_block",
     )
     def architype_decl(self, p: YaccProduction) -> YaccProduction:
         """Architype declaration rule."""
         return p
 
-    @_(
-        "doc_tag strict_arch_ref member_block",
-        "doc_tag dotted_name strict_arch_ref member_block",
-    )
+    @_("strict_arch_ref member_block")
     def architype_def(self, p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
         return p
@@ -258,7 +255,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "esc_name",
-        "arch_ref",
+        # "arch_ref",
     )
     def named_refs(self, p: YaccProduction) -> YaccProduction:
         """All reference rules."""
@@ -287,10 +284,10 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag static_tag KW_CAN access_tag all_refs event_clause SEMI",
-        "doc_tag static_tag KW_CAN access_tag all_refs func_decl SEMI",
-        "doc_tag static_tag KW_CAN access_tag all_refs event_clause code_block",
-        "doc_tag static_tag KW_CAN access_tag all_refs func_decl code_block",
+        "static_tag KW_CAN access_tag all_refs event_clause SEMI",
+        "static_tag KW_CAN access_tag all_refs func_decl SEMI",
+        "static_tag KW_CAN access_tag all_refs event_clause code_block",
+        "static_tag KW_CAN access_tag all_refs func_decl code_block",
         "ability_decl_decor",
     )
     def ability_decl(self, p: YaccProduction) -> YaccProduction:
@@ -298,30 +295,28 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag decorators static_tag KW_CAN access_tag all_refs event_clause SEMI",
-        "doc_tag decorators static_tag KW_CAN access_tag all_refs func_decl SEMI",
-        "doc_tag decorators static_tag KW_CAN access_tag all_refs event_clause code_block",
-        "doc_tag decorators static_tag KW_CAN access_tag all_refs func_decl code_block",
+        "decorators static_tag KW_CAN access_tag all_refs event_clause SEMI",
+        "decorators static_tag KW_CAN access_tag all_refs func_decl SEMI",
+        "decorators static_tag KW_CAN access_tag all_refs event_clause code_block",
+        "decorators static_tag KW_CAN access_tag all_refs func_decl code_block",
     )
     def ability_decl_decor(self, p: YaccProduction) -> YaccProduction:
         """Ability declaration rule."""
         return p
 
     @_(
-        "doc_tag ability_ref event_clause code_block",
-        "doc_tag dotted_name ability_ref event_clause code_block",
-        "doc_tag ability_ref func_decl code_block",
-        "doc_tag dotted_name ability_ref func_decl code_block",
+        "ability_ref event_clause code_block",
+        "ability_ref func_decl code_block",
     )
     def ability_def(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
         return p
 
     @_(
-        "doc_tag static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI",
-        "doc_tag static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI",
-        "doc_tag decorators static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI",
-        "doc_tag decorators static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI",
+        "static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI",
+        "static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI",
+        "decorators static_tag KW_CAN access_tag all_refs event_clause KW_ABSTRACT SEMI",
+        "decorators static_tag KW_CAN access_tag all_refs func_decl KW_ABSTRACT SEMI",
     )
     def abstract_ability(self, p: YaccProduction) -> YaccProduction:
         """Abstract ability rule."""
@@ -377,18 +372,17 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "doc_tag KW_ENUM access_tag NAME inherited_archs SEMI",
-        "doc_tag KW_ENUM access_tag NAME inherited_archs enum_block",
-        "doc_tag decorators KW_ENUM access_tag NAME inherited_archs SEMI",
-        "doc_tag decorators KW_ENUM access_tag NAME inherited_archs enum_block",
+        "KW_ENUM access_tag NAME inherited_archs SEMI",
+        "KW_ENUM access_tag NAME inherited_archs enum_block",
+        "decorators KW_ENUM access_tag NAME inherited_archs SEMI",
+        "decorators KW_ENUM access_tag NAME inherited_archs enum_block",
     )
     def enum_decl(self, p: YaccProduction) -> YaccProduction:
         """Enum decl rule."""
         return p
 
     @_(
-        "doc_tag enum_ref enum_block",
-        "doc_tag dotted_name enum_ref enum_block",
+        "enum_ref enum_block",
     )
     def enum_def(self, p: YaccProduction) -> YaccProduction:
         """Enum def rule."""
@@ -449,8 +443,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     # Has statements
     # --------------
     @_(
-        "doc_tag static_tag KW_HAS access_tag has_assign_clause SEMI",
-        "doc_tag static_tag KW_FREEZE access_tag has_assign_clause SEMI",
+        "static_tag KW_HAS access_tag has_assign_clause SEMI",
+        "static_tag KW_FREEZE access_tag has_assign_clause SEMI",
     )
     def has_stmt(self, p: YaccProduction) -> YaccProduction:
         """Has statement rule."""
@@ -552,8 +546,9 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
 
     @_(
         "import_stmt",
-        "architype_decl",
-        "ability_decl",
+        "architype",
+        "ability",
+        "enum",
         "typed_ctx_block",
         "assignment SEMI",
         "static_assignment",
