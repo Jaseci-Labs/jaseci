@@ -10,7 +10,7 @@ walker GuessGame {
 }
 
 node turn {
-    can check with :w:GuessGame entry;
+    can check with GuessGame entry;
 }
 
 :node:turn:ability:check {

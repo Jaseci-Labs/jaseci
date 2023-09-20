@@ -14,7 +14,7 @@ class AstNode:
 
     def __init__(
         self,
-        parent: Optional["AstNode"],
+        parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list,
         line: int,
@@ -180,7 +180,7 @@ class Test(AstNode):
                 sym_tab=name.sym_tab,
             )
         )
-        kid[1] = self.name
+        kid[0] = self.name  # Index is 0 since Doc string is inserted after init
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
@@ -208,6 +208,22 @@ class ModuleCode(AstNode):
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
+
+
+class PyInlineCode(AstNode):
+    """Inline Python code node type for Jac Ast."""
+
+    def __init__(
+        self,
+        code: Token,
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+    ) -> None:
+        """Initialize inline python code node."""
+        self.code = code
+        super().__init__(parent=parent, mod_link=mod_link, kid=kid, line=line)
 
 
 class Import(AstNode):
@@ -343,8 +359,7 @@ class ArchDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        mod: Optional[DottedNameList],
-        arch: ArchRef,
+        target: ArchRefChain,
         body: ArchBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -354,8 +369,7 @@ class ArchDef(AstNode):
     ) -> None:
         """Initialize arch def node."""
         self.doc = doc
-        self.mod = mod
-        self.arch = arch
+        self.target = target
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
@@ -405,7 +419,7 @@ class Ability(OOPAccessNode):
 
     def __init__(
         self,
-        name_ref: Name | SpecialVarRef | ArchRef,
+        name_ref: Name | SpecialVarRef,
         is_func: bool,
         is_async: bool,
         is_static: bool,
@@ -467,8 +481,7 @@ class AbilityDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        target: Optional[DottedNameList],
-        ability: ArchRef,
+        target: ArchRefChain,
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
         parent: Optional[AstNode],
@@ -480,25 +493,11 @@ class AbilityDef(AstNode):
         """Initialize ability def node."""
         self.doc = doc
         self.target = target
-        self.ability = ability
         self.signature = signature
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
-
-    def py_resolve_name(self) -> str:
-        """Resolve name."""
-        ability_name = self.ability.py_resolve_name()
-        if self.target:
-            owner = self.target.names[-1]
-            if isinstance(owner, ArchRef):
-                owner = owner.py_resolve_name()
-                ability_name = f"{owner}.{ability_name}"
-                return ability_name
-            raise Exception("Invalid AST: Expected reference to Architype!")
-        else:
-            return ability_name
 
 
 class EventSignature(AstNode):
@@ -529,7 +528,7 @@ class DottedNameList(AstNode):
 
     def __init__(
         self,
-        names: list[Token | SpecialVarRef | ArchRef | Name],
+        names: list[Token | SpecialVarRef | Name],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -541,6 +540,29 @@ class DottedNameList(AstNode):
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
+
+
+class ArchRefChain(AstNode):
+    """Arch ref list node type for Jac Ast."""
+
+    def __init__(
+        self,
+        archs: list[ArchRef],
+        parent: Optional[AstNode],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        line: int,
+        sym_tab: Optional[SymbolTable] = None,
+    ) -> None:
+        """Initialize name list ."""
+        self.archs = archs
+        super().__init__(
+            parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
+        )
+
+    def py_resolve_name(self) -> str:
+        """Resolve name."""
+        return ".".join([x.py_resolve_name() for x in self.archs])
 
 
 class FuncSignature(AstNode):
@@ -615,7 +637,7 @@ class Enum(OOPAccessNode):
         self,
         name: Name,
         doc: Optional[Token],
-        decorators: Optional["Decorators"],
+        decorators: Optional[Decorators],
         access: Optional[Token],
         base_classes: "BaseClasses",
         body: Optional["EnumBlock"],
@@ -647,8 +669,7 @@ class EnumDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        enum: ArchRef,
-        mod: Optional[DottedNameList],
+        target: ArchRefChain,
         body: EnumBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -657,9 +678,8 @@ class EnumDef(AstNode):
         sym_tab: Optional[SymbolTable] = None,
     ) -> None:
         """Initialize arch def node."""
-        self.enum = enum
         self.doc = doc
-        self.mod = mod
+        self.target = target
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
@@ -690,7 +710,7 @@ class ArchBlock(AstNode):
 
     def __init__(
         self,
-        members: list["ArchHas | Ability"],
+        members: list[ArchHas | Ability],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1714,8 +1734,8 @@ class AtomTrailer(AstNode):
 
     def __init__(
         self,
-        target: "AtomType",
-        right: "IndexSlice | ArchRef | Token",
+        target: AtomType,
+        right: IndexSlice | ArchRef | Token,
         null_ok: bool,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -2153,9 +2173,14 @@ def replace_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
     return new_node
 
 
-def append_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
+def append_node(
+    node: AstNode, new_node: Optional[AstNode], front: bool = False
+) -> AstNode | None:
     """Replace node with new_node."""
-    node.kid.append(new_node)
+    if front:
+        node.kid.insert(0, new_node)
+    else:
+        node.kid.append(new_node)
     if new_node:
         new_node.parent = node
     return new_node

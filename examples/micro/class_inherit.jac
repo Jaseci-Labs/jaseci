@@ -12,6 +12,6 @@ object Parent {
 object Child:Parent {
     can init() -> None {
         # Child initialization
-        :o:Parent.init();  # Initialize parent, :o: is alias for :object:
+        Parent.init();  # Initialize parent, :o: is alias for :object:
     }
 }

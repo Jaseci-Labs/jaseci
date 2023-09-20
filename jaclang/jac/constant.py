@@ -28,6 +28,8 @@ class Constants(str, Enum):
     WITH_DIR = "_jac_apply_dir_"
     EDGE_DIR = "_jac_Edge_Dir_"
 
+    PYNLINE = "::py::"
+
     def __str__(self) -> str:
         """Return the string representation of the token."""
         return self.value
@@ -55,6 +57,7 @@ class Tokens(str, Enum):
     FLOAT = "FLOAT"
     STRING = "STRING"
     DOC_STRING = "DOC_STRING"
+    PYNLINE = "PYNLINE"
     FSTRING = "FSTRING"
     BOOL = "BOOL"
     INT = "INT"
