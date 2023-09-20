@@ -188,7 +188,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Architype declaration rule."""
         return p
 
-    @_("strict_arch_ref member_block")
+    @_("abil_to_arch_chain member_block")
     def architype_def(self, p: YaccProduction) -> YaccProduction:
         """Architype definition rule."""
         return p
@@ -340,10 +340,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         return p
 
     @_(
-        "ability_ref event_clause code_block",
-        "ability_ref func_decl code_block",
-        "strict_arch_ref ability_ref event_clause code_block",
-        "strict_arch_ref ability_ref func_decl code_block",
+        "arch_to_abil_chain event_clause code_block",
+        "arch_to_abil_chain func_decl code_block",
     )
     def ability_def(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
@@ -1210,8 +1208,34 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "walker_ref",
         "object_ref",
     )
-    def strict_arch_ref(self, p: YaccProduction) -> YaccProduction:
+    def arch_ref(self, p: YaccProduction) -> YaccProduction:
         """Strict Architype reference rule."""
+        return p
+
+    @_(
+        "arch_ref",
+        "ability_ref",
+        "arch_or_ability_chain arch_ref",
+        "arch_or_ability_chain ability_ref",
+    )
+    def arch_or_ability_chain(self, p: YaccProduction) -> YaccProduction:
+        """Strict Architype reference rule."""
+        return p
+
+    @_(
+        "arch_ref",
+        "arch_or_ability_chain arch_ref",
+    )
+    def abil_to_arch_chain(self, p: YaccProduction) -> YaccProduction:
+        """Strict Architype reference list rule."""
+        return p
+
+    @_(
+        "ability_ref",
+        "arch_or_ability_chain ability_ref",
+    )
+    def arch_to_abil_chain(self, p: YaccProduction) -> YaccProduction:
+        """Strict Architype reference list rule."""
         return p
 
     @_("NODE_OP NAME")
