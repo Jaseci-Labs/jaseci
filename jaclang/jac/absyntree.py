@@ -14,7 +14,7 @@ class AstNode:
 
     def __init__(
         self,
-        parent: Optional["AstNode"],
+        parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list,
         line: int,
@@ -326,7 +326,7 @@ class Architype(OOPAccessNode):
         name: Name,
         arch_type: Token,
         doc: Optional[Token],
-        decorators: Optional[Decorators],
+        decorators: list[Decorator],
         access: Optional[Token],
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
@@ -359,8 +359,7 @@ class ArchDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        mod: Optional[DottedNameList],
-        arch: ArchRef,
+        target: list[ArchRef],
         body: ArchBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -370,20 +369,19 @@ class ArchDef(AstNode):
     ) -> None:
         """Initialize arch def node."""
         self.doc = doc
-        self.mod = mod
-        self.arch = arch
+        self.target = target
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
 
 
-class Decorators(AstNode):
+class Decorator(AstNode):
     """Decorators node type for Jac Ast."""
 
     def __init__(
         self,
-        calls: list[ExprType],
+        call: ExprType,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -391,7 +389,7 @@ class Decorators(AstNode):
         sym_tab: Optional[SymbolTable] = None,
     ) -> None:
         """Initialize decorators node."""
-        self.calls = calls
+        self.call = call
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
@@ -427,7 +425,7 @@ class Ability(OOPAccessNode):
         is_static: bool,
         is_abstract: bool,
         doc: Optional[Token],
-        decorators: Optional[Decorators],
+        decorators: list[Decorator],
         access: Optional[Token],
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
@@ -483,8 +481,7 @@ class AbilityDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        target: Optional[DottedNameList],
-        ability: ArchRef,
+        target: list[ArchRef],
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
         parent: Optional[AstNode],
@@ -496,7 +493,6 @@ class AbilityDef(AstNode):
         """Initialize ability def node."""
         self.doc = doc
         self.target = target
-        self.ability = ability
         self.signature = signature
         self.body = body
         super().__init__(
@@ -631,7 +627,7 @@ class Enum(OOPAccessNode):
         self,
         name: Name,
         doc: Optional[Token],
-        decorators: Optional["Decorators"],
+        decorators: list[Decorator],
         access: Optional[Token],
         base_classes: "BaseClasses",
         body: Optional["EnumBlock"],
@@ -663,8 +659,7 @@ class EnumDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
-        enum: ArchRef,
-        mod: Optional[DottedNameList],
+        target: list[ArchRef],
         body: EnumBlock,
         parent: Optional[AstNode],
         mod_link: Optional[Module],
@@ -673,9 +668,8 @@ class EnumDef(AstNode):
         sym_tab: Optional[SymbolTable] = None,
     ) -> None:
         """Initialize arch def node."""
-        self.enum = enum
         self.doc = doc
-        self.mod = mod
+        self.target = target
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
@@ -706,7 +700,7 @@ class ArchBlock(AstNode):
 
     def __init__(
         self,
-        members: list["ArchHas | Ability"],
+        members: list[ArchHas | Ability],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
         kid: list[AstNode],

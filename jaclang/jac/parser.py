@@ -64,7 +64,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "include_stmt",
         "doc_tag architype",
         "doc_tag ability",
-        "PYNLINE",
+        "python_code_block",
     )
     def element(self, p: YaccProduction) -> YaccProduction:
         """Element rule."""
@@ -117,6 +117,11 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     )
     def doc_tag(self, p: YaccProduction) -> YaccProduction:
         """Doc tag rule."""
+        return p
+
+    @_("PYNLINE")
+    def python_code_block(self, p: YaccProduction) -> YaccProduction:
+        """Python code block rule."""
         return p
 
     # Import Statements
@@ -289,7 +294,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         """Enum decl rule."""
         return p
 
-    @_("enum_ref enum_block")
+    @_("arch_to_enum_chain enum_block")
     def enum_def(self, p: YaccProduction) -> YaccProduction:
         """Enum def rule."""
         return p
@@ -419,7 +424,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "doc_tag architype",
         "doc_tag ability",
         "doc_tag abstract_ability",
-        "PYNLINE",
+        "python_code_block",
     )
     def member_stmt(self, p: YaccProduction) -> YaccProduction:
         """Attribute statement rule."""
@@ -551,7 +556,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "yield_stmt SEMI",
         "await_stmt SEMI",
         "walker_stmt",
-        "PYNLINE",
+        "python_code_block",
     )
     def statement(self, p: YaccProduction) -> YaccProduction:
         """Statement rule."""
@@ -1235,6 +1240,14 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "arch_or_ability_chain ability_ref",
     )
     def arch_to_abil_chain(self, p: YaccProduction) -> YaccProduction:
+        """Strict Architype reference list rule."""
+        return p
+
+    @_(
+        "enum_ref",
+        "arch_or_ability_chain enum_ref",
+    )
+    def arch_to_enum_chain(self, p: YaccProduction) -> YaccProduction:
         """Strict Architype reference list rule."""
         return p
 
