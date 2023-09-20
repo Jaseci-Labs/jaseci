@@ -9,7 +9,7 @@ walker GuessGame2 {
 }
 
 node turn {
-    can check with :w:GuessGame|:w:GuessGame2 entry;
+    can check with GuessGame|GuessGame2 entry;
 }
 
 
