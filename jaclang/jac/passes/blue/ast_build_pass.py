@@ -188,7 +188,7 @@ class AstBuildPass(Pass):
                 ast.ModuleCode(
                     doc=None,
                     name=None,
-                    body=node.kid[1],
+                    body=node.kid[0],
                     parent=node.parent,
                     mod_link=self.mod_link,
                     kid=node.kid,
