@@ -62,6 +62,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "include_stmt",
         "doc_tag architype",
         "doc_tag ability",
+        "PYNLINE",
     )
     def element(self, p: YaccProduction) -> YaccProduction:
         """Element rule."""
@@ -418,6 +419,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "doc_tag architype",
         "doc_tag ability",
         "doc_tag abstract_ability",
+        "PYNLINE",
     )
     def member_stmt(self, p: YaccProduction) -> YaccProduction:
         """Attribute statement rule."""
@@ -551,6 +553,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "yield_stmt SEMI",
         "await_stmt SEMI",
         "walker_stmt",
+        "PYNLINE",
     )
     def statement(self, p: YaccProduction) -> YaccProduction:
         """Statement rule."""

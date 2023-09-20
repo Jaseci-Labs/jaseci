@@ -25,6 +25,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         "FLOAT",
         "STRING",
         "DOC_STRING",
+        "PYNLINE",
         "FSTRING",
         "BOOL",
         "INT",
@@ -189,6 +190,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     # Regular expression rules for tokens
     FLOAT = r"(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
     DOC_STRING = r'"""(.|\n|\r)*?"""|\'\'\'(.|\n|\r)*?\'\'\''  # type: ignore
+    PYNLINE = r"<python>(.|\n|\r)*?<python>"  # type: ignore
     FSTRING = r'f"[^"\r\n]*"|f\'[^\'\r\n]*\''
     STRING = r'"[^"\r\n]*"|\'[^\'\r\n]*\''
     BOOL = r"True|False"
@@ -367,6 +369,12 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         return t
 
     def DOC_STRING(self, t: Token) -> Token:  # noqa
+        """Add docstring to lexer."""
+        self.lineno += t.value.count("\n")
+        self.lineno += t.value.count("\r")
+        return t
+
+    def PYNLINE(self, t: Token) -> Token:  # noqa
         """Add docstring to lexer."""
         self.lineno += t.value.count("\n")
         self.lineno += t.value.count("\r")
