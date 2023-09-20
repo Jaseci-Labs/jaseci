@@ -341,6 +341,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "ability_ref event_clause code_block",
         "ability_ref func_decl code_block",
+        "strict_arch_ref ability_ref event_clause code_block",
+        "strict_arch_ref ability_ref func_decl code_block",
     )
     def ability_def(self, p: YaccProduction) -> YaccProduction:
         """Ability rule."""
@@ -529,6 +531,8 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
         "import_stmt",
         "architype",
         "ability",
+        "DOC_STRING architype",
+        "DOC_STRING ability",
         "typed_ctx_block",
         "assignment SEMI",
         "static_assignment",

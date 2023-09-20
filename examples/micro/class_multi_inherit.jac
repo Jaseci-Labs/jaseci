@@ -12,7 +12,7 @@ object Parent {
 object Mom:Parent {
     can init() -> None {
         # Mom initialization
-        :o:Parent.init();
+        Parent.init();
     }
     can speak() -> None {
         # Mom speaking
@@ -22,7 +22,7 @@ object Mom:Parent {
 object Dad:Parent {
     can init() -> None {
         # Dad initialization
-        :o:Parent.init();
+        Parent.init();
     }
     can speak() -> None {
         # Dad speaking
@@ -32,7 +32,7 @@ object Dad:Parent {
 object Child:Mom:Dad { #Child inherits from Mom and Dad
     can init() -> None {
         # Child initialization
-        :o:Mom.init();
-        :o:Dad.init();
+        Mom.init();
+        Dad.init();
     }
 }

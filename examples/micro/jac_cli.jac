@@ -102,7 +102,7 @@ with entry {
 
 :object:ShellCmd:ability:init
 (registry: Interface, *args: list, **kwargs: dict) {
-    <h>:o:cmd.Cmd.__init__(*args, **kwargs);
+    <h>.cmd.Cmd.__init__(*args, **kwargs);
     <h>.reg = registry;
 }
 
