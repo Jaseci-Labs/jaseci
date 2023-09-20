@@ -82,7 +82,7 @@ class AstBuildPass(Pass):
             new_node = replace_node(node, node.kid[1])
             if new_node and hasattr(new_node, "doc"):
                 new_node.doc = doc  # type: ignore
-                new_node.kid.insert(0, doc)
+                append_node(new_node, doc, front=True)
             else:
                 self.ice("Expected node to have doc attribute!")
         else:
@@ -939,7 +939,7 @@ class AstBuildPass(Pass):
             new_node = replace_node(node, node.kid[-1])
             if new_node and hasattr(new_node, "doc"):
                 new_node.doc = doc  # type: ignore
-                new_node.kid.insert(0, doc)
+                append_node(new_node, doc, front=True)
             else:
                 self.ice("Expected node to have doc attribute!")
         else:
@@ -1177,7 +1177,7 @@ class AstBuildPass(Pass):
             new_node = replace_node(node, node.kid[-1])
             if isinstance(new_node, (ast.Architype, ast.Ability)):
                 new_node.doc = doc
-                new_node.kid.insert(0, doc)
+                append_node(new_node, doc, front=True)
         else:
             replace_node(node, node.kid[0])
 

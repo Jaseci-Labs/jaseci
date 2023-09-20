@@ -196,7 +196,7 @@ class Test(AstNode):
                 sym_tab=name.sym_tab,
             )
         )
-        kid[1] = self.name
+        kid[0] = self.name  # Index is 0 since Doc string is inserted after init
         self.body = body
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
