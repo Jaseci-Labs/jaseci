@@ -1,11 +1,13 @@
 """Test pass module."""
 from jaclang.jac.passes.blue import SymTabBuildPass
 from jaclang.jac.transpiler import jac_file_to_pass
-from jaclang.utils.test import TestCase
+from jaclang.utils.test import AstSyncTestMixin, TestCase
 
 
-class SymTabBuildPassTests(TestCase):
+class SymTabBuildPassTests(TestCase, AstSyncTestMixin):
     """Test pass module."""
+
+    TargetPass = SymTabBuildPass
 
     def setUp(self) -> None:
         """Set up test."""

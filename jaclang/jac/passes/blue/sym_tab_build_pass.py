@@ -60,7 +60,6 @@ class SymTabBuildPass(Pass):
         mod_path: str,
         rel_mod_path: str,
         is_imported: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.push_scope(node.name, fresh=True)
         self.sync_node_to_scope(node)
@@ -74,7 +73,6 @@ class SymTabBuildPass(Pass):
         mod_path: str,
         rel_mod_path: str,
         is_imported: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.pop_scope()
 
@@ -82,7 +80,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -93,7 +90,6 @@ class SymTabBuildPass(Pass):
         access: Optional[Token],
         assignments: 'AssignmentList',
         is_frozen: bool,
-        sym_tab: Optional[SymbolTable],
         """
         for i in self.get_all_sub_nodes(node, ast.Assignment):
             if not isinstance(i.target, ast.Name):
@@ -115,7 +111,6 @@ class SymTabBuildPass(Pass):
         doc: Optional[Token],
         description: Token,
         body: CodeBlock,
-        sym_tab: Optional[SymbolTable],
         """
         if node.name and (
             collide := self.cur_scope().insert(
@@ -137,7 +132,6 @@ class SymTabBuildPass(Pass):
         doc: Optional[Token],
         description: Token,
         body: CodeBlock,
-        sym_tab: Optional[SymbolTable],
         """
         self.pop_scope()
 
@@ -156,9 +150,15 @@ class SymTabBuildPass(Pass):
 
         doc: Optional[Token],
         body: 'CodeBlock',
-        sym_tab: Optional[SymbolTable],
         """
         self.pop_scope()
+
+    def enter_py_inline_code(self, node: ast.PyInlineCode) -> None:
+        """Sub objects.
+
+        code: Token,
+        """
+        self.sync_node_to_scope(node)
 
     def enter_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -168,7 +168,6 @@ class SymTabBuildPass(Pass):
         alias: Optional[Name],
         items: Optional[ModuleItems],
         is_absorb: bool,
-        sym_tab: Optional[SymbolTable],
         sub_module: Optional[Module],
         """
         if node.items:
@@ -192,7 +191,6 @@ class SymTabBuildPass(Pass):
         alias: Optional[Name],
         items: Optional[ModuleItems],
         is_absorb: bool,
-        sym_tab: Optional[SymbolTable],
         sub_module: Optional[Module],
         """
         if node.is_absorb:
@@ -228,7 +226,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         path: list[Token],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -237,7 +234,6 @@ class SymTabBuildPass(Pass):
 
         name: Name,
         alias: Optional[Token],
-        sym_tab: Optional[SymbolTable],
         body: Optional[AstNode],
         """
         self.sync_node_to_scope(node)
@@ -246,7 +242,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         items: list['ModuleItem'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -260,7 +255,6 @@ class SymTabBuildPass(Pass):
         access: Optional[Token],
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
-        sym_tab: Optional[SymbolTable],
         """
         if collide := self.cur_scope().insert(
             name=node.name.value,
@@ -283,7 +277,6 @@ class SymTabBuildPass(Pass):
         access: Optional[Token],
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
-        sym_tab: Optional[SymbolTable],
         """
         self.pop_scope()
 
@@ -294,7 +287,6 @@ class SymTabBuildPass(Pass):
         mod: Optional[DottedNameList],
         arch: ArchRef,
         body: ArchBlock,
-        sym_tab: Optional[SymbolTable],
         """
         name = node.target.py_resolve_name()
         if collide := self.cur_scope().insert(
@@ -315,15 +307,13 @@ class SymTabBuildPass(Pass):
         mod: Optional[DottedNameList],
         arch: ArchRef,
         body: ArchBlock,
-        sym_tab: Optional[SymbolTable],
         """
         self.pop_scope()
 
-    def enter_decorator(self, node: ast.Decorators) -> None:
+    def enter_decorators(self, node: ast.Decorators) -> None:
         """Sub objects.
 
         calls: list[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -331,7 +321,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         base_classes: list[DottedNameList],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -347,7 +336,6 @@ class SymTabBuildPass(Pass):
         access: Optional[Token],
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
-        sym_tab: Optional[SymbolTable],
         arch_attached: Optional[ArchBlock],
         """
         ability_name = node.resolve_ability_symtab_name()
@@ -380,7 +368,6 @@ class SymTabBuildPass(Pass):
         access: Optional[Token],
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
-        sym_tab: Optional[SymbolTable],
         arch_attached: Optional[ArchBlock],
         """
         self.pop_scope()
@@ -413,7 +400,6 @@ class SymTabBuildPass(Pass):
         ability: ArchRef,
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
-        sym_tab: Optional[SymbolTable],
         """
         self.pop_scope()
 
@@ -423,7 +409,6 @@ class SymTabBuildPass(Pass):
         event: Token,
         arch_tag_info: Optional[TypeSpecList],
         return_type: Optional['TypeSpec'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -431,7 +416,13 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         names: list[Token | SpecialVarRef | ArchRef | Name],
-        sym_tab: Optional[SymbolTable],
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
+        """Sub objects.
+
+        archs: list[ArchRef],
         """
         self.sync_node_to_scope(node)
 
@@ -440,7 +431,6 @@ class SymTabBuildPass(Pass):
 
         params: Optional['FuncParams'],
         return_type: Optional['TypeSpec'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -448,7 +438,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         params: list['ParamVar'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -459,7 +448,6 @@ class SymTabBuildPass(Pass):
         unpack: Optional[Token],
         type_tag: 'TypeSpec',
         value: Optional[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -472,7 +460,6 @@ class SymTabBuildPass(Pass):
         access: Optional[Token],
         base_classes: 'BaseClasses',
         body: Optional['EnumBlock'],
-        sym_tab: Optional[SymbolTable],
         """
         if collide := self.cur_scope().insert(
             name=node.name.value,
@@ -494,7 +481,6 @@ class SymTabBuildPass(Pass):
         access: Optional[Token],
         base_classes: 'BaseClasses',
         body: Optional['EnumBlock'],
-        sym_tab: Optional[SymbolTable],
         """
         self.pop_scope()
 
@@ -524,7 +510,6 @@ class SymTabBuildPass(Pass):
         enum: ArchRef,
         mod: Optional[DottedNameList],
         body: EnumBlock,
-        sym_tab: Optional[SymbolTable],
         """
         self.pop_scope()
 
@@ -532,7 +517,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         stmts: list['Name|Assignment'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -540,7 +524,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         members: list['ArchHas | Ability'],
-        sym_tab: Optional[SymbolTable],
         """
         for i in self.get_all_sub_nodes(node, ast.Ability):
             i.arch_attached = node
@@ -554,7 +537,6 @@ class SymTabBuildPass(Pass):
         access: Optional[Token],
         vars: 'HasVarList',
         is_frozen: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -564,7 +546,6 @@ class SymTabBuildPass(Pass):
         name: Name,
         type_tag: 'TypeSpec',
         value: Optional[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -572,7 +553,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         vars: list['HasVar'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -583,7 +563,6 @@ class SymTabBuildPass(Pass):
         list_nest: TypeSpec,
         dict_nest: TypeSpec,
         null_ok: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -591,7 +570,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         types: list[TypeSpec],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -599,7 +577,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         stmts: list[StmtType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -608,7 +585,6 @@ class SymTabBuildPass(Pass):
 
         type_ctx: TypeSpecList,
         body: CodeBlock,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -619,7 +595,6 @@ class SymTabBuildPass(Pass):
         body: 'CodeBlock',
         elseifs: Optional['ElseIfs'],
         else_body: Optional['ElseStmt'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -627,7 +602,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         elseifs: list['IfStmt'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -635,7 +609,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         body: 'CodeBlock',
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -645,7 +618,6 @@ class SymTabBuildPass(Pass):
         body: 'CodeBlock',
         excepts: Optional['ExceptList'],
         finally_body: Optional['FinallyStmt'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -655,7 +627,6 @@ class SymTabBuildPass(Pass):
         ex_type: ExprType,
         name: Optional[Token],
         body: 'CodeBlock',
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -663,7 +634,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         excepts: list['Except'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -671,7 +641,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         body: 'CodeBlock',
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -682,7 +651,6 @@ class SymTabBuildPass(Pass):
         condition: ExprType,
         count_by: ExprType,
         body: 'CodeBlock',
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -692,7 +660,6 @@ class SymTabBuildPass(Pass):
         name_list: NameList,
         collection: ExprType,
         body: CodeBlock,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -704,7 +671,6 @@ class SymTabBuildPass(Pass):
         col_start: int,
         col_end: int,
         already_declared: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -712,7 +678,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         names: list[Name],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -721,7 +686,6 @@ class SymTabBuildPass(Pass):
 
         condition: ExprType,
         body: 'CodeBlock',
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -730,7 +694,6 @@ class SymTabBuildPass(Pass):
 
         exprs: 'ExprAsItemList',
         body: 'CodeBlock',
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -739,7 +702,6 @@ class SymTabBuildPass(Pass):
 
         expr: ExprType,
         alias: Optional[Name],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -747,7 +709,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         items: list['ExprAsItem'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -755,7 +716,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         cause: Optional[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -764,7 +724,6 @@ class SymTabBuildPass(Pass):
 
         condition: ExprType,
         error_msg: Optional[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -772,7 +731,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         ctrl: Token,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -780,7 +738,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         target: ExprType,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -788,7 +745,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         expr: ExprType,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -796,7 +752,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         expr: Optional[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -804,7 +759,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         expr: Optional[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -812,7 +766,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         target: ExprType,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -822,7 +775,6 @@ class SymTabBuildPass(Pass):
         vis_type: Optional[Token],
         target: ExprType,
         else_body: Optional['ElseStmt'],
-        sym_tab: Optional[SymbolTable],
         from_walker: bool,
         """
         self.sync_node_to_scope(node)
@@ -832,7 +784,6 @@ class SymTabBuildPass(Pass):
 
         hops: Optional[ExprType],
         else_body: Optional['ElseStmt'],
-        sym_tab: Optional[SymbolTable],
         from_walker: bool,
         """
         self.sync_node_to_scope(node)
@@ -840,7 +791,6 @@ class SymTabBuildPass(Pass):
     def enter_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects.
 
-        sym_tab: Optional[SymbolTable],
         from_walker: bool,
         """
         self.sync_node_to_scope(node)
@@ -849,7 +799,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         target: ExprType,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -860,7 +809,6 @@ class SymTabBuildPass(Pass):
         target: 'AtomType',
         value: ExprType,
         mutable: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -870,7 +818,6 @@ class SymTabBuildPass(Pass):
         left: ExprType,
         right: ExprType,
         op: Token | DisconnectOp | ConnectOp,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -880,7 +827,6 @@ class SymTabBuildPass(Pass):
         condition: 'BinaryExpr | IfElseExpr',
         value: ExprType,
         else_value: ExprType,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -889,7 +835,6 @@ class SymTabBuildPass(Pass):
 
         operand: ExprType,
         op: Token,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -898,7 +843,6 @@ class SymTabBuildPass(Pass):
 
         target: ExprType,
         is_dict: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -906,7 +850,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         strings: list['Token | FString'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -914,7 +857,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         values: list[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -922,7 +864,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         values: list[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -930,7 +871,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         values: list[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -940,7 +880,6 @@ class SymTabBuildPass(Pass):
         first_expr: Optional[ExprType],
         exprs: Optional[ExprList],
         assigns: Optional[AssignmentList],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -948,7 +887,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         kv_pairs: list['KVPair'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -962,7 +900,6 @@ class SymTabBuildPass(Pass):
         is_list: bool,
         is_gen: bool,
         is_set: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -974,7 +911,6 @@ class SymTabBuildPass(Pass):
         name_list: NameList,
         collection: ExprType,
         conditional: Optional[ExprType],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -983,7 +919,6 @@ class SymTabBuildPass(Pass):
 
         key: ExprType,
         value: ExprType,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -993,7 +928,6 @@ class SymTabBuildPass(Pass):
         target: 'AtomType',
         right: 'IndexSlice | ArchRef | Token',
         null_ok: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1002,7 +936,6 @@ class SymTabBuildPass(Pass):
 
         target: 'AtomType',
         params: Optional['ParamList'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1011,7 +944,6 @@ class SymTabBuildPass(Pass):
 
         p_args: Optional[ExprList],
         p_kwargs: Optional['AssignmentList'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1019,7 +951,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         values: list['Assignment'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1029,7 +960,6 @@ class SymTabBuildPass(Pass):
         start: Optional[ExprType],
         stop: Optional[ExprType],
         is_range: bool,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1038,7 +968,6 @@ class SymTabBuildPass(Pass):
 
         name_ref: Name | SpecialVarRef,
         arch: Token,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1046,7 +975,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         var: Token,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1056,7 +984,6 @@ class SymTabBuildPass(Pass):
         filter_type: Optional[ExprType],
         filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
-        sym_tab: Optional[SymbolTable],
         from_walker: bool,
         """
         self.sync_node_to_scope(node)
@@ -1067,7 +994,6 @@ class SymTabBuildPass(Pass):
         filter_type: Optional[ExprType],
         filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
-        sym_tab: Optional[SymbolTable],
         from_walker: bool,
         """
         self.sync_node_to_scope(node)
@@ -1078,7 +1004,6 @@ class SymTabBuildPass(Pass):
         conn_type: Optional[ExprType],
         conn_assign: Optional[AssignmentList],
         edge_dir: EdgeDir,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1086,7 +1011,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         compares: list[BinaryExpr],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1094,7 +1018,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         parts: list['Token | ExprType'],
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1102,7 +1025,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         name: str,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1113,7 +1035,6 @@ class SymTabBuildPass(Pass):
         value: str,
         col_start: int,
         col_end: int,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)
 
@@ -1125,6 +1046,5 @@ class SymTabBuildPass(Pass):
         col_start: int,
         col_end: int,
         typ: type,
-        sym_tab: Optional[SymbolTable],
         """
         self.sync_node_to_scope(node)

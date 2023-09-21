@@ -1,5 +1,4 @@
 """Enum for shape types"""
-include:jac circle_clean;
 
 :enum:ShapeType {
     CIRCLE = "Circle",
@@ -26,11 +25,3 @@ include:jac circle_clean;
     print(f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}");
 }
 
-# Unit Tests!
-global expected_area = 78.53981633974483;
-test { check.AlmostEqual(calculate_area(RAD), expected_area); }
-test { c = Circle(RAD); check.AlmostEqual(c.area(), expected_area); }
-test { c = Circle(RAD); check.Equal(c.shape_type, ShapeType.CIRCLE); }
-
-"""Here we run the main program."""
-with entry:__main__ { main_run(); }

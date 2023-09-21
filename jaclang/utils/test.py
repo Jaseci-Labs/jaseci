@@ -5,6 +5,8 @@ import os
 from abc import ABC, abstractmethod
 from unittest import TestCase as _TestCase
 
+from jaclang.utils.helpers import get_ast_nodes_as_snake_case as ast_snakes
+
 
 class TestCase(_TestCase):
     """Base test case for Jaseci."""
@@ -101,3 +103,31 @@ class TestCaseMicroSuite(ABC, TestCase):
     def micro_suite_test(self, filename: str) -> None:
         """Test micro jac file."""
         pass
+
+
+class AstSyncTestMixin:
+    """Mixin for testing AST sync."""
+
+    TargetPass = None
+
+    def test_pass_ast_complete(self) -> None:
+        """Test for enter/exit name diffs with parser."""
+        ast_func_names = [
+            x
+            for x in ast_snakes()
+            if x not in ["ast_node", "o_o_p_access_node", "walker_stmt_only_node"]
+        ]
+        pygen_func_names = []
+        for name, value in inspect.getmembers(self.TargetPass):
+            if (
+                (name.startswith("enter_") or name.startswith("exit_"))
+                and inspect.isfunction(value)
+                and not getattr(self.TargetPass.__base__, value.__name__, False)  # type: ignore
+                and value.__qualname__.split(".")[0]
+                == self.TargetPass.__name__.replace("enter_", "").replace("exit_", "")  # type: ignore
+            ):
+                pygen_func_names.append(name.replace("enter_", "").replace("exit_", ""))
+        for name in pygen_func_names:
+            self.assertIn(name, ast_func_names)  # type: ignore
+        for name in ast_func_names:
+            self.assertIn(name, pygen_func_names)  # type: ignore
