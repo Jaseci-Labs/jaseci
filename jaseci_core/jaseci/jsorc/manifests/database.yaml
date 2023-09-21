@@ -84,7 +84,7 @@ spec:
             secretKeyRef:
               key: password
               name: jaseci-db-credentials
-        image: postgres:alpine
+        image: postgres:15-alpine
         imagePullPolicy: IfNotPresent
         name: jaseci-db
         ports:
