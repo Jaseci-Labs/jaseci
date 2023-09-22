@@ -14,6 +14,7 @@ class SymbolType(Enum):
     VAR = "var"
     ABILITY = "ability"
     ARCH = "arch"
+    IMPL = "impl"
     HAS = "field"
 
 
@@ -85,6 +86,10 @@ class SymbolTable:
             not sym_hit
             or (sym_hit == SymbolHitType.DECL and self.tab[name].decl)
             or (sym_hit == SymbolHitType.DEFN and len(self.tab[name].defn))
+            or (
+                sym_hit == SymbolHitType.DECL_DEFN
+                and (self.tab[name].decl or len(self.tab[name].defn))
+            )
             or (sym_hit == SymbolHitType.USE and len(self.tab[name].uses))
         ):
             return self.tab[name]
@@ -143,7 +148,7 @@ class SymbolTable:
 
     def __repr__(self) -> str:
         """Repr."""
-        out = f"{self.name}:\n"
+        out = f"{self.name} {super().__repr__()}:\n"
         for k, v in self.tab.items():
             out += f"    {k}: {v}\n"
         return out

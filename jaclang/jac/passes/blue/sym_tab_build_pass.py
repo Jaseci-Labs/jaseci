@@ -291,7 +291,7 @@ class SymTabBuildPass(Pass):
         name = node.target.py_resolve_name()
         if collide := self.cur_scope().insert(
             name=name,
-            sym_type=St.ARCH,
+            sym_type=St.IMPL,
             sym_hit=Sht.DEFN,
             node=node,
             single=True,
@@ -338,14 +338,8 @@ class SymTabBuildPass(Pass):
         body: Optional[CodeBlock],
         arch_attached: Optional[ArchBlock],
         """
-        ability_name = node.resolve_ability_symtab_name()
-        # To support decl/def match so decl gets copied into importing module
-        relevant_scope = (
-            self.cur_scope()
-            if not node.arch_attached
-            else self.cur_scope().get_parent()
-        )
-        if collide := relevant_scope.insert(
+        ability_name = node.py_resolve_name()
+        if collide := self.cur_scope().insert(
             name=ability_name,
             sym_type=St.ABILITY,
             sym_hit=Sht.DECL_DEFN if node.body else Sht.DECL,
@@ -383,7 +377,7 @@ class SymTabBuildPass(Pass):
         ability_name = node.target.py_resolve_name()
         if collide := self.cur_scope().insert(
             name=ability_name,
-            sym_type=St.ABILITY,
+            sym_type=St.IMPL,
             sym_hit=Sht.DEFN,
             node=node,
             single=True,
@@ -494,7 +488,7 @@ class SymTabBuildPass(Pass):
         name = node.target.py_resolve_name()
         if collide := self.cur_scope().insert(
             name=name,
-            sym_type=St.ARCH,
+            sym_type=St.IMPL,
             sym_hit=Sht.DEFN,
             node=node,
             single=True,

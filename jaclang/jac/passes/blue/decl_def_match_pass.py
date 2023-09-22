@@ -2,7 +2,7 @@
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.blue import SubNodeTabPass
-from jaclang.jac.symtable import SymbolTable, SymbolType
+from jaclang.jac.symtable import SymbolHitType, SymbolTable, SymbolType
 
 
 class DeclDefMatchPass(Pass):
@@ -14,8 +14,7 @@ class DeclDefMatchPass(Pass):
         if not self.ir.sym_tab:
             return self.ice("Expected symbol table on node.")
         self.connect_decl_def(self.ir.sym_tab)
-
-    #        self.terminate()
+        self.terminate()
 
     def after_pass(self) -> None:
         """Rebuild sub node table."""
@@ -23,29 +22,39 @@ class DeclDefMatchPass(Pass):
 
     def connect_decl_def(self, sym_tab: SymbolTable) -> None:
         """Connect Decls and Defs."""
-        # print(sym_tab)
         for sym in sym_tab.tab.values():
-            if sym.sym_type in [SymbolType.ABILITY, SymbolType.ARCH]:
-                if isinstance(sym.decl, ast.Ability) and sym.decl.is_abstract:
-                    if sym.defn:
-                        self.error(
-                            f"Abstract ability {sym.name} should not have a definition.",
-                            sym.defn[-1],
+            if sym.sym_type == SymbolType.IMPL:
+                arch_refs = sym.name.split(".")
+                lookup = sym_tab.lookup(arch_refs[0], sym_hit=SymbolHitType.DECL_DEFN)
+                decl_node = lookup.decl if lookup else None
+                for name in arch_refs[1:]:
+                    if decl_node:
+                        lookup = (
+                            decl_node.sym_tab.lookup(
+                                name, sym_hit=SymbolHitType.DECL_DEFN
+                            )
+                            if decl_node.sym_tab
+                            else None
                         )
-                    continue
-                if not sym.decl:
+                        decl_node = lookup.decl if lookup else None
+                    else:
+                        break
+                if not decl_node:
                     self.error(
-                        f"Unable to match implementation {sym.name} to an declaration.",
+                        f"Unable to match implementation {sym.name} to a declaration.",
                         sym.defn[-1],
                     )
-                if not sym.defn:
+                    continue
+                elif isinstance(decl_node, ast.Ability) and decl_node.is_abstract:
                     self.error(
-                        f"Unable to match declaration {sym.name} to an implementation.",
-                        sym.decl,
+                        f"Abstract ability {decl_node.py_resolve_name()} should not have a definition.",
+                        decl_node,
                     )
-                if sym.decl and sym.defn and sym.decl != sym.defn[-1]:
-                    ast.append_node(sym.decl, sym.defn[-1])
-                    sym.decl.body = sym.defn[-1].body  # type: ignore
-                    sym.decl.sym_tab = sym.defn[-1].sym_tab
+                    continue
+                ast.append_node(decl_node, sym.defn[-1].body)  # type: ignore
+                decl_node.body = sym.defn[-1].body  # type: ignore
+                decl_node.sym_tab.tab = sym.defn[-1].sym_tab.tab  # type: ignore
+                sym.decl = decl_node
+
         for i in sym_tab.kid:
             self.connect_decl_def(i)
