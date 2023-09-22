@@ -57,9 +57,12 @@ class Symbol:
 class SymbolTable:
     """Symbol Table."""
 
-    def __init__(self, name: str, parent: Optional[SymbolTable] = None) -> None:
+    def __init__(
+        self, name: str, key_node: ast.AstNode, parent: Optional[SymbolTable] = None
+    ) -> None:
         """Initialize."""
         self.name = name
+        self.key_node = key_node
         self.parent = parent if parent else self
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
@@ -133,9 +136,9 @@ class SymbolTable:
         elif sym_hit == SymbolHitType.USE:
             self.tab[name].uses.append(node)
 
-    def push_scope(self, name: str) -> SymbolTable:
+    def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""
-        self.kid.append(SymbolTable(name, self))
+        self.kid.append(SymbolTable(name, key_node, self))
         return self.kid[-1]
 
     def __repr__(self) -> str:
