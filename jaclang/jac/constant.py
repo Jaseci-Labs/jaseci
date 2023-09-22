@@ -29,6 +29,7 @@ class Constants(str, Enum):
     EDGE_DIR = "_jac_Edge_Dir_"
 
     PYNLINE = "::py::"
+    JAC_GEN_DIR = "__jac_gen__"
 
     def __str__(self) -> str:
         """Return the string representation of the token."""

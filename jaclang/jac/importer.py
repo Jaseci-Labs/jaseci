@@ -38,7 +38,7 @@ def import_jac_module(
         caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
     full_target = path.normpath(path.join(caller_dir, target))
 
-    dev_dir = path.join(caller_dir, "__jac_gen__")
+    dev_dir = path.join(caller_dir, Con.JAC_GEN_DIR)
     makedirs(dev_dir, exist_ok=True)
     py_file_path = path.join(dev_dir, module_name + ".py")
     if (
