@@ -24,7 +24,8 @@ class Alert:
 
     def __str__(self) -> str:
         """Return string representation of alert."""
-        return f"{self.mod}, line {self.line}: {self.msg}"
+        mod_path = os.path.relpath(self.mod, start=os.getcwd())
+        return f"{mod_path}, line {self.line}: {self.msg}"
 
 
 class TransformError(Exception):
