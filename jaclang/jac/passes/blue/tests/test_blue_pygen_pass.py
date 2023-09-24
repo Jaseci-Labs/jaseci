@@ -1,6 +1,6 @@
 """Test ast build pass module."""
 from jaclang.jac.passes.blue import BluePygenPass
-from jaclang.jac.transpiler import jac_file_to_pass, transpile_jac_blue
+from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
@@ -89,8 +89,10 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = transpile_jac_blue(filename, "")
-        self.assertGreater(len(code_gen), 10)
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path(filename), target=BluePygenPass
+        )
+        self.assertGreater(len(code_gen.ir.meta["py_code"]), 10)
 
 
 BluePygenPassTests.self_attach_micro_tests()

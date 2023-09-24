@@ -4,7 +4,8 @@ import sys
 
 from jaclang import core
 from jaclang import jac_purple_import
-from jaclang.jac.transpiler import transpile_jac_purple
+from jaclang.jac.passes.purple import PurplePygenPass
+from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCaseMicroSuite
 
 
@@ -55,8 +56,10 @@ class PurplePygenPassTests(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = transpile_jac_purple(filename, "")
-        self.assertGreater(len(code_gen), 10)
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path(filename), target=PurplePygenPass
+        )
+        self.assertGreater(len(code_gen.ir.meta["py_code"]), 10)
 
 
 PurplePygenPassTests.self_attach_micro_tests()
