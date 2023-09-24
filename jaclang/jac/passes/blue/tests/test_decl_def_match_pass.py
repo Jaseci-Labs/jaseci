@@ -17,10 +17,10 @@ class DeclDefMatchPassTests(TestCase):
             self.fixture_abs_path("base.jac"), "", DeclDefMatchPass
         )
         self.assertFalse(state.errors_had)
-        self.assertIn("Test.say_hi", state.ir.sym_tab.tab)
-        self.assertIsNotNone(state.ir.sym_tab.tab["Test.say_hi"].decl.body)
-        self.assertIn("Test.init", state.ir.sym_tab.tab)
-        self.assertIsNotNone(state.ir.sym_tab.tab["Test.init"].decl.body)
+        self.assertIn("(o)Test.(a)say_hi", state.ir.sym_tab.tab)
+        self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(a)say_hi"].decl.body)
+        self.assertIn("(o)Test.(a)init", state.ir.sym_tab.tab)
+        self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(a)init"].decl.body)
 
     def test_ability_connected_to_decl_post(self) -> None:
         """Basic test for pass."""
@@ -28,10 +28,10 @@ class DeclDefMatchPassTests(TestCase):
             self.fixture_abs_path("base2.jac"), "", DeclDefMatchPass
         )
         self.assertFalse(state.errors_had)
-        self.assertIn("Test.say_hi", state.ir.sym_tab.tab)
-        self.assertIsNotNone(state.ir.sym_tab.tab["Test.say_hi"].decl.body)
-        self.assertIn("Test.init", state.ir.sym_tab.tab)
-        self.assertIsNotNone(state.ir.sym_tab.tab["Test.init"].decl.body)
+        self.assertIn("(o)Test.(a)say_hi", state.ir.sym_tab.tab)
+        self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(a)say_hi"].decl.body)
+        self.assertIn("(o)Test.(a)init", state.ir.sym_tab.tab)
+        self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(a)init"].decl.body)
 
     def test_collision_error_correct(self) -> None:
         """Basic test for multi defs."""

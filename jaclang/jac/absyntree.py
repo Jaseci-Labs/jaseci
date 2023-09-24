@@ -554,7 +554,9 @@ class ArchRefChain(AstNode):
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
-        return ".".join([x.py_resolve_name() for x in self.archs])
+        return ".".join(
+            [f"({x.arch.value[1]}){x.py_resolve_name()}" for x in self.archs]
+        )
 
 
 class FuncSignature(AstNode):

@@ -24,7 +24,8 @@ class DeclDefMatchPass(Pass):
         """Connect Decls and Defs."""
         for sym in sym_tab.tab.values():
             if sym.sym_type == SymbolType.IMPL:
-                arch_refs = sym.name.split(".")
+                # currently strips the type info from impls
+                arch_refs = [x[3:] for x in sym.name.split(".")]
                 lookup = sym_tab.lookup(arch_refs[0], sym_hit=SymbolHitType.DECL_DEFN)
                 decl_node = lookup.decl if lookup else None
                 for name in arch_refs[1:]:
