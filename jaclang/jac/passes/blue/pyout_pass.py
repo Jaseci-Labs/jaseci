@@ -54,11 +54,8 @@ class PyOutPass(Pass):
             tb = traceback.extract_tb(e.__traceback__)
             err = handle_jac_error(node.meta["py_code"], e, tb)
             raise type(e)(str(e) + "\n" + err)
-            # print(f"Failed on {out_path} with base {mod_path}")
-            # return
         with open(out_path, "wb") as f:
             marshal.dump(codeobj, f)
-            # print(f"Success on {out_path} with base {mod_path}")
 
     def get_output_targets(self, node: ast.Module) -> tuple[str, str, str]:
         """Get output targets."""

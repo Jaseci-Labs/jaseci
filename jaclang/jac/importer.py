@@ -45,8 +45,6 @@ def import_jac_module(
         cachable
         and path.exists(py_file_path)
         and path.getmtime(py_file_path) > path.getmtime(full_target)
-        and path.exists(pyc_file_path)
-        and path.getmtime(pyc_file_path) > path.getmtime(full_target)
     ):
         with open(py_file_path, "r") as f:
             code_string = f.read()
