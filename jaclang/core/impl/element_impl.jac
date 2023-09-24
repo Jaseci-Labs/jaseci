@@ -7,8 +7,8 @@
 }
 
 :object:Element:ability:<init>
-(_jac_exec_ctx: ExecutionContext) {
-    <self>.__jinfo = _jac_exec_ctx :> ExecutionContext;
+(exec_ctx: ExecutionContext) {
+    <self>.__jinfo = exec_ctx :> ExecutionContext;
 }
 
 :object:Element:ability:_jac_make_public_ro {

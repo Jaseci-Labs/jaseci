@@ -1,7 +1,9 @@
 """Utility functions and classes for Jac compilation toolchain."""
 import re
+import traceback
 
 import jaclang.jac.absyntree as ast
+from jaclang.jac.constant import Constants as Con, Values as Val
 
 
 def pascal_to_snake(pascal_string: str) -> str:
@@ -38,6 +40,36 @@ def dedent_code_block(code: str) -> str:
     dedented_lines = [line[min_indent:] for line in lines]
     dedented_code = "\n".join(dedented_lines)
     return dedented_code
+
+
+def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary) -> str:
+    """Handle Jac Error."""
+    except_line = e.end_lineno if isinstance(e, SyntaxError) else list(tb)[-1].lineno
+    if not isinstance(except_line, int) or except_line == 0:
+        return ""
+    py_error_region = clip_code_section(
+        add_line_numbers(code_string), except_line, Val.JAC_ERROR_LINE_RANGE
+    )
+    try:
+        jac_err_line = int(code_string.splitlines()[except_line - 1].split()[-1])
+        mod_index = int(code_string.splitlines()[except_line - 1].split()[-2])
+        mod_paths = code_string.split(Con.JAC_DEBUG_SPLITTER)[1].strip().splitlines()
+        target_mod = mod_paths[mod_index]
+        with open(target_mod, "r") as file:
+            jac_code_string = file.read()
+        jac_error_region = clip_code_section(
+            add_line_numbers(jac_code_string), jac_err_line, Val.JAC_ERROR_LINE_RANGE
+        )
+    except Exception as e:
+        jac_error_region = str(e)
+        target_mod = ""
+    snippet = (
+        f"{Con.JAC_ERROR_PREAMBLE}\n"
+        f"{target_mod}\n"
+        f"JacCode Snippet:\n{jac_error_region}\n"
+        f"PyCode Snippet:\n{py_error_region}\n"
+    )
+    return snippet
 
 
 def get_ast_nodes_as_snake_case() -> list[str]:

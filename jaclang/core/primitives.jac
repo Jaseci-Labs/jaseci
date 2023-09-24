@@ -51,6 +51,7 @@ object ElementMetaData {
 object Element {
     has _jinfo: ElementMetaData = ElementMetaData();
 
+    can <init>(exec_ctx: ExecutionContext=None);
     can _jac_make_public_ro;
     can _jac_make_public_rw;
     can _jac_make_private;
