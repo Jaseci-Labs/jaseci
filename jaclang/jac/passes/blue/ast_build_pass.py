@@ -1172,10 +1172,30 @@ class AstBuildPass(Pass):
         Rule 175   statement -> doc_tag architype
         Rule 176   statement -> import_stmt
         """
-        if isinstance(node.kid[-1], (ast.Architype, ast.Ability)):
+        if isinstance(
+            node.kid[-1],
+            (
+                ast.Architype,
+                ast.ArchDef,
+                ast.Enum,
+                ast.EnumDef,
+                ast.Ability,
+                ast.AbilityDef,
+            ),
+        ):
             doc = node.kid[0]
             new_node = replace_node(node, node.kid[-1])
-            if isinstance(new_node, (ast.Architype, ast.Ability)):
+            if isinstance(
+                new_node,
+                (
+                    ast.Architype,
+                    ast.ArchDef,
+                    ast.Enum,
+                    ast.EnumDef,
+                    ast.Ability,
+                    ast.AbilityDef,
+                ),
+            ):
                 new_node.doc = doc
                 append_node(new_node, doc, front=True)
         else:

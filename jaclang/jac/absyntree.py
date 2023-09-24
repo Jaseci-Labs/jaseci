@@ -2008,6 +2008,10 @@ class Parse(AstNode):
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
 
+    def __repr__(self) -> str:
+        """Return string representation of parse node."""
+        return super().__repr__() + f" ({self.name})" + " line: " + str(self.line)
+
 
 class Token(AstNode):
     """Token node type for Jac Ast."""
