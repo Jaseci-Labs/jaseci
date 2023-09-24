@@ -256,6 +256,7 @@ class BluePygenPass(Pass):
                 self.warning(
                     "Includes import * in target module into current namespace."
                 )
+            return
         if not node.items:
             if not node.alias:
                 self.emit_ln(node, f"import {node.path.meta['py_code']}")
