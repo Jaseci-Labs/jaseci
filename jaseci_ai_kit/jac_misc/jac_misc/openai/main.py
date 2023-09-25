@@ -14,9 +14,9 @@ from jaseci.utils.utils import logger
 from uuid import uuid4
 from json import dumps
 import openai
+from openai import FineTuningJob
 from os import remove
 from glob import glob
-from openai.cli import FineTune
 from typing import Union
 
 
@@ -418,44 +418,49 @@ def generate_model(prompts: list, file_name=None, **kwargs):
     """
     Generates model using these format.
     [
-        {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
-        {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
-        {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
+        {"messages": [{"role": "<role>", "content": "<content>" }, ...]},
+        {"messages": [{"role": "<role>", "content": "<content>" }, ...]},
+        {"messages": [{"role": "<role>", "content": "<content>" }, ...]}
     ]
     """
-    fname = file_name or str(uuid4())
-    full_fname = f"{fname}.jsonl"
-    with open(full_fname, "w") as file:
-        for prompt in prompts:
-            file.write(dumps(prompt) + "\n")
+    response = {}
+    try:
+        fname = file_name or str(uuid4())
+        full_fname = f"{fname}.jsonl"
+        with open(full_fname, "w") as file:
+            max = len(prompts) - 1
+            for idx, prompt in enumerate(prompts):
+                file.write(dumps(prompt) + ("\n" if idx != max else ""))
 
-    FineTune.prepare_data(FineTunePreparation(full_fname, True))
-
-    response = openai.FineTune.create(
-        training_file=FineTune._get_or_upload(f"{fname}_prepared.jsonl", False),
-        validation_file=FineTune._get_or_upload(f"{fname}.jsonl", False),
-        **kwargs,
-    )
-
-    for f in glob(f"{fname}*.jsonl"):
-        remove(f)
+        with open(full_fname, "rb") as file:
+            mfile = openai.File.create(file=file, purpose="fine-tune")
+            # [openai.File.delete(data.id) for data in openai.File.list()["data"]]
+            response = FineTuningJob.create(
+                training_file=mfile["id"],
+                **kwargs,
+            )
+    except Exception as e:
+        raise e
+    finally:
+        for f in glob(f"{fname}*.jsonl"):
+            remove(f)
 
     return response
 
 
 @jaseci_action(act_group=["openai"], allow_remote=True)
 def fine_tune_list(*args, **kwargs):
-    return openai.FineTune.list(*args, **kwargs)
+    return FineTuningJob.list(*args, **kwargs)
 
 
 @jaseci_action(act_group=["openai"], allow_remote=True)
 def fine_tune_retrieve(id: str, *args, **kwargs):
-    return openai.FineTune.retrieve(id, *args, **kwargs)
+    return FineTuningJob.retrieve(id, *args, **kwargs)
 
 
 @jaseci_action(act_group=["openai"], allow_remote=True)
 def fine_tune_cancel(id: str, *args, **kwargs):
-    return openai.FineTune.cancel(id, *args, **kwargs)
+    return FineTuningJob.cancel(id, *args, **kwargs)
 
 
 @jaseci_action(act_group=["openai"], allow_remote=True)
