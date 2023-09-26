@@ -1,7 +1,7 @@
 from typing import List
 import warnings
 
-from lsprotocol import types
+from jaclang.vendor.pygls.lsprotocol import types
 
 from .workspace import Workspace
 from .text_document import TextDocument

@@ -1,7 +1,7 @@
 # GENERATED FROM scripts/gen-client.py -- DO NOT EDIT
 # flake8: noqa
 from concurrent.futures import Future
-from lsprotocol import types
+from jaclang.vendor.pygls.lsprotocol import types
 from jaclang.vendor.pygls.client import JsonRPCClient
 from jaclang.vendor.pygls.protocol import LanguageServerProtocol
 from jaclang.vendor.pygls.protocol import default_converter

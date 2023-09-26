@@ -22,7 +22,7 @@ import os
 import re
 from typing import List, Optional, Pattern, Union
 
-from lsprotocol import types
+from jaclang.vendor.pygls.lsprotocol import types
 
 from jaclang.vendor.pygls.uris import to_fs_path
 from .position import Position
@@ -127,8 +127,8 @@ class TextDocument(object):
         """Apply a text change to a document, considering TextDocumentSyncKind
 
         Performs either
-        :attr:`~jaclang.vendor.pygls.lsp_types.TextDocumentSyncKind.Incremental`,
-        :attr:`~jaclang.vendor.pygls.lsp_types.TextDocumentSyncKind.Full`, or no synchronization
+        :attr:`~lsprotocol.types.TextDocumentSyncKind.Incremental`,
+        :attr:`~lsprotocol.types.TextDocumentSyncKind.Full`, or no synchronization
         based on both the client request and server capabilities.
 
         .. admonition:: ``Incremental`` versus ``Full`` synchronization

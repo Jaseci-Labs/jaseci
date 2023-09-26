@@ -22,8 +22,8 @@ import os
 import warnings
 from typing import Dict, List, Optional, Union
 
-from lsprotocol import types
-from jaclang.vendor.pygls.lsp_types import (
+from jaclang.vendor.pygls.lsprotocol import types
+from jaclang.vendor.pygls.lsprotocol.types import (
     PositionEncodingKind,
     TextDocumentSyncKind,
     WorkspaceFolder,

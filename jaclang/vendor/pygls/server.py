@@ -42,7 +42,7 @@ from jaclang.vendor.pygls.exceptions import (
     JsonRpcException,
     FeatureRequestError,
 )
-from jaclang.vendor.pygls.lsp_types import (
+from jaclang.vendor.pygls.lsprotocol.types import (
     ClientCapabilities,
     Diagnostic,
     MessageType,
@@ -359,7 +359,7 @@ class LanguageServer(Server):
     This class can be extended and it can be passed as a first argument to
     registered commands/features.
 
-    .. |ServerInfo| replace:: :class:`~jaclang.vendor.pygls.lsp_types.InitializeResultServerInfoType`
+    .. |ServerInfo| replace:: :class:`~lsprotocol.types.InitializeResultServerInfoType`
 
     Parameters
     ----------
@@ -384,10 +384,10 @@ class LanguageServer(Server):
        None
           No synchronization
 
-       :attr:`~jaclang.vendor.pygls.lsp_types.TextDocumentSyncKind.Full`
+       :attr:`~lsprotocol.types.TextDocumentSyncKind.Full`
           Send entire document text with each update
 
-       :attr:`~jaclang.vendor.pygls.lsp_types.TextDocumentSyncKind.Incremental`
+       :attr:`~lsprotocol.types.TextDocumentSyncKind.Incremental`
           Send only the region of text that changed with each update
 
     notebook_document_sync

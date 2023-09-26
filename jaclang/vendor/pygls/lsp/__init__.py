@@ -16,7 +16,7 @@
 ############################################################################
 from typing import Any, Callable, List, Optional, Union
 
-from jaclang.vendor.pygls.lsp_types import (
+from jaclang.vendor.pygls.lsprotocol.types import (
     ALL_TYPES_MAP,
     METHOD_TO_TYPES,
     TEXT_DOCUMENT_DID_SAVE,

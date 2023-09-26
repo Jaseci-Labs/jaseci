@@ -251,6 +251,11 @@ class MessageType(int, enum.Enum):
     """An information message."""
     Log = 4
     """A log message."""
+    Debug = 5
+    """A debug message.
+
+    @since 3.18.0"""
+    # Since: 3.18.0
 
 
 @enum.unique

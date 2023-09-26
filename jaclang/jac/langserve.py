@@ -1,6 +1,6 @@
 """Example language server for JAC."""
 
-from jaclang.vendor.pygls.lsp_types import (
+from jaclang.vendor.pygls.lsprotocol.types import (
     CompletionItem,
     CompletionList,
     CompletionParams,

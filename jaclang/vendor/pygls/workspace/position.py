@@ -19,7 +19,7 @@
 import logging
 from typing import List, Optional, Union
 
-from lsprotocol import types
+from jaclang.vendor.pygls.lsprotocol import types
 
 
 log = logging.getLogger(__name__)

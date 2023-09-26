@@ -18,7 +18,7 @@ from functools import reduce
 from typing import Any, Dict, List, Optional, Set, Union
 import logging
 
-from jaclang.vendor.pygls.lsp_types import (
+from jaclang.vendor.pygls.lsprotocol.types import (
     INLAY_HINT_RESOLVE,
     TEXT_DOCUMENT_CODE_ACTION,
     TEXT_DOCUMENT_CODE_LENS,
@@ -67,7 +67,7 @@ from jaclang.vendor.pygls.lsp_types import (
     InlayHintOptions,
     PositionEncodingKind,
 )
-from jaclang.vendor.pygls.lsp_types import (
+from jaclang.vendor.pygls.lsprotocol.types import (
     ClientCapabilities,
     CodeLensOptions,
     CompletionOptions,

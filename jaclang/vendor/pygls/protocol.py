@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 
 import attrs
 from cattrs.errors import ClassValidationError
-from lsprotocol import converters
+from jaclang.vendor.pygls.lsprotocol import converters
 
 from jaclang.vendor.pygls.capabilities import ServerCapabilitiesBuilder
 from jaclang.vendor.pygls.constants import ATTR_FEATURE_TYPE
@@ -65,7 +65,7 @@ from jaclang.vendor.pygls.feature_manager import (
     is_thread_function,
 )
 from jaclang.vendor.pygls.lsp import ConfigCallbackType, ShowDocumentCallbackType
-from jaclang.vendor.pygls.lsp_types import (
+from jaclang.vendor.pygls.lsprotocol.types import (
     CANCEL_REQUEST,
     CLIENT_REGISTER_CAPABILITY,
     CLIENT_UNREGISTER_CAPABILITY,
@@ -93,7 +93,7 @@ from jaclang.vendor.pygls.lsp_types import (
     WORKSPACE_EXECUTE_COMMAND,
     WORKSPACE_SEMANTIC_TOKENS_REFRESH,
 )
-from jaclang.vendor.pygls.lsp_types import (
+from jaclang.vendor.pygls.lsprotocol.types import (
     ApplyWorkspaceEditParams,
     Diagnostic,
     DidChangeNotebookDocumentParams,
@@ -1039,13 +1039,13 @@ class LanguageServerProtocol(JsonRPCProtocol, metaclass=LSPMeta):
         .. deprecated:: 1.0.1
 
            Passing ``(uri, diagnostics, version)`` as arguments is deprecated.
-           Pass an instance of :class:`~jaclang.vendor.pygls.lsp_types.PublishDiagnosticParams`
+           Pass an instance of :class:`~lsprotocol.types.PublishDiagnosticParams`
            instead.
 
         Parameters
         ----------
         params_or_uri
-           The :class:`~jaclang.vendor.pygls.lsp_types.PublishDiagnosticParams` to send to the client.
+           The :class:`~lsprotocol.types.PublishDiagnosticParams` to send to the client.
 
         diagnostics
            *Deprecated*. The diagnostics to publish
