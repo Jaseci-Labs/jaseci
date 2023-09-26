@@ -62,11 +62,11 @@ from functools import partial
 from argparse import ArgumentParser
 
 import lark
-from jaclang.utils.lark.tools import lalr_argparser, build_lalr, make_warnings_comments
+from jaclang.vendor.lark.tools import lalr_argparser, build_lalr, make_warnings_comments
 
 
-from jaclang.utils.lark.grammar import Rule
-from jaclang.utils.lark.lexer import TerminalDef
+from jaclang.vendor.lark.grammar import Rule
+from jaclang.vendor.lark.lexer import TerminalDef
 
 _dir = path.dirname(__file__)
 _larkdir = path.join(_dir, path.pardir)

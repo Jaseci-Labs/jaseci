@@ -4,8 +4,8 @@ from typing import Iterator, List
 from copy import copy
 import warnings
 
-from jaclang.utils.lark.exceptions import UnexpectedToken
-from jaclang.utils.lark.lexer import Token, LexerThread
+from jaclang.vendor.lark.exceptions import UnexpectedToken
+from jaclang.vendor.lark.lexer import Token, LexerThread
 
 
 class InteractiveParser:

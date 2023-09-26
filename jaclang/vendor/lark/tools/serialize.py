@@ -1,9 +1,9 @@
 import sys
 import json
 
-from jaclang.utils.lark.grammar import Rule
-from jaclang.utils.lark.lexer import TerminalDef
-from jaclang.utils.lark.tools import lalr_argparser, build_lalr
+from jaclang.vendor.lark.grammar import Rule
+from jaclang.vendor.lark.lexer import TerminalDef
+from jaclang.vendor.lark.tools import lalr_argparser, build_lalr
 
 import argparse
 

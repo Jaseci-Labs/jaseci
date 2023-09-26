@@ -1,38 +1,55 @@
-from jaclang.utils.lark import Lark, Transformer
+from jaclang.vendor.lark import Lark, Transformer, v_args
 
 
-# Grammar without imports
 grammar = """
-    start: expr
-    expr: expr "+" term -> add
-        | term
-    term: term "*" factor -> mul
-        | factor
-    factor: NUMBER -> num
-          | "(" expr ")"
-    NUMBER: /\d+/
-    WS: /\s+/
-    %ignore WS
+?start: sum
+
+?sum: product
+    | sum "+" product   -> add
+    | sum "-" product   -> sub
+
+?product: item
+    | product "*" item  -> mul
+    | product "/" item  -> div
+
+?item: NUMBER           -> num
+     | "(" sum ")"
+
+%import common.NUMBER
+%import common.WS
+%ignore WS
 """
 
-# Lark parser
-parser = Lark(grammar)
 
+# We define a transformer to process the parsed data
+class CalcTransformer(Transformer):
+    @v_args(inline=True)
+    def num(self, n):
+        return float(n[0])
 
-# Transformer class to handle parsed tree
-class ArithmeticTransformer(Transformer):
     def add(self, items):
-        print(items[0], items[1])
+        return sum(items)
+
+    def sub(self, items):
+        return items[0] - items[1]
 
     def mul(self, items):
-        print(items[0], items[1])
+        return items[0] * items[1]
 
-    def num(self, items):
-        print(int(items[0]))
+    def div(self, items):
+        return items[0] / items[1]
 
 
-# Using the parser and transformer
-expr = "3 + 5 * 2"
-tree = parser.parse(expr)
-result = ArithmeticTransformer().transform(tree)
-print(result)  # Outputs: 13
+# We use the grammar and transformer to instantiate the parser
+parser = Lark(grammar, parser="lalr", transformer=CalcTransformer())
+
+
+def evaluate(expression):
+    return parser.parse(expression)
+
+
+# Test the parser
+expr1 = "3 + 5 * (2 - 8)"
+expr2 = "12.5 / 2.5 + 7"
+print(f"{expr1} = {evaluate(expr1)}")
+print(f"{expr2} = {evaluate(expr2)}")
