@@ -26,7 +26,7 @@ from typing import Optional, Tuple
 import re
 from urllib import parse
 
-from pygls import IS_WIN
+from jaclang.vendor.pygls import IS_WIN
 
 RE_DRIVE_LETTER_PATH = re.compile(r"^\/[a-zA-Z]:")
 

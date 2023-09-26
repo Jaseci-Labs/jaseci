@@ -2,7 +2,7 @@ import asyncio
 from concurrent.futures import Future
 from typing import Dict
 
-from lsprotocol.types import (
+from jaclang.vendor.pygls.lsp_types import (
     PROGRESS,
     WINDOW_WORK_DONE_PROGRESS_CREATE,
     ProgressParams,
@@ -12,7 +12,7 @@ from lsprotocol.types import (
     WorkDoneProgressReport,
     WorkDoneProgressCreateParams,
 )
-from pygls.protocol import LanguageServerProtocol
+from jaclang.vendor.pygls.protocol import LanguageServerProtocol
 
 
 class Progress:

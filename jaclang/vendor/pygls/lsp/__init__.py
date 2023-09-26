@@ -16,7 +16,7 @@
 ############################################################################
 from typing import Any, Callable, List, Optional, Union
 
-from lsprotocol.types import (
+from jaclang.vendor.pygls.lsp_types import (
     ALL_TYPES_MAP,
     METHOD_TO_TYPES,
     TEXT_DOCUMENT_DID_SAVE,
@@ -37,7 +37,7 @@ from lsprotocol.types import (
 )
 from typeguard import check_type
 
-from pygls.exceptions import MethodTypeNotRegisteredError
+from jaclang.vendor.pygls.exceptions import MethodTypeNotRegisteredError
 
 ConfigCallbackType = Callable[[List[Any]], None]
 ShowDocumentCallbackType = Callable[[ShowDocumentResult], None]

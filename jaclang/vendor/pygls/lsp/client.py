@@ -2,9 +2,9 @@
 # flake8: noqa
 from concurrent.futures import Future
 from lsprotocol import types
-from pygls.client import JsonRPCClient
-from pygls.protocol import LanguageServerProtocol
-from pygls.protocol import default_converter
+from jaclang.vendor.pygls.client import JsonRPCClient
+from jaclang.vendor.pygls.protocol import LanguageServerProtocol
+from jaclang.vendor.pygls.protocol import default_converter
 from typing import Any
 from typing import Callable
 from typing import List

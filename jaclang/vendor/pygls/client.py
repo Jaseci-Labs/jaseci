@@ -27,8 +27,8 @@ from typing import Union
 
 from cattrs import Converter
 
-from pygls.exceptions import PyglsError, JsonRpcException
-from pygls.protocol import JsonRPCProtocol, default_converter
+from jaclang.vendor.pygls.exceptions import PyglsError, JsonRpcException
+from jaclang.vendor.pygls.protocol import JsonRPCProtocol, default_converter
 
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ class JsonRPCClient:
         ::
 
            import logging
-           from pygls.client import JsonRPCClient
+           from jaclang.vendor.pygls.client import JsonRPCClient
 
            ls = JsonRPCClient()
 

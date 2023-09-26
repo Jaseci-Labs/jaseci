@@ -33,16 +33,16 @@ from typing import (
 )
 
 import cattrs
-from pygls import IS_PYODIDE
-from pygls.lsp import ConfigCallbackType, ShowDocumentCallbackType
-from pygls.exceptions import (
+from jaclang.vendor.pygls import IS_PYODIDE
+from jaclang.vendor.pygls.lsp import ConfigCallbackType, ShowDocumentCallbackType
+from jaclang.vendor.pygls.exceptions import (
     FeatureNotificationError,
     JsonRpcInternalError,
     PyglsError,
     JsonRpcException,
     FeatureRequestError,
 )
-from lsprotocol.types import (
+from jaclang.vendor.pygls.lsp_types import (
     ClientCapabilities,
     Diagnostic,
     MessageType,
@@ -56,9 +56,13 @@ from lsprotocol.types import (
     WorkspaceEdit,
     WorkspaceConfigurationParams,
 )
-from pygls.progress import Progress
-from pygls.protocol import JsonRPCProtocol, LanguageServerProtocol, default_converter
-from pygls.workspace import Workspace
+from jaclang.vendor.pygls.progress import Progress
+from jaclang.vendor.pygls.protocol import (
+    JsonRPCProtocol,
+    LanguageServerProtocol,
+    default_converter,
+)
+from jaclang.vendor.pygls.workspace import Workspace
 
 if not IS_PYODIDE:
     from multiprocessing.pool import ThreadPool
@@ -355,7 +359,7 @@ class LanguageServer(Server):
     This class can be extended and it can be passed as a first argument to
     registered commands/features.
 
-    .. |ServerInfo| replace:: :class:`~lsprotocol.types.InitializeResultServerInfoType`
+    .. |ServerInfo| replace:: :class:`~jaclang.vendor.pygls.lsp_types.InitializeResultServerInfoType`
 
     Parameters
     ----------
@@ -380,10 +384,10 @@ class LanguageServer(Server):
        None
           No synchronization
 
-       :attr:`~lsprotocol.types.TextDocumentSyncKind.Full`
+       :attr:`~jaclang.vendor.pygls.lsp_types.TextDocumentSyncKind.Full`
           Send entire document text with each update
 
-       :attr:`~lsprotocol.types.TextDocumentSyncKind.Incremental`
+       :attr:`~jaclang.vendor.pygls.lsp_types.TextDocumentSyncKind.Incremental`
           Send only the region of text that changed with each update
 
     notebook_document_sync

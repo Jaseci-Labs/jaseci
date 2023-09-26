@@ -23,13 +23,13 @@ import warnings
 from typing import Dict, List, Optional, Union
 
 from lsprotocol import types
-from lsprotocol.types import (
+from jaclang.vendor.pygls.lsp_types import (
     PositionEncodingKind,
     TextDocumentSyncKind,
     WorkspaceFolder,
 )
-from pygls.uris import to_fs_path, uri_scheme
-from pygls.workspace.text_document import TextDocument
+from jaclang.vendor.pygls.uris import to_fs_path, uri_scheme
+from jaclang.vendor.pygls.workspace.text_document import TextDocument
 
 logger = logging.getLogger(__name__)
 

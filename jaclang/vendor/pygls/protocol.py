@@ -41,16 +41,16 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from pygls.server import LanguageServer, WebSocketTransportAdapter
+    from jaclang.vendor.pygls.server import LanguageServer, WebSocketTransportAdapter
 
 
 import attrs
 from cattrs.errors import ClassValidationError
 from lsprotocol import converters
 
-from pygls.capabilities import ServerCapabilitiesBuilder
-from pygls.constants import ATTR_FEATURE_TYPE
-from pygls.exceptions import (
+from jaclang.vendor.pygls.capabilities import ServerCapabilitiesBuilder
+from jaclang.vendor.pygls.constants import ATTR_FEATURE_TYPE
+from jaclang.vendor.pygls.exceptions import (
     JsonRpcException,
     JsonRpcInternalError,
     JsonRpcInvalidParams,
@@ -59,9 +59,13 @@ from pygls.exceptions import (
     FeatureNotificationError,
     FeatureRequestError,
 )
-from pygls.feature_manager import FeatureManager, assign_help_attrs, is_thread_function
-from pygls.lsp import ConfigCallbackType, ShowDocumentCallbackType
-from lsprotocol.types import (
+from jaclang.vendor.pygls.feature_manager import (
+    FeatureManager,
+    assign_help_attrs,
+    is_thread_function,
+)
+from jaclang.vendor.pygls.lsp import ConfigCallbackType, ShowDocumentCallbackType
+from jaclang.vendor.pygls.lsp_types import (
     CANCEL_REQUEST,
     CLIENT_REGISTER_CAPABILITY,
     CLIENT_UNREGISTER_CAPABILITY,
@@ -89,7 +93,7 @@ from lsprotocol.types import (
     WORKSPACE_EXECUTE_COMMAND,
     WORKSPACE_SEMANTIC_TOKENS_REFRESH,
 )
-from lsprotocol.types import (
+from jaclang.vendor.pygls.lsp_types import (
     ApplyWorkspaceEditParams,
     Diagnostic,
     DidChangeNotebookDocumentParams,
@@ -119,8 +123,8 @@ from lsprotocol.types import (
     WorkspaceConfigurationParams,
     WorkDoneProgressCancelParams,
 )
-from pygls.uris import from_fs_path
-from pygls.workspace import Workspace
+from jaclang.vendor.pygls.uris import from_fs_path
+from jaclang.vendor.pygls.workspace import Workspace
 
 logger = logging.getLogger(__name__)
 
@@ -735,7 +739,7 @@ class LanguageServerProtocol(JsonRPCProtocol, metaclass=LSPMeta):
         self._workspace: Optional[Workspace] = None
         self.trace = None
 
-        from pygls.progress import Progress
+        from jaclang.vendor.pygls.progress import Progress
 
         self.progress = Progress(self)
 
@@ -1035,13 +1039,13 @@ class LanguageServerProtocol(JsonRPCProtocol, metaclass=LSPMeta):
         .. deprecated:: 1.0.1
 
            Passing ``(uri, diagnostics, version)`` as arguments is deprecated.
-           Pass an instance of :class:`~lsprotocol.types.PublishDiagnosticParams`
+           Pass an instance of :class:`~jaclang.vendor.pygls.lsp_types.PublishDiagnosticParams`
            instead.
 
         Parameters
         ----------
         params_or_uri
-           The :class:`~lsprotocol.types.PublishDiagnosticParams` to send to the client.
+           The :class:`~jaclang.vendor.pygls.lsp_types.PublishDiagnosticParams` to send to the client.
 
         diagnostics
            *Deprecated*. The diagnostics to publish
