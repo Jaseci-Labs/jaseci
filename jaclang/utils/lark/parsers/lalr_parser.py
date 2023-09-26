@@ -9,7 +9,11 @@ from ..utils import Serialize
 
 from .lalr_analysis import LALR_Analyzer, Shift, IntParseTable
 from .lalr_interactive_parser import InteractiveParser
-from lark.exceptions import UnexpectedCharacters, UnexpectedInput, UnexpectedToken
+from jaclang.utils.lark.exceptions import (
+    UnexpectedCharacters,
+    UnexpectedInput,
+    UnexpectedToken,
+)
 
 ###{standalone
 
