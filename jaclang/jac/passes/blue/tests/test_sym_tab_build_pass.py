@@ -18,5 +18,5 @@ class SymTabBuildPassTests(TestCase, AstSyncTestMixin):
         state = jac_file_to_pass(
             self.fixture_abs_path("multi_def_err.jac"), "", SymTabBuildPass
         )
-        self.assertGreater(len(state.errors_had), 0)
-        self.assertIn("MyObject", str(state.errors_had[0]))
+        self.assertGreater(len(state.warnings_had), 0)
+        self.assertIn("MyObject", str(state.warnings_had[0]))

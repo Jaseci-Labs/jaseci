@@ -64,7 +64,7 @@ class JacCliTests(TestCase):
         stdout_value = captured_output.getvalue()
         # print(stdout_value)
         # Assertions or verifications
-        self.assertIn("*4:", stdout_value)
+        self.assertIn("Errors occured", stdout_value)
 
     def test_jac_ast_tool_pass_template(self) -> None:
         """Basic test for pass."""

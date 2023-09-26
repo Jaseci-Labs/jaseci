@@ -25,7 +25,13 @@ import:py from jaclang.jac.constant, Constants as C;
         base = './' if not base else base;
         mod=mod[:-4];
         mod = __jac_import__(target=mod, base_path=base);
-        :> ((mod, entrypoint) :> getattr );
+        if not mod {
+            print('Errors occured while importing the module.');
+            return;
+        }
+        else {
+            :> ((mod, entrypoint) :> getattr );
+        }
     } else {
         "Not a .jac file." :> print;
     }

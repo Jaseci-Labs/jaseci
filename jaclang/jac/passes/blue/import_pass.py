@@ -26,7 +26,7 @@ class ImportPass(Pass):
                     ast.append_node(i, self.import_module(i, node.mod_path))
                     i.sub_module = i.kid[-1]
                 self.enter_import(i)
-            SubNodeTabPass(mod_path=node.mod_path, input_ir=node)
+            SubNodeTabPass(prior=self, mod_path=node.mod_path, input_ir=node)
 
     def enter_import(self, node: ast.Import) -> None:
         """Sub objects.

@@ -51,7 +51,8 @@ def import_jac_module(
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
     else:
-        transpiler_func(file_path=full_target, base_dir=caller_dir)
+        if transpiler_func(file_path=full_target, base_dir=caller_dir):
+            return None
         with open(py_file_path, "r") as f:
             code_string = f.read()
         with open(pyc_file_path, "rb") as f:

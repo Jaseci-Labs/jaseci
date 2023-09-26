@@ -38,6 +38,7 @@ class SymTabBuildPass(Pass):
         typ: str,
         original: ast.AstNode,
         other_nodes: Optional[list[ast.AstNode]] = None,
+        warn_only: bool = False,
     ) -> None:
         """Already declared error."""
         mod_path = original.mod_link.rel_mod_path if original.mod_link else self.ice()
@@ -49,7 +50,7 @@ class SymTabBuildPass(Pass):
             for i in other_nodes:
                 mod_path = i.mod_link.rel_mod_path if i.mod_link else self.ice()
                 err_msg += f", also see {mod_path}, line {i.line}"
-        self.error(err_msg)
+        self.warning(err_msg)
 
     def enter_module(self, node: ast.Module) -> None:
         """Sub objects.
