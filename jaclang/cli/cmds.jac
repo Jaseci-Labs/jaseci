@@ -20,4 +20,7 @@ can <>test(filename: str);
 can ast_tool(tool: str);
 
 @cmd_reg.register
+can lsp;
+
+@cmd_reg.register
 can clean;

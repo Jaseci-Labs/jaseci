@@ -7,7 +7,7 @@ from jaclang.jac.constant import Constants as Con
 from jaclang.jac.lexer import JacLexer
 from jaclang.jac.transform import ABCParserMeta, Transform
 from jaclang.utils.helpers import dedent_code_block
-from jaclang.utils.sly.yacc import Parser, YaccProduction
+from jaclang.vendor.sly.yacc import Parser, YaccProduction
 
 
 _ = None  # For flake8 linting
@@ -1435,7 +1435,7 @@ def parse_tree_to_ast(
         return result
 
     from jaclang.utils.fstring_parser import FStringLexer, FStringParser
-    from jaclang.utils.sly.lex import Token as LexToken
+    from jaclang.vendor.sly.lex import Token as LexToken
 
     ast_tree: ast.AstNode = None
     if not isinstance(tree, ast.AstNode):

@@ -1,7 +1,7 @@
 # type: ignore
 """Python Like F-String Parser."""
-from jaclang.utils.sly.lex import Lexer
-from jaclang.utils.sly.yacc import Parser, YaccProduction
+from jaclang.vendor.sly.lex import Lexer
+from jaclang.vendor.sly.yacc import Parser, YaccProduction
 
 _ = None  # For flake8 linting and sly compatibility
 

@@ -6,7 +6,7 @@ from jaclang.jac.parser import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.blue import BluePygenPass, PyOutPass, pass_schedule
-from jaclang.jac.transform import Transform
+from jaclang.jac.transform import Alert, Transform
 
 
 T = TypeVar("T", bound=Pass)
@@ -22,7 +22,7 @@ def jac_file_to_parse_tree(file_path: str, base_dir: str) -> Transform:
         return prse
 
 
-def transpile_jac_blue(file_path: str, base_dir: str) -> str:
+def transpile_jac_blue(file_path: str, base_dir: str) -> list[Alert]:
     """Transpiler Jac file and return python code as string."""
     code = jac_file_to_pass(
         file_path=file_path,
@@ -31,13 +31,15 @@ def transpile_jac_blue(file_path: str, base_dir: str) -> str:
         schedule=pass_schedule,
     )
     if isinstance(code.ir, ast.Module):
-        PyOutPass(mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code)
-        return code.ir.meta["py_code"]
+        print_pass = PyOutPass(
+            mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code
+        )
     else:
-        raise code.gen_exception("Transpilation of Jac file failed.")
+        return code.errors_had
+    return print_pass.errors_had
 
 
-def transpile_jac_purple(file_path: str, base_dir: str) -> str:
+def transpile_jac_purple(file_path: str, base_dir: str) -> list[Alert]:
     """Transpiler Jac file and return python code as string."""
     from jaclang.jac.passes.purple import pass_schedule, PurplePygenPass
 
@@ -48,10 +50,12 @@ def transpile_jac_purple(file_path: str, base_dir: str) -> str:
         schedule=pass_schedule,
     )
     if isinstance(code.ir, ast.Module):
-        PyOutPass(mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code)
-        return code.ir.meta["py_code"]
+        print_pass = PyOutPass(
+            mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code
+        )
     else:
-        raise code.gen_exception("Transpilation of Jac file failed.")
+        return code.errors_had
+    return print_pass.errors_had
 
 
 def jac_file_to_pass(

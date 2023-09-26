@@ -25,7 +25,13 @@ import:py from jaclang.jac.constant, Constants as C;
         base = './' if not base else base;
         mod=mod[:-4];
         mod = __jac_import__(target=mod, base_path=base);
-        :> ((mod, entrypoint) :> getattr );
+        if not mod {
+            print('Errors occured while importing the module.');
+            return;
+        }
+        else {
+            :> ((mod, entrypoint) :> getattr );
+        }
     } else {
         "Not a .jac file." :> print;
     }
@@ -55,6 +61,13 @@ import:py from jaclang.jac.constant, Constants as C;
     }
 }
 
+"""Run language server for Jac."""
+:a:lsp {
+    import:py from jaclang.jac.langserve, server;
+    print("Starting server...");
+    server.start_io();
+}
+
 """Remove the __jac_gen__ , __pycache__ folders from the current directory recursevely."""
 :a:clean {
     current_dir = os.getcwd();
@@ -70,3 +83,4 @@ import:py from jaclang.jac.constant, Constants as C;
     }
     print("Done cleaning.");
 }
+
