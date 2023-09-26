@@ -22,7 +22,7 @@ def jac_file_to_parse_tree(file_path: str, base_dir: str) -> Transform:
         return prse
 
 
-def transpile_jac_blue(file_path: str, base_dir: str) -> str:
+def transpile_jac_blue(file_path: str, base_dir: str) -> None:
     """Transpiler Jac file and return python code as string."""
     code = jac_file_to_pass(
         file_path=file_path,
@@ -32,12 +32,11 @@ def transpile_jac_blue(file_path: str, base_dir: str) -> str:
     )
     if isinstance(code.ir, ast.Module):
         PyOutPass(mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code)
-        return code.ir.meta["py_code"]
     else:
         raise code.gen_exception("Transpilation of Jac file failed.")
 
 
-def transpile_jac_purple(file_path: str, base_dir: str) -> str:
+def transpile_jac_purple(file_path: str, base_dir: str) -> None:
     """Transpiler Jac file and return python code as string."""
     from jaclang.jac.passes.purple import pass_schedule, PurplePygenPass
 
@@ -49,7 +48,6 @@ def transpile_jac_purple(file_path: str, base_dir: str) -> str:
     )
     if isinstance(code.ir, ast.Module):
         PyOutPass(mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code)
-        return code.ir.meta["py_code"]
     else:
         raise code.gen_exception("Transpilation of Jac file failed.")
 
