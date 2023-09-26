@@ -2,7 +2,7 @@
 from typing import Generator
 
 from jaclang.jac.transform import ABCLexerMeta, Transform
-from jaclang.utils.sly.lex import Lexer, Token
+from jaclang.vendor.sly.lex import Lexer, Token
 
 
 class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
