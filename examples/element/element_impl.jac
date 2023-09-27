@@ -63,7 +63,7 @@ import:py sys;
     return (<here>.index |> sys.getsizeof) / 1024.0;
 }
 
-:object:Element:ability:init
+:object:ElementInterface:ability:init
 (owner_id: UUID, memory: Memory, jid: UUID, persist: bool = False) {
     <here>.jinfo.owner_id = owner_id;
     <here>.jinfo.memory = memory;
@@ -71,31 +71,31 @@ import:py sys;
     <here>.jinfo._persist = persist;
 }
 
-:object:Element:ability:make_public_ro {
+:object:ElementInterface:ability:make_public_ro {
     <here>.jinfo.access_mode = AccessMode.READ_ONLY;
 }
 
-:object:Element:ability:make_public_rw {
+:object:ElementInterface:ability:make_public_rw {
     <here>.jinfo.access_mode = AccessMode.READ_WRITE;
 }
 
-:object:Element:ability:make_private {
+:object:ElementInterface:ability:make_private {
     <here>.jinfo.access_mode = AccessMode.PRIVATE;
 }
 
-:object:Element:ability:is_public_ro -> bool {
+:object:ElementInterface:ability:is_public_ro -> bool {
     return <here>.jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
-:object:Element:ability:is_public_rw -> bool {
+:object:ElementInterface:ability:is_public_rw -> bool {
     return <here>.jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
-:object:Element:ability:is_private -> bool {
+:object:ElementInterface:ability:is_private -> bool {
     return <here>.jinfo.access_mode == AccessMode.PRIVATE;
 }
 
-:object:Element:ability:is_readable
+:object:ElementInterface:ability:is_readable
 (caller_id: UUID) -> bool{
     return (
             caller_id == <here>.owner_id
@@ -105,7 +105,7 @@ import:py sys;
         );
 }
 
-:object:Element:ability:is_writable
+:object:ElementInterface:ability:is_writable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <here>.owner_id
@@ -114,7 +114,7 @@ import:py sys;
         );
 }
 
-:object:Element:ability:give_access
+:object:ElementInterface:ability:give_access
 (caller_id: UUID, read_write: bool = False) {
     if read_write {
         caller_id |> <here>.rw_access.add;
@@ -125,7 +125,7 @@ import:py sys;
     }
 }
 
-:object:Element:ability:revoke_access
+:object:ElementInterface:ability:revoke_access
 (caller_id: UUID) {
     caller_id |> <here>.ro_access.discard;
     caller_id |> <here>.rw_access.discard;
