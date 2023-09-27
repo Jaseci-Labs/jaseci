@@ -40,6 +40,7 @@ global exec_ctx = ExecutionContext();
 
 object ElementInterface {
     has jid: UUID = :>uuid4,
+        py_obj: any = None,
         timestamp: datetime = :>datetime.now,
         persist: bool = False,
         access_mode: AccessMode = AccessMode.PRIVATE,
@@ -48,6 +49,7 @@ object ElementInterface {
         owner_id: UUID = exec_ctx.master,
         mem: Memory = exec_ctx.memory;
 
+    can <init>(py_obj: any);
     can make_public_ro;
     can make_public_rw;
     can make_private;
@@ -72,7 +74,6 @@ object NodeInterface:ObjectInterface {
     has edges_: dict[EdgeDir, list[Edge]]
         = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
-    can __call__(walk: Walker);
     can connect_node_(nd: Node, edg: Edge) -> Node;
     can edges_to_nodes_(dir: EdgeDir) -> list[Node];
 }
@@ -82,7 +83,6 @@ object EdgeInterface:ObjectInterface {
         target_: Node?,
         dir_: EdgeDir?;
 
-    can __call__(walk: Walker);
     can apply_dir_(dir: EdgeDir) -> Edge;
     can attach_(src: Node, trg: Node) -> Edge;
 }
@@ -93,17 +93,34 @@ object WalkerInterface:ObjectInterface {
         ignores_: list[Node] = [],
         disengaged_: bool = False;
 
-    can __call__(nd: Node);
     can visit_(nds: list[Node]|list[Edge]|Node|Edge);
     can ignore_(nds: list[Node]|list[Edge]|Node|Edge);
     can disengage_;
 }
 
-object Element { has _jac_: ElementInterface = ElementInterface(); }
-object Object:Element { has _jac_: ObjectInterface = ObjectInterface(); }
-object Node:Object { has _jac_: NodeInterface = NodeInterface(); }
-object Edge:Object { has _jac_: EdgeInterface = EdgeInterface(); }
-object Walker:Object { has _jac_: WalkerInterface = WalkerInterface(); }
+object Element {
+    has _jac_: ElementInterface = ElementInterface();
+    can <init>(_jac_pyobj: any);
+}
+
+object Object:Element {
+    has _jac_: ObjectInterface = ObjectInterface();
+}
+
+object Node:Object {
+    has _jac_: NodeInterface = NodeInterface();
+    can __call__(walk: Walker);
+}
+
+object Edge:Object {
+    has _jac_: EdgeInterface = EdgeInterface();
+    can __call__(walk: Walker);
+}
+
+object Walker:Object {
+    has _jac_: WalkerInterface = WalkerInterface();
+    can __call__(nd: Node);
+}
 
 object Master:Element { has root_node: Node = Node(); }
 

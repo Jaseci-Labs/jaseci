@@ -1,21 +1,14 @@
 """Implementation for Jac's Element Abstractions"""
 import:py from jaclang.jac.constant, EdgeDir;
 
-:object:Node:ability:__call__
-(walk: Walker) {
-    if not (walk, Walker) :> isinstance {
-        raise ("Argument must be a Walker instance") :> TypeError;
-    }
-    <self> :> walk;
-}
 
-:object:Node:ability:_jac_connect_node_
+:object:NodeInterface:ability:_jac_connect_node_
 (nd: Node, edg: Edge) -> Node {
     (<self>, nd) :> edg._jac_attach_;
     return <self>;
 }
 
-:object:Node:ability:_jac_edges_to_nodes_
+:object:NodeInterface:ability:_jac_edges_to_nodes_
 (dir: EdgeDir) -> list[Node] {
     ret_nodes = [];
     if dir in [EdgeDir.OUT, EdgeDir.ANY] {
@@ -31,21 +24,13 @@ import:py from jaclang.jac.constant, EdgeDir;
     return ret_nodes;
 }
 
-:object:Edge:ability:__call__
-(walk: Walker) {
-    if not (walk, Walker) :> isinstance {
-        raise ("Argument must be a Walker instance") :> TypeError;
-    }
-    <self>._jac_target_ :> walk;
-}
-
-:object:Edge:ability:_jac_apply_dir_
+:object:EdgeInterface:ability:_jac_apply_dir_
 (dir: EdgeDir) -> Edge {
     <self>._jac_dir_ = dir;
     return <self>;
 }
 
-:object:Edge:ability:_jac_attach_
+:object:EdgeInterface:ability:_jac_attach_
 (src: Node, trg: Node) -> Edge {
     if <self>._jac_dir_ == EdgeDir.IN {
         <self>._jac_source_ = trg;
@@ -60,6 +45,48 @@ import:py from jaclang.jac.constant, EdgeDir;
     }
 
     return <self>;
+}
+
+:object:WalkerInterface:ability:_jac_visit_
+(nds: list[Node]|list[Edge]|Node|Edge) {
+    if isinstance(nds, list) {
+        for i in nds {
+            if(i not in <self>._jac_ignores_) { i :> <self>._jac_next_.append; }
+        }
+    } elif nds not in <self>._jac_ignores_ { nds :> <self>._jac_next_.append; }
+    return len(nds) if isinstance(nds, list) else 1;
+}
+
+:object:WalkerInterface:ability:_jac_ignore_
+(nds: list[Node]|list[Edge]|Node|Edge) {
+    if isinstance(nds, list) {
+        for i in nds {
+            i :> <self>._jac_ignores_.append;
+        }
+    } else { nds :> <self>._jac_ignores_.append; }
+}
+
+:object:WalkerInterface:ability:_jac_disengage_ {
+    <self>._jac_next_ = [];
+    <self>._jac_disengaged_ = True;
+}
+
+
+:object:Node:ability:__call__
+(walk: Walker) {
+    if not (walk, Walker) :> isinstance {
+        raise ("Argument must be a Walker instance") :> TypeError;
+    }
+    <self> :> walk;
+}
+
+
+:object:Edge:ability:__call__
+(walk: Walker) {
+    if not (walk, Walker) :> isinstance {
+        raise ("Argument must be a Walker instance") :> TypeError;
+    }
+    <self>._jac_target_ :> walk;
 }
 
 :object:Walker:ability:__call__
@@ -102,28 +129,4 @@ import:py from jaclang.jac.constant, EdgeDir;
         nd :> <self>._jac_path_.append;
     }
     <self>._jac_ignores_=[];
-}
-
-:object:Walker:ability:_jac_visit_
-(nds: list[Node]|list[Edge]|Node|Edge) {
-    if isinstance(nds, list) {
-        for i in nds {
-            if(i not in <self>._jac_ignores_) { i :> <self>._jac_next_.append; }
-        }
-    } elif nds not in <self>._jac_ignores_ { nds :> <self>._jac_next_.append; }
-    return len(nds) if isinstance(nds, list) else 1;
-}
-
-:object:Walker:ability:_jac_ignore_
-(nds: list[Node]|list[Edge]|Node|Edge) {
-    if isinstance(nds, list) {
-        for i in nds {
-            i :> <self>._jac_ignores_.append;
-        }
-    } else { nds :> <self>._jac_ignores_.append; }
-}
-
-:object:Walker:ability:_jac_disengage_ {
-    <self>._jac_next_ = [];
-    <self>._jac_disengaged_ = True;
 }

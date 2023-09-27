@@ -64,11 +64,8 @@ import:py sys;
 }
 
 :object:ElementInterface:ability:init
-(owner_id: UUID, memory: Memory, jid: UUID, persist: bool = False) {
-    <here>.jinfo.owner_id = owner_id;
-    <here>.jinfo.memory = memory;
-    <here>.jinfo.id = jid;
-    <here>.jinfo._persist = persist;
+(py_obj: any) {
+    <here>.py_obj = py_obj;
 }
 
 :object:ElementInterface:ability:make_public_ro {
