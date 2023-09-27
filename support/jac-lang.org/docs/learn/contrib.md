@@ -36,6 +36,10 @@ Then run the tests!
 pytest
 ```
 
+> Important
+>
+> If you are making changes / updates to the main transpiler/compiler you may want to periodically run `jac clean` and/or `source scripts/clean_jac_gen.sh` to clean any cached bytecode of the bootstrapped transpiler. (otherwise you may be running stale cached implementations of the `jac` tool.)
+
 ## Linting Policy
 
 The linting process for Jaseci ensures code quality, consistency, and readability. We utilize Flake8 as the primary linter, along with the following plugins: flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations, and pep8-naming. These plugins enhance code quality and adherence to best practices.
