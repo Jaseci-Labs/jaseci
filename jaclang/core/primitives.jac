@@ -37,7 +37,7 @@ object ExecutionContext {
 
 global exec_ctx = ExecutionContext();
 
-object ElementMetaData {
+object ElementInterface {
     has jid: UUID = :>uuid4,
         timestamp: datetime = :>datetime.now,
         persist: bool = False,
@@ -46,12 +46,7 @@ object ElementMetaData {
         ro_access: set = :>set,
         owner_id: UUID = exec_ctx.master,
         mem: Memory = exec_ctx.memory;
-}
 
-object Element {
-    has _jinfo: ElementMetaData = ElementMetaData();
-
-    can <init>(exec_ctx: ExecutionContext=None);
     can _jac_make_public_ro;
     can _jac_make_public_rw;
     can _jac_make_private;
@@ -62,6 +57,13 @@ object Element {
     can _jac_is_writable(caller_id: UUID) -> bool;
     can _jac_give_access(caller_id: UUID, read_write: bool = False);
     can _jac_revoke_access(caller_id: UUID);
+}
+
+
+object Element {
+    has _jinfo: ElementInterface = ElementInterface();
+
+    can <init>(exec_ctx: ExecutionContext=None);
 }
 
 object Object:Element {
