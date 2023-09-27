@@ -103,7 +103,7 @@ class JacFormatPass(Pass):
             self.indent_level += 1
             self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
-        self.emit_ln(node, "}")
+        self.emit(node, "}")
         self.emit_ln(node, "")
 
     def exit_module(self, node: ast.Module) -> None:
@@ -127,7 +127,10 @@ class JacFormatPass(Pass):
         stmts: list["StmtType"],
         """
         for stmt in node.stmts:
-            self.emit_ln(node, f"{stmt.meta['jac_code']};")
+            if isinstance(stmt, (ast.IfStmt, ast.WhileStmt)):
+                self.emit(node, f"{stmt.meta['jac_code']}")
+            else:
+                self.emit(node, f"{stmt.meta['jac_code']};\n")
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -141,8 +144,7 @@ class JacFormatPass(Pass):
                 f"{node.target.meta['jac_code']}({node.params.meta['jac_code']})",
             )
         else:
-            self.emit(node, f"{node.target.meta['jac_code']}()")  # Added semicolon
-            self.emit_ln(node, "")
+            self.emit(node, f"{node.target.meta['jac_code']}()")
 
     def exit_param_list(self, node: ast.ParamList) -> None:
         """Sub objects.
@@ -232,8 +234,7 @@ class JacFormatPass(Pass):
         if node.body:
             self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
-        self.emit(node, "}")
-        self.emit_ln(node, "")
+        self.emit(node, "}\n")
 
     def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
@@ -244,7 +245,6 @@ class JacFormatPass(Pass):
         """
         event_value = node.event.value if node.event else None
         self.emit(node, f"{event_value};")
-        self.emit_ln(node, "")
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -262,9 +262,14 @@ class JacFormatPass(Pass):
                 f"import:{node.lang.value} from {node.path.meta['jac_code']}, {node.items.meta['jac_code']};\n",  # noqa
             )
         else:
-            self.emit(
-                node, f"include:{node.lang.value} {node.path.meta['jac_code']};\n"
-            )
+            if node.is_absorb:
+                self.emit(
+                    node, f"include:{node.lang.value} {node.path.meta['jac_code']};\n"
+                )
+            else:
+                self.emit(
+                    node, f"import:{node.lang.value} {node.path.meta['jac_code']};\n"
+                )
         self.emit_ln(node, "")
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
@@ -344,7 +349,7 @@ class JacFormatPass(Pass):
         if return_type_jac_code:
             self.emit(node, f"({params}) -> {return_type_jac_code}")
         else:
-            self.emit(node, f"{params}")
+            self.emit(node, f"({params})")
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -631,13 +636,11 @@ class JacFormatPass(Pass):
         elseifs: Optional[ElseIfs],
         else_body: Optional[ElseStmt],
         """
-        self.emit(node, f"if {node.condition.meta['jac_code']}")
-        self.emit(node, " {")
-        self.emit_ln(node, "")
+        self.emit(node, f"if {node.condition.meta['jac_code']} {{\n")
         self.indent_level += 1
         self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
-        self.emit_ln(node, "}")
+        self.emit(node, "} ")
         if node.elseifs:
             self.emit(node, node.elseifs.meta["jac_code"])
         if node.else_body:
@@ -653,8 +656,7 @@ class JacFormatPass(Pass):
             self.indent_level += 1
             self.emit(node, i.body.meta["jac_code"])
             self.indent_level -= 1
-            self.emit(node, "}")
-            self.emit_ln(node, "")
+            self.emit(node, "} ")
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
