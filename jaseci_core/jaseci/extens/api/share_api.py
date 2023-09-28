@@ -34,7 +34,7 @@ class ShareApi:
             obj.save()
 
             # Add the objet id to the receiver's incoming list
-            receiver_mast.incoming[str(obj.id)] = str(self)
+            receiver_mast.incoming[str(obj.id)] = {"jid": self.jid, "name": self.name}
 
         receiver_mast.save()
         self.save()
