@@ -70,31 +70,31 @@ object ObjectInterface:ElementInterface {
 }
 
 object NodeInterface:ObjectInterface {
-    has edges_: dict[EdgeDir, list[Edge]]
+    has edges: dict[EdgeDir, list[Edge]]
         = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
-    can connect_node_(nd: Node, edg: Edge) -> Node;
-    can edges_to_nodes_(dir: EdgeDir) -> list[Node];
+    can connect_node(nd: Node, edg: Edge) -> Node;
+    can edges_to_nodes(dir: EdgeDir) -> list[Node];
 }
 
 object EdgeInterface:ObjectInterface {
-    has source_: Node?,
-        target_: Node?,
-        dir_: EdgeDir?;
+    has source: Node?,
+        target: Node?,
+        dir: EdgeDir?;
 
-    can apply_dir_(dir: EdgeDir) -> Edge;
-    can attach_(src: Node, trg: Node) -> Edge;
+    can apply_dir(dir: EdgeDir) -> Edge;
+    can attach(src: Node, trg: Node) -> Edge;
 }
 
 object WalkerInterface:ObjectInterface {
-    has path_: list[Node] = [],
-        next_: list[Node] = [],
-        ignores_: list[Node] = [],
-        disengaged_: bool = False;
+    has path: list[Node] = [],
+        next: list[Node] = [],
+        ignores: list[Node] = [],
+        disengaged: bool = False;
 
-    can visit_(nds: list[Node]|list[Edge]|Node|Edge);
-    can ignore_(nds: list[Node]|list[Edge]|Node|Edge);
-    can disengage_;
+    can visit_node(nds: list[Node]|list[Edge]|Node|Edge);
+    can ignore_node(nds: list[Node]|list[Edge]|Node|Edge);
+    can disengage_now;
 }
 
 object Element {

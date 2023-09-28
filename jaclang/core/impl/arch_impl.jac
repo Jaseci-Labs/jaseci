@@ -2,73 +2,72 @@
 import:py from jaclang.jac.constant, EdgeDir;
 
 
-:object:NodeInterface:ability:_jac_connect_node_
+:object:NodeInterface:ability:connect_node
 (nd: Node, edg: Edge) -> Node {
-    (<self>, nd) :> edg._jac_attach_;
+    (<self>, nd) :> edg.attach;
     return <self>;
 }
 
-:object:NodeInterface:ability:_jac_edges_to_nodes_
+:object:NodeInterface:ability:edges_to_nodes
 (dir: EdgeDir) -> list[Node] {
     ret_nodes = [];
     if dir in [EdgeDir.OUT, EdgeDir.ANY] {
-        for i in <self>._jac_edges_[EdgeDir.OUT] {
-            ret_nodes.append(i._jac_target_);
+        for i in <self>.edges[EdgeDir.OUT] {
+            ret_nodes.append(i.target);
         }
     } elif dir in [EdgeDir.IN, EdgeDir.ANY] {
-        for i in <self>._jac_edges_[EdgeDir.IN] {
-            ret_nodes.append(i._jac_source_);
+        for i in <self>.edges[EdgeDir.IN] {
+            ret_nodes.append(i.source);
         }
-
     }
     return ret_nodes;
 }
 
-:object:EdgeInterface:ability:_jac_apply_dir_
+:object:EdgeInterface:ability:apply_dir
 (dir: EdgeDir) -> Edge {
-    <self>._jac_dir_ = dir;
+    <self>.dir = dir;
     return <self>;
 }
 
-:object:EdgeInterface:ability:_jac_attach_
+:object:EdgeInterface:ability:attach
 (src: Node, trg: Node) -> Edge {
-    if <self>._jac_dir_ == EdgeDir.IN {
-        <self>._jac_source_ = trg;
-        <self>._jac_target_ = src;
-        <self> :> src._jac_edges_[EdgeDir.IN].append;
-        <self> :> trg._jac_edges_[EdgeDir.OUT].append;
+    if <self>.dir == EdgeDir.IN {
+        <self>.source = trg;
+        <self>.target = src;
+        <self> :> src.edges[EdgeDir.IN].append;
+        <self> :> trg.edges[EdgeDir.OUT].append;
     } else {
-        <self>._jac_source_ = src;
-        <self>._jac_target_ = trg;
-        <self> :> src._jac_edges_[EdgeDir.OUT].append;
-        <self> :> trg._jac_edges_[EdgeDir.IN].append;
+        <self>.source = src;
+        <self>.target = trg;
+        <self> :> src.edges[EdgeDir.OUT].append;
+        <self> :> trg.edges[EdgeDir.IN].append;
     }
 
     return <self>;
 }
 
-:object:WalkerInterface:ability:_jac_visit_
+:object:WalkerInterface:ability:visit_node
 (nds: list[Node]|list[Edge]|Node|Edge) {
     if isinstance(nds, list) {
         for i in nds {
-            if(i not in <self>._jac_ignores_) { i :> <self>._jac_next_.append; }
+            if(i not in <self>.ignores) { i :> <self>.next.append; }
         }
-    } elif nds not in <self>._jac_ignores_ { nds :> <self>._jac_next_.append; }
+    } elif nds not in <self>.ignores { nds :> <self>.next.append; }
     return len(nds) if isinstance(nds, list) else 1;
 }
 
-:object:WalkerInterface:ability:_jac_ignore_
+:object:WalkerInterface:ability:ignore_node
 (nds: list[Node]|list[Edge]|Node|Edge) {
     if isinstance(nds, list) {
         for i in nds {
-            i :> <self>._jac_ignores_.append;
+            i :> <self>.ignores.append;
         }
-    } else { nds :> <self>._jac_ignores_.append; }
+    } else { nds :> <self>.ignores.append; }
 }
 
-:object:WalkerInterface:ability:_jac_disengage_ {
-    <self>._jac_next_ = [];
-    <self>._jac_disengaged_ = True;
+:object:WalkerInterface:ability:disengage_now {
+    <self>.next = [];
+    <self>.disengaged = True;
 }
 
 
@@ -86,47 +85,47 @@ import:py from jaclang.jac.constant, EdgeDir;
     if not (walk, Walker) :> isinstance {
         raise ("Argument must be a Walker instance") :> TypeError;
     }
-    <self>._jac_target_ :> walk;
+    <self>.target_ :> walk;
 }
 
 :object:Walker:ability:__call__
 (nd: Node) {
-    <self>._jac_path_ = [];
-    <self>._jac_next_ = [nd];
+    <self>.path = [];
+    <self>.next = [nd];
     walker_type = <self>.__class__.__name__;
-    while <self>._jac_next_ :> len {
-        nd = 0 :> <self>._jac_next_.pop;
+    while <self>.next :> len {
+        nd = 0 :> <self>.next.pop;
         node_type = nd.__class__.__name__;
 
-        for i in nd._jac_ds_entry_funcs {
+        for i in nd.ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == node_type and
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];
             }
-            if <self>._jac_disengaged_ {return;}
+            if <self>.disengaged {return;}
         }
-        for i in <self>._jac_ds_entry_funcs {
+        for i in <self>.ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == walker_type and
                 (nd:>type in i['types'] or nd in i['types']) {  # if nd==root direct chec
                 (<self>, nd) :> i['func'];
             }
-            if <self>._jac_disengaged_ {return;}
+            if <self>.disengaged {return;}
         }
-        for i in <self>._jac_ds_exit_funcs {
+        for i in <self>.ds_exit_funcs {
             if i['func'].__qualname__.split(".")[0] == walker_type and
             (nd:>type in i['types'] or nd in i['types']) {
                 (<self>, nd) :> i['func'];
             }
-            if <self>._jac_disengaged_ {return;}
+            if <self>.disengaged {return;}
         }
-        for i in nd._jac_ds_exit_funcs {
+        for i in nd.ds_exit_funcs {
             if i['func'].__qualname__.split(".")[0] == node_type and
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];
             }
-            if <self>._jac_disengaged_ {return;}
+            if <self>.disengaged {return;}
         }
-        nd :> <self>._jac_path_.append;
+        nd :> <self>.path.append;
     }
-    <self>._jac_ignores_=[];
+    <self>.ignores=[];
 }
