@@ -49,7 +49,6 @@ object ElementInterface {
         owner_id: UUID = exec_ctx.master,
         mem: Memory = exec_ctx.memory;
 
-    can <init>(py_obj: any);
     can make_public_ro;
     can make_public_rw;
     can make_private;
@@ -100,7 +99,7 @@ object WalkerInterface:ObjectInterface {
 
 object Element {
     has _jac_: ElementInterface = ElementInterface();
-    can <init>(_jac_pyobj: any);
+    can <init>;
 }
 
 object Object:Element {
