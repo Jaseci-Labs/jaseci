@@ -4,7 +4,7 @@ import:py from jaclang.jac.constant, EdgeDir;
 
 :object:NodeInterface:ability:connect_node
 (nd: Node, edg: Edge) -> Node {
-    (<self>, nd) :> edg.attach;
+    (<self>.py_obj, nd) :> edg.attach;
     return <self>;
 }
 
@@ -34,13 +34,13 @@ import:py from jaclang.jac.constant, EdgeDir;
     if <self>.dir == EdgeDir.IN {
         <self>.source = trg;
         <self>.target = src;
-        <self> :> src.edges[EdgeDir.IN].append;
-        <self> :> trg.edges[EdgeDir.OUT].append;
+        <self> :> src._jac_.edges[EdgeDir.IN].append;
+        <self> :> trg._jac_.edges[EdgeDir.OUT].append;
     } else {
         <self>.source = src;
         <self>.target = trg;
-        <self> :> src.edges[EdgeDir.OUT].append;
-        <self> :> trg.edges[EdgeDir.IN].append;
+        <self> :> src._jac_.edges[EdgeDir.OUT].append;
+        <self> :> trg._jac_.edges[EdgeDir.IN].append;
     }
 
     return <self>;
@@ -85,16 +85,16 @@ import:py from jaclang.jac.constant, EdgeDir;
     if not (walk, Walker) :> isinstance {
         raise ("Argument must be a Walker instance") :> TypeError;
     }
-    <self>.target_ :> walk;
+    <self>._jac_.target :> walk;
 }
 
 :object:Walker:ability:__call__
 (nd: Node) {
-    <self>.path = [];
-    <self>.next = [nd];
+    <self>._jac_.path = [];
+    <self>._jac_.next = [nd];
     walker_type = <self>.__class__.__name__;
-    while <self>.next :> len {
-        nd = 0 :> <self>.next.pop;
+    while <self>._jac_.next :> len {
+        nd = 0 :> <self>._jac_.next.pop;
         node_type = nd.__class__.__name__;
 
         for i in nd._jac_ds_.ds_entry_funcs {
@@ -102,30 +102,30 @@ import:py from jaclang.jac.constant, EdgeDir;
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];
             }
-            if <self>.disengaged {return;}
+            if <self>._jac_.disengaged {return;}
         }
         for i in <self>._jac_ds_.ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == walker_type and
                 (nd:>type in i['types'] or nd in i['types']) {  # if nd==root direct chec
                 (<self>, nd) :> i['func'];
             }
-            if <self>.disengaged {return;}
+            if <self>._jac_.disengaged {return;}
         }
         for i in <self>._jac_ds_.ds_exit_funcs {
             if i['func'].__qualname__.split(".")[0] == walker_type and
             (nd:>type in i['types'] or nd in i['types']) {
                 (<self>, nd) :> i['func'];
             }
-            if <self>.disengaged {return;}
+            if <self>._jac_.disengaged {return;}
         }
         for i in nd._jac_ds_.ds_exit_funcs {
             if i['func'].__qualname__.split(".")[0] == node_type and
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];
             }
-            if <self>.disengaged {return;}
+            if <self>._jac_.disengaged {return;}
         }
-        nd :> <self>.path.append;
+        nd :> <self>._jac_.path.append;
     }
-    <self>.ignores=[];
+    <self>._jac_.ignores=[];
 }
