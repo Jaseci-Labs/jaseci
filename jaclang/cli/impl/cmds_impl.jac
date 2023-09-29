@@ -61,13 +61,6 @@ import:py from jaclang.jac.constant, Constants as C;
     }
 }
 
-"""Run language server for Jac."""
-:a:lsp {
-    import:py from jaclang.jac.langserve, server;
-    print("Starting server...");
-    server.start_io();
-}
-
 """Remove the __jac_gen__ , __pycache__ folders from the current directory recursevely."""
 :a:clean {
     current_dir = os.getcwd();
