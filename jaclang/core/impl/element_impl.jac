@@ -90,10 +90,6 @@
     return decorator;
 }
 
-:object:Element:ability:<init> {
-    <self>._jac_.py_obj = <self>;
-}
-
 :ability:make_architype(base_class: type) -> type {
     can class_decorator(cls: type) -> type {
         # Check if cls is a subclass of base_class

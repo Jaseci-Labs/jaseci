@@ -100,27 +100,26 @@ object WalkerInterface:ObjectInterface {
 }
 
 object Element {
-    has _jac_: ElementInterface = ElementInterface();
-    can <init>;
+    has _jac_: ElementInterface = ElementInterface(py_obj=<self>);
 }
 
 object Object:Element {
-    has _jac_: ObjectInterface = ObjectInterface();
+    has _jac_: ObjectInterface = ObjectInterface(py_obj=<self>);
     static has _jac_ds_: DataSpatialInterface = DataSpatialInterface();
 }
 
 object Node:Object {
-    has _jac_: NodeInterface = NodeInterface();
+    has _jac_: NodeInterface = NodeInterface(py_obj=<self>);
     can __call__(walk: Walker);
 }
 
 object Edge:Object {
-    has _jac_: EdgeInterface = EdgeInterface();
+    has _jac_: EdgeInterface = EdgeInterface(py_obj=<self>);
     can __call__(walk: Walker);
 }
 
 object Walker:Object {
-    has _jac_: WalkerInterface = WalkerInterface();
+    has _jac_: WalkerInterface = WalkerInterface(py_obj=<self>);
     can __call__(nd: Node);
 }
 
