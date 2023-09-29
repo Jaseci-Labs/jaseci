@@ -60,6 +60,7 @@ def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary)
         jac_error_region = clip_code_section(
             add_line_numbers(jac_code_string), jac_err_line, Val.JAC_ERROR_LINE_RANGE
         )
+        target_mod = f"JacCode File: {target_mod}:{jac_err_line}"
     except Exception as e:
         jac_error_region = str(e)
         target_mod = ""
