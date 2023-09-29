@@ -97,28 +97,28 @@ import:py from jaclang.jac.constant, EdgeDir;
         nd = 0 :> <self>.next.pop;
         node_type = nd.__class__.__name__;
 
-        for i in nd.ds_entry_funcs {
+        for i in nd._jac_ds_.ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == node_type and
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];
             }
             if <self>.disengaged {return;}
         }
-        for i in <self>.ds_entry_funcs {
+        for i in <self>._jac_ds_.ds_entry_funcs {
             if i['func'].__qualname__.split(".")[0] == walker_type and
                 (nd:>type in i['types'] or nd in i['types']) {  # if nd==root direct chec
                 (<self>, nd) :> i['func'];
             }
             if <self>.disengaged {return;}
         }
-        for i in <self>.ds_exit_funcs {
+        for i in <self>._jac_ds_.ds_exit_funcs {
             if i['func'].__qualname__.split(".")[0] == walker_type and
             (nd:>type in i['types'] or nd in i['types']) {
                 (<self>, nd) :> i['func'];
             }
             if <self>.disengaged {return;}
         }
-        for i in nd.ds_exit_funcs {
+        for i in nd._jac_ds_.ds_exit_funcs {
             if i['func'].__qualname__.split(".")[0] == node_type and
                 <self>:>type in i['types'] {
                 (nd, <self>) :> i['func'];

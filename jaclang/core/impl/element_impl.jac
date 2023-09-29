@@ -66,8 +66,7 @@
 }
 
 
-
-:object:ObjectInterface:ability:on_entry
+:object:DataSpatialInterface:ability:on_entry
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_entry_funcs.append({'types': triggers, 'func': func});
@@ -79,7 +78,7 @@
     return decorator;
 }
 
-:object:ObjectInterface:ability:on_exit
+:object:DataSpatialInterface:ability:on_exit
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_exit_funcs.append({'types': triggers, 'func': func});

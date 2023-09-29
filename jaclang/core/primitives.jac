@@ -61,13 +61,15 @@ object ElementInterface {
     can revoke_access(caller_id: UUID);
 }
 
-object ObjectInterface:ElementInterface {
+object DataSpatialInterface {
     static has ds_entry_funcs: list[dict]=[],
                ds_exit_funcs: list[dict]=[];
 
     static can on_entry(cls: type, triggers: list[type]);
     static can on_exit(cls: type, triggers: list[type]);
 }
+
+object ObjectInterface:ElementInterface {}
 
 object NodeInterface:ObjectInterface {
     has edges: dict[EdgeDir, list[Edge]]
@@ -104,6 +106,7 @@ object Element {
 
 object Object:Element {
     has _jac_: ObjectInterface = ObjectInterface();
+    static has _jac_ds_: DataSpatialInterface = DataSpatialInterface();
 }
 
 object Node:Object {
