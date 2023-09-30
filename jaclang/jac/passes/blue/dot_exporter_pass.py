@@ -49,9 +49,9 @@ class DotGraphPass(Pass):
             for i in info:
                 label += f"<BR/> {i[0]}: {i[1]}"
             label += ">"
-            
+
         return f"[label={label} {shape} {style} {fillcolor}]"
-    
+
     def __gen_node_info(self, node: ast.AstNode) -> None:
         init_source = inspect.getsource(node.__class__.__init__)
         info_to_be_dumped: List[str] = []

@@ -27,6 +27,3 @@ class DotGraphDrawerPassTests(TestCase):
         f.close()
         self.assertEqual(res_lines, ref_lines)
         return state
-
-
-DotGraphDrawerPassTests().test_report_generation()
