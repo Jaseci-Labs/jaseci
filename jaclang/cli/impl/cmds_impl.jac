@@ -81,11 +81,11 @@ import:py from jaclang.jac.constant, Constants as C;
 :a:gen_dotfile
 (filename: str) {
     import:py from jaclang.jac.transpiler, jac_file_to_pass;
-    import:py from jaclang.jac.passes.blue, DotGraphPass;
+    import:py from jaclang.jac.passes.blue.schedules, DotGraphPass, full_ast_dot_gen;
     if filename.endswith(".jac") {
         [base, mod] = os.path.split(filename);
         base = './' if not base else base;
-        jac_file_to_pass(filename, base, DotGraphPass);
+        jac_file_to_pass(filename, base, DotGraphPass, full_ast_dot_gen);
     } else {
         "Not a .jac file." :> print;
     }
