@@ -19,11 +19,11 @@ class DotGraphDrawerPassTests(TestCase):
             self.fixture_abs_path("multi_def_err.jac"), "", DotGraphPass
         )
         self.assertFalse(state.errors_had)
-        f = open("out.dot")
-        res_lines = "".join(f.readlines())
-        f.close()
-        f = open(self.fixture_abs_path("multi_def_err.dot"))
-        ref_lines = "".join(f.readlines())
-        f.close()
+
+        with open("out.dot") as f:
+            res_lines = "".join(f.readlines())
+
+        with open(self.fixture_abs_path("multi_def_err.dot")) as f:
+            ref_lines = "".join(f.readlines())
+
         self.assertEqual(res_lines, ref_lines)
-        return state
