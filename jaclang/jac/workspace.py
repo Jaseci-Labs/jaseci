@@ -64,3 +64,7 @@ class Workspace:
     def del_file(self, file_path: str) -> None:
         """Delete a file from the workspace."""
         del self.modules[file_path]
+
+    def file_list(self) -> list[str]:
+        """Return a list of files in the workspace."""
+        return list(self.modules.keys())
