@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 
-
+# import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.blue import AstBuildPass, SemanticCheckPass
 from jaclang.jac.transpiler import jac_file_to_pass
 
@@ -37,7 +37,7 @@ class Workspace:
             for file in jac_files
         }
 
-    def rebuild_file(self, file_path: str) -> None:
+    def rebuild_file(self, file_path: str, deep: bool = False) -> None:
         """Rebuild a file."""
         self.modules[file_path] = (
             jac_file_to_pass(
@@ -45,7 +45,9 @@ class Workspace:
             ),
             jac_file_to_pass(
                 file_path=file_path, base_dir=self.path, target=SemanticCheckPass
-            ),
+            )
+            if deep
+            else self.modules[file_path][1],
         )
 
     def add_file(self, file_path: str) -> None:
