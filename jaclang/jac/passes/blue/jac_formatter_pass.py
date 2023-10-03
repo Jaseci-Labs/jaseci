@@ -678,7 +678,7 @@ class JacFormatPass(Pass):
         elseifs: list[IfStmt],
         """
         for i in node.elseifs:
-            self.emit_ln(node, f"elif {i.condition.meta['jac_code']} {{")
+            self.emit(node, f" elif {i.condition.meta['jac_code']} {{\n")
             self.indent_level += 1
             self.emit(node, i.body.meta["jac_code"])
             self.indent_level -= 1
@@ -693,7 +693,7 @@ class JacFormatPass(Pass):
 
         body: CodeBlock,
         """
-        self.emit_ln(node, "else {")
+        self.emit(node, " else {\n")
         self.indent_level += 1
         self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
