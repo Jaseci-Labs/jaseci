@@ -20,7 +20,7 @@ can <>test(filename: str);
 can ast_tool(tool: str);
 
 @cmd_reg.register
-can lsp;
+can clean;
 
 @cmd_reg.register
-can clean;
+can gen_dotfile(filename: str) ;

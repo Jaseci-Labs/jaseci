@@ -1,4 +1,4 @@
-"""Collection of passes for Jac IR."""
+"""Pass schedules."""
 from .ast_build_pass import AstBuildPass  # noqa: I100
 from .sub_node_tab_pass import SubNodeTabPass
 from .import_pass import ImportPass  # noqa: I100
@@ -9,8 +9,7 @@ from .blue_pygen_pass import BluePygenPass  # noqa: I100
 from .pyout_pass import PyOutPass  # noqa: I100
 from .dot_exporter_pass import DotGraphPass  # noqa: I100
 
-
-pass_schedule = [
+py_code_gen = [
     AstBuildPass,
     SubNodeTabPass,
     ImportPass,
@@ -20,14 +19,21 @@ pass_schedule = [
     BluePygenPass,
 ]
 
-__all__ = [
-    "AstBuildPass",
-    "SubNodeTabPass",
-    "ImportPass",
-    "SymTabBuildPass",
-    "DeclDefMatchPass",
-    "SemanticCheckPass",
-    "BluePygenPass",
-    "PyOutPass",
-    "DotGraphPass",
+py_transpiler = [
+    *py_code_gen,
+    PyOutPass,
+]
+
+ast_dot_gen = [
+    AstBuildPass,
+    DotGraphPass,
+]
+
+full_ast_dot_gen = [
+    AstBuildPass,
+    SubNodeTabPass,
+    ImportPass,
+    SymTabBuildPass,
+    DeclDefMatchPass,
+    DotGraphPass,
 ]

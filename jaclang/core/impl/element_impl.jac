@@ -6,36 +6,31 @@
     PRIVATE
 }
 
-:object:Element:ability:<init>
-(exec_ctx: ExecutionContext) {
-    <self>.__jinfo = exec_ctx :> ExecutionContext;
-}
-
-:object:Element:ability:_jac_make_public_ro {
+:object:ElementInterface:ability:make_public_ro {
     <self>.__jinfo.access_mode = AccessMode.READ_ONLY;
 }
 
-:object:Element:ability:_jac_make_public_rw {
+:object:ElementInterface:ability:make_public_rw {
     <self>.__jinfo.access_mode = AccessMode.READ_WRITE;
 }
 
-:object:Element:ability:_jac_make_private {
+:object:ElementInterface:ability:make_private {
     <self>.__jinfo.access_mode = AccessMode.PRIVATE;
 }
 
-:object:Element:ability:_jac_is_public_ro -> bool {
+:object:ElementInterface:ability:is_public_ro -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
-:object:Element:ability:_jac_is_public_rw -> bool {
+:object:ElementInterface:ability:is_public_rw -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
-:object:Element:ability:_jac_is_private -> bool {
+:object:ElementInterface:ability:is_private -> bool {
     return <self>.__jinfo.access_mode == AccessMode.PRIVATE;
 }
 
-:object:Element:ability:_jac_is_readable
+:object:ElementInterface:ability:is_readable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <self>.owner_id
@@ -45,7 +40,7 @@
         );
 }
 
-:object:Element:ability:_jac_is_writable
+:object:ElementInterface:ability:is_writable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <self>.owner_id
@@ -54,7 +49,7 @@
         );
 }
 
-:object:Element:ability:_jac_give_access
+:object:ElementInterface:ability:give_access
 (caller_id: UUID, read_write: bool = False) {
     if read_write {
         caller_id |> <self>.rw_access.add;
@@ -64,16 +59,17 @@
     }
 }
 
-:object:Element:ability:_jac_revoke_access
+:object:ElementInterface:ability:revoke_access
 (caller_id: UUID) {
     caller_id |> <self>.ro_access.discard;
     caller_id |> <self>.rw_access.discard;
 }
 
-:object:Object:ability:_jac_on_entry
+
+:object:DataSpatialInterface:ability:on_entry
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
-        cls._jac_ds_entry_funcs.append({'types': triggers, 'func': func});
+        cls.ds_entry_funcs.append({'types': triggers, 'func': func});
         can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }
@@ -82,10 +78,10 @@
     return decorator;
 }
 
-:object:Object:ability:_jac_on_exit
+:object:DataSpatialInterface:ability:on_exit
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
-        cls._jac_ds_exit_funcs.append({'types': triggers, 'func': func});
+        cls.ds_exit_funcs.append({'types': triggers, 'func': func});
         can wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }

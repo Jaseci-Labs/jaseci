@@ -43,3 +43,4 @@ codegen_output*
 
 *.rdb
 node_modules
+out.dot

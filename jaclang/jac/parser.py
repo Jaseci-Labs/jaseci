@@ -114,6 +114,7 @@ class JacParser(Transform, Parser, metaclass=ABCParserMeta):
     @_(
         "empty",
         "DOC_STRING",
+        "STRING",
     )
     def doc_tag(self, p: YaccProduction) -> YaccProduction:
         """Doc tag rule."""

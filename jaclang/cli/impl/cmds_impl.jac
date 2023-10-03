@@ -61,13 +61,6 @@ import:py from jaclang.jac.constant, Constants as C;
     }
 }
 
-"""Run language server for Jac."""
-:a:lsp {
-    import:py from jaclang.jac.langserve, server;
-    print("Starting server...");
-    server.start_io();
-}
-
 """Remove the __jac_gen__ , __pycache__ folders from the current directory recursevely."""
 :a:clean {
     current_dir = os.getcwd();
@@ -82,5 +75,19 @@ import:py from jaclang.jac.constant, Constants as C;
         }
     }
     print("Done cleaning.");
+}
+
+"""Remove the __jac_gen__ , __pycache__ folders from the current directory recursevely."""
+:a:gen_dotfile
+(filename: str) {
+    import:py from jaclang.jac.transpiler, jac_file_to_pass;
+    import:py from jaclang.jac.passes.blue.schedules, DotGraphPass, full_ast_dot_gen;
+    if filename.endswith(".jac") {
+        [base, mod] = os.path.split(filename);
+        base = './' if not base else base;
+        jac_file_to_pass(filename, base, DotGraphPass, full_ast_dot_gen);
+    } else {
+        "Not a .jac file." :> print;
+    }
 }
 

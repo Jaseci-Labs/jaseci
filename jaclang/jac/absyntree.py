@@ -270,7 +270,7 @@ class ModulePath(AstNode):
     ) -> None:
         """Initialize module path node."""
         self.path = path
-        self.path_str = ".".join([p.value for p in path])
+        self.path_str = "".join([p.value for p in path])
         super().__init__(
             parent=parent, mod_link=mod_link, kid=kid, line=line, sym_tab=sym_tab
         )
