@@ -21,3 +21,6 @@ can ast_tool(tool: str);
 
 @cmd_reg.register
 can clean;
+
+@cmd_reg.register
+can gen_dotfile(filename: str) ;

@@ -35,10 +35,12 @@ object ExecutionContext {
     can get_root() -> Node;
 }
 
+"Global Execution Context, should be monkey patched by the user."
 global exec_ctx = ExecutionContext();
 
-object ElementMetaData {
+object ElementInterface {
     has jid: UUID = :>uuid4,
+        py_obj: any = None,
         timestamp: datetime = :>datetime.now,
         persist: bool = False,
         access_mode: AccessMode = AccessMode.PRIVATE,
@@ -46,65 +48,81 @@ object ElementMetaData {
         ro_access: set = :>set,
         owner_id: UUID = exec_ctx.master,
         mem: Memory = exec_ctx.memory;
+
+    can make_public_ro;
+    can make_public_rw;
+    can make_private;
+    can is_public_ro -> bool;
+    can is_public_rw -> bool;
+    can is_private -> bool;
+    can is_readable(caller_id: UUID) -> bool;
+    can is_writable(caller_id: UUID) -> bool;
+    can give_access(caller_id: UUID, read_write: bool = False);
+    can revoke_access(caller_id: UUID);
+}
+
+object DataSpatialInterface {
+    static has ds_entry_funcs: list[dict]=[],
+               ds_exit_funcs: list[dict]=[];
+
+    static can on_entry(cls: type, triggers: list[type]);
+    static can on_exit(cls: type, triggers: list[type]);
+}
+
+object ObjectInterface:ElementInterface {}
+
+object NodeInterface:ObjectInterface {
+    has edges: dict[EdgeDir, list[Edge]]
+        = {EdgeDir.IN: [], EdgeDir.OUT: []};
+
+    can connect_node(nd: Node, edg: Edge) -> Node;
+    can edges_to_nodes(dir: EdgeDir) -> list[Node];
+}
+
+object EdgeInterface:ObjectInterface {
+    has source: Node?,
+        target: Node?,
+        dir: EdgeDir?;
+
+    can apply_dir(dir: EdgeDir) -> Edge;
+    can attach(src: Node, trg: Node) -> Edge;
+}
+
+object WalkerInterface:ObjectInterface {
+    has path: list[Node] = [],
+        next: list[Node] = [],
+        ignores: list[Node] = [],
+        disengaged: bool = False;
+
+    can visit_node(nds: list[Node]|list[Edge]|Node|Edge);
+    can ignore_node(nds: list[Node]|list[Edge]|Node|Edge);
+    can disengage_now;
 }
 
 object Element {
-    has _jinfo: ElementMetaData = ElementMetaData();
-
-    can <init>(exec_ctx: ExecutionContext=None);
-    can _jac_make_public_ro;
-    can _jac_make_public_rw;
-    can _jac_make_private;
-    can _jac_is_public_ro -> bool;
-    can _jac_is_public_rw -> bool;
-    can _jac_is_private -> bool;
-    can _jac_is_readable(caller_id: UUID) -> bool;
-    can _jac_is_writable(caller_id: UUID) -> bool;
-    can _jac_give_access(caller_id: UUID, read_write: bool = False);
-    can _jac_revoke_access(caller_id: UUID);
+    has _jac_: ElementInterface = ElementInterface(py_obj=<self>);
 }
 
 object Object:Element {
-    static has _jac_ds_entry_funcs: list[dict]=[],
-               _jac_ds_exit_funcs: list[dict]=[];
-
-    static can _jac_on_entry(cls: type, triggers: list[type]);
-    static can _jac_on_exit(cls: type, triggers: list[type]);
+    has _jac_: ObjectInterface = ObjectInterface(py_obj=<self>);
+    static has _jac_ds_: DataSpatialInterface = DataSpatialInterface();
 }
 
 object Node:Object {
-    has _jac_edges_: dict[EdgeDir, list[Edge]]
-        = {EdgeDir.IN: [], EdgeDir.OUT: []};
-
+    has _jac_: NodeInterface = NodeInterface(py_obj=<self>);
     can __call__(walk: Walker);
-    can _jac_connect_node_(nd: Node, edg: Edge) -> Node;
-    can _jac_edges_to_nodes_(dir: EdgeDir) -> list[Node];
 }
 
 object Edge:Object {
-    has _jac_source_: Node?,
-        _jac_target_: Node?,
-        _jac_dir_: EdgeDir?;
-
+    has _jac_: EdgeInterface = EdgeInterface(py_obj=<self>);
     can __call__(walk: Walker);
-    can _jac_apply_dir_(dir: EdgeDir) -> Edge;
-    can _jac_attach_(src: Node, trg: Node) -> Edge;
 }
 
 object Walker:Object {
-    has _jac_path_: list[Node] = [],
-        _jac_next_: list[Node] = [],
-        _jac_ignores_: list[Node] = [],
-        _jac_disengaged_: bool = False;
-
+    has _jac_: WalkerInterface = WalkerInterface(py_obj=<self>);
     can __call__(nd: Node);
-    can _jac_visit_(nds: list[Node]|list[Edge]|Node|Edge);
-    can _jac_ignore_(nds: list[Node]|list[Edge]|Node|Edge);
-    can _jac_disengage_;
 }
 
-object Master:Element {
-    has root_node: Node = Node();
-}
+object Master:Element { has root_node: Node = Node(); }
 
 can make_architype(base_class: type) -> type;

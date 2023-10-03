@@ -103,13 +103,13 @@ arch_attached: Optional["ArchBlock"] = None,
         nd.signature.event.name == Tok.KW_ENTRY {
         "Object" |> <self>.add_element_import;
         type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
-        (nd, f"@{C.OBJECT_CLASS}._jac_on_entry([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
+        (nd, f"@{C.OBJECT_CLASS}.{C.ON_ENTRY}([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
     }
     elif nd.signature:>type == ast.EventSignature and nd.arch_attached and
         nd.signature.event.name == Tok.KW_EXIT {
         "Object" |> <self>.add_element_import;
         type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
-        (nd, f"@{C.OBJECT_CLASS}._jac_on_exit([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
+        (nd, f"@{C.OBJECT_CLASS}.{C.ON_EXIT}([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
     }
     (nd) |> <super>.exit_ability;
 }

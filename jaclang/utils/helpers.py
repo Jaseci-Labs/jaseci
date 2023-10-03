@@ -1,6 +1,8 @@
 """Utility functions and classes for Jac compilation toolchain."""
 import re
+import textwrap
 import traceback
+
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con, Values as Val
@@ -35,11 +37,11 @@ def clip_code_section(s: str, target_line: int, line_range: int) -> str:
 
 def dedent_code_block(code: str) -> str:
     """Dedent a code block."""
-    lines = code.splitlines()
-    min_indent = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
-    dedented_lines = [line[min_indent:] for line in lines]
-    dedented_code = "\n".join(dedented_lines)
-    return dedented_code
+    # lines = code.splitlines()
+    # min_indent = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
+    # dedented_lines = [line[min_indent:] for line in lines]
+    # dedented_code = "\n".join(dedented_lines)
+    return textwrap.dedent(code)
 
 
 def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary) -> str:
@@ -60,6 +62,7 @@ def handle_jac_error(code_string: str, e: Exception, tb: traceback.StackSummary)
         jac_error_region = clip_code_section(
             add_line_numbers(jac_code_string), jac_err_line, Val.JAC_ERROR_LINE_RANGE
         )
+        target_mod = f"JacCode File: {target_mod}:{jac_err_line}"
     except Exception as e:
         jac_error_region = str(e)
         target_mod = ""

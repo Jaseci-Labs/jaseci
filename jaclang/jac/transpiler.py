@@ -30,7 +30,7 @@ def transpile_jac_blue(file_path: str, base_dir: str) -> list[Alert]:
         target=BluePygenPass,
         schedule=pass_schedule,
     )
-    if isinstance(code.ir, ast.Module):
+    if isinstance(code.ir, ast.Module) and not code.errors_had:
         print_pass = PyOutPass(
             mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code
         )
@@ -49,7 +49,7 @@ def transpile_jac_purple(file_path: str, base_dir: str) -> list[Alert]:
         target=PurplePygenPass,
         schedule=pass_schedule,
     )
-    if isinstance(code.ir, ast.Module):
+    if isinstance(code.ir, ast.Module) and not code.errors_had:
         print_pass = PyOutPass(
             mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code
         )

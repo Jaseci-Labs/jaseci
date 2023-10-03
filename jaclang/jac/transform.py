@@ -9,8 +9,8 @@ from jaclang.jac.absyntree import AstNode
 from jaclang.jac.constant import Constants as Con, Values as Val
 from jaclang.utils.helpers import add_line_numbers, clip_code_section
 from jaclang.utils.log import logging
-from jaclang.utils.sly.lex import LexerMeta
-from jaclang.utils.sly.yacc import ParserMeta
+from jaclang.vendor.sly.lex import LexerMeta
+from jaclang.vendor.sly.yacc import ParserMeta
 
 
 class Alert:
