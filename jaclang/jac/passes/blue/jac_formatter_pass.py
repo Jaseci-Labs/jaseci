@@ -229,8 +229,9 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         if isinstance(node.signature, ast.EventSignature):
-            print("here in exit_ability_def/EventSignature ")
-            print(node.signature.arch_tag_info.meta)
+            # need to find a example and implement
+            self.warning("This Event Defination is not available currently")
+            return
         else:
             fun_def = ""
             for arch in node.target.archs:
