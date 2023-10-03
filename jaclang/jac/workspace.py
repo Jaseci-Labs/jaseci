@@ -33,12 +33,15 @@ class Workspace:
 
     def rebuild_workspace(self) -> None:
         """Rebuild workspace."""
+        self.modules = {}
         for file in [
-            os.path.join(root, name)
+            os.path.normpath(os.path.join(root, name))
             for root, _, files in os.walk(self.path)
             for name in files
             if name.endswith(".jac")
         ]:
+            if file in self.modules:
+                continue
             build = jac_file_to_pass(
                 file_path=file, base_dir=self.path, target=SemanticCheckPass
             )

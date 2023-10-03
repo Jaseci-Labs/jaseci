@@ -58,10 +58,9 @@ class ImportPass(Pass):
 
         base_dir = path.dirname(mod_path)
         target = path.normpath(
-            path.normpath(
-                path.join(base_dir, *(node.path.path_str.split("."))) + ".jac"
-            )
+            path.join(base_dir, *(node.path.path_str.split("."))) + ".jac"
         )
+
         if target in self.import_table:
             # self.warning(f"Circular import detected, module {target} already imported.")
             return self.import_table[target]
