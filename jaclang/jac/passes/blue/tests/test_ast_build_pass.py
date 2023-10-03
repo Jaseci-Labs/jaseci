@@ -51,8 +51,8 @@ class AstBuildPassTests(TestCaseMicroSuite):
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         lex = JacLexer(mod_path=f"{filename}", input_ir=self.file_to_str(filename)).ir
-        prse = JacParser(mod_path=f"{filename}", input_ir=lex).ir
-        build_pass = AstBuildPass(mod_path="", input_ir=prse).ir
+        prse = JacParser(mod_path=f"{filename}", input_ir=lex)
+        build_pass = AstBuildPass(mod_path="", prior=prse, input_ir=prse.ir).ir
         self.assertIsNotNone(build_pass)
         if build_pass:
             self.assertGreater(len(str(build_pass.to_dict())), 200)
