@@ -11,13 +11,13 @@ from .jac_formatter_pass import JacFormatPass  # noqa: I100
 
 pass_schedule = [
     AstBuildPass,
+    JacFormatPass,
     SubNodeTabPass,
     ImportPass,
     SymTabBuildPass,
     DeclDefMatchPass,
     SemanticCheckPass,
     BluePygenPass,
-    JacFormatPass,
 ]
 
 __all__ = [
