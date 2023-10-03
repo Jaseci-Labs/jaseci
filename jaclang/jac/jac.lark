@@ -1,0 +1,32 @@
+start: (func_def | declaration)+
+
+declaration: type CNAME ";"
+
+func_def: type CNAME "(" params ")" "{" stmt* "}"
+
+params: type CNAME ("," type CNAME)* | -> empty
+
+stmt: "return" expr ";"
+    | declaration
+    | CNAME "=" expr ";"
+    | "if" "(" condition ")" stmt ("else" stmt)?
+    | "{" stmt* "}"
+    | "while" "(" condition ")" stmt
+    | expr ";"
+
+condition: expr "==" expr
+            | expr "!=" expr
+
+expr: CNAME
+    | NUMBER
+    | expr "+" expr
+    | expr "-" expr
+    | "(" expr ")"
+    | CNAME "(" (expr ("," expr)*)? ")"
+
+type: "int" | "float"
+
+%import common.CNAME
+%import common.NUMBER
+%import common.WS
+%ignore WS
