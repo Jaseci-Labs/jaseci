@@ -26,6 +26,7 @@ except ImportError:
     pass
 if TYPE_CHECKING:
     from .common import LexerConf
+    from .parsers.lalr_parser_state import ParserState
 
 from .utils import classify, get_regexp_width, Serialize, logger
 from .exceptions import UnexpectedCharacters, LexError, UnexpectedToken
@@ -528,7 +529,7 @@ class LexerThread:
         self.state = lexer_state
 
     @classmethod
-    def from_text(cls, lexer: "Lexer", text: str):
+    def from_text(cls, lexer: "Lexer", text: str) -> "LexerThread":
         return cls(lexer, LexerState(text))
 
     def lex(self, parser_state):
@@ -602,7 +603,24 @@ def _check_regex_collisions(
                 return
 
 
-class BasicLexer(Lexer):
+class AbstractBasicLexer(Lexer):
+    terminals_by_name: Dict[str, TerminalDef]
+
+    @abstractmethod
+    def __init__(self, conf: "LexerConf", comparator=None) -> None:
+        ...
+
+    @abstractmethod
+    def next_token(self, lex_state: LexerState, parser_state: Any = None) -> Token:
+        ...
+
+    def lex(self, state: LexerState, parser_state: Any) -> Iterator[Token]:
+        with suppress(EOFError):
+            while True:
+                yield self.next_token(state, parser_state)
+
+
+class BasicLexer(AbstractBasicLexer):
     terminals: Collection[TerminalDef]
     ignore_types: FrozenSet[str]
     newline_types: FrozenSet[str]
@@ -695,11 +713,6 @@ class BasicLexer(Lexer):
     def match(self, text, pos):
         return self.scanner.match(text, pos)
 
-    def lex(self, state: LexerState, parser_state: Any) -> Iterator[Token]:
-        with suppress(EOFError):
-            while True:
-                yield self.next_token(state, parser_state)
-
     def next_token(self, lex_state: LexerState, parser_state: Any = None) -> Token:
         line_ctr = lex_state.line_ctr
         while line_ctr.char_pos < len(lex_state.text):
@@ -747,13 +760,15 @@ class BasicLexer(Lexer):
 
 
 class ContextualLexer(Lexer):
-    lexers: Dict[str, BasicLexer]
-    root_lexer: BasicLexer
+    lexers: Dict[int, AbstractBasicLexer]
+    root_lexer: AbstractBasicLexer
+
+    BasicLexer: Type[AbstractBasicLexer] = BasicLexer
 
     def __init__(
         self,
         conf: "LexerConf",
-        states: Dict[str, Collection[str]],
+        states: Dict[int, Collection[str]],
         always_accept: Collection[str] = (),
     ) -> None:
         terminals = list(conf.terminals)
@@ -768,7 +783,7 @@ class ContextualLexer(Lexer):
             )
         else:
             comparator = None
-        lexer_by_tokens: Dict[FrozenSet[str], BasicLexer] = {}
+        lexer_by_tokens: Dict[FrozenSet[str], AbstractBasicLexer] = {}
         self.lexers = {}
         for state, accepts in states.items():
             key = frozenset(accepts)
@@ -780,16 +795,18 @@ class ContextualLexer(Lexer):
                 lexer_conf.terminals = [
                     terminals_by_name[n] for n in accepts if n in terminals_by_name
                 ]
-                lexer = BasicLexer(lexer_conf, comparator)
+                lexer = self.BasicLexer(lexer_conf, comparator)
                 lexer_by_tokens[key] = lexer
 
             self.lexers[state] = lexer
 
         assert trad_conf.terminals is terminals
         trad_conf.skip_validation = True  # We don't need to verify all terminals again
-        self.root_lexer = BasicLexer(trad_conf, comparator)
+        self.root_lexer = self.BasicLexer(trad_conf, comparator)
 
-    def lex(self, lexer_state: LexerState, parser_state: Any) -> Iterator[Token]:
+    def lex(
+        self, lexer_state: LexerState, parser_state: "ParserState"
+    ) -> Iterator[Token]:
         try:
             while True:
                 lexer = self.lexers[parser_state.position]

@@ -7,6 +7,7 @@ Full reference and more details is here:
 https://web.archive.org/web/20190616123959/http://www.bramvandersanden.com/post/2014/06/shared-packed-parse-forest/
 """
 
+from typing import Type, AbstractSet
 from random import randint
 from collections import deque
 from operator import attrgetter
@@ -15,7 +16,7 @@ from functools import partial
 
 from ..parse_tree_builder import AmbiguousIntermediateExpander
 from ..visitors import Discard
-from ..utils import logger
+from ..utils import logger, OrderedSet
 from ..tree import Tree
 
 
@@ -47,6 +48,7 @@ class SymbolNode(ForestNode):
         priority: The priority of the node's symbol.
     """
 
+    Set: Type[AbstractSet] = set  # Overridden by StableSymbolNode
     __slots__ = (
         "s",
         "start",
@@ -63,8 +65,8 @@ class SymbolNode(ForestNode):
         self.s = s
         self.start = start
         self.end = end
-        self._children = set()
-        self.paths = set()
+        self._children = self.Set()
+        self.paths = self.Set()
         self.paths_loaded = False
 
         ### We use inf here as it can be safely negated without resorting to conditionals,
@@ -82,7 +84,7 @@ class SymbolNode(ForestNode):
     def load_paths(self):
         for transitive, node in self.paths:
             if transitive.next_titem is not None:
-                vn = SymbolNode(
+                vn = type(self)(
                     transitive.next_titem.s, transitive.next_titem.start, self.end
                 )
                 vn.add_path(transitive.next_titem, node)
@@ -144,6 +146,11 @@ class SymbolNode(ForestNode):
         else:
             symbol = self.s.name
         return "({}, {}, {}, {})".format(symbol, self.start, self.end, self.priority)
+
+
+class StableSymbolNode(SymbolNode):
+    "A version of SymbolNode that uses OrderedSet for output stability"
+    Set = OrderedSet
 
 
 class PackedNode(ForestNode):

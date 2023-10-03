@@ -15,6 +15,7 @@ from typing import (
     Any,
     Sequence,
     Iterable,
+    AbstractSet,
 )
 
 ###{standalone
@@ -296,13 +297,13 @@ class fzset(frozenset):
         return "{%s}" % ", ".join(map(repr, self))
 
 
-def classify_bool(seq: Sequence, pred: Callable) -> Any:
+def classify_bool(seq: Iterable, pred: Callable) -> Any:
     false_elems = []
     true_elems = [elem for elem in seq if pred(elem) or false_elems.append(elem)]  # type: ignore[func-returns-value]
     return true_elems, false_elems
 
 
-def bfs(initial: Sequence, expand: Callable) -> Iterator:
+def bfs(initial: Iterable, expand: Callable) -> Iterator:
     open_q = deque(list(initial))
     visited = set(open_q)
     while open_q:
@@ -358,3 +359,31 @@ def small_factors(n: int, max_factor: int) -> List[Tuple[int, int]]:
         if a + b <= max_factor:
             return small_factors(r, max_factor) + [(a, b)]
     assert False, "Failed to factorize %s" % n
+
+
+class OrderedSet(AbstractSet[T]):
+    """A minimal OrderedSet implementation, using a dictionary.
+
+    (relies on the dictionary being ordered)
+    """
+
+    def __init__(self, items: Iterable[T] = ()):
+        self.d = dict.fromkeys(items)
+
+    def __contains__(self, item: Any) -> bool:
+        return item in self.d
+
+    def add(self, item: T):
+        self.d[item] = None
+
+    def __iter__(self) -> Iterator[T]:
+        return iter(self.d)
+
+    def remove(self, item: T):
+        del self.d[item]
+
+    def __bool__(self):
+        return bool(self.d)
+
+    def __len__(self) -> int:
+        return len(self.d)

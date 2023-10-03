@@ -25,7 +25,6 @@
 #
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from types import ModuleType
 from typing import (
     TypeVar,
@@ -45,6 +44,7 @@ from typing import (
     IO,
     TYPE_CHECKING,
     overload,
+    Sequence,
     Pattern as REPattern,
     ClassVar,
     Set,
@@ -61,7 +61,7 @@ from collections import defaultdict
 from functools import partial
 from argparse import ArgumentParser
 
-import lark
+import jaclang.vendor.lark
 from jaclang.vendor.lark.tools import lalr_argparser, build_lalr, make_warnings_comments
 
 
@@ -82,8 +82,9 @@ EXTRACT_STANDALONE_FILES = [
     "lexer.py",
     "common.py",
     "parse_tree_builder.py",
-    "parsers/lalr_parser.py",
     "parsers/lalr_analysis.py",
+    "parsers/lalr_parser_state.py",
+    "parsers/lalr_parser.py",
     "parser_frontends.py",
     "lark.py",
     "indenter.py",

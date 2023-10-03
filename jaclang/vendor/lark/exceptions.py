@@ -67,6 +67,7 @@ class UnexpectedInput(LarkError):
     pos_in_stream = None
     state: Any
     _terminals_by_name = None
+    interactive_parser: "InteractiveParser"
 
     def get_context(self, text: str, span: int = 40) -> str:
         """Returns a pretty string pinpointing the error in the text,
@@ -271,7 +272,6 @@ class UnexpectedToken(ParseError, UnexpectedInput):
 
     expected: Set[str]
     considered_rules: Set[str]
-    interactive_parser: "InteractiveParser"
 
     def __init__(
         self,

@@ -1,11 +1,12 @@
 from copy import deepcopy
 import sys
 from types import ModuleType
-from typing import Callable, Collection, Dict, Optional, TYPE_CHECKING
+from typing import Callable, Collection, Dict, Optional, TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from .lark import PostLex
     from .lexer import Lexer
+    from .grammar import Rule
     from typing import Union, Type
 
     if sys.version_info >= (3, 8):
@@ -24,7 +25,8 @@ from .lexer import TerminalDef, Token
 
 _ParserArgType: "TypeAlias" = 'Literal["earley", "lalr", "cyk", "auto"]'
 _LexerArgType: "TypeAlias" = 'Union[Literal["auto", "basic", "contextual", "dynamic", "dynamic_complete"], Type[Lexer]]'
-_Callback = Callable[[Token], Token]
+_LexerCallback = Callable[[Token], Token]
+ParserCallbacks = Dict[str, Callable]
 
 
 class LexerConf(Serialize):
@@ -41,7 +43,7 @@ class LexerConf(Serialize):
     re_module: ModuleType
     ignore: Collection[str]
     postlex: "Optional[PostLex]"
-    callbacks: Dict[str, _Callback]
+    callbacks: Dict[str, _LexerCallback]
     g_regex_flags: int
     skip_validation: bool
     use_bytes: bool
@@ -54,7 +56,7 @@ class LexerConf(Serialize):
         re_module: ModuleType,
         ignore: Collection[str] = (),
         postlex: "Optional[PostLex]" = None,
-        callbacks: Optional[Dict[str, _Callback]] = None,
+        callbacks: Optional[Dict[str, _LexerCallback]] = None,
         g_regex_flags: int = 0,
         skip_validation: bool = False,
         use_bytes: bool = False,
@@ -92,13 +94,18 @@ class LexerConf(Serialize):
 class ParserConf(Serialize):
     __serialize_fields__ = "rules", "start", "parser_type"
 
-    def __init__(self, rules, callbacks, start):
+    rules: List["Rule"]
+    callbacks: ParserCallbacks
+    start: List[str]
+    parser_type: _ParserArgType
+
+    def __init__(
+        self, rules: List["Rule"], callbacks: ParserCallbacks, start: List[str]
+    ):
         assert isinstance(start, list)
         self.rules = rules
         self.callbacks = callbacks
         self.start = start
-
-        self.parser_type = None
 
 
 ###}

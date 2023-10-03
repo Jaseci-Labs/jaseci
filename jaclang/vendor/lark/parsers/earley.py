@@ -9,20 +9,25 @@ The Earley parser outputs an SPPF-tree as per that document. The SPPF tree forma
 is explained here: https://lark-parser.readthedocs.io/en/latest/_static/sppf/sppf.html
 """
 
-import typing
-
+from typing import TYPE_CHECKING, Callable, Optional, List, Any
 from collections import deque
 
 from ..lexer import Token
 from ..tree import Tree
 from ..exceptions import UnexpectedEOF, UnexpectedToken
-from ..utils import logger
+from ..utils import logger, OrderedSet
 from .grammar_analysis import GrammarAnalyzer
 from ..grammar import NonTerminal
 from .earley_common import Item
-from .earley_forest import ForestSumVisitor, SymbolNode, TokenNode, ForestToParseTree
+from .earley_forest import (
+    ForestSumVisitor,
+    SymbolNode,
+    StableSymbolNode,
+    TokenNode,
+    ForestToParseTree,
+)
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ..common import LexerConf, ParserConf
 
 
@@ -35,17 +40,20 @@ class Parser:
         self,
         lexer_conf: "LexerConf",
         parser_conf: "ParserConf",
-        term_matcher,
-        resolve_ambiguity=True,
-        debug=False,
-        tree_class=Tree,
+        term_matcher: Callable,
+        resolve_ambiguity: bool = True,
+        debug: bool = False,
+        tree_class: Optional[Callable[[str, List], Any]] = Tree,
+        ordered_sets: bool = True,
     ):
         analysis = GrammarAnalyzer(parser_conf)
         self.lexer_conf = lexer_conf
         self.parser_conf = parser_conf
         self.resolve_ambiguity = resolve_ambiguity
         self.debug = debug
-        self.tree_class = tree_class
+        self.Tree = tree_class
+        self.Set = OrderedSet if ordered_sets else set
+        self.SymbolNode = StableSymbolNode if ordered_sets else SymbolNode
 
         self.FIRST = analysis.FIRST
         self.NULLABLE = analysis.NULLABLE
@@ -111,7 +119,7 @@ class Parser:
                     item.node = (
                         node_cache[label]
                         if label in node_cache
-                        else node_cache.setdefault(label, SymbolNode(*label))
+                        else node_cache.setdefault(label, self.SymbolNode(*label))
                     )
                     item.node.add_family(item.s, item.rule, item.start, None, None)
 
@@ -132,7 +140,7 @@ class Parser:
                     new_item.node = (
                         node_cache[label]
                         if label in node_cache
-                        else node_cache.setdefault(label, SymbolNode(*label))
+                        else node_cache.setdefault(label, self.SymbolNode(*label))
                     )
                     new_item.node.add_path(root_transitive, item.node)
                     if new_item.expect in self.TERMINALS:
@@ -164,7 +172,7 @@ class Parser:
                         new_item.node = (
                             node_cache[label]
                             if label in node_cache
-                            else node_cache.setdefault(label, SymbolNode(*label))
+                            else node_cache.setdefault(label, self.SymbolNode(*label))
                         )
                         new_item.node.add_family(
                             new_item.s, new_item.rule, i, originator.node, item.node
@@ -191,7 +199,7 @@ class Parser:
                     new_item.node = (
                         node_cache[label]
                         if label in node_cache
-                        else node_cache.setdefault(label, SymbolNode(*label))
+                        else node_cache.setdefault(label, self.SymbolNode(*label))
                     )
                     new_item.node.add_family(
                         new_item.s,
@@ -234,13 +242,13 @@ class Parser:
             Earley predictor, based on the previously completed tokens.
             This ensures that at each phase of the parse we have a custom
             lexer context, allowing for more complex ambiguities."""
-            next_to_scan = set()
-            next_set = set()
+            next_to_scan = self.Set()
+            next_set = self.Set()
             columns.append(next_set)
             transitives.append({})
             node_cache = {}
 
-            for item in set(to_scan):
+            for item in self.Set(to_scan):
                 if match(item.expect, token):
                     new_item = item.advance()
                     label = (new_item.s, new_item.start, i)
@@ -258,7 +266,7 @@ class Parser:
                     new_item.node = (
                         node_cache[label]
                         if label in node_cache
-                        else node_cache.setdefault(label, SymbolNode(*label))
+                        else node_cache.setdefault(label, self.SymbolNode(*label))
                     )
                     new_item.node.add_family(
                         new_item.s, item.rule, new_item.start, item.node, token_node
@@ -316,8 +324,8 @@ class Parser:
         assert start, start
         start_symbol = NonTerminal(start)
 
-        columns = [set()]
-        to_scan = set()  # The scan buffer. 'Q' in E.Scott's paper.
+        columns = [self.Set()]
+        to_scan = self.Set()  # The scan buffer. 'Q' in E.Scott's paper.
 
         ## Predict for the start_symbol.
         # Add predicted items to the first Earley set (for the predictor) if they
@@ -363,10 +371,10 @@ class Parser:
         if len(solutions) > 1:
             assert False, "Earley should not generate multiple start symbol items!"
 
-        if self.tree_class is not None:
+        if self.Tree is not None:
             # Perform our SPPF -> AST conversion
             transformer = ForestToParseTree(
-                self.tree_class,
+                self.Tree,
                 self.callbacks,
                 self.forest_sum_visitor and self.forest_sum_visitor(),
                 self.resolve_ambiguity,
