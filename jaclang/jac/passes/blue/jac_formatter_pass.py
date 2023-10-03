@@ -98,15 +98,14 @@ class JacFormatPass(Pass):
 
         """
         if node.doc:
-            self.emit(node, node.doc.value + "\n")
+            self.emit_ln(node, node.doc.value)
         if isinstance(node.parent, ast.Elements):
-            self.emit(node, "with entry {\n")
+            self.emit_ln(node, "with entry {")
         if node.body:
             self.indent_level += 1
             self.emit(node, node.body.meta["jac_code"])
-        self.indent_level -= 1
-        self.emit(node, "}")
-        self.emit_ln(node, "")
+            self.indent_level -= 1
+        self.emit_ln(node, "}")
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -115,9 +114,11 @@ class JacFormatPass(Pass):
         doc: Token,
         body: "Elements",
         """
-        self.emit_ln(node, node.doc.value)
-        self.emit_ln(node, "")
-        self.emit(node, self.preamble.meta["jac_code"])
+        if node.doc:
+            self.emit_ln(node, node.doc.value)
+            self.emit_ln(node, "")
+        if self.preamble:
+            self.emit(node, self.preamble.meta["jac_code"])
         if node.body:
             self.emit(node, node.body.meta["jac_code"])
         self.ir = node
@@ -129,10 +130,12 @@ class JacFormatPass(Pass):
         stmts: list["StmtType"],
         """
         for stmt in node.stmts:
-            if isinstance(stmt, (ast.IfStmt, ast.WhileStmt, ast.TryStmt)):
+            if isinstance(
+                stmt, (ast.IfStmt, ast.WhileStmt, ast.TryStmt, ast.IterForStmt)
+            ):
                 self.emit(node, f"{stmt.meta['jac_code']}")
             else:
-                self.emit(node, f"{stmt.meta['jac_code']};\n")
+                self.emit_ln(node, f"{stmt.meta['jac_code']};")
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -232,10 +235,10 @@ class JacFormatPass(Pass):
             fun_def = ""
             for arch in node.target.archs:
                 fun_def += arch.meta["jac_code"]
-            self.emit(node, f"{fun_def} {{\n")
+            self.emit_ln(node, f"{fun_def} {{")
         self.indent_level += 1
         if node.body:
-            self.emit(node, node.body.meta["jac_code"])
+            self.emit_ln(node, node.body.meta["jac_code"])
         self.indent_level -= 1
         self.emit_ln(node, "}")
         self.emit_ln(node, "")
@@ -261,18 +264,18 @@ class JacFormatPass(Pass):
         self.sub_module = None
         """
         if node.items:
-            self.emit(
+            self.emit_ln(
                 node,
-                f"import:{node.lang.value} from {node.path.meta['jac_code']}, {node.items.meta['jac_code']};\n",  # noqa
+                f"import:{node.lang.value} from {node.path.meta['jac_code']}, {node.items.meta['jac_code']};",  # noqa
             )
         else:
             if node.is_absorb:
-                self.emit(
-                    node, f"include:{node.lang.value} {node.path.meta['jac_code']};\n"
+                self.emit_ln(
+                    node, f"include:{node.lang.value} {node.path.meta['jac_code']};"
                 )
             else:
-                self.emit(
-                    node, f"import:{node.lang.value} {node.path.meta['jac_code']};\n"
+                self.emit_ln(
+                    node, f"import:{node.lang.value} {node.path.meta['jac_code']};"
                 )
         self.emit_ln(node, "")
 
@@ -287,7 +290,7 @@ class JacFormatPass(Pass):
         doc = node.doc.value if node.doc else ""
         mod = f"{node.mod.meta['jac_code']} " if node.mod else ""
         arch = node.arch.meta["jac_code"]
-        self.emit(node, f"{doc}\n{mod}{arch} {{\n")
+        self.emit_ln(node, f"{doc}\n{mod}{arch} {{")
         self.indent_level += 1
         self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
@@ -317,6 +320,9 @@ class JacFormatPass(Pass):
         body: Optional[CodeBlock],
         arch_attached: Optional["ArchBlock"] = None,
         """
+        access_modifier = None
+        if node.access:
+            access_modifier = node.access.meta["jac_code"]
         if isinstance(node.signature, (ast.FuncSignature, ast.EventSignature)):
             if isinstance(node.signature, ast.EventSignature):
                 self.emit(
@@ -325,13 +331,23 @@ class JacFormatPass(Pass):
                 )
             elif isinstance(node.signature, ast.FuncSignature):
                 if isinstance(node.name_ref, ast.SpecialVarRef):
-                    fun_signature = f"can {node.name_ref.var.value}{node.signature.meta['jac_code']}"  # noqa
+                    if access_modifier:
+                        fun_signature = f"can:{access_modifier} {node.name_ref.var.value}{node.signature.meta['jac_code']}"  # noqa
+                    else:
+                        fun_signature = f"can {node.name_ref.var.value}{node.signature.meta['jac_code']}"  # noqa
                 else:
-                    fun_signature = (
-                        f"can {node.name_ref.value}{node.signature.meta['jac_code']}"
-                    )
-
-                self.emit_ln(node, f"{fun_signature};")
+                    if access_modifier:
+                        fun_signature = f"can:{access_modifier} {node.name_ref.value}{node.signature.meta['jac_code']}"  # noqa
+                    else:
+                        fun_signature = f"can {node.name_ref.value}{node.signature.meta['jac_code']}"  # noqa
+                if node.body:
+                    self.emit_ln(node, f"{fun_signature} {{")
+                    self.indent_level += 1
+                    self.emit_ln(node, node.body.meta["jac_code"])
+                    self.indent_level -= 1
+                    self.emit_ln(node, "}")
+                else:
+                    self.emit_ln(node, f"{fun_signature};")
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
@@ -358,10 +374,16 @@ class JacFormatPass(Pass):
         vars: "HasVarList",
         is_frozen: bool,
         """
-        self.emit_ln(
-            node,
-            f"has {node.vars.meta['jac_code']};",
-        )
+        if node.access:
+            self.emit_ln(
+                node,
+                f"has:{node.access.meta['jac_code']} {node.vars.meta['jac_code']};",
+            )
+        else:
+            self.emit_ln(
+                node,
+                f"has {node.vars.meta['jac_code']};",
+            )
         self.emit_ln(node, "")
 
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
@@ -564,13 +586,11 @@ class JacFormatPass(Pass):
                     node,
                     f"{node.left.meta['jac_code']} |> {node.right.meta['jac_code']}",
                 )
-
             elif node.op.name in [Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
                 self.emit(
                     node,
                     f"{node.left.meta['jac_code']} :> {node.right.meta['jac_code']}",
                 )
-
             elif node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]:
                 self.emit(
                     node,
@@ -600,7 +620,8 @@ class JacFormatPass(Pass):
                 self.indent_level += 1
             self.emit(node, i.meta["jac_code"])
             first_out = True
-        self.indent_level -= 1
+        if self.indent_level > 0:
+            self.indent_level -= 1
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
@@ -640,7 +661,7 @@ class JacFormatPass(Pass):
         elseifs: Optional[ElseIfs],
         else_body: Optional[ElseStmt],
         """
-        self.emit(node, f"if {node.condition.meta['jac_code']} {{\n")
+        self.emit_ln(node, f"if {node.condition.meta['jac_code']} {{")
         self.indent_level += 1
         self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
@@ -687,15 +708,14 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         self.emit_ln(node, "")
-        self.emit(
+        self.emit_ln(
             node,
-            f"for {node.iter.meta['jac_code']} to {node.condition.meta['jac_code']} by {node.count_by.meta['jac_code']} {{\n",  # noqa
+            f"for {node.iter.meta['jac_code']} to {node.condition.meta['jac_code']} by {node.count_by.meta['jac_code']} {{",  # noqa
         )
         self.indent_level += 1
-
         self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
-        self.emit(node, "}\n")
+        self.emit_ln(node, "}")
 
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
@@ -847,24 +867,24 @@ class JacFormatPass(Pass):
         body: Optional["ArchBlock"],
         """
         if node.doc:
-            self.emit(node, node.doc.value)
-            self.emit_ln(node, "")
+            self.emit_ln(node, node.doc.value)
         if node.decorators:
-            self.emit(node, node.decorators.meta["jac_code"])
+            self.emit_ln(node, node.decorators.meta["jac_code"])
         if not len(node.base_classes.base_classes):
-            self.emit(node, f"{node.arch_type.value} {node.name.meta['jac_code']} {{")
-            self.emit_ln(node, "")
+            self.emit_ln(
+                node, f"{node.arch_type.value} {node.name.meta['jac_code']} {{"
+            )
         else:
             self.emit_ln(
                 node,
-                f"object {node.name.meta['jac_code']}:{node.base_classes.meta['jac_code']} {{",  # noqa
+                f"{node.arch_type.value} {node.name.meta['jac_code']}:{node.base_classes.meta['jac_code']} {{",  # noqa
             )
-        self.indent_level += 1
         if node.body:
+            self.indent_level += 1
             self.emit(node, node.body.meta["jac_code"])
+            self.indent_level -= 1
         else:
             self.decl_def_missing(node.name.meta["jac_code"])
-        self.indent_level -= 1
         self.emit_ln(node, "}")
         self.emit_ln(node, "")
         self.emit_ln(node, "")
@@ -1118,7 +1138,7 @@ class JacFormatPass(Pass):
         target: Optional["ExprType"],
         else_body: Optional["ElseStmt"],
         """
-        self.emit_ln(node, f"visit {node.target.meta['jac_code']};")
+        self.emit(node, f"visit {node.target.meta['jac_code']}")
 
     def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
         """Sub objects.
