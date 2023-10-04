@@ -1,17 +1,19 @@
 start: module
 
-module: DOC_STRING? element_list?
+module: (doc_tag? element (element_with_doc | element)*)?
+      | doc_tag (element_with_doc (element_with_doc | element)*)?
 
-element_list: element+
-
-element: python_code_block
-       | doc_tag? ability
-       | doc_tag? architype
+element: py_code_block
        | include_stmt
        | import_stmt
-       | doc_tag? mod_code
-       | doc_tag? test
-       | doc_tag? global_var
+       | ability
+       | architype
+       | mod_code
+       | test
+       | global_var
+
+element_with_doc: doc_tag (ability | architype | mod_code | test | global_var | py_code_block)
+
 
 global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
 
@@ -28,7 +30,7 @@ mod_code: KW_WITH KW_ENTRY sub_name? code_block
 doc_tag: STRING
         | DOC_STRING
 
-python_code_block: PYNLINE
+py_code_block: PYNLINE
 
 import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
            | KW_IMPORT sub_name import_path KW_AS NAME SEMI
@@ -115,7 +117,7 @@ member_block: LBRACE member_stmt_list? RBRACE
 
 member_stmt_list: member_stmt (member_stmt_list)?
 
-member_stmt: python_code_block
+member_stmt: py_code_block
            | doc_tag? abstract_ability
            | doc_tag? ability
            | doc_tag? architype
@@ -157,7 +159,7 @@ code_block: LBRACE statement_list? RBRACE
 
 statement_list: statement+
 
-statement: python_code_block
+statement: py_code_block
           | walker_stmt
           | await_stmt SEMI
           | yield_stmt SEMI
@@ -220,15 +222,15 @@ return_stmt: KW_RETURN expression?
 
 yield_stmt: KW_YIELD expression?
 
-walker_stmt: (disengage_stmt | revisit_stmt | visit_stmt | ignore_stmt) SEMI?
+walker_stmt: disengage_stmt | revisit_stmt | visit_stmt | ignore_stmt
 
-ignore_stmt: KW_IGNORE expression
+ignore_stmt: KW_IGNORE expression SEMI
 
 visit_stmt: KW_VISIT (sub_name_dotted)? expression (else_stmt | SEMI)
 
-revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)?
+revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
 
-disengage_stmt: KW_DISENGAGE
+disengage_stmt: KW_DISENGAGE SEMI
 
 await_stmt: KW_AWAIT expression
 

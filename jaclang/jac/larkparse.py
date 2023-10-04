@@ -1,18 +1,21 @@
 """Lark parser for Jac Lang."""
+import logging
 import os
 from typing import Optional
 
 from jaclang.jac.transform import Transform
-from jaclang.vendor.lark import Lark, ParseTree
+from jaclang.vendor.lark import Lark, ParseTree, logger
+
+logger.setLevel(logging.DEBUG)
 
 
 with open(os.path.join(os.path.dirname(__file__), "jac.lark"), "r") as f:
     jac_grammar = f.read()
 parser = Lark(
     jac_grammar,
-    lexer="contextual",
     parser="lalr",
     # strict=True,
+    # debug=True,
     # lexer_callbacks={"COMMENT": self.comments.append},
 )
 
