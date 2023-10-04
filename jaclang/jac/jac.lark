@@ -373,7 +373,7 @@ list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
 set_val: LBRACE expr_list RBRACE
 
-expr_list: (expression COMMA)* expression
+expr_list: expr_list COMMA expression | expression
 
 tuple_list: expression COMMA (expr_list COMMA assignment_list | assignment_list | expr_list)?
           | assignment_list
@@ -404,7 +404,7 @@ func_call_tail: LPAREN param_list? RPAREN
 
 param_list: (expr_list COMMA assignment_list) | assignment_list | expr_list
 
-assignment_list: (assignment COMMA)* assignment
+assignment_list: assignment_list COMMA assignment | assignment
 
 index_slice: LSQUARE expression? (COLON expression?)? RSQUARE
 
