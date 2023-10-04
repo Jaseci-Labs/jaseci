@@ -18,7 +18,6 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         code_gen = jac_file_to_pass(
             self.fixture_abs_path("base.jac"), target=JacFormatPass
         )
-        print(code_gen.errors_had)
         self.assertFalse(code_gen.errors_had)
 
     def test_empty_codeblock(self) -> None:

@@ -252,7 +252,8 @@ class JacFormatPass(Pass):
         return_type: Optional["TypeSpec"],
         """
         event_value = node.event.value if node.event else None
-        self.emit_ln(node, f"{node.arch_tag_info.meta['jac_code']} {event_value};")
+        if node.arch_tag_info:
+            self.emit_ln(node, f"{node.arch_tag_info.meta['jac_code']} {event_value};")
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -1282,4 +1283,3 @@ class JacFormatPass(Pass):
         name: str,
         """
         self.error(f"Parse node should not be in this AST!! {node.name}")
-        raise ValueError("Parse node should not be in AST after being Built!!")
