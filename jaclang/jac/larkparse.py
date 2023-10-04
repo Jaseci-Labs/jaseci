@@ -24,10 +24,12 @@ class JacParser(Transform):
         self.comments = []
         self.parser = Lark(
             jac_grammar,
+            lexer="contextual",
             parser="lalr",
+            # strict=True,
             lexer_callbacks={"COMMENT": self.comments.append},
         )
-        self.ir = self.transform(input_ir)
+        Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
     def transform(self, ir: str) -> ParseTree:
         """Transform input IR."""

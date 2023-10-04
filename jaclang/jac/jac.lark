@@ -477,7 +477,7 @@ OCT: /0[oO][0-7_]+/
 INT: /[0-9][0-9_]*/
 NULL: /None/
 KWESC_NAME: /<>[a-zA-Z_][a-zA-Z0-9_]*/
-
+NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
 
 TYP_STRING: "str"
 TYP_INT: "int"
@@ -597,7 +597,7 @@ RSHIFT: />>/
 LTE: /<=/
 GTE: />=/
 NE: /!=/
-NOT: /!|not/
+NOT.1: /!|not/
 WALRUS_EQ: /:=/
 COLON: /:/
 LBRACE: /{/
@@ -625,7 +625,7 @@ RPAREN: /\)/
 LSQUARE: /\[/
 RSQUARE: /\]/
 
-NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
 COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
 WS: /[ \t\r\n]+/
+%ignore COMMENT
 %ignore WS
