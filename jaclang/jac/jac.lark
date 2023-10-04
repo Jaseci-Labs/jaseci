@@ -36,12 +36,7 @@ import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
 
 include_stmt: KW_INCLUDE sub_name import_path SEMI
 
-import_path: import_path_prefix import_path_tail?
-import_path_prefix: DOT DOT esc_name
-                  | DOT esc_name
-                  | esc_name
-
-import_path_tail: (import_path_tail DOT)? esc_name
+import_path: DOT? DOT? esc_name ((DOT esc_name)+)?
 
 import_items: named_refs (KW_AS NAME)? (COMMA import_items)?
 
