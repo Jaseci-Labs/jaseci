@@ -285,14 +285,12 @@ class JacFormatPass(Pass):
         """Sub objects.
 
         doc: Optional[Token],
-        mod: Optional["DottedNameList"],
-        arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
-        body: "ArchBlock",
+        target: ArchRefChain,
+        body: ArchBlock,
         """
         doc = node.doc.value if node.doc else ""
-        mod = f"{node.mod.meta['jac_code']} " if node.mod else ""
-        arch = node.arch.meta["jac_code"]
-        self.emit_ln(node, f"{doc}\n{mod}{arch} {{")
+        target = f"{node.target.meta['jac_code']} "
+        self.emit_ln(node, f"{doc}\n{target} {{")
         self.indent_level += 1
         self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
@@ -310,7 +308,7 @@ class JacFormatPass(Pass):
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
-        name_ref: Name | SpecialVarRef | ArchRef,
+        name_ref: Name | SpecialVarRef,
         is_func: bool,
         is_async: bool,
         is_static: bool,
@@ -327,9 +325,14 @@ class JacFormatPass(Pass):
             access_modifier = node.access.meta["jac_code"]
         if isinstance(node.signature, (ast.FuncSignature, ast.EventSignature)):
             if isinstance(node.signature, ast.EventSignature):
+                can_name = (
+                    node.name_ref.value
+                    if isinstance(node.name_ref, ast.Name)
+                    else node.name_ref.var.value
+                )
                 self.emit(
                     node,
-                    f"can {node.name_ref.value} with {node.signature.meta['jac_code']}",
+                    f"can {can_name} with {node.signature.meta['jac_code']}",
                 )
             elif isinstance(node.signature, ast.FuncSignature):
                 if isinstance(node.name_ref, ast.SpecialVarRef):

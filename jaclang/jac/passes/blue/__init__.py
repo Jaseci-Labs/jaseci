@@ -13,7 +13,7 @@ from .dot_exporter_pass import DotGraphPass  # noqa: I100
 
 pass_schedule = [
     AstBuildPass,
-    JacFormatPass,
+    # JacFormatPass,
     SubNodeTabPass,
     ImportPass,
     SymTabBuildPass,
