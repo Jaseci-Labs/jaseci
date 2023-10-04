@@ -4,6 +4,7 @@ module: DOC_STRING element_list?
        | DOC_STRING
 
 element_list: element+
+
 element: python_code_block
        | doc_tag? ability
        | doc_tag? architype
@@ -64,6 +65,7 @@ decorator: DECOR_OP atom
 inherited_archs: sub_name_dotted*
 
 sub_name: COLON NAME
+
 sub_name_dotted: COLON dotted_name
 
 dotted_name: all_refs (DOT dotted_name)?
@@ -107,9 +109,9 @@ ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 
 abstract_ability: static_tag KW_CAN access_tag? all_refs (func_decl | event_clause) KW_ABSTRACT SEMI
 
-event_clause: KW_WITH type_spec? (KW_EXIT | KW_ENTRY) return_type_tag
+event_clause: KW_WITH type_spec? (KW_EXIT | KW_ENTRY) return_type_tag?
 
-func_decl: LPAREN func_decl_param_list? RPAREN return_type_tag?
+func_decl: (LPAREN func_decl_param_list? RPAREN)? return_type_tag?
 
 func_decl_param_list: param_var (COMMA func_decl_param_list)?
 
@@ -412,7 +414,7 @@ param_list: (expr_list COMMA assignment_list) | assignment_list | expr_list
 
 assignment_list: (assignment COMMA)* assignment
 
-index_slice: LSQUARE (expression? COLON expression?)? RSQUARE
+index_slice: LSQUARE expression? (COLON expression?)? RSQUARE
 
 arch_ref: object_ref
         | walker_ref
@@ -466,7 +468,7 @@ filter_compare_list: (esc_name cmp_op expression COMMA)* esc_name cmp_op express
 FLOAT: /(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
-FSTRING: /f"[^"\r\n]*"|f'[^'\r\n]*'/
+FSTRING.1: /f"[^"\r\n]*"|f'[^'\r\n]*'/
 STRING: /"[^"\r\n]*"|'[^'\r\n]*'/
 BOOL: /True|False/
 KW_NIN: /\bnot\s+in\b/
@@ -626,6 +628,6 @@ LSQUARE: /\[/
 RSQUARE: /\]/
 
 COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
-WS: /[ \t\r\n]+/
+WS: /[ \t\f\r\n]/+
 %ignore COMMENT
 %ignore WS

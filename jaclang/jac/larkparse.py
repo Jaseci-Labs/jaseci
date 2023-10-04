@@ -8,6 +8,13 @@ from jaclang.vendor.lark import Lark, ParseTree
 
 with open(os.path.join(os.path.dirname(__file__), "jac.lark"), "r") as f:
     jac_grammar = f.read()
+parser = Lark(
+    jac_grammar,
+    lexer="contextual",
+    parser="lalr",
+    # strict=True,
+    # lexer_callbacks={"COMMENT": self.comments.append},
+)
 
 
 class JacParser(Transform):
@@ -22,15 +29,9 @@ class JacParser(Transform):
     ) -> None:
         """Initialize parser."""
         self.comments = []
-        self.parser = Lark(
-            jac_grammar,
-            lexer="contextual",
-            parser="lalr",
-            # strict=True,
-            lexer_callbacks={"COMMENT": self.comments.append},
-        )
+
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
     def transform(self, ir: str) -> ParseTree:
         """Transform input IR."""
-        return self.parser.parse(ir)
+        return parser.parse(ir)
