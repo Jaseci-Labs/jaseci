@@ -3,29 +3,29 @@ start: module
 module: DOC_STRING element_list?
        | DOC_STRING
 
-?element_list: element+
+element_list: element+
 element: python_code_block
-       | doc_tag ability
-       | doc_tag architype
+       | doc_tag? ability
+       | doc_tag? architype
        | include_stmt
        | import_stmt
-       | doc_tag mod_code
-       | doc_tag test
-       | doc_tag global_var
+       | doc_tag? mod_code
+       | doc_tag? test
+       | doc_tag? global_var
 
 global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
 
-?access: KW_PROT
+access: KW_PROT
        | KW_PUB
        | KW_PRIV
 
-access_tag: COLON access?
+access_tag: COLON access
 
 test: KW_TEST NAME? code_block
 
 mod_code: KW_WITH KW_ENTRY sub_name? code_block
 
-?doc_tag: STRING
+doc_tag: STRING
         | DOC_STRING
 
 python_code_block: PYNLINE
@@ -36,45 +36,45 @@ import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
 
 include_stmt: KW_INCLUDE sub_name import_path SEMI
 
-?import_path: import_path_prefix import_path_tail?
+import_path: import_path_prefix import_path_tail?
 import_path_prefix: DOT DOT esc_name
                   | DOT esc_name
                   | esc_name
 
-?import_path_tail: (import_path_tail DOT)? esc_name
+import_path_tail: (import_path_tail DOT)? esc_name
 
-?import_items: named_refs (KW_AS NAME)? (COMMA import_items)?
+import_items: named_refs (KW_AS NAME)? (COMMA import_items)?
 
-?architype: decorator architype
+architype: decorator architype
           | enum
           | architype_def
           | architype_decl
 
-architype_decl: arch_type access_tag NAME inherited_archs (member_block | SEMI)
+architype_decl: arch_type access_tag? NAME inherited_archs (member_block | SEMI)
 
 architype_def: abil_to_arch_chain member_block
 
-?arch_type: KW_WALKER
+arch_type: KW_WALKER
           | KW_OBJECT
           | KW_EDGE
           | KW_NODE
 
 decorator: DECOR_OP atom
 
-?inherited_archs: sub_name_dotted*
+inherited_archs: sub_name_dotted*
 
 sub_name: COLON NAME
 sub_name_dotted: COLON dotted_name
 
-?dotted_name: all_refs (DOT dotted_name)?
+dotted_name: all_refs (DOT dotted_name)?
 
-?esc_name: KWESC_NAME
+esc_name: KWESC_NAME
          | NAME
 
-?all_refs: special_refs
+all_refs: special_refs
          | named_refs
 
-?named_refs: global_ref
+named_refs: global_ref
            | esc_name
 
 special_refs: INIT_OP
@@ -83,61 +83,61 @@ special_refs: INIT_OP
             | SELF_OP
             | HERE_OP
 
-?enum: enum_def
+enum: enum_def
      | enum_decl
 
-enum_decl: KW_ENUM access_tag NAME inherited_archs (enum_block | SEMI)
+enum_decl: KW_ENUM access_tag? NAME inherited_archs (enum_block | SEMI)
 
 enum_def: arch_to_enum_chain enum_block
 
 enum_block: LBRACE enum_stmt_list? RBRACE
 
-?enum_stmt_list: enum_item (COMMA enum_stmt_list)?
+enum_stmt_list: enum_item (COMMA enum_stmt_list)?
 
 enum_item: NAME EQ expression
          | NAME
 
-?ability: decorator ability
+ability: decorator ability
         | ability_def
         | KW_ASYNC ability_decl
         | ability_decl
 
-ability_decl: static_tag KW_CAN access_tag all_refs (func_decl | event_clause) (code_block | SEMI)
+ability_decl: static_tag KW_CAN access_tag? all_refs (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 
-abstract_ability: static_tag KW_CAN access_tag all_refs (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: static_tag KW_CAN access_tag? all_refs (func_decl | event_clause) KW_ABSTRACT SEMI
 
 event_clause: KW_WITH type_spec? (KW_EXIT | KW_ENTRY) return_type_tag
 
-?func_decl: LPAREN func_decl_param_list? RPAREN return_type_tag?
+func_decl: LPAREN func_decl_param_list? RPAREN return_type_tag?
 
-?func_decl_param_list: param_var (COMMA func_decl_param_list)?
+func_decl_param_list: param_var (COMMA func_decl_param_list)?
 
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 
 member_block: LBRACE member_stmt_list? RBRACE
 
-?member_stmt_list: member_stmt (member_stmt_list)?
+member_stmt_list: member_stmt (member_stmt_list)?
 
 member_stmt: python_code_block
-           | doc_tag abstract_ability
-           | doc_tag ability
-           | doc_tag architype
-           | doc_tag has_stmt
+           | doc_tag? abstract_ability
+           | doc_tag? ability
+           | doc_tag? architype
+           | doc_tag? has_stmt
 
-has_stmt: static_tag (KW_FREEZE | KW_HAS) access_tag has_assign_clause SEMI
+has_stmt: static_tag (KW_FREEZE | KW_HAS) access_tag? has_assign_clause SEMI
 
-?static_tag: KW_STATIC?
+static_tag: KW_STATIC?
 
-?has_assign_clause: typed_has_clause (COMMA has_assign_clause)?
+has_assign_clause: typed_has_clause (COMMA has_assign_clause)?
 
 typed_has_clause: esc_name type_tag (EQ expression)?
 
 type_tag: COLON type_spec
 
-?return_type_tag: RETURN_HINT? type_spec
+return_type_tag: RETURN_HINT? type_spec
 
-?type_spec: single_type (BW_OR type_spec | NULL_OK)?
+type_spec: single_type (BW_OR type_spec | NULL_OK)?
 
 single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
            | TYP_SET LSQUARE single_type RSQUARE
@@ -161,9 +161,9 @@ builtin_type: TYP_TYPE
 
 code_block: LBRACE statement_list? RBRACE
 
-?statement_list: statement+
+statement_list: statement+
 
-?statement: python_code_block
+statement: python_code_block
           | walker_stmt
           | await_stmt SEMI
           | yield_stmt SEMI
@@ -182,21 +182,21 @@ code_block: LBRACE statement_list? RBRACE
           | static_assignment
           | assignment SEMI
           | typed_ctx_block
-          | doc_tag ability
-          | doc_tag architype
+          | doc_tag? ability
+          | doc_tag? architype
           | import_stmt
 
 typed_ctx_block: RETURN_HINT type_spec code_block
 
-?if_stmt: KW_IF expression code_block (elif_list? else_stmt? | elif_list?)
+if_stmt: KW_IF expression code_block (elif_list? else_stmt? | elif_list?)
 
-?elif_list: KW_ELIF expression code_block elif_list?
+elif_list: KW_ELIF expression code_block elif_list?
 
-?else_stmt: KW_ELSE code_block
+else_stmt: KW_ELSE code_block
 
 try_stmt: KW_TRY code_block (except_list? finally_stmt? | finally_stmt)
 
-?except_list: except_def+
+except_list: except_def+
 
 except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
 
@@ -204,13 +204,13 @@ finally_stmt: KW_FINALLY code_block
 
 for_stmt: KW_FOR (name_list KW_IN | assignment KW_TO expression KW_BY) expression code_block
 
-?name_list: NAME (COMMA name_list)?
+name_list: NAME (COMMA name_list)?
 
 while_stmt: KW_WHILE expression code_block
 
 with_stmt: KW_WITH expr_as_list code_block
 
-?expr_as_list: (expression (KW_AS NAME)? | NAME) (COMMA expr_as_list)?
+expr_as_list: (expression (KW_AS NAME)?) (COMMA expr_as_list)?
 
 raise_stmt: KW_RAISE expression?
 
@@ -238,7 +238,7 @@ disengage_stmt: KW_DISENGAGE
 
 await_stmt: KW_AWAIT expression
 
-assignment: (KW_FREEZE?) atom EQ expression
+assignment: KW_FREEZE? atom EQ expression
 
 static_assignment: KW_HAS assignment_list SEMI
 
@@ -377,7 +377,7 @@ multistring: multistring FSTRING
 
 list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
-set_val: LBRACE expr_list? RBRACE
+set_val: LBRACE expr_list RBRACE
 
 expr_list: (expression COMMA)* expression
 
@@ -477,7 +477,7 @@ OCT: /0[oO][0-7_]+/
 INT: /[0-9][0-9_]*/
 NULL: /None/
 KWESC_NAME: /<>[a-zA-Z_][a-zA-Z0-9_]*/
-NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
+
 
 TYP_STRING: "str"
 TYP_INT: "int"
@@ -578,8 +578,8 @@ ELVIS_OP: /\?:/
 NULL_OK: /\?/
 DECOR_OP: /@/
 
-KW_AND: /&&/ | "and"
-KW_OR:  /\|\|/ | "or"
+KW_AND: /&&|and/
+KW_OR:  /\|\||or/
 ADD_EQ: /\+=/
 SUB_EQ: /-=/
 MUL_EQ: /\*=/
@@ -597,7 +597,7 @@ RSHIFT: />>/
 LTE: /<=/
 GTE: />=/
 NE: /!=/
-NOT: /!/ | "not"
+NOT: /!|not/
 WALRUS_EQ: /:=/
 COLON: /:/
 LBRACE: /{/
@@ -625,6 +625,7 @@ RPAREN: /\)/
 LSQUARE: /\[/
 RSQUARE: /\]/
 
+NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
 COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
 WS: /[ \t\r\n]+/
 %ignore WS
