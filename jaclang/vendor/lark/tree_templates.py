@@ -6,7 +6,7 @@ A tree templates is a tree that contains nodes that are template variables.
 
 from typing import Union, Optional, Mapping, Dict, Tuple, Iterator
 
-from lark import Tree, Transformer
+from jaclang.vendor.lark import Tree, Transformer
 from jaclang.vendor.lark.exceptions import MissingVariableError
 
 Branch = Union[Tree[str], str]

@@ -63,7 +63,7 @@ class Transform(ABC):
     def __init__(
         self,
         mod_path: str,
-        input_ir: AstNode,
+        input_ir: AstNode | str,
         base_path: str = "",
         prior: Optional[Transform] = None,
     ) -> None:
@@ -79,7 +79,7 @@ class Transform(ABC):
         self.ir = self.transform(ir=input_ir)
 
     @abstractmethod
-    def transform(self, ir: AstNode) -> AstNode:
+    def transform(self, ir: AstNode | str) -> AstNode | str:
         """Transform interface."""
         pass
 

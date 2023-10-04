@@ -6,7 +6,7 @@ import codecs
 import argparse
 
 
-from lark import Lark, Transformer, v_args
+from jaclang.vendor.lark import Lark, Transformer, v_args
 
 nearley_grammar = r"""
     start: (ruledef|directive)+
@@ -167,7 +167,7 @@ def create_code_for_nearley_grammar(g, start, builtin_path, folder_path, es6=Fal
     lark_g = "\n".join(rule_defs)
     lark_g += "\n" + "\n".join("!%s: %s" % item for item in n2l.extra_rules.items())
 
-    emit("from lark import Lark, Transformer")
+    emit("from jaclang.vendor.lark import Lark, Transformer")
     emit()
     emit("grammar = " + repr(lark_g))
     emit()
