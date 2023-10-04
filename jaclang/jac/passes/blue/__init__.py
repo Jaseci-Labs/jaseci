@@ -7,11 +7,13 @@ from .decl_def_match_pass import DeclDefMatchPass  # noqa: I100
 from .semantic_check_pass import SemanticCheckPass  # noqa: I100
 from .blue_pygen_pass import BluePygenPass  # noqa: I100
 from .pyout_pass import PyOutPass  # noqa: I100
+from .jac_formatter_pass import JacFormatPass  # noqa: I100
 from .dot_exporter_pass import DotGraphPass  # noqa: I100
 
 
 pass_schedule = [
     AstBuildPass,
+    # JacFormatPass,
     SubNodeTabPass,
     ImportPass,
     SymTabBuildPass,
@@ -29,5 +31,6 @@ __all__ = [
     "SemanticCheckPass",
     "BluePygenPass",
     "PyOutPass",
+    "JacFormatPass",
     "DotGraphPass",
 ]
