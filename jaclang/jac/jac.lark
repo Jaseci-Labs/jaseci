@@ -12,7 +12,7 @@ element: py_code_block
        | test
        | global_var
 
-element_with_doc: doc_tag (ability | architype | mod_code | test | global_var | py_code_block)
+element_with_doc: doc_tag (ability | architype | mod_code | test | global_var)
 
 
 global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
@@ -28,7 +28,7 @@ test: KW_TEST NAME? code_block
 mod_code: KW_WITH KW_ENTRY sub_name? code_block
 
 doc_tag: STRING
-        | DOC_STRING
+       | DOC_STRING
 
 py_code_block: PYNLINE
 
@@ -70,7 +70,7 @@ esc_name: KWESC_NAME
          | NAME
 
 all_refs: special_refs
-         | named_refs
+        | named_refs
 
 named_refs: global_ref
            | esc_name
