@@ -1,7 +1,6 @@
 start: module
 
-module: DOC_STRING element_list?
-       | DOC_STRING
+module: DOC_STRING? element_list?
 
 element_list: element+
 
@@ -104,10 +103,10 @@ ability: decorator ability
         | KW_ASYNC ability_decl
         | ability_decl
 
-ability_decl: static_tag KW_CAN access_tag? all_refs (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_STATIC? KW_CAN access_tag? all_refs (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 
-abstract_ability: static_tag KW_CAN access_tag? all_refs (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: KW_STATIC? KW_CAN access_tag? all_refs (func_decl | event_clause) KW_ABSTRACT SEMI
 
 event_clause: KW_WITH type_spec? (KW_EXIT | KW_ENTRY) return_type_tag?
 
@@ -127,9 +126,7 @@ member_stmt: python_code_block
            | doc_tag? architype
            | doc_tag? has_stmt
 
-has_stmt: static_tag (KW_FREEZE | KW_HAS) access_tag? has_assign_clause SEMI
-
-static_tag: KW_STATIC?
+has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_clause SEMI
 
 has_assign_clause: typed_has_clause (COMMA has_assign_clause)?
 
