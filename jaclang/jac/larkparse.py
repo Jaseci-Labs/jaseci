@@ -8,6 +8,18 @@ from jaclang.vendor.lark import Lark, ParseTree, logger
 
 logger.setLevel(logging.DEBUG)
 
+# cur_dir = os.path.dirname(__file__)
+# if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac.lark")):
+#     from jaclang.vendor.lark.tools import standalone
+
+#     os.mkdir(os.path.join(cur_dir, "__jac_gen__"))
+#     args = [
+#         os.path.join(cur_dir, "jac.lark"),
+#         "-o",
+#         os.path.join(cur_dir, "__jac_gen__", "jac_parser.py"),
+#     ]
+#     standalone.main(args)
+
 
 with open(os.path.join(os.path.dirname(__file__), "jac.lark"), "r") as f:
     jac_grammar = f.read()
