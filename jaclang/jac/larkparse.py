@@ -1,14 +1,16 @@
 """Lark parser for Jac Lang."""
-
+import logging
 from typing import Optional
 
 from jaclang.jac import JacLark
 from jaclang.jac.transform import Transform
-from jaclang.vendor.lark import ParseTree
+from jaclang.vendor.lark import Lark, ParseTree, logger
 
 
 class JacParser(Transform):
     """Jac Parser."""
+
+    dev_mode = False
 
     def __init__(
         self,
@@ -19,6 +21,8 @@ class JacParser(Transform):
     ) -> None:
         """Initialize parser."""
         self.comments = []
+        if JacParser.dev_mode:
+            JacParser.make_dev()
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
     def transform(self, ir: str) -> ParseTree:
@@ -38,6 +42,18 @@ class JacParser(Transform):
             JacParser.parser.parse(ir),
             JacParser.comment_cache,
         )
+
+    @staticmethod
+    def make_dev() -> None:
+        """Make parser in dev mode."""
+        JacParser.parser = Lark.open(
+            "jac.lark",
+            parser="lalr",
+            rel_to=__file__,
+            debug=True,
+            lexer_callbacks={"COMMENT": JacParser._comment_callback},
+        )
+        logger.setLevel(logging.DEBUG)
 
     comment_cache = []
     parser = JacLark(lexer_callbacks={"COMMENT": _comment_callback})
