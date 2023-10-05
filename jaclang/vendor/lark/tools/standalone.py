@@ -196,7 +196,7 @@ def gen_standalone(lark_inst, output=None, out=sys.stdout, compress=False):
     output("Shift = 0")
     output("Reduce = 1")
     output("def Lark_StandAlone(**kwargs):")
-    output("  return jaclang.vendor.Lark._load_from_dict(DATA, MEMO, **kwargs)")
+    output("  return Lark._load_from_dict(DATA, MEMO, **kwargs)")
 
 
 def main():

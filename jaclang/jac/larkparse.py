@@ -1,34 +1,39 @@
 """Lark parser for Jac Lang."""
 import logging
 import os
+import sys
 from typing import Optional
 
 from jaclang.jac.transform import Transform
-from jaclang.vendor.lark import Lark, ParseTree, logger
+
+
+cur_dir = os.path.dirname(__file__)
+if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac_parser.py")):
+    from jaclang.vendor.lark.tools import standalone
+
+    os.makedirs(os.path.join(cur_dir, "__jac_gen__"), exist_ok=True)
+    with open(os.path.join(cur_dir, "__jac_gen__", "__init__.py"), "w"):
+        pass
+    save_argv = sys.argv
+    sys.argv = [
+        "lark",
+        os.path.join(cur_dir, "jac.lark"),
+        "-o",
+        os.path.join(cur_dir, "__jac_gen__", "jac_parser.py"),
+        "-c",
+    ]
+    standalone.main()
+    sys.argv = save_argv
+from .__jac_gen__.jac_parser import Lark_StandAlone as Lark, logger  # noqa: E402
 
 logger.setLevel(logging.DEBUG)
 
-# cur_dir = os.path.dirname(__file__)
-# if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac.lark")):
-#     from jaclang.vendor.lark.tools import standalone
-
-#     os.mkdir(os.path.join(cur_dir, "__jac_gen__"))
-#     args = [
-#         os.path.join(cur_dir, "jac.lark"),
-#         "-o",
-#         os.path.join(cur_dir, "__jac_gen__", "jac_parser.py"),
-#     ]
-#     standalone.main(args)
-
-
 with open(os.path.join(os.path.dirname(__file__), "jac.lark"), "r") as f:
     jac_grammar = f.read()
+comments = []
 parser = Lark(
-    jac_grammar,
-    parser="lalr",
     # strict=True,
-    # debug=True,
-    # lexer_callbacks={"COMMENT": self.comments.append},
+    lexer_callbacks={"COMMENT": comments.append},
 )
 
 
@@ -47,6 +52,6 @@ class JacParser(Transform):
 
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
-    def transform(self, ir: str) -> ParseTree:
+    def transform(self, ir: str) -> Lark:
         """Transform input IR."""
         return parser.parse(ir)
