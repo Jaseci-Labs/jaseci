@@ -68,6 +68,13 @@ def customer_retrieve(customer_id: str, **kwargs):
 
 
 @jaseci_action()
+def customer_delete(customer_id: str, **kwargs):
+    """delete customer"""
+
+    return stripe().Customer.delete(customer_id, **kwargs)
+
+
+@jaseci_action()
 def payment_method_attach(payment_method_id: str, customer_id: str, **kwargs):
     """retrieve customer list of invoices"""
 

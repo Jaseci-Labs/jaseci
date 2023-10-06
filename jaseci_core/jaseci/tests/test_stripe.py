@@ -26,6 +26,7 @@ class StripeTests(CoreTest):
         stripe.Product.list = Mock()
         stripe.Customer.create = Mock()
         stripe.Customer.retrieve = Mock()
+        stripe.Customer.delete = Mock()
         stripe.PaymentMethod.list = Mock()
         stripe.PaymentMethod.attach = Mock()
         stripe.PaymentMethod.detach = Mock()
@@ -77,6 +78,10 @@ class StripeTests(CoreTest):
     @jac_testcase("stripe.jac", "get_customer")
     def test_stripe_get_customer(self, ret):
         stripe.Customer.retrieve.assert_called_once_with("cus_NBsqL1C1GrrHYM")
+
+    @jac_testcase("stripe.jac", "delete_customer")
+    def test_stripe_delete_customer(self, ret):
+        stripe.Customer.delete.assert_called_once_with("cus_NBsqL1C1GrrHYM")
 
     @jac_testcase("stripe.jac", "attach_payment_method")
     def test_stripe_attach_payment_method(self, ret):
