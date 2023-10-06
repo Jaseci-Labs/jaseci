@@ -371,15 +371,13 @@ multistring: multistring fstring
            | fstring
            | STRING
 
-fstring: FSTR_START fstr_parts FSTR_END
+fstring: FSTR_START fstr_parts* FSTR_END
 
-fstr_parts: fstr_parts fstr_expr
-          | fstr_parts FSTR_PIECE
-          | FSTR_PIECE
+fstr_parts: FSTR_PIECE
           | fstr_expr
           | fstring
 
-fstr_expr: FSTR_EXPR_START fstr_parts FSTR_EXPR_END
+fstr_expr: LBRACE expression RBRACE
 
 list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
@@ -636,9 +634,7 @@ WS: /[ \t\f\r\n]/+
 // f-string tokens
 FSTR_START.2: "f\""
 FSTR_END: "\""
-FSTR_PIECE: /[^\{\}\"]+/ | "{{" | "}}"
-FSTR_EXPR_START: /(?<!\{)\{(?!\{)/
-FSTR_EXPR_END: /(?<!\})\}(?!\})/
+FSTR_PIECE.-1: /[^\{\}\"]+/ | "{{" | "}}"
 
 %ignore COMMENT
 %ignore WS
