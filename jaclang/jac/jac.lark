@@ -373,7 +373,8 @@ multistring: multistring fstring
 
 fstring: FSTR_START fstr_parts* FSTR_END
 
-fstr_parts: FSTR_PIECE
+?fstr_parts: FSTR_PIECE
+          | FSTR_BESC
           | fstr_expr
           | fstring
 
@@ -632,9 +633,10 @@ COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
 WS: /[ \t\f\r\n]/+
 
 // f-string tokens
-FSTR_START.2: "f\""
+FSTR_START.1: "f\""
 FSTR_END: "\""
-FSTR_PIECE.-1: /[^\{\}\"]+/ | "{{" | "}}"
+FSTR_PIECE.-1: /[^\{\}\"]+/
+FSTR_BESC.1: /{{|}}/
 
 %ignore COMMENT
 %ignore WS

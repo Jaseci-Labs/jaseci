@@ -10,6 +10,16 @@ class TestLarkParser(TestCaseMicroSuite):
         """Set up test."""
         return super().setUp()
 
+    def test_fstring_escape_brace(self) -> None:
+        """Test fstring escape brace."""
+        prse = JacParser(mod_path="", input_ir='global a=f"{{}}", not_b=4;')
+        out = prse.ir.pretty()
+        self.assertFalse(prse.errors_had)
+        self.assertIn("not_b", out)
+        self.assertIn("{{", out)
+        self.assertIn("}}", out)
+        self.assertIn("fstring", out)
+
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         prse = JacParser(mod_path=filename, input_ir=self.file_to_str(filename))
