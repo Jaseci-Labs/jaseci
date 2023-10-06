@@ -33,7 +33,7 @@ setup(
         "pytest-cov",
         "validators",
         "psycopg2-binary==2.9.5",
-        "pygls",
+        "pygls==1.0.2",
         "mock",
         "beautifulsoup4>=4.12.2, <4.13.0",
         "lxml>=4.9.2, <4.10.0",
