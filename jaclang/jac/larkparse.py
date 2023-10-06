@@ -2,9 +2,18 @@
 import logging
 from typing import Optional
 
-from jaclang.jac import JacLark
+from jaclang.jac import JacLark, Transformer
 from jaclang.jac.transform import Transform
 from jaclang.vendor.lark import Lark, ParseTree, logger
+
+
+class TreeToAST(Transformer):
+    """Transform parse tree to AST."""
+
+    def start(self, children: list[ParseTree]) -> list[ParseTree]:
+        """Start."""
+        print(children)
+        return children
 
 
 class JacParser(Transform):
@@ -56,4 +65,7 @@ class JacParser(Transform):
         logger.setLevel(logging.DEBUG)
 
     comment_cache = []
-    parser = JacLark(lexer_callbacks={"COMMENT": _comment_callback})
+    parser = JacLark(
+        transformer=TreeToAST(), lexer_callbacks={"COMMENT": _comment_callback}
+    )
+    # parser = JacLark(lexer_callbacks={"COMMENT": _comment_callback})
