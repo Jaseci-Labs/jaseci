@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
-from jaclang.jac.transform import Transform
+from jaclang.jac.passes.ir_pass import Pass
 from jaclang.vendor.lark import Lark, logger
 
 
@@ -17,49 +16,50 @@ class TreeToAST(jl.Transformer):
     def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:
         """Initialize transformer."""
         super().__init__(*args, **kwargs)
-        self.parser = parser
+        self.jac_parse = parser
 
     def start(self, kid: list[ast.Module]) -> ast.Module:
         """Start."""
+        print("DFSDJOGFSDOIJDG")
         return kid[0]
 
-    def module(self, kid: list[ast.AstNode]) -> ast.Module:
+    def module(self, kid: list[ast.AstNode]) -> ast.AstNode:
         """Builder for Module ast node."""
         doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
         body = kid[1:] if doc else kid
-        return ast.Module(
-            name=self.parser.mod_path.split(os.path.sep)[-1].split(".")[0],
+        mod = ast.Module(
+            name=self.jac_parse.mod_path.split(os.path.sep)[-1].split(".")[0],
             doc=doc,
             body=body,
-            mod_path=self.parser.mod_path,
-            rel_mod_path=self.parser.rel_mod_path,
+            mod_path=self.jac_parse.mod_path,
+            rel_mod_path=self.jac_parse.rel_mod_path,
             is_imported=False,
-            parent=None,
             mod_link=None,
         )
+        print(mod)
+        self.mod_link = mod
+        return mod
+
+    def element(self, kid: list[ast.AstNode]) -> ast.ElementType:
+        """Builder for Module ast node."""
+        return kid[0]
 
 
-class JacParser(Transform):
+class JacParser(Pass):
     """Jac Parser."""
 
     dev_mode = False
 
-    def __init__(
-        self,
-        mod_path: str,
-        input_ir: str,
-        base_path: str = "",
-        prior: Optional[Transform] = None,
-    ) -> None:
+    def before_pass(self) -> None:
         """Initialize parser."""
+        super().before_pass()
         self.comments = []
         if JacParser.dev_mode:
             JacParser.make_dev()
-        Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
-    def transform(self, ir: str) -> ast.Module:
+    def transform(self, ir: ast.SourceString) -> ast.Module:
         """Transform input IR."""
-        tree, self.comments = JacParser.parse(ir)
+        tree, self.comments = JacParser.parse(ir.value)
         tree = TreeToAST(parser=self).transform(tree)
         return tree
 

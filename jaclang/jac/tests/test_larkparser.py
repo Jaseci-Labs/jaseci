@@ -1,4 +1,5 @@
 """Tests for Jac parser."""
+from jaclang.jac.absyntree import SourceString
 from jaclang.jac.larkparse import JacParser
 from jaclang.utils.test import TestCaseMicroSuite
 
@@ -12,7 +13,8 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_fstring_escape_brace(self) -> None:
         """Test fstring escape brace."""
-        prse = JacParser(mod_path="", input_ir='global a=f"{{}}", not_b=4;')
+        source = SourceString('global a=f"{{}}", not_b=4;')
+        prse = JacParser(mod_path="", input_ir=source, prior=None)
         out = prse.ir.pretty()
         self.assertFalse(prse.errors_had)
         self.assertIn("not_b", out)
