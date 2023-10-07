@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional
+from typing import Type, Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
@@ -21,9 +21,10 @@ class TreeToAST(jl.Transformer):
 
     def start(self, kid: list[ast.Module]) -> ast.Module:
         """Start."""
+        print(type(Type[ast.AstNode]), type(ast.AstNode))
         return kid[0]
 
-    def module(self, kid: list[ast.ElementType]) -> ast.Module:
+    def module(self, kid: list[Type[ast.AstNode]]) -> ast.Module:
         """Builder for Module ast node."""
         doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
         body = kid[1:] if doc else kid
@@ -37,7 +38,7 @@ class TreeToAST(jl.Transformer):
             parent=None,
             mod_link=None,
             kid=kid,
-            tok_range=tuple(kid[0].tok_range[0], kid[-1].tok_range[1]),
+            tok_range=(kid[0].tok_range[0], kid[-1].tok_range[1]),
         )
 
 

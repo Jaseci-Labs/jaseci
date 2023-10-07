@@ -56,7 +56,7 @@ class Module(AstNode):
         self,
         name: str,
         doc: Optional[Token],
-        body: list[ElementType],
+        body: list[Type[AstNode]],
         mod_path: str,
         rel_mod_path: str,
         is_imported: bool,
