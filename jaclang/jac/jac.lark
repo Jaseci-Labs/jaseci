@@ -15,20 +15,10 @@ element: py_code_block
        | global_var
 
 global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
-
-access: KW_PROT
-       | KW_PUB
-       | KW_PRIV
-
-access_tag: COLON access
-
+access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
 test: KW_TEST NAME? code_block
-
 mod_code: KW_WITH KW_ENTRY sub_name? code_block
-
-doc_tag: STRING
-       | DOC_STRING
-
+doc_tag: ( STRING | DOC_STRING )
 py_code_block: PYNLINE
 
 import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI

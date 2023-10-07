@@ -5,62 +5,10 @@ import logging
 import os
 
 import jaclang.jac.absyntree as ast
+from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac import jac_lark as jl
 from jaclang.jac.passes.ir_pass import Pass
 from jaclang.vendor.lark import Lark, logger
-
-
-class TreeToAST(jl.Transformer):
-    """Transform parse tree to AST."""
-
-    def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:
-        """Initialize transformer."""
-        super().__init__(*args, **kwargs)
-        self.parse_ref = parser
-
-    def start(self, kid: list[ast.Module]) -> ast.Module:
-        """Start."""
-        return kid[0]
-
-    def module(self, kid: list[ast.AstNode]) -> ast.AstNode:
-        """Builder for Module ast node."""
-        doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
-        body = kid[1:] if doc else kid
-        mod = ast.Module(
-            name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
-            doc=doc,
-            body=body,
-            mod_path=self.parse_ref.mod_path,
-            rel_mod_path=self.parse_ref.rel_mod_path,
-            is_imported=False,
-            mod_link=None,
-        )
-        print(mod)
-        self.mod_link = mod
-        return mod
-
-    def element_with_doc(self, kid: list[ast.AstNode]) -> ast.ElementType:
-        """Builder for Elements with docstring ast node."""
-        if isinstance(kid[1], ast.ElementType) and isinstance(kid[0], ast.Constant):
-            kid[1].doc = kid[0]
-            kid[1].add_kid_left(kid[0])
-            return kid[1]
-        else:
-            raise self.ice()
-
-    def element(self, kid: list[ast.AstNode]) -> ast.ElementType:
-        """Builder for Element ast nodes."""
-        if isinstance(kid[0], ast.ElementType):
-            return kid[0]
-        else:
-            raise self.ice()
-
-    def ice(self) -> Exception:
-        """Raise internal compiler error."""
-        self.parse_ref.error("Unexpected item in parse tree!")
-        return RuntimeError(
-            f"{self.parse_ref.__class__.__name__} - Unexpected item in parse tree!"
-        )
 
 
 class JacParser(Pass):
@@ -78,7 +26,7 @@ class JacParser(Pass):
     def transform(self, ir: ast.SourceString) -> ast.Module:
         """Transform input IR."""
         tree, self.comments = JacParser.parse(ir.value)
-        tree = TreeToAST(parser=self).transform(tree)
+        tree = JacParser.TreeToAST(parser=self).transform(tree)
         return tree
 
     @staticmethod
@@ -109,3 +57,105 @@ class JacParser(Pass):
 
     comment_cache = []
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})
+
+    class TreeToAST(jl.Transformer):
+        """Transform parse tree to AST."""
+
+        def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:
+            """Initialize transformer."""
+            super().__init__(*args, **kwargs)
+            self.parse_ref = parser
+
+        def ice(self) -> Exception:
+            """Raise internal compiler error."""
+            self.parse_ref.error("Unexpected item in parse tree!")
+            return RuntimeError(
+                f"{self.parse_ref.__class__.__name__} - Unexpected item in parse tree!"
+            )
+
+        def start(self, kid: list[ast.Module]) -> ast.Module:
+            """
+            start: module
+            """
+            return kid[0]
+
+        def module(self, kid: list[ast.AstNode]) -> ast.AstNode:
+            """
+            module: (doc_tag? element (element_with_doc | element)*)?
+            doc_tag (element_with_doc (element_with_doc | element)*)?
+            """
+            doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
+            body = kid[1:] if doc else kid
+            mod = ast.Module(
+                name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
+                doc=doc,
+                body=body,
+                mod_path=self.parse_ref.mod_path,
+                rel_mod_path=self.parse_ref.rel_mod_path,
+                is_imported=False,
+                mod_link=None,
+                kid=kid,
+            )
+            self.mod_link = mod
+            return mod
+
+        def element_with_doc(self, kid: list[ast.AstNode]) -> ast.ElementType:
+            """
+            element_with_doc: doc_tag element
+            """
+            if isinstance(kid[1], ast.ElementType) and isinstance(kid[0], ast.Constant):
+                kid[1].doc = kid[0]
+                kid[1].add_kids_left([kid[0]])
+                return kid[1]
+            else:
+                raise self.ice()
+
+        def element(self, kid: list[ast.AstNode]) -> ast.ElementType:
+            """
+            element: py_code_block
+                | include_stmt
+                | import_stmt
+                | ability
+                | architype
+                | mod_code
+                | test
+                | global_var
+            """
+            if isinstance(kid[0], ast.ElementType):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def global_var(self, kid: list[ast.AstNode]) -> ast.GlobalVars:
+            """
+            global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
+            """
+            is_frozen = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_FREEZE
+            access = kid[1] if isinstance(kid[1], ast.AccessTag) else None
+            assignments = kid[2:-1] if access else kid[1:-1]
+            valid_assigns: list[ast.Assignment] = [
+                i for i in assignments if isinstance(i, ast.Assignment)
+            ]
+            if len(valid_assigns) == len(assignments):
+                return ast.GlobalVars(
+                    access=access,
+                    assignments=valid_assigns,
+                    is_frozen=is_frozen,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def access_tag(self, kid: list[ast.AstNode]) -> ast.AccessTag:
+            """
+            access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
+            """
+            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Token):
+                return ast.AccessTag(
+                    access=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()

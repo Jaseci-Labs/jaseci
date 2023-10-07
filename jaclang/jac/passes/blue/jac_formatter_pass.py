@@ -1016,7 +1016,7 @@ class JacFormatPass(Pass):
             node, f"{{{', '.join([value.meta['jac_code'] for value in node.values])}}}"
         )
 
-    def exit_assignment_list(self, node: ast.AssignmentList) -> None:
+    def exit_assignment_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         values: list[Assignment],

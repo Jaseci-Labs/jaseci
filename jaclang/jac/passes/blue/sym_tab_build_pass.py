@@ -935,13 +935,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_assignment_list(self, node: ast.AssignmentList) -> None:
-        """Sub objects.
-
-        values: list['Assignment'],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
 

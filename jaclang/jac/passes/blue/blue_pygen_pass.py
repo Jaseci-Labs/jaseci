@@ -1257,7 +1257,7 @@ class BluePygenPass(Pass):
         elif node.p_kwargs:
             self.emit(node, f"{node.p_kwargs.meta['py_code']}")
 
-    def exit_assignment_list(self, node: ast.AssignmentList) -> None:
+    def exit_assignment_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         values: list[Assignment],
