@@ -27,7 +27,7 @@ class Alert:
         try:
             mod_path = os.path.relpath(self.mod, start=os.getcwd())
         except ValueError:
-            mod_path = "<code string>"
+            mod_path = "<code_string>"
         return f"{mod_path}, line {self.line}: {self.msg}"
 
 

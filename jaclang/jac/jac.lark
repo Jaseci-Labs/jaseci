@@ -3,6 +3,8 @@ start: module
 module: (doc_tag? element (element_with_doc | element)*)?
       | doc_tag (element_with_doc (element_with_doc | element)*)?
 
+element_with_doc: doc_tag element
+
 element: py_code_block
        | include_stmt
        | import_stmt
@@ -11,9 +13,6 @@ element: py_code_block
        | mod_code
        | test
        | global_var
-
-element_with_doc: doc_tag (ability | architype | mod_code | test | global_var)
-
 
 global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
 

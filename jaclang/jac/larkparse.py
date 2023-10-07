@@ -16,11 +16,10 @@ class TreeToAST(jl.Transformer):
     def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:
         """Initialize transformer."""
         super().__init__(*args, **kwargs)
-        self.jac_parse = parser
+        self.parse_ref = parser
 
     def start(self, kid: list[ast.Module]) -> ast.Module:
         """Start."""
-        print("DFSDJOGFSDOIJDG")
         return kid[0]
 
     def module(self, kid: list[ast.AstNode]) -> ast.AstNode:
@@ -28,11 +27,11 @@ class TreeToAST(jl.Transformer):
         doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
         body = kid[1:] if doc else kid
         mod = ast.Module(
-            name=self.jac_parse.mod_path.split(os.path.sep)[-1].split(".")[0],
+            name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
             doc=doc,
             body=body,
-            mod_path=self.jac_parse.mod_path,
-            rel_mod_path=self.jac_parse.rel_mod_path,
+            mod_path=self.parse_ref.mod_path,
+            rel_mod_path=self.parse_ref.rel_mod_path,
             is_imported=False,
             mod_link=None,
         )
@@ -40,15 +39,34 @@ class TreeToAST(jl.Transformer):
         self.mod_link = mod
         return mod
 
+    def element_with_doc(self, kid: list[ast.AstNode]) -> ast.ElementType:
+        """Builder for Elements with docstring ast node."""
+        if isinstance(kid[1], ast.ElementType) and isinstance(kid[0], ast.Constant):
+            kid[1].doc = kid[0]
+            kid[1].add_kid_left(kid[0])
+            return kid[1]
+        else:
+            raise self.ice()
+
     def element(self, kid: list[ast.AstNode]) -> ast.ElementType:
-        """Builder for Module ast node."""
-        return kid[0]
+        """Builder for Element ast nodes."""
+        if isinstance(kid[0], ast.ElementType):
+            return kid[0]
+        else:
+            raise self.ice()
+
+    def ice(self) -> Exception:
+        """Raise internal compiler error."""
+        self.parse_ref.error("Unexpected item in parse tree!")
+        return RuntimeError(
+            f"{self.parse_ref.__class__.__name__} - Unexpected item in parse tree!"
+        )
 
 
 class JacParser(Pass):
     """Jac Parser."""
 
-    dev_mode = False
+    dev_mode = True
 
     def before_pass(self) -> None:
         """Initialize parser."""
@@ -83,6 +101,7 @@ class JacParser(Pass):
             "jac.lark",
             parser="lalr",
             rel_to=__file__,
+            strict=True,
             debug=True,
             lexer_callbacks={"COMMENT": JacParser._comment_callback},
         )

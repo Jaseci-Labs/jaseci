@@ -24,7 +24,11 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        prse = JacParser(mod_path=filename, input_ir=self.file_to_str(filename))
+        prse = JacParser(
+            mod_path=filename,
+            input_ir=SourceString(self.file_to_str(filename)),
+            prior=None,
+        )
         self.assertFalse(prse.errors_had)
 
 

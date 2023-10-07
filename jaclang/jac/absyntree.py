@@ -23,6 +23,25 @@ class AstNode:
         self.meta: dict = {}
         self.tok_range: tuple[Token, Token] = self.resolve_tok_range()
 
+    @property
+    def line(self) -> int:
+        """Get line number."""
+        return self.tok_range[0].line_no
+
+    def add_kid_left(self, node: AstNode) -> AstNode:
+        """Add kid left."""
+        self.kid.insert(0, node)
+        node.parent = self
+        self.tok_range = self.resolve_tok_range()
+        return self
+
+    def add_kid_right(self, node: AstNode) -> AstNode:
+        """Add kid right."""
+        self.kid.append(node)
+        node.parent = self
+        self.tok_range = self.resolve_tok_range()
+        return self
+
     def set_parent(self, parent: AstNode) -> AstNode:
         """Set parent."""
         self.parent = parent
@@ -90,7 +109,7 @@ class GlobalVars(AstNode):
 
     def __init__(
         self,
-        doc: Optional["Token"],
+        doc: Optional[Constant],
         access: Optional[Token],
         assignments: "AssignmentList",
         is_frozen: bool,
@@ -161,12 +180,14 @@ class PyInlineCode(AstNode):
 
     def __init__(
         self,
+        doc: Optional[Constant],
         code: Token,
         mod_link: Optional[Module],
         kid: list[AstNode],
         tok_range: tuple[Token, Token],
     ) -> None:
         """Initialize inline python code node."""
+        self.doc = doc
         self.code = code
         super().__init__(mod_link=mod_link, kid=kid, tok_range=tok_range)
 
@@ -176,6 +197,7 @@ class Import(AstNode):
 
     def __init__(
         self,
+        doc: Optional[Constant],
         lang: Name,
         path: ModulePath,
         alias: Optional[Name],
@@ -186,6 +208,7 @@ class Import(AstNode):
         sub_module: Optional["Module"] = None,
     ) -> None:
         """Initialize import node."""
+        self.doc = doc
         self.lang = lang
         self.path = path
         self.alias = alias
@@ -1494,7 +1517,7 @@ class Token(AstNode):
         """Initialize token."""
         self.name = name
         self.value = value
-        self.line = line
+        self.line_no = line
         self.col_start = col_start
         self.col_end = col_end
         super().__init__(mod_link=mod_link, kid=[])
@@ -1579,8 +1602,8 @@ ElementType = Union[
     Architype,
     Ability,
     PyInlineCode,
+    Import,
 ]
-
 
 AtomType = Union[
     MultiString,
