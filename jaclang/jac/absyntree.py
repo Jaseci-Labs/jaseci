@@ -45,7 +45,7 @@ class AstNode:
         ret = {
             "node": str(type(self).__name__),
             "kid": [x.to_dict() for x in self.kid if x],
-            "line": self.line,
+            "line": self.tok_range[0].line,
         }
         if isinstance(self, Token):
             ret["name"] = self.name
@@ -1550,7 +1550,7 @@ class FString(AstNode):
 
     def __init__(
         self,
-        parts: list["Token | ExprType"],
+        parts: list[Token | ExprType],
         parent: Optional[AstNode],
         mod_link: Optional[Module],
     ) -> None:
@@ -1588,6 +1588,7 @@ class Token(AstNode):
         self,
         name: str,
         value: str,
+        line: int,
         col_start: int,
         col_end: int,
         parent: Optional[AstNode],
@@ -1596,6 +1597,7 @@ class Token(AstNode):
         """Initialize token."""
         self.name = name
         self.value = value
+        self.line = line
         self.col_start = col_start
         self.col_end = col_end
         super().__init__(parent=parent, mod_link=mod_link, kid=[])
