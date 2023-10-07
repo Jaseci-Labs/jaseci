@@ -158,15 +158,6 @@ class BluePygenPass(Pass):
         self.ir = node
         self.ir.meta["py_code"] = self.ir.meta["py_code"].rstrip()
 
-    def exit_elements(self, node: ast.Elements) -> None:
-        """Sub objects.
-
-        elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec],
-        """
-        for i in node.elements:
-            self.emit(node, i.meta["py_code"])
-            self.emit(node, "\n")
-
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 

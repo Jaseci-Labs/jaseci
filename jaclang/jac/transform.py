@@ -24,7 +24,10 @@ class Alert:
 
     def __str__(self) -> str:
         """Return string representation of alert."""
-        mod_path = os.path.relpath(self.mod, start=os.getcwd())
+        try:
+            mod_path = os.path.relpath(self.mod, start=os.getcwd())
+        except ValueError:
+            mod_path = "<code string>"
         return f"{mod_path}, line {self.line}: {self.msg}"
 
 

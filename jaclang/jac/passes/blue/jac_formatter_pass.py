@@ -80,15 +80,6 @@ class JacFormatPass(Pass):
         """
         self.emit(node, node.value)
 
-    def exit_elements(self, node: ast.Elements) -> None:
-        """Sub objects.
-
-        elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec], # noqa E501
-        """
-        for element in node.elements:
-            self.emit(node, element.meta["jac_code"])
-        self.emit_ln(node, "")
-
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
 

@@ -1,19 +1,44 @@
 """Lark parser for Jac Lang."""
+from __future__ import annotations
+
 import logging
+import os
 from typing import Optional
 
-from jaclang.jac import JacLark, Transformer
+import jaclang.jac.absyntree as ast
+from jaclang.jac import jac_lark as jl
 from jaclang.jac.transform import Transform
-from jaclang.vendor.lark import Lark, ParseTree, logger
+from jaclang.vendor.lark import Lark, logger
 
 
-class TreeToAST(Transformer):
+class TreeToAST(jl.Transformer):
     """Transform parse tree to AST."""
 
-    def start(self, children: list[ParseTree]) -> list[ParseTree]:
+    def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:
+        """Initialize transformer."""
+        super().__init__(*args, **kwargs)
+        self.parser = parser
+
+    def start(self, kid: list[ast.Module]) -> ast.Module:
         """Start."""
-        print(children)
-        return children
+        return kid[0]
+
+    def module(self, kid: list[ast.ElementType]) -> ast.Module:
+        """Builder for Module ast node."""
+        doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
+        body = kid[1:] if doc else kid
+        return ast.Module(
+            name=self.parser.mod_path.split(os.path.sep)[-1].split(".")[0],
+            doc=doc,
+            body=body,
+            mod_path=self.parser.mod_path,
+            rel_mod_path=self.parser.rel_mod_path,
+            is_imported=False,
+            parent=None,
+            mod_link=None,
+            kid=kid,
+            tok_range=tuple(kid[0].tok_range[0], kid[-1].tok_range[1]),
+        )
 
 
 class JacParser(Transform):
@@ -34,9 +59,10 @@ class JacParser(Transform):
             JacParser.make_dev()
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
-    def transform(self, ir: str) -> ParseTree:
+    def transform(self, ir: str) -> ast.Module:
         """Transform input IR."""
         tree, self.comments = JacParser.parse(ir)
+        tree = TreeToAST(parser=self).transform(tree)
         return tree
 
     @staticmethod
@@ -44,7 +70,7 @@ class JacParser(Transform):
         JacParser.comment_cache.append(comment)
 
     @staticmethod
-    def parse(ir: str) -> tuple[ParseTree, list[str]]:
+    def parse(ir: str) -> tuple[jl.Tree, list[str]]:
         """Parse input IR."""
         JacParser.comment_cache = []
         return (
@@ -65,7 +91,4 @@ class JacParser(Transform):
         logger.setLevel(logging.DEBUG)
 
     comment_cache = []
-    parser = JacLark(
-        transformer=TreeToAST(), lexer_callbacks={"COMMENT": _comment_callback}
-    )
-    # parser = JacLark(lexer_callbacks={"COMMENT": _comment_callback})
+    parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})

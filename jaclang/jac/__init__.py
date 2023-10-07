@@ -20,12 +20,9 @@ if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac_parser.py")):
     ]
     standalone.main()
     sys.argv = save_argv
-from .__jac_gen__.jac_parser import (  # noqa: E402
-    Lark_StandAlone as JacLark,
-    Transformer,
-    logger,
-)
+from .__jac_gen__ import jac_parser as jac_lark  # noqa: E402
 
-logger.setLevel(logging.DEBUG)
 
-__all__ = ["JacLark", "Transformer", "logger"]
+jac_lark.logger.setLevel(logging.DEBUG)
+
+__all__ = ["jac_lark"]

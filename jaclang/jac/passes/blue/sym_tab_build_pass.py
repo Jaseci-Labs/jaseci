@@ -77,13 +77,6 @@ class SymTabBuildPass(Pass):
         """
         self.pop_scope()
 
-    def enter_elements(self, node: ast.Elements) -> None:
-        """Sub objects.
-
-        elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
