@@ -288,7 +288,7 @@ class JacFormatPass(Pass):
         self.emit(node, "}")
         self.emit_ln(node, "")
 
-    def exit_arch_block(self, node: ast.ArchBlock) -> None:
+    def exit_arch_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         members: list["ArchHas | Ability"],
@@ -459,7 +459,7 @@ class JacFormatPass(Pass):
         body: EnumBlock,
         """
 
-    def exit_enum_block(self, node: ast.EnumBlock) -> None:
+    def exit_enum_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         stmts: list['Name|Assignment'],
@@ -478,7 +478,7 @@ class JacFormatPass(Pass):
         """
         self.emit(node, "|".join([i.meta["jac_code"] for i in node.types]))
 
-    def exit_dotted_name_list(self, node: ast.DottedNameList) -> None:
+    def exit_dotted_name_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         names: list[all_refs],
@@ -793,7 +793,7 @@ class JacFormatPass(Pass):
             self.indent_level -= 1
         self.emit(node, "}")
 
-    def exit_decorators(self, node: ast.Decorators) -> None:
+    def exit_decorators(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         calls: list["ExprType"],

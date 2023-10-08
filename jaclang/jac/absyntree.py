@@ -96,7 +96,7 @@ class Module(AstNode):
     def __init__(
         self,
         name: str,
-        doc: Optional[Token],
+        doc: Optional[Constant],
         body: list[ElementType],
         mod_path: str,
         rel_mod_path: str,
@@ -122,12 +122,12 @@ class GlobalVars(AstNode):
 
     def __init__(
         self,
-        access: Optional[SubTag],
+        access: Optional[SubTag[Token]],
         assignments: SubNodeList[Assignment],
         is_frozen: bool,
         mod_link: Optional[Module],
         kid: list[AstNode],
-        doc: Optional[Token] = None,
+        doc: Optional[Constant] = None,
     ) -> None:
         """Initialize global var node."""
         self.doc = doc
@@ -137,12 +137,12 @@ class GlobalVars(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class SubTag(AstNode):
+class SubTag(AstNode, Generic[T]):
     """SubTag node type for Jac Ast."""
 
     def __init__(
         self,
-        tag: Token,
+        tag: T,
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -176,7 +176,7 @@ class Test(AstNode):
         body: CodeBlock,
         mod_link: Optional[Module],
         kid: list[AstNode],
-        doc: Optional[Token] = None,
+        doc: Optional[Constant] = None,
     ) -> None:
         """Initialize test node."""
         self.doc = doc
@@ -204,11 +204,11 @@ class ModuleCode(AstNode):
 
     def __init__(
         self,
-        name: Optional[SubTag],
+        name: Optional[SubTag[Name]],
         body: CodeBlock,
         mod_link: Optional[Module],
         kid: list[AstNode],
-        doc: Optional[Token] = None,
+        doc: Optional[Constant] = None,
     ) -> None:
         """Initialize test node."""
         self.doc = doc
@@ -241,12 +241,12 @@ class Import(AstNode):
         lang: SubTag,
         path: ModulePath,
         alias: Optional[Name],
-        items: SubNodeList[ModuleItem],
+        items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
         mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
-        sub_module: Optional["Module"] = None,
+        sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize import node."""
         self.doc = doc
@@ -300,13 +300,13 @@ class Architype(AstNode):
         self,
         name: Name,
         arch_type: Token,
-        access: Optional[SubTag],
-        base_classes: SubNodeList[DottedNameList],
-        body: Optional[ArchBlock | ArchDef],
+        access: Optional[SubTag[Token]],
+        base_classes: SubNodeList[SubNodeList[Name | SpecialVarRef]],
+        body: Optional[SubNodeList[ArchHas | Ability] | ArchDef],
         mod_link: Optional[Module],
         kid: list[AstNode],
-        doc: Optional[Token] = None,
-        decorators: Optional[Decorators] = None,
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize object arch node."""
         self.name = name
@@ -324,12 +324,12 @@ class ArchDef(AstNode):
 
     def __init__(
         self,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
         target: ArchRefChain,
-        body: ArchBlock,
+        body: SubNodeList[ArchHas | Ability],
         mod_link: Optional[Module],
         kid: list[AstNode],
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize arch def node."""
         self.doc = doc
@@ -339,17 +339,47 @@ class ArchDef(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class Decorators(AstNode):
-    """Decorators node type for Jac Ast."""
+class Enum(AstNode):
+    """Enum node type for Jac Ast."""
 
     def __init__(
         self,
-        calls: list[ExprType],
+        name: Name,
+        access: Optional[SubTag[Token]],
+        base_classes: SubNodeList[SubNodeList[Name | SpecialVarRef]],
+        body: Optional[SubNodeList[Name | Assignment] | EnumDef],
         mod_link: Optional[Module],
         kid: list[AstNode],
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
-        """Initialize decorators node."""
-        self.calls = calls
+        """Initialize object arch node."""
+        self.name = name
+        self.doc = doc
+        self.access = access
+        self.decorators = decorators
+        self.base_classes = base_classes
+        self.body = body
+        super().__init__(mod_link=mod_link, kid=kid)
+
+
+class EnumDef(AstNode):
+    """EnumDef node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: ArchRefChain,
+        body: SubNodeList[Name | Assignment],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
+    ) -> None:
+        """Initialize arch def node."""
+        self.doc = doc
+        self.target = target
+        self.body = body
+        self.decorators = decorators
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -363,14 +393,14 @@ class Ability(AstNode):
         is_async: bool,
         is_static: bool,
         is_abstract: bool,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
-        access: Optional[SubTag],
+        access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
         mod_link: Optional[Module],
         kid: list[AstNode],
-        arch_attached: Optional[ArchBlock] = None,
+        arch_attached: Optional[SubNodeList[ArchHas | Ability]] = None,
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize func arch node."""
         self.name_ref = name_ref
@@ -380,7 +410,7 @@ class Ability(AstNode):
         self.is_abstract = is_abstract
         self.doc = doc
         self.decorators = decorators
-
+        self.access = access
         self.signature = signature
         self.body = body
         self.arch_attached = arch_attached
@@ -401,18 +431,20 @@ class AbilityDef(AstNode):
 
     def __init__(
         self,
-        doc: Optional[Token],
         target: ArchRefChain,
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
         mod_link: Optional[Module],
         kid: list[AstNode],
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize ability def node."""
         self.doc = doc
         self.target = target
         self.signature = signature
         self.body = body
+        self.decorators = decorators
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -431,20 +463,6 @@ class EventSignature(AstNode):
         self.event = event
         self.arch_tag_info = arch_tag_info
         self.return_type = return_type
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class DottedNameList(AstNode):
-    """DottedNameList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        names: list[Token | SpecialVarRef | Name],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize name list node."""
-        self.names = names
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -473,8 +491,8 @@ class FuncSignature(AstNode):
 
     def __init__(
         self,
-        params: Optional["FuncParams"],
-        return_type: Optional["TypeSpec"],
+        params: Optional[FuncParams],
+        return_type: Optional[TypeSpec],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -485,7 +503,7 @@ class FuncSignature(AstNode):
 
 
 class FuncParams(AstNode):
-    """ArchBlock node type for Jac Ast."""
+    """Func params node type for Jac Ast."""
 
     def __init__(
         self,
@@ -518,83 +536,14 @@ class ParamVar(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class Enum(AstNode):
-    """Enum node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: Name,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
-        access: Optional[SubTag],
-        base_classes: SubNodeList[DottedNameList],
-        body: Optional["EnumBlock"],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize object arch node."""
-        self.name = name
-        self.doc = doc
-        self.decorators = decorators
-        self.base_classes = base_classes
-        self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class EnumDef(AstNode):
-    """EnumDef node type for Jac Ast."""
-
-    def __init__(
-        self,
-        doc: Optional[Token],
-        target: ArchRefChain,
-        body: EnumBlock,
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize arch def node."""
-        self.doc = doc
-        self.target = target
-        self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class EnumBlock(AstNode):
-    """EnumBlock node type for Jac Ast."""
-
-    def __init__(
-        self,
-        stmts: list["Name|Assignment"],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize enum block node."""
-        self.stmts = stmts
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class ArchBlock(AstNode):
-    """ArchBlock node type for Jac Ast."""
-
-    def __init__(
-        self,
-        members: list[ArchHas | Ability],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize arch block node."""
-        self.members = members
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
 class ArchHas(AstNode):
     """HasStmt node type for Jac Ast."""
 
     def __init__(
         self,
-        doc: Optional[Token],
+        doc: Optional[Constant],
         is_static: bool,
-        access: Optional[SubTag],
+        access: Optional[SubTag[Token]],
         vars: HasVarList,
         is_frozen: bool,
         mod_link: Optional[Module],
@@ -659,7 +608,7 @@ class TypeSpec(AstNode):
 
     def __init__(
         self,
-        spec_type: Token | DottedNameList,
+        spec_type: Token | SubNodeList[Name | SpecialVarRef],
         list_nest: TypeSpec,  # needed for lists
         dict_nest: TypeSpec,  # needed for dicts, uses list_nest as key
         null_ok: bool,
@@ -1138,12 +1087,12 @@ class Assignment(AstNode):
 
     def __init__(
         self,
-        is_static: bool,
         target: AtomType,
         value: ExprType,
-        mutable: bool,
         mod_link: Optional[Module],
         kid: list[AstNode],
+        is_static: bool = False,
+        mutable: bool = True,
     ) -> None:
         """Initialize assignment node."""
         self.is_static = is_static
@@ -1680,11 +1629,13 @@ ElementType = Union[
 
 ArchType = Union[
     Architype,
-    Enum,
     ArchDef,
+    Enum,
+    EnumDef,
 ]
 
 AtomType = Union[
+    Name,
     MultiString,
     ListVal,
     TupleVal,

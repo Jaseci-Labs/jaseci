@@ -26,18 +26,15 @@ import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
            | KW_IMPORT sub_name import_path SEMI
 
 include_stmt: KW_INCLUDE sub_name import_path SEMI
-
 import_path: DOT? DOT? esc_name ((DOT esc_name)+)?
-
-import_items: (import_items COMMA)? named_refs (KW_AS NAME)?
+import_items: (import_items COMMA)? named_ref (KW_AS NAME)?
 
 architype: decorators architype
           | enum
           | architype_def
           | architype_decl
 
-architype_decl: arch_type access_tag? NAME inherited_archs (member_block | SEMI)
-
+architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
 
 arch_type: KW_WALKER
@@ -46,25 +43,21 @@ arch_type: KW_WALKER
           | KW_NODE
 
 decorators: (DECOR_OP atom)+
-
-inherited_archs: sub_name_dotted*
-
-sub_name: COLON NAME
-
+inherited_archs: sub_name_dotted+
 sub_name_dotted: COLON dotted_name
+sub_name: COLON NAME
+dotted_name: (dotted_name DOT)? any_ref
 
-dotted_name: all_refs (DOT dotted_name)?
+any_ref: special_ref
+        | named_ref
+
+named_ref: global_ref
+           | esc_name
 
 esc_name: KWESC_NAME
          | NAME
 
-all_refs: special_refs
-        | named_refs
-
-named_refs: global_ref
-           | esc_name
-
-special_refs: INIT_OP
+special_ref: INIT_OP
             | ROOT_OP
             | SUPER_OP
             | SELF_OP
@@ -73,13 +66,10 @@ special_refs: INIT_OP
 enum: enum_def
      | enum_decl
 
-enum_decl: KW_ENUM access_tag? NAME inherited_archs (enum_block | SEMI)
-
+enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
-
 enum_block: LBRACE enum_stmt_list? RBRACE
-
-enum_stmt_list: enum_item (COMMA enum_stmt_list)?
+enum_stmt_list: (enum_stmt_list COMMA)? enum_item
 
 enum_item: NAME EQ expression
          | NAME
@@ -89,10 +79,13 @@ ability: decorators ability
         | KW_ASYNC ability_decl
         | ability_decl
 
-ability_decl: KW_STATIC? KW_CAN access_tag? all_refs (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_STATIC? KW_CAN access_tag? any_ref
+       (func_decl | event_clause) (code_block | SEMI)
+
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 
-abstract_ability: KW_STATIC? KW_CAN access_tag? all_refs (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref
+       (func_decl | event_clause) KW_ABSTRACT SEMI
 
 event_clause: KW_WITH type_spec? (KW_EXIT | KW_ENTRY) return_type_tag?
 
@@ -330,7 +323,7 @@ cmp_op: KW_ISN
       | EE
 
 atom: edge_op_ref
-    | all_refs
+    | any_ref
     | atomic_chain
     | LPAREN expression RPAREN
     | atom_collection
@@ -394,9 +387,9 @@ atomic_chain: atomic_call
             | atomic_chain_unsafe
             | atomic_chain_safe
 
-atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice | DOT_BKWD all_refs | DOT_FWD all_refs | DOT all_refs)
+atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice | DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
 
-atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice | DOT_BKWD all_refs | DOT_FWD all_refs | DOT all_refs)
+atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice | DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
 
 atomic_call: atom func_call_tail
 
@@ -426,7 +419,7 @@ edge_ref: EDGE_OP NAME
 walker_ref: WALKER_OP NAME
 object_ref: OBJECT_OP esc_name
 enum_ref: ENUM_OP NAME
-ability_ref: ABILITY_OP (special_refs | esc_name)
+ability_ref: ABILITY_OP (special_ref | esc_name)
 global_ref: GLOBAL_OP esc_name
 
 edge_op_ref: edge_any

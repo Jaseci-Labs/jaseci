@@ -324,7 +324,7 @@ class BluePygenPass(Pass):
         body: "ArchBlock",
         """
 
-    def exit_decorators(self, node: ast.Decorators) -> None:
+    def exit_decorators(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         calls: list["ExprType"],
@@ -404,7 +404,7 @@ class BluePygenPass(Pass):
         body: CodeBlock,
         """
 
-    def exit_arch_block(self, node: ast.ArchBlock) -> None:
+    def exit_arch_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         members: list["ArchHas | Ability"],
@@ -529,7 +529,7 @@ class BluePygenPass(Pass):
         """
         self.error("Event style abilities not supported in bootstrap Jac")
 
-    def exit_dotted_name_list(self, node: ast.DottedNameList) -> None:
+    def exit_dotted_name_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         names: list[all_refs],
@@ -619,7 +619,7 @@ class BluePygenPass(Pass):
         body: EnumBlock,
         """
 
-    def exit_enum_block(self, node: ast.EnumBlock) -> None:
+    def exit_enum_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         stmts: list['Name|Assignment'],

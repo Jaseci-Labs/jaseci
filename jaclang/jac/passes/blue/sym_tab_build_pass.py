@@ -297,13 +297,6 @@ class SymTabBuildPass(Pass):
         """
         self.pop_scope()
 
-    def enter_decorators(self, node: ast.Decorators) -> None:
-        """Sub objects.
-
-        calls: list[ExprType],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
@@ -383,13 +376,6 @@ class SymTabBuildPass(Pass):
         event: Token,
         arch_tag_info: Optional[TypeSpecList],
         return_type: Optional['TypeSpec'],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_dotted_name_list(self, node: ast.DottedNameList) -> None:
-        """Sub objects.
-
-        names: list[Token | SpecialVarRef | ArchRef | Name],
         """
         self.sync_node_to_scope(node)
 
@@ -487,14 +473,7 @@ class SymTabBuildPass(Pass):
         """
         self.pop_scope()
 
-    def enter_enum_block(self, node: ast.EnumBlock) -> None:
-        """Sub objects.
-
-        stmts: list['Name|Assignment'],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_arch_block(self, node: ast.ArchBlock) -> None:
+    def enter_arch_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         members: list['ArchHas | Ability'],
