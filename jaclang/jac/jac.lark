@@ -90,13 +90,13 @@ event_clause: KW_WITH type_specs? (KW_EXIT | KW_ENTRY) return_type_tag?
 
 func_decl: (LPAREN func_decl_param_list? RPAREN)? return_type_tag?
 
-func_decl_param_list: (func_decl_param_list COMMA)? param_var 
+func_decl_param_list: (func_decl_param_list COMMA)? param_var
 
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 
 member_block: LBRACE member_stmt_list? RBRACE
 
-member_stmt_list: (member_stmt_list)? member_stmt 
+member_stmt_list: (member_stmt_list)? member_stmt
 
 member_stmt: doc_tag? py_code_block
            | doc_tag? abstract_ability
@@ -106,7 +106,7 @@ member_stmt: doc_tag? py_code_block
 
 has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
 
-has_assign_list: (has_assign_list COMMA)? typed_has_clause 
+has_assign_list: (has_assign_list COMMA)? typed_has_clause
 
 typed_has_clause: esc_name type_tag (EQ expression)?
 

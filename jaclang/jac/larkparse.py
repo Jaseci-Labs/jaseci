@@ -1108,6 +1108,54 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def builtin_type(self, kid: list[ast.AstNode]) -> ast.Token:
+            """Grammar rule.
+
+            builtin_type: TYP_TYPE
+                        | TYP_ANY
+                        | TYP_BOOL
+                        | TYP_DICT
+                        | TYP_SET
+                        | TYP_TUPLE
+                        | TYP_LIST
+                        | TYP_FLOAT
+                        | TYP_INT
+                        | TYP_BYTES
+                        | TYP_STRING
+            """
+            if isinstance(kid[0], ast.Token):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def code_block(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.CodeBlockStmt]:
+            """Grammar rule.
+
+            code_block: LBRACE statement_list? RBRACE
+            """
+            if isinstance(kid[1], ast.SubNodeList):
+                return kid[1]
+            else:
+                return ast.SubNodeList[ast.CodeBlockStmt](
+                    items=[],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+
+        def statement_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.CodeBlockStmt]:
+            """Grammar rule.
+
+            statement_list: statement+
+            """
+            if isinstance(kid[0], ast.SubNodeList):
+                return kid[0]
+            else:
+                raise self.ice()
+
 
 # member_stmt: doc_tag? py_code_block
 #            | doc_tag? abstract_ability
