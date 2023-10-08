@@ -265,7 +265,7 @@ class ModulePath(AstNode):
 
     def __init__(
         self,
-        path: list[Name],
+        path: list[Token],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -278,15 +278,16 @@ class ModulePath(AstNode):
 class ModuleItems(AstNode):
     """ModuleItems node type for Jac Ast."""
 
-    def __init__(
-        self,
-        items: list[ModuleItem],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize module items node."""
-        self.items = items
-        super().__init__(mod_link=mod_link, kid=kid)
+
+#     def __init__(
+#         self,
+#         items: list[ModuleItem],
+#         mod_link: Optional[Module],
+#         kid: list[AstNode],
+#     ) -> None:
+#         """Initialize module items node."""
+#         self.items = items
+#         super().__init__(mod_link=mod_link, kid=kid)
 
 
 class ModuleItem(AstNode):
@@ -1448,7 +1449,7 @@ class IndexSlice(AstNode):
 
 
 class ArchRef(AstNode):
-    """GlobalRef node type for Jac Ast."""
+    """ArchRef node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1457,7 +1458,7 @@ class ArchRef(AstNode):
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
-        """Initialize global reference expression node."""
+        """Initialize architype reference expression node."""
         self.name_ref = name_ref
         self.arch = arch
         super().__init__(mod_link=mod_link, kid=kid)

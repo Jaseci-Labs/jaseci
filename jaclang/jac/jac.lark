@@ -29,7 +29,7 @@ include_stmt: KW_INCLUDE sub_name import_path SEMI
 
 import_path: DOT? DOT? esc_name ((DOT esc_name)+)?
 
-import_items: named_refs (KW_AS NAME)? (COMMA import_items)?
+import_items: (import_items COMMA)? named_refs (KW_AS NAME)?
 
 architype: decorator architype
           | enum
