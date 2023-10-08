@@ -95,7 +95,7 @@ class Module(AstNode):
         self,
         name: str,
         doc: Optional[Token],
-        body: list[AstNode],
+        body: list[ElementType],
         mod_path: str,
         rel_mod_path: str,
         is_imported: bool,
@@ -156,28 +156,24 @@ class Test(AstNode):
     def __init__(
         self,
         name: Name | Token,
-        doc: Optional[Token],
         body: CodeBlock,
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize test node."""
-        self.doc = doc
+        self.doc: Optional[Token] = None
         Test.TEST_COUNT += 1 if isinstance(name, Token) else 0
         self.name: Name = (  # for auto generated test names
             name
             if isinstance(name, Name)
             else Name(
                 name="NAME",
-                value=f"test_{Test.TEST_COUNT}",
+                value=f"test_t{Test.TEST_COUNT}",
                 col_start=name.col_start,
                 col_end=name.col_end,
-                tok_range=name.tok_range,
-                already_declared=False,
-                parent=name.parent,
-                mod_link=name.mod_link,
+                line=name.line,
+                mod_link=mod_link,
                 kid=name.kid,
-                sym_tab=name.sym_tab,
             )
         )
         # kid[0] = self.name  # Index is 0 since Doc string is inserted after init
@@ -1615,12 +1611,10 @@ class Name(Token):
         line: int,
         col_start: int,
         col_end: int,
-        already_declared: bool,
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize name."""
-        self.already_declared = already_declared
         super().__init__(
             name=name,
             value=value,

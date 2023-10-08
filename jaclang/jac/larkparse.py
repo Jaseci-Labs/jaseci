@@ -86,18 +86,24 @@ class JacParser(Pass):
             """
             doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
             body = kid[1:] if doc else kid
-            mod = ast.Module(
-                name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
-                doc=doc,
-                body=body,
-                mod_path=self.parse_ref.mod_path,
-                rel_mod_path=self.parse_ref.rel_mod_path,
-                is_imported=False,
-                mod_link=None,
-                kid=kid,
-            )
-            self.mod_link = mod
-            return mod
+            valid_body: list[ast.ElementType] = [
+                i for i in body if isinstance(i, ast.ElementType)
+            ]
+            if len(valid_body) == len(body):
+                mod = ast.Module(
+                    name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
+                    doc=doc,
+                    body=valid_body,
+                    mod_path=self.parse_ref.mod_path,
+                    rel_mod_path=self.parse_ref.rel_mod_path,
+                    is_imported=False,
+                    mod_link=None,
+                    kid=kid,
+                )
+                self.mod_link = mod
+                return mod
+            else:
+                raise self.ice()
 
         def element_with_doc(self, kid: list[ast.AstNode]) -> ast.ElementType:
             """
@@ -154,6 +160,40 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Token):
                 return ast.AccessTag(
                     access=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def test(self, kid: list[ast.AstNode]) -> ast.Test:
+            """
+            test: KW_TEST NAME? code_block
+            """
+            name = kid[1] if isinstance(kid[1], ast.Name) else kid[0]
+            codeblock = kid[2] if name else kid[1]
+            if isinstance(codeblock, ast.CodeBlock) and isinstance(
+                name, (ast.Name, ast.Token)
+            ):
+                return ast.Test(
+                    name=name,
+                    body=codeblock,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def mod_code(self, kid: list[ast.AstNode]) -> ast.ModuleCode:
+            """
+            mod_code: KW_WITH KW_ENTRY sub_name? code_block
+            """
+            name = kid[2] if isinstance(kid[2], ast.Name) else None
+            codeblock = kid[3] if name else kid[2]
+            if isinstance(codeblock, ast.CodeBlock):
+                return ast.ModuleCode(
+                    name=name,
+                    body=codeblock,
                     mod_link=self.mod_link,
                     kid=kid,
                 )
