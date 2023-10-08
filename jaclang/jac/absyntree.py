@@ -173,7 +173,7 @@ class Test(AstNode):
     def __init__(
         self,
         name: Name | Token,
-        body: CodeBlock,
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
@@ -205,7 +205,7 @@ class ModuleCode(AstNode):
     def __init__(
         self,
         name: Optional[SubTag[Name]],
-        body: CodeBlock,
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
@@ -388,14 +388,14 @@ class Ability(AstNode):
 
     def __init__(
         self,
-        name_ref: Name | SpecialVarRef,
+        name_ref: NameType,
         is_func: bool,
         is_async: bool,
         is_static: bool,
         is_abstract: bool,
         access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
-        body: Optional[CodeBlock],
+        body: Optional[SubNodeList[StmtType]],
         mod_link: Optional[Module],
         kid: list[AstNode],
         arch_attached: Optional[SubNodeList[ArchHas | Ability]] = None,
@@ -433,7 +433,7 @@ class AbilityDef(AstNode):
         self,
         target: ArchRefChain,
         signature: FuncSignature | EventSignature,
-        body: CodeBlock,
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
@@ -623,27 +623,13 @@ class TypeSpec(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class CodeBlock(AstNode):
-    """CodeBlock node type for Jac Ast."""
-
-    def __init__(
-        self,
-        stmts: list[StmtType],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize code block node."""
-        self.stmts = stmts
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
 class TypedCtxBlock(AstNode):
     """TypedCtxBlock node type for Jac Ast."""
 
     def __init__(
         self,
         type_ctx: TypeSpecList,
-        body: CodeBlock,
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -659,7 +645,7 @@ class IfStmt(AstNode):
     def __init__(
         self,
         condition: ExprType,
-        body: "CodeBlock",
+        body: SubNodeList[StmtType],
         elseifs: Optional["ElseIfs"],
         else_body: Optional["ElseStmt"],
         mod_link: Optional[Module],
@@ -692,7 +678,7 @@ class ElseStmt(AstNode):
 
     def __init__(
         self,
-        body: "CodeBlock",
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -706,7 +692,7 @@ class TryStmt(AstNode):
 
     def __init__(
         self,
-        body: "CodeBlock",
+        body: SubNodeList[StmtType],
         excepts: Optional["ExceptList"],
         finally_body: Optional["FinallyStmt"],
         mod_link: Optional[Module],
@@ -740,7 +726,7 @@ class Except(AstNode):
         self,
         ex_type: ExprType,
         name: Optional[Token],
-        body: "CodeBlock",
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -756,7 +742,7 @@ class FinallyStmt(AstNode):
 
     def __init__(
         self,
-        body: "CodeBlock",
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -773,7 +759,7 @@ class IterForStmt(AstNode):
         iter: Assignment,
         condition: ExprType,
         count_by: ExprType,
-        body: CodeBlock,
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -792,7 +778,7 @@ class InForStmt(AstNode):
         self,
         name_list: NameList,
         collection: ExprType,
-        body: CodeBlock,
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -823,7 +809,7 @@ class WhileStmt(AstNode):
     def __init__(
         self,
         condition: ExprType,
-        body: "CodeBlock",
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -839,7 +825,7 @@ class WithStmt(AstNode):
     def __init__(
         self,
         exprs: "ExprAsItemList",
-        body: "CodeBlock",
+        body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -1632,6 +1618,11 @@ ArchType = Union[
     ArchDef,
     Enum,
     EnumDef,
+]
+
+NameType = Union[
+    Name,
+    SpecialVarRef,
 ]
 
 AtomType = Union[

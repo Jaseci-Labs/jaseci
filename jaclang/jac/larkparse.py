@@ -176,7 +176,7 @@ class JacParser(Pass):
             """
             name = kid[1] if isinstance(kid[1], ast.Name) else kid[0]
             codeblock = kid[2] if name else kid[1]
-            if isinstance(codeblock, ast.CodeBlock) and isinstance(
+            if isinstance(codeblock, ast.SubNodeList) and isinstance(
                 name, (ast.Name, ast.Token)
             ):
                 return ast.Test(
@@ -195,7 +195,7 @@ class JacParser(Pass):
             """
             name = kid[2] if isinstance(kid[2], ast.SubTag) else None
             codeblock = kid[3] if name else kid[2]
-            if isinstance(codeblock, ast.CodeBlock):
+            if isinstance(codeblock, ast.SubNodeList):
                 return ast.ModuleCode(
                     name=name,
                     body=codeblock,
@@ -710,30 +710,82 @@ class JacParser(Pass):
 
             ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
             """
-            is_static = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_STATIC
-            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
-            name = kid[2] if access else kid[1]
-            ref = kid[3] if access else kid[2]
-            func = kid[4] if access else kid[3]
-            body = (
-                kid[5]
-                if access and isinstance(kid[5], ast.CodeBlock)
-                else kid[4]
-                if isinstance(kid[4], ast.CodeBlock)
-                else None
-            )
-            if (
-                isinstance(name, ast.Name)
-                and isinstance(ref, ast.Name | ast.SpecialVarRef)
-                and isinstance(func, ast.FuncDecl)
+            chomp = [*kid]
+            is_static = isinstance(chomp[0], ast.Token)
+            chomp = chomp[1:] if is_static else chomp
+            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            chomp = chomp[1:] if access else chomp
+            name = chomp[0]
+            chomp = chomp[1:]
+            is_func = isinstance(chomp[0], ast.FuncSignature)
+            signature = chomp[0]
+            chomp = chomp[1:]
+            body = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
+            if isinstance(name, ast.NameType) and isinstance(
+                signature, (ast.FuncSignature, ast.EventSignature)
             ):
                 return ast.Ability(
-                    name=name,
-                    ref=ref,
-                    access=access,
-                    func=func,
-                    body=body,
+                    name_ref=name,
+                    is_func=is_func,
+                    is_async=False,
                     is_static=is_static,
+                    is_abstract=False,
+                    access=access,
+                    signature=signature,
+                    body=body,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
+            """Grammar rule.
+
+            ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
+            """
+            if (
+                isinstance(kid[0], ast.ArchRefChain)
+                and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
+                and isinstance(kid[2], ast.SubNodeList)
+            ):
+                return ast.AbilityDef(
+                    target=kid[0],
+                    signature=kid[1],
+                    body=kid[2],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def abstract_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
+            """Grammar rule.
+
+            abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+            """
+            chomp = [*kid]
+            is_static = isinstance(chomp[0], ast.Token)
+            chomp = chomp[1:] if is_static else chomp
+            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            chomp = chomp[1:] if access else chomp
+            name = chomp[0]
+            chomp = chomp[1:]
+            is_func = isinstance(chomp[0], ast.FuncSignature)
+            signature = chomp[0]
+            chomp = chomp[1:]
+            if isinstance(name, ast.NameType) and isinstance(
+                signature, (ast.FuncSignature, ast.EventSignature)
+            ):
+                return ast.Ability(
+                    name_ref=name,
+                    is_func=is_func,
+                    is_async=False,
+                    is_static=is_static,
+                    is_abstract=True,
+                    access=access,
+                    signature=signature,
+                    body=None,
                     mod_link=self.mod_link,
                     kid=kid,
                 )
