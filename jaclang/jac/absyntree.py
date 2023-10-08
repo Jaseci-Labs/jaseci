@@ -454,8 +454,8 @@ class EventSignature(AstNode):
     def __init__(
         self,
         event: Token,
-        arch_tag_info: Optional[TypeSpecList],
-        return_type: Optional["TypeSpec"],
+        arch_tag_info: Optional[SubNodeList[TypeSpec]],
+        return_type: Optional[TypeSpec],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -577,7 +577,7 @@ class HasVar(AstNode):
     def __init__(
         self,
         name: Name,
-        type_tag: "TypeSpec",
+        type_tag: TypeSpec,
         value: Optional[ExprType],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -586,20 +586,6 @@ class HasVar(AstNode):
         self.name = name
         self.type_tag = type_tag
         self.value = value
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class TypeSpecList(AstNode):
-    """TypeSpecList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        types: list[TypeSpec],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize type list node."""
-        self.types = types
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -628,7 +614,7 @@ class TypedCtxBlock(AstNode):
 
     def __init__(
         self,
-        type_ctx: TypeSpecList,
+        type_ctx: SubNodeList[TypeSpec],
         body: SubNodeList[StmtType],
         mod_link: Optional[Module],
         kid: list[AstNode],

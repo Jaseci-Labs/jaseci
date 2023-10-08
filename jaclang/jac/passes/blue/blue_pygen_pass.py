@@ -630,7 +630,7 @@ class BluePygenPass(Pass):
             else:
                 self.emit_ln(node, i.meta["py_code"])
 
-    def exit_code_block(self, node: ast.CodeBlock) -> None:
+    def exit_code_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         stmts: list["StmtType"],

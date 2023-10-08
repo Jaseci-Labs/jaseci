@@ -792,6 +792,25 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def event_clause(self, kid: list[ast.AstNode]) -> ast.EventSignature:
+            """Grammar rule.
+
+            event_clause: KW_WITH type_specs? (KW_EXIT | KW_ENTRY) return_type_tag?
+            """
+            type_specs = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
+            return_spec = kid[-1] if isinstance(kid[-1], ast.TypeSpec) else None
+            event = kid[2] if type_specs else kid[1]
+            if isinstance(event, ast.Token) and isinstance(return_spec, ast.TypeSpec):
+                return ast.EventSignature(
+                    event=event,
+                    arch_tag_info=type_specs,
+                    return_type=return_spec,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
 
 # enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
 

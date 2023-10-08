@@ -526,13 +526,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_code_block(self, node: ast.CodeBlock) -> None:
-        """Sub objects.
-
-        stmts: list[StmtType],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
 

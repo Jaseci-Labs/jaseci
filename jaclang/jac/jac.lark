@@ -87,7 +87,7 @@ ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref
        (func_decl | event_clause) KW_ABSTRACT SEMI
 
-event_clause: KW_WITH type_spec? (KW_EXIT | KW_ENTRY) return_type_tag?
+event_clause: KW_WITH type_specs? (KW_EXIT | KW_ENTRY) return_type_tag?
 
 func_decl: (LPAREN func_decl_param_list? RPAREN)? return_type_tag?
 
@@ -111,11 +111,11 @@ has_assign_clause: typed_has_clause (COMMA has_assign_clause)?
 
 typed_has_clause: esc_name type_tag (EQ expression)?
 
-type_tag: COLON type_spec
+type_tag: COLON type_specs
 
-return_type_tag: RETURN_HINT? type_spec
+return_type_tag: RETURN_HINT? type_specs
 
-type_spec: single_type (BW_OR type_spec | NULL_OK)?
+type_specs: single_type (BW_OR type_specs | NULL_OK)?
 
 single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
            | TYP_SET LSQUARE single_type RSQUARE
@@ -164,7 +164,7 @@ statement: py_code_block
           | doc_tag? architype
           | import_stmt
 
-typed_ctx_block: RETURN_HINT type_spec code_block
+typed_ctx_block: RETURN_HINT type_specs code_block
 
 if_stmt: KW_IF expression code_block (elif_list? else_stmt? | elif_list?)
 

@@ -115,7 +115,7 @@ class JacFormatPass(Pass):
         self.ir = node
         self.ir.meta["jac_code"] = self.ir.meta["jac_code"].rstrip()
 
-    def exit_code_block(self, node: ast.CodeBlock) -> None:
+    def exit_code_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         stmts: list["StmtType"],
