@@ -88,8 +88,8 @@ class JacParser(Pass):
             """
             doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
             body = kid[1:] if doc else kid
-            valid_body: list[ast.ElementType] = [
-                i for i in body if isinstance(i, ast.ElementType)
+            valid_body: list[ast.ElementStmt] = [
+                i for i in body if isinstance(i, ast.ElementStmt)
             ]
             if len(valid_body) == len(body):
                 mod = ast.Module(
@@ -107,19 +107,19 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def element_with_doc(self, kid: list[ast.AstNode]) -> ast.ElementType:
+        def element_with_doc(self, kid: list[ast.AstNode]) -> ast.ElementStmt:
             """Grammar rule.
 
             element_with_doc: doc_tag element
             """
-            if isinstance(kid[1], ast.ElementType) and isinstance(kid[0], ast.Constant):
+            if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.Constant):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
                 return kid[1]
             else:
                 raise self.ice()
 
-        def element(self, kid: list[ast.AstNode]) -> ast.ElementType:
+        def element(self, kid: list[ast.AstNode]) -> ast.ElementStmt:
             """Grammar rule.
 
             element: py_code_block
@@ -131,7 +131,7 @@ class JacParser(Pass):
                 | test
                 | global_var
             """
-            if isinstance(kid[0], ast.ElementType):
+            if isinstance(kid[0], ast.ElementStmt):
                 return kid[0]
             else:
                 raise self.ice()
@@ -401,7 +401,7 @@ class JacParser(Pass):
             architype_def: abil_to_arch_chain member_block
             """
             if isinstance(kid[0], ast.ArchRefChain) and isinstance(
-                kid[1], ast.ArchBlock
+                kid[1], ast.SubNodeList
             ):
                 return ast.ArchDef(
                     target=kid[0],
@@ -442,14 +442,14 @@ class JacParser(Pass):
 
         def inherited_archs(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.SubNodeList[ast.Name | ast.SpecialVarRef]]:
+        ) -> ast.SubNodeList[ast.SubNodeList[ast.NameType]]:
             """Grammar rule.
 
             inherited_archs: sub_name_dotted+
             """
             valid_inh = [i for i in kid if isinstance(i, ast.SubNodeList)]
             if len(valid_inh) == len(kid):
-                return ast.SubNodeList[ast.SubNodeList[ast.Name | ast.SpecialVarRef]](
+                return ast.SubNodeList[ast.SubNodeList[ast.NameType]](
                     items=valid_inh,
                     mod_link=self.mod_link,
                     kid=kid,
@@ -487,9 +487,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def dotted_name(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.Name | ast.SpecialVarRef]:
+        def dotted_name(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.NameType]:
             """Grammar rule.
 
             dotted_name: (dotted_name DOT)? all_refs
@@ -508,7 +506,7 @@ class JacParser(Pass):
                 i for i in new_kid if isinstance(i, (ast.Name, ast.SpecialVarRef))
             ]
             if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return ast.SubNodeList[ast.Name | ast.SpecialVarRef](
+                return ast.SubNodeList[ast.NameType](
                     items=valid_kid,
                     mod_link=self.mod_link,
                     kid=kid,
@@ -516,13 +514,13 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def any_ref(self, kid: list[ast.AstNode]) -> ast.Name | ast.SpecialVarRef:
+        def any_ref(self, kid: list[ast.AstNode]) -> ast.NameType:
             """Grammar rule.
 
             any_ref: special_ref
                     | named_ref
             """
-            if isinstance(kid[0], ast.Name | ast.SpecialVarRef):
+            if isinstance(kid[0], ast.NameType):
                 return kid[0]
             else:
                 raise self.ice()
@@ -624,7 +622,7 @@ class JacParser(Pass):
 
         def enum_block(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.Name | ast.Assignment]:
+        ) -> ast.SubNodeList[ast.EnumBlockStmt]:
             """Grammar rule.
 
             enum_block: LBRACE enum_stmt_list? RBRACE
@@ -632,7 +630,7 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.SubNodeList):
                 return kid[1]
             else:
-                return ast.SubNodeList[ast.Name | ast.Assignment](
+                return ast.SubNodeList[ast.EnumBlockStmt](
                     items=[],
                     mod_link=self.mod_link,
                     kid=kid,
@@ -640,7 +638,7 @@ class JacParser(Pass):
 
         def enum_stmt_list(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.Name | ast.Assignment]:
+        ) -> ast.SubNodeList[ast.EnumBlockStmt]:
             """Grammar rule.
 
             enum_stmt_list: (enum_stmt_list COMMA)? enum_item
@@ -655,11 +653,9 @@ class JacParser(Pass):
             else:
                 name = kid[0]
             new_kid = [name, comma, *consume.kid] if consume else [name]
-            valid_kid = [
-                i for i in new_kid if isinstance(i, (ast.Name, ast.Assignment))
-            ]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.EnumBlockStmt)]
             if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return ast.SubNodeList[ast.Name | ast.Assignment](
+                return ast.SubNodeList[ast.EnumBlockStmt](
                     items=valid_kid,
                     mod_link=self.mod_link,
                     kid=kid,
@@ -667,7 +663,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def enum_item(self, kid: list[ast.AstNode]) -> ast.Name | ast.Assignment:
+        def enum_item(self, kid: list[ast.AstNode]) -> ast.EnumBlockStmt:
             """Grammar rule.
 
             enum_item: NAME EQ expression
@@ -800,7 +796,9 @@ class JacParser(Pass):
             type_specs = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
             return_spec = kid[-1] if isinstance(kid[-1], ast.TypeSpec) else None
             event = kid[2] if type_specs else kid[1]
-            if isinstance(event, ast.Token) and isinstance(return_spec, ast.TypeSpec):
+            if isinstance(event, ast.Token) and isinstance(
+                return_spec, ast.SubNodeList
+            ):
                 return ast.EventSignature(
                     event=event,
                     arch_tag_info=type_specs,
@@ -811,57 +809,323 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
+            """Grammar rule.
 
-# enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
+            func_decl: (LPAREN func_decl_param_list? RPAREN)? retur_type_tag?
+            """
+            params = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
+            return_spec = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
+            if isinstance(params, ast.SubNodeList) and isinstance(
+                return_spec, ast.SubNodeList
+            ):
+                return ast.FuncSignature(
+                    params=params,
+                    return_type=return_spec,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# enum_def: arch_to_enum_chain enum_block
+        def func_decl_param_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ParamVar]:
+            """Grammar rule.
 
-# enum_block: LBRACE enum_stmt_list? RBRACE
+            func_decl_param_list: (func_decl_param_list COMMA)? param_var
+            """
+            consume = None
+            param = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                param = kid[2]
+            else:
+                param = kid[0]
+            new_kid = [param, comma, *consume.kid] if consume else [param]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.ParamVar)]
+            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
+                return ast.SubNodeList[ast.ParamVar](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# enum_stmt_list: (enum_stmt_list COMMA)? enum_item
+        def param_var(self, kid: list[ast.AstNode]) -> ast.ParamVar:
+            """Grammar rule.
 
-# enum_item: NAME EQ expression
-#          | NAME
+            param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
+            """
+            star = kid[0] if isinstance(kid[0], ast.Token) else None
+            name = kid[1] if star else kid[0]
+            type_tag = kid[2] if star else kid[1]
+            value = kid[-1] if isinstance(kid[-1], ast.ExprType) else None
+            if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubNodeList):
+                return ast.ParamVar(
+                    name=name,
+                    type_tag=type_tag,
+                    value=value,
+                    unpack=star,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# ability: decorators ability
-#         | ability_def
-#         | KW_ASYNC ability_decl
-#         | ability_decl
+        def member_block(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ArchBlockStmt]:
+            """Grammar rule.
 
-# ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
-# ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
+            member_block: LBRACE member_stmt_list? RBRACE
+            """
+            if isinstance(kid[1], ast.SubNodeList):
+                return kid[1]
+            else:
+                return ast.SubNodeList[ast.ArchBlockStmt](
+                    items=[],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
 
-# abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+        def member_stmt_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ArchBlockStmt]:
+            """Grammar rule.
 
-# event_clause: KW_WITH type_spec? (KW_EXIT | KW_ENTRY) return_type_tag?
+            member_stmt_list: (member_stmt_list)? member_stmt
+            """
+            consume = None
+            stmt = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                stmt = kid[1]
+            else:
+                stmt = kid[0]
+            new_kid = [stmt, *consume.kid] if consume else [stmt]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.ArchBlockStmt)]
+            if len(valid_kid) == len(new_kid):
+                return ast.SubNodeList[ast.ArchBlockStmt](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# func_decl: (LPAREN func_decl_param_list? RPAREN)? return_type_tag?
+        def member_stmt(self, kid: list[ast.AstNode]) -> ast.ArchBlockStmt:
+            """Grammar rule.
 
-# func_decl_param_list: param_var (COMMA func_decl_param_list)?
+            member_stmt: doc_tag? py_code_block
+                        | doc_tag? abstract_ability
+                        | doc_tag? ability
+                        | doc_tag? architype
+                        | doc_tag? has_stmt
+            """
+            if isinstance(kid[1], ast.ArchBlockStmt) and isinstance(
+                kid[0], ast.Constant
+            ):
+                kid[1].doc = kid[0]
+                kid[1].add_kids_left([kid[0]])
+                return kid[1]
+            elif isinstance(kid[0], ast.ArchBlockStmt):
+                return kid[0]
+            else:
+                raise self.ice()
 
-# param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
+        def has_stmt(self, kid: list[ast.AstNode]) -> ast.ArchHas:
+            """Grammar rule.
 
-# member_block: LBRACE member_stmt_list? RBRACE
+            has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
+            """
+            chomp = [*kid]
+            is_static = (
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            )
+            chomp = chomp[1:] if is_static else chomp
+            is_freeze = (
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_FREEZE
+            )
+            chomp = chomp[1:]
+            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            chomp = chomp[1:] if access else chomp
+            assign = chomp[0]
+            if isinstance(assign, ast.SubNodeList):
+                return ast.ArchHas(
+                    vars=assign,
+                    is_static=is_static,
+                    is_frozen=is_freeze,
+                    access=access,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# member_stmt_list: member_stmt (member_stmt_list)?
+        def has_assign_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.HasVar]:
+            """Grammar rule.
 
-# member_stmt: py_code_block
+            has_assign_list: (has_assign_list COMMA)? typed_has_clause
+            """
+            consume = None
+            assign = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                assign = kid[2]
+            else:
+                assign = kid[0]
+            new_kid = [assign, comma, *consume.kid] if consume else [assign]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
+            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
+                return ast.SubNodeList[ast.HasVar](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def typed_has_clause(self, kid: list[ast.AstNode]) -> ast.HasVar:
+            """Grammar rule.
+
+            typed_has_clause: esc_name type_tag (EQ expression)?
+            """
+            name = kid[0]
+            type_tag = kid[1]
+            value = kid[-1] if isinstance(kid[-1], ast.ExprType) else None
+            if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
+                return ast.HasVar(
+                    name=name,
+                    type_tag=type_tag,
+                    value=value,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def type_tag(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubTag[ast.SubNodeList[ast.TypeSpec]]:
+            """Grammar rule.
+
+            type_tag: COLON type_specs
+            """
+            if isinstance(kid[1], ast.SubNodeList):
+                return ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
+                    tag=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def return_type_tag(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubTag[ast.SubNodeList[ast.TypeSpec]]:
+            """Grammar rule.
+
+            return_type_tag: RETURN_HINT type_specs
+            """
+            if isinstance(kid[1], ast.SubNodeList):
+                return ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
+                    tag=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def type_specs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.TypeSpec]:
+            """Grammar rule.
+
+            type_specs: (type_specs BW_OR)? single_type NULL_OK?
+            """
+            consume = None
+            spec = None
+            pipe = None
+            null_ok = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                pipe = kid[1]
+                spec = kid[2]
+            else:
+                spec = kid[0]
+            if isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.NULL_OK:
+                null_ok = kid[-1]
+            new_kid = [*consume.kid, pipe, spec] if consume else [spec]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.TypeSpec)]
+            if null_ok:
+                valid_kid[-1].null_ok = True
+                valid_kid[-1].add_kids_right([null_ok])
+            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
+                return ast.SubNodeList[ast.TypeSpec](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def single_type(self, kid: list[ast.AstNode]) -> ast.TypeSpec:
+            """Grammar rule.
+
+            single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
+                        | TYP_SET LSQUARE single_type RSQUARE
+                        | TYP_TUPLE LSQUARE single_type RSQUARE
+                        | TYP_LIST LSQUARE single_type RSQUARE
+                        | dotted_name
+                        | NULL
+                        | builtin_type
+            """
+            spec_type = kid[0]
+            list_nest = None
+            dict_nest = None
+            if len(kid) > 1:
+                list_nest = kid[2]
+            if len(kid) > 4:
+                dict_nest = kid[4]
+            if (
+                isinstance(spec_type, (ast.Token, ast.SubNodeList))
+                and (not list_nest or isinstance(list_nest, ast.TypeSpec))
+                and (not dict_nest or isinstance(dict_nest, ast.TypeSpec))
+            ):
+                return ast.TypeSpec(
+                    spec_type=spec_type,
+                    list_nest=list_nest,
+                    dict_nest=dict_nest,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+
+# member_stmt: doc_tag? py_code_block
 #            | doc_tag? abstract_ability
 #            | doc_tag? ability
 #            | doc_tag? architype
 #            | doc_tag? has_stmt
 
-# has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_clause SEMI
+# has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
 
-# has_assign_clause: typed_has_clause (COMMA has_assign_clause)?
+# has_assign_list: (has_assign_list COMMA)? typed_has_clause
 
 # typed_has_clause: esc_name type_tag (EQ expression)?
 
-# type_tag: COLON type_spec
+# type_tag: COLON type_specs
 
-# return_type_tag: RETURN_HINT? type_spec
+# return_type_tag: RETURN_HINT type_specs
 
-# type_spec: single_type (BW_OR type_spec | NULL_OK)?
+# type_specs: (type_specs BW_OR)? single_type NULL_OK?
 
 # single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
 #            | TYP_SET LSQUARE single_type RSQUARE
@@ -910,7 +1174,7 @@ class JacParser(Pass):
 #           | doc_tag? architype
 #           | import_stmt
 
-# typed_ctx_block: RETURN_HINT type_spec code_block
+# typed_ctx_block: RETURN_HINT type_specs code_block
 
 # if_stmt: KW_IF expression code_block (elif_list? else_stmt? | elif_list?)
 
@@ -1133,11 +1397,9 @@ class JacParser(Pass):
 #             | atomic_chain_unsafe
 #             | atomic_chain_safe
 
-# atomic_chain_unsafe: atom (filter_compr | edge_op_ref
-# | index_slice | DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
+# atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice | DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
 
-# atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice |
-# DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
+# atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice | DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
 
 # atomic_call: atom func_call_tail
 

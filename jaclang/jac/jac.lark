@@ -69,53 +69,52 @@ enum: enum_def
 enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
 enum_block: LBRACE enum_stmt_list? RBRACE
-enum_stmt_list: (enum_stmt_list COMMA)? enum_item
+enum_stmt_list: (enum_stmt_list COMMA)? enum_stmt
 
-enum_item: NAME EQ expression
+enum_stmt: NAME EQ expression
          | NAME
+         | py_code_block
 
 ability: decorators ability
         | ability_def
         | KW_ASYNC ability_decl
         | ability_decl
 
-ability_decl: KW_STATIC? KW_CAN access_tag? any_ref
-       (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
 
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 
-abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref
-       (func_decl | event_clause) KW_ABSTRACT SEMI
+abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
 
 event_clause: KW_WITH type_specs? (KW_EXIT | KW_ENTRY) return_type_tag?
 
 func_decl: (LPAREN func_decl_param_list? RPAREN)? return_type_tag?
 
-func_decl_param_list: param_var (COMMA func_decl_param_list)?
+func_decl_param_list: (func_decl_param_list COMMA)? param_var 
 
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 
 member_block: LBRACE member_stmt_list? RBRACE
 
-member_stmt_list: member_stmt (member_stmt_list)?
+member_stmt_list: (member_stmt_list)? member_stmt 
 
-member_stmt: py_code_block
+member_stmt: doc_tag? py_code_block
            | doc_tag? abstract_ability
            | doc_tag? ability
            | doc_tag? architype
            | doc_tag? has_stmt
 
-has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_clause SEMI
+has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
 
-has_assign_clause: typed_has_clause (COMMA has_assign_clause)?
+has_assign_list: (has_assign_list COMMA)? typed_has_clause 
 
 typed_has_clause: esc_name type_tag (EQ expression)?
 
 type_tag: COLON type_specs
 
-return_type_tag: RETURN_HINT? type_specs
+return_type_tag: RETURN_HINT type_specs
 
-type_specs: single_type (BW_OR type_specs | NULL_OK)?
+type_specs: (type_specs BW_OR)? single_type NULL_OK?
 
 single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
            | TYP_SET LSQUARE single_type RSQUARE
