@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import pprint
-from typing import Optional, Union
+from typing import Generic, Optional, TypeVar, Union
 
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.symtable import SymbolTable
+
+T = TypeVar("T")
 
 
 class AstNode:
@@ -120,31 +122,46 @@ class GlobalVars(AstNode):
 
     def __init__(
         self,
-        access: Optional[AccessTag],
-        assignments: list[Assignment],
+        access: Optional[SubTag],
+        assignments: SubNodeList[Assignment],
         is_frozen: bool,
         mod_link: Optional[Module],
         kid: list[AstNode],
+        doc: Optional[Token] = None,
     ) -> None:
         """Initialize global var node."""
-        self.doc: Optional[Constant] = None
+        self.doc = doc
         self.access = access
         self.assignments = assignments
         self.is_frozen = is_frozen
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class AccessTag(AstNode):
-    """AccessTag node type for Jac Ast."""
+class SubTag(AstNode):
+    """SubTag node type for Jac Ast."""
 
     def __init__(
         self,
-        access: Token,
+        tag: Token,
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
-        """Initialize access tag node."""
-        self.access = access
+        """Initialize tag node."""
+        self.tag = tag
+        super().__init__(mod_link=mod_link, kid=kid)
+
+
+class SubNodeList(AstNode, Generic[T]):
+    """SubNodeList node type for Jac Ast."""
+
+    def __init__(
+        self,
+        items: list[T],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize sub node list node."""
+        self.items = items
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -159,9 +176,10 @@ class Test(AstNode):
         body: CodeBlock,
         mod_link: Optional[Module],
         kid: list[AstNode],
+        doc: Optional[Token] = None,
     ) -> None:
         """Initialize test node."""
-        self.doc: Optional[Token] = None
+        self.doc = doc
         Test.TEST_COUNT += 1 if isinstance(name, Token) else 0
         self.name: Name = (  # for auto generated test names
             name
@@ -186,11 +204,11 @@ class ModuleCode(AstNode):
 
     def __init__(
         self,
-        doc: Optional[Token],
-        name: Optional[Name],
+        name: Optional[SubTag],
         body: CodeBlock,
         mod_link: Optional[Module],
         kid: list[AstNode],
+        doc: Optional[Token] = None,
     ) -> None:
         """Initialize test node."""
         self.doc = doc
@@ -204,16 +222,15 @@ class PyInlineCode(AstNode):
 
     def __init__(
         self,
-        doc: Optional[Constant],
         code: Token,
         mod_link: Optional[Module],
         kid: list[AstNode],
-        tok_range: tuple[Token, Token],
+        doc: Optional[Constant] = None,
     ) -> None:
         """Initialize inline python code node."""
         self.doc = doc
         self.code = code
-        super().__init__(mod_link=mod_link, kid=kid, tok_range=tok_range)
+        super().__init__(mod_link=mod_link, kid=kid)
 
 
 class Import(AstNode):
@@ -221,14 +238,14 @@ class Import(AstNode):
 
     def __init__(
         self,
-        doc: Optional[Constant],
-        lang: Name,
+        lang: SubTag,
         path: ModulePath,
         alias: Optional[Name],
         items: Optional[ModuleItems],
         is_absorb: bool,  # For includes
         mod_link: Optional[Module],
         kid: list[AstNode],
+        doc: Optional[Constant] = None,
         sub_module: Optional["Module"] = None,
     ) -> None:
         """Initialize import node."""
@@ -299,7 +316,7 @@ class Architype(AstNode):
         arch_type: Token,
         doc: Optional[Token],
         decorators: Optional[Decorators],
-        access: Optional[AccessTag],
+        access: Optional[SubTag],
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         mod_link: Optional[Module],
@@ -373,7 +390,7 @@ class Ability(AstNode):
         is_abstract: bool,
         doc: Optional[Token],
         decorators: Optional[Decorators],
-        access: Optional[AccessTag],
+        access: Optional[SubTag],
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
         mod_link: Optional[Module],
@@ -534,7 +551,7 @@ class Enum(AstNode):
         name: Name,
         doc: Optional[Token],
         decorators: Optional[Decorators],
-        access: Optional[AccessTag],
+        access: Optional[SubTag],
         base_classes: "BaseClasses",
         body: Optional["EnumBlock"],
         mod_link: Optional[Module],
@@ -602,7 +619,7 @@ class ArchHas(AstNode):
         self,
         doc: Optional[Token],
         is_static: bool,
-        access: Optional[AccessTag],
+        access: Optional[SubTag],
         vars: HasVarList,
         is_frozen: bool,
         mod_link: Optional[Module],
@@ -1272,7 +1289,7 @@ class TupleVal(AstNode):
         self,
         first_expr: Optional[ExprType],
         exprs: Optional[ExprList],
-        assigns: Optional[AssignmentList],
+        assigns: list[Assignment],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -1402,7 +1419,7 @@ class ParamList(AstNode):
     def __init__(
         self,
         p_args: Optional[ExprList],
-        p_kwargs: Optional["AssignmentList"],
+        p_kwargs: SubNodeList[Assignment],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -1517,7 +1534,7 @@ class ConnectOp(AstNode):
     def __init__(
         self,
         conn_type: Optional[ExprType],
-        conn_assign: Optional[AssignmentList],
+        conn_assign: SubNodeList[Assignment],
         edge_dir: EdgeDir,
         mod_link: Optional[Module],
         kid: list[AstNode],

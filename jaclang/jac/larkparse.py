@@ -5,8 +5,8 @@ import logging
 import os
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac import jac_lark as jl
+from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes.ir_pass import Pass
 from jaclang.vendor.lark import Lark, logger
 
@@ -74,13 +74,15 @@ class JacParser(Pass):
             )
 
         def start(self, kid: list[ast.Module]) -> ast.Module:
-            """
+            """Grammar rule.
+
             start: module
             """
             return kid[0]
 
         def module(self, kid: list[ast.AstNode]) -> ast.AstNode:
-            """
+            """Grammar rule.
+
             module: (doc_tag? element (element_with_doc | element)*)?
             doc_tag (element_with_doc (element_with_doc | element)*)?
             """
@@ -106,7 +108,8 @@ class JacParser(Pass):
                 raise self.ice()
 
         def element_with_doc(self, kid: list[ast.AstNode]) -> ast.ElementType:
-            """
+            """Grammar rule.
+
             element_with_doc: doc_tag element
             """
             if isinstance(kid[1], ast.ElementType) and isinstance(kid[0], ast.Constant):
@@ -117,7 +120,8 @@ class JacParser(Pass):
                 raise self.ice()
 
         def element(self, kid: list[ast.AstNode]) -> ast.ElementType:
-            """
+            """Grammar rule.
+
             element: py_code_block
                 | include_stmt
                 | import_stmt
@@ -133,19 +137,17 @@ class JacParser(Pass):
                 raise self.ice()
 
         def global_var(self, kid: list[ast.AstNode]) -> ast.GlobalVars:
-            """
+            """Grammar rule.
+
             global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
             """
             is_frozen = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_FREEZE
-            access = kid[1] if isinstance(kid[1], ast.AccessTag) else None
-            assignments = kid[2:-1] if access else kid[1:-1]
-            valid_assigns: list[ast.Assignment] = [
-                i for i in assignments if isinstance(i, ast.Assignment)
-            ]
-            if len(valid_assigns) == len(assignments):
+            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
+            assignments = kid[2] if access else kid[1]
+            if isinstance(assignments, ast.SubNodeList):
                 return ast.GlobalVars(
                     access=access,
-                    assignments=valid_assigns,
+                    assignments=assignments,
                     is_frozen=is_frozen,
                     mod_link=self.mod_link,
                     kid=kid,
@@ -153,13 +155,14 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def access_tag(self, kid: list[ast.AstNode]) -> ast.AccessTag:
-            """
+        def access_tag(self, kid: list[ast.AstNode]) -> ast.SubTag:
+            """Grammar rule.
+
             access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Token):
-                return ast.AccessTag(
-                    access=kid[1],
+                return ast.SubTag(
+                    tag=kid[1],
                     mod_link=self.mod_link,
                     kid=kid,
                 )
@@ -167,7 +170,8 @@ class JacParser(Pass):
                 raise self.ice()
 
         def test(self, kid: list[ast.AstNode]) -> ast.Test:
-            """
+            """Grammar rule.
+
             test: KW_TEST NAME? code_block
             """
             name = kid[1] if isinstance(kid[1], ast.Name) else kid[0]
@@ -185,15 +189,92 @@ class JacParser(Pass):
                 raise self.ice()
 
         def mod_code(self, kid: list[ast.AstNode]) -> ast.ModuleCode:
-            """
+            """Grammar rule.
+
             mod_code: KW_WITH KW_ENTRY sub_name? code_block
             """
-            name = kid[2] if isinstance(kid[2], ast.Name) else None
+            name = kid[2] if isinstance(kid[2], ast.SubTag) else None
             codeblock = kid[3] if name else kid[2]
             if isinstance(codeblock, ast.CodeBlock):
                 return ast.ModuleCode(
                     name=name,
                     body=codeblock,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def doc_tag(self, kid: list[ast.AstNode]) -> ast.Constant:
+            """Grammar rule.
+
+            doc_tag: ( STRING | DOC_STRING )
+            """
+            if isinstance(kid[0], ast.Constant):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def py_code_block(self, kid: list[ast.AstNode]) -> ast.PyInlineCode:
+            """Grammar rule.
+
+            py_code_block: PYNLINE
+            """
+            if isinstance(kid[0], ast.Token):
+                return ast.PyInlineCode(
+                    code=kid[0],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def import_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
+            """Grammar rule.
+
+            import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
+                | KW_IMPORT sub_name import_path KW_AS NAME SEMI
+                | KW_IMPORT sub_name import_path SEMI
+            """
+            lang = kid[1]
+            path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
+            alias = kid[5] if isinstance(kid[4], ast.Name) else None
+            items = kid[5] if isinstance(kid[4], ast.ModuleItems) else None
+            is_absorb = False
+            if (
+                isinstance(lang, ast.SubTag)
+                and isinstance(path, ast.ModulePath)
+                and isinstance(alias, ast.Name)
+                and isinstance(items, ast.ModuleItems)
+            ):
+                return ast.Import(
+                    lang=lang,
+                    path=path,
+                    alias=alias,
+                    items=items,
+                    is_absorb=is_absorb,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+
+            else:
+                raise self.ice()
+
+        def include_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
+            """Grammar rule.
+
+            include_stmt: KW_INCLUDE sub_name import_path SEMI
+            """
+            lang = kid[1]
+            path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
+            is_absorb = True
+            if isinstance(lang, ast.SubTag) and isinstance(path, ast.ModulePath):
+                return ast.Import(
+                    lang=lang,
+                    path=path,
+                    alias=None,
+                    items=None,
+                    is_absorb=is_absorb,
                     mod_link=self.mod_link,
                     kid=kid,
                 )
