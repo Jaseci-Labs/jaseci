@@ -232,13 +232,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_module_items(self, node: ast.ModuleItems) -> None:
-        """Sub objects.
-
-        items: list['ModuleItem'],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_architype(self, node: ast.Architype) -> None:
         """Sub objects.
 
@@ -308,13 +301,6 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         calls: list[ExprType],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_base_classes(self, node: ast.BaseClasses) -> None:
-        """Sub objects.
-
-        base_classes: list[DottedNameList],
         """
         self.sync_node_to_scope(node)
 

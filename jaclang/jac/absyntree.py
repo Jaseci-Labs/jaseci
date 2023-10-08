@@ -241,7 +241,7 @@ class Import(AstNode):
         lang: SubTag,
         path: ModulePath,
         alias: Optional[Name],
-        items: Optional[ModuleItems],
+        items: SubNodeList[ModuleItem],
         is_absorb: bool,  # For includes
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -275,21 +275,6 @@ class ModulePath(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class ModuleItems(AstNode):
-    """ModuleItems node type for Jac Ast."""
-
-
-#     def __init__(
-#         self,
-#         items: list[ModuleItem],
-#         mod_link: Optional[Module],
-#         kid: list[AstNode],
-#     ) -> None:
-#         """Initialize module items node."""
-#         self.items = items
-#         super().__init__(mod_link=mod_link, kid=kid)
-
-
 class ModuleItem(AstNode):
     """ModuleItem node type for Jac Ast."""
 
@@ -315,19 +300,20 @@ class Architype(AstNode):
         self,
         name: Name,
         arch_type: Token,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
         access: Optional[SubTag],
-        base_classes: BaseClasses,
-        body: Optional[ArchBlock],
+        base_classes: SubNodeList[DottedNameList],
+        body: Optional[ArchBlock | ArchDef],
         mod_link: Optional[Module],
         kid: list[AstNode],
+        doc: Optional[Token] = None,
+        decorators: Optional[Decorators] = None,
     ) -> None:
         """Initialize object arch node."""
         self.name = name
         self.arch_type = arch_type
         self.doc = doc
         self.decorators = decorators
+        self.access = access
         self.base_classes = base_classes
         self.body = body
         super().__init__(mod_link=mod_link, kid=kid)
@@ -339,6 +325,7 @@ class ArchDef(AstNode):
     def __init__(
         self,
         doc: Optional[Token],
+        decorators: Optional[Decorators],
         target: ArchRefChain,
         body: ArchBlock,
         mod_link: Optional[Module],
@@ -346,6 +333,7 @@ class ArchDef(AstNode):
     ) -> None:
         """Initialize arch def node."""
         self.doc = doc
+        self.decorators = decorators
         self.target = target
         self.body = body
         super().__init__(mod_link=mod_link, kid=kid)
@@ -362,20 +350,6 @@ class Decorators(AstNode):
     ) -> None:
         """Initialize decorators node."""
         self.calls = calls
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class BaseClasses(AstNode):
-    """BaseArch node type for Jac Ast."""
-
-    def __init__(
-        self,
-        base_classes: list[DottedNameList],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize base classes node."""
-        self.base_classes = base_classes
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -553,7 +527,7 @@ class Enum(AstNode):
         doc: Optional[Token],
         decorators: Optional[Decorators],
         access: Optional[SubTag],
-        base_classes: "BaseClasses",
+        base_classes: SubNodeList[DottedNameList],
         body: Optional["EnumBlock"],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1702,6 +1676,12 @@ ElementType = Union[
     Ability,
     PyInlineCode,
     Import,
+]
+
+ArchType = Union[
+    Architype,
+    Enum,
+    ArchDef,
 ]
 
 AtomType = Union[

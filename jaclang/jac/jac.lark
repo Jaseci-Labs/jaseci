@@ -31,7 +31,7 @@ import_path: DOT? DOT? esc_name ((DOT esc_name)+)?
 
 import_items: (import_items COMMA)? named_refs (KW_AS NAME)?
 
-architype: decorator architype
+architype: decorators architype
           | enum
           | architype_def
           | architype_decl
@@ -45,7 +45,7 @@ arch_type: KW_WALKER
           | KW_EDGE
           | KW_NODE
 
-decorator: DECOR_OP atom
+decorators: (DECOR_OP atom)+
 
 inherited_archs: sub_name_dotted*
 
@@ -84,7 +84,7 @@ enum_stmt_list: enum_item (COMMA enum_stmt_list)?
 enum_item: NAME EQ expression
          | NAME
 
-ability: decorator ability
+ability: decorators ability
         | ability_def
         | KW_ASYNC ability_decl
         | ability_decl

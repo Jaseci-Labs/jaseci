@@ -269,7 +269,7 @@ class BluePygenPass(Pass):
         """
         self.emit(node, "".join([i.value for i in node.path]))
 
-    def exit_module_items(self, node: ast.ModuleItems) -> None:
+    def exit_module_items(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         items: list["ModuleItem"],
@@ -332,7 +332,7 @@ class BluePygenPass(Pass):
         for i in node.calls:
             self.emit_ln(node, "@" + i.meta["py_code"])
 
-    def exit_base_classes(self, node: ast.BaseClasses) -> None:
+    def exit_base_classes(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         base_classes: list[DottedNameList],

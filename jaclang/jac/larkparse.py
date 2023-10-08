@@ -239,13 +239,13 @@ class JacParser(Pass):
             lang = kid[1]
             path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
             alias = kid[5] if isinstance(kid[4], ast.Name) else None
-            items = kid[5] if isinstance(kid[4], ast.ModuleItems) else None
+            items = kid[5] if isinstance(kid[4], ast.SubNodeList) else None
             is_absorb = False
             if (
                 isinstance(lang, ast.SubTag)
                 and isinstance(path, ast.ModulePath)
                 and isinstance(alias, ast.Name)
-                and isinstance(items, ast.ModuleItems)
+                and isinstance(items, ast.SubNodeList)
             ):
                 return ast.Import(
                     lang=lang,
@@ -338,13 +338,59 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def architype(self, kid: list[ast.AstNode]) -> ast.ArchType:
+            """Grammar rule.
 
-# import_items: (import_items COMMA)? named_refs (KW_AS NAME)?
+            architype: decorators architype
+                    | enum
+                    | architype_def
+                    | architype_decl
+            """
+            if isinstance(kid[0], ast.Decorators):
+                if isinstance(kid[1], ast.ArchType):
+                    kid[1].decorators = kid[0]
+                    kid[1].add_kids_left([kid[0]])
+                    return kid[1]
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.ArchType):
+                return kid[0]
+            else:
+                raise self.ice()
 
-# architype: decorator architype
-#           | enum
-#           | architype_def
-#           | architype_decl
+        def architype_decl(self, kid: list[ast.AstNode]) -> ast.ArchType:
+            """Grammar rule.
+
+            architype_decl: arch_type access_tag? NAME inherited_archs (member_block | SEMI)
+            """
+            arch_type = kid[0]
+            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
+            name = kid[2] if access else kid[1]
+            inh = kid[3] if access else kid[2]
+            body = (
+                kid[4]
+                if access and isinstance(kid[4], ast.ArchBlock)
+                else kid[3]
+                if isinstance(kid[3], ast.ArchBlock)
+                else None
+            )
+            if (
+                isinstance(arch_type, ast.Token)
+                and isinstance(name, ast.Name)
+                and isinstance(inh, ast.SubNodeList)
+            ):
+                return ast.Architype(
+                    arch_type=arch_type,
+                    name=name,
+                    access=access,
+                    base_classes=inh,
+                    body=body,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
 
 # architype_decl: arch_type access_tag? NAME inherited_archs (member_block | SEMI)
 

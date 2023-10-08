@@ -801,7 +801,7 @@ class JacFormatPass(Pass):
         for i in node.calls:
             self.emit_ln(node, "@" + i.meta["jac_code"])
 
-    def exit_module_items(self, node: ast.ModuleItems) -> None:
+    def exit_module_items(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         items: list["ModuleItem"],
@@ -831,7 +831,7 @@ class JacFormatPass(Pass):
         else:
             self.emit(node, node.name.value)
 
-    def exit_base_classes(self, node: ast.BaseClasses) -> None:
+    def exit_base_classes(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         base_classes: list[DottedNameList],
