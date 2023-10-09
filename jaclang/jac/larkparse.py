@@ -1472,6 +1472,152 @@ class JacParser(Pass):
                     kid=kid,
                 )
 
+        def assert_stmt(self, kid: list[ast.AstNode]) -> ast.AssertStmt:
+            """Grammar rule.
+
+            assert_stmt: KW_ASSERT expression (COMMA expression)?
+            """
+            condition = kid[1]
+            error_msg = kid[3] if len(kid) > 3 else None
+            if isinstance(condition, ast.ExprType) and (
+                isinstance(error_msg, ast.ExprType) or not error_msg
+            ):
+                return ast.AssertStmt(
+                    condition=condition,
+                    error_msg=error_msg,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def ctrl_stmt(self, kid: list[ast.AstNode]) -> ast.CtrlStmt:
+            """Grammar rule.
+
+            ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
+            """
+            if isinstance(kid[0], ast.Token):
+                return ast.CtrlStmt(
+                    ctrl=kid[0],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def delete_stmt(self, kid: list[ast.AstNode]) -> ast.DeleteStmt:
+            """Grammar rule.
+
+            delete_stmt: KW_DELETE expression
+            """
+            if isinstance(kid[1], ast.ExprType):
+                return ast.DeleteStmt(
+                    target=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def report_stmt(self, kid: list[ast.AstNode]) -> ast.ReportStmt:
+            """Grammar rule.
+
+            report_stmt: KW_REPORT expression
+            """
+            if isinstance(kid[1], ast.ExprType):
+                return ast.ReportStmt(
+                    expr=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def return_stmt(self, kid: list[ast.AstNode]) -> ast.ReturnStmt:
+            """Grammar rule.
+
+            return_stmt: KW_RETURN expression?
+            """
+            if len(kid) > 1:
+                if isinstance(kid[1], ast.ExprType) or not kid[1]:
+                    return ast.ReturnStmt(
+                        expr=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            else:
+                return ast.ReturnStmt(
+                    expr=None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+
+        def yield_stmt(self, kid: list[ast.AstNode]) -> ast.YieldStmt:
+            """Grammar rule.
+
+            yield_stmt: KW_YIELD expression?
+            """
+            if len(kid) > 1:
+                if isinstance(kid[1], ast.ExprType) or not kid[1]:
+                    return ast.YieldStmt(
+                        expr=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            else:
+                return ast.YieldStmt(
+                    expr=None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+
+        def walker_stmt(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
+            """Grammar rule.
+
+            walker_stmt: disengage_stmt | revisit_stmt | visit_stmt | ignore_stmt
+            """
+            if isinstance(kid[0], ast.CodeBlockStmt):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def ignore_stmt(self, kid: list[ast.AstNode]) -> ast.IgnoreStmt:
+            """Grammar rule.
+
+            ignore_stmt: KW_IGNORE expression SEMI
+            """
+            if isinstance(kid[1], ast.ExprType):
+                return ast.IgnoreStmt(
+                    target=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def visit_stmt(self, kid: list[ast.AstNode]) -> ast.VisitStmt:
+            """Grammar rule.
+
+            visit_stmt: KW_VISIT (sub_name_dotted)? expression (else_stmt | SEMI)
+            """
+            sub_name = kid[1] if isinstance(kid[1], ast.SubTag) else None
+            target = kid[2] if sub_name else kid[1]
+            else_body = kid[-1] if isinstance(kid[-1], ast.ElseStmt) else None
+            if isinstance(target, ast.ExprType):
+                return ast.VisitStmt(
+                    vis_type=sub_name,
+                    target=target,
+                    else_body=else_body,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
 
 # raise_stmt: KW_RAISE expression?
 

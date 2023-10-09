@@ -887,20 +887,6 @@ class YieldStmt(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class IgnoreStmt(AstNode):
-    """IgnoreStmt node type for Jac Ast."""
-
-    def __init__(
-        self,
-        target: ExprType,
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize ignore statement node."""
-        self.target = target
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
 class WalkerStmtOnlyNode(AstNode):
     """WalkerStmtOnlyNode node type for Jac Ast."""
 
@@ -915,12 +901,26 @@ class WalkerStmtOnlyNode(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
+class IgnoreStmt(WalkerStmtOnlyNode):
+    """IgnoreStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: ExprType,
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize ignore statement node."""
+        self.target = target
+        super().__init__(mod_link=mod_link, kid=kid)
+
+
 class VisitStmt(WalkerStmtOnlyNode):
     """VisitStmt node type for Jac Ast."""
 
     def __init__(
         self,
-        vis_type: Optional[Token],
+        vis_type: Optional[SubTag[SubNodeList[Name]]],
         target: ExprType,
         else_body: Optional["ElseStmt"],
         mod_link: Optional[Module],
