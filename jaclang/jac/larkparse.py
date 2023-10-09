@@ -1133,7 +1133,7 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.CodeBlockStmt]:
             """Grammar rule.
 
-            code_block: LBRACE statement_list? RBRACE
+            code_block: LBRACE statement_list* RBRACE
             """
             if isinstance(kid[1], ast.SubNodeList):
                 return kid[1]
@@ -1151,102 +1151,327 @@ class JacParser(Pass):
 
             statement_list: statement+
             """
-            if isinstance(kid[0], ast.SubNodeList):
-                return kid[0]
+            valid_stmt = [i for i in kid if isinstance(i, ast.CodeBlockStmt)]
+            if len(valid_stmt) == len(kid):
+                return ast.SubNodeList[ast.CodeBlockStmt](
+                    items=valid_stmt,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
             else:
                 raise self.ice()
 
+        def statement(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
+            """Grammar rule.
 
-# member_stmt: doc_tag? py_code_block
-#            | doc_tag? abstract_ability
-#            | doc_tag? ability
-#            | doc_tag? architype
-#            | doc_tag? has_stmt
+            statement: py_code_block
+                    | walker_stmt
+                    | await_stmt SEMI
+                    | yield_stmt SEMI
+                    | return_stmt SEMI
+                    | report_stmt SEMI
+                    | delete_stmt SEMI
+                    | ctrl_stmt SEMI
+                    | assert_stmt SEMI
+                    | raise_stmt SEMI
+                    | with_stmt
+                    | while_stmt
+                    | for_stmt
+                    | try_stmt
+                    | if_stmt
+                    | expression SEMI
+                    | static_assignment
+                    | assignment SEMI
+                    | typed_ctx_block
+                    | doc_tag? ability
+                    | doc_tag? architype
+                    | import_stmt
+            """
+            if isinstance(kid[0], ast.CodeBlockStmt):
+                return kid[0]
+            elif isinstance(kid[1], (ast.Ability, ast.Architype)) and isinstance(
+                kid[0], ast.Constant
+            ):
+                kid[1].doc = kid[0]
+                kid[1].add_kids_left([kid[0]])
+                return kid[1]
+            else:
+                raise self.ice()
 
-# has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
+        def typed_ctx_block(self, kid: list[ast.AstNode]) -> ast.TypedCtxBlock:
+            """Grammar rule.
 
-# has_assign_list: (has_assign_list COMMA)? typed_has_clause
+            typed_ctx_block: RETURN_HINT type_specs code_block
+            """
+            if isinstance(kid[1], ast.SubNodeList) and isinstance(
+                kid[2], ast.SubNodeList
+            ):
+                return ast.TypedCtxBlock(
+                    type_ctx=kid[1],
+                    body=kid[2],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# typed_has_clause: esc_name type_tag (EQ expression)?
+        def if_stmt(self, kid: list[ast.AstNode]) -> ast.IfStmt:
+            """Grammar rule.
 
-# type_tag: COLON type_specs
+            if_stmt: KW_IF expression code_block elif_stmt? else_stmt?
+            """
+            if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.SubNodeList):
+                return ast.IfStmt(
+                    condition=kid[1],
+                    body=kid[2],
+                    elseifs=kid[3] if isinstance(kid[3], ast.ElseIfs) else None,
+                    else_body=kid[4] if isinstance(kid[4], ast.ElseStmt) else None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# return_type_tag: RETURN_HINT type_specs
+        def elif_stmt(self, kid: list[ast.AstNode]) -> ast.ElseIfs:
+            """Grammar rule.
 
-# type_specs: (type_specs BW_OR)? single_type NULL_OK?
+            elif_stmt: KW_ELIF expression code_block elif_stmt?
+            """
+            if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.SubNodeList):
+                return ast.ElseIfs(
+                    condition=kid[1],
+                    body=kid[2],
+                    elseifs=kid[3] if isinstance(kid[3], ast.ElseIfs) else None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
-#            | TYP_SET LSQUARE single_type RSQUARE
-#            | TYP_TUPLE LSQUARE single_type RSQUARE
-#            | TYP_LIST LSQUARE single_type RSQUARE
-#            | dotted_name
-#            | NULL
-#            | builtin_type
+        def else_stmt(self, kid: list[ast.AstNode]) -> ast.ElseStmt:
+            """Grammar rule.
 
-# builtin_type: TYP_TYPE
-#             | TYP_ANY
-#             | TYP_BOOL
-#             | TYP_DICT
-#             | TYP_SET
-#             | TYP_TUPLE
-#             | TYP_LIST
-#             | TYP_FLOAT
-#             | TYP_INT
-#             | TYP_BYTES
-#             | TYP_STRING
+            else_stmt: KW_ELSE code_block
+            """
+            if isinstance(kid[1], ast.SubNodeList):
+                return ast.ElseStmt(
+                    body=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# code_block: LBRACE statement_list? RBRACE
+        def try_stmt(self, kid: list[ast.AstNode]) -> ast.TryStmt:
+            """Grammar rule.
 
-# statement_list: statement+
+            try_stmt: KW_TRY code_block except_list? finally_stmt?
+            """
+            if isinstance(kid[1], ast.SubNodeList):
+                return ast.TryStmt(
+                    body=kid[1],
+                    excepts=kid[2] if isinstance(kid[2], ast.SubNodeList) else None,
+                    finally_body=kid[3]
+                    if isinstance(kid[3], ast.FinallyStmt)
+                    else None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# statement: py_code_block
-#           | walker_stmt
-#           | await_stmt SEMI
-#           | yield_stmt SEMI
-#           | return_stmt SEMI
-#           | report_stmt SEMI
-#           | delete_stmt SEMI
-#           | ctrl_stmt SEMI
-#           | assert_stmt SEMI
-#           | raise_stmt SEMI
-#           | with_stmt
-#           | while_stmt
-#           | for_stmt
-#           | try_stmt
-#           | if_stmt
-#           | expression SEMI
-#           | static_assignment
-#           | assignment SEMI
-#           | typed_ctx_block
-#           | doc_tag? ability
-#           | doc_tag? architype
-#           | import_stmt
+        def except_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Except]:
+            """Grammar rule.
 
-# typed_ctx_block: RETURN_HINT type_specs code_block
+            except_list: except_def+
+            """
+            valid_kid = [i for i in kid if isinstance(i, ast.Except)]
+            if len(valid_kid) == len(kid):
+                return ast.SubNodeList[ast.Except](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# if_stmt: KW_IF expression code_block (elif_list? else_stmt? | elif_list?)
+        def except_def(self, kid: list[ast.AstNode]) -> ast.Except:
+            """Grammar rule.
 
-# elif_list: KW_ELIF expression code_block elif_list?
+            except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
+            """
+            ex_type = kid[1]
+            name = kid[3] if isinstance(kid[3], ast.Name) else None
+            body = kid[-1]
+            if isinstance(ex_type, ast.ExprType) and isinstance(body, ast.SubNodeList):
+                return ast.Except(
+                    ex_type=ex_type,
+                    name=name,
+                    body=body,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# else_stmt: KW_ELSE code_block
+        def finally_stmt(self, kid: list[ast.AstNode]) -> ast.FinallyStmt:
+            """Grammar rule.
 
-# try_stmt: KW_TRY code_block (except_list? finally_stmt? | finally_stmt)
+            finally_stmt: KW_FINALLY code_block
+            """
+            if isinstance(kid[1], ast.SubNodeList):
+                return ast.FinallyStmt(
+                    body=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# except_list: except_def+
+        def for_stmt(self, kid: list[ast.AstNode]) -> ast.IterForStmt | ast.InForStmt:
+            """Grammar rule.
 
-# except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
+            for_stmt: KW_FOR assignment KW_TO expression KW_BY expression code_block
+                    | KW_FOR name_list KW_IN expression code_block
+            """
+            if isinstance(kid[1], ast.Assignment):
+                if (
+                    isinstance(kid[3], ast.ExprType)
+                    and isinstance(kid[5], ast.ExprType)
+                    and isinstance(kid[6], ast.SubNodeList)
+                ):
+                    return ast.IterForStmt(
+                        iter=kid[1],
+                        condition=kid[3],
+                        count_by=kid[5],
+                        body=kid[6],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[1], ast.SubNodeList):
+                if isinstance(kid[3], ast.ExprType) and isinstance(
+                    kid[4], ast.SubNodeList
+                ):
+                    return ast.InForStmt(
+                        name_list=kid[1],
+                        collection=kid[3],
+                        body=kid[4],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            else:
+                raise self.ice()
 
-# finally_stmt: KW_FINALLY code_block
+        def name_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Name]:
+            """Grammar rule.
 
-# for_stmt: KW_FOR (name_list KW_IN | assignment KW_TO expression KW_BY) expression code_block
+            name_list: (name_list COMMA)? NAME
+            """
+            consume = None
+            name = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                name = kid[2]
+            else:
+                name = kid[0]
+            new_kid = [name, comma, *consume.kid] if consume else [name]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.Name)]
+            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
+                return ast.SubNodeList[ast.Name](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# name_list: NAME (COMMA name_list)?
+        def while_stmt(self, kid: list[ast.AstNode]) -> ast.WhileStmt:
+            """Grammar rule.
 
-# while_stmt: KW_WHILE expression code_block
+            while_stmt: KW_WHILE expression code_block
+            """
+            if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.SubNodeList):
+                return ast.WhileStmt(
+                    condition=kid[1],
+                    body=kid[2],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# with_stmt: KW_WITH expr_as_list code_block
+        def with_stmt(self, kid: list[ast.AstNode]) -> ast.WithStmt:
+            """Grammar rule.
 
-# expr_as_list: (expression (KW_AS NAME)?) (COMMA expr_as_list)?
+            with_stmt: KW_WITH expr_as_list code_block
+            """
+            if isinstance(kid[1], ast.SubNodeList) and isinstance(
+                kid[2], ast.SubNodeList
+            ):
+                return ast.WithStmt(
+                    exprs=kid[1],
+                    body=kid[2],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def expr_as_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ExprAsItem]:
+            """Grammar rule.
+
+            expr_as_list: (expr_as_list COMMA)? expression (KW_AS NAME)?
+            """
+            consume = None
+            expr = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                expr = kid[2]
+            else:
+                expr = kid[0]
+            name = kid[-1] if isinstance(kid[-1], ast.Name) else None
+            new_kid = [expr, comma, *consume.kid] if consume else [expr]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.ExprAsItem)]
+            if name:
+                valid_kid[-1].alias = name
+                valid_kid[-1].add_kids_right([name])
+            return ast.SubNodeList[ast.ExprAsItem](
+                items=valid_kid,
+                mod_link=self.mod_link,
+                kid=kid,
+            )
+
+        def raise_stmt(self, kid: list[ast.AstNode]) -> ast.RaiseStmt:
+            """Grammar rule.
+
+            raise_stmt: KW_RAISE expression?
+            """
+            if len(kid) > 1:
+                if isinstance(kid[1], ast.ExprType) or not kid[1]:
+                    return ast.RaiseStmt(
+                        cause=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            else:
+                return ast.RaiseStmt(
+                    cause=None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+
 
 # raise_stmt: KW_RAISE expression?
 

@@ -624,11 +624,15 @@ class ElseIfs(AstNode):
 
     def __init__(
         self,
-        elseifs: list["IfStmt"],
+        condition: ExprType,
+        body: SubNodeList[CodeBlockStmt],
+        elseifs: Optional[ElseIfs],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
-        """Initialize elseifs node."""
+        """Initialize if statement node."""
+        self.condition = condition
+        self.body = body
         self.elseifs = elseifs
         super().__init__(mod_link=mod_link, kid=kid)
 
@@ -653,8 +657,8 @@ class TryStmt(AstNode):
     def __init__(
         self,
         body: SubNodeList[CodeBlockStmt],
-        excepts: Optional["ExceptList"],
-        finally_body: Optional["FinallyStmt"],
+        excepts: Optional[SubNodeList[Except]],
+        finally_body: Optional[FinallyStmt],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -662,20 +666,6 @@ class TryStmt(AstNode):
         self.body = body
         self.excepts = excepts
         self.finally_body = finally_body
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class ExceptList(AstNode):
-    """ExceptList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        excepts: list["Except"],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize excepts node."""
-        self.excepts = excepts
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -736,7 +726,7 @@ class InForStmt(AstNode):
 
     def __init__(
         self,
-        name_list: NameList,
+        name_list: SubNodeList[Name],
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
         mod_link: Optional[Module],
@@ -746,20 +736,6 @@ class InForStmt(AstNode):
         self.name_list = name_list
         self.collection = collection
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class NameList(AstNode):
-    """NameList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        names: list[Name],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize name list node."""
-        self.names = names
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -784,7 +760,7 @@ class WithStmt(AstNode):
 
     def __init__(
         self,
-        exprs: "ExprAsItemList",
+        exprs: SubNodeList[ExprAsItem],
         body: SubNodeList[CodeBlockStmt],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -792,20 +768,6 @@ class WithStmt(AstNode):
         """Initialize with statement node."""
         self.exprs = exprs
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class ExprAsItemList(AstNode):
-    """ExprAsItemList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        items: list["ExprAsItem"],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize module items node."""
-        self.items = items
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -1190,7 +1152,7 @@ class InnerCompr(AstNode):
     def __init__(
         self,
         out_expr: ExprType,
-        name_list: NameList,
+        name_list: SubNodeList[Name],
         collection: ExprType,
         conditional: Optional[ExprType],
         is_list: bool,
@@ -1218,7 +1180,7 @@ class DictCompr(AstNode):
         self,
         outk_expr: ExprType,
         outv_expr: ExprType,
-        name_list: NameList,
+        name_list: SubNodeList[Name],
         collection: ExprType,
         conditional: Optional[ExprType],
         mod_link: Optional[Module],
@@ -1644,6 +1606,7 @@ CodeBlockStmt = Union[
     VisitStmt,
     IgnoreStmt,
     PyInlineCode,
+    TypedCtxBlock,
 ]
 # Utiliiy functions
 # -----------------
