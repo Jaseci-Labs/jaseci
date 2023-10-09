@@ -308,19 +308,11 @@ atom_collection: dict_compr
                | tuple_val
                | list_val
 
-multistring: multistring fstring
-           | multistring STRING
-           | fstring
-           | STRING
+multistring: (fstring | STRING)+
 
-fstring: FSTR_START fstr_parts* FSTR_END
+fstring: FSTR_START fstr_parts FSTR_END
 
-fstr_parts: FSTR_PIECE
-          | FSTR_BESC
-          | fstr_expr
-          | fstring
-
-fstr_expr: LBRACE expression RBRACE
+fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
 
 list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN

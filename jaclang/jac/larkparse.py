@@ -1,8 +1,10 @@
 """Lark parser for Jac Lang."""
 from __future__ import annotations
 
+
 import logging
 import os
+from typing import Union
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
@@ -628,6 +630,8 @@ class JacParser(Pass):
             enum_block: LBRACE enum_stmt_list? RBRACE
             """
             if isinstance(kid[1], ast.SubNodeList):
+                kid[1].add_kids_left([kid[0]])
+                kid[1].add_kids_right([kid[2]])
                 return kid[1]
             else:
                 return ast.SubNodeList[ast.EnumBlockStmt](
@@ -884,6 +888,8 @@ class JacParser(Pass):
             member_block: LBRACE member_stmt_list? RBRACE
             """
             if isinstance(kid[1], ast.SubNodeList):
+                kid[1].add_kids_left([kid[0]])
+                kid[1].add_kids_right([kid[2]])
                 return kid[1]
             else:
                 return ast.SubNodeList[ast.ArchBlockStmt](
@@ -1136,6 +1142,8 @@ class JacParser(Pass):
             code_block: LBRACE statement_list* RBRACE
             """
             if isinstance(kid[1], ast.SubNodeList):
+                kid[1].add_kids_left([kid[0]])
+                kid[1].add_kids_right([kid[2]])
                 return kid[1]
             else:
                 return ast.SubNodeList[ast.CodeBlockStmt](
@@ -1701,16 +1709,14 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def pipe(self, kid: list[ast.AstNode]) -> ast.ExprType:
-            """Grammar rule.
-
-            pipe: pipe_back PIPE_FWD pipe
-                | pipe_back
-            """
+        def binary_expr(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Binary expression helper."""
             if len(kid) > 1:
                 if (
                     isinstance(kid[0], ast.ExprType)
-                    and isinstance(kid[1], ast.Constant)
+                    and isinstance(
+                        kid[1], (ast.Constant, ast.DisconnectOp, ast.ConnectOp)
+                    )
                     and isinstance(kid[2], ast.ExprType)
                 ):
                     return ast.BinaryExpr(
@@ -1726,6 +1732,14 @@ class JacParser(Pass):
                 return kid[0]
             else:
                 raise self.ice()
+
+        def pipe(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            pipe: pipe_back PIPE_FWD pipe
+                | pipe_back
+            """
+            return self.binary_expr(kid)
 
         def pipe_back(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1733,172 +1747,380 @@ class JacParser(Pass):
             pipe_back: elvis_check PIPE_BKWD pipe_back
                      | elvis_check
             """
-            if len(kid) > 1:
-                if (
-                    isinstance(kid[0], ast.ExprType)
-                    and isinstance(kid[1], ast.Constant)
-                    and isinstance(kid[2], ast.ExprType)
-                ):
-                    return ast.BinaryExpr(
-                        left=kid[0],
-                        op=kid[1],
-                        right=kid[2],
+            return self.binary_expr(kid)
+
+        def elvis_check(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            elvis_check: bitwise_or ELVIS_OP elvis_check
+                       | bitwise_or
+            """
+            return self.binary_expr(kid)
+
+        def bitwise_or(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            bitwise_or: bitwise_xor BW_OR bitwise_or
+                      | bitwise_xor
+            """
+            return self.binary_expr(kid)
+
+        def bitwise_xor(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            bitwise_xor: bitwise_and BW_XOR bitwise_xor
+                       | bitwise_and
+            """
+            return self.binary_expr(kid)
+
+        def bitwise_and(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            bitwise_and: shift BW_AND bitwise_and
+                       | shift
+            """
+            return self.binary_expr(kid)
+
+        def shift(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            shift: logical RSHIFT shift
+                 | logical LSHIFT shift
+                 | logical
+            """
+            return self.binary_expr(kid)
+
+        def logical(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            logical: NOT logical
+                   | compare KW_OR logical
+                   | compare KW_AND logical
+                   | compare
+            """
+            if len(kid) == 2:
+                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
+                    return ast.UnaryExpr(
+                        op=kid[0],
+                        operand=kid[1],
                         mod_link=self.mod_link,
                         kid=kid,
                     )
                 else:
                     raise self.ice()
-            elif isinstance(kid[0], ast.ExprType):
+            return self.binary_expr(kid)
+
+        def compare(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            compare: arithmetic cmp_op compare
+                   | arithmetic
+            """
+            return self.binary_expr(kid)
+
+        def arithmetic(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            arithmetic: term MINUS arithmetic
+                      | term PLUS arithmetic
+                      | term
+            """
+            return self.binary_expr(kid)
+
+        def term(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            term: factor MOD term
+                 | factor DIV term
+                 | factor FLOOR_DIV term
+                 | factor STAR_MUL term
+                 | factor
+            """
+            return self.binary_expr(kid)
+
+        def factor(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            factor: power
+                  | BW_NOT factor
+                  | MINUS factor
+                  | PLUS factor
+            """
+            if len(kid) == 2:
+                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
+                    return ast.UnaryExpr(
+                        op=kid[0],
+                        operand=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            return self.binary_expr(kid)
+
+        def power(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            power: connect STAR_POW power
+                  | connect
+            """
+            return self.binary_expr(kid)
+
+        def connect(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            connect: atomic_pipe
+                   | atomic_pipe connect_op connect
+                   | atomic_pipe disconnect_op connect
+            """
+            return self.binary_expr(kid)
+
+        def atomic_pipe(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            atomic_pipe: atomic_pipe_back
+                       | atomic_pipe KW_SPAWN atomic_pipe_back
+                       | atomic_pipe A_PIPE_FWD atomic_pipe_back
+            """
+            return self.binary_expr(kid)
+
+        def atomic_pipe_back(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            atomic_pipe_back: unpack
+                            | atomic_pipe_back A_PIPE_BKWD unpack
+            """
+            return self.binary_expr(kid)
+
+        def unpack(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            unpack: ref
+                  | STAR_MUL atom
+                  | STAR_POW atom
+            """
+            if len(kid) == 2:
+                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.AtomType):
+                    return ast.UnaryExpr(
+                        op=kid[0],
+                        operand=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            return self.binary_expr(kid)
+
+        def ref(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            ref: walrus_assign
+               | BW_AND walrus_assign
+            """
+            if len(kid) == 2:
+                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
+                    return ast.UnaryExpr(
+                        op=kid[0],
+                        operand=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            return self.binary_expr(kid)
+
+        def walrus_assign(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            walrus_assign: ds_call walrus_op walrus_assign
+                         | ds_call
+            """
+            return self.binary_expr(kid)
+
+        def ds_call(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            ds_call: atom
+                   | PIPE_FWD atom
+                   | A_PIPE_FWD atom
+                   | KW_SPAWN atom
+            """
+            if len(kid) == 2:
+                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
+                    return ast.UnaryExpr(
+                        op=kid[0],
+                        operand=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            return self.binary_expr(kid)
+
+        def walrus_op(self, kid: list[ast.AstNode]) -> ast.Token:
+            """Grammar rule.
+
+            walrus_op: RSHIFT_EQ
+                     | LSHIFT_EQ
+                     | BW_NOT_EQ
+                     | BW_XOR_EQ
+                     | BW_OR_EQ
+                     | BW_AND_EQ
+                     | MOD_EQ
+                     | DIV_EQ
+                     | FLOOR_DIV_EQ
+                     | MUL_EQ
+                     | SUB_EQ
+                     | ADD_EQ
+                     | WALRUS_EQ
+            """
+            if isinstance(kid[0], ast.Token):
                 return kid[0]
             else:
                 raise self.ice()
 
+        def cmp_op(self, kid: list[ast.AstNode]) -> ast.Token:
+            """Grammar rule.
 
-# disengage_stmt: KW_DISENGAGE SEMI
-# await_stmt: KW_AWAIT expression
-# assignment: KW_FREEZE? atom EQ expression
+            cmp_op: KW_ISN
+                  | KW_IS
+                  | KW_NIN
+                  | KW_IN
+                  | NE
+                  | GTE
+                  | LTE
+                  | GT
+                  | LT
+                  | EE
+            """
+            if isinstance(kid[0], ast.Token):
+                return kid[0]
+            else:
+                raise self.ice()
 
-# expression: pipe KW_IF expression KW_ELSE expression
-#           | pipe
+        def atom(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
 
-# pipe: pipe_back PIPE_FWD pipe
-#     | pipe_back
+            atom: edge_op_ref
+                 | any_ref
+                 | atomic_chain
+                 | LPAREN expression RPAREN
+                 | atom_collection
+                 | atom_literal
+            """
+            if len(kid) == 1:
+                if isinstance(kid[0], ast.AtomType):
+                    return kid[0]
+                else:
+                    raise self.ice()
+            elif len(kid) == 3:
+                if (
+                    isinstance(kid[0], ast.Token)
+                    and isinstance(kid[1], ast.ExprType)
+                    and isinstance(kid[2], ast.Token)
+                ):
+                    kid[1].add_kids_left([kid[0]])
+                    kid[1].add_kids_right([kid[2]])
+                    return kid[1]
+                else:
+                    raise self.ice()
+            else:
+                raise self.ice()
 
-# pipe_back: elvis_check PIPE_BKWD pipe_back
-#          | elvis_check
+        def atom_literal(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
 
-# elvis_check: bitwise_or ELVIS_OP elvis_check
-#            | bitwise_or
+            atom_literal: builtin_type
+                        | NULL
+                        | BOOL
+                        | multistring
+                        | FLOAT
+                        | OCT
+                        | BIN
+                        | HEX
+                        | INT
+            """
+            if isinstance(kid[0], ast.AtomType):
+                return kid[0]
+            else:
+                raise self.ice()
 
-# bitwise_or: bitwise_xor BW_OR bitwise_or
-#           | bitwise_xor
+        def atom_collection(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
 
-# bitwise_xor: bitwise_and BW_XOR bitwise_xor
-#            | bitwise_and
+            atom_collection: dict_compr
+                           | set_compr
+                           | gen_compr
+                           | list_compr
+                           | dict_val
+                           | set_val
+                           | tuple_val
+                           | list_val
+            """
+            if isinstance(kid[0], ast.AtomType):
+                return kid[0]
+            else:
+                raise self.ice()
 
-# bitwise_and: shift BW_AND bitwise_and
-#            | shift
+        def multistring(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
 
-# shift: logical RSHIFT shift
-#      | logical LSHIFT shift
-#      | logical
+            multistring: (fstring | STRING)+
+            """
+            valid_strs = [i for i in kid if isinstance(i, (ast.Constant, ast.FString))]
+            if len(valid_strs) == len(kid):
+                return ast.MultiString(
+                    strings=valid_strs,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# logical: NOT logical
-#        | compare KW_OR logical
-#        | compare KW_AND logical
-#        | compare
+        def fstring(self, kid: list[ast.AstNode]) -> ast.FString:
+            """Grammar rule.
 
-# compare: arithmetic cmp_op compare
-#        | arithmetic
+            fstring: FSTR_START fstr_parts FSTR_END
+            """
+            if len(kid) == 2:
+                return ast.FString(
+                    parts=None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            elif isinstance(kid[1], ast.SubNodeList):
+                return ast.FString(
+                    parts=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# arithmetic: term MINUS arithmetic
-#           | term PLUS arithmetic
-#           | term
+        def fstr_parts(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.Constant | ast.ExprType]:
+            """Grammar rule.
 
-# term: factor MOD term
-#     | factor DIV term
-#     | factor FLOOR_DIV term
-#     | factor STAR_MUL term
-#     | factor
+            fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
+            """
+            valid_types = Union[ast.Constant, ast.ExprType]
+            valid_parts = [i for i in kid if isinstance(i, valid_types)]
+            if len(valid_parts) == len(kid):
+                return ast.SubNodeList[ast.Constant | ast.ExprType](
+                    items=valid_parts,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# factor: power
-#       | BW_NOT factor
-#       | MINUS factor
-#       | PLUS factor
 
-# power: connect STAR_POW power
-#      | connect
+# multistring: (fstring | STRING)+
 
-# connect: atomic_pipe
-#        | atomic_pipe connect_op connect
-#        | atomic_pipe disconnect_op connect
+# fstring: FSTR_START fstr_parts FSTR_END
 
-# atomic_pipe: atomic_pipe_back
-#            | atomic_pipe KW_SPAWN atomic_pipe_back
-#            | atomic_pipe A_PIPE_FWD atomic_pipe_back
-
-# atomic_pipe_back: unpack
-#                 | atomic_pipe_back A_PIPE_BKWD unpack
-
-# unpack: ref
-#       | STAR_MUL atom
-#       | STAR_POW atom
-
-# ref: walrus_assign
-#    | BW_AND walrus_assign
-
-# walrus_assign: ds_call walrus_op walrus_assign
-#              | ds_call
-
-# ds_call: atom
-#        | PIPE_FWD atom
-#        | A_PIPE_FWD atom
-#        | KW_SPAWN atom
-
-# walrus_op: RSHIFT_EQ
-#          | LSHIFT_EQ
-#          | BW_NOT_EQ
-#          | BW_XOR_EQ
-#          | BW_OR_EQ
-#          | BW_AND_EQ
-#          | MOD_EQ
-#          | DIV_EQ
-#          | FLOOR_DIV_EQ
-#          | MUL_EQ
-#          | SUB_EQ
-#          | ADD_EQ
-#          | WALRUS_EQ
-
-# cmp_op: KW_ISN
-#       | KW_IS
-#       | KW_NIN
-#       | KW_IN
-#       | NE
-#       | GTE
-#       | LTE
-#       | GT
-#       | LT
-#       | EE
-
-# atom: edge_op_ref
-#     | any_ref
-#     | atomic_chain
-#     | LPAREN expression RPAREN
-#     | atom_collection
-#     | atom_literal
-
-# atom_literal: builtin_type
-#             | NULL
-#             | BOOL
-#             | multistring
-#             | FLOAT
-#             | OCT
-#             | BIN
-#             | HEX
-#             | INT
-
-# atom_collection: dict_compr
-#                | set_compr
-#                | gen_compr
-#                | list_compr
-#                | dict_val
-#                | set_val
-#                | tuple_val
-#                | list_val
-
-# multistring: multistring fstring
-#            | multistring STRING
-#            | fstring
-#            | STRING
-
-# fstring: FSTR_START fstr_parts* FSTR_END
-
-# fstr_parts: FSTR_PIECE
-#           | FSTR_BESC
-#           | fstr_expr
-#           | fstring
-
-# fstr_expr: LBRACE expression RBRACE
+# fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
 
 # list_val: LSQUARE expr_list? RSQUARE
 # tuple_val: LPAREN tuple_list? RPAREN

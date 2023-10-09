@@ -1083,7 +1083,7 @@ class MultiString(AstNode):
 
     def __init__(
         self,
-        strings: list["Token | FString"],
+        strings: list[Constant | FString],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -1397,7 +1397,7 @@ class FString(AstNode):
 
     def __init__(
         self,
-        parts: list[Token | ExprType],
+        parts: Optional[SubNodeList[Constant | ExprType]],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
