@@ -470,7 +470,7 @@ class BluePygenPass(Pass):
         """
         self.emit(node, node.vars.meta["py_code"])
 
-    def exit_has_var_list(self, node: ast.HasVarList) -> None:
+    def exit_has_var_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         vars: list[HasVar],
@@ -495,7 +495,7 @@ class BluePygenPass(Pass):
                 node, f"{node.name.value}: {node.type_tag.meta['py_code']} = None"
             )
 
-    def exit_type_spec_list(self, node: ast.TypeSpecList) -> None:
+    def exit_type_spec_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         types: list[TypeSpec],
@@ -555,7 +555,7 @@ class BluePygenPass(Pass):
         if node.return_type:
             self.emit(node, f" -> {node.return_type.meta['py_code']}")
 
-    def exit_func_params(self, node: ast.FuncParams) -> None:
+    def exit_func_params(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         params: list["ParamVar"],
@@ -724,7 +724,7 @@ class BluePygenPass(Pass):
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
 
-    def exit_except_list(self, node: ast.ExceptList) -> None:
+    def exit_except_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         excepts: list[Except],
@@ -770,7 +770,7 @@ class BluePygenPass(Pass):
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
 
-    def exit_name_list(self, node: ast.NameList) -> None:
+    def exit_name_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         names: list[Name],
@@ -799,7 +799,7 @@ class BluePygenPass(Pass):
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
 
-    def exit_expr_as_item_list(self, node: ast.ExprAsItemList) -> None:
+    def exit_expr_as_item_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         items: list["ExprAsItem"],

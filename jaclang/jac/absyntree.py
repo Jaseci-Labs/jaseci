@@ -922,7 +922,7 @@ class VisitStmt(WalkerStmtOnlyNode):
         self,
         vis_type: Optional[SubTag[SubNodeList[Name]]],
         target: ExprType,
-        else_body: Optional["ElseStmt"],
+        else_body: Optional[ElseStmt],
         mod_link: Optional[Module],
         kid: list[AstNode],
         from_walker: bool = False,
@@ -944,7 +944,7 @@ class RevisitStmt(WalkerStmtOnlyNode):
     def __init__(
         self,
         hops: Optional[ExprType],
-        else_body: Optional["ElseStmt"],
+        else_body: Optional[ElseStmt],
         mod_link: Optional[Module],
         kid: list[AstNode],
         from_walker: bool = False,
@@ -1010,30 +1010,12 @@ class Assignment(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class BinaryExpr(AstNode):
-    """ExprBinary node type for Jac Ast."""
-
-    def __init__(
-        self,
-        left: ExprType,
-        right: ExprType,
-        op: Token | DisconnectOp | ConnectOp,
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize binary expression node."""
-        self.left = left
-        self.right = right
-        self.op = op
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
 class IfElseExpr(AstNode):
     """ExprIfElse node type for Jac Ast."""
 
     def __init__(
         self,
-        condition: "BinaryExpr | IfElseExpr",
+        condition: ExprType,
         value: ExprType,
         else_value: ExprType,
         mod_link: Optional[Module],
@@ -1043,6 +1025,24 @@ class IfElseExpr(AstNode):
         self.condition = condition
         self.value = value
         self.else_value = else_value
+        super().__init__(mod_link=mod_link, kid=kid)
+
+
+class BinaryExpr(AstNode):
+    """ExprBinary node type for Jac Ast."""
+
+    def __init__(
+        self,
+        left: ExprType,
+        right: ExprType,
+        op: Constant | DisconnectOp | ConnectOp,
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize binary expression node."""
+        self.left = left
+        self.right = right
+        self.op = op
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -1588,6 +1588,7 @@ CodeBlockStmt = Union[
     Assignment,
     ExprType,
     IfStmt,
+    IfElseExpr,
     TryStmt,
     IterForStmt,
     InForStmt,

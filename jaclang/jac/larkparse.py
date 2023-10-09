@@ -1618,36 +1618,145 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def revisit_stmt(self, kid: list[ast.AstNode]) -> ast.RevisitStmt:
+            """Grammar rule.
 
-# raise_stmt: KW_RAISE expression?
+            revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
+            """
+            target = kid[1] if isinstance(kid[1], ast.ExprType) else None
+            else_body = kid[-1] if isinstance(kid[-1], ast.ElseStmt) else None
+            return ast.RevisitStmt(
+                hops=target,
+                else_body=else_body,
+                mod_link=self.mod_link,
+                kid=kid,
+            )
 
-# assert_stmt: KW_ASSERT expression (COMMA expression)?
+        def disengage_stmt(self, kid: list[ast.AstNode]) -> ast.DisengageStmt:
+            """Grammar rule.
 
-# ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
+            disengage_stmt: KW_DISENGAGE SEMI
+            """
+            return ast.DisengageStmt(
+                mod_link=self.mod_link,
+                kid=kid,
+            )
 
-# delete_stmt: KW_DELETE expression
+        def await_stmt(self, kid: list[ast.AstNode]) -> ast.AwaitStmt:
+            """Grammar rule.
 
-# report_stmt: KW_REPORT expression
+            await_stmt: KW_AWAIT expression
+            """
+            if isinstance(kid[1], ast.ExprType):
+                return ast.AwaitStmt(
+                    target=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# return_stmt: KW_RETURN expression?
+        def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
+            """Grammar rule.
 
-# yield_stmt: KW_YIELD expression?
+            assignment: KW_FREEZE? atom EQ expression
+            """
+            is_frozen = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_FREEZE
+            target = kid[1] if is_frozen else kid[0]
+            value = kid[-1]
+            if isinstance(target, ast.AtomType) and isinstance(value, ast.ExprType):
+                return ast.Assignment(
+                    target=target,
+                    value=value,
+                    mutable=not is_frozen,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# walker_stmt: disengage_stmt | revisit_stmt | visit_stmt | ignore_stmt
+        def expression(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
 
-# ignore_stmt: KW_IGNORE expression SEMI
+            expression: pipe KW_IF expression KW_ELSE expression
+                      | pipe
+            """
+            if len(kid) > 1:
+                if (
+                    isinstance(kid[0], ast.ExprType)
+                    and isinstance(kid[2], ast.ExprType)
+                    and isinstance(kid[4], ast.ExprType)
+                ):
+                    return ast.IfElseExpr(
+                        value=kid[0],
+                        condition=kid[2],
+                        else_value=kid[4],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.ExprType):
+                return kid[0]
+            else:
+                raise self.ice()
 
-# visit_stmt: KW_VISIT (sub_name_dotted)? expression (else_stmt | SEMI)
+        def pipe(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
 
-# revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
+            pipe: pipe_back PIPE_FWD pipe
+                | pipe_back
+            """
+            if len(kid) > 1:
+                if (
+                    isinstance(kid[0], ast.ExprType)
+                    and isinstance(kid[1], ast.Constant)
+                    and isinstance(kid[2], ast.ExprType)
+                ):
+                    return ast.BinaryExpr(
+                        left=kid[0],
+                        op=kid[1],
+                        right=kid[2],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.ExprType):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def pipe_back(self, kid: list[ast.AstNode]) -> ast.ExprType:
+            """Grammar rule.
+
+            pipe_back: elvis_check PIPE_BKWD pipe_back
+                     | elvis_check
+            """
+            if len(kid) > 1:
+                if (
+                    isinstance(kid[0], ast.ExprType)
+                    and isinstance(kid[1], ast.Constant)
+                    and isinstance(kid[2], ast.ExprType)
+                ):
+                    return ast.BinaryExpr(
+                        left=kid[0],
+                        op=kid[1],
+                        right=kid[2],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.ExprType):
+                return kid[0]
+            else:
+                raise self.ice()
+
 
 # disengage_stmt: KW_DISENGAGE SEMI
-
 # await_stmt: KW_AWAIT expression
-
 # assignment: KW_FREEZE? atom EQ expression
-
-# static_assignment: KW_HAS assignment_list SEMI
 
 # expression: pipe KW_IF expression KW_ELSE expression
 #           | pipe
@@ -1816,9 +1925,16 @@ class JacParser(Pass):
 #             | atomic_chain_unsafe
 #             | atomic_chain_safe
 
-# atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice | DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
+# atomic_chain_unsafe: atom atomic_chainable
 
-# atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice | DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
+# atomic_chain_safe: atom NULL_OK atomic_chainable
+
+# atomic_chainable: filter_compr
+#                 | edge_op_ref
+#                 | index_slice
+#                 | DOT_BKWD any_ref
+#                 | DOT_FWD any_ref
+#                 | DOT any_ref
 
 # atomic_call: atom func_call_tail
 

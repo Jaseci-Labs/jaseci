@@ -81,21 +81,13 @@ ability: decorators ability
         | ability_decl
 
 ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
-
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-
 abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-
 event_clause: KW_WITH type_specs? (KW_EXIT | KW_ENTRY) return_type_tag?
-
 func_decl: (LPAREN func_decl_param_list? RPAREN)? return_type_tag?
-
 func_decl_param_list: (func_decl_param_list COMMA)? param_var
-
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
-
 member_block: LBRACE member_stmt_list? RBRACE
-
 member_stmt_list: (member_stmt_list)? member_stmt
 
 member_stmt: doc_tag? py_code_block
@@ -105,15 +97,10 @@ member_stmt: doc_tag? py_code_block
            | doc_tag? has_stmt
 
 has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
-
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-
 typed_has_clause: esc_name type_tag (EQ expression)?
-
 type_tag: COLON type_specs
-
 return_type_tag: RETURN_HINT type_specs
-
 type_specs: (type_specs BW_OR)? single_type NULL_OK?
 
 single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
@@ -137,7 +124,6 @@ builtin_type: TYP_TYPE
             | TYP_STRING
 
 code_block: LBRACE statement_list? RBRACE
-
 statement_list: statement+
 
 statement: py_code_block
@@ -156,12 +142,12 @@ statement: py_code_block
           | try_stmt
           | if_stmt
           | expression SEMI
-          | static_assignment
           | assignment SEMI
           | typed_ctx_block
           | doc_tag? ability
           | doc_tag? architype
           | import_stmt
+          | SEMI
 
 typed_ctx_block: RETURN_HINT type_specs code_block
 if_stmt: KW_IF expression code_block elif_stmt? else_stmt?
@@ -193,7 +179,6 @@ revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
 disengage_stmt: KW_DISENGAGE SEMI
 await_stmt: KW_AWAIT expression
 assignment: KW_FREEZE? atom EQ expression
-static_assignment: KW_HAS assignment_list SEMI
 
 expression: pipe KW_IF expression KW_ELSE expression
           | pipe
@@ -362,9 +347,16 @@ atomic_chain: atomic_call
             | atomic_chain_unsafe
             | atomic_chain_safe
 
-atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice | DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
+atomic_chain_unsafe: atom atomic_chainable
 
-atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice | DOT_BKWD any_ref | DOT_FWD any_ref | DOT any_ref)
+atomic_chain_safe: atom NULL_OK atomic_chainable
+
+atomic_chainable: filter_compr
+                | edge_op_ref
+                | index_slice
+                | DOT_BKWD any_ref
+                | DOT_FWD any_ref
+                | DOT any_ref
 
 atomic_call: atom func_call_tail
 

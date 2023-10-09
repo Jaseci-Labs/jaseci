@@ -405,7 +405,7 @@ class JacFormatPass(Pass):
         else:
             self.emit(node, f"{node.arch.value}{node.name_ref.value}")
 
-    def exit_func_params(self, node: ast.FuncParams) -> None:
+    def exit_func_params(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         params: list["ParamVar"],
@@ -494,7 +494,7 @@ class JacFormatPass(Pass):
             else:
                 self.emit_ln(node, i.meta["jac_code"])
 
-    def exit_type_spec_list(self, node: ast.TypeSpecList) -> None:
+    def exit_type_spec_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         types: list[TypeSpec],
@@ -628,7 +628,7 @@ class JacFormatPass(Pass):
                     f"Binary operator {node.op.value} not supported in bootstrap Jac"
                 )
 
-    def exit_has_var_list(self, node: ast.HasVarList) -> None:
+    def exit_has_var_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         vars: list[HasVar],
@@ -770,7 +770,7 @@ class JacFormatPass(Pass):
         self.indent_level -= 1
         self.emit_ln(node, "}")
 
-    def exit_except_list(self, node: ast.ExceptList) -> None:
+    def exit_except_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         excepts: list[Except],
@@ -940,7 +940,7 @@ class JacFormatPass(Pass):
             f"Unable to find definition for {decl} declaration. Perhaps there's an `include` missing?"  # noqa
         )
 
-    def exit_name_list(self, node: ast.NameList) -> None:
+    def exit_name_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         names: list[Name],
@@ -1224,7 +1224,7 @@ class JacFormatPass(Pass):
         """
         self.ds_feature_warn()
 
-    def exit_expr_as_item_list(self, node: ast.ExprAsItemList) -> None:
+    def exit_expr_as_item_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         items: list["ExprAsItem"],

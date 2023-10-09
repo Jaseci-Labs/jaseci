@@ -394,13 +394,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_func_params(self, node: ast.FuncParams) -> None:
-        """Sub objects.
-
-        params: list['ParamVar'],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
 
@@ -502,13 +495,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_has_var_list(self, node: ast.HasVarList) -> None:
-        """Sub objects.
-
-        vars: list['HasVar'],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
@@ -516,13 +502,6 @@ class SymTabBuildPass(Pass):
         list_nest: TypeSpec,
         dict_nest: TypeSpec,
         null_ok: bool,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_type_spec_list(self, node: ast.TypeSpecList) -> None:
-        """Sub objects.
-
-        types: list[TypeSpec],
         """
         self.sync_node_to_scope(node)
 
@@ -576,13 +555,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_except_list(self, node: ast.ExceptList) -> None:
-        """Sub objects.
-
-        excepts: list['Except'],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
 
@@ -620,13 +592,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_name_list(self, node: ast.NameList) -> None:
-        """Sub objects.
-
-        names: list[Name],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
 
@@ -648,13 +613,6 @@ class SymTabBuildPass(Pass):
 
         expr: ExprType,
         alias: Optional[Name],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_expr_as_item_list(self, node: ast.ExprAsItemList) -> None:
-        """Sub objects.
-
-        items: list['ExprAsItem'],
         """
         self.sync_node_to_scope(node)
 
