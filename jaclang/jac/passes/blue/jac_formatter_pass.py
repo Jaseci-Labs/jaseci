@@ -228,6 +228,9 @@ class JacFormatPass(Pass):
         ability: AbilityRef,
         body: CodeBlock,
         """
+        self.emit_ln(node, "")
+        if node.doc:
+            self.emit_ln(node, node.doc.meta["jac_code"])
         if isinstance(node.signature, ast.EventSignature):
             # need to find a example and implement
             self.warning("This Event Defination is not available currently")
@@ -236,7 +239,10 @@ class JacFormatPass(Pass):
             fun_def = ""
             for arch in node.target.archs:
                 fun_def += arch.meta["jac_code"]
-            self.emit_ln(node, f"{fun_def} {{")
+            if node.signature.meta:
+                self.emit_ln(node, f"{fun_def} {node.signature.meta['jac_code']}{{")
+            else:
+                self.emit_ln(node, f"{fun_def} {{")
         self.indent_level += 1
         if node.body:
             self.emit_ln(node, node.body.meta["jac_code"])
@@ -254,6 +260,8 @@ class JacFormatPass(Pass):
         event_value = node.event.value if node.event else None
         if node.arch_tag_info:
             self.emit_ln(node, f"{node.arch_tag_info.meta['jac_code']} {event_value};")
+        else:
+            self.emit_ln(node, f"{event_value};")
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -352,7 +360,10 @@ class JacFormatPass(Pass):
                     self.indent_level -= 1
                     self.emit_ln(node, "}")
                 else:
-                    self.emit_ln(node, f"{fun_signature};")
+                    if node.is_abstract:
+                        self.emit_ln(node, f"{fun_signature} abstract;")
+                    else:
+                        self.emit_ln(node, f"{fun_signature};")
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
@@ -365,10 +376,12 @@ class JacFormatPass(Pass):
         return_type_jac_code = ""
         if node.return_type:
             return_type_jac_code = node.return_type.meta["jac_code"]
-        if return_type_jac_code:
+        if return_type_jac_code and params:
             self.emit(node, f"({params}) -> {return_type_jac_code}")
-        else:
+        elif params:
             self.emit(node, f"({params})")
+        elif return_type_jac_code:
+            self.emit(node, f"-> {return_type_jac_code}")
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -449,16 +462,19 @@ class JacFormatPass(Pass):
                 f"class {node.name.meta['jac_code']}({node.base_classes.meta['jac_code']}):",  # noqa
             )
         else:
-            self.emit_ln(node, f"enum {node.name.value} {{")
-        self.indent_level += 1
-        if node.doc:
-            self.emit_ln(node, node.doc.value)
-        if node.body:
-            self.emit(node, node.body.meta["jac_code"])
-        else:
-            self.decl_def_missing(node.name.meta["jac_code"])
-        self.indent_level -= 1
-        self.emit_ln(node, "}")
+            if node.body:
+                self.emit_ln(node, f"enum {node.name.value} {{")
+                self.indent_level += 1
+                if node.doc:
+                    self.emit_ln(node, node.doc.value)
+                if node.body:
+                    self.emit(node, node.body.meta["jac_code"])
+                else:
+                    self.decl_def_missing(node.name.meta["jac_code"])
+                self.indent_level -= 1
+                self.emit_ln(node, "}")
+            else:
+                self.emit_ln(node, f"enum {node.name.value};")
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -467,6 +483,14 @@ class JacFormatPass(Pass):
         mod: Optional[DottedNameList],
         body: EnumBlock,
         """
+        if node.doc:
+            self.emit_ln(node, node.doc.value)
+        self.emit_ln(node, node.target.meta["jac_code"] + "{")
+        if node.body:
+            self.indent_level += 1
+            self.emit(node, node.body.meta["jac_code"])
+            self.indent_level -= 1
+        self.emit_ln(node, "}")
 
     def exit_enum_block(self, node: ast.EnumBlock) -> None:
         """Sub objects.
@@ -641,9 +665,7 @@ class JacFormatPass(Pass):
                 f"{node.name.meta['jac_code']}: {node.type_tag.meta['jac_code']} = {node.value.meta['jac_code']}",  # noqa
             )
         else:
-            self.emit(
-                node, f"self.{node.name.value}: {node.type_tag.meta['jac_code']} = None"
-            )
+            self.emit(node, f"{node.name.value}: {node.type_tag.meta['jac_code']}")
 
     def get_mod_index(self, node: ast.AstNode) -> int:
         """Get module index."""
@@ -827,7 +849,8 @@ class JacFormatPass(Pass):
         """
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        self.emit(node, node.assignments.meta["jac_code"])
+        self.emit_ln(node, f"global {node.assignments.meta['jac_code']};")
+        self.emit_ln(node, "")
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
@@ -845,7 +868,7 @@ class JacFormatPass(Pass):
 
         base_classes: list[DottedNameList],
         """
-        self.emit(node, ", ".join([i.meta["jac_code"] for i in node.base_classes]))
+        self.emit(node, ":".join([i.meta["jac_code"] for i in node.base_classes]))
 
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
@@ -871,6 +894,7 @@ class JacFormatPass(Pass):
         base_classes: "BaseClasses",
         body: Optional["ArchBlock"],
         """
+        self.emit_ln(node, "")
         if node.doc:
             self.emit_ln(node, node.doc.value)
         if node.decorators:
@@ -891,7 +915,6 @@ class JacFormatPass(Pass):
         else:
             self.decl_def_missing(node.name.meta["jac_code"])
         self.emit_ln(node, "}")
-        self.emit_ln(node, "")
         self.emit_ln(node, "")
 
     def exit_f_string(self, node: ast.FString) -> None:
@@ -1249,14 +1272,15 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         test_name = node.name.value
-        test_code = "with entry {\n"
-        test_code += "print('Hello World');\n"
-        test_code += "}\n"
-        self.indent_level += 1
         if node.doc:
             self.emit_ln(node, test_name)
-        self.emit_ln(node, node.body.meta["jac_code"])
-        self.indent_level -= 1
+        if test_name:
+            self.emit_ln(node, f"{test_name} {{")
+            self.indent_level += 1
+        self.emit(node, f"{node.body.meta['jac_code']}")
+        if self.indent_level > 0:
+            self.indent_level -= 1
+            self.emit_ln(node, "}")
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
         """Sub objects.
