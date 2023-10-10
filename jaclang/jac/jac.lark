@@ -356,14 +356,6 @@ arch_ref: object_ref
         | edge_ref
         | node_ref
 
-arch_or_ability_chain: (arch_or_ability_chain (ability_ref | arch_ref)) | ability_ref | arch_ref
-
-abil_to_arch_chain: arch_or_ability_chain arch_ref | arch_ref
-
-arch_to_abil_chain: arch_or_ability_chain ability_ref | ability_ref
-
-arch_to_enum_chain: arch_or_ability_chain enum_ref | enum_ref
-
 node_ref: NODE_OP NAME
 edge_ref: EDGE_OP NAME
 walker_ref: WALKER_OP NAME
@@ -371,6 +363,12 @@ object_ref: OBJECT_OP esc_name
 enum_ref: ENUM_OP NAME
 ability_ref: ABILITY_OP (special_ref | esc_name)
 global_ref: GLOBAL_OP esc_name
+
+arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
+abil_to_arch_chain: arch_or_ability_chain? arch_ref
+arch_to_abil_chain: arch_or_ability_chain? ability_ref
+arch_to_enum_chain: arch_or_ability_chain? enum_ref
+
 
 edge_op_ref: edge_any
            | edge_from

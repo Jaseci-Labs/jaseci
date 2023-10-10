@@ -2533,37 +2533,159 @@ class JacParser(Pass):
                 kid=kid,
             )
 
+        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
+            """Grammar rule.
 
-# atomic_chain: atomic_call
-#             | atomic_chain_unsafe
-#             | atomic_chain_safe
+            index_slice: LSQUARE expression? (COLON expression?)? RSQUARE
+            """
+            if len(kid) == 2:
+                return ast.IndexSlice(
+                    start=None,
+                    stop=None,
+                    is_range=False,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            expr1 = kid[1]
+            expr2 = None
+            if len(kid) > 3:
+                expr2 = kid[3]
+            if isinstance(expr1, ast.ExprType) and (
+                isinstance(expr2, ast.ExprType) or expr2 is None
+            ):
+                return ast.IndexSlice(
+                    start=expr1,
+                    stop=expr2,
+                    is_range=True,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
-#                    | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
+        def arch_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+            """Grammar rule.
 
-# atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
-#                 | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
+            arch_ref: object_ref
+                    | walker_ref
+                    | edge_ref
+                    | node_ref
+            """
+            if isinstance(kid[0], ast.ArchRef):
+                return kid[0]
+            else:
+                raise self.ice()
 
-# atomic_call: atom LPAREN param_list? RPAREN
+        def node_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+            """Grammar rule.
 
-# param_list: (expr_list COMMA assignment_list) | assignment_list | expr_list
+            node_ref: NODE_OP NAME
+            """
+            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
+                return ast.ArchRef(
+                    arch=kid[0],
+                    name_ref=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# assignment_list: assignment_list COMMA assignment | assignment
+        def edge_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+            """Grammar rule.
 
-# index_slice: LSQUARE expression? (COLON expression?)? RSQUARE
+            edge_ref: EDGE_OP NAME
+            """
+            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
+                return ast.ArchRef(
+                    arch=kid[0],
+                    name_ref=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def walker_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+            """Grammar rule.
+
+            walker_ref: WALKER_OP NAME
+            """
+            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
+                return ast.ArchRef(
+                    arch=kid[0],
+                    name_ref=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def object_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+            """Grammar rule.
+
+            object_ref: OBJECT_OP esc_name
+            """
+            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
+                return ast.ArchRef(
+                    arch=kid[0],
+                    name_ref=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def enum_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+            """Grammar rule.
+
+            enum_ref: ENUM_OP NAME
+            """
+            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
+                return ast.ArchRef(
+                    arch=kid[0],
+                    name_ref=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def ability_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+            """Grammar rule.
+
+            ability_ref: ABILITY_OP (special_ref | esc_name)
+            """
+            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
+                return ast.ArchRef(
+                    arch=kid[0],
+                    name_ref=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def global_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+            """Grammar rule.
+
+            global_ref: GLOBAL_OP esc_name
+            """
+            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
+                return ast.ArchRef(
+                    arch=kid[0],
+                    name_ref=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
 
 # arch_ref: object_ref
 #         | walker_ref
 #         | edge_ref
 #         | node_ref
-
-# arch_or_ability_chain: (arch_or_ability_chain (ability_ref | arch_ref)) | ability_ref | arch_ref
-
-# abil_to_arch_chain: arch_or_ability_chain arch_ref | arch_ref
-
-# arch_to_abil_chain: arch_or_ability_chain ability_ref | ability_ref
-
-# arch_to_enum_chain: arch_or_ability_chain enum_ref | enum_ref
 
 # node_ref: NODE_OP NAME
 # edge_ref: EDGE_OP NAME
@@ -2572,6 +2694,12 @@ class JacParser(Pass):
 # enum_ref: ENUM_OP NAME
 # ability_ref: ABILITY_OP (special_ref | esc_name)
 # global_ref: GLOBAL_OP esc_name
+
+# arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
+# abil_to_arch_chain: arch_or_ability_chain? arch_ref
+# arch_to_abil_chain: arch_or_ability_chain? ability_ref
+# arch_to_enum_chain: arch_or_ability_chain? enum_ref
+
 
 # edge_op_ref: edge_any
 #            | edge_from
