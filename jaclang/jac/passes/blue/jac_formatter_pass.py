@@ -103,7 +103,7 @@ class JacFormatPass(Pass):
             self.emit_ln(node, "with entry {")
         if node.body:
             self.indent_level += 1
-            self.emit(node, node.body.meta["jac_code"])
+            self.emit_ln(node, node.body.meta["jac_code"])
             self.indent_level -= 1
         self.emit_ln(node, "}")
 
