@@ -2115,48 +2115,364 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def list_val(self, kid: list[ast.AstNode]) -> ast.ListVal:
+            """Grammar rule.
 
-# multistring: (fstring | STRING)+
+            list_val: LSQUARE expr_list? RSQUARE
+            """
+            if len(kid) == 2:
+                return ast.ListVal(
+                    values=None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            elif isinstance(kid[1], ast.SubNodeList):
+                return ast.ListVal(
+                    values=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# fstring: FSTR_START fstr_parts FSTR_END
+        def tuple_val(self, kid: list[ast.AstNode]) -> ast.TupleVal:
+            """Grammar rule.
 
-# fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
+            tuple_val: LPAREN tuple_list? RPAREN
+            """
+            if len(kid) == 2:
+                return ast.TupleVal(
+                    values=None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            elif isinstance(kid[1], ast.SubNodeList):
+                return ast.TupleVal(
+                    values=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# list_val: LSQUARE expr_list? RSQUARE
-# tuple_val: LPAREN tuple_list? RPAREN
-# set_val: LBRACE expr_list RBRACE
+        def set_val(self, kid: list[ast.AstNode]) -> ast.SetVal:
+            """Grammar rule.
 
-# expr_list: expr_list COMMA expression | expression
+            set_val: LBRACE expr_list RBRACE
+            """
+            if len(kid) == 2:
+                return ast.SetVal(
+                    values=None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            elif isinstance(kid[1], ast.SubNodeList):
+                return ast.SetVal(
+                    values=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# tuple_list: expression COMMA (expr_list COMMA assignment_list | assignment_list | expr_list)?
-#           | assignment_list
-#           | expression COMMA
+        def expr_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.ExprType]:
+            """Grammar rule.
 
-# dict_val: LBRACE kv_pairs? RBRACE
+            expr_list: (expr_list COMMA)? expression
+            """
+            consume = None
+            expr = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                expr = kid[2]
+            else:
+                expr = kid[0]
+            new_kid = [expr, comma, *consume.kid] if consume else [expr]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.ExprType)]
+            return ast.SubNodeList[ast.ExprType](
+                items=valid_kid,
+                mod_link=self.mod_link,
+                kid=kid,
+            )
 
-# list_compr: LSQUARE inner_compr RSQUARE
-# gen_compr: LPAREN inner_compr RPAREN
-# set_compr: LBRACE inner_compr RBRACE
-# inner_compr: expression KW_FOR name_list KW_IN walrus_assign (KW_IF expression)?
+        def tuple_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ExprType | ast.Assignment]:
+            """Grammar rule.
 
-# dict_compr: LBRACE expression COLON expression KW_FOR name_list KW_IN walrus_assign (KW_IF expression)? RBRACE
+            tuple_list: expression COMMA expr_list COMMA assignment_list
+                      | expression COMMA assignment_list
+                      | expression COMMA expr_list
+                      | expression COMMA
+                      | assignment_list
+            """
+            chomp = [*kid]
+            first_expr = None
+            if isinstance(chomp[0], ast.SubNodeList):
+                return chomp[0]
+            else:
+                first_expr = chomp[0]
+                chomp = chomp[2:]
+            expr_list = chomp[0].kid
+            chomp = chomp[1:]
+            if len(chomp):
+                chomp = chomp[1:]
+                expr_list = [*expr_list, *chomp[0].kid]
+            expr_list = [first_expr, *expr_list]
+            valid_type = Union[ast.ExprType, ast.Assignment]
+            valid_kid = [i for i in expr_list if isinstance(i, valid_type)]
+            if len(valid_kid) == len(expr_list):
+                return ast.SubNodeList[ast.ExprType | ast.Assignment](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
 
-# kv_pairs: (expression COLON expression COMMA)* expression COLON expression
+        def dict_val(self, kid: list[ast.AstNode]) -> ast.DictVal:
+            """Grammar rule.
+
+            dict_val: LBRACE kv_pairs? RBRACE
+            """
+            if len(kid) == 2:
+                return ast.DictVal(
+                    kv_pairs=None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            elif isinstance(kid[1], ast.SubNodeList):
+                return ast.DictVal(
+                    kv_pairs=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def kv_pairs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.KVPair]:
+            """Grammar rule.
+
+            kv_pairs: (kv_pairs COMMA)? kv_pair
+            """
+            consume = None
+            kv_pair = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                kv_pair = kid[2]
+            else:
+                kv_pair = kid[0]
+            new_kid = [kv_pair, comma, *consume.kid] if consume else [kv_pair]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.KVPair)]
+            return ast.SubNodeList[ast.KVPair](
+                items=valid_kid,
+                mod_link=self.mod_link,
+                kid=kid,
+            )
+
+        def kv_pair(self, kid: list[ast.AstNode]) -> ast.KVPair:
+            """Grammar rule.
+
+            kv_pair: expression COLON expression
+            """
+            if isinstance(kid[0], ast.ExprType) and isinstance(kid[2], ast.ExprType):
+                return ast.KVPair(
+                    key=kid[0],
+                    value=kid[2],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def list_compr(self, kid: list[ast.AstNode]) -> ast.ListCompr:
+            """Grammar rule.
+
+            list_compr: LSQUARE inner_compr RSQUARE
+            """
+            if isinstance(kid[1], ast.InnerCompr):
+                return ast.ListCompr(
+                    compr=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def gen_compr(self, kid: list[ast.AstNode]) -> ast.GenCompr:
+            """Grammar rule.
+
+            gen_compr: LPAREN inner_compr RPAREN
+            """
+            if isinstance(kid[1], ast.InnerCompr):
+                return ast.GenCompr(
+                    compr=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def set_compr(self, kid: list[ast.AstNode]) -> ast.SetCompr:
+            """Grammar rule.
+
+            set_compr: LBRACE inner_compr RBRACE
+            """
+            if isinstance(kid[1], ast.InnerCompr):
+                return ast.SetCompr(
+                    compr=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def inner_compr(self, kid: list[ast.AstNode]) -> ast.InnerCompr:
+            """Grammar rule.
+
+            inner_compr: expression KW_FOR name_list KW_IN walrus_assign (KW_IF expression)?
+            """
+            if (
+                isinstance(kid[0], ast.ExprType)
+                and isinstance(kid[2], ast.SubNodeList)
+                and isinstance(kid[4], ast.ExprType)
+            ):
+                return ast.InnerCompr(
+                    out_expr=kid[0],
+                    names=kid[2],
+                    collection=kid[4],
+                    conditional=kid[6]
+                    if len(kid) > 5 and isinstance(kid[6], ast.ExprType)
+                    else None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def dict_compr(self, kid: list[ast.AstNode]) -> ast.DictCompr:
+            """Grammar rule.
+
+            dict_compr: LBRACE kv_pair KW_FOR name_list KW_IN walrus_assign (KW_IF expression)? RBRACE
+            """
+            if (
+                isinstance(kid[1], ast.KVPair)
+                and isinstance(kid[3], ast.SubNodeList)
+                and isinstance(kid[5], ast.ExprType)
+            ):
+                return ast.DictCompr(
+                    kv_pair=kid[1],
+                    names=kid[3],
+                    collection=kid[5],
+                    conditional=kid[7]
+                    if len(kid) > 6 and isinstance(kid[7], ast.AtomType)
+                    else None,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def atomic_chain(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
+
+            atomic_chain: atomic_call
+                        | atomic_chain_unsafe
+                        | atomic_chain_safe
+            """
+            if isinstance(kid[0], ast.AtomType):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def atomic_chain_unsafe(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
+
+            atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
+                               | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
+            """
+            if len(kid) == 2:
+                if isinstance(kid[0], ast.AtomType) and isinstance(
+                    kid[1], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
+                ):
+                    return ast.AtomTrailer(
+                        target=kid[0],
+                        right=kid[1],
+                        null_ok=False,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            elif len(kid) == 3:
+                if (
+                    isinstance(kid[0], ast.AtomType)
+                    and isinstance(kid[1], ast.Token)
+                    and isinstance(kid[2], ast.AtomType)
+                ):
+                    return ast.AtomTrailer(
+                        target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
+                        right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                        null_ok=False,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            else:
+                raise self.ice()
+
+        def atomic_chain_safe(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
+
+            atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
+                             | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
+            """
+            if len(kid) == 3:
+                if isinstance(kid[0], ast.AtomType) and isinstance(
+                    kid[2], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
+                ):
+                    return ast.AtomTrailer(
+                        target=kid[0],
+                        right=kid[2],
+                        null_ok=True,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            elif len(kid) == 4:
+                if (
+                    isinstance(kid[0], ast.AtomType)
+                    and isinstance(kid[1], ast.Token)
+                    and isinstance(kid[3], ast.AtomType)
+                ):
+                    return ast.AtomTrailer(
+                        target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[3],
+                        right=kid[3] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                        null_ok=True,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+            else:
+                raise self.ice()
+
 
 # atomic_chain: atomic_call
 #             | atomic_chain_unsafe
 #             | atomic_chain_safe
 
-# atomic_chain_unsafe: atom atomic_chainable
+# atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
+#                    | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
 
-# atomic_chain_safe: atom NULL_OK atomic_chainable
-
-# atomic_chainable: filter_compr
-#                 | edge_op_ref
-#                 | index_slice
-#                 | DOT_BKWD any_ref
-#                 | DOT_FWD any_ref
-#                 | DOT any_ref
+# atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
+#                 | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
 
 # atomic_call: atom func_call_tail
 

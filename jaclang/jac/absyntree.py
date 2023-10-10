@@ -1062,22 +1062,6 @@ class UnaryExpr(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class UnpackExpr(AstNode):
-    """ExprUnpack node type for Jac Ast."""
-
-    def __init__(
-        self,
-        target: ExprType,
-        is_dict: bool,
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize unpack expression node."""
-        self.target = target
-        self.is_dict = is_dict
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
 class MultiString(AstNode):
     """ExprMultiString node type for Jac Ast."""
 
@@ -1092,12 +1076,26 @@ class MultiString(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
+class FString(AstNode):
+    """FString node type for Jac Ast."""
+
+    def __init__(
+        self,
+        parts: Optional[SubNodeList[Constant | ExprType]],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize fstring expression node."""
+        self.parts = parts
+        super().__init__(mod_link=mod_link, kid=kid)
+
+
 class ExprList(AstNode):
     """ExprList node type for Jac Ast."""
 
     def __init__(
         self,
-        values: list[ExprType],
+        values: Optional[SubNodeList[ExprType]],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -1119,16 +1117,14 @@ class TupleVal(AstNode):
 
     def __init__(
         self,
-        first_expr: Optional[ExprType],
-        exprs: Optional[ExprList],
-        assigns: list[Assignment],
+        values: Optional[
+            SubNodeList[ExprType | SubNodeList[ExprType] | SubNodeList[Assignment]]
+        ],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize tuple value node."""
-        self.first_expr = first_expr
-        self.exprs = exprs
-        self.assigns = assigns
+        self.values = values
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -1137,61 +1133,12 @@ class DictVal(AstNode):
 
     def __init__(
         self,
-        kv_pairs: list["KVPair"],
+        kv_pairs: Optional[SubNodeList[KVPair]],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize dict expression node."""
         self.kv_pairs = kv_pairs
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class InnerCompr(AstNode):
-    """ListCompr node type for Jac Ast."""
-
-    def __init__(
-        self,
-        out_expr: ExprType,
-        name_list: SubNodeList[Name],
-        collection: ExprType,
-        conditional: Optional[ExprType],
-        is_list: bool,
-        is_gen: bool,
-        is_set: bool,
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize comprehension expression node."""
-        self.out_expr = out_expr
-        self.name_list = name_list
-        self.collection = collection
-        self.conditional = conditional
-        self.is_list = is_list
-        self.is_gen = is_gen
-        self.is_set = is_set
-
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class DictCompr(AstNode):
-    """DictCompr node type for Jac Ast."""
-
-    def __init__(
-        self,
-        outk_expr: ExprType,
-        outv_expr: ExprType,
-        name_list: SubNodeList[Name],
-        collection: ExprType,
-        conditional: Optional[ExprType],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize comprehension expression node."""
-        self.outk_expr = outk_expr
-        self.outv_expr = outv_expr
-        self.name_list = name_list
-        self.collection = collection
-        self.conditional = conditional
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -1211,13 +1158,76 @@ class KVPair(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
+class ListCompr(AstNode):
+    """ListCompr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        compr: InnerCompr,
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize comprehension expression node."""
+        self.compr = compr
+        super().__init__(mod_link=mod_link, kid=kid)
+
+
+class GenCompr(ListCompr):
+    """GenCompr node type for Jac Ast."""
+
+
+class SetCompr(ListCompr):
+    """SetCompr node type for Jac Ast."""
+
+
+class InnerCompr(AstNode):
+    """ListCompr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        out_expr: ExprType,
+        names: SubNodeList[Name],
+        collection: ExprType,
+        conditional: Optional[ExprType],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize comprehension expression node."""
+        self.out_expr = out_expr
+        self.names = names
+        self.collection = collection
+        self.conditional = conditional
+
+        super().__init__(mod_link=mod_link, kid=kid)
+
+
+class DictCompr(AstNode):
+    """DictCompr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        kv_pair: KVPair,
+        names: SubNodeList[Name],
+        collection: ExprType,
+        conditional: Optional[ExprType],
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize comprehension expression node."""
+        self.kv_pair = kv_pair
+        self.names = names
+        self.collection = collection
+        self.conditional = conditional
+        super().__init__(mod_link=mod_link, kid=kid)
+
+
 class AtomTrailer(AstNode):
     """AtomTrailer node type for Jac Ast."""
 
     def __init__(
         self,
         target: AtomType,
-        right: IndexSlice | ArchRef | Token,
+        right: AtomType,
         null_ok: bool,
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1234,7 +1244,7 @@ class FuncCall(AstNode):
 
     def __init__(
         self,
-        target: "AtomType",
+        target: AtomType,
         params: Optional["ParamList"],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1392,20 +1402,6 @@ class FilterCompr(AstNode):
         super().__init__(mod_link=mod_link, kid=kid)
 
 
-class FString(AstNode):
-    """FString node type for Jac Ast."""
-
-    def __init__(
-        self,
-        parts: Optional[SubNodeList[Constant | ExprType]],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize fstring expression node."""
-        self.parts = parts
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
 # AST Parse-Tree Node Types
 
 
@@ -1542,18 +1538,20 @@ AtomType = Union[
     TupleVal,
     SetVal,
     DictVal,
-    InnerCompr,
+    ListCompr,
+    SetCompr,
+    GenCompr,
     DictCompr,
     AtomTrailer,
     EdgeOpRef,
     FilterCompr,
+    IndexSlice,
 ]
 
 ExprType = Union[
     UnaryExpr,
     BinaryExpr,
     IfElseExpr,
-    UnpackExpr,
     AtomType,
 ]
 

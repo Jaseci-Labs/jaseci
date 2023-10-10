@@ -309,46 +309,37 @@ atom_collection: dict_compr
                | list_val
 
 multistring: (fstring | STRING)+
-
 fstring: FSTR_START fstr_parts FSTR_END
-
 fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
-
 list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
 set_val: LBRACE expr_list RBRACE
+expr_list: (expr_list COMMA)? expression
 
-expr_list: expr_list COMMA expression | expression
-
-tuple_list: expression COMMA (expr_list COMMA assignment_list | assignment_list | expr_list)?
-          | assignment_list
+tuple_list: expression COMMA expr_list COMMA assignment_list
+          | expression COMMA assignment_list
+          | expression COMMA expr_list
           | expression COMMA
+          | assignment_list
 
-dict_val: LBRACE kv_pairs? RBRACE
-
+dict_val: LBRACE kv_pair_list? RBRACE
+kv_pair_list: (kv_pair_list COMMA)? kv_pair
+kv_pair: expression COLON expression
 list_compr: LSQUARE inner_compr RSQUARE
 gen_compr: LPAREN inner_compr RPAREN
 set_compr: LBRACE inner_compr RBRACE
 inner_compr: expression KW_FOR name_list KW_IN walrus_assign (KW_IF expression)?
-
-dict_compr: LBRACE expression COLON expression KW_FOR name_list KW_IN walrus_assign (KW_IF expression)? RBRACE
-
-kv_pairs: (expression COLON expression COMMA)* expression COLON expression
+dict_compr: LBRACE kv_pair KW_FOR name_list KW_IN walrus_assign (KW_IF expression)? RBRACE
 
 atomic_chain: atomic_call
             | atomic_chain_unsafe
             | atomic_chain_safe
 
-atomic_chain_unsafe: atom atomic_chainable
+atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
+                   | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
 
-atomic_chain_safe: atom NULL_OK atomic_chainable
-
-atomic_chainable: filter_compr
-                | edge_op_ref
-                | index_slice
-                | DOT_BKWD any_ref
-                | DOT_FWD any_ref
-                | DOT any_ref
+atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
+                | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
 
 atomic_call: atom func_call_tail
 
