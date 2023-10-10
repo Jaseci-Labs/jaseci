@@ -2681,6 +2681,112 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def arch_or_ability_chain(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ArchRef]:
+            """Grammar rule.
+
+            arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
+            """
+            consume = None
+            name = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                name = kid[1]
+            else:
+                name = kid[0]
+            new_kid = [name, *consume.kid] if consume else [name]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.ArchRef)]
+            if len(valid_kid) == len(new_kid):
+                return ast.SubNodeList[ast.ArchRef](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def abil_to_arch_chain(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ArchRef]:
+            """Grammar rule.
+
+            abil_to_arch_chain: arch_or_ability_chain? arch_ref
+            """
+            if len(kid) == 2:
+                if isinstance(kid[1], ast.ArchRef) and isinstance(
+                    kid[0], ast.SubNodeList
+                ):
+                    return ast.SubNodeList[ast.ArchRef](
+                        items=[*(kid[0].items), kid[1]],
+                        mod_link=self.mod_link,
+                        kid=[*(kid[0].kid), kid[1]],
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.SubNodeList):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def arch_to_abil_chain(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ArchRef]:
+            """Grammar rule.
+
+            arch_to_abil_chain: arch_or_ability_chain? ability_ref
+            """
+            if len(kid) == 2:
+                if isinstance(kid[1], ast.ArchRef) and isinstance(
+                    kid[0], ast.SubNodeList
+                ):
+                    return ast.SubNodeList[ast.ArchRef](
+                        items=[*(kid[0].items), kid[1]],
+                        mod_link=self.mod_link,
+                        kid=[*(kid[0].kid), kid[1]],
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.SubNodeList):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def arch_to_enum_chain(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ArchRef | ast.EnumDef]:
+            """Grammar rule.
+
+            arch_to_enum_chain: arch_or_ability_chain? enum_ref
+            """
+            if len(kid) == 2:
+                if isinstance(kid[1], ast.EnumDef) and isinstance(
+                    kid[0], ast.SubNodeList
+                ):
+                    return ast.SubNodeList[ast.ArchRef | ast.EnumDef](
+                        items=[*(kid[0].items), kid[1]],
+                        mod_link=self.mod_link,
+                        kid=[*(kid[0].kid), kid[1]],
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.SubNodeList):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def edge_op_ref(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
+            """Grammar rule.
+
+            edge_op_ref: edge_any
+                       | edge_from
+                       | edge_to
+            """
+            if isinstance(kid[0], ast.EdgeOpRef):
+                return kid[0]
+            else:
+                raise self.ice()
+
 
 # arch_ref: object_ref
 #         | walker_ref
