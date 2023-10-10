@@ -269,9 +269,9 @@ class JacFormatPass(Pass):
         """
         event_value = node.event.value if node.event else None
         if node.arch_tag_info:
-            self.emit_ln(node, f"{node.arch_tag_info.meta['jac_code']} {event_value};")
+            self.emit(node, f"{node.arch_tag_info.meta['jac_code']} {event_value}")
         else:
-            self.emit_ln(node, f"{event_value};")
+            self.emit(node, f"{event_value}")
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -352,10 +352,20 @@ class JacFormatPass(Pass):
                     if isinstance(node.name_ref, ast.Name)
                     else node.name_ref.var.value
                 )
-                self.emit(
-                    node,
-                    f"can {can_name} with {node.signature.meta['jac_code']}",
-                )
+                if node.body:
+                    self.emit_ln(
+                        node,
+                        f"can {can_name} with {node.signature.meta['jac_code']} {{",
+                    )
+                    self.indent_level += 1
+                    self.emit(node, node.body.meta["jac_code"])
+                    self.indent_level -= 1
+                    self.emit_ln(node, "}")
+                else:
+                    self.emit_ln(
+                        node,
+                        f"can {can_name} with {node.signature.meta['jac_code']};",
+                    )
             elif isinstance(node.signature, ast.FuncSignature):
                 if isinstance(node.name_ref, ast.SpecialVarRef):
                     if access_modifier:
@@ -727,7 +737,7 @@ class JacFormatPass(Pass):
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
-        self.emit(node, "disengage;")
+        self.emit(node, "disengage")
 
     def exit_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
