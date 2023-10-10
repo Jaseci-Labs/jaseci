@@ -195,6 +195,13 @@ def subscription_item_create_usage_record(
 
 
 @jaseci_action()
+def subscription_item_retrieve(subscription_item_id: str, **kwargs):
+    """retrieve subscription item"""
+
+    return stripe().SubscriptionItem.retrieve(subscription_item_id, **kwargs)
+
+
+@jaseci_action()
 def checkout_session_create(success_url: str, mode: str, **kwargs):
     return stripe().checkout.Session.create(
         success_url=success_url,
