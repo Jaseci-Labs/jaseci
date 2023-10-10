@@ -396,7 +396,9 @@ connect_from: CARROW_L_P1 expression (COLON assignment_list)? CARROW_L_P2
 
 filter_compr: LPAREN EQ filter_compare_list RPAREN
 
-filter_compare_list: (esc_name cmp_op expression COMMA)* esc_name cmp_op expression
+filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
+
+filter_compare_item: esc_name cmp_op expression
 
 FLOAT: /(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/

@@ -1348,8 +1348,18 @@ class EdgeOpRef(WalkerStmtOnlyNode):
         )
 
 
-class DisconnectOp(EdgeOpRef):
+class DisconnectOp(WalkerStmtOnlyNode):
     """DisconnectOpRef node type for Jac Ast."""
+
+    def __init__(
+        self,
+        edge_spec: EdgeOpRef,
+        mod_link: Optional[Module],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize disconnect op reference expression node."""
+        self.edge_spec = edge_spec
+        super().__init__(mod_link=mod_link, kid=kid)
 
 
 class ConnectOp(AstNode):
@@ -1358,7 +1368,7 @@ class ConnectOp(AstNode):
     def __init__(
         self,
         conn_type: Optional[ExprType],
-        conn_assign: SubNodeList[Assignment],
+        conn_assign: Optional[SubNodeList[Assignment]],
         edge_dir: EdgeDir,
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1375,7 +1385,7 @@ class FilterCompr(AstNode):
 
     def __init__(
         self,
-        compares: list[BinaryExpr],
+        compares: SubNodeList[BinaryExpr],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:

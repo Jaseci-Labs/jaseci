@@ -8,7 +8,7 @@ from typing import Union
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
-from jaclang.jac.constant import Tokens as Tok
+from jaclang.jac.constant import EdgeDir, Tokens as Tok
 from jaclang.jac.passes.ir_pass import Pass
 from jaclang.vendor.lark import Lark, logger
 
@@ -2787,6 +2787,185 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def edge_to(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
+            """Grammar rule.
+
+            edge_to: ARROW_R_P1 expression (COLON filter_compare_list)? ARROW_R_P2
+                   | ARROW_R
+            """
+            ftype = kid[1] if len(kid) >= 3 else None
+            fcond = kid[3] if len(kid) >= 5 else None
+            if isinstance(ftype, ast.ExprType) and (
+                isinstance(fcond, ast.FilterCompr) or fcond is None
+            ):
+                return ast.EdgeOpRef(
+                    filter_type=ftype,
+                    filter_cond=fcond,
+                    edge_dir=EdgeDir.OUT,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def edge_from(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
+            """Grammar rule.
+
+            edge_from: ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_L_P2
+                     | ARROW_L
+            """
+            ftype = kid[1] if len(kid) >= 3 else None
+            fcond = kid[3] if len(kid) >= 5 else None
+            if isinstance(ftype, ast.ExprType) and (
+                isinstance(fcond, ast.FilterCompr) or fcond is None
+            ):
+                return ast.EdgeOpRef(
+                    filter_type=ftype,
+                    filter_cond=fcond,
+                    edge_dir=EdgeDir.IN,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def edge_any(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
+            """Grammar rule.
+
+            edge_any: ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_R_P2
+                    | ARROW_BI
+            """
+            ftype = kid[1] if len(kid) >= 3 else None
+            fcond = kid[3] if len(kid) >= 5 else None
+            if isinstance(ftype, ast.ExprType) and (
+                isinstance(fcond, ast.FilterCompr) or fcond is None
+            ):
+                return ast.EdgeOpRef(
+                    filter_type=ftype,
+                    filter_cond=fcond,
+                    edge_dir=EdgeDir.ANY,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def connect_op(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
+            """Grammar rule.
+
+            connect_op: connect_from
+                      | connect_to
+            """
+            if isinstance(kid[0], ast.ConnectOp):
+                return kid[0]
+            else:
+                raise self.ice()
+
+        def disconnect_op(self, kid: list[ast.AstNode]) -> ast.DisconnectOp:
+            """Grammar rule.
+
+            disconnect_op: NOT edge_op_ref
+            """
+            if isinstance(kid[1], ast.EdgeOpRef):
+                return ast.DisconnectOp(
+                    edge_spec=kid[1],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def connect_to(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
+            """Grammar rule.
+
+            connect_to: CARROW_R_P1 expression (COLON assignment_list)? CARROW_R_P2
+                      | CARROW_R
+            """
+            conn_type = kid[1] if len(kid) >= 3 else None
+            conn_assign = kid[3] if len(kid) >= 5 else None
+            if isinstance(conn_type, ast.ExprType) and (
+                isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
+            ):
+                return ast.ConnectOp(
+                    conn_type=conn_type,
+                    conn_assign=conn_assign,
+                    edge_dir=EdgeDir.OUT,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def connect_from(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
+            """Grammar rule.
+
+            connect_from: CARROW_L_P1 expression (COLON assignment_list)? CARROW_L_P2
+                        | CARROW_L
+            """
+            conn_type = kid[1] if len(kid) >= 3 else None
+            conn_assign = kid[3] if len(kid) >= 5 else None
+            if isinstance(conn_type, ast.ExprType) and (
+                isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
+            ):
+                return ast.ConnectOp(
+                    conn_type=conn_type,
+                    conn_assign=conn_assign,
+                    edge_dir=EdgeDir.IN,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def filter_compr(self, kid: list[ast.AstNode]) -> ast.FilterCompr:
+            """Grammar rule.
+
+            filter_compr: LPAREN EQ filter_compare_list RPAREN
+            """
+            if isinstance(kid[2], ast.SubNodeList):
+                return ast.FilterCompr(
+                    compares=kid[2],
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
+            else:
+                raise self.ice()
+
+        def filter_compare_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.BinaryExpr]:
+            """Grammar rule.
+
+            filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
+            """
+            consume = None
+            expr = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                expr = kid[2]
+            else:
+                expr = kid[0]
+            new_kid = [expr, comma, *consume.kid] if consume else [expr]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.BinaryExpr)]
+            return ast.SubNodeList[ast.BinaryExpr](
+                items=valid_kid,
+                mod_link=self.mod_link,
+                kid=kid,
+            )
+
+        def filter_compare_item(self, kid: list[ast.AstNode]) -> ast.BinaryExpr:
+            """Grammar rule.
+
+            filter_compare_item: esc_name cmp_op expression
+            """
+            ret = self.binary_expr(kid)
+            if isinstance(ret, ast.BinaryExpr):
+                return ret
+            else:
+                raise self.ice()
+
 
 # arch_ref: object_ref
 #         | walker_ref
@@ -2833,4 +3012,6 @@ class JacParser(Pass):
 
 # filter_compr: LPAREN EQ filter_compare_list RPAREN
 
-# filter_compare_list: (esc_name cmp_op expression COMMA)* esc_name cmp_op expression
+# filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
+
+# filter_compare_item: esc_name cmp_op expression
