@@ -1117,9 +1117,7 @@ class TupleVal(AstNode):
 
     def __init__(
         self,
-        values: Optional[
-            SubNodeList[ExprType | SubNodeList[ExprType] | SubNodeList[Assignment]]
-        ],
+        values: Optional[SubNodeList[ExprType | Assignment]],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -1245,29 +1243,13 @@ class FuncCall(AstNode):
     def __init__(
         self,
         target: AtomType,
-        params: Optional["ParamList"],
+        params: Optional[SubNodeList[ExprType | Assignment]],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize function call expression node."""
         self.target = target
         self.params = params
-        super().__init__(mod_link=mod_link, kid=kid)
-
-
-class ParamList(AstNode):
-    """ParamList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        p_args: Optional[ExprList],
-        p_kwargs: SubNodeList[Assignment],
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize parameter list expression node."""
-        self.p_args = p_args
-        self.p_kwargs = p_kwargs
         super().__init__(mod_link=mod_link, kid=kid)
 
 
@@ -1546,6 +1528,7 @@ AtomType = Union[
     EdgeOpRef,
     FilterCompr,
     IndexSlice,
+    FuncCall,
 ]
 
 ExprType = Union[

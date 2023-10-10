@@ -2463,6 +2463,76 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def atomic_call(self, kid: list[ast.AstNode]) -> ast.FuncCall:
+            """Grammar rule.
+
+            atomic_call: atom LPAREN param_list? RPAREN
+            """
+            if (
+                len(kid) == 4
+                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[2], ast.SubNodeList)
+            ):
+                return ast.FuncCall(
+                    target=kid[0], params=kid[2], mod_link=self.mod_link, kid=kid
+                )
+            elif len(kid) == 1 and isinstance(kid[0], ast.AtomType):
+                return ast.FuncCall(
+                    target=kid[0], params=None, mod_link=self.mod_link, kid=kid
+                )
+            else:
+                raise self.ice()
+
+        def param_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.ExprType | ast.Assignment]:
+            """Grammar rule.
+
+            param_list: (expr_list COMMA assignment_list) | assignment_list | expr_list
+            """
+            if len(kid) == 1:
+                if isinstance(kid[0], ast.SubNodeList):
+                    return kid[0]
+                else:
+                    raise self.ice()
+            else:
+                valid_type = Union[ast.ExprType, ast.Assignment]
+                valid_kid = [
+                    i for i in [*kid[0].kid, *kid[2].kid] if isinstance(i, valid_type)
+                ]
+                if len(valid_kid) == len(kid[0].kid) + len(kid[2].kid):
+                    return ast.SubNodeList[ast.ExprType | ast.Assignment](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                else:
+                    raise self.ice()
+
+        def assignment_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.Assignment]:
+            """Grammar rule.
+
+            assignment_list: assignment_list COMMA assignment | assignment
+            """
+            consume = None
+            assign = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                assign = kid[2]
+            else:
+                assign = kid[0]
+            new_kid = [assign, comma, *consume.kid] if consume else [assign]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.Assignment)]
+            return ast.SubNodeList[ast.Assignment](
+                items=valid_kid,
+                mod_link=self.mod_link,
+                kid=kid,
+            )
+
 
 # atomic_chain: atomic_call
 #             | atomic_chain_unsafe
@@ -2474,9 +2544,7 @@ class JacParser(Pass):
 # atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
 #                 | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
 
-# atomic_call: atom func_call_tail
-
-# func_call_tail: LPAREN param_list? RPAREN
+# atomic_call: atom LPAREN param_list? RPAREN
 
 # param_list: (expr_list COMMA assignment_list) | assignment_list | expr_list
 

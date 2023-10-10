@@ -341,13 +341,13 @@ atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
 atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
                 | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
 
-atomic_call: atom func_call_tail
+atomic_call: atom LPAREN param_list? RPAREN
 
-func_call_tail: LPAREN param_list? RPAREN
+param_list: expr_list COMMA assignment_list
+          | assignment_list
+          | expr_list
 
-param_list: (expr_list COMMA assignment_list) | assignment_list | expr_list
-
-assignment_list: assignment_list COMMA assignment | assignment
+assignment_list: (assignment_list COMMA)? assignment
 
 index_slice: LSQUARE expression? (COLON expression?)? RSQUARE
 
