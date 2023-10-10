@@ -172,6 +172,13 @@ walker list_usage_report {
     stripe.subscription_item_list_usage_record_summaries(subscription_item_id, limit=1);
 }
 
+walker subscription_item_retrieve {
+    has subscription_item_id = "si_1MTgMQCZO78n7fsZqu1dk6nD";
+    can stripe.subscription_item_retrieve;
+
+    stripe.subscription_item_retrieve(subscription_item_id);
+}
+
 walker create_checkout_session {
     has success_url = "https://example.com/success", cancel_url = "https://example.com/cancel", line_items = [{"price": "price_H5ggYwtDq4fbrJ","quantity": 12}], mode = "payment";
     can stripe.checkout_session_create;

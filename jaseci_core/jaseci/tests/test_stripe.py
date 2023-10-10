@@ -44,6 +44,7 @@ class StripeTests(CoreTest):
         stripe.Invoice.retrieve = Mock()
         stripe.SubscriptionItem.create_usage_record = Mock()
         stripe.SubscriptionItem.list_usage_record_summaries = Mock()
+        stripe.SubscriptionItem.retrieve = Mock()
         stripe.checkout.Session.create = Mock()
         stripe.billing_portal.Session.create = Mock()
 
@@ -203,6 +204,10 @@ class StripeTests(CoreTest):
     @jac_testcase("stripe.jac", "list_usage_report")
     def test_stripe_list_usage_report(self, ret):
         stripe.SubscriptionItem.list_usage_record_summaries.assert_called()
+
+    @jac_testcase("stripe.jac", "subscription_item_retrieve")
+    def test_stripe_subscription_item_retrieve(self, ret):
+        stripe.SubscriptionItem.retrieve.assert_called()
 
     @jac_testcase("stripe.jac", "create_checkout_session")
     def test_stripe_create_checkout_session(self, ret):
