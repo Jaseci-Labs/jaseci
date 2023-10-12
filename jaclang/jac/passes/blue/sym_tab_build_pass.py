@@ -742,14 +742,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_unpack_expr(self, node: ast.UnpackExpr) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        is_dict: bool,
-        """
-        self.sync_node_to_scope(node)
-
     def enter_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 
@@ -840,14 +832,6 @@ class SymTabBuildPass(Pass):
 
         target: 'AtomType',
         params: Optional['ParamList'],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_param_list(self, node: ast.ParamList) -> None:
-        """Sub objects.
-
-        p_args: Optional[ExprList],
-        p_kwargs: Optional['AssignmentList'],
         """
         self.sync_node_to_scope(node)
 

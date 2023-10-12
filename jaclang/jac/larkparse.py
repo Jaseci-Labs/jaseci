@@ -2966,52 +2966,6 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-
-# arch_ref: object_ref
-#         | walker_ref
-#         | edge_ref
-#         | node_ref
-
-# node_ref: NODE_OP NAME
-# edge_ref: EDGE_OP NAME
-# walker_ref: WALKER_OP NAME
-# object_ref: OBJECT_OP esc_name
-# enum_ref: ENUM_OP NAME
-# ability_ref: ABILITY_OP (special_ref | esc_name)
-# global_ref: GLOBAL_OP esc_name
-
-# arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
-# abil_to_arch_chain: arch_or_ability_chain? arch_ref
-# arch_to_abil_chain: arch_or_ability_chain? ability_ref
-# arch_to_enum_chain: arch_or_ability_chain? enum_ref
-
-
-# edge_op_ref: edge_any
-#            | edge_from
-#            | edge_to
-
-# edge_to: ARROW_R_P1 expression (COLON filter_compare_list)? ARROW_R_P2
-#        | ARROW_R
-
-# edge_from: ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_L_P2
-#          | ARROW_L
-
-# edge_any: ARROW_L_P1 expression (COLON filter_compare_list)? ARROW_R_P2
-#         | ARROW_BI
-
-# connect_op: connect_from
-#           | connect_to
-
-# disconnect_op: NOT edge_op_ref
-
-# connect_to: CARROW_R_P1 expression (COLON assignment_list)? CARROW_R_P2
-#           | CARROW_R
-
-# connect_from: CARROW_L_P1 expression (COLON assignment_list)? CARROW_L_P2
-#             | CARROW_L
-
-# filter_compr: LPAREN EQ filter_compare_list RPAREN
-
-# filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
-
-# filter_compare_item: esc_name cmp_op expression
+        def __default_token__(self, token: jl.Token) -> ast.Token:
+            """Token handler."""
+            print(f"Unhandled rule: {token}")

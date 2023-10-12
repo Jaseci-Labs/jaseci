@@ -142,7 +142,7 @@ class JacFormatPass(Pass):
         else:
             self.emit(node, f"{node.target.meta['jac_code']}()")
 
-    def exit_param_list(self, node: ast.ParamList) -> None:
+    def exit_param_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         p_args: Optional[ExprList],
@@ -1019,7 +1019,7 @@ class JacFormatPass(Pass):
             node, f"[{', '.join([value.meta['jac_code'] for value in node.values])}]"
         )
 
-    def exit_unpack_expr(self, node: ast.UnpackExpr) -> None:
+    def exit_unpack_expr(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         target: ExprType,
