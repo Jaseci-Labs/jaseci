@@ -67,6 +67,7 @@ class JacParser(Pass):
             """Initialize transformer."""
             super().__init__(*args, **kwargs)
             self.parse_ref = parser
+            self.mod_link = None
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
@@ -2968,4 +2969,29 @@ class JacParser(Pass):
 
         def __default_token__(self, token: jl.Token) -> ast.Token:
             """Token handler."""
-            print(f"Unhandled rule: {token}")
+            ret_type = ast.Token
+            if token.type in [Tok.NAME, Tok.KWESC_NAME]:
+                ret_type = ast.Name
+            elif token.type in [
+                Tok.FLOAT,
+                Tok.INT,
+                Tok.HEX,
+                Tok.BIN,
+                Tok.OCT,
+                Tok.STRING,
+                Tok.FSTR_BESC,
+                Tok.FSTR_PIECE,
+            ]:
+                ret_type = ast.Constant
+
+            return ret_type(
+                name=token.type,
+                value=token.value,
+                line=token.line if token.line is not None else 0,
+                col_start=token.column if token.column is not None else 0,
+                col_end=token.end_column if token.end_column is not None else 0,
+                pos_start=token.start_pos if token.start_pos is not None else 0,
+                pos_end=token.end_pos if token.end_pos is not None else 0,
+                mod_link=self.mod_link,
+                kid=[],
+            )

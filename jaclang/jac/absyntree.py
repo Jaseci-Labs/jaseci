@@ -1426,6 +1426,8 @@ class Token(AstNode):
         line: int,
         col_start: int,
         col_end: int,
+        pos_start: int,
+        pos_end: int,
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -1435,59 +1437,17 @@ class Token(AstNode):
         self.line_no = line
         self.col_start = col_start
         self.col_end = col_end
+        self.pos_start = pos_start
+        self.pos_end = pos_end
         super().__init__(mod_link=mod_link, kid=kid)
 
 
 class Name(Token):
     """Name node type for Jac Ast."""
 
-    def __init__(
-        self,
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize name."""
-        super().__init__(
-            name=name,
-            value=value,
-            line=line,
-            col_start=col_start,
-            col_end=col_end,
-            mod_link=mod_link,
-            kid=kid,
-        )
-
 
 class Constant(Token):
     """Constant node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        typ: type,
-        mod_link: Optional[Module],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize constant."""
-        super().__init__(
-            name=name,
-            value=value,
-            line=line,
-            col_start=col_start,
-            col_end=col_end,
-            mod_link=mod_link,
-            kid=kid,
-        )
-        self._typ = typ
 
 
 class SourceString(Token):
@@ -1504,6 +1464,8 @@ class SourceString(Token):
             line=0,
             col_start=0,
             col_end=0,
+            pos_start=0,
+            pos_end=0,
             mod_link=None,
             kid=[],
         )

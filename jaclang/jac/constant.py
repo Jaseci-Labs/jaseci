@@ -214,6 +214,10 @@ class Tokens(str, Enum):
     RETURN_HINT = "RETURN_HINT"
     NULL_OK = "NULL_OK"
     DECOR_OP = "DECOR_OP"
+    FSTR_START = "FSTR_START"
+    FSTR_END = "FSTR_END"
+    FSTR_PIECE = "FSTR_PIECE"
+    FSTR_BESC = "FSTR_BESC"
 
     def __str__(self) -> str:
         """Return the string representation of the token."""
