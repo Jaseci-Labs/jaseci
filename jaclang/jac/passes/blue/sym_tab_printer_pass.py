@@ -42,15 +42,20 @@ class SymbolTablePrinterPass(Pass):
         return super().before_pass()
 
     def __build_symbol_tree(self, node: ast.SymbolTable, parent_node: Optional[__SymbolTree] = None) -> __SymbolTree:
-        root = self.__SymbolTree(node_name=f"{node.key_node.__class__.__name__}({node.name})", parent=parent_node)
+        root = self.__SymbolTree(node_name=f"SymTable::{node.key_node.__class__.__name__}({node.name})", parent=parent_node)
         symbols = self.__SymbolTree(node_name="Symbols", parent=root)
         children = self.__SymbolTree(node_name="Children", parent=root)
 
         for sym in node.tab:
             sym = node.tab[sym]
-            self.__SymbolTree(
-                node_name=f"Symbol({sym.name}, {sym.sym_type})", parent=symbols
-            )
+            symbol_node = self.__SymbolTree(node_name=f"Symbol({sym.name})", parent=symbols)
+            self.__SymbolTree(node_name=f"declared in {sym.decl.__class__.__name__}", parent=symbol_node)
+            defn = self.__SymbolTree(node_name=f"defn", parent=symbol_node)
+            for n in sym.defn:
+                self.__SymbolTree(node_name=n.__class__.__name__, parent=defn)
+            uses = self.__SymbolTree(node_name=f"uses", parent=symbol_node)
+            for n in sym.uses:
+                self.__SymbolTree(node_name=n.__class__.__name__, parent=uses)
 
         for k in node.kid:
             self.__build_symbol_tree(k, children)
