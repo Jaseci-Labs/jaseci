@@ -76,7 +76,7 @@ class JacParser(Pass):
                 f"{self.parse_ref.__class__.__name__} - Unexpected item in parse tree!"
             )
 
-        def node_update(self, node: ast.AstNode) -> ast.AstNode:
+        def nu(self, node: ast.T) -> ast.T:
             """Update node."""
             self.parse_ref.cur_node = node
             return node
@@ -86,7 +86,7 @@ class JacParser(Pass):
 
             start: module
             """
-            return self.node_update(kid[0])
+            return self.nu(kid[0])
 
         def module(self, kid: list[ast.AstNode]) -> ast.AstNode:
             """Grammar rule.
@@ -111,7 +111,7 @@ class JacParser(Pass):
                     kid=kid,
                 )
                 self.mod_link = mod
-                return mod
+                return self.nu(mod)
             else:
                 raise self.ice()
 
@@ -123,7 +123,7 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.Constant):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
-                return kid[1]
+                return self.nu(kid[1])
             else:
                 raise self.ice()
 
@@ -140,7 +140,7 @@ class JacParser(Pass):
                 | global_var
             """
             if isinstance(kid[0], ast.ElementStmt):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -153,12 +153,14 @@ class JacParser(Pass):
             access = kid[1] if isinstance(kid[1], ast.SubTag) else None
             assignments = kid[2] if access else kid[1]
             if isinstance(assignments, ast.SubNodeList):
-                return ast.GlobalVars(
-                    access=access,
-                    assignments=assignments,
-                    is_frozen=is_frozen,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.GlobalVars(
+                        access=access,
+                        assignments=assignments,
+                        is_frozen=is_frozen,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -169,10 +171,12 @@ class JacParser(Pass):
             access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Token):
-                return ast.SubTag[ast.Token](
-                    tag=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubTag[ast.Token](
+                        tag=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -187,11 +191,13 @@ class JacParser(Pass):
             if isinstance(codeblock, ast.SubNodeList) and isinstance(
                 name, (ast.Name, ast.Token)
             ):
-                return ast.Test(
-                    name=name,
-                    body=codeblock,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.Test(
+                        name=name,
+                        body=codeblock,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -204,11 +210,13 @@ class JacParser(Pass):
             name = kid[2] if isinstance(kid[2], ast.SubTag) else None
             codeblock = kid[3] if name else kid[2]
             if isinstance(codeblock, ast.SubNodeList):
-                return ast.ModuleCode(
-                    name=name,
-                    body=codeblock,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ModuleCode(
+                        name=name,
+                        body=codeblock,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -219,7 +227,7 @@ class JacParser(Pass):
             doc_tag: ( STRING | DOC_STRING )
             """
             if isinstance(kid[0], ast.Constant):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -229,10 +237,12 @@ class JacParser(Pass):
             py_code_block: PYNLINE
             """
             if isinstance(kid[0], ast.Token):
-                return ast.PyInlineCode(
-                    code=kid[0],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.PyInlineCode(
+                        code=kid[0],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -255,14 +265,16 @@ class JacParser(Pass):
                 and isinstance(alias, ast.Name)
                 and isinstance(items, ast.SubNodeList)
             ):
-                return ast.Import(
-                    lang=lang,
-                    path=path,
-                    alias=alias,
-                    items=items,
-                    is_absorb=is_absorb,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.Import(
+                        lang=lang,
+                        path=path,
+                        alias=alias,
+                        items=items,
+                        is_absorb=is_absorb,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
 
             else:
@@ -277,14 +289,16 @@ class JacParser(Pass):
             path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
             is_absorb = True
             if isinstance(lang, ast.SubTag) and isinstance(path, ast.ModulePath):
-                return ast.Import(
-                    lang=lang,
-                    path=path,
-                    alias=None,
-                    items=None,
-                    is_absorb=is_absorb,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.Import(
+                        lang=lang,
+                        path=path,
+                        alias=None,
+                        items=None,
+                        is_absorb=is_absorb,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -296,10 +310,12 @@ class JacParser(Pass):
             """
             valid_path = [i for i in kid if isinstance(i, ast.Token)]
             if len(valid_path) == len(kid):
-                return ast.ModulePath(
-                    path=valid_path,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ModulePath(
+                        path=valid_path,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -342,10 +358,12 @@ class JacParser(Pass):
             new_kid = [item, *consume.kid] if consume else [item]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ModuleItem)]
             if len(valid_kid) == len(new_kid):
-                return ast.SubNodeList[ast.ModuleItem](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=[*valid_kid],
+                return self.nu(
+                    ast.SubNodeList[ast.ModuleItem](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=[*valid_kid],
+                    )
                 )
             else:
                 raise self.ice()
@@ -362,11 +380,11 @@ class JacParser(Pass):
                 if isinstance(kid[1], ast.ArchType):
                     kid[1].decorators = kid[0]
                     kid[1].add_kids_left([kid[0]])
-                    return kid[1]
+                    return self.nu(kid[1])
                 else:
                     raise self.ice()
             elif isinstance(kid[0], ast.ArchType):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -391,14 +409,16 @@ class JacParser(Pass):
                 and isinstance(name, ast.Name)
                 and isinstance(inh, ast.SubNodeList)
             ):
-                return ast.Architype(
-                    arch_type=arch_type,
-                    name=name,
-                    access=access,
-                    base_classes=inh,
-                    body=body,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.Architype(
+                        arch_type=arch_type,
+                        name=name,
+                        access=access,
+                        base_classes=inh,
+                        body=body,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -411,11 +431,13 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchRefChain) and isinstance(
                 kid[1], ast.SubNodeList
             ):
-                return ast.ArchDef(
-                    target=kid[0],
-                    body=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ArchDef(
+                        target=kid[0],
+                        body=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -429,7 +451,7 @@ class JacParser(Pass):
                     | KW_NODE
             """
             if isinstance(kid[0], ast.Token):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -440,10 +462,12 @@ class JacParser(Pass):
             """
             valid_decors = [i for i in kid if isinstance(i, ast.ExprType)]
             if len(valid_decors) == len(kid) / 2:
-                return ast.SubNodeList[ast.ExprType](
-                    items=valid_decors,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.ExprType](
+                        items=valid_decors,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -457,10 +481,12 @@ class JacParser(Pass):
             """
             valid_inh = [i for i in kid if isinstance(i, ast.SubNodeList)]
             if len(valid_inh) == len(kid):
-                return ast.SubNodeList[ast.SubNodeList[ast.NameType]](
-                    items=valid_inh,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.SubNodeList[ast.NameType]](
+                        items=valid_inh,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -473,10 +499,12 @@ class JacParser(Pass):
             sub_name_dotted: COLON dotted_name
             """
             if isinstance(kid[1], ast.SubNodeList):
-                return ast.SubTag[ast.SubNodeList[ast.Name]](
-                    tag=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubTag[ast.SubNodeList[ast.Name]](
+                        tag=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -487,10 +515,12 @@ class JacParser(Pass):
             sub_name: COLON NAME
             """
             if isinstance(kid[1], ast.Name):
-                return ast.SubTag[ast.Name](
-                    tag=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubTag[ast.Name](
+                        tag=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -514,10 +544,12 @@ class JacParser(Pass):
                 i for i in new_kid if isinstance(i, (ast.Name, ast.SpecialVarRef))
             ]
             if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return ast.SubNodeList[ast.NameType](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.NameType](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -529,7 +561,7 @@ class JacParser(Pass):
                     | named_ref
             """
             if isinstance(kid[0], ast.NameType):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -540,7 +572,7 @@ class JacParser(Pass):
                     | esc_name
             """
             if isinstance(kid[0], ast.Name):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -551,7 +583,7 @@ class JacParser(Pass):
                     | NAME
             """
             if isinstance(kid[0], ast.Name):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -565,10 +597,12 @@ class JacParser(Pass):
                         | HERE_OP
             """
             if isinstance(kid[0], ast.Token):
-                return ast.SpecialVarRef(
-                    var=kid[0],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SpecialVarRef(
+                        var=kid[0],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -580,7 +614,7 @@ class JacParser(Pass):
                 | enum_decl
             """
             if isinstance(kid[0], (ast.Enum, ast.EnumDef)):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -600,13 +634,15 @@ class JacParser(Pass):
                 else None
             )
             if isinstance(name, ast.Name) and isinstance(inh, ast.SubNodeList):
-                return ast.Enum(
-                    name=name,
-                    access=access,
-                    base_classes=inh,
-                    body=body,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.Enum(
+                        name=name,
+                        access=access,
+                        base_classes=inh,
+                        body=body,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -619,11 +655,13 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchRefChain) and isinstance(
                 kid[1], ast.SubNodeList
             ):
-                return ast.EnumDef(
-                    target=kid[0],
-                    body=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.EnumDef(
+                        target=kid[0],
+                        body=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -638,12 +676,14 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.SubNodeList):
                 kid[1].add_kids_left([kid[0]])
                 kid[1].add_kids_right([kid[2]])
-                return kid[1]
+                return self.nu(kid[1])
             else:
-                return ast.SubNodeList[ast.EnumBlockStmt](
-                    items=[],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.EnumBlockStmt](
+                        items=[],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
 
         def enum_stmt_list(
@@ -665,10 +705,12 @@ class JacParser(Pass):
             new_kid = [name, comma, *consume.kid] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.EnumBlockStmt)]
             if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return ast.SubNodeList[ast.EnumBlockStmt](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.EnumBlockStmt](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -681,13 +723,15 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.Name):
                 if len(kid) == 1:
-                    return kid[0]
+                    return self.nu(kid[0])
                 elif isinstance(kid[2], ast.ExprType):
-                    return ast.Assignment(
-                        target=kid[0],
-                        value=kid[2],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.Assignment(
+                            target=kid[0],
+                            value=kid[2],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
             raise self.ice()
 
@@ -703,11 +747,11 @@ class JacParser(Pass):
                 if isinstance(kid[1], (ast.Ability, ast.AbilityDef)):
                     kid[1].decorators = kid[0]
                     kid[1].add_kids_left([kid[0]])
-                    return kid[1]
+                    return self.nu(kid[1])
                 else:
                     raise self.ice()
             elif isinstance(kid[0], (ast.Ability, ast.AbilityDef)):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -730,17 +774,19 @@ class JacParser(Pass):
             if isinstance(name, ast.NameType) and isinstance(
                 signature, (ast.FuncSignature, ast.EventSignature)
             ):
-                return ast.Ability(
-                    name_ref=name,
-                    is_func=is_func,
-                    is_async=False,
-                    is_static=is_static,
-                    is_abstract=False,
-                    access=access,
-                    signature=signature,
-                    body=body,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.Ability(
+                        name_ref=name,
+                        is_func=is_func,
+                        is_async=False,
+                        is_static=is_static,
+                        is_abstract=False,
+                        access=access,
+                        signature=signature,
+                        body=body,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -755,12 +801,14 @@ class JacParser(Pass):
                 and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
                 and isinstance(kid[2], ast.SubNodeList)
             ):
-                return ast.AbilityDef(
-                    target=kid[0],
-                    signature=kid[1],
-                    body=kid[2],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.AbilityDef(
+                        target=kid[0],
+                        signature=kid[1],
+                        body=kid[2],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -783,17 +831,19 @@ class JacParser(Pass):
             if isinstance(name, ast.NameType) and isinstance(
                 signature, (ast.FuncSignature, ast.EventSignature)
             ):
-                return ast.Ability(
-                    name_ref=name,
-                    is_func=is_func,
-                    is_async=False,
-                    is_static=is_static,
-                    is_abstract=True,
-                    access=access,
-                    signature=signature,
-                    body=None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.Ability(
+                        name_ref=name,
+                        is_func=is_func,
+                        is_async=False,
+                        is_static=is_static,
+                        is_abstract=True,
+                        access=access,
+                        signature=signature,
+                        body=None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -809,12 +859,14 @@ class JacParser(Pass):
             if isinstance(event, ast.Token) and isinstance(
                 return_spec, ast.SubNodeList
             ):
-                return ast.EventSignature(
-                    event=event,
-                    arch_tag_info=type_specs,
-                    return_type=return_spec,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.EventSignature(
+                        event=event,
+                        arch_tag_info=type_specs,
+                        return_type=return_spec,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -829,11 +881,13 @@ class JacParser(Pass):
             if isinstance(params, ast.SubNodeList) and isinstance(
                 return_spec, ast.SubNodeList
             ):
-                return ast.FuncSignature(
-                    params=params,
-                    return_type=return_spec,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.FuncSignature(
+                        params=params,
+                        return_type=return_spec,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -857,10 +911,12 @@ class JacParser(Pass):
             new_kid = [param, comma, *consume.kid] if consume else [param]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ParamVar)]
             if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return ast.SubNodeList[ast.ParamVar](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.ParamVar](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -875,13 +931,15 @@ class JacParser(Pass):
             type_tag = kid[2] if star else kid[1]
             value = kid[-1] if isinstance(kid[-1], ast.ExprType) else None
             if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubNodeList):
-                return ast.ParamVar(
-                    name=name,
-                    type_tag=type_tag,
-                    value=value,
-                    unpack=star,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ParamVar(
+                        name=name,
+                        type_tag=type_tag,
+                        value=value,
+                        unpack=star,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -896,12 +954,14 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.SubNodeList):
                 kid[1].add_kids_left([kid[0]])
                 kid[1].add_kids_right([kid[2]])
-                return kid[1]
+                return self.nu(kid[1])
             else:
-                return ast.SubNodeList[ast.ArchBlockStmt](
-                    items=[],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.ArchBlockStmt](
+                        items=[],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
 
         def member_stmt_list(
@@ -921,10 +981,12 @@ class JacParser(Pass):
             new_kid = [stmt, *consume.kid] if consume else [stmt]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ArchBlockStmt)]
             if len(valid_kid) == len(new_kid):
-                return ast.SubNodeList[ast.ArchBlockStmt](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.ArchBlockStmt](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -943,9 +1005,9 @@ class JacParser(Pass):
             ):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
-                return kid[1]
+                return self.nu(kid[1])
             elif isinstance(kid[0], ast.ArchBlockStmt):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -967,13 +1029,15 @@ class JacParser(Pass):
             chomp = chomp[1:] if access else chomp
             assign = chomp[0]
             if isinstance(assign, ast.SubNodeList):
-                return ast.ArchHas(
-                    vars=assign,
-                    is_static=is_static,
-                    is_frozen=is_freeze,
-                    access=access,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ArchHas(
+                        vars=assign,
+                        is_static=is_static,
+                        is_frozen=is_freeze,
+                        access=access,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -997,10 +1061,12 @@ class JacParser(Pass):
             new_kid = [assign, comma, *consume.kid] if consume else [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
             if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return ast.SubNodeList[ast.HasVar](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.HasVar](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1014,12 +1080,14 @@ class JacParser(Pass):
             type_tag = kid[1]
             value = kid[-1] if isinstance(kid[-1], ast.ExprType) else None
             if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
-                return ast.HasVar(
-                    name=name,
-                    type_tag=type_tag,
-                    value=value,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.HasVar(
+                        name=name,
+                        type_tag=type_tag,
+                        value=value,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1032,10 +1100,12 @@ class JacParser(Pass):
             type_tag: COLON type_specs
             """
             if isinstance(kid[1], ast.SubNodeList):
-                return ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
-                    tag=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
+                        tag=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1048,10 +1118,12 @@ class JacParser(Pass):
             return_type_tag: RETURN_HINT type_specs
             """
             if isinstance(kid[1], ast.SubNodeList):
-                return ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
-                    tag=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
+                        tag=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1079,10 +1151,12 @@ class JacParser(Pass):
                 valid_kid[-1].null_ok = True
                 valid_kid[-1].add_kids_right([null_ok])
             if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return ast.SubNodeList[ast.TypeSpec](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.TypeSpec](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1110,12 +1184,14 @@ class JacParser(Pass):
                 and (not list_nest or isinstance(list_nest, ast.TypeSpec))
                 and (not dict_nest or isinstance(dict_nest, ast.TypeSpec))
             ):
-                return ast.TypeSpec(
-                    spec_type=spec_type,
-                    list_nest=list_nest,
-                    dict_nest=dict_nest,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.TypeSpec(
+                        spec_type=spec_type,
+                        list_nest=list_nest,
+                        dict_nest=dict_nest,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1136,7 +1212,7 @@ class JacParser(Pass):
                         | TYP_STRING
             """
             if isinstance(kid[0], ast.Token):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -1150,12 +1226,14 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.SubNodeList):
                 kid[1].add_kids_left([kid[0]])
                 kid[1].add_kids_right([kid[2]])
-                return kid[1]
+                return self.nu(kid[1])
             else:
-                return ast.SubNodeList[ast.CodeBlockStmt](
-                    items=[],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.CodeBlockStmt](
+                        items=[],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
 
         def statement_list(
@@ -1167,10 +1245,12 @@ class JacParser(Pass):
             """
             valid_stmt = [i for i in kid if isinstance(i, ast.CodeBlockStmt)]
             if len(valid_stmt) == len(kid):
-                return ast.SubNodeList[ast.CodeBlockStmt](
-                    items=valid_stmt,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.CodeBlockStmt](
+                        items=valid_stmt,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1202,13 +1282,13 @@ class JacParser(Pass):
                     | import_stmt
             """
             if isinstance(kid[0], ast.CodeBlockStmt):
-                return kid[0]
+                return self.nu(kid[0])
             elif isinstance(kid[1], (ast.Ability, ast.Architype)) and isinstance(
                 kid[0], ast.Constant
             ):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
-                return kid[1]
+                return self.nu(kid[1])
             else:
                 raise self.ice()
 
@@ -1220,11 +1300,13 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.SubNodeList) and isinstance(
                 kid[2], ast.SubNodeList
             ):
-                return ast.TypedCtxBlock(
-                    type_ctx=kid[1],
-                    body=kid[2],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.TypedCtxBlock(
+                        type_ctx=kid[1],
+                        body=kid[2],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1235,13 +1317,15 @@ class JacParser(Pass):
             if_stmt: KW_IF expression code_block elif_stmt? else_stmt?
             """
             if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.SubNodeList):
-                return ast.IfStmt(
-                    condition=kid[1],
-                    body=kid[2],
-                    elseifs=kid[3] if isinstance(kid[3], ast.ElseIfs) else None,
-                    else_body=kid[4] if isinstance(kid[4], ast.ElseStmt) else None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.IfStmt(
+                        condition=kid[1],
+                        body=kid[2],
+                        elseifs=kid[3] if isinstance(kid[3], ast.ElseIfs) else None,
+                        else_body=kid[4] if isinstance(kid[4], ast.ElseStmt) else None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1252,12 +1336,14 @@ class JacParser(Pass):
             elif_stmt: KW_ELIF expression code_block elif_stmt?
             """
             if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.SubNodeList):
-                return ast.ElseIfs(
-                    condition=kid[1],
-                    body=kid[2],
-                    elseifs=kid[3] if isinstance(kid[3], ast.ElseIfs) else None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ElseIfs(
+                        condition=kid[1],
+                        body=kid[2],
+                        elseifs=kid[3] if isinstance(kid[3], ast.ElseIfs) else None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1268,10 +1354,12 @@ class JacParser(Pass):
             else_stmt: KW_ELSE code_block
             """
             if isinstance(kid[1], ast.SubNodeList):
-                return ast.ElseStmt(
-                    body=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ElseStmt(
+                        body=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1282,14 +1370,16 @@ class JacParser(Pass):
             try_stmt: KW_TRY code_block except_list? finally_stmt?
             """
             if isinstance(kid[1], ast.SubNodeList):
-                return ast.TryStmt(
-                    body=kid[1],
-                    excepts=kid[2] if isinstance(kid[2], ast.SubNodeList) else None,
-                    finally_body=kid[3]
-                    if isinstance(kid[3], ast.FinallyStmt)
-                    else None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.TryStmt(
+                        body=kid[1],
+                        excepts=kid[2] if isinstance(kid[2], ast.SubNodeList) else None,
+                        finally_body=kid[3]
+                        if isinstance(kid[3], ast.FinallyStmt)
+                        else None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1301,10 +1391,12 @@ class JacParser(Pass):
             """
             valid_kid = [i for i in kid if isinstance(i, ast.Except)]
             if len(valid_kid) == len(kid):
-                return ast.SubNodeList[ast.Except](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.Except](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1318,12 +1410,14 @@ class JacParser(Pass):
             name = kid[3] if isinstance(kid[3], ast.Name) else None
             body = kid[-1]
             if isinstance(ex_type, ast.ExprType) and isinstance(body, ast.SubNodeList):
-                return ast.Except(
-                    ex_type=ex_type,
-                    name=name,
-                    body=body,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.Except(
+                        ex_type=ex_type,
+                        name=name,
+                        body=body,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1334,10 +1428,12 @@ class JacParser(Pass):
             finally_stmt: KW_FINALLY code_block
             """
             if isinstance(kid[1], ast.SubNodeList):
-                return ast.FinallyStmt(
-                    body=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.FinallyStmt(
+                        body=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1354,13 +1450,15 @@ class JacParser(Pass):
                     and isinstance(kid[5], ast.ExprType)
                     and isinstance(kid[6], ast.SubNodeList)
                 ):
-                    return ast.IterForStmt(
-                        iter=kid[1],
-                        condition=kid[3],
-                        count_by=kid[5],
-                        body=kid[6],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.IterForStmt(
+                            iter=kid[1],
+                            condition=kid[3],
+                            count_by=kid[5],
+                            body=kid[6],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -1368,12 +1466,14 @@ class JacParser(Pass):
                 if isinstance(kid[3], ast.ExprType) and isinstance(
                     kid[4], ast.SubNodeList
                 ):
-                    return ast.InForStmt(
-                        name_list=kid[1],
-                        collection=kid[3],
-                        body=kid[4],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.InForStmt(
+                            name_list=kid[1],
+                            collection=kid[3],
+                            body=kid[4],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -1397,10 +1497,12 @@ class JacParser(Pass):
             new_kid = [name, comma, *consume.kid] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.Name)]
             if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return ast.SubNodeList[ast.Name](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.Name](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1411,11 +1513,13 @@ class JacParser(Pass):
             while_stmt: KW_WHILE expression code_block
             """
             if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.SubNodeList):
-                return ast.WhileStmt(
-                    condition=kid[1],
-                    body=kid[2],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.WhileStmt(
+                        condition=kid[1],
+                        body=kid[2],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1428,11 +1532,13 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.SubNodeList) and isinstance(
                 kid[2], ast.SubNodeList
             ):
-                return ast.WithStmt(
-                    exprs=kid[1],
-                    body=kid[2],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.WithStmt(
+                        exprs=kid[1],
+                        body=kid[2],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1459,10 +1565,12 @@ class JacParser(Pass):
             if name:
                 valid_kid[-1].alias = name
                 valid_kid[-1].add_kids_right([name])
-            return ast.SubNodeList[ast.ExprAsItem](
-                items=valid_kid,
-                mod_link=self.mod_link,
-                kid=kid,
+            return self.nu(
+                ast.SubNodeList[ast.ExprAsItem](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
             )
 
         def raise_stmt(self, kid: list[ast.AstNode]) -> ast.RaiseStmt:
@@ -1472,18 +1580,22 @@ class JacParser(Pass):
             """
             if len(kid) > 1:
                 if isinstance(kid[1], ast.ExprType) or not kid[1]:
-                    return ast.RaiseStmt(
-                        cause=kid[1],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.RaiseStmt(
+                            cause=kid[1],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
             else:
-                return ast.RaiseStmt(
-                    cause=None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.RaiseStmt(
+                        cause=None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
 
         def assert_stmt(self, kid: list[ast.AstNode]) -> ast.AssertStmt:
@@ -1496,11 +1608,13 @@ class JacParser(Pass):
             if isinstance(condition, ast.ExprType) and (
                 isinstance(error_msg, ast.ExprType) or not error_msg
             ):
-                return ast.AssertStmt(
-                    condition=condition,
-                    error_msg=error_msg,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.AssertStmt(
+                        condition=condition,
+                        error_msg=error_msg,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1511,10 +1625,12 @@ class JacParser(Pass):
             ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
             """
             if isinstance(kid[0], ast.Token):
-                return ast.CtrlStmt(
-                    ctrl=kid[0],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.CtrlStmt(
+                        ctrl=kid[0],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1525,10 +1641,12 @@ class JacParser(Pass):
             delete_stmt: KW_DELETE expression
             """
             if isinstance(kid[1], ast.ExprType):
-                return ast.DeleteStmt(
-                    target=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.DeleteStmt(
+                        target=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1539,10 +1657,12 @@ class JacParser(Pass):
             report_stmt: KW_REPORT expression
             """
             if isinstance(kid[1], ast.ExprType):
-                return ast.ReportStmt(
-                    expr=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ReportStmt(
+                        expr=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1550,22 +1670,26 @@ class JacParser(Pass):
         def return_stmt(self, kid: list[ast.AstNode]) -> ast.ReturnStmt:
             """Grammar rule.
 
-            return_stmt: KW_RETURN expression?
+            return_stmt: KW_RETURN self.nu(expression?
             """
             if len(kid) > 1:
                 if isinstance(kid[1], ast.ExprType) or not kid[1]:
-                    return ast.ReturnStmt(
-                        expr=kid[1],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.ReturnStmt(
+                            expr=kid[1],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
             else:
-                return ast.ReturnStmt(
-                    expr=None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ReturnStmt(
+                        expr=None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
 
         def yield_stmt(self, kid: list[ast.AstNode]) -> ast.YieldStmt:
@@ -1575,18 +1699,22 @@ class JacParser(Pass):
             """
             if len(kid) > 1:
                 if isinstance(kid[1], ast.ExprType) or not kid[1]:
-                    return ast.YieldStmt(
-                        expr=kid[1],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.YieldStmt(
+                            expr=kid[1],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
             else:
-                return ast.YieldStmt(
-                    expr=None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.YieldStmt(
+                        expr=None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
 
         def walker_stmt(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
@@ -1595,7 +1723,7 @@ class JacParser(Pass):
             walker_stmt: disengage_stmt | revisit_stmt | visit_stmt | ignore_stmt
             """
             if isinstance(kid[0], ast.CodeBlockStmt):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -1605,10 +1733,12 @@ class JacParser(Pass):
             ignore_stmt: KW_IGNORE expression SEMI
             """
             if isinstance(kid[1], ast.ExprType):
-                return ast.IgnoreStmt(
-                    target=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.IgnoreStmt(
+                        target=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1622,12 +1752,14 @@ class JacParser(Pass):
             target = kid[2] if sub_name else kid[1]
             else_body = kid[-1] if isinstance(kid[-1], ast.ElseStmt) else None
             if isinstance(target, ast.ExprType):
-                return ast.VisitStmt(
-                    vis_type=sub_name,
-                    target=target,
-                    else_body=else_body,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.VisitStmt(
+                        vis_type=sub_name,
+                        target=target,
+                        else_body=else_body,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1639,11 +1771,13 @@ class JacParser(Pass):
             """
             target = kid[1] if isinstance(kid[1], ast.ExprType) else None
             else_body = kid[-1] if isinstance(kid[-1], ast.ElseStmt) else None
-            return ast.RevisitStmt(
-                hops=target,
-                else_body=else_body,
-                mod_link=self.mod_link,
-                kid=kid,
+            return self.nu(
+                ast.RevisitStmt(
+                    hops=target,
+                    else_body=else_body,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
             )
 
         def disengage_stmt(self, kid: list[ast.AstNode]) -> ast.DisengageStmt:
@@ -1651,9 +1785,11 @@ class JacParser(Pass):
 
             disengage_stmt: KW_DISENGAGE SEMI
             """
-            return ast.DisengageStmt(
-                mod_link=self.mod_link,
-                kid=kid,
+            return self.nu(
+                ast.DisengageStmt(
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
             )
 
         def await_stmt(self, kid: list[ast.AstNode]) -> ast.AwaitStmt:
@@ -1662,10 +1798,12 @@ class JacParser(Pass):
             await_stmt: KW_AWAIT expression
             """
             if isinstance(kid[1], ast.ExprType):
-                return ast.AwaitStmt(
-                    target=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.AwaitStmt(
+                        target=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1679,12 +1817,14 @@ class JacParser(Pass):
             target = kid[1] if is_frozen else kid[0]
             value = kid[-1]
             if isinstance(target, ast.AtomType) and isinstance(value, ast.ExprType):
-                return ast.Assignment(
-                    target=target,
-                    value=value,
-                    mutable=not is_frozen,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.Assignment(
+                        target=target,
+                        value=value,
+                        mutable=not is_frozen,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -1701,17 +1841,19 @@ class JacParser(Pass):
                     and isinstance(kid[2], ast.ExprType)
                     and isinstance(kid[4], ast.ExprType)
                 ):
-                    return ast.IfElseExpr(
-                        value=kid[0],
-                        condition=kid[2],
-                        else_value=kid[4],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.IfElseExpr(
+                            value=kid[0],
+                            condition=kid[2],
+                            else_value=kid[4],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
             elif isinstance(kid[0], ast.ExprType):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -1725,17 +1867,19 @@ class JacParser(Pass):
                     )
                     and isinstance(kid[2], ast.ExprType)
                 ):
-                    return ast.BinaryExpr(
-                        left=kid[0],
-                        op=kid[1],
-                        right=kid[2],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.BinaryExpr(
+                            left=kid[0],
+                            op=kid[1],
+                            right=kid[2],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
             elif isinstance(kid[0], ast.ExprType):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -1806,11 +1950,13 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.UnaryExpr(
+                            op=kid[0],
+                            operand=kid[1],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -1854,11 +2000,13 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.UnaryExpr(
+                            op=kid[0],
+                            operand=kid[1],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -1907,11 +2055,13 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.AtomType):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.UnaryExpr(
+                            op=kid[0],
+                            operand=kid[1],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -1925,11 +2075,13 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.UnaryExpr(
+                            op=kid[0],
+                            operand=kid[1],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -1953,11 +2105,13 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.UnaryExpr(
+                            op=kid[0],
+                            operand=kid[1],
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -1981,7 +2135,7 @@ class JacParser(Pass):
                      | WALRUS_EQ
             """
             if isinstance(kid[0], ast.Token):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2000,7 +2154,7 @@ class JacParser(Pass):
                   | EE
             """
             if isinstance(kid[0], ast.Token):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2016,7 +2170,7 @@ class JacParser(Pass):
             """
             if len(kid) == 1:
                 if isinstance(kid[0], ast.AtomType):
-                    return kid[0]
+                    return self.nu(kid[0])
                 else:
                     raise self.ice()
             elif len(kid) == 3:
@@ -2027,7 +2181,7 @@ class JacParser(Pass):
                 ):
                     kid[1].add_kids_left([kid[0]])
                     kid[1].add_kids_right([kid[2]])
-                    return kid[1]
+                    return self.nu(kid[1])
                 else:
                     raise self.ice()
             else:
@@ -2047,7 +2201,7 @@ class JacParser(Pass):
                         | INT
             """
             if isinstance(kid[0], ast.AtomType):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2064,7 +2218,7 @@ class JacParser(Pass):
                            | list_val
             """
             if isinstance(kid[0], ast.AtomType):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2075,10 +2229,12 @@ class JacParser(Pass):
             """
             valid_strs = [i for i in kid if isinstance(i, (ast.Constant, ast.FString))]
             if len(valid_strs) == len(kid):
-                return ast.MultiString(
-                    strings=valid_strs,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.MultiString(
+                        strings=valid_strs,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2089,16 +2245,20 @@ class JacParser(Pass):
             fstring: FSTR_START fstr_parts FSTR_END
             """
             if len(kid) == 2:
-                return ast.FString(
-                    parts=None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.FString(
+                        parts=None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             elif isinstance(kid[1], ast.SubNodeList):
-                return ast.FString(
-                    parts=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.FString(
+                        parts=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2113,10 +2273,12 @@ class JacParser(Pass):
             valid_types = Union[ast.Constant, ast.ExprType]
             valid_parts = [i for i in kid if isinstance(i, valid_types)]
             if len(valid_parts) == len(kid):
-                return ast.SubNodeList[ast.Constant | ast.ExprType](
-                    items=valid_parts,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.Constant | ast.ExprType](
+                        items=valid_parts,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2127,16 +2289,20 @@ class JacParser(Pass):
             list_val: LSQUARE expr_list? RSQUARE
             """
             if len(kid) == 2:
-                return ast.ListVal(
-                    values=None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ListVal(
+                        values=None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             elif isinstance(kid[1], ast.SubNodeList):
-                return ast.ListVal(
-                    values=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ListVal(
+                        values=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2147,16 +2313,20 @@ class JacParser(Pass):
             tuple_val: LPAREN tuple_list? RPAREN
             """
             if len(kid) == 2:
-                return ast.TupleVal(
-                    values=None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.TupleVal(
+                        values=None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             elif isinstance(kid[1], ast.SubNodeList):
-                return ast.TupleVal(
-                    values=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.TupleVal(
+                        values=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2167,16 +2337,20 @@ class JacParser(Pass):
             set_val: LBRACE expr_list RBRACE
             """
             if len(kid) == 2:
-                return ast.SetVal(
-                    values=None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SetVal(
+                        values=None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             elif isinstance(kid[1], ast.SubNodeList):
-                return ast.SetVal(
-                    values=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SetVal(
+                        values=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2197,10 +2371,12 @@ class JacParser(Pass):
                 expr = kid[0]
             new_kid = [expr, comma, *consume.kid] if consume else [expr]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ExprType)]
-            return ast.SubNodeList[ast.ExprType](
-                items=valid_kid,
-                mod_link=self.mod_link,
-                kid=kid,
+            return self.nu(
+                ast.SubNodeList[ast.ExprType](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
             )
 
         def tuple_list(
@@ -2217,7 +2393,7 @@ class JacParser(Pass):
             chomp = [*kid]
             first_expr = None
             if isinstance(chomp[0], ast.SubNodeList):
-                return chomp[0]
+                return self.nu(chomp[0])
             else:
                 first_expr = chomp[0]
                 chomp = chomp[2:]
@@ -2230,10 +2406,12 @@ class JacParser(Pass):
             valid_type = Union[ast.ExprType, ast.Assignment]
             valid_kid = [i for i in expr_list if isinstance(i, valid_type)]
             if len(valid_kid) == len(expr_list):
-                return ast.SubNodeList[ast.ExprType | ast.Assignment](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.ExprType | ast.Assignment](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2244,16 +2422,20 @@ class JacParser(Pass):
             dict_val: LBRACE kv_pairs? RBRACE
             """
             if len(kid) == 2:
-                return ast.DictVal(
-                    kv_pairs=None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.DictVal(
+                        kv_pairs=None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             elif isinstance(kid[1], ast.SubNodeList):
-                return ast.DictVal(
-                    kv_pairs=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.DictVal(
+                        kv_pairs=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2274,10 +2456,12 @@ class JacParser(Pass):
                 kv_pair = kid[0]
             new_kid = [kv_pair, comma, *consume.kid] if consume else [kv_pair]
             valid_kid = [i for i in new_kid if isinstance(i, ast.KVPair)]
-            return ast.SubNodeList[ast.KVPair](
-                items=valid_kid,
-                mod_link=self.mod_link,
-                kid=kid,
+            return self.nu(
+                ast.SubNodeList[ast.KVPair](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
             )
 
         def kv_pair(self, kid: list[ast.AstNode]) -> ast.KVPair:
@@ -2286,11 +2470,13 @@ class JacParser(Pass):
             kv_pair: expression COLON expression
             """
             if isinstance(kid[0], ast.ExprType) and isinstance(kid[2], ast.ExprType):
-                return ast.KVPair(
-                    key=kid[0],
-                    value=kid[2],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.KVPair(
+                        key=kid[0],
+                        value=kid[2],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2301,10 +2487,12 @@ class JacParser(Pass):
             list_compr: LSQUARE inner_compr RSQUARE
             """
             if isinstance(kid[1], ast.InnerCompr):
-                return ast.ListCompr(
-                    compr=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ListCompr(
+                        compr=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2315,10 +2503,12 @@ class JacParser(Pass):
             gen_compr: LPAREN inner_compr RPAREN
             """
             if isinstance(kid[1], ast.InnerCompr):
-                return ast.GenCompr(
-                    compr=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.GenCompr(
+                        compr=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2329,10 +2519,12 @@ class JacParser(Pass):
             set_compr: LBRACE inner_compr RBRACE
             """
             if isinstance(kid[1], ast.InnerCompr):
-                return ast.SetCompr(
-                    compr=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SetCompr(
+                        compr=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2347,15 +2539,17 @@ class JacParser(Pass):
                 and isinstance(kid[2], ast.SubNodeList)
                 and isinstance(kid[4], ast.ExprType)
             ):
-                return ast.InnerCompr(
-                    out_expr=kid[0],
-                    names=kid[2],
-                    collection=kid[4],
-                    conditional=kid[6]
-                    if len(kid) > 5 and isinstance(kid[6], ast.ExprType)
-                    else None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.InnerCompr(
+                        out_expr=kid[0],
+                        names=kid[2],
+                        collection=kid[4],
+                        conditional=kid[6]
+                        if len(kid) > 5 and isinstance(kid[6], ast.ExprType)
+                        else None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2370,15 +2564,17 @@ class JacParser(Pass):
                 and isinstance(kid[3], ast.SubNodeList)
                 and isinstance(kid[5], ast.ExprType)
             ):
-                return ast.DictCompr(
-                    kv_pair=kid[1],
-                    names=kid[3],
-                    collection=kid[5],
-                    conditional=kid[7]
-                    if len(kid) > 6 and isinstance(kid[7], ast.AtomType)
-                    else None,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.DictCompr(
+                        kv_pair=kid[1],
+                        names=kid[3],
+                        collection=kid[5],
+                        conditional=kid[7]
+                        if len(kid) > 6 and isinstance(kid[7], ast.AtomType)
+                        else None,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2391,7 +2587,7 @@ class JacParser(Pass):
                         | atomic_chain_safe
             """
             if isinstance(kid[0], ast.AtomType):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2405,12 +2601,14 @@ class JacParser(Pass):
                 if isinstance(kid[0], ast.AtomType) and isinstance(
                     kid[1], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
                 ):
-                    return ast.AtomTrailer(
-                        target=kid[0],
-                        right=kid[1],
-                        null_ok=False,
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.AtomTrailer(
+                            target=kid[0],
+                            right=kid[1],
+                            null_ok=False,
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -2420,12 +2618,14 @@ class JacParser(Pass):
                     and isinstance(kid[1], ast.Token)
                     and isinstance(kid[2], ast.AtomType)
                 ):
-                    return ast.AtomTrailer(
-                        target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
-                        right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                        null_ok=False,
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.AtomTrailer(
+                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
+                            right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                            null_ok=False,
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -2442,12 +2642,14 @@ class JacParser(Pass):
                 if isinstance(kid[0], ast.AtomType) and isinstance(
                     kid[2], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
                 ):
-                    return ast.AtomTrailer(
-                        target=kid[0],
-                        right=kid[2],
-                        null_ok=True,
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.AtomTrailer(
+                            target=kid[0],
+                            right=kid[2],
+                            null_ok=True,
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -2457,12 +2659,14 @@ class JacParser(Pass):
                     and isinstance(kid[1], ast.Token)
                     and isinstance(kid[3], ast.AtomType)
                 ):
-                    return ast.AtomTrailer(
-                        target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[3],
-                        right=kid[3] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                        null_ok=True,
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.AtomTrailer(
+                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[3],
+                            right=kid[3] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                            null_ok=True,
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -2479,12 +2683,16 @@ class JacParser(Pass):
                 and isinstance(kid[0], ast.AtomType)
                 and isinstance(kid[2], ast.SubNodeList)
             ):
-                return ast.FuncCall(
-                    target=kid[0], params=kid[2], mod_link=self.mod_link, kid=kid
+                return self.nu(
+                    ast.FuncCall(
+                        target=kid[0], params=kid[2], mod_link=self.mod_link, kid=kid
+                    )
                 )
             elif len(kid) == 1 and isinstance(kid[0], ast.AtomType):
-                return ast.FuncCall(
-                    target=kid[0], params=None, mod_link=self.mod_link, kid=kid
+                return self.nu(
+                    ast.FuncCall(
+                        target=kid[0], params=None, mod_link=self.mod_link, kid=kid
+                    )
                 )
             else:
                 raise self.ice()
@@ -2498,7 +2706,7 @@ class JacParser(Pass):
             """
             if len(kid) == 1:
                 if isinstance(kid[0], ast.SubNodeList):
-                    return kid[0]
+                    return self.nu(kid[0])
                 else:
                     raise self.ice()
             else:
@@ -2507,10 +2715,12 @@ class JacParser(Pass):
                     i for i in [*kid[0].kid, *kid[2].kid] if isinstance(i, valid_type)
                 ]
                 if len(valid_kid) == len(kid[0].kid) + len(kid[2].kid):
-                    return ast.SubNodeList[ast.ExprType | ast.Assignment](
-                        items=valid_kid,
-                        mod_link=self.mod_link,
-                        kid=kid,
+                    return self.nu(
+                        ast.SubNodeList[ast.ExprType | ast.Assignment](
+                            items=valid_kid,
+                            mod_link=self.mod_link,
+                            kid=kid,
+                        )
                     )
                 else:
                     raise self.ice()
@@ -2533,10 +2743,12 @@ class JacParser(Pass):
                 assign = kid[0]
             new_kid = [assign, comma, *consume.kid] if consume else [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.Assignment)]
-            return ast.SubNodeList[ast.Assignment](
-                items=valid_kid,
-                mod_link=self.mod_link,
-                kid=kid,
+            return self.nu(
+                ast.SubNodeList[ast.Assignment](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
             )
 
         def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
@@ -2545,12 +2757,14 @@ class JacParser(Pass):
             index_slice: LSQUARE expression? (COLON expression?)? RSQUARE
             """
             if len(kid) == 2:
-                return ast.IndexSlice(
-                    start=None,
-                    stop=None,
-                    is_range=False,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.IndexSlice(
+                        start=None,
+                        stop=None,
+                        is_range=False,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             expr1 = kid[1]
             expr2 = None
@@ -2559,12 +2773,14 @@ class JacParser(Pass):
             if isinstance(expr1, ast.ExprType) and (
                 isinstance(expr2, ast.ExprType) or expr2 is None
             ):
-                return ast.IndexSlice(
-                    start=expr1,
-                    stop=expr2,
-                    is_range=True,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.IndexSlice(
+                        start=expr1,
+                        stop=expr2,
+                        is_range=True,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2578,7 +2794,7 @@ class JacParser(Pass):
                     | node_ref
             """
             if isinstance(kid[0], ast.ArchRef):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2588,11 +2804,13 @@ class JacParser(Pass):
             node_ref: NODE_OP NAME
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
-                return ast.ArchRef(
-                    arch=kid[0],
-                    name_ref=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ArchRef(
+                        arch=kid[0],
+                        name_ref=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2603,11 +2821,13 @@ class JacParser(Pass):
             edge_ref: EDGE_OP NAME
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
-                return ast.ArchRef(
-                    arch=kid[0],
-                    name_ref=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ArchRef(
+                        arch=kid[0],
+                        name_ref=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2618,11 +2838,13 @@ class JacParser(Pass):
             walker_ref: WALKER_OP NAME
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
-                return ast.ArchRef(
-                    arch=kid[0],
-                    name_ref=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ArchRef(
+                        arch=kid[0],
+                        name_ref=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2633,11 +2855,13 @@ class JacParser(Pass):
             object_ref: OBJECT_OP esc_name
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
-                return ast.ArchRef(
-                    arch=kid[0],
-                    name_ref=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ArchRef(
+                        arch=kid[0],
+                        name_ref=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2648,11 +2872,13 @@ class JacParser(Pass):
             enum_ref: ENUM_OP NAME
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
-                return ast.ArchRef(
-                    arch=kid[0],
-                    name_ref=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ArchRef(
+                        arch=kid[0],
+                        name_ref=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2663,11 +2889,13 @@ class JacParser(Pass):
             ability_ref: ABILITY_OP (special_ref | esc_name)
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
-                return ast.ArchRef(
-                    arch=kid[0],
-                    name_ref=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ArchRef(
+                        arch=kid[0],
+                        name_ref=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2678,11 +2906,13 @@ class JacParser(Pass):
             global_ref: GLOBAL_OP esc_name
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameType):
-                return ast.ArchRef(
-                    arch=kid[0],
-                    name_ref=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ArchRef(
+                        arch=kid[0],
+                        name_ref=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2704,10 +2934,12 @@ class JacParser(Pass):
             new_kid = [name, *consume.kid] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ArchRef)]
             if len(valid_kid) == len(new_kid):
-                return ast.SubNodeList[ast.ArchRef](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.SubNodeList[ast.ArchRef](
+                        items=valid_kid,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2723,15 +2955,17 @@ class JacParser(Pass):
                 if isinstance(kid[1], ast.ArchRef) and isinstance(
                     kid[0], ast.SubNodeList
                 ):
-                    return ast.SubNodeList[ast.ArchRef](
-                        items=[*(kid[0].items), kid[1]],
-                        mod_link=self.mod_link,
-                        kid=[*(kid[0].kid), kid[1]],
+                    return self.nu(
+                        ast.SubNodeList[ast.ArchRef](
+                            items=[*(kid[0].items), kid[1]],
+                            mod_link=self.mod_link,
+                            kid=[*(kid[0].kid), kid[1]],
+                        )
                     )
                 else:
                     raise self.ice()
             elif isinstance(kid[0], ast.SubNodeList):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2746,15 +2980,17 @@ class JacParser(Pass):
                 if isinstance(kid[1], ast.ArchRef) and isinstance(
                     kid[0], ast.SubNodeList
                 ):
-                    return ast.SubNodeList[ast.ArchRef](
-                        items=[*(kid[0].items), kid[1]],
-                        mod_link=self.mod_link,
-                        kid=[*(kid[0].kid), kid[1]],
+                    return self.nu(
+                        ast.SubNodeList[ast.ArchRef](
+                            items=[*(kid[0].items), kid[1]],
+                            mod_link=self.mod_link,
+                            kid=[*(kid[0].kid), kid[1]],
+                        )
                     )
                 else:
                     raise self.ice()
             elif isinstance(kid[0], ast.SubNodeList):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2769,15 +3005,17 @@ class JacParser(Pass):
                 if isinstance(kid[1], ast.EnumDef) and isinstance(
                     kid[0], ast.SubNodeList
                 ):
-                    return ast.SubNodeList[ast.ArchRef | ast.EnumDef](
-                        items=[*(kid[0].items), kid[1]],
-                        mod_link=self.mod_link,
-                        kid=[*(kid[0].kid), kid[1]],
+                    return self.nu(
+                        ast.SubNodeList[ast.ArchRef | ast.EnumDef](
+                            items=[*(kid[0].items), kid[1]],
+                            mod_link=self.mod_link,
+                            kid=[*(kid[0].kid), kid[1]],
+                        )
                     )
                 else:
                     raise self.ice()
             elif isinstance(kid[0], ast.SubNodeList):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2789,7 +3027,7 @@ class JacParser(Pass):
                        | edge_to
             """
             if isinstance(kid[0], ast.EdgeOpRef):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2804,12 +3042,14 @@ class JacParser(Pass):
             if isinstance(ftype, ast.ExprType) and (
                 isinstance(fcond, ast.FilterCompr) or fcond is None
             ):
-                return ast.EdgeOpRef(
-                    filter_type=ftype,
-                    filter_cond=fcond,
-                    edge_dir=EdgeDir.OUT,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.EdgeOpRef(
+                        filter_type=ftype,
+                        filter_cond=fcond,
+                        edge_dir=EdgeDir.OUT,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2825,12 +3065,14 @@ class JacParser(Pass):
             if isinstance(ftype, ast.ExprType) and (
                 isinstance(fcond, ast.FilterCompr) or fcond is None
             ):
-                return ast.EdgeOpRef(
-                    filter_type=ftype,
-                    filter_cond=fcond,
-                    edge_dir=EdgeDir.IN,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.EdgeOpRef(
+                        filter_type=ftype,
+                        filter_cond=fcond,
+                        edge_dir=EdgeDir.IN,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2846,12 +3088,14 @@ class JacParser(Pass):
             if isinstance(ftype, ast.ExprType) and (
                 isinstance(fcond, ast.FilterCompr) or fcond is None
             ):
-                return ast.EdgeOpRef(
-                    filter_type=ftype,
-                    filter_cond=fcond,
-                    edge_dir=EdgeDir.ANY,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.EdgeOpRef(
+                        filter_type=ftype,
+                        filter_cond=fcond,
+                        edge_dir=EdgeDir.ANY,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2863,7 +3107,7 @@ class JacParser(Pass):
                       | connect_to
             """
             if isinstance(kid[0], ast.ConnectOp):
-                return kid[0]
+                return self.nu(kid[0])
             else:
                 raise self.ice()
 
@@ -2873,10 +3117,12 @@ class JacParser(Pass):
             disconnect_op: NOT edge_op_ref
             """
             if isinstance(kid[1], ast.EdgeOpRef):
-                return ast.DisconnectOp(
-                    edge_spec=kid[1],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.DisconnectOp(
+                        edge_spec=kid[1],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2892,12 +3138,14 @@ class JacParser(Pass):
             if isinstance(conn_type, ast.ExprType) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
-                return ast.ConnectOp(
-                    conn_type=conn_type,
-                    conn_assign=conn_assign,
-                    edge_dir=EdgeDir.OUT,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ConnectOp(
+                        conn_type=conn_type,
+                        conn_assign=conn_assign,
+                        edge_dir=EdgeDir.OUT,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2913,12 +3161,14 @@ class JacParser(Pass):
             if isinstance(conn_type, ast.ExprType) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
-                return ast.ConnectOp(
-                    conn_type=conn_type,
-                    conn_assign=conn_assign,
-                    edge_dir=EdgeDir.IN,
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.ConnectOp(
+                        conn_type=conn_type,
+                        conn_assign=conn_assign,
+                        edge_dir=EdgeDir.IN,
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2929,10 +3179,12 @@ class JacParser(Pass):
             filter_compr: LPAREN EQ filter_compare_list RPAREN
             """
             if isinstance(kid[2], ast.SubNodeList):
-                return ast.FilterCompr(
-                    compares=kid[2],
-                    mod_link=self.mod_link,
-                    kid=kid,
+                return self.nu(
+                    ast.FilterCompr(
+                        compares=kid[2],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
                 )
             else:
                 raise self.ice()
@@ -2955,10 +3207,12 @@ class JacParser(Pass):
                 expr = kid[0]
             new_kid = [expr, comma, *consume.kid] if consume else [expr]
             valid_kid = [i for i in new_kid if isinstance(i, ast.BinaryExpr)]
-            return ast.SubNodeList[ast.BinaryExpr](
-                items=valid_kid,
-                mod_link=self.mod_link,
-                kid=kid,
+            return self.nu(
+                ast.SubNodeList[ast.BinaryExpr](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
+                )
             )
 
         def filter_compare_item(self, kid: list[ast.AstNode]) -> ast.BinaryExpr:
@@ -2968,7 +3222,7 @@ class JacParser(Pass):
             """
             ret = self.binary_expr(kid)
             if isinstance(ret, ast.BinaryExpr):
-                return ret
+                return self.nu(ret)
             else:
                 raise self.ice()
 
@@ -2989,14 +3243,16 @@ class JacParser(Pass):
             ]:
                 ret_type = ast.Constant
 
-            return ret_type(
-                name=token.type,
-                value=token.value,
-                line=token.line if token.line is not None else 0,
-                col_start=token.column if token.column is not None else 0,
-                col_end=token.end_column if token.end_column is not None else 0,
-                pos_start=token.start_pos if token.start_pos is not None else 0,
-                pos_end=token.end_pos if token.end_pos is not None else 0,
-                mod_link=self.mod_link,
-                kid=[],
+            return self.nu(
+                ret_type(
+                    name=token.type,
+                    value=token.value,
+                    line=token.line if token.line is not None else 0,
+                    col_start=token.column if token.column is not None else 0,
+                    col_end=token.end_column if token.end_column is not None else 0,
+                    pos_start=token.start_pos if token.start_pos is not None else 0,
+                    pos_end=token.end_pos if token.end_pos is not None else 0,
+                    mod_link=self.mod_link,
+                    kid=[],
+                )
             )

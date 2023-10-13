@@ -124,6 +124,7 @@ class Pass(Transform):
         if not isinstance(node, ast.AstNode):
             self.ice("Current node is not an AstNode.")
         self.cur_line = node.line
+        self.cur_col = node.column
         if node.mod_link:
             self.rel_mod_path = node.mod_link.rel_mod_path
             self.mod_path = node.mod_link.mod_path
@@ -142,6 +143,7 @@ class Pass(Transform):
         """Pass Error."""
         if isinstance(self.cur_node, ast.AstNode):
             self.cur_line = self.cur_node.line
+            self.cur_col = self.cur_node.column
         self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
         raise RuntimeError(
             f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"

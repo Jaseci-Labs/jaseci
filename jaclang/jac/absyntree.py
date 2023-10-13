@@ -8,8 +8,6 @@ from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.symtable import SymbolTable
 
-T = TypeVar("T")
-
 
 class AstNode:
     """Abstract syntax tree node for Jac."""
@@ -29,6 +27,11 @@ class AstNode:
     def line(self) -> int:
         """Get line number."""
         return self.tok_range[0].line_no
+
+    @property
+    def column(self) -> int:
+        """Get column position number."""
+        return self.tok_range[0].col_start
 
     def add_kids_left(self, nodes: list[AstNode]) -> AstNode:
         """Add kid left."""
@@ -86,6 +89,9 @@ class AstNode:
     def print(self, depth: Optional[int] = None) -> None:
         """Print ast."""
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
+
+
+T = TypeVar("T", bound=AstNode)
 
 
 # AST Mid Level Node Types

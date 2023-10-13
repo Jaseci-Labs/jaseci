@@ -16,11 +16,12 @@ from jaclang.vendor.sly.yacc import ParserMeta
 class Alert:
     """Alert interface."""
 
-    def __init__(self, msg: str, mod: str, line: int) -> None:
+    def __init__(self, msg: str, mod: str, line: int, col: int) -> None:
         """Initialize alert."""
         self.msg = msg
         self.mod = mod
         self.line = line
+        self.col = 0
 
     def __str__(self) -> str:
         """Return string representation of alert."""
@@ -28,7 +29,7 @@ class Alert:
             mod_path = os.path.relpath(self.mod, start=os.getcwd())
         except ValueError:
             mod_path = "<code_string>"
-        return f"{mod_path}, line {self.line}: {self.msg}"
+        return f"{mod_path}, line {self.line}, col {self.col}: {self.msg}"
 
 
 class TransformError(Exception):
@@ -75,6 +76,7 @@ class Transform(ABC):
         self.errors_had: list[Alert] = [] if not prior else prior.errors_had
         self.warnings_had: list[Alert] = [] if not prior else prior.warnings_had
         self.cur_line = 0
+        self.cur_col = 0
         self.mod_path = mod_path
         self.rel_mod_path = (
             mod_path.replace(base_path, "") if base_path else mod_path.split(os.sep)[-1]
@@ -88,13 +90,13 @@ class Transform(ABC):
 
     def log_error(self, msg: str) -> None:
         """Pass Error."""
-        alrt = Alert(msg, self.mod_path, self.cur_line)
+        alrt = Alert(msg, self.mod_path, self.cur_line, self.cur_col)
         self.errors_had.append(alrt)
         self.logger.error(str(alrt))
 
     def log_warning(self, msg: str) -> None:
         """Pass Error."""
-        alrt = Alert(msg, self.mod_path, self.cur_line)
+        alrt = Alert(msg, self.mod_path, self.cur_line, self.cur_col)
         self.warnings_had.append(alrt)
         self.logger.warning(str(alrt))
 
