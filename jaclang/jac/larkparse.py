@@ -3240,6 +3240,7 @@ class JacParser(Pass):
                 Tok.STRING,
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,
+                Tok.DOC_STRING,
             ]:
                 ret_type = ast.Constant
 
