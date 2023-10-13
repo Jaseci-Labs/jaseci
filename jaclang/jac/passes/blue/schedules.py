@@ -9,6 +9,7 @@ from .blue_pygen_pass import BluePygenPass  # noqa: I100
 from .pyout_pass import PyOutPass  # noqa: I100
 from .dot_exporter_pass import DotGraphPass  # noqa: I100
 from .ast_printer_pass import ASTPrinterPass  # noqa: I100
+from .sym_tab_printer_pass import SymbolTablePrinterPass  # noqa: I100
 
 
 py_code_gen = [
@@ -52,4 +53,13 @@ full_ast_print = [
     SymTabBuildPass,
     DeclDefMatchPass,
     ASTPrinterPass
+]
+
+sym_tab_print = [
+    AstBuildPass,
+    SubNodeTabPass,
+    ImportPass,
+    SymTabBuildPass,
+    DeclDefMatchPass,
+    SymbolTablePrinterPass
 ]
