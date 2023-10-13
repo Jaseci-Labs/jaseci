@@ -83,8 +83,13 @@ class DotGraphPass(Pass):
 
     def after_pass(self) -> None:
         """Finalize pass by generating the dot file."""
-        with open(self.OUTPUT_FILE_PATH, "w") as f:
-            f.write("digraph graph1 {")
-            f.write("\n".join(self.__dot_lines))
-            f.write("}")
+        if self.OUTPUT_FILE_PATH:
+            with open(self.OUTPUT_FILE_PATH, "w") as f:
+                f.write("digraph graph1 {")
+                f.write("\n".join(self.__dot_lines))
+                f.write("}")
+        else:
+            print("digraph graph1 {")
+            print("\n".join(self.__dot_lines))
+            print("}")
         return super().after_pass()

@@ -148,17 +148,18 @@ class AstTool:
             return "Usage: gen_dotfile <file_path> [<output_path>]"
 
         file_name: str = args[0]
-        out_path = args[1] if len(args) == 2 else "out.dot"
+        DotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
 
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
-
-        DotGraphPass.OUTPUT_FILE_PATH = out_path
 
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = './' if not base else base
             jac_file_to_pass(file_name, base, DotGraphPass, full_ast_dot_gen)
-            return f"Dot file generated at {out_path}"
+            if DotGraphPass.OUTPUT_FILE_PATH:
+                return f"Dot file generated at {DotGraphPass.OUTPUT_FILE_PATH}"
+            else:
+                return ""
         else:
             return "Not a .jac file."
