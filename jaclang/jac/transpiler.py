@@ -5,7 +5,13 @@ import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes import Pass
-from jaclang.jac.passes.blue import BluePygenPass, PyOutPass, pass_schedule
+from jaclang.jac.passes.blue import (
+    BluePygenPass,
+    JacFormatPass,
+    PyOutPass,
+    pass_schedule,
+)
+from jaclang.jac.passes.blue.schedules import format_pass
 from jaclang.jac.transform import Alert, Transform
 
 
@@ -74,5 +80,38 @@ def jac_file_to_pass(
         )
     ast_ret = target(
         mod_path=file_path, input_ir=ast_ret.ir, base_path=base_dir, prior=ast_ret
+    )
+    return ast_ret
+
+
+def jac_file_formatter(
+    file_path: str,
+    base_dir: str = "",
+    target: Type[T] = JacFormatPass,
+    schedule: list[Type[T]] = format_pass,
+) -> T:
+    """Convert a Jac file to an AST."""
+    with open(file_path) as file:
+        tem_file = file.read()
+        lex = JacLexer(mod_path=file_path, input_ir=tem_file, base_path=base_dir)
+        prse = JacParser(
+            mod_path=file_path, input_ir=lex.ir, base_path=base_dir, prior=lex
+        )
+
+    for i in schedule:
+        if i == target:
+            break
+        ast_ret = i(
+            mod_path=file_path,
+            input_ir=prse.ir,
+            base_path=base_dir,
+            prior=prse,
+        )
+    ast_ret = target(
+        mod_path=file_path,
+        input_ir=ast_ret.ir,
+        base_path=base_dir,
+        prior=ast_ret,
+        comments=lex.comments,
     )
     return ast_ret
