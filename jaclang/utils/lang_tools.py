@@ -8,6 +8,7 @@ from typing import List, Optional
 import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacLexer
 from jaclang.jac.passes.blue.schedules import SymbolTablePrinterPass, sym_tab_print
+from jaclang.jac.passes.blue.schedules import SymtabDotGraphPass, sym_tab_dot_gen
 from jaclang.jac.passes.blue.schedules import ASTPrinterPass, full_ast_print
 from jaclang.jac.passes.blue.schedules import DotGraphPass, full_ast_dot_gen
 from jaclang.jac.transpiler import jac_file_to_pass
@@ -201,5 +202,28 @@ class AstTool:
             base = './' if not base else base
             jac_file_to_pass(file_name, base, SymbolTablePrinterPass, sym_tab_print)
             return ""
+        else:
+            return "Not a .jac file."
+
+    def gen_symtab_dotfile(self, *args: List[str]) -> str:
+        """Generate a dot file for Symbol Table."""
+        args = args[0]
+        if len(args) == 0:
+            return "Usage: gen_dotfile <file_path> [<output_path>]"
+
+        file_name: str = args[0]
+        SymtabDotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
+
+        if not os.path.isfile(file_name):
+            return f"Error: {file_name} not found"
+
+        if file_name.endswith(".jac"):
+            [base, mod] = os.path.split(file_name)
+            base = './' if not base else base
+            jac_file_to_pass(file_name, base, SymtabDotGraphPass, sym_tab_dot_gen)
+            if SymtabDotGraphPass.OUTPUT_FILE_PATH:
+                return f"Dot file generated at {SymtabDotGraphPass.OUTPUT_FILE_PATH}"
+            else:
+                return ""
         else:
             return "Not a .jac file."

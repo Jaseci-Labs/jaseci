@@ -50,10 +50,10 @@ class SymbolTablePrinterPass(Pass):
             sym = node.tab[sym]
             symbol_node = self.__SymbolTree(node_name=f"Symbol({sym.name})", parent=symbols)
             self.__SymbolTree(node_name=f"declared in {sym.decl.__class__.__name__}", parent=symbol_node)
-            defn = self.__SymbolTree(node_name=f"defn", parent=symbol_node)
+            defn = self.__SymbolTree(node_name="defn", parent=symbol_node)
             for n in sym.defn:
                 self.__SymbolTree(node_name=n.__class__.__name__, parent=defn)
-            uses = self.__SymbolTree(node_name=f"uses", parent=symbol_node)
+            uses = self.__SymbolTree(node_name="uses", parent=symbol_node)
             for n in sym.uses:
                 self.__SymbolTree(node_name=n.__class__.__name__, parent=uses)
 

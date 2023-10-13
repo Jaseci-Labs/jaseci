@@ -11,6 +11,7 @@ from .jac_formatter_pass import JacFormatPass  # noqa: I100
 from .dot_exporter_pass import DotGraphPass  # noqa: I100
 from .ast_printer_pass import ASTPrinterPass  # noqa: I100
 from .sym_tab_printer_pass import SymbolTablePrinterPass  # noqa: I100
+from .sym_tab_dot_exporter_pass import SymtabDotGraphPass  # noqa: I100
 
 
 pass_schedule = [
@@ -36,5 +37,6 @@ __all__ = [
     "JacFormatPass",
     "DotGraphPass",
     "ASTPrinterPass",
-    "SymbolTablePrinterPass"
+    "SymbolTablePrinterPass",
+    "SymtabDotGraphPass"
 ]

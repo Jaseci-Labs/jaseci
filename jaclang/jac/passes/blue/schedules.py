@@ -10,6 +10,7 @@ from .pyout_pass import PyOutPass  # noqa: I100
 from .dot_exporter_pass import DotGraphPass  # noqa: I100
 from .ast_printer_pass import ASTPrinterPass  # noqa: I100
 from .sym_tab_printer_pass import SymbolTablePrinterPass  # noqa: I100
+from .sym_tab_dot_exporter_pass import SymtabDotGraphPass   # noqa: I100
 
 
 py_code_gen = [
@@ -62,4 +63,13 @@ sym_tab_print = [
     SymTabBuildPass,
     DeclDefMatchPass,
     SymbolTablePrinterPass
+]
+
+sym_tab_dot_gen = [
+    AstBuildPass,
+    SubNodeTabPass,
+    ImportPass,
+    SymTabBuildPass,
+    DeclDefMatchPass,
+    SymtabDotGraphPass
 ]
