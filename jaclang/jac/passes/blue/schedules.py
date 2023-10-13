@@ -8,6 +8,8 @@ from .semantic_check_pass import SemanticCheckPass  # noqa: I100
 from .blue_pygen_pass import BluePygenPass  # noqa: I100
 from .pyout_pass import PyOutPass  # noqa: I100
 from .dot_exporter_pass import DotGraphPass  # noqa: I100
+from .ast_printer_pass import ASTPrinterPass  # noqa: I100
+
 
 py_code_gen = [
     AstBuildPass,
@@ -36,4 +38,18 @@ full_ast_dot_gen = [
     SymTabBuildPass,
     DeclDefMatchPass,
     DotGraphPass,
+]
+
+ast_print = [
+    AstBuildPass,
+    ASTPrinterPass
+]
+
+full_ast_print = [
+    AstBuildPass,
+    SubNodeTabPass,
+    ImportPass,
+    SymTabBuildPass,
+    DeclDefMatchPass,
+    ASTPrinterPass
 ]
