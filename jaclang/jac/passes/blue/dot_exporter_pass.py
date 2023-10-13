@@ -17,6 +17,8 @@ DOT_GRAPH_CLASS_COLOR_MAP: dict[type, str] = {
 class DotGraphPass(Pass):
     """Jac AST convertion to DOT graph."""
 
+    OUTPUT_FILE_PATH: str = "out.dot"
+
     def before_pass(self) -> None:
         """Initialize pass."""
         self.__dot_lines: list[str] = []
@@ -81,7 +83,7 @@ class DotGraphPass(Pass):
 
     def after_pass(self) -> None:
         """Finalize pass by generating the dot file."""
-        with open("out.dot", "w") as f:
+        with open(self.OUTPUT_FILE_PATH, "w") as f:
             f.write("digraph graph1 {")
             f.write("\n".join(self.__dot_lines))
             f.write("}")

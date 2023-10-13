@@ -17,10 +17,7 @@ can enter(filename: str, entrypoint: str, args: list);
 can <>test(filename: str);
 
 @cmd_reg.register
-can ast_tool(tool: str);
+can ast_tool(tool: str, args: list = []);
 
 @cmd_reg.register
 can clean;
-
-@cmd_reg.register
-can gen_dotfile(filename: str) ;

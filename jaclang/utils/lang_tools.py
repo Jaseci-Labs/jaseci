@@ -1,11 +1,14 @@
 """Language tools for the Jaclang project."""
 
 import inspect
+import os
 import sys
-from typing import Optional
+from typing import List, Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacLexer
+from jaclang.jac.passes.blue.schedules import DotGraphPass, full_ast_dot_gen
+from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.helpers import pascal_to_snake
 
 
@@ -76,7 +79,7 @@ class AstTool:
             key=lambda cls: source_code.find(f"class {cls.name}"),
         )
 
-    def pass_template(self) -> str:
+    def pass_template(self, *args: List[str]) -> str:
         """Generate pass template."""
         output = "import jaclang.jac.absyntree as ast\nfrom jaclang.jac.passes import Pass\n\nclass SomePass(Pass):\n"
 
@@ -108,14 +111,14 @@ class AstTool:
         )
         return output
 
-    def jac_keywords(self) -> str:
+    def jac_keywords(self, *args: List[str]) -> str:
         """Get all Jac keywords as an or string."""
         ret = ""
         for k in JacLexer._remapping["NAME"].keys():
             ret += f"{k}|"
         return ret[:-1]
 
-    def md_doc(self) -> str:
+    def md_doc(self, *args: List[str]) -> str:
         """Generate mermaid markdown doc."""
         output = ""
         for cls in self.ast_classes:
@@ -137,3 +140,25 @@ class AstTool:
             output += "```\n\n"
             output += f"{cls.doc} \n\n"
         return output
+
+    def gen_dotfile(self, *args: List[str]) -> str:
+        """Generate a dot file for AST."""
+        args = args[0]
+        if len(args) == 0:
+            return "Usage: gen_dotfile <file_path> [<output_path>]"
+
+        file_name: str = args[0]
+        out_path = args[1] if len(args) == 2 else "out.dot"
+
+        if not os.path.isfile(file_name):
+            return f"Error: {file_name} not found"
+
+        DotGraphPass.OUTPUT_FILE_PATH = out_path
+
+        if file_name.endswith(".jac"):
+            [base, mod] = os.path.split(file_name)
+            base = './' if not base else base
+            jac_file_to_pass(file_name, base, DotGraphPass, full_ast_dot_gen)
+            return f"Dot file generated at {out_path}"
+        else:
+            return "Not a .jac file."
