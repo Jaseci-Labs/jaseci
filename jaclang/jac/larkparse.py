@@ -71,9 +71,9 @@ class JacParser(Pass):
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
-            self.parse_ref.error("Unexpected item in parse tree!")
+            self.parse_ref.error("Unexpected syntax, not valid Jac!")
             return RuntimeError(
-                f"{self.parse_ref.__class__.__name__} - Unexpected item in parse tree!"
+                f"{self.parse_ref.__class__.__name__} - Unexpected syntax, not valid Jac!"
             )
 
         def nu(self, node: ast.T) -> ast.T:
@@ -256,14 +256,19 @@ class JacParser(Pass):
             """
             lang = kid[1]
             path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
-            alias = kid[5] if isinstance(kid[4], ast.Name) else None
-            items = kid[5] if isinstance(kid[4], ast.SubNodeList) else None
+
+            alias = kid[5] if len(kid) > 4 and isinstance(kid[4], ast.Name) else None
+            items = (
+                kid[-1]
+                if len(kid) > 4 and isinstance(kid[-1], ast.SubNodeList)
+                else None
+            )
             is_absorb = False
             if (
                 isinstance(lang, ast.SubTag)
                 and isinstance(path, ast.ModulePath)
-                and isinstance(alias, ast.Name)
-                and isinstance(items, ast.SubNodeList)
+                and (isinstance(alias, ast.Name) or alias is None)
+                and (isinstance(items, ast.SubNodeList) or items is None)
             ):
                 return self.nu(
                     ast.Import(
@@ -1150,16 +1155,13 @@ class JacParser(Pass):
             if null_ok:
                 valid_kid[-1].null_ok = True
                 valid_kid[-1].add_kids_right([null_ok])
-            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return self.nu(
-                    ast.SubNodeList[ast.TypeSpec](
-                        items=valid_kid,
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.SubNodeList[ast.TypeSpec](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def single_type(self, kid: list[ast.AstNode]) -> ast.TypeSpec:
             """Grammar rule.
