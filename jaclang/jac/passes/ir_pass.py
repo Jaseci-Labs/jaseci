@@ -21,7 +21,6 @@ class Pass(Transform):
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
-        self.cur_node = input_ir  # tracks current node during traversal
         self.ir = input_ir
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
@@ -123,8 +122,6 @@ class Pass(Transform):
             node = self.cur_node
         if not isinstance(node, ast.AstNode):
             self.ice("Current node is not an AstNode.")
-        self.cur_line = node.line
-        self.cur_col = node.column
         if node.mod_link:
             self.rel_mod_path = node.mod_link.rel_mod_path
             self.mod_path = node.mod_link.mod_path
@@ -141,9 +138,6 @@ class Pass(Transform):
 
     def ice(self, msg: str = "Something went horribly wrong!") -> None:
         """Pass Error."""
-        if isinstance(self.cur_node, ast.AstNode):
-            self.cur_line = self.cur_node.line
-            self.cur_col = self.cur_node.column
         self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
         raise RuntimeError(
             f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"

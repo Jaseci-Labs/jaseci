@@ -931,11 +931,15 @@ class JacParser(Pass):
 
             param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
             """
-            star = kid[0] if isinstance(kid[0], ast.Token) else None
+            star = (
+                kid[0]
+                if isinstance(kid[0], ast.Token) and kid[0].name != Tok.NAME
+                else None
+            )
             name = kid[1] if star else kid[0]
             type_tag = kid[2] if star else kid[1]
             value = kid[-1] if isinstance(kid[-1], ast.ExprType) else None
-            if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubNodeList):
+            if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
                 return self.nu(
                     ast.ParamVar(
                         name=name,

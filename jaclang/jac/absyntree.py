@@ -29,9 +29,14 @@ class AstNode:
         return self.tok_range[0].line_no
 
     @property
-    def column(self) -> int:
+    def col_start(self) -> int:
         """Get column position number."""
-        return self.tok_range[0].col_start
+        return self.tok_range[0].c_start
+
+    @property
+    def col_end(self) -> int:
+        """Get column position number."""
+        return self.tok_range[1].c_end
 
     def add_kids_left(self, nodes: list[AstNode]) -> AstNode:
         """Add kid left."""
@@ -196,6 +201,8 @@ class Test(AstNode):
                 col_start=name.col_start,
                 col_end=name.col_end,
                 line=name.line,
+                pos_start=name.pos_start,
+                pos_end=name.pos_end,
                 mod_link=mod_link,
                 kid=name.kid,
             )
@@ -515,7 +522,7 @@ class ParamVar(AstNode):
         self,
         name: Name,
         unpack: Optional[Token],
-        type_tag: SubNodeList[TypeSpec],
+        type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1441,8 +1448,8 @@ class Token(AstNode):
         self.name = name
         self.value = value
         self.line_no = line
-        self.col_start = col_start
-        self.col_end = col_end
+        self.c_start = col_start
+        self.c_end = col_end
         self.pos_start = pos_start
         self.pos_end = pos_end
         super().__init__(mod_link=mod_link, kid=kid)
