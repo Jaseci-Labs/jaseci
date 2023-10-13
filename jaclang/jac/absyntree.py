@@ -1487,6 +1487,7 @@ NameType = Union[
 
 AtomType = Union[
     NameType,
+    Constant,
     MultiString,
     ListVal,
     TupleVal,

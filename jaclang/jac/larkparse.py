@@ -76,12 +76,17 @@ class JacParser(Pass):
                 f"{self.parse_ref.__class__.__name__} - Unexpected item in parse tree!"
             )
 
+        def node_update(self, node: ast.AstNode) -> ast.AstNode:
+            """Update node."""
+            self.parse_ref.cur_node = node
+            return node
+
         def start(self, kid: list[ast.Module]) -> ast.Module:
             """Grammar rule.
 
             start: module
             """
-            return kid[0]
+            return self.node_update(kid[0])
 
         def module(self, kid: list[ast.AstNode]) -> ast.AstNode:
             """Grammar rule.
