@@ -617,15 +617,9 @@ class JacParser(Pass):
             """
             access = kid[1] if isinstance(kid[1], ast.SubTag) else None
             name = kid[2] if access else kid[1]
-            inh = kid[3] if access else kid[2]
-            body = (
-                kid[4]
-                if access and isinstance(kid[4], ast.SubNodeList)
-                else kid[3]
-                if isinstance(kid[3], ast.SubNodeList)
-                else None
-            )
-            if isinstance(name, ast.Name) and isinstance(inh, ast.SubNodeList):
+            inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
+            body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
+            if isinstance(name, ast.Name):
                 return self.nu(
                     ast.Enum(
                         name=name,
@@ -663,54 +657,26 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.EnumBlockStmt]:
             """Grammar rule.
 
-            enum_block: LBRACE enum_stmt_list? RBRACE
+            enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt)? RBRACE
             """
-            if isinstance(kid[1], ast.SubNodeList):
-                kid[1].add_kids_left([kid[0]])
-                kid[1].add_kids_right([kid[2]])
-                return self.nu(kid[1])
-            else:
-                return self.nu(
-                    ast.SubNodeList[ast.EnumBlockStmt](
-                        items=[],
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
-                )
-
-        def enum_stmt_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.EnumBlockStmt]:
-            """Grammar rule.
-
-            enum_stmt_list: (enum_stmt_list COMMA)? enum_item
-            """
-            consume = None
-            name = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                name = kid[2]
-            else:
-                name = kid[0]
-            new_kid = [name, comma, *consume.kid] if consume else [name]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.EnumBlockStmt)]
-            return self.nu(
-                ast.SubNodeList[ast.EnumBlockStmt](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
-                )
+            ret = ast.SubNodeList[ast.EnumBlockStmt](
+                items=[],
+                mod_link=self.mod_link,
+                kid=kid,
             )
+            ret.items = [i for i in kid if isinstance(i, ast.EnumBlockStmt)]
+            return self.nu(ret)
 
-        def enum_item(self, kid: list[ast.AstNode]) -> ast.EnumBlockStmt:
+        def enum_stmt(self, kid: list[ast.AstNode]) -> ast.EnumBlockStmt:
             """Grammar rule.
 
-            enum_item: NAME EQ expression
+            enum_stmt: NAME EQ expression
                     | NAME
+                    | py_code_block
             """
-            if isinstance(kid[0], ast.Name):
+            if isinstance(kid[0], ast.PyInlineCode):
+                return self.nu(kid[0])
+            if isinstance(kid[0], (ast.Name)):
                 if len(kid) == 1:
                     return self.nu(kid[0])
                 elif isinstance(kid[2], ast.ExprType):
@@ -845,8 +811,8 @@ class JacParser(Pass):
             type_specs = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
             return_spec = kid[-1] if isinstance(kid[-1], ast.TypeSpec) else None
             event = kid[2] if type_specs else kid[1]
-            if isinstance(event, ast.Token) and isinstance(
-                return_spec, ast.SubNodeList
+            if isinstance(event, ast.Token) and (
+                isinstance(return_spec, ast.SubTag) or return_spec is None
             ):
                 return self.nu(
                     ast.EventSignature(
@@ -866,7 +832,7 @@ class JacParser(Pass):
             func_decl: (LPAREN func_decl_param_list? RPAREN)? retur_type_tag?
             """
             params = (
-                kid[1] if len(kid) and isinstance(kid[1], ast.SubNodeList) else None
+                kid[1] if len(kid) > 1 and isinstance(kid[1], ast.SubNodeList) else None
             )
             return_spec = (
                 kid[-1] if len(kid) and isinstance(kid[-1], ast.SubNodeList) else None
@@ -2927,8 +2893,14 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            elif isinstance(kid[0], ast.ArchRefChain):
-                return self.nu(kid[0])
+            elif isinstance(kid[0], ast.ArchRef):
+                return self.nu(
+                    ast.ArchRefChain(
+                        archs=[kid[0]],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                )
             else:
                 raise self.ice()
 
@@ -2950,8 +2922,14 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            elif isinstance(kid[0], ast.ArchRefChain):
-                return self.nu(kid[0])
+            elif isinstance(kid[0], ast.ArchRef):
+                return self.nu(
+                    ast.ArchRefChain(
+                        archs=[kid[0]],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                )
             else:
                 raise self.ice()
 
@@ -2973,8 +2951,14 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            elif isinstance(kid[0], ast.ArchRefChain):
-                return self.nu(kid[0])
+            elif isinstance(kid[0], ast.ArchRef):
+                return self.nu(
+                    ast.ArchRefChain(
+                        archs=[kid[0]],
+                        mod_link=self.mod_link,
+                        kid=kid,
+                    )
+                )
             else:
                 raise self.ice()
 
@@ -2998,7 +2982,7 @@ class JacParser(Pass):
             """
             ftype = kid[1] if len(kid) >= 3 else None
             fcond = kid[3] if len(kid) >= 5 else None
-            if isinstance(ftype, ast.ExprType) and (
+            if (isinstance(ftype, ast.ExprType) or ftype is None) and (
                 isinstance(fcond, ast.FilterCompr) or fcond is None
             ):
                 return self.nu(
@@ -3021,7 +3005,7 @@ class JacParser(Pass):
             """
             ftype = kid[1] if len(kid) >= 3 else None
             fcond = kid[3] if len(kid) >= 5 else None
-            if isinstance(ftype, ast.ExprType) and (
+            if (isinstance(ftype, ast.ExprType) or ftype is None) and (
                 isinstance(fcond, ast.FilterCompr) or fcond is None
             ):
                 return self.nu(
@@ -3044,7 +3028,7 @@ class JacParser(Pass):
             """
             ftype = kid[1] if len(kid) >= 3 else None
             fcond = kid[3] if len(kid) >= 5 else None
-            if isinstance(ftype, ast.ExprType) and (
+            if (isinstance(ftype, ast.ExprType) or ftype is None) and (
                 isinstance(fcond, ast.FilterCompr) or fcond is None
             ):
                 return self.nu(
@@ -3094,7 +3078,7 @@ class JacParser(Pass):
             """
             conn_type = kid[1] if len(kid) >= 3 else None
             conn_assign = kid[3] if len(kid) >= 5 else None
-            if isinstance(conn_type, ast.ExprType) and (
+            if (isinstance(conn_type, ast.ExprType) or conn_type is None) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 return self.nu(
@@ -3117,7 +3101,7 @@ class JacParser(Pass):
             """
             conn_type = kid[1] if len(kid) >= 3 else None
             conn_assign = kid[3] if len(kid) >= 5 else None
-            if isinstance(conn_type, ast.ExprType) and (
+            if (isinstance(conn_type, ast.ExprType) or conn_type is None) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 return self.nu(

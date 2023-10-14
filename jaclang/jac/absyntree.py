@@ -359,7 +359,7 @@ class Enum(AstNode):
         self,
         name: Name,
         access: Optional[SubTag[Token]],
-        base_classes: SubNodeList[SubNodeList[NameType]],
+        base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -468,7 +468,7 @@ class EventSignature(AstNode):
         self,
         event: Token,
         arch_tag_info: Optional[SubNodeList[TypeSpec]],
-        return_type: Optional[SubNodeList[TypeSpec]],
+        return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -1552,8 +1552,9 @@ ElementStmt = Union[
     Test,
     ModuleCode,
     Import,
-    Architype,
     Ability,
+    AbilityDef,
+    ArchType,
     PyInlineCode,
     Import,
 ]
