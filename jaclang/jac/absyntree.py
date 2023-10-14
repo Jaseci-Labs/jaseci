@@ -314,7 +314,7 @@ class Architype(AstNode):
         name: Name,
         arch_type: Token,
         access: Optional[SubTag[Token]],
-        base_classes: SubNodeList[SubNodeList[NameType]],
+        base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1048,7 +1048,7 @@ class BinaryExpr(AstNode):
         self,
         left: ExprType,
         right: ExprType,
-        op: Constant | DisconnectOp | ConnectOp,
+        op: Token | DisconnectOp | ConnectOp,
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:

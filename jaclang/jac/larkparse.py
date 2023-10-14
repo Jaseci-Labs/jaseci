@@ -71,9 +71,9 @@ class JacParser(Pass):
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
-            self.parse_ref.error("Unexpected syntax, not valid Jac!")
+            self.parse_ref.error("Internal Compiler Error, Invalid Parse Tree!")
             return RuntimeError(
-                f"{self.parse_ref.__class__.__name__} - Unexpected syntax, not valid Jac!"
+                f"{self.parse_ref.__class__.__name__} - Internal Compiler Error, Invalid Parse Tree!"
             )
 
         def nu(self, node: ast.T) -> ast.T:
@@ -396,24 +396,14 @@ class JacParser(Pass):
         def architype_decl(self, kid: list[ast.AstNode]) -> ast.ArchType:
             """Grammar rule.
 
-            architype_decl: arch_type access_tag? NAME inherited_archs (member_block | SEMI)
+            architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
             """
             arch_type = kid[0]
             access = kid[1] if isinstance(kid[1], ast.SubTag) else None
             name = kid[2] if access else kid[1]
-            inh = kid[3] if access else kid[2]
-            body = (
-                kid[4]
-                if access and isinstance(kid[4], ast.SubNodeList)
-                else kid[3]
-                if isinstance(kid[3], ast.SubNodeList)
-                else None
-            )
-            if (
-                isinstance(arch_type, ast.Token)
-                and isinstance(name, ast.Name)
-                and isinstance(inh, ast.SubNodeList)
-            ):
+            inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
+            body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
+            if isinstance(arch_type, ast.Token) and isinstance(name, ast.Name):
                 return self.nu(
                     ast.Architype(
                         arch_type=arch_type,
@@ -479,15 +469,15 @@ class JacParser(Pass):
 
         def inherited_archs(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.SubNodeList[ast.NameType]]:
+        ) -> ast.SubNodeList[ast.SubTag[ast.SubNodeList[ast.NameType]]]:
             """Grammar rule.
 
             inherited_archs: sub_name_dotted+
             """
-            valid_inh = [i for i in kid if isinstance(i, ast.SubNodeList)]
+            valid_inh = [i for i in kid if isinstance(i, ast.SubTag)]
             if len(valid_inh) == len(kid):
                 return self.nu(
-                    ast.SubNodeList[ast.SubNodeList[ast.NameType]](
+                    ast.SubNodeList[ast.SubTag[ast.SubNodeList[ast.NameType]]](
                         items=valid_inh,
                         mod_link=self.mod_link,
                         kid=kid,
@@ -548,16 +538,13 @@ class JacParser(Pass):
             valid_kid = [
                 i for i in new_kid if isinstance(i, (ast.Name, ast.SpecialVarRef))
             ]
-            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return self.nu(
-                    ast.SubNodeList[ast.NameType](
-                        items=valid_kid,
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.SubNodeList[ast.NameType](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def any_ref(self, kid: list[ast.AstNode]) -> ast.NameType:
             """Grammar rule.
@@ -709,16 +696,13 @@ class JacParser(Pass):
                 name = kid[0]
             new_kid = [name, comma, *consume.kid] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.EnumBlockStmt)]
-            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return self.nu(
-                    ast.SubNodeList[ast.EnumBlockStmt](
-                        items=valid_kid,
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.SubNodeList[ast.EnumBlockStmt](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def enum_item(self, kid: list[ast.AstNode]) -> ast.EnumBlockStmt:
             """Grammar rule.
@@ -883,8 +867,8 @@ class JacParser(Pass):
             """
             params = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
             return_spec = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
-            if isinstance(params, ast.SubNodeList) and isinstance(
-                return_spec, ast.SubNodeList
+            if (isinstance(params, ast.SubNodeList) or params is None) and (
+                isinstance(return_spec, ast.SubNodeList) or return_spec is None
             ):
                 return self.nu(
                     ast.FuncSignature(
@@ -915,16 +899,13 @@ class JacParser(Pass):
                 param = kid[0]
             new_kid = [param, comma, *consume.kid] if consume else [param]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ParamVar)]
-            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return self.nu(
-                    ast.SubNodeList[ast.ParamVar](
-                        items=valid_kid,
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.SubNodeList[ast.ParamVar](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def param_var(self, kid: list[ast.AstNode]) -> ast.ParamVar:
             """Grammar rule.
@@ -1009,14 +990,15 @@ class JacParser(Pass):
                         | doc_tag? architype
                         | doc_tag? has_stmt
             """
-            if isinstance(kid[1], ast.ArchBlockStmt) and isinstance(
+            if isinstance(kid[0], ast.ArchBlockStmt):
+                return self.nu(kid[0])
+            elif isinstance(kid[1], ast.ArchBlockStmt) and isinstance(
                 kid[0], ast.Constant
             ):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
                 return self.nu(kid[1])
-            elif isinstance(kid[0], ast.ArchBlockStmt):
-                return self.nu(kid[0])
+
             else:
                 raise self.ice()
 
@@ -1069,16 +1051,13 @@ class JacParser(Pass):
                 assign = kid[0]
             new_kid = [assign, comma, *consume.kid] if consume else [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
-            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return self.nu(
-                    ast.SubNodeList[ast.HasVar](
-                        items=valid_kid,
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.SubNodeList[ast.HasVar](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def typed_has_clause(self, kid: list[ast.AstNode]) -> ast.HasVar:
             """Grammar rule.
@@ -1502,16 +1481,13 @@ class JacParser(Pass):
                 name = kid[0]
             new_kid = [name, comma, *consume.kid] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.Name)]
-            if len(valid_kid) == (len(new_kid) / 2 + len(new_kid) % 2):
-                return self.nu(
-                    ast.SubNodeList[ast.Name](
-                        items=valid_kid,
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.SubNodeList[ast.Name](
+                    items=valid_kid,
+                    mod_link=self.mod_link,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def while_stmt(self, kid: list[ast.AstNode]) -> ast.WhileStmt:
             """Grammar rule.
@@ -1868,9 +1844,7 @@ class JacParser(Pass):
             if len(kid) > 1:
                 if (
                     isinstance(kid[0], ast.ExprType)
-                    and isinstance(
-                        kid[1], (ast.Constant, ast.DisconnectOp, ast.ConnectOp)
-                    )
+                    and isinstance(kid[1], (ast.Token, ast.DisconnectOp, ast.ConnectOp))
                     and isinstance(kid[2], ast.ExprType)
                 ):
                     return self.nu(
