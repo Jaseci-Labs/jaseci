@@ -27,7 +27,8 @@ import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
 
 include_stmt: KW_INCLUDE sub_name import_path SEMI
 import_path: DOT? DOT? esc_name ((DOT esc_name)+)?
-import_items: (import_items COMMA)? named_ref (KW_AS NAME)?
+import_items: (import_item COMMA)* import_item
+import_item: named_ref (KW_AS NAME)?
 
 architype: decorators architype
           | enum
@@ -83,10 +84,10 @@ ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
 event_clause: KW_WITH type_specs? (KW_EXIT | KW_ENTRY) return_type_tag?
-func_decl: (LPAREN func_decl_param_list? RPAREN)? return_type_tag?
-func_decl_param_list: (func_decl_param_list COMMA)? param_var
+func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
+func_decl_params: (param_var COMMA)* param_var
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
-member_block: LBRACE member_stmt+ RBRACE
+member_block: LBRACE member_stmt* RBRACE
 
 member_stmt: doc_tag? py_code_block
            | doc_tag? abstract_ability

@@ -257,10 +257,10 @@ class JacParser(Pass):
             lang = kid[1]
             path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
 
-            alias = kid[5] if len(kid) > 4 and isinstance(kid[4], ast.Name) else None
+            alias = kid[-2] if isinstance(kid[-2], ast.Name) else None
             items = (
-                kid[-1]
-                if len(kid) > 4 and isinstance(kid[-1], ast.SubNodeList)
+                kid[-2]
+                if len(kid) > 4 and isinstance(kid[-2], ast.SubNodeList)
                 else None
             )
             is_absorb = False
@@ -330,44 +330,31 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.ModuleItem]:
             """Grammar rule.
 
-            import_items: (import_items COMMA)? named_refs (KW_AS NAME)?
+            import_items: (import_item COMMA)* import_item
             """
-            consume = None
-            name = None
-            alias = None
-            item = None
-            item_kids = []
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                name = kid[2]
-                item_kids.append(name)
-            else:
-                name = kid[0]
-                item_kids.append(name)
-            if (
-                len(kid) > 2
-                and isinstance(kid[-2], ast.Token)
-                and kid[-2].name == Tok.KW_AS
+            ret = ast.SubNodeList[ast.ModuleItem](
+                items=[i for i in kid if isinstance(i, ast.ModuleItem)],
+                mod_link=self.mod_link,
+                kid=kid,
+            )
+            return self.nu(ret)
+
+        def import_item(self, kid: list[ast.AstNode]) -> ast.ModuleItem:
+            """Grammar rule.
+
+            import_item: named_ref (KW_AS NAME)?
+            """
+            name = kid[0]
+            alias = kid[2] if len(kid) > 1 else None
+            if isinstance(name, ast.Name) and (
+                alias is None or isinstance(alias, ast.Name)
             ):
-                alias = kid[-1]
-                item_kids = item_kids + [kid[-2], alias]
-            if isinstance(name, ast.Name) and isinstance(alias, ast.Name):
-                item = ast.ModuleItem(
-                    name=name,
-                    alias=alias,
-                    mod_link=self.mod_link,
-                    kid=item_kids,
-                )
-            else:
-                self.ice()
-            new_kid = [item, *consume.kid] if consume else [item]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.ModuleItem)]
-            if len(valid_kid) == len(new_kid):
                 return self.nu(
-                    ast.SubNodeList[ast.ModuleItem](
-                        items=valid_kid,
+                    ast.ModuleItem(
+                        name=name,
+                        alias=alias,
                         mod_link=self.mod_link,
-                        kid=[*valid_kid],
+                        kid=kid,
                     )
                 )
             else:
@@ -829,7 +816,7 @@ class JacParser(Pass):
         def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
             """Grammar rule.
 
-            func_decl: (LPAREN func_decl_param_list? RPAREN)? retur_type_tag?
+            func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
             """
             params = (
                 kid[1] if len(kid) > 1 and isinstance(kid[1], ast.SubNodeList) else None
@@ -851,31 +838,19 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def func_decl_param_list(
+        def func_decl_params(
             self, kid: list[ast.AstNode]
         ) -> ast.SubNodeList[ast.ParamVar]:
             """Grammar rule.
 
-            func_decl_param_list: (func_decl_param_list COMMA)? param_var
+            func_decl_params: (param_var COMMA)* param_var
             """
-            consume = None
-            param = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                param = kid[2]
-            else:
-                param = kid[0]
-            new_kid = [param, comma, *consume.kid] if consume else [param]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.ParamVar)]
-            return self.nu(
-                ast.SubNodeList[ast.ParamVar](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
-                )
+            ret = ast.SubNodeList[ast.ParamVar](
+                items=[i for i in kid if isinstance(i, ast.ParamVar)],
+                mod_link=self.mod_link,
+                kid=kid,
             )
+            return self.nu(ret)
 
         def param_var(self, kid: list[ast.AstNode]) -> ast.ParamVar:
             """Grammar rule.
@@ -909,7 +884,7 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.ArchBlockStmt]:
             """Grammar rule.
 
-            member_block: LBRACE member_stmt+ RBRACE
+            member_block: LBRACE member_stmt* RBRACE
             """
             ret = ast.SubNodeList[ast.ArchBlockStmt](
                 items=[],
@@ -2602,19 +2577,25 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.ExprType | ast.Assignment]:
             """Grammar rule.
 
-            param_list: (expr_list COMMA assignment_list) | assignment_list | expr_list
+            param_list: expr_list COMMA assignment_list
+                | assignment_list
+                | expr_list
             """
             if len(kid) == 1:
                 if isinstance(kid[0], ast.SubNodeList):
                     return self.nu(kid[0])
                 else:
                     raise self.ice()
-            else:
+            elif isinstance(kid[0], ast.SubNodeList) and isinstance(
+                kid[2], ast.SubNodeList
+            ):
                 valid_type = Union[ast.ExprType, ast.Assignment]
                 valid_kid = [
-                    i for i in [*kid[0].kid, *kid[2].kid] if isinstance(i, valid_type)
+                    i
+                    for i in [*kid[0].items, *kid[2].items]
+                    if isinstance(i, valid_type)
                 ]
-                if len(valid_kid) == len(kid[0].kid) + len(kid[2].kid):
+                if len(valid_kid) == len(kid[0].items) + len(kid[2].items):
                     return self.nu(
                         ast.SubNodeList[ast.ExprType | ast.Assignment](
                             items=valid_kid,
@@ -2624,6 +2605,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
+            raise self.ice()
 
         def assignment_list(
             self, kid: list[ast.AstNode]
