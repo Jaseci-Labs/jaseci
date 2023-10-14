@@ -1144,7 +1144,7 @@ class DictVal(AstNode):
 
     def __init__(
         self,
-        kv_pairs: Optional[SubNodeList[KVPair]],
+        kv_pairs: list[KVPair],
         mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
@@ -1518,6 +1518,7 @@ ArchType = Union[
 NameType = Union[
     Name,
     SpecialVarRef,
+    ArchRef,
 ]
 
 AtomType = Union[

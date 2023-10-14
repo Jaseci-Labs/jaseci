@@ -187,7 +187,7 @@ class JacParser(Pass):
             test: KW_TEST NAME? code_block
             """
             name = kid[1] if isinstance(kid[1], ast.Name) else kid[0]
-            codeblock = kid[2] if name else kid[1]
+            codeblock = kid[2] if name != kid[0] else kid[1]
             if isinstance(codeblock, ast.SubNodeList) and isinstance(
                 name, (ast.Name, ast.Token)
             ):
@@ -557,13 +557,13 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def named_ref(self, kid: list[ast.AstNode]) -> ast.Name:
+        def named_ref(self, kid: list[ast.AstNode]) -> ast.NameType:
             """Grammar rule.
 
             named_ref: global_ref
                     | esc_name
             """
-            if isinstance(kid[0], ast.Name):
+            if isinstance(kid[0], ast.NameType):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
@@ -1314,9 +1314,11 @@ class JacParser(Pass):
                 return self.nu(
                     ast.TryStmt(
                         body=kid[1],
-                        excepts=kid[2] if isinstance(kid[2], ast.SubNodeList) else None,
-                        finally_body=kid[3]
-                        if isinstance(kid[3], ast.FinallyStmt)
+                        excepts=kid[2]
+                        if len(kid) > 2 and isinstance(kid[2], ast.SubNodeList)
+                        else None,
+                        finally_body=kid[-1]
+                        if isinstance(kid[-1], ast.FinallyStmt)
                         else None,
                         mod_link=self.mod_link,
                         kid=kid,
@@ -1348,7 +1350,7 @@ class JacParser(Pass):
             except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
             """
             ex_type = kid[1]
-            name = kid[3] if isinstance(kid[3], ast.Name) else None
+            name = kid[3] if len(kid) > 3 and isinstance(kid[3], ast.Name) else None
             body = kid[-1]
             if isinstance(ex_type, ast.ExprType) and isinstance(body, ast.SubNodeList):
                 return self.nu(
@@ -2352,50 +2354,15 @@ class JacParser(Pass):
         def dict_val(self, kid: list[ast.AstNode]) -> ast.DictVal:
             """Grammar rule.
 
-            dict_val: LBRACE kv_pairs? RBRACE
+            dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
             """
-            if len(kid) == 2:
-                return self.nu(
-                    ast.DictVal(
-                        kv_pairs=None,
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
-                )
-            elif isinstance(kid[1], ast.SubNodeList):
-                return self.nu(
-                    ast.DictVal(
-                        kv_pairs=kid[1],
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
-                )
-            else:
-                raise self.ice()
-
-        def kv_pairs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.KVPair]:
-            """Grammar rule.
-
-            kv_pairs: (kv_pairs COMMA)? kv_pair
-            """
-            consume = None
-            kv_pair = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                kv_pair = kid[2]
-            else:
-                kv_pair = kid[0]
-            new_kid = [kv_pair, comma, *consume.kid] if consume else [kv_pair]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.KVPair)]
-            return self.nu(
-                ast.SubNodeList[ast.KVPair](
-                    items=valid_kid,
-                    mod_link=self.mod_link,
-                    kid=kid,
-                )
+            ret = ast.DictVal(
+                kv_pairs=[],
+                mod_link=self.mod_link,
+                kid=kid,
             )
+            ret.kv_pairs = [i for i in kid if isinstance(i, ast.KVPair)]
+            return self.nu(ret)
 
         def kv_pair(self, kid: list[ast.AstNode]) -> ast.KVPair:
             """Grammar rule.

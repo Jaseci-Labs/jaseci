@@ -320,8 +320,7 @@ tuple_list: expression COMMA expr_list COMMA assignment_list
           | expression COMMA
           | assignment_list
 
-dict_val: LBRACE kv_pair_list? RBRACE
-kv_pair_list: (kv_pair_list COMMA)? kv_pair
+dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
 kv_pair: expression COLON expression
 list_compr: LSQUARE inner_compr RSQUARE
 gen_compr: LPAREN inner_compr RPAREN

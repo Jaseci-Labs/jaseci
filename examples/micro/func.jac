@@ -6,7 +6,7 @@ can factorial(n: int) -> int {
 }
 
 can factorial_recount(n: int) -> int {
-    has count = 0;  # static variable, state kept between calls
+    count = 0;
     count += 1 |> print;  # += is a walrus style operator in Jac
     if n == 0 { return 1; }
     else { return n * factorial(n-1); }
