@@ -107,7 +107,6 @@ class JacParser(Pass):
                     mod_path=self.parse_ref.mod_path,
                     rel_mod_path=self.parse_ref.rel_mod_path,
                     is_imported=False,
-                    mod_link=None,
                     kid=kid,
                 )
                 self.mod_link = mod
@@ -158,7 +157,6 @@ class JacParser(Pass):
                         access=access,
                         assignments=assignments,
                         is_frozen=is_frozen,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -174,7 +172,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubTag[ast.Token](
                         tag=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -195,7 +192,6 @@ class JacParser(Pass):
                     ast.Test(
                         name=name,
                         body=codeblock,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -214,7 +210,6 @@ class JacParser(Pass):
                     ast.ModuleCode(
                         name=name,
                         body=codeblock,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -240,7 +235,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.PyInlineCode(
                         code=kid[0],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -277,7 +271,6 @@ class JacParser(Pass):
                         alias=alias,
                         items=items,
                         is_absorb=is_absorb,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -301,7 +294,6 @@ class JacParser(Pass):
                         alias=None,
                         items=None,
                         is_absorb=is_absorb,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -318,7 +310,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ModulePath(
                         path=valid_path,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -334,7 +325,6 @@ class JacParser(Pass):
             """
             ret = ast.SubNodeList[ast.ModuleItem](
                 items=[i for i in kid if isinstance(i, ast.ModuleItem)],
-                mod_link=self.mod_link,
                 kid=kid,
             )
             return self.nu(ret)
@@ -353,7 +343,6 @@ class JacParser(Pass):
                     ast.ModuleItem(
                         name=name,
                         alias=alias,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -398,7 +387,6 @@ class JacParser(Pass):
                         access=access,
                         base_classes=inh,
                         body=body,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -417,7 +405,6 @@ class JacParser(Pass):
                     ast.ArchDef(
                         target=kid[0],
                         body=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -447,7 +434,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.ExprType](
                         items=valid_decors,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -466,7 +452,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.SubTag[ast.SubNodeList[ast.NameType]]](
                         items=valid_inh,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -484,7 +469,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubTag[ast.SubNodeList[ast.Name]](
                         tag=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -500,7 +484,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubTag[ast.Name](
                         tag=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -526,7 +509,6 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.NameType](
                     items=valid_kid,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -577,7 +559,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SpecialVarRef(
                         var=kid[0],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -611,7 +592,6 @@ class JacParser(Pass):
                         access=access,
                         base_classes=inh,
                         body=body,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -630,7 +610,6 @@ class JacParser(Pass):
                     ast.EnumDef(
                         target=kid[0],
                         body=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -646,7 +625,6 @@ class JacParser(Pass):
             """
             ret = ast.SubNodeList[ast.EnumBlockStmt](
                 items=[],
-                mod_link=self.mod_link,
                 kid=kid,
             )
             ret.items = [i for i in kid if isinstance(i, ast.EnumBlockStmt)]
@@ -669,7 +647,6 @@ class JacParser(Pass):
                         ast.Assignment(
                             target=kid[0],
                             value=kid[2],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -724,7 +701,6 @@ class JacParser(Pass):
                         access=access,
                         signature=signature,
                         body=body,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -746,7 +722,6 @@ class JacParser(Pass):
                         target=kid[0],
                         signature=kid[1],
                         body=kid[2],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -781,7 +756,6 @@ class JacParser(Pass):
                         access=access,
                         signature=signature,
                         body=None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -804,7 +778,6 @@ class JacParser(Pass):
                         event=event,
                         arch_tag_info=type_specs,
                         return_type=return_spec,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -829,7 +802,6 @@ class JacParser(Pass):
                     ast.FuncSignature(
                         params=params,
                         return_type=return_spec,
-                        mod_link=self.mod_link,
                         kid=kid if len(kid) else [ast.EmptyToken()],
                     )
                 )
@@ -845,7 +817,6 @@ class JacParser(Pass):
             """
             ret = ast.SubNodeList[ast.ParamVar](
                 items=[i for i in kid if isinstance(i, ast.ParamVar)],
-                mod_link=self.mod_link,
                 kid=kid,
             )
             return self.nu(ret)
@@ -870,7 +841,6 @@ class JacParser(Pass):
                         type_tag=type_tag,
                         value=value,
                         unpack=star,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -886,7 +856,6 @@ class JacParser(Pass):
             """
             ret = ast.SubNodeList[ast.ArchBlockStmt](
                 items=[],
-                mod_link=self.mod_link,
                 kid=kid,
             )
             ret.items = [i for i in kid if isinstance(i, ast.ArchBlockStmt)]
@@ -937,7 +906,6 @@ class JacParser(Pass):
                         is_static=is_static,
                         is_frozen=is_freeze,
                         access=access,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -965,7 +933,6 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.HasVar](
                     items=valid_kid,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -984,7 +951,6 @@ class JacParser(Pass):
                         name=name,
                         type_tag=type_tag,
                         value=value,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1002,7 +968,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
                         tag=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1020,7 +985,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
                         tag=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1052,7 +1016,6 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.TypeSpec](
                     items=valid_kid,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -1085,7 +1048,6 @@ class JacParser(Pass):
                         spec_type=spec_type,
                         list_nest=list_nest,
                         dict_nest=dict_nest,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1117,7 +1079,6 @@ class JacParser(Pass):
                         col_end=kid[0].col_end,
                         pos_start=kid[0].pos_start,
                         pos_end=kid[0].pos_end,
-                        mod_link=kid[0].mod_link,
                         kid=kid[0].kid,
                     )
                 )
@@ -1139,7 +1100,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.CodeBlockStmt](
                         items=[],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1156,7 +1116,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.CodeBlockStmt](
                         items=valid_stmt,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1212,7 +1171,6 @@ class JacParser(Pass):
                     ast.TypedCtxBlock(
                         type_ctx=kid[1],
                         body=kid[2],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1235,7 +1193,6 @@ class JacParser(Pass):
                         else_body=kid[-1]
                         if isinstance(kid[-1], ast.ElseStmt)
                         else None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1255,7 +1212,6 @@ class JacParser(Pass):
                         elseifs=kid[3]
                         if len(kid) > 3 and isinstance(kid[3], ast.ElseIfs)
                         else None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1271,7 +1227,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ElseStmt(
                         body=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1293,7 +1248,6 @@ class JacParser(Pass):
                         finally_body=kid[-1]
                         if isinstance(kid[-1], ast.FinallyStmt)
                         else None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1310,7 +1264,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.Except](
                         items=valid_kid,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1331,7 +1284,6 @@ class JacParser(Pass):
                         ex_type=ex_type,
                         name=name,
                         body=body,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1347,7 +1299,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.FinallyStmt(
                         body=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1372,7 +1323,6 @@ class JacParser(Pass):
                             condition=kid[3],
                             count_by=kid[5],
                             body=kid[6],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1387,7 +1337,6 @@ class JacParser(Pass):
                             name_list=kid[1],
                             collection=kid[3],
                             body=kid[4],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1415,7 +1364,6 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Name](
                     items=valid_kid,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -1430,7 +1378,6 @@ class JacParser(Pass):
                     ast.WhileStmt(
                         condition=kid[1],
                         body=kid[2],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1449,7 +1396,6 @@ class JacParser(Pass):
                     ast.WithStmt(
                         exprs=kid[1],
                         body=kid[2],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1481,7 +1427,6 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.ExprAsItem](
                     items=valid_kid,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -1496,7 +1441,6 @@ class JacParser(Pass):
                     return self.nu(
                         ast.RaiseStmt(
                             cause=kid[1],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1506,7 +1450,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.RaiseStmt(
                         cause=None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1525,7 +1468,6 @@ class JacParser(Pass):
                     ast.AssertStmt(
                         condition=condition,
                         error_msg=error_msg,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1541,7 +1483,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.CtrlStmt(
                         ctrl=kid[0],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1557,7 +1498,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.DeleteStmt(
                         target=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1573,7 +1513,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ReportStmt(
                         expr=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1590,7 +1529,6 @@ class JacParser(Pass):
                     return self.nu(
                         ast.ReturnStmt(
                             expr=kid[1],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1600,7 +1538,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ReturnStmt(
                         expr=None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1615,7 +1552,6 @@ class JacParser(Pass):
                     return self.nu(
                         ast.YieldStmt(
                             expr=kid[1],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1625,7 +1561,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.YieldStmt(
                         expr=None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1649,7 +1584,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.IgnoreStmt(
                         target=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1670,7 +1604,6 @@ class JacParser(Pass):
                         vis_type=sub_name,
                         target=target,
                         else_body=else_body,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1688,7 +1621,6 @@ class JacParser(Pass):
                 ast.RevisitStmt(
                     hops=target,
                     else_body=else_body,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -1700,7 +1632,6 @@ class JacParser(Pass):
             """
             return self.nu(
                 ast.DisengageStmt(
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -1714,7 +1645,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.AwaitStmt(
                         target=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1735,7 +1665,6 @@ class JacParser(Pass):
                         target=target,
                         value=value,
                         mutable=not is_frozen,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -1759,7 +1688,6 @@ class JacParser(Pass):
                             value=kid[0],
                             condition=kid[2],
                             else_value=kid[4],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1783,7 +1711,6 @@ class JacParser(Pass):
                             left=kid[0],
                             op=kid[1],
                             right=kid[2],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1865,7 +1792,6 @@ class JacParser(Pass):
                         ast.UnaryExpr(
                             op=kid[0],
                             operand=kid[1],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1915,7 +1841,6 @@ class JacParser(Pass):
                         ast.UnaryExpr(
                             op=kid[0],
                             operand=kid[1],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1970,7 +1895,6 @@ class JacParser(Pass):
                         ast.UnaryExpr(
                             op=kid[0],
                             operand=kid[1],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -1990,7 +1914,6 @@ class JacParser(Pass):
                         ast.UnaryExpr(
                             op=kid[0],
                             operand=kid[1],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -2020,7 +1943,6 @@ class JacParser(Pass):
                         ast.UnaryExpr(
                             op=kid[0],
                             operand=kid[1],
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -2143,7 +2065,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.MultiString(
                         strings=valid_strs,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2159,7 +2080,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.FString(
                         parts=None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2167,7 +2087,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.FString(
                         parts=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2186,7 +2105,6 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Constant | ast.ExprType](
                     items=valid_parts,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -2200,7 +2118,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ListVal(
                         values=None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2208,7 +2125,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ListVal(
                         values=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2224,7 +2140,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.TupleVal(
                         values=None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2232,7 +2147,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.TupleVal(
                         values=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2248,7 +2162,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SetVal(
                         values=None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2256,7 +2169,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SetVal(
                         values=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2282,7 +2194,6 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.ExprType](
                     items=valid_kid,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -2317,7 +2228,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SubNodeList[ast.ExprType | ast.Assignment](
                         items=valid_kid,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2331,7 +2241,6 @@ class JacParser(Pass):
             """
             ret = ast.DictVal(
                 kv_pairs=[],
-                mod_link=self.mod_link,
                 kid=kid,
             )
             ret.kv_pairs = [i for i in kid if isinstance(i, ast.KVPair)]
@@ -2347,7 +2256,6 @@ class JacParser(Pass):
                     ast.KVPair(
                         key=kid[0],
                         value=kid[2],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2363,7 +2271,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ListCompr(
                         compr=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2379,7 +2286,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.GenCompr(
                         compr=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2395,7 +2301,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.SetCompr(
                         compr=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2420,7 +2325,6 @@ class JacParser(Pass):
                         conditional=kid[6]
                         if len(kid) > 5 and isinstance(kid[6], ast.ExprType)
                         else None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2445,7 +2349,6 @@ class JacParser(Pass):
                         conditional=kid[7]
                         if len(kid) > 6 and isinstance(kid[7], ast.AtomType)
                         else None,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2479,7 +2382,6 @@ class JacParser(Pass):
                             target=kid[0],
                             right=kid[1],
                             null_ok=False,
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -2496,7 +2398,6 @@ class JacParser(Pass):
                             target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
                             right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
                             null_ok=False,
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -2520,7 +2421,6 @@ class JacParser(Pass):
                             target=kid[0],
                             right=kid[2],
                             null_ok=True,
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -2537,7 +2437,6 @@ class JacParser(Pass):
                             target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[3],
                             right=kid[3] if kid[1].name != Tok.DOT_BKWD else kid[0],
                             null_ok=True,
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -2556,17 +2455,9 @@ class JacParser(Pass):
                 and isinstance(kid[0], ast.AtomType)
                 and isinstance(kid[2], ast.SubNodeList)
             ):
-                return self.nu(
-                    ast.FuncCall(
-                        target=kid[0], params=kid[2], mod_link=self.mod_link, kid=kid
-                    )
-                )
+                return self.nu(ast.FuncCall(target=kid[0], params=kid[2], kid=kid))
             elif len(kid) == 3 and isinstance(kid[0], ast.AtomType):
-                return self.nu(
-                    ast.FuncCall(
-                        target=kid[0], params=None, mod_link=self.mod_link, kid=kid
-                    )
-                )
+                return self.nu(ast.FuncCall(target=kid[0], params=None, kid=kid))
             else:
                 raise self.ice()
 
@@ -2597,7 +2488,6 @@ class JacParser(Pass):
                     return self.nu(
                         ast.SubNodeList[ast.ExprType | ast.Assignment](
                             items=valid_kid,
-                            mod_link=self.mod_link,
                             kid=kid,
                         )
                     )
@@ -2626,7 +2516,6 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Assignment](
                     items=valid_kid,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -2642,7 +2531,6 @@ class JacParser(Pass):
                         start=None,
                         stop=None,
                         is_range=False,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2658,7 +2546,6 @@ class JacParser(Pass):
                         start=expr1,
                         stop=expr2,
                         is_range=True,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2688,7 +2575,6 @@ class JacParser(Pass):
                     ast.ArchRef(
                         arch=kid[0],
                         name_ref=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2705,7 +2591,6 @@ class JacParser(Pass):
                     ast.ArchRef(
                         arch=kid[0],
                         name_ref=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2722,7 +2607,6 @@ class JacParser(Pass):
                     ast.ArchRef(
                         arch=kid[0],
                         name_ref=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2739,7 +2623,6 @@ class JacParser(Pass):
                     ast.ArchRef(
                         arch=kid[0],
                         name_ref=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2756,7 +2639,6 @@ class JacParser(Pass):
                     ast.ArchRef(
                         arch=kid[0],
                         name_ref=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2773,7 +2655,6 @@ class JacParser(Pass):
                     ast.ArchRef(
                         arch=kid[0],
                         name_ref=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2790,7 +2671,6 @@ class JacParser(Pass):
                     ast.ArchRef(
                         arch=kid[0],
                         name_ref=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2815,7 +2695,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ArchRefChain(
                         archs=valid_kid,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2834,7 +2713,6 @@ class JacParser(Pass):
                     return self.nu(
                         ast.ArchRefChain(
                             archs=[*(kid[0].archs), kid[1]],
-                            mod_link=self.mod_link,
                             kid=[*(kid[0].kid), kid[1]],
                         )
                     )
@@ -2844,7 +2722,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ArchRefChain(
                         archs=[kid[0]],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2863,7 +2740,6 @@ class JacParser(Pass):
                     return self.nu(
                         ast.ArchRefChain(
                             archs=[*(kid[0].archs), kid[1]],
-                            mod_link=self.mod_link,
                             kid=[*(kid[0].kid), kid[1]],
                         )
                     )
@@ -2873,7 +2749,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ArchRefChain(
                         archs=[kid[0]],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2892,7 +2767,6 @@ class JacParser(Pass):
                     return self.nu(
                         ast.ArchRefChain(
                             archs=[*(kid[0].archs), kid[1]],
-                            mod_link=self.mod_link,
                             kid=[*(kid[0].kid), kid[1]],
                         )
                     )
@@ -2902,7 +2776,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ArchRefChain(
                         archs=[kid[0]],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2937,7 +2810,6 @@ class JacParser(Pass):
                         filter_type=ftype,
                         filter_cond=fcond,
                         edge_dir=EdgeDir.OUT,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2960,7 +2832,6 @@ class JacParser(Pass):
                         filter_type=ftype,
                         filter_cond=fcond,
                         edge_dir=EdgeDir.IN,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -2983,7 +2854,6 @@ class JacParser(Pass):
                         filter_type=ftype,
                         filter_cond=fcond,
                         edge_dir=EdgeDir.ANY,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -3010,7 +2880,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.DisconnectOp(
                         edge_spec=kid[1],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -3033,7 +2902,6 @@ class JacParser(Pass):
                         conn_type=conn_type,
                         conn_assign=conn_assign,
                         edge_dir=EdgeDir.OUT,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -3056,7 +2924,6 @@ class JacParser(Pass):
                         conn_type=conn_type,
                         conn_assign=conn_assign,
                         edge_dir=EdgeDir.IN,
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -3072,7 +2939,6 @@ class JacParser(Pass):
                 return self.nu(
                     ast.FilterCompr(
                         compares=kid[2],
-                        mod_link=self.mod_link,
                         kid=kid,
                     )
                 )
@@ -3100,7 +2966,6 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.BinaryExpr](
                     items=valid_kid,
-                    mod_link=self.mod_link,
                     kid=kid,
                 )
             )
@@ -3143,7 +3008,6 @@ class JacParser(Pass):
                     col_end=token.end_column if token.end_column is not None else 0,
                     pos_start=token.start_pos if token.start_pos is not None else 0,
                     pos_end=token.end_pos if token.end_pos is not None else 0,
-                    mod_link=self.mod_link,
                     kid=[],
                 )
             )

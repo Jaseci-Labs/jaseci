@@ -12,11 +12,11 @@ from jaclang.jac.symtable import SymbolTable
 class AstNode:
     """Abstract syntax tree node for Jac."""
 
-    def __init__(self, mod_link: Optional[Module], kid: list[AstNode]) -> None:
+    def __init__(self, kid: list[AstNode]) -> None:
         """Initialize ast."""
         self.parent: Optional[AstNode] = None
         self.kid = [x.set_parent(self) for x in kid]
-        self.mod_link = mod_link
+        self.mod_link: Optional[Module] = None
         self.sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
         self._typ: type = type(None)
@@ -112,7 +112,6 @@ class Module(AstNode):
         mod_path: str,
         rel_mod_path: str,
         is_imported: bool,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize whole program node."""
@@ -122,10 +121,7 @@ class Module(AstNode):
         self.mod_path = mod_path
         self.rel_mod_path = rel_mod_path
         self.is_imported = is_imported
-        super().__init__(
-            mod_link=mod_link,
-            kid=kid,
-        )
+        super().__init__(kid=kid)
 
 
 class GlobalVars(AstNode):
@@ -136,7 +132,6 @@ class GlobalVars(AstNode):
         access: Optional[SubTag[Token]],
         assignments: SubNodeList[Assignment],
         is_frozen: bool,
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
     ) -> None:
@@ -145,7 +140,7 @@ class GlobalVars(AstNode):
         self.access = access
         self.assignments = assignments
         self.is_frozen = is_frozen
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class SubTag(AstNode, Generic[T]):
@@ -154,12 +149,11 @@ class SubTag(AstNode, Generic[T]):
     def __init__(
         self,
         tag: T,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize tag node."""
         self.tag = tag
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class SubNodeList(AstNode, Generic[T]):
@@ -168,12 +162,11 @@ class SubNodeList(AstNode, Generic[T]):
     def __init__(
         self,
         items: list[T],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize sub node list node."""
         self.items = items
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class Test(AstNode):
@@ -185,7 +178,6 @@ class Test(AstNode):
         self,
         name: Name | Token,
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
     ) -> None:
@@ -203,13 +195,12 @@ class Test(AstNode):
                 line=name.line,
                 pos_start=name.pos_start,
                 pos_end=name.pos_end,
-                mod_link=mod_link,
                 kid=name.kid,
             )
         )
         # kid[0] = self.name  # Index is 0 since Doc string is inserted after init
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ModuleCode(AstNode):
@@ -219,7 +210,6 @@ class ModuleCode(AstNode):
         self,
         name: Optional[SubTag[Name]],
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
     ) -> None:
@@ -227,7 +217,7 @@ class ModuleCode(AstNode):
         self.doc = doc
         self.name = name
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class PyInlineCode(AstNode):
@@ -236,14 +226,13 @@ class PyInlineCode(AstNode):
     def __init__(
         self,
         code: Token,
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
     ) -> None:
         """Initialize inline python code node."""
         self.doc = doc
         self.code = code
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class Import(AstNode):
@@ -256,7 +245,6 @@ class Import(AstNode):
         alias: Optional[Name],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
         sub_module: Optional[Module] = None,
@@ -270,7 +258,7 @@ class Import(AstNode):
         self.is_absorb = is_absorb
         self.sub_module = sub_module
 
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ModulePath(AstNode):
@@ -279,13 +267,12 @@ class ModulePath(AstNode):
     def __init__(
         self,
         path: list[Token],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize module path node."""
         self.path = path
         self.path_str = "".join([p.value for p in path])
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ModuleItem(AstNode):
@@ -295,7 +282,6 @@ class ModuleItem(AstNode):
         self,
         name: Name,
         alias: Optional[Token],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         body: Optional[AstNode] = None,
     ) -> None:
@@ -303,7 +289,7 @@ class ModuleItem(AstNode):
         self.name = name
         self.alias = alias
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class Architype(AstNode):
@@ -316,7 +302,6 @@ class Architype(AstNode):
         access: Optional[SubTag[Token]],
         base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -329,7 +314,7 @@ class Architype(AstNode):
         self.access = access
         self.base_classes = base_classes
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ArchDef(AstNode):
@@ -339,7 +324,6 @@ class ArchDef(AstNode):
         self,
         target: ArchRefChain,
         body: SubNodeList[ArchBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -349,7 +333,7 @@ class ArchDef(AstNode):
         self.decorators = decorators
         self.target = target
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class Enum(AstNode):
@@ -361,7 +345,6 @@ class Enum(AstNode):
         access: Optional[SubTag[Token]],
         base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -373,7 +356,7 @@ class Enum(AstNode):
         self.decorators = decorators
         self.base_classes = base_classes
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class EnumDef(AstNode):
@@ -383,7 +366,6 @@ class EnumDef(AstNode):
         self,
         target: ArchRefChain,
         body: SubNodeList[EnumBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -393,7 +375,7 @@ class EnumDef(AstNode):
         self.target = target
         self.body = body
         self.decorators = decorators
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class Ability(AstNode):
@@ -409,7 +391,6 @@ class Ability(AstNode):
         access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | SubNodeList[TypeSpec] | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt]],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         arch_attached: Optional[Architype] = None,
         doc: Optional[Constant] = None,
@@ -427,7 +408,7 @@ class Ability(AstNode):
         self.signature = signature
         self.body = body
         self.arch_attached = arch_attached
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
@@ -447,7 +428,6 @@ class AbilityDef(AstNode):
         target: ArchRefChain,
         signature: FuncSignature | EventSignature,
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -458,7 +438,7 @@ class AbilityDef(AstNode):
         self.signature = signature
         self.body = body
         self.decorators = decorators
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class EventSignature(AstNode):
@@ -469,14 +449,13 @@ class EventSignature(AstNode):
         event: Token,
         arch_tag_info: Optional[SubNodeList[TypeSpec]],
         return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize event signature node."""
         self.event = event
         self.arch_tag_info = arch_tag_info
         self.return_type = return_type
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ArchRefChain(AstNode):
@@ -485,12 +464,11 @@ class ArchRefChain(AstNode):
     def __init__(
         self,
         archs: list[ArchRef],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize name list ."""
         self.archs = archs
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
@@ -506,13 +484,12 @@ class FuncSignature(AstNode):
         self,
         params: Optional[SubNodeList[ParamVar]],
         return_type: Optional[SubNodeList[TypeSpec]],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize method signature node."""
         self.params = params
         self.return_type = return_type
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ParamVar(AstNode):
@@ -524,7 +501,6 @@ class ParamVar(AstNode):
         unpack: Optional[Token],
         type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize param var node."""
@@ -532,7 +508,7 @@ class ParamVar(AstNode):
         self.unpack = unpack
         self.type_tag = type_tag
         self.value = value
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ArchHas(AstNode):
@@ -544,7 +520,6 @@ class ArchHas(AstNode):
         access: Optional[SubTag[Token]],
         vars: SubNodeList[HasVar],
         is_frozen: bool,
-        mod_link: Optional[Module],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
     ) -> None:
@@ -555,7 +530,7 @@ class ArchHas(AstNode):
         self.access = access
         self.is_frozen = is_frozen
         self.doc = doc
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class HasVar(AstNode):
@@ -566,14 +541,13 @@ class HasVar(AstNode):
         name: Name,
         type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize has var node."""
         self.name = name
         self.type_tag = type_tag
         self.value = value
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class TypeSpec(AstNode):
@@ -584,7 +558,6 @@ class TypeSpec(AstNode):
         spec_type: Token | SubNodeList[NameType],
         list_nest: Optional[TypeSpec],  # needed for lists
         dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
-        mod_link: Optional[Module],
         kid: list[AstNode],
         null_ok: bool = False,
     ) -> None:
@@ -593,7 +566,7 @@ class TypeSpec(AstNode):
         self.list_nest = list_nest
         self.dict_nest = dict_nest
         self.null_ok = null_ok
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class TypedCtxBlock(AstNode):
@@ -603,13 +576,12 @@ class TypedCtxBlock(AstNode):
         self,
         type_ctx: SubNodeList[TypeSpec],
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize typed context block node."""
         self.type_ctx = type_ctx
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class IfStmt(AstNode):
@@ -621,7 +593,6 @@ class IfStmt(AstNode):
         body: SubNodeList[CodeBlockStmt],
         elseifs: Optional[ElseIfs],
         else_body: Optional[ElseStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize if statement node."""
@@ -629,7 +600,7 @@ class IfStmt(AstNode):
         self.body = body
         self.elseifs = elseifs
         self.else_body = else_body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ElseIfs(AstNode):
@@ -640,14 +611,13 @@ class ElseIfs(AstNode):
         condition: ExprType,
         body: SubNodeList[CodeBlockStmt],
         elseifs: Optional[ElseIfs],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize if statement node."""
         self.condition = condition
         self.body = body
         self.elseifs = elseifs
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ElseStmt(AstNode):
@@ -656,12 +626,11 @@ class ElseStmt(AstNode):
     def __init__(
         self,
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize else node."""
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class TryStmt(AstNode):
@@ -672,14 +641,13 @@ class TryStmt(AstNode):
         body: SubNodeList[CodeBlockStmt],
         excepts: Optional[SubNodeList[Except]],
         finally_body: Optional[FinallyStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize try statement node."""
         self.body = body
         self.excepts = excepts
         self.finally_body = finally_body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class Except(AstNode):
@@ -690,14 +658,13 @@ class Except(AstNode):
         ex_type: ExprType,
         name: Optional[Token],
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize except node."""
         self.ex_type = ex_type
         self.name = name
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class FinallyStmt(AstNode):
@@ -706,12 +673,11 @@ class FinallyStmt(AstNode):
     def __init__(
         self,
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize finally statement node."""
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class IterForStmt(AstNode):
@@ -723,7 +689,6 @@ class IterForStmt(AstNode):
         condition: ExprType,
         count_by: ExprType,
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize iter for node."""
@@ -731,7 +696,7 @@ class IterForStmt(AstNode):
         self.condition = condition
         self.count_by = count_by
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class InForStmt(AstNode):
@@ -742,14 +707,13 @@ class InForStmt(AstNode):
         name_list: SubNodeList[Name],
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize in for node."""
         self.name_list = name_list
         self.collection = collection
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class WhileStmt(AstNode):
@@ -759,13 +723,12 @@ class WhileStmt(AstNode):
         self,
         condition: ExprType,
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize while statement node."""
         self.condition = condition
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class WithStmt(AstNode):
@@ -775,13 +738,12 @@ class WithStmt(AstNode):
         self,
         exprs: SubNodeList[ExprAsItem],
         body: SubNodeList[CodeBlockStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize with statement node."""
         self.exprs = exprs
         self.body = body
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ExprAsItem(AstNode):
@@ -791,13 +753,12 @@ class ExprAsItem(AstNode):
         self,
         expr: ExprType,
         alias: Optional[Name],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize module item node."""
         self.expr = expr
         self.alias = alias
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class RaiseStmt(AstNode):
@@ -806,12 +767,11 @@ class RaiseStmt(AstNode):
     def __init__(
         self,
         cause: Optional[ExprType],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize raise statement node."""
         self.cause = cause
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class AssertStmt(AstNode):
@@ -821,13 +781,12 @@ class AssertStmt(AstNode):
         self,
         condition: ExprType,
         error_msg: Optional[ExprType],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize assert statement node."""
         self.condition = condition
         self.error_msg = error_msg
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class CtrlStmt(AstNode):
@@ -836,12 +795,11 @@ class CtrlStmt(AstNode):
     def __init__(
         self,
         ctrl: Token,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize control statement node."""
         self.ctrl = ctrl
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class DeleteStmt(AstNode):
@@ -850,12 +808,11 @@ class DeleteStmt(AstNode):
     def __init__(
         self,
         target: ExprType,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize delete statement node."""
         self.target = target
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ReportStmt(AstNode):
@@ -864,12 +821,11 @@ class ReportStmt(AstNode):
     def __init__(
         self,
         expr: ExprType,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize report statement node."""
         self.expr = expr
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ReturnStmt(AstNode):
@@ -878,12 +834,11 @@ class ReturnStmt(AstNode):
     def __init__(
         self,
         expr: Optional[ExprType],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize return statement node."""
         self.expr = expr
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class YieldStmt(AstNode):
@@ -892,12 +847,11 @@ class YieldStmt(AstNode):
     def __init__(
         self,
         expr: Optional[ExprType],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize yeild statement node."""
         self.expr = expr
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class WalkerStmtOnlyNode(AstNode):
@@ -905,13 +859,12 @@ class WalkerStmtOnlyNode(AstNode):
 
     def __init__(
         self,
-        mod_link: Optional[Module],
         kid: list[AstNode],
         from_walker: bool = False,
     ) -> None:
         """Initialize walker statement only node."""
         self.from_walker = from_walker
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class IgnoreStmt(WalkerStmtOnlyNode):
@@ -920,12 +873,11 @@ class IgnoreStmt(WalkerStmtOnlyNode):
     def __init__(
         self,
         target: ExprType,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize ignore statement node."""
         self.target = target
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class VisitStmt(WalkerStmtOnlyNode):
@@ -936,7 +888,6 @@ class VisitStmt(WalkerStmtOnlyNode):
         vis_type: Optional[SubTag[SubNodeList[Name]]],
         target: ExprType,
         else_body: Optional[ElseStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         from_walker: bool = False,
     ) -> None:
@@ -945,7 +896,6 @@ class VisitStmt(WalkerStmtOnlyNode):
         self.target = target
         self.else_body = else_body
         super().__init__(
-            mod_link=mod_link,
             kid=kid,
             from_walker=from_walker,
         )
@@ -958,7 +908,6 @@ class RevisitStmt(WalkerStmtOnlyNode):
         self,
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
-        mod_link: Optional[Module],
         kid: list[AstNode],
         from_walker: bool = False,
     ) -> None:
@@ -966,7 +915,6 @@ class RevisitStmt(WalkerStmtOnlyNode):
         self.hops = hops
         self.else_body = else_body
         super().__init__(
-            mod_link=mod_link,
             kid=kid,
             from_walker=from_walker,
         )
@@ -977,13 +925,11 @@ class DisengageStmt(WalkerStmtOnlyNode):
 
     def __init__(
         self,
-        mod_link: Optional[Module],
         kid: list[AstNode],
         from_walker: bool = False,
     ) -> None:
         """Initialize disengage statement node."""
         super().__init__(
-            mod_link=mod_link,
             kid=kid,
             from_walker=from_walker,
         )
@@ -995,12 +941,11 @@ class AwaitStmt(AstNode):
     def __init__(
         self,
         target: ExprType,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize sync statement node."""
         self.target = target
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class Assignment(AstNode):
@@ -1010,7 +955,6 @@ class Assignment(AstNode):
         self,
         target: AtomType,
         value: ExprType,
-        mod_link: Optional[Module],
         kid: list[AstNode],
         is_static: bool = False,
         mutable: bool = True,
@@ -1020,7 +964,7 @@ class Assignment(AstNode):
         self.target = target
         self.value = value
         self.mutable = mutable
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class IfElseExpr(AstNode):
@@ -1031,14 +975,13 @@ class IfElseExpr(AstNode):
         condition: ExprType,
         value: ExprType,
         else_value: ExprType,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize if else expression node."""
         self.condition = condition
         self.value = value
         self.else_value = else_value
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class BinaryExpr(AstNode):
@@ -1049,14 +992,13 @@ class BinaryExpr(AstNode):
         left: ExprType,
         right: ExprType,
         op: Token | DisconnectOp | ConnectOp,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize binary expression node."""
         self.left = left
         self.right = right
         self.op = op
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class UnaryExpr(AstNode):
@@ -1066,13 +1008,12 @@ class UnaryExpr(AstNode):
         self,
         operand: ExprType,
         op: Token,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize unary expression node."""
         self.operand = operand
         self.op = op
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class MultiString(AstNode):
@@ -1081,12 +1022,11 @@ class MultiString(AstNode):
     def __init__(
         self,
         strings: list[Constant | FString],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize multi string expression node."""
         self.strings = strings
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class FString(AstNode):
@@ -1095,12 +1035,11 @@ class FString(AstNode):
     def __init__(
         self,
         parts: Optional[SubNodeList[Constant | ExprType]],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize fstring expression node."""
         self.parts = parts
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ExprList(AstNode):
@@ -1109,12 +1048,11 @@ class ExprList(AstNode):
     def __init__(
         self,
         values: Optional[SubNodeList[ExprType]],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize expr value node."""
         self.values = values
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ListVal(ExprList):
@@ -1131,12 +1069,11 @@ class TupleVal(AstNode):
     def __init__(
         self,
         values: Optional[SubNodeList[ExprType | Assignment]],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize tuple value node."""
         self.values = values
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class DictVal(AstNode):
@@ -1145,12 +1082,11 @@ class DictVal(AstNode):
     def __init__(
         self,
         kv_pairs: list[KVPair],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize dict expression node."""
         self.kv_pairs = kv_pairs
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class KVPair(AstNode):
@@ -1160,13 +1096,12 @@ class KVPair(AstNode):
         self,
         key: ExprType,
         value: ExprType,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize key value pair expression node."""
         self.key = key
         self.value = value
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ListCompr(AstNode):
@@ -1175,12 +1110,11 @@ class ListCompr(AstNode):
     def __init__(
         self,
         compr: InnerCompr,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
         self.compr = compr
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class GenCompr(ListCompr):
@@ -1200,7 +1134,6 @@ class InnerCompr(AstNode):
         names: SubNodeList[Name],
         collection: ExprType,
         conditional: Optional[ExprType],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
@@ -1209,7 +1142,7 @@ class InnerCompr(AstNode):
         self.collection = collection
         self.conditional = conditional
 
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class DictCompr(AstNode):
@@ -1221,7 +1154,6 @@ class DictCompr(AstNode):
         names: SubNodeList[Name],
         collection: ExprType,
         conditional: Optional[ExprType],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
@@ -1229,7 +1161,7 @@ class DictCompr(AstNode):
         self.names = names
         self.collection = collection
         self.conditional = conditional
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class AtomTrailer(AstNode):
@@ -1240,14 +1172,13 @@ class AtomTrailer(AstNode):
         target: AtomType,
         right: AtomType,
         null_ok: bool,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
         self.null_ok = null_ok
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class FuncCall(AstNode):
@@ -1257,13 +1188,12 @@ class FuncCall(AstNode):
         self,
         target: AtomType,
         params: Optional[SubNodeList[ExprType | Assignment]],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize function call expression node."""
         self.target = target
         self.params = params
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class IndexSlice(AstNode):
@@ -1274,14 +1204,13 @@ class IndexSlice(AstNode):
         start: Optional[ExprType],
         stop: Optional[ExprType],
         is_range: bool,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize index slice expression node."""
         self.start = start
         self.stop = stop
         self.is_range = is_range
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ArchRef(AstNode):
@@ -1291,13 +1220,12 @@ class ArchRef(AstNode):
         self,
         name_ref: NameType,
         arch: Token,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize architype reference expression node."""
         self.name_ref = name_ref
         self.arch = arch
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
@@ -1315,12 +1243,11 @@ class SpecialVarRef(AstNode):
     def __init__(
         self,
         var: Token,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize special var reference expression node."""
         self.var = var
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
@@ -1346,7 +1273,6 @@ class EdgeOpRef(WalkerStmtOnlyNode):
         filter_type: Optional[ExprType],
         filter_cond: Optional[SubNodeList[BinaryExpr]],
         edge_dir: EdgeDir,
-        mod_link: Optional[Module],
         kid: list[AstNode],
         from_walker: bool = False,
     ) -> None:
@@ -1355,7 +1281,6 @@ class EdgeOpRef(WalkerStmtOnlyNode):
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
         super().__init__(
-            mod_link=mod_link,
             kid=kid,
             from_walker=from_walker,
         )
@@ -1367,12 +1292,11 @@ class DisconnectOp(WalkerStmtOnlyNode):
     def __init__(
         self,
         edge_spec: EdgeOpRef,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize disconnect op reference expression node."""
         self.edge_spec = edge_spec
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class ConnectOp(AstNode):
@@ -1383,14 +1307,13 @@ class ConnectOp(AstNode):
         conn_type: Optional[ExprType],
         conn_assign: Optional[SubNodeList[Assignment]],
         edge_dir: EdgeDir,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize connect op reference expression node."""
         self.conn_type = conn_type
         self.conn_assign = conn_assign
         self.edge_dir = edge_dir
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class FilterCompr(AstNode):
@@ -1399,12 +1322,11 @@ class FilterCompr(AstNode):
     def __init__(
         self,
         compares: SubNodeList[BinaryExpr],
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""
         self.compares = compares
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 # AST Parse-Tree Node Types
@@ -1417,12 +1339,11 @@ class Parse(AstNode):
     def __init__(
         self,
         name: str,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize parse."""
         self.name = name
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
     def __repr__(self) -> str:
         """Return string representation of parse node."""
@@ -1441,7 +1362,6 @@ class Token(AstNode):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        mod_link: Optional[Module],
         kid: list[AstNode],
     ) -> None:
         """Initialize token."""
@@ -1452,7 +1372,7 @@ class Token(AstNode):
         self.c_end = col_end
         self.pos_start = pos_start
         self.pos_end = pos_end
-        super().__init__(mod_link=mod_link, kid=kid)
+        super().__init__(kid=kid)
 
 
 class Name(Token):
@@ -1483,7 +1403,6 @@ class SourceString(Token):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            mod_link=None,
             kid=[],
         )
 
@@ -1501,7 +1420,6 @@ class EmptyToken(Token):
             col_end=0,
             pos_start=0,
             pos_end=0,
-            mod_link=None,
             kid=[],
         )
 
