@@ -1463,6 +1463,10 @@ class Constant(Token):
     """Constant node type for Jac Ast."""
 
 
+class BuiltinType(Token):
+    """Type node type for Jac Ast."""
+
+
 class SourceString(Token):
     """SourceString node type for Jac Ast."""
 
@@ -1474,6 +1478,24 @@ class SourceString(Token):
         super().__init__(
             name="",
             value=source,
+            line=0,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            mod_link=None,
+            kid=[],
+        )
+
+
+class EmptyToken(Token):
+    """EmptyToken node type for Jac Ast."""
+
+    def __init__(self) -> None:
+        """Initialize empty token."""
+        super().__init__(
+            name="EmptyToken",
+            value="",
             line=0,
             col_start=0,
             col_end=0,
@@ -1500,6 +1522,7 @@ NameType = Union[
 
 AtomType = Union[
     NameType,
+    BuiltinType,
     Constant,
     MultiString,
     ListVal,

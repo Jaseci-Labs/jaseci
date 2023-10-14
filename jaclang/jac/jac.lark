@@ -87,8 +87,7 @@ event_clause: KW_WITH type_specs? (KW_EXIT | KW_ENTRY) return_type_tag?
 func_decl: (LPAREN func_decl_param_list? RPAREN)? return_type_tag?
 func_decl_param_list: (func_decl_param_list COMMA)? param_var
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
-member_block: LBRACE member_stmt_list? RBRACE
-member_stmt_list: (member_stmt_list)? member_stmt
+member_block: LBRACE member_stmt+ RBRACE
 
 member_stmt: doc_tag? py_code_block
            | doc_tag? abstract_ability

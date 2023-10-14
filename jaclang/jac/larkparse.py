@@ -865,8 +865,12 @@ class JacParser(Pass):
 
             func_decl: (LPAREN func_decl_param_list? RPAREN)? retur_type_tag?
             """
-            params = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
-            return_spec = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
+            params = (
+                kid[1] if len(kid) and isinstance(kid[1], ast.SubNodeList) else None
+            )
+            return_spec = (
+                kid[-1] if len(kid) and isinstance(kid[-1], ast.SubNodeList) else None
+            )
             if (isinstance(params, ast.SubNodeList) or params is None) and (
                 isinstance(return_spec, ast.SubNodeList) or return_spec is None
             ):
@@ -875,7 +879,7 @@ class JacParser(Pass):
                         params=params,
                         return_type=return_spec,
                         mod_link=self.mod_link,
-                        kid=kid,
+                        kid=kid if len(kid) else [ast.EmptyToken()],
                     )
                 )
             else:
@@ -939,47 +943,15 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.ArchBlockStmt]:
             """Grammar rule.
 
-            member_block: LBRACE member_stmt_list? RBRACE
+            member_block: LBRACE member_stmt+ RBRACE
             """
-            if isinstance(kid[1], ast.SubNodeList):
-                kid[1].add_kids_left([kid[0]])
-                kid[1].add_kids_right([kid[2]])
-                return self.nu(kid[1])
-            else:
-                return self.nu(
-                    ast.SubNodeList[ast.ArchBlockStmt](
-                        items=[],
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
-                )
-
-        def member_stmt_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.ArchBlockStmt]:
-            """Grammar rule.
-
-            member_stmt_list: (member_stmt_list)? member_stmt
-            """
-            consume = None
-            stmt = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                stmt = kid[1]
-            else:
-                stmt = kid[0]
-            new_kid = [stmt, *consume.kid] if consume else [stmt]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.ArchBlockStmt)]
-            if len(valid_kid) == len(new_kid):
-                return self.nu(
-                    ast.SubNodeList[ast.ArchBlockStmt](
-                        items=valid_kid,
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
-                )
-            else:
-                raise self.ice()
+            ret = ast.SubNodeList[ast.ArchBlockStmt](
+                items=[],
+                mod_link=self.mod_link,
+                kid=kid,
+            )
+            ret.items = [i for i in kid if isinstance(i, ast.ArchBlockStmt)]
+            return self.nu(ret)
 
         def member_stmt(self, kid: list[ast.AstNode]) -> ast.ArchBlockStmt:
             """Grammar rule.
@@ -1197,7 +1169,19 @@ class JacParser(Pass):
                         | TYP_STRING
             """
             if isinstance(kid[0], ast.Token):
-                return self.nu(kid[0])
+                return self.nu(
+                    ast.BuiltinType(
+                        name=kid[0].name,
+                        value=kid[0].value,
+                        line=kid[0].line,
+                        col_start=kid[0].col_start,
+                        col_end=kid[0].col_end,
+                        pos_start=kid[0].pos_start,
+                        pos_end=kid[0].pos_end,
+                        mod_link=kid[0].mod_link,
+                        kid=kid[0].kid,
+                    )
+                )
             else:
                 raise self.ice()
 
@@ -1306,8 +1290,12 @@ class JacParser(Pass):
                     ast.IfStmt(
                         condition=kid[1],
                         body=kid[2],
-                        elseifs=kid[3] if isinstance(kid[3], ast.ElseIfs) else None,
-                        else_body=kid[4] if isinstance(kid[4], ast.ElseStmt) else None,
+                        elseifs=kid[3]
+                        if len(kid) > 3 and isinstance(kid[3], ast.ElseIfs)
+                        else None,
+                        else_body=kid[-1]
+                        if isinstance(kid[-1], ast.ElseStmt)
+                        else None,
                         mod_link=self.mod_link,
                         kid=kid,
                     )
@@ -1325,7 +1313,9 @@ class JacParser(Pass):
                     ast.ElseIfs(
                         condition=kid[1],
                         body=kid[2],
-                        elseifs=kid[3] if isinstance(kid[3], ast.ElseIfs) else None,
+                        elseifs=kid[3]
+                        if len(kid) > 3 and isinstance(kid[3], ast.ElseIfs)
+                        else None,
                         mod_link=self.mod_link,
                         kid=kid,
                     )
@@ -2252,16 +2242,13 @@ class JacParser(Pass):
             """
             valid_types = Union[ast.Constant, ast.ExprType]
             valid_parts = [i for i in kid if isinstance(i, valid_types)]
-            if len(valid_parts) == len(kid):
-                return self.nu(
-                    ast.SubNodeList[ast.Constant | ast.ExprType](
-                        items=valid_parts,
-                        mod_link=self.mod_link,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.SubNodeList[ast.Constant | ast.ExprType](
+                    items=valid_parts,
+                    mod_link=self.mod_link,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def list_val(self, kid: list[ast.AstNode]) -> ast.ListVal:
             """Grammar rule.
@@ -2668,7 +2655,7 @@ class JacParser(Pass):
                         target=kid[0], params=kid[2], mod_link=self.mod_link, kid=kid
                     )
                 )
-            elif len(kid) == 1 and isinstance(kid[0], ast.AtomType):
+            elif len(kid) == 3 and isinstance(kid[0], ast.AtomType):
                 return self.nu(
                     ast.FuncCall(
                         target=kid[0], params=None, mod_link=self.mod_link, kid=kid
