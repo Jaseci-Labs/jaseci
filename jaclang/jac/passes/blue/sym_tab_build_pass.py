@@ -41,14 +41,22 @@ class SymTabBuildPass(Pass):
         warn_only: bool = False,
     ) -> None:
         """Already declared error."""
-        mod_path = original.mod_link.rel_mod_path if original.mod_link else self.ice()
+        mod_path = (
+            original.mod_link.rel_mod_path
+            if original.mod_link
+            else self.ice("Mod_link unknown")
+        )
         err_msg = (
             f"Name used for {typ} '{name}' already declared at "
             f"{mod_path}, line {original.line}"
         )
         if other_nodes:
             for i in other_nodes:
-                mod_path = i.mod_link.rel_mod_path if i.mod_link else self.ice()
+                mod_path = (
+                    i.mod_link.rel_mod_path
+                    if i.mod_link
+                    else self.ice("Mod_link unknown")
+                )
                 err_msg += f", also see {mod_path}, line {i.line}"
         self.warning(err_msg)
 
@@ -87,7 +95,7 @@ class SymTabBuildPass(Pass):
         """
         for i in self.get_all_sub_nodes(node, ast.Assignment):
             if not isinstance(i.target, ast.Name):
-                self.ice()
+                self.ice("Expected name type for globabl vars")
             elif collide := self.cur_scope().insert(
                 name=i.target.value,
                 sym_type=St.VAR,
