@@ -2,15 +2,13 @@
 from __future__ import annotations
 
 import os
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from typing import Optional
 
 from jaclang.jac.absyntree import AstNode
 from jaclang.jac.constant import Constants as Con, Values as Val
 from jaclang.utils.helpers import add_line_numbers, clip_code_section
 from jaclang.utils.log import logging
-from jaclang.vendor.sly.lex import LexerMeta
-from jaclang.vendor.sly.yacc import ParserMeta
 
 
 class Alert:
@@ -119,15 +117,3 @@ class Transform(ABC):
     ) -> TransformError:
         """Raise error."""
         return TransformError(msg, self.errors_had, self.warnings_had)
-
-
-class ABCLexerMeta(ABCMeta, LexerMeta):
-    """Metaclass for Jac Lexer."""
-
-    pass
-
-
-class ABCParserMeta(ABCMeta, ParserMeta):
-    """Metaclass for Jac Lexer."""
-
-    pass

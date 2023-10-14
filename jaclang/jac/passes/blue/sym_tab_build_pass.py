@@ -98,6 +98,20 @@ class SymTabBuildPass(Pass):
                 self.already_declared_err(i.target.value, "global var", collide)
         self.sync_node_to_scope(node)
 
+    def enter_sub_tag(self, node: ast.SubTag) -> None:
+        """Sub objects.
+
+        tag: T,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_sub_node_list(self, node: ast.SubNodeList) -> None:
+        """Sub objects.
+
+        items: list[T],
+        """
+        self.sync_node_to_scope(node)
+
     def enter_test(self, node: ast.Test) -> None:
         """Sub objects.
 
@@ -243,6 +257,8 @@ class SymTabBuildPass(Pass):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
+        for i in self.get_all_sub_nodes(node, ast.Ability):
+            i.arch_attached = node
         if collide := self.cur_scope().insert(
             name=node.name.value,
             sym_type=St.ARCH,
@@ -465,15 +481,6 @@ class SymTabBuildPass(Pass):
         body: EnumBlock,
         """
         self.pop_scope()
-
-    def enter_arch_block(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        members: list['ArchHas | Ability'],
-        """
-        for i in self.get_all_sub_nodes(node, ast.Ability):
-            i.arch_attached = node
-        self.sync_node_to_scope(node)
 
     def enter_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -786,6 +793,35 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_k_v_pair(self, node: ast.KVPair) -> None:
+        """Sub objects.
+
+        key: ExprType,
+        value: ExprType,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_list_compr(self, node: ast.ListCompr) -> None:
+        """Sub objects.
+
+        compr: InnerCompr,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_gen_compr(self, node: ast.GenCompr) -> None:
+        """Sub objects.
+
+        compr: InnerCompr,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_set_compr(self, node: ast.SetCompr) -> None:
+        """Sub objects.
+
+        compr: InnerCompr,
+        """
+        self.sync_node_to_scope(node)
+
     def enter_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
@@ -807,14 +843,6 @@ class SymTabBuildPass(Pass):
         name_list: NameList,
         collection: ExprType,
         conditional: Optional[ExprType],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_k_v_pair(self, node: ast.KVPair) -> None:
-        """Sub objects.
-
-        key: ExprType,
-        value: ExprType,
         """
         self.sync_node_to_scope(node)
 
@@ -920,6 +948,17 @@ class SymTabBuildPass(Pass):
         self.sync_node_to_scope(node)
 
     def enter_constant(self, node: ast.Constant) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        typ: type,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_builtin_type(self, node: ast.BuiltinType) -> None:
         """Sub objects.
 
         name: str,

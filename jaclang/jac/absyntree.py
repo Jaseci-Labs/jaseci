@@ -18,7 +18,7 @@ class AstNode:
         self.kid = [x.set_parent(self) for x in kid]
         self.mod_link = mod_link
         self.sym_tab: Optional[SymbolTable] = None
-        self._sub_node_tab: dict[AstNode, list[AstNode]] = {}
+        self._sub_node_tab: dict[type, list[AstNode]] = {}
         self._typ: type = type(None)
         self.meta: dict = {}
         self.tok_range: tuple[Token, Token] = self.resolve_tok_range()

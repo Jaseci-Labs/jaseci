@@ -115,7 +115,8 @@ class AstSyncTestMixin:
         ast_func_names = [
             x
             for x in ast_snakes()
-            if x not in ["ast_node", "o_o_p_access_node", "walker_stmt_only_node"]
+            if x
+            not in ["ast_node", "walker_stmt_only_node", "source_string", "empty_token"]
         ]
         pygen_func_names = []
         for name, value in inspect.getmembers(self.TargetPass):

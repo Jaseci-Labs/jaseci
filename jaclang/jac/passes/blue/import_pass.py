@@ -27,10 +27,7 @@ class ImportPass(Pass):
                     if not mod:
                         self.run_again = False
                         continue
-                    ast.append_node(i, mod)
-                    i.sub_module = (
-                        i.kid[-1] if isinstance(i.kid[-1], ast.Module) else self.ice()
-                    )
+                    i.sub_module = mod
                 self.enter_import(i)
             SubNodeTabPass(prior=self, mod_path=node.mod_path, input_ir=node)
         node.meta["sub_import_tab"] = self.import_table
@@ -53,7 +50,7 @@ class ImportPass(Pass):
     # Utility functions
     # -----------------
 
-    def import_module(self, node: ast.Import, mod_path: str) -> ast.AstNode | None:
+    def import_module(self, node: ast.Import, mod_path: str) -> ast.Module | None:
         """Import a module."""
         from jaclang.jac.transpiler import jac_file_to_pass
         from jaclang.jac.passes.blue import SubNodeTabPass
@@ -79,6 +76,7 @@ class ImportPass(Pass):
         if isinstance(mod, ast.Module):
             self.import_table[target] = mod
             mod.is_imported = True
+            return mod
         else:
             self.error(f"Module {target} is not a valid Jac module.")
-        return mod
+            return None
