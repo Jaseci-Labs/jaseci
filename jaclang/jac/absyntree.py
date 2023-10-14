@@ -1344,7 +1344,7 @@ class EdgeOpRef(WalkerStmtOnlyNode):
     def __init__(
         self,
         filter_type: Optional[ExprType],
-        filter_cond: Optional[FilterCompr],
+        filter_cond: Optional[SubNodeList[BinaryExpr]],
         edge_dir: EdgeDir,
         mod_link: Optional[Module],
         kid: list[AstNode],
@@ -1600,30 +1600,3 @@ CodeBlockStmt = Union[
     PyInlineCode,
     TypedCtxBlock,
 ]
-# Utiliiy functions
-# -----------------
-
-
-def replace_node(node: AstNode, new_node: Optional[AstNode]) -> AstNode | None:
-    """Replace node with new_node."""
-    if node.parent:
-        node.parent.kid[node.parent.kid.index(node)] = new_node
-    if new_node:
-        new_node.parent = node.parent
-        for i in new_node.kid:
-            if i:
-                i.parent = new_node
-    return new_node
-
-
-def append_node(
-    node: AstNode, new_node: Optional[AstNode], front: bool = False
-) -> AstNode | None:
-    """Replace node with new_node."""
-    if front:
-        node.kid.insert(0, new_node)
-    else:
-        node.kid.append(new_node)
-    if new_node:
-        new_node.parent = node
-    return new_node

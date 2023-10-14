@@ -522,9 +522,7 @@ class JacParser(Pass):
             else:
                 name = kid[0]
             new_kid = [name, dot, *consume.kid] if consume else [name]
-            valid_kid = [
-                i for i in new_kid if isinstance(i, (ast.Name, ast.SpecialVarRef))
-            ]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.NameType)]
             return self.nu(
                 ast.SubNodeList[ast.NameType](
                     items=valid_kid,
@@ -2932,7 +2930,7 @@ class JacParser(Pass):
             ftype = kid[1] if len(kid) >= 3 else None
             fcond = kid[3] if len(kid) >= 5 else None
             if (isinstance(ftype, ast.ExprType) or ftype is None) and (
-                isinstance(fcond, ast.FilterCompr) or fcond is None
+                isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
                 return self.nu(
                     ast.EdgeOpRef(
@@ -2955,7 +2953,7 @@ class JacParser(Pass):
             ftype = kid[1] if len(kid) >= 3 else None
             fcond = kid[3] if len(kid) >= 5 else None
             if (isinstance(ftype, ast.ExprType) or ftype is None) and (
-                isinstance(fcond, ast.FilterCompr) or fcond is None
+                isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
                 return self.nu(
                     ast.EdgeOpRef(
@@ -2978,7 +2976,7 @@ class JacParser(Pass):
             ftype = kid[1] if len(kid) >= 3 else None
             fcond = kid[3] if len(kid) >= 5 else None
             if (isinstance(ftype, ast.ExprType) or ftype is None) and (
-                isinstance(fcond, ast.FilterCompr) or fcond is None
+                isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
                 return self.nu(
                     ast.EdgeOpRef(

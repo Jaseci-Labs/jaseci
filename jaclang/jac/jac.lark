@@ -403,8 +403,8 @@ DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
 STRING: /"[^"\r\n]*"|'[^'\r\n]*'/
 BOOL: /True|False/
-KW_NIN: /\bnot\s+in\b/
-KW_ISN: /\bis\s+not\b/
+KW_NIN.1: /\bnot\s+in\b/
+KW_ISN.1: /\bis\s+not\b/
 HEX: /0[xX][0-9a-fA-F_]+/
 BIN: /0[bB][01_]+/
 OCT: /0[oO][0-7_]+/
