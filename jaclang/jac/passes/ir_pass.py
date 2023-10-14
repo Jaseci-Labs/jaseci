@@ -13,9 +13,9 @@ class Pass(Transform):
 
     def __init__(
         self,
-        prior: Transform,
         mod_path: str,
         input_ir: ast.AstNode,
+        prior: Optional[Transform],
         base_path: str = "",
     ) -> None:
         """Initialize parser."""

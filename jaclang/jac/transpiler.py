@@ -2,8 +2,7 @@
 from typing import Type, TypeVar
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.parser import JacLexer
-from jaclang.jac.parser import JacParser
+from jaclang.jac.larkparse import JacParser
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.blue import BluePygenPass, PyOutPass, pass_schedule
 from jaclang.jac.transform import Alert, Transform
@@ -15,9 +14,9 @@ T = TypeVar("T", bound=Pass)
 def jac_file_to_parse_tree(file_path: str, base_dir: str) -> Transform:
     """Convert a Jac file to an AST."""
     with open(file_path) as file:
-        lex = JacLexer(mod_path=file_path, input_ir=file.read(), base_path=base_dir)
+        source = ast.SourceString(file.read())
         prse = JacParser(
-            mod_path=file_path, input_ir=lex.ir, base_path=base_dir, prior=lex
+            mod_path=file_path, input_ir=source, base_path=base_dir, prior=None
         )
         return prse
 

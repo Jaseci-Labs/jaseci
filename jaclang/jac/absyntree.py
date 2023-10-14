@@ -251,7 +251,7 @@ class Import(AstNode):
 
     def __init__(
         self,
-        lang: SubTag,
+        lang: SubTag[Name],
         path: ModulePath,
         alias: Optional[Name],
         items: Optional[SubNodeList[ModuleItem]],
@@ -1552,7 +1552,6 @@ ElementStmt = Union[
     GlobalVars,
     Test,
     ModuleCode,
-    Import,
     Ability,
     AbilityDef,
     ArchType,

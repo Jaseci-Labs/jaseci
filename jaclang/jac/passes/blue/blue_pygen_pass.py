@@ -13,7 +13,7 @@ class BluePygenPass(Pass):
         self.indent_size = 4
         self.indent_level = 0
         self.debuginfo = {"jac_mods": []}
-        self.preamble = ast.AstNode(parent=None, mod_link=None, kid=[], line=0)
+        self.preamble = ast.EmptyToken()
         self.preamble.meta["py_code"] = "from __future__ import annotations\n"
         self.cur_arch = None  # tracks current architype during transpilation
 
@@ -232,7 +232,7 @@ class BluePygenPass(Pass):
         is_absorb: bool,  # For includes
         self.sub_module = None
         """
-        if node.lang.value == Con.JAC_LANG_IMP:  # injects module into sys.modules
+        if node.lang.tag.value == Con.JAC_LANG_IMP:  # injects module into sys.modules
             self.needs_jac_import()
             self.emit_ln(
                 node,
