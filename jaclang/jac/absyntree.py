@@ -266,7 +266,7 @@ class ModulePath(AstNode):
 
     def __init__(
         self,
-        path: list[Token],
+        path: list[Name],
         kid: list[AstNode],
     ) -> None:
         """Initialize module path node."""
@@ -281,7 +281,7 @@ class ModuleItem(AstNode):
     def __init__(
         self,
         name: Name,
-        alias: Optional[Token],
+        alias: Optional[Name],
         kid: list[AstNode],
         body: Optional[AstNode] = None,
     ) -> None:

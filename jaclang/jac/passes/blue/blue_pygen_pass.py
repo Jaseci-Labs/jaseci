@@ -189,12 +189,13 @@ class BluePygenPass(Pass):
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
 
-        lang: Token,
-        path: "ModulePath",
-        alias: Optional[Token],
-        items: Optional["ModuleItems"],
+        lang: SubTag[Name],
+        path: ModulePath,
+        alias: Optional[Name],
+        items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
-        self.sub_module = None
+        doc: Optional[Constant] = None,
+        sub_module: Optional[Module] = None,
         """
         if node.lang.tag.value == Con.JAC_LANG_IMP:  # injects module into sys.modules
             self.needs_jac_import()
@@ -221,10 +222,14 @@ class BluePygenPass(Pass):
                     f"import {node.path.meta['py_code']} as {node.alias.meta['py_code']}",
                 )
         else:
-            self.emit_ln(
+            self.emit(
                 node,
-                f"from {node.path.meta['py_code']} import {node.items.meta['py_code']}",
+                f"from {node.path.meta['py_code']} import ",
             )
+            for i in node.items.items:
+                self.emit(node, i.meta["py_code"])
+                self.emit(node, ", ")
+            self.emit_ln(node, "\n")
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -232,13 +237,6 @@ class BluePygenPass(Pass):
         path: list[Token],
         """
         self.emit(node, "".join([i.value for i in node.path]))
-
-    def exit_module_items(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        items: list["ModuleItem"],
-        """
-        self.emit(node, ", ".join([i.meta["py_code"] for i in node.items]))
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
