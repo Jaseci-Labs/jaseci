@@ -72,7 +72,7 @@ class MasterApi:
     def master_active_set(self, name: str):
         """
         Sets the default master master should use
-        NOTE: Specail handler included in general_interface_to_api
+        NOTE: Special handler included in general_interface_to_api
         """
         mas = self.sub_master_ids.get_obj_by_name(name)
         if not mas:
