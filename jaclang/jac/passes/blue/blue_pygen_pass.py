@@ -282,14 +282,17 @@ class BluePygenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
         if node.decorators:
-            self.emit(node, node.decorators.meta["py_code"])
-        if not len(node.base_classes.base_classes):
+            for i in node.decorators.items:
+                self.emit_ln(node, "@" + i.meta["py_code"])
+        if not node.base_classes:
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
-            self.emit_ln(
-                node,
-                f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
-            )
+            out = f"class {node.name.meta['py_code']}("
+            for i in node.base_classes.items:
+                for j in i.items:
+                    out += j.meta["py_code"] + "."
+                out = out[:-1] + ", "
+            self.emit_ln(node, out[:-2] + "):")
         self.indent_level += 1
         if node.doc:
             self.emit_ln(node, node.doc.value)
@@ -300,26 +303,50 @@ class BluePygenPass(Pass):
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
 
+        target: ArchRefChain,
+        body: SubNodeList[ArchBlockStmt],
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
+        """
+
+    def exit_enum(self, node: ast.Enum) -> None:
+        """Sub objects.
+
+        name: Name,
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
+        body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
+        """
+        if node.decorators:
+            for i in node.decorators.items:
+                self.emit_ln(node, "@" + i.meta["py_code"])
+        if not node.base_classes:
+            self.needs_enum()
+            self.emit_ln(node, f"class {node.name.value}(__jac_Enum__):")
+        else:
+            self.needs_enum()
+            out = f"class {node.name.meta['py_code']}("
+            for i in node.base_classes.items:
+                for j in i.items:
+                    out += j.meta["py_code"] + "."
+                out = out[:-1] + ", "
+            self.emit_ln(node, out[:-2] + ", __jac_Enum__):")
+        self.indent_level += 1
+        if node.doc:
+            self.emit_ln(node, node.doc.value)
+        if node.body:
+            self.emit(node, node.body.meta["py_code"])
+        self.indent_level -= 1
+
+    def exit_enum_def(self, node: ast.EnumDef) -> None:
+        """Sub objects.
+
         doc: Optional[Token],
-        mod: Optional["DottedNameList"],
-        arch: "ObjectRef | NodeRef | EdgeRef | WalkerRef",
-        body: "ArchBlock",
+        mod: Optional[DottedNameList],
+        body: EnumBlock,
         """
-
-    def exit_decorators(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        calls: list["ExprType"],
-        """
-        for i in node.calls:
-            self.emit_ln(node, "@" + i.meta["py_code"])
-
-    def exit_base_classes(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        base_classes: list[DottedNameList],
-        """
-        self.emit(node, ", ".join([i.meta["py_code"] for i in node.base_classes]))
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_ability(self, node: ast.Ability) -> None:
@@ -565,41 +592,6 @@ class BluePygenPass(Pass):
             )
         else:
             self.emit(node, f"{node.name.value}: {node.type_tag.meta['py_code']}")
-
-    def exit_enum(self, node: ast.Enum) -> None:
-        """Sub objects.
-
-        name: Name,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
-        access: Optional[Token],
-        base_classes: BaseClasses,
-        body: Optional[EnumBlock],
-        """
-        if node.decorators:
-            self.emit_ln(node, node.decorators.meta["py_code"])
-        if len(node.base_classes.base_classes):
-            self.emit_ln(
-                node,
-                f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
-            )
-        else:
-            self.needs_enum()
-            self.emit_ln(node, f"class {node.name.value}(__jac_Enum__):")
-        self.indent_level += 1
-        if node.doc:
-            self.emit_ln(node, node.doc.value)
-        if node.body:
-            self.emit(node, node.body.meta["py_code"])
-        self.indent_level -= 1
-
-    def exit_enum_def(self, node: ast.EnumDef) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        mod: Optional[DottedNameList],
-        body: EnumBlock,
-        """
 
     def exit_enum_block(self, node: ast.AstNode) -> None:
         """Sub objects.

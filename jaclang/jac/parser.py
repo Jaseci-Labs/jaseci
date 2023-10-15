@@ -460,14 +460,14 @@ class JacParser(Pass):
 
         def sub_name_dotted(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubTag[ast.SubNodeList[ast.Name]]:
+        ) -> ast.SubTag[ast.SubNodeList[ast.NameType]]:
             """Grammar rule.
 
             sub_name_dotted: COLON dotted_name
             """
             if isinstance(kid[1], ast.SubNodeList):
                 return self.nu(
-                    ast.SubTag[ast.SubNodeList[ast.Name]](
+                    ast.SubTag[ast.SubNodeList[ast.NameType]](
                         tag=kid[1],
                         kid=kid,
                     )
