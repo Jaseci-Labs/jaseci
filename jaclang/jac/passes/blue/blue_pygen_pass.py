@@ -108,6 +108,7 @@ class BluePygenPass(Pass):
         body: list[ElementStmt],
         mod_path: str,
         rel_mod_path: str,
+        is_imported: bool,
         """
         if node.doc:
             self.emit_ln(node, node.doc.value)
@@ -125,21 +126,37 @@ class BluePygenPass(Pass):
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
-        doc: Optional["Token"],
-        access: Optional[Token],
-        assignments: "AssignmentList",
+        access: Optional[SubTag[Token]],
+        assignments: SubNodeList[Assignment],
         is_frozen: bool,
+        doc: Optional[Constant] = None,
         """
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        self.emit(node, node.assignments.meta["py_code"])
+        for i in node.assignments.items:
+            self.emit_ln(node, i.meta["py_code"])
+
+    def exit_sub_tag(self, node: ast.SubTag) -> None:
+        """Sub objects.
+
+        tag: T,
+        """
+        self.emit(node, node.tag.meta["py_code"])
+
+    def exit_sub_node_list(self, node: ast.SubNodeList) -> None:
+        """Sub objects.
+
+        items: list[T],
+        """
+        for i in node.items:
+            self.emit(node, i.meta["py_code"])
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
 
-        name: Optional[Name],
-        doc: Optional[Token],
-        body: CodeBlock,
+        name: Name | Token,
+        body: SubNodeList[CodeBlockStmt],
+        doc: Optional[Constant] = None,
         """
         test_name = node.name.value
         test_code = "import unittest as __jac_unittest__\n"
@@ -154,7 +171,10 @@ class BluePygenPass(Pass):
         if node.doc:
             self.emit_ln(node, node.doc.value)
         self.emit_ln(node, "check = __jac_check()")
-        self.emit_ln(node, node.body.meta["py_code"])
+        if len(node.body.items):
+            self.emit(node, node.body.meta["py_code"])
+        else:
+            self.emit_ln(node, "pass")
         self.indent_level -= 1
         self.emit_ln(
             node,
@@ -164,10 +184,9 @@ class BluePygenPass(Pass):
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
 
-        doc: Optional[Token],
-        name: Optional[Name],
-        body: CodeBlock,
-
+        name: Optional[SubTag[Name]],
+        body: SubNodeList[CodeBlockStmt],
+        doc: Optional[Constant] = None,
         """
         if node.doc:
             self.emit_ln(node, node.doc.value)
@@ -183,6 +202,7 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         code: Token,
+        doc: Optional[Constant] = None,
         """
         self.emit_ln(node, node.code.value)
 
@@ -255,11 +275,11 @@ class BluePygenPass(Pass):
 
         name: Name,
         arch_type: Token,
-        doc: Optional[Token],
-        decorators: Optional["Decorators"],
-        access: Optional[Token],
-        base_classes: "BaseClasses",
-        body: Optional["ArchBlock"],
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
+        body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
         """
         if node.decorators:
             self.emit(node, node.decorators.meta["py_code"])
