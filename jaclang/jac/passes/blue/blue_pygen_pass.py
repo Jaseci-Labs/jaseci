@@ -100,57 +100,21 @@ class BluePygenPass(Pass):
         """Warn about feature."""
         self.warning("Data spatial features not supported in bootstrap Jac.")
 
-    def exit_parse(self, node: ast.Parse) -> None:
-        """Sub objects.
-
-        name: str,
-        """
-        self.error(f"Parse node should not be in this AST!! {node.name}")
-        raise ValueError("Parse node should not be in AST after being Built!!")
-
-    def exit_token(self, node: ast.Token) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        """
-        self.emit(node, node.value)
-
-    def exit_name(self, node: ast.Name) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        already_declared: bool,
-        """
-        self.emit(node, node.value)
-
-    def exit_constant(self, node: ast.Constant) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        typ: type,
-        """
-        self.emit(node, node.value)
-
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
 
         name: str,
-        doc: Token,
-        body: "Elements",
+        doc: Optional[Constant],
+        body: list[ElementStmt],
+        mod_path: str,
+        rel_mod_path: str,
         """
-        self.emit_ln(node, node.doc.value)
+        if node.doc:
+            self.emit_ln(node, node.doc.value)
         self.emit(node, self.preamble.meta["py_code"])
         if node.body:
-            self.emit(node, node.body.meta["py_code"])
+            for i in node.body:
+                self.emit(node, i.meta["py_code"])
         self.emit(node, f'r""" {Con.JAC_DEBUG_SPLITTER}\n')
         for i in self.debuginfo["jac_mods"]:
             self.emit(node, f"{i}\n")
@@ -1350,3 +1314,35 @@ class BluePygenPass(Pass):
             else:
                 self.emit(node, "{" + part.meta["py_code"] + "}")
         self.emit(node, '"')
+
+    def exit_token(self, node: ast.Token) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        """
+        self.emit(node, node.value)
+
+    def exit_name(self, node: ast.Name) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        already_declared: bool,
+        """
+        self.emit(node, node.value)
+
+    def exit_constant(self, node: ast.Constant) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        typ: type,
+        """
+        self.emit(node, node.value)

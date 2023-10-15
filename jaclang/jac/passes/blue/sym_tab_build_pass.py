@@ -938,13 +938,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_parse(self, node: ast.Parse) -> None:
-        """Sub objects.
-
-        name: str,
-        """
-        self.sync_node_to_scope(node)
-
     def enter_token(self, node: ast.Token) -> None:
         """Sub objects.
 

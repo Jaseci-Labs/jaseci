@@ -1294,10 +1294,3 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         self.ds_feature_warn()
-
-    def exit_parse(self, node: ast.Parse) -> None:
-        """Sub objects.
-
-        name: str,
-        """
-        self.error(f"Parse node should not be in this AST!! {node.name}")

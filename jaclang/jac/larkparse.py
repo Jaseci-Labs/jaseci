@@ -1407,29 +1407,33 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.ExprAsItem]:
             """Grammar rule.
 
-            expr_as_list: (expr_as_list COMMA)? expression (KW_AS NAME)?
+            expr_as_list: (expr_as COMMA)* expr_as
             """
-            consume = None
-            expr = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                expr = kid[2]
-            else:
-                expr = kid[0]
-            name = kid[-1] if isinstance(kid[-1], ast.Name) else None
-            new_kid = [expr, comma, *consume.kid] if consume else [expr]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.ExprAsItem)]
-            if name:
-                valid_kid[-1].alias = name
-                valid_kid[-1].add_kids_right([name])
-            return self.nu(
-                ast.SubNodeList[ast.ExprAsItem](
-                    items=valid_kid,
-                    kid=kid,
-                )
+            ret = ast.SubNodeList[ast.ExprAsItem](
+                items=[i for i in kid if isinstance(i, ast.ExprAsItem)],
+                kid=kid,
             )
+            return self.nu(ret)
+
+        def expr_as(self, kid: list[ast.AstNode]) -> ast.ExprAsItem:
+            """Grammar rule.
+
+            expr_as: expression (KW_AS NAME)?
+            """
+            expr = kid[0]
+            alias = kid[2] if len(kid) > 1 else None
+            if isinstance(expr, ast.ExprType) and (
+                alias is None or isinstance(alias, ast.Name)
+            ):
+                return self.nu(
+                    ast.ExprAsItem(
+                        expr=expr,
+                        alias=alias,
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
 
         def raise_stmt(self, kid: list[ast.AstNode]) -> ast.RaiseStmt:
             """Grammar rule.

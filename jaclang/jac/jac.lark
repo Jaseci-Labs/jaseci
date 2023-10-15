@@ -163,7 +163,8 @@ for_stmt: KW_FOR assignment KW_TO expression KW_BY expression code_block
 name_list: (name_list COMMA)? NAME
 while_stmt: KW_WHILE expression code_block
 with_stmt: KW_WITH expr_as_list code_block
-expr_as_list: (expr_as_list COMMA)? expression (KW_AS NAME)?
+expr_as_list: (expr_as COMMA)* expr_as
+expr_as: expression (KW_AS NAME)?
 raise_stmt: KW_RAISE expression?
 assert_stmt: KW_ASSERT expression (COMMA expression)?
 ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE

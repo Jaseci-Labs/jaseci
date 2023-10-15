@@ -1333,23 +1333,6 @@ class FilterCompr(AstNode):
 
 
 # --------------------------
-class Parse(AstNode):
-    """Parse node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: str,
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize parse."""
-        self.name = name
-        super().__init__(kid=kid)
-
-    def __repr__(self) -> str:
-        """Return string representation of parse node."""
-        return super().__repr__() + f" ({self.name})" + " line: " + str(self.line)
-
-
 class Token(AstNode):
     """Token node type for Jac Ast."""
 
