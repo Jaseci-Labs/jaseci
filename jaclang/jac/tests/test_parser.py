@@ -2,7 +2,7 @@
 from jaclang.jac import jac_lark as jl
 from jaclang.jac.absyntree import SourceString
 from jaclang.jac.constant import Tokens
-from jaclang.jac.larkparse import JacParser
+from jaclang.jac.parser import JacParser
 from jaclang.utils.test import TestCaseMicroSuite
 
 
