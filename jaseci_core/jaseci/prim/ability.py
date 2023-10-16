@@ -34,7 +34,6 @@ class Ability(Element, JacCode, Interp):
         """
         Run ability
         """
-        Interp.__init__(self)  # Reset before as result need to be absorbed after
         self.push_scope(
             JacScope(
                 parent=self,
