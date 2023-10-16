@@ -441,6 +441,21 @@ class AbilityDef(AstNode):
         super().__init__(kid=kid)
 
 
+class FuncSignature(AstNode):
+    """FuncSignature node type for Jac Ast."""
+
+    def __init__(
+        self,
+        params: Optional[SubNodeList[ParamVar]],
+        return_type: Optional[SubNodeList[TypeSpec]],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize method signature node."""
+        self.params = params
+        self.return_type = return_type
+        super().__init__(kid=kid)
+
+
 class EventSignature(AstNode):
     """EventSignature node type for Jac Ast."""
 
@@ -475,21 +490,6 @@ class ArchRefChain(AstNode):
         return ".".join(
             [f"({x.arch.value[1]}){x.py_resolve_name()}" for x in self.archs]
         )
-
-
-class FuncSignature(AstNode):
-    """FuncSignature node type for Jac Ast."""
-
-    def __init__(
-        self,
-        params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubNodeList[TypeSpec]],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize method signature node."""
-        self.params = params
-        self.return_type = return_type
-        super().__init__(kid=kid)
 
 
 class ParamVar(AstNode):

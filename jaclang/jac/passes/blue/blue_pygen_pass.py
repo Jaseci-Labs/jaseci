@@ -300,6 +300,60 @@ class BluePygenPass(Pass):
             self.emit(node, node.body.meta["py_code"])
         self.indent_level -= 1
 
+        # """Sub objects.
+
+        # members: list["ArchHas | Ability"],
+        # """
+        # init_func = None
+        # for i in node.members:
+        #     if isinstance(i, ast.Ability) and i.py_resolve_name() == "__init__":
+        #         init_func = i
+        #         break
+        # static_has_members = [
+        #     i for i in node.members if isinstance(i, ast.ArchHas) and i.is_static
+        # ]
+        # for i in static_has_members:
+        #     self.emit(node, i.meta["py_code"])
+        #     self.emit(node, "\n")
+
+        # if init_func and init_func.decorators:
+        #     self.emit(node, init_func.decorators.meta["py_code"])
+        # self.emit_ln(node, "def __init__(self,")
+        # self.indent_level += 1
+        # if has_members := [
+        #     i for i in node.members if isinstance(i, ast.ArchHas) and not i.is_static
+        # ]:
+        #     for i in has_members:
+        #         for j in i.vars.vars:
+        #             self.emit_ln(node, f"{j.name.value} = None,")
+        # if init_func and init_func.signature:
+        #     if "->" in init_func.signature.meta["py_code"]:
+        #         init_func.signature.meta["py_code"] = init_func.signature.meta[
+        #             "py_code"
+        #         ].split("->")[0]
+        #     if len(init_func.signature.meta["py_code"]):
+        #         self.emit_ln(node, f"{init_func.signature.meta['py_code']},")
+        # self.emit_ln(node, " *args, **kwargs):")
+        # if not init_func:
+        #     self.emit_ln(node, "super().__init__(*args, **kwargs)")
+        # for i in has_members:
+        #     for j in i.vars.vars:
+        #         if j.value:
+        #             self.emit_ln(
+        #                 node,
+        #                 f"self.{j.name.value} = {j.value.meta['py_code']} if {j.name.value} is "
+        #                 f"None else {j.name.value}",
+        #             )
+        #         else:
+        #             self.emit_ln(node, f"self.{j.name.value} = {j.name.value}")
+        # if init_func and init_func.body:
+        #     self.emit(node, f"{init_func.body.meta['py_code']}")
+        # self.indent_level -= 1
+        # for i in node.members:
+        #     if i not in has_members + static_has_members:
+        #         self.emit(node, i.meta["py_code"])
+        #         self.emit(node, "\n")
+
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
 
@@ -339,6 +393,11 @@ class BluePygenPass(Pass):
         if node.body:
             self.emit(node, node.body.meta["py_code"])
         self.indent_level -= 1
+        # for i in node.stmts:
+        #     if isinstance(i, ast.Name):
+        #         self.emit_ln(node, i.meta["py_code"] + " = __jac_auto__()")
+        #     else:
+        #         self.emit_ln(node, i.meta["py_code"])
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -352,17 +411,17 @@ class BluePygenPass(Pass):
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
-        name_ref: Name | SpecialVarRef | ArchRef,
+        name_ref: NameType,
         is_func: bool,
         is_async: bool,
         is_static: bool,
         is_abstract: bool,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
-        access: Optional[Token],
-        signature: Optional[FuncSignature | TypeSpec | EventSignature],
-        body: Optional[CodeBlock],
-        arch_attached: Optional["ArchBlock"] = None,
+        access: Optional[SubTag[Token]],
+        signature: Optional[FuncSignature | SubNodeList[TypeSpec] | EventSignature],
+        body: Optional[SubNodeList[CodeBlockStmt]],
+        arch_attached: Optional[Architype] = None,
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
         """
         ability_name = node.py_resolve_name()
         if node.arch_attached and ability_name == "__init__":
@@ -404,146 +463,49 @@ class BluePygenPass(Pass):
             self.emit_ln(node, "pass")
         self.indent_level -= 1
 
+        # if len(node.stmts) == 0:
+        #     self.emit_ln(node, "pass")
+        # for i in node.stmts:
+        #     self.emit(node, i.meta["py_code"])
+        #     if len(i.meta["py_code"]) and i.meta["py_code"][-1] != "\n":
+        #         self.emit_ln(node, "\n")
+
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
 
-        doc: Optional[Token],
-        mod: Optional["DottedNameList"],
-        ability: AbilityRef,
-        body: CodeBlock,
+        target: ArchRefChain,
+        signature: FuncSignature | EventSignature,
+        body: SubNodeList[CodeBlockStmt],
+        kid: list[AstNode],
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
         """
 
-    def exit_arch_block(self, node: ast.AstNode) -> None:
+    def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
 
-        members: list["ArchHas | Ability"],
+        params: Optional[SubNodeList[ParamVar]],
+        return_type: Optional[SubNodeList[TypeSpec]],
         """
-        init_func = None
-        for i in node.members:
-            if isinstance(i, ast.Ability) and i.py_resolve_name() == "__init__":
-                init_func = i
-                break
-        static_has_members = [
-            i for i in node.members if isinstance(i, ast.ArchHas) and i.is_static
-        ]
-        for i in static_has_members:
-            self.emit(node, i.meta["py_code"])
-            self.emit(node, "\n")
-
-        if init_func and init_func.decorators:
-            self.emit(node, init_func.decorators.meta["py_code"])
-        self.emit_ln(node, "def __init__(self,")
-        self.indent_level += 1
-        if has_members := [
-            i for i in node.members if isinstance(i, ast.ArchHas) and not i.is_static
-        ]:
-            for i in has_members:
-                for j in i.vars.vars:
-                    self.emit_ln(node, f"{j.name.value} = None,")
-        if init_func and init_func.signature:
-            if "->" in init_func.signature.meta["py_code"]:
-                init_func.signature.meta["py_code"] = init_func.signature.meta[
-                    "py_code"
-                ].split("->")[0]
-            if len(init_func.signature.meta["py_code"]):
-                self.emit_ln(node, f"{init_func.signature.meta['py_code']},")
-        self.emit_ln(node, " *args, **kwargs):")
-        if not init_func:
-            self.emit_ln(node, "super().__init__(*args, **kwargs)")
-        for i in has_members:
-            for j in i.vars.vars:
-                if j.value:
-                    self.emit_ln(
-                        node,
-                        f"self.{j.name.value} = {j.value.meta['py_code']} if {j.name.value} is "
-                        f"None else {j.name.value}",
-                    )
-                else:
-                    self.emit_ln(node, f"self.{j.name.value} = {j.name.value}")
-        if init_func and init_func.body:
-            self.emit(node, f"{init_func.body.meta['py_code']}")
-        self.indent_level -= 1
-        for i in node.members:
-            if i not in has_members + static_has_members:
-                self.emit(node, i.meta["py_code"])
-                self.emit(node, "\n")
-
-    def exit_arch_has(self, node: ast.ArchHas) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        is_static: bool,
-        access: Optional[Token],
-        vars: "HasVarList",
-        is_frozen: bool,
-        """
-        self.emit(node, node.vars.meta["py_code"])
-
-    def exit_has_var_list(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        vars: list[HasVar],
-        """
-        for i in node.vars:
-            self.emit_ln(node, i.meta["py_code"])
-
-    def exit_has_var(self, node: ast.HasVar) -> None:
-        """Sub objects.
-
-        name: Token,
-        type_tag: TypeSpec,
-        value: Optional["ExprType"],
-        """
-        if node.value:
-            self.emit(
-                node,
-                f"{node.name.value}: {node.type_tag.meta['py_code']} = {node.value.meta['py_code']}",
-            )
-        else:
-            self.emit(
-                node, f"{node.name.value}: {node.type_tag.meta['py_code']} = None"
-            )
-
-    def exit_type_spec_list(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        types: list[TypeSpec],
-        """
-        self.emit(node, "|".join([i.meta["py_code"] for i in node.types]))
-
-    def exit_type_spec(self, node: ast.TypeSpec) -> None:
-        """Sub objects.
-
-        typ: "Token | DottedNameList",
-        list_nest: TypeSpec,
-        dict_nest: TypeSpec,
-        """
-        if node.dict_nest:
-            self.emit(
-                node,
-                f"dict[{node.list_nest.meta['py_code']}, {node.dict_nest.meta['py_code']}]",
-            )
-        elif node.list_nest:
-            self.emit(node, f"list[{node.list_nest.meta['py_code']}]")
-        else:
-            self.emit(node, node.spec_type.meta["py_code"])
+        if node.params:
+            self.emit(node, node.params.meta["py_code"])
+        if node.return_type:
+            self.emit(node, f" -> {node.return_type.meta['py_code']}")
+        # first_out = False
+        # for i in node.params:
+        #     self.emit(node, ", ") if first_out else None
+        #     self.emit(node, i.meta["py_code"])
+        #     first_out = True
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
 
         event: Token,
-        arch_tag_info: Optional["TypeList | TypeSpec"],
-        return_type: Optional["TypeSpec"],
+        arch_tag_info: Optional[SubNodeList[TypeSpec]],
+        return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
         """
         self.error("Event style abilities not supported in bootstrap Jac")
-
-    def exit_dotted_name_list(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        names: list[all_refs],
-        """
-        self.emit(node, ".".join([i.meta["py_code"] for i in node.names]))
 
     def exit_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
@@ -552,36 +514,13 @@ class BluePygenPass(Pass):
         """
         self.emit(node, ".".join([i.meta["py_code"] for i in node.archs]))
 
-    def exit_func_signature(self, node: ast.FuncSignature) -> None:
-        """Sub objects.
-
-        params: Optional[FuncParams],
-        return_type: Optional[TypeSpec],
-        self.is_arch_attached = False
-        """
-        if node.params:
-            self.emit(node, node.params.meta["py_code"])
-        if node.return_type:
-            self.emit(node, f" -> {node.return_type.meta['py_code']}")
-
-    def exit_func_params(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        params: list["ParamVar"],
-        """
-        first_out = False
-        for i in node.params:
-            self.emit(node, ", ") if first_out else None
-            self.emit(node, i.meta["py_code"])
-            first_out = True
-
     def exit_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
 
-        name: Token,
+        name: Name,
         unpack: Optional[Token],
-        type_tag: "TypeSpec",
-        value: Optional["ExprType"],
+        type_tag: SubTag[SubNodeList[TypeSpec]],
+        value: Optional[ExprType],
         """
         if node.unpack:
             self.emit(node, f"{node.unpack.value}")
@@ -593,34 +532,69 @@ class BluePygenPass(Pass):
         else:
             self.emit(node, f"{node.name.value}: {node.type_tag.meta['py_code']}")
 
-    def exit_enum_block(self, node: ast.AstNode) -> None:
+    def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
 
-        stmts: list['Name|Assignment'],
+        is_static: bool,
+        access: Optional[SubTag[Token]],
+        vars: SubNodeList[HasVar],
+        is_frozen: bool,
+        kid: list[AstNode],
+        doc: Optional[Constant] = None,
         """
-        for i in node.stmts:
-            if isinstance(i, ast.Name):
-                self.emit_ln(node, i.meta["py_code"] + " = __jac_auto__()")
-            else:
-                self.emit_ln(node, i.meta["py_code"])
+        self.emit(node, node.vars.meta["py_code"])
+        # for i in node.vars: # For vars
+        #     self.emit_ln(node, i.meta["py_code"])
 
-    def exit_code_block(self, node: ast.AstNode) -> None:
+    def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
 
-        stmts: list["StmtType"],
+        name: Name,
+        type_tag: SubTag[SubNodeList[TypeSpec]],
+        value: Optional[ExprType],
         """
-        if len(node.stmts) == 0:
-            self.emit_ln(node, "pass")
-        for i in node.stmts:
-            self.emit(node, i.meta["py_code"])
-            if len(i.meta["py_code"]) and i.meta["py_code"][-1] != "\n":
-                self.emit_ln(node, "\n")
+        if node.value:
+            self.emit(
+                node,
+                f"{node.name.value}: {node.type_tag.meta['py_code']} = {node.value.meta['py_code']}",
+            )
+        else:
+            self.emit(
+                node, f"{node.name.value}: {node.type_tag.meta['py_code']} = None"
+            )
+        # self.emit(node, "|".join([i.meta["py_code"] for i in node.types])) #for type_tag
+
+    def exit_type_spec(self, node: ast.TypeSpec) -> None:
+        """Sub objects.
+
+        spec_type: Token | SubNodeList[NameType],
+        list_nest: Optional[TypeSpec],  # needed for lists
+        dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
+        null_ok: bool = False,
+        """
+        if node.dict_nest and node.list_nest:
+            self.emit(
+                node,
+                f"dict[{node.list_nest.meta['py_code']}, {node.dict_nest.meta['py_code']}]",
+            )
+        elif node.list_nest:
+            self.emit(node, f"list[{node.list_nest.meta['py_code']}]")
+        else:
+            self.emit(node, node.spec_type.meta["py_code"])
+
+    def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
+        """Sub objects.
+
+        type_ctx: TypeList,
+        body: CodeBlock,
+        """
+        self.ds_feature_warn()
 
     def exit_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
 
         condition: ExprType,
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
         elseifs: Optional[ElseIfs],
         else_body: Optional[ElseStmt],
         """
@@ -634,30 +608,24 @@ class BluePygenPass(Pass):
         if node.else_body:
             self.emit(node, node.else_body.meta["py_code"])
 
-    def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
-        """Sub objects.
-
-        type_ctx: TypeList,
-        body: CodeBlock,
-        """
-        self.ds_feature_warn()
-
     def exit_else_ifs(self, node: ast.ElseIfs) -> None:
         """Sub objects.
 
-        elseifs: list[IfStmt],
+        condition: ExprType,
+        body: SubNodeList[CodeBlockStmt],
+        elseifs: Optional[ElseIfs],
         """
-        for i in node.elseifs:
-            self.emit_ln(node, f"elif {i.condition.meta['py_code']}:")
-            self.indent_level += 1
-            self.emit(node, i.body.meta["py_code"])
-            self.indent_level -= 1
-            self.emit(node, "\n")
+        self.emit_ln(node, f"elif {node.condition.meta['py_code']}:")
+        self.indent_level += 1
+        self.emit(node, node.body.meta["py_code"])
+        self.indent_level -= 1
+        if node.elseifs:
+            self.emit(node, node.elseifs.meta["py_code"])
 
     def exit_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
 
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
         """
         self.emit_ln(node, "else:")
         self.indent_level += 1
@@ -668,8 +636,8 @@ class BluePygenPass(Pass):
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
 
-        body: CodeBlock,
-        excepts: Optional[ExceptList],
+        body: SubNodeList[CodeBlockStmt],
+        excepts: Optional[SubNodeList[Except]],
         finally_body: Optional[FinallyStmt],
         """
         self.emit_ln(node, "try:")
@@ -684,9 +652,9 @@ class BluePygenPass(Pass):
     def exit_except(self, node: ast.Except) -> None:
         """Sub objects.
 
-        typ: ExprType,
+        ex_type: ExprType,
         name: Optional[Token],
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
         """
         if node.name:
             self.emit_ln(
@@ -697,19 +665,13 @@ class BluePygenPass(Pass):
         self.indent_level += 1
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
-
-    def exit_except_list(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        excepts: list[Except],
-        """
-        for i in node.excepts:
-            self.emit_ln(node, i.meta["py_code"])
+        # for i in node.excepts:
+        #     self.emit_ln(node, i.meta["py_code"])
 
     def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
 
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
         """
         self.emit_ln(node, "finally:")
         self.indent_level += 1
@@ -722,7 +684,7 @@ class BluePygenPass(Pass):
         iter: Assignment,
         condition: ExprType,
         count_by: ExprType,
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
         """
         self.emit_ln(node, f"{node.iter.meta['py_code']}")
         self.emit_ln(node, f"while {node.condition.meta['py_code']}:")
@@ -734,28 +696,22 @@ class BluePygenPass(Pass):
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        name_list: Token,
+        name_list: SubNodeList[Name],
         collection: ExprType,
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
         """
         names = node.name_list.meta["py_code"]
         self.emit_ln(node, f"for {names} in {node.collection.meta['py_code']}:")
         self.indent_level += 1
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
-
-    def exit_name_list(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        names: list[Name],
-        """
-        self.emit(node, ",".join([i.meta["py_code"] for i in node.names]))
+        # self.emit(node, ",".join([i.meta["py_code"] for i in node.names]))
 
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
 
         condition: ExprType,
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
         """
         self.emit_ln(node, f"while {node.condition.meta['py_code']}:")
         self.indent_level += 1
@@ -765,26 +721,20 @@ class BluePygenPass(Pass):
     def exit_with_stmt(self, node: ast.WithStmt) -> None:
         """Sub objects.
 
-        exprs: "ExprAsItemList",
-        body: "CodeBlock",
+        exprs: SubNodeList[ExprAsItem],
+        body: SubNodeList[CodeBlockStmt],
         """
         self.emit_ln(node, f"with {node.exprs.meta['py_code']}:")
         self.indent_level += 1
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
-
-    def exit_expr_as_item_list(self, node: ast.AstNode) -> None:
-        """Sub objects.
-
-        items: list["ExprAsItem"],
-        """
-        self.emit(node, ", ".join([i.meta["py_code"] for i in node.items]))
+        # self.emit(node, ", ".join([i.meta["py_code"] for i in node.items]))
 
     def exit_expr_as_item(self, node: ast.ExprAsItem) -> None:
         """Sub objects.
 
-        expr: "ExprType",
-        alias: Optional[Token],
+        expr: ExprType,
+        alias: Optional[Name],
         """
         if node.alias:
             self.emit(node, node.expr.meta["py_code"] + " as " + node.alias.value)
