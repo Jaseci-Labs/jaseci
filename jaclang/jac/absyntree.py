@@ -38,20 +38,22 @@ class AstNode:
         """Get column position number."""
         return self.tok_range[1].c_end
 
-    def add_kids_left(self, nodes: list[AstNode]) -> AstNode:
+    def add_kids_left(self, nodes: list[AstNode], pos_update: bool = True) -> AstNode:
         """Add kid left."""
         self.kid = [*nodes, *self.kid]
-        for i in nodes:
-            i.parent = self
-        self.tok_range = self.resolve_tok_range()
+        if pos_update:
+            for i in nodes:
+                i.parent = self
+            self.tok_range = self.resolve_tok_range()
         return self
 
-    def add_kids_right(self, nodes: list[AstNode]) -> AstNode:
+    def add_kids_right(self, nodes: list[AstNode], pos_update: bool = True) -> AstNode:
         """Add kid right."""
         self.kid = [*self.kid, *nodes]
-        for i in nodes:
-            i.parent = self
-        self.tok_range = self.resolve_tok_range()
+        if pos_update:
+            for i in nodes:
+                i.parent = self
+            self.tok_range = self.resolve_tok_range()
         return self
 
     def set_kids(self, nodes: list[AstNode]) -> AstNode:
@@ -300,7 +302,7 @@ class Architype(AstNode):
         name: Name,
         arch_type: Token,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
+        base_classes: Optional[SubNodeList[SubTag[SubNodeList[NameType]]]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
@@ -343,7 +345,7 @@ class Enum(AstNode):
         self,
         name: Name,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
+        base_classes: Optional[SubNodeList[SubTag[SubNodeList[NameType]]]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         kid: list[AstNode],
         doc: Optional[Constant] = None,

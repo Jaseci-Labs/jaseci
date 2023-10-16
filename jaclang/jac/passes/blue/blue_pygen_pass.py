@@ -308,7 +308,7 @@ class BluePygenPass(Pass):
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
             for i in node.base_classes.items:
-                self.dot_sep_node_list(i)
+                self.dot_sep_node_list(i.tag)
             self.comma_sep_node_list(node.base_classes)
             self.emit_ln(
                 node,
@@ -405,7 +405,7 @@ class BluePygenPass(Pass):
         else:
             self.needs_enum()
             for i in node.base_classes.items:
-                self.dot_sep_node_list(i)
+                self.dot_sep_node_list(i.tag)
             self.comma_sep_node_list(node.base_classes)
             self.emit_ln(
                 node,
@@ -477,14 +477,15 @@ class BluePygenPass(Pass):
         self.indent_level += 1
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        if node.body and len(node.body.items):
+        body = node.body.body if isinstance(node.body, ast.AbilityDef) else node.body
+        if body and len(body.items):
             self.emit_ln(node, "try:")
             self.indent_level += 1
-            self.nl_sep_node_list(node.body)
-            self.emit(node, node.body.meta["py_code"])
+            self.nl_sep_node_list(body)
+            self.emit(node, body.meta["py_code"])
             self.indent_level -= 1
             self.emit_jac_error_handler(node)
-        elif node.is_abstract or (node.body and not len(node.body.items)):
+        elif node.is_abstract or (body and not len(body.items)):
             self.emit_ln(node, "pass")
         else:
             self.warning(f"No implementation for ability {ability_name}")
