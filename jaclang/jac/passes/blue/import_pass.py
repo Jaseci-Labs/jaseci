@@ -23,7 +23,7 @@ class ImportPass(Pass):
             for i in self.get_all_sub_nodes(node, ast.Import):
                 if i.lang.tag.value == "jac" and not i.sub_module:
                     self.run_again = True
-                    mod = self.import_module(i, node.mod_path)
+                    mod = self.import_module(node=i, mod_path=node.mod_path)
                     if not mod:
                         self.run_again = False
                         continue
@@ -56,6 +56,7 @@ class ImportPass(Pass):
         from jaclang.jac.transpiler import jac_file_to_pass
         from jaclang.jac.passes.blue import SubNodeTabPass
 
+        self.cur_node = node  # impacts error reporting
         base_dir = path.dirname(mod_path)
         target = path.normpath(
             path.join(base_dir, *(node.path.path_str.split("."))) + ".jac"
@@ -72,7 +73,8 @@ class ImportPass(Pass):
                 file_path=target, base_dir=base_dir, target=SubNodeTabPass
             )
             mod = mod_pass.ir
-        except Exception:
+        except Exception as e:
+            print(e)
             mod = None
         if isinstance(mod, ast.Module):
             self.import_table[target] = mod

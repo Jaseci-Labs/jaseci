@@ -193,7 +193,7 @@ class BluePygenPass(Pass):
         self.emit_ln(node, "check = __jac_check()")
         if len(node.body.items):
             self.nl_sep_node_list(node.body)
-            self.emit(node, node.body.meta["py_code"])
+            self.emit_ln(node, node.body.meta["py_code"])
         else:
             self.emit_ln(node, "pass")
         self.indent_level -= 1
@@ -320,7 +320,7 @@ class BluePygenPass(Pass):
         body = node.body.body if isinstance(node.body, ast.ArchDef) else node.body
         if body:
             self.nl_sep_node_list(body)
-            self.emit(node, body.meta["py_code"])
+            self.emit_ln(node, body.meta["py_code"])
         self.indent_level -= 1
 
         # """Sub objects.
@@ -482,7 +482,7 @@ class BluePygenPass(Pass):
             self.emit_ln(node, "try:")
             self.indent_level += 1
             self.nl_sep_node_list(body)
-            self.emit(node, body.meta["py_code"])
+            self.emit_ln(node, body.meta["py_code"])
             self.indent_level -= 1
             self.emit_jac_error_handler(node)
         elif node.is_abstract or (body and not len(body.items)):
@@ -636,7 +636,7 @@ class BluePygenPass(Pass):
         self.emit_ln(node, f"if {node.condition.meta['py_code']}:")
         self.indent_level += 1
         self.nl_sep_node_list(node.body)
-        self.emit(node, node.body.meta["py_code"])
+        self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
         self.emit(node, "\n")
         if node.elseifs:
@@ -654,7 +654,7 @@ class BluePygenPass(Pass):
         self.emit_ln(node, f"elif {node.condition.meta['py_code']}:")
         self.indent_level += 1
         self.nl_sep_node_list(node.body)
-        self.emit(node, node.body.meta["py_code"])
+        self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
         if node.elseifs:
             self.emit(node, node.elseifs.meta["py_code"])
@@ -667,7 +667,7 @@ class BluePygenPass(Pass):
         self.emit_ln(node, "else:")
         self.indent_level += 1
         self.nl_sep_node_list(node.body)
-        self.emit(node, node.body.meta["py_code"])
+        self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
         self.emit(node, "\n")
 

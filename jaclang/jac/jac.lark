@@ -513,8 +513,8 @@ ELVIS_OP: /\?:/
 NULL_OK: /\?/
 DECOR_OP: /@/
 
-KW_AND: /&&|and/
-KW_OR:  /\|\||or/
+KW_AND.1: /&&|and/
+KW_OR.1:  /\|\||or/
 ADD_EQ: /\+=/
 SUB_EQ: /-=/
 MUL_EQ: /\*=/
