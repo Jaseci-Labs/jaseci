@@ -2229,15 +2229,12 @@ class JacParser(Pass):
             expr_list = [first_expr, *expr_list]
             valid_type = Union[ast.ExprType, ast.Assignment]
             valid_kid = [i for i in expr_list if isinstance(i, valid_type)]
-            if len(valid_kid) == len(expr_list):
-                return self.nu(
-                    ast.SubNodeList[ast.ExprType | ast.Assignment](
-                        items=valid_kid,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.SubNodeList[ast.ExprType | ast.Assignment](
+                    items=valid_kid,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def dict_val(self, kid: list[ast.AstNode]) -> ast.DictVal:
             """Grammar rule.
@@ -2530,32 +2527,35 @@ class JacParser(Pass):
 
             index_slice: LSQUARE expression? (COLON expression?)? RSQUARE
             """
-            if len(kid) == 2:
-                return self.nu(
-                    ast.IndexSlice(
-                        start=None,
-                        stop=None,
-                        is_range=False,
-                        kid=kid,
-                    )
+            chomp = [*kid]
+            chomp = chomp[1:]
+            is_range = isinstance(chomp[0], ast.Token) or isinstance(
+                chomp[1], ast.Token
+            )
+            expr1 = chomp[0] if isinstance(chomp[0], ast.ExprType) else None
+            expr2 = (
+                chomp[1]
+                if isinstance(chomp[0], ast.Token)
+                and chomp[0].name == Tok.COLON
+                and isinstance(chomp[1], ast.ExprType)
+                else None
+            )
+            chomp = chomp[1:]
+            expr2 = (
+                chomp[1]
+                if isinstance(chomp[0], ast.Token)
+                and chomp[0].name == Tok.COLON
+                and isinstance(chomp[1], ast.ExprType)
+                else None
+            )
+            return self.nu(
+                ast.IndexSlice(
+                    start=expr1,
+                    stop=expr2,
+                    is_range=is_range,
+                    kid=kid,
                 )
-            expr1 = kid[1]
-            expr2 = None
-            if len(kid) > 3:
-                expr2 = kid[3]
-            if isinstance(expr1, ast.ExprType) and (
-                isinstance(expr2, ast.ExprType) or expr2 is None
-            ):
-                return self.nu(
-                    ast.IndexSlice(
-                        start=expr1,
-                        stop=expr2,
-                        is_range=True,
-                        kid=kid,
-                    )
-                )
-            else:
-                raise self.ice()
+            )
 
         def arch_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
