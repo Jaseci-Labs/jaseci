@@ -409,14 +409,14 @@ class BluePygenPass(Pass):
         self.indent_level += 1
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        if node.body:
-            self.emit(node, node.body.meta["py_code"])
+        body = node.body.body if isinstance(node.body, ast.EnumDef) else node.body
+        if body:
+            for i in body.items:
+                if isinstance(i, ast.Name):
+                    self.emit_ln(node, i.meta["py_code"] + " = __jac_auto__()")
+                else:
+                    self.emit_ln(node, i.meta["py_code"])
         self.indent_level -= 1
-        # for i in node.stmts:
-        #     if isinstance(i, ast.Name):
-        #         self.emit_ln(node, i.meta["py_code"] + " = __jac_auto__()")
-        #     else:
-        #         self.emit_ln(node, i.meta["py_code"])
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -472,14 +472,17 @@ class BluePygenPass(Pass):
         self.indent_level += 1
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        if node.body:
+        if node.body and len(node.body.items):
             self.emit_ln(node, "try:")
             self.indent_level += 1
+            self.nl_sep_node_list(node.body)
             self.emit(node, node.body.meta["py_code"])
             self.indent_level -= 1
             self.emit_jac_error_handler(node)
-        elif node.is_abstract:
+        elif node.is_abstract or (node.body and not len(node.body.items)):
             self.emit_ln(node, "pass")
+        else:
+            self.warning(f"No implementation for ability {ability_name}")
         self.indent_level -= 1
 
         # if len(node.stmts) == 0:
