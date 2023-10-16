@@ -23,7 +23,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         self.ir: Generator = self.ir
 
     tokens = {
-        "COMMENT",
+        "SL_COMMENT",
         "FLOAT",
         "STRING",
         "DOC_STRING",
@@ -186,7 +186,7 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     # Ignored patterns
     ignore_ws = r"[ \t]+"
     ignore_newline = r"[\r\n]+"  # type: ignore
-    # ignore_comment = r"#\*(.|\n|\r)*?\*#"  # type: ignore
+    ignore_comment = r"#\*(.|\n|\r)*?\*#"  # type: ignore
     # ignore_py_comment = r"#.*"
 
     # Regular expression rules for tokens
@@ -365,11 +365,11 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         self.lineno += len(t.value)
         return t
 
-    # def ignore_comment(self, t: Token) -> Token:  # noqa
-    #     """Add docstring to lexer."""
-    #     self.lineno += t.value.count("\n")
-    #     self.lineno += t.value.count("\r")
-    #     return t
+    def ignore_comment(self, t: Token) -> Token:  # noqa
+        """Add docstring to lexer."""
+        self.lineno += t.value.count("\n")
+        self.lineno += t.value.count("\r")
+        return t
 
     def DOC_STRING(self, t: Token) -> Token:  # noqa
         """Add docstring to lexer."""
