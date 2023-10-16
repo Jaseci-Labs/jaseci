@@ -1,5 +1,7 @@
 """JacFormatPass for Jaseci Ast."""
 
+from typing import Any, List, Tuple
+
 import jaclang.jac.absyntree as ast
 from jaclang.jac import constant
 from jaclang.jac.constant import Constants as Con
@@ -10,6 +12,13 @@ from jaclang.jac.passes import Pass
 class JacFormatPass(Pass):
     """JacFormat Pass format Jac code."""
 
+    def __init__(
+        self, comments: list = None, *args: Any, **kwargs: Any  # noqa
+    ) -> None:  # noqa
+        """Initialize Formatter."""
+        self.comments = comments
+        super().__init__(*args, **kwargs)
+
     def before_pass(self) -> None:
         """Initialize pass."""
         self.indent_size = 4
@@ -17,6 +26,27 @@ class JacFormatPass(Pass):
         self.debuginfo = {"jac_mods": []}
         self.preamble = ast.AstNode(parent=None, mod_link=None, kid=[], line=0)
         self.preamble.meta["jac_code"] = ""
+
+    def emit_comments_for_line(self, line: int) -> Tuple[List[str], List[str]]:
+        """Stitch comments associated with the given line."""
+        if not line:
+            return [], []
+
+        inline_comments = []
+        standalone_comments = []
+
+        for comment in self.comments:
+            if comment.lineno == line:
+                if abs(comment.index - comment.lineidx) < 10:
+                    standalone_comments.append(comment.value)
+                else:
+                    inline_comments.append(comment.value)
+            elif (comment.lineno == line - 1 or comment.lineno == line + 1) and abs(
+                comment.index - comment.lineidx
+            ) < 10:
+                standalone_comments.append(comment.value)
+
+        return standalone_comments, inline_comments
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Enter node."""
@@ -97,10 +127,16 @@ class JacFormatPass(Pass):
         body: CodeBlock,
 
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         if node.doc:
             self.emit_ln(node, node.doc.value)
         if isinstance(node.parent, ast.Elements):
-            self.emit_ln(node, "with entry {")
+            self.emit_ln(node, f"with entry {{ {comment_str}")
         if node.body:
             self.indent_level += 1
             self.emit_ln(node, node.body.meta["jac_code"])
@@ -129,23 +165,40 @@ class JacFormatPass(Pass):
 
         stmts: list["StmtType"],
         """
-        for stmt in node.stmts:
-            unary_expr_found = any(isinstance(kid, ast.UnaryExpr) for kid in stmt.kid)
-            if isinstance(
-                stmt,
-                (
-                    ast.IfStmt,
-                    ast.WhileStmt,
-                    ast.TryStmt,
-                    ast.IterForStmt,
-                    ast.InForStmt,
-                ),
-            ):
-                self.emit(node, f"{stmt.meta['jac_code']}")
-            elif unary_expr_found:
-                self.emit(node, f"{stmt.meta['jac_code']};")
-            else:
-                self.emit_ln(node, f"{stmt.meta['jac_code']};")
+        comment_str = ""
+        if node.stmts:
+            for stmt in node.stmts:
+                standalone_comments, inline_comments = self.emit_comments_for_line(
+                    stmt.line
+                )
+                for comment in standalone_comments:
+                    self.emit_ln(node, f"{comment}")
+                if inline_comments:
+                    comment_str = " ; ".join(inline_comments)
+                unary_expr_found = any(
+                    isinstance(kid, ast.UnaryExpr) for kid in stmt.kid
+                )
+                if isinstance(
+                    stmt,
+                    (
+                        ast.IfStmt,
+                        ast.WhileStmt,
+                        ast.TryStmt,
+                        ast.IterForStmt,
+                        ast.InForStmt,
+                    ),
+                ):
+                    self.emit(node, f"{stmt.meta['jac_code']}")
+                elif unary_expr_found:
+                    self.emit(node, f"{stmt.meta['jac_code']}; {comment_str}")
+                else:
+                    self.emit_ln(node, f"{stmt.meta['jac_code']}; {comment_str}")
+        else:
+            standalone_comments, inline_comments = self.emit_comments_for_line(
+                node.line
+            )
+            for comment in standalone_comments:
+                self.emit_ln(node, f"{comment}")
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -238,7 +291,13 @@ class JacFormatPass(Pass):
         ability: AbilityRef,
         body: CodeBlock,
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
         self.emit_ln(node, "")
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         if node.doc:
             self.emit_ln(node, node.doc.meta["jac_code"])
         if isinstance(node.signature, ast.EventSignature):
@@ -250,9 +309,11 @@ class JacFormatPass(Pass):
             for arch in node.target.archs:
                 fun_def += arch.meta["jac_code"]
             if node.signature.meta:
-                self.emit_ln(node, f"{fun_def} {node.signature.meta['jac_code']}{{")
+                self.emit_ln(
+                    node, f"{fun_def} {node.signature.meta['jac_code']}{{ {comment_str}"
+                )
             else:
-                self.emit_ln(node, f"{fun_def} {{")
+                self.emit_ln(node, f"{fun_def} {{ {comment_str}")
         self.indent_level += 1
         if node.body:
             self.emit_ln(node, node.body.meta["jac_code"])
@@ -283,19 +344,27 @@ class JacFormatPass(Pass):
         is_absorb: bool,  # For includes
         self.sub_module = None
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         if node.items:
-            self.emit_ln(
+            self.emit(
                 node,
-                f"import:{node.lang.value} from {node.path.meta['jac_code']}, {node.items.meta['jac_code']};",  # noqa
+                f"import:{node.lang.value} from {node.path.meta['jac_code']}, {node.items.meta['jac_code']}; {comment_str}",  # noqa
             )
         else:
             if node.is_absorb:
-                self.emit_ln(
-                    node, f"include:{node.lang.value} {node.path.meta['jac_code']};"
+                self.emit(
+                    node,
+                    f"include:{node.lang.value} {node.path.meta['jac_code']}; {comment_str}",  # noqa
                 )
             else:
-                self.emit_ln(
-                    node, f"import:{node.lang.value} {node.path.meta['jac_code']};"
+                self.emit(
+                    node,
+                    f"import:{node.lang.value} {node.path.meta['jac_code']}; {comment_str}",  # noqa
                 )
         self.emit_ln(node, "")
 
@@ -306,9 +375,15 @@ class JacFormatPass(Pass):
         target: ArchRefChain,
         body: ArchBlock,
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         doc = node.doc.value if node.doc else ""
         target = f"{node.target.meta['jac_code']} "
-        self.emit_ln(node, f"{doc}\n{target} {{")
+        self.emit_ln(node, f"{doc}\n{target} {{ {comment_str}")
         self.indent_level += 1
         self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
@@ -338,6 +413,12 @@ class JacFormatPass(Pass):
         body: Optional[CodeBlock],
         arch_attached: Optional["ArchBlock"] = None,
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         access_modifier = None
         if node.doc:
             self.emit_ln(node, node.doc.meta["jac_code"])
@@ -355,7 +436,7 @@ class JacFormatPass(Pass):
                 if node.body:
                     self.emit_ln(
                         node,
-                        f"can {can_name} with {node.signature.meta['jac_code']} {{",
+                        f"can {can_name} with {node.signature.meta['jac_code']} {{ {comment_str}",  # noqa
                     )
                     self.indent_level += 1
                     self.emit(node, node.body.meta["jac_code"])
@@ -364,7 +445,7 @@ class JacFormatPass(Pass):
                 else:
                     self.emit_ln(
                         node,
-                        f"can {can_name} with {node.signature.meta['jac_code']};",
+                        f"can {can_name} with {node.signature.meta['jac_code']}; {comment_str}",  # noqa
                     )
             elif isinstance(node.signature, ast.FuncSignature):
                 if isinstance(node.name_ref, ast.SpecialVarRef):
@@ -378,16 +459,16 @@ class JacFormatPass(Pass):
                     else:
                         fun_signature = f"can {node.name_ref.value}{node.signature.meta['jac_code']}"  # noqa
                 if node.body:
-                    self.emit_ln(node, f"{fun_signature} {{")
+                    self.emit_ln(node, f"{fun_signature} {{ {comment_str}")
                     self.indent_level += 1
                     self.emit_ln(node, node.body.meta["jac_code"])
                     self.indent_level -= 1
                     self.emit_ln(node, "}")
                 else:
                     if node.is_abstract:
-                        self.emit_ln(node, f"{fun_signature} abstract;")
+                        self.emit_ln(node, f"{fun_signature} abstract; {comment_str}")
                     else:
-                        self.emit_ln(node, f"{fun_signature};")
+                        self.emit_ln(node, f"{fun_signature}; {comment_str}")
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
@@ -416,15 +497,21 @@ class JacFormatPass(Pass):
         vars: "HasVarList",
         is_frozen: bool,
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         if node.access:
             self.emit_ln(
                 node,
-                f"has:{node.access.meta['jac_code']} {node.vars.meta['jac_code']};",
+                f"has:{node.access.meta['jac_code']} {node.vars.meta['jac_code']}; {comment_str}",  # noqa
             )
         else:
             self.emit_ln(
                 node,
-                f"has {node.vars.meta['jac_code']};",
+                f"has {node.vars.meta['jac_code']}; {comment_str}",
             )
         self.emit_ln(node, "")
 
@@ -477,17 +564,23 @@ class JacFormatPass(Pass):
         base_classes: BaseClasses,
         body: Optional[EnumBlock],
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         if node.decorators:
             self.emit_ln(node, node.decorators.meta["jac_code"])
 
         if len(node.base_classes.base_classes):
             self.emit_ln(
                 node,
-                f"class {node.name.meta['jac_code']}({node.base_classes.meta['jac_code']}):",  # noqa
+                f"enum {node.name.meta['jac_code']}({node.base_classes.meta['jac_code']}) {{ {comment_str}",  # noqa
             )
         else:
             if node.body:
-                self.emit_ln(node, f"enum {node.name.value} {{")
+                self.emit_ln(node, f"enum {node.name.value} {{ {comment_str}")
                 self.indent_level += 1
                 if node.doc:
                     self.emit_ln(node, node.doc.value)
@@ -498,7 +591,7 @@ class JacFormatPass(Pass):
                 self.indent_level -= 1
                 self.emit_ln(node, "}")
             else:
-                self.emit_ln(node, f"enum {node.name.value};")
+                self.emit_ln(node, f"enum {node.name.value}; {comment_str}")
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -712,11 +805,17 @@ class JacFormatPass(Pass):
         elseifs: Optional[ElseIfs],
         else_body: Optional[ElseStmt],
         """
-        self.emit_ln(node, f"if {node.condition.meta['jac_code']} {{")
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
+        self.emit_ln(node, f"if {node.condition.meta['jac_code']} {{ {comment_str}")
         self.indent_level += 1
         self.emit(node, node.body.meta["jac_code"])
         self.indent_level -= 1
-        self.emit(node, "} ")
+        self.emit(node, "}")
         if node.elseifs:
             self.emit(node, node.elseifs.meta["jac_code"])
         if node.else_body:
@@ -728,12 +827,18 @@ class JacFormatPass(Pass):
 
         elseifs: list[IfStmt],
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         for i in node.elseifs:
-            self.emit(node, f" elif {i.condition.meta['jac_code']} {{\n")
+            self.emit(node, f" elif {i.condition.meta['jac_code']} {{ {comment_str}\n")
             self.indent_level += 1
             self.emit(node, i.body.meta["jac_code"])
             self.indent_level -= 1
-            self.emit(node, "} ")
+            self.emit(node, "}")
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
@@ -758,10 +863,16 @@ class JacFormatPass(Pass):
         count_by: ExprType,
         body: CodeBlock,
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         self.emit_ln(node, "")
         self.emit_ln(
             node,
-            f"for {node.iter.meta['jac_code']} to {node.condition.meta['jac_code']} by {node.count_by.meta['jac_code']} {{",  # noqa
+            f"for {node.iter.meta['jac_code']} to {node.condition.meta['jac_code']} by {node.count_by.meta['jac_code']} {{ {comment_str}",  # noqa
         )
         self.indent_level += 1
         self.emit(node, node.body.meta["jac_code"])
@@ -792,12 +903,21 @@ class JacFormatPass(Pass):
         name: Optional[Token],
         body: CodeBlock,
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         if node.name:
             self.emit_ln(
-                node, f"except {node.ex_type.meta['jac_code']} as {node.name.value}:"
+                node,
+                f"except {node.ex_type.meta['jac_code']} as {node.name.value}{{ {comment_str}",  # noqa
             )
         else:
-            self.emit_ln(node, f"except {node.ex_type.meta['jac_code']} {{")
+            self.emit_ln(
+                node, f"except {node.ex_type.meta['jac_code']} {{ {comment_str}"
+            )
         self.indent_level += 1
         self.emit_ln(node, node.body.meta["jac_code"])
         self.indent_level -= 1
@@ -840,7 +960,13 @@ class JacFormatPass(Pass):
         exprs: "ExprAsItemList",
         body: "CodeBlock",
         """
-        self.emit(node, f"with {node.exprs.meta['jac_code']}{{")
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
+        self.emit(node, f"with {node.exprs.meta['jac_code']}{{ {comment_str}")
         if node.body.meta["jac_code"]:
             self.emit_ln(node, "")
             self.indent_level += 1
@@ -871,9 +997,15 @@ class JacFormatPass(Pass):
         assignments: "AssignmentList",
         is_frozen: bool,
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        self.emit_ln(node, f"global {node.assignments.meta['jac_code']};")
+        self.emit_ln(node, f"global {node.assignments.meta['jac_code']}; {comment_str}")
         self.emit_ln(node, "")
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
@@ -918,6 +1050,12 @@ class JacFormatPass(Pass):
         base_classes: "BaseClasses",
         body: Optional["ArchBlock"],
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         self.emit_ln(node, "")
         if node.doc:
             self.emit_ln(node, node.doc.value)
@@ -925,12 +1063,13 @@ class JacFormatPass(Pass):
             self.emit_ln(node, node.decorators.meta["jac_code"])
         if not len(node.base_classes.base_classes):
             self.emit_ln(
-                node, f"{node.arch_type.value} {node.name.meta['jac_code']} {{"
+                node,
+                f"{node.arch_type.value} {node.name.meta['jac_code']} {{ {comment_str}",
             )
         else:
             self.emit_ln(
                 node,
-                f"{node.arch_type.value} {node.name.meta['jac_code']}:{node.base_classes.meta['jac_code']} {{",  # noqa
+                f"{node.arch_type.value} {node.name.meta['jac_code']}:{node.base_classes.meta['jac_code']} {{ {comment_str}",  # noqa
             )
         if node.body:
             self.indent_level += 1
@@ -1282,8 +1421,16 @@ class JacFormatPass(Pass):
         collection: ExprType,
         body: CodeBlock,
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         names = node.name_list.meta["jac_code"]
-        self.emit_ln(node, f"for {names} in {node.collection.meta['jac_code']} {{")
+        self.emit_ln(
+            node, f"for {names} in {node.collection.meta['jac_code']} {{ {comment_str}"
+        )
         if node.body:
             self.indent_level += 1
             self.emit(node, node.body.meta["jac_code"])
@@ -1297,11 +1444,17 @@ class JacFormatPass(Pass):
         doc: Optional[Token],
         body: CodeBlock,
         """
+        comment_str = ""
+        standalone_comments, inline_comments = self.emit_comments_for_line(node.line)
+        for comment in standalone_comments:
+            self.emit_ln(node, f"{comment}")
+        if inline_comments:
+            comment_str = " ; ".join(inline_comments)
         test_name = node.name.value
         if node.doc:
             self.emit_ln(node, node.doc.meta["jac_code"])
         if test_name:
-            self.emit_ln(node, f"test {test_name} {{")
+            self.emit_ln(node, f"test {test_name} {{ {comment_str}")
             self.indent_level += 1
         self.emit(node, f"{node.body.meta['jac_code']}")
         if self.indent_level > 0:

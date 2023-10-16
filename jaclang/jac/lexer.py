@@ -18,10 +18,12 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     ) -> None:
         """Initialize lexer."""
         self.fstr_override = fstr_override
+        self.comments = []
         Transform.__init__(self, mod_path, input_ir, base_path, prior)  # type: ignore
         self.ir: Generator = self.ir
 
     tokens = {
+        "SL_COMMENT",
         "FLOAT",
         "STRING",
         "DOC_STRING",
@@ -185,11 +187,12 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
     ignore_ws = r"[ \t]+"
     ignore_newline = r"[\r\n]+"  # type: ignore
     ignore_comment = r"#\*(.|\n|\r)*?\*#"  # type: ignore
-    ignore_py_comment = r"#.*"
+    # ignore_py_comment = r"#.*"
 
     # Regular expression rules for tokens
     FLOAT = r"(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
     DOC_STRING = r'"""(.|\n|\r)*?"""|\'\'\'(.|\n|\r)*?\'\'\''  # type: ignore
+    SL_COMMENT = r"#.*"
     PYNLINE = r"::py::(.|\n|\r)*?::py::"  # type: ignore
     FSTRING = r'f"[^"\r\n]*"|f\'[^\'\r\n]*\''
     STRING = r'"[^"\r\n]*"|\'[^\'\r\n]*\''
@@ -374,6 +377,12 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         self.lineno += t.value.count("\r")
         return t
 
+    def SL_COMMENT(self, t: Token) -> Token:  # noqa
+        """Handle single-line comments."""
+        self.lineno += t.value.count("\n")
+        self.lineno += t.value.count("\r")
+        return t
+
     def PYNLINE(self, t: Token) -> Token:  # noqa
         """Add docstring to lexer."""
         self.lineno += t.value.count("\n")
@@ -390,6 +399,9 @@ class JacLexer(Lexer, Transform, metaclass=ABCLexerMeta):
         """Tokenize override for no module level docstring."""
         has_doc_string_start = False
         for tok in super().tokenize(text):
+            if tok.type == "SL_COMMENT":
+                self.comments.append(tok)
+                continue
             if (
                 tok.type != "DOC_STRING"
                 and not has_doc_string_start
