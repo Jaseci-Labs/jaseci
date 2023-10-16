@@ -72,6 +72,11 @@ class BluePygenPass(Pass):
         node.meta["py_code"] = "\n".join([i.meta["py_code"] for i in node.items])
         return node.meta["py_code"]
 
+    def sep_node_list(self, node: ast.SubNodeList, delim: str = " ") -> str:
+        """Render newline separated node list."""
+        node.meta["py_code"] = f"{delim}".join([i.meta["py_code"] for i in node.items])
+        return node.meta["py_code"]
+
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
         self.emit_ln_unique(
@@ -510,8 +515,10 @@ class BluePygenPass(Pass):
         return_type: Optional[SubNodeList[TypeSpec]],
         """
         if node.params:
+            self.comma_sep_node_list(node.params)
             self.emit(node, node.params.meta["py_code"])
         if node.return_type:
+            self.sep_node_list(node.return_type, delim="|")
             self.emit(node, f" -> {node.return_type.meta['py_code']}")
         # first_out = False
         # for i in node.params:
@@ -544,6 +551,7 @@ class BluePygenPass(Pass):
         type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         """
+        self.sep_node_list(node.type_tag.tag, delim="|")
         if node.unpack:
             self.emit(node, f"{node.unpack.value}")
         if node.value:
@@ -564,6 +572,7 @@ class BluePygenPass(Pass):
         kid: list[AstNode],
         doc: Optional[Constant] = None,
         """
+        self.nl_sep_node_list(node.vars)
         self.emit(node, node.vars.meta["py_code"])
         # for i in node.vars: # For vars
         #     self.emit_ln(node, i.meta["py_code"])
@@ -575,6 +584,7 @@ class BluePygenPass(Pass):
         type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         """
+        self.sep_node_list(node.type_tag.tag, delim="|")
         if node.value:
             self.emit(
                 node,
@@ -594,6 +604,8 @@ class BluePygenPass(Pass):
         dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
         null_ok: bool = False,
         """
+        if isinstance(node.spec_type, ast.SubNodeList):
+            self.dot_sep_node_list(node.spec_type)
         if node.dict_nest and node.list_nest:
             self.emit(
                 node,
@@ -622,6 +634,7 @@ class BluePygenPass(Pass):
         """
         self.emit_ln(node, f"if {node.condition.meta['py_code']}:")
         self.indent_level += 1
+        self.nl_sep_node_list(node.body)
         self.emit(node, node.body.meta["py_code"])
         self.indent_level -= 1
         self.emit(node, "\n")
@@ -639,6 +652,7 @@ class BluePygenPass(Pass):
         """
         self.emit_ln(node, f"elif {node.condition.meta['py_code']}:")
         self.indent_level += 1
+        self.nl_sep_node_list(node.body)
         self.emit(node, node.body.meta["py_code"])
         self.indent_level -= 1
         if node.elseifs:
@@ -651,6 +665,7 @@ class BluePygenPass(Pass):
         """
         self.emit_ln(node, "else:")
         self.indent_level += 1
+        self.nl_sep_node_list(node.body)
         self.emit(node, node.body.meta["py_code"])
         self.indent_level -= 1
         self.emit(node, "\n")
@@ -664,6 +679,7 @@ class BluePygenPass(Pass):
         """
         self.emit_ln(node, "try:")
         self.indent_level += 1
+        self.nl_sep_node_list(node.body)
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
         if node.excepts:
@@ -685,6 +701,7 @@ class BluePygenPass(Pass):
         else:
             self.emit_ln(node, f"except {node.ex_type.meta['py_code']}:")
         self.indent_level += 1
+        self.nl_sep_node_list(node.body)
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
         # for i in node.excepts:
@@ -697,6 +714,7 @@ class BluePygenPass(Pass):
         """
         self.emit_ln(node, "finally:")
         self.indent_level += 1
+        self.nl_sep_node_list(node.body)
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
 
@@ -711,6 +729,7 @@ class BluePygenPass(Pass):
         self.emit_ln(node, f"{node.iter.meta['py_code']}")
         self.emit_ln(node, f"while {node.condition.meta['py_code']}:")
         self.indent_level += 1
+        self.nl_sep_node_list(node.body)
         self.emit_ln(node, node.body.meta["py_code"])
         self.emit_ln(node, f"{node.count_by.meta['py_code']}")
         self.indent_level -= 1
@@ -722,9 +741,11 @@ class BluePygenPass(Pass):
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
         """
+        self.comma_sep_node_list(node.name_list)
         names = node.name_list.meta["py_code"]
         self.emit_ln(node, f"for {names} in {node.collection.meta['py_code']}:")
         self.indent_level += 1
+        self.nl_sep_node_list(node.body)
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
         # self.emit(node, ",".join([i.meta["py_code"] for i in node.names]))
@@ -737,6 +758,7 @@ class BluePygenPass(Pass):
         """
         self.emit_ln(node, f"while {node.condition.meta['py_code']}:")
         self.indent_level += 1
+        self.nl_sep_node_list(node.body)
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
 
@@ -750,7 +772,7 @@ class BluePygenPass(Pass):
         self.emit_ln(node, f"with {node.exprs.meta['py_code']}:")
         self.indent_level += 1
 
-        print(self.nl_sep_node_list(node.body))
+        self.nl_sep_node_list(node.body)
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
         # self.emit(node, ", ".join([i.meta["py_code"] for i in node.items]))
@@ -1049,9 +1071,10 @@ class BluePygenPass(Pass):
         values: Optional[SubNodeList[ExprType]],
         """
         if node.values:
+            self.comma_sep_node_list(node.values)
             self.emit(
                 node,
-                f"{', '.join([value.meta['py_code'] for value in node.values.items])}",
+                f"{node.values.meta['py_code']}",
             )
 
     def exit_list_val(self, node: ast.ListVal) -> None:
@@ -1060,9 +1083,10 @@ class BluePygenPass(Pass):
         values: Optional[SubNodeList[ExprType]],
         """
         if node.values:
+            self.comma_sep_node_list(node.values)
             self.emit(
                 node,
-                f"[{', '.join([value.meta['py_code'] for value in node.values.items])}]",
+                f"[{node.values.meta['py_code']}]",
             )
 
     def exit_set_val(self, node: ast.ListVal) -> None:
@@ -1071,9 +1095,10 @@ class BluePygenPass(Pass):
         values: Optional[SubNodeList[ExprType]],
         """
         if node.values:
+            self.comma_sep_node_list(node.values)
             self.emit(
                 node,
-                f"{{{', '.join([value.meta['py_code'] for value in node.values.items])}}}",
+                f"{{{node.values.meta['py_code']}}}",
             )
 
     def exit_tuple_val(self, node: ast.TupleVal) -> None:
@@ -1082,9 +1107,10 @@ class BluePygenPass(Pass):
         values: Optional[SubNodeList[ExprType | Assignment]],
         """
         if node.values:
+            self.comma_sep_node_list(node.values)
             self.emit(
                 node,
-                f"({', '.join([value.meta['py_code'] for value in node.values.items])})",
+                f"({node.values.meta['py_code']})",
             )
 
     def exit_dict_val(self, node: ast.DictVal) -> None:
@@ -1113,6 +1139,7 @@ class BluePygenPass(Pass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
+        self.comma_sep_node_list(node.names)
         names = node.names.meta["py_code"]
         partial = (
             f"{node.out_expr.meta['py_code']} for {names} "
@@ -1198,6 +1225,7 @@ class BluePygenPass(Pass):
         params: Optional[SubNodeList[ExprType | Assignment]],
         """
         if node.params:
+            self.comma_sep_node_list(node.params)
             self.emit(
                 node,
                 f"{node.target.meta['py_code']}({node.params.meta['py_code']})",
