@@ -2,7 +2,7 @@
 from typing import Type, TypeVar
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.parser import JacLexer
+from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.blue import BluePygenPass, PyOutPass, pass_schedule
