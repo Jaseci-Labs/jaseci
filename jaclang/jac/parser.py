@@ -504,7 +504,7 @@ class JacParser(Pass):
                 name = kid[2]
             else:
                 name = kid[0]
-            new_kid = [name, dot, *consume.kid] if consume else [name]
+            new_kid = [*consume.kid, dot, dot, name] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.NameType)]
             return self.nu(
                 ast.SubNodeList[ast.NameType](
@@ -930,7 +930,7 @@ class JacParser(Pass):
                 assign = kid[2]
             else:
                 assign = kid[0]
-            new_kid = [assign, comma, *consume.kid] if consume else [assign]
+            new_kid = [*consume.kid, comma, assign] if consume else [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
             return self.nu(
                 ast.SubNodeList[ast.HasVar](
@@ -1361,7 +1361,7 @@ class JacParser(Pass):
                 name = kid[2]
             else:
                 name = kid[0]
-            new_kid = [name, comma, *consume.kid] if consume else [name]
+            new_kid = [*consume.kid, comma, name] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.Name)]
             return self.nu(
                 ast.SubNodeList[ast.Name](
@@ -2196,7 +2196,7 @@ class JacParser(Pass):
                 expr = kid[2]
             else:
                 expr = kid[0]
-            new_kid = [expr, comma, *consume.kid] if consume else [expr]
+            new_kid = [*consume.kid, comma, expr] if consume else [expr]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ExprType)]
             return self.nu(
                 ast.SubNodeList[ast.ExprType](
@@ -2515,7 +2515,7 @@ class JacParser(Pass):
                 assign = kid[2]
             else:
                 assign = kid[0]
-            new_kid = [assign, comma, *consume.kid] if consume else [assign]
+            new_kid = [*consume.kid, comma, assign] if consume else [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.Assignment)]
             return self.nu(
                 ast.SubNodeList[ast.Assignment](
@@ -2696,7 +2696,7 @@ class JacParser(Pass):
                 name = kid[1]
             else:
                 name = kid[0]
-            new_kid = [name, *consume.kid] if consume else [name]
+            new_kid = [*consume.kid, name] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ArchRef)]
             if len(valid_kid) == len(new_kid):
                 return self.nu(
@@ -2968,7 +2968,7 @@ class JacParser(Pass):
                 expr = kid[2]
             else:
                 expr = kid[0]
-            new_kid = [expr, comma, *consume.kid] if consume else [expr]
+            new_kid = [*consume.kid, comma, expr] if consume else [expr]
             valid_kid = [i for i in new_kid if isinstance(i, ast.BinaryExpr)]
             return self.nu(
                 ast.SubNodeList[ast.BinaryExpr](

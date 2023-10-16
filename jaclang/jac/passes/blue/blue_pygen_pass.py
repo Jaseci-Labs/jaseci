@@ -320,7 +320,7 @@ class BluePygenPass(Pass):
         body = node.body.body if isinstance(node.body, ast.ArchDef) else node.body
         if body:
             self.nl_sep_node_list(body)
-            self.emit_ln(node, body.meta["py_code"])
+            self.emit_ln(node, body.meta["py_code"] if len(body.items) else "pass")
         self.indent_level -= 1
 
         # """Sub objects.
@@ -575,8 +575,6 @@ class BluePygenPass(Pass):
         """
         self.nl_sep_node_list(node.vars)
         self.emit(node, node.vars.meta["py_code"])
-        # for i in node.vars: # For vars
-        #     self.emit_ln(node, i.meta["py_code"])
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
@@ -1067,7 +1065,7 @@ class BluePygenPass(Pass):
 
         values: Optional[SubNodeList[ExprType]],
         """
-        if node.values:
+        if node.values is not None:
             self.comma_sep_node_list(node.values)
             self.emit(
                 node,
@@ -1079,19 +1077,21 @@ class BluePygenPass(Pass):
 
         values: Optional[SubNodeList[ExprType]],
         """
-        if node.values:
+        if node.values is not None:
             self.comma_sep_node_list(node.values)
             self.emit(
                 node,
                 f"[{node.values.meta['py_code']}]",
             )
+        else:
+            self.emit(node, "[]")
 
-    def exit_set_val(self, node: ast.ListVal) -> None:
+    def exit_set_val(self, node: ast.SetVal) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType]],
         """
-        if node.values:
+        if node.values is not None:
             self.comma_sep_node_list(node.values)
             self.emit(
                 node,
@@ -1103,7 +1103,7 @@ class BluePygenPass(Pass):
 
         values: Optional[SubNodeList[ExprType | Assignment]],
         """
-        if node.values:
+        if node.values is not None:
             self.comma_sep_node_list(node.values)
             self.emit(
                 node,
