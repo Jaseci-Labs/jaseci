@@ -57,6 +57,21 @@ class BluePygenPass(Pass):
         if "\n" in node.meta["py_code"]:
             node.meta["py_code"] = node.meta["py_code"].rstrip(" ")
 
+    def comma_sep_node_list(self, node: ast.SubNodeList) -> str:
+        """Render comma separated node list."""
+        node.meta["py_code"] = ", ".join([i.meta["py_code"] for i in node.items])
+        return node.meta["py_code"]
+
+    def dot_sep_node_list(self, node: ast.SubNodeList) -> str:
+        """Render dot separated node list."""
+        node.meta["py_code"] = ".".join([i.meta["py_code"] for i in node.items])
+        return node.meta["py_code"]
+
+    def nl_sep_node_list(self, node: ast.SubNodeList) -> str:
+        """Render newline separated node list."""
+        node.meta["py_code"] = "\n".join([i.meta["py_code"] for i in node.items])
+        return node.meta["py_code"]
+
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
         self.emit_ln_unique(
@@ -133,8 +148,8 @@ class BluePygenPass(Pass):
         """
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        for i in node.assignments.items:
-            self.emit_ln(node, i.meta["py_code"])
+        self.comma_sep_node_list(node.assignments)
+        self.emit_ln(node, node.assignments.meta["py_code"])
 
     def exit_sub_tag(self, node: ast.SubTag) -> None:
         """Sub objects.
@@ -172,6 +187,7 @@ class BluePygenPass(Pass):
             self.emit_ln(node, node.doc.value)
         self.emit_ln(node, "check = __jac_check()")
         if len(node.body.items):
+            self.nl_sep_node_list(node.body)
             self.emit(node, node.body.meta["py_code"])
         else:
             self.emit_ln(node, "pass")
@@ -196,6 +212,7 @@ class BluePygenPass(Pass):
             self.emit(node, node.body.meta["py_code"])
             self.indent_level -= 1
         else:
+            self.nl_sep_node_list(node.body)
             self.emit(node, node.body.meta["py_code"])
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
@@ -246,10 +263,8 @@ class BluePygenPass(Pass):
                 node,
                 f"from {node.path.meta['py_code']} import ",
             )
-            for i in node.items.items:
-                self.emit(node, i.meta["py_code"])
-                self.emit(node, ", ")
-            self.emit_ln(node, "\n")
+            self.comma_sep_node_list(node.items)
+            self.emit_ln(node, node.items.meta["py_code"])
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -287,17 +302,20 @@ class BluePygenPass(Pass):
         if not node.base_classes:
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
-            out = f"class {node.name.meta['py_code']}("
             for i in node.base_classes.items:
-                for j in i.items:
-                    out += j.meta["py_code"] + "."
-                out = out[:-1] + ", "
-            self.emit_ln(node, out[:-2] + "):")
+                self.dot_sep_node_list(i)
+            self.comma_sep_node_list(node.base_classes)
+            self.emit_ln(
+                node,
+                f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}):",
+            )
         self.indent_level += 1
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        if node.body:
-            self.emit(node, node.body.meta["py_code"])
+        body = node.body.body if isinstance(node.body, ast.ArchDef) else node.body
+        if body:
+            self.nl_sep_node_list(body)
+            self.emit(node, body.meta["py_code"])
         self.indent_level -= 1
 
         # """Sub objects.
@@ -381,12 +399,13 @@ class BluePygenPass(Pass):
             self.emit_ln(node, f"class {node.name.value}(__jac_Enum__):")
         else:
             self.needs_enum()
-            out = f"class {node.name.meta['py_code']}("
             for i in node.base_classes.items:
-                for j in i.items:
-                    out += j.meta["py_code"] + "."
-                out = out[:-1] + ", "
-            self.emit_ln(node, out[:-2] + ", __jac_Enum__):")
+                self.dot_sep_node_list(i)
+            self.comma_sep_node_list(node.base_classes)
+            self.emit_ln(
+                node,
+                f"class {node.name.meta['py_code']}({node.base_classes.meta['py_code']}, __jac_Enum__):",
+            )
         self.indent_level += 1
         if node.doc:
             self.emit_ln(node, node.doc.value)
@@ -724,8 +743,11 @@ class BluePygenPass(Pass):
         exprs: SubNodeList[ExprAsItem],
         body: SubNodeList[CodeBlockStmt],
         """
+        self.comma_sep_node_list(node.exprs)
         self.emit_ln(node, f"with {node.exprs.meta['py_code']}:")
         self.indent_level += 1
+
+        print(self.nl_sep_node_list(node.body))
         self.emit_ln(node, node.body.meta["py_code"])
         self.indent_level -= 1
         # self.emit(node, ", ".join([i.meta["py_code"] for i in node.items]))
@@ -965,7 +987,7 @@ class BluePygenPass(Pass):
         operand: ExprType,
         op: Token,
         """
-        if node.op.value in ["-", "~", "+"]:
+        if node.op.value in ["-", "~", "+", "*", "**"]:
             self.emit(node, f"{node.op.value}{node.operand.meta['py_code']}")
         elif node.op.value == "(":  # (expression) reuses unary expr
             self.emit(node, f"({node.operand.meta['py_code']})")
