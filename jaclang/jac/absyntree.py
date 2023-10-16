@@ -889,16 +889,12 @@ class VisitStmt(WalkerStmtOnlyNode):
         target: ExprType,
         else_body: Optional[ElseStmt],
         kid: list[AstNode],
-        from_walker: bool = False,
     ) -> None:
         """Initialize visit statement node."""
         self.vis_type = vis_type
         self.target = target
         self.else_body = else_body
-        super().__init__(
-            kid=kid,
-            from_walker=from_walker,
-        )
+        super().__init__(kid=kid)
 
 
 class RevisitStmt(WalkerStmtOnlyNode):
@@ -909,15 +905,11 @@ class RevisitStmt(WalkerStmtOnlyNode):
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
         kid: list[AstNode],
-        from_walker: bool = False,
     ) -> None:
         """Initialize revisit statement node."""
         self.hops = hops
         self.else_body = else_body
-        super().__init__(
-            kid=kid,
-            from_walker=from_walker,
-        )
+        super().__init__(kid=kid)
 
 
 class DisengageStmt(WalkerStmtOnlyNode):
@@ -926,13 +918,9 @@ class DisengageStmt(WalkerStmtOnlyNode):
     def __init__(
         self,
         kid: list[AstNode],
-        from_walker: bool = False,
     ) -> None:
         """Initialize disengage statement node."""
-        super().__init__(
-            kid=kid,
-            from_walker=from_walker,
-        )
+        super().__init__(kid=kid)
 
 
 class AwaitStmt(AstNode):
@@ -967,23 +955,6 @@ class Assignment(AstNode):
         super().__init__(kid=kid)
 
 
-class IfElseExpr(AstNode):
-    """ExprIfElse node type for Jac Ast."""
-
-    def __init__(
-        self,
-        condition: ExprType,
-        value: ExprType,
-        else_value: ExprType,
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize if else expression node."""
-        self.condition = condition
-        self.value = value
-        self.else_value = else_value
-        super().__init__(kid=kid)
-
-
 class BinaryExpr(AstNode):
     """ExprBinary node type for Jac Ast."""
 
@@ -1013,6 +984,23 @@ class UnaryExpr(AstNode):
         """Initialize unary expression node."""
         self.operand = operand
         self.op = op
+        super().__init__(kid=kid)
+
+
+class IfElseExpr(AstNode):
+    """ExprIfElse node type for Jac Ast."""
+
+    def __init__(
+        self,
+        condition: ExprType,
+        value: ExprType,
+        else_value: ExprType,
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize if else expression node."""
+        self.condition = condition
+        self.value = value
+        self.else_value = else_value
         super().__init__(kid=kid)
 
 
@@ -1104,6 +1092,26 @@ class KVPair(AstNode):
         super().__init__(kid=kid)
 
 
+class InnerCompr(AstNode):
+    """ListCompr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        out_expr: ExprType,
+        names: SubNodeList[Name],
+        collection: ExprType,
+        conditional: Optional[ExprType],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize comprehension expression node."""
+        self.out_expr = out_expr
+        self.names = names
+        self.collection = collection
+        self.conditional = conditional
+
+        super().__init__(kid=kid)
+
+
 class ListCompr(AstNode):
     """ListCompr node type for Jac Ast."""
 
@@ -1123,26 +1131,6 @@ class GenCompr(ListCompr):
 
 class SetCompr(ListCompr):
     """SetCompr node type for Jac Ast."""
-
-
-class InnerCompr(AstNode):
-    """ListCompr node type for Jac Ast."""
-
-    def __init__(
-        self,
-        out_expr: ExprType,
-        names: SubNodeList[Name],
-        collection: ExprType,
-        conditional: Optional[ExprType],
-        kid: list[AstNode],
-    ) -> None:
-        """Initialize comprehension expression node."""
-        self.out_expr = out_expr
-        self.names = names
-        self.collection = collection
-        self.conditional = conditional
-
-        super().__init__(kid=kid)
 
 
 class DictCompr(AstNode):
