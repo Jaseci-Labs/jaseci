@@ -40,7 +40,6 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
         )
         self.assertFalse(code_gen.errors_had)
-        print(code_gen.ir.meta["py_code"])
         self.assertIn(
             'say((dump(print)(len))({"name": "value"}))', code_gen.ir.meta["py_code"]
         )

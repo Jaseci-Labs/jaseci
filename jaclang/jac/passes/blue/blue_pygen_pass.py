@@ -214,11 +214,11 @@ class BluePygenPass(Pass):
         if node.name:
             self.emit_ln(node, f"if __name__ == '{node.name.meta['py_code']}':")
             self.indent_level += 1
-            self.emit(node, node.body.meta["py_code"])
+            self.emit_ln(node, node.body.meta["py_code"])
             self.indent_level -= 1
         else:
             self.nl_sep_node_list(node.body)
-            self.emit(node, node.body.meta["py_code"])
+            self.emit_ln(node, node.body.meta["py_code"])
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
         """Sub objects.
@@ -1022,10 +1022,6 @@ class BluePygenPass(Pass):
             self.emit(node, f"{node.operand.meta['py_code']}()")
         else:
             self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
-        # if node.is_dict:
-        #     self.emit(node, f"**{node.target.meta['py_code']}")
-        # else:
-        #     self.emit(node, f"*{node.target.meta['py_code']}")
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.

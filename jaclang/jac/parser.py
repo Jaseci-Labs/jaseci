@@ -2016,9 +2016,10 @@ class JacParser(Pass):
                     and isinstance(kid[1], ast.ExprType)
                     and isinstance(kid[2], ast.Token)
                 ):
-                    kid[1].add_kids_left([kid[0]])
-                    kid[1].add_kids_right([kid[2]])
-                    return self.nu(kid[1])
+                    ret = ast.UnaryExpr(operand=kid[1], op=kid[0], kid=kid)
+                    ret.add_kids_left([kid[0]])
+                    ret.add_kids_right([kid[2]])
+                    return self.nu(ret)
                 else:
                     raise self.ice()
             else:
