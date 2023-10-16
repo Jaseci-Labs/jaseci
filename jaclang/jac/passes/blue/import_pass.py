@@ -28,6 +28,7 @@ class ImportPass(Pass):
                         self.run_again = False
                         continue
                     i.sub_module = mod
+                    i.add_kids_right([mod], pos_update=False)
                 self.enter_import(i)
             SubNodeTabPass(prior=self, mod_path=node.mod_path, input_ir=node)
         node.meta["sub_import_tab"] = self.import_table
