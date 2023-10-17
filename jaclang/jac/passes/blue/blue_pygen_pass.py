@@ -369,7 +369,13 @@ class BluePygenPass(Pass):
                             f"self.{j.name.meta['py_code']} = {j.name.meta['py_code']}",
                         )
             if init_func and init_func.body:
-                self.emit(node, f"{init_func.body.meta['py_code']}")
+                ibody = (
+                    init_func.body.body
+                    if isinstance(init_func.body, ast.AbilityDef)
+                    else init_func.body
+                )
+                self.nl_sep_node_list(ibody)
+                self.emit_ln(node, f"{ibody.meta['py_code']}")
             self.indent_level -= 1
             for i in body.items:
                 if i not in has_members + static_has_members:
