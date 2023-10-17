@@ -161,7 +161,7 @@ class BluePygenPass(Pass):
         """
         if node.doc:
             self.emit_ln(node, node.doc.meta["py_code"])
-        self.comma_sep_node_list(node.assignments)
+        self.nl_sep_node_list(node.assignments)
         self.emit_ln(node, node.assignments.meta["py_code"])
 
     def exit_sub_tag(self, node: ast.SubTag) -> None:
@@ -222,6 +222,7 @@ class BluePygenPass(Pass):
         if node.name:
             self.emit_ln(node, f"if __name__ == '{node.name.meta['py_code']}':")
             self.indent_level += 1
+            self.nl_sep_node_list(node.body)
             self.emit_ln(node, node.body.meta["py_code"])
             self.indent_level -= 1
         else:
