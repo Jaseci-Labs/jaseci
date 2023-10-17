@@ -30,7 +30,11 @@ class BluePygenPass(Pass):
     def emit_ln(self, node: ast.AstNode, s: str) -> None:
         """Emit code to node."""
         self.emit(node, s.strip().strip("\n"))
-        self.emit(node, f"  # {self.get_mod_index(node)} {node.line}\n")
+        if node.meta["py_code"] and (
+            len(spl := node.meta["py_code"].split()) < 3 or spl[-3] != "#"
+        ):
+            self.emit(node, f"  # {self.get_mod_index(node)} {node.line}")
+        self.emit(node, "\n")
 
     def emit_ln_unique(self, node: ast.AstNode, s: str) -> None:
         """Emit code to node."""
@@ -69,7 +73,11 @@ class BluePygenPass(Pass):
 
     def nl_sep_node_list(self, node: ast.SubNodeList) -> str:
         """Render newline separated node list."""
-        node.meta["py_code"] = "\n".join([i.meta["py_code"] for i in node.items])
+        node.meta["py_code"] = ""
+        for i in node.items:
+            node.meta[
+                "py_code"
+            ] += f"{i.meta['py_code']}  # {self.get_mod_index(i)} {i.line}\n"
         return node.meta["py_code"]
 
     def sep_node_list(self, node: ast.SubNodeList, delim: str = " ") -> str:

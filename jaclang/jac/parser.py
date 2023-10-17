@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
@@ -25,17 +25,25 @@ class JacParser(Pass):
         if JacParser.dev_mode:
             JacParser.make_dev()
 
-    def transform(self, ir: ast.SourceString) -> ast.Module:
+    def transform(self, ir: ast.SourceString) -> Optional[ast.Module]:
         """Transform input IR."""
         self.before_pass()
-        tree, self.comments = JacParser.parse(ir.value, on_error=self.error_callback)
-        tree = JacParser.TreeToAST(parser=self).transform(tree)
+        try:
+            tree, self.comments = JacParser.parse(
+                ir.value, on_error=self.error_callback
+            )
+        except jl.UnexpectedInput as e:
+            self.error(f"Syntax Error: {e}")
+            tree = None
+        except Exception as e:
+            tree = None
+            self.error(f"Internal Error: {e}")
+        if tree:
+            tree = JacParser.TreeToAST(parser=self).transform(tree)
         return tree
 
     def error_callback(self, e: jl.UnexpectedInput) -> bool:
         """Handle error."""
-        print("HERE")
-        # e.interactive_parser.feed_token(jl.Token("WS", " "))
         return True
 
     @staticmethod
