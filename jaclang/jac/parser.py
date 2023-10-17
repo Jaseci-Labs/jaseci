@@ -525,7 +525,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.NameType](
                     items=valid_kid,
-                    kid=kid,
+                    kid=new_kid,
                 )
             )
 
@@ -951,7 +951,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.HasVar](
                     items=valid_kid,
-                    kid=kid,
+                    kid=new_kid,
                 )
             )
 
@@ -1382,7 +1382,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Name](
                     items=valid_kid,
-                    kid=kid,
+                    kid=new_kid,
                 )
             )
 
@@ -2217,7 +2217,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.ExprType](
                     items=valid_kid,
-                    kid=kid,
+                    kid=new_kid,
                 )
             )
 
@@ -2536,7 +2536,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.Assignment](
                     items=valid_kid,
-                    kid=kid,
+                    kid=new_kid,
                 )
             )
 
@@ -2723,7 +2723,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.ArchRefChain(
                         archs=valid_kid,
-                        kid=kid,
+                        kid=new_kid,
                     )
                 )
             else:
@@ -2994,7 +2994,7 @@ class JacParser(Pass):
             return self.nu(
                 ast.SubNodeList[ast.BinaryExpr](
                     items=valid_kid,
-                    kid=kid,
+                    kid=new_kid,
                 )
             )
 
