@@ -1476,8 +1476,9 @@ EnumBlockStmt = Union[
 
 CodeBlockStmt = Union[
     Import,
-    Architype,
+    ArchType,
     Ability,
+    AbilityDef,
     Assignment,
     ExprType,
     IfStmt,

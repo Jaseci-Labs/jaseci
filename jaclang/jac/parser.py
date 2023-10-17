@@ -1164,9 +1164,10 @@ class JacParser(Pass):
                     | doc_tag? architype
                     | import_stmt
             """
+            valid_doc_types = Union[ast.ArchType, ast.Ability, ast.AbilityDef]
             if isinstance(kid[0], ast.CodeBlockStmt):
                 return self.nu(kid[0])
-            elif isinstance(kid[1], (ast.Ability, ast.Architype)) and isinstance(
+            elif isinstance(kid[1], valid_doc_types) and isinstance(
                 kid[0], ast.Constant
             ):
                 kid[1].doc = kid[0]
