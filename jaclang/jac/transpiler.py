@@ -2,7 +2,6 @@
 from typing import Type, TypeVar
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.lexer import JacLexer
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.blue import (
@@ -21,9 +20,9 @@ T = TypeVar("T", bound=Pass)
 def jac_file_to_parse_tree(file_path: str, base_dir: str) -> Transform:
     """Convert a Jac file to an AST."""
     with open(file_path) as file:
-        lex = JacLexer(mod_path=file_path, input_ir=file.read(), base_path=base_dir)
+        source = ast.SourceString(file.read())
         prse = JacParser(
-            mod_path=file_path, input_ir=lex.ir, base_path=base_dir, prior=lex
+            mod_path=file_path, input_ir=source, base_path=base_dir, prior=None
         )
         return prse
 
@@ -87,31 +86,31 @@ def jac_file_to_pass(
 def jac_file_formatter(
     file_path: str,
     base_dir: str = "",
-    target: Type[T] = JacFormatPass,
     schedule: list[Type[T]] = format_pass,
-) -> T:
+) -> JacFormatPass:
     """Convert a Jac file to an AST."""
+    target = JacFormatPass
     with open(file_path) as file:
-        tem_file = file.read()
-        lex = JacLexer(mod_path=file_path, input_ir=tem_file, base_path=base_dir)
+        source = ast.SourceString(file.read())
         prse = JacParser(
-            mod_path=file_path, input_ir=lex.ir, base_path=base_dir, prior=lex
+            mod_path=file_path, input_ir=source, base_path=base_dir, prior=None
         )
+        comments = prse.comments
 
     for i in schedule:
         if i == target:
             break
-        ast_ret = i(
+        prse = i(
             mod_path=file_path,
             input_ir=prse.ir,
             base_path=base_dir,
             prior=prse,
         )
-    ast_ret = target(
+    prse = target(
         mod_path=file_path,
-        input_ir=ast_ret.ir,
+        input_ir=prse.ir,
         base_path=base_dir,
-        prior=ast_ret,
-        comments=lex.comments,
+        prior=prse,
+        comments=comments,
     )
-    return ast_ret
+    return prse

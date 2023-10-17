@@ -6,7 +6,7 @@ from typing import Optional
 
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.passes.blue import SemanticCheckPass
+from jaclang.jac.passes.blue import DeclDefMatchPass
 from jaclang.jac.transpiler import Alert, jac_file_to_pass
 
 
@@ -43,7 +43,7 @@ class Workspace:
             if file in self.modules:
                 continue
             build = jac_file_to_pass(
-                file_path=file, base_dir=self.path, target=SemanticCheckPass
+                file_path=file, base_dir=self.path, target=DeclDefMatchPass
             )
             self.modules[file] = ModuleInfo(
                 ir=build.ir if isinstance(build.ir, ast.Module) else None,
@@ -61,7 +61,7 @@ class Workspace:
     def rebuild_file(self, file_path: str, deep: bool = False) -> None:
         """Rebuild a file."""
         build = jac_file_to_pass(
-            file_path=file_path, base_dir=self.path, target=SemanticCheckPass
+            file_path=file_path, base_dir=self.path, target=DeclDefMatchPass
         )
         self.modules[file_path] = ModuleInfo(
             ir=build.ir if isinstance(build.ir, ast.Module) else None,

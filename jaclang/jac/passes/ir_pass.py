@@ -13,15 +13,14 @@ class Pass(Transform):
 
     def __init__(
         self,
-        prior: Transform,
         mod_path: str,
         input_ir: ast.AstNode,
+        prior: Optional[Transform],
         base_path: str = "",
     ) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
-        self.cur_node = input_ir  # tracks current node during traversal
         self.ir = input_ir
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
@@ -37,15 +36,11 @@ class Pass(Transform):
         """Run on entering node."""
         if hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
-        if isinstance(node, ast.Parse) and hasattr(self, f"enter_{node.name}"):
-            getattr(self, f"enter_{node.name}")(node)
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Run on exiting node."""
         if hasattr(self, f"exit_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"exit_{pascal_to_snake(type(node).__name__)}")(node)
-        if isinstance(node, ast.Parse) and hasattr(self, f"exit_{node.name}"):
-            getattr(self, f"exit_{node.name}")(node)
 
     def terminate(self) -> None:
         """Terminate traversal."""
@@ -123,7 +118,6 @@ class Pass(Transform):
             node = self.cur_node
         if not isinstance(node, ast.AstNode):
             self.ice("Current node is not an AstNode.")
-        self.cur_line = node.line
         if node.mod_link:
             self.rel_mod_path = node.mod_link.rel_mod_path
             self.mod_path = node.mod_link.mod_path
@@ -140,8 +134,6 @@ class Pass(Transform):
 
     def ice(self, msg: str = "Something went horribly wrong!") -> None:
         """Pass Error."""
-        if isinstance(self.cur_node, ast.AstNode):
-            self.cur_line = self.cur_node.line
         self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
         raise RuntimeError(
             f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"

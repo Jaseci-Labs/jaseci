@@ -110,15 +110,6 @@ class JacFormatPass(Pass):
         """
         self.emit(node, node.value)
 
-    def exit_elements(self, node: ast.Elements) -> None:
-        """Sub objects.
-
-        elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability | AbilitySpec], # noqa E501
-        """
-        for element in node.elements:
-            self.emit(node, element.meta["jac_code"])
-        self.emit_ln(node, "")
-
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
 
@@ -160,7 +151,7 @@ class JacFormatPass(Pass):
         self.ir = node
         self.ir.meta["jac_code"] = self.ir.meta["jac_code"].rstrip()
 
-    def exit_code_block(self, node: ast.CodeBlock) -> None:
+    def exit_code_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         stmts: list["StmtType"],
@@ -214,7 +205,7 @@ class JacFormatPass(Pass):
         else:
             self.emit(node, f"{node.target.meta['jac_code']}()")
 
-    def exit_param_list(self, node: ast.ParamList) -> None:
+    def exit_param_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         p_args: Optional[ExprList],
@@ -390,7 +381,7 @@ class JacFormatPass(Pass):
         self.emit(node, "}")
         self.emit_ln(node, "")
 
-    def exit_arch_block(self, node: ast.ArchBlock) -> None:
+    def exit_arch_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         members: list["ArchHas | Ability"],
@@ -525,7 +516,7 @@ class JacFormatPass(Pass):
         else:
             self.emit(node, f"{node.arch.value}{node.name_ref.value}")
 
-    def exit_func_params(self, node: ast.FuncParams) -> None:
+    def exit_func_params(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         params: list["ParamVar"],
@@ -609,7 +600,7 @@ class JacFormatPass(Pass):
             self.indent_level -= 1
         self.emit_ln(node, "}")
 
-    def exit_enum_block(self, node: ast.EnumBlock) -> None:
+    def exit_enum_block(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         stmts: list['Name|Assignment'],
@@ -620,7 +611,7 @@ class JacFormatPass(Pass):
             else:
                 self.emit_ln(node, i.meta["jac_code"])
 
-    def exit_type_spec_list(self, node: ast.TypeSpecList) -> None:
+    def exit_type_spec_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         types: list[TypeSpec],
@@ -628,7 +619,7 @@ class JacFormatPass(Pass):
         """
         self.emit(node, "|".join([i.meta["jac_code"] for i in node.types]))
 
-    def exit_dotted_name_list(self, node: ast.DottedNameList) -> None:
+    def exit_dotted_name_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         names: list[all_refs],
@@ -754,7 +745,7 @@ class JacFormatPass(Pass):
                     f"Binary operator {node.op.value} not supported in bootstrap Jac"
                 )
 
-    def exit_has_var_list(self, node: ast.HasVarList) -> None:
+    def exit_has_var_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         vars: list[HasVar],
@@ -923,7 +914,7 @@ class JacFormatPass(Pass):
         self.indent_level -= 1
         self.emit_ln(node, "}")
 
-    def exit_except_list(self, node: ast.ExceptList) -> None:
+    def exit_except_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         excepts: list[Except],
@@ -974,7 +965,7 @@ class JacFormatPass(Pass):
             self.indent_level -= 1
         self.emit(node, "}")
 
-    def exit_decorators(self, node: ast.Decorators) -> None:
+    def exit_decorators(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         calls: list["ExprType"],
@@ -982,7 +973,7 @@ class JacFormatPass(Pass):
         for i in node.calls:
             self.emit_ln(node, "@" + i.meta["jac_code"])
 
-    def exit_module_items(self, node: ast.ModuleItems) -> None:
+    def exit_module_items(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         items: list["ModuleItem"],
@@ -1019,7 +1010,7 @@ class JacFormatPass(Pass):
         else:
             self.emit(node, node.name.value)
 
-    def exit_base_classes(self, node: ast.BaseClasses) -> None:
+    def exit_base_classes(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         base_classes: list[DottedNameList],
@@ -1112,7 +1103,7 @@ class JacFormatPass(Pass):
             f"Unable to find definition for {decl} declaration. Perhaps there's an `include` missing?"  # noqa
         )
 
-    def exit_name_list(self, node: ast.NameList) -> None:
+    def exit_name_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         names: list[Name],
@@ -1191,7 +1182,7 @@ class JacFormatPass(Pass):
             node, f"[{', '.join([value.meta['jac_code'] for value in node.values])}]"
         )
 
-    def exit_unpack_expr(self, node: ast.UnpackExpr) -> None:
+    def exit_unpack_expr(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         target: ExprType,
@@ -1211,7 +1202,7 @@ class JacFormatPass(Pass):
             node, f"{{{', '.join([value.meta['jac_code'] for value in node.values])}}}"
         )
 
-    def exit_assignment_list(self, node: ast.AssignmentList) -> None:
+    def exit_assignment_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         values: list[Assignment],
@@ -1396,7 +1387,7 @@ class JacFormatPass(Pass):
         """
         self.ds_feature_warn()
 
-    def exit_expr_as_item_list(self, node: ast.ExprAsItemList) -> None:
+    def exit_expr_as_item_list(self, node: ast.AstNode) -> None:
         """Sub objects.
 
         items: list["ExprAsItem"],
@@ -1482,10 +1473,3 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         self.ds_feature_warn()
-
-    def exit_parse(self, node: ast.Parse) -> None:
-        """Sub objects.
-
-        name: str,
-        """
-        self.error(f"Parse node should not be in this AST!! {node.name}")

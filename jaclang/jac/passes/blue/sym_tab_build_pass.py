@@ -41,14 +41,22 @@ class SymTabBuildPass(Pass):
         warn_only: bool = False,
     ) -> None:
         """Already declared error."""
-        mod_path = original.mod_link.rel_mod_path if original.mod_link else self.ice()
+        mod_path = (
+            original.mod_link.rel_mod_path
+            if original.mod_link
+            else self.ice("Mod_link unknown")
+        )
         err_msg = (
             f"Name used for {typ} '{name}' already declared at "
             f"{mod_path}, line {original.line}"
         )
         if other_nodes:
             for i in other_nodes:
-                mod_path = i.mod_link.rel_mod_path if i.mod_link else self.ice()
+                mod_path = (
+                    i.mod_link.rel_mod_path
+                    if i.mod_link
+                    else self.ice("Mod_link unknown")
+                )
                 err_msg += f", also see {mod_path}, line {i.line}"
         self.warning(err_msg)
 
@@ -77,13 +85,6 @@ class SymTabBuildPass(Pass):
         """
         self.pop_scope()
 
-    def enter_elements(self, node: ast.Elements) -> None:
-        """Sub objects.
-
-        elements: list[GlobalVars | Test | ModuleCode | Import | Architype | Ability],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
@@ -94,7 +95,7 @@ class SymTabBuildPass(Pass):
         """
         for i in self.get_all_sub_nodes(node, ast.Assignment):
             if not isinstance(i.target, ast.Name):
-                self.ice()
+                self.ice("Expected name type for globabl vars")
             elif collide := self.cur_scope().insert(
                 name=i.target.value,
                 sym_type=St.VAR,
@@ -103,6 +104,20 @@ class SymTabBuildPass(Pass):
                 single=True,
             ):
                 self.already_declared_err(i.target.value, "global var", collide)
+        self.sync_node_to_scope(node)
+
+    def enter_sub_tag(self, node: ast.SubTag) -> None:
+        """Sub objects.
+
+        tag: T,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_sub_node_list(self, node: ast.SubNodeList) -> None:
+        """Sub objects.
+
+        items: list[T],
+        """
         self.sync_node_to_scope(node)
 
     def enter_test(self, node: ast.Test) -> None:
@@ -239,13 +254,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_module_items(self, node: ast.ModuleItems) -> None:
-        """Sub objects.
-
-        items: list['ModuleItem'],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_architype(self, node: ast.Architype) -> None:
         """Sub objects.
 
@@ -257,6 +265,8 @@ class SymTabBuildPass(Pass):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
+        for i in self.get_all_sub_nodes(node, ast.Ability):
+            i.arch_attached = node
         if collide := self.cur_scope().insert(
             name=node.name.value,
             sym_type=St.ARCH,
@@ -310,20 +320,6 @@ class SymTabBuildPass(Pass):
         body: ArchBlock,
         """
         self.pop_scope()
-
-    def enter_decorators(self, node: ast.Decorators) -> None:
-        """Sub objects.
-
-        calls: list[ExprType],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_base_classes(self, node: ast.BaseClasses) -> None:
-        """Sub objects.
-
-        base_classes: list[DottedNameList],
-        """
-        self.sync_node_to_scope(node)
 
     def enter_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -407,13 +403,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_dotted_name_list(self, node: ast.DottedNameList) -> None:
-        """Sub objects.
-
-        names: list[Token | SpecialVarRef | ArchRef | Name],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
 
@@ -426,13 +415,6 @@ class SymTabBuildPass(Pass):
 
         params: Optional['FuncParams'],
         return_type: Optional['TypeSpec'],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_func_params(self, node: ast.FuncParams) -> None:
-        """Sub objects.
-
-        params: list['ParamVar'],
         """
         self.sync_node_to_scope(node)
 
@@ -508,22 +490,6 @@ class SymTabBuildPass(Pass):
         """
         self.pop_scope()
 
-    def enter_enum_block(self, node: ast.EnumBlock) -> None:
-        """Sub objects.
-
-        stmts: list['Name|Assignment'],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_arch_block(self, node: ast.ArchBlock) -> None:
-        """Sub objects.
-
-        members: list['ArchHas | Ability'],
-        """
-        for i in self.get_all_sub_nodes(node, ast.Ability):
-            i.arch_attached = node
-        self.sync_node_to_scope(node)
-
     def enter_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
 
@@ -544,13 +510,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_has_var_list(self, node: ast.HasVarList) -> None:
-        """Sub objects.
-
-        vars: list['HasVar'],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
@@ -558,20 +517,6 @@ class SymTabBuildPass(Pass):
         list_nest: TypeSpec,
         dict_nest: TypeSpec,
         null_ok: bool,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_type_spec_list(self, node: ast.TypeSpecList) -> None:
-        """Sub objects.
-
-        types: list[TypeSpec],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_code_block(self, node: ast.CodeBlock) -> None:
-        """Sub objects.
-
-        stmts: list[StmtType],
         """
         self.sync_node_to_scope(node)
 
@@ -625,13 +570,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_except_list(self, node: ast.ExceptList) -> None:
-        """Sub objects.
-
-        excepts: list['Except'],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
 
@@ -669,13 +607,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_name_list(self, node: ast.NameList) -> None:
-        """Sub objects.
-
-        names: list[Name],
-        """
-        self.sync_node_to_scope(node)
-
     def enter_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
 
@@ -697,13 +628,6 @@ class SymTabBuildPass(Pass):
 
         expr: ExprType,
         alias: Optional[Name],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_expr_as_item_list(self, node: ast.ExprAsItemList) -> None:
-        """Sub objects.
-
-        items: list['ExprAsItem'],
         """
         self.sync_node_to_scope(node)
 
@@ -833,14 +757,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_unpack_expr(self, node: ast.UnpackExpr) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        is_dict: bool,
-        """
-        self.sync_node_to_scope(node)
-
     def enter_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 
@@ -885,6 +801,35 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_k_v_pair(self, node: ast.KVPair) -> None:
+        """Sub objects.
+
+        key: ExprType,
+        value: ExprType,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_list_compr(self, node: ast.ListCompr) -> None:
+        """Sub objects.
+
+        compr: InnerCompr,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_gen_compr(self, node: ast.GenCompr) -> None:
+        """Sub objects.
+
+        compr: InnerCompr,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_set_compr(self, node: ast.SetCompr) -> None:
+        """Sub objects.
+
+        compr: InnerCompr,
+        """
+        self.sync_node_to_scope(node)
+
     def enter_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
@@ -909,14 +854,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_k_v_pair(self, node: ast.KVPair) -> None:
-        """Sub objects.
-
-        key: ExprType,
-        value: ExprType,
-        """
-        self.sync_node_to_scope(node)
-
     def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
 
@@ -931,21 +868,6 @@ class SymTabBuildPass(Pass):
 
         target: 'AtomType',
         params: Optional['ParamList'],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_param_list(self, node: ast.ParamList) -> None:
-        """Sub objects.
-
-        p_args: Optional[ExprList],
-        p_kwargs: Optional['AssignmentList'],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_assignment_list(self, node: ast.AssignmentList) -> None:
-        """Sub objects.
-
-        values: list['Assignment'],
         """
         self.sync_node_to_scope(node)
 
@@ -1016,13 +938,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_parse(self, node: ast.Parse) -> None:
-        """Sub objects.
-
-        name: str,
-        """
-        self.sync_node_to_scope(node)
-
     def enter_token(self, node: ast.Token) -> None:
         """Sub objects.
 
@@ -1034,6 +949,17 @@ class SymTabBuildPass(Pass):
         self.sync_node_to_scope(node)
 
     def enter_constant(self, node: ast.Constant) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        typ: type,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_builtin_type(self, node: ast.BuiltinType) -> None:
         """Sub objects.
 
         name: str,
