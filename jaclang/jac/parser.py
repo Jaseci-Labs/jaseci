@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Union
+from typing import Callable, Union
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
@@ -16,7 +16,7 @@ from jaclang.vendor.lark import Lark, logger
 class JacParser(Pass):
     """Jac Parser."""
 
-    dev_mode = True
+    dev_mode = False
 
     def before_pass(self) -> None:
         """Initialize parser."""
@@ -27,20 +27,27 @@ class JacParser(Pass):
 
     def transform(self, ir: ast.SourceString) -> ast.Module:
         """Transform input IR."""
-        tree, self.comments = JacParser.parse(ir.value)
+        self.before_pass()
+        tree, self.comments = JacParser.parse(ir.value, on_error=self.error_callback)
         tree = JacParser.TreeToAST(parser=self).transform(tree)
         return tree
+
+    def error_callback(self, e: jl.UnexpectedInput) -> bool:
+        """Handle error."""
+        print("HERE")
+        # e.interactive_parser.feed_token(jl.Token("WS", " "))
+        return True
 
     @staticmethod
     def _comment_callback(comment: str) -> None:
         JacParser.comment_cache.append(comment)
 
     @staticmethod
-    def parse(ir: str) -> tuple[jl.Tree, list[str]]:
+    def parse(ir: str, on_error: Callable) -> tuple[jl.Tree, list[str]]:
         """Parse input IR."""
         JacParser.comment_cache = []
         return (
-            JacParser.parser.parse(ir),
+            JacParser.parser.parse(ir, on_error=on_error),
             JacParser.comment_cache,
         )
 
@@ -51,7 +58,6 @@ class JacParser(Pass):
             "jac.lark",
             parser="lalr",
             rel_to=__file__,
-            strict=True,
             debug=True,
             lexer_callbacks={"COMMENT": JacParser._comment_callback},
         )

@@ -30,10 +30,9 @@ import_path: DOT? DOT? esc_name ((DOT esc_name)+)?
 import_items: (import_item COMMA)* import_item
 import_item: named_ref (KW_AS NAME)?
 
-architype: decorators architype
-          | enum
-          | architype_def
-          | architype_decl
+architype: decorators? enum
+          | decorators? architype_def
+          | decorators? architype_decl
 
 architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
@@ -75,10 +74,9 @@ enum_stmt: NAME EQ expression
          | NAME
          | py_code_block
 
-ability: decorators ability
-        | ability_def
-        | KW_ASYNC ability_decl
-        | ability_decl
+ability: decorators? ability_def
+        | decorators? KW_ASYNC ability_decl
+        | decorators? ability_decl
 
 ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
