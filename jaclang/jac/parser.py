@@ -2533,7 +2533,11 @@ class JacParser(Pass):
             chomp = chomp[1:]
             is_range = (
                 isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON
-            ) or (isinstance(chomp[1], ast.Token) and chomp[1].name == Tok.COLON)
+            ) or (
+                len(chomp) > 1
+                and isinstance(chomp[1], ast.Token)
+                and chomp[1].name == Tok.COLON
+            )
             expr1 = chomp[0] if isinstance(chomp[0], ast.ExprType) else None
             expr2 = (
                 chomp[1]
@@ -2547,8 +2551,9 @@ class JacParser(Pass):
                 chomp[1]
                 if isinstance(chomp[0], ast.Token)
                 and chomp[0].name == Tok.COLON
+                and len(chomp) > 1
                 and isinstance(chomp[1], ast.ExprType)
-                else None
+                else expr2
             )
             return self.nu(
                 ast.IndexSlice(

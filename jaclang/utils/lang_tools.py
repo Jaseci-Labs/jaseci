@@ -92,7 +92,7 @@ class AstTool:
 
             for kid in cls.kids:
                 emit(
-                    f"    {kid.name}: {kid.typ}{' ='+kid.default if kid.default else ''},"
+                    f"    {kid.name}: {kid.typ}{' ='+str(kid.default) if kid.default else ''},"
                 )
 
             emit('    """\n')
