@@ -569,6 +569,7 @@ class BluePygenPass(Pass):
         value: Optional[ExprType],
         """
         self.sep_node_list(node.type_tag.tag, delim="|")
+        node.type_tag.meta["py_code"] = node.type_tag.tag.meta["py_code"]
         if node.unpack:
             self.emit(node, f"{node.unpack.meta['py_code']}")
         if node.value:
@@ -602,6 +603,7 @@ class BluePygenPass(Pass):
         value: Optional[ExprType],
         """
         self.sep_node_list(node.type_tag.tag, delim="|")
+        node.type_tag.meta["py_code"] = node.type_tag.tag.meta["py_code"]
         if node.value:
             self.emit(
                 node,
@@ -637,8 +639,8 @@ class BluePygenPass(Pass):
     def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
 
-        type_ctx: TypeList,
-        body: CodeBlock,
+        type_ctx: SubNodeList[TypeSpec],
+        body: SubNodeList[CodeBlockStmt],
         """
         self.ds_feature_warn()
 

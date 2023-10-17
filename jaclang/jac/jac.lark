@@ -100,13 +100,13 @@ type_tag: COLON type_specs
 return_type_tag: RETURN_HINT type_specs
 type_specs: (type_specs BW_OR)? single_type NULL_OK?
 
-single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
-           | TYP_SET LSQUARE single_type RSQUARE
-           | TYP_TUPLE LSQUARE single_type RSQUARE
-           | TYP_LIST LSQUARE single_type RSQUARE
-           | dotted_name
-           | NULL
-           | builtin_type
+single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE NULL_OK?
+           | TYP_SET LSQUARE single_type RSQUARE NULL_OK?
+           | TYP_TUPLE LSQUARE single_type RSQUARE NULL_OK?
+           | TYP_LIST LSQUARE single_type RSQUARE NULL_OK?
+           | dotted_name NULL_OK?
+           | NULL NULL_OK?
+           | builtin_type NULL_OK?
 
 builtin_type: TYP_TYPE
             | TYP_ANY

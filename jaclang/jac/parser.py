@@ -1012,50 +1012,47 @@ class JacParser(Pass):
         def type_specs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.TypeSpec]:
             """Grammar rule.
 
-            type_specs: (type_specs BW_OR)? single_type NULL_OK?
+            type_specs: (type_specs BW_OR)? single_type
             """
             consume = None
             spec = None
             pipe = None
-            null_ok = None
             if isinstance(kid[0], ast.SubNodeList):
                 consume = kid[0]
                 pipe = kid[1]
                 spec = kid[2]
             else:
                 spec = kid[0]
-            if isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.NULL_OK:
-                null_ok = kid[-1]
             new_kid = [*consume.kid, pipe, spec] if consume else [spec]
             valid_kid = [i for i in new_kid if isinstance(i, ast.TypeSpec)]
-            if null_ok:
-                valid_kid[-1].null_ok = True
-                valid_kid[-1].add_kids_right([null_ok])
             return self.nu(
                 ast.SubNodeList[ast.TypeSpec](
                     items=valid_kid,
-                    kid=kid,
+                    kid=new_kid,
                 )
             )
 
         def single_type(self, kid: list[ast.AstNode]) -> ast.TypeSpec:
             """Grammar rule.
 
-            single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE
-                        | TYP_SET LSQUARE single_type RSQUARE
-                        | TYP_TUPLE LSQUARE single_type RSQUARE
-                        | TYP_LIST LSQUARE single_type RSQUARE
-                        | dotted_name
-                        | NULL
-                        | builtin_type
+            single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE NULL_OK?
+                    | TYP_SET LSQUARE single_type RSQUARE NULL_OK?
+                    | TYP_TUPLE LSQUARE single_type RSQUARE NULL_OK?
+                    | TYP_LIST LSQUARE single_type RSQUARE NULL_OK?
+                    | dotted_name NULL_OK?
+                    | NULL NULL_OK?
+                    | builtin_type NULL_OK?
             """
-            spec_type = kid[0]
+            chomp = [*kid]
+            null_ok = isinstance(chomp[-1], ast.Token) and chomp[-1].name == Tok.NULL_OK
+            chomp = chomp[:-1] if null_ok else chomp
+            spec_type = chomp[0]
             list_nest = None
             dict_nest = None
-            if len(kid) > 1:
-                list_nest = kid[2]
-            if len(kid) > 4:
-                dict_nest = kid[4]
+            if len(chomp) > 1:
+                list_nest = chomp[2]
+            if len(chomp) > 4:
+                dict_nest = chomp[4]
             if (
                 isinstance(spec_type, (ast.Token, ast.SubNodeList))
                 and (not list_nest or isinstance(list_nest, ast.TypeSpec))
@@ -1066,6 +1063,7 @@ class JacParser(Pass):
                         spec_type=spec_type,
                         list_nest=list_nest,
                         dict_nest=dict_nest,
+                        null_ok=null_ok,
                         kid=kid,
                     )
                 )
