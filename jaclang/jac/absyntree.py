@@ -1410,6 +1410,7 @@ NameType = Union[
     Name,
     SpecialVarRef,
     ArchRef,
+    SubNodeList,  # this is for dotted names, but too broad
 ]
 
 AtomType = Union[
