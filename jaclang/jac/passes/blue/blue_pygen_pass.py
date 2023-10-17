@@ -319,63 +319,57 @@ class BluePygenPass(Pass):
             self.emit_ln(node, node.doc.value)
         body = node.body.body if isinstance(node.body, ast.ArchDef) else node.body
         if body:
-            self.nl_sep_node_list(body)
-            self.emit_ln(node, body.meta["py_code"] if len(body.items) else "pass")
+            init_func = None
+            for i in body.items:
+                if isinstance(i, ast.Ability) and i.py_resolve_name() == "__init__":
+                    init_func = i
+                    break
+            static_has_members = [
+                i for i in body.items if isinstance(i, ast.ArchHas) and i.is_static
+            ]
+            for i in static_has_members:
+                self.emit(node, i.meta["py_code"])
+                self.emit(node, "\n")
+
+            if init_func and init_func.decorators:
+                self.emit(node, init_func.decorators.meta["py_code"])
+            self.emit_ln(node, "def __init__(self,")
+            self.indent_level += 1
+            if has_members := [
+                i for i in body.items if isinstance(i, ast.ArchHas) and not i.is_static
+            ]:
+                for i in has_members:
+                    for j in i.vars.items:
+                        self.emit_ln(node, f"{j.name.value} = None,")
+            if init_func and init_func.signature:
+                if "->" in init_func.signature.meta["py_code"]:
+                    init_func.signature.meta["py_code"] = init_func.signature.meta[
+                        "py_code"
+                    ].split("->")[0]
+                if len(init_func.signature.meta["py_code"]):
+                    self.emit_ln(node, f"{init_func.signature.meta['py_code']},")
+            self.emit_ln(node, " *args, **kwargs):")
+            if not init_func:
+                self.emit_ln(node, "super().__init__(*args, **kwargs)")
+            for i in has_members:
+                for j in i.vars.items:
+                    if j.value:
+                        self.emit_ln(
+                            node,
+                            f"self.{j.name.value} = {j.value.meta['py_code']} "
+                            f"if {j.name.value} is "
+                            f"None else {j.name.value}",
+                        )
+                    else:
+                        self.emit_ln(node, f"self.{j.name.value} = {j.name.value}")
+            if init_func and init_func.body:
+                self.emit(node, f"{init_func.body.meta['py_code']}")
+            self.indent_level -= 1
+            for i in body.items:
+                if i not in has_members + static_has_members:
+                    self.emit(node, i.meta["py_code"])
+                    self.emit(node, "\n")
         self.indent_level -= 1
-
-        # """Sub objects.
-
-        # members: list["ArchHas | Ability"],
-        # """
-        # init_func = None
-        # for i in node.members:
-        #     if isinstance(i, ast.Ability) and i.py_resolve_name() == "__init__":
-        #         init_func = i
-        #         break
-        # static_has_members = [
-        #     i for i in node.members if isinstance(i, ast.ArchHas) and i.is_static
-        # ]
-        # for i in static_has_members:
-        #     self.emit(node, i.meta["py_code"])
-        #     self.emit(node, "\n")
-
-        # if init_func and init_func.decorators:
-        #     self.emit(node, init_func.decorators.meta["py_code"])
-        # self.emit_ln(node, "def __init__(self,")
-        # self.indent_level += 1
-        # if has_members := [
-        #     i for i in node.members if isinstance(i, ast.ArchHas) and not i.is_static
-        # ]:
-        #     for i in has_members:
-        #         for j in i.vars.vars:
-        #             self.emit_ln(node, f"{j.name.value} = None,")
-        # if init_func and init_func.signature:
-        #     if "->" in init_func.signature.meta["py_code"]:
-        #         init_func.signature.meta["py_code"] = init_func.signature.meta[
-        #             "py_code"
-        #         ].split("->")[0]
-        #     if len(init_func.signature.meta["py_code"]):
-        #         self.emit_ln(node, f"{init_func.signature.meta['py_code']},")
-        # self.emit_ln(node, " *args, **kwargs):")
-        # if not init_func:
-        #     self.emit_ln(node, "super().__init__(*args, **kwargs)")
-        # for i in has_members:
-        #     for j in i.vars.vars:
-        #         if j.value:
-        #             self.emit_ln(
-        #                 node,
-        #                 f"self.{j.name.value} = {j.value.meta['py_code']} if {j.name.value} is "
-        #                 f"None else {j.name.value}",
-        #             )
-        #         else:
-        #             self.emit_ln(node, f"self.{j.name.value} = {j.name.value}")
-        # if init_func and init_func.body:
-        #     self.emit(node, f"{init_func.body.meta['py_code']}")
-        # self.indent_level -= 1
-        # for i in node.members:
-        #     if i not in has_members + static_has_members:
-        #         self.emit(node, i.meta["py_code"])
-        #         self.emit(node, "\n")
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.

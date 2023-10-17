@@ -38,9 +38,9 @@ body: Optional["ArchBlock"],
 :object:PurplePygenPass:ability:exit_architype
 (nd: ast.Architype) {
     |> <self>.add_exec_context;
-    if nd.decorators {
-        (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
-    }
+    # if nd.decorators {
+    #     (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
+    # }
     arch_type=nd.arch_type.name;
     arch_insert = "";
     if arch_type == Tok.KW_OBJECT {
@@ -63,21 +63,22 @@ body: Optional["ArchBlock"],
         arch_insert = C.WALKER_CLASS;
         (nd, f"@_jac_make_architype_({arch_insert})") |> <self>.emit_ln;
     }
-    if nd.base_classes.base_classes |> len {
-        (nd, f"class {nd.name.meta['py_code']}"
-             f"({nd.base_classes.meta['py_code']}):")
-            |> <self>.emit_ln;
-    } else {
-        (nd, f"class {nd.name.meta['py_code']}:") |> <self>.emit_ln;
-    }
-    <self>.indent_level += 1;
-    if nd.doc {
-        (nd, nd.doc.meta["py_code"]) |> <self>.emit_ln; }
-    if nd.body {
-        (nd, nd.body.meta["py_code"]) |> <self>.emit_ln; }
-    else {
-        nd.name.meta["py_code"] |> <self>.decl_def_missing; }
-    <self>.indent_level -= 1;
+    <super>.exit_architype(nd);
+    # if nd.base_classes.base_classes |> len {
+    #     (nd, f"class {nd.name.meta['py_code']}"
+    #          f"({nd.base_classes.meta['py_code']}):")
+    #         |> <self>.emit_ln;
+    # } else {
+    #     (nd, f"class {nd.name.meta['py_code']}:") |> <self>.emit_ln;
+    # }
+    # <self>.indent_level += 1;
+    # if nd.doc {
+    #     (nd, nd.doc.meta["py_code"]) |> <self>.emit_ln; }
+    # if nd.body {
+    #     (nd, nd.body.meta["py_code"]) |> <self>.emit_ln; }
+    # else {
+    #     nd.name.meta["py_code"] |> <self>.decl_def_missing; }
+    # <self>.indent_level -= 1;
 }
 
 

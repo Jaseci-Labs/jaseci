@@ -310,7 +310,7 @@ atom_collection: dict_compr
 
 multistring: (fstring | STRING)+
 fstring: FSTR_START fstr_parts FSTR_END
-fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
+fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
 list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
 set_val: LBRACE expr_list RBRACE
@@ -560,8 +560,6 @@ RPAREN: /\)/
 LSQUARE: /\[/
 RSQUARE: /\]/
 
-COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
-WS: /[ \t\f\r\n]/+
 
 // f-string tokens
 FSTR_START.1: "f\""
@@ -569,5 +567,7 @@ FSTR_END: "\""
 FSTR_PIECE.-1: /[^\{\}\"]+/
 FSTR_BESC.1: /{{|}}/
 
+COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
+WS.-2: /[ \t\f\r\n]/+
 %ignore COMMENT
 %ignore WS

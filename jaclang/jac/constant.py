@@ -59,7 +59,6 @@ class Tokens(str, Enum):
 
     FLOAT = "FLOAT"
     STRING = "STRING"
-    SL_COMMENT = "SL_COMMENT"
     DOC_STRING = "DOC_STRING"
     PYNLINE = "PYNLINE"
     BOOL = "BOOL"
