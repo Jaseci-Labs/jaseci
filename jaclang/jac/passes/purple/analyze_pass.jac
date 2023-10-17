@@ -6,14 +6,13 @@ import:py from jaclang.jac.constant, Tokens as Tok;
 
 
 object AnalyzePass:Pass{
-    can enter_arch_block(nd:ast.ArchBlock);
+    can enter_architype(nd: ast.Architype);
 }
 
 
-:object:AnalyzePass:ability:enter_arch_block(nd:ast.ArchBlock) {
+:object:AnalyzePass:ability:enter_architype(nd:ast.Architype) {
     if (
-        isinstance(nd.parent, ast.Architype)
-        and nd.parent.arch_type.name == Tok.KW_WALKER
+        nd.arch_type.name == Tok.KW_WALKER
     ) {
         for i in <self>.get_all_sub_nodes(nd, ast.VisitStmt, brute_force=False){
             i.from_walker = True;

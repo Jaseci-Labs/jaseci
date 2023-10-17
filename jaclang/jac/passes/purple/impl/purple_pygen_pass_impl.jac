@@ -64,35 +64,22 @@ body: Optional["ArchBlock"],
         (nd, f"@_jac_make_architype_({arch_insert})") |> <self>.emit_ln;
     }
     <super>.exit_architype(nd);
-    # if nd.base_classes.base_classes |> len {
-    #     (nd, f"class {nd.name.meta['py_code']}"
-    #          f"({nd.base_classes.meta['py_code']}):")
-    #         |> <self>.emit_ln;
-    # } else {
-    #     (nd, f"class {nd.name.meta['py_code']}:") |> <self>.emit_ln;
-    # }
-    # <self>.indent_level += 1;
-    # if nd.doc {
-    #     (nd, nd.doc.meta["py_code"]) |> <self>.emit_ln; }
-    # if nd.body {
-    #     (nd, nd.body.meta["py_code"]) |> <self>.emit_ln; }
-    # else {
-    #     nd.name.meta["py_code"] |> <self>.decl_def_missing; }
-    # <self>.indent_level -= 1;
 }
 
 
 """Sub objects.
 
-name: Name,
+name_ref: NameType,
 is_func: bool,
 is_async: bool,
-doc: Optional[DocString],
-decorators: Optional["Decorators"],
-access: Optional[Token],
-signature: Optional["FuncSignature | TypeSpec | EventSignature"],
-body: Optional["CodeBlock"],
-arch_attached: Optional["ArchBlock"] = None,
+is_static: bool,
+is_abstract: bool,
+access: Optional[SubTag[Token]],
+signature: Optional[FuncSignature | SubNodeList[TypeSpec] | EventSignature],
+body: Optional[SubNodeList[CodeBlockStmt]],
+arch_attached: Optional[Architype] = None,
+doc: Optional[Constant] = None,
+decorators: Optional[SubNodeList[ExprType]] = None,
 """
 :object:PurplePygenPass:ability:exit_ability
 (nd: ast.Ability) {
@@ -119,18 +106,20 @@ arch_attached: Optional["ArchBlock"] = None,
 """Sub objects.
 
 event: Token,
-arch_tag_info: Optional["TypeList | TypeSpec"],
-return_type: Optional["TypeSpec"],
+arch_tag_info: Optional[SubNodeList[TypeSpec]],
+return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
 """
 :object:PurplePygenPass:ability:exit_event_signature
 (nd: ast.EventSignature) {
     if nd.arch_tag_info {
+        (nd.arch_tag_info, delim="|") |> <self>.sep_node_list;
         (nd, f"{C.HERE}: {nd.arch_tag_info.meta['py_code']}")
             |> <self>.emit;
     } else {
         (nd, f"{C.HERE}") |> <self>.emit;
     }
     if nd.return_type {
+        (nd.return_type, delim="|") |> <self>.sep_node_list;
         (nd, f" -> {nd.return_type.meta['py_code']}") |> <self>.emit;
     }
 }
