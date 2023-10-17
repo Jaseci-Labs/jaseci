@@ -10,7 +10,7 @@ import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
 from jaclang.jac.constant import EdgeDir, Tokens as Tok
 from jaclang.jac.passes.ir_pass import Pass
-from jaclang.vendor.lark import Lark, logger
+from jaclang.vendor.lark import Lark, Transformer, logger
 
 
 class JacParser(Pass):
@@ -61,12 +61,14 @@ class JacParser(Pass):
             debug=True,
             lexer_callbacks={"COMMENT": JacParser._comment_callback},
         )
+        JacParser.JacTransformer = Transformer
         logger.setLevel(logging.DEBUG)
 
     comment_cache = []
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})
+    JacTransformer = jl.Transformer
 
-    class TreeToAST(jl.Transformer):
+    class TreeToAST(JacTransformer):
         """Transform parse tree to AST."""
 
         def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:
