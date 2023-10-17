@@ -2531,9 +2531,9 @@ class JacParser(Pass):
             """
             chomp = [*kid]
             chomp = chomp[1:]
-            is_range = isinstance(chomp[0], ast.Token) or isinstance(
-                chomp[1], ast.Token
-            )
+            is_range = (
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON
+            ) or (isinstance(chomp[1], ast.Token) and chomp[1].name == Tok.COLON)
             expr1 = chomp[0] if isinstance(chomp[0], ast.ExprType) else None
             expr2 = (
                 chomp[1]

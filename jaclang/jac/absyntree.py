@@ -203,6 +203,8 @@ class Test(AstNode):
         # kid[0] = self.name  # Index is 0 since Doc string is inserted after init
         self.body = body
         super().__init__(kid=kid)
+        if self.name not in self.kid:
+            self.add_kids_left([self.name], pos_update=False)
 
 
 class ModuleCode(AstNode):
@@ -415,7 +417,11 @@ class Ability(AstNode):
     def py_resolve_name(self) -> str:
         """Resolve name."""
         if isinstance(self.name_ref, Name):
-            return self.name_ref.value
+            return (
+                self.name_ref.value
+                if self.name_ref.name != Tok.KWESC_NAME
+                else self.name_ref.value[2:]
+            )
         elif isinstance(self.name_ref, (SpecialVarRef, ArchRef)):
             return self.name_ref.py_resolve_name()
         else:
@@ -1220,7 +1226,11 @@ class ArchRef(AstNode):
     def py_resolve_name(self) -> str:
         """Resolve name."""
         if isinstance(self.name_ref, Name):
-            return self.name_ref.value
+            return (
+                self.name_ref.value
+                if self.name_ref.name != Tok.KWESC_NAME
+                else self.name_ref.value[2:]
+            )
         elif isinstance(self.name_ref, SpecialVarRef):
             return self.name_ref.py_resolve_name()
         else:
