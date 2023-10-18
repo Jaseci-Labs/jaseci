@@ -33,7 +33,7 @@ class BluePygenPass(Pass):
         if node.meta["py_code"] and (
             len(spl := node.meta["py_code"].split()) < 3 or spl[-3] != "#"
         ):
-            self.emit(node, f"  # {self.get_mod_index(node)} {node.line}")
+            self.emit(node, f"  # {self.get_mod_index(node)} {node.loc.first_line}")
         self.emit(node, "\n")
 
     def emit_ln_unique(self, node: ast.AstNode, s: str) -> None:
@@ -77,7 +77,7 @@ class BluePygenPass(Pass):
         for i in node.items:
             node.meta[
                 "py_code"
-            ] += f"{i.meta['py_code']}  # {self.get_mod_index(i)} {i.line}\n"
+            ] += f"{i.meta['py_code']}  # {self.get_mod_index(i)} {i.loc.first_line}\n"
         return node.meta["py_code"]
 
     def sep_node_list(self, node: ast.SubNodeList, delim: str = " ") -> str:

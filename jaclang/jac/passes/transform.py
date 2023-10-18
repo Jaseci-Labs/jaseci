@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from jaclang.jac.absyntree import AstNode
+from jaclang.jac.codeloc import CodeLocInfo
 from jaclang.jac.constant import Constants as Con, Values as Val
 from jaclang.utils.helpers import add_line_numbers, clip_code_section
 from jaclang.utils.log import logging
@@ -14,15 +15,11 @@ from jaclang.utils.log import logging
 class Alert:
     """Alert interface."""
 
-    def __init__(
-        self, msg: str, mod: str, line: int, col_start: int, col_end: int
-    ) -> None:
+    def __init__(self, msg: str, mod: str, loc: CodeLocInfo) -> None:
         """Initialize alert."""
         self.msg = msg
         self.mod = mod
-        self.line = line
-        self.col_start = col_start
-        self.col_end = col_end
+        self.loc: CodeLocInfo = loc
 
     def __str__(self) -> str:
         """Return string representation of alert."""
@@ -30,7 +27,7 @@ class Alert:
             mod_path = os.path.relpath(self.mod, start=os.getcwd())
         except ValueError:
             mod_path = "<code_string>"
-        return f"{mod_path}, line {self.line}, col {self.col_start}: {self.msg}"
+        return f"{mod_path}, line {self.loc.first_line}, col {self.loc.col_start}: {self.msg}"
 
 
 class TransformError(Exception):
@@ -51,7 +48,9 @@ class TransformError(Exception):
             for i in self.warnings:
                 message += "\n" + str(i)
         if len(errors) or len(warnings):
-            jac_err_line = errors[0].line if len(errors) else warnings[0].line
+            jac_err_line = (
+                errors[0].loc.first_line if len(errors) else warnings[0].loc.first_line
+            )
             with open(errors[0].mod, "r") as file:
                 jac_code_string = file.read()
             message += f"\n{Con.JAC_ERROR_PREAMBLE}\n" + clip_code_section(
@@ -90,25 +89,13 @@ class Transform(ABC):
 
     def log_error(self, msg: str) -> None:
         """Pass Error."""
-        alrt = Alert(
-            msg,
-            self.mod_path,
-            self.cur_node.line if self.cur_node else 0,
-            self.cur_node.col_start if self.cur_node else 0,
-            self.cur_node.col_end if self.cur_node else 0,
-        )
+        alrt = Alert(msg, self.mod_path, self.cur_node.loc)
         self.errors_had.append(alrt)
         self.logger.error(str(alrt))
 
     def log_warning(self, msg: str) -> None:
         """Pass Error."""
-        alrt = Alert(
-            msg,
-            self.mod_path,
-            self.cur_node.line if self.cur_node else 0,
-            self.cur_node.col_start if self.cur_node else 0,
-            self.cur_node.col_end if self.cur_node else 0,
-        )
+        alrt = Alert(msg, self.mod_path, self.cur_node.loc)
         self.warnings_had.append(alrt)
         self.logger.warning(str(alrt))
 

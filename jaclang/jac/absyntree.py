@@ -4,6 +4,7 @@ from __future__ import annotations
 import pprint
 from typing import Generic, Optional, TypeVar, Union
 
+from jaclang.jac.codeloc import CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.symtable import SymbolTable
@@ -21,22 +22,7 @@ class AstNode:
         self._sub_node_tab: dict[type, list[AstNode]] = {}
         self._typ: type = type(None)
         self.meta: dict = {}
-        self.tok_range: tuple[Token, Token] = self.resolve_tok_range()
-
-    @property
-    def line(self) -> int:
-        """Get line number."""
-        return self.tok_range[0].line_no
-
-    @property
-    def col_start(self) -> int:
-        """Get column position number."""
-        return self.tok_range[0].c_start
-
-    @property
-    def col_end(self) -> int:
-        """Get column position number."""
-        return self.tok_range[1].c_end
+        self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
 
     def add_kids_left(self, nodes: list[AstNode], pos_update: bool = True) -> AstNode:
         """Add kid left."""
@@ -44,7 +30,7 @@ class AstNode:
         if pos_update:
             for i in nodes:
                 i.parent = self
-            self.tok_range = self.resolve_tok_range()
+            self.loc.update_first_token(self.kid[0].loc.first_tok)
         return self
 
     def add_kids_right(self, nodes: list[AstNode], pos_update: bool = True) -> AstNode:
@@ -53,7 +39,7 @@ class AstNode:
         if pos_update:
             for i in nodes:
                 i.parent = self
-            self.tok_range = self.resolve_tok_range()
+            self.loc.update_last_token(self.kid[-1].loc.last_tok)
         return self
 
     def set_kids(self, nodes: list[AstNode]) -> AstNode:
@@ -61,7 +47,7 @@ class AstNode:
         self.kid = nodes
         for i in nodes:
             i.parent = self
-        self.tok_range = self.resolve_tok_range()
+        self.loc.update_token_range(*self.resolve_tok_range())
         return self
 
     def set_parent(self, parent: AstNode) -> AstNode:
@@ -73,8 +59,8 @@ class AstNode:
         """Get token range."""
         if len(self.kid):
             return (
-                self.kid[0].tok_range[0],
-                self.kid[-1].tok_range[1],
+                self.kid[0].loc.first_tok,
+                self.kid[-1].loc.last_tok,
             )
         elif isinstance(self, Token):
             return (self, self)
@@ -86,7 +72,8 @@ class AstNode:
         ret = {
             "node": str(type(self).__name__),
             "kid": [x.to_dict() for x in self.kid if x],
-            "line": self.tok_range[0].line,
+            "line": self.loc.first_line,
+            "col": self.loc.col_start,
         }
         if isinstance(self, Token):
             ret["name"] = self.name
@@ -192,9 +179,9 @@ class Test(AstNode):
             else Name(
                 name="NAME",
                 value=f"test_t{Test.TEST_COUNT}",
-                col_start=name.col_start,
-                col_end=name.col_end,
-                line=name.line,
+                col_start=name.loc.col_start,
+                col_end=name.loc.col_end,
+                line=name.loc.first_line,
                 pos_start=name.pos_start,
                 pos_end=name.pos_end,
                 kid=name.kid,

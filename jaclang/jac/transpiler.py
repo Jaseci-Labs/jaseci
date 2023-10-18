@@ -11,7 +11,7 @@ from jaclang.jac.passes.blue import (
     pass_schedule,
 )
 from jaclang.jac.passes.blue.schedules import format_pass
-from jaclang.jac.transform import Alert, Transform
+from jaclang.jac.passes.transform import Alert, Transform
 
 
 T = TypeVar("T", bound=Pass)

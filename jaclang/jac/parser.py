@@ -1090,9 +1090,9 @@ class JacParser(Pass):
                     ast.BuiltinType(
                         name=kid[0].name,
                         value=kid[0].value,
-                        line=kid[0].line,
-                        col_start=kid[0].col_start,
-                        col_end=kid[0].col_end,
+                        line=kid[0].loc.first_line,
+                        col_start=kid[0].loc.col_start,
+                        col_end=kid[0].loc.col_end,
                         pos_start=kid[0].pos_start,
                         pos_end=kid[0].pos_end,
                         kid=kid[0].kid,

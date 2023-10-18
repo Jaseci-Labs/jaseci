@@ -48,7 +48,7 @@ class SymTabBuildPass(Pass):
         )
         err_msg = (
             f"Name used for {typ} '{name}' already declared at "
-            f"{mod_path}, line {original.line}"
+            f"{mod_path}, line {original.loc.first_line}"
         )
         if other_nodes:
             for i in other_nodes:
@@ -57,7 +57,7 @@ class SymTabBuildPass(Pass):
                     if i.mod_link
                     else self.ice("Mod_link unknown")
                 )
-                err_msg += f", also see {mod_path}, line {i.line}"
+                err_msg += f", also see {mod_path}, line {i.loc.first_line}"
         self.warning(err_msg)
 
     def enter_module(self, node: ast.Module) -> None:
