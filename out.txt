@@ -1,0 +1,18 @@
+Module
++-- Token
++-- Elements
+    +-- Architype
+    |   +-- Token
+    |   +-- Name
+    |   +-- BaseClasses
+    |   +-- ArchBlock
+    +-- Architype
+    |   +-- Token
+    |   +-- Name
+    |   +-- BaseClasses
+    |   +-- ArchBlock
+    +-- Architype
+        +-- Token
+        +-- Name
+        +-- BaseClasses
+        +-- ArchBlock
