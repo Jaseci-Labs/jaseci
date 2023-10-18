@@ -11,20 +11,10 @@ from jaclang.jac.passes.blue import (
     pass_schedule,
 )
 from jaclang.jac.passes.blue.schedules import format_pass
-from jaclang.jac.passes.transform import Alert, Transform
+from jaclang.jac.passes.transform import Alert
 
 
 T = TypeVar("T", bound=Pass)
-
-
-def jac_file_to_parse_tree(file_path: str, base_dir: str) -> Transform:
-    """Convert a Jac file to an AST."""
-    with open(file_path) as file:
-        source = ast.SourceString(file.read())
-        prse = JacParser(
-            mod_path=file_path, input_ir=source, base_path=base_dir, prior=None
-        )
-        return prse
 
 
 def transpile_jac_blue(file_path: str, base_dir: str) -> list[Alert]:
@@ -70,7 +60,22 @@ def jac_file_to_pass(
     schedule: list[Type[T]] = pass_schedule,
 ) -> T:
     """Convert a Jac file to an AST."""
-    ast_ret = jac_file_to_parse_tree(file_path, base_dir)
+    with open(file_path) as file:
+        return jac_str_to_pass(file.read(), file_path, base_dir, target, schedule)
+
+
+def jac_str_to_pass(
+    jac_str: str,
+    file_path: str,
+    base_dir: str = "",
+    target: Type[T] = BluePygenPass,
+    schedule: list[Type[T]] = pass_schedule,
+) -> T:
+    """Convert a Jac file to an AST."""
+    source = ast.SourceString(jac_str)
+    ast_ret = JacParser(
+        mod_path=file_path, input_ir=source, base_path=base_dir, prior=None
+    )
     for i in schedule:
         if i == target:
             break

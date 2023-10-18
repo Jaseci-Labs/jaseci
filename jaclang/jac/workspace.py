@@ -7,16 +7,21 @@ from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.blue import DeclDefMatchPass
-from jaclang.jac.transpiler import Alert, jac_file_to_pass
+from jaclang.jac.transpiler import Alert, jac_str_to_pass
 
 
 class ModuleInfo:
     """Module IR and Stats."""
 
     def __init__(
-        self, ir: Optional[ast.Module], errors: list[Alert], warnings: list[Alert]
+        self,
+        text: str,
+        ir: Optional[ast.Module],
+        errors: list[Alert],
+        warnings: list[Alert],
     ) -> None:
         """Initialize module info."""
+        self.text = text
         self.ir = ir
         self.errors = errors
         self.warnings = warnings
@@ -42,10 +47,16 @@ class Workspace:
         ]:
             if file in self.modules:
                 continue
-            build = jac_file_to_pass(
-                file_path=file, base_dir=self.path, target=DeclDefMatchPass
+            with open(file, "r") as f:
+                source = f.read()
+            build = jac_str_to_pass(
+                jac_str=source,
+                file_path=file,
+                base_dir=self.path,
+                target=DeclDefMatchPass,
             )
             self.modules[file] = ModuleInfo(
+                text=source,
                 ir=build.ir if isinstance(build.ir, ast.Module) else None,
                 errors=build.errors_had,
                 warnings=build.warnings_had,
@@ -53,6 +64,7 @@ class Workspace:
             if build.ir:
                 for sub in build.ir.meta["sub_import_tab"]:
                     self.modules[sub] = ModuleInfo(
+                        text=source,
                         ir=build.ir.meta["sub_import_tab"][sub],
                         errors=build.errors_had,
                         warnings=build.warnings_had,
@@ -60,10 +72,16 @@ class Workspace:
 
     def rebuild_file(self, file_path: str, deep: bool = False) -> None:
         """Rebuild a file."""
-        build = jac_file_to_pass(
-            file_path=file_path, base_dir=self.path, target=DeclDefMatchPass
+        with open(file_path, "r") as f:
+            source = f.read()
+        build = jac_str_to_pass(
+            jac_str=source,
+            file_path=file_path,
+            base_dir=self.path,
+            target=DeclDefMatchPass,
         )
         self.modules[file_path] = ModuleInfo(
+            text=source,
             ir=build.ir if isinstance(build.ir, ast.Module) else None,
             errors=build.errors_had,
             warnings=build.warnings_had,
@@ -71,6 +89,7 @@ class Workspace:
         if deep:
             for sub in build.ir.meta["sub_import_tab"]:
                 self.modules[sub] = ModuleInfo(
+                    text=source,
                     ir=build.ir.meta["sub_import_tab"][sub],
                     errors=build.errors_had,
                     warnings=build.warnings_had,
