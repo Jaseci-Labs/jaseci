@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 
 import jaclang.jac.absyntree as ast
@@ -15,13 +14,11 @@ class ModuleInfo:
 
     def __init__(
         self,
-        text: str,
-        ir: Optional[ast.Module],
+        ir: ast.Module,
         errors: list[Alert],
         warnings: list[Alert],
     ) -> None:
         """Initialize module info."""
-        self.text = text
         self.ir = ir
         self.errors = errors
         self.warnings = warnings
@@ -55,22 +52,22 @@ class Workspace:
                 base_dir=self.path,
                 target=DeclDefMatchPass,
             )
+            if not isinstance(build.ir, ast.Module):
+                continue
             self.modules[file] = ModuleInfo(
-                text=source,
-                ir=build.ir if isinstance(build.ir, ast.Module) else None,
+                ir=build.ir,
                 errors=build.errors_had,
                 warnings=build.warnings_had,
             )
             if build.ir:
                 for sub in build.ir.meta["sub_import_tab"]:
                     self.modules[sub] = ModuleInfo(
-                        text=source,
                         ir=build.ir.meta["sub_import_tab"][sub],
                         errors=build.errors_had,
                         warnings=build.warnings_had,
                     )
 
-    def rebuild_file(self, file_path: str, deep: bool = False) -> None:
+    def rebuild_file(self, file_path: str, deep: bool = False) -> bool:
         """Rebuild a file."""
         with open(file_path, "r") as f:
             source = f.read()
@@ -80,20 +77,21 @@ class Workspace:
             base_dir=self.path,
             target=DeclDefMatchPass,
         )
+        if not isinstance(build.ir, ast.Module):
+            return False
         self.modules[file_path] = ModuleInfo(
-            text=source,
-            ir=build.ir if isinstance(build.ir, ast.Module) else None,
+            ir=build.ir,
             errors=build.errors_had,
             warnings=build.warnings_had,
         )
         if deep:
             for sub in build.ir.meta["sub_import_tab"]:
                 self.modules[sub] = ModuleInfo(
-                    text=source,
                     ir=build.ir.meta["sub_import_tab"][sub],
                     errors=build.errors_had,
                     warnings=build.warnings_had,
                 )
+        return True
 
     def add_file(self, file_path: str) -> None:
         """Add a file to the workspace."""
@@ -106,3 +104,9 @@ class Workspace:
     def file_list(self) -> list[str]:
         """Return a list of files in the workspace."""
         return list(self.modules.keys())
+
+    def get_dependencies(self, file_path: str) -> list[str]:
+        """Return a list of dependencies for a file."""
+        return [
+            i.mod_path for i in self.modules[file_path].ir.get_all_sub_nodes(ast.Module)
+        ]

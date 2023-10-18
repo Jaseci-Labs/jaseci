@@ -18,16 +18,17 @@ class JacParser(Pass):
 
     dev_mode = False
 
-    def before_pass(self) -> None:
+    def before_pass(self, source: ast.SourceString) -> None:
         """Initialize parser."""
         super().before_pass()
+        self.source = source
         self.comments = []
         if JacParser.dev_mode:
             JacParser.make_dev()
 
     def transform(self, ir: ast.SourceString) -> Optional[ast.Module]:
         """Transform input IR."""
-        self.before_pass()
+        self.before_pass(ir)
         try:
             tree, self.comments = JacParser.parse(
                 ir.value, on_error=self.error_callback
@@ -118,6 +119,7 @@ class JacParser(Pass):
             if len(valid_body) == len(body):
                 mod = ast.Module(
                     name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
+                    source=self.parse_ref.source,
                     doc=doc,
                     body=valid_body,
                     mod_path=self.parse_ref.mod_path,

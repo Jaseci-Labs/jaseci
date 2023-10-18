@@ -67,6 +67,12 @@ class AstNode:
         else:
             raise ValueError(f"Empty kid for Token {type(self).__name__}")
 
+    def get_all_sub_nodes(self, typ: type[T], brute_force: bool = True) -> list[T]:
+        """Get all sub nodes of type."""
+        from jaclang.jac.passes import Pass
+
+        return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
+
     def to_dict(self) -> dict:
         """Return dict representation of node."""
         ret = {
@@ -96,6 +102,7 @@ class Module(AstNode):
     def __init__(
         self,
         name: str,
+        source: SourceString,
         doc: Optional[Constant],
         body: list[ElementStmt],
         mod_path: str,
@@ -105,6 +112,7 @@ class Module(AstNode):
     ) -> None:
         """Initialize whole program node."""
         self.name = name
+        self.source = source
         self.doc = doc
         self.body = body
         self.mod_path = mod_path
@@ -1375,6 +1383,11 @@ class SourceString(Token):
             pos_end=0,
             kid=[],
         )
+
+    @property
+    def code(self) -> str:
+        """Return code."""
+        return self.value
 
 
 class EmptyToken(Token):
