@@ -6,7 +6,7 @@ import sys
 from typing import List, Optional
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.parser import JacLexer
+
 from jaclang.jac.passes.blue.schedules import SymbolTablePrinterPass, sym_tab_print
 from jaclang.jac.passes.blue.schedules import SymtabDotGraphPass, sym_tab_dot_gen
 from jaclang.jac.passes.blue.schedules import ASTPrinterPass, full_ast_print

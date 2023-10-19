@@ -37,12 +37,10 @@ full_ast_dot_gen = [
 ]
 
 ast_print = [
-    AstBuildPass,
     ASTPrinterPass
 ]
 
 full_ast_print = [
-    AstBuildPass,
     SubNodeTabPass,
     ImportPass,
     SymTabBuildPass,
@@ -51,7 +49,6 @@ full_ast_print = [
 ]
 
 sym_tab_print = [
-    AstBuildPass,
     SubNodeTabPass,
     ImportPass,
     SymTabBuildPass,
@@ -60,7 +57,6 @@ sym_tab_print = [
 ]
 
 sym_tab_dot_gen = [
-    AstBuildPass,
     SubNodeTabPass,
     ImportPass,
     SymTabBuildPass,

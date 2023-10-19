@@ -40,6 +40,8 @@ class DotGraphPass(Pass):
             shape = 'shape="box"'
             style = 'style="filled"'
             fillcolor = f'fillcolor="{DOT_GRAPH_CLASS_COLOR_MAP[node.__class__]}"'
+        if isinstance(node, ast.Token):
+            shape = 'shape="box"'
 
         info = self.__gen_node_info(node)
         if len(info) == 0:
@@ -47,13 +49,16 @@ class DotGraphPass(Pass):
         else:
             label = f"<{node.__class__.__name__}"
             for i in info:
-                label += f"<BR/> {i[0]}: {i[1]}"
+                label += f"<BR/> {i[0]}{i[1]}{i[2]}"
             label += ">"
 
         label = f"{label} {shape} {style} {fillcolor}".strip()
         return f"[label={label}]"
 
-    def __gen_node_info(self, node: ast.AstNode) -> list[tuple[str, str]]:
+    def __gen_node_info(self, node: ast.AstNode) -> list[tuple[str, str, str]]:
+        info_of_type = ":"
+        info_of_value = "="
+        # Get info from the fieds and their types from the constructors
         init_source = inspect.getsource(node.__class__.__init__)
         info_to_be_dumped: list[tuple[str, str]] = []
         for line in init_source.split("\n"):
@@ -65,9 +70,15 @@ class DotGraphPass(Pass):
                 info_to_be_dumped.append(
                     (
                         line.strip().split(":")[0].strip(),
+                        info_of_type,
                         line.strip().split(":")[1].split("#")[0].strip(),
                     )
                 )
+        # Get token value and name
+        if isinstance(node, ast.Token):
+            node: ast.Token
+            info_to_be_dumped.append(("name", info_of_value, node.name))
+            info_to_be_dumped.append(("value", info_of_value, node.value))
         return info_to_be_dumped
 
     def enter_node(self, node: ast.AstNode) -> None:

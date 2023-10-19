@@ -48,13 +48,20 @@ class ASTPrinterPass(Pass):
         markers += marker if level > 0 else ""
         if self.SAVE_OUTPUT:
             f = open(self.SAVE_OUTPUT, "a+")
-            print(f"{markers}{root.__class__.__name__}", file=f)
+            print(f"{markers}{self.__node_repr_in_tree(root)}", file=f)
             f.close()
         else:
-            print(f"{markers}{root.__class__.__name__}")
+            print(f"{markers}{self.__node_repr_in_tree(root)}")
         # After root has been printed, recurse down (depth-first) the child nodes.
         for i, child in enumerate(root.kid):
             # The last child will not need connection markers on the current level
             # (see example above)
             is_last = i == len(root.kid) - 1
             self.__print_tree(child, marker, [*level_markers, not is_last])
+
+    def __node_repr_in_tree(self, node: ast.AstNode) -> str:
+        if isinstance(node, ast.Token):
+            node: ast.Token
+            return f"{node.__class__.__name__}(name={node.name}, val={node.value})"
+        else:
+            return node.__class__.__name__
