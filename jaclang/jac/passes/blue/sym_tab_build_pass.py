@@ -2,6 +2,7 @@
 from typing import Optional
 
 import jaclang.jac.absyntree as ast
+from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 from jaclang.jac.symtable import SymbolHitType as Sht, SymbolTable, SymbolType as St
 
@@ -269,7 +270,13 @@ class SymTabBuildPass(Pass):
             i.arch_attached = node
         if collide := self.cur_scope().insert(
             name=node.name.value,
-            sym_type=St.ARCH,
+            sym_type=St.OBJECT_ARCH
+            if node.arch_type.value == Tok.KW_OBJECT
+            else St.NODE_ARCH
+            if node.arch_type.value == Tok.KW_NODE
+            else St.EDGE_ARCH
+            if node.arch_type.value == Tok.KW_EDGE
+            else St.WALKER_ARCH,
             sym_hit=Sht.DECL_DEFN if node.body else Sht.DECL,
             node=node,
             single=True,
@@ -440,7 +447,7 @@ class SymTabBuildPass(Pass):
         """
         if collide := self.cur_scope().insert(
             name=node.name.value,
-            sym_type=St.ARCH,
+            sym_type=St.ENUM_ARCH,
             sym_hit=Sht.DECL_DEFN if node.body else Sht.DECL,
             node=node,
             single=True,

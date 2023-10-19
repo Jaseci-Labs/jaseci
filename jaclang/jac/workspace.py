@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import os
 
-
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.blue import DeclDefMatchPass
+from jaclang.jac.symtable import Symbol, SymbolTable
 from jaclang.jac.transpiler import Alert, jac_str_to_pass
 
 
@@ -110,3 +110,28 @@ class Workspace:
         return [
             i.mod_path for i in self.modules[file_path].ir.get_all_sub_nodes(ast.Module)
         ]
+
+    def get_symbols(self, file_path: str) -> list[Symbol]:
+        """Return a list of symbols for a file."""
+
+        def sym_tab_list(sym_tab: SymbolTable) -> list[SymbolTable]:
+            """Iterate through symbol table."""
+            sym_tabs = (
+                [sym_tab]
+                if not (
+                    isinstance(sym_tab.owner, ast.Module)
+                    and sym_tab.owner.mod_path != file_path
+                )
+                else []
+            )
+            for i in sym_tab.kid:
+                sym_tabs += sym_tab_list(i)
+            return sym_tabs
+
+        symbols = []
+        if file_path in self.modules:
+            root_table = self.modules[file_path].ir.sym_tab
+            if file_path in self.modules and isinstance(root_table, SymbolTable):
+                for i in sym_tab_list(sym_tab=root_table):
+                    symbols += list(i.tab.values())
+        return symbols
