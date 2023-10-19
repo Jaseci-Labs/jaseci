@@ -12,10 +12,10 @@ class SymbolTablePrinterPass(Pass):
 
     class __SymbolTree:
         def __init__(
-                self,
-                node_name: str,
-                parent: Optional[SymbolTablePrinterPass.__SymbolTree] = None,
-                children: Optional[List[SymbolTablePrinterPass.__SymbolTree]] = None
+            self,
+            node_name: str,
+            parent: Optional[SymbolTablePrinterPass.__SymbolTree] = None,
+            children: Optional[List[SymbolTablePrinterPass.__SymbolTree]] = None,
         ) -> None:
             self.parent = parent
             self.kid = children if children is not None else []
@@ -41,16 +41,25 @@ class SymbolTablePrinterPass(Pass):
         self.terminate()
         return super().before_pass()
 
-    def __build_symbol_tree(self, node: ast.SymbolTable, parent_node: Optional[__SymbolTree] = None) -> __SymbolTree:
-        root = self.__SymbolTree(node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
-                                 parent=parent_node)
+    def __build_symbol_tree(
+        self, node: ast.SymbolTable, parent_node: Optional[__SymbolTree] = None
+    ) -> __SymbolTree:
+        root = self.__SymbolTree(
+            node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
+            parent=parent_node,
+        )
         symbols = self.__SymbolTree(node_name="Symbols", parent=root)
         children = self.__SymbolTree(node_name="Children", parent=root)
 
         for sym in node.tab:
             sym = node.tab[sym]
-            symbol_node = self.__SymbolTree(node_name=f"Symbol({sym.name})", parent=symbols)
-            self.__SymbolTree(node_name=f"declared in {sym.decl.__class__.__name__}", parent=symbol_node)
+            symbol_node = self.__SymbolTree(
+                node_name=f"Symbol({sym.name})", parent=symbols
+            )
+            self.__SymbolTree(
+                node_name=f"declared in {sym.decl.__class__.__name__}",
+                parent=symbol_node,
+            )
             defn = self.__SymbolTree(node_name="defn", parent=symbol_node)
             for n in sym.defn:
                 self.__SymbolTree(node_name=n.__class__.__name__, parent=defn)
@@ -63,10 +72,10 @@ class SymbolTablePrinterPass(Pass):
         return root
 
     def __print_tree(
-            self,
-            root: __SymbolTree,
-            marker: str = "+-- ",
-            level_markers: Optional[List[str]] = None
+        self,
+        root: __SymbolTree,
+        marker: str = "+-- ",
+        level_markers: Optional[List[str]] = None,
     ) -> None:
         """Recursive function that prints the hierarchical structure of a tree.
 
@@ -85,7 +94,7 @@ class SymbolTablePrinterPass(Pass):
         connection_str = "|" + empty_str[:-1]
         if not level_markers:
             level_markers = []
-        level = len(level_markers)   # recursion level
+        level = len(level_markers)  # recursion level
 
         def mapper(draw: bool) -> str:
             return connection_str if draw else empty_str
@@ -93,9 +102,8 @@ class SymbolTablePrinterPass(Pass):
         markers = "".join(map(mapper, level_markers[:-1]))
         markers += marker if level > 0 else ""
         if self.SAVE_OUTPUT:
-            f = open(self.SAVE_OUTPUT, "a+")
-            print(f"{markers}{root.name}", file=f)
-            f.close()
+            with open(self.SAVE_OUTPUT, "a+") as f:
+                print(f"{markers}{root.name}", file=f)
         else:
             print(f"{markers}{root.name}")
         # After root has been printed, recurse down (depth-first) the child nodes.

@@ -21,7 +21,10 @@ class SymbolTablePrinterPassTest(TestCase):
         """Basic test for pass."""
         SymbolTablePrinterPass.SAVE_OUTPUT = "out.txt"
         state = jac_file_to_pass(
-            self.fixture_abs_path("multi_def_err.jac"), "", SymbolTablePrinterPass, sym_tab_print
+            self.fixture_abs_path("multi_def_err.jac"),
+            "",
+            SymbolTablePrinterPass,
+            sym_tab_print,
         )
         self.assertFalse(state.errors_had)
 

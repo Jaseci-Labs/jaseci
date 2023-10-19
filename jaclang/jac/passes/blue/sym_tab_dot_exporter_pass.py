@@ -12,10 +12,10 @@ class SymtabDotGraphPass(Pass):
 
     class __SymbolTree:
         def __init__(
-                self,
-                node_name: str,
-                parent: Optional[SymtabDotGraphPass.__SymbolTree] = None,
-                children: Optional[List[SymtabDotGraphPass.__SymbolTree]] = None
+            self,
+            node_name: str,
+            parent: Optional[SymtabDotGraphPass.__SymbolTree] = None,
+            children: Optional[List[SymtabDotGraphPass.__SymbolTree]] = None,
         ) -> None:
             self.parent = parent
             self.kid = children if children is not None else []
@@ -42,16 +42,25 @@ class SymtabDotGraphPass(Pass):
         self.terminate()
         return super().before_pass()
 
-    def __build_symbol_tree(self, node: ast.SymbolTable, parent_node: Optional[__SymbolTree] = None) -> __SymbolTree:
-        root = self.__SymbolTree(node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
-                                 parent=parent_node)
+    def __build_symbol_tree(
+        self, node: ast.SymbolTable, parent_node: Optional[__SymbolTree] = None
+    ) -> __SymbolTree:
+        root = self.__SymbolTree(
+            node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
+            parent=parent_node,
+        )
         symbols = self.__SymbolTree(node_name="Symbols", parent=root)
         children = self.__SymbolTree(node_name="Children", parent=root)
 
         for sym in node.tab:
             sym = node.tab[sym]
-            symbol_node = self.__SymbolTree(node_name=f"Symbol({sym.name})", parent=symbols)
-            self.__SymbolTree(node_name=f"declared in {sym.decl.__class__.__name__}", parent=symbol_node)
+            symbol_node = self.__SymbolTree(
+                node_name=f"Symbol({sym.name})", parent=symbols
+            )
+            self.__SymbolTree(
+                node_name=f"declared in {sym.decl.__class__.__name__}",
+                parent=symbol_node,
+            )
             defn = self.__SymbolTree(node_name="defn", parent=symbol_node)
             for n in sym.defn:
                 self.__SymbolTree(node_name=n.__class__.__name__, parent=defn)

@@ -6,11 +6,16 @@ import sys
 from typing import List, Optional
 
 import jaclang.jac.absyntree as ast
-
-from jaclang.jac.passes.blue.schedules import SymbolTablePrinterPass, sym_tab_print
-from jaclang.jac.passes.blue.schedules import SymtabDotGraphPass, sym_tab_dot_gen
-from jaclang.jac.passes.blue.schedules import ASTPrinterPass, full_ast_print
-from jaclang.jac.passes.blue.schedules import DotGraphPass, full_ast_dot_gen
+from jaclang.jac.passes.blue.schedules import (
+    ASTPrinterPass,
+    DotGraphPass,
+    SymbolTablePrinterPass,
+    SymtabDotGraphPass,
+    full_ast_dot_gen,
+    full_ast_print,
+    sym_tab_dot_gen,
+    sym_tab_print,
+)
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.helpers import pascal_to_snake
 
@@ -84,7 +89,9 @@ class AstTool:
 
     def pass_template(self, *args: List[str]) -> str:
         """Generate pass template."""
-        output = "import jaclang.jac.absyntree as ast\nfrom jaclang.jac.passes import Pass\n\nclass SomePass(Pass):\n"
+        output = "import jaclang.jac.absyntree as ast\n"
+        "from jaclang.jac.passes import Pass\n\n"
+        "class SomePass(Pass):\n"
 
         def emit(to_append: str) -> None:
             """Emit to output."""
@@ -151,7 +158,7 @@ class AstTool:
 
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
-            base = './' if not base else base
+            base = base if base else "./"
             jac_file_to_pass(file_name, base, DotGraphPass, full_ast_dot_gen)
             if DotGraphPass.OUTPUT_FILE_PATH:
                 return f"Dot file generated at {DotGraphPass.OUTPUT_FILE_PATH}"
@@ -173,7 +180,7 @@ class AstTool:
 
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
-            base = './' if not base else base
+            base = base if base else "./"
             jac_file_to_pass(file_name, base, ASTPrinterPass, full_ast_print)
             return ""
         else:
@@ -181,6 +188,7 @@ class AstTool:
 
     def symtab_print(self, *args: List[str]) -> str:
         """Generate a dot file for AST."""
+        print(args)
         args = args[0]
         if len(args) == 0:
             return "Usage: print <file_path>"
@@ -192,7 +200,7 @@ class AstTool:
 
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
-            base = './' if not base else base
+            base = base if base else "./"
             jac_file_to_pass(file_name, base, SymbolTablePrinterPass, sym_tab_print)
             return ""
         else:
@@ -212,7 +220,7 @@ class AstTool:
 
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
-            base = './' if not base else base
+            base = base if base else "./"
             jac_file_to_pass(file_name, base, SymtabDotGraphPass, sym_tab_dot_gen)
             if SymtabDotGraphPass.OUTPUT_FILE_PATH:
                 return f"Dot file generated at {SymtabDotGraphPass.OUTPUT_FILE_PATH}"
