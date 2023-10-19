@@ -18,3 +18,9 @@ class TestWrokspace(TestCase):
         ws = Workspace(path=os.path.join(os.path.dirname(__file__)))
         key = [i for i in ws.modules.keys() if "fam.jac" in i][0]
         self.assertGreater(len(ws.get_dependencies(key)), 0)
+
+    def test_symbols_basic(self) -> None:
+        """Basic test of functionarlity."""
+        ws = Workspace(path=os.path.join(os.path.dirname(__file__)))
+        key = [i for i in ws.modules.keys() if "fam.jac" in i][0]
+        self.assertGreater(len(ws.get_symbols(key)), 5)
