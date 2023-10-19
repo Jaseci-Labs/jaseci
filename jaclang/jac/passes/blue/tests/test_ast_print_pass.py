@@ -17,6 +17,12 @@ class AstPrinterPassTest(TestCase):
             os.remove("out.txt")
         return super().setUp()
 
+    def tearDown(self) -> None:
+        """Tear down test."""
+        if os.path.isfile("out.txt"):
+            os.remove("out.txt")
+        return super().tearDown()
+
     def test_report_generation(self) -> None:
         """Basic test for pass."""
         ASTPrinterPass.SAVE_OUTPUT = "out.txt"

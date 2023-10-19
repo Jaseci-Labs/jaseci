@@ -1,4 +1,6 @@
 """Test pass module."""
+import os
+
 from jaclang.jac.passes.blue import SymtabDotGraphPass
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCase
@@ -11,7 +13,15 @@ class DotGraphDrawerPassTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
+        if os.path.isfile("out.dot"):
+            os.remove("out.dot")
         return super().setUp()
+
+    def tearDown(self) -> None:
+        """Tear down test."""
+        if os.path.isfile("out.dot"):
+            os.remove("out.dot")
+        return super().tearDown()
 
     def test_report_generation(self) -> None:
         """Basic test for pass."""
