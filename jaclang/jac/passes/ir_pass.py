@@ -2,7 +2,7 @@
 from typing import Optional, TypeVar
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.transform import Transform
+from jaclang.jac.passes.transform import Transform
 from jaclang.utils.helpers import pascal_to_snake
 
 T = TypeVar("T", bound=ast.AstNode)
@@ -13,15 +13,14 @@ class Pass(Transform):
 
     def __init__(
         self,
-        prior: Transform,
         mod_path: str,
         input_ir: ast.AstNode,
+        prior: Optional[Transform],
         base_path: str = "",
     ) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
-        self.cur_node = input_ir  # tracks current node during traversal
         self.ir = input_ir
         Transform.__init__(self, mod_path, input_ir, base_path, prior)
 
@@ -37,15 +36,11 @@ class Pass(Transform):
         """Run on entering node."""
         if hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
-        if isinstance(node, ast.Parse) and hasattr(self, f"enter_{node.name}"):
-            getattr(self, f"enter_{node.name}")(node)
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Run on exiting node."""
         if hasattr(self, f"exit_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"exit_{pascal_to_snake(type(node).__name__)}")(node)
-        if isinstance(node, ast.Parse) and hasattr(self, f"exit_{node.name}"):
-            getattr(self, f"exit_{node.name}")(node)
 
     def terminate(self) -> None:
         """Terminate traversal."""
@@ -55,15 +50,16 @@ class Pass(Transform):
         """Prune traversal."""
         self.prune_signal = True
 
+    @staticmethod
     def get_all_sub_nodes(
-        self, node: ast.AstNode, typ: type[T], brute_force: bool = False
+        node: ast.AstNode, typ: type[T], brute_force: bool = False
     ) -> list[T]:
         """Get all sub nodes of type."""
         result = []
         # Assumes pass built the sub node table
         if not node:
             return result
-        elif len(node._sub_node_tab) and not brute_force:
+        elif len(node._sub_node_tab):
             result.extend(node._sub_node_tab[typ] if typ in node._sub_node_tab else [])
         elif len(node.kid):
             if not brute_force:
@@ -73,7 +69,7 @@ class Pass(Transform):
                 for i in node.kid:
                     if isinstance(i, typ):
                         result.append(i)
-                    result.extend(self.get_all_sub_nodes(i, typ, brute_force))
+                    result.extend(Pass.get_all_sub_nodes(i, typ, brute_force))
         return result
 
     def recalculate_parents(self, node: ast.AstNode) -> None:
@@ -123,7 +119,6 @@ class Pass(Transform):
             node = self.cur_node
         if not isinstance(node, ast.AstNode):
             self.ice("Current node is not an AstNode.")
-        self.cur_line = node.line
         if node.mod_link:
             self.rel_mod_path = node.mod_link.rel_mod_path
             self.mod_path = node.mod_link.mod_path
@@ -140,8 +135,6 @@ class Pass(Transform):
 
     def ice(self, msg: str = "Something went horribly wrong!") -> None:
         """Pass Error."""
-        if isinstance(self.cur_node, ast.AstNode):
-            self.cur_line = self.cur_node.line
         self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
         raise RuntimeError(
             f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"

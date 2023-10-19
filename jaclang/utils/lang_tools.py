@@ -99,7 +99,7 @@ class AstTool:
 
             for kid in cls.kids:
                 emit(
-                    f"    {kid.name}: {kid.typ}{' ='+kid.default if kid.default else ''},"
+                    f"    {kid.name}: {kid.typ}{' ='+str(kid.default) if kid.default else ''},"
                 )
 
             emit('    """\n')
@@ -113,13 +113,6 @@ class AstTool:
             .replace("')", "")
         )
         return output
-
-    def jac_keywords(self, *args: List[str]) -> str:
-        """Get all Jac keywords as an or string."""
-        ret = ""
-        for k in JacLexer._remapping["NAME"].keys():
-            ret += f"{k}|"
-        return ret[:-1]
 
     def md_doc(self, *args: List[str]) -> str:
         """Generate mermaid markdown doc."""

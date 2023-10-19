@@ -54,8 +54,8 @@ class DeclDefMatchPass(Pass):
                         decl_node,
                     )
                     continue
-                ast.append_node(decl_node, sym.defn[-1].body)  # type: ignore
-                decl_node.body = sym.defn[-1].body  # type: ignore
+                decl_node.body = sym.defn[-1]  # type: ignore
+                decl_node.add_kids_right([sym.defn[-1]], pos_update=False)  # type: ignore
                 decl_node.sym_tab.tab = sym.defn[-1].sym_tab.tab  # type: ignore
                 sym.decl = decl_node
 

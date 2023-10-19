@@ -8,10 +8,19 @@ from jaclang.jac.passes import Pass
 class SubNodeTabPass(Pass):
     """AST Enrichment Pass for basic high level semantics."""
 
+    def before_pass(self) -> None:
+        """Initialize pass."""
+        self.cur_module = None
+
     def enter_node(self, node: ast.AstNode) -> None:
         """Table builder."""
         super().enter_node(node)
         node._sub_node_tab = {}  # clears on entry
+        node.mod_link = self.cur_module
+
+    def enter_module(self, node: ast.Module) -> None:
+        """Update cur module."""
+        self.cur_module = node
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Table builder."""

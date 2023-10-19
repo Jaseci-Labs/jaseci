@@ -13,7 +13,11 @@ class SymbolType(Enum):
 
     VAR = "var"
     ABILITY = "ability"
-    ARCH = "arch"
+    OBJECT_ARCH = "object"
+    NODE_ARCH = "node"
+    EDGE_ARCH = "edge"
+    WALKER_ARCH = "walker"
+    ENUM_ARCH = "enum"
     IMPL = "impl"
     HAS = "field"
 
@@ -59,11 +63,11 @@ class SymbolTable:
     """Symbol Table."""
 
     def __init__(
-        self, name: str, key_node: ast.AstNode, parent: Optional[SymbolTable] = None
+        self, name: str, owner: ast.AstNode, parent: Optional[SymbolTable] = None
     ) -> None:
         """Initialize."""
         self.name = name
-        self.key_node = key_node
+        self.owner = owner
         self.parent = parent if parent else self
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
