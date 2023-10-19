@@ -94,7 +94,7 @@ class SymbolTablePrinterPass(Pass):
         markers += marker if level > 0 else ""
         if self.SAVE_OUTPUT:
             f = open(self.SAVE_OUTPUT, "a+")
-            print(f"{markers}{root.__class__.__name__}", file=f)
+            print(f"{markers}{root.name}", file=f)
             f.close()
         else:
             print(f"{markers}{root.name}")

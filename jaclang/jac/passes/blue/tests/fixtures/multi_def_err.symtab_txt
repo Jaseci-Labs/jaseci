@@ -1,0 +1,22 @@
+SymTable::Module(multi_def_err)
++-- Symbols
+|   +-- Symbol(MyObject)
+|   |   +-- declared in Architype
+|   |   +-- defn
+|   |   |   +-- Architype
+|   |   +-- uses
+|   +-- Symbol(AnotherObject)
+|       +-- declared in Architype
+|       +-- defn
+|       |   +-- Architype
+|       +-- uses
++-- Children
+    +-- SymTable::Architype(MyObject)
+    |   +-- Symbols
+    |   +-- Children
+    +-- SymTable::Architype(AnotherObject)
+    |   +-- Symbols
+    |   +-- Children
+    +-- SymTable::Architype(MyObject)
+        +-- Symbols
+        +-- Children
