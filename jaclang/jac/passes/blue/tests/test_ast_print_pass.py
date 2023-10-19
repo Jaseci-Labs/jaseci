@@ -1,5 +1,5 @@
 """Test pass module."""
-import os 
+import os
 
 from jaclang.jac.passes.blue import ASTPrinterPass
 from jaclang.jac.transpiler import jac_file_to_pass

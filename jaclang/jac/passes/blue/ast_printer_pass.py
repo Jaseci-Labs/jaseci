@@ -30,7 +30,7 @@ class ASTPrinterPass(Pass):
         - level_markers: Internally used by recursion to indicate where to
                         print markers and connections (see explanations below)
 
-        Note: This implementation is found in https://simonhessner.de/python-3-recursively-print-structured-tree-including-hierarchy-markers-using-depth-first-search/
+        Note: This implementation is found in https://simonhessner.de/python-3-recursively-print-structured-tree-including-hierarchy-markers-using-depth-first-search/   # noqa
         """
         if root is None:
             return

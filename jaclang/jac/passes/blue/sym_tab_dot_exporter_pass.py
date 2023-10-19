@@ -43,7 +43,8 @@ class SymtabDotGraphPass(Pass):
         return super().before_pass()
 
     def __build_symbol_tree(self, node: ast.SymbolTable, parent_node: Optional[__SymbolTree] = None) -> __SymbolTree:
-        root = self.__SymbolTree(node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})", parent=parent_node)
+        root = self.__SymbolTree(node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
+                                 parent=parent_node)
         symbols = self.__SymbolTree(node_name="Symbols", parent=root)
         children = self.__SymbolTree(node_name="Children", parent=root)
 

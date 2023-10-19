@@ -42,7 +42,8 @@ class SymbolTablePrinterPass(Pass):
         return super().before_pass()
 
     def __build_symbol_tree(self, node: ast.SymbolTable, parent_node: Optional[__SymbolTree] = None) -> __SymbolTree:
-        root = self.__SymbolTree(node_name=f"SymTable::{node.key_node.__class__.__name__}({node.name})", parent=parent_node)
+        root = self.__SymbolTree(node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
+                                 parent=parent_node)
         symbols = self.__SymbolTree(node_name="Symbols", parent=root)
         children = self.__SymbolTree(node_name="Children", parent=root)
 
@@ -75,7 +76,7 @@ class SymbolTablePrinterPass(Pass):
         - level_markers: Internally used by recursion to indicate where to
                         print markers and connections (see explanations below)
 
-        Note: This implementation is found in https://simonhessner.de/python-3-recursively-print-structured-tree-including-hierarchy-markers-using-depth-first-search/
+        Note: This implementation is found in https://simonhessner.de/python-3-recursively-print-structured-tree-including-hierarchy-markers-using-depth-first-search/  # noqa
         """
         if root is None:
             return
