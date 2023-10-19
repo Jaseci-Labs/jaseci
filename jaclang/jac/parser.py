@@ -1167,7 +1167,10 @@ class JacParser(Pass):
                     | import_stmt
             """
             valid_doc_types = Union[ast.ArchType, ast.Ability, ast.AbilityDef]
-            if isinstance(kid[0], ast.CodeBlockStmt):
+            if isinstance(kid[0], ast.CodeBlockStmt) and len(kid) < 2:
+                return self.nu(kid[0])
+            elif isinstance(kid[0], ast.CodeBlockStmt):
+                kid[0].add_kids_right([kid[1]], pos_update=False)
                 return self.nu(kid[0])
             elif isinstance(kid[1], valid_doc_types) and isinstance(
                 kid[0], ast.Constant
