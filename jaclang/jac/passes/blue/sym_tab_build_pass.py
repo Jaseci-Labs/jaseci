@@ -192,12 +192,25 @@ class SymTabBuildPass(Pass):
                 name = i.alias.value if i.alias else i.name.value
                 if collide := self.cur_scope().insert(
                     name=name,
-                    sym_type=St.VAR,
+                    sym_type=St.MOD,
                     sym_hit=Sht.DECL_DEFN,
                     node=node,
                     single=True,
                 ):
                     self.already_declared_err(name, "import item", collide)
+        else:
+            if collide := self.cur_scope().insert(
+                name=node.alias.value if node.alias else node.path.path_str,
+                sym_type=St.MOD,
+                sym_hit=Sht.DECL_DEFN,
+                node=node,
+                single=True,
+            ):
+                self.already_declared_err(
+                    node.alias.value if node.alias else node.path.path_str,
+                    "import item",
+                    collide,
+                )
         self.sync_node_to_scope(node)
 
     def exit_import(self, node: ast.Import) -> None:

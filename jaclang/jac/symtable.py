@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 class SymbolType(Enum):
     """Symbol types."""
 
+    MOD = "mod"
     VAR = "var"
     ABILITY = "ability"
     OBJECT_ARCH = "object"
@@ -20,6 +21,14 @@ class SymbolType(Enum):
     ENUM_ARCH = "enum"
     IMPL = "impl"
     HAS_VAR = "field"
+
+
+class SymbolAccess(Enum):
+    """Symbol types."""
+
+    PRIVATE = "private"
+    PUBLIC = "public"
+    PROTECTED = "protected"
 
 
 class SymbolHitType(Enum):
@@ -42,6 +51,7 @@ class Symbol:
         decl: Optional[ast.AstNode] = None,
         defn: Optional[list[ast.AstNode]] = None,
         uses: Optional[list[ast.AstNode]] = None,
+        access: Optional[SymbolAccess] = None,
     ) -> None:
         """Initialize."""
         self.name = name
@@ -50,6 +60,7 @@ class Symbol:
         self.decl = decl
         self.defn: list[ast.AstNode] = defn if defn else []
         self.uses: list[ast.AstNode] = uses if uses else []
+        self.access = access if access else SymbolAccess.PUBLIC
 
     def __repr__(self) -> str:
         """Repr."""
