@@ -3,7 +3,8 @@ from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
-from jaclang.jac.symtable import SymbolHitType as Sht, SymbolType as St
+
+# from jaclang.jac.symtable import SymbolHitType as Sht, SymbolType as St
 
 
 class DefUsePass(Pass):
@@ -11,7 +12,7 @@ class DefUsePass(Pass):
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.marked: ast.AstNode = []
+        self.marked: list[ast.AstSymbolNode] = []
 
     def already_declared_err(
         self,
@@ -43,585 +44,584 @@ class DefUsePass(Pass):
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
-        doc: Optional['Token'],
-        access: Optional[Token],
-        assignments: 'AssignmentList',
+        access: Optional[SubTag[Token]],
+        assignments: SubNodeList[Assignment],
         is_frozen: bool,
+        doc: Optional[Constant],
         """
-        # Get all kids and apply access information
+        # for i in node.assignments.items:
+        #     node.sym_tab.lookup()
 
-    def enter_event_signature(self, node: ast.EventSignature) -> None:
+    def exit_sub_tag(self, node: ast.SubTag) -> None:
+        """Sub objects.
+
+        tag: T,
+        """
+
+    def exit_sub_node_list(self, node: ast.SubNodeList) -> None:
+        """Sub objects.
+
+        items: list[T],
+        """
+
+    def exit_test(self, node: ast.Test) -> None:
+        """Sub objects.
+
+        name: Name | Token,
+        body: SubNodeList[CodeBlockStmt],
+        doc: Optional[Constant],
+        """
+
+    def exit_module_code(self, node: ast.ModuleCode) -> None:
+        """Sub objects.
+
+        name: Optional[SubTag[Name]],
+        body: SubNodeList[CodeBlockStmt],
+        doc: Optional[Constant],
+        """
+
+    def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
+        """Sub objects.
+
+        code: Token,
+        doc: Optional[Constant],
+        """
+
+    def exit_import(self, node: ast.Import) -> None:
+        """Sub objects.
+
+        lang: SubTag[Name],
+        path: ModulePath,
+        alias: Optional[Name],
+        items: Optional[SubNodeList[ModuleItem]],
+        is_absorb: bool,
+        doc: Optional[Constant],
+        sub_module: Optional[Module],
+        """
+
+    def exit_module_path(self, node: ast.ModulePath) -> None:
+        """Sub objects.
+
+        path: list[Token],
+        """
+
+    def exit_module_item(self, node: ast.ModuleItem) -> None:
+        """Sub objects.
+
+        name: Name,
+        alias: Optional[Name],
+        body: Optional[AstNode],
+        """
+
+    def exit_architype(self, node: ast.Architype) -> None:
+        """Sub objects.
+
+        name: Name,
+        arch_type: Token,
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[SubTag[SubNodeList[NameType]]]],
+        body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
+        doc: Optional[Constant],
+        decorators: Optional[SubNodeList[ExprType]],
+        """
+
+    def exit_arch_def(self, node: ast.ArchDef) -> None:
+        """Sub objects.
+
+        target: ArchRefChain,
+        body: SubNodeList[ArchBlockStmt],
+        doc: Optional[Constant],
+        decorators: Optional[SubNodeList[ExprType]],
+        """
+
+    def exit_enum(self, node: ast.Enum) -> None:
+        """Sub objects.
+
+        name: Name,
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[SubTag[SubNodeList[NameType]]]],
+        body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
+        doc: Optional[Constant],
+        decorators: Optional[SubNodeList[ExprType]],
+        """
+
+    def exit_enum_def(self, node: ast.EnumDef) -> None:
+        """Sub objects.
+
+        target: ArchRefChain,
+        body: SubNodeList[EnumBlockStmt],
+        doc: Optional[Constant],
+        decorators: Optional[SubNodeList[ExprType]],
+        """
+
+    def exit_ability(self, node: ast.Ability) -> None:
+        """Sub objects.
+
+        name_ref: NameType,
+        is_func: bool,
+        is_async: bool,
+        is_static: bool,
+        is_abstract: bool,
+        access: Optional[SubTag[Token]],
+        signature: Optional[FuncSignature | SubNodeList[TypeSpec] | EventSignature],
+        body: Optional[SubNodeList[CodeBlockStmt]],
+        arch_attached: Optional[Architype],
+        doc: Optional[Constant],
+        decorators: Optional[SubNodeList[ExprType]],
+        """
+
+    def exit_ability_def(self, node: ast.AbilityDef) -> None:
+        """Sub objects.
+
+        target: ArchRefChain,
+        signature: FuncSignature | EventSignature,
+        body: SubNodeList[CodeBlockStmt],
+        doc: Optional[Constant],
+        decorators: Optional[SubNodeList[ExprType]],
+        """
+
+    def exit_func_signature(self, node: ast.FuncSignature) -> None:
+        """Sub objects.
+
+        params: Optional[SubNodeList[ParamVar]],
+        return_type: Optional[SubNodeList[TypeSpec]],
+        """
+
+    def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
 
         event: Token,
         arch_tag_info: Optional[SubNodeList[TypeSpec]],
         return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
+    def exit_arch_ref(self, node: ast.ArchRef) -> None:
+        """Sub objects.
+
+        name_ref: NameType,
+        arch: Token,
+        """
+
+    def exit_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
 
         archs: list[ArchRef],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_func_signature(self, node: ast.FuncSignature) -> None:
-        """Sub objects.
-
-        params: Optional['FuncParams'],
-        return_type: Optional['TypeSpec'],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_param_var(self, node: ast.ParamVar) -> None:
+    def exit_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
 
         name: Name,
         unpack: Optional[Token],
-        type_tag: 'TypeSpec',
+        type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_enum(self, node: ast.Enum) -> None:
+    def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
 
-        name: Name,
-        doc: Optional[Token],
-        decorators: Optional['Decorators'],
-        access: Optional[Token],
-        base_classes: 'BaseClasses',
-        body: Optional['EnumBlock'],
-        """
-        if collide := self.cur_scope().insert(
-            name=node.name.value,
-            sym_type=St.ENUM_ARCH,
-            sym_hit=Sht.DECL_DEFN if node.body else Sht.DECL,
-            node=node,
-            single=True,
-        ):
-            self.already_declared_err(node.name.value, "enum", collide)
-        self.push_scope(node.name.value, node)
-        self.sync_node_to_scope(node)
-
-    def exit_enum(self, node: ast.Enum) -> None:
-        """Sub objects.
-
-        name: Name,
-        doc: Optional[Token],
-        decorators: Optional['Decorators'],
-        access: Optional[Token],
-        base_classes: 'BaseClasses',
-        body: Optional['EnumBlock'],
-        """
-        self.pop_scope()
-
-    def enter_enum_def(self, node: ast.EnumDef) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        target: list[ArchRef],
-        body: EnumBlock,
-        """
-        name = node.target.py_resolve_name()
-        if collide := self.cur_scope().insert(
-            name=name,
-            sym_type=St.IMPL,
-            sym_hit=Sht.DEFN,
-            node=node,
-            single=True,
-        ):
-            self.already_declared_err(name, "enum def", collide)
-        self.push_scope(name, node)
-        self.sync_node_to_scope(node)
-
-    def exit_enum_def(self, node: ast.EnumDef) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        enum: ArchRef,
-        mod: Optional[DottedNameList],
-        body: EnumBlock,
-        """
-        self.pop_scope()
-
-    def enter_arch_has(self, node: ast.ArchHas) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
         is_static: bool,
-        access: Optional[Token],
-        vars: 'HasVarList',
+        access: Optional[SubTag[Token]],
+        vars: SubNodeList[HasVar],
         is_frozen: bool,
+        doc: Optional[Constant],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_has_var(self, node: ast.HasVar) -> None:
+    def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
 
         name: Name,
-        type_tag: 'TypeSpec',
+        type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_type_spec(self, node: ast.TypeSpec) -> None:
+    def exit_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
-        spec_type: Token | DottedNameList,
-        list_nest: TypeSpec,
-        dict_nest: TypeSpec,
+        spec_type: Token | SubNodeList[NameType],
+        list_nest: Optional[TypeSpec],
+        dict_nest: Optional[TypeSpec],
         null_ok: bool,
         """
-        # Use
 
-    def enter_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
+    def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
 
-        type_ctx: TypeSpecList,
-        body: CodeBlock,
+        type_ctx: SubNodeList[TypeSpec],
+        body: SubNodeList[CodeBlockStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_if_stmt(self, node: ast.IfStmt) -> None:
+    def exit_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
 
         condition: ExprType,
-        body: 'CodeBlock',
-        elseifs: Optional['ElseIfs'],
-        else_body: Optional['ElseStmt'],
+        body: SubNodeList[CodeBlockStmt],
+        elseifs: Optional[ElseIfs],
+        else_body: Optional[ElseStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_else_ifs(self, node: ast.ElseIfs) -> None:
+    def exit_else_ifs(self, node: ast.ElseIfs) -> None:
         """Sub objects.
 
-        elseifs: list['IfStmt'],
+        condition: ExprType,
+        body: SubNodeList[CodeBlockStmt],
+        elseifs: Optional[ElseIfs],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_else_stmt(self, node: ast.ElseStmt) -> None:
+    def exit_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
 
-        body: 'CodeBlock',
+        body: SubNodeList[CodeBlockStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_try_stmt(self, node: ast.TryStmt) -> None:
+    def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
 
-        body: 'CodeBlock',
-        excepts: Optional['ExceptList'],
-        finally_body: Optional['FinallyStmt'],
+        body: SubNodeList[CodeBlockStmt],
+        excepts: Optional[SubNodeList[Except]],
+        finally_body: Optional[FinallyStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_except(self, node: ast.Except) -> None:
+    def exit_except(self, node: ast.Except) -> None:
         """Sub objects.
 
         ex_type: ExprType,
         name: Optional[Token],
-        body: 'CodeBlock',
+        body: SubNodeList[CodeBlockStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_finally_stmt(self, node: ast.FinallyStmt) -> None:
+    def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
 
-        body: 'CodeBlock',
+        body: SubNodeList[CodeBlockStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_iter_for_stmt(self, node: ast.IterForStmt) -> None:
+    def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.
 
-        iter: 'Assignment',
+        iter: Assignment,
         condition: ExprType,
         count_by: ExprType,
-        body: 'CodeBlock',
+        body: SubNodeList[CodeBlockStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_in_for_stmt(self, node: ast.InForStmt) -> None:
+    def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        name_list: NameList,
+        name_list: SubNodeList[Name],
         collection: ExprType,
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_name(self, node: ast.Name) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        already_declared: bool,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_while_stmt(self, node: ast.WhileStmt) -> None:
+    def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
 
         condition: ExprType,
-        body: 'CodeBlock',
+        body: SubNodeList[CodeBlockStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_with_stmt(self, node: ast.WithStmt) -> None:
+    def exit_with_stmt(self, node: ast.WithStmt) -> None:
         """Sub objects.
 
-        exprs: 'ExprAsItemList',
-        body: 'CodeBlock',
+        exprs: SubNodeList[ExprAsItem],
+        body: SubNodeList[CodeBlockStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_expr_as_item(self, node: ast.ExprAsItem) -> None:
+    def exit_expr_as_item(self, node: ast.ExprAsItem) -> None:
         """Sub objects.
 
         expr: ExprType,
         alias: Optional[Name],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_raise_stmt(self, node: ast.RaiseStmt) -> None:
+    def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.
 
         cause: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_assert_stmt(self, node: ast.AssertStmt) -> None:
+    def exit_assert_stmt(self, node: ast.AssertStmt) -> None:
         """Sub objects.
 
         condition: ExprType,
         error_msg: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
+    def exit_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
 
         ctrl: Token,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_delete_stmt(self, node: ast.DeleteStmt) -> None:
+    def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_report_stmt(self, node: ast.ReportStmt) -> None:
+    def exit_report_stmt(self, node: ast.ReportStmt) -> None:
         """Sub objects.
 
         expr: ExprType,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_return_stmt(self, node: ast.ReturnStmt) -> None:
+    def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_yield_stmt(self, node: ast.YieldStmt) -> None:
+    def exit_yield_stmt(self, node: ast.YieldStmt) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
+    def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_visit_stmt(self, node: ast.VisitStmt) -> None:
+    def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
-        vis_type: Optional[Token],
+        vis_type: Optional[SubTag[SubNodeList[Name]]],
         target: ExprType,
-        else_body: Optional['ElseStmt'],
-        from_walker: bool,
+        else_body: Optional[ElseStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_revisit_stmt(self, node: ast.RevisitStmt) -> None:
+    def exit_revisit_stmt(self, node: ast.RevisitStmt) -> None:
         """Sub objects.
 
         hops: Optional[ExprType],
-        else_body: Optional['ElseStmt'],
-        from_walker: bool,
+        else_body: Optional[ElseStmt],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_disengage_stmt(self, node: ast.DisengageStmt) -> None:
-        """Sub objects.
+    def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
+        """Sub objects."""
 
-        from_walker: bool,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_await_stmt(self, node: ast.AwaitStmt) -> None:
+    def exit_await_stmt(self, node: ast.AwaitStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_assignment(self, node: ast.Assignment) -> None:
+    def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
-        is_static: bool,
-        target: 'AtomType',
+        target: AtomType,
         value: ExprType,
-        mutable: bool,
+        is_static: bool,
+        mutable: bool =True,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_binary_expr(self, node: ast.BinaryExpr) -> None:
+    def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
 
         left: ExprType,
         right: ExprType,
         op: Token | DisconnectOp | ConnectOp,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_if_else_expr(self, node: ast.IfElseExpr) -> None:
-        """Sub objects.
-
-        condition: 'BinaryExpr | IfElseExpr',
-        value: ExprType,
-        else_value: ExprType,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_unary_expr(self, node: ast.UnaryExpr) -> None:
+    def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
         """Sub objects.
 
         operand: ExprType,
         op: Token,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_multi_string(self, node: ast.MultiString) -> None:
+    def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
 
-        strings: list['Token | FString'],
+        condition: ExprType,
+        value: ExprType,
+        else_value: ExprType,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_expr_list(self, node: ast.ExprList) -> None:
+    def exit_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 
-        values: list[ExprType],
+        strings: list[Constant | FString],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_list_val(self, node: ast.ListVal) -> None:
+    def exit_f_string(self, node: ast.FString) -> None:
         """Sub objects.
 
-        values: list[ExprType],
+        parts: Optional[SubNodeList[Constant | ExprType]],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_set_val(self, node: ast.SetVal) -> None:
+    def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
-        values: list[ExprType],
+        values: Optional[SubNodeList[ExprType]],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_tuple_val(self, node: ast.TupleVal) -> None:
+    def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
 
-        first_expr: Optional[ExprType],
-        exprs: Optional[ExprList],
-        assigns: Optional[AssignmentList],
+        values: Optional[SubNodeList[ExprType]],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_dict_val(self, node: ast.DictVal) -> None:
+    def exit_set_val(self, node: ast.SetVal) -> None:
         """Sub objects.
 
-        kv_pairs: list['KVPair'],
+        values: Optional[SubNodeList[ExprType]],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_k_v_pair(self, node: ast.KVPair) -> None:
+    def exit_tuple_val(self, node: ast.TupleVal) -> None:
+        """Sub objects.
+
+        values: Optional[SubNodeList[ExprType | Assignment]],
+        """
+
+    def exit_dict_val(self, node: ast.DictVal) -> None:
+        """Sub objects.
+
+        kv_pairs: list[KVPair],
+        """
+
+    def exit_k_v_pair(self, node: ast.KVPair) -> None:
         """Sub objects.
 
         key: ExprType,
         value: ExprType,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_list_compr(self, node: ast.ListCompr) -> None:
-        """Sub objects.
-
-        compr: InnerCompr,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_gen_compr(self, node: ast.GenCompr) -> None:
-        """Sub objects.
-
-        compr: InnerCompr,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_set_compr(self, node: ast.SetCompr) -> None:
-        """Sub objects.
-
-        compr: InnerCompr,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_inner_compr(self, node: ast.InnerCompr) -> None:
+    def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
         out_expr: ExprType,
-        name_list: NameList,
-        collection: ExprType,
-        conditional: Optional[ExprType],
-        is_list: bool,
-        is_gen: bool,
-        is_set: bool,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_dict_compr(self, node: ast.DictCompr) -> None:
-        """Sub objects.
-
-        outk_expr: ExprType,
-        outv_expr: ExprType,
-        name_list: NameList,
+        names: SubNodeList[Name],
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
+    def exit_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.
 
-        target: 'AtomType',
-        right: 'IndexSlice | ArchRef | Token',
+        compr: InnerCompr,
+        """
+
+    def exit_gen_compr(self, node: ast.GenCompr) -> None:
+        """Sub objects.
+
+        compr: InnerCompr,
+        """
+
+    def exit_set_compr(self, node: ast.SetCompr) -> None:
+        """Sub objects.
+
+        compr: InnerCompr,
+        """
+
+    def exit_dict_compr(self, node: ast.DictCompr) -> None:
+        """Sub objects.
+
+        kv_pair: KVPair,
+        names: SubNodeList[Name],
+        collection: ExprType,
+        conditional: Optional[ExprType],
+        """
+
+    def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
+        """Sub objects.
+
+        target: AtomType,
+        right: AtomType,
         null_ok: bool,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_func_call(self, node: ast.FuncCall) -> None:
+    def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
 
-        target: 'AtomType',
-        params: Optional['ParamList'],
+        target: AtomType,
+        params: Optional[SubNodeList[ExprType | Assignment]],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_index_slice(self, node: ast.IndexSlice) -> None:
+    def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
 
         start: Optional[ExprType],
         stop: Optional[ExprType],
         is_range: bool,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_arch_ref(self, node: ast.ArchRef) -> None:
-        """Sub objects.
-
-        name_ref: Name | SpecialVarRef,
-        arch: Token,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
+    def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Sub objects.
 
         var: Token,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
+    def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
 
         filter_type: Optional[ExprType],
-        filter_cond: Optional[FilterCompr],
+        filter_cond: Optional[SubNodeList[BinaryExpr]],
         edge_dir: EdgeDir,
         from_walker: bool,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_disconnect_op(self, node: ast.DisconnectOp) -> None:
+    def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
 
-        filter_type: Optional[ExprType],
-        filter_cond: Optional[FilterCompr],
-        edge_dir: EdgeDir,
-        from_walker: bool,
+        edge_spec: EdgeOpRef,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_connect_op(self, node: ast.ConnectOp) -> None:
+    def exit_connect_op(self, node: ast.ConnectOp) -> None:
         """Sub objects.
 
         conn_type: Optional[ExprType],
-        conn_assign: Optional[AssignmentList],
+        conn_assign: Optional[SubNodeList[Assignment]],
         edge_dir: EdgeDir,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_filter_compr(self, node: ast.FilterCompr) -> None:
+    def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
-        compares: list[BinaryExpr],
+        compares: SubNodeList[BinaryExpr],
         """
-        self.sync_node_to_scope(node)
 
-    def enter_f_string(self, node: ast.FString) -> None:
-        """Sub objects.
-
-        parts: list['Token | ExprType'],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_token(self, node: ast.Token) -> None:
+    def exit_token(self, node: ast.Token) -> None:
         """Sub objects.
 
         name: str,
         value: str,
         col_start: int,
         col_end: int,
+        pos_start: int,
+        pos_end: int,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_constant(self, node: ast.Constant) -> None:
+    def exit_name(self, node: ast.Name) -> None:
         """Sub objects.
 
         name: str,
         value: str,
         col_start: int,
         col_end: int,
-        typ: type,
+        pos_start: int,
+        pos_end: int,
         """
-        self.sync_node_to_scope(node)
 
-    def enter_builtin_type(self, node: ast.BuiltinType) -> None:
+    def exit_constant(self, node: ast.Constant) -> None:
         """Sub objects.
 
         name: str,
         value: str,
         col_start: int,
         col_end: int,
-        typ: type,
+        pos_start: int,
+        pos_end: int,
         """
-        self.sync_node_to_scope(node)
+
+    def exit_builtin_type(self, node: ast.BuiltinType) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """

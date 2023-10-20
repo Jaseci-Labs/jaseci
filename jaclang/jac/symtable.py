@@ -12,6 +12,7 @@ class SymbolType(Enum):
     """Symbol types."""
 
     MOD = "mod"
+    MOD_VAR = "mod"
     VAR = "var"
     ABILITY = "ability"
     OBJECT_ARCH = "object"
@@ -48,9 +49,9 @@ class Symbol:
         name: str,
         sym_type: SymbolType,
         typ: Optional[type] = None,
-        decl: Optional[ast.AstNode] = None,
-        defn: Optional[list[ast.AstNode]] = None,
-        uses: Optional[list[ast.AstNode]] = None,
+        decl: Optional[ast.AstSymbolNode] = None,
+        defn: Optional[list[ast.AstSymbolNode]] = None,
+        uses: Optional[list[ast.AstSymbolNode]] = None,
         access: Optional[SymbolAccess] = None,
     ) -> None:
         """Initialize."""
@@ -58,8 +59,8 @@ class Symbol:
         self.sym_type = sym_type
         self.typ = typ
         self.decl = decl
-        self.defn: list[ast.AstNode] = defn if defn else []
-        self.uses: list[ast.AstNode] = uses if uses else []
+        self.defn: list[ast.AstSymbolNode] = defn if defn else []
+        self.uses: list[ast.AstSymbolNode] = uses if uses else []
         self.access = access if access else SymbolAccess.PUBLIC
 
     def __repr__(self) -> str:
@@ -117,7 +118,7 @@ class SymbolTable:
         name: str,
         sym_type: SymbolType,
         sym_hit: SymbolHitType,
-        node: ast.AstNode,
+        node: ast.AstSymbolNode,
         single: bool = False,
     ) -> Optional[ast.AstNode]:
         """Set a variable in the symbol table.
@@ -167,3 +168,12 @@ class SymbolTable:
         for k, v in self.tab.items():
             out += f"    {k}: {v}\n"
         return out
+
+
+__all__ = [
+    "Symbol",
+    "SymbolTable",
+    "SymbolType",
+    "SymbolAccess",
+    "SymbolHitType",
+]

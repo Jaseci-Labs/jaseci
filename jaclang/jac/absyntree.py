@@ -7,7 +7,7 @@ from typing import Generic, Optional, TypeVar, Union
 from jaclang.jac.codeloc import CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
-from jaclang.jac.symtable import SymbolTable
+from jaclang.jac.symtable import Symbol, SymbolTable
 
 
 class AstNode:
@@ -91,6 +91,15 @@ class AstNode:
         pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
 
 
+class AstSymbolNode(AstNode):
+    """Nodes that have link to a symbol in symbol table."""
+
+    def __init__(self, kid: list[AstNode]) -> None:
+        """Initialize ast."""
+        super().__init__(kid=kid)
+        self.sym: Optional[Symbol] = None
+
+
 T = TypeVar("T", bound=AstNode)
 
 
@@ -166,7 +175,7 @@ class SubNodeList(AstNode, Generic[T]):
         super().__init__(kid=kid)
 
 
-class Test(AstNode):
+class Test(AstSymbolNode):
     """Test node type for Jac Ast."""
 
     TEST_COUNT = 0
@@ -234,7 +243,7 @@ class PyInlineCode(AstNode):
         super().__init__(kid=kid)
 
 
-class Import(AstNode):
+class Import(AstSymbolNode):
     """Import node type for Jac Ast."""
 
     def __init__(
@@ -274,7 +283,7 @@ class ModulePath(AstNode):
         super().__init__(kid=kid)
 
 
-class ModuleItem(AstNode):
+class ModuleItem(AstSymbolNode):
     """ModuleItem node type for Jac Ast."""
 
     def __init__(
@@ -291,7 +300,7 @@ class ModuleItem(AstNode):
         super().__init__(kid=kid)
 
 
-class Architype(AstNode):
+class Architype(AstSymbolNode):
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
@@ -316,7 +325,7 @@ class Architype(AstNode):
         super().__init__(kid=kid)
 
 
-class ArchDef(AstNode):
+class ArchDef(AstSymbolNode):
     """ArchDef node type for Jac Ast."""
 
     def __init__(
@@ -335,7 +344,7 @@ class ArchDef(AstNode):
         super().__init__(kid=kid)
 
 
-class Enum(AstNode):
+class Enum(AstSymbolNode):
     """Enum node type for Jac Ast."""
 
     def __init__(
@@ -358,7 +367,7 @@ class Enum(AstNode):
         super().__init__(kid=kid)
 
 
-class EnumDef(AstNode):
+class EnumDef(AstSymbolNode):
     """EnumDef node type for Jac Ast."""
 
     def __init__(
@@ -377,7 +386,7 @@ class EnumDef(AstNode):
         super().__init__(kid=kid)
 
 
-class Ability(AstNode):
+class Ability(AstSymbolNode):
     """Ability node type for Jac Ast."""
 
     def __init__(
@@ -423,7 +432,7 @@ class Ability(AstNode):
             raise NotImplementedError
 
 
-class AbilityDef(AstNode):
+class AbilityDef(AstSymbolNode):
     """AbilityDef node type for Jac Ast."""
 
     def __init__(
@@ -1353,8 +1362,31 @@ class Token(AstNode):
         super().__init__(kid=kid)
 
 
-class Name(Token):
+class Name(Token, AstSymbolNode):
     """Name node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize name."""
+        super().__init__(
+            name=name,
+            value=value,
+            line=line,
+            col_start=col_start,
+            col_end=col_end,
+            pos_start=pos_start,
+            pos_end=pos_end,
+            kid=kid,
+        )
 
 
 class Constant(Token):

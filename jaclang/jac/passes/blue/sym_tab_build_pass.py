@@ -89,10 +89,10 @@ class SymTabBuildPass(Pass):
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
-        doc: Optional['Token'],
-        access: Optional[Token],
-        assignments: 'AssignmentList',
+        access: Optional[SubTag[Token]],
+        assignments: SubNodeList[Assignment],
         is_frozen: bool,
+        doc: Optional[Constant] = None,
         """
         for i in self.get_all_sub_nodes(node, ast.Assignment):
             if not isinstance(i.target, ast.Name):
@@ -101,7 +101,7 @@ class SymTabBuildPass(Pass):
                 name=i.target.value,
                 sym_type=St.VAR,
                 sym_hit=Sht.DECL_DEFN,
-                node=i,
+                node=i.target,
                 single=True,
             ):
                 self.already_declared_err(i.target.value, "global var", collide)
@@ -192,9 +192,9 @@ class SymTabBuildPass(Pass):
                 name = i.alias.value if i.alias else i.name.value
                 if collide := self.cur_scope().insert(
                     name=name,
-                    sym_type=St.MOD,
+                    sym_type=St.MOD_VAR,
                     sym_hit=Sht.DECL_DEFN,
-                    node=node,
+                    node=i,
                     single=True,
                 ):
                     self.already_declared_err(name, "import item", collide)

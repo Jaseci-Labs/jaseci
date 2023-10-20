@@ -80,7 +80,15 @@ class AstTool:
             AstNodeInfo(cls)
             for _, cls in classes
             if issubclass(cls, ast.AstNode)
-            and cls.__name__ not in ["AstNode", "OOPAccessNode", "WalkerStmtOnlyNode"]
+            and cls.__name__
+            not in [
+                "AstNode",
+                "OOPAccessNode",
+                "WalkerStmtOnlyNode",
+                "SourceString",
+                "EmptyToken",
+                "AstSymbolNode",
+            ]
         ]
         self.ast_classes = sorted(
             ast_node_classes,
@@ -89,9 +97,11 @@ class AstTool:
 
     def pass_template(self) -> str:
         """Generate pass template."""
-        output = "import jaclang.jac.absyntree as ast\n"
-        "from jaclang.jac.passes import Pass\n\n"
-        "class SomePass(Pass):\n"
+        output = (
+            "import jaclang.jac.absyntree as ast\n"
+            "from jaclang.jac.passes import Pass\n\n"
+            "class SomePass(Pass):\n"
+        )
 
         def emit(to_append: str) -> None:
             """Emit to output."""
@@ -100,7 +110,7 @@ class AstTool:
 
         for cls in self.ast_classes:
             emit(
-                f"def exit_{cls.class_name_snake}(self, node: ast.{cls.name}) -> None:\n"
+                f"def exit_{cls.class_name_snake}(self, node: ast.{cls.name}) -> None:"
             )
             emit('    """Sub objects.\n')
 
