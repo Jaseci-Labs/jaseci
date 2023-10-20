@@ -87,7 +87,7 @@ class AstTool:
             key=lambda cls: source_code.find(f"class {cls.name}"),
         )
 
-    def pass_template(self, *args: List[str]) -> str:
+    def pass_template(self) -> str:
         """Generate pass template."""
         output = "import jaclang.jac.absyntree as ast\n"
         "from jaclang.jac.passes import Pass\n\n"
@@ -121,7 +121,7 @@ class AstTool:
         )
         return output
 
-    def md_doc(self, *args: List[str]) -> str:
+    def md_doc(self) -> str:
         """Generate mermaid markdown doc."""
         output = ""
         for cls in self.ast_classes:
@@ -144,9 +144,8 @@ class AstTool:
             output += f"{cls.doc} \n\n"
         return output
 
-    def gen_dotfile(self, *args: List[str]) -> str:
+    def gen_dotfile(self, args: List[str]) -> str:
         """Generate a dot file for AST."""
-        args = args[0]
         if len(args) == 0:
             return "Usage: gen_dotfile <file_path> [<output_path>]"
 
@@ -167,9 +166,8 @@ class AstTool:
         else:
             return "Not a .jac file."
 
-    def print(self, *args: List[str]) -> str:
+    def print(self, args: List[str]) -> str:
         """Generate a dot file for AST."""
-        args = args[0]
         if len(args) == 0:
             return "Usage: print <file_path>"
 
@@ -186,10 +184,8 @@ class AstTool:
         else:
             return "Not a .jac file."
 
-    def symtab_print(self, *args: List[str]) -> str:
+    def symtab_print(self, args: List[str]) -> str:
         """Generate a dot file for AST."""
-        print(args)
-        args = args[0]
         if len(args) == 0:
             return "Usage: print <file_path>"
 
@@ -206,9 +202,8 @@ class AstTool:
         else:
             return "Not a .jac file."
 
-    def gen_symtab_dotfile(self, *args: List[str]) -> str:
+    def gen_symtab_dotfile(self, args: List[str]) -> str:
         """Generate a dot file for Symbol Table."""
-        args = args[0]
         if len(args) == 0:
             return "Usage: gen_dotfile <file_path> [<output_path>]"
 

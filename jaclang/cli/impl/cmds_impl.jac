@@ -54,8 +54,13 @@ import:py from jaclang.jac.constant, Constants as C;
 :a:ast_tool
 (tool: str, args: list) {
     import:py from jaclang.utils.lang_tools, AstTool;
-    if(hasattr(AstTool, tool)){
-        print(getattr(AstTool(), tool)(args));
+    if(hasattr(AstTool, tool)) {
+        try {
+            if(len(args)) { print(getattr(AstTool(), tool)(args)); }
+            else { print(getattr(AstTool(), tool)()); }
+        } except Exception {
+            print(f"Error while running ast tool {tool}, check args.");
+        }
     } else {
         print(f"Ast tool {tool} not found.");
     }
