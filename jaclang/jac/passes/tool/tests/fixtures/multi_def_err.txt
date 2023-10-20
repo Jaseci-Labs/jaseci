@@ -1,20 +1,20 @@
 Module
-+-- Constant(name=DOC_STRING, val="""Test for base classes.""")
++-- Constant - """Test for base classes."""
 +-- Architype
-|   +-- Token(name=KW_OBJECT, val=object)
-|   +-- Name(name=NAME, val=MyObject)
+|   +-- Token - object
+|   +-- Name - MyObject
 |   +-- SubNodeList
-|       +-- Token(name=LBRACE, val={)
-|       +-- Token(name=RBRACE, val=})
+|       +-- Token - {
+|       +-- Token - }
 +-- Architype
-|   +-- Token(name=KW_OBJECT, val=object)
-|   +-- Name(name=NAME, val=AnotherObject)
+|   +-- Token - object
+|   +-- Name - AnotherObject
 |   +-- SubNodeList
-|       +-- Token(name=LBRACE, val={)
-|       +-- Token(name=RBRACE, val=})
+|       +-- Token - {
+|       +-- Token - }
 +-- Architype
-    +-- Token(name=KW_OBJECT, val=object)
-    +-- Name(name=NAME, val=MyObject)
+    +-- Token - object
+    +-- Name - MyObject
     +-- SubNodeList
-        +-- Token(name=LBRACE, val={)
-        +-- Token(name=RBRACE, val=})
+        +-- Token - {
+        +-- Token - }

@@ -19,7 +19,7 @@ class SymbolType(Enum):
     WALKER_ARCH = "walker"
     ENUM_ARCH = "enum"
     IMPL = "impl"
-    HAS = "field"
+    HAS_VAR = "field"
 
 
 class SymbolHitType(Enum):

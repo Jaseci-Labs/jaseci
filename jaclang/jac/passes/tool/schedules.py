@@ -3,17 +3,17 @@ from jaclang.jac.passes.blue.sub_node_tab_pass import SubNodeTabPass
 from jaclang.jac.passes.blue.import_pass import ImportPass  # noqa: I100
 from jaclang.jac.passes.blue.sym_tab_build_pass import SymTabBuildPass  # noqa: I100
 from jaclang.jac.passes.blue.decl_def_match_pass import DeclDefMatchPass  # noqa: I100
-from jaclang.jac.passes.tool.dot_exporter_pass import DotGraphPass  # noqa: I100
-from jaclang.jac.passes.tool.ast_printer_pass import ASTPrinterPass  # noqa: I100
-from jaclang.jac.passes.tool.sym_tab_printer_pass import (  # noqa: I100
-    SymbolTablePrinterPass,
+from jaclang.jac.passes.tool.ast_printer_pass import (  # noqa: I100
+    AstDotGraphPass,
+    AstPrinterPass,
 )
-from jaclang.jac.passes.tool.sym_tab_dot_exporter_pass import (  # noqa: I100
-    SymtabDotGraphPass,
+from jaclang.jac.passes.tool.sym_tab_printer_pass import (  # noqa: I100
+    SymbolTableDotGraphPass,
+    SymbolTablePrinterPass,
 )
 
 ast_dot_gen = [
-    DotGraphPass,
+    AstDotGraphPass,
 ]
 
 full_ast_dot_gen = [
@@ -21,17 +21,17 @@ full_ast_dot_gen = [
     ImportPass,
     SymTabBuildPass,
     DeclDefMatchPass,
-    DotGraphPass,
+    AstDotGraphPass,
 ]
 
-ast_print = [ASTPrinterPass]
+ast_print = [AstPrinterPass]
 
 full_ast_print = [
     SubNodeTabPass,
     ImportPass,
     SymTabBuildPass,
     DeclDefMatchPass,
-    ASTPrinterPass,
+    AstPrinterPass,
 ]
 
 sym_tab_print = [
@@ -47,14 +47,14 @@ sym_tab_dot_gen = [
     ImportPass,
     SymTabBuildPass,
     DeclDefMatchPass,
-    SymtabDotGraphPass,
+    SymbolTableDotGraphPass,
 ]
 
 __all__ = [
-    "ASTPrinterPass",
-    "DotGraphPass",
+    "AstPrinterPass",
+    "AstDotGraphPass",
     "SymbolTablePrinterPass",
-    "SymtabDotGraphPass",
+    "SymbolTableDotGraphPass",
     "ast_dot_gen",
     "full_ast_dot_gen",
     "ast_print",

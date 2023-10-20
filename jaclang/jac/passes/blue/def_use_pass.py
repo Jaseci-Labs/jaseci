@@ -1,37 +1,14 @@
-"""Symbol table tree build pass for Jaseci Ast."""
+"""Ast build pass for Jaseci Ast."""
 from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
-from jaclang.jac.symtable import SymbolHitType as Sht, SymbolTable, SymbolType as St
+from jaclang.jac.symtable import SymbolHitType as Sht, SymbolType as St
 
 
-class SymTabBuildPass(Pass):
-    """Jac Symbol table build pass."""
-
-    def before_pass(self) -> None:
-        """Before pass."""
-        self.cur_sym_tab: list[SymbolTable] = []
-
-    def push_scope(self, name: str, key_node: ast.AstNode, fresh: bool = False) -> None:
-        """Push scope."""
-        if fresh:
-            self.cur_sym_tab.append(SymbolTable(name, key_node))
-        else:
-            self.cur_sym_tab.append(self.cur_scope().push_scope(name, key_node))
-
-    def pop_scope(self) -> None:
-        """Pop scope."""
-        self.cur_sym_tab.pop()
-
-    def cur_scope(self) -> SymbolTable:
-        """Return current scope."""
-        return self.cur_sym_tab[-1]
-
-    def sync_node_to_scope(self, node: ast.AstNode) -> None:
-        """Sync node to scope."""
-        node.sym_tab = self.cur_scope()
+class DefUsePass(Pass):
+    """Jac Ast build pass."""
 
     def already_declared_err(
         self,
@@ -39,7 +16,6 @@ class SymTabBuildPass(Pass):
         typ: str,
         original: ast.AstNode,
         other_nodes: Optional[list[ast.AstNode]] = None,
-        warn_only: bool = False,
     ) -> None:
         """Already declared error."""
         mod_path = (
@@ -61,31 +37,6 @@ class SymTabBuildPass(Pass):
                 err_msg += f", also see {mod_path}, line {i.loc.first_line}"
         self.warning(err_msg)
 
-    def enter_module(self, node: ast.Module) -> None:
-        """Sub objects.
-
-        name: str,
-        doc: Token,
-        body: Optional['Elements'],
-        mod_path: str,
-        rel_mod_path: str,
-        is_imported: bool,
-        """
-        self.push_scope(node.name, node, fresh=True)
-        self.sync_node_to_scope(node)
-
-    def exit_module(self, node: ast.Module) -> None:
-        """Sub objects.
-
-        name: str,
-        doc: Token,
-        body: Optional['Elements'],
-        mod_path: str,
-        rel_mod_path: str,
-        is_imported: bool,
-        """
-        self.pop_scope()
-
     def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
@@ -94,18 +45,7 @@ class SymTabBuildPass(Pass):
         assignments: 'AssignmentList',
         is_frozen: bool,
         """
-        for i in self.get_all_sub_nodes(node, ast.Assignment):
-            if not isinstance(i.target, ast.Name):
-                self.ice("Expected name type for globabl vars")
-            elif collide := self.cur_scope().insert(
-                name=i.target.value,
-                sym_type=St.VAR,
-                sym_hit=Sht.DECL_DEFN,
-                node=i,
-                single=True,
-            ):
-                self.already_declared_err(i.target.value, "global var", collide)
-        self.sync_node_to_scope(node)
+        # Get all kids and apply access information
 
     def enter_sub_tag(self, node: ast.SubTag) -> None:
         """Sub objects.

@@ -7,10 +7,10 @@ from typing import List, Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.tool.schedules import (
-    ASTPrinterPass,
-    DotGraphPass,
+    AstDotGraphPass,
+    AstPrinterPass,
+    SymbolTableDotGraphPass,
     SymbolTablePrinterPass,
-    SymtabDotGraphPass,
     full_ast_dot_gen,
     full_ast_print,
     sym_tab_dot_gen,
@@ -150,7 +150,7 @@ class AstTool:
             return "Usage: gen_dotfile <file_path> [<output_path>]"
 
         file_name: str = args[0]
-        DotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
+        AstDotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
 
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
@@ -158,9 +158,9 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, DotGraphPass, full_ast_dot_gen)
-            if DotGraphPass.OUTPUT_FILE_PATH:
-                return f"Dot file generated at {DotGraphPass.OUTPUT_FILE_PATH}"
+            jac_file_to_pass(file_name, base, AstDotGraphPass, full_ast_dot_gen)
+            if AstDotGraphPass.OUTPUT_FILE_PATH:
+                return f"Dot file generated at {AstDotGraphPass.OUTPUT_FILE_PATH}"
             else:
                 return ""
         else:
@@ -179,7 +179,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, ASTPrinterPass, full_ast_print)
+            jac_file_to_pass(file_name, base, AstPrinterPass, full_ast_print)
             return ""
         else:
             return "Not a .jac file."
@@ -208,7 +208,7 @@ class AstTool:
             return "Usage: gen_dotfile <file_path> [<output_path>]"
 
         file_name: str = args[0]
-        SymtabDotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
+        SymbolTableDotGraphPass.OUTPUT_FILE_PATH = args[1] if len(args) == 2 else None
 
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
@@ -216,9 +216,11 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, SymtabDotGraphPass, sym_tab_dot_gen)
-            if SymtabDotGraphPass.OUTPUT_FILE_PATH:
-                return f"Dot file generated at {SymtabDotGraphPass.OUTPUT_FILE_PATH}"
+            jac_file_to_pass(file_name, base, SymbolTableDotGraphPass, sym_tab_dot_gen)
+            if SymbolTableDotGraphPass.OUTPUT_FILE_PATH:
+                return (
+                    f"Dot file generated at {SymbolTableDotGraphPass.OUTPUT_FILE_PATH}"
+                )
             else:
                 return ""
         else:
