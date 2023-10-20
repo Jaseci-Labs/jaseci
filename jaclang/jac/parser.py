@@ -1165,6 +1165,7 @@ class JacParser(Pass):
                     | doc_tag? ability
                     | doc_tag? architype
                     | import_stmt
+                    | SEMI
             """
             valid_doc_types = Union[ast.ArchType, ast.Ability, ast.AbilityDef]
             if isinstance(kid[0], ast.CodeBlockStmt) and len(kid) < 2:

@@ -1502,4 +1502,5 @@ CodeBlockStmt = Union[
     IgnoreStmt,
     PyInlineCode,
     TypedCtxBlock,
+    Token,  # TODO: This is only for SEMI's create new type
 ]
