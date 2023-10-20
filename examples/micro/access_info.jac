@@ -6,6 +6,6 @@ object MyObj {
         <h>.a = a;
     }
     can:public set_a(val: int) -> None {
-        <h>.a = val;
+        <h>.a = val;;
     }
 }
