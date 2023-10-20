@@ -8,7 +8,7 @@ from jaclang.jac.passes import Pass
 class ASTPrinterPass(Pass):
     """Jac AST convertion to ascii tree."""
 
-    SAVE_OUTPUT = False
+    SAVE_OUTPUT: Optional[str] = None
 
     def before_pass(self) -> None:
         """Initialize pass."""

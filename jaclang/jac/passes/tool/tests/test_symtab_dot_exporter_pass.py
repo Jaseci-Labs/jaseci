@@ -1,7 +1,7 @@
 """Test pass module."""
 import os
 
-from jaclang.jac.passes.blue import SymtabDotGraphPass
+from jaclang.jac.passes.tool import SymtabDotGraphPass
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCase
 

@@ -26,18 +26,20 @@ class SymbolTablePrinterPass(Pass):
             return self.__parent
 
         @parent.setter
-        def parent(self, parent_node: SymbolTablePrinterPass.__SymbolTree) -> None:
+        def parent(
+            self, parent_node: Optional[SymbolTablePrinterPass.__SymbolTree]
+        ) -> None:
             if parent_node:
                 self.__parent = parent_node
                 parent_node.kid.append(self)
 
-    SAVE_OUTPUT = False
+    SAVE_OUTPUT: Optional[str] = None
 
     def before_pass(self) -> None:
         """Initialize pass."""
-        self.__root = self.__build_symbol_tree(self.ir.sym_tab)
-        self.__print_tree(self.__root)
-        # self.print_symtable(self.ir.sym_tab)
+        if isinstance(self.ir.sym_tab, ast.SymbolTable):
+            self.__root = self.__build_symbol_tree(self.ir.sym_tab)
+            self.__print_tree(self.__root)
         self.terminate()
         return super().before_pass()
 
@@ -75,18 +77,9 @@ class SymbolTablePrinterPass(Pass):
         self,
         root: __SymbolTree,
         marker: str = "+-- ",
-        level_markers: Optional[List[str]] = None,
+        level_markers: Optional[List[bool]] = None,
     ) -> None:
-        """Recursive function that prints the hierarchical structure of a tree.
-
-        Parameters:
-        - root: Node instance, possibly containing children Nodes
-        - marker: String to print in front of each node  ("+- " by default)
-        - level_markers: Internally used by recursion to indicate where to
-                        print markers and connections (see explanations below)
-
-        Note: This implementation is found in https://simonhessner.de/python-3-recursively-print-structured-tree-including-hierarchy-markers-using-depth-first-search/  # noqa
-        """
+        """Recursive function that prints the hierarchical structure of a tree."""
         if root is None:
             return
 
