@@ -33,14 +33,14 @@ class JacParser(Pass):
             tree, self.comments = JacParser.parse(
                 ir.value, on_error=self.error_callback
             )
+            if tree:
+                tree = JacParser.TreeToAST(parser=self).transform(tree)
         except jl.UnexpectedInput as e:
             self.error(f"Syntax Error: {e}")
             tree = None
         except Exception as e:
             tree = None
             self.error(f"Internal Error: {e}")
-        if tree:
-            tree = JacParser.TreeToAST(parser=self).transform(tree)
         return tree
 
     def error_callback(self, e: jl.UnexpectedInput) -> bool:
