@@ -2,13 +2,16 @@
 from typing import Optional
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 from jaclang.jac.symtable import SymbolHitType as Sht, SymbolType as St
 
 
 class DefUsePass(Pass):
     """Jac Ast build pass."""
+
+    def before_pass(self) -> None:
+        """Before pass."""
+        self.marked: ast.AstNode = []
 
     def already_declared_err(
         self,
@@ -37,7 +40,7 @@ class DefUsePass(Pass):
                 err_msg += f", also see {mod_path}, line {i.loc.first_line}"
         self.warning(err_msg)
 
-    def enter_global_vars(self, node: ast.GlobalVars) -> None:
+    def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
         doc: Optional['Token'],
@@ -47,306 +50,12 @@ class DefUsePass(Pass):
         """
         # Get all kids and apply access information
 
-    def enter_sub_tag(self, node: ast.SubTag) -> None:
-        """Sub objects.
-
-        tag: T,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_sub_node_list(self, node: ast.SubNodeList) -> None:
-        """Sub objects.
-
-        items: list[T],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_test(self, node: ast.Test) -> None:
-        """Sub objects.
-
-        name: Name,
-        doc: Optional[Token],
-        description: Token,
-        body: CodeBlock,
-        """
-        if node.name and (
-            collide := self.cur_scope().insert(
-                name=node.name.value,
-                sym_type=St.ABILITY,
-                sym_hit=Sht.DECL_DEFN,
-                node=node,
-                single=True,
-            )
-        ):
-            self.already_declared_err(node.name.value, "test", collide)
-        self.push_scope(node.name.value, node)
-        self.sync_node_to_scope(node)
-
-    def exit_test(self, node: ast.Test) -> None:
-        """Sub objects.
-
-        name: Name,
-        doc: Optional[Token],
-        description: Token,
-        body: CodeBlock,
-        """
-        self.pop_scope()
-
-    def enter_module_code(self, node: ast.ModuleCode) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        name: Optional[Name],
-        body: CodeBlock,
-        """
-        self.push_scope("module_code", node)
-        self.sync_node_to_scope(node)
-
-    def exit_module_code(self, node: ast.ModuleCode) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        body: 'CodeBlock',
-        """
-        self.pop_scope()
-
-    def enter_py_inline_code(self, node: ast.PyInlineCode) -> None:
-        """Sub objects.
-
-        code: Token,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_import(self, node: ast.Import) -> None:
-        """Sub objects.
-
-        lang: Name,
-        path: ModulePath,
-        alias: Optional[Name],
-        items: Optional[ModuleItems],
-        is_absorb: bool,
-        sub_module: Optional[Module],
-        """
-        if node.items:
-            for i in node.items.items:
-                name = i.alias.value if i.alias else i.name.value
-                if collide := self.cur_scope().insert(
-                    name=name,
-                    sym_type=St.VAR,
-                    sym_hit=Sht.DECL_DEFN,
-                    node=node,
-                    single=True,
-                ):
-                    self.already_declared_err(name, "import item", collide)
-        self.sync_node_to_scope(node)
-
-    def exit_import(self, node: ast.Import) -> None:
-        """Sub objects.
-
-        lang: Name,
-        path: ModulePath,
-        alias: Optional[Name],
-        items: Optional[ModuleItems],
-        is_absorb: bool,
-        sub_module: Optional[Module],
-        """
-        if node.is_absorb:
-            if not node.sub_module or not node.sub_module.sym_tab:
-                self.error(
-                    f"Module {node.path.path_str} not found to include *, or ICE occurred!"
-                )
-            else:
-                for k, v in node.sub_module.sym_tab.tab.items():
-                    if collide := self.cur_scope().insert(
-                        name=k,
-                        sym_type=v.sym_type,
-                        sym_hit=Sht.DECL_DEFN
-                        if (v.decl and len(v.defn))
-                        else Sht.DECL
-                        if v.decl
-                        else Sht.DEFN,
-                        node=v.decl if v.decl else v.defn[-1],
-                        single=True,
-                    ):
-                        other_node = (
-                            v.decl if v.decl else v.defn[-1] if len(v.defn) else None
-                        )
-                        if other_node:
-                            self.already_declared_err(
-                                k, "include item", collide, [other_node]
-                            )
-                        else:
-                            self.already_declared_err(k, "include item", collide)
-        self.sync_node_to_scope(node)
-
-    def enter_module_path(self, node: ast.ModulePath) -> None:
-        """Sub objects.
-
-        path: list[Token],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_module_item(self, node: ast.ModuleItem) -> None:
-        """Sub objects.
-
-        name: Name,
-        alias: Optional[Token],
-        body: Optional[AstNode],
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_architype(self, node: ast.Architype) -> None:
-        """Sub objects.
-
-        name: Name,
-        arch_type: Token,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
-        access: Optional[Token],
-        base_classes: BaseClasses,
-        body: Optional[ArchBlock],
-        """
-        for i in self.get_all_sub_nodes(node, ast.Ability):
-            i.arch_attached = node
-        if collide := self.cur_scope().insert(
-            name=node.name.value,
-            sym_type=St.OBJECT_ARCH
-            if node.arch_type.value == Tok.KW_OBJECT
-            else St.NODE_ARCH
-            if node.arch_type.value == Tok.KW_NODE
-            else St.EDGE_ARCH
-            if node.arch_type.value == Tok.KW_EDGE
-            else St.WALKER_ARCH,
-            sym_hit=Sht.DECL_DEFN if node.body else Sht.DECL,
-            node=node,
-            single=True,
-        ):
-            self.already_declared_err(node.name.value, "architype", collide)
-        self.push_scope(node.name.value, node)
-        self.sync_node_to_scope(node)
-
-    def exit_architype(self, node: ast.Architype) -> None:
-        """Sub objects.
-
-        name: Name,
-        arch_type: Token,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
-        access: Optional[Token],
-        base_classes: BaseClasses,
-        body: Optional[ArchBlock],
-        """
-        self.pop_scope()
-
-    def enter_arch_def(self, node: ast.ArchDef) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        mod: Optional[DottedNameList],
-        arch: ArchRef,
-        body: ArchBlock,
-        """
-        name = node.target.py_resolve_name()
-        if collide := self.cur_scope().insert(
-            name=name,
-            sym_type=St.IMPL,
-            sym_hit=Sht.DEFN,
-            node=node,
-            single=True,
-        ):
-            self.already_declared_err(name, "architype def", collide)
-        self.push_scope(name, node)
-        self.sync_node_to_scope(node)
-
-    def exit_arch_def(self, node: ast.ArchDef) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        mod: Optional[DottedNameList],
-        arch: ArchRef,
-        body: ArchBlock,
-        """
-        self.pop_scope()
-
-    def enter_ability(self, node: ast.Ability) -> None:
-        """Sub objects.
-
-        name_ref: Name | SpecialVarRef | ArchRef,
-        is_func: bool,
-        is_async: bool,
-        is_static: bool,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
-        access: Optional[Token],
-        signature: Optional[FuncSignature | TypeSpec | EventSignature],
-        body: Optional[CodeBlock],
-        arch_attached: Optional[ArchBlock],
-        """
-        ability_name = node.py_resolve_name()
-        if collide := self.cur_scope().insert(
-            name=ability_name,
-            sym_type=St.ABILITY,
-            sym_hit=Sht.DECL_DEFN if node.body else Sht.DECL,
-            node=node,
-            single=True,
-        ):
-            self.already_declared_err(ability_name, "ability", collide)
-        self.push_scope(ability_name, node)
-        self.sync_node_to_scope(node)
-
-    def exit_ability(self, node: ast.Ability) -> None:
-        """Sub objects.
-
-        name_ref: Name | SpecialVarRef | ArchRef,
-        is_func: bool,
-        is_async: bool,
-        is_static: bool,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
-        access: Optional[Token],
-        signature: Optional[FuncSignature | TypeSpec | EventSignature],
-        body: Optional[CodeBlock],
-        arch_attached: Optional[ArchBlock],
-        """
-        self.pop_scope()
-
-    def enter_ability_def(self, node: ast.AbilityDef) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        target: ArchRefChain,
-        signature: FuncSignature | EventSignature,
-        body: CodeBlock,
-        """
-        ability_name = node.target.py_resolve_name()
-        if collide := self.cur_scope().insert(
-            name=ability_name,
-            sym_type=St.IMPL,
-            sym_hit=Sht.DEFN,
-            node=node,
-            single=True,
-        ):
-            self.already_declared_err(ability_name, "ability def", collide)
-        self.push_scope(ability_name, node)
-        self.sync_node_to_scope(node)
-
-    def exit_ability_def(self, node: ast.AbilityDef) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        target: Optional[DottedNameList],
-        ability: ArchRef,
-        signature: FuncSignature | EventSignature,
-        body: CodeBlock,
-        """
-        self.pop_scope()
-
     def enter_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
 
         event: Token,
-        arch_tag_info: Optional[TypeSpecList],
-        return_type: Optional['TypeSpec'],
+        arch_tag_info: Optional[SubNodeList[TypeSpec]],
+        return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
         """
         self.sync_node_to_scope(node)
 
@@ -465,7 +174,7 @@ class DefUsePass(Pass):
         dict_nest: TypeSpec,
         null_ok: bool,
         """
-        self.sync_node_to_scope(node)
+        # Use
 
     def enter_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.

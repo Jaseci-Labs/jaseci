@@ -208,7 +208,7 @@ class SymTabBuildPass(Pass):
             ):
                 self.already_declared_err(
                     node.alias.value if node.alias else node.path.path_str,
-                    "import item",
+                    "import",
                     collide,
                 )
         self.sync_node_to_scope(node)
@@ -418,8 +418,8 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         event: Token,
-        arch_tag_info: Optional[TypeSpecList],
-        return_type: Optional['TypeSpec'],
+        arch_tag_info: Optional[SubNodeList[TypeSpec]],
+        return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
         """
         self.sync_node_to_scope(node)
 
