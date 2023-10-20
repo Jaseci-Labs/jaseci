@@ -53,6 +53,20 @@ class Workspace:
                 target=DeclDefMatchPass,
             )
             if not isinstance(build.ir, ast.Module):
+                self.modules[file] = ModuleInfo(
+                    ir=ast.Module(
+                        name="",
+                        doc=None,
+                        body=[],
+                        source=ast.SourceString(source),
+                        mod_path=file,
+                        rel_mod_path="",
+                        is_imported=False,
+                        kid=[],
+                    ),
+                    errors=build.errors_had,
+                    warnings=build.warnings_had,
+                )
                 continue
             self.modules[file] = ModuleInfo(
                 ir=build.ir,
@@ -78,6 +92,20 @@ class Workspace:
             target=DeclDefMatchPass,
         )
         if not isinstance(build.ir, ast.Module):
+            self.modules[file_path] = ModuleInfo(
+                ir=ast.Module(
+                    name="",
+                    doc=None,
+                    body=[],
+                    source=ast.SourceString(source),
+                    mod_path=file_path,
+                    rel_mod_path="",
+                    is_imported=False,
+                    kid=[],
+                ),
+                errors=build.errors_had,
+                warnings=build.warnings_had,
+            )
             return False
         self.modules[file_path] = ModuleInfo(
             ir=build.ir,
