@@ -49,3 +49,16 @@ sym_tab_dot_gen = [
     DeclDefMatchPass,
     SymtabDotGraphPass,
 ]
+
+__all__ = [
+    "ASTPrinterPass",
+    "DotGraphPass",
+    "SymbolTablePrinterPass",
+    "SymtabDotGraphPass",
+    "ast_dot_gen",
+    "full_ast_dot_gen",
+    "ast_print",
+    "full_ast_print",
+    "sym_tab_print",
+    "sym_tab_dot_gen",
+]
