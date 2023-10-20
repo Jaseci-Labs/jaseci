@@ -5,7 +5,7 @@ import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 from jaclang.jac.symtable import (
-    SymbolAccess as Sa,
+    # SymbolAccess as Sa,
     SymbolHitType as Sht,
     SymbolTable,
     SymbolType as St,
