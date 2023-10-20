@@ -20,7 +20,7 @@ class ASTPrinterPass(Pass):
         self,
         root: ast.AstNode,
         marker: str = "+-- ",
-        level_markers: Optional[List[str]] = None,
+        level_markers: Optional[List[bool]] = None,
     ) -> None:
         """Recursive function that prints the hierarchical structure of a tree."""
         if root is None:
