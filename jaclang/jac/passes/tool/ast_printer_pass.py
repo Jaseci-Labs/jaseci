@@ -51,7 +51,6 @@ class ASTPrinterPass(Pass):
 
     def __node_repr_in_tree(self, node: ast.AstNode) -> str:
         if isinstance(node, ast.Token):
-            node: ast.Token
             return f"{node.__class__.__name__}(name={node.name}, val={node.value})"
         else:
             return node.__class__.__name__
