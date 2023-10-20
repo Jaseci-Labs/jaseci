@@ -1,5 +1,6 @@
 """Jac Blue pass for drawing AST."""
 import inspect
+from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.absyntree import Ability, AbilityDef, ArchDef, Architype
@@ -17,7 +18,7 @@ DOT_GRAPH_CLASS_COLOR_MAP: dict[type, str] = {
 class DotGraphPass(Pass):
     """Jac AST convertion to DOT graph."""
 
-    OUTPUT_FILE_PATH: str = "out.dot"
+    OUTPUT_FILE_PATH: Optional[str] = "out.dot"
 
     def before_pass(self) -> None:
         """Initialize pass."""
@@ -60,7 +61,7 @@ class DotGraphPass(Pass):
         info_of_value = "="
         # Get info from the fieds and their types from the constructors
         init_source = inspect.getsource(node.__class__.__init__)
-        info_to_be_dumped: list[tuple[str, str]] = []
+        info_to_be_dumped: list[tuple[str, str, str]] = []
         for line in init_source.split("\n"):
             if "def" in line:
                 continue
@@ -76,7 +77,6 @@ class DotGraphPass(Pass):
                 )
         # Get token value and name
         if isinstance(node, ast.Token):
-            node: ast.Token
             info_to_be_dumped.append(("name", info_of_value, node.name))
             info_to_be_dumped.append(("value", info_of_value, node.value))
         return info_to_be_dumped

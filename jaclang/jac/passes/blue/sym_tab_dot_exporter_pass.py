@@ -26,19 +26,22 @@ class SymtabDotGraphPass(Pass):
             return self.__parent
 
         @parent.setter
-        def parent(self, parent_node: SymtabDotGraphPass.__SymbolTree) -> None:
+        def parent(
+            self, parent_node: Optional[SymtabDotGraphPass.__SymbolTree]
+        ) -> None:
             if parent_node:
                 self.__parent = parent_node
                 parent_node.kid.append(self)
 
-    OUTPUT_FILE_PATH: str = "out.dot"
+    OUTPUT_FILE_PATH: Optional[str] = "out.dot"
 
     def before_pass(self) -> None:
         """Initialize pass."""
         self.__dot_lines: list[str] = []
         self.__id_map: dict[int, int] = {}
         self.__lase_id_used = 0
-        self.__gen_dot_graph(self.__build_symbol_tree(self.ir.sym_tab))
+        if isinstance(self.ir.sym_tab, ast.SymbolTable):
+            self.__gen_dot_graph(self.__build_symbol_tree(self.ir.sym_tab))
         self.terminate()
         return super().before_pass()
 
