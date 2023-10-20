@@ -145,7 +145,9 @@ class SymbolTable:
             ):
                 return self.tab[name].uses[-1]
         if name not in self.tab:
-            self.tab[name] = Symbol(name=name, sym_type=sym_type)
+            sym = Symbol(name=name, sym_type=sym_type)
+            node.sym = sym
+            self.tab[name] = sym
         if sym_hit == SymbolHitType.DECL:
             self.tab[name].decl = node
         elif sym_hit == SymbolHitType.DEFN:

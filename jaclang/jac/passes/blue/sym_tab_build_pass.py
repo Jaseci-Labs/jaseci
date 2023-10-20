@@ -4,7 +4,12 @@ from typing import Optional
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
-from jaclang.jac.symtable import SymbolHitType as Sht, SymbolTable, SymbolType as St
+from jaclang.jac.symtable import (
+    SymbolAccess as Sa,
+    SymbolHitType as Sht,
+    SymbolTable,
+    SymbolType as St,
+)
 
 
 class SymTabBuildPass(Pass):
@@ -105,6 +110,14 @@ class SymTabBuildPass(Pass):
                 single=True,
             ):
                 self.already_declared_err(i.target.value, "global var", collide)
+            # if isinstance(i.target.sym, ast.Symbol):
+            #     i.target.sym.access = (
+            #         Sa.PRIVATE
+            #         if node.access.tag and node.access.tag.value == Tok.KW_PRIV
+            #         else Sa.PROTECTED
+            #         if node.access.tag and node.access.tag.value == Tok.KW_PROT
+            #         else Sa.PUBLIC,
+            #     )
         self.sync_node_to_scope(node)
 
     def enter_sub_tag(self, node: ast.SubTag) -> None:

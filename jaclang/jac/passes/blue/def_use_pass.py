@@ -41,7 +41,7 @@ class DefUsePass(Pass):
                 err_msg += f", also see {mod_path}, line {i.loc.first_line}"
         self.warning(err_msg)
 
-    def exit_global_vars(self, node: ast.GlobalVars) -> None:
+    def enter_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
         access: Optional[SubTag[Token]],
@@ -49,22 +49,20 @@ class DefUsePass(Pass):
         is_frozen: bool,
         doc: Optional[Constant],
         """
-        # for i in node.assignments.items:
-        #     node.sym_tab.lookup()
 
-    def exit_sub_tag(self, node: ast.SubTag) -> None:
+    def enter_sub_tag(self, node: ast.SubTag) -> None:
         """Sub objects.
 
         tag: T,
         """
 
-    def exit_sub_node_list(self, node: ast.SubNodeList) -> None:
+    def enter_sub_node_list(self, node: ast.SubNodeList) -> None:
         """Sub objects.
 
         items: list[T],
         """
 
-    def exit_test(self, node: ast.Test) -> None:
+    def enter_test(self, node: ast.Test) -> None:
         """Sub objects.
 
         name: Name | Token,
@@ -72,7 +70,7 @@ class DefUsePass(Pass):
         doc: Optional[Constant],
         """
 
-    def exit_module_code(self, node: ast.ModuleCode) -> None:
+    def enter_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
 
         name: Optional[SubTag[Name]],
@@ -80,14 +78,14 @@ class DefUsePass(Pass):
         doc: Optional[Constant],
         """
 
-    def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
+    def enter_py_inline_code(self, node: ast.PyInlineCode) -> None:
         """Sub objects.
 
         code: Token,
         doc: Optional[Constant],
         """
 
-    def exit_import(self, node: ast.Import) -> None:
+    def enter_import(self, node: ast.Import) -> None:
         """Sub objects.
 
         lang: SubTag[Name],
@@ -99,13 +97,13 @@ class DefUsePass(Pass):
         sub_module: Optional[Module],
         """
 
-    def exit_module_path(self, node: ast.ModulePath) -> None:
+    def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
 
         path: list[Token],
         """
 
-    def exit_module_item(self, node: ast.ModuleItem) -> None:
+    def enter_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
 
         name: Name,
@@ -113,7 +111,7 @@ class DefUsePass(Pass):
         body: Optional[AstNode],
         """
 
-    def exit_architype(self, node: ast.Architype) -> None:
+    def enter_architype(self, node: ast.Architype) -> None:
         """Sub objects.
 
         name: Name,
@@ -125,7 +123,7 @@ class DefUsePass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
 
-    def exit_arch_def(self, node: ast.ArchDef) -> None:
+    def enter_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
 
         target: ArchRefChain,
@@ -134,7 +132,7 @@ class DefUsePass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
 
-    def exit_enum(self, node: ast.Enum) -> None:
+    def enter_enum(self, node: ast.Enum) -> None:
         """Sub objects.
 
         name: Name,
@@ -145,7 +143,7 @@ class DefUsePass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
 
-    def exit_enum_def(self, node: ast.EnumDef) -> None:
+    def enter_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
 
         target: ArchRefChain,
@@ -154,7 +152,7 @@ class DefUsePass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
 
-    def exit_ability(self, node: ast.Ability) -> None:
+    def enter_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
         name_ref: NameType,
@@ -170,7 +168,7 @@ class DefUsePass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
 
-    def exit_ability_def(self, node: ast.AbilityDef) -> None:
+    def enter_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
 
         target: ArchRefChain,
@@ -180,14 +178,14 @@ class DefUsePass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
 
-    def exit_func_signature(self, node: ast.FuncSignature) -> None:
+    def enter_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
 
         params: Optional[SubNodeList[ParamVar]],
         return_type: Optional[SubNodeList[TypeSpec]],
         """
 
-    def exit_event_signature(self, node: ast.EventSignature) -> None:
+    def enter_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
 
         event: Token,
@@ -195,20 +193,20 @@ class DefUsePass(Pass):
         return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
         """
 
-    def exit_arch_ref(self, node: ast.ArchRef) -> None:
+    def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
 
         name_ref: NameType,
         arch: Token,
         """
 
-    def exit_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
+    def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
 
         archs: list[ArchRef],
         """
 
-    def exit_param_var(self, node: ast.ParamVar) -> None:
+    def enter_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
 
         name: Name,
@@ -217,7 +215,7 @@ class DefUsePass(Pass):
         value: Optional[ExprType],
         """
 
-    def exit_arch_has(self, node: ast.ArchHas) -> None:
+    def enter_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
 
         is_static: bool,
@@ -227,7 +225,7 @@ class DefUsePass(Pass):
         doc: Optional[Constant],
         """
 
-    def exit_has_var(self, node: ast.HasVar) -> None:
+    def enter_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
 
         name: Name,
@@ -235,7 +233,7 @@ class DefUsePass(Pass):
         value: Optional[ExprType],
         """
 
-    def exit_type_spec(self, node: ast.TypeSpec) -> None:
+    def enter_type_spec(self, node: ast.TypeSpec) -> None:
         """Sub objects.
 
         spec_type: Token | SubNodeList[NameType],
@@ -244,14 +242,14 @@ class DefUsePass(Pass):
         null_ok: bool,
         """
 
-    def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
+    def enter_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
 
         type_ctx: SubNodeList[TypeSpec],
         body: SubNodeList[CodeBlockStmt],
         """
 
-    def exit_if_stmt(self, node: ast.IfStmt) -> None:
+    def enter_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
 
         condition: ExprType,
@@ -260,7 +258,7 @@ class DefUsePass(Pass):
         else_body: Optional[ElseStmt],
         """
 
-    def exit_else_ifs(self, node: ast.ElseIfs) -> None:
+    def enter_else_ifs(self, node: ast.ElseIfs) -> None:
         """Sub objects.
 
         condition: ExprType,
@@ -268,13 +266,13 @@ class DefUsePass(Pass):
         elseifs: Optional[ElseIfs],
         """
 
-    def exit_else_stmt(self, node: ast.ElseStmt) -> None:
+    def enter_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
 
         body: SubNodeList[CodeBlockStmt],
         """
 
-    def exit_try_stmt(self, node: ast.TryStmt) -> None:
+    def enter_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
 
         body: SubNodeList[CodeBlockStmt],
@@ -282,7 +280,7 @@ class DefUsePass(Pass):
         finally_body: Optional[FinallyStmt],
         """
 
-    def exit_except(self, node: ast.Except) -> None:
+    def enter_except(self, node: ast.Except) -> None:
         """Sub objects.
 
         ex_type: ExprType,
@@ -290,13 +288,13 @@ class DefUsePass(Pass):
         body: SubNodeList[CodeBlockStmt],
         """
 
-    def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
+    def enter_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
 
         body: SubNodeList[CodeBlockStmt],
         """
 
-    def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
+    def enter_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.
 
         iter: Assignment,
@@ -305,7 +303,7 @@ class DefUsePass(Pass):
         body: SubNodeList[CodeBlockStmt],
         """
 
-    def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
+    def enter_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
         name_list: SubNodeList[Name],
@@ -313,77 +311,77 @@ class DefUsePass(Pass):
         body: SubNodeList[CodeBlockStmt],
         """
 
-    def exit_while_stmt(self, node: ast.WhileStmt) -> None:
+    def enter_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
 
         condition: ExprType,
         body: SubNodeList[CodeBlockStmt],
         """
 
-    def exit_with_stmt(self, node: ast.WithStmt) -> None:
+    def enter_with_stmt(self, node: ast.WithStmt) -> None:
         """Sub objects.
 
         exprs: SubNodeList[ExprAsItem],
         body: SubNodeList[CodeBlockStmt],
         """
 
-    def exit_expr_as_item(self, node: ast.ExprAsItem) -> None:
+    def enter_expr_as_item(self, node: ast.ExprAsItem) -> None:
         """Sub objects.
 
         expr: ExprType,
         alias: Optional[Name],
         """
 
-    def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
+    def enter_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.
 
         cause: Optional[ExprType],
         """
 
-    def exit_assert_stmt(self, node: ast.AssertStmt) -> None:
+    def enter_assert_stmt(self, node: ast.AssertStmt) -> None:
         """Sub objects.
 
         condition: ExprType,
         error_msg: Optional[ExprType],
         """
 
-    def exit_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
+    def enter_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
 
         ctrl: Token,
         """
 
-    def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
+    def enter_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
 
-    def exit_report_stmt(self, node: ast.ReportStmt) -> None:
+    def enter_report_stmt(self, node: ast.ReportStmt) -> None:
         """Sub objects.
 
         expr: ExprType,
         """
 
-    def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
+    def enter_return_stmt(self, node: ast.ReturnStmt) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
 
-    def exit_yield_stmt(self, node: ast.YieldStmt) -> None:
+    def enter_yield_stmt(self, node: ast.YieldStmt) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
 
-    def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
+    def enter_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
 
-    def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
+    def enter_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
         vis_type: Optional[SubTag[SubNodeList[Name]]],
@@ -391,23 +389,23 @@ class DefUsePass(Pass):
         else_body: Optional[ElseStmt],
         """
 
-    def exit_revisit_stmt(self, node: ast.RevisitStmt) -> None:
+    def enter_revisit_stmt(self, node: ast.RevisitStmt) -> None:
         """Sub objects.
 
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
 
-    def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
+    def enter_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
 
-    def exit_await_stmt(self, node: ast.AwaitStmt) -> None:
+    def enter_await_stmt(self, node: ast.AwaitStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
 
-    def exit_assignment(self, node: ast.Assignment) -> None:
+    def enter_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
         target: AtomType,
@@ -416,7 +414,7 @@ class DefUsePass(Pass):
         mutable: bool =True,
         """
 
-    def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
+    def enter_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
 
         left: ExprType,
@@ -424,14 +422,14 @@ class DefUsePass(Pass):
         op: Token | DisconnectOp | ConnectOp,
         """
 
-    def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
+    def enter_unary_expr(self, node: ast.UnaryExpr) -> None:
         """Sub objects.
 
         operand: ExprType,
         op: Token,
         """
 
-    def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
+    def enter_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
 
         condition: ExprType,
@@ -439,56 +437,56 @@ class DefUsePass(Pass):
         else_value: ExprType,
         """
 
-    def exit_multi_string(self, node: ast.MultiString) -> None:
+    def enter_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 
         strings: list[Constant | FString],
         """
 
-    def exit_f_string(self, node: ast.FString) -> None:
+    def enter_f_string(self, node: ast.FString) -> None:
         """Sub objects.
 
         parts: Optional[SubNodeList[Constant | ExprType]],
         """
 
-    def exit_expr_list(self, node: ast.ExprList) -> None:
+    def enter_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType]],
         """
 
-    def exit_list_val(self, node: ast.ListVal) -> None:
+    def enter_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType]],
         """
 
-    def exit_set_val(self, node: ast.SetVal) -> None:
+    def enter_set_val(self, node: ast.SetVal) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType]],
         """
 
-    def exit_tuple_val(self, node: ast.TupleVal) -> None:
+    def enter_tuple_val(self, node: ast.TupleVal) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType | Assignment]],
         """
 
-    def exit_dict_val(self, node: ast.DictVal) -> None:
+    def enter_dict_val(self, node: ast.DictVal) -> None:
         """Sub objects.
 
         kv_pairs: list[KVPair],
         """
 
-    def exit_k_v_pair(self, node: ast.KVPair) -> None:
+    def enter_k_v_pair(self, node: ast.KVPair) -> None:
         """Sub objects.
 
         key: ExprType,
         value: ExprType,
         """
 
-    def exit_inner_compr(self, node: ast.InnerCompr) -> None:
+    def enter_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
         out_expr: ExprType,
@@ -497,25 +495,25 @@ class DefUsePass(Pass):
         conditional: Optional[ExprType],
         """
 
-    def exit_list_compr(self, node: ast.ListCompr) -> None:
+    def enter_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.
 
         compr: InnerCompr,
         """
 
-    def exit_gen_compr(self, node: ast.GenCompr) -> None:
+    def enter_gen_compr(self, node: ast.GenCompr) -> None:
         """Sub objects.
 
         compr: InnerCompr,
         """
 
-    def exit_set_compr(self, node: ast.SetCompr) -> None:
+    def enter_set_compr(self, node: ast.SetCompr) -> None:
         """Sub objects.
 
         compr: InnerCompr,
         """
 
-    def exit_dict_compr(self, node: ast.DictCompr) -> None:
+    def enter_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
 
         kv_pair: KVPair,
@@ -524,7 +522,7 @@ class DefUsePass(Pass):
         conditional: Optional[ExprType],
         """
 
-    def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
+    def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
 
         target: AtomType,
@@ -532,14 +530,14 @@ class DefUsePass(Pass):
         null_ok: bool,
         """
 
-    def exit_func_call(self, node: ast.FuncCall) -> None:
+    def enter_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
 
         target: AtomType,
         params: Optional[SubNodeList[ExprType | Assignment]],
         """
 
-    def exit_index_slice(self, node: ast.IndexSlice) -> None:
+    def enter_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
 
         start: Optional[ExprType],
@@ -547,13 +545,13 @@ class DefUsePass(Pass):
         is_range: bool,
         """
 
-    def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
+    def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Sub objects.
 
         var: Token,
         """
 
-    def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
+    def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
 
         filter_type: Optional[ExprType],
@@ -562,13 +560,13 @@ class DefUsePass(Pass):
         from_walker: bool,
         """
 
-    def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
+    def enter_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
 
         edge_spec: EdgeOpRef,
         """
 
-    def exit_connect_op(self, node: ast.ConnectOp) -> None:
+    def enter_connect_op(self, node: ast.ConnectOp) -> None:
         """Sub objects.
 
         conn_type: Optional[ExprType],
@@ -576,13 +574,13 @@ class DefUsePass(Pass):
         edge_dir: EdgeDir,
         """
 
-    def exit_filter_compr(self, node: ast.FilterCompr) -> None:
+    def enter_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
         compares: SubNodeList[BinaryExpr],
         """
 
-    def exit_token(self, node: ast.Token) -> None:
+    def enter_token(self, node: ast.Token) -> None:
         """Sub objects.
 
         name: str,
@@ -593,7 +591,7 @@ class DefUsePass(Pass):
         pos_end: int,
         """
 
-    def exit_name(self, node: ast.Name) -> None:
+    def enter_name(self, node: ast.Name) -> None:
         """Sub objects.
 
         name: str,
@@ -604,7 +602,7 @@ class DefUsePass(Pass):
         pos_end: int,
         """
 
-    def exit_constant(self, node: ast.Constant) -> None:
+    def enter_constant(self, node: ast.Constant) -> None:
         """Sub objects.
 
         name: str,
@@ -615,7 +613,7 @@ class DefUsePass(Pass):
         pos_end: int,
         """
 
-    def exit_builtin_type(self, node: ast.BuiltinType) -> None:
+    def enter_builtin_type(self, node: ast.BuiltinType) -> None:
         """Sub objects.
 
         name: str,
