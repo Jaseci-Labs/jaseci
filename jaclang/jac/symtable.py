@@ -4,6 +4,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     import jaclang.jac.absyntree as ast
 
@@ -11,17 +12,23 @@ if TYPE_CHECKING:
 class SymbolType(Enum):
     """Symbol types."""
 
-    MOD = "mod"
+    MODULE = "module"
     MOD_VAR = "mod_var"
     VAR = "var"
+    IMM_VAR = "immutable"
     ABILITY = "ability"
     OBJECT_ARCH = "object"
     NODE_ARCH = "node"
     EDGE_ARCH = "edge"
     WALKER_ARCH = "walker"
     ENUM_ARCH = "enum"
+    TEST = "test"
+    TYPE = "type"
     IMPL = "impl"
     HAS_VAR = "field"
+    METHOD = "method"
+    CONSTRUCTOR = "constructor"
+    ENUM_MEMBER = "enum_member"
 
     def __str__(self) -> str:
         """Stringify."""
@@ -56,11 +63,11 @@ class Symbol:
         self,
         name: str,
         sym_type: SymbolType,
+        access: SymbolAccess,
         typ: Optional[type] = None,
         decl: Optional[ast.AstSymbolNode] = None,
         defn: Optional[list[ast.AstSymbolNode]] = None,
         uses: Optional[list[ast.AstSymbolNode]] = None,
-        access: SymbolAccess = SymbolAccess.PUBLIC,
     ) -> None:
         """Initialize."""
         self.name = name
@@ -123,10 +130,9 @@ class SymbolTable:
 
     def insert(
         self,
-        name: str,
-        sym_type: SymbolType,
         sym_hit: SymbolHitType,
         node: ast.AstSymbolNode,
+        access_spec: Optional[ast.AstAccessNode] = None,
         single: bool = False,
     ) -> Optional[ast.AstNode]:
         """Set a variable in the symbol table.
@@ -137,36 +143,40 @@ class SymbolTable:
         if single:
             if (
                 sym_hit in [SymbolHitType.DECL, SymbolHitType.DECL_DEFN]
-                and name in self.tab
-                and self.tab[name].decl
+                and node.sym_name in self.tab
+                and self.tab[node.sym_name].decl
             ):
-                return self.tab[name].decl
+                return self.tab[node.sym_name].decl
             elif (
                 sym_hit in [SymbolHitType.DEFN, SymbolHitType.DECL_DEFN]
-                and name in self.tab
-                and len(self.tab[name].defn)
+                and node.sym_name in self.tab
+                and len(self.tab[node.sym_name].defn)
             ):
-                return self.tab[name].defn[-1]
+                return self.tab[node.sym_name].defn[-1]
             elif (
                 sym_hit == SymbolHitType.USE
-                and name in self.tab
-                and len(self.tab[name].uses)
+                and node.sym_name in self.tab
+                and len(self.tab[node.sym_name].uses)
             ):
-                return self.tab[name].uses[-1]
-        if name not in self.tab:
-            sym = Symbol(name=name, sym_type=sym_type)
-            node.sym = sym
-            self.tab[name] = sym
+                return self.tab[node.sym_name].uses[-1]
+        if node.sym_name not in self.tab:
+            sym = Symbol(
+                name=node.sym_name,
+                sym_type=node.sym_type,
+                access=access_spec.access_type if access_spec else SymbolAccess.PUBLIC,
+            )
+            node.sym_link = sym
+            self.tab[node.sym_name] = sym
         if sym_hit == SymbolHitType.DECL:
-            self.tab[name].decl = node
+            self.tab[node.sym_name].decl = node
         elif sym_hit == SymbolHitType.DEFN:
-            self.tab[name].defn.append(node)
+            self.tab[node.sym_name].defn.append(node)
         elif sym_hit == SymbolHitType.DECL_DEFN:
-            self.tab[name].defn.append(node)
-            if not self.tab[name].decl:
-                self.tab[name].decl = node
+            self.tab[node.sym_name].defn.append(node)
+            if not self.tab[node.sym_name].decl:
+                self.tab[node.sym_name].decl = node
         elif sym_hit == SymbolHitType.USE:
-            self.tab[name].uses.append(node)
+            self.tab[node.sym_name].uses.append(node)
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""

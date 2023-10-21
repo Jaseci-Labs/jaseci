@@ -7,7 +7,7 @@ from typing import Generic, Optional, TypeVar, Union
 from jaclang.jac.codeloc import CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
-from jaclang.jac.symtable import Symbol, SymbolTable
+from jaclang.jac.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
 
 
 class AstNode:
@@ -73,7 +73,7 @@ class AstNode:
 
         return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Union[str, list[AstNode], int]]:
         """Return dict representation of node."""
         ret = {
             "node": str(type(self).__name__),
@@ -94,9 +94,11 @@ class AstNode:
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
 
-    def __init__(self) -> None:
+    def __init__(self, sym_name: str, sym_type: SymbolType) -> None:
         """Initialize ast."""
-        self.sym: Optional[Symbol] = None
+        self.sym_link: Optional[Symbol] = None
+        self.sym_name: str = sym_name
+        self.sym_type: SymbolType = sym_type
 
 
 class AstAccessNode(AstNode):
@@ -105,6 +107,17 @@ class AstAccessNode(AstNode):
     def __init__(self, access: Optional[SubTag[Token]]) -> None:
         """Initialize ast."""
         self.access: Optional[SubTag[Token]] = access
+
+    @property
+    def access_type(self) -> SymbolAccess:
+        """Get access spec."""
+        return (
+            SymbolAccess.PRIVATE
+            if self.access and self.access.tag.value == Tok.KW_PRIV
+            else SymbolAccess.PROTECTED
+            if self.access and self.access.tag.value == Tok.KW_PROT
+            else SymbolAccess.PUBLIC
+        )
 
 
 class WalkerStmtOnlyNode(AstNode):
@@ -224,6 +237,9 @@ class Test(AstSymbolNode):
         AstNode.__init__(self, kid=kid)
         if self.name not in self.kid:
             self.add_kids_left([self.name], pos_update=False)
+        AstSymbolNode.__init__(
+            self, sym_name=self.name.sym_name, sym_type=SymbolType.TEST
+        )
 
 
 class ModuleCode(AstNode):
@@ -281,6 +297,11 @@ class Import(AstSymbolNode):
         self.is_absorb = is_absorb
         self.sub_module = sub_module
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=alias.sym_name if alias else path.path_str,
+            sym_type=SymbolType.MODULE,
+        )
 
 
 class ModulePath(AstNode):
@@ -312,6 +333,11 @@ class ModuleItem(AstSymbolNode):
         self.alias = alias
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=alias.sym_name if alias else name.sym_name,
+            sym_type=SymbolType.MOD_VAR,
+        )
 
 
 class Architype(AstSymbolNode, AstAccessNode):
@@ -336,7 +362,17 @@ class Architype(AstSymbolNode, AstAccessNode):
         self.base_classes = base_classes
         self.body = body
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(self)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=name.value,
+            sym_type=SymbolType.OBJECT_ARCH
+            if arch_type.value == Tok.KW_OBJECT
+            else SymbolType.NODE_ARCH
+            if arch_type.value == Tok.KW_NODE
+            else SymbolType.EDGE_ARCH
+            if arch_type.value == Tok.KW_EDGE
+            else SymbolType.WALKER_ARCH,
+        )
         AstAccessNode.__init__(self, access=access)
 
 
@@ -357,6 +393,9 @@ class ArchDef(AstSymbolNode):
         self.target = target
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self, sym_name=target.py_resolve_name(), sym_type=SymbolType.IMPL
+        )
 
 
 class Enum(AstSymbolNode, AstAccessNode):
@@ -379,7 +418,7 @@ class Enum(AstSymbolNode, AstAccessNode):
         self.base_classes = base_classes
         self.body = body
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(self)
+        AstSymbolNode.__init__(self, sym_name=name.value, sym_type=SymbolType.ENUM_ARCH)
         AstAccessNode.__init__(self, access=access)
 
 
@@ -400,6 +439,9 @@ class EnumDef(AstSymbolNode):
         self.body = body
         self.decorators = decorators
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self, sym_name=target.py_resolve_name(), sym_type=SymbolType.IMPL
+        )
 
 
 class Ability(AstSymbolNode, AstAccessNode):
@@ -416,7 +458,6 @@ class Ability(AstSymbolNode, AstAccessNode):
         signature: Optional[FuncSignature | SubNodeList[TypeSpec] | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt]],
         kid: list[AstNode],
-        arch_attached: Optional[Architype] = None,
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
@@ -430,10 +471,21 @@ class Ability(AstSymbolNode, AstAccessNode):
         self.decorators = decorators
         self.signature = signature
         self.body = body
-        self.arch_attached = arch_attached
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(self)
+        AstSymbolNode.__init__(
+            self, sym_name=self.py_resolve_name(), sym_type=SymbolType.ABILITY
+        )
         AstAccessNode.__init__(self, access=access)
+
+    @property
+    def is_method(self) -> bool:
+        """Check if is method."""
+        check = isinstance(self.parent, SubNodeList) and isinstance(
+            self.parent.parent, Architype
+        )
+        if check:
+            self.sym_type = SymbolType.METHOD
+        return check
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
@@ -468,6 +520,9 @@ class AbilityDef(AstSymbolNode):
         self.body = body
         self.decorators = decorators
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self, sym_name=target.py_resolve_name(), sym_type=SymbolType.IMPL
+        )
 
 
 class FuncSignature(AstNode):
@@ -521,7 +576,7 @@ class ArchRefChain(AstNode):
         )
 
 
-class ParamVar(AstNode):
+class ParamVar(AstSymbolNode):
     """ParamVar node type for Jac Ast."""
 
     def __init__(
@@ -538,6 +593,7 @@ class ParamVar(AstNode):
         self.type_tag = type_tag
         self.value = value
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(self, sym_name=name.value, sym_type=SymbolType.VAR)
 
 
 class ArchHas(AstAccessNode):
@@ -1383,7 +1439,8 @@ class Name(Token, AstSymbolNode):
         kid: list[AstNode],
     ) -> None:
         """Initialize name."""
-        super().__init__(
+        Token.__init__(
+            self,
             name=name,
             value=value,
             line=line,
@@ -1393,6 +1450,7 @@ class Name(Token, AstSymbolNode):
             pos_end=pos_end,
             kid=kid,
         )
+        AstSymbolNode.__init__(self, sym_name=value, sym_type=SymbolType.VAR)
 
 
 class Constant(Token):

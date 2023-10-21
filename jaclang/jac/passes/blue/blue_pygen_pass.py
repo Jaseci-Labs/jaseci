@@ -456,15 +456,15 @@ class BluePygenPass(Pass):
         is_async: bool,
         is_static: bool,
         is_abstract: bool,
+        is_method: bool,
         access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | SubNodeList[TypeSpec] | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt]],
-        arch_attached: Optional[Architype] = None,
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
         ability_name = node.py_resolve_name()
-        if node.arch_attached and ability_name == "__init__":
+        if node.is_method and ability_name == "__init__":
             return
         if node.decorators:
             for i in node.decorators.items:
@@ -476,18 +476,18 @@ class BluePygenPass(Pass):
                 )
             else:
                 node.signature.meta["py_code"] += ")"
-            if node.arch_attached and not node.is_static:
+            if node.is_method and not node.is_static:
                 self.emit_ln(
                     node, f"def {ability_name}(self,{node.signature.meta['py_code']}:"
                 )
             else:
-                if node.arch_attached and node.is_static:
+                if node.is_method and node.is_static:
                     self.emit_ln(node, "@classmethod")
                 self.emit_ln(
                     node, f"def {ability_name}({node.signature.meta['py_code']}:"
                 )
         else:
-            if node.arch_attached:
+            if node.is_method:
                 self.emit_ln(node, f"def {ability_name}(self):")
             else:
                 self.emit_ln(node, f"def {ability_name}():")

@@ -84,16 +84,16 @@ decorators: Optional[SubNodeList[ExprType]] = None,
 :object:PurplePygenPass:ability:exit_ability
 (nd: ast.Ability) {
     ability_name = nd.py_resolve_name();
-    if nd.arch_attached and ability_name == "__init__" {
+    if nd.is_method and ability_name == "__init__" {
         return;
     }
-    if nd.signature:>type == ast.EventSignature and nd.arch_attached and
+    if nd.signature:>type == ast.EventSignature and nd.is_method and
         nd.signature.event.name == Tok.KW_ENTRY {
         "Object" |> <self>.add_element_import;
         type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
         (nd, f"@{C.OBJECT_CLASS}.{C.ON_ENTRY}([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
     }
-    elif nd.signature:>type == ast.EventSignature and nd.arch_attached and
+    elif nd.signature:>type == ast.EventSignature and nd.is_method and
         nd.signature.event.name == Tok.KW_EXIT {
         "Object" |> <self>.add_element_import;
         type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
