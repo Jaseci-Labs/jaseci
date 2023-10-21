@@ -5,7 +5,7 @@ import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 from jaclang.jac.symtable import (
-    # SymbolAccess as Sa,
+    SymbolAccess as Sa,
     SymbolHitType as Sht,
     SymbolTable,
     SymbolType as St,
@@ -100,24 +100,27 @@ class SymTabBuildPass(Pass):
         doc: Optional[Constant] = None,
         """
         for i in self.get_all_sub_nodes(node, ast.Assignment):
-            if not isinstance(i.target, ast.Name):
+            if isinstance(i.target, ast.Name):
+                if collide := self.cur_scope().insert(
+                    name=i.target.value,
+                    sym_type=St.VAR,
+                    sym_hit=Sht.DECL_DEFN,
+                    node=i.target,
+                    single=True,
+                ):
+                    self.already_declared_err(i.target.value, "global var", collide)
+                if i.target.sym:
+                    i.target.sym.access = (
+                        Sa.PRIVATE
+                        if node.access and node.access.tag.value == Tok.KW_PRIV
+                        else Sa.PROTECTED
+                        if node.access and node.access.tag.value == Tok.KW_PROT
+                        else Sa.PUBLIC
+                    )
+                else:
+                    self.ice("Expected name type for globabl vars")
+            else:
                 self.ice("Expected name type for globabl vars")
-            elif collide := self.cur_scope().insert(
-                name=i.target.value,
-                sym_type=St.VAR,
-                sym_hit=Sht.DECL_DEFN,
-                node=i.target,
-                single=True,
-            ):
-                self.already_declared_err(i.target.value, "global var", collide)
-            # if isinstance(i.target.sym, ast.Symbol):
-            #     i.target.sym.access = (
-            #         Sa.PRIVATE
-            #         if node.access.tag and node.access.tag.value == Tok.KW_PRIV
-            #         else Sa.PROTECTED
-            #         if node.access.tag and node.access.tag.value == Tok.KW_PROT
-            #         else Sa.PUBLIC,
-            #     )
         self.sync_node_to_scope(node)
 
     def enter_sub_tag(self, node: ast.SubTag) -> None:

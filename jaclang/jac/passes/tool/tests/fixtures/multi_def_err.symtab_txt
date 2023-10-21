@@ -1,22 +1,24 @@
 SymTable::Module(multi_def_err)
 +-- Symbols
-|   +-- Symbol(MyObject)
-|   |   +-- declared in Architype
+|   +-- MyObject
+|   |   +-- public walker
+|   |   +-- decl: line 3, col 1
 |   |   +-- defn
-|   |   |   +-- Architype
+|   |   |   +-- line 3, col 1
 |   |   +-- uses
-|   +-- Symbol(AnotherObject)
-|       +-- declared in Architype
+|   +-- AnotherObject
+|       +-- public walker
+|       +-- decl: line 5, col 1
 |       +-- defn
-|       |   +-- Architype
+|       |   +-- line 5, col 1
 |       +-- uses
-+-- Children
++-- Sub Tables
     +-- SymTable::Architype(MyObject)
     |   +-- Symbols
-    |   +-- Children
+    |   +-- Sub Tables
     +-- SymTable::Architype(AnotherObject)
     |   +-- Symbols
-    |   +-- Children
+    |   +-- Sub Tables
     +-- SymTable::Architype(MyObject)
         +-- Symbols
-        +-- Children
+        +-- Sub Tables

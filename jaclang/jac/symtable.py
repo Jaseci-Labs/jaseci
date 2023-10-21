@@ -12,7 +12,7 @@ class SymbolType(Enum):
     """Symbol types."""
 
     MOD = "mod"
-    MOD_VAR = "mod"
+    MOD_VAR = "mod_var"
     VAR = "var"
     ABILITY = "ability"
     OBJECT_ARCH = "object"
@@ -23,6 +23,10 @@ class SymbolType(Enum):
     IMPL = "impl"
     HAS_VAR = "field"
 
+    def __str__(self) -> str:
+        """Stringify."""
+        return self.value
+
 
 class SymbolAccess(Enum):
     """Symbol types."""
@@ -30,6 +34,10 @@ class SymbolAccess(Enum):
     PRIVATE = "private"
     PUBLIC = "public"
     PROTECTED = "protected"
+
+    def __str__(self) -> str:
+        """Stringify."""
+        return self.value
 
 
 class SymbolHitType(Enum):
@@ -52,7 +60,7 @@ class Symbol:
         decl: Optional[ast.AstSymbolNode] = None,
         defn: Optional[list[ast.AstSymbolNode]] = None,
         uses: Optional[list[ast.AstSymbolNode]] = None,
-        access: Optional[SymbolAccess] = None,
+        access: SymbolAccess = SymbolAccess.PUBLIC,
     ) -> None:
         """Initialize."""
         self.name = name
@@ -61,7 +69,7 @@ class Symbol:
         self.decl = decl
         self.defn: list[ast.AstSymbolNode] = defn if defn else []
         self.uses: list[ast.AstSymbolNode] = uses if uses else []
-        self.access = access if access else SymbolAccess.PUBLIC
+        self.access = access
 
     def __repr__(self) -> str:
         """Repr."""
@@ -123,7 +131,8 @@ class SymbolTable:
     ) -> Optional[ast.AstNode]:
         """Set a variable in the symbol table.
 
-        Returns original symbol single check fails.
+        Returns original symbol as collision if single check fails, none otherwise.
+        Also updates node.sym to create pointer to symbol.
         """
         if single:
             if (

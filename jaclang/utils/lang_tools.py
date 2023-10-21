@@ -88,6 +88,7 @@ class AstTool:
                 "SourceString",
                 "EmptyToken",
                 "AstSymbolNode",
+                "AstAccessNode",
             ]
         ]
         self.ast_classes = sorted(
