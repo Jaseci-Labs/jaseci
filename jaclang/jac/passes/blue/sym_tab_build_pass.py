@@ -220,7 +220,7 @@ class SymTabBuildPass(Pass):
                         if (v.decl and len(v.defn))
                         else Sht.DECL
                         if v.decl
-                        else Sht.DEFN,
+                        else Sht.DEF,
                         node=v.decl if v.decl else v.defn[-1],
                         single=True,
                     ):
@@ -290,7 +290,7 @@ class SymTabBuildPass(Pass):
         arch: ArchRef,
         body: ArchBlock,
         """
-        if collide := self.cur_scope().insert(sym_hit=Sht.DEFN, node=node, single=True):
+        if collide := self.cur_scope().insert(sym_hit=Sht.DEF, node=node, single=True):
             self.already_declared_err(node.sym_name, "architype def", collide)
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
@@ -348,7 +348,7 @@ class SymTabBuildPass(Pass):
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
         """
-        if collide := self.cur_scope().insert(sym_hit=Sht.DEFN, node=node, single=True):
+        if collide := self.cur_scope().insert(sym_hit=Sht.DEF, node=node, single=True):
             self.already_declared_err(node.sym_name, "ability def", collide)
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
@@ -434,7 +434,7 @@ class SymTabBuildPass(Pass):
         target: list[ArchRef],
         body: EnumBlock,
         """
-        if collide := self.cur_scope().insert(sym_hit=Sht.DEFN, node=node, single=True):
+        if collide := self.cur_scope().insert(sym_hit=Sht.DEF, node=node, single=True):
             self.already_declared_err(node.sym_name, "enum def", collide)
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
