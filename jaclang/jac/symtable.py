@@ -47,13 +47,6 @@ class SymbolAccess(Enum):
         return self.value
 
 
-class SymbolHitType(Enum):
-    """Symbol types."""
-
-    DEF = "defn"
-    USE = "use"
-
-
 class Symbol:
     """Symbol."""
 
@@ -121,14 +114,12 @@ class SymbolTable:
             raise Exception("No parent")
         return self.parent
 
-    def lookup(
-        self, name: str, sym_hit: Optional[SymbolHitType] = None, deep: bool = True
-    ) -> Optional[Symbol]:
+    def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
         """Lookup a variable in the symbol table."""
         if name in self.tab:
             return self.tab[name]
         if deep and self.has_parent():
-            return self.get_parent().lookup(name, sym_hit, deep)
+            return self.get_parent().lookup(name, deep)
         return None
 
     def insert(
@@ -168,5 +159,4 @@ __all__ = [
     "SymbolTable",
     "SymbolType",
     "SymbolAccess",
-    "SymbolHitType",
 ]

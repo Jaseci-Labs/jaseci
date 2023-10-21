@@ -43,6 +43,7 @@ class SymbolTablePrinterPassTest(TestCase):
 
         with open(self.fixture_abs_path("multi_def_err.symtab_txt")) as f:
             ref_lines = "".join(f.readlines())
+
         self.assertEqual(res_lines, ref_lines)
 
 
