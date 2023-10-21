@@ -47,42 +47,46 @@ class SymbolAccess(Enum):
         return self.value
 
 
-class SymbolHitType(Enum):
-    """Symbol types."""
-
-    DECL = "decl"
-    DEFN = "defn"
-    DECL_DEFN = "decl_defn"
-    USE = "use"
-
-
 class Symbol:
     """Symbol."""
 
     def __init__(
         self,
-        name: str,
-        sym_type: SymbolType,
+        defn: ast.AstSymbolNode,
         access: SymbolAccess,
         typ: Optional[type] = None,
-        decl: Optional[ast.AstSymbolNode] = None,
-        defn: Optional[list[ast.AstSymbolNode]] = None,
-        uses: Optional[list[ast.AstSymbolNode]] = None,
     ) -> None:
         """Initialize."""
-        self.name = name
-        self.sym_type = sym_type
         self.typ = typ
-        self.decl = decl
-        self.defn: list[ast.AstSymbolNode] = defn if defn else []
-        self.uses: list[ast.AstSymbolNode] = uses if uses else []
+        self.defn: list[ast.AstSymbolNode] = [defn]
+        defn.sym_link = self
         self.access = access
+
+    @property
+    def decl(self) -> ast.AstSymbolNode:
+        """Get decl."""
+        return self.defn[0]
+
+    @property
+    def sym_name(self) -> str:
+        """Get name."""
+        return self.decl.sym_name
+
+    @property
+    def sym_type(self) -> SymbolType:
+        """Get sym_type."""
+        return self.decl.sym_type
+
+    def add_defn(self, node: ast.AstSymbolNode) -> None:
+        """Add defn."""
+        self.defn.append(node)
+        node.sym_link = self
 
     def __repr__(self) -> str:
         """Repr."""
         return (
-            f"Symbol({self.name}, {self.sym_type}, {self.typ}, "
-            f"{self.decl}, {self.defn}, {self.uses})"
+            f"Symbol({self.sym_name}, {self.sym_type}, {self.access}, "
+            f"{self.typ}, {self.defn})"
         )
 
 
@@ -98,6 +102,7 @@ class SymbolTable:
         self.parent = parent if parent else self
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
+        self.uses: dict[ast.AstSymbolNode, Symbol] = {}
 
     def has_parent(self) -> bool:
         """Check if has parent."""
@@ -109,28 +114,16 @@ class SymbolTable:
             raise Exception("No parent")
         return self.parent
 
-    def lookup(
-        self, name: str, sym_hit: Optional[SymbolHitType] = None, deep: bool = True
-    ) -> Optional[Symbol]:
+    def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
         """Lookup a variable in the symbol table."""
-        if name in self.tab and (
-            not sym_hit
-            or (sym_hit == SymbolHitType.DECL and self.tab[name].decl)
-            or (sym_hit == SymbolHitType.DEFN and len(self.tab[name].defn))
-            or (
-                sym_hit == SymbolHitType.DECL_DEFN
-                and (self.tab[name].decl or len(self.tab[name].defn))
-            )
-            or (sym_hit == SymbolHitType.USE and len(self.tab[name].uses))
-        ):
+        if name in self.tab:
             return self.tab[name]
         if deep and self.has_parent():
-            return self.get_parent().lookup(name, sym_hit, deep)
+            return self.get_parent().lookup(name, deep)
         return None
 
     def insert(
         self,
-        sym_hit: SymbolHitType,
         node: ast.AstSymbolNode,
         access_spec: Optional[ast.AstAccessNode] = None,
         single: bool = False,
@@ -140,43 +133,13 @@ class SymbolTable:
         Returns original symbol as collision if single check fails, none otherwise.
         Also updates node.sym to create pointer to symbol.
         """
-        if single:
-            if (
-                sym_hit in [SymbolHitType.DECL, SymbolHitType.DECL_DEFN]
-                and node.sym_name in self.tab
-                and self.tab[node.sym_name].decl
-            ):
-                return self.tab[node.sym_name].decl
-            elif (
-                sym_hit in [SymbolHitType.DEFN, SymbolHitType.DECL_DEFN]
-                and node.sym_name in self.tab
-                and len(self.tab[node.sym_name].defn)
-            ):
-                return self.tab[node.sym_name].defn[-1]
-            elif (
-                sym_hit == SymbolHitType.USE
-                and node.sym_name in self.tab
-                and len(self.tab[node.sym_name].uses)
-            ):
-                return self.tab[node.sym_name].uses[-1]
+        if single and node.sym_name in self.tab:
+            return self.tab[node.sym_name].defn[-1]
         if node.sym_name not in self.tab:
-            sym = Symbol(
-                name=node.sym_name,
-                sym_type=node.sym_type,
+            self.tab[node.sym_name] = Symbol(
+                defn=node,
                 access=access_spec.access_type if access_spec else SymbolAccess.PUBLIC,
             )
-            node.sym_link = sym
-            self.tab[node.sym_name] = sym
-        if sym_hit == SymbolHitType.DECL:
-            self.tab[node.sym_name].decl = node
-        elif sym_hit == SymbolHitType.DEFN:
-            self.tab[node.sym_name].defn.append(node)
-        elif sym_hit == SymbolHitType.DECL_DEFN:
-            self.tab[node.sym_name].defn.append(node)
-            if not self.tab[node.sym_name].decl:
-                self.tab[node.sym_name].decl = node
-        elif sym_hit == SymbolHitType.USE:
-            self.tab[node.sym_name].uses.append(node)
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""
@@ -196,5 +159,4 @@ __all__ = [
     "SymbolTable",
     "SymbolType",
     "SymbolAccess",
-    "SymbolHitType",
 ]

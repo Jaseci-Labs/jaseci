@@ -2,7 +2,7 @@
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.blue import SubNodeTabPass
-from jaclang.jac.symtable import SymbolHitType, SymbolTable, SymbolType
+from jaclang.jac.symtable import SymbolTable, SymbolType
 
 
 class DeclDefMatchPass(Pass):
@@ -13,7 +13,7 @@ class DeclDefMatchPass(Pass):
         self.need_match = []
         if not self.ir.sym_tab:
             return self.ice("Expected symbol table on node.")
-        self.connect_decl_def(self.ir.sym_tab)
+        self.connect_def_impl(self.ir.sym_tab)
         self.terminate()
 
     def after_pass(self) -> None:
@@ -22,20 +22,18 @@ class DeclDefMatchPass(Pass):
             prior=self, mod_path=self.mod_path, input_ir=self.ir
         ).ir
 
-    def connect_decl_def(self, sym_tab: SymbolTable) -> None:
+    def connect_def_impl(self, sym_tab: SymbolTable) -> None:
         """Connect Decls and Defs."""
         for sym in sym_tab.tab.values():
             if sym.sym_type == SymbolType.IMPL:
                 # currently strips the type info from impls
-                arch_refs = [x[3:] for x in sym.name.split(".")]
-                lookup = sym_tab.lookup(arch_refs[0], sym_hit=SymbolHitType.DECL_DEFN)
+                arch_refs = [x[3:] for x in sym.sym_name.split(".")]
+                lookup = sym_tab.lookup(arch_refs[0])
                 decl_node = lookup.decl if lookup else None
                 for name in arch_refs[1:]:
                     if decl_node:
                         lookup = (
-                            decl_node.sym_tab.lookup(
-                                name, sym_hit=SymbolHitType.DECL_DEFN
-                            )
+                            decl_node.sym_tab.lookup(name)
                             if decl_node.sym_tab
                             else None
                         )
@@ -44,7 +42,7 @@ class DeclDefMatchPass(Pass):
                         break
                 if not decl_node:
                     self.error(
-                        f"Unable to match implementation {sym.name} to a declaration.",
+                        f"Unable to match implementation {sym.sym_name} to a declaration.",
                         sym.defn[-1],
                     )
                     continue
@@ -54,10 +52,8 @@ class DeclDefMatchPass(Pass):
                         decl_node,
                     )
                     continue
-                decl_node.body = sym.defn[-1]  # type: ignore
-                decl_node.add_kids_right([sym.defn[-1]], pos_update=False)  # type: ignore
-                decl_node.sym_tab.tab = sym.defn[-1].sym_tab.tab  # type: ignore
-                sym.decl = decl_node
-
+                decl_node.body = sym.decl  # type: ignore
+                decl_node.add_kids_right([sym.decl], pos_update=False)  # type: ignore
+                decl_node.sym_tab.tab = sym.decl.sym_tab.tab  # type: ignore
         for i in sym_tab.kid:
-            self.connect_decl_def(i)
+            self.connect_def_impl(i)
