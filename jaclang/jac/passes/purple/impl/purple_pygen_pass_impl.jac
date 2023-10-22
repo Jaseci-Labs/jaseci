@@ -112,14 +112,12 @@ return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
 :object:PurplePygenPass:ability:exit_event_signature
 (nd: ast.EventSignature) {
     if nd.arch_tag_info {
-        (nd.arch_tag_info, delim="|") |> <self>.sep_node_list;
         (nd, f"{C.HERE}: {nd.arch_tag_info.meta['py_code']}")
             |> <self>.emit;
     } else {
         (nd, f"{C.HERE}") |> <self>.emit;
     }
     if nd.return_type {
-        (nd.return_type, delim="|") |> <self>.sep_node_list;
         (nd, f" -> {nd.return_type.meta['py_code']}") |> <self>.emit;
     }
 }

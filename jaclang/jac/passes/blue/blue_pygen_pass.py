@@ -1196,7 +1196,15 @@ class BluePygenPass(Pass):
         right: AtomType,
         null_ok: bool,
         """
-        if isinstance(node.target, ast.AtomUnit) and node.target.is_null_ok:
+        if (
+            isinstance(
+                node.target, ast.AtomUnit
+            )  # a bit complicated but works, checks if left is null_ok
+            and node.target.is_null_ok
+            or isinstance(node.target, ast.AtomTrailer)
+            and isinstance(node.target.right, ast.AtomUnit)
+            and node.target.right.is_null_ok
+        ):
             if isinstance(node.right, (ast.IndexSlice, ast.ListVal)):
                 self.emit(
                     node,

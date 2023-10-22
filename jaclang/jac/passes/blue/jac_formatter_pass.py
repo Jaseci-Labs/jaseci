@@ -543,30 +543,16 @@ class JacFormatPass(Pass):
         right: IndexSlice | ArchRefType | Token,
         null_ok: bool,
         """
-        if node.null_ok:
-            if isinstance(node.right, ast.IndexSlice):
-                self.emit(
-                    node,
-                    f"({node.target.meta['jac_code']}{node.right.meta['jac_code']} "
-                    f"if {node.target.meta['jac_code']} is not None else None)",
-                )
-            else:
-                self.emit(
-                    node,
-                    f"({node.target.meta['jac_code']}.{node.right.meta['jac_code']} "
-                    f"if {node.target.meta['jac_code']} is not None else None)",
-                )
+        if isinstance(node.right, ast.IndexSlice):
+            self.emit(
+                node,
+                f"{node.target.meta['jac_code']}{node.right.meta['jac_code']}",
+            )
         else:
-            if isinstance(node.right, ast.IndexSlice):
-                self.emit(
-                    node,
-                    f"{node.target.meta['jac_code']}{node.right.meta['jac_code']}",
-                )
-            else:
-                self.emit(
-                    node,
-                    f"{node.target.meta['jac_code']}.{node.right.meta['jac_code']}",
-                )
+            self.emit(
+                node,
+                f"{node.target.meta['jac_code']}.{node.right.meta['jac_code']}",
+            )
 
     def exit_atom_unit(self, node: ast.AtomUnit) -> None:
         """Sub objects.
