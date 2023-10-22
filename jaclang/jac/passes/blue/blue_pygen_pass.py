@@ -1199,7 +1199,7 @@ class BluePygenPass(Pass):
         null_ok: bool,
         """
         if node.null_ok:
-            if isinstance(node.right, ast.IndexSlice):
+            if isinstance(node.right, (ast.IndexSlice, ast.ListVal)):
                 self.emit(
                     node,
                     f"({node.target.meta['py_code']}{node.right.meta['py_code']} "
@@ -1212,7 +1212,7 @@ class BluePygenPass(Pass):
                     f"if {node.target.meta['py_code']} is not None else None)",
                 )
         else:
-            if isinstance(node.right, ast.IndexSlice):
+            if isinstance(node.right, (ast.IndexSlice, ast.ListVal)):
                 self.emit(
                     node,
                     f"{node.target.meta['py_code']}{node.right.meta['py_code']}",

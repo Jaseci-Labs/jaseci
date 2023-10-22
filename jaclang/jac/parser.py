@@ -1916,24 +1916,28 @@ class JacParser(Pass):
         def atomic_chain(self, kid: list[ast.AstNode]) -> ast.AtomType:
             """Grammar rule.
 
-            atomic_chain: atomic_call
-                        | atomic_chain_unsafe
-                        | atomic_chain_safe
-                        | atom
+            atomic_chain: atomic_chain (filter_compr | edge_op_ref | index_slice | list_val )
+                        | atomic_chain (DOT_BKWD | DOT_FWD | DOT) any_ref
+                        | atomic_call
+                        | atom NULL_OK?
             """
-            if isinstance(kid[0], ast.AtomType):
+            if len(kid) < 2 and isinstance(kid[0], ast.AtomType):
                 return self.nu(kid[0])
-            else:
-                print(type(kid[0]))
-                raise self.ice()
-
-        def atomic_chain_unsafe(self, kid: list[ast.AstNode]) -> ast.AtomType:
-            """Grammar rule.
-
-            atomic_chain_unsafe: atomic_chain (filter_compr | edge_op_ref | index_slice | list_val )
-                            | atomic_chain (DOT_BKWD | DOT_FWD | DOT) any_ref
-            """
-            if len(kid) == 2:
+            elif (
+                len(kid) == 2
+                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[-1], ast.Token)
+                and kid[-1].name == Tok.NULL_OK
+            ):
+                return self.nu(
+                    ast.AtomUnit(
+                        value=kid[0],
+                        is_paren=False,
+                        is_null_ok=True,
+                        kid=kid,
+                    )
+                )
+            elif len(kid) == 2:
                 if isinstance(kid[0], ast.AtomType) and isinstance(
                     kid[1],
                     (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
@@ -1959,46 +1963,6 @@ class JacParser(Pass):
                             target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
                             right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
                             null_ok=False,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
-
-        def atomic_chain_safe(self, kid: list[ast.AstNode]) -> ast.AtomType:
-            """Grammar rule.
-
-            atomic_chain_safe: atomic_chain NULL_OK (filter_compr | edge_op_ref | index_slice | list_val)
-                            | atomic_chain NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
-            """
-            if len(kid) == 3:
-                if isinstance(kid[0], ast.AtomType) and isinstance(
-                    kid[2],
-                    (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0],
-                            right=kid[2],
-                            null_ok=True,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            elif len(kid) == 4:
-                if (
-                    isinstance(kid[0], ast.AtomType)
-                    and isinstance(kid[1], ast.Token)
-                    and isinstance(kid[3], ast.AtomType)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[3],
-                            right=kid[3] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                            null_ok=True,
                             kid=kid,
                         )
                     )
@@ -2089,7 +2053,6 @@ class JacParser(Pass):
 
             atom: edge_op_ref
                  | any_ref
-                 | atomic_chain
                  | LPAREN expression RPAREN
                  | atom_collection
                  | atom_literal
@@ -2105,9 +2068,11 @@ class JacParser(Pass):
                     and isinstance(kid[1], ast.ExprType)
                     and isinstance(kid[2], ast.Token)
                 ):
-                    ret = ast.UnaryExpr(operand=kid[1], op=kid[0], kid=kid)
-                    ret.add_kids_left([kid[0]])
-                    ret.add_kids_right([kid[2]])
+                    ret = ast.AtomUnit(
+                        value=kid[1], is_paren=True, is_null_ok=False, kid=kid
+                    )
+                    # ret.add_kids_left([kid[0]])
+                    # ret.add_kids_right([kid[2]])
                     return self.nu(ret)
                 else:
                     raise self.ice()

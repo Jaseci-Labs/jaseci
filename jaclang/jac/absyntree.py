@@ -1228,6 +1228,23 @@ class AtomTrailer(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
+class AtomUnit(AstNode):
+    """AtomUnit node type for Jac Ast."""
+
+    def __init__(
+        self,
+        value: AtomType | ExprType,
+        is_paren: bool,
+        is_null_ok: bool,
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize atom unit expression node."""
+        self.value = value
+        self.is_paren = is_paren
+        self.is_null_ok = is_null_ok
+        AstNode.__init__(self, kid=kid)
+
+
 class FuncCall(AstNode):
     """FuncCall node type for Jac Ast."""
 
@@ -1527,7 +1544,7 @@ AtomType = Union[
     FilterCompr,
     IndexSlice,
     FuncCall,
-    UnaryExpr,  # For parenthetical atoms
+    AtomUnit,
 ]
 
 ExprType = Union[
