@@ -79,4 +79,4 @@ class CodeLocInfo:
 
     def __str__(self) -> str:
         """Stringify."""
-        return f"{self.first_tok.line_no}:{self.first_tok.c_start}"
+        return f"{self.first_tok.line_no}:{self.first_tok.c_start} - {self.last_tok.line_no}:{self.last_tok.c_end}"
