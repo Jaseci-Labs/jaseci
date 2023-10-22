@@ -1250,12 +1250,14 @@ class IndexSlice(AstNode):
         self,
         start: Optional[ExprType],
         stop: Optional[ExprType],
+        step: Optional[ExprType],
         is_range: bool,
         kid: list[AstNode],
     ) -> None:
         """Initialize index slice expression node."""
         self.start = start
         self.stop = stop
+        self.step = step
         self.is_range = is_range
         AstNode.__init__(self, kid=kid)
 

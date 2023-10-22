@@ -16,7 +16,7 @@ from jaclang.vendor.lark import Lark, Transformer, logger
 class JacParser(Pass):
     """Jac Parser."""
 
-    dev_mode = True
+    dev_mode = False
 
     def before_pass(self, source: ast.SourceString) -> None:
         """Initialize parser."""
@@ -1930,8 +1930,8 @@ class JacParser(Pass):
         def atomic_chain_unsafe(self, kid: list[ast.AstNode]) -> ast.AtomType:
             """Grammar rule.
 
-            atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
-                               | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
+            atomic_chain_unsafe: atomic_chain (filter_compr | edge_op_ref | index_slice | list_val )
+                            | atomic_chain (DOT_BKWD | DOT_FWD | DOT) any_ref
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.AtomType) and isinstance(
@@ -2021,11 +2021,10 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
+        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice | ast.ListVal:
             """Grammar rule.
 
-            index_slice: LSQUARE ((expression COMMA)* expression | expression? (COLON expression?)?
-                        (COLON expression?)?)? RSQUARE
+            index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
             """
             chomp = [*kid]
             chomp = chomp[1:]
@@ -2053,10 +2052,31 @@ class JacParser(Pass):
                 and isinstance(chomp[1], ast.ExprType)
                 else expr2
             )
+            expr3 = None
+            if len(chomp) > 1:
+                chomp = chomp[1:]
+                expr3 = (
+                    chomp[1]
+                    if isinstance(chomp[0], ast.Token)
+                    and chomp[0].name == Tok.COLON
+                    and isinstance(chomp[1], ast.ExprType)
+                    else None
+                )
+                if len(chomp) > 1:
+                    chomp = chomp[1:]
+                    expr3 = (
+                        chomp[1]
+                        if isinstance(chomp[0], ast.Token)
+                        and chomp[0].name == Tok.COLON
+                        and len(chomp) > 1
+                        and isinstance(chomp[1], ast.ExprType)
+                        else expr3
+                    )
             return self.nu(
                 ast.IndexSlice(
                     start=expr1,
                     stop=expr2,
+                    step=expr3,
                     is_range=is_range,
                     kid=kid,
                 )
