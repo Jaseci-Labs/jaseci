@@ -43,8 +43,7 @@ arch_type: KW_WALKER
           | KW_NODE
 
 decorators: (DECOR_OP atom)+
-inherited_archs: sub_name_dotted+
-sub_name_dotted: COLON dotted_name
+inherited_archs: LT (atomic_chain COMMA)? atomic_chain GT
 sub_name: COLON NAME
 dotted_name: (dotted_name DOT)? any_ref
 
@@ -173,7 +172,7 @@ return_stmt: KW_RETURN expression?
 yield_stmt: KW_YIELD expression?
 walker_stmt: disengage_stmt | revisit_stmt | visit_stmt | ignore_stmt
 ignore_stmt: KW_IGNORE expression SEMI
-visit_stmt: KW_VISIT (sub_name_dotted)? expression (else_stmt | SEMI)
+visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
 revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
 disengage_stmt: KW_DISENGAGE SEMI
 await_stmt: KW_AWAIT expression
