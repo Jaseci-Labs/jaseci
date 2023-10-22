@@ -10,7 +10,7 @@ include:jac impl.purple_pygen_pass_impl;
 This pass leverages data spacial lib to provide code
 gen for full Jac language. It is bootstrapped in Jac blue.
 """
-object PurplePygenPass:BluePygenPass {
+object PurplePygenPass:BluePygenPass: {
 
     #*
     These add functions generate necessary imports

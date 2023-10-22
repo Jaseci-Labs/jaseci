@@ -1,6 +1,6 @@
 """JacFormatPass for Jaseci Ast."""
 
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import constant
@@ -13,10 +13,10 @@ class JacFormatPass(Pass):
     """JacFormat Pass format Jac code."""
 
     def __init__(
-        self, comments: list = None, *args: Any, **kwargs: Any  # noqa
+        self, comments: Optional[list] = None, *args: Any, **kwargs: Any  # noqa
     ) -> None:  # noqa
         """Initialize Formatter."""
-        self.comments = comments
+        self.comments = comments if comments else []
 
         super().__init__(*args, **kwargs)
 
@@ -166,9 +166,6 @@ class JacFormatPass(Pass):
             self.indent_level += 1
         if node.items:
             for stmt in node.items:
-                if isinstance(stmt, ast.IfStmt):
-                    print(print(self.indent_level))
-
                 self.emit(node, f"{stmt.meta['jac_code']}")
         if isinstance(node.kid[-1], ast.Token) and node.kid[-1].name == "RBRACE":
             self.indent_level -= 1
@@ -210,12 +207,13 @@ class JacFormatPass(Pass):
     def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
-        values: list[ExprType],
+        values: Optional[SubNodeList[ExprType]],
         """
         if node.values is not None:
             self.sep_node_list(node.values, delim=";")
             self.emit(
-                node, f"{', '.join([value.meta['jac_code'] for value in node.values])}"
+                node,
+                f"{', '.join([value.meta['jac_code'] for value in node.values.items])}",
             )
 
     def exit_multi_string(self, node: ast.MultiString) -> None:
@@ -223,8 +221,6 @@ class JacFormatPass(Pass):
 
         strings: list[Token],
         """
-        print("in ml_string")
-        print(node.kid)
         for string in range(0, len(node.strings) - 1):
             self.emit_ln(node, node.strings[string].meta["jac_code"])
         self.emit(node, node.strings[-1].meta["jac_code"])
@@ -366,7 +362,7 @@ class JacFormatPass(Pass):
                 can_name = (
                     node.name_ref.value
                     if isinstance(node.name_ref, ast.Name)
-                    else node.name_ref.var.value
+                    else node.name_ref.sym_name
                 )
                 if node.body:
                     self.emit_ln(
@@ -389,9 +385,9 @@ class JacFormatPass(Pass):
                         fun_signature = f"can {node.name_ref.var.value}{node.signature.meta['jac_code']}"  # noqa
                 else:
                     if access_modifier:
-                        fun_signature = f"can:{access_modifier} {node.name_ref.value}{node.signature.meta['jac_code']}"  # noqa
+                        fun_signature = f"can:{access_modifier} {node.name_ref.sym_name}{node.signature.meta['jac_code']}"  # noqa
                     else:
-                        fun_signature = f"can {node.name_ref.value}{node.signature.meta['jac_code']}"  # noqa
+                        fun_signature = f"can {node.name_ref.sym_name}{node.signature.meta['jac_code']}"  # noqa
                 if node.body:
                     self.emit(node, f"{fun_signature}")
                     self.emit_ln(node, node.body.meta["jac_code"])
@@ -454,7 +450,7 @@ class JacFormatPass(Pass):
         if isinstance(node.name_ref, ast.SpecialVarRef):
             self.emit(node, f"{node.arch.value}{node.name_ref.var.meta['jac_code']}")
         else:
-            self.emit(node, f"{node.arch.value}{node.name_ref.value}")
+            self.emit(node, f"{node.arch.value}{node.name_ref.sym_name}")
 
     def exit_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
@@ -660,7 +656,6 @@ class JacFormatPass(Pass):
         value: Optional["ExprType"],
         """
         node.type_tag.meta["jac_code"] = node.type_tag.tag.meta["jac_code"]
-        self.comma_sep_node_list(node.type_tag.tag)
         if node.value:
             self.emit(
                 node,
@@ -728,7 +723,6 @@ class JacFormatPass(Pass):
         else_body: Optional[ElseStmt],
         """
         self.emit(node, f"if {node.condition.meta['jac_code']}")
-        print(node.body)
         self.emit(node, node.body.meta["jac_code"])
         if node.elseifs:
             self.emit(node, node.elseifs.meta["jac_code"])
@@ -906,13 +900,10 @@ class JacFormatPass(Pass):
                 f"{node.arch_type.value} {node.name.meta['jac_code']} ",
             )
         else:
-            for i in node.base_classes.items:
-                self.dot_sep_node_list(i.tag)
-                i.meta["jac_code"] = i.tag.meta["jac_code"]
             self.sep_node_list(node.base_classes, delim=":")
             self.emit(
                 node,
-                f"{node.arch_type.value} {node.name.meta['jac_code']}:{node.base_classes.meta['jac_code']} ",  # noqa
+                f"{node.arch_type.value} {node.name.meta['jac_code']}:{node.base_classes.meta['jac_code']}: ",  # noqa
             )
         body = node.body.body if isinstance(node.body, ast.ArchDef) else node.body
         if body:
@@ -927,14 +918,15 @@ class JacFormatPass(Pass):
         parts: list["Token | ExprType"],
         """
         self.emit(node, 'f"')
-        for part in node.parts.items:
-            if isinstance(part, ast.Constant) and part.name in [
-                Tok.FSTR_PIECE,
-                Tok.FSTR_BESC,
-            ]:
-                self.emit(node, f"{part.meta['jac_code']}")
-            else:
-                self.emit(node, "{" + part.meta["jac_code"] + "}")
+        if node.parts:
+            for part in node.parts.items:
+                if isinstance(part, ast.Constant) and part.name in [
+                    Tok.FSTR_PIECE,
+                    Tok.FSTR_BESC,
+                ]:
+                    self.emit(node, f"{part.meta['jac_code']}")
+                else:
+                    self.emit(node, "{" + part.meta["jac_code"] + "}")
         self.emit(node, '"')
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:

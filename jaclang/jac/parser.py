@@ -1935,7 +1935,8 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.AtomType) and isinstance(
-                    kid[1], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
+                    kid[1],
+                    (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
                 ):
                     return self.nu(
                         ast.AtomTrailer(
@@ -1969,12 +1970,13 @@ class JacParser(Pass):
         def atomic_chain_safe(self, kid: list[ast.AstNode]) -> ast.AtomType:
             """Grammar rule.
 
-            atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
-                             | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
+            atomic_chain_safe: atomic_chain NULL_OK (filter_compr | edge_op_ref | index_slice | list_val)
+                            | atomic_chain NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
             """
             if len(kid) == 3:
                 if isinstance(kid[0], ast.AtomType) and isinstance(
-                    kid[2], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
+                    kid[2],
+                    (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
                 ):
                     return self.nu(
                         ast.AtomTrailer(

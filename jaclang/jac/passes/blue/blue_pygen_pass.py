@@ -306,7 +306,7 @@ class BluePygenPass(Pass):
         name: Name,
         arch_type: Token,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[SubTag[SubNodeList[NameType]]]],
+        base_classes: Optional[SubNodeList[AtomType]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -317,9 +317,6 @@ class BluePygenPass(Pass):
         if not node.base_classes:
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
-            for i in node.base_classes.items:
-                self.dot_sep_node_list(i.tag)
-                i.meta["py_code"] = i.tag.meta["py_code"]
             self.comma_sep_node_list(node.base_classes)
             self.emit_ln(
                 node,
@@ -406,7 +403,7 @@ class BluePygenPass(Pass):
 
         name: Name,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
+        base_classes: Optional[Optional[SubNodeList[AtomType]]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -419,9 +416,6 @@ class BluePygenPass(Pass):
             self.emit_ln(node, f"class {node.name.meta['py_code']}(__jac_Enum__):")
         else:
             self.needs_enum()
-            for i in node.base_classes.items:
-                self.dot_sep_node_list(i.tag)
-                i.meta["py_code"] = i.tag.meta["py_code"]
             self.comma_sep_node_list(node.base_classes)
             self.emit_ln(
                 node,
@@ -530,19 +524,13 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubNodeList[TypeSpec]],
+        return_type: Optional[SubTag[ExprType]],
         """
         if node.params:
             self.comma_sep_node_list(node.params)
             self.emit(node, node.params.meta["py_code"])
         if node.return_type:
-            self.sep_node_list(node.return_type, delim="|")
-            self.emit(node, f" -> {node.return_type.meta['py_code']}")
-        # first_out = False
-        # for i in node.params:
-        #     self.emit(node, ", ") if first_out else None
-        #     self.emit(node, i.meta["py_code"])
-        #     first_out = True
+            self.emit(node, f" -> {node.return_type.tag.meta['py_code']}")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_event_signature(self, node: ast.EventSignature) -> None:
@@ -566,10 +554,9 @@ class BluePygenPass(Pass):
 
         name: Name,
         unpack: Optional[Token],
-        type_tag: SubTag[SubNodeList[TypeSpec]],
+        type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
-        self.sep_node_list(node.type_tag.tag, delim="|")
         node.type_tag.meta["py_code"] = node.type_tag.tag.meta["py_code"]
         if node.unpack:
             self.emit(node, f"{node.unpack.meta['py_code']}")
@@ -603,7 +590,6 @@ class BluePygenPass(Pass):
         type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         """
-        self.sep_node_list(node.type_tag.tag, delim="|")
         node.type_tag.meta["py_code"] = node.type_tag.tag.meta["py_code"]
         if node.value:
             self.emit(
