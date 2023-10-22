@@ -102,7 +102,7 @@ class SymbolTable:
         self.parent = parent if parent else self
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
-        self.uses: dict[ast.AstSymbolNode, Symbol] = {}
+        self.uses: list[ast.AstSymbolNode] = []
 
     def has_parent(self) -> bool:
         """Check if has parent."""

@@ -1308,7 +1308,7 @@ class ArchRef(AstSymbolNode):
             raise NotImplementedError
 
 
-class SpecialVarRef(AstNode):
+class SpecialVarRef(AstSymbolNode):
     """HereRef node type for Jac Ast."""
 
     def __init__(
@@ -1319,6 +1319,9 @@ class SpecialVarRef(AstNode):
         """Initialize special var reference expression node."""
         self.var = var
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self, sym_name=self.py_resolve_name(), sym_type=SymbolType.VAR
+        )
 
     def py_resolve_name(self) -> str:
         """Resolve name."""

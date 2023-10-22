@@ -3,8 +3,7 @@ from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
-
-# from jaclang.jac.symtable import SymbolHitType as Sht, SymbolType as St
+from jaclang.jac.symtable import Symbol, SymbolTable
 
 
 class DefUsePass(Pass):
@@ -12,7 +11,38 @@ class DefUsePass(Pass):
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.marked: list[ast.AstSymbolNode] = []
+        self.marked: list[ast.AstSymbolNode] = []  # Marked for ignoring
+        self.unlinked: list[ast.AstSymbolNode] = []  # Failed use lookups
+
+    def after_pass(self) -> None:
+        """After pass."""
+        for i in self.unlinked:
+            self.warning(f"Unlinked {i.__class__.__name__} {i.sym_name}")
+            print(f"Unlinked {i.__class__.__name__} {i.sym_name} {i.loc}")
+
+    def use_lookup(
+        self, node: ast.AstSymbolNode, sym_table: Optional[SymbolTable] = None
+    ) -> Optional[Symbol]:
+        """Link to symbol."""
+        deep = True
+        if not sym_table:
+            sym_table = node.sym_tab
+            deep = False
+        if node.sym_link:
+            return node.sym_link
+        if sym_table:
+            node.sym_link = (
+                sym_table.lookup(node.sym_name, deep=deep) if sym_table else None
+            )
+            if node.sym_link:
+                print(
+                    "LINKED",
+                    node.__class__.__name__,
+                    node.sym_name,
+                    node.sym_link.decl.loc,
+                )
+                sym_table.uses.append(node)
+        return node.sym_link
 
     def already_declared_err(
         self,
@@ -47,16 +77,28 @@ class DefUsePass(Pass):
         name_ref: NameType,
         arch: Token,
         """
-        # if node in self.marked:
-        #     return
-        # self.marked.append(node)
-        # node.sym_link = node.sym_tab.lookup(node.sym_name)
+        if node in self.marked:
+            return
+        self.use_lookup(node)
+        if not node.sym_link:
+            self.unlinked.append(node)
 
     def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
 
         archs: list[ArchRef],
         """
+        cur_sym_tab = node.sym_tab
+        for i in node.archs:
+            if cur_sym_tab is None:
+                self.marked.append(i)
+                continue
+            lookup = self.use_lookup(i, cur_sym_tab)
+            if lookup:
+                cur_sym_tab = lookup.decl.sym_tab
+            else:
+                self.unlinked.append(i)
+                cur_sym_tab = None
 
     def enter_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
