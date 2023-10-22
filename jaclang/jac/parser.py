@@ -2024,8 +2024,8 @@ class JacParser(Pass):
         def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
             """Grammar rule.
 
-            index_slice: LSQUARE expression (COMMA expression)* RSQUARE
-                    | LSQUARE (expression? (COLON expression?)? (COLON expression?)?)? RSQUARE
+            index_slice: LSQUARE ((expression COMMA)* expression | expression? (COLON expression?)?
+                        (COLON expression?)?)? RSQUARE
             """
             chomp = [*kid]
             chomp = chomp[1:]

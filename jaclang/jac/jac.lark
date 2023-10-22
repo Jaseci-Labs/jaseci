@@ -284,7 +284,7 @@ atomic_chain_safe: atomic_chain NULL_OK (filter_compr | edge_op_ref | index_slic
                 | atomic_chain NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
 
 atomic_call: atomic_chain LPAREN param_list? RPAREN
-index_slice: LSQUARE (expression ((COMMA expression)*) | expression? (COLON expression?)? (COLON expression?)?)? RSQUARE
+index_slice: LSQUARE (((expression COMMA)* expression) | (expression? (COLON expression?)? (COLON expression?)?)?) RSQUARE
 
 atom: edge_op_ref
     | any_ref
