@@ -1218,13 +1218,11 @@ class AtomTrailer(AstNode):
         self,
         target: AtomType,
         right: AtomType,
-        null_ok: bool,
         kid: list[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
-        self.null_ok = null_ok
         AstNode.__init__(self, kid=kid)
 
 

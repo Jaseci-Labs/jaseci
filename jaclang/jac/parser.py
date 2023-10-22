@@ -1917,7 +1917,7 @@ class JacParser(Pass):
             """Grammar rule.
 
             atomic_chain: atomic_chain (filter_compr | edge_op_ref | index_slice | list_val )
-                        | atomic_chain (DOT_BKWD | DOT_FWD | DOT) any_ref
+                        | atomic_chain (DOT_BKWD | DOT_FWD | DOT) atom NULL_OK?
                         | atomic_call
                         | atom NULL_OK?
             """
@@ -1949,21 +1949,29 @@ class JacParser(Pass):
                     ast.AtomTrailer(
                         target=kid[0],
                         right=kid[1],
-                        null_ok=False,
                         kid=kid,
                     )
                 )
             elif (
-                len(kid) == 3
+                len(kid) > 2
                 and isinstance(kid[0], ast.AtomType)
                 and isinstance(kid[1], ast.Token)
                 and isinstance(kid[2], ast.AtomType)
             ):
+                kid[2] = (
+                    ast.AtomUnit(
+                        value=kid[2],
+                        is_paren=False,
+                        is_null_ok=True,
+                        kid=[kid[2], kid[-1]],
+                    )
+                    if isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.NULL_OK
+                    else kid[2]
+                )
                 return self.nu(
                     ast.AtomTrailer(
                         target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
                         right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                        null_ok=False,
                         kid=kid,
                     )
                 )
