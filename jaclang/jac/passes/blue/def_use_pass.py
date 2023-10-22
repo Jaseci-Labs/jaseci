@@ -122,15 +122,6 @@ class DefUsePass(Pass):
         value: Optional[ExprType],
         """
 
-    def enter_type_spec(self, node: ast.TypeSpec) -> None:
-        """Sub objects.
-
-        spec_type: Token | SubNodeList[NameType],
-        list_nest: Optional[TypeSpec],
-        dict_nest: Optional[TypeSpec],
-        null_ok: bool,
-        """
-
     def enter_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
 

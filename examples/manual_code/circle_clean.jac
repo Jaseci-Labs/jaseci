@@ -16,7 +16,7 @@ object Shape {
 }
 
 """Circle class inherits from Shape."""
-object Circle:Shape {
+object Circle:Shape: {
     has radius: float;
     can <init>;
     can area -> float;

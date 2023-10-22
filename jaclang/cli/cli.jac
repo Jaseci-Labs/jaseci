@@ -31,7 +31,7 @@ object CommandRegistry {
 }
 
 
-object CommandShell:cmd.Cmd {
+object CommandShell:cmd.Cmd: {
     static has intro: str = "Welcome to the Jac CLI!",
                prompt: str = "jac> ";
     has cmd_reg: CommandRegistry;

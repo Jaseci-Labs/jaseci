@@ -9,7 +9,7 @@ object Parent {
     }
 }
 
-object Mom:Parent {
+object Mom:Parent: {
     can init() -> None {
         # Mom initialization
         Parent.init();
@@ -19,7 +19,7 @@ object Mom:Parent {
     }
 }
 
-object Dad:Parent {
+object Dad:Parent: {
     can init() -> None {
         # Dad initialization
         Parent.init();
@@ -29,7 +29,7 @@ object Dad:Parent {
     }
 }
 
-object Child:Mom:Dad { #Child inherits from Mom and Dad
+object Child:Mom,Dad: { #Child inherits from Mom and Dad
     can init() -> None {
         # Child initialization
         Mom.init();

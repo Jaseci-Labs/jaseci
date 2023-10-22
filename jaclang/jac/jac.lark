@@ -43,7 +43,10 @@ arch_type: KW_WALKER
           | KW_NODE
 
 decorators: (DECOR_OP atom)+
-inherited_archs: LT (atom COMMA)? atom GT
+
+inherited_archs: LT (atom COMMA)* atom GT
+               | COLON (atom COMMA)* atom COLON
+
 sub_name: COLON NAME
 
 any_ref: special_ref
@@ -269,6 +272,18 @@ cmp_op: KW_ISN
       | LT
       | EE
 
+atomic_chain: atomic_call
+            | atomic_chain_unsafe
+            | atomic_chain_safe
+
+atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice )
+                   | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
+
+atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
+                | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
+
+atomic_call: atom LPAREN param_list? RPAREN
+
 atom: edge_op_ref
     | any_ref
     | atomic_chain
@@ -316,18 +331,6 @@ gen_compr: LPAREN inner_compr RPAREN
 set_compr: LBRACE inner_compr RBRACE
 inner_compr: expression KW_FOR name_list KW_IN walrus_assign (KW_IF expression)?
 dict_compr: LBRACE kv_pair KW_FOR name_list KW_IN walrus_assign (KW_IF expression)? RBRACE
-
-atomic_chain: atomic_call
-            | atomic_chain_unsafe
-            | atomic_chain_safe
-
-atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
-                   | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
-
-atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
-                | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
-
-atomic_call: atom LPAREN param_list? RPAREN
 
 param_list: expr_list COMMA assignment_list
           | assignment_list

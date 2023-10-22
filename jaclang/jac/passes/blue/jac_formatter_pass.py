@@ -519,26 +519,26 @@ class JacFormatPass(Pass):
         if node.body:
             self.emit(node, node.body.meta["jac_code"])
 
-    def exit_type_spec(self, node: ast.TypeSpec) -> None:
-        """Sub objects.
+    # def exit_type_spec(self, node: ast.TypeSpec) -> None:
+    #     """Sub objects.
 
-        spec_type: Token | SubNodeList[NameType],
-        list_nest: Optional[TypeSpec],  # needed for lists
-        dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
-        null_ok: bool = False,
-        """
-        if isinstance(node.spec_type, ast.SubNodeList):
-            self.comma_sep_node_list(node.spec_type)
+    #     spec_type: Token | SubNodeList[NameType],
+    #     list_nest: Optional[TypeSpec],  # needed for lists
+    #     dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
+    #     null_ok: bool = False,
+    #     """
+    #     if isinstance(node.spec_type, ast.SubNodeList):
+    #         self.comma_sep_node_list(node.spec_type)
 
-        if node.dict_nest:
-            self.emit(
-                node,
-                f"dict[{node.list_nest.meta['jac_code']}, {node.dict_nest.meta['jac_code']}]",  # noqa
-            )
-        elif node.list_nest:
-            self.emit(node, f"list[{node.list_nest.meta['jac_code']}]")
-        else:
-            self.emit(node, node.spec_type.meta["jac_code"])
+    #     if node.dict_nest:
+    #         self.emit(
+    #             node,
+    #             f"dict[{node.list_nest.meta['jac_code']}, {node.dict_nest.meta['jac_code']}]",  # noqa
+    #         )
+    #     elif node.list_nest:
+    #         self.emit(node, f"list[{node.list_nest.meta['jac_code']}]")
+    #     else:
+    #         self.emit(node, node.spec_type.meta["jac_code"])
 
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.

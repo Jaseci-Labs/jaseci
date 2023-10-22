@@ -126,12 +126,12 @@ class Pass(Transform):
     def error(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
         self.update_code_loc(node_override)
-        self.log_error(f"{msg}")
+        self.log_error(f"{msg}", node_override=node_override)
 
     def warning(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
         self.update_code_loc(node_override)
-        self.log_warning(f"{msg}")
+        self.log_warning(f"{msg}", node_override=node_override)
 
     def ice(self, msg: str = "Something went horribly wrong!") -> None:
         """Pass Error."""

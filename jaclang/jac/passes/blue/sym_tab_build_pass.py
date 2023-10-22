@@ -452,16 +452,6 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_type_spec(self, node: ast.TypeSpec) -> None:
-        """Sub objects.
-
-        spec_type: Token | DottedNameList,
-        list_nest: TypeSpec,
-        dict_nest: TypeSpec,
-        null_ok: bool,
-        """
-        self.sync_node_to_scope(node)
-
     def enter_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
 
