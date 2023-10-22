@@ -371,7 +371,9 @@ class Architype(AstSymbolNode, AstAccessNode):
             if arch_type.value == Tok.KW_NODE
             else SymbolType.EDGE_ARCH
             if arch_type.value == Tok.KW_EDGE
-            else SymbolType.WALKER_ARCH,
+            else SymbolType.WALKER_ARCH
+            if arch_type.value == Tok.KW_WALKER
+            else SymbolType.TYPE,
         )
         AstAccessNode.__init__(self, access=access)
 
