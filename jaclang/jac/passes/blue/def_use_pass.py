@@ -47,7 +47,10 @@ class DefUsePass(Pass):
         name_ref: NameType,
         arch: Token,
         """
-        # node.sym_tab.insert(
+        # if node in self.marked:
+        #     return
+        # self.marked.append(node)
+        # node.sym_link = node.sym_tab.lookup(node.sym_name)
 
     def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.

@@ -53,6 +53,7 @@ any_ref: special_ref
 
 named_ref: global_ref
            | esc_name
+           | arch_ref
 
 esc_name: KWESC_NAME
          | NAME

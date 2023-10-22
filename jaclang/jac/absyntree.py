@@ -1277,7 +1277,7 @@ class IndexSlice(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class ArchRef(AstNode):
+class ArchRef(AstSymbolNode):
     """ArchRef node type for Jac Ast."""
 
     def __init__(
@@ -1290,6 +1290,9 @@ class ArchRef(AstNode):
         self.name_ref = name_ref
         self.arch = arch
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self, sym_name=self.py_resolve_name(), sym_type=SymbolType.TYPE
+        )
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
