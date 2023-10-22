@@ -45,7 +45,6 @@ arch_type: KW_WALKER
 decorators: (DECOR_OP atom)+
 inherited_archs: LT (atomic_chain COMMA)? atomic_chain GT
 sub_name: COLON NAME
-dotted_name: (dotted_name DOT)? any_ref
 
 any_ref: special_ref
         | named_ref
@@ -81,7 +80,7 @@ ability: decorators? ability_def
 ability_decl: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
 abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-event_clause: KW_WITH type_specs? (KW_EXIT | KW_ENTRY) return_type_tag?
+event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
 func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
 func_decl_params: (param_var COMMA)* param_var
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
@@ -96,17 +95,8 @@ member_stmt: doc_tag? py_code_block
 has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
 typed_has_clause: esc_name type_tag (EQ expression)?
-type_tag: COLON type_specs
-return_type_tag: RETURN_HINT type_specs
-type_specs: (type_specs BW_OR)? single_type
-
-single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE NULL_OK?
-           | TYP_SET LSQUARE single_type RSQUARE NULL_OK?
-           | TYP_TUPLE LSQUARE single_type RSQUARE NULL_OK?
-           | TYP_LIST LSQUARE single_type RSQUARE NULL_OK?
-           | dotted_name NULL_OK?
-           | NULL NULL_OK?
-           | builtin_type NULL_OK?
+type_tag: COLON expression
+return_type_tag: RETURN_HINT expression
 
 builtin_type: TYP_TYPE
             | TYP_ANY
@@ -146,7 +136,7 @@ statement: py_code_block
           | import_stmt
           | SEMI
 
-typed_ctx_block: RETURN_HINT type_specs code_block
+typed_ctx_block: RETURN_HINT expression code_block
 if_stmt: KW_IF expression code_block elif_stmt? else_stmt?
 elif_stmt: KW_ELIF expression code_block elif_stmt?
 else_stmt: KW_ELSE code_block
