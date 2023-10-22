@@ -43,7 +43,7 @@ arch_type: KW_WALKER
           | KW_NODE
 
 decorators: (DECOR_OP atom)+
-inherited_archs: LT (atomic_chain COMMA)? atomic_chain GT
+inherited_archs: LT (atom COMMA)? atom GT
 sub_name: COLON NAME
 
 any_ref: special_ref
@@ -51,7 +51,6 @@ any_ref: special_ref
 
 named_ref: global_ref
            | esc_name
-           | arch_ref
 
 esc_name: KWESC_NAME
          | NAME
@@ -355,7 +354,6 @@ arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
 abil_to_arch_chain: arch_or_ability_chain? arch_ref
 arch_to_abil_chain: arch_or_ability_chain? ability_ref
 arch_to_enum_chain: arch_or_ability_chain? enum_ref
-
 
 edge_op_ref: edge_any
            | edge_from
