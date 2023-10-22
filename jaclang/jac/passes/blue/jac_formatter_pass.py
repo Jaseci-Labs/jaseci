@@ -568,6 +568,18 @@ class JacFormatPass(Pass):
                     f"{node.target.meta['jac_code']}.{node.right.meta['jac_code']}",
                 )
 
+    def exit_atom_unit(self, node: ast.AtomUnit) -> None:
+        """Sub objects.
+
+        value: AtomType | ExprType,
+        is_paren: bool,
+        is_null_ok: bool,
+        """
+        if node.is_paren:
+            self.emit(node, f"({node.value.meta['jac_code']})")
+        elif node.is_null_ok:
+            self.emit(node, f"{node.value.meta['jac_code']}?")
+
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
 

@@ -1937,37 +1937,36 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif len(kid) == 2:
-                if isinstance(kid[0], ast.AtomType) and isinstance(
+            elif (
+                len(kid) == 2
+                and isinstance(kid[0], ast.AtomType)
+                and isinstance(
                     kid[1],
                     (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0],
-                            right=kid[1],
-                            null_ok=False,
-                            kid=kid,
-                        )
+                )
+            ):
+                return self.nu(
+                    ast.AtomTrailer(
+                        target=kid[0],
+                        right=kid[1],
+                        null_ok=False,
+                        kid=kid,
                     )
-                else:
-                    raise self.ice()
-            elif len(kid) == 3:
-                if (
-                    isinstance(kid[0], ast.AtomType)
-                    and isinstance(kid[1], ast.Token)
-                    and isinstance(kid[2], ast.AtomType)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
-                            right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                            null_ok=False,
-                            kid=kid,
-                        )
+                )
+            elif (
+                len(kid) == 3
+                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[1], ast.Token)
+                and isinstance(kid[2], ast.AtomType)
+            ):
+                return self.nu(
+                    ast.AtomTrailer(
+                        target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
+                        right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                        null_ok=False,
+                        kid=kid,
                     )
-                else:
-                    raise self.ice()
+                )
             else:
                 raise self.ice()
 

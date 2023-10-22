@@ -795,6 +795,15 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_atom_unit(self, node: ast.AtomUnit) -> None:
+        """Sub objects.
+
+        value: AtomType | ExprType,
+        is_paren: bool,
+        is_null_ok: bool,
+        """
+        self.sync_node_to_scope(node)
+
     def enter_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
 

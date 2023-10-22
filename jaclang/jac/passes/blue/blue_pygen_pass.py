@@ -1022,8 +1022,6 @@ class BluePygenPass(Pass):
         """
         if node.op.value in ["-", "~", "+", "*", "**"]:
             self.emit(node, f"{node.op.meta['py_code']}{node.operand.meta['py_code']}")
-        elif node.op.value == "(":  # (expression) reuses unary expr
-            self.emit(node, f"({node.operand.meta['py_code']})")
         elif node.op.value == "not":
             self.emit(node, f"not {node.operand.meta['py_code']}")
         elif node.op.name in [Tok.PIPE_FWD, Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
@@ -1198,7 +1196,7 @@ class BluePygenPass(Pass):
         right: AtomType,
         null_ok: bool,
         """
-        if node.null_ok:
+        if isinstance(node.target, ast.AtomUnit) and node.target.is_null_ok:
             if isinstance(node.right, (ast.IndexSlice, ast.ListVal)):
                 self.emit(
                     node,
@@ -1223,6 +1221,18 @@ class BluePygenPass(Pass):
                     f"{node.target.meta['py_code']}.{node.right.meta['py_code']}",
                 )
 
+    def exit_atom_unit(self, node: ast.AtomUnit) -> None:
+        """Sub objects.
+
+        value: AtomType | ExprType,
+        is_paren: bool,
+        is_null_ok: bool,
+        """
+        if node.is_null_ok:
+            self.emit(node, node.value.meta["py_code"])
+        elif node.is_paren:
+            self.emit(node, f"({node.value.meta['py_code']})")
+
     # NOTE: Incomplete for Jac Purple and Red
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -1238,15 +1248,6 @@ class BluePygenPass(Pass):
             )
         else:
             self.emit(node, f"{node.target.meta['py_code']}()")
-        # if node.p_args and node.p_kwargs:
-        #     self.emit(
-        #         node,
-        #         f"{node.p_args.meta['py_code']}, {node.p_kwargs.meta['py_code']}",
-        #     )
-        # elif node.p_args:
-        #     self.emit(node, f"{node.p_args.meta['py_code']}")
-        # elif node.p_kwargs:
-        #     self.emit(node, f"{node.p_kwargs.meta['py_code']}")
 
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
