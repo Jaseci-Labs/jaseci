@@ -130,7 +130,7 @@ class SymTabBuildPass(Pass):
         body: CodeBlock,
         """
         if collide := self.cur_scope().insert(node=node, single=True):
-            self.already_declared_err(node.name.value, "test", collide)
+            self.already_declared_err(node.sym_name, "test", collide)
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
 
