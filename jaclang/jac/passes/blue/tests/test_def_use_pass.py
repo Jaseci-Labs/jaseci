@@ -18,5 +18,12 @@ class DefUsePassTests(TestCase):
             base_dir="",
             target=DefUsePass,
         )
+        for i in state.unlinked:
+            print(f"Unlinked {i.__class__.__name__} {i.sym_name} {i.loc}")
+        for i in state.linked:
+            print(
+                f"Linked {i.__class__.__name__} {i.sym_name} {i.loc} "
+                f"{i.sym_link.decl.loc if i.sym_link else None}"
+            )
         self.assertEqual(len(state.warnings_had), 0)
         self.assertEqual(len(state.errors_had), 0)

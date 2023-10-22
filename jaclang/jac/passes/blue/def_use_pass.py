@@ -11,14 +11,14 @@ class DefUsePass(Pass):
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.marked: list[ast.AstSymbolNode] = []  # Marked for ignoring
-        self.unlinked: list[ast.AstSymbolNode] = []  # Failed use lookups
+        self.marked: set[ast.AstSymbolNode] = set()  # Marked for ignoring
+        self.unlinked: set[ast.AstSymbolNode] = set()  # Failed use lookups
+        self.linked: set[ast.AstSymbolNode] = set()  # Successful use lookups
 
     def after_pass(self) -> None:
         """After pass."""
         for i in self.unlinked:
             self.warning(f"Unlinked {i.__class__.__name__} {i.sym_name}")
-            print(f"Unlinked {i.__class__.__name__} {i.sym_name} {i.loc}")
 
     def use_lookup(
         self, node: ast.AstSymbolNode, sym_table: Optional[SymbolTable] = None
@@ -35,12 +35,7 @@ class DefUsePass(Pass):
                 sym_table.lookup(node.sym_name, deep=deep) if sym_table else None
             )
             if node.sym_link:
-                print(
-                    "LINKED",
-                    node.__class__.__name__,
-                    node.sym_name,
-                    node.sym_link.decl.loc,
-                )
+                self.linked.add(node)
                 sym_table.uses.append(node)
         return node.sym_link
 
@@ -81,7 +76,7 @@ class DefUsePass(Pass):
             return
         self.use_lookup(node)
         if not node.sym_link:
-            self.unlinked.append(node)
+            self.unlinked.add(node)
 
     def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
@@ -91,13 +86,13 @@ class DefUsePass(Pass):
         cur_sym_tab = node.sym_tab
         for i in node.archs:
             if cur_sym_tab is None:
-                self.marked.append(i)
+                self.marked.add(i)
                 continue
             lookup = self.use_lookup(i, cur_sym_tab)
             if lookup:
                 cur_sym_tab = lookup.decl.sym_tab
             else:
-                self.unlinked.append(i)
+                self.unlinked.add(i)
                 cur_sym_tab = None
 
     def enter_param_var(self, node: ast.ParamVar) -> None:
