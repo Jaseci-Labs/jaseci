@@ -1525,6 +1525,7 @@ AtomType = Union[
     FilterCompr,
     IndexSlice,
     FuncCall,
+    UnaryExpr,  # For parenthetical atoms
 ]
 
 ExprType = Union[

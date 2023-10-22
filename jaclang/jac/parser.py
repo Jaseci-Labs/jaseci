@@ -446,15 +446,15 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def decorators(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.ExprType]:
+        def decorators(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.AtomType]:
             """Grammar rule.
 
-            decorators: (DECOR_OP atom)+
+            decorators: (DECOR_OP atomic_chain)+
             """
-            valid_decors = [i for i in kid if isinstance(i, ast.ExprType)]
+            valid_decors = [i for i in kid if isinstance(i, ast.AtomType)]
             if len(valid_decors) == len(kid) / 2:
                 return self.nu(
-                    ast.SubNodeList[ast.ExprType](
+                    ast.SubNodeList[ast.AtomType](
                         items=valid_decors,
                         kid=kid,
                     )
@@ -467,7 +467,8 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.AtomType]:
             """Grammar rule.
 
-            inherited_archs: LT (atom COMMA)* atom GT
+            inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
+                           | COLON (atomic_chain COMMA)* atomic_chain COLON
             """
             valid_inh = [i for i in kid if isinstance(i, ast.AtomType)]
             return self.nu(
@@ -1575,7 +1576,7 @@ class JacParser(Pass):
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
             """Grammar rule.
 
-            assignment: KW_FREEZE? atom EQ expression
+            assignment: KW_FREEZE? atomic_chain EQ expression
             """
             is_frozen = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_FREEZE
             target = kid[1] if is_frozen else kid[0]
@@ -1619,7 +1620,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def binary_expr(self, kid: list[ast.AstNode]) -> ast.ExprType:
+        def binary_expr_unwind(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Binary expression helper."""
             if len(kid) > 1:
                 if (
@@ -1648,7 +1649,7 @@ class JacParser(Pass):
             pipe: pipe_back PIPE_FWD pipe
                 | pipe_back
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def pipe_back(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1656,7 +1657,7 @@ class JacParser(Pass):
             pipe_back: elvis_check PIPE_BKWD pipe_back
                      | elvis_check
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def elvis_check(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1664,7 +1665,7 @@ class JacParser(Pass):
             elvis_check: bitwise_or ELVIS_OP elvis_check
                        | bitwise_or
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def bitwise_or(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1672,7 +1673,7 @@ class JacParser(Pass):
             bitwise_or: bitwise_xor BW_OR bitwise_or
                       | bitwise_xor
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def bitwise_xor(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1680,7 +1681,7 @@ class JacParser(Pass):
             bitwise_xor: bitwise_and BW_XOR bitwise_xor
                        | bitwise_and
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def bitwise_and(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1688,7 +1689,7 @@ class JacParser(Pass):
             bitwise_and: shift BW_AND bitwise_and
                        | shift
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def shift(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1697,7 +1698,7 @@ class JacParser(Pass):
                  | logical LSHIFT shift
                  | logical
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def logical(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1718,7 +1719,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def compare(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1726,7 +1727,7 @@ class JacParser(Pass):
             compare: arithmetic cmp_op compare
                    | arithmetic
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def arithmetic(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1735,7 +1736,7 @@ class JacParser(Pass):
                       | term PLUS arithmetic
                       | term
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def term(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1746,7 +1747,7 @@ class JacParser(Pass):
                  | factor STAR_MUL term
                  | factor
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def factor(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1767,7 +1768,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def power(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1775,7 +1776,7 @@ class JacParser(Pass):
             power: connect STAR_POW power
                   | connect
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def connect(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1784,7 +1785,7 @@ class JacParser(Pass):
                    | atomic_pipe connect_op connect
                    | atomic_pipe disconnect_op connect
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def atomic_pipe(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1793,7 +1794,7 @@ class JacParser(Pass):
                        | atomic_pipe KW_SPAWN atomic_pipe_back
                        | atomic_pipe A_PIPE_FWD atomic_pipe_back
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def atomic_pipe_back(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1801,17 +1802,17 @@ class JacParser(Pass):
             atomic_pipe_back: unpack
                             | atomic_pipe_back A_PIPE_BKWD unpack
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def unpack(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
             unpack: ref
-                  | STAR_MUL atom
-                  | STAR_POW atom
+                | STAR_MUL unpack
+                | STAR_POW unpack
             """
             if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.AtomType):
+                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
                     return self.nu(
                         ast.UnaryExpr(
                             op=kid[0],
@@ -1821,7 +1822,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def ref(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1840,7 +1841,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def walrus_assign(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1848,15 +1849,15 @@ class JacParser(Pass):
             walrus_assign: ds_call walrus_op walrus_assign
                          | ds_call
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def ds_call(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
-            ds_call: atom
-                   | PIPE_FWD atom
-                   | A_PIPE_FWD atom
-                   | KW_SPAWN atom
+            ds_call: atomic_chain
+                | PIPE_FWD atomic_chain
+                | A_PIPE_FWD atomic_chain
+                | KW_SPAWN atomic_chain
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
@@ -1869,7 +1870,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def walrus_op(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
@@ -1911,6 +1912,155 @@ class JacParser(Pass):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
+
+        def atomic_chain(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
+
+            atomic_chain: atomic_call
+                        | atomic_chain_unsafe
+                        | atomic_chain_safe
+                        | atom
+            """
+            if isinstance(kid[0], ast.AtomType):
+                return self.nu(kid[0])
+            else:
+                print(type(kid[0]))
+                raise self.ice()
+
+        def atomic_chain_unsafe(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
+
+            atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
+                               | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
+            """
+            if len(kid) == 2:
+                if isinstance(kid[0], ast.AtomType) and isinstance(
+                    kid[1], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
+                ):
+                    return self.nu(
+                        ast.AtomTrailer(
+                            target=kid[0],
+                            right=kid[1],
+                            null_ok=False,
+                            kid=kid,
+                        )
+                    )
+                else:
+                    raise self.ice()
+            elif len(kid) == 3:
+                if (
+                    isinstance(kid[0], ast.AtomType)
+                    and isinstance(kid[1], ast.Token)
+                    and isinstance(kid[2], ast.AtomType)
+                ):
+                    return self.nu(
+                        ast.AtomTrailer(
+                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
+                            right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                            null_ok=False,
+                            kid=kid,
+                        )
+                    )
+                else:
+                    raise self.ice()
+            else:
+                raise self.ice()
+
+        def atomic_chain_safe(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
+
+            atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
+                             | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
+            """
+            if len(kid) == 3:
+                if isinstance(kid[0], ast.AtomType) and isinstance(
+                    kid[2], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
+                ):
+                    return self.nu(
+                        ast.AtomTrailer(
+                            target=kid[0],
+                            right=kid[2],
+                            null_ok=True,
+                            kid=kid,
+                        )
+                    )
+                else:
+                    raise self.ice()
+            elif len(kid) == 4:
+                if (
+                    isinstance(kid[0], ast.AtomType)
+                    and isinstance(kid[1], ast.Token)
+                    and isinstance(kid[3], ast.AtomType)
+                ):
+                    return self.nu(
+                        ast.AtomTrailer(
+                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[3],
+                            right=kid[3] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                            null_ok=True,
+                            kid=kid,
+                        )
+                    )
+                else:
+                    raise self.ice()
+            else:
+                raise self.ice()
+
+        def atomic_call(self, kid: list[ast.AstNode]) -> ast.FuncCall:
+            """Grammar rule.
+
+            atomic_call: atom LPAREN param_list? RPAREN
+            """
+            if (
+                len(kid) == 4
+                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[2], ast.SubNodeList)
+            ):
+                return self.nu(ast.FuncCall(target=kid[0], params=kid[2], kid=kid))
+            elif len(kid) == 3 and isinstance(kid[0], ast.AtomType):
+                return self.nu(ast.FuncCall(target=kid[0], params=None, kid=kid))
+            else:
+                raise self.ice()
+
+        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
+            """Grammar rule.
+
+            index_slice: LSQUARE expression (COMMA expression)* RSQUARE
+                    | LSQUARE (expression? (COLON expression?)? (COLON expression?)?)? RSQUARE
+            """
+            chomp = [*kid]
+            chomp = chomp[1:]
+            is_range = (
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON
+            ) or (
+                len(chomp) > 1
+                and isinstance(chomp[1], ast.Token)
+                and chomp[1].name == Tok.COLON
+            )
+            expr1 = chomp[0] if isinstance(chomp[0], ast.ExprType) else None
+            expr2 = (
+                chomp[1]
+                if isinstance(chomp[0], ast.Token)
+                and chomp[0].name == Tok.COLON
+                and isinstance(chomp[1], ast.ExprType)
+                else None
+            )
+            chomp = chomp[1:]
+            expr2 = (
+                chomp[1]
+                if isinstance(chomp[0], ast.Token)
+                and chomp[0].name == Tok.COLON
+                and len(chomp) > 1
+                and isinstance(chomp[1], ast.ExprType)
+                else expr2
+            )
+            return self.nu(
+                ast.IndexSlice(
+                    start=expr1,
+                    stop=expr2,
+                    is_range=is_range,
+                    kid=kid,
+                )
+            )
 
         def atom(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -2274,112 +2424,6 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def atomic_chain(self, kid: list[ast.AstNode]) -> ast.AtomType:
-            """Grammar rule.
-
-            atomic_chain: atomic_call
-                        | atomic_chain_unsafe
-                        | atomic_chain_safe
-            """
-            if isinstance(kid[0], ast.AtomType):
-                return self.nu(kid[0])
-            else:
-                raise self.ice()
-
-        def atomic_chain_unsafe(self, kid: list[ast.AstNode]) -> ast.AtomType:
-            """Grammar rule.
-
-            atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
-                               | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
-            """
-            if len(kid) == 2:
-                if isinstance(kid[0], ast.AtomType) and isinstance(
-                    kid[1], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0],
-                            right=kid[1],
-                            null_ok=False,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            elif len(kid) == 3:
-                if (
-                    isinstance(kid[0], ast.AtomType)
-                    and isinstance(kid[1], ast.Token)
-                    and isinstance(kid[2], ast.AtomType)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
-                            right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                            null_ok=False,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
-
-        def atomic_chain_safe(self, kid: list[ast.AstNode]) -> ast.AtomType:
-            """Grammar rule.
-
-            atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
-                             | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
-            """
-            if len(kid) == 3:
-                if isinstance(kid[0], ast.AtomType) and isinstance(
-                    kid[2], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0],
-                            right=kid[2],
-                            null_ok=True,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            elif len(kid) == 4:
-                if (
-                    isinstance(kid[0], ast.AtomType)
-                    and isinstance(kid[1], ast.Token)
-                    and isinstance(kid[3], ast.AtomType)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[3],
-                            right=kid[3] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                            null_ok=True,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
-
-        def atomic_call(self, kid: list[ast.AstNode]) -> ast.FuncCall:
-            """Grammar rule.
-
-            atomic_call: atom LPAREN param_list? RPAREN
-            """
-            if (
-                len(kid) == 4
-                and isinstance(kid[0], ast.AtomType)
-                and isinstance(kid[2], ast.SubNodeList)
-            ):
-                return self.nu(ast.FuncCall(target=kid[0], params=kid[2], kid=kid))
-            elif len(kid) == 3 and isinstance(kid[0], ast.AtomType):
-                return self.nu(ast.FuncCall(target=kid[0], params=None, kid=kid))
-            else:
-                raise self.ice()
-
         def param_list(
             self, kid: list[ast.AstNode]
         ) -> ast.SubNodeList[ast.ExprType | ast.Assignment]:
@@ -2436,46 +2480,6 @@ class JacParser(Pass):
                 ast.SubNodeList[ast.Assignment](
                     items=valid_kid,
                     kid=new_kid,
-                )
-            )
-
-        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
-            """Grammar rule.
-
-            index_slice: LSQUARE expression? (COLON expression?)? RSQUARE
-            """
-            chomp = [*kid]
-            chomp = chomp[1:]
-            is_range = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON
-            ) or (
-                len(chomp) > 1
-                and isinstance(chomp[1], ast.Token)
-                and chomp[1].name == Tok.COLON
-            )
-            expr1 = chomp[0] if isinstance(chomp[0], ast.ExprType) else None
-            expr2 = (
-                chomp[1]
-                if isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                and isinstance(chomp[1], ast.ExprType)
-                else None
-            )
-            chomp = chomp[1:]
-            expr2 = (
-                chomp[1]
-                if isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                and len(chomp) > 1
-                and isinstance(chomp[1], ast.ExprType)
-                else expr2
-            )
-            return self.nu(
-                ast.IndexSlice(
-                    start=expr1,
-                    stop=expr2,
-                    is_range=is_range,
-                    kid=kid,
                 )
             )
 
@@ -2902,7 +2906,7 @@ class JacParser(Pass):
 
             filter_compare_item: esc_name cmp_op expression
             """
-            ret = self.binary_expr(kid)
+            ret = self.binary_expr_unwind(kid)
             if isinstance(ret, ast.BinaryExpr):
                 return self.nu(ret)
             else:
