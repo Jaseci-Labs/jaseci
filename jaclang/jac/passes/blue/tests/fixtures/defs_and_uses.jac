@@ -37,7 +37,7 @@ can your_print(messag: str) -> str {
 # Decl/Def Combined
 object YourPrinter {
     can your_print(messag: str) -> str {
-        output = f"from me: {message}";
+        output = f"from me: {messag}";
         print("from me: {message}");
         return output;
     }

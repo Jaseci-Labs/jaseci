@@ -27,11 +27,10 @@ class SymTabPass(Pass):
 
     def seen(self, node: ast.AstSymbolNode) -> bool:
         """Check if seen."""
-        result = (
-            node.sym_link is not None or node in self.linked or node in self.unlinked
-        )
-        if result:
+        result = node in self.linked or node in self.unlinked
+        if node.sym_link and not result:
             self.linked.add(node)
+            return True
         return result
 
     def def_insert(
@@ -44,6 +43,8 @@ class SymTabPass(Pass):
     ) -> Optional[Symbol]:
         """Insert into symbol table."""
         table = table_override if table_override else node.sym_tab
+        if self.seen(node) and node.sym_link and table == node.sym_link.parent_tab:
+            return node.sym_link
         if (
             table
             and (

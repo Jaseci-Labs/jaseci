@@ -58,6 +58,7 @@ class Symbol:
         self,
         defn: ast.AstSymbolNode,
         access: SymbolAccess,
+        parent_tab: SymbolTable,
         typ: Optional[type] = None,
     ) -> None:
         """Initialize."""
@@ -65,6 +66,7 @@ class Symbol:
         self.defn: list[ast.AstSymbolNode] = [defn]
         defn.sym_link = self
         self.access = access
+        self.parent_tab = parent_tab
 
     @property
     def decl(self) -> ast.AstSymbolNode:
@@ -143,6 +145,7 @@ class SymbolTable:
             self.tab[node.sym_name] = Symbol(
                 defn=node,
                 access=access_spec.access_type if access_spec else SymbolAccess.PUBLIC,
+                parent_tab=self,
             )
         else:
             self.tab[node.sym_name].add_defn(node)
