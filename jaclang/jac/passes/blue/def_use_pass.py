@@ -100,7 +100,7 @@ class DefUsePass(Pass):
 
         name: Name,
         unpack: Optional[Token],
-        type_tag: SubTag[SubNodeList[TypeSpec]],
+        type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
 
