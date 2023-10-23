@@ -18,13 +18,6 @@ class SymTabPass(Pass):
         self.unlinked: set[ast.AstSymbolNode] = set()  # Failed use lookups
         self.linked: set[ast.AstSymbolNode] = set()  # Successful use lookups
 
-    def after_pass(self) -> None:
-        """After pass."""
-        for i in self.unlinked:
-            self.warning(
-                f"Unlinked {i.__class__.__name__} {i.sym_name}", node_override=i
-            )
-
     def seen(self, node: ast.AstSymbolNode) -> bool:
         """Check if seen."""
         result = node in self.linked or node in self.unlinked

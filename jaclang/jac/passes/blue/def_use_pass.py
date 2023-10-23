@@ -12,6 +12,15 @@ from jaclang.jac.passes.blue.sym_tab_build_pass import SymTabPass
 class DefUsePass(SymTabPass):
     """Jac Ast build pass."""
 
+    def after_pass(self) -> None:
+        """After pass."""
+        for i in self.unlinked:
+            if not i.sym_name.startswith("["):
+                self.warning(
+                    f"{i.sym_name} used before being defined.",
+                    node_override=i,
+                )
+
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
 
