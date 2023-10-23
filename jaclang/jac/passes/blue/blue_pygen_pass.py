@@ -601,27 +601,6 @@ class BluePygenPass(Pass):
                 node,
                 f"{node.name.meta['py_code']}: {node.type_tag.meta['py_code']} = None",
             )
-        # self.emit(node, "|".join([i.meta["py_code"] for i in node.types])) #for type_tag
-
-    # def exit_type_spec(self, node: ast.TypeSpec) -> None:
-    #     """Sub objects.
-
-    #     spec_type: Token | SubNodeList[NameType],
-    #     list_nest: Optional[TypeSpec],  # needed for lists
-    #     dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
-    #     null_ok: bool = False,
-    #     """
-    #     if isinstance(node.spec_type, ast.SubNodeList):
-    #         self.dot_sep_node_list(node.spec_type)
-    #     if node.dict_nest and node.list_nest:
-    #         self.emit(
-    #             node,
-    #             f"dict[{node.list_nest.meta['py_code']}, {node.dict_nest.meta['py_code']}]",
-    #         )
-    #     elif node.list_nest:
-    #         self.emit(node, f"list[{node.list_nest.meta['py_code']}]")
-    #     else:
-    #         self.emit(node, node.spec_type.meta["py_code"])
 
     def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
