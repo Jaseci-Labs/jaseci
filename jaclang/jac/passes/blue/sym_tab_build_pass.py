@@ -3,38 +3,150 @@
 This pass builds the symbol table tree for the Jaseci Ast. It also adds symbols
 for globals, imports, architypes, and abilities declarations and definitions.
 """
-from typing import Optional
+from typing import Optional, Sequence
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
-from jaclang.jac.symtable import SymbolTable
+from jaclang.jac.symtable import Symbol, SymbolTable
 
 
-class SymTabBuildPass(Pass):
-    """Jac Symbol table build pass."""
+class SymTabPass(Pass):
+    """Jac Ast build pass."""
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.cur_sym_tab: list[SymbolTable] = []
+        self.unlinked: set[ast.AstSymbolNode] = set()  # Failed use lookups
+        self.linked: set[ast.AstSymbolNode] = set()  # Successful use lookups
 
-    def push_scope(self, name: str, key_node: ast.AstNode, fresh: bool = False) -> None:
-        """Push scope."""
-        if fresh:
-            self.cur_sym_tab.append(SymbolTable(name, key_node))
-        else:
-            self.cur_sym_tab.append(self.cur_scope().push_scope(name, key_node))
+    def after_pass(self) -> None:
+        """After pass."""
+        for i in self.unlinked:
+            self.warning(
+                f"Unlinked {i.__class__.__name__} {i.sym_name}", node_override=i
+            )
 
-    def pop_scope(self) -> None:
-        """Pop scope."""
-        self.cur_sym_tab.pop()
+    def seen(self, node: ast.AstSymbolNode) -> bool:
+        """Check if seen."""
+        result = (
+            node.sym_link is not None or node in self.linked or node in self.unlinked
+        )
+        if result:
+            self.linked.add(node)
+        return result
 
-    def cur_scope(self) -> SymbolTable:
-        """Return current scope."""
-        return self.cur_sym_tab[-1]
+    def def_insert(
+        self,
+        node: ast.AstSymbolNode,
+        access_spec: Optional[ast.AstAccessNode] = None,
+        single_use: Optional[str] = None,
+        also_link: Optional[list[ast.AstSymbolNode]] = None,
+        table_override: Optional[SymbolTable] = None,
+    ) -> Optional[Symbol]:
+        """Insert into symbol table."""
+        table = table_override if table_override else node.sym_tab
+        if (
+            table
+            and (
+                collide := table.insert(
+                    node=node, single=single_use is not None, access_spec=access_spec
+                )
+            )
+            and single_use
+        ):
+            self.ice("Symbol Table Should be present by now") if not table else None
+            self.already_declared_err(
+                name=node.sym_name,
+                typ=single_use if single_use else "ICE",
+                original=collide,
+            )
+        self.handle_hit_outcome(node, also_link)
+        return node.sym_link
 
-    def sync_node_to_scope(self, node: ast.AstNode) -> None:
-        """Sync node to scope."""
-        node.sym_tab = self.cur_scope()
+    def use_lookup(
+        self,
+        node: ast.AstSymbolNode,
+        sym_table: Optional[SymbolTable] = None,
+        also_link: Optional[list[ast.AstSymbolNode]] = None,
+    ) -> Optional[Symbol]:
+        """Link to symbol."""
+        if self.seen(node):
+            return node.sym_link
+        deep = True
+        if not sym_table:
+            sym_table = node.sym_tab
+            deep = False
+        if sym_table:
+            node.sym_link = (
+                sym_table.lookup(name=node.sym_name, deep=deep) if sym_table else None
+            )
+            # If successful lookup mark linked, add to table uses, and link others
+            if node.sym_link:
+                sym_table.uses.append(node)
+        self.handle_hit_outcome(node, also_link)
+        return node.sym_link
+
+    def chain_def_insert(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
+        """Link chain of containing names to symbol."""
+        if not node_list:
+            return
+        cur_sym_tab = node_list[0].sym_tab
+        node_list = node_list[:1]  # Just performs lookup mappings of pre assign chain
+        for i in node_list:
+            if cur_sym_tab is None:
+                break
+            cur_sym_tab = (
+                lookup.decl.sym_tab
+                if (
+                    lookup := self.use_lookup(
+                        i,
+                        sym_table=cur_sym_tab,
+                        also_link=[i.sym_name_node]
+                        if isinstance(i.sym_name_node, ast.AstSymbolNode)
+                        else [],
+                    )
+                )
+                else None
+            )
+
+    def chain_use_lookup(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
+        """Link chain of containing names to symbol."""
+        if not node_list:
+            return
+        cur_sym_tab = node_list[0].sym_tab
+        for i in node_list:
+            if cur_sym_tab is None:
+                break
+            cur_sym_tab = (
+                lookup.decl.sym_tab
+                if (
+                    lookup := self.use_lookup(
+                        i,
+                        sym_table=cur_sym_tab,
+                        also_link=[i.sym_name_node]
+                        if isinstance(i.sym_name_node, ast.AstSymbolNode)
+                        else [],
+                    )
+                )
+                else None
+            )
+
+    def handle_hit_outcome(
+        self,
+        node: ast.AstSymbolNode,
+        also_link: Optional[list[ast.AstSymbolNode]] = None,
+    ) -> None:
+        """Handle outcome of lookup or insert."""
+        # If successful lookup mark linked, add to table uses, and link others
+        if node.sym_link:
+            self.linked.add(node)
+            for i in also_link if also_link else []:
+                i.sym_link = node.sym_link
+        if not node.sym_link:
+            # Mark nodes that were not successfully linked
+            self.unlinked.add(node)
+            for i in also_link if also_link else []:
+                if not i.sym_link:
+                    self.unlinked.add(i)
 
     def already_declared_err(
         self,
@@ -42,7 +154,6 @@ class SymTabBuildPass(Pass):
         typ: str,
         original: ast.AstNode,
         other_nodes: Optional[list[ast.AstNode]] = None,
-        warn_only: bool = False,
     ) -> None:
         """Already declared error."""
         mod_path = (
@@ -63,6 +174,34 @@ class SymTabBuildPass(Pass):
                 )
                 err_msg += f", also see {mod_path}, line {i.loc.first_line}"
         self.warning(err_msg)
+
+
+class SymTabBuildPass(SymTabPass):
+    """Jac Symbol table build pass."""
+
+    def before_pass(self) -> None:
+        """Before pass."""
+        super().before_pass()
+        self.cur_sym_tab: list[SymbolTable] = []
+
+    def push_scope(self, name: str, key_node: ast.AstNode, fresh: bool = False) -> None:
+        """Push scope."""
+        if fresh:
+            self.cur_sym_tab.append(SymbolTable(name, key_node))
+        else:
+            self.cur_sym_tab.append(self.cur_scope().push_scope(name, key_node))
+
+    def pop_scope(self) -> None:
+        """Pop scope."""
+        self.cur_sym_tab.pop()
+
+    def cur_scope(self) -> SymbolTable:
+        """Return current scope."""
+        return self.cur_sym_tab[-1]
+
+    def sync_node_to_scope(self, node: ast.AstNode) -> None:
+        """Sync node to scope."""
+        node.sym_tab = self.cur_scope()
 
     def enter_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -97,15 +236,12 @@ class SymTabBuildPass(Pass):
         is_frozen: bool,
         doc: Optional[Constant] = None,
         """
+        self.sync_node_to_scope(node)
         for i in self.get_all_sub_nodes(node, ast.Assignment):
             if isinstance(i.target, ast.Name):
-                if collide := self.cur_scope().insert(
-                    node=i.target, access_spec=node, single=True
-                ):
-                    self.already_declared_err(i.target.value, "global var", collide)
+                self.def_insert(i.target, access_spec=node, single_use="global var")
             else:
                 self.ice("Expected name type for globabl vars")
-        self.sync_node_to_scope(node)
 
     def enter_sub_tag(self, node: ast.SubTag) -> None:
         """Sub objects.
@@ -129,8 +265,8 @@ class SymTabBuildPass(Pass):
         description: Token,
         body: CodeBlock,
         """
-        if collide := self.cur_scope().insert(node=node, single=True):
-            self.already_declared_err(node.sym_name, "test", collide)
+        self.sync_node_to_scope(node)
+        self.def_insert(node, single_use="test", also_link=[node.name])
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
 
@@ -179,18 +315,14 @@ class SymTabBuildPass(Pass):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
+        self.sync_node_to_scope(node)
         if node.items:
             for i in node.items.items:
-                if collide := self.cur_scope().insert(node=i, single=True):
-                    self.already_declared_err(i.sym_name, "import item", collide)
+                self.def_insert(i, single_use="import item", also_link=[i.name])
         else:
-            if collide := self.cur_scope().insert(node=node, single=True):
-                self.already_declared_err(
-                    node.alias.value if node.alias else node.path.path_str,
-                    "import",
-                    collide,
-                )
-        self.sync_node_to_scope(node)
+            self.def_insert(
+                node, single_use="import", also_link=[node.alias] if node.alias else []
+            )
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -202,26 +334,15 @@ class SymTabBuildPass(Pass):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
+        self.sync_node_to_scope(node)
         if node.is_absorb:
             if not node.sub_module or not node.sub_module.sym_tab:
                 self.error(
                     f"Module {node.path.path_str} not found to include *, or ICE occurred!"
                 )
             else:
-                for k, v in node.sub_module.sym_tab.tab.items():
-                    if collide := self.cur_scope().insert(
-                        node=v.decl if v.decl else v.defn[-1],
-                        single=True,
-                    ):
-                        other_node = (
-                            v.decl if v.decl else v.defn[-1] if len(v.defn) else None
-                        )
-                        if other_node:
-                            self.already_declared_err(
-                                k, "include item", collide, [other_node]
-                            )
-                        else:
-                            self.already_declared_err(k, "include item", collide)
+                for v in node.sub_module.sym_tab.tab.values():
+                    self.def_insert(v.decl, table_override=self.cur_scope())
         self.sync_node_to_scope(node)
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
@@ -251,8 +372,8 @@ class SymTabBuildPass(Pass):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
-        if collide := self.cur_scope().insert(node=node, access_spec=node, single=True):
-            self.already_declared_err(node.name.value, "architype", collide)
+        self.sync_node_to_scope(node)
+        self.def_insert(node, single_use="architype", also_link=[node.name])
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
 
@@ -277,8 +398,8 @@ class SymTabBuildPass(Pass):
         arch: ArchRef,
         body: ArchBlock,
         """
-        if collide := self.cur_scope().insert(node=node, single=True):
-            self.already_declared_err(node.sym_name, "architype def", collide)
+        self.sync_node_to_scope(node)
+        self.def_insert(node, single_use="arch def")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 
@@ -305,8 +426,8 @@ class SymTabBuildPass(Pass):
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
         """
-        if collide := self.cur_scope().insert(node=node, access_spec=node, single=True):
-            self.already_declared_err(node.sym_name, "ability", collide)
+        self.sync_node_to_scope(node)
+        self.def_insert(node, single_use="ability", also_link=[node.name_ref])
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 
@@ -333,8 +454,8 @@ class SymTabBuildPass(Pass):
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
         """
-        if collide := self.cur_scope().insert(node=node, single=True):
-            self.already_declared_err(node.sym_name, "ability def", collide)
+        self.sync_node_to_scope(node)
+        self.def_insert(node, single_use="ability def")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 
@@ -393,9 +514,9 @@ class SymTabBuildPass(Pass):
         base_classes: 'BaseClasses',
         body: Optional['EnumBlock'],
         """
-        if collide := self.cur_scope().insert(node=node, access_spec=node, single=True):
-            self.already_declared_err(node.name.value, "enum", collide)
-        self.push_scope(node.name.value, node)
+        self.sync_node_to_scope(node)
+        self.def_insert(node, single_use="enum", also_link=[node.name])
+        self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 
     def exit_enum(self, node: ast.Enum) -> None:
@@ -417,8 +538,8 @@ class SymTabBuildPass(Pass):
         target: list[ArchRef],
         body: EnumBlock,
         """
-        if collide := self.cur_scope().insert(node=node, single=True):
-            self.already_declared_err(node.sym_name, "enum def", collide)
+        self.sync_node_to_scope(node)
+        self.def_insert(node, single_use="enum def")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 
@@ -533,8 +654,11 @@ class SymTabBuildPass(Pass):
 
         name: str,
         value: str,
+        line: int,
         col_start: int,
         col_end: int,
+        pos_start: int,
+        pos_end: int,
         already_declared: bool,
         """
         self.sync_node_to_scope(node)
@@ -902,19 +1026,63 @@ class SymTabBuildPass(Pass):
 
         name: str,
         value: str,
+        line: int,
         col_start: int,
         col_end: int,
+        pos_start: int,
+        pos_end: int,
         """
         self.sync_node_to_scope(node)
 
-    def enter_constant(self, node: ast.Constant) -> None:
+    def enter_float(self, node: ast.Float) -> None:
         """Sub objects.
 
         name: str,
         value: str,
+        line: int,
         col_start: int,
         col_end: int,
-        typ: type,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_int(self, node: ast.Int) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_string(self, node: ast.String) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.sync_node_to_scope(node)
+
+    def enter_bool(self, node: ast.Bool) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
         """
         self.sync_node_to_scope(node)
 
@@ -923,8 +1091,11 @@ class SymTabBuildPass(Pass):
 
         name: str,
         value: str,
+        line: int,
         col_start: int,
         col_end: int,
+        pos_start: int,
+        pos_end: int,
         typ: type,
         """
         self.sync_node_to_scope(node)

@@ -123,6 +123,7 @@ class AstSyncTestMixin:
                 "empty_token",
                 "ast_symbol_node",
                 "ast_access_node",
+                "token_symbol",
             ]
         ]
         pygen_func_names = []

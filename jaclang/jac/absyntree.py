@@ -1596,7 +1596,35 @@ class TokenSymbol(Token, AstSymbolNode):
 class Name(TokenSymbol):
     """Name node type for Jac Ast."""
 
-    SYMBOL_TYPE = SymbolType.VAR
+    def __init__(
+        self,
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize token."""
+        Token.__init__(
+            self,
+            name=name,
+            value=value,
+            line=line,
+            col_start=col_start,
+            col_end=col_end,
+            pos_start=pos_start,
+            pos_end=pos_end,
+            kid=kid,
+        )
+        AstSymbolNode.__init__(
+            self,
+            sym_name=value,
+            sym_name_node=self,
+            sym_type=SymbolType.VAR,
+        )
 
 
 class Float(TokenSymbol):

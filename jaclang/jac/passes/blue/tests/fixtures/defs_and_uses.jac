@@ -22,7 +22,7 @@ object MyPrinter {
 (message: str) -> str {
     y = ".".join([i for i in range(10)]);
     output = f"from me: {message} {y}";
-    print("from me: {message}");
+    print(f"from me: {output}");
     return output;
 }
 
