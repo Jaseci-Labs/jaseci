@@ -13,13 +13,15 @@ can my_print(messag: str) -> str;
 
 # Declaration
 object MyPrinter {
+    has thing_to_print: str;
     can my_print(messag: str) -> str; # method declaration
 }
 
 # Definition
 :object:MyPrinter:ability:my_print
 (message: str) -> str {
-    output = f"from me: {message}";
+    y = ".".join([i for i in range(10)]);
+    output = f"from me: {message} {y}";
     print("from me: {message}");
     return output;
 }

@@ -251,7 +251,7 @@ class SymTabBuildPass(Pass):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
-        if collide := self.cur_scope().insert(node=node, single=True):
+        if collide := self.cur_scope().insert(node=node, access_spec=node, single=True):
             self.already_declared_err(node.name.value, "architype", collide)
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
@@ -305,7 +305,7 @@ class SymTabBuildPass(Pass):
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
         """
-        if collide := self.cur_scope().insert(node=node, single=True):
+        if collide := self.cur_scope().insert(node=node, access_spec=node, single=True):
             self.already_declared_err(node.sym_name, "ability", collide)
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
@@ -393,7 +393,7 @@ class SymTabBuildPass(Pass):
         base_classes: 'BaseClasses',
         body: Optional['EnumBlock'],
         """
-        if collide := self.cur_scope().insert(node=node, single=True):
+        if collide := self.cur_scope().insert(node=node, access_spec=node, single=True):
             self.already_declared_err(node.name.value, "enum", collide)
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
@@ -766,25 +766,43 @@ class SymTabBuildPass(Pass):
         """Sub objects.
 
         out_expr: ExprType,
-        name_list: NameList,
+        names: SubNodeList[Name],
         collection: ExprType,
         conditional: Optional[ExprType],
-        is_list: bool,
-        is_gen: bool,
-        is_set: bool,
         """
+        self.push_scope("in_list_compr", node)
         self.sync_node_to_scope(node)
+
+    def exit_inner_compr(self, node: ast.InnerCompr) -> None:
+        """Sub objects.
+
+        out_expr: ExprType,
+        names: SubNodeList[Name],
+        collection: ExprType,
+        conditional: Optional[ExprType],
+        """
+        self.pop_scope()
 
     def enter_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
 
-        outk_expr: ExprType,
-        outv_expr: ExprType,
-        name_list: NameList,
+        kv_pair: KVPair,
+        names: SubNodeList[Name],
         collection: ExprType,
         conditional: Optional[ExprType],
         """
+        self.push_scope("in_dict_compr", node)
         self.sync_node_to_scope(node)
+
+    def exit_dict_compr(self, node: ast.DictCompr) -> None:
+        """Sub objects.
+
+        kv_pair: KVPair,
+        names: SubNodeList[Name],
+        collection: ExprType,
+        conditional: Optional[ExprType],
+        """
+        self.pop_scope()
 
     def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.

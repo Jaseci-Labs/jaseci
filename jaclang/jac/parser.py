@@ -1949,6 +1949,7 @@ class JacParser(Pass):
                     ast.AtomTrailer(
                         target=kid[0],
                         right=kid[1],
+                        is_scope_contiar=isinstance(kid[1], ast.FilterCompr),
                         kid=kid,
                     )
                 )
@@ -1972,6 +1973,7 @@ class JacParser(Pass):
                     ast.AtomTrailer(
                         target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
                         right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                        is_scope_contiar=True,
                         kid=kid,
                     )
                 )

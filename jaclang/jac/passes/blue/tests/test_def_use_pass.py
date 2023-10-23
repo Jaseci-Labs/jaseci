@@ -23,7 +23,7 @@ class DefUsePassTests(TestCase):
         for i in state.linked:
             print(
                 f"Linked {i.__class__.__name__} {i.sym_name} {i.loc} "
-                f"{i.sym_link.decl.loc if i.sym_link else None}"
+                f", {i.sym_link.decl.loc if i.sym_link else None}"
             )
         self.assertEqual(len(state.warnings_had), 0)
         self.assertEqual(len(state.errors_had), 0)

@@ -9,6 +9,21 @@ from jaclang.jac.symtable import Symbol, SymbolTable
 from jaclang.jac.transpiler import Alert, jac_str_to_pass
 
 
+def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
+    """Iterate through symbol table."""
+    sym_tabs = (
+        [sym_tab]
+        if not (
+            isinstance(sym_tab.owner, ast.Module)
+            and sym_tab.owner.mod_path != file_path
+        )
+        else []
+    )
+    for i in sym_tab.kid:
+        sym_tabs += sym_tab_list(i, file_path=file_path)
+    return sym_tabs
+
+
 class ModuleInfo:
     """Module IR and Stats."""
 
@@ -133,33 +148,33 @@ class Workspace:
         """Return a list of files in the workspace."""
         return list(self.modules.keys())
 
-    def get_dependencies(self, file_path: str) -> list[str]:
+    def get_dependencies(self, file_path: str) -> list[ast.Import]:
         """Return a list of dependencies for a file."""
-        return [
-            i.mod_path for i in self.modules[file_path].ir.get_all_sub_nodes(ast.Module)
-        ]
+        return self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
 
     def get_symbols(self, file_path: str) -> list[Symbol]:
         """Return a list of symbols for a file."""
-
-        def sym_tab_list(sym_tab: SymbolTable) -> list[SymbolTable]:
-            """Iterate through symbol table."""
-            sym_tabs = (
-                [sym_tab]
-                if not (
-                    isinstance(sym_tab.owner, ast.Module)
-                    and sym_tab.owner.mod_path != file_path
-                )
-                else []
-            )
-            for i in sym_tab.kid:
-                sym_tabs += sym_tab_list(i)
-            return sym_tabs
-
         symbols = []
         if file_path in self.modules:
             root_table = self.modules[file_path].ir.sym_tab
             if file_path in self.modules and isinstance(root_table, SymbolTable):
-                for i in sym_tab_list(sym_tab=root_table):
+                for i in sym_tab_list(sym_tab=root_table, file_path=file_path):
                     symbols += list(i.tab.values())
         return symbols
+
+    def get_definitions(self, file_path: str) -> list[ast.AstSymbolNode]:  # need test
+        """Return a list of definitions for a file."""
+        defs = []
+        for i in self.get_symbols(file_path):
+            defs += i.defn
+        return defs
+
+    def get_uses(self, file_path: str) -> list[ast.AstSymbolNode]:  # need test
+        """Return a list of definitions for a file."""
+        uses = []
+        if file_path in self.modules:
+            root_table = self.modules[file_path].ir.sym_tab
+            if file_path in self.modules and isinstance(root_table, SymbolTable):
+                for i in sym_tab_list(sym_tab=root_table, file_path=file_path):
+                    uses += i.uses
+        return uses

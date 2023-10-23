@@ -620,7 +620,7 @@ class ArchHas(AstAccessNode):
         AstAccessNode.__init__(self, access=access)
 
 
-class HasVar(AstNode):
+class HasVar(AstSymbolNode):
     """HasVar node type for Jac Ast."""
 
     def __init__(
@@ -635,6 +635,7 @@ class HasVar(AstNode):
         self.type_tag = type_tag
         self.value = value
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(self, sym_name=name.value, sym_type=SymbolType.VAR)
 
 
 class TypedCtxBlock(AstNode):
@@ -1218,11 +1219,13 @@ class AtomTrailer(AstNode):
         self,
         target: AtomType,
         right: AtomType,
+        is_scope_contiar: bool,
         kid: list[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
+        self.is_scope_contiar = is_scope_contiar
         AstNode.__init__(self, kid=kid)
 
 
