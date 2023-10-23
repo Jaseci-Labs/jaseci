@@ -5,7 +5,7 @@ import:py from jaclang.jac.passes, Pass;
 import:py from jaclang.jac.constant, Tokens as Tok;
 
 
-object AnalyzePass:Pass{
+object AnalyzePass:Pass: {
     can enter_architype(nd: ast.Architype);
 }
 

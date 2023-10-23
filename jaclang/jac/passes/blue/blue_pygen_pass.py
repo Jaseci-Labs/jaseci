@@ -306,7 +306,7 @@ class BluePygenPass(Pass):
         name: Name,
         arch_type: Token,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[SubTag[SubNodeList[NameType]]]],
+        base_classes: Optional[SubNodeList[AtomType]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -317,9 +317,6 @@ class BluePygenPass(Pass):
         if not node.base_classes:
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
-            for i in node.base_classes.items:
-                self.dot_sep_node_list(i.tag)
-                i.meta["py_code"] = i.tag.meta["py_code"]
             self.comma_sep_node_list(node.base_classes)
             self.emit_ln(
                 node,
@@ -406,7 +403,7 @@ class BluePygenPass(Pass):
 
         name: Name,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[SubNodeList[NameType]]],
+        base_classes: Optional[Optional[SubNodeList[AtomType]]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -419,9 +416,6 @@ class BluePygenPass(Pass):
             self.emit_ln(node, f"class {node.name.meta['py_code']}(__jac_Enum__):")
         else:
             self.needs_enum()
-            for i in node.base_classes.items:
-                self.dot_sep_node_list(i.tag)
-                i.meta["py_code"] = i.tag.meta["py_code"]
             self.comma_sep_node_list(node.base_classes)
             self.emit_ln(
                 node,
@@ -530,19 +524,13 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubNodeList[TypeSpec]],
+        return_type: Optional[SubTag[ExprType]],
         """
         if node.params:
             self.comma_sep_node_list(node.params)
             self.emit(node, node.params.meta["py_code"])
         if node.return_type:
-            self.sep_node_list(node.return_type, delim="|")
-            self.emit(node, f" -> {node.return_type.meta['py_code']}")
-        # first_out = False
-        # for i in node.params:
-        #     self.emit(node, ", ") if first_out else None
-        #     self.emit(node, i.meta["py_code"])
-        #     first_out = True
+            self.emit(node, f" -> {node.return_type.tag.meta['py_code']}")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_event_signature(self, node: ast.EventSignature) -> None:
@@ -566,10 +554,9 @@ class BluePygenPass(Pass):
 
         name: Name,
         unpack: Optional[Token],
-        type_tag: SubTag[SubNodeList[TypeSpec]],
+        type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
-        self.sep_node_list(node.type_tag.tag, delim="|")
         node.type_tag.meta["py_code"] = node.type_tag.tag.meta["py_code"]
         if node.unpack:
             self.emit(node, f"{node.unpack.meta['py_code']}")
@@ -603,7 +590,6 @@ class BluePygenPass(Pass):
         type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         """
-        self.sep_node_list(node.type_tag.tag, delim="|")
         node.type_tag.meta["py_code"] = node.type_tag.tag.meta["py_code"]
         if node.value:
             self.emit(
@@ -617,25 +603,25 @@ class BluePygenPass(Pass):
             )
         # self.emit(node, "|".join([i.meta["py_code"] for i in node.types])) #for type_tag
 
-    def exit_type_spec(self, node: ast.TypeSpec) -> None:
-        """Sub objects.
+    # def exit_type_spec(self, node: ast.TypeSpec) -> None:
+    #     """Sub objects.
 
-        spec_type: Token | SubNodeList[NameType],
-        list_nest: Optional[TypeSpec],  # needed for lists
-        dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
-        null_ok: bool = False,
-        """
-        if isinstance(node.spec_type, ast.SubNodeList):
-            self.dot_sep_node_list(node.spec_type)
-        if node.dict_nest and node.list_nest:
-            self.emit(
-                node,
-                f"dict[{node.list_nest.meta['py_code']}, {node.dict_nest.meta['py_code']}]",
-            )
-        elif node.list_nest:
-            self.emit(node, f"list[{node.list_nest.meta['py_code']}]")
-        else:
-            self.emit(node, node.spec_type.meta["py_code"])
+    #     spec_type: Token | SubNodeList[NameType],
+    #     list_nest: Optional[TypeSpec],  # needed for lists
+    #     dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
+    #     null_ok: bool = False,
+    #     """
+    #     if isinstance(node.spec_type, ast.SubNodeList):
+    #         self.dot_sep_node_list(node.spec_type)
+    #     if node.dict_nest and node.list_nest:
+    #         self.emit(
+    #             node,
+    #             f"dict[{node.list_nest.meta['py_code']}, {node.dict_nest.meta['py_code']}]",
+    #         )
+    #     elif node.list_nest:
+    #         self.emit(node, f"list[{node.list_nest.meta['py_code']}]")
+    #     else:
+    #         self.emit(node, node.spec_type.meta["py_code"])
 
     def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
@@ -1036,8 +1022,6 @@ class BluePygenPass(Pass):
         """
         if node.op.value in ["-", "~", "+", "*", "**"]:
             self.emit(node, f"{node.op.meta['py_code']}{node.operand.meta['py_code']}")
-        elif node.op.value == "(":  # (expression) reuses unary expr
-            self.emit(node, f"({node.operand.meta['py_code']})")
         elif node.op.value == "not":
             self.emit(node, f"not {node.operand.meta['py_code']}")
         elif node.op.name in [Tok.PIPE_FWD, Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
@@ -1212,8 +1196,16 @@ class BluePygenPass(Pass):
         right: AtomType,
         null_ok: bool,
         """
-        if node.null_ok:
-            if isinstance(node.right, ast.IndexSlice):
+        if (
+            isinstance(
+                node.target, ast.AtomUnit
+            )  # a bit complicated but works, checks if left is null_ok
+            and node.target.is_null_ok
+            or isinstance(node.target, ast.AtomTrailer)
+            and isinstance(node.target.right, ast.AtomUnit)
+            and node.target.right.is_null_ok
+        ):
+            if isinstance(node.right, (ast.IndexSlice, ast.ListVal)):
                 self.emit(
                     node,
                     f"({node.target.meta['py_code']}{node.right.meta['py_code']} "
@@ -1226,7 +1218,7 @@ class BluePygenPass(Pass):
                     f"if {node.target.meta['py_code']} is not None else None)",
                 )
         else:
-            if isinstance(node.right, ast.IndexSlice):
+            if isinstance(node.right, (ast.IndexSlice, ast.ListVal)):
                 self.emit(
                     node,
                     f"{node.target.meta['py_code']}{node.right.meta['py_code']}",
@@ -1236,6 +1228,18 @@ class BluePygenPass(Pass):
                     node,
                     f"{node.target.meta['py_code']}.{node.right.meta['py_code']}",
                 )
+
+    def exit_atom_unit(self, node: ast.AtomUnit) -> None:
+        """Sub objects.
+
+        value: AtomType | ExprType,
+        is_paren: bool,
+        is_null_ok: bool,
+        """
+        if node.is_null_ok:
+            self.emit(node, node.value.meta["py_code"])
+        elif node.is_paren:
+            self.emit(node, f"({node.value.meta['py_code']})")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_func_call(self, node: ast.FuncCall) -> None:
@@ -1252,15 +1256,6 @@ class BluePygenPass(Pass):
             )
         else:
             self.emit(node, f"{node.target.meta['py_code']}()")
-        # if node.p_args and node.p_kwargs:
-        #     self.emit(
-        #         node,
-        #         f"{node.p_args.meta['py_code']}, {node.p_kwargs.meta['py_code']}",
-        #     )
-        # elif node.p_args:
-        #     self.emit(node, f"{node.p_args.meta['py_code']}")
-        # elif node.p_kwargs:
-        #     self.emit(node, f"{node.p_kwargs.meta['py_code']}")
 
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.

@@ -9,7 +9,7 @@ object Parent {
     }
 }
 
-object Child:Parent {
+object Child:Parent: {
     can init() -> None {
         # Child initialization
         Parent.init();  # Initialize parent, :o: is alias for :object:

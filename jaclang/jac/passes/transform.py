@@ -87,15 +87,23 @@ class Transform(ABC):
         """Transform interface."""
         pass
 
-    def log_error(self, msg: str) -> None:
+    def log_error(self, msg: str, node_override: Optional[AstNode] = None) -> None:
         """Pass Error."""
-        alrt = Alert(msg, self.mod_path, self.cur_node.loc)
+        alrt = Alert(
+            msg,
+            self.mod_path,
+            self.cur_node.loc if not node_override else node_override.loc,
+        )
         self.errors_had.append(alrt)
         self.logger.error(str(alrt))
 
-    def log_warning(self, msg: str) -> None:
+    def log_warning(self, msg: str, node_override: Optional[AstNode] = None) -> None:
         """Pass Error."""
-        alrt = Alert(msg, self.mod_path, self.cur_node.loc)
+        alrt = Alert(
+            msg,
+            self.mod_path,
+            self.cur_node.loc if not node_override else node_override.loc,
+        )
         self.warnings_had.append(alrt)
         self.logger.warning(str(alrt))
 

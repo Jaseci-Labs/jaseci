@@ -348,7 +348,7 @@ class Architype(AstSymbolNode, AstAccessNode):
         name: Name,
         arch_type: Token,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[SubTag[SubNodeList[NameType]]]],
+        base_classes: Optional[SubNodeList[AtomType]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
@@ -407,7 +407,7 @@ class Enum(AstSymbolNode, AstAccessNode):
         self,
         name: Name,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[SubTag[SubNodeList[NameType]]]],
+        base_classes: Optional[Optional[SubNodeList[AtomType]]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
@@ -457,7 +457,7 @@ class Ability(AstSymbolNode, AstAccessNode):
         is_static: bool,
         is_abstract: bool,
         access: Optional[SubTag[Token]],
-        signature: Optional[FuncSignature | SubNodeList[TypeSpec] | EventSignature],
+        signature: Optional[FuncSignature | ExprType | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt]],
         kid: list[AstNode],
         doc: Optional[Constant] = None,
@@ -533,7 +533,7 @@ class FuncSignature(AstNode):
     def __init__(
         self,
         params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubNodeList[TypeSpec]],
+        return_type: Optional[SubTag[ExprType]],
         kid: list[AstNode],
     ) -> None:
         """Initialize method signature node."""
@@ -548,8 +548,8 @@ class EventSignature(AstNode):
     def __init__(
         self,
         event: Token,
-        arch_tag_info: Optional[SubNodeList[TypeSpec]],
-        return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
+        arch_tag_info: Optional[ExprType],
+        return_type: Optional[SubTag[ExprType]],
         kid: list[AstNode],
     ) -> None:
         """Initialize event signature node."""
@@ -585,7 +585,7 @@ class ParamVar(AstSymbolNode):
         self,
         name: Name,
         unpack: Optional[Token],
-        type_tag: SubTag[SubNodeList[TypeSpec]],
+        type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         kid: list[AstNode],
     ) -> None:
@@ -626,7 +626,7 @@ class HasVar(AstNode):
     def __init__(
         self,
         name: Name,
-        type_tag: SubTag[SubNodeList[TypeSpec]],
+        type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         kid: list[AstNode],
     ) -> None:
@@ -637,31 +637,12 @@ class HasVar(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class TypeSpec(AstNode):
-    """TypeSpec node type for Jac Ast."""
-
-    def __init__(
-        self,
-        spec_type: Token | SubNodeList[NameType],
-        list_nest: Optional[TypeSpec],  # needed for lists
-        dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
-        kid: list[AstNode],
-        null_ok: bool = False,
-    ) -> None:
-        """Initialize type spec node."""
-        self.spec_type = spec_type
-        self.list_nest = list_nest
-        self.dict_nest = dict_nest
-        self.null_ok = null_ok
-        AstNode.__init__(self, kid=kid)
-
-
 class TypedCtxBlock(AstNode):
     """TypedCtxBlock node type for Jac Ast."""
 
     def __init__(
         self,
-        type_ctx: SubNodeList[TypeSpec],
+        type_ctx: ExprType,
         body: SubNodeList[CodeBlockStmt],
         kid: list[AstNode],
     ) -> None:
@@ -960,7 +941,7 @@ class VisitStmt(WalkerStmtOnlyNode):
 
     def __init__(
         self,
-        vis_type: Optional[SubTag[SubNodeList[Name]]],
+        vis_type: Optional[SubNodeList[AtomType]],
         target: ExprType,
         else_body: Optional[ElseStmt],
         kid: list[AstNode],
@@ -1237,13 +1218,28 @@ class AtomTrailer(AstNode):
         self,
         target: AtomType,
         right: AtomType,
-        null_ok: bool,
         kid: list[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
-        self.null_ok = null_ok
+        AstNode.__init__(self, kid=kid)
+
+
+class AtomUnit(AstNode):
+    """AtomUnit node type for Jac Ast."""
+
+    def __init__(
+        self,
+        value: AtomType | ExprType,
+        is_paren: bool,
+        is_null_ok: bool,
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize atom unit expression node."""
+        self.value = value
+        self.is_paren = is_paren
+        self.is_null_ok = is_null_ok
         AstNode.__init__(self, kid=kid)
 
 
@@ -1269,12 +1265,14 @@ class IndexSlice(AstNode):
         self,
         start: Optional[ExprType],
         stop: Optional[ExprType],
+        step: Optional[ExprType],
         is_range: bool,
         kid: list[AstNode],
     ) -> None:
         """Initialize index slice expression node."""
         self.start = start
         self.stop = stop
+        self.step = step
         self.is_range = is_range
         AstNode.__init__(self, kid=kid)
 
@@ -1524,7 +1522,6 @@ NameType = Union[
     Name,
     SpecialVarRef,
     ArchRef,
-    SubNodeList,  # this is for dotted names, but too broad
 ]
 
 AtomType = Union[
@@ -1545,6 +1542,7 @@ AtomType = Union[
     FilterCompr,
     IndexSlice,
     FuncCall,
+    AtomUnit,
 ]
 
 ExprType = Union[
