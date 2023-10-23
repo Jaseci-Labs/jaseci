@@ -1,4 +1,9 @@
-"""Connect Decls and Defs in AST."""
+"""Connect Decls and Defs in AST.
+
+This pass creates and manages compilation of Python code from the AST. This pass
+also creates bytecode files from the Python code, and manages the caching of
+relevant files.
+"""
 import marshal
 import os
 import traceback

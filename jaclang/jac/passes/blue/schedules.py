@@ -1,4 +1,7 @@
-"""Pass schedules."""
+"""Pass schedules.
+
+These are various pass schedules for the Jac compiler and static analysis.
+"""
 from .sub_node_tab_pass import SubNodeTabPass  # noqa: I100
 from .import_pass import ImportPass  # noqa: I100
 from .sym_tab_build_pass import SymTabBuildPass  # noqa: I100

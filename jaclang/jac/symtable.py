@@ -140,6 +140,9 @@ class SymbolTable:
                 defn=node,
                 access=access_spec.access_type if access_spec else SymbolAccess.PUBLIC,
             )
+        else:
+            self.tab[node.sym_name].add_defn(node)
+        node.sym_link = self.tab[node.sym_name]
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""

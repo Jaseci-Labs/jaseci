@@ -1,4 +1,10 @@
-"""Connect Decls and Defs in AST."""
+"""Connect Decls and Defs in AST.
+
+This pass creates links in the ast between Decls of Architypes and Abilities
+that are separate from their implementations (Defs). This pass creates a link
+in the ast between the Decls and Defs of Architypes and Abilities through the
+body field.
+"""
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.blue import SubNodeTabPass

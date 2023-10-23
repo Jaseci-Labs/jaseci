@@ -1,4 +1,7 @@
-"""JacFormatPass for Jaseci Ast."""
+"""JacFormatPass for Jaseci Ast.
+
+This is a pass for formatting Jac code.
+"""
 
 from typing import Any, List, Optional, Tuple
 

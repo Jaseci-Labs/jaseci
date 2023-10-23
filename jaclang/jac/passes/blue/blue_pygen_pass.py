@@ -1,4 +1,8 @@
-"""Jac Blue pass for Jaseci Ast."""
+"""Jac Blue pass for Jaseci Ast.
+
+At the end of this pass a meta['py_code'] is present with pure python code
+in each node. Module nodes contain the entire module code.
+"""
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con
 from jaclang.jac.constant import Tokens as Tok

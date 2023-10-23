@@ -1,4 +1,9 @@
-"""Static Import Pass."""
+"""Static Import Pass.
+
+This pass statically imports all modules used in import statements in the
+current module. This pass is run before the def/decl pass to ensure that all
+symbols are available for matching.
+"""
 from os import path
 
 import jaclang.jac.absyntree as ast

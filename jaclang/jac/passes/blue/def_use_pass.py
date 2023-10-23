@@ -1,4 +1,10 @@
-"""Ast build pass for Jaseci Ast."""
+"""Ast build pass for Jaseci Ast.
+
+This pass adds a more complete set of symbols from the AST to the
+symbol table. This includes assignments, parameters, arch ref chains,
+and more. This pass also links the symbols in the AST to their corresponding
+sybmols in the symbol table (including uses).
+"""
 from typing import Optional
 
 import jaclang.jac.absyntree as ast
@@ -11,7 +17,7 @@ class DefUsePass(Pass):
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.marked: set[ast.AstSymbolNode] = set()  # Marked for ignoring
+        # self.marked: set[ast.AstSymbolNode] = set()  # Marked for ignoring
         self.unlinked: set[ast.AstSymbolNode] = set()  # Failed use lookups
         self.linked: set[ast.AstSymbolNode] = set()  # Successful use lookups
 
@@ -20,8 +26,39 @@ class DefUsePass(Pass):
         for i in self.unlinked:
             self.warning(f"Unlinked {i.__class__.__name__} {i.sym_name}")
 
+    def seen(self, node: ast.AstSymbolNode) -> bool:
+        """Check if seen."""
+        return node.sym_link is not None or node in self.linked or node in self.unlinked
+
+    def def_insert(
+        self,
+        node: ast.AstSymbolNode,
+        single_use: Optional[str] = None,
+        also_link: Optional[list[ast.AstSymbolNode]] = None,
+    ) -> None:
+        """Insert into symbol table."""
+        if (
+            node.sym_tab
+            and (
+                collide := node.sym_tab.insert(node=node, single=single_use is not None)
+            )
+            and single_use
+        ):
+            self.ice(
+                "Symbol Table Should be present by now"
+            ) if not node.sym_tab else None
+            self.already_declared_err(
+                name=node.sym_name,
+                typ=single_use if single_use else "ICE",
+                original=collide,
+            )
+        self.handle_hit_outcome(node, also_link)
+
     def use_lookup(
-        self, node: ast.AstSymbolNode, sym_table: Optional[SymbolTable] = None
+        self,
+        node: ast.AstSymbolNode,
+        sym_table: Optional[SymbolTable] = None,
+        also_link: Optional[list[ast.AstSymbolNode]] = None,
     ) -> Optional[Symbol]:
         """Link to symbol."""
         deep = True
@@ -32,12 +69,31 @@ class DefUsePass(Pass):
             return node.sym_link
         if sym_table:
             node.sym_link = (
-                sym_table.lookup(node.sym_name, deep=deep) if sym_table else None
+                sym_table.lookup(name=node.sym_name, deep=deep) if sym_table else None
             )
+            # If successful lookup mark linked, add to table uses, and link others
             if node.sym_link:
-                self.linked.add(node)
                 sym_table.uses.append(node)
+        self.handle_hit_outcome(node, also_link)
         return node.sym_link
+
+    def handle_hit_outcome(
+        self,
+        node: ast.AstSymbolNode,
+        also_link: Optional[list[ast.AstSymbolNode]] = None,
+    ) -> None:
+        """Handle outcome of lookup or insert."""
+        # If successful lookup mark linked, add to table uses, and link others
+        if node.sym_link:
+            self.linked.add(node)
+            for i in also_link if also_link else []:
+                i.sym_link = node.sym_link
+        if not node.sym_link:
+            # Mark nodes that were not successfully linked
+            self.unlinked.add(node)
+            for i in also_link if also_link else []:
+                if not i.sym_link:
+                    self.unlinked.add(i)
 
     def already_declared_err(
         self,
@@ -72,11 +128,9 @@ class DefUsePass(Pass):
         name_ref: NameType,
         arch: Token,
         """
-        if node in self.marked:
+        if self.seen(node):
             return
-        self.use_lookup(node)
-        if not node.sym_link:
-            self.unlinked.add(node)
+        self.use_lookup(node, also_link=[node.name_ref])
 
     def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
@@ -86,9 +140,9 @@ class DefUsePass(Pass):
         cur_sym_tab = node.sym_tab
         for i in node.archs:
             if cur_sym_tab is None:
-                self.marked.add(i)
+                self.unlinked.add(i)
                 continue
-            lookup = self.use_lookup(i, cur_sym_tab)
+            lookup = self.use_lookup(i, sym_table=cur_sym_tab, also_link=[i.name_ref])
             if lookup:
                 cur_sym_tab = lookup.decl.sym_tab
             else:
@@ -103,6 +157,10 @@ class DefUsePass(Pass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
+        if self.seen(node):
+            return
+        self.def_insert(node, single_use="func param")
+        # self.use_lookup(node.type_tag.tag)
 
     def enter_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
