@@ -94,10 +94,13 @@ class AstNode:
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
 
-    def __init__(self, sym_name: str, sym_type: SymbolType) -> None:
+    def __init__(
+        self, sym_name: str, sym_name_node: AstNode, sym_type: SymbolType
+    ) -> None:
         """Initialize ast."""
         self.sym_link: Optional[Symbol] = None
         self.sym_name: str = sym_name
+        self.sym_name_node = sym_name_node
         self.sym_type: SymbolType = sym_type
 
 
@@ -238,7 +241,10 @@ class Test(AstSymbolNode):
         if self.name not in self.kid:
             self.add_kids_left([self.name], pos_update=False)
         AstSymbolNode.__init__(
-            self, sym_name=self.name.sym_name, sym_type=SymbolType.TEST
+            self,
+            sym_name=self.name.sym_name,
+            sym_name_node=self.name,
+            sym_type=SymbolType.TEST,
         )
 
 
@@ -300,6 +306,7 @@ class Import(AstSymbolNode):
         AstSymbolNode.__init__(
             self,
             sym_name=alias.sym_name if alias else path.path_str,
+            sym_name_node=alias if alias else path,
             sym_type=SymbolType.MODULE,
         )
 
@@ -336,6 +343,7 @@ class ModuleItem(AstSymbolNode):
         AstSymbolNode.__init__(
             self,
             sym_name=alias.sym_name if alias else name.sym_name,
+            sym_name_node=alias if alias else name,
             sym_type=SymbolType.MOD_VAR,
         )
 
@@ -365,6 +373,7 @@ class Architype(AstSymbolNode, AstAccessNode):
         AstSymbolNode.__init__(
             self,
             sym_name=name.value,
+            sym_name_node=name,
             sym_type=SymbolType.OBJECT_ARCH
             if arch_type.value == Tok.KW_OBJECT
             else SymbolType.NODE_ARCH
@@ -396,7 +405,10 @@ class ArchDef(AstSymbolNode):
         self.body = body
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
-            self, sym_name=target.py_resolve_name(), sym_type=SymbolType.IMPL
+            self,
+            sym_name=target.py_resolve_name(),
+            sym_name_node=target,
+            sym_type=SymbolType.IMPL,
         )
 
 
@@ -420,7 +432,12 @@ class Enum(AstSymbolNode, AstAccessNode):
         self.base_classes = base_classes
         self.body = body
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(self, sym_name=name.value, sym_type=SymbolType.ENUM_ARCH)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=name.value,
+            sym_name_node=name,
+            sym_type=SymbolType.ENUM_ARCH,
+        )
         AstAccessNode.__init__(self, access=access)
 
 
@@ -442,7 +459,10 @@ class EnumDef(AstSymbolNode):
         self.decorators = decorators
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
-            self, sym_name=target.py_resolve_name(), sym_type=SymbolType.IMPL
+            self,
+            sym_name=target.py_resolve_name(),
+            sym_name_node=target,
+            sym_type=SymbolType.IMPL,
         )
 
 
@@ -475,7 +495,10 @@ class Ability(AstSymbolNode, AstAccessNode):
         self.body = body
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
-            self, sym_name=self.py_resolve_name(), sym_type=SymbolType.ABILITY
+            self,
+            sym_name=self.py_resolve_name(),
+            sym_name_node=name_ref,
+            sym_type=SymbolType.ABILITY,
         )
         AstAccessNode.__init__(self, access=access)
 
@@ -523,7 +546,10 @@ class AbilityDef(AstSymbolNode):
         self.decorators = decorators
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
-            self, sym_name=target.py_resolve_name(), sym_type=SymbolType.IMPL
+            self,
+            sym_name=target.py_resolve_name(),
+            sym_name_node=target,
+            sym_type=SymbolType.IMPL,
         )
 
 
@@ -595,7 +621,12 @@ class ParamVar(AstSymbolNode):
         self.type_tag = type_tag
         self.value = value
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(self, sym_name=name.value, sym_type=SymbolType.VAR)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=name.value,
+            sym_name_node=name,
+            sym_type=SymbolType.VAR,
+        )
 
 
 class ArchHas(AstAccessNode):
@@ -635,7 +666,12 @@ class HasVar(AstSymbolNode):
         self.type_tag = type_tag
         self.value = value
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(self, sym_name=name.value, sym_type=SymbolType.VAR)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=name.value,
+            sym_name_node=name,
+            sym_type=SymbolType.VAR,
+        )
 
 
 class TypedCtxBlock(AstNode):
@@ -1294,7 +1330,10 @@ class ArchRef(AstSymbolNode):
         self.arch = arch
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
-            self, sym_name=self.py_resolve_name(), sym_type=SymbolType.TYPE
+            self,
+            sym_name=self.py_resolve_name(),
+            sym_name_node=name_ref,
+            sym_type=SymbolType.TYPE,
         )
 
     def py_resolve_name(self) -> str:
@@ -1323,7 +1362,10 @@ class SpecialVarRef(AstSymbolNode):
         self.var = var
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
-            self, sym_name=self.py_resolve_name(), sym_type=SymbolType.VAR
+            self,
+            sym_name=self.py_resolve_name(),
+            sym_name_node=var,
+            sym_type=SymbolType.VAR,
         )
 
     def py_resolve_name(self) -> str:
@@ -1459,7 +1501,12 @@ class Name(Token, AstSymbolNode):
             pos_end=pos_end,
             kid=kid,
         )
-        AstSymbolNode.__init__(self, sym_name=value, sym_type=SymbolType.VAR)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=value,
+            sym_name_node=self,
+            sym_type=SymbolType.VAR,
+        )
 
 
 class Constant(Token):

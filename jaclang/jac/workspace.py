@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.passes.blue import DeclDefMatchPass
+from jaclang.jac.passes.blue import DefUsePass
 from jaclang.jac.symtable import Symbol, SymbolTable
 from jaclang.jac.transpiler import Alert, jac_str_to_pass
 
@@ -65,7 +65,7 @@ class Workspace:
                 jac_str=source,
                 file_path=file,
                 base_dir=self.path,
-                target=DeclDefMatchPass,
+                target=DefUsePass,
             )
             if not isinstance(build.ir, ast.Module):
                 self.modules[file] = ModuleInfo(
@@ -104,7 +104,7 @@ class Workspace:
             jac_str=source,
             file_path=file_path,
             base_dir=self.path,
-            target=DeclDefMatchPass,
+            target=DefUsePass,
         )
         if not isinstance(build.ir, ast.Module):
             self.modules[file_path] = ModuleInfo(
