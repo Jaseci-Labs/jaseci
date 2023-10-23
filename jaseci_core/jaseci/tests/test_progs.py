@@ -48,7 +48,7 @@ class ProgTests(TestCaseHelper, TestCase):
         self.assertFalse(report["success"])
         self.assertEqual(
             [
-                "test:aload - line 3, col 33 - rule expr_list - Only super master can load actions."
+                "test:aload - line 3, col 32 - rule ability_call - Only super master can load actions."
             ],
             report["errors"],
         )

@@ -52,26 +52,11 @@ class FileTest(CoreTest):
         self.assertEqual(
             {
                 "id": f"{uuid}",
-                "name": "tmp",
-                "content_type": None,
+                "name": "jaseci_bible.pdf",
+                "content_type": "application/pdf",
                 "field": None,
-                "absolute_name": f"{uuid}-tmp",
-                "absolute_path": f"/tmp/{uuid}-tmp",
-                "persist": False,
-            },
-            reps[1],
-        )
-
-        reps = self.call_walker("download_file")
-        uuid = reps[0]
-        self.assertEqual(
-            {
-                "id": f"{uuid}",
-                "name": "tmp",
-                "content_type": None,
-                "field": None,
-                "absolute_name": f"{uuid}-tmp",
-                "absolute_path": f"/tmp/{uuid}-tmp",
+                "absolute_name": f"{uuid}-jaseci_bible.pdf",
+                "absolute_path": f"/tmp/{uuid}-jaseci_bible.pdf",
                 "persist": False,
             },
             reps[1],
@@ -84,11 +69,11 @@ class FileTest(CoreTest):
         self.assertEqual(
             {
                 "id": f"{uuid}",
-                "name": "tmp",
-                "content_type": None,
+                "name": "jaseci_bible.pdf",
+                "content_type": "application/pdf",
                 "field": None,
-                "absolute_name": f"{uuid}-tmp",
-                "absolute_path": f"/tmp/{uuid}-tmp",
+                "absolute_name": f"{uuid}-jaseci_bible.pdf",
+                "absolute_path": f"/tmp/{uuid}-jaseci_bible.pdf",
                 "persist": False,
             },
             reps,
@@ -104,8 +89,8 @@ class FileTest(CoreTest):
                 "name": "jaseci_bible.pdf",
                 "content_type": "application/pdf",
                 "field": None,
-                "absolute_name": f"{uuid}-tmp",
-                "absolute_path": f"/tmp/{uuid}-tmp",
+                "absolute_name": f"{uuid}-jaseci_bible.pdf",
+                "absolute_path": f"/tmp/{uuid}-jaseci_bible.pdf",
                 "persist": False,
             },
             reps,
@@ -126,6 +111,6 @@ class FileTest(CoreTest):
         self.assertEqual({"test": 1}, kwargs["data"])
         self.assertEqual({"test": 2}, kwargs["headers"])
         self.assertEqual("file", kwargs["files"][0][0])
-        self.assertEqual("tmp", kwargs["files"][0][1][0])
+        self.assertEqual("jaseci_bible.pdf", kwargs["files"][0][1][0])
         self.assertIsInstance(kwargs["files"][0][1][1], BufferedReader)
-        self.assertIsNone(kwargs["files"][0][1][2])
+        self.assertEqual("application/pdf", kwargs["files"][0][1][2])

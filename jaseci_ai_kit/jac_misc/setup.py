@@ -7,6 +7,7 @@ MODULES = [
     "cluster",
     "ph",
     "openai",
+    "elastic_retrieval",
     "huggingface",
     "langchain",
     "forecast",
