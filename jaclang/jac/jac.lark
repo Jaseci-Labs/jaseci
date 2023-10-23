@@ -29,11 +29,7 @@ include_stmt: KW_INCLUDE sub_name import_path SEMI
 import_path: DOT? DOT? esc_name ((DOT esc_name)+)?
 import_items: (import_item COMMA)* import_item
 import_item: named_ref (KW_AS NAME)?
-
-architype: decorators? enum
-          | decorators? architype_def
-          | decorators? architype_decl
-
+architype: decorators? (enum | architype_def | architype_decl)
 architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
 
@@ -87,13 +83,7 @@ func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
 func_decl_params: (param_var COMMA)* param_var
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 member_block: LBRACE member_stmt* RBRACE
-
-member_stmt: doc_tag? py_code_block
-           | doc_tag? abstract_ability
-           | doc_tag? ability
-           | doc_tag? architype
-           | doc_tag? has_stmt
-
+member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt)
 has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
 typed_has_clause: esc_name type_tag (EQ expression)?
