@@ -2,6 +2,7 @@
 This module demonstrates a simple circle class and a function to calculate the area of a circle.
 (Module docstrings are optional but good practice in python)
 """
+from abc import ABC, abstractmethod
 from enum import Enum
 import math
 import unittest
@@ -29,12 +30,13 @@ class ShapeType(Enum):
     UNKNOWN = "Unknown"
 
 
-class Shape:
+class Shape(ABC):
     """Base class for a shape."""
 
     def __init__(self, shape_type: ShapeType):
         self.shape_type = shape_type
 
+    @abstractmethod
     def area(self) -> float:
         """Abstract method to calculate the area of a shape."""
         pass

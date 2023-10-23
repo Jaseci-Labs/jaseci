@@ -46,7 +46,7 @@ class AstNodeInfo:
         self.doc = cls.__doc__
         AstNodeInfo.type_map[self.name] = cls
         self.class_name_snake = pascal_to_snake(cls.__name__)
-        self.init_sig = inspect.signature(cls.__init__)
+        self.init_sig = inspect.signature(cls.__class__.__init__)
         self.kids: list[AstKidInfo] = []
         for param_name, param in self.init_sig.parameters.items():
             if param_name not in [

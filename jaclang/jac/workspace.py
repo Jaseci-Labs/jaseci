@@ -5,8 +5,9 @@ import os
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.blue import DefUsePass
+from jaclang.jac.passes.transform import Alert
 from jaclang.jac.symtable import Symbol, SymbolTable
-from jaclang.jac.transpiler import Alert, jac_str_to_pass
+from jaclang.jac.transpiler import jac_str_to_pass
 
 
 def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
