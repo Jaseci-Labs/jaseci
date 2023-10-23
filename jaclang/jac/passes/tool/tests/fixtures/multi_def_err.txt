@@ -1,5 +1,5 @@
 Module
-+-- Constant - """Test for base classes."""
++-- String - """Test for base classes."""
 +-- Architype
 |   +-- Token - object
 |   +-- Name - MyObject

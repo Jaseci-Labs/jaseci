@@ -105,14 +105,55 @@ class JacFormatPass(Pass):
         """
         self.emit(node, node.value)
 
-    def exit_constant(self, node: ast.Constant) -> None:
+    def enter_float(self, node: ast.Float) -> None:
         """Sub objects.
 
         name: str,
         value: str,
+        line: int,
         col_start: int,
         col_end: int,
-        typ: type,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def enter_int(self, node: ast.Int) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def enter_string(self, node: ast.String) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def enter_bool(self, node: ast.Bool) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
         """
         self.emit(node, node.value)
 
@@ -921,7 +962,7 @@ class JacFormatPass(Pass):
         self.emit(node, 'f"')
         if node.parts:
             for part in node.parts.items:
-                if isinstance(part, ast.Constant) and part.name in [
+                if isinstance(part, ast.String) and part.name in [
                     Tok.FSTR_PIECE,
                     Tok.FSTR_BESC,
                 ]:

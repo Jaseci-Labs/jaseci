@@ -143,7 +143,7 @@ class Module(AstNode):
         self,
         name: str,
         source: SourceString,
-        doc: Optional[Constant],
+        doc: Optional[String],
         body: list[ElementStmt],
         mod_path: str,
         rel_mod_path: str,
@@ -170,7 +170,7 @@ class GlobalVars(AstAccessNode):
         assignments: SubNodeList[Assignment],
         is_frozen: bool,
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
     ) -> None:
         """Initialize global var node."""
         self.doc = doc
@@ -216,7 +216,7 @@ class Test(AstSymbolNode):
         name: Name | Token,
         body: SubNodeList[CodeBlockStmt],
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
     ) -> None:
         """Initialize test node."""
         self.doc = doc
@@ -256,7 +256,7 @@ class ModuleCode(AstNode):
         name: Optional[SubTag[Name]],
         body: SubNodeList[CodeBlockStmt],
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
     ) -> None:
         """Initialize test node."""
         self.doc = doc
@@ -272,7 +272,7 @@ class PyInlineCode(AstNode):
         self,
         code: Token,
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
     ) -> None:
         """Initialize inline python code node."""
         self.doc = doc
@@ -291,7 +291,7 @@ class Import(AstSymbolNode):
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
         sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize import node."""
@@ -359,7 +359,7 @@ class Architype(AstSymbolNode, AstAccessNode):
         base_classes: Optional[SubNodeList[AtomType]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize object arch node."""
@@ -395,7 +395,7 @@ class ArchDef(AstSymbolNode):
         target: ArchRefChain,
         body: SubNodeList[ArchBlockStmt],
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize arch def node."""
@@ -422,7 +422,7 @@ class Enum(AstSymbolNode, AstAccessNode):
         base_classes: Optional[Optional[SubNodeList[AtomType]]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize object arch node."""
@@ -449,7 +449,7 @@ class EnumDef(AstSymbolNode):
         target: ArchRefChain,
         body: SubNodeList[EnumBlockStmt],
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize arch def node."""
@@ -480,7 +480,7 @@ class Ability(AstSymbolNode, AstAccessNode):
         signature: Optional[FuncSignature | ExprType | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt]],
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize func arch node."""
@@ -535,7 +535,7 @@ class AbilityDef(AstSymbolNode):
         signature: FuncSignature | EventSignature,
         body: SubNodeList[CodeBlockStmt],
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize ability def node."""
@@ -639,7 +639,7 @@ class ArchHas(AstAccessNode):
         vars: SubNodeList[HasVar],
         is_frozen: bool,
         kid: list[AstNode],
-        doc: Optional[Constant] = None,
+        doc: Optional[String] = None,
     ) -> None:
         """Initialize has statement node."""
         self.doc = doc
@@ -1100,30 +1100,42 @@ class IfElseExpr(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class MultiString(AstNode):
+class MultiString(AstSymbolNode):
     """ExprMultiString node type for Jac Ast."""
 
     def __init__(
         self,
-        strings: list[Constant | FString],
+        strings: list[String | FString],
         kid: list[AstNode],
     ) -> None:
         """Initialize multi string expression node."""
         self.strings = strings
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.STRING,
+        )
 
 
-class FString(AstNode):
+class FString(AstSymbolNode):
     """FString node type for Jac Ast."""
 
     def __init__(
         self,
-        parts: Optional[SubNodeList[Constant | ExprType]],
+        parts: Optional[SubNodeList[String | ExprType]],
         kid: list[AstNode],
     ) -> None:
         """Initialize fstring expression node."""
         self.parts = parts
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.STRING,
+        )
 
 
 class ExprList(AstNode):
@@ -1139,15 +1151,45 @@ class ExprList(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class ListVal(ExprList):
+class ListVal(AstSymbolNode):
     """ListVal node type for Jac Ast."""
 
+    def __init__(
+        self,
+        values: Optional[SubNodeList[ExprType]],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize value node."""
+        self.values = values
+        AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
-class SetVal(ExprList):
+
+class SetVal(AstSymbolNode):
     """SetVal node type for Jac Ast."""
 
+    def __init__(
+        self,
+        values: Optional[SubNodeList[ExprType]],
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize value node."""
+        self.values = values
+        AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
-class TupleVal(AstNode):
+
+class TupleVal(AstSymbolNode):
     """TupleVal node type for Jac Ast."""
 
     def __init__(
@@ -1158,9 +1200,15 @@ class TupleVal(AstNode):
         """Initialize tuple value node."""
         self.values = values
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
 
-class DictVal(AstNode):
+class DictVal(AstSymbolNode):
     """ExprDict node type for Jac Ast."""
 
     def __init__(
@@ -1171,6 +1219,12 @@ class DictVal(AstNode):
         """Initialize dict expression node."""
         self.kv_pairs = kv_pairs
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
 
 class KVPair(AstNode):
@@ -1208,7 +1262,7 @@ class InnerCompr(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class ListCompr(AstNode):
+class ListCompr(AstSymbolNode):
     """ListCompr node type for Jac Ast."""
 
     def __init__(
@@ -1219,6 +1273,12 @@ class ListCompr(AstNode):
         """Initialize comprehension expression node."""
         self.compr = compr
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
 
 class GenCompr(ListCompr):
@@ -1229,7 +1289,7 @@ class SetCompr(ListCompr):
     """SetCompr node type for Jac Ast."""
 
 
-class DictCompr(AstNode):
+class DictCompr(AstSymbolNode):
     """DictCompr node type for Jac Ast."""
 
     def __init__(
@@ -1246,6 +1306,12 @@ class DictCompr(AstNode):
         self.collection = collection
         self.conditional = conditional
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
 
 class AtomTrailer(AstNode):
@@ -1255,13 +1321,13 @@ class AtomTrailer(AstNode):
         self,
         target: AtomType,
         right: AtomType,
-        is_scope_contiar: bool,
+        is_scope_contained: bool,
         kid: list[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
-        self.is_scope_contiar = is_scope_contiar
+        self.is_scope_contained = is_scope_contained
         AstNode.__init__(self, kid=kid)
 
 
@@ -1297,7 +1363,7 @@ class FuncCall(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class IndexSlice(AstNode):
+class IndexSlice(AstSymbolNode):
     """IndexSlice node type for Jac Ast."""
 
     def __init__(
@@ -1314,6 +1380,12 @@ class IndexSlice(AstNode):
         self.step = step
         self.is_range = is_range
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_type=SymbolType.SEQUENCE,
+            sym_name_node=self,
+        )
 
 
 class ArchRef(AstSymbolNode):
@@ -1384,7 +1456,7 @@ class SpecialVarRef(AstSymbolNode):
             raise NotImplementedError("ICE: Special var reference not implemented")
 
 
-class EdgeOpRef(WalkerStmtOnlyNode):
+class EdgeOpRef(WalkerStmtOnlyNode, AstSymbolNode):
     """EdgeOpRef node type for Jac Ast."""
 
     def __init__(
@@ -1400,6 +1472,12 @@ class EdgeOpRef(WalkerStmtOnlyNode):
         self.edge_dir = edge_dir
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
 
 class DisconnectOp(WalkerStmtOnlyNode):
@@ -1433,7 +1511,7 @@ class ConnectOp(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class FilterCompr(AstNode):
+class FilterCompr(AstSymbolNode):
     """FilterCtx node type for Jac Ast."""
 
     def __init__(
@@ -1444,11 +1522,15 @@ class FilterCompr(AstNode):
         """Initialize filter_cond context expression node."""
         self.compares = compares
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=SymbolType.SEQUENCE,
+        )
 
 
-# AST Parse-Tree Node Types
-
-
+# AST Terminal Node Types
 # --------------------------
 class Token(AstNode):
     """Token node type for Jac Ast."""
@@ -1475,7 +1557,43 @@ class Token(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class Name(Token, AstSymbolNode):
+class TokenSymbol(Token, AstSymbolNode):
+    """TokenSymbol node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.VAR
+
+    def __init__(
+        self,
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        kid: list[AstNode],
+    ) -> None:
+        """Initialize token."""
+        Token.__init__(
+            self,
+            name=name,
+            value=value,
+            line=line,
+            col_start=col_start,
+            col_end=col_end,
+            pos_start=pos_start,
+            pos_end=pos_end,
+            kid=kid,
+        )
+        AstSymbolNode.__init__(
+            self,
+            sym_name=f"[{self.__class__.__name__}]",
+            sym_name_node=self,
+            sym_type=self.SYMBOL_TYPE,
+        )
+
+
+class Name(TokenSymbol):
     """Name node type for Jac Ast."""
 
     def __init__(
@@ -1489,7 +1607,7 @@ class Name(Token, AstSymbolNode):
         pos_end: int,
         kid: list[AstNode],
     ) -> None:
-        """Initialize name."""
+        """Initialize token."""
         Token.__init__(
             self,
             name=name,
@@ -1509,14 +1627,37 @@ class Name(Token, AstSymbolNode):
         )
 
 
-class Constant(Token):
-    """Constant node type for Jac Ast."""
+class Float(TokenSymbol):
+    """Float node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.NUMBER
 
 
-class BuiltinType(Token):
+class Int(TokenSymbol):
+    """Int node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.NUMBER
+
+
+class String(TokenSymbol):
+    """String node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.STRING
+
+
+class Bool(TokenSymbol):
+    """Bool node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.BOOL
+
+
+class BuiltinType(TokenSymbol):
     """Type node type for Jac Ast."""
 
+    SYMBOL_TYPE = SymbolType.VAR
 
+
+# ----------------
 class SourceString(Token):
     """SourceString node type for Jac Ast."""
 
@@ -1574,10 +1715,17 @@ NameType = Union[
     ArchRef,
 ]
 
-AtomType = Union[
-    NameType,
+LiteralType = Union[
     BuiltinType,
-    Constant,
+    Float,
+    Int,
+    String,
+    Bool,
+]
+
+AtomSymbolType = Union[
+    NameType,
+    LiteralType,
     MultiString,
     ListVal,
     TupleVal,
@@ -1587,10 +1735,14 @@ AtomType = Union[
     SetCompr,
     GenCompr,
     DictCompr,
-    AtomTrailer,
     EdgeOpRef,
     FilterCompr,
     IndexSlice,
+]
+
+AtomType = Union[
+    AtomSymbolType,
+    AtomTrailer,
     FuncCall,
     AtomUnit,
 ]

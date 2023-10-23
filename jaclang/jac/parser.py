@@ -115,7 +115,7 @@ class JacParser(Pass):
             module: (doc_tag? element (element_with_doc | element)*)?
             doc_tag (element_with_doc (element_with_doc | element)*)?
             """
-            doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
+            doc = kid[0] if len(kid) and isinstance(kid[0], ast.String) else None
             body = kid[1:] if doc else kid
             valid_body: list[ast.ElementStmt] = [
                 i for i in body if isinstance(i, ast.ElementStmt)
@@ -141,7 +141,7 @@ class JacParser(Pass):
 
             element_with_doc: doc_tag element
             """
-            if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.Constant):
+            if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.String):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
                 return self.nu(kid[1])
@@ -238,12 +238,12 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def doc_tag(self, kid: list[ast.AstNode]) -> ast.Constant:
+        def doc_tag(self, kid: list[ast.AstNode]) -> ast.String:
             """Grammar rule.
 
             doc_tag: ( STRING | DOC_STRING )
             """
-            if isinstance(kid[0], ast.Constant):
+            if isinstance(kid[0], ast.String):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
@@ -855,7 +855,7 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchBlockStmt):
                 return self.nu(kid[0])
             elif isinstance(kid[1], ast.ArchBlockStmt) and isinstance(
-                kid[0], ast.Constant
+                kid[0], ast.String
             ):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
@@ -1070,9 +1070,7 @@ class JacParser(Pass):
             elif isinstance(kid[0], ast.CodeBlockStmt):
                 kid[0].add_kids_right([kid[1]], pos_update=False)
                 return self.nu(kid[0])
-            elif isinstance(kid[1], valid_doc_types) and isinstance(
-                kid[0], ast.Constant
-            ):
+            elif isinstance(kid[1], valid_doc_types) and isinstance(kid[0], ast.String):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
                 return self.nu(kid[1])
@@ -1949,7 +1947,7 @@ class JacParser(Pass):
                     ast.AtomTrailer(
                         target=kid[0],
                         right=kid[1],
-                        is_scope_contiar=isinstance(kid[1], ast.FilterCompr),
+                        is_scope_contained=isinstance(kid[1], ast.FilterCompr),
                         kid=kid,
                     )
                 )
@@ -1973,7 +1971,7 @@ class JacParser(Pass):
                     ast.AtomTrailer(
                         target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
                         right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                        is_scope_contiar=True,
+                        is_scope_contained=True,
                         kid=kid,
                     )
                 )
@@ -2128,7 +2126,7 @@ class JacParser(Pass):
 
             multistring: (fstring | STRING)+
             """
-            valid_strs = [i for i in kid if isinstance(i, (ast.Constant, ast.FString))]
+            valid_strs = [i for i in kid if isinstance(i, (ast.String, ast.FString))]
             if len(valid_strs) == len(kid):
                 return self.nu(
                     ast.MultiString(
@@ -2161,17 +2159,14 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def fstr_parts(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.Constant | ast.ExprType]:
+        def fstr_parts(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.ExprType]:
             """Grammar rule.
 
             fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
             """
-            valid_types = Union[ast.Constant, ast.ExprType]
-            valid_parts = [i for i in kid if isinstance(i, valid_types)]
+            valid_parts = [i for i in kid if isinstance(i, ast.ExprType)]
             return self.nu(
-                ast.SubNodeList[ast.Constant | ast.ExprType](
+                ast.SubNodeList[ast.ExprType](
                     items=valid_parts,
                     kid=kid,
                 )
@@ -2913,19 +2908,21 @@ class JacParser(Pass):
             ret_type = ast.Token
             if token.type in [Tok.NAME, Tok.KWESC_NAME]:
                 ret_type = ast.Name
+
+            elif token.type == Tok.FLOAT:
+                ret_type = ast.Float
+            elif token.type in [Tok.INT, Tok.INT, Tok.HEX, Tok.BIN, Tok.OCT]:
+                ret_type = ast.Int
             elif token.type in [
-                Tok.FLOAT,
-                Tok.INT,
-                Tok.HEX,
-                Tok.BIN,
-                Tok.OCT,
+                Tok.STRING,
                 Tok.STRING,
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,
                 Tok.DOC_STRING,
             ]:
-                ret_type = ast.Constant
-
+                ret_type = ast.String
+            elif token.type == Tok.BOOL:
+                ret_type = ast.Bool
             return self.nu(
                 ret_type(
                     name=token.type,

@@ -22,7 +22,7 @@ object MyPrinter {
 (message: str) -> str {
     y = ".".join([i for i in range(10)]);
     output = f"from me: {message} {y}";
-    print("from me: {message}");
+    print(f"from me: {output}");
     return output;
 }
 
@@ -37,7 +37,7 @@ can your_print(messag: str) -> str {
 # Decl/Def Combined
 object YourPrinter {
     can your_print(messag: str) -> str {
-        output = f"from me: {message}";
+        output = f"from me: {messag}";
         print("from me: {message}");
         return output;
     }
