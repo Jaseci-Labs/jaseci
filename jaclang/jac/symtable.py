@@ -12,23 +12,23 @@ if TYPE_CHECKING:
 class SymbolType(Enum):
     """Symbol types."""
 
-    MODULE = "module"
-    MOD_VAR = "mod_var"
-    VAR = "var"
-    IMM_VAR = "immutable"
-    ABILITY = "ability"
-    OBJECT_ARCH = "object"
-    NODE_ARCH = "node"
-    EDGE_ARCH = "edge"
-    WALKER_ARCH = "walker"
-    ENUM_ARCH = "enum"
-    TEST = "test"
-    TYPE = "type"
-    IMPL = "impl"
-    HAS_VAR = "field"
-    METHOD = "method"
-    CONSTRUCTOR = "constructor"
-    ENUM_MEMBER = "enum_member"
+    MODULE = "module"  # LSP: Module
+    MOD_VAR = "mod_var"  # LSP: Variable
+    VAR = "var"  # LSP: Variable
+    IMM_VAR = "immutable"  # LSP: Constant
+    ABILITY = "ability"  # LSP: Function
+    OBJECT_ARCH = "object"  # LSP: Class
+    NODE_ARCH = "node"  # LSP: Class
+    EDGE_ARCH = "edge"  # LSP: Class
+    WALKER_ARCH = "walker"  # LSP: Class
+    ENUM_ARCH = "enum"  # LSP: Enum
+    TEST = "test"  # LSP: Function
+    TYPE = "type"  # LSP: TypeParameter
+    IMPL = "impl"  # LSP: Interface or Property
+    HAS_VAR = "field"  # LSP: Field
+    METHOD = "method"  # LSP: Method
+    CONSTRUCTOR = "constructor"  # LSP: Constructor
+    ENUM_MEMBER = "enum_member"  # LSP: EnumMember
 
     def __str__(self) -> str:
         """Stringify."""
