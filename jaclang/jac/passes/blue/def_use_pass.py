@@ -5,7 +5,7 @@ symbol table. This includes assignments, parameters, arch ref chains,
 and more. This pass also links the symbols in the AST to their corresponding
 sybmols in the symbol table (including uses).
 """
-from typing import Optional
+from typing import Optional, Sequence
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
@@ -83,6 +83,47 @@ class DefUsePass(Pass):
         self.handle_hit_outcome(node, also_link)
         return node.sym_link
 
+    def chain_def_insert(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
+        """Link chain of containing names to symbol."""
+        cur_sym_tab = node_list[0].sym_tab
+        node_list = node_list[:1]  # Just performs lookup mappings of pre assign chain
+        for i in node_list:
+            if cur_sym_tab is None:
+                break
+            cur_sym_tab = (
+                lookup.decl.sym_tab
+                if (
+                    lookup := self.use_lookup(
+                        i,
+                        sym_table=cur_sym_tab,
+                        also_link=[i.sym_name_node]
+                        if isinstance(i.sym_name_node, ast.AstSymbolNode)
+                        else [],
+                    )
+                )
+                else None
+            )
+
+    def chain_use_lookup(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
+        """Link chain of containing names to symbol."""
+        cur_sym_tab = node_list[0].sym_tab
+        for i in node_list:
+            if cur_sym_tab is None:
+                break
+            cur_sym_tab = (
+                lookup.decl.sym_tab
+                if (
+                    lookup := self.use_lookup(
+                        i,
+                        sym_table=cur_sym_tab,
+                        also_link=[i.sym_name_node]
+                        if isinstance(i.sym_name_node, ast.AstSymbolNode)
+                        else [],
+                    )
+                )
+                else None
+            )
+
     def handle_hit_outcome(
         self,
         node: ast.AstSymbolNode,
@@ -141,19 +182,7 @@ class DefUsePass(Pass):
 
         archs: list[ArchRef],
         """
-        cur_sym_tab = node.sym_tab
-        for i in node.archs:
-            if cur_sym_tab is None:
-                break
-            cur_sym_tab = (
-                lookup.decl.sym_tab
-                if (
-                    lookup := self.use_lookup(
-                        i, sym_table=cur_sym_tab, also_link=[i.name_ref]
-                    )
-                )
-                else None
-            )
+        self.chain_use_lookup(node.archs)
 
     def enter_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
@@ -211,8 +240,32 @@ class DefUsePass(Pass):
 
         target: AtomType,
         right: AtomType,
-        null_ok: bool,
+        is_scope_contained: bool,
         """
+        left = node.right if isinstance(node.right, ast.AtomTrailer) else node.target
+        right = node.target if isinstance(node.right, ast.AtomTrailer) else node.right
+        left = (
+            left.value if isinstance(left, ast.AtomUnit) and left.is_null_ok else left
+        )
+        trag_list: list[ast.AstSymbolNode] = []
+        while isinstance(left, ast.AtomTrailer) and left.is_scope_contained:
+            if not isinstance(right, ast.AtomSymbolType):
+                break
+            trag_list.insert(0, right)
+            old_left = left
+            left = (
+                old_left.right
+                if isinstance(old_left.right, ast.AtomTrailer)
+                else old_left.target
+            )
+            right = (
+                old_left.target
+                if isinstance(old_left.right, ast.AtomTrailer)
+                else old_left.right
+            )
+            left = left.value if isinstance(left, ast.AtomUnit) else left
+        trag_list.insert(0, left)
+        self.chain_use_lookup(trag_list)
 
     def enter_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -220,6 +273,7 @@ class DefUsePass(Pass):
         target: AtomType,
         params: Optional[SubNodeList[ExprType | Assignment]],
         """
+        self.use_lookup(node.target, also_link=[node.target])
 
     def enter_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.

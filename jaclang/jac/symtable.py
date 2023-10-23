@@ -29,6 +29,10 @@ class SymbolType(Enum):
     METHOD = "method"  # LSP: Method
     CONSTRUCTOR = "constructor"  # LSP: Constructor
     ENUM_MEMBER = "enum_member"  # LSP: EnumMember
+    NUMBER = "number"  # LSP: Number
+    STRING = "string"  # LSP: String
+    BOOL = "bool"  # LSP: Boolean
+    SEQUENCE = "sequence"  # LSP: Array
 
     def __str__(self) -> str:
         """Stringify."""
