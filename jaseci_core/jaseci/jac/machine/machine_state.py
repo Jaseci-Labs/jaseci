@@ -210,13 +210,21 @@ class MachineState:
     def inherit_runtime_state(self, mach):
         """Inherits runtime output state from another machine"""
         self.report += mach.report
+        mach.report = []
         if mach.report_status:
             self.report_status = mach.report_status
+            mach.report_status = None
         if mach.report_custom:
             self.report_custom = mach.report_custom
+            mach.report_custom = None
         if mach.report_file:
             self.report_file = mach.report_file
+            mach.report_file = None
         self.runtime_errors += mach.runtime_errors
+        mach.runtime_errors = []
+        mach.runtime_stack_trace = []
+        mach._loop_ctrl = None
+        mach._stopped = None
 
     def obj_set_to_jac_set(self, obj_set):
         """

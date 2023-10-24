@@ -297,14 +297,13 @@ class Elastic:
     # standard methods
     def generate_from_meta(self, meta: dict, override: dict, action: str = None):
         scope = meta["scope"].local_scope
-        interp = meta["interp"]
 
-        node = interp.current_node
         walker = scope["visitor"]
+        node = walker.current_node
 
         override_misc = override.get("misc")
         override["misc"] = {
-            "report": copy(interp.report),
+            "report": copy(walker.report),
             "node": node.serialize(detailed=False),
         }
 
@@ -313,7 +312,7 @@ class Elastic:
 
         master = meta["h"].get_obj(meta["m_id"], meta["m_id"]).master_self(True)
 
-        headers = interp.request_context.get("headers", {})
+        headers = walker.request_context.get("headers", {})
         if headers.get("Authorization"):
             del headers["Authorization"]
 
@@ -326,7 +325,7 @@ class Elastic:
             "node_id": node.jid,
             "master_id": master["jid"],
             "user": master.get("__meta__") or {"email": master["name"]},
-            "request_context": interp.request_context,
+            "request_context": walker.request_context,
             "data": walker.context,
         }
 
