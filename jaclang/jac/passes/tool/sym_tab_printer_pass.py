@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
+from jaclang.jac.symtable import SymbolTable
 
 
 class _SymbolTree:
@@ -30,7 +30,7 @@ class _SymbolTree:
 
 
 def _build_symbol_tree_common(
-    node: ast.SymbolTable, parent_node: Optional[_SymbolTree] = None
+    node: SymbolTable, parent_node: Optional[_SymbolTree] = None
 ) -> _SymbolTree:
     root = _SymbolTree(
         node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
@@ -68,7 +68,7 @@ class SymbolTablePrinterPass(Pass):
 
     def before_pass(self) -> None:
         """Initialize pass."""
-        if isinstance(self.ir.sym_tab, ast.SymbolTable):
+        if isinstance(self.ir.sym_tab, SymbolTable):
             root = _build_symbol_tree_common(self.ir.sym_tab)
             self._print_tree(root)
         self.terminate()
@@ -118,7 +118,7 @@ class SymbolTableDotGraphPass(Pass):
         self.__dot_lines: list[str] = []
         self.__id_map: dict[int, int] = {}
         self.__lase_id_used = 0
-        if isinstance(self.ir.sym_tab, ast.SymbolTable):
+        if isinstance(self.ir.sym_tab, SymbolTable):
             self.__gen_dot_graph(_build_symbol_tree_common(self.ir.sym_tab))
         self.terminate()
         return super().before_pass()
