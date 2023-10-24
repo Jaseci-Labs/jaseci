@@ -114,9 +114,14 @@ class PyAstBuildPass(Pass):
         )
         body = [self.proc_node(i) for i in node.body]
         valid_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
+        if len(valid_body) != len(body):
+            self.error("Length mismatch in function body")
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
+        doc = None
         decorators = [self.proc_node(i) for i in node.decorator_list]
         valid_decorators = [i for i in decorators if isinstance(i, ast.ExprType)]
+        if len(valid_decorators) != len(decorators):
+            self.error("Length mismatch in decorators on function")
         valid_decorators = (
             ast.SubNodeList[ast.ExprType](items=valid_decorators, kid=decorators)
             if len(valid_decorators)
@@ -144,6 +149,7 @@ class PyAstBuildPass(Pass):
             signature=sig,
             body=valid_body,
             decorators=valid_decorators,
+            doc=doc,
             kid=kid,
         )
 
@@ -173,50 +179,61 @@ class PyAstBuildPass(Pass):
             body: list[stmt]
             decorator_list: list[expr]
         """
-        # name = ast.Name(
-        #     name=Tok.NAME,
-        #     value=node.name,
-        #     line=node.lineno,
-        #     col_start=node.col_offset,
-        #     col_end=node.col_offset + len(node.name),
-        #     pos_start=0,
-        #     pos_end=0,
-        #     kid=[],
-        # )
-        # body = [self.proc_node(i) for i in node.body]
-        # valid_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
-        # valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
-        # decorators = [self.proc_node(i) for i in node.decorator_list]
-        # valid_decorators = [i for i in decorators if isinstance(i, ast.ExprType)]
-        # valid_decorators = (
-        #     ast.SubNodeList[ast.ExprType](items=valid_decorators, kid=decorators)
-        #     if len(valid_decorators)
-        #     else None
-        # )
-        # res = self.proc_node(node.args)
-        # sig: Optional[ast.FuncSignature] | ast.ExprType = (
-        #     res if isinstance(res, ast.FuncSignature) else None
-        # )
-        # ret_sig = self.proc_node(node.returns) if node.returns else None
-        # if isinstance(ret_sig, ast.ExprType):
-        #     if not sig:
-        #         sig = ret_sig
-        #     else:
-        #         sig.return_type = ast.SubTag[ast.ExprType](tag=ret_sig, kid=[ret_sig])
-        #         sig.add_kids_right([sig.return_type])
-        # kid = [name, sig, valid_body] if sig else [name, valid_body]
-        # return ast.Ability(
-        #     name_ref=name,
-        #     is_func=True,
-        #     is_async=False,
-        #     is_static=False,
-        #     is_abstract=False,
-        #     access=None,
-        #     signature=sig,
-        #     body=valid_body,
-        #     decorators=valid_decorators,
-        #     kid=kid,
-        # )
+        name = ast.Name(
+            name=Tok.NAME,
+            value=node.name,
+            line=node.lineno,
+            col_start=node.col_offset,
+            col_end=node.col_offset + len(node.name),
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        arch_type = ast.Token(
+            name=Tok.KW_OBJECT,
+            value="object",
+            line=node.lineno,
+            col_start=0,
+            col_end=0,
+            pos_start=0,
+            pos_end=0,
+            kid=[],
+        )
+        base_classes = [self.proc_node(base) for base in node.bases]
+        valid_bases = [base for base in base_classes if isinstance(base, ast.AtomType)]
+        if len(valid_bases) != len(base_classes):
+            self.error("Length mismatch in base classes")
+        valid_bases = (
+            ast.SubNodeList[ast.AtomType](items=valid_bases, kid=base_classes)
+            if len(valid_bases)
+            else None
+        )
+        body = [self.proc_node(i) for i in node.body]
+        valid_body = [i for i in body if isinstance(i, ast.ArchBlockStmt)]
+        if len(valid_body) != len(body):
+            self.error("Length mismatch in classes body")
+        valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid_body, kid=body)
+        doc = None
+        decorators = [self.proc_node(i) for i in node.decorator_list]
+        valid_decorators = [i for i in decorators if isinstance(i, ast.ExprType)]
+        if len(valid_decorators) != len(decorators):
+            self.error("Length mismatch in decorators in class")
+        valid_decorators = (
+            ast.SubNodeList[ast.ExprType](items=valid_decorators, kid=decorators)
+            if len(valid_decorators)
+            else None
+        )
+        kid = [name, valid_bases, valid_body] if valid_bases else [name, valid_body]
+        return ast.Architype(
+            arch_type=arch_type,
+            name=name,
+            access=None,
+            base_classes=valid_bases,
+            body=valid_body,
+            kid=kid,
+            doc=doc,
+            decorators=valid_decorators,
+        )
 
 
 # class Return(stmt):
