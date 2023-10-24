@@ -231,7 +231,7 @@ class MemoryHook:
 
         return cls
 
-    def clear_cache(self):
+    def clear_cache(self, all=False):
         MemoryHook.__init__(self)
 
     ####################################################

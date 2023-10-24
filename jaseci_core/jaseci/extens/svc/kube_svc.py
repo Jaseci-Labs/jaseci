@@ -1,5 +1,5 @@
 from base64 import b64decode
-
+from datetime import datetime
 from kubernetes import config as kubernetes_config
 from kubernetes.client import (
     ApiClient,
@@ -394,3 +394,39 @@ class KubeService(JsOrc.CommonService):
         placeholder_resolver(manifest, manifest)
 
         return manifest
+
+    def has_replicas(self):
+        try:
+            return (
+                self.read(
+                    "Deployment", "jaseci", self.namespace, quiet=self.quiet
+                ).spec.replicas
+                > 1
+            )
+        except Exception as e:
+            self.quiet or logger.error(f"Error checking jaseci replica -- {e}")
+
+    def restart(self):
+        try:
+            return self.api.patch_namespaced_deployment(
+                name="jaseci",
+                namespace=self.namespace,
+                body={
+                    "spec": {
+                        "template": {
+                            "metadata": {
+                                "annotations": {
+                                    "kubectl.kubernetes.io/restartedAt": datetime.utcnow().isoformat(
+                                        "T"
+                                    )
+                                    + "Z"
+                                }
+                            }
+                        }
+                    }
+                },
+            )
+        except ApiException as e:
+            self.quiet or logger.error(
+                f"Error triggering jaseci rollout restart -- {e}"
+            )
