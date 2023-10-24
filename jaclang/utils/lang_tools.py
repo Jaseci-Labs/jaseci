@@ -1,5 +1,6 @@
 """Language tools for the Jaclang project."""
 
+import ast as py_ast
 import inspect
 import os
 import sys
@@ -133,6 +134,21 @@ class AstTool:
             .replace("ForwardRef('", "")
             .replace("')", "")
         )
+        return output
+
+    def py_ast_nodes(self) -> str:
+        """List python ast nodes."""
+        visit_methods = [
+            method for method in dir(py_ast._Unparser) if method.startswith("visit_")  # type: ignore
+        ]
+        node_names = [method.replace("visit_", "") for method in visit_methods]
+        output = ""
+        for i in node_names:
+            nd = pascal_to_snake(i)
+            output += (
+                f"def proc_{nd}(self, node: py_ast.{i}) -> ast.AstNode:\n"
+                + '    """Process python node."""\n\n'
+            )
         return output
 
     def md_doc(self) -> str:

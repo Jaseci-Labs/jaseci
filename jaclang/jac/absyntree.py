@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ast as py_ast
 import pprint
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, Sequence, TypeVar, Union
 
 from jaclang.jac.codeloc import CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
@@ -14,7 +14,7 @@ from jaclang.jac.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
 class AstNode:
     """Abstract syntax tree node for Jac."""
 
-    def __init__(self, kid: list[AstNode]) -> None:
+    def __init__(self, kid: Sequence[AstNode]) -> None:
         """Initialize ast."""
         self.parent: Optional[AstNode] = None
         self.kid = [x.set_parent(self) for x in kid]
@@ -25,7 +25,9 @@ class AstNode:
         self.meta: dict = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
 
-    def add_kids_left(self, nodes: list[AstNode], pos_update: bool = True) -> AstNode:
+    def add_kids_left(
+        self, nodes: Sequence[AstNode], pos_update: bool = True
+    ) -> AstNode:
         """Add kid left."""
         self.kid = [*nodes, *self.kid]
         if pos_update:
@@ -34,7 +36,9 @@ class AstNode:
             self.loc.update_first_token(self.kid[0].loc.first_tok)
         return self
 
-    def add_kids_right(self, nodes: list[AstNode], pos_update: bool = True) -> AstNode:
+    def add_kids_right(
+        self, nodes: Sequence[AstNode], pos_update: bool = True
+    ) -> AstNode:
         """Add kid right."""
         self.kid = [*self.kid, *nodes]
         if pos_update:
@@ -43,7 +47,7 @@ class AstNode:
             self.loc.update_last_token(self.kid[-1].loc.last_tok)
         return self
 
-    def set_kids(self, nodes: list[AstNode]) -> AstNode:
+    def set_kids(self, nodes: Sequence[AstNode]) -> AstNode:
         """Set kids."""
         self.kid = nodes
         for i in nodes:
@@ -153,11 +157,11 @@ class Module(AstDocNode):
         name: str,
         source: JacSource,
         doc: Optional[String],
-        body: list[ElementStmt],
+        body: Sequence[ElementStmt],
         mod_path: str,
         rel_mod_path: str,
         is_imported: bool,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize whole program node."""
         self.name = name
@@ -178,7 +182,7 @@ class GlobalVars(AstAccessNode, AstDocNode):
         access: Optional[SubTag[Token]],
         assignments: SubNodeList[Assignment],
         is_frozen: bool,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
         """Initialize global var node."""
@@ -195,7 +199,7 @@ class SubTag(AstNode, Generic[T]):
     def __init__(
         self,
         tag: T,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize tag node."""
         self.tag = tag
@@ -207,8 +211,8 @@ class SubNodeList(AstNode, Generic[T]):
 
     def __init__(
         self,
-        items: list[T],
-        kid: list[AstNode],
+        items: Sequence[T],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize sub node list node."""
         self.items = items
@@ -224,7 +228,7 @@ class Test(AstSymbolNode, AstDocNode):
         self,
         name: Name | Token,
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
         """Initialize test node."""
@@ -264,7 +268,7 @@ class ModuleCode(AstDocNode):
         self,
         name: Optional[SubTag[Name]],
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
         """Initialize test node."""
@@ -280,7 +284,7 @@ class PyInlineCode(AstDocNode):
     def __init__(
         self,
         code: Token,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
         """Initialize inline python code node."""
@@ -299,7 +303,7 @@ class Import(AstSymbolNode, AstDocNode):
         alias: Optional[Name],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
         sub_module: Optional[Module] = None,
     ) -> None:
@@ -325,8 +329,8 @@ class ModulePath(AstNode):
 
     def __init__(
         self,
-        path: list[Token],
-        kid: list[AstNode],
+        path: Sequence[Token],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize module path node."""
         self.path = path
@@ -341,7 +345,7 @@ class ModuleItem(AstSymbolNode):
         self,
         name: Name,
         alias: Optional[Name],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         body: Optional[AstNode] = None,
     ) -> None:
         """Initialize module item node."""
@@ -367,7 +371,7 @@ class Architype(AstSymbolNode, AstAccessNode, AstDocNode):
         access: Optional[SubTag[Token]],
         base_classes: Optional[SubNodeList[AtomType]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
@@ -403,7 +407,7 @@ class ArchDef(AstSymbolNode, AstAccessNode, AstDocNode):
         self,
         target: ArchRefChain,
         body: SubNodeList[ArchBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
@@ -431,7 +435,7 @@ class Enum(AstSymbolNode, AstAccessNode, AstDocNode):
         access: Optional[SubTag[Token]],
         base_classes: Optional[Optional[SubNodeList[AtomType]]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
@@ -458,7 +462,7 @@ class EnumDef(AstSymbolNode, AstDocNode):
         self,
         target: ArchRefChain,
         body: SubNodeList[EnumBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
@@ -489,7 +493,7 @@ class Ability(AstSymbolNode, AstAccessNode, AstDocNode):
         access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | ExprType | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt]],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
@@ -544,7 +548,7 @@ class AbilityDef(AstSymbolNode, AstDocNode):
         target: ArchRefChain,
         signature: FuncSignature | EventSignature,
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
@@ -570,7 +574,7 @@ class FuncSignature(AstNode):
         self,
         params: Optional[SubNodeList[ParamVar]],
         return_type: Optional[SubTag[ExprType]],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize method signature node."""
         self.params = params
@@ -586,7 +590,7 @@ class EventSignature(AstNode):
         event: Token,
         arch_tag_info: Optional[ExprType],
         return_type: Optional[SubTag[ExprType]],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize event signature node."""
         self.event = event
@@ -600,8 +604,8 @@ class ArchRefChain(AstNode):
 
     def __init__(
         self,
-        archs: list[ArchRef],
-        kid: list[AstNode],
+        archs: Sequence[ArchRef],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize name list ."""
         self.archs = archs
@@ -623,7 +627,7 @@ class ParamVar(AstSymbolNode):
         unpack: Optional[Token],
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize param var node."""
         self.name = name
@@ -648,7 +652,7 @@ class ArchHas(AstAccessNode, AstDocNode):
         access: Optional[SubTag[Token]],
         vars: SubNodeList[HasVar],
         is_frozen: bool,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
         """Initialize has statement node."""
@@ -668,7 +672,7 @@ class HasVar(AstSymbolNode):
         name: Name,
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize has var node."""
         self.name = name
@@ -690,7 +694,7 @@ class TypedCtxBlock(AstNode):
         self,
         type_ctx: ExprType,
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize typed context block node."""
         self.type_ctx = type_ctx
@@ -707,7 +711,7 @@ class IfStmt(AstNode):
         body: SubNodeList[CodeBlockStmt],
         elseifs: Optional[ElseIfs],
         else_body: Optional[ElseStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize if statement node."""
         self.condition = condition
@@ -725,7 +729,7 @@ class ElseIfs(AstNode):
         condition: ExprType,
         body: SubNodeList[CodeBlockStmt],
         elseifs: Optional[ElseIfs],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize if statement node."""
         self.condition = condition
@@ -740,7 +744,7 @@ class ElseStmt(AstNode):
     def __init__(
         self,
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize else node."""
         self.body = body
@@ -755,7 +759,7 @@ class TryStmt(AstNode):
         body: SubNodeList[CodeBlockStmt],
         excepts: Optional[SubNodeList[Except]],
         finally_body: Optional[FinallyStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize try statement node."""
         self.body = body
@@ -772,7 +776,7 @@ class Except(AstNode):
         ex_type: ExprType,
         name: Optional[Token],
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize except node."""
         self.ex_type = ex_type
@@ -787,7 +791,7 @@ class FinallyStmt(AstNode):
     def __init__(
         self,
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize finally statement node."""
         self.body = body
@@ -803,7 +807,7 @@ class IterForStmt(AstNode):
         condition: ExprType,
         count_by: ExprType,
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize iter for node."""
         self.iter = iter
@@ -821,7 +825,7 @@ class InForStmt(AstNode):
         name_list: SubNodeList[Name],
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize in for node."""
         self.name_list = name_list
@@ -837,7 +841,7 @@ class WhileStmt(AstNode):
         self,
         condition: ExprType,
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize while statement node."""
         self.condition = condition
@@ -852,7 +856,7 @@ class WithStmt(AstNode):
         self,
         exprs: SubNodeList[ExprAsItem],
         body: SubNodeList[CodeBlockStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize with statement node."""
         self.exprs = exprs
@@ -867,7 +871,7 @@ class ExprAsItem(AstNode):
         self,
         expr: ExprType,
         alias: Optional[Name],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize module item node."""
         self.expr = expr
@@ -881,7 +885,7 @@ class RaiseStmt(AstNode):
     def __init__(
         self,
         cause: Optional[ExprType],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize raise statement node."""
         self.cause = cause
@@ -895,7 +899,7 @@ class AssertStmt(AstNode):
         self,
         condition: ExprType,
         error_msg: Optional[ExprType],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize assert statement node."""
         self.condition = condition
@@ -909,7 +913,7 @@ class CtrlStmt(AstNode):
     def __init__(
         self,
         ctrl: Token,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize control statement node."""
         self.ctrl = ctrl
@@ -921,8 +925,8 @@ class DeleteStmt(AstNode):
 
     def __init__(
         self,
-        target: ExprType,
-        kid: list[AstNode],
+        target: ExprList,
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize delete statement node."""
         self.target = target
@@ -935,7 +939,7 @@ class ReportStmt(AstNode):
     def __init__(
         self,
         expr: ExprType,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize report statement node."""
         self.expr = expr
@@ -948,7 +952,7 @@ class ReturnStmt(AstNode):
     def __init__(
         self,
         expr: Optional[ExprType],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize return statement node."""
         self.expr = expr
@@ -961,7 +965,7 @@ class YieldStmt(AstNode):
     def __init__(
         self,
         expr: Optional[ExprType],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize yeild statement node."""
         self.expr = expr
@@ -974,7 +978,7 @@ class IgnoreStmt(WalkerStmtOnlyNode):
     def __init__(
         self,
         target: ExprType,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize ignore statement node."""
         self.target = target
@@ -990,7 +994,7 @@ class VisitStmt(WalkerStmtOnlyNode):
         vis_type: Optional[SubNodeList[AtomType]],
         target: ExprType,
         else_body: Optional[ElseStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize visit statement node."""
         self.vis_type = vis_type
@@ -1007,7 +1011,7 @@ class RevisitStmt(WalkerStmtOnlyNode):
         self,
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize revisit statement node."""
         self.hops = hops
@@ -1021,7 +1025,7 @@ class DisengageStmt(WalkerStmtOnlyNode):
 
     def __init__(
         self,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize disengage statement node."""
         AstNode.__init__(self, kid=kid)
@@ -1034,7 +1038,7 @@ class AwaitStmt(AstNode):
     def __init__(
         self,
         target: ExprType,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize sync statement node."""
         self.target = target
@@ -1048,7 +1052,7 @@ class Assignment(AstNode):
         self,
         target: AtomType,
         value: ExprType,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
         is_static: bool = False,
         mutable: bool = True,
     ) -> None:
@@ -1068,7 +1072,7 @@ class BinaryExpr(AstNode):
         left: ExprType,
         right: ExprType,
         op: Token | DisconnectOp | ConnectOp,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize binary expression node."""
         self.left = left
@@ -1084,7 +1088,7 @@ class UnaryExpr(AstNode):
         self,
         operand: ExprType,
         op: Token,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize unary expression node."""
         self.operand = operand
@@ -1100,7 +1104,7 @@ class IfElseExpr(AstNode):
         condition: ExprType,
         value: ExprType,
         else_value: ExprType,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize if else expression node."""
         self.condition = condition
@@ -1114,8 +1118,8 @@ class MultiString(AstSymbolNode):
 
     def __init__(
         self,
-        strings: list[String | FString],
-        kid: list[AstNode],
+        strings: Sequence[String | FString],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize multi string expression node."""
         self.strings = strings
@@ -1134,7 +1138,7 @@ class FString(AstSymbolNode):
     def __init__(
         self,
         parts: Optional[SubNodeList[String | ExprType]],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize fstring expression node."""
         self.parts = parts
@@ -1153,7 +1157,7 @@ class ExprList(AstNode):
     def __init__(
         self,
         values: Optional[SubNodeList[ExprType]],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize expr value node."""
         self.values = values
@@ -1166,7 +1170,7 @@ class ListVal(AstSymbolNode):
     def __init__(
         self,
         values: Optional[SubNodeList[ExprType]],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize value node."""
         self.values = values
@@ -1185,7 +1189,7 @@ class SetVal(AstSymbolNode):
     def __init__(
         self,
         values: Optional[SubNodeList[ExprType]],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize value node."""
         self.values = values
@@ -1204,7 +1208,7 @@ class TupleVal(AstSymbolNode):
     def __init__(
         self,
         values: Optional[SubNodeList[ExprType | Assignment]],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize tuple value node."""
         self.values = values
@@ -1222,8 +1226,8 @@ class DictVal(AstSymbolNode):
 
     def __init__(
         self,
-        kv_pairs: list[KVPair],
-        kid: list[AstNode],
+        kv_pairs: Sequence[KVPair],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize dict expression node."""
         self.kv_pairs = kv_pairs
@@ -1243,7 +1247,7 @@ class KVPair(AstNode):
         self,
         key: ExprType,
         value: ExprType,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize key value pair expression node."""
         self.key = key
@@ -1260,7 +1264,7 @@ class InnerCompr(AstNode):
         names: SubNodeList[Name],
         collection: ExprType,
         conditional: Optional[ExprType],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
         self.out_expr = out_expr
@@ -1277,7 +1281,7 @@ class ListCompr(AstSymbolNode):
     def __init__(
         self,
         compr: InnerCompr,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
         self.compr = compr
@@ -1307,7 +1311,7 @@ class DictCompr(AstSymbolNode):
         names: SubNodeList[Name],
         collection: ExprType,
         conditional: Optional[ExprType],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
         self.kv_pair = kv_pair
@@ -1331,7 +1335,7 @@ class AtomTrailer(AstNode):
         target: AtomType,
         right: AtomType,
         is_scope_contained: bool,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
@@ -1348,7 +1352,7 @@ class AtomUnit(AstNode):
         value: AtomType | ExprType,
         is_paren: bool,
         is_null_ok: bool,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize atom unit expression node."""
         self.value = value
@@ -1364,7 +1368,7 @@ class FuncCall(AstNode):
         self,
         target: AtomType,
         params: Optional[SubNodeList[ExprType | Assignment]],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize function call expression node."""
         self.target = target
@@ -1381,7 +1385,7 @@ class IndexSlice(AstSymbolNode):
         stop: Optional[ExprType],
         step: Optional[ExprType],
         is_range: bool,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize index slice expression node."""
         self.start = start
@@ -1404,7 +1408,7 @@ class ArchRef(AstSymbolNode):
         self,
         name_ref: NameType,
         arch: Token,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize architype reference expression node."""
         self.name_ref = name_ref
@@ -1437,7 +1441,7 @@ class SpecialVarRef(AstSymbolNode):
     def __init__(
         self,
         var: Token,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize special var reference expression node."""
         self.var = var
@@ -1473,7 +1477,7 @@ class EdgeOpRef(WalkerStmtOnlyNode, AstSymbolNode):
         filter_type: Optional[ExprType],
         filter_cond: Optional[SubNodeList[BinaryExpr]],
         edge_dir: EdgeDir,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize edge op reference expression node."""
         self.filter_type = filter_type
@@ -1495,7 +1499,7 @@ class DisconnectOp(WalkerStmtOnlyNode):
     def __init__(
         self,
         edge_spec: EdgeOpRef,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize disconnect op reference expression node."""
         self.edge_spec = edge_spec
@@ -1511,7 +1515,7 @@ class ConnectOp(AstNode):
         conn_type: Optional[ExprType],
         conn_assign: Optional[SubNodeList[Assignment]],
         edge_dir: EdgeDir,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize connect op reference expression node."""
         self.conn_type = conn_type
@@ -1526,7 +1530,7 @@ class FilterCompr(AstSymbolNode):
     def __init__(
         self,
         compares: SubNodeList[BinaryExpr],
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""
         self.compares = compares
@@ -1553,7 +1557,7 @@ class Token(AstNode):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
         self.name = name
@@ -1580,7 +1584,7 @@ class TokenSymbol(Token, AstSymbolNode):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
         Token.__init__(
@@ -1614,7 +1618,7 @@ class Name(TokenSymbol):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        kid: list[AstNode],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
         Token.__init__(
