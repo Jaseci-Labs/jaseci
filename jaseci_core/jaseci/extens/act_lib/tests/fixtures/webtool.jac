@@ -5,7 +5,7 @@ walker get_meta_valid {
 }
 
 walker get_meta_need_auth {
-    has url = "https://docs.google.com/presentation/d/1lIYEuzzhZZ9PJaG_u3XgrFXX5Y6xd0zHV-aB2F8bXXU/edit";
+    has url = "https://github.com/settings/profile";
     can webtool.get_page_meta;
     report webtool.get_page_meta(url);
 }
@@ -26,5 +26,7 @@ walker get_meta_timeout {
 walker get_meta_need_header {
     has url = "https://www.invaluable.com/blog/what-is-a-mandala/";
     can webtool.get_page_meta;
-    report webtool.get_page_meta(url);
+    report webtool.get_page_meta(url, headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
+    });
 }
