@@ -221,7 +221,7 @@ class TaskServiceTest(TestCaseHelper, TestCase):
                         },
                         {
                             "method": "GET",
-                            "api": "https://jsonplaceholder.typicode.com/todos/100",
+                            "api": "https://dummyjson.com/products/1",
                             "save_to": "testing_nested",
                             "save_req_to": "req_testing_nested",
                         },
