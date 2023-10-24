@@ -38,11 +38,11 @@ class ImportPass(Pass):
                         continue
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)
-                elif i.lang.tag.value == "py" and not i.sub_module:
-                    mod = self.import_py_module(node=i, mod_path=node.mod_path)
-                    if not mod:
-                        continue
-                    i.sub_module = mod
+                # elif i.lang.tag.value == "py" and not i.sub_module:
+                #     mod = self.import_py_module(node=i, mod_path=node.mod_path)
+                #     if not mod:
+                #         continue
+                #     # i.sub_module = mod
                 self.enter_import(i)
             SubNodeTabPass(prior=self, mod_path=node.mod_path, input_ir=node)
         node.meta["sub_import_tab"] = self.import_table
