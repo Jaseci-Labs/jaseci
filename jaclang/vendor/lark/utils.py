@@ -212,7 +212,7 @@ def is_id_start(s: str) -> bool:
     return _test_unicode_category(s, _ID_START)
 
 
-def dedup_list(l: List[T]) -> List[T]:
+def dedup_list(l: Sequence[T]) -> List[T]:
     """Given a list (l) will removing duplicates from the list,
     preserving the original order of the list. Assumes that
     the list entries are hashable."""
@@ -262,7 +262,8 @@ def combine_alternatives(lists):
 
 
 try:
-    import atomicwrites
+    # atomicwrites doesn't have type bindings
+    import atomicwrites  # type: ignore[import]
 
     _has_atomicwrites = True
 except ImportError:

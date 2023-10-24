@@ -4,8 +4,10 @@ from typing import Iterator, List
 from copy import copy
 import warnings
 
-from jaclang.vendor.lark.exceptions import UnexpectedToken
-from jaclang.vendor.lark.lexer import Token, LexerThread
+from lark.exceptions import UnexpectedToken
+from lark.lexer import Token, LexerThread
+
+###{standalone
 
 
 class InteractiveParser:
@@ -164,3 +166,6 @@ class ImmutableInteractiveParser(InteractiveParser):
         """Convert to an ``InteractiveParser``."""
         p = copy(self)
         return InteractiveParser(p.parser, p.parser_state, p.lexer_thread)
+
+
+###}
