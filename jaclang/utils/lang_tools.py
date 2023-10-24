@@ -90,6 +90,7 @@ class AstTool:
                 "AstSymbolNode",
                 "AstAccessNode",
                 "TokenSymbol",
+                "AstDocNode",
             ]
         ]
         self.ast_classes = sorted(

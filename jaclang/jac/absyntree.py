@@ -123,6 +123,14 @@ class AstAccessNode(AstNode):
         )
 
 
+class AstDocNode(AstNode):
+    """Nodes that have access."""
+
+    def __init__(self, doc: Optional[String]) -> None:
+        """Initialize ast."""
+        self.doc: Optional[String] = doc
+
+
 class WalkerStmtOnlyNode(AstNode):
     """WalkerStmtOnlyNode node type for Jac Ast."""
 
@@ -136,7 +144,7 @@ T = TypeVar("T", bound=AstNode)
 
 # AST Mid Level Node Types
 # --------------------------
-class Module(AstNode):
+class Module(AstDocNode):
     """Whole Program node type for Jac Ast."""
 
     def __init__(
@@ -153,15 +161,15 @@ class Module(AstNode):
         """Initialize whole program node."""
         self.name = name
         self.source = source
-        self.doc = doc
         self.body = body
         self.mod_path = mod_path
         self.rel_mod_path = rel_mod_path
         self.is_imported = is_imported
         AstNode.__init__(self, kid=kid)
+        AstDocNode.__init__(self, doc=doc)
 
 
-class GlobalVars(AstAccessNode):
+class GlobalVars(AstAccessNode, AstDocNode):
     """GlobalVars node type for Jac Ast."""
 
     def __init__(
@@ -173,11 +181,11 @@ class GlobalVars(AstAccessNode):
         doc: Optional[String] = None,
     ) -> None:
         """Initialize global var node."""
-        self.doc = doc
         self.assignments = assignments
         self.is_frozen = is_frozen
         AstNode.__init__(self, kid=kid)
         AstAccessNode.__init__(self, access=access)
+        AstDocNode.__init__(self, doc=doc)
 
 
 class SubTag(AstNode, Generic[T]):
@@ -206,7 +214,7 @@ class SubNodeList(AstNode, Generic[T]):
         AstNode.__init__(self, kid=kid)
 
 
-class Test(AstSymbolNode):
+class Test(AstSymbolNode, AstDocNode):
     """Test node type for Jac Ast."""
 
     TEST_COUNT = 0
@@ -219,7 +227,6 @@ class Test(AstSymbolNode):
         doc: Optional[String] = None,
     ) -> None:
         """Initialize test node."""
-        self.doc = doc
         Test.TEST_COUNT += 1 if isinstance(name, Token) else 0
         self.name: Name = (  # for auto generated test names
             name
@@ -246,9 +253,10 @@ class Test(AstSymbolNode):
             sym_name_node=self.name,
             sym_type=SymbolType.TEST,
         )
+        AstDocNode.__init__(self, doc=doc)
 
 
-class ModuleCode(AstNode):
+class ModuleCode(AstDocNode):
     """Free mod code for Jac Ast."""
 
     def __init__(
@@ -259,13 +267,13 @@ class ModuleCode(AstNode):
         doc: Optional[String] = None,
     ) -> None:
         """Initialize test node."""
-        self.doc = doc
         self.name = name
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstDocNode.__init__(self, doc=doc)
 
 
-class PyInlineCode(AstNode):
+class PyInlineCode(AstDocNode):
     """Inline Python code node type for Jac Ast."""
 
     def __init__(
@@ -275,12 +283,12 @@ class PyInlineCode(AstNode):
         doc: Optional[String] = None,
     ) -> None:
         """Initialize inline python code node."""
-        self.doc = doc
         self.code = code
         AstNode.__init__(self, kid=kid)
+        AstDocNode.__init__(self, doc=doc)
 
 
-class Import(AstSymbolNode):
+class Import(AstSymbolNode, AstDocNode):
     """Import node type for Jac Ast."""
 
     def __init__(
@@ -295,7 +303,6 @@ class Import(AstSymbolNode):
         sub_module: Optional[Module] = None,
     ) -> None:
         """Initialize import node."""
-        self.doc = doc
         self.lang = lang
         self.path = path
         self.alias = alias
@@ -309,6 +316,7 @@ class Import(AstSymbolNode):
             sym_name_node=alias if alias else path,
             sym_type=SymbolType.MODULE,
         )
+        AstDocNode.__init__(self, doc=doc)
 
 
 class ModulePath(AstNode):
@@ -348,7 +356,7 @@ class ModuleItem(AstSymbolNode):
         )
 
 
-class Architype(AstSymbolNode, AstAccessNode):
+class Architype(AstSymbolNode, AstAccessNode, AstDocNode):
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
@@ -365,7 +373,6 @@ class Architype(AstSymbolNode, AstAccessNode):
         """Initialize object arch node."""
         self.name = name
         self.arch_type = arch_type
-        self.doc = doc
         self.decorators = decorators
         self.base_classes = base_classes
         self.body = body
@@ -375,19 +382,20 @@ class Architype(AstSymbolNode, AstAccessNode):
             sym_name=name.value,
             sym_name_node=name,
             sym_type=SymbolType.OBJECT_ARCH
-            if arch_type.value == Tok.KW_OBJECT
+            if arch_type.name == Tok.KW_OBJECT
             else SymbolType.NODE_ARCH
-            if arch_type.value == Tok.KW_NODE
+            if arch_type.name == Tok.KW_NODE
             else SymbolType.EDGE_ARCH
-            if arch_type.value == Tok.KW_EDGE
+            if arch_type.name == Tok.KW_EDGE
             else SymbolType.WALKER_ARCH
-            if arch_type.value == Tok.KW_WALKER
+            if arch_type.name == Tok.KW_WALKER
             else SymbolType.TYPE,
         )
         AstAccessNode.__init__(self, access=access)
+        AstDocNode.__init__(self, doc=doc)
 
 
-class ArchDef(AstSymbolNode):
+class ArchDef(AstSymbolNode, AstAccessNode, AstDocNode):
     """ArchDef node type for Jac Ast."""
 
     def __init__(
@@ -399,7 +407,6 @@ class ArchDef(AstSymbolNode):
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize arch def node."""
-        self.doc = doc
         self.decorators = decorators
         self.target = target
         self.body = body
@@ -410,9 +417,11 @@ class ArchDef(AstSymbolNode):
             sym_name_node=target,
             sym_type=SymbolType.IMPL,
         )
+        AstAccessNode.__init__(self, access=None)
+        AstDocNode.__init__(self, doc=doc)
 
 
-class Enum(AstSymbolNode, AstAccessNode):
+class Enum(AstSymbolNode, AstAccessNode, AstDocNode):
     """Enum node type for Jac Ast."""
 
     def __init__(
@@ -427,7 +436,6 @@ class Enum(AstSymbolNode, AstAccessNode):
     ) -> None:
         """Initialize object arch node."""
         self.name = name
-        self.doc = doc
         self.decorators = decorators
         self.base_classes = base_classes
         self.body = body
@@ -439,9 +447,10 @@ class Enum(AstSymbolNode, AstAccessNode):
             sym_type=SymbolType.ENUM_ARCH,
         )
         AstAccessNode.__init__(self, access=access)
+        AstDocNode.__init__(self, doc=doc)
 
 
-class EnumDef(AstSymbolNode):
+class EnumDef(AstSymbolNode, AstDocNode):
     """EnumDef node type for Jac Ast."""
 
     def __init__(
@@ -453,7 +462,6 @@ class EnumDef(AstSymbolNode):
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize arch def node."""
-        self.doc = doc
         self.target = target
         self.body = body
         self.decorators = decorators
@@ -464,9 +472,10 @@ class EnumDef(AstSymbolNode):
             sym_name_node=target,
             sym_type=SymbolType.IMPL,
         )
+        AstDocNode.__init__(self, doc=doc)
 
 
-class Ability(AstSymbolNode, AstAccessNode):
+class Ability(AstSymbolNode, AstAccessNode, AstDocNode):
     """Ability node type for Jac Ast."""
 
     def __init__(
@@ -489,7 +498,6 @@ class Ability(AstSymbolNode, AstAccessNode):
         self.is_async = is_async
         self.is_static = is_static
         self.is_abstract = is_abstract
-        self.doc = doc
         self.decorators = decorators
         self.signature = signature
         self.body = body
@@ -501,6 +509,7 @@ class Ability(AstSymbolNode, AstAccessNode):
             sym_type=SymbolType.ABILITY,
         )
         AstAccessNode.__init__(self, access=access)
+        AstDocNode.__init__(self, doc=doc)
 
     @property
     def is_method(self) -> bool:
@@ -526,7 +535,7 @@ class Ability(AstSymbolNode, AstAccessNode):
             raise NotImplementedError
 
 
-class AbilityDef(AstSymbolNode):
+class AbilityDef(AstSymbolNode, AstDocNode):
     """AbilityDef node type for Jac Ast."""
 
     def __init__(
@@ -539,7 +548,6 @@ class AbilityDef(AstSymbolNode):
         decorators: Optional[SubNodeList[ExprType]] = None,
     ) -> None:
         """Initialize ability def node."""
-        self.doc = doc
         self.target = target
         self.signature = signature
         self.body = body
@@ -551,6 +559,7 @@ class AbilityDef(AstSymbolNode):
             sym_name_node=target,
             sym_type=SymbolType.IMPL,
         )
+        AstDocNode.__init__(self, doc=doc)
 
 
 class FuncSignature(AstNode):
@@ -629,7 +638,7 @@ class ParamVar(AstSymbolNode):
         )
 
 
-class ArchHas(AstAccessNode):
+class ArchHas(AstAccessNode, AstDocNode):
     """HasStmt node type for Jac Ast."""
 
     def __init__(
@@ -642,13 +651,12 @@ class ArchHas(AstAccessNode):
         doc: Optional[String] = None,
     ) -> None:
         """Initialize has statement node."""
-        self.doc = doc
         self.is_static = is_static
         self.vars = vars
         self.is_frozen = is_frozen
-        self.doc = doc
         AstNode.__init__(self, kid=kid)
         AstAccessNode.__init__(self, access=access)
+        AstDocNode.__init__(self, doc=doc)
 
 
 class HasVar(AstSymbolNode):
