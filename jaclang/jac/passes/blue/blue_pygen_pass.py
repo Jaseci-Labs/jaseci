@@ -316,8 +316,8 @@ class BluePygenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
         if node.decorators:
-            for i in node.decorators.items:
-                self.emit_ln(node, "@" + i.meta["py_code"])
+            for dec in node.decorators.items:  # renamed 'd' to 'dec'
+                self.emit_ln(node, "@" + dec.meta["py_code"])
         if not node.base_classes:
             self.emit_ln(node, f"class {node.name.meta['py_code']}:")
         else:
@@ -332,28 +332,28 @@ class BluePygenPass(Pass):
         body = node.body.body if isinstance(node.body, ast.ArchDef) else node.body
         if body:
             init_func = None
-            for i in body.items:
-                if isinstance(i, ast.Ability) and i.py_resolve_name() == "__init__":
-                    init_func = i
+            for itm in body.items:  # renamed 'b' to 'itm'
+                if isinstance(itm, ast.Ability) and itm.py_resolve_name() == "__init__":
+                    init_func = itm
                     break
-            static_has_members = [
+            static_members = [
                 i for i in body.items if isinstance(i, ast.ArchHas) and i.is_static
             ]
-            for i in static_has_members:
-                self.emit(node, i.meta["py_code"])
+            for mem in static_members:  # renamed 'd' to 'mem'
+                self.emit(node, mem.meta["py_code"])
                 self.emit(node, "\n")
 
             if init_func and init_func.decorators:
-                for i in init_func.decorators.items:
-                    self.emit_ln(node, "@" + i.meta["py_code"])
+                for dec in init_func.decorators.items:  # renamed 'd' to 'dec'
+                    self.emit_ln(node, "@" + dec.meta["py_code"])
             self.emit_ln(node, "def __init__(self,")
             self.indent_level += 1
             if has_members := [
                 i for i in body.items if isinstance(i, ast.ArchHas) and not i.is_static
             ]:
-                for i in has_members:
-                    for j in i.vars.items:
-                        self.emit_ln(node, f"{j.name.meta['py_code']} = None,")
+                for mem in has_members:  # renamed 'd' to 'mem'
+                    for var in mem.vars.items:  # renamed 'j' to 'var'
+                        self.emit_ln(node, f"{var.name.meta['py_code']} = None,")
             if init_func and init_func.signature:
                 if "->" in init_func.signature.meta["py_code"]:
                     init_func.signature.meta["py_code"] = init_func.signature.meta[
@@ -364,19 +364,19 @@ class BluePygenPass(Pass):
             self.emit_ln(node, " *args, **kwargs):")
             if not init_func:
                 self.emit_ln(node, "super().__init__(*args, **kwargs)")
-            for i in has_members:
-                for j in i.vars.items:
-                    if j.value:
+            for mem in has_members:  # renamed 'd' to 'mem'
+                for var in mem.vars.items:  # renamed 'j' to 'var'
+                    if var.value:
                         self.emit_ln(
                             node,
-                            f"self.{j.name.meta['py_code']} = {j.value.meta['py_code']} "
-                            f"if {j.name.meta['py_code']} is "
-                            f"None else {j.name.meta['py_code']}",
+                            f"self.{var.name.meta['py_code']} = {var.value.meta['py_code']} "
+                            f"if {var.name.meta['py_code']} is "
+                            f"None else {var.name.meta['py_code']}",
                         )
                     else:
                         self.emit_ln(
                             node,
-                            f"self.{j.name.meta['py_code']} = {j.name.meta['py_code']}",
+                            f"self.{var.name.meta['py_code']} = {var.name.meta['py_code']}",
                         )
             if init_func and init_func.body:
                 ibody = (
@@ -387,9 +387,9 @@ class BluePygenPass(Pass):
                 self.nl_sep_node_list(ibody)
                 self.emit_ln(node, f"{ibody.meta['py_code']}")
             self.indent_level -= 1
-            for i in body.items:
-                if i not in has_members + static_has_members:
-                    self.emit(node, i.meta["py_code"])
+            for itm in body.items:  # renamed 'd' to 'itm'
+                if itm not in has_members + static_members:
+                    self.emit(node, itm.meta["py_code"])
                     self.emit(node, "\n")
         self.indent_level -= 1
 
@@ -413,8 +413,8 @@ class BluePygenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
         if node.decorators:
-            for i in node.decorators.items:
-                self.emit_ln(node, "@" + i.meta["py_code"])
+            for dec in node.decorators.items:  # Renamed 'i' to 'dec'
+                self.emit_ln(node, "@" + dec.meta["py_code"])
         if not node.base_classes:
             self.needs_enum()
             self.emit_ln(node, f"class {node.name.meta['py_code']}(__jac_Enum__):")
@@ -430,11 +430,11 @@ class BluePygenPass(Pass):
             self.emit_ln(node, node.doc.meta["py_code"])
         body = node.body.body if isinstance(node.body, ast.EnumDef) else node.body
         if body:
-            for i in body.items:
-                if isinstance(i, ast.Name):
-                    self.emit_ln(node, i.meta["py_code"] + " = __jac_auto__()")
+            for itm in body.items:  # Renamed 'i' to 'itm'
+                if isinstance(itm, ast.Name):
+                    self.emit_ln(node, itm.meta["py_code"] + " = __jac_auto__()")
                 else:
-                    self.emit_ln(node, i.meta["py_code"])
+                    self.emit_ln(node, itm.meta["py_code"])
         self.indent_level -= 1
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
@@ -465,8 +465,8 @@ class BluePygenPass(Pass):
         if node.is_method and ability_name == "__init__":
             return
         if node.decorators:
-            for i in node.decorators.items:
-                self.emit_ln(node, "@" + i.meta["py_code"])
+            for dec in node.decorators.items:  # Renamed 'i' to 'dec'
+                self.emit_ln(node, "@" + dec.meta["py_code"])
         if isinstance(node.signature, (ast.FuncSignature, ast.EventSignature)):
             if "->" in node.signature.meta["py_code"]:
                 node.signature.meta["py_code"] = node.signature.meta["py_code"].replace(

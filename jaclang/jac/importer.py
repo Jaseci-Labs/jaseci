@@ -8,12 +8,13 @@ from os import path
 from typing import Callable, Optional
 
 from jaclang.jac.constant import Constants as Con
+from jaclang.jac.passes.transform import Alert
 from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
 from jaclang.utils.helpers import handle_jac_error
 
 
 def import_jac_module(
-    transpiler_func: Callable,
+    transpiler_func: Callable[[str, str], list[Alert]],
     target: str,
     base_path: Optional[str] = None,
     cachable: bool = True,
@@ -51,7 +52,7 @@ def import_jac_module(
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
     else:
-        if transpiler_func(file_path=full_target, base_dir=caller_dir):
+        if transpiler_func(full_target, caller_dir):
             return None
         with open(py_file_path, "r") as f:
             code_string = f.read()
