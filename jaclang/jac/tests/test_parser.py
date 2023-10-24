@@ -1,6 +1,6 @@
 """Tests for Jac parser."""
 from jaclang.jac import jac_lark as jl
-from jaclang.jac.absyntree import SourceString
+from jaclang.jac.absyntree import JacSource
 from jaclang.jac.constant import Tokens
 from jaclang.jac.parser import JacParser
 from jaclang.utils.test import TestCaseMicroSuite
@@ -15,7 +15,7 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_fstring_escape_brace(self) -> None:
         """Test fstring escape brace."""
-        source = SourceString('global a=f"{{}}", not_b=4;')
+        source = JacSource('global a=f"{{}}", not_b=4;')
         prse = JacParser(mod_path="", input_ir=source, prior=None)
         self.assertFalse(prse.errors_had)
 
@@ -23,7 +23,7 @@ class TestLarkParser(TestCaseMicroSuite):
         """Parse micro jac file."""
         prse = JacParser(
             mod_path=filename,
-            input_ir=SourceString(self.file_to_str(filename)),
+            input_ir=JacSource(self.file_to_str(filename)),
             prior=None,
         )
         self.assertFalse(prse.errors_had)
@@ -32,7 +32,7 @@ class TestLarkParser(TestCaseMicroSuite):
         """Parse micro jac file."""
         prse = JacParser(
             mod_path="",
-            input_ir=SourceString(self.load_fixture("fam.jac")),
+            input_ir=JacSource(self.load_fixture("fam.jac")),
             prior=None,
         )
         self.assertFalse(prse.errors_had)
@@ -41,7 +41,7 @@ class TestLarkParser(TestCaseMicroSuite):
         """Parse micro jac file."""
         prse = JacParser(
             mod_path="",
-            input_ir=SourceString(self.load_fixture("../../../cli/impl/cli_impl.jac")),
+            input_ir=JacSource(self.load_fixture("../../../cli/impl/cli_impl.jac")),
             prior=None,
         )
         self.assertFalse(prse.errors_had)
@@ -50,7 +50,7 @@ class TestLarkParser(TestCaseMicroSuite):
         """Parse micro jac file."""
         prse = JacParser(
             mod_path="",
-            input_ir=SourceString(self.load_fixture("kwesc.jac")),
+            input_ir=JacSource(self.load_fixture("kwesc.jac")),
             prior=None,
         )
         self.assertFalse(prse.errors_had)
@@ -59,7 +59,7 @@ class TestLarkParser(TestCaseMicroSuite):
         """Parse micro jac file."""
         prse = JacParser(
             mod_path="",
-            input_ir=SourceString(self.load_fixture("mod_doc_test.jac")),
+            input_ir=JacSource(self.load_fixture("mod_doc_test.jac")),
             prior=None,
         )
         self.assertFalse(prse.errors_had)

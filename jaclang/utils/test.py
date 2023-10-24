@@ -121,12 +121,13 @@ class AstSyncTestMixin:
             not in [
                 "ast_node",
                 "walker_stmt_only_node",
-                "source_string",
+                "jac_source",
                 "empty_token",
                 "ast_symbol_node",
                 "ast_access_node",
                 "token_symbol",
                 "ast_doc_node",
+                "python_module_ast",
             ]
         ]
         pygen_func_names = []

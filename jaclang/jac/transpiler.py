@@ -72,7 +72,7 @@ def jac_str_to_pass(
     schedule: list[Type[T]] = pass_schedule,
 ) -> T:
     """Convert a Jac file to an AST."""
-    source = ast.SourceString(jac_str)
+    source = ast.JacSource(jac_str)
     ast_ret = JacParser(
         mod_path=file_path, input_ir=source, base_path=base_dir, prior=None
     )
@@ -96,7 +96,7 @@ def jac_file_formatter(
     """Convert a Jac file to an AST."""
     target = JacFormatPass
     with open(file_path) as file:
-        source = ast.SourceString(file.read())
+        source = ast.JacSource(file.read())
         prse = JacParser(
             mod_path=file_path, input_ir=source, base_path=base_dir, prior=None
         )

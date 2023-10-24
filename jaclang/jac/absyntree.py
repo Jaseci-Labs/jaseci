@@ -1,6 +1,7 @@
 """Abstract class for IR Passes for Jac."""
 from __future__ import annotations
 
+import ast as py_ast
 import pprint
 from typing import Generic, Optional, TypeVar, Union
 
@@ -150,7 +151,7 @@ class Module(AstDocNode):
     def __init__(
         self,
         name: str,
-        source: SourceString,
+        source: JacSource,
         doc: Optional[String],
         body: list[ElementStmt],
         mod_path: str,
@@ -1665,32 +1666,6 @@ class BuiltinType(TokenSymbol):
     SYMBOL_TYPE = SymbolType.VAR
 
 
-# ----------------
-class SourceString(Token):
-    """SourceString node type for Jac Ast."""
-
-    def __init__(
-        self,
-        source: str,
-    ) -> None:
-        """Initialize source string."""
-        super().__init__(
-            name="",
-            value=source,
-            line=0,
-            col_start=0,
-            col_end=0,
-            pos_start=0,
-            pos_end=0,
-            kid=[],
-        )
-
-    @property
-    def code(self) -> str:
-        """Return code."""
-        return self.value
-
-
 class EmptyToken(Token):
     """EmptyToken node type for Jac Ast."""
 
@@ -1706,6 +1681,36 @@ class EmptyToken(Token):
             pos_end=0,
             kid=[],
         )
+
+
+# ----------------
+class JacSource(EmptyToken):
+    """SourceString node type for Jac Ast."""
+
+    def __init__(
+        self,
+        source: str,
+    ) -> None:
+        """Initialize source string."""
+        super().__init__()
+        self.value = source
+
+    @property
+    def code(self) -> str:
+        """Return code."""
+        return self.value
+
+
+class PythonModuleAst(EmptyToken):
+    """SourceString node type for Jac Ast."""
+
+    def __init__(
+        self,
+        ast: py_ast.Module,
+    ) -> None:
+        """Initialize source string."""
+        super().__init__()
+        self.ast = ast
 
 
 # ----------------

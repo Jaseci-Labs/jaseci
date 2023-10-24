@@ -85,12 +85,13 @@ class AstTool:
                 "AstNode",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
-                "SourceString",
+                "JacCode",
                 "EmptyToken",
                 "AstSymbolNode",
                 "AstAccessNode",
                 "TokenSymbol",
                 "AstDocNode",
+                "PythonModuleAst",
             ]
         ]
         self.ast_classes = sorted(

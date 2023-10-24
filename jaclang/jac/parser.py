@@ -18,7 +18,7 @@ class JacParser(Pass):
 
     dev_mode = False
 
-    def before_pass(self, source: ast.SourceString) -> None:
+    def before_pass(self, source: ast.JacSource) -> None:
         """Initialize parser."""
         super().before_pass()
         self.source = source
@@ -26,7 +26,7 @@ class JacParser(Pass):
         if JacParser.dev_mode:
             JacParser.make_dev()
 
-    def transform(self, ir: ast.SourceString) -> Optional[ast.Module]:
+    def transform(self, ir: ast.JacSource) -> Optional[ast.Module]:
         """Transform input IR."""
         self.before_pass(ir)
         try:

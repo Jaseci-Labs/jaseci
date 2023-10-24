@@ -32,17 +32,18 @@ class ImportPass(Pass):
             for i in self.get_all_sub_nodes(node, ast.Import):
                 if i.lang.tag.value == "jac" and not i.sub_module:
                     self.run_again = True
-                    mod = self.import_module(node=i, mod_path=node.mod_path)
+                    mod = (
+                        self.import_module(node=i, mod_path=node.mod_path)
+                        if i.lang.tag.value == "jac"
+                        else self.import_py_module(node=i, mod_path=node.mod_path)
+                    )
                     if not mod:
                         self.run_again = False
                         continue
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)
-                # elif i.lang.tag.value == "py" and not i.sub_module:
-                #     mod = self.import_py_module(node=i, mod_path=node.mod_path)
-                #     if not mod:
-                #         continue
-                #     # i.sub_module = mod
+                # elif i.lang.tag.value == "py":
+                #     self.import_py_module(node=i, mod_path=node.mod_path)
                 self.enter_import(i)
             SubNodeTabPass(prior=self, mod_path=node.mod_path, input_ir=node)
         node.meta["sub_import_tab"] = self.import_table
@@ -101,10 +102,10 @@ class ImportPass(Pass):
             )
             return None
 
-    def import_py_module(
-        self, node: ast.Import, mod_path: str
-    ) -> ast.Module | py_ast.AST | None:
+    def import_py_module(self, node: ast.Import, mod_path: str) -> ast.Module | None:
         """Import a module."""
+        from jaclang.jac.passes.blue import PyAstBuildPass
+
         base_dir = path.dirname(mod_path)
 
         sys.path.append(base_dir)
@@ -117,7 +118,12 @@ class ImportPass(Pass):
                 if spec.origin in self.import_table:
                     return self.import_table[spec.origin]
                 with open(spec.origin, "r", encoding="utf-8") as f:
-                    mod = py_ast.parse(f.read())
+                    mod = PyAstBuildPass(
+                        mod_path=mod_path,
+                        input_ir=ast.PythonModuleAst(py_ast.parse(f.read())),
+                        base_path=base_dir,
+                        prior=None,
+                    ).ir
                 self.import_table[spec.origin] = mod
                 return mod
         except Exception as e:
