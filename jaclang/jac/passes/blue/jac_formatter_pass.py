@@ -81,82 +81,6 @@ class JacFormatPass(Pass):
             self.emit_ln(node, s)
             self.indent_level = ilev
 
-    def exit_token(self, node: ast.Token) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        """
-        if node.name != "SEMI":
-            self.emit(node, node.value)
-        else:
-            self.emit(node, "")
-
-    def exit_name(self, node: ast.Name) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        already_declared: bool,
-        """
-        self.emit(node, node.value)
-
-    def enter_float(self, node: ast.Float) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
-        self.emit(node, node.value)
-
-    def enter_int(self, node: ast.Int) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
-        self.emit(node, node.value)
-
-    def enter_string(self, node: ast.String) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
-        self.emit(node, node.value)
-
-    def enter_bool(self, node: ast.Bool) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
-        self.emit(node, node.value)
-
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
 
@@ -1357,6 +1281,82 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         self.ds_feature_warn()
+
+    def exit_token(self, node: ast.Token) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        """
+        if node.name != "SEMI":
+            self.emit(node, node.value)
+        else:
+            self.emit(node, "")
+
+    def exit_name(self, node: ast.Name) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        already_declared: bool,
+        """
+        self.emit(node, node.value)
+
+    def enter_float(self, node: ast.Float) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def enter_int(self, node: ast.Int) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def enter_string(self, node: ast.String) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def enter_bool(self, node: ast.Bool) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
 
     def exit_builtin_type(self, node: ast.BuiltinType) -> None:
         """Sub objects.
