@@ -24,6 +24,7 @@
 #
 #
 
+from copy import deepcopy
 from abc import ABC, abstractmethod
 from types import ModuleType
 from typing import (
@@ -85,6 +86,7 @@ EXTRACT_STANDALONE_FILES = [
     "parsers/lalr_analysis.py",
     "parsers/lalr_parser_state.py",
     "parsers/lalr_parser.py",
+    "parsers/lalr_interactive_parser.py",
     "parser_frontends.py",
     "lark.py",
     "indenter.py",
@@ -96,11 +98,11 @@ def extract_sections(lines):
     text = []
     sections = defaultdict(list)
     for line in lines:
-        line_check = line.strip()
-        if line_check.startswith("###"):
-            if line_check[3] == "{":
-                section = line_check[4:].strip()
-            elif line_check[3] == "}":
+        clean_line = line.strip()
+        if clean_line.startswith("###"):
+            if clean_line[3] == "{":
+                section = clean_line[4:].strip()
+            elif clean_line[3] == "}":
                 sections[section] += text
                 section = None
                 text = []

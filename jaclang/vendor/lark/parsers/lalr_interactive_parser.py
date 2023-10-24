@@ -7,6 +7,8 @@ import warnings
 from jaclang.vendor.lark.exceptions import UnexpectedToken
 from jaclang.vendor.lark.lexer import Token, LexerThread
 
+###{standalone
+
 
 class InteractiveParser:
     """InteractiveParser gives you advanced control over parsing and error handling when parsing with LALR.
@@ -164,3 +166,6 @@ class ImmutableInteractiveParser(InteractiveParser):
         """Convert to an ``InteractiveParser``."""
         p = copy(self)
         return InteractiveParser(p.parser, p.parser_state, p.lexer_thread)
+
+
+###}
