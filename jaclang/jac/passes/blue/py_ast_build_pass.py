@@ -66,7 +66,7 @@ class PyAstBuildPass(Pass):
         return self.nu(
             ast.Module(
                 name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
-                source=ast.JacSource(""),
+                source=ast.JacSource("", mod_path=self.mod_path),
                 doc=elements[0] if isinstance(elements[0], ast.String) else None,
                 body=valid,
                 is_imported=False,
