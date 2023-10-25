@@ -149,9 +149,16 @@ class Workspace:
         """Return a list of files in the workspace."""
         return list(self.modules.keys())
 
-    def get_dependencies(self, file_path: str) -> list[ast.Import]:
+    def get_dependencies(self, file_path: str, deep: bool = False) -> list[ast.Import]:
         """Return a list of dependencies for a file."""
-        return self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
+        if deep:
+            return self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
+        else:
+            return [
+                i
+                for i in self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
+                if i.mod_link and i.mod_link.mod_path == file_path
+            ]
 
     def get_symbols(self, file_path: str) -> list[Symbol]:
         """Return a list of symbols for a file."""
@@ -167,10 +174,7 @@ class Workspace:
         """Return a list of definitions for a file."""
         defs = []
         for i in self.get_symbols(file_path):
-            valid_defs = [
-                x for x in i.defn if x.mod_link and x.mod_link.mod_path == file_path
-            ]
-            defs += valid_defs
+            defs += i.defn
         return defs
 
     def get_uses(self, file_path: str) -> list[ast.AstSymbolNode]:  # need test
@@ -180,10 +184,5 @@ class Workspace:
             root_table = self.modules[file_path].ir.sym_tab
             if file_path in self.modules and isinstance(root_table, SymbolTable):
                 for i in sym_tab_list(sym_tab=root_table, file_path=file_path):
-                    valid_uses = [
-                        x
-                        for x in i.uses
-                        if x.mod_link and x.mod_link.mod_path == file_path
-                    ]
-                    uses += valid_uses
+                    uses += i.uses
         return uses

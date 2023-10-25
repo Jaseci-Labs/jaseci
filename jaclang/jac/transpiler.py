@@ -61,7 +61,13 @@ def jac_file_to_pass(
 ) -> T:
     """Convert a Jac file to an AST."""
     with open(file_path) as file:
-        return jac_str_to_pass(file.read(), file_path, base_dir, target, schedule)
+        return jac_str_to_pass(
+            jac_str=file.read(),
+            file_path=file_path,
+            base_dir=base_dir,
+            target=target,
+            schedule=schedule,
+        )
 
 
 def jac_str_to_pass(
