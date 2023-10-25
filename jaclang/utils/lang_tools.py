@@ -121,7 +121,7 @@ class AstTool:
 
             for kid in cls.kids:
                 emit(
-                    f"    {kid.name}: {kid.typ}{' ='+str(kid.default) if kid.default else ''},"
+                    f"    {kid.name}: {kid.typ}{' =' + str(kid.default) if kid.default else ''},"
                 )
 
             emit('    """\n')
@@ -138,17 +138,29 @@ class AstTool:
 
     def py_ast_nodes(self) -> str:
         """List python ast nodes."""
+        from jaclang.jac.passes.blue import PyAstBuildPass
+
         visit_methods = [
             method for method in dir(py_ast._Unparser) if method.startswith("visit_")  # type: ignore
         ]
         node_names = [method.replace("visit_", "") for method in visit_methods]
+        pass_func_names = []
+        for name, value in inspect.getmembers(PyAstBuildPass):
+            if name.startswith("proc_") and inspect.isfunction(value):
+                pass_func_names.append(name.replace("proc_", ""))
         output = ""
+        missing = []
         for i in node_names:
             nd = pascal_to_snake(i)
-            output += (
+            this_func = (
                 f"def proc_{nd}(self, node: py_ast.{i}) -> ast.AstNode:\n"
                 + '    """Process python node."""\n\n'
             )
+            if nd not in pass_func_names:
+                missing.append(this_func)
+            output += this_func
+        for i in missing:
+            output += f"# missing: \n{i}\n"
         return output
 
     def md_doc(self) -> str:

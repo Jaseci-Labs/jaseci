@@ -637,3 +637,15 @@ class PyAstBuildPass(Pass):
 
     def proc_withitem(self, node: py_ast.withitem) -> ast.AstNode:
         """Process python node."""
+
+    def proc_param_spec(self, node: py_ast.ParamSpec) -> ast.AstNode:
+        """Process python node."""
+
+    def proc_type_alias(self, node: py_ast.TypeAlias) -> ast.AstNode:
+        """Process python node."""
+
+    def proc_type_var(self, node: py_ast.TypeVar) -> ast.AstNode:
+        """Process python node."""
+
+    def proc_type_var_tuple(self, node: py_ast.TypeVarTuple) -> ast.AstNode:
+        """Process python node."""

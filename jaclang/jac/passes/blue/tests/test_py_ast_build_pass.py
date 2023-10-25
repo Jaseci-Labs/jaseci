@@ -14,7 +14,7 @@ class DefUsePassTests(TestCase):
         """Set up test."""
         return super().setUp()
 
-    def test_synced_to_py_ast(self) -> None:
+    def test_synced_to_latest_py_ast(self) -> None:
         """Basic test for pass."""
         visit_methods = [
             method for method in dir(py_ast._Unparser) if method.startswith("visit_")  # type: ignore
