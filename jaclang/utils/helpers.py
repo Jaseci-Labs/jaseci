@@ -17,7 +17,7 @@ def pascal_to_snake(pascal_string: str) -> str:
 def add_line_numbers(s: str) -> str:
     """Add line numbers to a string."""
     lines = s.split("\n")
-    return "\n".join(f"{i+1}: \t{line}" for i, line in enumerate(lines))
+    return "\n".join(f"{i + 1}: \t{line}" for i, line in enumerate(lines))
 
 
 def clip_code_section(s: str, target_line: int, line_range: int) -> str:
