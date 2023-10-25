@@ -20,7 +20,7 @@ class AstNode:
         self.kid = [x.set_parent(self) for x in kid]
         self.mod_link: Optional[Module] = None
         self.sym_tab: Optional[SymbolTable] = None
-        self._sub_node_tab: dict[type, list[AstNode]] = {}
+        self._sub_node_tab: dict[type, Sequence[AstNode]] = {}
         self._typ: type = type(None)
         self.meta: dict = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
@@ -72,13 +72,13 @@ class AstNode:
         else:
             raise ValueError(f"Empty kid for Token {type(self).__name__}")
 
-    def get_all_sub_nodes(self, typ: type[T], brute_force: bool = True) -> list[T]:
+    def get_all_sub_nodes(self, typ: type[T], brute_force: bool = True) -> Sequence[T]:
         """Get all sub nodes of type."""
         from jaclang.jac.passes import Pass
 
         return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
 
-    def to_dict(self) -> dict[str, Union[str, list[AstNode], int]]:
+    def to_dict(self) -> dict[str, Union[str, Sequence[AstNode], int]]:
         """Return dict representation of node."""
         ret = {
             "node": str(type(self).__name__),
