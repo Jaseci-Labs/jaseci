@@ -150,23 +150,13 @@ class SymTabPass(Pass):
         other_nodes: Optional[list[ast.AstNode]] = None,
     ) -> None:
         """Already declared error."""
-        mod_path = (
-            original.mod_link.rel_mod_path
-            if original.mod_link
-            else self.ice("Mod_link unknown")
-        )
         err_msg = (
             f"Name used for {typ} '{name}' already declared at "
-            f"{mod_path}, line {original.loc.first_line}"
+            f"{original.loc.mod_path}, line {original.loc.first_line}"
         )
         if other_nodes:
             for i in other_nodes:
-                mod_path = (
-                    i.mod_link.rel_mod_path
-                    if i.mod_link
-                    else self.ice("Mod_link unknown")
-                )
-                err_msg += f", also see {mod_path}, line {i.loc.first_line}"
+                err_msg += f", also see {i.loc.mod_path}, line {i.loc.first_line}"
         self.warning(err_msg)
 
 
@@ -204,7 +194,6 @@ class SymTabBuildPass(SymTabPass):
         doc: Token,
         body: Optional['Elements'],
         mod_path: str,
-        rel_mod_path: str,
         is_imported: bool,
         """
         self.push_scope(node.name, node, fresh=True)
@@ -217,7 +206,6 @@ class SymTabBuildPass(SymTabPass):
         doc: Token,
         body: Optional['Elements'],
         mod_path: str,
-        rel_mod_path: str,
         is_imported: bool,
         """
         self.pop_scope()

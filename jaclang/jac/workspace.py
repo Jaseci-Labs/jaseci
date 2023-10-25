@@ -17,7 +17,7 @@ def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> Sequence[SymbolTable]:
         [sym_tab]
         if not (
             isinstance(sym_tab.owner, ast.Module)
-            and sym_tab.owner.mod_path != file_path
+            and sym_tab.owner.loc.mod_path != file_path
         )
         else []
     )
@@ -75,9 +75,7 @@ class Workspace:
                         name="",
                         doc=None,
                         body=[],
-                        source=ast.JacSource(source),
-                        mod_path=file,
-                        rel_mod_path="",
+                        source=ast.JacSource(source, mod_path=file),
                         is_imported=False,
                         kid=[ast.EmptyToken()],
                     ),
@@ -114,9 +112,7 @@ class Workspace:
                     name="",
                     doc=None,
                     body=[],
-                    source=ast.JacSource(source),
-                    mod_path=file_path,
-                    rel_mod_path="",
+                    source=ast.JacSource(source, mod_path=file_path),
                     is_imported=False,
                     kid=[ast.EmptyToken()],
                 ),
@@ -160,7 +156,7 @@ class Workspace:
             return [
                 i
                 for i in self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
-                if i.mod_link and i.mod_link.mod_path == file_path
+                if i.loc.mod_path == file_path
             ]
 
     def get_symbols(self, file_path: str) -> Sequence[Symbol]:

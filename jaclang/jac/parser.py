@@ -18,6 +18,11 @@ class JacParser(Pass):
 
     dev_mode = False
 
+    def __init__(self, input_ir: ast.JacSource) -> None:
+        """Initialize parser."""
+        self.mod_path = input_ir.loc.mod_path
+        Pass.__init__(self, input_ir=input_ir, prior=None)
+
     def before_pass(self, source: ast.JacSource) -> None:
         """Initialize parser."""
         super().before_pass()
@@ -88,7 +93,6 @@ class JacParser(Pass):
             """Initialize transformer."""
             super().__init__(*args, **kwargs)
             self.parse_ref = parser
-            self.mod_link = None
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
@@ -126,12 +130,9 @@ class JacParser(Pass):
                     source=self.parse_ref.source,
                     doc=doc,
                     body=valid_body,
-                    mod_path=self.parse_ref.mod_path,
-                    rel_mod_path=self.parse_ref.rel_mod_path,
                     is_imported=False,
                     kid=kid,
                 )
-                self.mod_link = mod
                 return self.nu(mod)
             else:
                 raise self.ice()
@@ -988,6 +989,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.BuiltinType(
                         name=kid[0].name,
+                        file_path=self.parse_ref.mod_path,
                         value=kid[0].value,
                         line=kid[0].loc.first_line,
                         col_start=kid[0].loc.col_start,
@@ -2925,6 +2927,7 @@ class JacParser(Pass):
                 ret_type = ast.Bool
             return self.nu(
                 ret_type(
+                    file_path=self.parse_ref.mod_path,
                     name=token.type,
                     value=token.value,
                     line=token.line if token.line is not None else 0,

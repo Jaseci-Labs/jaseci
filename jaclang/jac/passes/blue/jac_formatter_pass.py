@@ -632,7 +632,7 @@ class JacFormatPass(Pass):
 
     def get_mod_index(self, node: ast.AstNode) -> int:
         """Get module index."""
-        path = node.mod_link.mod_path if node.mod_link else None
+        path = node.loc.mod_path
         if not path:
             return -1
         if path not in self.debuginfo["jac_mods"]:

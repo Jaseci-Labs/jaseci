@@ -1,7 +1,6 @@
 """Standardized transformation process and error interface."""
 from __future__ import annotations
 
-import os
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -15,19 +14,17 @@ from jaclang.utils.log import logging
 class Alert:
     """Alert interface."""
 
-    def __init__(self, msg: str, mod: str, loc: CodeLocInfo) -> None:
+    def __init__(self, msg: str, loc: CodeLocInfo) -> None:
         """Initialize alert."""
         self.msg = msg
-        self.mod = mod
         self.loc: CodeLocInfo = loc
 
     def __str__(self) -> str:
         """Return string representation of alert."""
-        try:
-            mod_path = os.path.relpath(self.mod, start=os.getcwd())
-        except ValueError:
-            mod_path = "<code_string>"
-        return f"{mod_path}, line {self.loc.first_line}, col {self.loc.col_start}: {self.msg}"
+        return (
+            f"{self.loc.mod_path}, line {self.loc.first_line},"
+            f" col {self.loc.col_start}: {self.msg}"
+        )
 
 
 class TransformError(Exception):
@@ -51,7 +48,7 @@ class TransformError(Exception):
             jac_err_line = (
                 errors[0].loc.first_line if len(errors) else warnings[0].loc.first_line
             )
-            with open(errors[0].mod, "r") as file:
+            with open(errors[0].loc.mod_path, "r") as file:
                 jac_code_string = file.read()
             message += f"\n{Con.JAC_ERROR_PREAMBLE}\n" + clip_code_section(
                 add_line_numbers(jac_code_string),
@@ -66,9 +63,7 @@ class Transform(ABC):
 
     def __init__(
         self,
-        mod_path: str,
         input_ir: AstNode,
-        base_path: str = "",
         prior: Optional[Transform] = None,
     ) -> None:
         """Initialize pass."""
@@ -76,10 +71,6 @@ class Transform(ABC):
         self.errors_had: list[Alert] = [] if not prior else prior.errors_had
         self.warnings_had: list[Alert] = [] if not prior else prior.warnings_had
         self.cur_node = input_ir  # tracks current node during traversal
-        self.mod_path = mod_path
-        self.rel_mod_path = (
-            mod_path.replace(base_path, "") if base_path else mod_path.split(os.sep)[-1]
-        )
         self.ir = self.transform(ir=input_ir)
 
     @abstractmethod
@@ -89,21 +80,13 @@ class Transform(ABC):
 
     def log_error(self, msg: str, node_override: Optional[AstNode] = None) -> None:
         """Pass Error."""
-        alrt = Alert(
-            msg,
-            self.mod_path,
-            self.cur_node.loc if not node_override else node_override.loc,
-        )
+        alrt = Alert(msg, self.cur_node.loc if not node_override else node_override.loc)
         self.errors_had.append(alrt)
         self.logger.error(str(alrt))
 
     def log_warning(self, msg: str, node_override: Optional[AstNode] = None) -> None:
         """Pass Error."""
-        alrt = Alert(
-            msg,
-            self.mod_path,
-            self.cur_node.loc if not node_override else node_override.loc,
-        )
+        alrt = Alert(msg, self.cur_node.loc if not node_override else node_override.loc)
         self.warnings_had.append(alrt)
         self.logger.warning(str(alrt))
 

@@ -5,7 +5,6 @@ Module -->|str| name
 Module -->|Token| doc
 Module -.->|'Elements'| body
 Module -->|str| mod_path
-Module -->|str| rel_mod_path
 Module -->|bool| is_imported
 ```
 

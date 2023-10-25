@@ -16,6 +16,11 @@ T = TypeVar("T", bound=ast.AstNode)
 class PyAstBuildPass(Pass):
     """Jac Parser."""
 
+    def __init__(self, input_ir: ast.PythonModuleAst) -> None:
+        """Initialize parser."""
+        self.mod_path = input_ir.loc.mod_path
+        Pass.__init__(self, input_ir=input_ir, prior=None)
+
     def nu(self, node: ast.T) -> ast.T:
         """Update node."""
         self.cur_node = node
@@ -64,8 +69,6 @@ class PyAstBuildPass(Pass):
                 source=ast.JacSource(""),
                 doc=elements[0] if isinstance(elements[0], ast.String) else None,
                 body=valid,
-                mod_path=self.mod_path,
-                rel_mod_path=self.rel_mod_path,
                 is_imported=False,
                 kid=elements,
             )
@@ -88,6 +91,7 @@ class PyAstBuildPass(Pass):
             type_params: list[type_param]
         """
         name = ast.Name(
+            file_path=self.mod_path,
             name=Tok.NAME,
             value=node.name,
             line=node.lineno,
@@ -171,6 +175,7 @@ class PyAstBuildPass(Pass):
             type_params: list[type_param]
         """
         name = ast.Name(
+            file_path=self.mod_path,
             name=Tok.NAME,
             value=node.name,
             line=node.lineno,
@@ -181,6 +186,7 @@ class PyAstBuildPass(Pass):
             kid=[],
         )
         arch_type = ast.Token(
+            file_path=self.mod_path,
             name=Tok.KW_OBJECT,
             value="object",
             line=node.lineno,

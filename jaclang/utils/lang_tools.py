@@ -55,7 +55,6 @@ class AstNodeInfo:
                 "parent",
                 "kid",
                 "line",
-                "mod_link",
                 "sym_tab",
             ]:
                 param_type = (

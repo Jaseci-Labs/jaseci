@@ -33,9 +33,9 @@ class ImportPass(Pass):
                 if i.lang.tag.value == "jac" and not i.sub_module:
                     self.run_again = True
                     mod = (
-                        self.import_module(node=i, mod_path=node.mod_path)
+                        self.import_module(node=i, mod_path=node.loc.mod_path)
                         if i.lang.tag.value == "jac"
-                        else self.import_py_module(node=i, mod_path=node.mod_path)
+                        else self.import_py_module(node=i, mod_path=node.loc.mod_path)
                     )
                     if not mod:
                         self.run_again = False
@@ -45,7 +45,7 @@ class ImportPass(Pass):
                 # elif i.lang.tag.value == "py":
                 #     self.import_py_module(node=i, mod_path=node.mod_path)
                 self.enter_import(i)
-            SubNodeTabPass(prior=self, mod_path=node.mod_path, input_ir=node)
+            SubNodeTabPass(prior=self, input_ir=node)
         node.meta["sub_import_tab"] = self.import_table
 
     def enter_import(self, node: ast.Import) -> None:
@@ -119,10 +119,7 @@ class ImportPass(Pass):
                     return self.import_table[spec.origin]
                 with open(spec.origin, "r", encoding="utf-8") as f:
                     mod = PyAstBuildPass(
-                        mod_path=mod_path,
-                        input_ir=ast.PythonModuleAst(py_ast.parse(f.read())),
-                        base_path=base_dir,
-                        prior=None,
+                        input_ir=ast.PythonModuleAst(py_ast.parse(f.read())), prior=None
                     ).ir
                 self.import_table[spec.origin] = mod
                 return mod

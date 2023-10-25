@@ -18,7 +18,6 @@ class AstNode:
         """Initialize ast."""
         self.parent: Optional[AstNode] = None
         self.kid = [x.set_parent(self) for x in kid]
-        self.mod_link: Optional[Module] = None
         self.sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, Sequence[AstNode]] = {}
         self._typ: type = type(None)
@@ -158,8 +157,6 @@ class Module(AstDocNode):
         source: JacSource,
         doc: Optional[String],
         body: Sequence[ElementStmt],
-        mod_path: str,
-        rel_mod_path: str,
         is_imported: bool,
         kid: Sequence[AstNode],
     ) -> None:
@@ -167,8 +164,6 @@ class Module(AstDocNode):
         self.name = name
         self.source = source
         self.body = body
-        self.mod_path = mod_path
-        self.rel_mod_path = rel_mod_path
         self.is_imported = is_imported
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
@@ -237,6 +232,7 @@ class Test(AstSymbolNode, AstDocNode):
             name
             if isinstance(name, Name)
             else Name(
+                file_path=name.file_path,
                 name="NAME",
                 value=f"test_t{Test.TEST_COUNT}",
                 col_start=name.loc.col_start,
@@ -1550,6 +1546,7 @@ class Token(AstNode):
 
     def __init__(
         self,
+        file_path: str,
         name: str,
         value: str,
         line: int,
@@ -1560,6 +1557,7 @@ class Token(AstNode):
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize token."""
+        self.file_path = file_path
         self.name = name
         self.value = value
         self.line_no = line
@@ -1577,6 +1575,7 @@ class TokenSymbol(Token, AstSymbolNode):
 
     def __init__(
         self,
+        file_path: str,
         name: str,
         value: str,
         line: int,
@@ -1589,6 +1588,7 @@ class TokenSymbol(Token, AstSymbolNode):
         """Initialize token."""
         Token.__init__(
             self,
+            file_path=file_path,
             name=name,
             value=value,
             line=line,
@@ -1611,6 +1611,7 @@ class Name(TokenSymbol):
 
     def __init__(
         self,
+        file_path: str,
         name: str,
         value: str,
         line: int,
@@ -1623,6 +1624,7 @@ class Name(TokenSymbol):
         """Initialize token."""
         Token.__init__(
             self,
+            file_path=file_path,
             name=name,
             value=value,
             line=line,
@@ -1677,6 +1679,7 @@ class EmptyToken(Token):
         """Initialize empty token."""
         super().__init__(
             name="EmptyToken",
+            file_path="",
             value="",
             line=0,
             col_start=0,
@@ -1691,13 +1694,11 @@ class EmptyToken(Token):
 class JacSource(EmptyToken):
     """SourceString node type for Jac Ast."""
 
-    def __init__(
-        self,
-        source: str,
-    ) -> None:
+    def __init__(self, source: str, mod_path: str) -> None:
         """Initialize source string."""
         super().__init__()
         self.value = source
+        self.file_path = mod_path
 
     @property
     def code(self) -> str:
@@ -1708,13 +1709,11 @@ class JacSource(EmptyToken):
 class PythonModuleAst(EmptyToken):
     """SourceString node type for Jac Ast."""
 
-    def __init__(
-        self,
-        ast: py_ast.Module,
-    ) -> None:
+    def __init__(self, ast: py_ast.Module, mod_path: str) -> None:
         """Initialize source string."""
         super().__init__()
         self.ast = ast
+        self.file_path = mod_path
 
 
 # ----------------

@@ -24,9 +24,7 @@ class DeclDefMatchPass(Pass):
 
     def after_pass(self) -> None:
         """Rebuild sub node table."""
-        self.ir = SubNodeTabPass(
-            prior=self, mod_path=self.mod_path, input_ir=self.ir
-        ).ir
+        self.ir = SubNodeTabPass(input_ir=self.ir, prior=self).ir
 
     def connect_def_impl(self, sym_tab: SymbolTable) -> None:
         """Connect Decls and Defs."""
