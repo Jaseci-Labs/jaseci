@@ -29,7 +29,7 @@ class SubNodeTabPass(Pass):
 
     def exit_module(self, node: ast.Module) -> None:
         """Update cur module."""
-        self.cur_module = node
+        self.cur_module = node.parent.mod_link if node.parent else None
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Table builder."""
