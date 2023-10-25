@@ -77,12 +77,15 @@ class PyAstBuildPass(Pass):
         """Process python node.
 
         class FunctionDef(stmt):
-            __match_args__ = ("name", "args", "body", "decorator_list", "returns")
+            __match_args__ = ("name", "args", "body", "decorator_list",
+                              "returns", "type_comment", "type_params")
             name: _Identifier
             args: arguments
             body: list[stmt]
             decorator_list: list[expr]
             returns: expr | None
+            if sys.version_info >= (3, 12):
+            type_params: list[type_param]
         """
         name = ast.Name(
             name=Tok.NAME,
@@ -139,12 +142,15 @@ class PyAstBuildPass(Pass):
         """Process python node.
 
         class AsyncFunctionDef(stmt):
-            __match_args__ = ("name", "args", "body", "decorator_list", "returns")
+            __match_args__ = ("name", "args", "body", "decorator_list",
+                              "returns", "type_comment", "type_params")
             name: _Identifier
             args: arguments
             body: list[stmt]
             decorator_list: list[expr]
             returns: expr | None
+            if sys.version_info >= (3, 12):
+                type_params: list[type_param]
         """
         ability = self.proc_function_def(node)
         ability.is_async = True
@@ -154,12 +160,15 @@ class PyAstBuildPass(Pass):
         """Process python node.
 
         class ClassDef(stmt):
-            __match_args__ = ("name", "bases", "keywords", "body", "decorator_list")
+            __match_args__ = ("name", "bases", "keywords", "body",
+                              "decorator_list", "type_params")
             name: _Identifier
             bases: list[expr]
             keywords: list[keyword]
             body: list[stmt]
             decorator_list: list[expr]
+            if sys.version_info >= (3, 12):
+            type_params: list[type_param]
         """
         name = ast.Name(
             name=Tok.NAME,
