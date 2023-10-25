@@ -167,7 +167,10 @@ class Workspace:
         """Return a list of definitions for a file."""
         defs = []
         for i in self.get_symbols(file_path):
-            defs += i.defn
+            valid_defs = [
+                x for x in i.defn if x.mod_link and x.mod_link.mod_path == file_path
+            ]
+            defs += valid_defs
         return defs
 
     def get_uses(self, file_path: str) -> list[ast.AstSymbolNode]:  # need test
@@ -177,5 +180,10 @@ class Workspace:
             root_table = self.modules[file_path].ir.sym_tab
             if file_path in self.modules and isinstance(root_table, SymbolTable):
                 for i in sym_tab_list(sym_tab=root_table, file_path=file_path):
-                    uses += i.uses
+                    valid_uses = [
+                        x
+                        for x in i.uses
+                        if x.mod_link and x.mod_link.mod_path == file_path
+                    ]
+                    uses += valid_uses
         return uses
