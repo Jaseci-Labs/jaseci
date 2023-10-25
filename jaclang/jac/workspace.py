@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from typing import Sequence
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.blue import DefUsePass
@@ -10,7 +11,7 @@ from jaclang.jac.symtable import Symbol, SymbolTable
 from jaclang.jac.transpiler import jac_str_to_pass
 
 
-def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
+def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> Sequence[SymbolTable]:
     """Iterate through symbol table."""
     sym_tabs = (
         [sym_tab]
@@ -31,8 +32,8 @@ class ModuleInfo:
     def __init__(
         self,
         ir: ast.Module,
-        errors: list[Alert],
-        warnings: list[Alert],
+        errors: Sequence[Alert],
+        warnings: Sequence[Alert],
     ) -> None:
         """Initialize module info."""
         self.ir = ir
@@ -145,11 +146,13 @@ class Workspace:
         """Delete a file from the workspace."""
         del self.modules[file_path]
 
-    def file_list(self) -> list[str]:
+    def file_list(self) -> Sequence[str]:
         """Return a list of files in the workspace."""
         return list(self.modules.keys())
 
-    def get_dependencies(self, file_path: str, deep: bool = False) -> list[ast.Import]:
+    def get_dependencies(
+        self, file_path: str, deep: bool = False
+    ) -> Sequence[ast.Import]:
         """Return a list of dependencies for a file."""
         if deep:
             return self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
@@ -160,7 +163,7 @@ class Workspace:
                 if i.mod_link and i.mod_link.mod_path == file_path
             ]
 
-    def get_symbols(self, file_path: str) -> list[Symbol]:
+    def get_symbols(self, file_path: str) -> Sequence[Symbol]:
         """Return a list of symbols for a file."""
         symbols = []
         if file_path in self.modules:
@@ -170,14 +173,16 @@ class Workspace:
                     symbols += list(i.tab.values())
         return symbols
 
-    def get_definitions(self, file_path: str) -> list[ast.AstSymbolNode]:  # need test
+    def get_definitions(
+        self, file_path: str
+    ) -> Sequence[ast.AstSymbolNode]:  # need test
         """Return a list of definitions for a file."""
         defs = []
         for i in self.get_symbols(file_path):
             defs += i.defn
         return defs
 
-    def get_uses(self, file_path: str) -> list[ast.AstSymbolNode]:  # need test
+    def get_uses(self, file_path: str) -> Sequence[ast.AstSymbolNode]:  # need test
         """Return a list of definitions for a file."""
         uses = []
         if file_path in self.modules:
