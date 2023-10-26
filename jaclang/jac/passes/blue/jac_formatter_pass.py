@@ -1,6 +1,9 @@
-"""JacFormatPass for Jaseci Ast."""
+"""JacFormatPass for Jaseci Ast.
 
-from typing import Any, List, Tuple
+This is a pass for formatting Jac code.
+"""
+
+from typing import Any, List, Optional, Tuple
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import constant
@@ -13,7 +16,7 @@ class JacFormatPass(Pass):
     """JacFormat Pass format Jac code."""
 
     def __init__(
-        self, comments: list = None, *args: Any, **kwargs: Any  # noqa
+        self, comments: Optional[list] = None, *args: Any, **kwargs: Any  # noqa
     ) -> None:  # noqa
         """Initialize Formatter."""
         self.comments = comments
@@ -110,41 +113,6 @@ class JacFormatPass(Pass):
             self.indent_level = 0
             self.emit_ln(node, s)
             self.indent_level = ilev
-
-    def exit_token(self, node: ast.Token) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        """
-        if node.name != "SEMI":
-            self.emit(node, node.value)
-        else:
-            self.emit(node, "")
-
-    def exit_name(self, node: ast.Name) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        already_declared: bool,
-        """
-        self.emit(node, node.value)
-
-    def exit_constant(self, node: ast.Constant) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        typ: type,
-        """
-        self.emit(node, node.value)
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
@@ -278,12 +246,13 @@ class JacFormatPass(Pass):
     def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
-        values: list[ExprType],
+        values: Optional[SubNodeList[ExprType]],
         """
         if node.values is not None:
             self.sep_node_list(node.values, delim=";")
             self.emit(
-                node, f"{', '.join([value.meta['jac_code'] for value in node.values])}"
+                node,
+                f"{', '.join([value.meta['jac_code'] for value in node.values.items])}",
             )
 
     def exit_multi_string(self, node: ast.MultiString) -> None:
@@ -449,7 +418,7 @@ class JacFormatPass(Pass):
                 can_name = (
                     node.name_ref.value
                     if isinstance(node.name_ref, ast.Name)
-                    else node.name_ref.var.value
+                    else node.name_ref.sym_name
                 )
                 if node.body:
                     self.emit(
@@ -472,9 +441,9 @@ class JacFormatPass(Pass):
                         fun_signature = f"can {node.name_ref.var.value}{node.signature.meta['jac_code']}"  # noqa
                 else:
                     if access_modifier:
-                        fun_signature = f"can:{access_modifier} {node.name_ref.value}{node.signature.meta['jac_code']}"  # noqa
+                        fun_signature = f"can:{access_modifier} {node.name_ref.sym_name}{node.signature.meta['jac_code']}"  # noqa
                     else:
-                        fun_signature = f"can {node.name_ref.value}{node.signature.meta['jac_code']}"  # noqa
+                        fun_signature = f"can {node.name_ref.sym_name}{node.signature.meta['jac_code']}"  # noqa
                 if node.body:
                     self.emit(node, f"{fun_signature}")
                     self.emit(node, node.body.meta["jac_code"])
@@ -553,7 +522,7 @@ class JacFormatPass(Pass):
         if isinstance(node.name_ref, ast.SpecialVarRef):
             self.emit(node, f"{node.arch.value}{node.name_ref.var.meta['jac_code']}")
         else:
-            self.emit(node, f"{node.arch.value}{node.name_ref.value}")
+            self.emit(node, f"{node.arch.value}{node.name_ref.sym_name}")
 
     def exit_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
@@ -618,26 +587,26 @@ class JacFormatPass(Pass):
         if node.body:
             self.emit(node, node.body.meta["jac_code"])
 
-    def exit_type_spec(self, node: ast.TypeSpec) -> None:
-        """Sub objects.
+    # def exit_type_spec(self, node: ast.TypeSpec) -> None:
+    #     """Sub objects.
 
-        spec_type: Token | SubNodeList[NameType],
-        list_nest: Optional[TypeSpec],  # needed for lists
-        dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
-        null_ok: bool = False,
-        """
-        if isinstance(node.spec_type, ast.SubNodeList):
-            self.comma_sep_node_list(node.spec_type)
+    #     spec_type: Token | SubNodeList[NameType],
+    #     list_nest: Optional[TypeSpec],  # needed for lists
+    #     dict_nest: Optional[TypeSpec],  # needed for dicts, uses list_nest as key
+    #     null_ok: bool = False,
+    #     """
+    #     if isinstance(node.spec_type, ast.SubNodeList):
+    #         self.comma_sep_node_list(node.spec_type)
 
-        if node.dict_nest:
-            self.emit(
-                node,
-                f"dict[{node.list_nest.meta['jac_code']}, {node.dict_nest.meta['jac_code']}]",  # noqa
-            )
-        elif node.list_nest:
-            self.emit(node, f"list[{node.list_nest.meta['jac_code']}]")
-        else:
-            self.emit(node, node.spec_type.meta["jac_code"])
+    #     if node.dict_nest:
+    #         self.emit(
+    #             node,
+    #             f"dict[{node.list_nest.meta['jac_code']}, {node.dict_nest.meta['jac_code']}]",  # noqa
+    #         )
+    #     elif node.list_nest:
+    #         self.emit(node, f"list[{node.list_nest.meta['jac_code']}]")
+    #     else:
+    #         self.emit(node, node.spec_type.meta["jac_code"])
 
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
@@ -646,30 +615,28 @@ class JacFormatPass(Pass):
         right: IndexSlice | ArchRefType | Token,
         null_ok: bool,
         """
-        if node.null_ok:
-            if isinstance(node.right, ast.IndexSlice):
-                self.emit(
-                    node,
-                    f"({node.target.meta['jac_code']}{node.right.meta['jac_code']} "
-                    f"if {node.target.meta['jac_code']} is not None else None)",
-                )
-            else:
-                self.emit(
-                    node,
-                    f"({node.target.meta['jac_code']}.{node.right.meta['jac_code']} "
-                    f"if {node.target.meta['jac_code']} is not None else None)",
-                )
+        if isinstance(node.right, ast.IndexSlice):
+            self.emit(
+                node,
+                f"{node.target.meta['jac_code']}{node.right.meta['jac_code']}",
+            )
         else:
-            if isinstance(node.right, ast.IndexSlice):
-                self.emit(
-                    node,
-                    f"{node.target.meta['jac_code']}{node.right.meta['jac_code']}",
-                )
-            else:
-                self.emit(
-                    node,
-                    f"{node.target.meta['jac_code']}.{node.right.meta['jac_code']}",
-                )
+            self.emit(
+                node,
+                f"{node.target.meta['jac_code']}.{node.right.meta['jac_code']}",
+            )
+
+    def exit_atom_unit(self, node: ast.AtomUnit) -> None:
+        """Sub objects.
+
+        value: AtomType | ExprType,
+        is_paren: bool,
+        is_null_ok: bool,
+        """
+        if node.is_paren:
+            self.emit(node, f"({node.value.meta['jac_code']})")
+        elif node.is_null_ok:
+            self.emit(node, f"{node.value.meta['jac_code']}?")
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
@@ -761,7 +728,6 @@ class JacFormatPass(Pass):
         value: Optional["ExprType"],
         """
         node.type_tag.meta["jac_code"] = node.type_tag.tag.meta["jac_code"]
-        self.comma_sep_node_list(node.type_tag.tag)
         if node.value:
             self.emit(
                 node,
@@ -772,7 +738,7 @@ class JacFormatPass(Pass):
 
     def get_mod_index(self, node: ast.AstNode) -> int:
         """Get module index."""
-        path = node.mod_link.mod_path if node.mod_link else None
+        path = node.loc.mod_path
         if not path:
             return -1
         if path not in self.debuginfo["jac_mods"]:
@@ -1008,13 +974,10 @@ class JacFormatPass(Pass):
                 f"{node.arch_type.value} {node.name.meta['jac_code']} ",
             )
         else:
-            for i in node.base_classes.items:
-                self.dot_sep_node_list(i.tag)
-                i.meta["jac_code"] = i.tag.meta["jac_code"]
             self.sep_node_list(node.base_classes, delim=":")
             self.emit(
                 node,
-                f"{node.arch_type.value} {node.name.meta['jac_code']}:{node.base_classes.meta['jac_code']} ",  # noqa
+                f"{node.arch_type.value} {node.name.meta['jac_code']}:{node.base_classes.meta['jac_code']}: ",  # noqa
             )
         body = node.body.body if isinstance(node.body, ast.ArchDef) else node.body
         if body:
@@ -1029,14 +992,15 @@ class JacFormatPass(Pass):
         parts: list["Token | ExprType"],
         """
         self.emit(node, 'f"')
-        for part in node.parts.items:
-            if isinstance(part, ast.Constant) and part.name in [
-                Tok.FSTR_PIECE,
-                Tok.FSTR_BESC,
-            ]:
-                self.emit(node, f"{part.meta['jac_code']}")
-            else:
-                self.emit(node, "{" + part.meta["jac_code"] + "}")
+        if node.parts:
+            for part in node.parts.items:
+                if isinstance(part, ast.String) and part.name in [
+                    Tok.FSTR_PIECE,
+                    Tok.FSTR_BESC,
+                ]:
+                    self.emit(node, f"{part.meta['jac_code']}")
+                else:
+                    self.emit(node, "{" + part.meta["jac_code"] + "}")
         self.emit(node, '"')
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
@@ -1457,6 +1421,82 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         self.ds_feature_warn()
+
+    def exit_token(self, node: ast.Token) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        """
+        if node.name != "SEMI":
+            self.emit(node, node.value)
+        else:
+            self.emit(node, "")
+
+    def exit_name(self, node: ast.Name) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        already_declared: bool,
+        """
+        self.emit(node, node.value)
+
+    def enter_float(self, node: ast.Float) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def enter_int(self, node: ast.Int) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def enter_string(self, node: ast.String) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def enter_bool(self, node: ast.Bool) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
 
     def exit_builtin_type(self, node: ast.BuiltinType) -> None:
         """Sub objects.

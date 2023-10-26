@@ -1,45 +1,25 @@
-"""Ast build pass for Jaseci Ast."""
-from typing import Optional
+"""Ast build pass for Jaseci Ast.
 
+This pass adds a more complete set of symbols from the AST to the
+symbol table. This includes assignments, parameters, arch ref chains,
+and more. This pass also links the symbols in the AST to their corresponding
+sybmols in the symbol table (including uses).
+"""
 import jaclang.jac.absyntree as ast
-from jaclang.jac.passes import Pass
-
-# from jaclang.jac.symtable import SymbolHitType as Sht, SymbolType as St
+from jaclang.jac.passes.blue.sym_tab_build_pass import SymTabPass
 
 
-class DefUsePass(Pass):
+class DefUsePass(SymTabPass):
     """Jac Ast build pass."""
 
-    def before_pass(self) -> None:
-        """Before pass."""
-        self.marked: list[ast.AstSymbolNode] = []
-
-    def already_declared_err(
-        self,
-        name: str,
-        typ: str,
-        original: ast.AstNode,
-        other_nodes: Optional[list[ast.AstNode]] = None,
-    ) -> None:
-        """Already declared error."""
-        mod_path = (
-            original.mod_link.rel_mod_path
-            if original.mod_link
-            else self.ice("Mod_link unknown")
-        )
-        err_msg = (
-            f"Name used for {typ} '{name}' already declared at "
-            f"{mod_path}, line {original.loc.first_line}"
-        )
-        if other_nodes:
-            for i in other_nodes:
-                mod_path = (
-                    i.mod_link.rel_mod_path
-                    if i.mod_link
-                    else self.ice("Mod_link unknown")
+    def after_pass(self) -> None:
+        """After pass."""
+        for i in self.unlinked:
+            if not i.sym_name.startswith("["):
+                self.warning(
+                    f"{i.sym_name} used before being defined.",
+                    node_override=i,
                 )
-                err_msg += f", also see {mod_path}, line {i.loc.first_line}"
-        self.warning(err_msg)
 
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
@@ -47,35 +27,24 @@ class DefUsePass(Pass):
         name_ref: NameType,
         arch: Token,
         """
-        # if node in self.marked:
-        #     return
-        # self.marked.append(node)
-        # node.sym_link = node.sym_tab.lookup(node.sym_name)
+        self.use_lookup(node, also_link=[node.name_ref])
 
     def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
 
         archs: list[ArchRef],
         """
+        self.chain_use_lookup(node.archs)
 
     def enter_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
 
         name: Name,
         unpack: Optional[Token],
-        type_tag: SubTag[SubNodeList[TypeSpec]],
+        type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
-
-    def enter_arch_has(self, node: ast.ArchHas) -> None:
-        """Sub objects.
-
-        is_static: bool,
-        access: Optional[SubTag[Token]],
-        vars: SubNodeList[HasVar],
-        is_frozen: bool,
-        doc: Optional[Constant],
-        """
+        self.def_insert(node, single_use="func param", also_link=[node.name])
 
     def enter_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
@@ -84,259 +53,33 @@ class DefUsePass(Pass):
         type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         """
-
-    def enter_type_spec(self, node: ast.TypeSpec) -> None:
-        """Sub objects.
-
-        spec_type: Token | SubNodeList[NameType],
-        list_nest: Optional[TypeSpec],
-        dict_nest: Optional[TypeSpec],
-        null_ok: bool,
-        """
-
-    def enter_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
-        """Sub objects.
-
-        type_ctx: SubNodeList[TypeSpec],
-        body: SubNodeList[CodeBlockStmt],
-        """
-
-    def enter_if_stmt(self, node: ast.IfStmt) -> None:
-        """Sub objects.
-
-        condition: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        elseifs: Optional[ElseIfs],
-        else_body: Optional[ElseStmt],
-        """
-
-    def enter_else_ifs(self, node: ast.ElseIfs) -> None:
-        """Sub objects.
-
-        condition: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        elseifs: Optional[ElseIfs],
-        """
-
-    def enter_else_stmt(self, node: ast.ElseStmt) -> None:
-        """Sub objects.
-
-        body: SubNodeList[CodeBlockStmt],
-        """
-
-    def enter_try_stmt(self, node: ast.TryStmt) -> None:
-        """Sub objects.
-
-        body: SubNodeList[CodeBlockStmt],
-        excepts: Optional[SubNodeList[Except]],
-        finally_body: Optional[FinallyStmt],
-        """
-
-    def enter_except(self, node: ast.Except) -> None:
-        """Sub objects.
-
-        ex_type: ExprType,
-        name: Optional[Token],
-        body: SubNodeList[CodeBlockStmt],
-        """
-
-    def enter_finally_stmt(self, node: ast.FinallyStmt) -> None:
-        """Sub objects.
-
-        body: SubNodeList[CodeBlockStmt],
-        """
-
-    def enter_iter_for_stmt(self, node: ast.IterForStmt) -> None:
-        """Sub objects.
-
-        iter: Assignment,
-        condition: ExprType,
-        count_by: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        """
-
-    def enter_in_for_stmt(self, node: ast.InForStmt) -> None:
-        """Sub objects.
-
-        name_list: SubNodeList[Name],
-        collection: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        """
-
-    def enter_while_stmt(self, node: ast.WhileStmt) -> None:
-        """Sub objects.
-
-        condition: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        """
-
-    def enter_with_stmt(self, node: ast.WithStmt) -> None:
-        """Sub objects.
-
-        exprs: SubNodeList[ExprAsItem],
-        body: SubNodeList[CodeBlockStmt],
-        """
-
-    def enter_expr_as_item(self, node: ast.ExprAsItem) -> None:
-        """Sub objects.
-
-        expr: ExprType,
-        alias: Optional[Name],
-        """
-
-    def enter_raise_stmt(self, node: ast.RaiseStmt) -> None:
-        """Sub objects.
-
-        cause: Optional[ExprType],
-        """
-
-    def enter_assert_stmt(self, node: ast.AssertStmt) -> None:
-        """Sub objects.
-
-        condition: ExprType,
-        error_msg: Optional[ExprType],
-        """
-
-    def enter_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
-        """Sub objects.
-
-        ctrl: Token,
-        """
-
-    def enter_delete_stmt(self, node: ast.DeleteStmt) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        """
-
-    def enter_report_stmt(self, node: ast.ReportStmt) -> None:
-        """Sub objects.
-
-        expr: ExprType,
-        """
-
-    def enter_return_stmt(self, node: ast.ReturnStmt) -> None:
-        """Sub objects.
-
-        expr: Optional[ExprType],
-        """
-
-    def enter_yield_stmt(self, node: ast.YieldStmt) -> None:
-        """Sub objects.
-
-        expr: Optional[ExprType],
-        """
-
-    def enter_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        """
-
-    def enter_visit_stmt(self, node: ast.VisitStmt) -> None:
-        """Sub objects.
-
-        vis_type: Optional[SubTag[SubNodeList[Name]]],
-        target: ExprType,
-        else_body: Optional[ElseStmt],
-        """
-
-    def enter_revisit_stmt(self, node: ast.RevisitStmt) -> None:
-        """Sub objects.
-
-        hops: Optional[ExprType],
-        else_body: Optional[ElseStmt],
-        """
-
-    def enter_disengage_stmt(self, node: ast.DisengageStmt) -> None:
-        """Sub objects."""
-
-    def enter_await_stmt(self, node: ast.AwaitStmt) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        """
+        if isinstance(node.parent, ast.SubNodeList) and isinstance(
+            node.parent.parent, ast.ArchHas
+        ):
+            self.def_insert(
+                node,
+                single_use="has var",
+                access_spec=node.parent.parent,
+                also_link=[node.name],
+            )
+        else:
+            self.ice("Inconsistency in AST, has var should be under arch has")
 
     def enter_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
         target: AtomType,
         value: ExprType,
-        is_static: bool,
-        mutable: bool =True,
+        kid: list[AstNode],
+        is_static: bool = False,
+        mutable: bool = True,
         """
-
-    def enter_binary_expr(self, node: ast.BinaryExpr) -> None:
-        """Sub objects.
-
-        left: ExprType,
-        right: ExprType,
-        op: Token | DisconnectOp | ConnectOp,
-        """
-
-    def enter_unary_expr(self, node: ast.UnaryExpr) -> None:
-        """Sub objects.
-
-        operand: ExprType,
-        op: Token,
-        """
-
-    def enter_if_else_expr(self, node: ast.IfElseExpr) -> None:
-        """Sub objects.
-
-        condition: ExprType,
-        value: ExprType,
-        else_value: ExprType,
-        """
-
-    def enter_multi_string(self, node: ast.MultiString) -> None:
-        """Sub objects.
-
-        strings: list[Constant | FString],
-        """
-
-    def enter_f_string(self, node: ast.FString) -> None:
-        """Sub objects.
-
-        parts: Optional[SubNodeList[Constant | ExprType]],
-        """
-
-    def enter_expr_list(self, node: ast.ExprList) -> None:
-        """Sub objects.
-
-        values: Optional[SubNodeList[ExprType]],
-        """
-
-    def enter_list_val(self, node: ast.ListVal) -> None:
-        """Sub objects.
-
-        values: Optional[SubNodeList[ExprType]],
-        """
-
-    def enter_set_val(self, node: ast.SetVal) -> None:
-        """Sub objects.
-
-        values: Optional[SubNodeList[ExprType]],
-        """
-
-    def enter_tuple_val(self, node: ast.TupleVal) -> None:
-        """Sub objects.
-
-        values: Optional[SubNodeList[ExprType | Assignment]],
-        """
-
-    def enter_dict_val(self, node: ast.DictVal) -> None:
-        """Sub objects.
-
-        kv_pairs: list[KVPair],
-        """
-
-    def enter_k_v_pair(self, node: ast.KVPair) -> None:
-        """Sub objects.
-
-        key: ExprType,
-        value: ExprType,
-        """
+        if isinstance(node.target, ast.AtomTrailer):
+            self.chain_def_insert(self.unwind_atom_trailer(node.target))
+        elif isinstance(node.target, ast.AtomSymbolType):
+            self.def_insert(node.target)
+        else:
+            self.error("Assignment target not valid")
 
     def enter_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
@@ -346,24 +89,8 @@ class DefUsePass(Pass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-
-    def enter_list_compr(self, node: ast.ListCompr) -> None:
-        """Sub objects.
-
-        compr: InnerCompr,
-        """
-
-    def enter_gen_compr(self, node: ast.GenCompr) -> None:
-        """Sub objects.
-
-        compr: InnerCompr,
-        """
-
-    def enter_set_compr(self, node: ast.SetCompr) -> None:
-        """Sub objects.
-
-        compr: InnerCompr,
-        """
+        for i in node.names.items:
+            self.def_insert(i, single_use="list compr var")
 
     def enter_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
@@ -373,14 +100,60 @@ class DefUsePass(Pass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
+        for i in node.names.items:
+            self.def_insert(i, single_use="dict compr var")
 
     def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
 
         target: AtomType,
         right: AtomType,
-        null_ok: bool,
+        is_scope_contained: bool,
         """
+        self.chain_use_lookup(self.unwind_atom_trailer(node))
+
+    def unwind_atom_trailer(self, node: ast.AtomTrailer) -> list[ast.AstSymbolNode]:
+        """Sub objects.
+
+        target: AtomType,
+        right: AtomType,
+        is_scope_contained: bool,
+        """
+        left = node.right if isinstance(node.right, ast.AtomTrailer) else node.target
+        right = node.target if isinstance(node.right, ast.AtomTrailer) else node.right
+        left, right = (
+            left.value if isinstance(left, ast.AtomUnit) and left.is_null_ok else left,
+            right.value
+            if isinstance(right, ast.AtomUnit) and right.is_null_ok
+            else right,
+        )
+        trag_list: list[ast.AstSymbolNode] = []
+        while isinstance(left, ast.AtomTrailer) and left.is_scope_contained:
+            if not isinstance(right, ast.AtomSymbolType):
+                break
+            trag_list.insert(0, right)
+            old_left = left
+            left = (
+                old_left.right
+                if isinstance(old_left.right, ast.AtomTrailer)
+                else old_left.target
+            )
+            right = (
+                old_left.target
+                if isinstance(old_left.right, ast.AtomTrailer)
+                else old_left.right
+            )
+            left, right = (
+                left.value
+                if isinstance(left, ast.AtomUnit) and left.is_null_ok
+                else left,
+                right.value
+                if isinstance(right, ast.AtomUnit) and right.is_null_ok
+                else right,
+            )
+            if isinstance(left, ast.AtomSymbolType):
+                trag_list.insert(0, left)
+        return trag_list
 
     def enter_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -443,6 +216,72 @@ class DefUsePass(Pass):
         pos_end: int,
         """
 
+    def enter_float(self, node: ast.Float) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.use_lookup(node)
+
+    def enter_int(self, node: ast.Int) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.use_lookup(node)
+
+    def enter_string(self, node: ast.String) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.use_lookup(node)
+
+    def enter_bool(self, node: ast.Bool) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.use_lookup(node)
+
+    def enter_builtin_type(self, node: ast.BuiltinType) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        typ: type,
+        """
+        self.use_lookup(node)
+
     def enter_name(self, node: ast.Name) -> None:
         """Sub objects.
 
@@ -453,25 +292,4 @@ class DefUsePass(Pass):
         pos_start: int,
         pos_end: int,
         """
-
-    def enter_constant(self, node: ast.Constant) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
-
-    def enter_builtin_type(self, node: ast.BuiltinType) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
+        self.use_lookup(node)

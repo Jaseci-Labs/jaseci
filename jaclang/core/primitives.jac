@@ -69,9 +69,9 @@ object DataSpatialInterface {
     static can on_exit(cls: type, triggers: list[type]);
 }
 
-object ObjectInterface:ElementInterface {}
+object ObjectInterface:ElementInterface: {}
 
-object NodeInterface:ObjectInterface {
+object NodeInterface:ObjectInterface: {
     has edges: dict[EdgeDir, list[Edge]]
         = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
@@ -79,7 +79,7 @@ object NodeInterface:ObjectInterface {
     can edges_to_nodes(dir: EdgeDir) -> list[Node];
 }
 
-object EdgeInterface:ObjectInterface {
+object EdgeInterface:ObjectInterface: {
     has source: Node?,
         target: Node?,
         dir: EdgeDir?;
@@ -88,7 +88,7 @@ object EdgeInterface:ObjectInterface {
     can attach(src: Node, trg: Node) -> Edge;
 }
 
-object WalkerInterface:ObjectInterface {
+object WalkerInterface:ObjectInterface: {
     has path: list[Node] = [],
         next: list[Node] = [],
         ignores: list[Node] = [],
@@ -103,26 +103,26 @@ object Element {
     has _jac_: ElementInterface = ElementInterface(py_obj=<self>);
 }
 
-object Object:Element {
+object Object:Element: {
     has _jac_: ObjectInterface = ObjectInterface(py_obj=<self>);
     static has _jac_ds_: DataSpatialInterface = DataSpatialInterface();
 }
 
-object Node:Object {
+object Node:Object: {
     has _jac_: NodeInterface = NodeInterface(py_obj=<self>);
     can __call__(walk: Walker);
 }
 
-object Edge:Object {
+object Edge:Object: {
     has _jac_: EdgeInterface = EdgeInterface(py_obj=<self>);
     can __call__(walk: Walker);
 }
 
-object Walker:Object {
+object Walker:Object: {
     has _jac_: WalkerInterface = WalkerInterface(py_obj=<self>);
     can __call__(nd: Node);
 }
 
-object Master:Element { has root_node: Node = Node(); }
+object Master:Element: { has root_node: Node = Node(); }
 
 can make_architype(base_class: type) -> type;

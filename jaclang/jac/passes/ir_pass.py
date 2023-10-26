@@ -13,16 +13,14 @@ class Pass(Transform):
 
     def __init__(
         self,
-        mod_path: str,
         input_ir: ast.AstNode,
         prior: Optional[Transform],
-        base_path: str = "",
     ) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
         self.ir = input_ir
-        Transform.__init__(self, mod_path, input_ir, base_path, prior)
+        Transform.__init__(self, input_ir, prior)
 
     def before_pass(self) -> None:
         """Run once before pass."""
@@ -119,19 +117,16 @@ class Pass(Transform):
             node = self.cur_node
         if not isinstance(node, ast.AstNode):
             self.ice("Current node is not an AstNode.")
-        if node.mod_link:
-            self.rel_mod_path = node.mod_link.rel_mod_path
-            self.mod_path = node.mod_link.mod_path
 
     def error(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
         self.update_code_loc(node_override)
-        self.log_error(f"{msg}")
+        self.log_error(f"{msg}", node_override=node_override)
 
     def warning(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
         """Pass Error."""
         self.update_code_loc(node_override)
-        self.log_warning(f"{msg}")
+        self.log_warning(f"{msg}", node_override=node_override)
 
     def ice(self, msg: str = "Something went horribly wrong!") -> None:
         """Pass Error."""

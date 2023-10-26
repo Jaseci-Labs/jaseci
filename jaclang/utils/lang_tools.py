@@ -1,5 +1,6 @@
 """Language tools for the Jaclang project."""
 
+import ast as py_ast
 import inspect
 import os
 import sys
@@ -46,7 +47,7 @@ class AstNodeInfo:
         self.doc = cls.__doc__
         AstNodeInfo.type_map[self.name] = cls
         self.class_name_snake = pascal_to_snake(cls.__name__)
-        self.init_sig = inspect.signature(cls.__init__)
+        self.init_sig = inspect.signature(cls.__class__.__init__)
         self.kids: list[AstKidInfo] = []
         for param_name, param in self.init_sig.parameters.items():
             if param_name not in [
@@ -54,7 +55,6 @@ class AstNodeInfo:
                 "parent",
                 "kid",
                 "line",
-                "mod_link",
                 "sym_tab",
             ]:
                 param_type = (
@@ -85,10 +85,13 @@ class AstTool:
                 "AstNode",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
-                "SourceString",
+                "JacCode",
                 "EmptyToken",
                 "AstSymbolNode",
                 "AstAccessNode",
+                "TokenSymbol",
+                "AstDocNode",
+                "PythonModuleAst",
             ]
         ]
         self.ast_classes = sorted(
@@ -117,7 +120,7 @@ class AstTool:
 
             for kid in cls.kids:
                 emit(
-                    f"    {kid.name}: {kid.typ}{' ='+str(kid.default) if kid.default else ''},"
+                    f"    {kid.name}: {kid.typ}{' =' + str(kid.default) if kid.default else ''},"
                 )
 
             emit('    """\n')
@@ -130,6 +133,33 @@ class AstTool:
             .replace("ForwardRef('", "")
             .replace("')", "")
         )
+        return output
+
+    def py_ast_nodes(self) -> str:
+        """List python ast nodes."""
+        from jaclang.jac.passes.blue import PyAstBuildPass
+
+        visit_methods = [
+            method for method in dir(py_ast._Unparser) if method.startswith("visit_")  # type: ignore
+        ]
+        node_names = [method.replace("visit_", "") for method in visit_methods]
+        pass_func_names = []
+        for name, value in inspect.getmembers(PyAstBuildPass):
+            if name.startswith("proc_") and inspect.isfunction(value):
+                pass_func_names.append(name.replace("proc_", ""))
+        output = ""
+        missing = []
+        for i in node_names:
+            nd = pascal_to_snake(i)
+            this_func = (
+                f"def proc_{nd}(self, node: py_ast.{i}) -> ast.AstNode:\n"
+                + '    """Process python node."""\n\n'
+            )
+            if nd not in pass_func_names:
+                missing.append(this_func)
+            output += this_func
+        for i in missing:
+            output += f"# missing: \n{i}\n"
         return output
 
     def md_doc(self) -> str:

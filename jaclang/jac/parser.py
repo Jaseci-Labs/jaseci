@@ -18,7 +18,12 @@ class JacParser(Pass):
 
     dev_mode = False
 
-    def before_pass(self, source: ast.SourceString) -> None:
+    def __init__(self, input_ir: ast.JacSource) -> None:
+        """Initialize parser."""
+        self.mod_path = input_ir.loc.mod_path
+        Pass.__init__(self, input_ir=input_ir, prior=None)
+
+    def before_pass(self, source: ast.JacSource) -> None:
         """Initialize parser."""
         super().before_pass()
         self.source = source
@@ -26,7 +31,7 @@ class JacParser(Pass):
         if JacParser.dev_mode:
             JacParser.make_dev()
 
-    def transform(self, ir: ast.SourceString) -> Optional[ast.Module]:
+    def transform(self, ir: ast.JacSource) -> Optional[ast.Module]:
         """Transform input IR."""
         self.before_pass(ir)
         try:
@@ -36,7 +41,11 @@ class JacParser(Pass):
             if tree:
                 tree = JacParser.TreeToAST(parser=self).transform(tree)
         except jl.UnexpectedInput as e:
-            self.error(f"Syntax Error: {e}")
+            catch_error = ast.EmptyToken()
+            catch_error.line_no = e.line
+            catch_error.c_start = e.column
+            catch_error.c_end = e.column
+            self.error(f"Syntax Error: {e}", node_override=catch_error)
             tree = None
         except Exception as e:
             tree = None
@@ -45,7 +54,7 @@ class JacParser(Pass):
 
     def error_callback(self, e: jl.UnexpectedInput) -> bool:
         """Handle error."""
-        return True
+        return False
 
     @staticmethod
     def _comment_callback(comment: str) -> None:
@@ -84,7 +93,6 @@ class JacParser(Pass):
             """Initialize transformer."""
             super().__init__(*args, **kwargs)
             self.parse_ref = parser
-            self.mod_link = None
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
@@ -111,7 +119,7 @@ class JacParser(Pass):
             module: (doc_tag? element (element_with_doc | element)*)?
             doc_tag (element_with_doc (element_with_doc | element)*)?
             """
-            doc = kid[0] if len(kid) and isinstance(kid[0], ast.Constant) else None
+            doc = kid[0] if len(kid) and isinstance(kid[0], ast.String) else None
             body = kid[1:] if doc else kid
             valid_body: list[ast.ElementStmt] = [
                 i for i in body if isinstance(i, ast.ElementStmt)
@@ -122,12 +130,9 @@ class JacParser(Pass):
                     source=self.parse_ref.source,
                     doc=doc,
                     body=valid_body,
-                    mod_path=self.parse_ref.mod_path,
-                    rel_mod_path=self.parse_ref.rel_mod_path,
                     is_imported=False,
                     kid=kid,
                 )
-                self.mod_link = mod
                 return self.nu(mod)
             else:
                 raise self.ice()
@@ -137,7 +142,7 @@ class JacParser(Pass):
 
             element_with_doc: doc_tag element
             """
-            if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.Constant):
+            if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.String):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
                 return self.nu(kid[1])
@@ -234,12 +239,12 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def doc_tag(self, kid: list[ast.AstNode]) -> ast.Constant:
+        def doc_tag(self, kid: list[ast.AstNode]) -> ast.String:
             """Grammar rule.
 
             doc_tag: ( STRING | DOC_STRING )
             """
-            if isinstance(kid[0], ast.Constant):
+            if isinstance(kid[0], ast.String):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
@@ -442,15 +447,15 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def decorators(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.ExprType]:
+        def decorators(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.AtomType]:
             """Grammar rule.
 
-            decorators: (DECOR_OP atom)+
+            decorators: (DECOR_OP atomic_chain)+
             """
-            valid_decors = [i for i in kid if isinstance(i, ast.ExprType)]
+            valid_decors = [i for i in kid if isinstance(i, ast.AtomType)]
             if len(valid_decors) == len(kid) / 2:
                 return self.nu(
-                    ast.SubNodeList[ast.ExprType](
+                    ast.SubNodeList[ast.AtomType](
                         items=valid_decors,
                         kid=kid,
                     )
@@ -460,38 +465,19 @@ class JacParser(Pass):
 
         def inherited_archs(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.SubTag[ast.SubNodeList[ast.NameType]]]:
+        ) -> ast.SubNodeList[ast.AtomType]:
             """Grammar rule.
 
-            inherited_archs: sub_name_dotted+
+            inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
+                           | COLON (atomic_chain COMMA)* atomic_chain COLON
             """
-            valid_inh = [i for i in kid if isinstance(i, ast.SubTag)]
-            if len(valid_inh) == len(kid):
-                return self.nu(
-                    ast.SubNodeList[ast.SubTag[ast.SubNodeList[ast.NameType]]](
-                        items=valid_inh,
-                        kid=kid,
-                    )
+            valid_inh = [i for i in kid if isinstance(i, ast.AtomType)]
+            return self.nu(
+                ast.SubNodeList[ast.AtomType](
+                    items=valid_inh,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
-
-        def sub_name_dotted(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubTag[ast.SubNodeList[ast.NameType]]:
-            """Grammar rule.
-
-            sub_name_dotted: COLON dotted_name
-            """
-            if isinstance(kid[1], ast.SubNodeList):
-                return self.nu(
-                    ast.SubTag[ast.SubNodeList[ast.NameType]](
-                        tag=kid[1],
-                        kid=kid,
-                    )
-                )
-            else:
-                raise self.ice()
+            )
 
         def sub_name(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.Name]:
             """Grammar rule.
@@ -507,29 +493,6 @@ class JacParser(Pass):
                 )
             else:
                 raise self.ice()
-
-        def dotted_name(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.NameType]:
-            """Grammar rule.
-
-            dotted_name: (dotted_name DOT)? all_refs
-            """
-            consume = None
-            name = None
-            dot = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                dot = kid[1]
-                name = kid[2]
-            else:
-                name = kid[0]
-            new_kid = [*consume.kid, dot, dot, name] if consume else [name]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.NameType)]
-            return self.nu(
-                ast.SubNodeList[ast.NameType](
-                    items=valid_kid,
-                    kid=new_kid,
-                )
-            )
 
         def any_ref(self, kid: list[ast.AstNode]) -> ast.NameType:
             """Grammar rule.
@@ -785,10 +748,10 @@ class JacParser(Pass):
         def event_clause(self, kid: list[ast.AstNode]) -> ast.EventSignature:
             """Grammar rule.
 
-            event_clause: KW_WITH type_specs? (KW_EXIT | KW_ENTRY) return_type_tag?
+            event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) return_type_tag?
             """
-            type_specs = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
-            return_spec = kid[-1] if isinstance(kid[-1], ast.TypeSpec) else None
+            type_specs = kid[1] if isinstance(kid[1], ast.ExprType) else None
+            return_spec = kid[-1] if isinstance(kid[-1], ast.SubTag) else None
             event = kid[2] if type_specs else kid[1]
             if isinstance(event, ast.Token) and (
                 isinstance(return_spec, ast.SubTag) or return_spec is None
@@ -813,10 +776,10 @@ class JacParser(Pass):
                 kid[1] if len(kid) > 1 and isinstance(kid[1], ast.SubNodeList) else None
             )
             return_spec = (
-                kid[-1] if len(kid) and isinstance(kid[-1], ast.SubNodeList) else None
+                kid[-1] if len(kid) and isinstance(kid[-1], ast.SubTag) else None
             )
             if (isinstance(params, ast.SubNodeList) or params is None) and (
-                isinstance(return_spec, ast.SubNodeList) or return_spec is None
+                isinstance(return_spec, ast.SubTag) or return_spec is None
             ):
                 return self.nu(
                     ast.FuncSignature(
@@ -893,7 +856,7 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchBlockStmt):
                 return self.nu(kid[0])
             elif isinstance(kid[1], ast.ArchBlockStmt) and isinstance(
-                kid[0], ast.Constant
+                kid[0], ast.String
             ):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
@@ -977,16 +940,14 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def type_tag(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubTag[ast.SubNodeList[ast.TypeSpec]]:
+        def type_tag(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.ExprType]:
             """Grammar rule.
 
-            type_tag: COLON type_specs
+            type_tag: COLON expression
             """
-            if isinstance(kid[1], ast.SubNodeList):
+            if isinstance(kid[1], ast.ExprType):
                 return self.nu(
-                    ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
+                    ast.SubTag[ast.ExprType](
                         tag=kid[1],
                         kid=kid,
                     )
@@ -994,78 +955,15 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def return_type_tag(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubTag[ast.SubNodeList[ast.TypeSpec]]:
+        def return_type_tag(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.ExprType]:
             """Grammar rule.
 
-            return_type_tag: RETURN_HINT type_specs
+            return_type_tag: RETURN_HINT expression
             """
-            if isinstance(kid[1], ast.SubNodeList):
+            if isinstance(kid[1], ast.ExprType):
                 return self.nu(
-                    ast.SubTag[ast.SubNodeList[ast.TypeSpec]](
+                    ast.SubTag[ast.ExprType](
                         tag=kid[1],
-                        kid=kid,
-                    )
-                )
-            else:
-                raise self.ice()
-
-        def type_specs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.TypeSpec]:
-            """Grammar rule.
-
-            type_specs: (type_specs BW_OR)? single_type
-            """
-            consume = None
-            spec = None
-            pipe = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                pipe = kid[1]
-                spec = kid[2]
-            else:
-                spec = kid[0]
-            new_kid = [*consume.kid, pipe, spec] if consume else [spec]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.TypeSpec)]
-            return self.nu(
-                ast.SubNodeList[ast.TypeSpec](
-                    items=valid_kid,
-                    kid=new_kid,
-                )
-            )
-
-        def single_type(self, kid: list[ast.AstNode]) -> ast.TypeSpec:
-            """Grammar rule.
-
-            single_type: TYP_DICT LSQUARE single_type COMMA single_type RSQUARE NULL_OK?
-                    | TYP_SET LSQUARE single_type RSQUARE NULL_OK?
-                    | TYP_TUPLE LSQUARE single_type RSQUARE NULL_OK?
-                    | TYP_LIST LSQUARE single_type RSQUARE NULL_OK?
-                    | dotted_name NULL_OK?
-                    | NULL NULL_OK?
-                    | builtin_type NULL_OK?
-            """
-            chomp = [*kid]
-            null_ok = isinstance(chomp[-1], ast.Token) and chomp[-1].name == Tok.NULL_OK
-            chomp = chomp[:-1] if null_ok else chomp
-            spec_type = chomp[0]
-            list_nest = None
-            dict_nest = None
-            if len(chomp) > 1:
-                list_nest = chomp[2]
-            if len(chomp) > 4:
-                dict_nest = chomp[4]
-            if (
-                isinstance(spec_type, (ast.Token, ast.SubNodeList))
-                and (not list_nest or isinstance(list_nest, ast.TypeSpec))
-                and (not dict_nest or isinstance(dict_nest, ast.TypeSpec))
-            ):
-                return self.nu(
-                    ast.TypeSpec(
-                        spec_type=spec_type,
-                        list_nest=list_nest,
-                        dict_nest=dict_nest,
-                        null_ok=null_ok,
                         kid=kid,
                     )
                 )
@@ -1091,6 +989,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.BuiltinType(
                         name=kid[0].name,
+                        file_path=self.parse_ref.mod_path,
                         value=kid[0].value,
                         line=kid[0].loc.first_line,
                         col_start=kid[0].loc.col_start,
@@ -1173,9 +1072,7 @@ class JacParser(Pass):
             elif isinstance(kid[0], ast.CodeBlockStmt):
                 kid[0].add_kids_right([kid[1]], pos_update=False)
                 return self.nu(kid[0])
-            elif isinstance(kid[1], valid_doc_types) and isinstance(
-                kid[0], ast.Constant
-            ):
+            elif isinstance(kid[1], valid_doc_types) and isinstance(kid[0], ast.String):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
                 return self.nu(kid[1])
@@ -1185,11 +1082,9 @@ class JacParser(Pass):
         def typed_ctx_block(self, kid: list[ast.AstNode]) -> ast.TypedCtxBlock:
             """Grammar rule.
 
-            typed_ctx_block: RETURN_HINT type_specs code_block
+            typed_ctx_block: RETURN_HINT expression code_block
             """
-            if isinstance(kid[1], ast.SubNodeList) and isinstance(
-                kid[2], ast.SubNodeList
-            ):
+            if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.SubNodeList):
                 return self.nu(
                     ast.TypedCtxBlock(
                         type_ctx=kid[1],
@@ -1620,9 +1515,9 @@ class JacParser(Pass):
         def visit_stmt(self, kid: list[ast.AstNode]) -> ast.VisitStmt:
             """Grammar rule.
 
-            visit_stmt: KW_VISIT (sub_name_dotted)? expression (else_stmt | SEMI)
+            visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
-            sub_name = kid[1] if isinstance(kid[1], ast.SubTag) else None
+            sub_name = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
             target = kid[2] if sub_name else kid[1]
             else_body = kid[-1] if isinstance(kid[-1], ast.ElseStmt) else None
             if isinstance(target, ast.ExprType):
@@ -1681,7 +1576,7 @@ class JacParser(Pass):
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
             """Grammar rule.
 
-            assignment: KW_FREEZE? atom EQ expression
+            assignment: KW_FREEZE? atomic_chain EQ expression
             """
             is_frozen = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_FREEZE
             target = kid[1] if is_frozen else kid[0]
@@ -1725,7 +1620,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def binary_expr(self, kid: list[ast.AstNode]) -> ast.ExprType:
+        def binary_expr_unwind(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Binary expression helper."""
             if len(kid) > 1:
                 if (
@@ -1754,7 +1649,7 @@ class JacParser(Pass):
             pipe: pipe_back PIPE_FWD pipe
                 | pipe_back
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def pipe_back(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1762,7 +1657,7 @@ class JacParser(Pass):
             pipe_back: elvis_check PIPE_BKWD pipe_back
                      | elvis_check
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def elvis_check(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1770,7 +1665,7 @@ class JacParser(Pass):
             elvis_check: bitwise_or ELVIS_OP elvis_check
                        | bitwise_or
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def bitwise_or(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1778,7 +1673,7 @@ class JacParser(Pass):
             bitwise_or: bitwise_xor BW_OR bitwise_or
                       | bitwise_xor
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def bitwise_xor(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1786,7 +1681,7 @@ class JacParser(Pass):
             bitwise_xor: bitwise_and BW_XOR bitwise_xor
                        | bitwise_and
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def bitwise_and(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1794,7 +1689,7 @@ class JacParser(Pass):
             bitwise_and: shift BW_AND bitwise_and
                        | shift
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def shift(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1803,7 +1698,7 @@ class JacParser(Pass):
                  | logical LSHIFT shift
                  | logical
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def logical(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1824,7 +1719,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def compare(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1832,7 +1727,7 @@ class JacParser(Pass):
             compare: arithmetic cmp_op compare
                    | arithmetic
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def arithmetic(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1841,7 +1736,7 @@ class JacParser(Pass):
                       | term PLUS arithmetic
                       | term
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def term(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1852,7 +1747,7 @@ class JacParser(Pass):
                  | factor STAR_MUL term
                  | factor
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def factor(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1873,7 +1768,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def power(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1881,7 +1776,7 @@ class JacParser(Pass):
             power: connect STAR_POW power
                   | connect
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def connect(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1890,7 +1785,7 @@ class JacParser(Pass):
                    | atomic_pipe connect_op connect
                    | atomic_pipe disconnect_op connect
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def atomic_pipe(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1899,7 +1794,7 @@ class JacParser(Pass):
                        | atomic_pipe KW_SPAWN atomic_pipe_back
                        | atomic_pipe A_PIPE_FWD atomic_pipe_back
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def atomic_pipe_back(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1907,17 +1802,17 @@ class JacParser(Pass):
             atomic_pipe_back: unpack
                             | atomic_pipe_back A_PIPE_BKWD unpack
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def unpack(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
             unpack: ref
-                  | STAR_MUL atom
-                  | STAR_POW atom
+                | STAR_MUL unpack
+                | STAR_POW unpack
             """
             if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.AtomType):
+                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
                     return self.nu(
                         ast.UnaryExpr(
                             op=kid[0],
@@ -1927,7 +1822,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def ref(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1946,7 +1841,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def walrus_assign(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
@@ -1954,15 +1849,15 @@ class JacParser(Pass):
             walrus_assign: ds_call walrus_op walrus_assign
                          | ds_call
             """
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def ds_call(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
-            ds_call: atom
-                   | PIPE_FWD atom
-                   | A_PIPE_FWD atom
-                   | KW_SPAWN atom
+            ds_call: atomic_chain
+                | PIPE_FWD atomic_chain
+                | A_PIPE_FWD atomic_chain
+                | KW_SPAWN atomic_chain
             """
             if len(kid) == 2:
                 if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
@@ -1975,7 +1870,7 @@ class JacParser(Pass):
                     )
                 else:
                     raise self.ice()
-            return self.binary_expr(kid)
+            return self.binary_expr_unwind(kid)
 
         def walrus_op(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
@@ -2018,12 +1913,155 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def atomic_chain(self, kid: list[ast.AstNode]) -> ast.AtomType:
+            """Grammar rule.
+
+            atomic_chain: atomic_chain (filter_compr | edge_op_ref | index_slice | list_val )
+                        | atomic_chain (DOT_BKWD | DOT_FWD | DOT) atom NULL_OK?
+                        | atomic_call
+                        | atom NULL_OK?
+            """
+            if len(kid) < 2 and isinstance(kid[0], ast.AtomType):
+                return self.nu(kid[0])
+            elif (
+                len(kid) == 2
+                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[-1], ast.Token)
+                and kid[-1].name == Tok.NULL_OK
+            ):
+                return self.nu(
+                    ast.AtomUnit(
+                        value=kid[0],
+                        is_paren=False,
+                        is_null_ok=True,
+                        kid=kid,
+                    )
+                )
+            elif (
+                len(kid) == 2
+                and isinstance(kid[0], ast.AtomType)
+                and isinstance(
+                    kid[1],
+                    (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
+                )
+            ):
+                return self.nu(
+                    ast.AtomTrailer(
+                        target=kid[0],
+                        right=kid[1],
+                        is_scope_contained=isinstance(kid[1], ast.FilterCompr),
+                        kid=kid,
+                    )
+                )
+            elif (
+                len(kid) > 2
+                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[1], ast.Token)
+                and isinstance(kid[2], ast.AtomType)
+            ):
+                kid[2] = (
+                    ast.AtomUnit(
+                        value=kid[2],
+                        is_paren=False,
+                        is_null_ok=True,
+                        kid=[kid[2], kid[-1]],
+                    )
+                    if isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.NULL_OK
+                    else kid[2]
+                )
+                return self.nu(
+                    ast.AtomTrailer(
+                        target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
+                        right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                        is_scope_contained=True,
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def atomic_call(self, kid: list[ast.AstNode]) -> ast.FuncCall:
+            """Grammar rule.
+
+            atomic_call: atom LPAREN param_list? RPAREN
+            """
+            if (
+                len(kid) == 4
+                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[2], ast.SubNodeList)
+            ):
+                return self.nu(ast.FuncCall(target=kid[0], params=kid[2], kid=kid))
+            elif len(kid) == 3 and isinstance(kid[0], ast.AtomType):
+                return self.nu(ast.FuncCall(target=kid[0], params=None, kid=kid))
+            else:
+                raise self.ice()
+
+        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice | ast.ListVal:
+            """Grammar rule.
+
+            index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
+            """
+            chomp = [*kid]
+            chomp = chomp[1:]
+            is_range = (
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON
+            ) or (
+                len(chomp) > 1
+                and isinstance(chomp[1], ast.Token)
+                and chomp[1].name == Tok.COLON
+            )
+            expr1 = chomp[0] if isinstance(chomp[0], ast.ExprType) else None
+            expr2 = (
+                chomp[1]
+                if isinstance(chomp[0], ast.Token)
+                and chomp[0].name == Tok.COLON
+                and isinstance(chomp[1], ast.ExprType)
+                else None
+            )
+            chomp = chomp[1:]
+            expr2 = (
+                chomp[1]
+                if isinstance(chomp[0], ast.Token)
+                and chomp[0].name == Tok.COLON
+                and len(chomp) > 1
+                and isinstance(chomp[1], ast.ExprType)
+                else expr2
+            )
+            expr3 = None
+            if len(chomp) > 1:
+                chomp = chomp[1:]
+                expr3 = (
+                    chomp[1]
+                    if isinstance(chomp[0], ast.Token)
+                    and chomp[0].name == Tok.COLON
+                    and isinstance(chomp[1], ast.ExprType)
+                    else None
+                )
+                if len(chomp) > 1:
+                    chomp = chomp[1:]
+                    expr3 = (
+                        chomp[1]
+                        if isinstance(chomp[0], ast.Token)
+                        and chomp[0].name == Tok.COLON
+                        and len(chomp) > 1
+                        and isinstance(chomp[1], ast.ExprType)
+                        else expr3
+                    )
+            return self.nu(
+                ast.IndexSlice(
+                    start=expr1,
+                    stop=expr2,
+                    step=expr3,
+                    is_range=is_range,
+                    kid=kid,
+                )
+            )
+
         def atom(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
             atom: edge_op_ref
                  | any_ref
-                 | atomic_chain
                  | LPAREN expression RPAREN
                  | atom_collection
                  | atom_literal
@@ -2039,9 +2077,11 @@ class JacParser(Pass):
                     and isinstance(kid[1], ast.ExprType)
                     and isinstance(kid[2], ast.Token)
                 ):
-                    ret = ast.UnaryExpr(operand=kid[1], op=kid[0], kid=kid)
-                    ret.add_kids_left([kid[0]])
-                    ret.add_kids_right([kid[2]])
+                    ret = ast.AtomUnit(
+                        value=kid[1], is_paren=True, is_null_ok=False, kid=kid
+                    )
+                    # ret.add_kids_left([kid[0]])
+                    # ret.add_kids_right([kid[2]])
                     return self.nu(ret)
                 else:
                     raise self.ice()
@@ -2088,7 +2128,7 @@ class JacParser(Pass):
 
             multistring: (fstring | STRING)+
             """
-            valid_strs = [i for i in kid if isinstance(i, (ast.Constant, ast.FString))]
+            valid_strs = [i for i in kid if isinstance(i, (ast.String, ast.FString))]
             if len(valid_strs) == len(kid):
                 return self.nu(
                     ast.MultiString(
@@ -2121,17 +2161,14 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def fstr_parts(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.Constant | ast.ExprType]:
+        def fstr_parts(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.ExprType]:
             """Grammar rule.
 
             fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
             """
-            valid_types = Union[ast.Constant, ast.ExprType]
-            valid_parts = [i for i in kid if isinstance(i, valid_types)]
+            valid_parts = [i for i in kid if isinstance(i, ast.ExprType)]
             return self.nu(
-                ast.SubNodeList[ast.Constant | ast.ExprType](
+                ast.SubNodeList[ast.ExprType](
                     items=valid_parts,
                     kid=kid,
                 )
@@ -2380,112 +2417,6 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def atomic_chain(self, kid: list[ast.AstNode]) -> ast.AtomType:
-            """Grammar rule.
-
-            atomic_chain: atomic_call
-                        | atomic_chain_unsafe
-                        | atomic_chain_safe
-            """
-            if isinstance(kid[0], ast.AtomType):
-                return self.nu(kid[0])
-            else:
-                raise self.ice()
-
-        def atomic_chain_unsafe(self, kid: list[ast.AstNode]) -> ast.AtomType:
-            """Grammar rule.
-
-            atomic_chain_unsafe: atom (filter_compr | edge_op_ref | index_slice)
-                               | atom (DOT_BKWD | DOT_FWD | DOT) any_ref
-            """
-            if len(kid) == 2:
-                if isinstance(kid[0], ast.AtomType) and isinstance(
-                    kid[1], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0],
-                            right=kid[1],
-                            null_ok=False,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            elif len(kid) == 3:
-                if (
-                    isinstance(kid[0], ast.AtomType)
-                    and isinstance(kid[1], ast.Token)
-                    and isinstance(kid[2], ast.AtomType)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
-                            right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                            null_ok=False,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
-
-        def atomic_chain_safe(self, kid: list[ast.AstNode]) -> ast.AtomType:
-            """Grammar rule.
-
-            atomic_chain_safe: atom NULL_OK (filter_compr | edge_op_ref | index_slice)
-                             | atom NULL_OK (DOT_BKWD | DOT_FWD | DOT) any_ref
-            """
-            if len(kid) == 3:
-                if isinstance(kid[0], ast.AtomType) and isinstance(
-                    kid[2], (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0],
-                            right=kid[2],
-                            null_ok=True,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            elif len(kid) == 4:
-                if (
-                    isinstance(kid[0], ast.AtomType)
-                    and isinstance(kid[1], ast.Token)
-                    and isinstance(kid[3], ast.AtomType)
-                ):
-                    return self.nu(
-                        ast.AtomTrailer(
-                            target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[3],
-                            right=kid[3] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                            null_ok=True,
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
-
-        def atomic_call(self, kid: list[ast.AstNode]) -> ast.FuncCall:
-            """Grammar rule.
-
-            atomic_call: atom LPAREN param_list? RPAREN
-            """
-            if (
-                len(kid) == 4
-                and isinstance(kid[0], ast.AtomType)
-                and isinstance(kid[2], ast.SubNodeList)
-            ):
-                return self.nu(ast.FuncCall(target=kid[0], params=kid[2], kid=kid))
-            elif len(kid) == 3 and isinstance(kid[0], ast.AtomType):
-                return self.nu(ast.FuncCall(target=kid[0], params=None, kid=kid))
-            else:
-                raise self.ice()
-
         def param_list(
             self, kid: list[ast.AstNode]
         ) -> ast.SubNodeList[ast.ExprType | ast.Assignment]:
@@ -2542,46 +2473,6 @@ class JacParser(Pass):
                 ast.SubNodeList[ast.Assignment](
                     items=valid_kid,
                     kid=new_kid,
-                )
-            )
-
-        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
-            """Grammar rule.
-
-            index_slice: LSQUARE expression? (COLON expression?)? RSQUARE
-            """
-            chomp = [*kid]
-            chomp = chomp[1:]
-            is_range = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON
-            ) or (
-                len(chomp) > 1
-                and isinstance(chomp[1], ast.Token)
-                and chomp[1].name == Tok.COLON
-            )
-            expr1 = chomp[0] if isinstance(chomp[0], ast.ExprType) else None
-            expr2 = (
-                chomp[1]
-                if isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                and isinstance(chomp[1], ast.ExprType)
-                else None
-            )
-            chomp = chomp[1:]
-            expr2 = (
-                chomp[1]
-                if isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                and len(chomp) > 1
-                and isinstance(chomp[1], ast.ExprType)
-                else expr2
-            )
-            return self.nu(
-                ast.IndexSlice(
-                    start=expr1,
-                    stop=expr2,
-                    is_range=is_range,
-                    kid=kid,
                 )
             )
 
@@ -3008,7 +2899,7 @@ class JacParser(Pass):
 
             filter_compare_item: esc_name cmp_op expression
             """
-            ret = self.binary_expr(kid)
+            ret = self.binary_expr_unwind(kid)
             if isinstance(ret, ast.BinaryExpr):
                 return self.nu(ret)
             else:
@@ -3019,21 +2910,24 @@ class JacParser(Pass):
             ret_type = ast.Token
             if token.type in [Tok.NAME, Tok.KWESC_NAME]:
                 ret_type = ast.Name
+
+            elif token.type == Tok.FLOAT:
+                ret_type = ast.Float
+            elif token.type in [Tok.INT, Tok.INT, Tok.HEX, Tok.BIN, Tok.OCT]:
+                ret_type = ast.Int
             elif token.type in [
-                Tok.FLOAT,
-                Tok.INT,
-                Tok.HEX,
-                Tok.BIN,
-                Tok.OCT,
+                Tok.STRING,
                 Tok.STRING,
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,
                 Tok.DOC_STRING,
             ]:
-                ret_type = ast.Constant
-
+                ret_type = ast.String
+            elif token.type == Tok.BOOL:
+                ret_type = ast.Bool
             return self.nu(
                 ret_type(
+                    file_path=self.parse_ref.mod_path,
                     name=token.type,
                     value=token.value,
                     line=token.line if token.line is not None else 0,

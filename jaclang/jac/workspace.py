@@ -2,11 +2,28 @@
 from __future__ import annotations
 
 import os
+from typing import Sequence
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.passes.blue import DeclDefMatchPass
+from jaclang.jac.passes.blue import DefUsePass
+from jaclang.jac.passes.transform import Alert
 from jaclang.jac.symtable import Symbol, SymbolTable
-from jaclang.jac.transpiler import Alert, jac_str_to_pass
+from jaclang.jac.transpiler import jac_str_to_pass
+
+
+def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> Sequence[SymbolTable]:
+    """Iterate through symbol table."""
+    sym_tabs = (
+        [sym_tab]
+        if not (
+            isinstance(sym_tab.owner, ast.Module)
+            and sym_tab.owner.loc.mod_path != file_path
+        )
+        else []
+    )
+    for i in sym_tab.kid:
+        sym_tabs += sym_tab_list(i, file_path=file_path)
+    return sym_tabs
 
 
 class ModuleInfo:
@@ -15,8 +32,8 @@ class ModuleInfo:
     def __init__(
         self,
         ir: ast.Module,
-        errors: list[Alert],
-        warnings: list[Alert],
+        errors: Sequence[Alert],
+        warnings: Sequence[Alert],
     ) -> None:
         """Initialize module info."""
         self.ir = ir
@@ -50,7 +67,7 @@ class Workspace:
                 jac_str=source,
                 file_path=file,
                 base_dir=self.path,
-                target=DeclDefMatchPass,
+                target=DefUsePass,
             )
             if not isinstance(build.ir, ast.Module):
                 self.modules[file] = ModuleInfo(
@@ -58,9 +75,7 @@ class Workspace:
                         name="",
                         doc=None,
                         body=[],
-                        source=ast.SourceString(source),
-                        mod_path=file,
-                        rel_mod_path="",
+                        source=ast.JacSource(source, mod_path=file),
                         is_imported=False,
                         kid=[ast.EmptyToken()],
                     ),
@@ -89,7 +104,7 @@ class Workspace:
             jac_str=source,
             file_path=file_path,
             base_dir=self.path,
-            target=DeclDefMatchPass,
+            target=DefUsePass,
         )
         if not isinstance(build.ir, ast.Module):
             self.modules[file_path] = ModuleInfo(
@@ -97,9 +112,7 @@ class Workspace:
                     name="",
                     doc=None,
                     body=[],
-                    source=ast.SourceString(source),
-                    mod_path=file_path,
-                    rel_mod_path="",
+                    source=ast.JacSource(source, mod_path=file_path),
                     is_imported=False,
                     kid=[ast.EmptyToken()],
                 ),
@@ -129,37 +142,48 @@ class Workspace:
         """Delete a file from the workspace."""
         del self.modules[file_path]
 
-    def file_list(self) -> list[str]:
+    def file_list(self) -> Sequence[str]:
         """Return a list of files in the workspace."""
         return list(self.modules.keys())
 
-    def get_dependencies(self, file_path: str) -> list[str]:
+    def get_dependencies(
+        self, file_path: str, deep: bool = False
+    ) -> Sequence[ast.Import]:
         """Return a list of dependencies for a file."""
-        return [
-            i.mod_path for i in self.modules[file_path].ir.get_all_sub_nodes(ast.Module)
-        ]
+        if deep:
+            return self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
+        else:
+            return [
+                i
+                for i in self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
+                if i.loc.mod_path == file_path
+            ]
 
-    def get_symbols(self, file_path: str) -> list[Symbol]:
+    def get_symbols(self, file_path: str) -> Sequence[Symbol]:
         """Return a list of symbols for a file."""
-
-        def sym_tab_list(sym_tab: SymbolTable) -> list[SymbolTable]:
-            """Iterate through symbol table."""
-            sym_tabs = (
-                [sym_tab]
-                if not (
-                    isinstance(sym_tab.owner, ast.Module)
-                    and sym_tab.owner.mod_path != file_path
-                )
-                else []
-            )
-            for i in sym_tab.kid:
-                sym_tabs += sym_tab_list(i)
-            return sym_tabs
-
         symbols = []
         if file_path in self.modules:
             root_table = self.modules[file_path].ir.sym_tab
             if file_path in self.modules and isinstance(root_table, SymbolTable):
-                for i in sym_tab_list(sym_tab=root_table):
+                for i in sym_tab_list(sym_tab=root_table, file_path=file_path):
                     symbols += list(i.tab.values())
         return symbols
+
+    def get_definitions(
+        self, file_path: str
+    ) -> Sequence[ast.AstSymbolNode]:  # need test
+        """Return a list of definitions for a file."""
+        defs = []
+        for i in self.get_symbols(file_path):
+            defs += i.defn
+        return defs
+
+    def get_uses(self, file_path: str) -> Sequence[ast.AstSymbolNode]:  # need test
+        """Return a list of definitions for a file."""
+        uses = []
+        if file_path in self.modules:
+            root_table = self.modules[file_path].ir.sym_tab
+            if file_path in self.modules and isinstance(root_table, SymbolTable):
+                for i in sym_tab_list(sym_tab=root_table, file_path=file_path):
+                    uses += i.uses
+        return uses

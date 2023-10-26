@@ -1,5 +1,11 @@
-"""Subnode Table building pass."""
+"""Subnode Table building pass.
+
+This pass builds a table of subnodes for each node in the AST. This is used
+for fast lookup of nodes of a certain type in the AST. This is just a utility
+pass and is not required for any other pass to work.
+"""
 from copy import copy
+from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
@@ -10,17 +16,12 @@ class SubNodeTabPass(Pass):
 
     def before_pass(self) -> None:
         """Initialize pass."""
-        self.cur_module = None
+        self.cur_module: Optional[ast.Module] = None
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Table builder."""
         super().enter_node(node)
         node._sub_node_tab = {}  # clears on entry
-        node.mod_link = self.cur_module
-
-    def enter_module(self, node: ast.Module) -> None:
-        """Update cur module."""
-        self.cur_module = node
 
     def exit_node(self, node: ast.AstNode) -> None:
         """Table builder."""

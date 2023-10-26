@@ -19,7 +19,7 @@ object Interface {
     can run_shell;
 }
 
-object ShellCmd:cmd.Cmd {
+object ShellCmd:cmd.Cmd: {
     has prompt: str = "> ",
         reg: Interface;
 

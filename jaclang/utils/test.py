@@ -53,6 +53,8 @@ class TestCase(_TestCase):
 class TestCaseMicroSuite(ABC, TestCase):
     """Base test case for Jaseci."""
 
+    test_micro_jac_files_fully_tested = None
+
     @classmethod
     def self_attach_micro_tests(cls) -> None:
         """Attach micro tests."""
@@ -89,11 +91,11 @@ class TestCaseMicroSuite(ABC, TestCase):
                     cls, method_name, lambda self, f=file_path: self.micro_suite_test(f)
                 )
 
-        def test_micro_jac_files_fully_tested(self) -> None:  # noqa: ANN001
+        def test_micro_jac_files_fully_tested(self: TestCase) -> None:  # noqa: ANN001
             """Test that all micro jac files are fully tested."""
-            self.directory = os.path.dirname(__file__) + "/../../examples/micro"
-            for filename in os.listdir(self.directory):
-                if os.path.isfile(os.path.join(self.directory, filename)):
+            directory = os.path.dirname(__file__) + "/../../examples/micro"
+            for filename in os.listdir(directory):
+                if os.path.isfile(os.path.join(directory, filename)):
                     method_name = f"test_micro_{filename.replace('.jac', '')}"
                     self.assertIn(method_name, dir(self))
 
@@ -119,10 +121,13 @@ class AstSyncTestMixin:
             not in [
                 "ast_node",
                 "walker_stmt_only_node",
-                "source_string",
+                "jac_source",
                 "empty_token",
                 "ast_symbol_node",
                 "ast_access_node",
+                "token_symbol",
+                "ast_doc_node",
+                "python_module_ast",
             ]
         ]
         pygen_func_names = []

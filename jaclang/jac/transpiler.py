@@ -26,9 +26,7 @@ def transpile_jac_blue(file_path: str, base_dir: str) -> list[Alert]:
         schedule=pass_schedule,
     )
     if isinstance(code.ir, ast.Module) and not code.errors_had:
-        print_pass = PyOutPass(
-            mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code
-        )
+        print_pass = PyOutPass(input_ir=code.ir, prior=code)
     else:
         return code.errors_had
     return print_pass.errors_had
@@ -45,9 +43,7 @@ def transpile_jac_purple(file_path: str, base_dir: str) -> list[Alert]:
         schedule=pass_schedule,
     )
     if isinstance(code.ir, ast.Module) and not code.errors_had:
-        print_pass = PyOutPass(
-            mod_path=file_path, input_ir=code.ir, base_path=base_dir, prior=code
-        )
+        print_pass = PyOutPass(input_ir=code.ir, prior=code)
     else:
         return code.errors_had
     return print_pass.errors_had
@@ -61,7 +57,13 @@ def jac_file_to_pass(
 ) -> T:
     """Convert a Jac file to an AST."""
     with open(file_path) as file:
-        return jac_str_to_pass(file.read(), file_path, base_dir, target, schedule)
+        return jac_str_to_pass(
+            jac_str=file.read(),
+            file_path=file_path,
+            base_dir=base_dir,
+            target=target,
+            schedule=schedule,
+        )
 
 
 def jac_str_to_pass(
@@ -72,19 +74,13 @@ def jac_str_to_pass(
     schedule: list[Type[T]] = pass_schedule,
 ) -> T:
     """Convert a Jac file to an AST."""
-    source = ast.SourceString(jac_str)
-    ast_ret = JacParser(
-        mod_path=file_path, input_ir=source, base_path=base_dir, prior=None
-    )
+    source = ast.JacSource(jac_str, mod_path=file_path)
+    ast_ret = JacParser(input_ir=source)
     for i in schedule:
         if i == target:
             break
-        ast_ret = i(
-            mod_path=file_path, input_ir=ast_ret.ir, base_path=base_dir, prior=ast_ret
-        )
-    ast_ret = target(
-        mod_path=file_path, input_ir=ast_ret.ir, base_path=base_dir, prior=ast_ret
-    )
+        ast_ret = i(input_ir=ast_ret.ir, prior=ast_ret)
+    ast_ret = target(input_ir=ast_ret.ir, prior=ast_ret)
     return ast_ret
 
 
@@ -96,26 +92,13 @@ def jac_file_formatter(
     """Convert a Jac file to an AST."""
     target = JacFormatPass
     with open(file_path) as file:
-        source = ast.SourceString(file.read())
-        prse = JacParser(
-            mod_path=file_path, input_ir=source, base_path=base_dir, prior=None
-        )
+        source = ast.JacSource(file.read(), mod_path=file_path)
+        prse = JacParser(input_ir=source)
         comments = prse.comments
 
     for i in schedule:
         if i == target:
             break
-        prse = i(
-            mod_path=file_path,
-            input_ir=prse.ir,
-            base_path=base_dir,
-            prior=prse,
-        )
-    prse = target(
-        mod_path=file_path,
-        input_ir=prse.ir,
-        base_path=base_dir,
-        prior=prse,
-        comments=comments,
-    )
+        prse = i(input_ir=prse.ir, prior=prse)
+    prse = target(input_ir=prse.ir, prior=prse, comments=comments)
     return prse

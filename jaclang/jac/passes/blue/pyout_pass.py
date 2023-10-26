@@ -1,4 +1,9 @@
-"""Connect Decls and Defs in AST."""
+"""Connect Decls and Defs in AST.
+
+This pass creates and manages compilation of Python code from the AST. This pass
+also creates bytecode files from the Python code, and manages the caching of
+relevant files.
+"""
 import marshal
 import os
 import traceback
@@ -24,11 +29,10 @@ class PyOutPass(Pass):
         doc: Token,
         body: Optional['Elements'],
         mod_path: str,
-        rel_mod_path: str,
         is_imported: bool,
         sym_tab: Optional[SymbolTable],
         """
-        if not (os.path.exists(node.mod_path) and node.meta.get("py_code")):
+        if not (os.path.exists(node.loc.mod_path) and node.meta.get("py_code")):
             return
         mods = [node] + self.get_all_sub_nodes(node, ast.Module)
         for mod in mods:
@@ -59,16 +63,16 @@ class PyOutPass(Pass):
 
     def get_output_targets(self, node: ast.Module) -> tuple[str, str, str]:
         """Get output targets."""
-        base_path, file_name = os.path.split(node.mod_path)
+        base_path, file_name = os.path.split(node.loc.mod_path)
         gen_path = os.path.join(base_path, Con.JAC_GEN_DIR)
         os.makedirs(gen_path, exist_ok=True)
         with open(os.path.join(gen_path, "__init__.py"), "w"):
             pass
-        mod_dir, file_name = os.path.split(node.mod_path)
+        mod_dir, file_name = os.path.split(node.loc.mod_path)
         mod_dir = mod_dir.replace(base_path, "").lstrip(os.sep)
         base_name, _ = os.path.splitext(file_name)
         out_dir = os.path.join(gen_path, mod_dir)
         os.makedirs(out_dir, exist_ok=True)
         out_path_py = os.path.join(out_dir, f"{base_name}.py")
         out_path_pyc = os.path.join(out_dir, f"{base_name}.pyc")
-        return node.mod_path, out_path_py, out_path_pyc
+        return node.loc.mod_path, out_path_py, out_path_pyc

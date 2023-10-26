@@ -32,7 +32,7 @@ object Shape {
 }
 
 """Circle class inherits from Shape."""
-object Circle:Shape {
+object Circle:Shape: {
     can <init>(radius: float) {
         <super>.<init>(ShapeType.CIRCLE);
         self.radius = radius;

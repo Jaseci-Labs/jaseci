@@ -1,11 +1,17 @@
- """Type Analyze Pass."""
+"""Code analysis pass.
+
+This pass is used to analyze the code and add some extra information to the
+AST. For example, it will mark all the walker relevent statement nodes that
+are within a walker so the purple codegen can statically recognize here and
+visitor.
+"""
 import:py jaclang.jac.absyntree as ast;
 
 import:py from jaclang.jac.passes, Pass;
 import:py from jaclang.jac.constant, Tokens as Tok;
 
 
-object AnalyzePass:Pass{
+object AnalyzePass:Pass: {
     can enter_architype(nd: ast.Architype);
 }
 

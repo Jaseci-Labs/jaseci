@@ -2,7 +2,8 @@
 from jaclang import jac_blue_import
 
 prim = jac_blue_import("primitives")
-exit(1) if not prim else None
+if not prim:
+    raise ImportError("Could not import primitives, internal compile error")
 
 Object = prim.Object
 Node = prim.Node

@@ -20,6 +20,11 @@ class CodeLocInfo:
         self.last_tok = last_tok
 
     @property
+    def mod_path(self) -> str:
+        """Get line number."""
+        return self.first_tok.file_path
+
+    @property
     def first_line(self) -> int:
         """Get line number."""
         return self.first_tok.line_no
@@ -76,3 +81,7 @@ class CodeLocInfo:
     def update_last_token(self, last_tok: Token) -> None:
         """Update last token."""
         self.last_tok = last_tok
+
+    def __str__(self) -> str:
+        """Stringify."""
+        return f"{self.first_tok.line_no}:{self.first_tok.c_start} - {self.last_tok.line_no}:{self.last_tok.c_end}"

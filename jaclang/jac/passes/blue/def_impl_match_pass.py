@@ -1,4 +1,10 @@
-"""Connect Decls and Defs in AST."""
+"""Connect Decls and Defs in AST.
+
+This pass creates links in the ast between Decls of Architypes and Abilities
+that are separate from their implementations (Defs). This pass creates a link
+in the ast between the Decls and Defs of Architypes and Abilities through the
+body field.
+"""
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.blue import SubNodeTabPass
@@ -18,9 +24,7 @@ class DeclDefMatchPass(Pass):
 
     def after_pass(self) -> None:
         """Rebuild sub node table."""
-        self.ir = SubNodeTabPass(
-            prior=self, mod_path=self.mod_path, input_ir=self.ir
-        ).ir
+        self.ir = SubNodeTabPass(input_ir=self.ir, prior=self).ir
 
     def connect_def_impl(self, sym_tab: SymbolTable) -> None:
         """Connect Decls and Defs."""

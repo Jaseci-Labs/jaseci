@@ -16,7 +16,7 @@ object Game {
 """
 A number guessing game. The player must guess a number between 1 and 100.
 """
-object GuessTheNumberGame:Game {
+object GuessTheNumberGame:Game: {
     has attempts: int = 10,
         correct_number: int = (1, 100) |> random.randint;
 
