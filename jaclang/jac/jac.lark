@@ -125,6 +125,7 @@ statement: py_code_block
           | ability
           | architype
           | import_stmt
+          | match_stmt
           | SEMI
 
 typed_ctx_block: RETURN_HINT expression code_block
@@ -380,6 +381,44 @@ filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
 
 filter_compare_item: named_ref cmp_op expression
 
+match_stmt: KW_MATCH expr_list LBRACE match_case_block+ RBRACE
+match_case_block: KW_CASE pattern match_guard? COLON statement_list
+match_guard: KW_IF expression
+
+pattern: as_pattern
+//     | or_pattern
+    | literal_pattern
+//     | capture_pattern
+    | PYWILD
+    | value_pattern
+//     | group_pattern
+    | sequence_pattern
+    | mapping_pattern
+    | class_pattern
+
+as_pattern: pattern KW_AS NAME
+
+// or_pattern: (pattern "|")+ pattern
+
+literal_pattern: INT
+    | FLOAT
+    | multistring
+    | NULL
+    | BOOL
+
+// capture_pattern: NAME
+
+value_pattern: NAME (DOT NAME)*
+
+// group_pattern: LPAREN pattern RPAREN
+
+sequence_pattern: LSQUARE pattern (COMMA pattern)* RSQUARE
+    | LPAREN pattern (COMMA pattern)* RPAREN
+
+mapping_pattern: LBRACE (pattern COLON pattern (COMMA pattern COLON pattern)*)? RBRACE
+
+class_pattern: NAME LPAREN (pattern (COMMA pattern)* )? RPAREN
+
 FLOAT: /(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
@@ -456,6 +495,8 @@ KW_HAS: "has"
 KW_GLOBAL: "global"
 KW_CAN: "can"
 KW_STATIC: "static"
+KW_MATCH: "match"
+KW_CASE: "case"
 
 ARROW_L: /<--/
 ARROW_R: /-->/
@@ -552,5 +593,6 @@ FSTR_BESC.1: /{{|}}/
 
 COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
 WS.-2: /[ \t\f\r\n]/+
+PYWILD.-2: /_/
 %ignore COMMENT
 %ignore WS
