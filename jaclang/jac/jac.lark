@@ -382,12 +382,14 @@ filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
 filter_compare_item: named_ref cmp_op expression
 
 match_stmt: KW_MATCH expr_list LBRACE match_case_block+ RBRACE
-match_case_block: KW_CASE pattern match_guard? COLON statement_list
+match_case_block: KW_CASE pattern_seq match_guard? COLON statement_list
 match_guard: KW_IF expression
 
-pattern: as_pattern
-//     | or_pattern
-    | literal_pattern
+pattern_seq: (or_pattern | as_pattern)
+as_pattern: or_pattern KW_AS NAME
+or_pattern: (pattern BW_OR)* pattern
+
+pattern: literal_pattern
 //     | capture_pattern
     | PYWILD
     | value_pattern
@@ -395,10 +397,6 @@ pattern: as_pattern
     | sequence_pattern
     | mapping_pattern
     | class_pattern
-
-as_pattern: pattern KW_AS NAME
-
-// or_pattern: (pattern "|")+ pattern
 
 literal_pattern: INT
     | FLOAT
