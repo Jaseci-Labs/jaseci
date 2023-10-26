@@ -10,14 +10,14 @@ element: py_code_block
        | import_stmt
        | ability
        | architype
-       | mod_code
+       | free_code
        | test
        | global_var
 
 global_var: (KW_FREEZE | KW_GLOBAL) access_tag? assignment_list SEMI
 access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
 test: KW_TEST NAME? code_block
-mod_code: KW_WITH KW_ENTRY sub_name? code_block
+free_code: KW_WITH KW_ENTRY sub_name? code_block
 doc_tag: ( STRING | DOC_STRING )
 py_code_block: PYNLINE
 
@@ -83,7 +83,7 @@ func_decl: (LPAREN func_decl_params? RPAREN)? return_type_tag?
 func_decl_params: (param_var COMMA)* param_var
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 member_block: LBRACE member_stmt* RBRACE
-member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt)
+member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
 typed_has_clause: esc_name type_tag (EQ expression)?
@@ -137,18 +137,17 @@ except_list: except_def+
 except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
 finally_stmt: KW_FINALLY code_block
 
-for_stmt: KW_FOR assignment KW_TO expression KW_BY expression code_block else_stmt?
-        | KW_FOR name_list KW_IN expression code_block else_stmt?
+for_stmt: KW_ASYNC? KW_FOR assignment KW_TO expression KW_BY expression code_block else_stmt?
+        | KW_ASYNC? KW_FOR atomic_list KW_IN expression code_block else_stmt?
 
-name_list: (name_list COMMA)? NAME
 while_stmt: KW_WHILE expression code_block
-with_stmt: KW_WITH expr_as_list code_block
+with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
 expr_as_list: (expr_as COMMA)* expr_as
 expr_as: expression (KW_AS expression)?
 raise_stmt: KW_RAISE expression?
 assert_stmt: KW_ASSERT expression (COMMA expression)?
 ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
-delete_stmt: KW_DELETE expression
+delete_stmt: KW_DELETE atomic_list
 report_stmt: KW_REPORT expression
 return_stmt: KW_RETURN expression?
 yield_stmt: KW_YIELD expression?
@@ -158,7 +157,9 @@ visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
 revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
 disengage_stmt: KW_DISENGAGE SEMI
 await_stmt: KW_AWAIT expression
-assignment: KW_FREEZE? atomic_chain EQ expression
+
+assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_stmt | expression)
+          | atomic_chain COLON expression (EQ (yield_stmt | expression))?
 
 expression: pipe KW_IF expression KW_ELSE expression
           | pipe
@@ -303,6 +304,7 @@ list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
 set_val: LBRACE expr_list RBRACE
 expr_list: (expr_list COMMA)? expression
+atomic_list: (atomic_list COMMA)? atomic_chain
 
 tuple_list: expression COMMA expr_list COMMA assignment_list
           | expression COMMA assignment_list
@@ -315,8 +317,8 @@ kv_pair: expression COLON expression
 list_compr: LSQUARE inner_compr RSQUARE
 gen_compr: LPAREN inner_compr RPAREN
 set_compr: LBRACE inner_compr RBRACE
-inner_compr: expression KW_FOR name_list KW_IN walrus_assign (KW_IF expression)?
-dict_compr: LBRACE kv_pair KW_FOR name_list KW_IN walrus_assign (KW_IF expression)? RBRACE
+inner_compr: expression KW_FOR atomic_list KW_IN walrus_assign (KW_IF expression)?
+dict_compr: LBRACE kv_pair KW_FOR atomic_list KW_IN walrus_assign (KW_IF expression)? RBRACE
 
 param_list: expr_list COMMA assignment_list
           | assignment_list
