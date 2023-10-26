@@ -26,7 +26,7 @@ import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
            | KW_IMPORT sub_name import_path SEMI
 
 include_stmt: KW_INCLUDE sub_name import_path SEMI
-import_path: DOT? DOT? esc_name ((DOT esc_name)+)?
+import_path: DOT? DOT? named_ref ((DOT named_ref)+)?
 import_items: (import_item COMMA)* import_item
 import_item: named_ref (KW_AS NAME)?
 architype: decorators? (enum | architype_def | architype_decl)
@@ -48,10 +48,7 @@ sub_name: COLON NAME
 any_ref: special_ref
         | named_ref
 
-named_ref: global_ref
-           | esc_name
-
-esc_name: KWESC_NAME
+named_ref: KWESC_NAME
          | NAME
 
 special_ref: INIT_OP
@@ -86,7 +83,7 @@ member_block: LBRACE member_stmt* RBRACE
 member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_FREEZE | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: esc_name type_tag (EQ expression)?
+typed_has_clause: named_ref type_tag (EQ expression)?
 type_tag: COLON expression
 return_type_tag: RETURN_HINT expression
 
@@ -122,6 +119,8 @@ statement: py_code_block
           | if_stmt
           | expression SEMI
           | assignment SEMI
+          | global_ref SEMI
+          | nonlocal_ref SEMI
           | typed_ctx_block
           | doc_tag? ability
           | doc_tag? architype
@@ -144,7 +143,7 @@ while_stmt: KW_WHILE expression code_block
 with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
 expr_as_list: (expr_as COMMA)* expr_as
 expr_as: expression (KW_AS expression)?
-raise_stmt: KW_RAISE expression?
+raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?
 assert_stmt: KW_ASSERT expression (COMMA expression)?
 ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
 delete_stmt: KW_DELETE atomic_list
@@ -157,12 +156,17 @@ visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
 revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
 disengage_stmt: KW_DISENGAGE SEMI
 await_stmt: KW_AWAIT expression
+global_ref: GLOBAL_OP name_list
+nonlocal_ref: NONLOCAL_OP name_list
 
 assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_stmt | expression)
           | atomic_chain COLON expression (EQ (yield_stmt | expression))?
 
 expression: pipe KW_IF expression KW_ELSE expression
           | pipe
+          | lamda_expr
+
+lamda_expr: KW_WITH tuple_val KW_CAN expression
 
 pipe: pipe_back PIPE_FWD pipe
     | pipe_back
@@ -305,6 +309,7 @@ tuple_val: LPAREN tuple_list? RPAREN
 set_val: LBRACE expr_list RBRACE
 expr_list: (expr_list COMMA)? expression
 atomic_list: (atomic_list COMMA)? atomic_chain
+name_list: (named_ref COMMA)* named_ref
 
 tuple_list: expression COMMA expr_list COMMA assignment_list
           | expression COMMA assignment_list
@@ -334,10 +339,9 @@ arch_ref: object_ref
 node_ref: NODE_OP NAME
 edge_ref: EDGE_OP NAME
 walker_ref: WALKER_OP NAME
-object_ref: OBJECT_OP esc_name
+object_ref: OBJECT_OP named_ref
 enum_ref: ENUM_OP NAME
-ability_ref: ABILITY_OP (special_ref | esc_name)
-global_ref: GLOBAL_OP esc_name
+ability_ref: ABILITY_OP (special_ref | named_ref)
 
 arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
 abil_to_arch_chain: arch_or_ability_chain? arch_ref
@@ -372,7 +376,7 @@ filter_compr: LPAREN EQ filter_compare_list RPAREN
 
 filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
 
-filter_compare_item: esc_name cmp_op expression
+filter_compare_item: named_ref cmp_op expression
 
 FLOAT: /(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
@@ -466,6 +470,7 @@ CARROW_L_P2: /]\+/
 CARROW_R_P1: /\+\[/
 
 GLOBAL_OP: /:g:|:global:/
+NONLOCAL_OP: /:nl:|:nonlocal:/
 HERE_OP: /<h>|<here>/
 SELF_OP: /<s>|<self>/
 INIT_OP: /<i>|<init>/
