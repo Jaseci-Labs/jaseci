@@ -122,8 +122,8 @@ statement: py_code_block
           | global_ref SEMI
           | nonlocal_ref SEMI
           | typed_ctx_block
-          | doc_tag? ability
-          | doc_tag? architype
+          | ability
+          | architype
           | import_stmt
           | SEMI
 
@@ -206,6 +206,7 @@ term: factor MOD term
     | factor DIV term
     | factor FLOOR_DIV term
     | factor STAR_MUL term
+    | factor DECOR_OP term
     | factor
 
 factor: power
@@ -255,6 +256,7 @@ walrus_op: RSHIFT_EQ
          | SUB_EQ
          | ADD_EQ
          | WALRUS_EQ
+         | MATMUL_EQ
 
 cmp_op: KW_ISN
       | KW_IS
@@ -491,6 +493,7 @@ DOT_BKWD: /<\./
 RETURN_HINT: /->/
 ELVIS_OP: /\?:/
 NULL_OK: /\?/
+MATMUL_EQ: /@=/
 DECOR_OP: /@/
 
 KW_AND.1: /&&|and/
