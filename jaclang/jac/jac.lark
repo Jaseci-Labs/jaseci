@@ -128,10 +128,10 @@ statement: py_code_block
           | SEMI
 
 typed_ctx_block: RETURN_HINT expression code_block
-if_stmt: KW_IF expression code_block elif_stmt? else_stmt?
-elif_stmt: KW_ELIF expression code_block elif_stmt?
+if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
+elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
 else_stmt: KW_ELSE code_block
-try_stmt: KW_TRY code_block except_list? finally_stmt?
+try_stmt: KW_TRY code_block except_list? else_stmt? finally_stmt?
 except_list: except_def+
 except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
 finally_stmt: KW_FINALLY code_block
