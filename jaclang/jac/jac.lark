@@ -390,10 +390,8 @@ as_pattern: or_pattern KW_AS NAME
 or_pattern: (pattern BW_OR)* pattern
 
 pattern: literal_pattern
-//     | capture_pattern
     | PYWILD
     | value_pattern
-//     | group_pattern
     | sequence_pattern
     | mapping_pattern
     | class_pattern
@@ -404,18 +402,16 @@ literal_pattern: INT
     | NULL
     | BOOL
 
-// capture_pattern: NAME
-
 value_pattern: NAME (DOT NAME)*
 
-// group_pattern: LPAREN pattern RPAREN
+sequence_pattern: LSQUARE list_inner_pattern (COMMA list_inner_pattern)* RSQUARE
+                | LPAREN list_inner_pattern (COMMA list_inner_pattern)* RPAREN
 
-sequence_pattern: LSQUARE pattern (COMMA pattern)* RSQUARE
-    | LPAREN pattern (COMMA pattern)* RPAREN
+dict_inner_pattern: (pattern_seq COLON pattern_seq | STAR_POW NAME)
+list_inner_pattern: (pattern_seq | STAR_MUL NAME)
+mapping_pattern: LBRACE (dict_inner_pattern (COMMA dict_inner_pattern)*)? RBRACE
 
-mapping_pattern: LBRACE (pattern COLON pattern (COMMA pattern COLON pattern)*)? RBRACE
-
-class_pattern: NAME LPAREN (pattern (COMMA pattern)* )? RPAREN
+class_pattern: NAME tuple_val
 
 FLOAT: /(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/

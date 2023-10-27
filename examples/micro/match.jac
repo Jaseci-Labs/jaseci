@@ -1,3 +1,6 @@
+object Point {
+    has x: flaot, y: float;
+}
 
 can match_example(data: dict) {
 
