@@ -161,13 +161,13 @@ global_ref: GLOBAL_OP name_list
 nonlocal_ref: NONLOCAL_OP name_list
 
 assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_stmt | expression)
-          | atomic_chain COLON expression (EQ (yield_stmt | expression))?
+          | atomic_chain type_tag (EQ (yield_stmt | expression))?
 
 expression: pipe KW_IF expression KW_ELSE expression
           | pipe
           | lamda_expr
 
-lamda_expr: KW_WITH tuple_val KW_CAN expression
+lamda_expr: KW_WITH func_decl_params? return_type_tag? KW_CAN expression
 
 pipe: pipe_back PIPE_FWD pipe
     | pipe_back

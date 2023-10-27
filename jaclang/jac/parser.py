@@ -1609,28 +1609,77 @@ class JacParser(Pass):
             """Grammar rule.
 
             assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_stmt | expression)
-                    | atomic_chain COLON expression (EQ (yield_stmt | expression))?
+                    | atomic_chain type_tag (EQ (yield_stmt | expression))?
             """
-            is_frozen = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_FREEZE
-            target = kid[1] if is_frozen else kid[0]
-            value = kid[-1]
-            if isinstance(target, ast.AtomType) and isinstance(value, ast.ExprType):
+            chomp = [*kid]
+            is_frozen = (
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_FREEZE
+            )
+            chomp = chomp[1:] if is_frozen else chomp
+            if (
+                len(chomp) > 1
+                and isinstance(chomp[1], ast.Token)
+                and chomp[1].name == Tok.EQ
+            ):
+                assignees: list[ast.AtomType] = []
+                while (
+                    isinstance(chomp[0], ast.AtomType)
+                    and len(chomp) > 1
+                    and isinstance(chomp[1], ast.Token)
+                    and chomp[1].name == Tok.EQ
+                ):
+                    assignees.append(chomp[0])
+                    chomp = chomp[2:]
+            elif isinstance(chomp[0], ast.AtomType):
+                assignees = [chomp[0]]
+            else:
+                raise self.ice()
+            chomp = chomp[1:]
+            type_tag = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            chomp = chomp[1:] if type_tag else chomp
+            if (
+                len(chomp) > 0
+                and isinstance(chomp[0], ast.Token)
+                and chomp[0].name == Tok.EQ
+            ):
+                chomp = chomp[1:]
+            valid_types = Union[ast.YieldStmt, ast.ExprType]
+            value = (
+                chomp[0]
+                if len(chomp) > 0 and isinstance(chomp[0], valid_types)
+                else None
+            )
+            if isinstance(assignees, valid_types):
                 return self.nu(
                     ast.Assignment(
-                        target=target,
+                        target=assignees,
+                        type_tag=type_tag,
                         value=value,
-                        mutable=not is_frozen,
+                        mutable=is_frozen,
                         kid=kid,
                     )
                 )
             else:
                 raise self.ice()
 
+        def assign_targets(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.AtomType]:
+            """Grammar rule.
+
+            assign_targets: (atomic_chain EQ)+
+            """
+            return ast.SubNodeList[ast.AtomType](
+                items=[i for i in kid if isinstance(i, ast.AtomType)],
+                kid=kid,
+            )
+
         def expression(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
             expression: pipe KW_IF expression KW_ELSE expression
-                      | pipe
+                    | pipe
+                    | lamda_expr
             """
             if len(kid) > 1:
                 if (
@@ -1673,6 +1722,29 @@ class JacParser(Pass):
                     raise self.ice()
             elif isinstance(kid[0], ast.ExprType):
                 return self.nu(kid[0])
+            else:
+                raise self.ice()
+
+        def lambda_expr(self, kid: list[ast.AstNode]) -> ast.LambdaExpr:
+            """Grammar rule.
+
+            lamda_expr: KW_WITH func_decl_params? return_type_tag? KW_CAN expression
+            """
+            chomp = [*kid][1:]
+            params = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
+            chomp = chomp[1:] if params else chomp
+            return_type = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            chomp = chomp[1:] if return_type else chomp
+            chomp = chomp[1:]
+            if isinstance(chomp[0], ast.ExprType):
+                return self.nu(
+                    ast.LambdaExpr(
+                        params=params,
+                        return_type=return_type,
+                        body=chomp[0],
+                        kid=kid,
+                    )
+                )
             else:
                 raise self.ice()
 

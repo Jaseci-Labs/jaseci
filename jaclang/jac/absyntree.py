@@ -151,6 +151,14 @@ class AstElseBodyNode(AstNode):
         self.else_body: Optional[ElseStmt | ElseIf] = else_body
 
 
+class AstTypedVarNode(AstNode):
+    """Nodes that have access."""
+
+    def __init__(self, type_tag: Optional[SubTag[ExprType]]) -> None:
+        """Initialize ast."""
+        self.type_tag: Optional[SubTag[ExprType]] = type_tag
+
+
 class WalkerStmtOnlyNode(AstNode):
     """WalkerStmtOnlyNode node type for Jac Ast."""
 
@@ -630,7 +638,7 @@ class ArchRefChain(AstNode):
         )
 
 
-class ParamVar(AstSymbolNode):
+class ParamVar(AstSymbolNode, AstTypedVarNode):
     """ParamVar node type for Jac Ast."""
 
     def __init__(
@@ -644,7 +652,6 @@ class ParamVar(AstSymbolNode):
         """Initialize param var node."""
         self.name = name
         self.unpack = unpack
-        self.type_tag = type_tag
         self.value = value
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -653,6 +660,7 @@ class ParamVar(AstSymbolNode):
             sym_name_node=name,
             sym_type=SymbolType.VAR,
         )
+        AstTypedVarNode.__init__(self, type_tag=type_tag)
 
 
 class ArchHas(AstAccessNode, AstDocNode):
@@ -676,7 +684,7 @@ class ArchHas(AstAccessNode, AstDocNode):
         AstDocNode.__init__(self, doc=doc)
 
 
-class HasVar(AstSymbolNode):
+class HasVar(AstSymbolNode, AstTypedVarNode):
     """HasVar node type for Jac Ast."""
 
     def __init__(
@@ -688,7 +696,6 @@ class HasVar(AstSymbolNode):
     ) -> None:
         """Initialize has var node."""
         self.name = name
-        self.type_tag = type_tag
         self.value = value
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -697,6 +704,7 @@ class HasVar(AstSymbolNode):
             sym_name_node=name,
             sym_type=SymbolType.VAR,
         )
+        AstTypedVarNode.__init__(self, type_tag=type_tag)
 
 
 class TypedCtxBlock(AstNode):
@@ -1082,13 +1090,14 @@ class NonLocalStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class Assignment(AstNode):
+class Assignment(AstTypedVarNode):
     """Assignment node type for Jac Ast."""
 
     def __init__(
         self,
-        target: AtomType,
-        value: ExprType,
+        target: list[AtomType],
+        value: Optional[ExprType | YieldStmt],
+        type_tag: Optional[SubTag[ExprType]],
         kid: Sequence[AstNode],
         is_static: bool = False,
         mutable: bool = True,
@@ -1099,6 +1108,7 @@ class Assignment(AstNode):
         self.value = value
         self.mutable = mutable
         AstNode.__init__(self, kid=kid)
+        AstTypedVarNode.__init__(self, type_tag=type_tag)
 
 
 class BinaryExpr(AstNode):
@@ -1115,6 +1125,23 @@ class BinaryExpr(AstNode):
         self.left = left
         self.right = right
         self.op = op
+        AstNode.__init__(self, kid=kid)
+
+
+class LambdaExpr(AstNode):
+    """ExprLambda node type for Jac Ast."""
+
+    def __init__(
+        self,
+        params: Optional[SubNodeList[ParamVar]],
+        return_type: Optional[SubTag[ExprType]],
+        body: ExprType,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize lambda expression node."""
+        self.params = params
+        self.return_type = return_type
+        self.body = body
         AstNode.__init__(self, kid=kid)
 
 
