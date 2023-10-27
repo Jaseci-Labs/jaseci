@@ -143,6 +143,14 @@ class AstAsyncNode(AstNode):
         self.is_async: bool = is_async
 
 
+class AstElseNode(AstNode):
+    """Nodes that have access."""
+
+    def __init__(self, else_body: Optional[ElseStmt]) -> None:
+        """Initialize ast."""
+        self.else_body: Optional[ElseStmt] = else_body
+
+
 class WalkerStmtOnlyNode(AstNode):
     """WalkerStmtOnlyNode node type for Jac Ast."""
 
@@ -706,7 +714,7 @@ class TypedCtxBlock(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class IfStmt(AstNode):
+class IfStmt(AstElseNode):
     """IfStmt node type for Jac Ast."""
 
     def __init__(
@@ -799,6 +807,7 @@ class IterForStmt(AstAsyncNode):
         condition: ExprType,
         count_by: ExprType,
         body: SubNodeList[CodeBlockStmt],
+        else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize iter for node."""
