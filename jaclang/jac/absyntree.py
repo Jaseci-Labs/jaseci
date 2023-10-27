@@ -143,12 +143,12 @@ class AstAsyncNode(AstNode):
         self.is_async: bool = is_async
 
 
-class AstElseNode(AstNode):
+class AstElseBodyNode(AstNode):
     """Nodes that have access."""
 
-    def __init__(self, else_body: Optional[ElseStmt]) -> None:
+    def __init__(self, else_body: Optional[ElseStmt | ElseIf]) -> None:
         """Initialize ast."""
-        self.else_body: Optional[ElseStmt] = else_body
+        self.else_body: Optional[ElseStmt | ElseIf] = else_body
 
 
 class WalkerStmtOnlyNode(AstNode):
@@ -714,7 +714,7 @@ class TypedCtxBlock(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class IfStmt(AstElseNode):
+class IfStmt(AstElseBodyNode):
     """IfStmt node type for Jac Ast."""
 
     def __init__(
@@ -727,8 +727,8 @@ class IfStmt(AstElseNode):
         """Initialize if statement node."""
         self.condition = condition
         self.body = body
-        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
 class ElseIf(IfStmt):
@@ -748,7 +748,7 @@ class ElseStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class TryStmt(AstNode):
+class TryStmt(AstElseBodyNode):
     """TryStmt node type for Jac Ast."""
 
     def __init__(
@@ -762,9 +762,9 @@ class TryStmt(AstNode):
         """Initialize try statement node."""
         self.body = body
         self.excepts = excepts
-        self.else_body = else_body
         self.finally_body = finally_body
         AstNode.__init__(self, kid=kid)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
 class Except(AstNode):
@@ -797,7 +797,7 @@ class FinallyStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class IterForStmt(AstAsyncNode):
+class IterForStmt(AstAsyncNode, AstElseBodyNode):
     """IterFor node type for Jac Ast."""
 
     def __init__(
@@ -817,9 +817,10 @@ class IterForStmt(AstAsyncNode):
         self.body = body
         AstNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
-class InForStmt(AstAsyncNode):
+class InForStmt(AstAsyncNode, AstElseBodyNode):
     """InFor node type for Jac Ast."""
 
     def __init__(
@@ -828,6 +829,7 @@ class InForStmt(AstAsyncNode):
         is_async: bool,
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
+        else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize in for node."""
@@ -836,6 +838,7 @@ class InForStmt(AstAsyncNode):
         self.body = body
         AstNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
 class WhileStmt(AstNode):
@@ -876,7 +879,7 @@ class ExprAsItem(AstNode):
     def __init__(
         self,
         expr: ExprType,
-        alias: Optional[Name],
+        alias: Optional[ExprType],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize module item node."""
@@ -891,10 +894,12 @@ class RaiseStmt(AstNode):
     def __init__(
         self,
         cause: Optional[ExprType],
+        from_target: Optional[ExprType],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize raise statement node."""
         self.cause = cause
+        self.from_target = from_target
         AstNode.__init__(self, kid=kid)
 
 
@@ -931,7 +936,7 @@ class DeleteStmt(AstNode):
 
     def __init__(
         self,
-        target: ExprList,
+        target: SubNodeList[AtomType],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize delete statement node."""
@@ -992,7 +997,7 @@ class IgnoreStmt(WalkerStmtOnlyNode):
         WalkerStmtOnlyNode.__init__(self)
 
 
-class VisitStmt(WalkerStmtOnlyNode):
+class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode):
     """VisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -1005,12 +1010,12 @@ class VisitStmt(WalkerStmtOnlyNode):
         """Initialize visit statement node."""
         self.vis_type = vis_type
         self.target = target
-        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
-class RevisitStmt(WalkerStmtOnlyNode):
+class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode):
     """ReVisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -1021,9 +1026,9 @@ class RevisitStmt(WalkerStmtOnlyNode):
     ) -> None:
         """Initialize revisit statement node."""
         self.hops = hops
-        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
 class DisengageStmt(WalkerStmtOnlyNode):
@@ -1047,6 +1052,32 @@ class AwaitStmt(AstNode):
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize sync statement node."""
+        self.target = target
+        AstNode.__init__(self, kid=kid)
+
+
+class GlobalStmt(AstNode):
+    """GlobalStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: SubNodeList[NameType],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize global statement node."""
+        self.target = target
+        AstNode.__init__(self, kid=kid)
+
+
+class NonLocalStmt(AstNode):
+    """NonlocalStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: SubNodeList[NameType],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize nonlocal statement node."""
         self.target = target
         AstNode.__init__(self, kid=kid)
 
@@ -1700,6 +1731,10 @@ class EmptyToken(Token):
         )
 
 
+class Semi(Token):
+    """Semicolon node type for Jac Ast."""
+
+
 # ----------------
 class JacSource(EmptyToken):
     """SourceString node type for Jac Ast."""
@@ -1832,5 +1867,7 @@ CodeBlockStmt = Union[
     IgnoreStmt,
     PyInlineCode,
     TypedCtxBlock,
-    Token,  # TODO: This is only for SEMI's create new type
+    GlobalStmt,
+    NonLocalStmt,
+    Semi,
 ]
