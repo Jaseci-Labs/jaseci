@@ -632,7 +632,7 @@ class BluePygenPass(Pass):
         if node.else_body:
             self.emit(node, node.else_body.meta["py_code"])
 
-    def exit_else_ifs(self, node: ast.ElseIfs) -> None:
+    def exit_else_ifs(self, node: ast.ElseIf) -> None:
         """Sub objects.
 
         condition: ExprType,

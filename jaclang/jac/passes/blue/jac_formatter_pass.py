@@ -695,7 +695,7 @@ class JacFormatPass(Pass):
         if node.else_body:
             self.emit(node, node.else_body.meta["jac_code"])
 
-    def exit_else_ifs(self, node: ast.ElseIfs) -> None:
+    def exit_else_ifs(self, node: ast.ElseIf) -> None:
         """Sub objects.
 
         elseifs: list[IfStmt],

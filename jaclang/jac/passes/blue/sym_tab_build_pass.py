@@ -573,7 +573,7 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_else_ifs(self, node: ast.ElseIfs) -> None:
+    def enter_else_ifs(self, node: ast.ElseIf) -> None:
         """Sub objects.
 
         elseifs: list['IfStmt'],

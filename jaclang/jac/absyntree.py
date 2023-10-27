@@ -135,6 +135,14 @@ class AstDocNode(AstNode):
         self.doc: Optional[String] = doc
 
 
+class AstAsyncNode(AstNode):
+    """Nodes that have access."""
+
+    def __init__(self, is_async: bool) -> None:
+        """Initialize ast."""
+        self.is_async: bool = is_async
+
+
 class WalkerStmtOnlyNode(AstNode):
     """WalkerStmtOnlyNode node type for Jac Ast."""
 
@@ -476,7 +484,7 @@ class EnumDef(AstSymbolNode, AstDocNode):
         AstDocNode.__init__(self, doc=doc)
 
 
-class Ability(AstSymbolNode, AstAccessNode, AstDocNode):
+class Ability(AstSymbolNode, AstAccessNode, AstDocNode, AstAsyncNode):
     """Ability node type for Jac Ast."""
 
     def __init__(
@@ -496,7 +504,6 @@ class Ability(AstSymbolNode, AstAccessNode, AstDocNode):
         """Initialize func arch node."""
         self.name_ref = name_ref
         self.is_func = is_func
-        self.is_async = is_async
         self.is_static = is_static
         self.is_abstract = is_abstract
         self.decorators = decorators
@@ -511,6 +518,7 @@ class Ability(AstSymbolNode, AstAccessNode, AstDocNode):
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
     @property
     def is_method(self) -> bool:
@@ -705,33 +713,18 @@ class IfStmt(AstNode):
         self,
         condition: ExprType,
         body: SubNodeList[CodeBlockStmt],
-        elseifs: Optional[ElseIfs],
-        else_body: Optional[ElseStmt],
+        else_body: Optional[ElseStmt | ElseIf],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize if statement node."""
         self.condition = condition
         self.body = body
-        self.elseifs = elseifs
         self.else_body = else_body
         AstNode.__init__(self, kid=kid)
 
 
-class ElseIfs(AstNode):
+class ElseIf(IfStmt):
     """ElseIfs node type for Jac Ast."""
-
-    def __init__(
-        self,
-        condition: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        elseifs: Optional[ElseIfs],
-        kid: Sequence[AstNode],
-    ) -> None:
-        """Initialize if statement node."""
-        self.condition = condition
-        self.body = body
-        self.elseifs = elseifs
-        AstNode.__init__(self, kid=kid)
 
 
 class ElseStmt(AstNode):
@@ -754,12 +747,14 @@ class TryStmt(AstNode):
         self,
         body: SubNodeList[CodeBlockStmt],
         excepts: Optional[SubNodeList[Except]],
+        else_body: Optional[ElseStmt],
         finally_body: Optional[FinallyStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize try statement node."""
         self.body = body
         self.excepts = excepts
+        self.else_body = else_body
         self.finally_body = finally_body
         AstNode.__init__(self, kid=kid)
 
@@ -794,12 +789,13 @@ class FinallyStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class IterForStmt(AstNode):
+class IterForStmt(AstAsyncNode):
     """IterFor node type for Jac Ast."""
 
     def __init__(
         self,
         iter: Assignment,
+        is_async: bool,
         condition: ExprType,
         count_by: ExprType,
         body: SubNodeList[CodeBlockStmt],
@@ -811,14 +807,16 @@ class IterForStmt(AstNode):
         self.count_by = count_by
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
 
-class InForStmt(AstNode):
+class InForStmt(AstAsyncNode):
     """InFor node type for Jac Ast."""
 
     def __init__(
         self,
         name_list: SubNodeList[Name],
+        is_async: bool,
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[AstNode],
@@ -828,6 +826,7 @@ class InForStmt(AstNode):
         self.collection = collection
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
 
 class WhileStmt(AstNode):
@@ -845,11 +844,12 @@ class WhileStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class WithStmt(AstNode):
+class WithStmt(AstAsyncNode):
     """WithStmt node type for Jac Ast."""
 
     def __init__(
         self,
+        is_async: bool,
         exprs: SubNodeList[ExprAsItem],
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[AstNode],
@@ -858,6 +858,7 @@ class WithStmt(AstNode):
         self.exprs = exprs
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
 
 class ExprAsItem(AstNode):
