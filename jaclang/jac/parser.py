@@ -16,7 +16,7 @@ from jaclang.vendor.lark import Lark, Transformer, logger
 class JacParser(Pass):
     """Jac Parser."""
 
-    dev_mode = True
+    dev_mode = False
 
     def __init__(self, input_ir: ast.JacSource) -> None:
         """Initialize parser."""
@@ -1612,7 +1612,11 @@ class JacParser(Pass):
             else:
                 raise self.ice()
             chomp = chomp[1:]
-            type_tag = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            type_tag = (
+                chomp[0]
+                if len(chomp) > 0 and isinstance(chomp[0], ast.SubTag)
+                else None
+            )
             chomp = chomp[1:] if type_tag else chomp
             if (
                 len(chomp) > 0

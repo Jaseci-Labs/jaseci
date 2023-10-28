@@ -35,7 +35,8 @@ class TestLarkParser(TestCaseMicroSuite):
         """Parse micro jac file."""
         prse = JacParser(
             input_ir=JacSource(
-                self.load_fixture("../../../cli/impl/cli_impl.jac"), mod_path=""
+                self.load_fixture("../../../cli/impl/cli_impl.jac"),
+                mod_path="../../../cli/impl/cli_impl.jac",
             )
         )
         self.assertFalse(prse.errors_had)
