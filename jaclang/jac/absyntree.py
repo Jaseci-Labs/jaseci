@@ -1607,6 +1607,92 @@ class FilterCompr(AstSymbolNode):
         )
 
 
+# Match Nodes
+# ------------
+
+
+class MatchStmt(AstNode):
+    """MatchStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: ExprType,
+        cases: SubNodeList[MatchCase],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match statement node."""
+        self.target = target
+        self.cases = cases
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchCase(AstNode):
+    """MatchCase node type for Jac Ast."""
+
+    def __init__(
+        self,
+        pattern: MatchPattern,
+        body: SubNodeList[CodeBlockStmt],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match case node."""
+        self.pattern = pattern
+        self.body = body
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchValue(AstNode):
+    """MatchValue node type for Jac Ast."""
+
+    def __init__(
+        self,
+        value: ExprType,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match value node."""
+        self.value = value
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchSingleton(AstNode):
+    """MatchSingleton node type for Jac Ast."""
+
+    def __init__(
+        self,
+        value: Bool | Null,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match singleton node."""
+        self.value = value
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchSequence(AstNode):
+    """MatchSequence node type for Jac Ast."""
+
+    def __init__(
+        self,
+        values: SubNodeList[MatchPattern],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match sequence node."""
+        self.values = values
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchStar(AstNode):
+    """MatchStar node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: NameType,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match star node."""
+        self.name = name
+        AstNode.__init__(self, kid=kid)
+
+
 # AST Terminal Node Types
 # --------------------------
 class Token(AstNode):
@@ -1738,6 +1824,12 @@ class BuiltinType(TokenSymbol):
     """Type node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.VAR
+
+
+class Null(TokenSymbol):
+    """Semicolon node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.NULL
 
 
 class EmptyToken(Token):
@@ -1898,3 +1990,5 @@ CodeBlockStmt = Union[
     NonLocalStmt,
     Semi,
 ]
+
+MatchPattern = Union[MatchValue, MatchSingleton, MatchSequence, MatchStar]

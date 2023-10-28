@@ -3024,6 +3024,8 @@ class JacParser(Pass):
                 ret_type = ast.Name
             elif token.type == Tok.SEMI:
                 ret_type = ast.Semi
+            elif token.type == Tok.NULL:
+                ret_type = ast.Null
             elif token.type == Tok.FLOAT:
                 ret_type = ast.Float
             elif token.type in [Tok.INT, Tok.INT, Tok.HEX, Tok.BIN, Tok.OCT]:

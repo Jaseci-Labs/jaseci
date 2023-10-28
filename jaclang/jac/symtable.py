@@ -33,6 +33,7 @@ class SymbolType(Enum):
     STRING = "string"  # LSP: String
     BOOL = "bool"  # LSP: Boolean
     SEQUENCE = "sequence"  # LSP: Array
+    NULL = "null"  # LSP: Null
 
     def __str__(self) -> str:
         """Stringify."""
