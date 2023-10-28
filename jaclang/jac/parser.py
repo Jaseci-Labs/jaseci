@@ -83,6 +83,7 @@ class JacParser(Pass):
         logger.setLevel(logging.DEBUG)
 
     comment_cache = []
+
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})
     JacTransformer = jl.Transformer
 
@@ -3069,6 +3070,272 @@ class JacParser(Pass):
                 )
             else:
                 raise self.ice()
+
+        def pattern_seq(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+            """Grammar rule.
+
+            pattern_seq: (or_pattern | as_pattern)
+            """
+            if isinstance(kid[0], ast.MatchPattern):
+                return self.nu(kid[0])
+            else:
+                raise self.ice()
+
+        def or_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+            """Grammar rule.
+
+            or_pattern: (pattern BW_OR)* pattern
+            """
+            if len(kid) == 1:
+                if isinstance(kid[0], ast.MatchPattern):
+                    return self.nu(kid[0])
+                else:
+                    raise self.ice()
+            else:
+                patterns = [i for i in kid if isinstance(i, ast.MatchPattern)]
+                return self.nu(
+                    ast.MatchOr(
+                        patterns=patterns,
+                        kid=kid,
+                    )
+                )
+
+        def as_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+            """Grammar rule.
+
+            as_pattern: pattern KW_AS NAME
+            """
+            if isinstance(kid[0], ast.MatchPattern) and isinstance(
+                kid[2], ast.NameType
+            ):
+                return self.nu(
+                    ast.MatchAs(
+                        pattern=kid[0],
+                        name=kid[2],
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+            """Grammar rule.
+
+            pattern: literal_pattern
+                | PYWILD
+                | value_pattern
+                | sequence_pattern
+                | mapping_pattern
+                | class_pattern
+            """
+            if isinstance(kid[0], ast.MatchPattern):
+                return self.nu(kid[0])
+            elif isinstance(kid[0], ast.Token) and kid[0].name == Tok.PYWILD:
+                return self.nu(
+                    ast.MatchWild(
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def literal_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+            """Grammar rule.
+
+            literal_pattern: INT
+                | FLOAT
+                | multistring
+                | NULL
+                | BOOL
+            """
+            if isinstance(kid[0], ast.ExprType):
+                return self.nu(
+                    ast.MatchValue(
+                        value=kid[0],
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def value_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+            """Grammar rule.
+
+            value_pattern: NAME (DOT NAME)*
+            """
+            if isinstance(kid[0], ast.AtomType):
+                return self.nu(
+                    ast.MatchValue(
+                        value=kid[0],
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def sequence_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+            """Grammar rule.
+
+            sequence_pattern: LSQUARE list_inner_pattern (COMMA list_inner_pattern)* RSQUARE
+                            | LPAREN list_inner_pattern (COMMA list_inner_pattern)* RPAREN
+            """
+            patterns = [i for i in kid if isinstance(i, ast.MatchPattern)]
+            return self.nu(
+                ast.MatchSequence(
+                    values=patterns,
+                    kid=kid,
+                )
+            )
+
+        def mapping_pattern(self, kid: list[ast.AstNode]) -> ast.MatchMapping:
+            """Grammar rule.
+
+            mapping_pattern: LBRACE (dict_inner_pattern (COMMA dict_inner_pattern)*)? RBRACE
+            """
+            valid_types = Union[ast.MatchKVPair, ast.MatchStar]
+            patterns = [i for i in kid if isinstance(i, valid_types)]
+            return self.nu(
+                ast.MatchMapping(
+                    values=patterns,
+                    kid=kid,
+                )
+            )
+
+        def list_inner_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+            """Grammar rule.
+
+            list_inner_pattern: (pattern_seq | STAR_MUL NAME)
+            """
+            if isinstance(kid[0], ast.MatchPattern):
+                return self.nu(kid[0])
+            elif isinstance(kid[-1], ast.Name):
+                return self.nu(
+                    ast.MatchStar(
+                        name=kid[-1],
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def dict_inner_pattern(
+            self, kid: list[ast.AstNode]
+        ) -> ast.MatchKVPair | ast.MatchStar:
+            """Grammar rule.
+
+            dict_inner_pattern: (pattern_seq COLON pattern_seq | STAR_POW NAME)
+            """
+            if isinstance(kid[0], ast.MatchPattern) and isinstance(
+                kid[2], ast.MatchPattern
+            ):
+                return self.nu(
+                    ast.MatchKVPair(
+                        key=kid[0],
+                        value=kid[2],
+                        kid=kid,
+                    )
+                )
+            elif isinstance(kid[-1], ast.Name):
+                return self.nu(
+                    ast.MatchStar(
+                        name=kid[-1],
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def class_pattern(self, kid: list[ast.AstNode]) -> ast.MatchClass:
+            """Grammar rule.
+
+            class_pattern: NAME LPAREN kw_pattern_list? RPAREN
+                        | NAME LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
+            """
+            name = kid[0]
+            first = kid[2]
+            second = kid[4] if len(kid) > 4 else None
+            arg = (
+                first
+                if isinstance(first, ast.SubNodeList)
+                and isinstance(first.items[0], ast.MatchPattern)
+                else None
+            )
+            kw = (
+                second
+                if isinstance(second, ast.SubNodeList)
+                and isinstance(second.items[0], ast.MatchKVPair)
+                else first
+                if isinstance(first, ast.SubNodeList)
+                and isinstance(first.items[0], ast.MatchKVPair)
+                else None
+            )
+            if isinstance(name, ast.NameType):
+                return self.nu(
+                    ast.MatchClass(
+                        name=name,
+                        arg_patterns=arg,
+                        kw_patterns=kw,
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def pattern_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.MatchPattern]:
+            """Grammar rule.
+
+            pattern_list: (pattern_seq COMMA)* pattern_seq
+            """
+            chomp = [*kid]
+            res: list[ast.MatchPattern] = []
+            while len(chomp):
+                comp = (
+                    chomp[1:]
+                    if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COMMA
+                    else chomp
+                )
+                val = chomp[0]
+                if isinstance(val, ast.MatchPattern):
+                    res.append(self.nu(val))
+                else:
+                    raise self.ice()
+                chomp = comp[1:]
+            return ast.SubNodeList[ast.MatchPattern](
+                items=res,
+                kid=kid,
+            )
+
+        def kw_pattern_list(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.MatchKVPair]:
+            """Grammar rule.
+
+            kw_pattern_list: (name_ref EQ pattern_seq COMMA)* name_ref EQ pattern_seq
+            """
+            chomp = [*kid]
+            res: list[ast.MatchKVPair] = []
+            while len(chomp):
+                comp = (
+                    chomp[1:]
+                    if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COMMA
+                    else chomp
+                )
+                key = chomp[0]
+                eq = chomp[1]
+                val = chomp[2]
+                if isinstance(key, ast.NameType) and isinstance(val, ast.MatchPattern):
+                    res.append(
+                        self.nu(ast.MatchKVPair(key=key, value=val, kid=[key, eq, val]))
+                    )
+                else:
+                    raise self.ice()
+                chomp = comp[3:]
+            return ast.SubNodeList[ast.MatchKVPair](
+                items=res,
+                kid=kid,
+            )
 
         def __default_token__(self, token: jl.Token) -> ast.Token:
             """Token handler."""

@@ -385,8 +385,9 @@ match_stmt: KW_MATCH expr_list LBRACE match_case_block+ RBRACE
 match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
 
 pattern_seq: (or_pattern | as_pattern)
-as_pattern: or_pattern KW_AS NAME
 or_pattern: (pattern BW_OR)* pattern
+as_pattern: or_pattern KW_AS NAME
+
 
 pattern: literal_pattern
     | PYWILD
@@ -406,11 +407,15 @@ value_pattern: NAME (DOT NAME)*
 sequence_pattern: LSQUARE list_inner_pattern (COMMA list_inner_pattern)* RSQUARE
                 | LPAREN list_inner_pattern (COMMA list_inner_pattern)* RPAREN
 
-dict_inner_pattern: (pattern_seq COLON pattern_seq | STAR_POW NAME)
-list_inner_pattern: (pattern_seq | STAR_MUL NAME)
 mapping_pattern: LBRACE (dict_inner_pattern (COMMA dict_inner_pattern)*)? RBRACE
+list_inner_pattern: (pattern_seq | STAR_MUL NAME)
+dict_inner_pattern: (pattern_seq COLON pattern_seq | STAR_POW NAME)
 
-class_pattern: NAME tuple_val
+class_pattern: NAME LPAREN kw_pattern_list? RPAREN
+             | NAME LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
+
+pattern_list: (pattern_list COMMA)? pattern_seq
+kw_pattern_list: (kw_pattern_list COMMA)? named_ref EQ pattern_seq
 
 FLOAT: /(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
