@@ -3045,7 +3045,7 @@ class JacParser(Pass):
             stmts = kid[-1]
             if (
                 isinstance(pattern, ast.MatchPattern)
-                and isinstance(guard, ast.ExprType)
+                and (isinstance(guard, ast.ExprType) or not guard)
                 and isinstance(stmts, ast.SubNodeList)
             ):
                 return self.nu(
@@ -3057,6 +3057,7 @@ class JacParser(Pass):
                     )
                 )
             else:
+                print(pattern, guard, stmts)
                 raise self.ice()
 
         def pattern_seq(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
@@ -3314,14 +3315,23 @@ class JacParser(Pass):
                 name = kid[0]
                 eq = kid[1]
                 value = kid[2]
-            new_kid = (
-                [*consume.kid, comma, name, eq, value] if consume else [name, eq, value]
-            )
-            valid_kid = [i for i in new_kid if isinstance(i, ast.MatchKVPair)]
-            return ast.SubNodeList[ast.MatchKVPair](
-                items=valid_kid,
-                kid=kid,
-            )
+            if isinstance(name, ast.NameType) and isinstance(value, ast.MatchPattern):
+                new_kid = (
+                    [
+                        *consume.kid,
+                        comma,
+                        ast.MatchKVPair(key=name, value=value, kid=[name, eq, value]),
+                    ]
+                    if consume
+                    else [ast.MatchKVPair(key=name, value=value, kid=[name, eq, value])]
+                )
+                valid_kid = [i for i in new_kid if isinstance(i, ast.MatchKVPair)]
+                return ast.SubNodeList[ast.MatchKVPair](
+                    items=valid_kid,
+                    kid=new_kid,
+                )
+            else:
+                raise self.ice()
 
         def __default_token__(self, token: jl.Token) -> ast.Token:
             """Token handler."""
