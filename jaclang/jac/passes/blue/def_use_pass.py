@@ -68,9 +68,9 @@ class DefUsePass(SymTabPass):
     def enter_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
-        target: AtomType,
-        value: ExprType,
-        kid: list[AstNode],
+        target: SubNodeList[AtomType],
+        value: Optional[ExprType | YieldStmt],
+        type_tag: Optional[SubTag[ExprType]],
         is_static: bool = False,
         mutable: bool = True,
         """

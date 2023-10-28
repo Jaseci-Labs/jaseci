@@ -614,6 +614,7 @@ class JacParser(Pass):
                 if len(kid) == 1:
                     return self.nu(kid[0])
                 elif isinstance(kid[2], ast.ExprType):
+                    kid[0] = ast.SubNodeList[ast.AtomType](items=[kid[0]], kid=[kid[0]])
                     return self.nu(
                         ast.Assignment(
                             target=kid[0],
@@ -1621,13 +1622,13 @@ class JacParser(Pass):
                     chomp = chomp[2:]
             elif isinstance(chomp[0], ast.AtomType):
                 assignees = [chomp[0]]
+                chomp = chomp[1:]
             else:
                 raise self.ice()
             assignees = ast.SubNodeList[ast.AtomType](
                 items=assignees[::2],
                 kid=assignees,
             )
-            chomp = chomp[1:]
             type_tag = (
                 chomp[0]
                 if len(chomp) > 0 and isinstance(chomp[0], ast.SubTag)
@@ -3204,6 +3205,7 @@ class JacParser(Pass):
             elif isinstance(kid[-1], ast.Name):
                 return self.nu(
                     ast.MatchStar(
+                        is_list=True,
                         name=kid[-1],
                         kid=kid,
                     )
@@ -3231,6 +3233,7 @@ class JacParser(Pass):
             elif isinstance(kid[-1], ast.Name):
                 return self.nu(
                     ast.MatchStar(
+                        is_list=False,
                         name=kid[-1],
                         kid=kid,
                     )
@@ -3238,7 +3241,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def class_pattern(self, kid: list[ast.AstNode]) -> ast.MatchClass:
+        def class_pattern(self, kid: list[ast.AstNode]) -> ast.MatchArch:
             """Grammar rule.
 
             class_pattern: NAME LPAREN kw_pattern_list? RPAREN
@@ -3264,7 +3267,7 @@ class JacParser(Pass):
             )
             if isinstance(name, ast.NameType):
                 return self.nu(
-                    ast.MatchClass(
+                    ast.MatchArch(
                         name=name,
                         arg_patterns=arg,
                         kw_patterns=kw,

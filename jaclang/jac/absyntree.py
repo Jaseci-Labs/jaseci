@@ -1077,17 +1077,8 @@ class GlobalStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class NonLocalStmt(AstNode):
+class NonLocalStmt(GlobalStmt):
     """NonlocalStmt node type for Jac Ast."""
-
-    def __init__(
-        self,
-        target: SubNodeList[NameType],
-        kid: Sequence[AstNode],
-    ) -> None:
-        """Initialize nonlocal statement node."""
-        self.target = target
-        AstNode.__init__(self, kid=kid)
 
 
 class Assignment(AstTypedVarNode):
@@ -1748,14 +1739,16 @@ class MatchStar(AstNode):
     def __init__(
         self,
         name: NameType,
+        is_list: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize match star node."""
         self.name = name
+        self.is_list = is_list
         AstNode.__init__(self, kid=kid)
 
 
-class MatchClass(AstNode):
+class MatchArch(AstNode):
     """MatchClass node type for Jac Ast."""
 
     def __init__(
@@ -2078,7 +2071,7 @@ MatchPattern = Union[
     MatchSequence,
     MatchStar,
     MatchMapping,
-    MatchClass,
+    MatchArch,
     MatchWild,
     MatchAs,
     MatchOr,
