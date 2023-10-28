@@ -560,6 +560,8 @@ class BluePygenPass(Pass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
+        if node.type_tag is None:
+            raise self.ice()
         node.type_tag.meta["py_code"] = node.type_tag.tag.meta["py_code"]
         if node.unpack:
             self.emit(node, f"{node.unpack.meta['py_code']}")
@@ -593,6 +595,8 @@ class BluePygenPass(Pass):
         type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         """
+        if node.type_tag is None:
+            raise self.ice()
         node.type_tag.meta["py_code"] = node.type_tag.tag.meta["py_code"]
         if node.value:
             self.emit(
@@ -911,8 +915,6 @@ class BluePygenPass(Pass):
         is_static: bool = False,
         mutable: bool = True,
         """
-        if node.is_static:
-            self.warning("Static variable semantics is not supported in bootstrap Jac")
         self.sep_node_list(node.target, delim="=")
         self.emit(node, node.target.meta["py_code"])
         if node.type_tag:

@@ -1090,11 +1090,9 @@ class Assignment(AstTypedVarNode):
         value: Optional[ExprType | YieldStmt],
         type_tag: Optional[SubTag[ExprType]],
         kid: Sequence[AstNode],
-        is_static: bool = False,
         mutable: bool = True,
     ) -> None:
         """Initialize assignment node."""
-        self.is_static = is_static
         self.target = target
         self.value = value
         self.mutable = mutable
