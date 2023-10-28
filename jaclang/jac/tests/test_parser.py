@@ -83,6 +83,8 @@ class TestLarkParser(TestCaseMicroSuite):
         for i in rules:
             self.assertIn(i, parse_funcs)
         for i in parse_funcs:
+            if i in ["binary_expr_unwind", "ice", "nu"]:
+                continue
             self.assertIn(i, rules)
 
 

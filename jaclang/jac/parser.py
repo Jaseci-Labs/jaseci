@@ -1652,18 +1652,6 @@ class JacParser(Pass):
                 )
             )
 
-        def assign_targets(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.AtomType]:
-            """Grammar rule.
-
-            assign_targets: (atomic_chain EQ)+
-            """
-            return ast.SubNodeList[ast.AtomType](
-                items=[i for i in kid if isinstance(i, ast.AtomType)],
-                kid=kid,
-            )
-
         def expression(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 

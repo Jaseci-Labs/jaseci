@@ -165,9 +165,9 @@ assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_stmt | expression)
 
 expression: pipe KW_IF expression KW_ELSE expression
           | pipe
-          | lamda_expr
+          | lambda_expr
 
-lamda_expr: KW_WITH func_decl_params? return_type_tag? KW_CAN expression
+lambda_expr: KW_WITH func_decl_params? return_type_tag? KW_CAN expression
 
 pipe: pipe_back PIPE_FWD pipe
     | pipe_back
