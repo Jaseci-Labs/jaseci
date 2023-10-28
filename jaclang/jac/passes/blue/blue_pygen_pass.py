@@ -892,9 +892,11 @@ class BluePygenPass(Pass):
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
-        is_static: bool,
-        target: AtomType,
-        value: ExprType,
+        target: list[AtomType] | AtomType,
+        value: Optional[ExprType | YieldStmt],
+        type_tag: Optional[SubTag[ExprType]],
+        is_static: bool = False,
+        mutable: bool = True,
         """
         if node.is_static:
             self.warning("Static variable semantics is not supported in bootstrap Jac")

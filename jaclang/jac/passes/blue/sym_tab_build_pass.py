@@ -220,10 +220,11 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
         for i in self.get_all_sub_nodes(node, ast.Assignment):
-            if isinstance(i.target, ast.Name):
-                self.def_insert(i.target, access_spec=node, single_use="global var")
-            else:
-                self.ice("Expected name type for globabl vars")
+            for j in i.target.items:
+                if isinstance(j, ast.NameType):
+                    self.def_insert(j, access_spec=node, single_use="global var")
+                else:
+                    self.ice("Expected name type for globabl vars")
 
     def enter_sub_tag(self, node: ast.SubTag) -> None:
         """Sub objects.

@@ -1610,19 +1610,23 @@ class JacParser(Pass):
                 and isinstance(chomp[1], ast.Token)
                 and chomp[1].name == Tok.EQ
             ):
-                assignees: list[ast.AtomType] = []
+                assignees = []
                 while (
                     isinstance(chomp[0], ast.AtomType)
                     and len(chomp) > 1
                     and isinstance(chomp[1], ast.Token)
                     and chomp[1].name == Tok.EQ
                 ):
-                    assignees.append(chomp[0])
+                    assignees += [chomp[0], chomp[1]]
                     chomp = chomp[2:]
             elif isinstance(chomp[0], ast.AtomType):
                 assignees = [chomp[0]]
             else:
                 raise self.ice()
+            assignees = ast.SubNodeList[ast.AtomType](
+                items=assignees[::2],
+                kid=assignees,
+            )
             chomp = chomp[1:]
             type_tag = (
                 chomp[0]
@@ -1644,7 +1648,7 @@ class JacParser(Pass):
             )
             return self.nu(
                 ast.Assignment(
-                    target=assignees if len(assignees) > 1 else assignees[0],
+                    target=assignees,
                     type_tag=type_tag,
                     value=value,
                     mutable=is_frozen,

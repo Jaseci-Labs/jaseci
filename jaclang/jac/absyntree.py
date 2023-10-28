@@ -21,7 +21,7 @@ class AstNode:
         self.sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, Sequence[AstNode]] = {}
         self._typ: type = type(None)
-        self.meta: dict[str, str | AstNode] = {}
+        self.meta: dict = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
 
     def add_kids_left(
@@ -1095,7 +1095,7 @@ class Assignment(AstTypedVarNode):
 
     def __init__(
         self,
-        target: list[AtomType] | AtomType,
+        target: SubNodeList[AtomType],
         value: Optional[ExprType | YieldStmt],
         type_tag: Optional[SubTag[ExprType]],
         kid: Sequence[AstNode],
