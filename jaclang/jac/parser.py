@@ -3029,6 +3029,47 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        def match_stmt(self, kid: list[ast.AstNode]) -> ast.MatchStmt:
+            """Grammar rule.
+
+            match_stmt: KW_MATCH expr_list LBRACE match_case_block+ RBRACE
+            """
+            cases = [i for i in kid if isinstance(i, ast.MatchCase)]
+            if isinstance(kid[1], ast.SubNodeList):
+                return self.nu(
+                    ast.MatchStmt(
+                        target=kid[1],
+                        cases=cases,
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def match_case_block(self, kid: list[ast.AstNode]) -> ast.MatchCase:
+            """Grammar rule.
+
+            match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
+            """
+            pattern = kid[1]
+            guard = kid[3] if len(kid) > 4 else None
+            stmts = kid[-1]
+            if (
+                isinstance(pattern, ast.MatchPattern)
+                and isinstance(guard, ast.ExprType)
+                and isinstance(stmts, ast.SubNodeList)
+            ):
+                return self.nu(
+                    ast.MatchCase(
+                        pattern=pattern,
+                        guard=guard,
+                        body=stmts,
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
         def __default_token__(self, token: jl.Token) -> ast.Token:
             """Token handler."""
             ret_type = ast.Token

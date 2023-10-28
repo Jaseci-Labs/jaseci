@@ -1616,8 +1616,8 @@ class MatchStmt(AstNode):
 
     def __init__(
         self,
-        target: ExprType,
-        cases: SubNodeList[MatchCase],
+        target: SubNodeList[ExprType],
+        cases: list[MatchCase],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize match statement node."""
@@ -1632,11 +1632,13 @@ class MatchCase(AstNode):
     def __init__(
         self,
         pattern: MatchPattern,
+        guard: Optional[ExprType],
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize match case node."""
         self.pattern = pattern
+        self.guard = guard
         self.body = body
         AstNode.__init__(self, kid=kid)
 
@@ -1710,8 +1712,8 @@ class MatchMapping(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class MatchClase(AstNode):
-    """MatchClase node type for Jac Ast."""
+class MatchClass(AstNode):
+    """MatchClass node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1721,7 +1723,7 @@ class MatchClase(AstNode):
         kwd_patterns: list[MatchPattern],
         kid: Sequence[AstNode],
     ) -> None:
-        """Initialize match clase node."""
+        """Initialize match class node."""
         self.name = name
         self.arg_patterns = arg_patterns
         self.kw_names = kw_names
@@ -2056,4 +2058,14 @@ CodeBlockStmt = Union[
     Semi,
 ]
 
-MatchPattern = Union[MatchValue, MatchSingleton, MatchSequence, MatchStar]
+
+MatchPattern = Union[
+    MatchValue,
+    MatchSingleton,
+    MatchSequence,
+    MatchStar,
+    MatchMapping,
+    MatchClass,
+    MatchAs,
+    MatchOr,
+]
