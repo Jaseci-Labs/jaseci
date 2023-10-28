@@ -28,8 +28,8 @@ can match_example(data: dict) {
             print(f"Matched a mapping with key1 and key2. Rest: {rest}");
 
         # MatchClass
-        case Point(x=0, y=0):
-            print("Matched a Point at the origin.");
+        case Point(int(a), y=0):
+            print(f"Point with x={a} and y=0");
 
         # MatchAs
         case [1, 2, rest_val as value]:

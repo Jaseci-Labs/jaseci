@@ -1693,6 +1693,70 @@ class MatchStar(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
+class MatchMapping(AstNode):
+    """MatchMapping node type for Jac Ast."""
+
+    def __init__(
+        self,
+        keys: SubNodeList[ExprType],
+        patterns: SubNodeList[MatchPattern],
+        rest: Optional[NameType],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match mapping node."""
+        self.keys = keys
+        self.patterns = patterns
+        self.rest = rest
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchClase(AstNode):
+    """MatchClase node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: ExprType,
+        arg_patterns: list[MatchPattern],
+        kw_names: list[NameType],
+        kwd_patterns: list[MatchPattern],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match clase node."""
+        self.name = name
+        self.arg_patterns = arg_patterns
+        self.kw_names = kw_names
+        self.kwd_patterns = kwd_patterns
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchAs(AstNode):
+    """MatchAs node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: NameType,
+        pattern: MatchPattern,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match as node."""
+        self.name = name
+        self.pattern = pattern
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchOr(AstNode):
+    """MatchOr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        patterns: list[MatchPattern],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match or node."""
+        self.patterns = patterns
+        AstNode.__init__(self, kid=kid)
+
+
 # AST Terminal Node Types
 # --------------------------
 class Token(AstNode):
