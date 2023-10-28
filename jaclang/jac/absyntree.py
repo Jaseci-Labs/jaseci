@@ -17,7 +17,7 @@ class AstNode:
     def __init__(self, kid: Sequence[AstNode]) -> None:
         """Initialize ast."""
         self.parent: Optional[AstNode] = None
-        self.kid = [x.set_parent(self) for x in kid]
+        self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
         self.sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, Sequence[AstNode]] = {}
         self._typ: type = type(None)
@@ -48,7 +48,7 @@ class AstNode:
 
     def set_kids(self, nodes: Sequence[AstNode]) -> AstNode:
         """Set kids."""
-        self.kid = nodes
+        self.kid = [*nodes]
         for i in nodes:
             i.parent = self
         self.loc.update_token_range(*self.resolve_tok_range())
@@ -133,6 +133,30 @@ class AstDocNode(AstNode):
     def __init__(self, doc: Optional[String]) -> None:
         """Initialize ast."""
         self.doc: Optional[String] = doc
+
+
+class AstAsyncNode(AstNode):
+    """Nodes that have access."""
+
+    def __init__(self, is_async: bool) -> None:
+        """Initialize ast."""
+        self.is_async: bool = is_async
+
+
+class AstElseBodyNode(AstNode):
+    """Nodes that have access."""
+
+    def __init__(self, else_body: Optional[ElseStmt | ElseIf]) -> None:
+        """Initialize ast."""
+        self.else_body: Optional[ElseStmt | ElseIf] = else_body
+
+
+class AstTypedVarNode(AstNode):
+    """Nodes that have access."""
+
+    def __init__(self, type_tag: Optional[SubTag[ExprType]]) -> None:
+        """Initialize ast."""
+        self.type_tag: Optional[SubTag[ExprType]] = type_tag
 
 
 class WalkerStmtOnlyNode(AstNode):
@@ -476,7 +500,7 @@ class EnumDef(AstSymbolNode, AstDocNode):
         AstDocNode.__init__(self, doc=doc)
 
 
-class Ability(AstSymbolNode, AstAccessNode, AstDocNode):
+class Ability(AstSymbolNode, AstAccessNode, AstDocNode, AstAsyncNode):
     """Ability node type for Jac Ast."""
 
     def __init__(
@@ -496,7 +520,6 @@ class Ability(AstSymbolNode, AstAccessNode, AstDocNode):
         """Initialize func arch node."""
         self.name_ref = name_ref
         self.is_func = is_func
-        self.is_async = is_async
         self.is_static = is_static
         self.is_abstract = is_abstract
         self.decorators = decorators
@@ -511,6 +534,7 @@ class Ability(AstSymbolNode, AstAccessNode, AstDocNode):
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
     @property
     def is_method(self) -> bool:
@@ -614,7 +638,7 @@ class ArchRefChain(AstNode):
         )
 
 
-class ParamVar(AstSymbolNode):
+class ParamVar(AstSymbolNode, AstTypedVarNode):
     """ParamVar node type for Jac Ast."""
 
     def __init__(
@@ -628,7 +652,6 @@ class ParamVar(AstSymbolNode):
         """Initialize param var node."""
         self.name = name
         self.unpack = unpack
-        self.type_tag = type_tag
         self.value = value
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -637,6 +660,7 @@ class ParamVar(AstSymbolNode):
             sym_name_node=name,
             sym_type=SymbolType.VAR,
         )
+        AstTypedVarNode.__init__(self, type_tag=type_tag)
 
 
 class ArchHas(AstAccessNode, AstDocNode):
@@ -660,7 +684,7 @@ class ArchHas(AstAccessNode, AstDocNode):
         AstDocNode.__init__(self, doc=doc)
 
 
-class HasVar(AstSymbolNode):
+class HasVar(AstSymbolNode, AstTypedVarNode):
     """HasVar node type for Jac Ast."""
 
     def __init__(
@@ -672,7 +696,6 @@ class HasVar(AstSymbolNode):
     ) -> None:
         """Initialize has var node."""
         self.name = name
-        self.type_tag = type_tag
         self.value = value
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -681,6 +704,7 @@ class HasVar(AstSymbolNode):
             sym_name_node=name,
             sym_type=SymbolType.VAR,
         )
+        AstTypedVarNode.__init__(self, type_tag=type_tag)
 
 
 class TypedCtxBlock(AstNode):
@@ -698,40 +722,25 @@ class TypedCtxBlock(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class IfStmt(AstNode):
+class IfStmt(AstElseBodyNode):
     """IfStmt node type for Jac Ast."""
 
     def __init__(
         self,
         condition: ExprType,
         body: SubNodeList[CodeBlockStmt],
-        elseifs: Optional[ElseIfs],
-        else_body: Optional[ElseStmt],
+        else_body: Optional[ElseStmt | ElseIf],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize if statement node."""
         self.condition = condition
         self.body = body
-        self.elseifs = elseifs
-        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
-class ElseIfs(AstNode):
+class ElseIf(IfStmt):
     """ElseIfs node type for Jac Ast."""
-
-    def __init__(
-        self,
-        condition: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        elseifs: Optional[ElseIfs],
-        kid: Sequence[AstNode],
-    ) -> None:
-        """Initialize if statement node."""
-        self.condition = condition
-        self.body = body
-        self.elseifs = elseifs
-        AstNode.__init__(self, kid=kid)
 
 
 class ElseStmt(AstNode):
@@ -747,13 +756,14 @@ class ElseStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class TryStmt(AstNode):
+class TryStmt(AstElseBodyNode):
     """TryStmt node type for Jac Ast."""
 
     def __init__(
         self,
         body: SubNodeList[CodeBlockStmt],
         excepts: Optional[SubNodeList[Except]],
+        else_body: Optional[ElseStmt],
         finally_body: Optional[FinallyStmt],
         kid: Sequence[AstNode],
     ) -> None:
@@ -762,6 +772,7 @@ class TryStmt(AstNode):
         self.excepts = excepts
         self.finally_body = finally_body
         AstNode.__init__(self, kid=kid)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
 class Except(AstNode):
@@ -794,15 +805,17 @@ class FinallyStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class IterForStmt(AstNode):
+class IterForStmt(AstAsyncNode, AstElseBodyNode):
     """IterFor node type for Jac Ast."""
 
     def __init__(
         self,
         iter: Assignment,
+        is_async: bool,
         condition: ExprType,
         count_by: ExprType,
         body: SubNodeList[CodeBlockStmt],
+        else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize iter for node."""
@@ -811,16 +824,20 @@ class IterForStmt(AstNode):
         self.count_by = count_by
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstAsyncNode.__init__(self, is_async=is_async)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
-class InForStmt(AstNode):
+class InForStmt(AstAsyncNode, AstElseBodyNode):
     """InFor node type for Jac Ast."""
 
     def __init__(
         self,
         name_list: SubNodeList[Name],
+        is_async: bool,
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
+        else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize in for node."""
@@ -828,6 +845,8 @@ class InForStmt(AstNode):
         self.collection = collection
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstAsyncNode.__init__(self, is_async=is_async)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
 class WhileStmt(AstNode):
@@ -845,11 +864,12 @@ class WhileStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class WithStmt(AstNode):
+class WithStmt(AstAsyncNode):
     """WithStmt node type for Jac Ast."""
 
     def __init__(
         self,
+        is_async: bool,
         exprs: SubNodeList[ExprAsItem],
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[AstNode],
@@ -858,6 +878,7 @@ class WithStmt(AstNode):
         self.exprs = exprs
         self.body = body
         AstNode.__init__(self, kid=kid)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
 
 class ExprAsItem(AstNode):
@@ -866,7 +887,7 @@ class ExprAsItem(AstNode):
     def __init__(
         self,
         expr: ExprType,
-        alias: Optional[Name],
+        alias: Optional[ExprType],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize module item node."""
@@ -881,10 +902,12 @@ class RaiseStmt(AstNode):
     def __init__(
         self,
         cause: Optional[ExprType],
+        from_target: Optional[ExprType],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize raise statement node."""
         self.cause = cause
+        self.from_target = from_target
         AstNode.__init__(self, kid=kid)
 
 
@@ -921,7 +944,7 @@ class DeleteStmt(AstNode):
 
     def __init__(
         self,
-        target: ExprList,
+        target: SubNodeList[AtomType],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize delete statement node."""
@@ -982,7 +1005,7 @@ class IgnoreStmt(WalkerStmtOnlyNode):
         WalkerStmtOnlyNode.__init__(self)
 
 
-class VisitStmt(WalkerStmtOnlyNode):
+class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode):
     """VisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -995,12 +1018,12 @@ class VisitStmt(WalkerStmtOnlyNode):
         """Initialize visit statement node."""
         self.vis_type = vis_type
         self.target = target
-        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
-class RevisitStmt(WalkerStmtOnlyNode):
+class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode):
     """ReVisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -1011,9 +1034,9 @@ class RevisitStmt(WalkerStmtOnlyNode):
     ) -> None:
         """Initialize revisit statement node."""
         self.hops = hops
-        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
+        AstElseBodyNode.__init__(self, else_body=else_body)
 
 
 class DisengageStmt(WalkerStmtOnlyNode):
@@ -1041,23 +1064,40 @@ class AwaitStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class Assignment(AstNode):
+class GlobalStmt(AstNode):
+    """GlobalStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: SubNodeList[NameType],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize global statement node."""
+        self.target = target
+        AstNode.__init__(self, kid=kid)
+
+
+class NonLocalStmt(GlobalStmt):
+    """NonlocalStmt node type for Jac Ast."""
+
+
+class Assignment(AstTypedVarNode):
     """Assignment node type for Jac Ast."""
 
     def __init__(
         self,
-        target: AtomType,
-        value: ExprType,
+        target: SubNodeList[AtomType],
+        value: Optional[ExprType | YieldStmt],
+        type_tag: Optional[SubTag[ExprType]],
         kid: Sequence[AstNode],
-        is_static: bool = False,
         mutable: bool = True,
     ) -> None:
         """Initialize assignment node."""
-        self.is_static = is_static
         self.target = target
         self.value = value
         self.mutable = mutable
         AstNode.__init__(self, kid=kid)
+        AstTypedVarNode.__init__(self, type_tag=type_tag)
 
 
 class BinaryExpr(AstNode):
@@ -1074,6 +1114,23 @@ class BinaryExpr(AstNode):
         self.left = left
         self.right = right
         self.op = op
+        AstNode.__init__(self, kid=kid)
+
+
+class LambdaExpr(AstNode):
+    """ExprLambda node type for Jac Ast."""
+
+    def __init__(
+        self,
+        params: Optional[SubNodeList[ParamVar]],
+        return_type: Optional[SubTag[ExprType]],
+        body: ExprType,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize lambda expression node."""
+        self.params = params
+        self.return_type = return_type
+        self.body = body
         AstNode.__init__(self, kid=kid)
 
 
@@ -1257,7 +1314,7 @@ class InnerCompr(AstNode):
     def __init__(
         self,
         out_expr: ExprType,
-        names: SubNodeList[Name],
+        names: SubNodeList[AtomType],
         collection: ExprType,
         conditional: Optional[ExprType],
         kid: Sequence[AstNode],
@@ -1304,7 +1361,7 @@ class DictCompr(AstSymbolNode):
     def __init__(
         self,
         kv_pair: KVPair,
-        names: SubNodeList[Name],
+        names: SubNodeList[AtomType],
         collection: ExprType,
         conditional: Optional[ExprType],
         kid: Sequence[AstNode],
@@ -1539,6 +1596,173 @@ class FilterCompr(AstSymbolNode):
         )
 
 
+# Match Nodes
+# ------------
+
+
+class MatchStmt(AstNode):
+    """MatchStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: SubNodeList[ExprType],
+        cases: list[MatchCase],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match statement node."""
+        self.target = target
+        self.cases = cases
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchCase(AstNode):
+    """MatchCase node type for Jac Ast."""
+
+    def __init__(
+        self,
+        pattern: MatchPattern,
+        guard: Optional[ExprType],
+        body: SubNodeList[CodeBlockStmt],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match case node."""
+        self.pattern = pattern
+        self.guard = guard
+        self.body = body
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchOr(AstNode):
+    """MatchOr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        patterns: list[MatchPattern],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match or node."""
+        self.patterns = patterns
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchAs(AstNode):
+    """MatchAs node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: NameType,
+        pattern: MatchPattern,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match as node."""
+        self.name = name
+        self.pattern = pattern
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchWild(AstNode):
+    """Match wild card node type for Jac Ast."""
+
+
+class MatchValue(AstNode):
+    """MatchValue node type for Jac Ast."""
+
+    def __init__(
+        self,
+        value: ExprType,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match value node."""
+        self.value = value
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchSingleton(AstNode):
+    """MatchSingleton node type for Jac Ast."""
+
+    def __init__(
+        self,
+        value: Bool | Null,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match singleton node."""
+        self.value = value
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchSequence(AstNode):
+    """MatchSequence node type for Jac Ast."""
+
+    def __init__(
+        self,
+        values: list[MatchPattern],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match sequence node."""
+        self.values = values
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchMapping(AstNode):
+    """MatchMapping node type for Jac Ast."""
+
+    def __init__(
+        self,
+        values: list[MatchKVPair | MatchStar],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match mapping node."""
+        self.values = values
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchKVPair(AstNode):
+    """MatchKVPair node type for Jac Ast."""
+
+    def __init__(
+        self,
+        key: MatchPattern | NameType,
+        value: MatchPattern,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match key value pair node."""
+        self.key = key
+        self.value = value
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchStar(AstNode):
+    """MatchStar node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: NameType,
+        is_list: bool,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match star node."""
+        self.name = name
+        self.is_list = is_list
+        AstNode.__init__(self, kid=kid)
+
+
+class MatchArch(AstNode):
+    """MatchClass node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: NameType,
+        arg_patterns: Optional[SubNodeList[MatchPattern]],
+        kw_patterns: Optional[SubNodeList[MatchKVPair]],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize match class node."""
+        self.name = name
+        self.arg_patterns = arg_patterns
+        self.kw_patterns = kw_patterns
+        AstNode.__init__(self, kid=kid)
+
+
 # AST Terminal Node Types
 # --------------------------
 class Token(AstNode):
@@ -1672,6 +1896,12 @@ class BuiltinType(TokenSymbol):
     SYMBOL_TYPE = SymbolType.VAR
 
 
+class Null(TokenSymbol):
+    """Semicolon node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.NULL
+
+
 class EmptyToken(Token):
     """EmptyToken node type for Jac Ast."""
 
@@ -1688,6 +1918,10 @@ class EmptyToken(Token):
             pos_end=0,
             kid=[],
         )
+
+
+class Semi(Token):
+    """Semicolon node type for Jac Ast."""
 
 
 # ----------------
@@ -1822,5 +2056,21 @@ CodeBlockStmt = Union[
     IgnoreStmt,
     PyInlineCode,
     TypedCtxBlock,
-    Token,  # TODO: This is only for SEMI's create new type
+    GlobalStmt,
+    NonLocalStmt,
+    MatchStmt,
+    Semi,
+]
+
+
+MatchPattern = Union[
+    MatchValue,
+    MatchSingleton,
+    MatchSequence,
+    MatchStar,
+    MatchMapping,
+    MatchArch,
+    MatchWild,
+    MatchAs,
+    MatchOr,
 ]

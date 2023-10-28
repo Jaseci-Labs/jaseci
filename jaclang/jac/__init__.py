@@ -1,7 +1,9 @@
 """Jac compiler tools."""
+import contextlib
 import logging
 import os
 import sys
+
 
 cur_dir = os.path.dirname(__file__)
 if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac_parser.py")):
@@ -23,6 +25,8 @@ if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac_parser.py")):
 
 from .__jac_gen__ import jac_parser as jac_lark  # noqa: E402
 
+
 jac_lark.logger.setLevel(logging.DEBUG)
+contextlib.suppress(AttributeError)
 
 __all__ = ["jac_lark"]

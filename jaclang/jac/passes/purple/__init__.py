@@ -8,14 +8,15 @@ analyze = jac_blue_import("analyze_pass")
 AnalyzePass = analyze.AnalyzePass  # type: ignore
 PurplePygenPass = purple.PurplePygenPass  # type: ignore
 
-__all__ = [
-    "AnalyzePass",
-    "PurplePygenPass",
-]
-
 
 pass_schedule = [
     *pass_schedule[:-1],
     AnalyzePass,
     PurplePygenPass,
+]
+
+__all__ = [
+    "pass_schedule",
+    "AnalyzePass",
+    "PurplePygenPass",
 ]
