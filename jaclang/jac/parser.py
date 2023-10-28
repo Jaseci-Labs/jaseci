@@ -617,6 +617,7 @@ class JacParser(Pass):
                         ast.Assignment(
                             target=kid[0],
                             value=kid[2],
+                            type_tag=None,
                             kid=kid,
                         )
                     )
@@ -1144,11 +1145,21 @@ class JacParser(Pass):
             chomp = [*kid][1:]
             block = chomp[0]
             chomp = chomp[1:]
-            except_list = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
+            except_list = (
+                chomp[0]
+                if len(chomp) and isinstance(chomp[0], ast.SubNodeList)
+                else None
+            )
             chomp = chomp[1:] if except_list else chomp
-            else_stmt = chomp[0] if isinstance(chomp[0], ast.ElseStmt) else None
+            else_stmt = (
+                chomp[0] if len(chomp) and isinstance(chomp[0], ast.ElseStmt) else None
+            )
             chomp = chomp[1:] if else_stmt else chomp
-            finally_stmt = chomp[0] if isinstance(chomp[0], ast.FinallyStmt) else None
+            finally_stmt = (
+                chomp[0]
+                if len(chomp) and isinstance(chomp[0], ast.FinallyStmt)
+                else None
+            )
             if isinstance(block, ast.SubNodeList):
                 return self.nu(
                     ast.TryStmt(
@@ -1630,18 +1641,15 @@ class JacParser(Pass):
                 if len(chomp) > 0 and isinstance(chomp[0], valid_types)
                 else None
             )
-            if isinstance(assignees, valid_types):
-                return self.nu(
-                    ast.Assignment(
-                        target=assignees,
-                        type_tag=type_tag,
-                        value=value,
-                        mutable=is_frozen,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.Assignment(
+                    target=assignees if len(assignees) > 1 else assignees[0],
+                    type_tag=type_tag,
+                    value=value,
+                    mutable=is_frozen,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def assign_targets(
             self, kid: list[ast.AstNode]

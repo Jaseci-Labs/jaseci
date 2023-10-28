@@ -17,11 +17,11 @@ class AstNode:
     def __init__(self, kid: Sequence[AstNode]) -> None:
         """Initialize ast."""
         self.parent: Optional[AstNode] = None
-        self.kid = [x.set_parent(self) for x in kid]
+        self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
         self.sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, Sequence[AstNode]] = {}
         self._typ: type = type(None)
-        self.meta: dict = {}
+        self.meta: dict[str, str | AstNode] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
 
     def add_kids_left(
@@ -48,7 +48,7 @@ class AstNode:
 
     def set_kids(self, nodes: Sequence[AstNode]) -> AstNode:
         """Set kids."""
-        self.kid = nodes
+        self.kid = [*nodes]
         for i in nodes:
             i.parent = self
         self.loc.update_token_range(*self.resolve_tok_range())
@@ -1095,7 +1095,7 @@ class Assignment(AstTypedVarNode):
 
     def __init__(
         self,
-        target: list[AtomType],
+        target: list[AtomType] | AtomType,
         value: Optional[ExprType | YieldStmt],
         type_tag: Optional[SubTag[ExprType]],
         kid: Sequence[AstNode],
@@ -2052,6 +2052,7 @@ CodeBlockStmt = Union[
     TypedCtxBlock,
     GlobalStmt,
     NonLocalStmt,
+    MatchStmt,
     Semi,
 ]
 

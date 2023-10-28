@@ -1,4 +1,6 @@
 """Tests for Jac parser."""
+import inspect
+
 from jaclang.jac import jac_lark as jl
 from jaclang.jac.absyntree import JacSource
 from jaclang.jac.constant import Tokens
@@ -64,6 +66,24 @@ class TestLarkParser(TestCaseMicroSuite):
             self.assertIn(token.name, tokens)
         for token in Tokens:
             self.assertIn(token.value, tokens)
+
+    def test_parser_impl_all_rules(self) -> None:
+        """Test that enum stays synced with lexer."""
+        rules = {
+            x.origin.name
+            for x in jl.Lark_StandAlone().parser.parser_conf.rules
+            if not x.origin.name.startswith("_")
+        }
+        parse_funcs = []
+        for name, value in inspect.getmembers(JacParser.TreeToAST):
+            if inspect.isfunction(value) and not getattr(
+                JacParser.TreeToAST.__base__, value.__name__, False
+            ):
+                parse_funcs.append(name)
+        for i in rules:
+            self.assertIn(i, parse_funcs)
+        for i in parse_funcs:
+            self.assertIn(i, rules)
 
 
 TestLarkParser.self_attach_micro_tests()
