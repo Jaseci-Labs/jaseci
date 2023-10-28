@@ -3286,24 +3286,21 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.MatchPattern]:
             """Grammar rule.
 
-            pattern_list: (pattern_seq COMMA)* pattern_seq
+            pattern_list: (pattern_list COMMA)? pattern_seq
             """
-            chomp = [*kid]
-            res: list[ast.MatchPattern] = []
-            while len(chomp):
-                comp = (
-                    chomp[1:]
-                    if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COMMA
-                    else chomp
-                )
-                val = chomp[0]
-                if isinstance(val, ast.MatchPattern):
-                    res.append(self.nu(val))
-                else:
-                    raise self.ice()
-                chomp = comp[1:]
+            consume = None
+            pattern = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                pattern = kid[2]
+            else:
+                pattern = kid[0]
+            new_kid = [*consume.kid, comma, pattern] if consume else [pattern]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.MatchPattern)]
             return ast.SubNodeList[ast.MatchPattern](
-                items=res,
+                items=valid_kid,
                 kid=kid,
             )
 
@@ -3312,28 +3309,29 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.MatchKVPair]:
             """Grammar rule.
 
-            kw_pattern_list: (name_ref EQ pattern_seq COMMA)* name_ref EQ pattern_seq
+            kw_pattern_list: (kw_pattern_list COMMA)? named_ref EQ pattern_seq
             """
-            chomp = [*kid]
-            res: list[ast.MatchKVPair] = []
-            while len(chomp):
-                comp = (
-                    chomp[1:]
-                    if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COMMA
-                    else chomp
-                )
-                key = chomp[0]
-                eq = chomp[1]
-                val = chomp[2]
-                if isinstance(key, ast.NameType) and isinstance(val, ast.MatchPattern):
-                    res.append(
-                        self.nu(ast.MatchKVPair(key=key, value=val, kid=[key, eq, val]))
-                    )
-                else:
-                    raise self.ice()
-                chomp = comp[3:]
+            consume = None
+            name = None
+            eq = None
+            value = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                name = kid[2]
+                eq = kid[3]
+                value = kid[4]
+            else:
+                name = kid[0]
+                eq = kid[1]
+                value = kid[2]
+            new_kid = (
+                [*consume.kid, comma, name, eq, value] if consume else [name, eq, value]
+            )
+            valid_kid = [i for i in new_kid if isinstance(i, ast.MatchKVPair)]
             return ast.SubNodeList[ast.MatchKVPair](
-                items=res,
+                items=valid_kid,
                 kid=kid,
             )
 
