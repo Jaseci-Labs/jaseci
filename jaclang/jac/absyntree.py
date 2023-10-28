@@ -19,7 +19,7 @@ class AstNode:
         self.parent: Optional[AstNode] = None
         self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
         self.sym_tab: Optional[SymbolTable] = None
-        self._sub_node_tab: dict[type, Sequence[AstNode]] = {}
+        self._sub_node_tab: dict[type, list[AstNode]] = {}
         self._typ: type = type(None)
         self.meta: dict = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
