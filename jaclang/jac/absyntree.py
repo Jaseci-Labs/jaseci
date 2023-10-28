@@ -1325,7 +1325,7 @@ class InnerCompr(AstNode):
     def __init__(
         self,
         out_expr: ExprType,
-        names: SubNodeList[Name],
+        names: SubNodeList[AtomType],
         collection: ExprType,
         conditional: Optional[ExprType],
         kid: Sequence[AstNode],
@@ -1372,7 +1372,7 @@ class DictCompr(AstSymbolNode):
     def __init__(
         self,
         kv_pair: KVPair,
-        names: SubNodeList[Name],
+        names: SubNodeList[AtomType],
         collection: ExprType,
         conditional: Optional[ExprType],
         kid: Sequence[AstNode],

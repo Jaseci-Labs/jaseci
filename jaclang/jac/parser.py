@@ -1267,29 +1267,6 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def name_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Name]:
-            """Grammar rule.
-
-            name_list: (name_list COMMA)? NAME
-            """
-            consume = None
-            name = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                name = kid[2]
-            else:
-                name = kid[0]
-            new_kid = [*consume.kid, comma, name] if consume else [name]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.Name)]
-            return self.nu(
-                ast.SubNodeList[ast.Name](
-                    items=valid_kid,
-                    kid=new_kid,
-                )
-            )
-
         def while_stmt(self, kid: list[ast.AstNode]) -> ast.WhileStmt:
             """Grammar rule.
 
@@ -2391,6 +2368,29 @@ class JacParser(Pass):
                 )
             )
 
+        def name_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Name]:
+            """Grammar rule.
+
+            name_list: (name_list COMMA)? NAME
+            """
+            consume = None
+            name = None
+            comma = None
+            if isinstance(kid[0], ast.SubNodeList):
+                consume = kid[0]
+                comma = kid[1]
+                name = kid[2]
+            else:
+                name = kid[0]
+            new_kid = [*consume.kid, comma, name] if consume else [name]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.Name)]
+            return self.nu(
+                ast.SubNodeList[ast.Name](
+                    items=valid_kid,
+                    kid=new_kid,
+                )
+            )
+
         def tuple_list(
             self, kid: list[ast.AstNode]
         ) -> ast.SubNodeList[ast.ExprType | ast.Assignment]:
@@ -2500,7 +2500,7 @@ class JacParser(Pass):
         def inner_compr(self, kid: list[ast.AstNode]) -> ast.InnerCompr:
             """Grammar rule.
 
-            inner_compr: expression KW_FOR name_list KW_IN walrus_assign (KW_IF expression)?
+            inner_compr: expression KW_FOR atom_list KW_IN walrus_assign (KW_IF expression)?
             """
             if (
                 isinstance(kid[0], ast.ExprType)
@@ -2524,7 +2524,7 @@ class JacParser(Pass):
         def dict_compr(self, kid: list[ast.AstNode]) -> ast.DictCompr:
             """Grammar rule.
 
-            dict_compr: LBRACE kv_pair KW_FOR name_list KW_IN walrus_assign (KW_IF expression)? RBRACE
+            dict_compr: LBRACE kv_pair KW_FOR atom_list KW_IN walrus_assign (KW_IF expression)? RBRACE
             """
             if (
                 isinstance(kid[1], ast.KVPair)
