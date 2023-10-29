@@ -13,7 +13,7 @@ from jaclang.utils.helpers import pascal_to_snake
 T = TypeVar("T", bound=ast.AstNode)
 
 
-class PyAstBuildPass(Pass):
+class PyastBuildPass(Pass):
     """Jac Parser."""
 
     def __init__(self, input_ir: ast.PythonModuleAst) -> None:

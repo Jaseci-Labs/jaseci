@@ -104,7 +104,7 @@ class ImportPass(Pass):
 
     def import_py_module(self, node: ast.Import, mod_path: str) -> ast.Module | None:
         """Import a module."""
-        from jaclang.jac.passes.blue import PyAstBuildPass
+        from jaclang.jac.passes.blue import PyastBuildPass
 
         base_dir = path.dirname(mod_path)
 
@@ -118,7 +118,7 @@ class ImportPass(Pass):
                 if spec.origin in self.import_table:
                     return self.import_table[spec.origin]
                 with open(spec.origin, "r", encoding="utf-8") as f:
-                    mod = PyAstBuildPass(
+                    mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
                             py_ast.parse(f.read()), mod_path=mod_path
                         ),

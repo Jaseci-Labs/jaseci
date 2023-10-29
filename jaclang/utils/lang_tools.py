@@ -140,14 +140,14 @@ class AstTool:
 
     def py_ast_nodes(self) -> str:
         """List python ast nodes."""
-        from jaclang.jac.passes.blue import PyAstBuildPass
+        from jaclang.jac.passes.blue import PyastBuildPass
 
         visit_methods = [
             method for method in dir(py_ast._Unparser) if method.startswith("visit_")  # type: ignore
         ]
         node_names = [method.replace("visit_", "") for method in visit_methods]
         pass_func_names = []
-        for name, value in inspect.getmembers(PyAstBuildPass):
+        for name, value in inspect.getmembers(PyastBuildPass):
             if name.startswith("proc_") and inspect.isfunction(value):
                 pass_func_names.append(name.replace("proc_", ""))
         output = ""

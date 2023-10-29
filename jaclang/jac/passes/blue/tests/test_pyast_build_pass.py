@@ -2,12 +2,12 @@
 import ast as py_ast
 import inspect
 
-from jaclang.jac.passes.blue import PyAstBuildPass
+from jaclang.jac.passes.blue import PyastBuildPass
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.utils.test import TestCase
 
 
-class DefUsePassTests(TestCase):
+class PyastBuildPassTests(TestCase):
     """Test pass module."""
 
     def setUp(self) -> None:
@@ -23,7 +23,7 @@ class DefUsePassTests(TestCase):
             pascal_to_snake(method.replace("visit_", "")) for method in visit_methods
         ]
         pass_func_names = []
-        for name, value in inspect.getmembers(PyAstBuildPass):
+        for name, value in inspect.getmembers(PyastBuildPass):
             if name.startswith("proc_") and inspect.isfunction(value):
                 pass_func_names.append(name.replace("proc_", ""))
         for name in pass_func_names:
