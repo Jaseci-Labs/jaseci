@@ -20,7 +20,8 @@ can example_function(numbers: list[int]) -> int {
     for number in [i+1 for i in numbers] {
         # walrus operation (assignment expressions, appears Python 3.8 and later, and Jac!)
         # if (result := number % 2) == 0 {  # Python compaitble version
-        if (result %= 2) == 0 { # Jac improved version
+        result %= 2;
+        if result == 0 { # Jac improved version
             even_numbers.append(number);
             counter += 1;
             # assert

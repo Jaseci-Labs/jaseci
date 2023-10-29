@@ -10,6 +10,7 @@ from .def_use_pass import DefUsePass  # noqa: I100
 from .blue_pygen_pass import BluePygenPass  # noqa: I100
 from .pyout_pass import PyOutPass  # noqa: I100
 from .jac_formatter_pass import JacFormatPass  # noqa: I100
+from .pyast_gen_pass import PyAstGenPass  # noqa: I100
 
 py_code_gen = [
     SubNodeTabPass,
@@ -18,6 +19,7 @@ py_code_gen = [
     DeclDefMatchPass,
     DefUsePass,
     BluePygenPass,
+    PyAstGenPass,
 ]
 
 py_transpiler = [

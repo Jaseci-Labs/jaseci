@@ -928,16 +928,21 @@ class BluePygenPass(Pass):
         if isinstance(node.op, ast.Token):
             if node.op.value in [
                 *["+", "-", "*", "/", "%", "**"],
-                *["+=", "-=", "*=", "/=", "%=", "**="],
-                *[">>", "<<", ">>=", "<<="],
-                *["//=", "&=", "|=", "^=", "~="],
-                *["//", "&", "|", "^"],
+                *[">>", "<<", "//", "&", "|", "^"],
                 *[">", "<", ">=", "<=", "==", "!=", ":="],
                 *["and", "or", "in", "not in", "is", "is not"],
             ]:
                 self.emit(
                     node,
                     f"{node.left.meta['py_code']} {node.op.meta['py_code']} {node.right.meta['py_code']}",
+                )
+            elif node.op.value in [
+                *["+=", "-=", "*=", "/=", "%=", "**="],
+                *[">>=", "<<=", "//=", "&=", "|=", "^=", "~="],
+            ]:
+                self.emit(
+                    node,
+                    f"{node.left.meta['py_code']}{node.op.meta['py_code']}{node.right.meta['py_code']}",
                 )
             elif node.op.name in [
                 Tok.PIPE_FWD,
@@ -1462,8 +1467,10 @@ class BluePygenPass(Pass):
             self.comma_sep_node_list(node.arg_patterns)
             params += node.arg_patterns.meta["py_code"]
         if node.kw_patterns:
+            if params != "(":
+                params += ", "
             self.comma_sep_node_list(node.kw_patterns)
-            params += node.kw_patterns.meta["py_code"]
+            params += node.kw_patterns.meta["py_code"].replace(": ", "=")
         params += ")"
         self.emit(node, params)
 
