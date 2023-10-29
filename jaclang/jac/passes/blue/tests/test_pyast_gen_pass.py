@@ -1,13 +1,13 @@
 """Test ast build pass module."""
-from jaclang.jac.passes.blue import PyAstGenPass
+from jaclang.jac.passes.blue import PyastGenPass
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
-class PyAstGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
+class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
     """Test pass module."""
 
-    TargetPass = PyAstGenPass
+    TargetPass = PyastGenPass
 
     def setUp(self) -> None:
         """Set up test."""
@@ -16,16 +16,32 @@ class PyAstGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
     def test_jac_cli(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_pass(
-            self.fixture_abs_path("../../../../../cli/cli.jac"), target=PyAstGenPass
+            self.fixture_abs_path("../../../../../cli/cli.jac"), target=PyastGenPass
         )
+        self.assertFalse(code_gen.errors_had)
+
+    def test_circle(self) -> None:
+        """Basic test for pass."""
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path("../../../../../../examples/manual_code/circle.jac"),
+            target=PyastGenPass,
+        )
+        for i in code_gen.mod_tree.body:
+            print(
+                i.__class__.__name__,
+                i.lineno,
+                i.col_offset,
+                i.end_lineno,
+                i.end_col_offset,
+            )
         self.assertFalse(code_gen.errors_had)
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         code_gen = jac_file_to_pass(
-            self.fixture_abs_path(filename), target=PyAstGenPass
+            self.fixture_abs_path(filename), target=PyastGenPass
         )
         self.assertGreater(len(code_gen.ir.meta["py_code"]), 10)
 
 
-PyAstGenPassTests.self_attach_micro_tests()
+PyastGenPassTests.self_attach_micro_tests()

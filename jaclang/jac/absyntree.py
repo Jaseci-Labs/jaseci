@@ -23,7 +23,7 @@ class AstNode:
         self._typ: type = type(None)
         self.meta: dict = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
-        self.py_ast: Optional[ast3.AST | list[ast3.AST]] = None
+        self.py_ast: list[ast3.AST] = []
 
     def add_kids_left(
         self, nodes: Sequence[AstNode], pos_update: bool = True
