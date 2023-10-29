@@ -1,7 +1,7 @@
 """Abstract class for IR Passes for Jac."""
 from __future__ import annotations
 
-import ast as py_ast
+import ast as ast3
 import pprint
 from typing import Generic, Optional, Sequence, TypeVar, Union
 
@@ -23,6 +23,7 @@ class AstNode:
         self._typ: type = type(None)
         self.meta: dict = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
+        self.py_ast: Optional[ast3.AST | list[ast3.AST]] = None
 
     def add_kids_left(
         self, nodes: Sequence[AstNode], pos_update: bool = True
@@ -170,6 +171,32 @@ class WalkerStmtOnlyNode(AstNode):
 T = TypeVar("T", bound=AstNode)
 
 
+class SubTag(AstNode, Generic[T]):
+    """SubTag node type for Jac Ast."""
+
+    def __init__(
+        self,
+        tag: T,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize tag node."""
+        self.tag = tag
+        AstNode.__init__(self, kid=kid)
+
+
+class SubNodeList(AstNode, Generic[T]):
+    """SubNodeList node type for Jac Ast."""
+
+    def __init__(
+        self,
+        items: Sequence[T],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize sub node list node."""
+        self.items = items
+        AstNode.__init__(self, kid=kid)
+
+
 # AST Mid Level Node Types
 # --------------------------
 class Module(AstDocNode):
@@ -210,32 +237,6 @@ class GlobalVars(AstAccessNode, AstDocNode):
         AstNode.__init__(self, kid=kid)
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
-
-
-class SubTag(AstNode, Generic[T]):
-    """SubTag node type for Jac Ast."""
-
-    def __init__(
-        self,
-        tag: T,
-        kid: Sequence[AstNode],
-    ) -> None:
-        """Initialize tag node."""
-        self.tag = tag
-        AstNode.__init__(self, kid=kid)
-
-
-class SubNodeList(AstNode, Generic[T]):
-    """SubNodeList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        items: Sequence[T],
-        kid: Sequence[AstNode],
-    ) -> None:
-        """Initialize sub node list node."""
-        self.items = items
-        AstNode.__init__(self, kid=kid)
 
 
 class Test(AstSymbolNode, AstDocNode):
@@ -1943,7 +1944,7 @@ class JacSource(EmptyToken):
 class PythonModuleAst(EmptyToken):
     """SourceString node type for Jac Ast."""
 
-    def __init__(self, ast: py_ast.Module, mod_path: str) -> None:
+    def __init__(self, ast: ast3.Module, mod_path: str) -> None:
         """Initialize source string."""
         super().__init__()
         self.ast = ast
