@@ -26,14 +26,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.fixture_abs_path("../../../../../../examples/manual_code/circle.jac"),
             target=PyastGenPass,
         )
-        for i in code_gen.mod_tree.body:
-            print(
-                i.__class__.__name__,
-                i.lineno,
-                i.col_offset,
-                i.end_lineno,
-                i.end_col_offset,
-            )
         self.assertFalse(code_gen.errors_had)
 
     def micro_suite_test(self, filename: str) -> None:

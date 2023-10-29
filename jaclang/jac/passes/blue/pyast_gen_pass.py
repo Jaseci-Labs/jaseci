@@ -4,49 +4,67 @@ At the end of this pass a meta['py_code'] is present with pure python code
 in each node. Module nodes contain the entire module code.
 """
 import ast as ast3
-from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
-from jaclang.utils.helpers import add_line_numbers
 
 
 class PyastGenPass(Pass):
     """Jac blue transpilation to python pass."""
 
     def before_pass(self) -> None:
-        """Before pass."""
-        self.mod_tree: Optional[ast3.AST] = None
-        self.py_nodes: list[ast3.AST] = []
-        self.marker: int = 0
+        """Initialize pass."""
+        self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
+        self.already_added = {"jimport": False, "enum": False, "test": False}
+        self.preamble: list[ast3.AST] = [
+            ast3.ImportFrom(
+                module="__future__",
+                names=[ast3.alias(name="annotations", asname=None)],
+                level=0,
+            )
+        ]
 
-    def flatten_ast(self, node: ast3.AST) -> list[ast3.AST]:
-        """Flatten the python AST in post-order traversal order."""
-        flattened = []
+    def needs_jac_import(self) -> None:
+        """Check if import is needed."""
+        if self.already_added["jimport"]:
+            return
+        self.preamble.append(
+            ast3.ImportFrom(
+                module="jaclang",
+                names=[ast3.alias(name="jac_blue_import", asname="__jac_import__")],
+                level=0,
+            )
+        )
+        self.already_added["jimport"] = True
 
-        def visit(node) -> None:
-            for child in ast3.iter_child_nodes(node):
-                visit(child)
-            flattened.append(node)
+    def needs_enum(self) -> None:
+        """Check if enum is needed."""
+        if self.already_added["enum"]:
+            return
+        self.preamble.append(
+            ast3.ImportFrom(
+                module="enum",
+                names=[
+                    ast3.alias(name="Enum", asname="__jac_Enum__"),
+                    ast3.alias(name="auto", asname="__jac_auto__"),
+                ],
+                level=0,
+            )
+        )
+        self.already_added["enum"] = True
 
-        visit(node)
-        return flattened
-
-    def cur_py_node(self) -> ast3.AST:
-        """Get current python node."""
-        return self.py_nodes[self.marker]
-
-    def step_py_node(self) -> ast3.AST:
-        """Get next python node."""
-        self.marker += 1
-        return self.py_nodes[self.marker]
-
-    def exit_node(self, node: ast.AstNode) -> None:
-        """Enter node."""
-        if "py_code" not in node.meta:
-            self.error("No py_code in meta for node", node)
-        else:
-            return Pass.exit_node(self, node)
+    def needs_test(self) -> None:
+        """Check if test is needed."""
+        if self.already_added["test"]:
+            return
+        test_code = "import unittest as __jac_unittest__\n"
+        test_code += "__jac_tc__ = __jac_unittest__.TestCase()\n"
+        test_code += "__jac_suite__ = __jac_unittest__.TestSuite()\n"
+        test_code += "class __jac_check:\n"
+        test_code += "    def __getattr__(self, name):\n"
+        test_code += "        return getattr(__jac_tc__, 'assert'+name)"
+        self.preamble += ast3.parse(test_code).body
+        self.already_added["test"] = True
 
     def exit_sub_tag(self, node: ast.SubTag) -> None:
         """Sub objects.
@@ -62,24 +80,6 @@ class PyastGenPass(Pass):
         """
         node.py_ast = [x.py_ast for x in node.items]
 
-    def enter_module(self, node: ast.Module) -> None:
-        """Sub objects.
-
-        name: str,
-        source: JacSource,
-        doc: Optional[String],
-        body: Sequence[ElementStmt],
-        is_imported: bool,
-        """
-        try:
-            self.mod_tree = ast3.parse(node.meta["py_code"], filename=node.loc.mod_path)
-            self.py_nodes = self.flatten_ast(self.mod_tree)
-            self.marker = 0
-        except Exception as e:
-            print(e)
-            print(add_line_numbers(node.meta["py_code"]))
-            raise e
-
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
 
@@ -90,11 +90,22 @@ class PyastGenPass(Pass):
         is_imported: bool,
         """
         if node.doc:
-            if isinstance(self.cur_py_node(), ast3.Expr):
-                node.py_ast.append(self.cur_py_node())
-                self.step_py_node()
-            else:
-                raise self.ice(ast3.Expr)
+            node.py_ast.append(
+                ast3.Module(
+                    body=[
+                        node.doc.py_ast,
+                        *self.preamble,
+                        *[x.py_ast for x in node.body],
+                    ],
+                    type_ignores=[],
+                )
+            )
+        else:
+            node.py_ast.append(
+                ast3.Module(
+                    body=[*self.preamble, *[x.py_ast for x in node.body]],
+                )
+            )
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -113,6 +124,18 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         doc: Optional[String],
         """
+        self.needs_test()
+        test_name = node.name.sym_name
+        node.py_ast.append(
+            ast3.FunctionDef(
+                name=test_name,
+                args=None,
+                body=node.body.py_ast,
+                decorator_list=[],
+                returns=None,
+                type_comment=None,
+            )
+        )
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
@@ -787,11 +810,6 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        if isinstance(self.cur_py_node(), ast3.Str):
-            node.py_ast.append(self.cur_py_node())
-            self.step_py_node()
-        else:
-            raise self.ice(ast3.Str)
 
     def exit_bool(self, node: ast.Bool) -> None:
         """Sub objects.
@@ -840,10 +858,3 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-
-    def ice(self, expected) -> RuntimeError:
-        """Sub objects."""
-        return super().ice(f"expected {expected} got {self.cur_py_node().__class__}")
-
-    def pp(self, node):
-        print(ast3.dump(self.cur_py_node(), indent=4))
