@@ -32,13 +32,6 @@ class PyAstBuildPass(Pass):
             f"{node.__class__.__name__} - {[(k, type(v)) for k, v in vars(node).items()]}"
         )
 
-    def ice(self, msg: Optional[str] = None) -> Exception:
-        """Raise internal compiler error."""
-        if not msg:
-            msg = "Internal Compiler Error, Invalid Python Parse Tree Conversion!"
-        super().error(msg)
-        return RuntimeError(f"{self.__class__.__name__} - {msg}")
-
     def convert(self, node: py_ast.AST) -> ast.AstNode:  # type: ignore
         """Get python node type."""
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
@@ -253,14 +246,11 @@ class PyAstBuildPass(Pass):
             targets: list[expr]
         """
         exprs = [self.convert(target) for target in node.targets]
-        valid_exprs = [expr for expr in exprs if isinstance(expr, ast.ExprType)]
+        valid_exprs = [expr for expr in exprs if isinstance(expr, ast.AtomType)]
         if not len(valid_exprs) or len(valid_exprs) != len(exprs):
             self.error("Length mismatch in delete targets")
         return ast.DeleteStmt(
-            target=ast.ExprList(
-                values=ast.SubNodeList[ast.ExprType](items=valid_exprs, kid=exprs),
-                kid=exprs,
-            ),
+            target=ast.SubNodeList[ast.AtomType](items=valid_exprs, kid=exprs),
             kid=exprs,
         )
 
