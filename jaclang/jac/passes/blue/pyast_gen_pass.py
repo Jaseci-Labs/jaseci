@@ -78,7 +78,8 @@ class PyastGenPass(Pass):
 
         items: Sequence[T],
         """
-        node.py_ast = [x.py_ast for x in node.items]
+        for i in node.items:
+            node.py_ast += i.py_ast
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.

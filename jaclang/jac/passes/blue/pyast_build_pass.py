@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ast as py_ast
 import os
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, Union
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Tokens as Tok
@@ -32,12 +32,12 @@ class PyastBuildPass(Pass):
             f"{node.__class__.__name__} - {[(k, type(v)) for k, v in vars(node).items()]}"
         )
 
-    def convert(self, node: py_ast.AST) -> ast.AstNode:  # type: ignore
+    def convert(self, node: py_ast.AST) -> ast.AstNode:
         """Get python node type."""
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
             return getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
-            self.error(f"Unknown node type {type(node).__name__}")
+            raise self.ice(f"Unknown node type {type(node).__name__}")
 
     def transform(self, ir: ast.PythonModuleAst) -> Optional[ast.Module]:
         """Transform input IR."""
@@ -52,7 +52,7 @@ class PyastBuildPass(Pass):
             body: list[stmt]
             type_ignores: list[TypeIgnore]
         """
-        elements = [self.convert(i) for i in node.body]
+        elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
         valid = [i for i in elements if isinstance(i, ast.ElementStmt)]
         if len(valid) != len(elements):
             self.error("Invalid module body")
@@ -265,22 +265,18 @@ class PyastBuildPass(Pass):
         valid_targets = [
             target for target in targets if isinstance(target, ast.AtomType)
         ]
-        if len(valid_targets) != len(targets):
-            self.error("Length mismatch in assignment targets")
-        if len(valid_targets) == 1:
-            valid_targets = valid_targets[0]
-        else:
-            valid_targets = ast.TupleVal(
-                ast.SubNodeList[ast.ExprType | ast.Assignment](
-                    items=valid_targets, kid=targets
-                ),
-                kid=targets,
+        if len(valid_targets) == len(targets):
+            valid_targets = ast.SubNodeList[ast.AtomType](
+                items=valid_targets, kid=targets
             )
+        else:
+            raise self.ice("Length mismatch in assignment targets")
         value = self.convert(node.value)
         if isinstance(value, ast.ExprType):
             return ast.Assignment(
                 target=valid_targets,
                 value=value,
+                type_tag=None,
                 kid=[valid_targets, value],
             )
         else:
@@ -323,14 +319,23 @@ class PyastBuildPass(Pass):
             simple: int
         """
         target = self.convert(node.target)
-        # annotation = self.proc_node(node.annotation)
-        # simple = node.simple
+        annotation = self.convert(node.annotation)
+        if isinstance(annotation, ast.ExprType):
+            annotation = ast.SubTag[ast.ExprType](tag=annotation, kid=[annotation])
+        else:
+            raise self.ice()
         value = self.convert(node.value) if node.value else None
-        if isinstance(target, ast.AtomType) and isinstance(value, ast.ExprType):
+        valid_types = Union[ast.ExprType, ast.YieldStmt]
+        if (
+            isinstance(target, ast.SubNodeList)
+            and (isinstance(value, valid_types) or not value)
+            and isinstance(annotation, ast.ExprType)
+        ):
             return ast.Assignment(
                 target=target,
                 value=value,
-                kid=[target, value],
+                type_tag=annotation,
+                kid=[target, annotation, value] if value else [target, annotation],
             )
         else:
             raise self.ice()
@@ -469,188 +474,188 @@ class PyastBuildPass(Pass):
         body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
         raise self.ice("IMPLEMENT ME")
 
-    def proc_raise(self, node: py_ast.Raise) -> ast.RaiseStmt:
+    def proc_raise(self, node: py_ast.Raise) -> None:
         """Process python node."""
 
-    def proc_assert(self, node: py_ast.Assert) -> ast.AstNode:
+    def proc_assert(self, node: py_ast.Assert) -> None:
         """Process python node."""
 
-    def proc_attribute(self, node: py_ast.Attribute) -> ast.AstNode:
+    def proc_attribute(self, node: py_ast.Attribute) -> None:
         """Process python node."""
 
-    def proc_await(self, node: py_ast.Await) -> ast.AstNode:
+    def proc_await(self, node: py_ast.Await) -> None:
         """Process python node."""
 
-    def proc_bin_op(self, node: py_ast.BinOp) -> ast.AstNode:
+    def proc_bin_op(self, node: py_ast.BinOp) -> None:
         """Process python node."""
 
-    def proc_bool_op(self, node: py_ast.BoolOp) -> ast.AstNode:
+    def proc_bool_op(self, node: py_ast.BoolOp) -> None:
         """Process python node."""
 
-    def proc_break(self, node: py_ast.Break) -> ast.AstNode:
+    def proc_break(self, node: py_ast.Break) -> None:
         """Process python node."""
 
-    def proc_call(self, node: py_ast.Call) -> ast.AstNode:
+    def proc_call(self, node: py_ast.Call) -> None:
         """Process python node."""
 
-    def proc_compare(self, node: py_ast.Compare) -> ast.AstNode:
+    def proc_compare(self, node: py_ast.Compare) -> None:
         """Process python node."""
 
-    def proc_constant(self, node: py_ast.Constant) -> ast.AstNode:
+    def proc_constant(self, node: py_ast.Constant) -> None:
         """Process python node."""
 
-    def proc_continue(self, node: py_ast.Continue) -> ast.AstNode:
+    def proc_continue(self, node: py_ast.Continue) -> None:
         """Process python node."""
 
-    def proc_dict(self, node: py_ast.Dict) -> ast.AstNode:
+    def proc_dict(self, node: py_ast.Dict) -> None:
         """Process python node."""
 
-    def proc_dict_comp(self, node: py_ast.DictComp) -> ast.AstNode:
+    def proc_dict_comp(self, node: py_ast.DictComp) -> None:
         """Process python node."""
 
-    def proc_ellipsis(self, node: py_ast.Ellipsis) -> ast.AstNode:
+    def proc_ellipsis(self, node: py_ast.Ellipsis) -> None:
         """Process python node."""
 
-    def proc_except_handler(self, node: py_ast.ExceptHandler) -> ast.AstNode:
+    def proc_except_handler(self, node: py_ast.ExceptHandler) -> None:
         """Process python node."""
 
-    def proc_expr(self, node: py_ast.Expr) -> ast.AstNode:
+    def proc_expr(self, node: py_ast.Expr) -> None:
         """Process python node."""
 
-    def proc_formatted_value(self, node: py_ast.FormattedValue) -> ast.AstNode:
+    def proc_formatted_value(self, node: py_ast.FormattedValue) -> None:
         """Process python node."""
 
-    def proc_function_type(self, node: py_ast.FunctionType) -> ast.AstNode:
+    def proc_function_type(self, node: py_ast.FunctionType) -> None:
         """Process python node."""
 
-    def proc_generator_exp(self, node: py_ast.GeneratorExp) -> ast.AstNode:
+    def proc_generator_exp(self, node: py_ast.GeneratorExp) -> None:
         """Process python node."""
 
-    def proc_global(self, node: py_ast.Global) -> ast.AstNode:
+    def proc_global(self, node: py_ast.Global) -> None:
         """Process python node."""
 
-    def proc_if_exp(self, node: py_ast.IfExp) -> ast.AstNode:
+    def proc_if_exp(self, node: py_ast.IfExp) -> None:
         """Process python node."""
 
-    def proc_import(self, node: py_ast.Import) -> ast.AstNode:
+    def proc_import(self, node: py_ast.Import) -> None:
         """Process python node."""
 
-    def proc_import_from(self, node: py_ast.ImportFrom) -> ast.AstNode:
+    def proc_import_from(self, node: py_ast.ImportFrom) -> None:
         """Process python node."""
 
-    def proc_joined_str(self, node: py_ast.JoinedStr) -> ast.AstNode:
+    def proc_joined_str(self, node: py_ast.JoinedStr) -> None:
         """Process python node."""
 
-    def proc_lambda(self, node: py_ast.Lambda) -> ast.AstNode:
+    def proc_lambda(self, node: py_ast.Lambda) -> None:
         """Process python node."""
 
-    def proc_list(self, node: py_ast.List) -> ast.AstNode:
+    def proc_list(self, node: py_ast.List) -> None:
         """Process python node."""
 
-    def proc_list_comp(self, node: py_ast.ListComp) -> ast.AstNode:
+    def proc_list_comp(self, node: py_ast.ListComp) -> None:
         """Process python node."""
 
-    def proc_match(self, node: py_ast.Match) -> ast.AstNode:
+    def proc_match(self, node: py_ast.Match) -> None:
         """Process python node."""
 
-    def proc_match_as(self, node: py_ast.MatchAs) -> ast.AstNode:
+    def proc_match_as(self, node: py_ast.MatchAs) -> None:
         """Process python node."""
 
-    def proc_match_class(self, node: py_ast.MatchClass) -> ast.AstNode:
+    def proc_match_class(self, node: py_ast.MatchClass) -> None:
         """Process python node."""
 
-    def proc_match_mapping(self, node: py_ast.MatchMapping) -> ast.AstNode:
+    def proc_match_mapping(self, node: py_ast.MatchMapping) -> None:
         """Process python node."""
 
-    def proc_match_or(self, node: py_ast.MatchOr) -> ast.AstNode:
+    def proc_match_or(self, node: py_ast.MatchOr) -> None:
         """Process python node."""
 
-    def proc_match_sequence(self, node: py_ast.MatchSequence) -> ast.AstNode:
+    def proc_match_sequence(self, node: py_ast.MatchSequence) -> None:
         """Process python node."""
 
-    def proc_match_singleton(self, node: py_ast.MatchSingleton) -> ast.AstNode:
+    def proc_match_singleton(self, node: py_ast.MatchSingleton) -> None:
         """Process python node."""
 
-    def proc_match_star(self, node: py_ast.MatchStar) -> ast.AstNode:
+    def proc_match_star(self, node: py_ast.MatchStar) -> None:
         """Process python node."""
 
-    def proc_match_value(self, node: py_ast.MatchValue) -> ast.AstNode:
+    def proc_match_value(self, node: py_ast.MatchValue) -> None:
         """Process python node."""
 
-    def proc_name(self, node: py_ast.Name) -> ast.AstNode:
+    def proc_name(self, node: py_ast.Name) -> None:
         """Process python node."""
 
-    def proc_named_expr(self, node: py_ast.NamedExpr) -> ast.AstNode:
+    def proc_named_expr(self, node: py_ast.NamedExpr) -> None:
         """Process python node."""
 
-    def proc_nonlocal(self, node: py_ast.Nonlocal) -> ast.AstNode:
+    def proc_nonlocal(self, node: py_ast.Nonlocal) -> None:
         """Process python node."""
 
-    def proc_pass(self, node: py_ast.Pass) -> ast.AstNode:
+    def proc_pass(self, node: py_ast.Pass) -> None:
         """Process python node."""
 
-    def proc_set(self, node: py_ast.Set) -> ast.AstNode:
+    def proc_set(self, node: py_ast.Set) -> None:
         """Process python node."""
 
-    def proc_set_comp(self, node: py_ast.SetComp) -> ast.AstNode:
+    def proc_set_comp(self, node: py_ast.SetComp) -> None:
         """Process python node."""
 
-    def proc_slice(self, node: py_ast.Slice) -> ast.AstNode:
+    def proc_slice(self, node: py_ast.Slice) -> None:
         """Process python node."""
 
-    def proc_starred(self, node: py_ast.Starred) -> ast.AstNode:
+    def proc_starred(self, node: py_ast.Starred) -> None:
         """Process python node."""
 
-    def proc_subscript(self, node: py_ast.Subscript) -> ast.AstNode:
+    def proc_subscript(self, node: py_ast.Subscript) -> None:
         """Process python node."""
 
-    def proc_try(self, node: py_ast.Try) -> ast.AstNode:
+    def proc_try(self, node: py_ast.Try) -> None:
         """Process python node."""
 
-    def proc_try_star(self, node: py_ast.TryStar) -> ast.AstNode:
+    def proc_try_star(self, node: py_ast.TryStar) -> None:
         """Process python node."""
 
-    def proc_tuple(self, node: py_ast.Tuple) -> ast.AstNode:
+    def proc_tuple(self, node: py_ast.Tuple) -> None:
         """Process python node."""
 
-    def proc_unary_op(self, node: py_ast.UnaryOp) -> ast.AstNode:
+    def proc_unary_op(self, node: py_ast.UnaryOp) -> None:
         """Process python node."""
 
-    def proc_yield(self, node: py_ast.Yield) -> ast.AstNode:
+    def proc_yield(self, node: py_ast.Yield) -> None:
         """Process python node."""
 
-    def proc_yield_from(self, node: py_ast.YieldFrom) -> ast.AstNode:
+    def proc_yield_from(self, node: py_ast.YieldFrom) -> None:
         """Process python node."""
 
-    def proc_alias(self, node: py_ast.alias) -> ast.AstNode:
+    def proc_alias(self, node: py_ast.alias) -> None:
         """Process python node."""
 
-    def proc_arg(self, node: py_ast.arg) -> ast.AstNode:
+    def proc_arg(self, node: py_ast.arg) -> None:
         """Process python node."""
 
-    def proc_arguments(self, node: py_ast.arguments) -> ast.AstNode:
+    def proc_arguments(self, node: py_ast.arguments) -> None:
         """Process python node."""
 
-    def proc_comprehension(self, node: py_ast.comprehension) -> ast.AstNode:
+    def proc_comprehension(self, node: py_ast.comprehension) -> None:
         """Process python node."""
 
-    def proc_keyword(self, node: py_ast.keyword) -> ast.AstNode:
+    def proc_keyword(self, node: py_ast.keyword) -> None:
         """Process python node."""
 
-    def proc_match_case(self, node: py_ast.match_case) -> ast.AstNode:
+    def proc_match_case(self, node: py_ast.match_case) -> None:
         """Process python node."""
 
-    def proc_withitem(self, node: py_ast.withitem) -> ast.AstNode:
+    def proc_withitem(self, node: py_ast.withitem) -> None:
         """Process python node."""
 
-    def proc_param_spec(self, node: py_ast.ParamSpec) -> ast.AstNode:
+    def proc_param_spec(self, node: py_ast.ParamSpec) -> None:
         """Process python node."""
 
-    def proc_type_alias(self, node: py_ast.TypeAlias) -> ast.AstNode:
+    def proc_type_alias(self, node: py_ast.TypeAlias) -> None:
         """Process python node."""
 
-    def proc_type_var(self, node: py_ast.TypeVar) -> ast.AstNode:
+    def proc_type_var(self, node: py_ast.TypeVar) -> None:
         """Process python node."""
 
-    def proc_type_var_tuple(self, node: py_ast.TypeVarTuple) -> ast.AstNode:
+    def proc_type_var_tuple(self, node: py_ast.TypeVarTuple) -> None:
         """Process python node."""
