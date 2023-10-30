@@ -90,15 +90,13 @@ class PyastGenPass(Pass):
         self.preamble += ast3.parse(test_code).body
         self.already_added["test"] = True
 
-    def flatten_ast_list(
-        self, body: list[ast3.AST | list[ast3.AST] | None]
-    ) -> list[ast3.AST]:
+    def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
         new_body = []
         for i in body:
             if isinstance(i, list):
                 new_body += i
-            elif isinstance(i, ast3.AST):
+            elif i is not None:
                 new_body.append(i) if i else None
         return new_body
 
@@ -135,7 +133,7 @@ class PyastGenPass(Pass):
 
         items: Sequence[T],
         """
-        node.gen.py_ast = self.flatten_ast_list([i.gen.py_ast for i in node.items])
+        node.gen.py_ast = self.flatten([i.gen.py_ast for i in node.items])
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -510,6 +508,7 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+        node.gen.py_ast = node.body.gen.py_ast
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.
@@ -517,7 +516,33 @@ class PyastGenPass(Pass):
         params: Optional[SubNodeList[ParamVar]],
         return_type: Optional[SubTag[ExprType]],
         """
-        node.gen.py_ast = node.params.gen.py_ast if node.params else []
+        params = []
+        vararg = None
+        kwargs = None
+        if isinstance(node.params, ast.SubNodeList):
+            for i in node.params.items:
+                if i.unpack and i.unpack.value == "*":
+                    vararg = i.gen.py_ast
+                elif i.unpack and i.unpack.value == "**":
+                    kwargs = i.gen.py_ast
+                else:
+                    params.append(i.gen.py_ast)
+        defaults = (
+            [x.value.gen.py_ast for x in node.params.items if x.value]
+            if node.params
+            else []
+        )
+        node.gen.py_ast = self.sync(
+            ast3.arguments(
+                posonlyargs=[],
+                args=params,
+                kwonlyargs=[],
+                vararg=vararg,
+                kwargs=kwargs,
+                kw_defaults=[],
+                defaults=defaults,
+            )
+        )
 
     def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
@@ -551,7 +576,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.arg(
                 arg=node.name.sym_name,
-                annotation=node.type_tag.gen.py_ast,
+                annotation=node.type_tag.gen.py_ast if node.type_tag else None,
             )
         )
 
@@ -564,6 +589,14 @@ class PyastGenPass(Pass):
         is_frozen: bool,
         doc: Optional[String],
         """
+        if node.doc:
+            doc = node.doc.gen.py_ast
+            if isinstance(doc, ast3.AST) and isinstance(node.vars.gen.py_ast, list):
+                node.gen.py_ast = [doc] + node.vars.gen.py_ast
+            else:
+                raise self.ice()
+        else:
+            node.gen.py_ast = node.vars.gen.py_ast
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
