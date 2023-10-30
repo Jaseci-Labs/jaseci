@@ -57,12 +57,14 @@ class PyastGenPass(Pass):
         """Check if test is needed."""
         if self.already_added["test"]:
             return
-        test_code = "import unittest as __jac_unittest__\n"
-        test_code += "__jac_tc__ = __jac_unittest__.TestCase()\n"
-        test_code += "__jac_suite__ = __jac_unittest__.TestSuite()\n"
-        test_code += "class __jac_check:\n"
-        test_code += "    def __getattr__(self, name):\n"
-        test_code += "        return getattr(__jac_tc__, 'assert'+name)"
+        test_code = (
+            "import unittest as __jac_unittest__\n"
+            "__jac_tc__ = __jac_unittest__.TestCase()\n"
+            "__jac_suite__ = __jac_unittest__.TestSuite()\n"
+            "class __jac_check:\n"
+            "    def __getattr__(self, name):\n"
+            "        return getattr(__jac_tc__, 'assert'+name)"
+        )
         self.preamble += ast3.parse(test_code).body
         self.already_added["test"] = True
 

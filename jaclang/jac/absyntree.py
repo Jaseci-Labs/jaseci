@@ -21,7 +21,7 @@ class AstNode:
         self.sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
         self._typ: type = type(None)
-        self.meta: dict = {}
+        self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
         self.py_ast: list[ast3.AST] = []
 
@@ -78,13 +78,13 @@ class AstNode:
 
         return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
 
-    def to_dict(self) -> dict[str, Union[str, Sequence[AstNode], int]]:
+    def to_dict(self) -> dict[str, str]:
         """Return dict representation of node."""
         ret = {
             "node": str(type(self).__name__),
-            "kid": [x.to_dict() for x in self.kid if x],
-            "line": self.loc.first_line,
-            "col": self.loc.col_start,
+            "kid": str([x.to_dict() for x in self.kid if x]),
+            "line": str(self.loc.first_line),
+            "col": str(self.loc.col_start),
         }
         if isinstance(self, Token):
             ret["name"] = self.name
@@ -355,7 +355,7 @@ class ModulePath(AstNode):
     ) -> None:
         """Initialize module path node."""
         self.path = path
-        self.path_str = "".join([p.value for p in path])
+        self.path_str: str = "".join([p.value for p in path])
         AstNode.__init__(self, kid=kid)
 
 

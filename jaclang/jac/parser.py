@@ -20,20 +20,19 @@ class JacParser(Pass):
 
     def __init__(self, input_ir: ast.JacSource) -> None:
         """Initialize parser."""
+        self.source = input_ir
         self.mod_path = input_ir.loc.mod_path
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
-    def before_pass(self, source: ast.JacSource) -> None:
+    def before_pass(self) -> None:
         """Initialize parser."""
         super().before_pass()
-        self.source = source
-        self.comments = []
+        self.comments: list[jl.Token] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
 
     def transform(self, ir: ast.JacSource) -> Optional[ast.Module]:
         """Transform input IR."""
-        self.before_pass(ir)
         try:
             tree, self.comments = JacParser.parse(
                 ir.value, on_error=self.error_callback
@@ -57,11 +56,11 @@ class JacParser(Pass):
         return False
 
     @staticmethod
-    def _comment_callback(comment: str) -> None:
+    def _comment_callback(comment: jl.Token) -> None:
         JacParser.comment_cache.append(comment)
 
     @staticmethod
-    def parse(ir: str, on_error: Callable) -> tuple[jl.Tree, list[str]]:
+    def parse(ir: str, on_error: Callable) -> tuple[jl.Tree, list[jl.Token]]:
         """Parse input IR."""
         JacParser.comment_cache = []
         return (
@@ -82,7 +81,7 @@ class JacParser(Pass):
         JacParser.JacTransformer = Transformer
         logger.setLevel(logging.DEBUG)
 
-    comment_cache = []
+    comment_cache: list[jl.Token] = []
 
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})
     JacTransformer = jl.Transformer
