@@ -19,7 +19,12 @@ class PyastGenPass(Pass):
     def before_pass(self) -> None:
         """Initialize pass."""
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
-        self.already_added = {"jimport": False, "enum": False, "test": False}
+        self.already_added = {
+            "jimport": False,
+            "enum": False,
+            "test": False,
+            "dataclass": False,
+        }
         self.preamble: list[ast3.AST] = [
             ast3.ImportFrom(
                 module="__future__",
@@ -52,6 +57,19 @@ class PyastGenPass(Pass):
                     ast3.alias(name="Enum", asname="__jac_Enum__"),
                     ast3.alias(name="auto", asname="__jac_auto__"),
                 ],
+                level=0,
+            )
+        )
+        self.already_added["enum"] = True
+
+    def needs_data_class(self) -> None:
+        """Check if enum is needed."""
+        if self.already_added["dataclass"]:
+            return
+        self.preamble.append(
+            ast3.ImportFrom(
+                module="dataclasses",
+                names=[ast3.alias(name="dataclass", asname="__jac_dataclass__")],
                 level=0,
             )
         )
@@ -340,6 +358,40 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+        self.needs_data_class()
+        body = (
+            [self.sync(ast3.Pass(), node.body)]
+            if isinstance(node.body, ast.SubNodeList) and not node.body.items
+            else node.body.gen.py_ast
+            if node.body
+            else []
+        )
+        if not isinstance(body, list):
+            raise self.ice()
+        if node.doc:
+            body = [node.doc.gen.py_ast, *body]
+        decorators = (
+            node.decorators.gen.py_ast
+            if isinstance(node.decorators, ast.SubNodeList)
+            else []
+        )
+        if isinstance(decorators, list):
+            decorators.append(
+                self.sync(ast3.Name(id="__jac_dataclass__", ctx=ast3.Load()))
+            )
+        else:
+            raise self.ice()
+        base_classes = node.base_classes.gen.py_ast if node.base_classes else []
+        node.gen.py_ast = self.sync(
+            ast3.ClassDef(
+                name=node.name.value,
+                bases=base_classes,
+                keywords=[],
+                body=body,
+                decorator_list=decorators,
+                type_params=[],
+            )
+        )
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
         """Sub objects.
@@ -349,6 +401,7 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+        node.gen.py_ast = node.body.gen.py_ast
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.
@@ -360,6 +413,46 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+        self.needs_enum()
+        body = (
+            [self.sync(ast3.Pass(), node.body)]
+            if isinstance(node.body, ast.SubNodeList) and not node.body.items
+            else node.body.gen.py_ast
+            if node.body
+            else []
+        )
+        if not isinstance(body, list):
+            raise self.ice()
+        if node.doc:
+            body = [node.doc.gen.py_ast, *body]
+        decorators = (
+            node.decorators.gen.py_ast
+            if isinstance(node.decorators, ast.SubNodeList)
+            else []
+        )
+        if isinstance(decorators, list):
+            decorators.append(
+                self.sync(ast3.Name(id="__jac_dataclass__", ctx=ast3.Load()))
+            )
+        else:
+            raise self.ice()
+        base_classes = node.base_classes.gen.py_ast if node.base_classes else []
+        if isinstance(base_classes, list):
+            base_classes.append(
+                self.sync(ast3.Name(id="__jac_Enum__", ctx=ast3.Load()))
+            )
+        else:
+            raise self.ice()
+        node.gen.py_ast = self.sync(
+            ast3.ClassDef(
+                name=node.name.value,
+                bases=base_classes,
+                keywords=[],
+                body=body,
+                decorator_list=decorators,
+                type_params=[],
+            )
+        )
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -369,6 +462,7 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+        node.gen.py_ast = node.body.gen.py_ast
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
