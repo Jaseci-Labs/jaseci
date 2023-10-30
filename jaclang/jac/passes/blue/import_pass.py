@@ -59,8 +59,8 @@ class ImportPass(Pass):
         self.sub_module = None
         """
         self.cur_node = node
-        if node.alias and node.sub_module:
-            node.sub_module.name = node.alias.value
+        if node.path.alias and node.sub_module:
+            node.sub_module.name = node.path.alias.value
         # Items matched during def/decl pass
 
     # Utility functions

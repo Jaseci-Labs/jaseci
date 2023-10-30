@@ -228,6 +228,14 @@ class PyastGenPass(Pass):
         sub_module: Optional[Module],
         """
         py_nodes: list[ast3.AST] = []
+        level = 0
+        py_compat_path_str = node.path.path_str
+        if node.path.path_str.startswith(".."):
+            level = 2
+            py_compat_path_str = node.path.path_str[2:]
+        elif node.path.path_str.startswith("."):
+            level = 1
+            py_compat_path_str = node.path.path_str[1:]
         if node.lang.tag.value == Con.JAC_LANG_IMP:  # injects module into sys.modules
             self.needs_jac_import()
             py_nodes.append(
@@ -244,7 +252,7 @@ class PyastGenPass(Pass):
                                         ast3.keyword(
                                             arg="target",
                                             value=ast3.Name(
-                                                id=f"{''.join([i.value for i in node.path.path])}",
+                                                id=f"{node.path.path_str}",
                                                 ctx=ast3.Load(),
                                             ),
                                         )
@@ -269,9 +277,9 @@ class PyastGenPass(Pass):
             py_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
-                        module="".join([i.value for i in node.path.path]),
+                        module=py_compat_path_str,
                         names=[self.sync(ast3.alias(name="*"), node)],
-                        level=0,
+                        level=level,
                     ),
                     jac_node=node,
                 )
@@ -282,32 +290,29 @@ class PyastGenPass(Pass):
                 )
             return
         if not node.items:
-            if not node.alias:
-                py_nodes.append(self.sync(ast3.Import(names=[node.path.gen.py_ast])))
-            else:
-                py_nodes.append(
-                    self.sync(
-                        ast3.parse(
-                            f"import {node.path.gen.py} as {node.alias.gen.py}"
-                        ).body[0]
+            py_nodes.append(self.sync(ast3.Import(names=[node.path.gen.py_ast])))
+        else:
+            py_nodes.append(
+                self.sync(
+                    ast3.ImportFrom(
+                        module=py_compat_path_str,
+                        names=node.items.gen.py_ast,
+                        level=level,
                     )
                 )
-        # else:
-        #     self.comma_sep_node_list(node.items)
-        #     self.emit_ln(
-        #         node,
-        #         f"from {node.path.gen.py} import {node.items.gen.py}",
-        #     )
+            )
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
 
         path: Sequence[Token],
+        alias: Optional[Name],
+        path_str: str,
         """
         node.gen.py_ast = self.sync(
             ast3.alias(
-                name=f"{''.join([i.value for i in node.path])}",
-                asname=None,
+                name=f"{node.path_str}",
+                asname=node.alias.value if node.alias else None,
             )
         )
 
@@ -318,6 +323,12 @@ class PyastGenPass(Pass):
         alias: Optional[Name],
         body: Optional[AstNode],
         """
+        node.gen.py_ast = self.sync(
+            ast3.alias(
+                name=f"{node.name.value}",
+                asname=node.alias.value if node.alias else None,
+            )
+        )
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Sub objects.

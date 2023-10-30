@@ -304,7 +304,9 @@ class SymTabBuildPass(SymTabPass):
                 self.def_insert(i, single_use="import item", also_link=[i.name])
         else:
             self.def_insert(
-                node, single_use="import", also_link=[node.alias] if node.alias else []
+                node.path,
+                single_use="import",
+                also_link=[node.path.alias] if node.path.alias else [],
             )
 
     def exit_import(self, node: ast.Import) -> None:

@@ -268,13 +268,11 @@ class JacParser(Pass):
             """Grammar rule.
 
             import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
-                | KW_IMPORT sub_name import_path KW_AS NAME SEMI
-                | KW_IMPORT sub_name import_path SEMI
+                    | KW_IMPORT sub_name import_path SEMI
             """
             lang = kid[1]
             path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
 
-            alias = kid[-2] if isinstance(kid[-2], ast.Name) else None
             items = (
                 kid[-2]
                 if len(kid) > 4 and isinstance(kid[-2], ast.SubNodeList)
@@ -284,14 +282,12 @@ class JacParser(Pass):
             if (
                 isinstance(lang, ast.SubTag)
                 and isinstance(path, ast.ModulePath)
-                and (isinstance(alias, ast.Name) or alias is None)
                 and (isinstance(items, ast.SubNodeList) or items is None)
             ):
                 return self.nu(
                     ast.Import(
                         lang=lang,
                         path=path,
-                        alias=alias,
                         items=items,
                         is_absorb=is_absorb,
                         kid=kid,
@@ -314,7 +310,6 @@ class JacParser(Pass):
                     ast.Import(
                         lang=lang,
                         path=path,
-                        alias=None,
                         items=None,
                         is_absorb=is_absorb,
                         kid=kid,
@@ -326,18 +321,26 @@ class JacParser(Pass):
         def import_path(self, kid: list[ast.AstNode]) -> ast.ModulePath:
             """Grammar rule.
 
-            import_path: DOT? DOT? name_ref ((DOT name_ref)+)?
+            import_path: DOT? DOT? named_ref (DOT named_ref)* (KW_AS NAME)?
             """
             valid_path = [i for i in kid if isinstance(i, ast.Token)]
-            if len(valid_path) == len(kid):
-                return self.nu(
-                    ast.ModulePath(
-                        path=valid_path,
-                        kid=kid,
-                    )
+            alias = (
+                kid[-1]
+                if len(kid) > 2
+                and isinstance(kid[-1], ast.Name)
+                and isinstance(kid[-2], ast.Token)
+                and kid[-2].name == Tok.KW_AS
+                else None
+            )
+            if alias is not None:
+                valid_path = valid_path[:-2]
+            return self.nu(
+                ast.ModulePath(
+                    path=valid_path,
+                    alias=alias,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def import_items(
             self, kid: list[ast.AstNode]

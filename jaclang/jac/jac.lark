@@ -22,11 +22,10 @@ doc_tag: ( STRING | DOC_STRING )
 py_code_block: PYNLINE
 
 import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
-           | KW_IMPORT sub_name import_path KW_AS NAME SEMI
            | KW_IMPORT sub_name import_path SEMI
 
 include_stmt: KW_INCLUDE sub_name import_path SEMI
-import_path: DOT? DOT? named_ref ((DOT named_ref)+)?
+import_path: DOT? DOT? named_ref (DOT named_ref)* (KW_AS NAME)?
 import_items: (import_item COMMA)* import_item
 import_item: named_ref (KW_AS NAME)?
 architype: decorators? (enum | architype_def | architype_decl)

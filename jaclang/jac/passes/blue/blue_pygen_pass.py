@@ -252,13 +252,7 @@ class BluePygenPass(Pass):
                 )
             return
         if not node.items:
-            if not node.alias:
-                self.emit_ln(node, f"import {node.path.gen.py}")
-            else:
-                self.emit_ln(
-                    node,
-                    f"import {node.path.gen.py} as {node.alias.gen.py}",
-                )
+            self.emit_ln(node, f"import {node.path.gen.py}")
         else:
             self.comma_sep_node_list(node.items)
             self.emit_ln(
@@ -270,8 +264,11 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         path: list[Token],
+        alias: Optional[Name],
         """
         self.emit(node, "".join([i.gen.py for i in node.path]))
+        if node.alias:
+            self.emit(node, " as " + node.alias.gen.py)
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.

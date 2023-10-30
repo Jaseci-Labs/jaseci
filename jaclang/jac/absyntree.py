@@ -315,14 +315,13 @@ class PyInlineCode(AstDocNode):
         AstDocNode.__init__(self, doc=doc)
 
 
-class Import(AstSymbolNode, AstDocNode):
+class Import(AstDocNode):
     """Import node type for Jac Ast."""
 
     def __init__(
         self,
         lang: SubTag[Name],
         path: ModulePath,
-        alias: Optional[Name],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
@@ -332,32 +331,33 @@ class Import(AstSymbolNode, AstDocNode):
         """Initialize import node."""
         self.lang = lang
         self.path = path
-        self.alias = alias
         self.items = items
         self.is_absorb = is_absorb
         self.sub_module = sub_module
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(
-            self,
-            sym_name=alias.sym_name if alias else path.path_str,
-            sym_name_node=alias if alias else path,
-            sym_type=SymbolType.MODULE,
-        )
         AstDocNode.__init__(self, doc=doc)
 
 
-class ModulePath(AstNode):
+class ModulePath(AstSymbolNode):
     """ModulePath node type for Jac Ast."""
 
     def __init__(
         self,
         path: Sequence[Token],
+        alias: Optional[Name],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize module path node."""
         self.path = path
+        self.alias = alias
         self.path_str: str = "".join([p.value for p in path])
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=alias.sym_name if alias else self.path_str,
+            sym_name_node=alias if alias else self,
+            sym_type=SymbolType.MODULE,
+        )
 
 
 class ModuleItem(AstSymbolNode):
