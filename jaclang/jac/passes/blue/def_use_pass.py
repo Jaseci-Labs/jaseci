@@ -68,18 +68,19 @@ class DefUsePass(SymTabPass):
     def enter_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
-        target: AtomType,
-        value: ExprType,
-        kid: list[AstNode],
+        target: SubNodeList[AtomType],
+        value: Optional[ExprType | YieldStmt],
+        type_tag: Optional[SubTag[ExprType]],
         is_static: bool = False,
         mutable: bool = True,
         """
-        if isinstance(node.target, ast.AtomTrailer):
-            self.chain_def_insert(self.unwind_atom_trailer(node.target))
-        elif isinstance(node.target, ast.AtomSymbolType):
-            self.def_insert(node.target)
-        else:
-            self.error("Assignment target not valid")
+        for i in node.target.items:
+            if isinstance(i, ast.AtomTrailer):
+                self.chain_def_insert(self.unwind_atom_trailer(i))
+            elif isinstance(i, ast.AtomSymbolType):
+                self.def_insert(i)
+            else:
+                self.error("Assignment target not valid")
 
     def enter_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
@@ -90,7 +91,12 @@ class DefUsePass(SymTabPass):
         conditional: Optional[ExprType],
         """
         for i in node.names.items:
-            self.def_insert(i, single_use="list compr var")
+            if isinstance(i, ast.AtomTrailer):
+                self.chain_def_insert(self.unwind_atom_trailer(i))
+            elif isinstance(i, ast.AtomSymbolType):
+                self.def_insert(i)
+            else:
+                self.error("Named target not valid")
 
     def enter_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
@@ -101,7 +107,12 @@ class DefUsePass(SymTabPass):
         conditional: Optional[ExprType],
         """
         for i in node.names.items:
-            self.def_insert(i, single_use="dict compr var")
+            if isinstance(i, ast.AtomTrailer):
+                self.chain_def_insert(self.unwind_atom_trailer(i))
+            elif isinstance(i, ast.AtomSymbolType):
+                self.def_insert(i)
+            else:
+                self.error("Named target not valid")
 
     def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.

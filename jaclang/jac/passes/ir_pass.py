@@ -128,10 +128,10 @@ class Pass(Transform):
         self.update_code_loc(node_override)
         self.log_warning(f"{msg}", node_override=node_override)
 
-    def ice(self, msg: str = "Something went horribly wrong!") -> None:
+    def ice(self, msg: str = "Something went horribly wrong!") -> RuntimeError:
         """Pass Error."""
         self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
-        raise RuntimeError(
+        return RuntimeError(
             f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"
         )
 

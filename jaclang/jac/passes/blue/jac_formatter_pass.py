@@ -798,12 +798,11 @@ class JacFormatPass(Pass):
         """
         self.emit(node, f"if {node.condition.meta['jac_code']}")
         self.emit(node, node.body.meta["jac_code"])
-        if node.elseifs:
-            self.emit(node, node.elseifs.meta["jac_code"])
+
         if node.else_body:
             self.emit(node, node.else_body.meta["jac_code"])
 
-    def exit_else_ifs(self, node: ast.ElseIfs) -> None:
+    def exit_else_if(self, node: ast.ElseIf) -> None:
         """Sub objects.
 
         elseifs: list[IfStmt],
@@ -812,8 +811,8 @@ class JacFormatPass(Pass):
 
         self.emit(node, node.body.meta["jac_code"])
 
-        if node.elseifs:
-            self.emit(node, node.elseifs.meta["jac_code"])
+        if node.else_body:
+            self.emit(node, node.else_body.meta["jac_code"])
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
@@ -946,12 +945,31 @@ class JacFormatPass(Pass):
         else:
             self.emit(node, node.name.value)
 
+    def exit_global_stmt(self, node: ast.GlobalStmt) -> None:
+        """Sub objects.
+
+        target: SubNodeList[NameType],
+        """
+        self.emit(node, ":g:")
+        self.comma_sep_node_list(node.target)
+        self.emit_ln(node, f"{node.target.meta['jac_code']}")
+
+    def exit_non_local_stmt(self, node: ast.GlobalStmt) -> None:
+        """Sub objects.
+
+        target: SubNodeList[NameType],
+        """
+        self.emit(node, ":nl:")
+        self.comma_sep_node_list(node.target)
+        self.emit_ln(node, f"{node.target.meta['jac_code']}")
+
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
-        is_static: bool,
-        target: AtomType,
-        value: ExprType,
+        target: SubNodeList[AtomType],
+        value: Optional[ExprType | YieldStmt],
+        type_tag: Optional[SubTag[ExprType]],
+        mutable: bool = True,
         """
         comment_str = ""
         (
@@ -962,11 +980,12 @@ class JacFormatPass(Pass):
             comment_str = " ; ".join(
                 comment_value for _, comment_value in inline_comments
             )
-        if node.is_static:
-            self.emit(node, "has ")
-        self.emit(
-            node, f"{node.target.meta['jac_code']} = {node.value.meta['jac_code']}"
-        )
+        self.sep_node_list(node.target, delim="=")
+        self.emit(node, node.target.meta["jac_code"])
+        if node.type_tag:
+            self.emit(node, f": {node.type_tag.tag.meta['jac_code']}")
+        if node.value:
+            self.emit(node, f" = {node.value.meta['jac_code']}")
         if isinstance(node.kid[-1], ast.Token) and node.kid[-1].name == "SEMI":
             self.emit_ln(node, node.kid[-1].value + " " + comment_str)
             self.processed_comments.add(comment_str)
@@ -1040,6 +1059,21 @@ class JacFormatPass(Pass):
         self.error(
             f"Unable to find definition for {decl} declaration. Perhaps there's an `include` missing?"  # noqa
         )
+
+    def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
+        """Sub objects.
+
+        params: Optional[SubNodeList[ParamVar]],
+        return_type: Optional[SubTag[ExprType]],
+        body: ExprType,
+        """
+        out = ""
+        if node.params:
+            self.comma_sep_node_list(node.params)
+            out += node.params.meta["jac_code"]
+        if node.return_type:
+            out += f" -> {node.return_type.tag.meta['jac_code']}"
+        self.emit(node, f"with {out} can {node.body.meta['jac_code']}")
 
     def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
         """Sub objects.
@@ -1444,6 +1478,122 @@ class JacFormatPass(Pass):
         """
         self.ds_feature_warn()
 
+    def exit_match_stmt(self, node: ast.MatchStmt) -> None:
+        """Sub objects.
+
+        target: SubNodeList[ExprType],
+        cases: list[MatchCase],
+        """
+        self.comma_sep_node_list(node.target)
+        self.emit_ln(node, f"match {node.target.meta['jac_code']} {{")
+        self.indent_level += 1
+        for case in node.cases:
+            self.emit_ln(node, case.meta["jac_code"])
+        self.indent_level -= 1
+        self.emit_ln(node, "}")
+
+    def exit_match_case(self, node: ast.MatchCase) -> None:
+        """Sub objects.
+
+        pattern: ExprType,
+        guard: Optional[ExprType],
+        body: SubNodeList[CodeBlockStmt],
+        """
+        if node.guard:
+            self.emit_ln(
+                node,
+                f"case {node.pattern.meta['jac_code']} if {node.guard.meta['jac_code']}:",
+            )
+        else:
+            self.emit(node, f"case {node.pattern.meta['jac_code']}:")
+        self.indent_level += 1
+        self.nl_sep_node_list(node.body)
+        self.emit_ln(node, node.body.meta["jac_code"])
+        self.indent_level -= 1
+
+    def exit_match_or(self, node: ast.MatchOr) -> None:
+        """Sub objects.
+
+        list[MatchPattern],
+        """
+        self.emit(node, " | ".join([i.meta["jac_code"] for i in node.patterns]))
+
+    def exit_match_as(self, node: ast.MatchAs) -> None:
+        """Sub objects.
+
+        name: NameType,
+        pattern: MatchPattern,
+        """
+        self.emit(
+            node, f"{node.name.meta['jac_code']} as {node.pattern.meta['jac_code']}"
+        )
+
+    def exit_match_wild(self, node: ast.MatchWild) -> None:
+        """Sub objects."""
+        self.emit(node, "_")
+
+    def exit_match_value(self, node: ast.MatchValue) -> None:
+        """Sub objects.
+
+        value: ExprType,
+        """
+        self.emit(node, node.value.meta["jac_code"])
+
+    def exit_match_singleton(self, node: ast.MatchSingleton) -> None:
+        """Sub objects.
+
+        value: Bool | Null,
+        """
+        self.emit(node, node.value.meta["jac_code"])
+
+    def exit_match_sequence(self, node: ast.MatchSequence) -> None:
+        """Sub objects.
+
+        values: list[MatchPattern],
+        """
+        self.emit(node, f"[{', '.join([i.meta['jac_code'] for i in node.values])}]")
+
+    def exit_match_mapping(self, node: ast.MatchMapping) -> None:
+        """Sub objects.
+
+        values: list[MatchKVPair | MatchStar],
+        """
+        self.emit(node, f"{{{', '.join([i.meta['jac_code'] for i in node.values])}}}")
+
+    def exit_match_k_v_pair(self, node: ast.MatchKVPair) -> None:
+        """Sub objects.
+
+        key: MatchPattern | NameType,
+        value: MatchPattern,
+        """
+        self.emit(node, f"{node.key.meta['jac_code']}: {node.value.meta['jac_code']}")
+
+    def exit_match_star(self, node: ast.MatchStar) -> None:
+        """Sub objects.
+
+        name: NameType,
+        is_list: bool,
+        """
+        self.emit(node, f"{'*' if node.is_list else '**'}{node.name.meta['jac_code']}")
+
+    def exit_match_arch(self, node: ast.MatchArch) -> None:
+        """Sub objects.
+
+        name: NameType,
+        arg_patterns: Optional[SubNodeList[MatchPattern]],
+        kw_patterns: Optional[SubNodeList[MatchKVPair]],
+        """
+        self.emit(node, node.name.meta["jac_code"])
+        params = "("
+        if node.arg_patterns:
+            self.comma_sep_node_list(node.arg_patterns)
+            params += node.arg_patterns.meta["jac_code"]
+        if node.kw_patterns:
+            self.comma_sep_node_list(node.kw_patterns)
+            params += node.kw_patterns.meta["jac_code"]
+        params += ")"
+        self.emit(node, params)
+
     def exit_token(self, node: ast.Token) -> None:
         """Sub objects.
 
@@ -1532,3 +1682,19 @@ class JacFormatPass(Pass):
         pos_end: int,
         """
         self.emit(node, node.value)
+
+    def exit_null(self, node: ast.Null) -> None:
+        """Sub objects.
+
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """
+        self.emit(node, node.value)
+
+    def exit_semi(self, node: ast.Semi) -> None:
+        """Sub objects."""

@@ -124,6 +124,7 @@ class Tokens(str, Enum):
     LSHIFT_EQ = "LSHIFT_EQ"
     RSHIFT_EQ = "RSHIFT_EQ"
     WALRUS_EQ = "WALRUS_EQ"
+    MATMUL_EQ = "MATMUL_EQ"
     KW_AND = "KW_AND"
     KW_OR = "KW_OR"
     KW_IF = "KW_IF"
@@ -165,6 +166,8 @@ class Tokens(str, Enum):
     COMMA = "COMMA"
     KW_CAN = "KW_CAN"
     KW_STATIC = "KW_STATIC"
+    KW_MATCH = "KW_MATCH"
+    KW_CASE = "KW_CASE"
     PLUS = "PLUS"
     MINUS = "MINUS"
     STAR_MUL = "STAR_MUL"
@@ -196,6 +199,7 @@ class Tokens(str, Enum):
     CARROW_R_P1 = "CARROW_R_P1"
     CARROW_R_P2 = "CARROW_R_P2"
     GLOBAL_OP = "GLOBAL_OP"
+    NONLOCAL_OP = "NONLOCAL_OP"
     HERE_OP = "HERE_OP"
     SELF_OP = "SELF_OP"
     INIT_OP = "INIT_OP"
@@ -218,6 +222,7 @@ class Tokens(str, Enum):
     FSTR_PIECE = "FSTR_PIECE"
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
+    PYWILD = "PYWILD"
     WS = "WS"
 
     def __str__(self) -> str:
