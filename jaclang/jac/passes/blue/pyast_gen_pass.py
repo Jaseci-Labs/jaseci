@@ -321,7 +321,6 @@ class PyastGenPass(Pass):
 
         name: Name,
         alias: Optional[Name],
-        body: Optional[AstNode],
         """
         node.gen.py_ast = self.sync(
             ast3.alias(

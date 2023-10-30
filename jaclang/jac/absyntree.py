@@ -368,12 +368,10 @@ class ModuleItem(AstSymbolNode):
         name: Name,
         alias: Optional[Name],
         kid: Sequence[AstNode],
-        body: Optional[AstNode] = None,
     ) -> None:
         """Initialize module item node."""
         self.name = name
         self.alias = alias
-        self.body = body
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
