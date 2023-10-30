@@ -5,7 +5,7 @@ import ast as ast3
 import pprint
 from typing import Generic, Optional, Sequence, TypeVar, Union
 
-from jaclang.jac.codeloc import CodeLocInfo
+from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
@@ -21,9 +21,10 @@ class AstNode:
         self.sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
         self._typ: type = type(None)
+        self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
-        self.py_ast: list[ast3.AST] = []
+        self.py_ast: ast3.AST | list[ast3.AST]
 
     def add_kids_left(
         self, nodes: Sequence[AstNode], pos_update: bool = True

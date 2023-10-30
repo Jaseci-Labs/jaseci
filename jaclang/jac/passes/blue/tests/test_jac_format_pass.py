@@ -22,12 +22,12 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Basic test for pass."""
         code_gen = jac_file_formatter(self.fixture_abs_path("base.jac"))
         self.assertFalse(code_gen.errors_had)
-        # self.assertIn("pass", code_gen.ir.meta["jac_code"])
+        # self.assertIn("pass", code_gen.ir.gen.jac)
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         code_gen = jac_file_formatter(self.fixture_abs_path(filename))
-        self.assertGreater(len(code_gen.ir.meta["jac_code"]), 10)
+        self.assertGreater(len(code_gen.ir.gen.jac), 10)
 
 
 JacFormatPassTests.self_attach_micro_tests()

@@ -39,7 +39,7 @@ body: Optional["ArchBlock"],
 (nd: ast.Architype) {
     |> <self>.add_exec_context;
     # if nd.decorators {
-    #     (nd, nd.decorators.meta["py_code"]) |> <self>.emit_ln;
+    #     (nd, nd.decorators.gen.py) |> <self>.emit_ln;
     # }
     arch_type=nd.arch_type.name;
     arch_insert = "";
@@ -90,13 +90,13 @@ decorators: Optional[SubNodeList[ExprType]] = None,
     if nd.signature:>type == ast.EventSignature and nd.is_method and
         nd.signature.event.name == Tok.KW_ENTRY {
         "Object" |> <self>.add_element_import;
-        type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
+        type_list = nd.signature.arch_tag_info?.gen?.py ?: "";
         (nd, f"@{C.OBJECT_CLASS}.{C.ON_ENTRY}([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
     }
     elif nd.signature:>type == ast.EventSignature and nd.is_method and
         nd.signature.event.name == Tok.KW_EXIT {
         "Object" |> <self>.add_element_import;
-        type_list = nd.signature.arch_tag_info?.meta?["py_code"] ?: "";
+        type_list = nd.signature.arch_tag_info?.gen.py ?: "";
         (nd, f"@{C.OBJECT_CLASS}.{C.ON_EXIT}([{type_list.replace('|', ', ')}])") |> <self>.emit_ln;
     }
     (nd) |> <super>.exit_ability;
@@ -112,13 +112,13 @@ return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
 :object:PurplePygenPass:ability:exit_event_signature
 (nd: ast.EventSignature) {
     if nd.arch_tag_info {
-        (nd, f"{C.HERE}: {nd.arch_tag_info.meta['py_code']}")
+        (nd, f"{C.HERE}: {nd.arch_tag_info.gen.py}")
             |> <self>.emit;
     } else {
         (nd, f"{C.HERE}") |> <self>.emit;
     }
     if nd.return_type {
-        (nd, f" -> {nd.return_type.meta['py_code']}") |> <self>.emit;
+        (nd, f" -> {nd.return_type.gen.py}") |> <self>.emit;
     }
 }
 
@@ -145,7 +145,7 @@ from_walker: bool = False,
 :object:PurplePygenPass:ability:exit_ignore_stmt
 (nd: ast.IgnoreStmt) {
     loc = 'self' if nd.from_walker else C.HERE;
-    (nd, f"{loc}.{C.WALKER_IGNORE}({nd.target.meta['py_code']})" )
+    (nd, f"{loc}.{C.WALKER_IGNORE}({nd.target.gen.py})" )
         |> <self>.emit_ln;
 }
 
@@ -161,11 +161,11 @@ from_walker: bool = False,
 (nd: ast.VisitStmt) {
     vis_type = nd.vis_type?.value ?: "";
     loc = 'self' if nd.from_walker else C.HERE;
-    (nd, f"if not {loc}.{C.WALKER_VISIT}({nd.target.meta['py_code']}): " )
+    (nd, f"if not {loc}.{C.WALKER_VISIT}({nd.target.gen.py}): " )
         |> <self>.emit_ln;
     <self>.indent_level += 1;
     if nd.else_body {
-        (nd, nd.else_body.body.meta["py_code"]) |> <self>.emit;
+        (nd, nd.else_body.body.gen.py) |> <self>.emit;
     } else {
         (nd, 'pass') |> <self>.emit_ln;
     }
@@ -192,7 +192,7 @@ op: Token,
 :object:PurplePygenPass:ability:exit_binary_expr
 (nd: ast.BinaryExpr) {
     if (nd.op:>type) == ast.ConnectOp {
-        (nd, f"{nd.left.meta['py_code']}.{C.CONNECT_NODE}({nd.right.meta['py_code']}, {nd.op.meta['py_code']})")
+        (nd, f"{nd.left.gen.py}.{C.CONNECT_NODE}({nd.right.gen.py}, {nd.op.gen.py})")
             |> <self>.emit;
     } elif (nd.op:>type) == ast.DisconnectOp {
         <self>.ds_feature_warn(); # TODO: Implement
@@ -220,13 +220,13 @@ from_walker: bool = False,
                else f"{C.EDGE_DIR}.ANY";
     if nd.filter_type and nd.filter_cond {
         (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {loc}.{C.EDGES_TO_NODE}({edge_dir})"
-            f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})"
-            f" and {nd.filter_cond.meta['py_code'].replace(C.PATCH, C.JAC_TMP)}]")
+            f" if isinstance({C.JAC_TMP}, {nd.filter_type.gen.py})"
+            f" and {nd.filter_cond.gen.py.replace(C.PATCH, C.JAC_TMP)}]")
             |> <self>.emit;
     }
     elif nd.filter_type {
         (nd, f"[{C.JAC_TMP} for {C.JAC_TMP} in {loc}.{C.EDGES_TO_NODE}({edge_dir})"
-            f" if isinstance({C.JAC_TMP}, {nd.filter_type.meta['py_code']})]")
+            f" if isinstance({C.JAC_TMP}, {nd.filter_type.gen.py})]")
             |> <self>.emit;
     }
     else {
@@ -248,12 +248,12 @@ edge_dir: EdgeDir,
     |> <self>.add_edge_directions;
 
     if nd.conn_type {
-        (nd, f"{nd.conn_type.meta['py_code']}.{C.WITH_DIR}({C.EDGE_DIR}.{nd.edge_dir.name}") |> <self>.emit;
+        (nd, f"{nd.conn_type.gen.py}.{C.WITH_DIR}({C.EDGE_DIR}.{nd.edge_dir.name}") |> <self>.emit;
     } else {
         (nd, f"{C.EDGE_CLASS}().{C.WITH_DIR}({C.EDGE_DIR}.{nd.edge_dir.name}") |> <self>.emit;
     }
     if nd.conn_assign {
-        (nd, f", {nd.conn_assign.meta['py_code']})") |> <self>.emit;
+        (nd, f", {nd.conn_assign.gen.py})") |> <self>.emit;
     } else {
         (nd, ")") |> <self>.emit;
     }

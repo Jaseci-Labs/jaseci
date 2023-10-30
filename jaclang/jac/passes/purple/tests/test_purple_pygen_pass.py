@@ -59,7 +59,7 @@ class PurplePygenPassTests(TestCaseMicroSuite):
         code_gen = jac_file_to_pass(
             self.fixture_abs_path(filename), target=PurplePygenPass
         )
-        self.assertGreater(len(code_gen.ir.meta["py_code"]), 10)
+        self.assertGreater(len(code_gen.ir.gen.py), 10)
 
 
 PurplePygenPassTests.self_attach_micro_tests()

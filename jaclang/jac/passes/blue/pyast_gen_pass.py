@@ -73,15 +73,14 @@ class PyastGenPass(Pass):
 
         tag: T,
         """
-        node.py_ast = node.tag.py_ast
+        node.gen.py_ast = node.tag.gen.py_ast
 
     def exit_sub_node_list(self, node: ast.SubNodeList) -> None:
         """Sub objects.
 
         items: Sequence[T],
         """
-        for i in node.items:
-            node.py_ast += i.py_ast
+        node.gen.py_ast = [i.gen.py_ast for i in node.items]
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -92,23 +91,26 @@ class PyastGenPass(Pass):
         body: Sequence[ElementStmt],
         is_imported: bool,
         """
-        if node.doc:
-            node.py_ast.append(
-                ast3.Module(
-                    body=[
-                        node.doc.py_ast,
-                        *self.preamble,
-                        *[x.py_ast for x in node.body],
-                    ],
-                    type_ignores=[],
-                )
-            )
-        else:
-            node.py_ast.append(
-                ast3.Module(
-                    body=[*self.preamble, *[x.py_ast for x in node.body]],
-                )
-            )
+        body = (
+            [
+                node.doc.gen.py_ast,
+                *self.preamble,
+                *[x.gen.py_ast for x in node.body],
+            ]
+            if node.doc
+            else [*self.preamble, *[x.gen.py_ast for x in node.body]]
+        )
+        new_body = []
+        for i in body:
+            if isinstance(i, list):
+                new_body += i
+            else:
+                new_body.append(i)
+        node.gen.py_ast = ast3.Module(
+            body=new_body,
+            type_ignores=[],
+        )
+        # sync_ast_loc(self.gen.py_ast, node)
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -118,7 +120,7 @@ class PyastGenPass(Pass):
         is_frozen: bool,
         doc: Optional[String],
         """
-        node.py_ast = node.assignments.py_ast
+        node.gen.py_ast = node.assignments.gen.py_ast
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -129,15 +131,13 @@ class PyastGenPass(Pass):
         """
         self.needs_test()
         test_name = node.name.sym_name
-        node.py_ast.append(
-            ast3.FunctionDef(
-                name=test_name,
-                args=None,
-                body=node.body.py_ast,
-                decorator_list=[],
-                returns=None,
-                type_comment=None,
-            )
+        node.gen.py_ast = ast3.FunctionDef(
+            name=test_name,
+            args=None,
+            body=node.body.gen.py_ast,
+            decorator_list=[],
+            returns=None,
+            type_comment=None,
         )
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
@@ -147,7 +147,7 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         doc: Optional[String],
         """
-        node.py_ast = node.body.py_ast
+        node.gen.py_ast = node.body.gen.py_ast
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
         """Sub objects.
@@ -155,7 +155,7 @@ class PyastGenPass(Pass):
         code: Token,
         doc: Optional[String],
         """
-        node.py_ast = [*ast3.parse(node.code.value).body]
+        node.gen.py_ast = [*ast3.parse(node.code.value).body]
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -169,6 +169,7 @@ class PyastGenPass(Pass):
         sub_module: Optional[Module],
         """
         # COME BACK TO THIS
+        # print(node.gen.py_ast)
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
