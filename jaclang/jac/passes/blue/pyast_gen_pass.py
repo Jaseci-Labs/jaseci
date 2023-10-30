@@ -330,7 +330,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.alias(
                 name=f"{node.path_str}",
-                asname=node.alias.value if node.alias else None,
+                asname=node.alias.sym_name if node.alias else None,
             )
         )
 
@@ -342,8 +342,8 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = self.sync(
             ast3.alias(
-                name=f"{node.name.value}",
-                asname=node.alias.value if node.alias else None,
+                name=f"{node.name.sym_name}",
+                asname=node.alias.sym_name if node.alias else None,
             )
         )
 
@@ -384,7 +384,7 @@ class PyastGenPass(Pass):
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         node.gen.py_ast = self.sync(
             ast3.ClassDef(
-                name=node.name.value,
+                name=node.name.sym_name,
                 bases=base_classes,
                 keywords=[],
                 body=body,
@@ -445,7 +445,7 @@ class PyastGenPass(Pass):
             raise self.ice()
         node.gen.py_ast = self.sync(
             ast3.ClassDef(
-                name=node.name.value,
+                name=node.name.sym_name,
                 bases=base_classes,
                 keywords=[],
                 body=body,
@@ -478,6 +478,28 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
+        func_type = ast3.AsyncFunctionDef if node.is_async else ast3.FunctionDef
+        body = (
+            [self.sync(ast3.Pass(), node.body)]
+            if isinstance(node.body, ast.SubNodeList) and not node.body.items
+            else node.body.gen.py_ast
+            if node.body
+            else []
+        )
+        if node.is_abstract and node.body:
+            self.error(
+                f"Abstract ability {node.sym_name} should not have a body.",
+                node,
+            )
+        node.gen.py_ast = self.sync(
+            func_type(
+                name=node.name_ref.sym_name,
+                args=node.signature.gen.py_ast if node.signature else [],
+                body=body,
+                decorator_list=node.decorators.gen.py_ast if node.decorators else [],
+                type_params=[],
+            )
+        )
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
@@ -495,6 +517,7 @@ class PyastGenPass(Pass):
         params: Optional[SubNodeList[ParamVar]],
         return_type: Optional[SubTag[ExprType]],
         """
+        node.gen.py_ast = node.params.gen.py_ast if node.params else []
 
     def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
@@ -525,6 +548,12 @@ class PyastGenPass(Pass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
+        node.gen.py_ast = self.sync(
+            ast3.arg(
+                arg=node.name.sym_name,
+                annotation=node.type_tag.gen.py_ast,
+            )
+        )
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.

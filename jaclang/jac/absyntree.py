@@ -512,7 +512,7 @@ class Ability(AstSymbolNode, AstAccessNode, AstDocNode, AstAsyncNode):
         is_abstract: bool,
         access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | ExprType | EventSignature],
-        body: Optional[SubNodeList[CodeBlockStmt]],
+        body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
