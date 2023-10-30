@@ -4,7 +4,7 @@ At the end of this pass a meta['py_code'] is present with pure python code
 in each node. Module nodes contain the entire module code.
 """
 import ast as ast3
-from typing import TypeVar
+from typing import Optional, TypeVar
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con
@@ -84,13 +84,26 @@ class PyastGenPass(Pass):
                 new_body.append(i) if i else None
         return new_body
 
-    def sync(self, py_node: T, jac_node: ast.AstNode) -> T:
+    def sync(
+        self, py_node: T, jac_node: Optional[ast.AstNode] = None, deep: bool = False
+    ) -> T:
         """Sync ast locations."""
+        if not jac_node:
+            jac_node = self.cur_node
         py_node.lineno = jac_node.loc.first_line
         py_node.col_offset = jac_node.loc.col_start
         py_node.end_lineno = jac_node.loc.last_line
         py_node.end_col_offset = jac_node.loc.col_end
+        if deep:
+            for child in ast3.iter_child_nodes(py_node):
+                self.sync(child, jac_node, deep=True)
         return py_node
+
+    def sync_many(self, py_nodes: list[T], jac_node: ast.AstNode) -> list[T]:
+        """Sync ast locations."""
+        for py_node in py_nodes:
+            self.sync(py_node, jac_node)
+        return py_nodes
 
     def exit_sub_tag(self, node: ast.SubTag[ast.T]) -> None:
         """Sub objects.
@@ -130,11 +143,12 @@ class PyastGenPass(Pass):
                 new_body += i
             else:
                 new_body.append(i) if i else None
-        node.gen.py_ast = ast3.Module(
-            body=new_body,
-            type_ignores=[],
+        node.gen.py_ast = self.sync(
+            ast3.Module(
+                body=new_body,
+                type_ignores=[],
+            )
         )
-        self.sync(py_node=node.gen.py_ast, jac_node=node)
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -173,19 +187,15 @@ class PyastGenPass(Pass):
                 returns=None,
                 type_comment=None,
             ),
-            node,
         )
         func.body.insert(
             0,
-            self.sync(
-                py_node=ast3.parse("check = __jac_check()").body[0], jac_node=node
-            ),
+            self.sync(ast3.parse("check = __jac_check()").body[0]),
         )
         check = self.sync(
             ast3.parse(
                 f"__jac_suite__.addTest(__jac_unittest__.FunctionTestCase(test_{test_name}))"
-            ).body[0],
-            jac_node=node,
+            ).body[0]
         )
         node.gen.py_ast = [func, check]
 
@@ -217,16 +227,54 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         sub_module: Optional[Module],
         """
+        py_nodes: list[ast3.AST] = []
         if node.lang.tag.value == Con.JAC_LANG_IMP:  # injects module into sys.modules
             self.needs_jac_import()
-            self.emit_ln(
-                node,
-                f"__jac_import__(target='{node.path.gen.py}', base_path=__file__)",
+            py_nodes.append(
+                self.sync(
+                    ast3.Expr(
+                        value=self.sync(
+                            ast3.Call(
+                                func=self.sync(
+                                    ast3.Name(id="__jac_import__", ctx=ast3.Load())
+                                ),
+                                args=[],
+                                keywords=[
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="target",
+                                            value=ast3.Name(
+                                                id=f"{''.join([i.value for i in node.path.path])}",
+                                                ctx=ast3.Load(),
+                                            ),
+                                        )
+                                    ),
+                                    self.sync(
+                                        ast3.keyword(
+                                            arg="base_path",
+                                            value=self.sync(
+                                                ast3.Name(
+                                                    id="__file__", ctx=ast3.Load()
+                                                )
+                                            ),
+                                        )
+                                    ),
+                                ],
+                            )
+                        )
+                    ),
+                )
             )
         if node.is_absorb:
-            self.emit_ln(
-                node,
-                f"from {node.path.gen.py} import *",
+            py_nodes.append(
+                self.sync(
+                    py_node=ast3.ImportFrom(
+                        module="".join([i.value for i in node.path.path]),
+                        names=[self.sync(ast3.alias(name="*"), node)],
+                        level=0,
+                    ),
+                    jac_node=node,
+                )
             )
             if node.items:
                 self.warning(
@@ -235,24 +283,33 @@ class PyastGenPass(Pass):
             return
         if not node.items:
             if not node.alias:
-                self.emit_ln(node, f"import {node.path.gen.py}")
+                py_nodes.append(self.sync(ast3.Import(names=[node.path.gen.py_ast])))
             else:
-                self.emit_ln(
-                    node,
-                    f"import {node.path.gen.py} as {node.alias.gen.py}",
+                py_nodes.append(
+                    self.sync(
+                        ast3.parse(
+                            f"import {node.path.gen.py} as {node.alias.gen.py}"
+                        ).body[0]
+                    )
                 )
-        else:
-            self.comma_sep_node_list(node.items)
-            self.emit_ln(
-                node,
-                f"from {node.path.gen.py} import {node.items.gen.py}",
-            )
+        # else:
+        #     self.comma_sep_node_list(node.items)
+        #     self.emit_ln(
+        #         node,
+        #         f"from {node.path.gen.py} import {node.items.gen.py}",
+        #     )
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
 
         path: Sequence[Token],
         """
+        node.gen.py_ast = self.sync(
+            ast3.alias(
+                name=f"{''.join([i.value for i in node.path])}",
+                asname=None,
+            )
+        )
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
