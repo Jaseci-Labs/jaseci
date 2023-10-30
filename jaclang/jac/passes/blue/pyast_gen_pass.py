@@ -4,9 +4,13 @@ At the end of this pass a meta['py_code'] is present with pure python code
 in each node. Module nodes contain the entire module code.
 """
 import ast as ast3
+from typing import TypeVar
 
 import jaclang.jac.absyntree as ast
+from jaclang.jac.constant import Constants as Con
 from jaclang.jac.passes import Pass
+
+T = TypeVar("T", bound=ast3.AST)
 
 
 class PyastGenPass(Pass):
@@ -68,19 +72,39 @@ class PyastGenPass(Pass):
         self.preamble += ast3.parse(test_code).body
         self.already_added["test"] = True
 
-    def exit_sub_tag(self, node: ast.SubTag) -> None:
+    def flatten_ast_list(
+        self, body: list[ast3.AST | list[ast3.AST] | None]
+    ) -> list[ast3.AST]:
+        """Flatten ast list."""
+        new_body = []
+        for i in body:
+            if isinstance(i, list):
+                new_body += i
+            elif isinstance(i, ast3.AST):
+                new_body.append(i) if i else None
+        return new_body
+
+    def sync(self, py_node: T, jac_node: ast.AstNode) -> T:
+        """Sync ast locations."""
+        py_node.lineno = jac_node.loc.first_line
+        py_node.col_offset = jac_node.loc.col_start
+        py_node.end_lineno = jac_node.loc.last_line
+        py_node.end_col_offset = jac_node.loc.col_end
+        return py_node
+
+    def exit_sub_tag(self, node: ast.SubTag[ast.T]) -> None:
         """Sub objects.
 
         tag: T,
         """
         node.gen.py_ast = node.tag.gen.py_ast
 
-    def exit_sub_node_list(self, node: ast.SubNodeList) -> None:
+    def exit_sub_node_list(self, node: ast.SubNodeList[ast.T]) -> None:
         """Sub objects.
 
         items: Sequence[T],
         """
-        node.gen.py_ast = [i.gen.py_ast for i in node.items]
+        node.gen.py_ast = self.flatten_ast_list([i.gen.py_ast for i in node.items])
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -105,12 +129,12 @@ class PyastGenPass(Pass):
             if isinstance(i, list):
                 new_body += i
             else:
-                new_body.append(i)
+                new_body.append(i) if i else None
         node.gen.py_ast = ast3.Module(
             body=new_body,
             type_ignores=[],
         )
-        # sync_ast_loc(self.gen.py_ast, node)
+        self.sync(py_node=node.gen.py_ast, jac_node=node)
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -120,7 +144,16 @@ class PyastGenPass(Pass):
         is_frozen: bool,
         doc: Optional[String],
         """
-        node.gen.py_ast = node.assignments.gen.py_ast
+        if node.doc:
+            doc = node.doc.gen.py_ast
+            if isinstance(doc, ast3.AST) and isinstance(
+                node.assignments.gen.py_ast, list
+            ):
+                node.gen.py_ast = [doc] + node.assignments.gen.py_ast
+            else:
+                raise self.ice()
+        else:
+            node.gen.py_ast = node.assignments.gen.py_ast
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -131,14 +164,30 @@ class PyastGenPass(Pass):
         """
         self.needs_test()
         test_name = node.name.sym_name
-        node.gen.py_ast = ast3.FunctionDef(
-            name=test_name,
-            args=None,
-            body=node.body.gen.py_ast,
-            decorator_list=[],
-            returns=None,
-            type_comment=None,
+        func = self.sync(
+            ast3.FunctionDef(
+                name=test_name,
+                args=None,
+                body=node.body.gen.py_ast,
+                decorator_list=[],
+                returns=None,
+                type_comment=None,
+            ),
+            node,
         )
+        func.body.insert(
+            0,
+            self.sync(
+                py_node=ast3.parse("check = __jac_check()").body[0], jac_node=node
+            ),
+        )
+        check = self.sync(
+            ast3.parse(
+                f"__jac_suite__.addTest(__jac_unittest__.FunctionTestCase(test_{test_name}))"
+            ).body[0],
+            jac_node=node,
+        )
+        node.gen.py_ast = [func, check]
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
@@ -168,8 +217,36 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         sub_module: Optional[Module],
         """
-        # COME BACK TO THIS
-        # print(node.gen.py_ast)
+        if node.lang.tag.value == Con.JAC_LANG_IMP:  # injects module into sys.modules
+            self.needs_jac_import()
+            self.emit_ln(
+                node,
+                f"__jac_import__(target='{node.path.gen.py}', base_path=__file__)",
+            )
+        if node.is_absorb:
+            self.emit_ln(
+                node,
+                f"from {node.path.gen.py} import *",
+            )
+            if node.items:
+                self.warning(
+                    "Includes import * in target module into current namespace."
+                )
+            return
+        if not node.items:
+            if not node.alias:
+                self.emit_ln(node, f"import {node.path.gen.py}")
+            else:
+                self.emit_ln(
+                    node,
+                    f"import {node.path.gen.py} as {node.alias.gen.py}",
+                )
+        else:
+            self.comma_sep_node_list(node.items)
+            self.emit_ln(
+                node,
+                f"from {node.path.gen.py} import {node.items.gen.py}",
+            )
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.

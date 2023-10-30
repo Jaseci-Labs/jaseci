@@ -1116,6 +1116,9 @@ class BinaryExpr(AstNode):
         self.left = left
         self.right = right
         self.op = op
+        # below is used for paren matching with PIPE_FWD ops
+        self.pipe_chain_count = 0
+        self.a_pipe_chain_count = 0
         AstNode.__init__(self, kid=kid)
 
 

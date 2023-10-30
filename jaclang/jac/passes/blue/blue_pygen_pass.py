@@ -16,7 +16,7 @@ class BluePygenPass(Pass):
         """Initialize pass."""
         self.indent_size = 4
         self.indent_level = 0
-        self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
+        self.mod_list: list[str] = []
         self.preamble = ast.EmptyToken()
         self.preamble.gen.py = "from __future__ import annotations\n"
 
@@ -50,9 +50,9 @@ class BluePygenPass(Pass):
         path = node.loc.mod_path
         if not path:
             return -1
-        if path not in self.debuginfo["jac_mods"]:
-            self.debuginfo["jac_mods"].append(path)
-        return self.debuginfo["jac_mods"].index(path)
+        if path not in self.mod_list:
+            self.mod_list.append(path)
+        return self.mod_list.index(path)
 
     def emit(self, node: ast.AstNode, s: str) -> None:
         """Emit code to node."""
@@ -60,24 +60,24 @@ class BluePygenPass(Pass):
         if "\n" in node.gen.py:
             node.gen.py = node.gen.py.rstrip(" ")
 
-    def comma_sep_node_list(self, node: ast.SubNodeList) -> str:
+    def comma_sep_node_list(self, node: ast.SubNodeList[ast.T]) -> str:
         """Render comma separated node list."""
         node.gen.py = ", ".join([i.gen.py for i in node.items])
         return node.gen.py
 
-    def dot_sep_node_list(self, node: ast.SubNodeList) -> str:
+    def dot_sep_node_list(self, node: ast.SubNodeList[ast.T]) -> str:
         """Render dot separated node list."""
         node.gen.py = ".".join([i.gen.py for i in node.items])
         return node.gen.py
 
-    def nl_sep_node_list(self, node: ast.SubNodeList) -> str:
+    def nl_sep_node_list(self, node: ast.SubNodeList[ast.T]) -> str:
         """Render newline separated node list."""
         node.gen.py = ""
         for i in node.items:
             node.gen.py += f"{i.gen.py}  # {self.get_mod_index(i)} {i.loc.first_line}\n"
         return node.gen.py
 
-    def sep_node_list(self, node: ast.SubNodeList, delim: str = " ") -> str:
+    def sep_node_list(self, node: ast.SubNodeList[ast.T], delim: str = " ") -> str:
         """Render newline separated node list."""
         node.gen.py = f"{delim}".join([i.gen.py for i in node.items])
         return node.gen.py
@@ -135,8 +135,8 @@ class BluePygenPass(Pass):
             for i in node.body:
                 self.emit(node, i.gen.py)
         self.emit(node, f'r""" {Con.JAC_DEBUG_SPLITTER}\n')
-        for i in self.debuginfo["jac_mods"]:
-            self.emit(node, f"{i}\n")
+        for mod in self.mod_list:
+            self.emit(node, f"{mod}\n")
         self.emit(node, f'{Con.JAC_DEBUG_SPLITTER} """\n')
         self.ir = node
         self.ir.gen.py = self.ir.gen.py.rstrip()
@@ -154,14 +154,14 @@ class BluePygenPass(Pass):
         self.nl_sep_node_list(node.assignments)
         self.emit_ln(node, node.assignments.gen.py)
 
-    def exit_sub_tag(self, node: ast.SubTag) -> None:
+    def exit_sub_tag(self, node: ast.SubTag[ast.T]) -> None:
         """Sub objects.
 
         tag: T,
         """
         self.emit(node, node.tag.gen.py)
 
-    def exit_sub_node_list(self, node: ast.SubNodeList) -> None:
+    def exit_sub_node_list(self, node: ast.SubNodeList[ast.T]) -> None:
         """Sub objects.
 
         items: list[T],
@@ -189,11 +189,8 @@ class BluePygenPass(Pass):
         if node.doc:
             self.emit_ln(node, node.doc.gen.py)
         self.emit_ln(node, "check = __jac_check()")
-        if len(node.body.items):
-            self.nl_sep_node_list(node.body)
-            self.emit_ln(node, node.body.gen.py)
-        else:
-            self.emit_ln(node, "pass")
+        self.nl_sep_node_list(node.body)
+        self.emit_ln(node, node.body.gen.py)
         self.indent_level -= 1
         self.emit_ln(
             node,
@@ -470,7 +467,9 @@ class BluePygenPass(Pass):
         self.indent_level += 1
         if node.doc:
             self.emit_ln(node, node.doc.gen.py)
-        body = node.body.body if isinstance(node.body, ast.AbilityDef) else node.body
+        body = node.body
+        if isinstance(body, ast.AbilityDef):
+            body = body.body
         if body and len(body.items):
             self.emit_ln(node, "try:")
             self.indent_level += 1
@@ -483,13 +482,6 @@ class BluePygenPass(Pass):
         else:
             self.warning(f"No implementation for ability {ability_name}")
         self.indent_level -= 1
-
-        # if len(node.stmts) == 0:
-        #     self.emit_ln(node, "pass")
-        # for i in node.stmts:
-        #     self.emit(node, i.gen.py)
-        #     if len(i.gen.py) and i.gen.py[-1] != "\n":
-        #         self.emit_ln(node, "\n")
 
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
@@ -944,27 +936,19 @@ class BluePygenPass(Pass):
                 self.ds_feature_warn()
             elif node.op.name == Tok.PIPE_FWD:
                 self.emit(node, f"{node.right.gen.py}({node.left.gen.py}")
-                paren_count = (
-                    node.meta["pipe_chain_count"]
-                    if "pipe_chain_count" in node.meta
-                    else 1
-                )
+                paren_count: int = node.pipe_chain_count if node.pipe_chain_count else 1
                 if (
                     isinstance(node.parent, ast.BinaryExpr)
                     and isinstance(node.parent.op, ast.Token)
                     and node.parent.op.name == Tok.PIPE_FWD
                 ):
-                    node.parent.meta["pipe_chain_count"] = paren_count + 1
+                    node.parent.pipe_chain_count = paren_count + 1
                 else:
                     self.emit(node, ")" * paren_count)
 
             elif node.op.name in [Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
                 self.emit(node, f"{node.right.gen.py}({node.left.gen.py}")
-                paren_count = (
-                    node.meta["a_pipe_chain_count"]
-                    if "a_pipe_chain_count" in node.meta
-                    else 1
-                )
+                paren_count = node.a_pipe_chain_count if node.a_pipe_chain_count else 1
                 if (
                     isinstance(node.parent, ast.BinaryExpr)
                     and isinstance(node.parent.op, ast.Token)
@@ -974,7 +958,7 @@ class BluePygenPass(Pass):
                         Tok.A_PIPE_FWD,
                     ]
                 ):
-                    node.parent.meta["a_pipe_chain_count"] = paren_count + 1
+                    node.parent.a_pipe_chain_count = paren_count + 1
                 else:
                     self.emit(node, ")" * paren_count)
 

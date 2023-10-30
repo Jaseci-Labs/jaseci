@@ -9,6 +9,15 @@ if TYPE_CHECKING:
     from jaclang.jac.absyntree import Token
 
 
+@dataclass
+class CodeGenTarget:
+    """Code generation target."""
+
+    py: str = ""
+    jac: str = ""
+    py_ast: Optional[ast3.AST | list[ast3.AST]] = None
+
+
 class CodeLocInfo:
     """Code location info."""
 
@@ -87,12 +96,3 @@ class CodeLocInfo:
     def __str__(self) -> str:
         """Stringify."""
         return f"{self.first_tok.line_no}:{self.first_tok.c_start} - {self.last_tok.line_no}:{self.last_tok.c_end}"
-
-
-@dataclass
-class CodeGenTarget:
-    """Code generation target."""
-
-    py: str = ""
-    jac: str = ""
-    py_ast: Optional[ast3.AST | list[ast3.AST]] = None
