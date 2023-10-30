@@ -32,6 +32,14 @@ class JacFormatPass(Pass):
         self.preamble = ast.EmptyToken()
         self.preamble.meta["jac_code"] = ""
 
+    def get_comments_from_first_column(self) -> List[Tuple[int, str]]:
+        """Get all comments that belong to column 1."""
+        return [
+            (comment.line, comment.value)
+            for comment in self.comments
+            if comment.column == 1
+        ]
+
     def emit_comments_for_line(
         self, line: int
     ) -> Tuple[List[Tuple[int, str]], List[Tuple[int, str]]]:
@@ -139,10 +147,7 @@ class JacFormatPass(Pass):
         doc: Token,
         body: "Elements",
         """
-        (
-            _,
-            next_line_standalone_comments,
-        ) = self.emit_comments_for_line(node.loc.first_line)
+        standalone_comments = self.get_comments_from_first_column()
         if node.doc:
             self.emit_ln(node, node.doc.value)
             self.emit_ln(node, "")
@@ -150,13 +155,14 @@ class JacFormatPass(Pass):
             self.emit(node, self.preamble.meta["jac_code"])
         if node.body:
             for i in node.body:
-                for next_line_no, next_line_comment in next_line_standalone_comments:
+                for next_line_no, next_line_comment in standalone_comments:
                     if (
                         next_line_no <= i.loc.first_line
                         and next_line_comment not in self.processed_comments
                     ):
                         self.emit_ln(node, next_line_comment)
-                        self.emit_ln(node, "")
+                        if next_line_comment.startswith("#*"):
+                            self.emit_ln(node, "")
                         self.processed_comments.add(next_line_comment)
                         break
                 self.emit(node, i.meta["jac_code"])
@@ -1502,7 +1508,7 @@ class JacFormatPass(Pass):
         if node.guard:
             self.emit_ln(
                 node,
-                f"case {node.pattern.meta['jac_code']} if {node.guard.meta['jac_code']}:",
+                f"case {node.pattern.meta['jac_code']} if {node.guard.meta['jac_code']}:",  # noqa
             )
         else:
             self.emit(node, f"case {node.pattern.meta['jac_code']}:")
