@@ -32,6 +32,14 @@ class JacFormatPass(Pass):
         self.preamble = ast.EmptyToken()
         self.preamble.meta["jac_code"] = ""
 
+    def get_comments_from_first_column(self) -> List[Tuple[int, str]]:
+        """Get all comments that belong to column 1."""
+        return [
+            (comment.line, comment.value)
+            for comment in self.comments
+            if comment.column == 1
+        ]
+
     def emit_comments_for_line(
         self, line: int
     ) -> Tuple[List[Tuple[int, str]], List[Tuple[int, str]]]:
@@ -71,7 +79,7 @@ class JacFormatPass(Pass):
                     else:
                         inline_comments.append((comment.line, comment.value))
                 elif (
-                    comment.line == line + 1
+                    (comment.line == line + 1 or comment.line == line + 2)
                     and comment.value not in self.processed_comments
                     and comment.column < 10
                 ):
@@ -139,10 +147,7 @@ class JacFormatPass(Pass):
         doc: Token,
         body: "Elements",
         """
-        (
-            _,
-            next_line_standalone_comments,
-        ) = self.emit_comments_for_line(node.loc.first_line)
+        standalone_comments = self.get_comments_from_first_column()
         if node.doc:
             self.emit_ln(node, node.doc.value)
             self.emit_ln(node, "")
@@ -150,12 +155,14 @@ class JacFormatPass(Pass):
             self.emit(node, self.preamble.meta["jac_code"])
         if node.body:
             for i in node.body:
-                for next_line_no, next_line_comment in next_line_standalone_comments:
+                for next_line_no, next_line_comment in standalone_comments:
                     if (
                         next_line_no <= i.loc.first_line
                         and next_line_comment not in self.processed_comments
                     ):
                         self.emit_ln(node, next_line_comment)
+                        if next_line_comment.startswith("#*"):
+                            self.emit_ln(node, "")
                         self.processed_comments.add(next_line_comment)
                         break
                 self.emit(node, i.meta["jac_code"])
@@ -167,47 +174,53 @@ class JacFormatPass(Pass):
 
         items: list[T],
         """
-        indent_set = False
-        comment_str = ""
-        (
-            inline_comments,
-            next_line_standalone_comments,
-        ) = self.emit_comments_for_line(node.loc.first_line)
-        if isinstance(node.kid[0], ast.Token) and node.kid[0].name == "LBRACE":
+        for stmt in node.kid:
+            comment_str = ""
+            (
+                inline_comments,
+                next_line_standalone_comments,
+            ) = self.emit_comments_for_line(stmt.loc.first_line)
             if inline_comments:
                 comment_str = " ; ".join(
                     comment_value for _, comment_value in inline_comments
                 )
-            self.emit_ln(node, node.kid[0].value + " " + comment_str)
-            self.indent_level += 1
-            indent_set = True
-            self.processed_comments.add(comment_str)
-            for next_line_no, next_line_comment in next_line_standalone_comments:
-                if next_line_no == node.loc.first_line + 1:
-                    # Emit the comment on the next line
-                    self.emit_ln(node, next_line_comment)
-                    self.processed_comments.add(next_line_comment)
-        # Emit next line standalone comments
-        if node.items:
-            for stmt in node.items:
-                comment_str = ""
-                (
-                    inline_comments,
-                    next_line_standalone_comments,
-                ) = self.emit_comments_for_line(stmt.loc.first_line)
-                if inline_comments:
-                    comment_str = " ; ".join(
-                        comment_value for _, comment_value in inline_comments
-                    )
-                if comment_str not in self.processed_comments:
-                    self.emit(node, f"{stmt.meta['jac_code']} {comment_str}")
+            if isinstance(stmt, ast.Token):
+                if stmt.name == "LBRACE":
+                    if comment_str not in self.processed_comments and comment_str != "":
+                        self.emit_ln(node, f"{stmt.value} {comment_str}")
+                        self.processed_comments.add(comment_str)
+                    else:
+                        self.emit_ln(node, f"{stmt.value}")
+                    self.indent_level += 1
+                elif stmt.name == "RBRACE":
+                    # self.emit_ln(node, "")
+                    self.indent_level -= 1
+                    if comment_str not in self.processed_comments and comment_str != "":
+                        self.emit_ln(node, f"{stmt.value} {comment_str}")
+                        self.processed_comments.add(comment_str)
+                    else:
+                        self.emit_ln(node, f"{stmt.value}")
+                    # self.emit_ln(node, "")
+                else:
+                    self.emit(node, f"{stmt.value}")
+                    continue
+            elif isinstance(stmt, ast.Assignment):
+                self.emit(node, f"{stmt.meta['jac_code']}")
+            else:
+                if comment_str not in self.processed_comments and comment_str != "":
+                    self.emit_ln(node, f"{stmt.meta['jac_code']} {comment_str}")
                     self.processed_comments.add(comment_str)
                 else:
                     self.emit(node, f"{stmt.meta['jac_code']}")
-        if indent_set:
-            self.indent_level -= 1
-            self.emit_ln(node, "")
-            self.emit_ln(node, node.kid[-1].value)
+                    continue
+            for next_line_no, next_line_comment in next_line_standalone_comments:
+                if (
+                    next_line_no == node.loc.first_line + 1
+                    or next_line_no == node.loc.first_line + 2
+                ):
+                    # Emit the comment on the next line
+                    self.emit_ln(node, next_line_comment)
+                    self.processed_comments.add(next_line_comment)
 
     def exit_sub_tag(self, node: ast.SubTag) -> None:
         """Sub objects.
@@ -325,6 +338,7 @@ class JacFormatPass(Pass):
 
         if node.body:
             self.emit(node, node.body.meta["jac_code"])
+        self.emit_ln(node, "")
 
     def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
@@ -552,27 +566,21 @@ class JacFormatPass(Pass):
         base_classes: BaseClasses,
         body: Optional[EnumBlock],
         """
+        if node.doc:
+            self.emit_ln(node, node.doc.value)
         if node.decorators:
             self.emit_ln(node, node.decorators.meta["jac_code"])
-
         if node.base_classes:
             self.emit(
                 node,
                 f"enum {node.name.meta['jac_code']}({node.base_classes.meta['jac_code']})",  # noqa
             )
         else:
-            if node.body:
-                self.emit(node, f"enum {node.name.value} ")
-
-                if node.doc:
-                    self.emit_ln(node, node.doc.value)
-                if node.body:
-                    self.emit(node, node.body.meta["jac_code"])
-                else:
-                    self.decl_def_missing(node.name.meta["jac_code"])
-
-            else:
-                self.emit(node, f"enum {node.name.value}")
+            self.emit(node, f"enum {node.name.value} ")
+        if node.body:
+            self.emit(node, node.body.meta["jac_code"])
+        else:
+            self.decl_def_missing(node.name.meta["jac_code"])
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -905,14 +913,31 @@ class JacFormatPass(Pass):
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
 
-        doc: Optional["Token"],
-        access: Optional[Token],
-        assignments: "AssignmentList",
+        access: Optional[SubTag[Token]],
+        assignments: SubNodeList[Assignment],
         is_frozen: bool,
+        doc: Optional[Constant] = None,
         """
+        comment_str = ""
+        (
+            inline_comments,
+            _,
+        ) = self.emit_comments_for_line(node.loc.first_line)
+        if inline_comments:
+            comment_str = " ; ".join(
+                comment_value for _, comment_value in inline_comments
+            )
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        self.emit_ln(node, f"global {node.assignments.meta['jac_code']};")
+        for i in node.kid:
+            if isinstance(i, ast.Token):
+                if i.name == "SEMI":
+                    self.emit_ln(node, i.value + " " + comment_str)
+                    self.processed_comments.add(comment_str)
+                else:
+                    self.emit(node, i.value + " ")
+            elif isinstance(i, ast.SubNodeList):
+                self.emit(node, node.assignments.meta["jac_code"])
         self.emit_ln(node, "")
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
@@ -1079,9 +1104,9 @@ class JacFormatPass(Pass):
         cause: Optional[ExprType],
         """
         if node.cause:
-            node.meta["jac_code"] = f"raise {node.cause.meta['jac_code']}"
+            node.meta["jac_code"] = f"raise {node.cause.meta['jac_code']};"
         else:
-            node.meta["jac_code"] = "raise"
+            node.meta["jac_code"] = "raise;"
 
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
@@ -1305,9 +1330,9 @@ class JacFormatPass(Pass):
         expr: Optional[ExprType],
         """
         if node.expr:
-            self.emit(node, f"return {node.expr.meta['jac_code']}")
+            self.emit_ln(node, f"return {node.expr.meta['jac_code']};")
         else:
-            self.emit(node, "return")
+            self.emit_ln(node, "return;")
 
     def exit_assert_stmt(self, node: ast.AssertStmt) -> None:
         """Sub objects.
@@ -1413,12 +1438,15 @@ class JacFormatPass(Pass):
                 comment_value for _, comment_value in inline_comments
             )
         names = node.name_list.meta["jac_code"]
-        self.emit(
-            node, f"for {names} in {node.collection.meta['jac_code']}  {comment_str}"
-        )
-        self.processed_comments.add(comment_str)
-        if node.body:
-            self.emit(node, node.body.meta["jac_code"])
+        if comment_str not in self.processed_comments and comment_str != "":
+            self.emit(
+                node,
+                f"for {names} in {node.collection.meta['jac_code']}  {comment_str}",
+            )
+            self.processed_comments.add(comment_str)
+        else:
+            self.emit(node, f"for {names} in {node.collection.meta['jac_code']}")
+        self.emit(node, node.body.meta["jac_code"])
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -1480,7 +1508,7 @@ class JacFormatPass(Pass):
         if node.guard:
             self.emit_ln(
                 node,
-                f"case {node.pattern.meta['jac_code']} if {node.guard.meta['jac_code']}:",
+                f"case {node.pattern.meta['jac_code']} if {node.guard.meta['jac_code']}:",  # noqa
             )
         else:
             self.emit(node, f"case {node.pattern.meta['jac_code']}:")
