@@ -7,7 +7,7 @@ import ast as ast3
 from typing import Optional, TypeVar
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.constant import Constants as Con
+from jaclang.jac.constant import Constants as Con, Tokens as Tok
 from jaclang.jac.passes import Pass
 
 T = TypeVar("T", bound=ast3.AST)
@@ -738,7 +738,7 @@ class PyastGenPass(Pass):
         ):
             body += [node.count_by.gen.py_ast]
         else:
-            return  # raise self.ice()
+            return  # TODO: raise self.ice()
         py_nodes.append(node.iter.gen.py_ast)
         py_nodes.append(
             self.sync(
@@ -754,7 +754,7 @@ class PyastGenPass(Pass):
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        name_list: SubNodeList[Name],
+        target: ExprType,
         is_async: bool,
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
@@ -776,6 +776,13 @@ class PyastGenPass(Pass):
         condition: ExprType,
         body: SubNodeList[CodeBlockStmt],
         """
+        node.gen.py_ast = self.sync(
+            ast3.While(
+                test=node.condition.gen.py_ast,
+                body=node.body.gen.py_ast,
+                orelse=None,
+            )
+        )
 
     def exit_with_stmt(self, node: ast.WithStmt) -> None:
         """Sub objects.
@@ -784,6 +791,13 @@ class PyastGenPass(Pass):
         exprs: SubNodeList[ExprAsItem],
         body: SubNodeList[CodeBlockStmt],
         """
+        with_node = ast3.AsyncWith if node.is_async else ast3.With
+        node.gen.py_ast = self.sync(
+            with_node(
+                items=node.exprs.gen.py_ast,
+                body=node.body.gen.py_ast,
+            )
+        )
 
     def exit_expr_as_item(self, node: ast.ExprAsItem) -> None:
         """Sub objects.
@@ -791,6 +805,12 @@ class PyastGenPass(Pass):
         expr: ExprType,
         alias: Optional[ExprType],
         """
+        node.gen.py_ast = self.sync(
+            ast3.withitem(
+                context_expr=node.expr.gen.py_ast,
+                optional_vars=node.alias.gen.py_ast if node.alias else None,
+            )
+        )
 
     def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.
@@ -798,6 +818,12 @@ class PyastGenPass(Pass):
         cause: Optional[ExprType],
         from_target: Optional[ExprType],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Raise(
+                exc=node.cause.gen.py_ast if node.cause else None,
+                cause=node.from_target.gen.py_ast if node.from_target else None,
+            )
+        )
 
     def exit_assert_stmt(self, node: ast.AssertStmt) -> None:
         """Sub objects.
@@ -805,42 +831,63 @@ class PyastGenPass(Pass):
         condition: ExprType,
         error_msg: Optional[ExprType],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Assert(
+                test=node.condition.gen.py_ast,
+                msg=node.error_msg.gen.py_ast if node.error_msg else None,
+            )
+        )
 
     def exit_ctrl_stmt(self, node: ast.CtrlStmt) -> None:
         """Sub objects.
 
         ctrl: Token,
         """
+        if node.ctrl.name == Tok.KW_BREAK:
+            node.gen.py_ast = self.sync(ast3.Break())
+        elif node.ctrl.name == Tok.KW_CONTINUE:
+            node.gen.py_ast = self.sync(ast3.Continue())
+        elif node.ctrl.name == Tok.KW_SKIP:
+            self.error("DS Not implemented yet.")
 
     def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
 
         target: SubNodeList[AtomType],
         """
+        node.gen.py_ast = self.sync(ast3.Delete(targets=node.target.gen.py_ast))
 
     def exit_report_stmt(self, node: ast.ReportStmt) -> None:
         """Sub objects.
 
         expr: ExprType,
         """
+        self.error("DS Not implemented yet.")
 
     def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Return(value=node.expr.gen.py_ast if node.expr else None)
+        )
 
     def exit_yield_stmt(self, node: ast.YieldStmt) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Yield(value=node.expr.gen.py_ast if node.expr else None)
+        )
 
     def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
+        self.error("DS Not implemented yet.")
 
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
@@ -849,6 +896,7 @@ class PyastGenPass(Pass):
         target: ExprType,
         else_body: Optional[ElseStmt],
         """
+        self.error("DS Not implemented yet.")
 
     def exit_revisit_stmt(self, node: ast.RevisitStmt) -> None:
         """Sub objects.
@@ -856,6 +904,7 @@ class PyastGenPass(Pass):
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
+        self.error("DS Not implemented yet.")
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
@@ -865,18 +914,37 @@ class PyastGenPass(Pass):
 
         target: ExprType,
         """
+        self.error("DS Not implemented yet.")
 
     def exit_global_stmt(self, node: ast.GlobalStmt) -> None:
         """Sub objects.
 
         target: SubNodeList[NameType],
         """
+        py_nodes = []
+        for x in node.target.items:
+            py_nodes.append(
+                self.sync(
+                    ast3.Global(names=[x.sym_name]),
+                    jac_node=x,
+                )
+            )
+        node.gen.py_ast = py_nodes
 
     def exit_non_local_stmt(self, node: ast.NonLocalStmt) -> None:
         """Sub objects.
 
         target: SubNodeList[NameType],
         """
+        py_nodes = []
+        for x in node.target.items:
+            py_nodes.append(
+                self.sync(
+                    ast3.Nonlocal(names=[x.sym_name]),
+                    jac_node=x,
+                )
+            )
+        node.gen.py_ast = py_nodes
 
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
@@ -886,6 +954,19 @@ class PyastGenPass(Pass):
         type_tag: Optional[SubTag[ExprType]],
         mutable: bool =True,
         """
+        if node.type_tag:
+            node.gen.py_ast = self.sync(
+                ast3.AnnAssign(
+                    target=node.target.gen.py_ast,
+                    annotation=node.type_tag.gen.py_ast,
+                    value=node.value.gen.py_ast if node.value else None,
+                    simple=node.value is None,
+                )
+            )
+        else:
+            node.gen.py_ast = self.sync(
+                ast3.Assign(targets=node.target.gen.py_ast, value=node.value.gen.py_ast)
+            )
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
@@ -894,6 +975,16 @@ class PyastGenPass(Pass):
         right: ExprType,
         op: Token | DisconnectOp | ConnectOp,
         """
+        if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
+            self.error("DS Not implemented yet.")
+        else:
+            node.gen.py_ast = self.sync(
+                ast3.BinOp(
+                    left=node.left.gen.py_ast,
+                    right=node.right.gen.py_ast,
+                    op=node.op.gen.py_ast,
+                )
+            )
 
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.

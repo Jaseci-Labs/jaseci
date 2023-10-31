@@ -1419,7 +1419,7 @@ class JacFormatPass(Pass):
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        name_list: SubNodeList[Name],
+        target: ExprType,
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
         """
