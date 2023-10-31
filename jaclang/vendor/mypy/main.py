@@ -28,7 +28,7 @@ from mypy.modulefinder import (
     get_search_dirs,
     mypy_path,
 )
-from mypy.options import INCOMPLETE_FEATURES, BuildType, Options
+from mypy.options import COMPLETE_FEATURES, INCOMPLETE_FEATURES, BuildType, Options
 from mypy.split_namespace import SplitNamespace
 from mypy.version import __version__
 
@@ -1227,10 +1227,7 @@ def process_options(
     parser.add_argument(
         "--debug-serialize", action="store_true", help=argparse.SUPPRESS
     )
-    # This one is deprecated, but we will keep it for few releases.
-    parser.add_argument(
-        "--enable-incomplete-features", action="store_true", help=argparse.SUPPRESS
-    )
+
     parser.add_argument(
         "--disable-bytearray-promotion", action="store_true", help=argparse.SUPPRESS
     )
@@ -1412,14 +1409,10 @@ def process_options(
 
     # Validate incomplete features.
     for feature in options.enable_incomplete_feature:
-        if feature not in INCOMPLETE_FEATURES:
+        if feature not in INCOMPLETE_FEATURES | COMPLETE_FEATURES:
             parser.error(f"Unknown incomplete feature: {feature}")
-    if options.enable_incomplete_features:
-        print(
-            "Warning: --enable-incomplete-features is deprecated, use"
-            " --enable-incomplete-feature=FEATURE instead"
-        )
-        options.enable_incomplete_feature = list(INCOMPLETE_FEATURES)
+        if feature in COMPLETE_FEATURES:
+            print(f"Warning: {feature} is already enabled by default")
 
     # Compute absolute path for custom typeshed (if present).
     if options.custom_typeshed_dir is not None:

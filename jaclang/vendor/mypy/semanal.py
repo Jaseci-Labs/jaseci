@@ -189,7 +189,7 @@ from mypy.nodes import (
     type_aliases_source_versions,
     typing_extensions_aliases,
 )
-from mypy.options import TYPE_VAR_TUPLE, Options
+from mypy.options import Options
 from mypy.patterns import (
     AsPattern,
     ClassPattern,
@@ -1839,7 +1839,7 @@ class SemanticAnalyzer(
             if info is None:
                 self.mark_incomplete(defn.name, defn)
             else:
-                self.prepare_class_def(defn, info)
+                self.prepare_class_def(defn, info, custom_names=True)
             return True
         return False
 
@@ -2219,8 +2219,9 @@ class SemanticAnalyzer(
                 # Preserve name from previous fine-grained incremental run.
                 global_name = defn.info.name
             defn.fullname = defn.info._fullname
-            if defn.info.is_named_tuple:
-                # Named tuple nested within a class is stored in the class symbol table.
+            if defn.info.is_named_tuple or defn.info.typeddict_type:
+                # Named tuples and Typed dicts nested within a class are stored
+                # in the class symbol table.
                 self.add_symbol_skip_local(global_name, defn.info)
             else:
                 self.globals[global_name] = SymbolTableNode(GDEF, defn.info)
@@ -4743,9 +4744,6 @@ class SemanticAnalyzer(
                 self.fail(
                     f'Unexpected keyword argument "{param_name}" for "TypeVarTuple"', s
                 )
-
-        if not self.incomplete_feature_enabled(TYPE_VAR_TUPLE, s):
-            return False
 
         name = self.extract_typevarlike_name(s, call)
         if name is None:
