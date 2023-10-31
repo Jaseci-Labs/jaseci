@@ -1432,7 +1432,7 @@ class JacFormatPass(Pass):
             comment_str = " ; ".join(
                 comment_value for _, comment_value in inline_comments
             )
-        names = node.name_list.gen.jac
+        names = node.target.gen.jac
         if comment_str not in self.processed_comments and comment_str != "":
             self.emit(
                 node,

@@ -834,7 +834,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode):
 
     def __init__(
         self,
-        name_list: SubNodeList[Name],
+        target: SubNodeList[Name],
         is_async: bool,
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
@@ -842,7 +842,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode):
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize in for node."""
-        self.name_list = name_list
+        self.target = target
         self.collection = collection
         self.body = body
         AstNode.__init__(self, kid=kid)

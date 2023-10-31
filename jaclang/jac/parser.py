@@ -1268,7 +1268,7 @@ class JacParser(Pass):
                     return self.nu(
                         ast.InForStmt(
                             is_async=is_async,
-                            name_list=chomp[1],
+                            target=chomp[1],
                             collection=chomp[3],
                             body=chomp[4],
                             else_body=chomp[-1]

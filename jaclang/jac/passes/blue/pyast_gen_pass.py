@@ -763,7 +763,7 @@ class PyastGenPass(Pass):
         for_node = ast3.AsyncFor if node.is_async else ast3.For
         node.gen.py_ast = self.sync(
             for_node(
-                target=node.name_list.gen.py_ast,
+                target=node.target.gen.py_ast,
                 iter=node.collection.gen.py_ast,
                 body=node.body.gen.py_ast,
                 orelse=node.else_body.gen.py_ast if node.else_body else None,

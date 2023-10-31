@@ -696,8 +696,8 @@ class BluePygenPass(Pass):
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
         """
-        self.comma_sep_node_list(node.name_list)
-        names = node.name_list.gen.py
+        self.comma_sep_node_list(node.target)
+        names = node.target.gen.py
         self.emit_ln(node, f"for {names} in {node.collection.gen.py}:")
         self.indent_level += 1
         self.nl_sep_node_list(node.body)
