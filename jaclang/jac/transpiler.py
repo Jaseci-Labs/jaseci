@@ -92,5 +92,5 @@ def jac_file_formatter(
         if i == target:
             break
         prse = i(input_ir=prse.ir, prior=prse)
-    prse = (target(input_ir=prse.ir, prior=prse),)
+    prse = target(input_ir=prse.ir, prior=prse)
     return prse
