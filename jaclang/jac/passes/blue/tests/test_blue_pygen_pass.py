@@ -26,13 +26,9 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
         )
         self.assertFalse(code_gen.errors_had)
-        self.assertIn(
-            'say((dump(print(len)))({"name": "value"}))', code_gen.ir.meta["py_code"]
-        )
-        self.assertIn(
-            '{"name": "value"}(len(print(print(print))))', code_gen.ir.meta["py_code"]
-        )
-        self.assertIn("a = (5 + 10) * 2", code_gen.ir.meta["py_code"])
+        self.assertIn('say((dump(print(len)))({"name": "value"}))', code_gen.ir.gen.py)
+        self.assertIn('{"name": "value"}(len(print(print(print))))', code_gen.ir.gen.py)
+        self.assertIn("a = (5 + 10) * 2", code_gen.ir.gen.py)
 
     def test_atomic_pipe_operator(self) -> None:
         """Basic test for pass."""
@@ -40,9 +36,7 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
         )
         self.assertFalse(code_gen.errors_had)
-        self.assertIn(
-            'say((dump(print)(len))({"name": "value"}))', code_gen.ir.meta["py_code"]
-        )
+        self.assertIn('say((dump(print)(len))({"name": "value"}))', code_gen.ir.gen.py)
 
     def test_pipe_operator_multi_param(self) -> None:
         """Basic test for pass."""
@@ -50,9 +44,9 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
         )
         self.assertFalse(code_gen.errors_had)
-        self.assertIn("self.func(*args, **kwargs)", code_gen.ir.meta["py_code"])
-        self.assertIn("inspect.signature(func)", code_gen.ir.meta["py_code"])
-        self.assertIn("self.registry.items()", code_gen.ir.meta["py_code"])
+        self.assertIn("self.func(*args, **kwargs)", code_gen.ir.gen.py)
+        self.assertIn("inspect.signature(func)", code_gen.ir.gen.py)
+        self.assertIn("self.registry.items()", code_gen.ir.gen.py)
 
     def test_with_stmt(self) -> None:
         """Basic test for pass."""
@@ -62,7 +56,7 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         self.assertFalse(code_gen.errors_had)
         self.assertIn(
             'with open("file.txt") as f, open("file2.txt") as f:',
-            code_gen.ir.meta["py_code"],
+            code_gen.ir.gen.py,
         )
 
     def test_empty_codeblock(self) -> None:
@@ -71,7 +65,7 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.fixture_abs_path("codegentext.jac"), target=BluePygenPass
         )
         self.assertFalse(code_gen.errors_had)
-        self.assertIn("pass", code_gen.ir.meta["py_code"])
+        self.assertIn("pass", code_gen.ir.gen.py)
 
     def test_enum_gen(self) -> None:
         """Basic test for pass."""
@@ -81,18 +75,18 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         self.assertFalse(code_gen.errors_had)
         self.assertIn(
             "from enum import Enum as __jac_Enum__, auto as __jac_auto__",
-            code_gen.ir.meta["py_code"],
+            code_gen.ir.gen.py,
         )
-        self.assertIn("class Color(__jac_Enum__):", code_gen.ir.meta["py_code"])
-        self.assertIn("GREEN = __jac_auto__()", code_gen.ir.meta["py_code"])
-        self.assertIn("RED = 1", code_gen.ir.meta["py_code"])
+        self.assertIn("class Color(__jac_Enum__):", code_gen.ir.gen.py)
+        self.assertIn("GREEN = __jac_auto__()", code_gen.ir.gen.py)
+        self.assertIn("RED = 1", code_gen.ir.gen.py)
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         code_gen = jac_file_to_pass(
             self.fixture_abs_path(filename), target=BluePygenPass
         )
-        self.assertGreater(len(code_gen.ir.meta["py_code"]), 10)
+        self.assertGreater(len(code_gen.ir.gen.py), 10)
 
 
 BluePygenPassTests.self_attach_micro_tests()

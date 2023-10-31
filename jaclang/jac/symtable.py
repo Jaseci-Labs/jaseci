@@ -151,6 +151,7 @@ class SymbolTable:
         else:
             self.tab[node.sym_name].add_defn(node)
         node.sym_link = self.tab[node.sym_name]
+        return None
 
     def push_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""

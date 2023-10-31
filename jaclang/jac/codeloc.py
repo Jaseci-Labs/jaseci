@@ -1,10 +1,21 @@
 """Code location info for AST nodes."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import ast as ast3
+from dataclasses import dataclass
+from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jaclang.jac.absyntree import Token
+
+
+@dataclass
+class CodeGenTarget:
+    """Code generation target."""
+
+    py: str = ""
+    jac: str = ""
+    py_ast: Optional[ast3.AST | list[ast3.AST]] = None
 
 
 class CodeLocInfo:

@@ -4,7 +4,7 @@ import ast as py_ast
 import inspect
 import os
 import sys
-from typing import List, Optional
+from typing import List, Optional, Type
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.tool.schedules import (
@@ -41,13 +41,13 @@ class AstNodeInfo:
         self.cls = cls
         self.process(cls)
 
-    def process(self, cls: type) -> None:
+    def process(self, cls: Type[ast.AstNode]) -> None:
         """Process AstNode class."""
         self.name = cls.__name__
         self.doc = cls.__doc__
         AstNodeInfo.type_map[self.name] = cls
         self.class_name_snake = pascal_to_snake(cls.__name__)
-        self.init_sig = inspect.signature(cls.__class__.__init__)
+        self.init_sig = inspect.signature(cls.__init__)
         self.kids: list[AstKidInfo] = []
         for param_name, param in self.init_sig.parameters.items():
             if param_name not in [
@@ -85,13 +85,16 @@ class AstTool:
                 "AstNode",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
-                "JacCode",
+                "JacSource",
                 "EmptyToken",
                 "AstSymbolNode",
                 "AstAccessNode",
                 "TokenSymbol",
                 "AstDocNode",
                 "PythonModuleAst",
+                "AstAsyncNode",
+                "AstElseBodyNode",
+                "AstTypedVarNode",
             ]
         ]
         self.ast_classes = sorted(
@@ -137,14 +140,14 @@ class AstTool:
 
     def py_ast_nodes(self) -> str:
         """List python ast nodes."""
-        from jaclang.jac.passes.blue import PyAstBuildPass
+        from jaclang.jac.passes.blue import PyastBuildPass
 
         visit_methods = [
             method for method in dir(py_ast._Unparser) if method.startswith("visit_")  # type: ignore
         ]
         node_names = [method.replace("visit_", "") for method in visit_methods]
         pass_func_names = []
-        for name, value in inspect.getmembers(PyAstBuildPass):
+        for name, value in inspect.getmembers(PyastBuildPass):
             if name.startswith("proc_") and inspect.isfunction(value):
                 pass_func_names.append(name.replace("proc_", ""))
         output = ""
@@ -199,7 +202,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, AstDotGraphPass, full_ast_dot_gen)
+            jac_file_to_pass(file_name, AstDotGraphPass, full_ast_dot_gen)
             if AstDotGraphPass.OUTPUT_FILE_PATH:
                 return f"Dot file generated at {AstDotGraphPass.OUTPUT_FILE_PATH}"
             else:
@@ -220,7 +223,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, AstPrinterPass, full_ast_print)
+            jac_file_to_pass(file_name, AstPrinterPass, full_ast_print)
             return ""
         else:
             return "Not a .jac file."
@@ -238,7 +241,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, SymbolTablePrinterPass, sym_tab_print)
+            jac_file_to_pass(file_name, SymbolTablePrinterPass, sym_tab_print)
             return ""
         else:
             return "Not a .jac file."
@@ -257,7 +260,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, SymbolTableDotGraphPass, sym_tab_dot_gen)
+            jac_file_to_pass(file_name, SymbolTableDotGraphPass, sym_tab_dot_gen)
             if SymbolTableDotGraphPass.OUTPUT_FILE_PATH:
                 return (
                     f"Dot file generated at {SymbolTableDotGraphPass.OUTPUT_FILE_PATH}"

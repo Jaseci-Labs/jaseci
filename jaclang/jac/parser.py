@@ -20,20 +20,19 @@ class JacParser(Pass):
 
     def __init__(self, input_ir: ast.JacSource) -> None:
         """Initialize parser."""
+        self.source = input_ir
         self.mod_path = input_ir.loc.mod_path
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
-    def before_pass(self, source: ast.JacSource) -> None:
+    def before_pass(self) -> None:
         """Initialize parser."""
         super().before_pass()
-        self.source = source
-        self.comments = []
+        self.comments: list[jl.Token] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
 
     def transform(self, ir: ast.JacSource) -> Optional[ast.Module]:
         """Transform input IR."""
-        self.before_pass(ir)
         try:
             tree, self.comments = JacParser.parse(
                 ir.value, on_error=self.error_callback
@@ -57,11 +56,11 @@ class JacParser(Pass):
         return False
 
     @staticmethod
-    def _comment_callback(comment: str) -> None:
+    def _comment_callback(comment: jl.Token) -> None:
         JacParser.comment_cache.append(comment)
 
     @staticmethod
-    def parse(ir: str, on_error: Callable) -> tuple[jl.Tree, list[str]]:
+    def parse(ir: str, on_error: Callable) -> tuple[jl.Tree, list[jl.Token]]:
         """Parse input IR."""
         JacParser.comment_cache = []
         return (
@@ -82,7 +81,7 @@ class JacParser(Pass):
         JacParser.JacTransformer = Transformer
         logger.setLevel(logging.DEBUG)
 
-    comment_cache = []
+    comment_cache: list[jl.Token] = []
 
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})
     JacTransformer = jl.Transformer
@@ -269,13 +268,11 @@ class JacParser(Pass):
             """Grammar rule.
 
             import_stmt: KW_IMPORT sub_name KW_FROM import_path COMMA import_items SEMI
-                | KW_IMPORT sub_name import_path KW_AS NAME SEMI
-                | KW_IMPORT sub_name import_path SEMI
+                    | KW_IMPORT sub_name import_path SEMI
             """
             lang = kid[1]
             path = kid[3] if isinstance(kid[3], ast.ModulePath) else kid[2]
 
-            alias = kid[-2] if isinstance(kid[-2], ast.Name) else None
             items = (
                 kid[-2]
                 if len(kid) > 4 and isinstance(kid[-2], ast.SubNodeList)
@@ -285,14 +282,12 @@ class JacParser(Pass):
             if (
                 isinstance(lang, ast.SubTag)
                 and isinstance(path, ast.ModulePath)
-                and (isinstance(alias, ast.Name) or alias is None)
                 and (isinstance(items, ast.SubNodeList) or items is None)
             ):
                 return self.nu(
                     ast.Import(
                         lang=lang,
                         path=path,
-                        alias=alias,
                         items=items,
                         is_absorb=is_absorb,
                         kid=kid,
@@ -315,7 +310,6 @@ class JacParser(Pass):
                     ast.Import(
                         lang=lang,
                         path=path,
-                        alias=None,
                         items=None,
                         is_absorb=is_absorb,
                         kid=kid,
@@ -327,18 +321,26 @@ class JacParser(Pass):
         def import_path(self, kid: list[ast.AstNode]) -> ast.ModulePath:
             """Grammar rule.
 
-            import_path: DOT? DOT? name_ref ((DOT name_ref)+)?
+            import_path: DOT? DOT? named_ref (DOT named_ref)* (KW_AS NAME)?
             """
             valid_path = [i for i in kid if isinstance(i, ast.Token)]
-            if len(valid_path) == len(kid):
-                return self.nu(
-                    ast.ModulePath(
-                        path=valid_path,
-                        kid=kid,
-                    )
+            alias = (
+                kid[-1]
+                if len(kid) > 2
+                and isinstance(kid[-1], ast.Name)
+                and isinstance(kid[-2], ast.Token)
+                and kid[-2].name == Tok.KW_AS
+                else None
+            )
+            if alias is not None:
+                valid_path = valid_path[:-2]
+            return self.nu(
+                ast.ModulePath(
+                    path=valid_path,
+                    alias=alias,
+                    kid=kid,
                 )
-            else:
-                raise self.ice()
+            )
 
         def import_items(
             self, kid: list[ast.AstNode]

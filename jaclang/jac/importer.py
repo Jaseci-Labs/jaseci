@@ -14,7 +14,7 @@ from jaclang.utils.helpers import handle_jac_error
 
 
 def import_jac_module(
-    transpiler_func: Callable[[str, str], list[Alert]],
+    transpiler_func: Callable[[str], list[Alert]],
     target: str,
     base_path: Optional[str] = None,
     cachable: bool = True,
@@ -52,7 +52,7 @@ def import_jac_module(
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
     else:
-        if transpiler_func(full_target, caller_dir):
+        if transpiler_func(full_target):
             return None
         with open(py_file_path, "r") as f:
             code_string = f.read()

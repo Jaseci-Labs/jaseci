@@ -32,7 +32,6 @@ class SymbolTablePrinterPassTest(TestCase):
         SymbolTablePrinterPass.SAVE_OUTPUT = "out.txt"
         state = jac_file_to_pass(
             self.fixture_abs_path("multi_def_err.jac"),
-            "",
             SymbolTablePrinterPass,
             sym_tab_print,
         )
@@ -65,7 +64,7 @@ class DotGraphDrawerPassTests(TestCase):
     def test_report_generation(self) -> None:
         """Basic test for pass."""
         state = jac_file_to_pass(
-            self.fixture_abs_path("multi_def_err.jac"), "", SymbolTableDotGraphPass
+            self.fixture_abs_path("multi_def_err.jac"), SymbolTableDotGraphPass
         )
         self.assertFalse(state.errors_had)
 
