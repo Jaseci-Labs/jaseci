@@ -1391,13 +1391,13 @@ class AtomTrailer(AstNode):
         self,
         target: AtomType,
         right: AtomType,
-        is_scope_contained: bool,
+        is_attr: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
-        self.is_scope_contained = is_scope_contained
+        self.is_attr = is_attr
         AstNode.__init__(self, kid=kid)
 
 

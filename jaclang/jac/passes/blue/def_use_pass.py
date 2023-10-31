@@ -144,7 +144,7 @@ class DefUsePass(SymTabPass):
             else right,
         )
         trag_list: list[ast.AstSymbolNode] = []
-        while isinstance(left, ast.AtomTrailer) and left.is_scope_contained:
+        while isinstance(left, ast.AtomTrailer) and left.is_attr:
             if not isinstance(right, ast.AtomSymbolType):
                 break
             trag_list.insert(0, right)

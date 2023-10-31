@@ -1153,18 +1153,36 @@ class PyastGenPass(Pass):
 
         compr: InnerCompr,
         """
+        node.gen.py_ast = self.sync(
+            ast3.ListComp(
+                elt=node.compr.out_expr.gen.py_ast,
+                generators=[node.compr.gen.py_ast],
+            )
+        )
 
     def exit_gen_compr(self, node: ast.GenCompr) -> None:
         """Sub objects.
 
         compr: InnerCompr,
         """
+        node.gen.py_ast = self.sync(
+            ast3.GeneratorExp(
+                elt=node.compr.out_expr.gen.py_ast,
+                generators=[node.compr.gen.py_ast],
+            )
+        )
 
     def exit_set_compr(self, node: ast.SetCompr) -> None:
         """Sub objects.
 
         compr: InnerCompr,
         """
+        node.gen.py_ast = self.sync(
+            ast3.SetComp(
+                elt=node.compr.out_expr.gen.py_ast,
+                generators=[node.compr.gen.py_ast],
+            )
+        )
 
     def exit_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
@@ -1174,14 +1192,31 @@ class PyastGenPass(Pass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
+        # TODO: Come back
 
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
 
         target: AtomType,
         right: AtomType,
-        is_scope_contained: bool,
+        is_attr: bool,
         """
+        if node.is_attr:
+            node.gen.py_ast = self.sync(
+                ast3.Attribute(
+                    value=node.target.gen.py_ast,
+                    attr=node.right.sym_name,
+                    ctx=ast3.Load(),
+                )
+            )
+        else:
+            node.gen.py_ast = self.sync(
+                ast3.Subscript(
+                    value=node.target.gen.py_ast,
+                    slice=node.right.gen.py_ast,
+                    ctx=ast3.Load(),
+                )
+            )
 
     def exit_atom_unit(self, node: ast.AtomUnit) -> None:
         """Sub objects.

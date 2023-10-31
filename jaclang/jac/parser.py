@@ -2071,7 +2071,7 @@ class JacParser(Pass):
                     ast.AtomTrailer(
                         target=kid[0],
                         right=kid[1],
-                        is_scope_contained=isinstance(kid[1], ast.FilterCompr),
+                        is_attr=isinstance(kid[1], ast.FilterCompr),
                         kid=kid,
                     )
                 )
@@ -2095,7 +2095,7 @@ class JacParser(Pass):
                     ast.AtomTrailer(
                         target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
                         right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
-                        is_scope_contained=True,
+                        is_attr=True,
                         kid=kid,
                     )
                 )
