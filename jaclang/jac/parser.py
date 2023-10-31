@@ -27,14 +27,13 @@ class JacParser(Pass):
     def before_pass(self) -> None:
         """Initialize parser."""
         super().before_pass()
-        self.comments: list[jl.Token] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
 
     def transform(self, ir: ast.JacSource) -> Optional[ast.Module]:
         """Transform input IR."""
         try:
-            tree, self.comments = JacParser.parse(
+            tree, self.source.comments = JacParser.parse(
                 ir.value, on_error=self.error_callback
             )
             if tree:
