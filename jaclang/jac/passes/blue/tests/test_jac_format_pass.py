@@ -37,7 +37,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         code_gen = jac_file_to_pass(
             self.fixture_abs_path(filename), target=JacFormatPass
         )
-        self.assertGreater(len(code_gen.ir.meta["jac_code"]), 10)
+        self.assertGreater(len(code_gen.ir.gen.jac), 10)
 
     def test_circle_jac(self) -> None:
         """Basic test for pass."""
