@@ -624,7 +624,7 @@ class ArchRefChain(AstNode):
 
     def __init__(
         self,
-        archs: Sequence[ArchRef],
+        archs: list[ArchRef],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize name list ."""
@@ -781,7 +781,7 @@ class Except(AstNode):
     def __init__(
         self,
         ex_type: ExprType,
-        name: Optional[Token],
+        name: Optional[Name],
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:

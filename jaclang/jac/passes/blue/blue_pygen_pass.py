@@ -703,7 +703,6 @@ class BluePygenPass(Pass):
         self.nl_sep_node_list(node.body)
         self.emit_ln(node, node.body.gen.py)
         self.indent_level -= 1
-        # self.emit(node, ",".join([i.gen.py for i in node.names]))
 
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.

@@ -551,6 +551,7 @@ class PyastGenPass(Pass):
         arch_tag_info: Optional[ExprType],
         return_type: Optional[SubTag[ExprType]],
         """
+        # TODO: Come back
 
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
@@ -558,12 +559,32 @@ class PyastGenPass(Pass):
         name_ref: NameType,
         arch: Token,
         """
+        node.gen.py_ast = node.name_ref.gen.py_ast
 
     def exit_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
 
         archs: Sequence[ArchRef],
         """
+
+        def make_attr_chain(arch: list[ast.ArchRef]) -> ast3.AST | None:
+            """Make attr chain."""
+            if len(arch) == 0:
+                return None
+            if len(arch) == 1 and isinstance(arch[0].gen.py_ast, ast3.AST):
+                return arch[0].gen.py_ast
+            cur = arch[-1]
+            attr = self.sync(
+                ast3.Attribute(
+                    value=make_attr_chain(arch[:-1]),
+                    attr=cur.name_ref.sym_name,
+                    ctx=ast3.Load(),
+                ),
+                jac_node=cur,
+            )
+            return attr
+
+        node.gen.py_ast = make_attr_chain(node.archs)
 
     def exit_param_var(self, node: ast.ParamVar) -> None:
         """Sub objects.
@@ -596,7 +617,7 @@ class PyastGenPass(Pass):
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = node.vars.gen.py_ast
+            node.gen.py_ast = node.vars.gen.py_ast  # TODO: This is a list
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
@@ -605,6 +626,13 @@ class PyastGenPass(Pass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
+        node.gen.py_ast = self.sync(
+            ast3.AnnAssign(
+                target=node.name.gen.py_ast,
+                annotation=node.type_tag.gen.py_ast if node.type_tag else None,
+                value=node.value.gen.py_ast if node.value else None,
+            )
+        )
 
     def exit_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
@@ -612,6 +640,7 @@ class PyastGenPass(Pass):
         type_ctx: ExprType,
         body: SubNodeList[CodeBlockStmt],
         """
+        # TODO: Come back
 
     def exit_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
@@ -620,6 +649,13 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt | ElseIf],
         """
+        node.gen.py_ast = self.sync(
+            ast3.If(
+                test=node.condition.gen.py_ast,
+                body=node.body.gen.py_ast,
+                orelse=node.else_body.gen.py_ast if node.else_body else None,
+            )
+        )
 
     def exit_else_if(self, node: ast.ElseIf) -> None:
         """Sub objects.
@@ -628,12 +664,20 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt | ElseIf],
         """
+        node.gen.py_ast = self.sync(
+            ast3.If(
+                test=node.condition.gen.py_ast,
+                body=node.body.gen.py_ast,
+                orelse=node.else_body.gen.py_ast if node.else_body else None,
+            )
+        )
 
     def exit_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
 
         body: SubNodeList[CodeBlockStmt],
         """
+        node.gen.py_ast = self.sync(ast3.If(test=ast3.NameConstant(value=True)))
 
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
@@ -643,20 +687,36 @@ class PyastGenPass(Pass):
         else_body: Optional[ElseStmt],
         finally_body: Optional[FinallyStmt],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Try(
+                body=node.body.gen.py_ast,
+                handlers=node.excepts.gen.py_ast if node.excepts else None,
+                orelse=node.else_body.gen.py_ast if node.else_body else None,
+                finalbody=node.finally_body.gen.py_ast if node.finally_body else None,
+            )
+        )
 
     def exit_except(self, node: ast.Except) -> None:
         """Sub objects.
 
         ex_type: ExprType,
-        name: Optional[Token],
+        name: Optional[Name],
         body: SubNodeList[CodeBlockStmt],
         """
+        node.gen.py_ast = self.sync(
+            ast3.ExceptHandler(
+                type=node.ex_type.gen.py_ast,
+                name=node.name.sym_name if node.name else None,
+                body=node.body.gen.py_ast,
+            )
+        )
 
     def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
 
         body: SubNodeList[CodeBlockStmt],
         """
+        node.gen.py_ast = node.body.gen.py_ast
 
     def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.
