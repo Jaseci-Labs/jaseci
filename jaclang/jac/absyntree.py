@@ -834,7 +834,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode):
 
     def __init__(
         self,
-        target: SubNodeList[Name],
+        target: ExprType,
         is_async: bool,
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],

@@ -1264,10 +1264,18 @@ class JacParser(Pass):
                 if isinstance(chomp[3], ast.ExprType) and isinstance(
                     chomp[4], ast.SubNodeList
                 ):
+                    target = chomp[1]
+                    if len(target.items) == 1:
+                        target = target.items[0]
+                    else:
+                        new_targ = ast.TupleVal(values=target, kid=[target])
+                        new_targ.parent = target.parent
+                        kid = [i if i != target else new_targ for i in kid]
+                        target = new_targ
                     return self.nu(
                         ast.InForStmt(
                             is_async=is_async,
-                            target=chomp[1],
+                            target=target,
                             collection=chomp[3],
                             body=chomp[4],
                             else_body=chomp[-1]
