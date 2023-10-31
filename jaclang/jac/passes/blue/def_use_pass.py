@@ -90,7 +90,12 @@ class DefUsePass(SymTabPass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        for i in node.names.items:
+        tuple_items = []
+        if isinstance(node.target, ast.TupleVal):
+            tuple_items = node.target.values.items if node.target.values else []
+        else:
+            tuple_items = [node.target]
+        for i in tuple_items:
             if isinstance(i, ast.AtomTrailer):
                 self.chain_def_insert(self.unwind_atom_trailer(i))
             elif isinstance(i, ast.AtomSymbolType):

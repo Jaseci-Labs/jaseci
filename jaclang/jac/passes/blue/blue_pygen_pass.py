@@ -908,14 +908,14 @@ class BluePygenPass(Pass):
                     node,
                     f"{node.left.gen.py} {node.op.gen.py} {node.right.gen.py}",
                 )
-            elif node.op.value in [
-                *["+=", "-=", "*=", "/=", "%=", "**="],
-                *[">>=", "<<=", "//=", "&=", "|=", "^=", "~="],
-            ]:
-                self.emit(
-                    node,
-                    f"{node.left.gen.py}{node.op.gen.py}{node.right.gen.py}",
-                )
+            # elif node.op.value in [
+            #     *["+=", "-=", "*=", "/=", "%=", "**="],
+            #     *[">>=", "<<=", "//=", "&=", "|=", "^=", "~="],
+            # ]:
+            #     self.emit(
+            #         node,
+            #         f"{node.left.gen.py}{node.op.gen.py}{node.right.gen.py}",
+            #     )
             elif node.op.name in [
                 Tok.PIPE_FWD,
                 Tok.KW_SPAWN,
@@ -977,16 +977,15 @@ class BluePygenPass(Pass):
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.
 
-        params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubTag[ExprType]],
+        signature: FuncSignature,
         body: ExprType,
         """
         out = ""
-        if node.params:
-            self.comma_sep_node_list(node.params)
-            out += node.params.gen.py
-        if node.return_type:
-            out += f" -> {node.return_type.tag.gen.py}"
+        if node.signature.params:
+            self.comma_sep_node_list(node.signature.params)
+            out += node.signature.params.gen.py
+        if node.signature.return_type:
+            out += f" -> {node.signature.return_type.tag.gen.py}"
         self.emit(node, f"lambda {out}: {node.body.gen.py}")
 
     def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
@@ -1114,13 +1113,11 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         out_expr: ExprType,
-        names: SubNodeList[Name],
+        target: ExprType,
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        self.comma_sep_node_list(node.names)
-        names = node.names.gen.py
-        partial = f"{node.out_expr.gen.py} for {names} " f"in {node.collection.gen.py}"
+        partial = f"{node.out_expr.gen.py} for {node.target.gen.py} in {node.collection.gen.py}"
         if node.conditional:
             partial += f" if {node.conditional.gen.py}"
         self.emit(node, f"({partial})")

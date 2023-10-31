@@ -929,7 +929,7 @@ class PyastGenPass(Pass):
                     jac_node=x,
                 )
             )
-        node.gen.py_ast = py_nodes
+        node.gen.py_ast = [*py_nodes]
 
     def exit_non_local_stmt(self, node: ast.NonLocalStmt) -> None:
         """Sub objects.
@@ -944,7 +944,7 @@ class PyastGenPass(Pass):
                     jac_node=x,
                 )
             )
-        node.gen.py_ast = py_nodes
+        node.gen.py_ast = [*py_nodes]
 
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
@@ -961,6 +961,16 @@ class PyastGenPass(Pass):
                     annotation=node.type_tag.gen.py_ast,
                     value=node.value.gen.py_ast if node.value else None,
                     simple=node.value is None,
+                )
+            )
+        elif not node.value:
+            self.ice()
+        elif node.aug_op:
+            node.gen.py_ast = self.sync(
+                ast3.AugAssign(
+                    target=node.target.gen.py_ast,
+                    op=node.aug_op.gen.py_ast,
+                    value=node.value.gen.py_ast,
                 )
             )
         else:
@@ -989,10 +999,15 @@ class PyastGenPass(Pass):
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.
 
-        params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubTag[ExprType]],
+        signature: FuncSignature,
         body: ExprType,
         """
+        node.gen.py_ast = self.sync(
+            ast3.Lambda(
+                args=node.signature.gen.py_ast,
+                body=node.body.gen.py_ast,
+            )
+        )
 
     def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
         """Sub objects.
@@ -1000,6 +1015,12 @@ class PyastGenPass(Pass):
         operand: ExprType,
         op: Token,
         """
+        node.gen.py_ast = self.sync(
+            ast3.UnaryOp(
+                op=node.op.gen.py_ast,
+                operand=node.operand.gen.py_ast,
+            )
+        )
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
@@ -1008,48 +1029,94 @@ class PyastGenPass(Pass):
         value: ExprType,
         else_value: ExprType,
         """
+        node.gen.py_ast = self.sync(
+            ast3.IfExp(
+                test=node.condition.gen.py_ast,
+                body=node.value.gen.py_ast,
+                orelse=node.else_value.gen.py_ast,
+            )
+        )
 
     def exit_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.
 
         strings: Sequence[String | FString],
         """
+        node.gen.py_ast = self.sync(
+            ast3.JoinedStr(
+                values=[x.gen.py_ast for x in node.strings],
+            )
+        )
 
     def exit_f_string(self, node: ast.FString) -> None:
         """Sub objects.
 
         parts: Optional[SubNodeList[String | ExprType]],
         """
+        node.gen.py_ast = self.sync(
+            ast3.FormattedValue(
+                value=node.parts.gen.py_ast,
+                conversion=-1,
+                format_spec=None,
+            )
+            if node.parts
+            else self.sync(ast3.Constant(value=""))
+        )
 
     def exit_expr_list(self, node: ast.ExprList) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType]],
         """
+        node.gen.py_ast = node.values.gen.py_ast if node.values else []
 
     def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType]],
         """
+        node.gen.py_ast = self.sync(
+            ast3.List(
+                elts=node.values.gen.py_ast if node.values else [],
+                ctx=ast3.Load(),
+            )
+        )
 
     def exit_set_val(self, node: ast.SetVal) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType]],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Set(
+                elts=node.values.gen.py_ast if node.values else [],
+                ctx=ast3.Load(),
+            )
+        )
 
     def exit_tuple_val(self, node: ast.TupleVal) -> None:
         """Sub objects.
 
         values: Optional[SubNodeList[ExprType | Assignment]],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Tuple(
+                elts=node.values.gen.py_ast if node.values else [],
+                ctx=ast3.Load(),
+            )
+        )
 
     def exit_dict_val(self, node: ast.DictVal) -> None:
         """Sub objects.
 
         kv_pairs: Sequence[KVPair],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Dict(
+                keys=[x.key.gen.py_ast for x in node.kv_pairs],
+                values=[x.value.gen.py_ast for x in node.kv_pairs],
+            )
+        )
 
     def exit_k_v_pair(self, node: ast.KVPair) -> None:
         """Sub objects.
@@ -1057,15 +1124,29 @@ class PyastGenPass(Pass):
         key: ExprType,
         value: ExprType,
         """
+        node.gen.py_ast = self.sync(
+            ast3.keyword(
+                arg=node.key.gen.py_ast,
+                value=node.value.gen.py_ast,
+            )
+        )
 
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
         out_expr: ExprType,
-        names: SubNodeList[AtomType],
+        target: ExprType,
         collection: ExprType,
         conditional: Optional[ExprType],
         """
+        node.gen.py_ast = self.sync(
+            ast3.comprehension(
+                target=node.target.gen.py_ast,
+                iter=node.collection.gen.py_ast,
+                ifs=[node.conditional.gen.py_ast] if node.conditional else [],
+                is_async=0,
+            )
+        )
 
     def exit_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.

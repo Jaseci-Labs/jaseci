@@ -1753,10 +1753,13 @@ class JacParser(Pass):
             if isinstance(chomp[0], ast.ExprType):
                 return self.nu(
                     ast.LambdaExpr(
-                        params=params,
-                        return_type=return_type,
+                        signature=ast.FuncSignature(
+                            params=params,
+                            return_type=return_type,
+                            kid=[params, return_type],
+                        ),
                         body=chomp[0],
-                        kid=kid,
+                        kid=[i for i in kid if i != params and i != return_type],
                     )
                 )
             else:
@@ -2544,10 +2547,18 @@ class JacParser(Pass):
                 and isinstance(kid[2], ast.SubNodeList)
                 and isinstance(kid[4], ast.ExprType)
             ):
+                target = kid[2]
+                if len(target.items) == 1:
+                    target = target.items[0]
+                else:
+                    new_targ = ast.TupleVal(values=target, kid=[target])
+                    new_targ.parent = target.parent
+                    kid = [i if i != target else new_targ for i in kid]
+                    target = new_targ
                 return self.nu(
                     ast.InnerCompr(
                         out_expr=kid[0],
-                        names=kid[2],
+                        target=target,
                         collection=kid[4],
                         conditional=kid[6]
                         if len(kid) > 5 and isinstance(kid[6], ast.ExprType)

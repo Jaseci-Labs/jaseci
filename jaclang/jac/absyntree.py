@@ -190,7 +190,7 @@ class SubNodeList(AstNode, Generic[T]):
 
     def __init__(
         self,
-        items: Sequence[T],
+        items: list[T],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize sub node list node."""
@@ -1128,14 +1128,12 @@ class LambdaExpr(AstNode):
 
     def __init__(
         self,
-        params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubTag[ExprType]],
+        signature: FuncSignature,
         body: ExprType,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize lambda expression node."""
-        self.params = params
-        self.return_type = return_type
+        self.signature = signature
         self.body = body
         AstNode.__init__(self, kid=kid)
 
@@ -1320,14 +1318,14 @@ class InnerCompr(AstNode):
     def __init__(
         self,
         out_expr: ExprType,
-        names: SubNodeList[AtomType],
+        target: ExprType,
         collection: ExprType,
         conditional: Optional[ExprType],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
         self.out_expr = out_expr
-        self.names = names
+        self.target = target
         self.collection = collection
         self.conditional = conditional
 

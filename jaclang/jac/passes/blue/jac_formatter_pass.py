@@ -1187,8 +1187,7 @@ class JacFormatPass(Pass):
         is_gen: bool,
         is_set: bool,
         """
-        self.comma_sep_node_list(node.names)
-        names = node.names.gen.jac
+        names = node.target.gen.jac
         partial = (
             f"{node.out_expr.gen.jac} for {names} " f"in {node.collection.gen.jac}"
         )
