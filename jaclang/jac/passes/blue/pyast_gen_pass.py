@@ -73,7 +73,7 @@ class PyastGenPass(Pass):
                 level=0,
             )
         )
-        self.already_added["enum"] = True
+        self.already_added["dataclass"] = True
 
     def needs_test(self) -> None:
         """Check if test is needed."""
@@ -1225,6 +1225,7 @@ class PyastGenPass(Pass):
         is_paren: bool,
         is_null_ok: bool,
         """
+        # TODO: Come back
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -1232,6 +1233,25 @@ class PyastGenPass(Pass):
         target: AtomType,
         params: Optional[SubNodeList[ExprType | Assignment]],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Call(
+                func=node.target.gen.py_ast,
+                args=[
+                    x.gen.py_ast
+                    for x in node.params.items
+                    if isinstance(x, ast.ExprType)
+                ]
+                if node.params
+                else [],
+                keywords=[
+                    x.gen.py_ast
+                    for x in node.params.items
+                    if isinstance(x, ast.Assignment)  # TODO: FIRST: make keywords
+                ]
+                if node.params
+                else [],
+            )
+        )
 
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
@@ -1241,12 +1261,20 @@ class PyastGenPass(Pass):
         step: Optional[ExprType],
         is_range: bool,
         """
+        node.gen.py_ast = self.sync(
+            ast3.Slice(
+                lower=node.start.gen.py_ast if node.start else None,
+                upper=node.stop.gen.py_ast if node.stop else None,
+                step=node.step.gen.py_ast if node.step else None,
+            )
+        )
 
     def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Sub objects.
 
         var: Token,
         """
+        node.gen.py_ast = self.sync(ast3.Name(id=node.sym_name, ctx=ast3.Load()))
 
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
@@ -1255,12 +1283,14 @@ class PyastGenPass(Pass):
         filter_cond: Optional[SubNodeList[BinaryExpr]],
         edge_dir: EdgeDir,
         """
+        self.error("DS Not implemented yet.")
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
 
         edge_spec: EdgeOpRef,
         """
+        self.error("DS Not implemented yet.")
 
     def exit_connect_op(self, node: ast.ConnectOp) -> None:
         """Sub objects.
@@ -1269,12 +1299,14 @@ class PyastGenPass(Pass):
         conn_assign: Optional[SubNodeList[Assignment]],
         edge_dir: EdgeDir,
         """
+        self.error("DS Not implemented yet.")
 
     def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
         compares: SubNodeList[BinaryExpr],
         """
+        self.error("DS Not implemented yet.")
 
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.
@@ -1282,6 +1314,12 @@ class PyastGenPass(Pass):
         target: SubNodeList[ExprType],
         cases: list[MatchCase],
         """
+        node.gen.py_ast = self.sync(
+            ast3.Match(
+                subject=node.target.gen.py_ast,
+                cases=[x.gen.py_ast for x in node.cases],
+            )
+        )
 
     def exit_match_case(self, node: ast.MatchCase) -> None:
         """Sub objects.
@@ -1376,6 +1414,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        node.gen.py_ast = self.sync(ast3.Name(id=node.sym_name, ctx=ast3.Load()))
 
     def exit_float(self, node: ast.Float) -> None:
         """Sub objects.
@@ -1388,6 +1427,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        node.gen.py_ast = self.sync(ast3.Constant(value=float(node.value)))
 
     def exit_int(self, node: ast.Int) -> None:
         """Sub objects.
@@ -1400,6 +1440,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        node.gen.py_ast = self.sync(ast3.Constant(value=int(node.value)))
 
     def exit_string(self, node: ast.String) -> None:
         """Sub objects.
@@ -1412,6 +1453,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        node.gen.py_ast = self.sync(ast3.Constant(value=node.value))
 
     def exit_bool(self, node: ast.Bool) -> None:
         """Sub objects.
@@ -1424,6 +1466,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        node.gen.py_ast = self.sync(ast3.Constant(value=bool(node.value)))
 
     def exit_builtin_type(self, node: ast.BuiltinType) -> None:
         """Sub objects.
@@ -1436,6 +1479,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        node.gen.py_ast = self.sync(ast3.Name(id=node.sym_name, ctx=ast3.Load()))
 
     def exit_null(self, node: ast.Null) -> None:
         """Sub objects.
@@ -1448,6 +1492,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        node.gen.py_ast = self.sync(ast3.Constant(value=None))
 
     def exit_semi(self, node: ast.Semi) -> None:
         """Sub objects.
