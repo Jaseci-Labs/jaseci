@@ -67,15 +67,15 @@ if __name__ == "__main__":
 
 # Unit Tests!
 class TestShapesFunctions(unittest.TestCase):
-    def test_calculate_area(self):
+    def test_calculate_area(self) -> None:
         expected_area = 78.53981633974483
         self.assertAlmostEqual(calculate_area(RAD), expected_area)
 
-    def test_circle_area(self):
+    def test_circle_area(self) -> None:
         c = Circle(RAD)
         expected_area = 78.53981633974483
         self.assertAlmostEqual(c.area(), expected_area)
 
-    def test_circle_type(self):
+    def test_circle_type(self) -> None:
         c = Circle(RAD)
         self.assertEqual(c.shape_type, ShapeType.CIRCLE)

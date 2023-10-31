@@ -16,7 +16,6 @@ class SubNodePassTests(TestCase):
         """Basic test for pass."""
         code_gen = jac_file_to_pass(
             file_path=self.fixture_abs_path("../../../../../cli/cli.jac"),
-            base_dir="",
             target=SubNodeTabPass,
         )
         for i in code_gen.ir.kid[1].kid:

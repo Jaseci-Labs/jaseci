@@ -66,7 +66,6 @@ class Workspace:
             build = jac_str_to_pass(
                 jac_str=source,
                 file_path=file,
-                base_dir=self.path,
                 target=DefUsePass,
             )
             if not isinstance(build.ir, ast.Module):
@@ -89,9 +88,9 @@ class Workspace:
                 warnings=build.warnings_had,
             )
             if build.ir:
-                for sub in build.ir.meta["sub_import_tab"]:
+                for sub in build.ir.mod_deps:
                     self.modules[sub] = ModuleInfo(
-                        ir=build.ir.meta["sub_import_tab"][sub],
+                        ir=build.ir.mod_deps[sub],
                         errors=build.errors_had,
                         warnings=build.warnings_had,
                     )
@@ -103,7 +102,6 @@ class Workspace:
         build = jac_str_to_pass(
             jac_str=source,
             file_path=file_path,
-            base_dir=self.path,
             target=DefUsePass,
         )
         if not isinstance(build.ir, ast.Module):
@@ -126,9 +124,9 @@ class Workspace:
             warnings=build.warnings_had,
         )
         if deep:
-            for sub in build.ir.meta["sub_import_tab"]:
+            for sub in build.ir.mod_deps:
                 self.modules[sub] = ModuleInfo(
-                    ir=build.ir.meta["sub_import_tab"][sub],
+                    ir=build.ir.mod_deps[sub],
                     errors=build.errors_had,
                     warnings=build.warnings_had,
                 )

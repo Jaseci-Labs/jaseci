@@ -17,11 +17,10 @@ from jaclang.jac.passes.transform import Alert
 T = TypeVar("T", bound=Pass)
 
 
-def transpile_jac_blue(file_path: str, base_dir: str) -> list[Alert]:
+def transpile_jac_blue(file_path: str) -> list[Alert]:
     """Transpiler Jac file and return python code as string."""
     code = jac_file_to_pass(
         file_path=file_path,
-        base_dir=base_dir,
         target=BluePygenPass,
         schedule=pass_schedule,
     )
@@ -32,13 +31,12 @@ def transpile_jac_blue(file_path: str, base_dir: str) -> list[Alert]:
     return print_pass.errors_had
 
 
-def transpile_jac_purple(file_path: str, base_dir: str) -> list[Alert]:
+def transpile_jac_purple(file_path: str) -> list[Alert]:
     """Transpiler Jac file and return python code as string."""
     from jaclang.jac.passes.purple import pass_schedule, PurplePygenPass
 
     code = jac_file_to_pass(
         file_path=file_path,
-        base_dir=base_dir,
         target=PurplePygenPass,
         schedule=pass_schedule,
     )
@@ -51,7 +49,6 @@ def transpile_jac_purple(file_path: str, base_dir: str) -> list[Alert]:
 
 def jac_file_to_pass(
     file_path: str,
-    base_dir: str = "",
     target: Type[T] = BluePygenPass,
     schedule: list[Type[T]] = pass_schedule,
 ) -> T:
@@ -60,7 +57,6 @@ def jac_file_to_pass(
         return jac_str_to_pass(
             jac_str=file.read(),
             file_path=file_path,
-            base_dir=base_dir,
             target=target,
             schedule=schedule,
         )
@@ -69,7 +65,6 @@ def jac_file_to_pass(
 def jac_str_to_pass(
     jac_str: str,
     file_path: str,
-    base_dir: str = "",
     target: Type[T] = BluePygenPass,
     schedule: list[Type[T]] = pass_schedule,
 ) -> T:
@@ -86,7 +81,6 @@ def jac_str_to_pass(
 
 def jac_file_formatter(
     file_path: str,
-    base_dir: str = "",
     schedule: list[Type[T]] = format_pass,
 ) -> JacFormatPass:
     """Convert a Jac file to an AST."""

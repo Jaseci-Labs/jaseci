@@ -26,7 +26,7 @@ class DotGraphDrawerPassTests(TestCase):
     def test_report_generation(self) -> None:
         """Basic test for pass."""
         state = jac_file_to_pass(
-            self.fixture_abs_path("multi_def_err.jac"), "", AstDotGraphPass
+            self.fixture_abs_path("multi_def_err.jac"), AstDotGraphPass
         )
         self.assertFalse(state.errors_had)
 
@@ -60,7 +60,7 @@ class AstPrinterPassTest(TestCase):
         """Basic test for pass."""
         AstPrinterPass.SAVE_OUTPUT = "out.txt"
         state = jac_file_to_pass(
-            self.fixture_abs_path("multi_def_err.jac"), "", AstPrinterPass
+            self.fixture_abs_path("multi_def_err.jac"), AstPrinterPass
         )
         self.assertFalse(state.errors_had)
 

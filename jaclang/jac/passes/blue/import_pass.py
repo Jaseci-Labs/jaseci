@@ -8,6 +8,7 @@ import ast as py_ast
 import importlib.util
 import sys
 from os import path
+from typing import Optional
 
 
 import jaclang.jac.absyntree as ast
@@ -20,7 +21,7 @@ class ImportPass(Pass):
 
     def before_pass(self) -> None:
         """Run once before pass."""
-        self.import_table = {}
+        self.import_table: dict[str, ast.Module] = {}
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
@@ -46,7 +47,7 @@ class ImportPass(Pass):
                 #     self.import_py_module(node=i, mod_path=node.mod_path)
                 self.enter_import(i)
             SubNodeTabPass(prior=self, input_ir=node)
-        node.meta["sub_import_tab"] = self.import_table
+        node.mod_deps = self.import_table
 
     def enter_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -59,8 +60,8 @@ class ImportPass(Pass):
         self.sub_module = None
         """
         self.cur_node = node
-        if node.alias and node.sub_module:
-            node.sub_module.name = node.alias.value
+        if node.path.alias and node.sub_module:
+            node.sub_module.name = node.path.alias.value
         # Items matched during def/decl pass
 
     # Utility functions
@@ -83,9 +84,7 @@ class ImportPass(Pass):
         if not path.exists(target):
             self.error(f"Could not find module {target}", node_override=node)
         try:
-            mod_pass = jac_file_to_pass(
-                file_path=target, base_dir=base_dir, target=SubNodeTabPass
-            )
+            mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
             self.errors_had += mod_pass.errors_had
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir
@@ -102,9 +101,9 @@ class ImportPass(Pass):
             )
             return None
 
-    def import_py_module(self, node: ast.Import, mod_path: str) -> ast.Module | None:
+    def import_py_module(self, node: ast.Import, mod_path: str) -> Optional[ast.Module]:
         """Import a module."""
-        from jaclang.jac.passes.blue import PyAstBuildPass
+        from jaclang.jac.passes.blue import PyastBuildPass
 
         base_dir = path.dirname(mod_path)
 
@@ -118,13 +117,16 @@ class ImportPass(Pass):
                 if spec.origin in self.import_table:
                     return self.import_table[spec.origin]
                 with open(spec.origin, "r", encoding="utf-8") as f:
-                    mod = PyAstBuildPass(
+                    mod = PyastBuildPass(
                         input_ir=ast.PythonModuleAst(
                             py_ast.parse(f.read()), mod_path=mod_path
                         ),
                     ).ir
-                self.import_table[spec.origin] = mod
-                return mod
+                if mod:
+                    self.import_table[spec.origin] = mod
+                    return mod
+                else:
+                    raise self.ice(f"Failed to import python module: {spec.origin}")
         except Exception as e:
             self.error(f"Failed to import python module: {e}", node_override=node)
-            return None
+        return None

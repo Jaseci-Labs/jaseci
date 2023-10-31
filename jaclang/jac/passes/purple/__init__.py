@@ -10,7 +10,7 @@ PurplePygenPass = purple.PurplePygenPass  # type: ignore
 
 
 pass_schedule = [
-    *pass_schedule[:-1],
+    *pass_schedule[:-2],
     AnalyzePass,
     PurplePygenPass,
 ]

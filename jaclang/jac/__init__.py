@@ -20,7 +20,7 @@ if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac_parser.py")):
         os.path.join(cur_dir, "__jac_gen__", "jac_parser.py"),
         "-c",
     ]
-    standalone.main()
+    standalone.main()  # type: ignore
     sys.argv = save_argv
 
 from .__jac_gen__ import jac_parser as jac_lark  # noqa: E402

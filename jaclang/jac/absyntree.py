@@ -1,11 +1,11 @@
 """Abstract class for IR Passes for Jac."""
 from __future__ import annotations
 
-import ast as py_ast
+import ast as ast3
 import pprint
 from typing import Generic, Optional, Sequence, TypeVar, Union
 
-from jaclang.jac.codeloc import CodeLocInfo
+from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
@@ -21,8 +21,10 @@ class AstNode:
         self.sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
         self._typ: type = type(None)
-        self.meta: dict = {}
+        self.gen: CodeGenTarget = CodeGenTarget()
+        self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
+        self.py_ast: ast3.AST | list[ast3.AST]
 
     def add_kids_left(
         self, nodes: Sequence[AstNode], pos_update: bool = True
@@ -77,13 +79,13 @@ class AstNode:
 
         return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
 
-    def to_dict(self) -> dict[str, Union[str, Sequence[AstNode], int]]:
+    def to_dict(self) -> dict[str, str]:
         """Return dict representation of node."""
         ret = {
             "node": str(type(self).__name__),
-            "kid": [x.to_dict() for x in self.kid if x],
-            "line": self.loc.first_line,
-            "col": self.loc.col_start,
+            "kid": str([x.to_dict() for x in self.kid if x]),
+            "line": str(self.loc.first_line),
+            "col": str(self.loc.col_start),
         }
         if isinstance(self, Token):
             ret["name"] = self.name
@@ -170,48 +172,6 @@ class WalkerStmtOnlyNode(AstNode):
 T = TypeVar("T", bound=AstNode)
 
 
-# AST Mid Level Node Types
-# --------------------------
-class Module(AstDocNode):
-    """Whole Program node type for Jac Ast."""
-
-    def __init__(
-        self,
-        name: str,
-        source: JacSource,
-        doc: Optional[String],
-        body: Sequence[ElementStmt],
-        is_imported: bool,
-        kid: Sequence[AstNode],
-    ) -> None:
-        """Initialize whole program node."""
-        self.name = name
-        self.source = source
-        self.body = body
-        self.is_imported = is_imported
-        AstNode.__init__(self, kid=kid)
-        AstDocNode.__init__(self, doc=doc)
-
-
-class GlobalVars(AstAccessNode, AstDocNode):
-    """GlobalVars node type for Jac Ast."""
-
-    def __init__(
-        self,
-        access: Optional[SubTag[Token]],
-        assignments: SubNodeList[Assignment],
-        is_frozen: bool,
-        kid: Sequence[AstNode],
-        doc: Optional[String] = None,
-    ) -> None:
-        """Initialize global var node."""
-        self.assignments = assignments
-        self.is_frozen = is_frozen
-        AstNode.__init__(self, kid=kid)
-        AstAccessNode.__init__(self, access=access)
-        AstDocNode.__init__(self, doc=doc)
-
-
 class SubTag(AstNode, Generic[T]):
     """SubTag node type for Jac Ast."""
 
@@ -236,6 +196,49 @@ class SubNodeList(AstNode, Generic[T]):
         """Initialize sub node list node."""
         self.items = items
         AstNode.__init__(self, kid=kid)
+
+
+# AST Mid Level Node Types
+# --------------------------
+class Module(AstDocNode):
+    """Whole Program node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: str,
+        source: JacSource,
+        doc: Optional[String],
+        body: Sequence[ElementStmt],
+        is_imported: bool,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize whole program node."""
+        self.name = name
+        self.source = source
+        self.body = body
+        self.is_imported = is_imported
+        self.mod_deps: dict[str, Module] = {}
+        AstNode.__init__(self, kid=kid)
+        AstDocNode.__init__(self, doc=doc)
+
+
+class GlobalVars(AstAccessNode, AstDocNode):
+    """GlobalVars node type for Jac Ast."""
+
+    def __init__(
+        self,
+        access: Optional[SubTag[Token]],
+        assignments: SubNodeList[Assignment],
+        is_frozen: bool,
+        kid: Sequence[AstNode],
+        doc: Optional[String] = None,
+    ) -> None:
+        """Initialize global var node."""
+        self.assignments = assignments
+        self.is_frozen = is_frozen
+        AstNode.__init__(self, kid=kid)
+        AstAccessNode.__init__(self, access=access)
+        AstDocNode.__init__(self, doc=doc)
 
 
 class Test(AstSymbolNode, AstDocNode):
@@ -313,14 +316,13 @@ class PyInlineCode(AstDocNode):
         AstDocNode.__init__(self, doc=doc)
 
 
-class Import(AstSymbolNode, AstDocNode):
+class Import(AstDocNode):
     """Import node type for Jac Ast."""
 
     def __init__(
         self,
         lang: SubTag[Name],
         path: ModulePath,
-        alias: Optional[Name],
         items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
@@ -330,32 +332,33 @@ class Import(AstSymbolNode, AstDocNode):
         """Initialize import node."""
         self.lang = lang
         self.path = path
-        self.alias = alias
         self.items = items
         self.is_absorb = is_absorb
         self.sub_module = sub_module
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(
-            self,
-            sym_name=alias.sym_name if alias else path.path_str,
-            sym_name_node=alias if alias else path,
-            sym_type=SymbolType.MODULE,
-        )
         AstDocNode.__init__(self, doc=doc)
 
 
-class ModulePath(AstNode):
+class ModulePath(AstSymbolNode):
     """ModulePath node type for Jac Ast."""
 
     def __init__(
         self,
         path: Sequence[Token],
+        alias: Optional[Name],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize module path node."""
         self.path = path
-        self.path_str = "".join([p.value for p in path])
+        self.alias = alias
+        self.path_str: str = "".join([p.value for p in path])
         AstNode.__init__(self, kid=kid)
+        AstSymbolNode.__init__(
+            self,
+            sym_name=alias.sym_name if alias else self.path_str,
+            sym_name_node=alias if alias else self,
+            sym_type=SymbolType.MODULE,
+        )
 
 
 class ModuleItem(AstSymbolNode):
@@ -366,12 +369,10 @@ class ModuleItem(AstSymbolNode):
         name: Name,
         alias: Optional[Name],
         kid: Sequence[AstNode],
-        body: Optional[AstNode] = None,
     ) -> None:
         """Initialize module item node."""
         self.name = name
         self.alias = alias
-        self.body = body
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -512,7 +513,7 @@ class Ability(AstSymbolNode, AstAccessNode, AstDocNode, AstAsyncNode):
         is_abstract: bool,
         access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | ExprType | EventSignature],
-        body: Optional[SubNodeList[CodeBlockStmt]],
+        body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
@@ -624,7 +625,7 @@ class ArchRefChain(AstNode):
 
     def __init__(
         self,
-        archs: Sequence[ArchRef],
+        archs: list[ArchRef],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize name list ."""
@@ -781,7 +782,7 @@ class Except(AstNode):
     def __init__(
         self,
         ex_type: ExprType,
-        name: Optional[Token],
+        name: Optional[Name],
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
@@ -833,7 +834,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode):
 
     def __init__(
         self,
-        name_list: SubNodeList[Name],
+        target: SubNodeList[Name],
         is_async: bool,
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
@@ -841,7 +842,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode):
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize in for node."""
-        self.name_list = name_list
+        self.target = target
         self.collection = collection
         self.body = body
         AstNode.__init__(self, kid=kid)
@@ -1114,6 +1115,9 @@ class BinaryExpr(AstNode):
         self.left = left
         self.right = right
         self.op = op
+        # below is used for paren matching with PIPE_FWD ops
+        self.pipe_chain_count = 0
+        self.a_pipe_chain_count = 0
         AstNode.__init__(self, kid=kid)
 
 
@@ -1943,7 +1947,7 @@ class JacSource(EmptyToken):
 class PythonModuleAst(EmptyToken):
     """SourceString node type for Jac Ast."""
 
-    def __init__(self, ast: py_ast.Module, mod_path: str) -> None:
+    def __init__(self, ast: ast3.Module, mod_path: str) -> None:
         """Initialize source string."""
         super().__init__()
         self.ast = ast

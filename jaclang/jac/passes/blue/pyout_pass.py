@@ -32,7 +32,10 @@ class PyOutPass(Pass):
         is_imported: bool,
         sym_tab: Optional[SymbolTable],
         """
-        if not (os.path.exists(node.loc.mod_path) and node.meta.get("py_code")):
+        if not (os.path.exists(node.loc.mod_path) and node.gen.py):
+            self.error(
+                f"Unable to find module {node.loc.mod_path} or no code present.", node
+            )
             return
         mods = [node] + self.get_all_sub_nodes(node, ast.Module)
         for mod in mods:
@@ -48,15 +51,15 @@ class PyOutPass(Pass):
     def gen_python(self, node: ast.Module, out_path: str) -> None:
         """Generate Python."""
         with open(out_path, "w") as f:
-            f.write(node.meta["py_code"])
+            f.write(node.gen.py)
 
     def compile_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
         """Generate Python."""
         try:
-            codeobj = compile(node.meta["py_code"], f"_jac_py_gen ({mod_path})", "exec")
+            codeobj = compile(node.gen.py, f"_jac_py_gen ({mod_path})", "exec")
         except Exception as e:
             tb = traceback.extract_tb(e.__traceback__)
-            err = handle_jac_error(node.meta["py_code"], e, tb)
+            err = handle_jac_error(node.gen.py, e, tb)
             raise type(e)(str(e) + "\n" + err)
         with open(out_path, "wb") as f:
             marshal.dump(codeobj, f)
