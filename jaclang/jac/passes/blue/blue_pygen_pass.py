@@ -692,13 +692,13 @@ class BluePygenPass(Pass):
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        name_list: SubNodeList[Name],
+        target: ExprType,
+        is_async: bool,
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
+        else_body: Optional[ElseStmt],
         """
-        self.comma_sep_node_list(node.target)
-        names = node.target.gen.py
-        self.emit_ln(node, f"for {names} in {node.collection.gen.py}:")
+        self.emit_ln(node, f"for {node.target.gen.py} in {node.collection.gen.py}:")
         self.indent_level += 1
         self.nl_sep_node_list(node.body)
         self.emit_ln(node, node.body.gen.py)
