@@ -677,7 +677,7 @@ class PyastGenPass(Pass):
 
         body: SubNodeList[CodeBlockStmt],
         """
-        node.gen.py_ast = self.sync(ast3.If(test=ast3.NameConstant(value=True)))
+        node.gen.py_ast = self.sync(ast3.If(test=ast3.Constant(value=True)))
 
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.

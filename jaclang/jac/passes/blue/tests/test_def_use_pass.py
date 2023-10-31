@@ -15,7 +15,6 @@ class DefUsePassTests(TestCase):
         """Basic test for pass."""
         state = jac_file_to_pass(
             file_path=self.fixture_abs_path("defs_and_uses.jac"),
-            base_dir="",
             target=DefUsePass,
         )
         # for i in state.unlinked:

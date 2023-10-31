@@ -13,9 +13,7 @@ class DeclDefMatchPassTests(TestCase):
 
     def test_ability_connected_to_decl(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(
-            self.fixture_abs_path("base.jac"), "", DeclDefMatchPass
-        )
+        state = jac_file_to_pass(self.fixture_abs_path("base.jac"), DeclDefMatchPass)
         self.assertFalse(state.errors_had)
         self.assertIn("(o)Test.(a)say_hi", state.ir.sym_tab.tab)
         self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(a)say_hi"].decl.body)
@@ -24,9 +22,7 @@ class DeclDefMatchPassTests(TestCase):
 
     def test_ability_connected_to_decl_post(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(
-            self.fixture_abs_path("base2.jac"), "", DeclDefMatchPass
-        )
+        state = jac_file_to_pass(self.fixture_abs_path("base2.jac"), DeclDefMatchPass)
         self.assertFalse(state.errors_had)
         self.assertIn("(o)Test.(a)say_hi", state.ir.sym_tab.tab)
         self.assertIsNotNone(state.ir.sym_tab.tab["(o)Test.(a)say_hi"].decl.body)

@@ -217,6 +217,7 @@ class Module(AstDocNode):
         self.source = source
         self.body = body
         self.is_imported = is_imported
+        self.mod_deps: dict[str, Module] = {}
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 

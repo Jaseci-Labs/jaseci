@@ -39,9 +39,9 @@ class PyastBuildPass(Pass):
         else:
             raise self.ice(f"Unknown node type {type(node).__name__}")
 
-    def transform(self, ir: ast.PythonModuleAst) -> Optional[ast.Module]:
+    def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
         """Transform input IR."""
-        self.ir = self.proc_module(ir.ast)
+        self.ir: ast.Module = self.proc_module(ir.ast)
         return self.ir
 
     def proc_module(self, node: py_ast.Module) -> ast.Module:

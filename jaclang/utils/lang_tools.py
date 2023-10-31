@@ -4,7 +4,7 @@ import ast as py_ast
 import inspect
 import os
 import sys
-from typing import List, Optional
+from typing import List, Optional, Type
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.tool.schedules import (
@@ -41,7 +41,7 @@ class AstNodeInfo:
         self.cls = cls
         self.process(cls)
 
-    def process(self, cls: type) -> None:
+    def process(self, cls: Type[ast.AstNode]) -> None:
         """Process AstNode class."""
         self.name = cls.__name__
         self.doc = cls.__doc__
@@ -202,7 +202,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, AstDotGraphPass, full_ast_dot_gen)
+            jac_file_to_pass(file_name, AstDotGraphPass, full_ast_dot_gen)
             if AstDotGraphPass.OUTPUT_FILE_PATH:
                 return f"Dot file generated at {AstDotGraphPass.OUTPUT_FILE_PATH}"
             else:
@@ -223,7 +223,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, AstPrinterPass, full_ast_print)
+            jac_file_to_pass(file_name, AstPrinterPass, full_ast_print)
             return ""
         else:
             return "Not a .jac file."
@@ -241,7 +241,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, SymbolTablePrinterPass, sym_tab_print)
+            jac_file_to_pass(file_name, SymbolTablePrinterPass, sym_tab_print)
             return ""
         else:
             return "Not a .jac file."
@@ -260,7 +260,7 @@ class AstTool:
         if file_name.endswith(".jac"):
             [base, mod] = os.path.split(file_name)
             base = base if base else "./"
-            jac_file_to_pass(file_name, base, SymbolTableDotGraphPass, sym_tab_dot_gen)
+            jac_file_to_pass(file_name, SymbolTableDotGraphPass, sym_tab_dot_gen)
             if SymbolTableDotGraphPass.OUTPUT_FILE_PATH:
                 return (
                     f"Dot file generated at {SymbolTableDotGraphPass.OUTPUT_FILE_PATH}"
