@@ -136,7 +136,7 @@ except_list: except_def+
 except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
 finally_stmt: KW_FINALLY code_block
 
-for_stmt: KW_ASYNC? KW_FOR assignment KW_TO expression KW_BY expression code_block else_stmt?
+for_stmt: KW_ASYNC? KW_FOR assignment KW_TO expression KW_BY assignment code_block else_stmt?
         | KW_ASYNC? KW_FOR atomic_list KW_IN expression code_block else_stmt?
 
 while_stmt: KW_WHILE expression code_block
@@ -161,6 +161,7 @@ nonlocal_ref: NONLOCAL_OP name_list
 
 assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_stmt | expression)
           | atomic_chain type_tag (EQ (yield_stmt | expression))?
+          | atomic_chain aug_op (yield_stmt | expression)
 
 expression: pipe KW_IF expression KW_ELSE expression
           | pipe
@@ -235,7 +236,7 @@ unpack: ref
 ref: walrus_assign
    | BW_AND walrus_assign
 
-walrus_assign: ds_call walrus_op walrus_assign
+walrus_assign: ds_call WALRUS_EQ walrus_assign
              | ds_call
 
 ds_call: atomic_chain
@@ -243,20 +244,19 @@ ds_call: atomic_chain
        | A_PIPE_FWD atomic_chain
        | KW_SPAWN atomic_chain
 
-walrus_op: RSHIFT_EQ
-         | LSHIFT_EQ
-         | BW_NOT_EQ
-         | BW_XOR_EQ
-         | BW_OR_EQ
-         | BW_AND_EQ
-         | MOD_EQ
-         | DIV_EQ
-         | FLOOR_DIV_EQ
-         | MUL_EQ
-         | SUB_EQ
-         | ADD_EQ
-         | WALRUS_EQ
-         | MATMUL_EQ
+aug_op: RSHIFT_EQ
+       | LSHIFT_EQ
+       | BW_NOT_EQ
+       | BW_XOR_EQ
+       | BW_OR_EQ
+       | BW_AND_EQ
+       | MOD_EQ
+       | DIV_EQ
+       | FLOOR_DIV_EQ
+       | MUL_EQ
+       | SUB_EQ
+       | ADD_EQ
+       | MATMUL_EQ
 
 cmp_op: KW_ISN
       | KW_IS

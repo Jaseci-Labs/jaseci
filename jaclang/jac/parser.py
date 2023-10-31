@@ -1243,7 +1243,7 @@ class JacParser(Pass):
             if isinstance(chomp[1], ast.Assignment):
                 if (
                     isinstance(chomp[3], ast.ExprType)
-                    and isinstance(chomp[5], ast.ExprType)
+                    and isinstance(chomp[5], ast.Assignment)
                     and isinstance(chomp[6], ast.SubNodeList)
                 ):
                     return self.nu(
@@ -1610,13 +1610,23 @@ class JacParser(Pass):
 
             assignment: KW_FREEZE? (atomic_chain EQ)+ (yield_stmt | expression)
                     | atomic_chain type_tag (EQ (yield_stmt | expression))?
+                    | atomic_chain aug_op (yield_stmt | expression)
             """
             chomp = [*kid]
             is_frozen = (
                 isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_FREEZE
             )
+            is_aug = None
             chomp = chomp[1:] if is_frozen else chomp
             if (
+                len(chomp) > 1
+                and isinstance(chomp[1], ast.Token)
+                and chomp[1].name != Tok.EQ
+            ):
+                assignees = [chomp[0]]
+                is_aug = chomp[1]
+                chomp = chomp[2:]
+            elif (
                 len(chomp) > 1
                 and isinstance(chomp[1], ast.Token)
                 and chomp[1].name == Tok.EQ
@@ -1657,6 +1667,17 @@ class JacParser(Pass):
                 if len(chomp) > 0 and isinstance(chomp[0], valid_types)
                 else None
             )
+            if is_aug:
+                return self.nu(
+                    ast.Assignment(
+                        target=assignees,
+                        type_tag=type_tag,
+                        value=value,
+                        mutable=is_frozen,
+                        aug_op=is_aug,
+                        kid=kid,
+                    )
+                )
             return self.nu(
                 ast.Assignment(
                     target=assignees,
@@ -1970,10 +1991,10 @@ class JacParser(Pass):
                     raise self.ice()
             return self.binary_expr_unwind(kid)
 
-        def walrus_op(self, kid: list[ast.AstNode]) -> ast.Token:
+        def aug_op(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
 
-            walrus_op: RSHIFT_EQ
+            aug_op: RSHIFT_EQ
                      | LSHIFT_EQ
                      | BW_NOT_EQ
                      | BW_XOR_EQ

@@ -814,7 +814,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode):
         iter: Assignment,
         is_async: bool,
         condition: ExprType,
-        count_by: ExprType,
+        count_by: Assignment,
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
@@ -1092,11 +1092,13 @@ class Assignment(AstTypedVarNode):
         type_tag: Optional[SubTag[ExprType]],
         kid: Sequence[AstNode],
         mutable: bool = True,
+        aug_op: Optional[Token] = None,
     ) -> None:
         """Initialize assignment node."""
         self.target = target
         self.value = value
         self.mutable = mutable
+        self.aug_op = aug_op
         AstNode.__init__(self, kid=kid)
         AstTypedVarNode.__init__(self, type_tag=type_tag)
 
