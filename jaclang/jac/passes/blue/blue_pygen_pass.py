@@ -882,7 +882,9 @@ class BluePygenPass(Pass):
         self.emit(node, node.target.gen.py)
         if node.type_tag:
             self.emit(node, f": {node.type_tag.tag.gen.py}")
-        if node.value:
+        if node.value and node.aug_op:
+            self.emit(node, f" {node.aug_op.value} {node.value.gen.py}")
+        elif node.value:
             self.emit(node, f" = {node.value.gen.py}")
 
     # NOTE: Incomplete for Jac Purple and Red
