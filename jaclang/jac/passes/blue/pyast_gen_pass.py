@@ -317,6 +317,7 @@ class PyastGenPass(Pass):
                     )
                 )
             )
+        node.gen.py_ast = py_nodes
 
     def exit_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -728,6 +729,27 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         """
+        py_nodes = []
+        body = node.body.gen.py_ast
+        if (
+            isinstance(body, list)
+            and isinstance(node.count_by.gen.py_ast, ast3.AST)
+            and isinstance(node.iter.gen.py_ast, ast3.AST)
+        ):
+            body += [node.count_by.gen.py_ast]
+        else:
+            return  # raise self.ice()
+        py_nodes.append(node.iter.gen.py_ast)
+        py_nodes.append(
+            self.sync(
+                ast3.While(
+                    test=node.condition.gen.py_ast,
+                    body=body,
+                    orelse=node.else_body.gen.py_ast if node.else_body else None,
+                )
+            )
+        )
+        node.gen.py_ast = py_nodes
 
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
@@ -738,6 +760,15 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         """
+        for_node = ast3.AsyncFor if node.is_async else ast3.For
+        node.gen.py_ast = self.sync(
+            for_node(
+                target=node.name_list.gen.py_ast,
+                iter=node.collection.gen.py_ast,
+                body=node.body.gen.py_ast,
+                orelse=node.else_body.gen.py_ast if node.else_body else None,
+            )
+        )
 
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
