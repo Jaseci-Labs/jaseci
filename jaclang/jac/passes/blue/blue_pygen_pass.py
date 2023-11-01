@@ -1112,12 +1112,15 @@ class BluePygenPass(Pass):
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
-        out_expr: ExprType,
+        is_async: bool,
         target: ExprType,
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        partial = f"{node.out_expr.gen.py} for {node.target.gen.py} in {node.collection.gen.py}"
+        partial = (
+            f"{'async' if node.is_async else ''} for {node.target.gen.py} in "
+            f"{node.collection.gen.py}"
+        )
         if node.conditional:
             partial += f" if {node.conditional.gen.py}"
         self.emit(node, f"({partial})")
@@ -1125,38 +1128,34 @@ class BluePygenPass(Pass):
     def exit_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.
 
+        out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"[{node.compr.gen.py}]")
+        self.emit(node, f"[{node.out_expr.gen.py} {node.compr.gen.py}]")
 
     def exit_gen_compr(self, node: ast.GenCompr) -> None:
         """Sub objects.
 
+        out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"({node.compr.gen.py},)")
+        self.emit(node, f"({node.out_expr.gen.py} {node.compr.gen.py},)")
 
     def exit_set_compr(self, node: ast.SetCompr) -> None:
         """Sub objects.
 
+        out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"{{{node.compr.gen.py}}}")
+        self.emit(node, f"{{{node.out_expr.gen.py} {node.compr.gen.py}}}")
 
     def exit_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
 
         kv_pair: KVPair,
-        names: SubNodeList[Name],
-        collection: ExprType,
-        conditional: Optional[ExprType],
+        compr: InnerCompr,
         """
-        names = node.names.gen.py
-        partial = f"{node.kv_pair.gen.py} for " f"{names}"
-        partial += f" in {node.collection.gen.py}"
-        if node.conditional:
-            partial += f" if {node.conditional.gen.py}"
-        self.emit(node, f"{{{partial}}}")
+        self.emit(node, f"{{{node.kv_pair.gen.py} {node.compr.gen.py}}}")
 
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.

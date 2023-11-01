@@ -2495,11 +2495,12 @@ class JacParser(Pass):
         def list_compr(self, kid: list[ast.AstNode]) -> ast.ListCompr:
             """Grammar rule.
 
-            list_compr: LSQUARE inner_compr RSQUARE
+            list_compr: LSQUARE expression inner_compr RSQUARE
             """
-            if isinstance(kid[1], ast.InnerCompr):
+            if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.InnerCompr):
                 return self.nu(
                     ast.ListCompr(
+                        out_expr=kid[0],
                         compr=kid[1],
                         kid=kid,
                     )
@@ -2510,11 +2511,12 @@ class JacParser(Pass):
         def gen_compr(self, kid: list[ast.AstNode]) -> ast.GenCompr:
             """Grammar rule.
 
-            gen_compr: LPAREN inner_compr RPAREN
+            gen_compr: LSQUARE expression inner_compr RSQUARE
             """
-            if isinstance(kid[1], ast.InnerCompr):
+            if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.InnerCompr):
                 return self.nu(
                     ast.GenCompr(
+                        out_expr=kid[0],
                         compr=kid[1],
                         kid=kid,
                     )
@@ -2525,44 +2527,13 @@ class JacParser(Pass):
         def set_compr(self, kid: list[ast.AstNode]) -> ast.SetCompr:
             """Grammar rule.
 
-            set_compr: LBRACE inner_compr RBRACE
+            set_compr: LSQUARE expression inner_compr RSQUARE
             """
-            if isinstance(kid[1], ast.InnerCompr):
+            if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.InnerCompr):
                 return self.nu(
                     ast.SetCompr(
-                        compr=kid[1],
-                        kid=kid,
-                    )
-                )
-            else:
-                raise self.ice()
-
-        def inner_compr(self, kid: list[ast.AstNode]) -> ast.InnerCompr:
-            """Grammar rule.
-
-            inner_compr: expression KW_FOR atom_list KW_IN walrus_assign (KW_IF expression)?
-            """
-            if (
-                isinstance(kid[0], ast.ExprType)
-                and isinstance(kid[2], ast.SubNodeList)
-                and isinstance(kid[4], ast.ExprType)
-            ):
-                target = kid[2]
-                if len(target.items) == 1:
-                    target = target.items[0]
-                else:
-                    new_targ = ast.TupleVal(values=target, kid=[target])
-                    new_targ.parent = target.parent
-                    kid = [i if i != target else new_targ for i in kid]
-                    target = new_targ
-                return self.nu(
-                    ast.InnerCompr(
                         out_expr=kid[0],
-                        target=target,
-                        collection=kid[4],
-                        conditional=kid[6]
-                        if len(kid) > 5 and isinstance(kid[6], ast.ExprType)
-                        else None,
+                        compr=kid[1],
                         kid=kid,
                     )
                 )
@@ -2572,20 +2543,48 @@ class JacParser(Pass):
         def dict_compr(self, kid: list[ast.AstNode]) -> ast.DictCompr:
             """Grammar rule.
 
-            dict_compr: LBRACE kv_pair KW_FOR atom_list KW_IN walrus_assign (KW_IF expression)? RBRACE
+            dict_compr: LBRACE kv_pair inner_compr RBRACE
             """
-            if (
-                isinstance(kid[1], ast.KVPair)
-                and isinstance(kid[3], ast.SubNodeList)
-                and isinstance(kid[5], ast.ExprType)
-            ):
+            if isinstance(kid[1], ast.KVPair) and isinstance(kid[2], ast.InnerCompr):
                 return self.nu(
                     ast.DictCompr(
                         kv_pair=kid[1],
-                        names=kid[3],
-                        collection=kid[5],
-                        conditional=kid[7]
-                        if len(kid) > 6 and isinstance(kid[7], ast.AtomType)
+                        compr=kid[2],
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def inner_compr(self, kid: list[ast.AstNode]) -> ast.InnerCompr:
+            """Grammar rule.
+
+            inner_compr: KW_ASYNC? KW_FOR atomic_list KW_IN walrus_assign (KW_IF expression)?
+            """
+            chomp = [*kid]
+            is_async = bool(
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ASYNC
+            )
+            chomp = chomp[1:] if is_async else chomp
+            chomp = chomp[1:]
+            if isinstance(chomp[0], ast.SubNodeList) and isinstance(
+                chomp[2], ast.ExprType
+            ):
+                target = chomp[0]
+                if len(target.items) == 1:
+                    target = target.items[0]
+                else:
+                    new_targ = ast.TupleVal(values=target, kid=[target])
+                    new_targ.parent = target.parent
+                    chomp = [i if i != target else new_targ for i in chomp]
+                    target = new_targ
+                return self.nu(
+                    ast.InnerCompr(
+                        is_async=is_async,
+                        target=target,
+                        collection=chomp[2],
+                        conditional=chomp[4]
+                        if len(chomp) > 4 and isinstance(chomp[4], ast.ExprType)
                         else None,
                         kid=kid,
                     )

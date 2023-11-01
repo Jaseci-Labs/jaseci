@@ -1312,11 +1312,12 @@ class KVPair(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class InnerCompr(AstNode):
+class InnerCompr(AstAsyncNode):
     """ListCompr node type for Jac Ast."""
 
     def __init__(
         self,
+        is_async: bool,
         target: ExprType,
         collection: ExprType,
         conditional: Optional[ExprType],
@@ -1326,8 +1327,8 @@ class InnerCompr(AstNode):
         self.target = target
         self.collection = collection
         self.conditional = conditional
-
         AstNode.__init__(self, kid=kid)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
 
 class ListCompr(AstSymbolNode):
