@@ -630,8 +630,12 @@ class BluePygenPass(Pass):
         """Sub objects.
 
         expr: ExprType,
+        in_fstring: bool,
         """
-        self.emit_ln(node, node.expr.gen.py)
+        if node.in_fstring:
+            self.emit(node, node.expr.gen.py)
+        else:
+            self.emit_ln(node, node.expr.gen.py)
 
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
