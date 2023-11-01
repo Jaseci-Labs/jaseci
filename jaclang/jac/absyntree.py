@@ -1934,6 +1934,7 @@ class JacSource(EmptyToken):
         super().__init__()
         self.value = source
         self.file_path = mod_path
+        self.comments = []
 
     @property
     def code(self) -> str:

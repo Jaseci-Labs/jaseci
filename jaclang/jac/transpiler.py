@@ -88,11 +88,9 @@ def jac_file_formatter(
     with open(file_path) as file:
         source = ast.JacSource(file.read(), mod_path=file_path)
         prse = JacParser(input_ir=source)
-        comments = prse.comments
-
     for i in schedule:
         if i == target:
             break
         prse = i(input_ir=prse.ir, prior=prse)
-    prse = target(input_ir=prse.ir, prior=prse, comments=comments)
+    prse = target(input_ir=prse.ir, prior=prse)
     return prse

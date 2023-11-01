@@ -3,7 +3,7 @@
 This is a pass for formatting Jac code.
 """
 
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Tuple
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import constant
@@ -15,11 +15,9 @@ from jaclang.jac.passes import Pass
 class JacFormatPass(Pass):
     """JacFormat Pass format Jac code."""
 
-    def __init__(
-        self, comments: Optional[list] = None, *args: Any, **kwargs: Any  # noqa
-    ) -> None:  # noqa
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa  # noqa
         """Initialize Formatter."""
-        self.comments = comments
+        self.comments = []
         self.processed_comments = set()
 
         super().__init__(*args, **kwargs)
@@ -137,6 +135,16 @@ class JacFormatPass(Pass):
 
         if node.body:
             self.emit(node, node.body.gen.jac)
+
+    def enter_module(self, node: ast.Module) -> None:
+        """Sub objects.
+
+        name: Optional[SubTag[Name]],
+        body: SubNodeList[CodeBlockStmt],
+        doc: Optional[Constant] = None,
+        """
+        if node.source.comments:
+            self.comments = node.source.comments
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -354,12 +362,13 @@ class JacFormatPass(Pass):
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
 
-        lang: Token,
-        path: "ModulePath",
-        alias: Optional[Token],
-        items: Optional["ModuleItems"],
+        lang: SubTag[Name],
+        path: ModulePath,
+        alias: Optional[Name],
+        items: Optional[SubNodeList[ModuleItem]],
         is_absorb: bool,  # For includes
-        self.sub_module = None
+        doc: Optional[Constant] = None,
+        sub_module: Optional[Module] = None,
         """
         if node.items:
             self.emit(
@@ -368,7 +377,7 @@ class JacFormatPass(Pass):
             )
         else:
             if node.is_absorb:
-                self.emit(
+                self.emit_ln(
                     node,
                     f"include:{node.lang.tag.value} {node.path.gen.jac};",
                 )
