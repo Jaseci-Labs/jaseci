@@ -42,11 +42,6 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         code_gen2 = jac_file_to_pass(
             self.fixture_abs_path(filename), target=BluePygenPass, schedule=with_format
         )
-        with open("text1.txt", "w") as f:
-            f.write(code_gen.ir.gen.py)
-        with open("text2.txt", "w") as f:
-            f.write(code_gen2.ir.gen.py)
-
         for i in range(len(code_gen.ir.gen.py.split("\n"))):
             if "test_" in code_gen.ir.gen.py.split("\n")[i]:
                 continue
