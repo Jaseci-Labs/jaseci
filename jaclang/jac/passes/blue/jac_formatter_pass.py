@@ -51,7 +51,10 @@ class JacFormatPass(Pass):
         i = 0
         while i < len(self.comments):
             comment = self.comments[i]
-
+            # Skip comments that start on the 1st column
+            if comment.column == 1:
+                i += 1
+                continue
             # Check if this is a multiline comment
             if comment.value.startswith("#*"):
                 end_line = comment.line
@@ -198,6 +201,17 @@ class JacFormatPass(Pass):
                     else:
                         self.emit_ln(node, f"{stmt.value}")
                     self.indent_level += 1
+                    for (
+                        next_line_no,
+                        next_line_comment,
+                    ) in next_line_standalone_comments:
+                        if (
+                            next_line_no == node.loc.first_line + 1
+                            or next_line_no == node.loc.first_line + 2
+                        ) and next_line_comment not in self.processed_comments:
+                            # Emit the comment on the next line
+                            self.emit_ln(node, next_line_comment)
+                            self.processed_comments.add(next_line_comment)
                 elif stmt.name == "RBRACE":
                     # self.emit_ln(node, "")
                     self.indent_level -= 1
@@ -223,7 +237,7 @@ class JacFormatPass(Pass):
                 if (
                     next_line_no == node.loc.first_line + 1
                     or next_line_no == node.loc.first_line + 2
-                ):
+                ) and next_line_comment not in self.processed_comments:
                     # Emit the comment on the next line
                     self.emit_ln(node, next_line_comment)
                     self.processed_comments.add(next_line_comment)
@@ -585,9 +599,24 @@ class JacFormatPass(Pass):
         else:
             self.emit(node, f"enum {node.name.value} ")
         if node.body:
-            self.emit(node, node.body.gen.jac)
+            for stmt in node.body.kid:
+                if isinstance(stmt, ast.Token):
+                    if stmt.name == "LBRACE":
+                        self.emit_ln(node, f"{stmt.value}")
+                        self.indent_level += 1
+                    elif stmt.name == "RBRACE":
+                        self.emit_ln(node, "")
+                        self.indent_level -= 1
+                        self.emit_ln(node, f"{stmt.value}")
+                        # self.emit_ln(node, "")
+                    else:
+                        self.indent_level -= 1
+                        self.emit_ln(node, f"{stmt.value}")
+                        self.indent_level += 1
+                else:
+                    self.emit(node, f"{stmt.gen.jac}")
         else:
-            self.decl_def_missing(node.name.gen.jac)
+            self.emit_ln(node, "")
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -827,7 +856,9 @@ class JacFormatPass(Pass):
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
-        self.emit(node, "disengage")
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
+        self.emit_ln(node, "")
 
     def exit_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
@@ -843,7 +874,9 @@ class JacFormatPass(Pass):
 
         expr: ExprType,
         """
-        self.emit_ln(node, node.expr.gen.jac)
+        self.emit(node, node.expr.gen.jac)
+        if isinstance(node.kid[-1], ast.Token) and node.kid[-1].name == "SEMI":
+            self.emit_ln(node, node.kid[-1].value)
 
     def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.
@@ -1291,11 +1324,14 @@ class JacFormatPass(Pass):
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
-        vis_type: Optional[Token],
-        target: Optional["ExprType"],
-        else_body: Optional["ElseStmt"],
+        vis_type: Optional[SubTag[SubNodeList[Name]]],
+        target: ExprType,
+        else_body: Optional[ElseStmt],
+        from_walker: bool = False,
         """
-        self.emit(node, f"visit {node.target.gen.jac}")
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
+        self.emit_ln(node, "")
 
     def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
         """Sub objects.
@@ -1458,10 +1494,14 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         test_name = node.name.value
+        if test_name.startswith("test", 0, 4):
+            test_name = ""
         if node.doc:
             self.emit_ln(node, node.doc.gen.jac)
         if test_name:
             self.emit(node, f"test {test_name}")
+        else:
+            self.emit(node, "test")
         self.emit(node, f"{node.body.gen.jac}")
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
@@ -1608,10 +1648,7 @@ class JacFormatPass(Pass):
         col_start: int,
         col_end: int,
         """
-        if node.name != "SEMI":
-            self.emit(node, node.value)
-        else:
-            self.emit(node, "")
+        self.emit(node, node.value)
 
     def exit_name(self, node: ast.Name) -> None:
         """Sub objects.
@@ -1704,3 +1741,4 @@ class JacFormatPass(Pass):
 
     def exit_semi(self, node: ast.Semi) -> None:
         """Sub objects."""
+        self.emit(node, node.value)
