@@ -53,6 +53,7 @@ class SymTabPass(Pass):
                 typ=single_use if single_use else "ICE",
                 original=collide,
             )
+        node.is_store = True
         self.handle_hit_outcome(node, also_link)
         return node.sym_link
 
@@ -84,7 +85,8 @@ class SymTabPass(Pass):
         if not node_list:
             return
         cur_sym_tab = node_list[0].sym_tab
-        node_list = node_list[:1]  # Just performs lookup mappings of pre assign chain
+        node_list[-1].is_store = True
+        node_list = node_list[:-1]  # Just performs lookup mappings of pre assign chain
         for i in node_list:
             if cur_sym_tab is None:
                 break

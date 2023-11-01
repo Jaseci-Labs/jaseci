@@ -110,6 +110,7 @@ class AstSymbolNode(AstNode):
         self.sym_name: str = sym_name
         self.sym_name_node = sym_name_node
         self.sym_type: SymbolType = sym_type
+        self.is_store: bool = False
 
 
 class AstAccessNode(AstNode):
@@ -765,10 +766,12 @@ class ExprStmt(AstNode):
     def __init__(
         self,
         expr: ExprType,
+        in_fstring: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize expr statement node."""
         self.expr = expr
+        self.in_fstring = in_fstring
         AstNode.__init__(self, kid=kid)
 
 
@@ -1209,7 +1212,7 @@ class FString(AstSymbolNode):
 
     def __init__(
         self,
-        parts: Optional[SubNodeList[String | ExprType]],
+        parts: Optional[SubNodeList[String | ExprStmt]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize fstring expression node."""

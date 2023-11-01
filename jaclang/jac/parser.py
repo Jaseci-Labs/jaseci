@@ -1066,6 +1066,7 @@ class JacParser(Pass):
             elif isinstance(kid[0], ast.ExprType):
                 return ast.ExprStmt(
                     expr=kid[0],
+                    in_fstring=False,
                     kid=kid,
                 )
             elif isinstance(kid[0], ast.CodeBlockStmt):
@@ -2289,16 +2290,24 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def fstr_parts(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.ExprType]:
+        def fstr_parts(
+            self, kid: list[ast.AstNode]
+        ) -> ast.SubNodeList[ast.String | ast.ExprStmt]:
             """Grammar rule.
 
             fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE | fstring)*
             """
-            valid_parts = [i for i in kid if isinstance(i, ast.ExprType)]
+            valid_parts: list[ast.String | ast.ExprStmt] = [
+                i
+                if isinstance(i, ast.String)
+                else ast.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                for i in kid
+                if isinstance(i, ast.ExprType)
+            ]
             return self.nu(
-                ast.SubNodeList[ast.ExprType](
+                ast.SubNodeList[ast.String | ast.ExprStmt](
                     items=valid_parts,
-                    kid=kid,
+                    kid=valid_parts,
                 )
             )
 
