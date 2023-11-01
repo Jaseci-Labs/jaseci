@@ -5,6 +5,7 @@ import ast as ast3
 import pprint
 from typing import Generic, Optional, Sequence, TypeVar, Union
 
+from jaclang.jac import jac_lark as jl
 from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
@@ -72,7 +73,9 @@ class AstNode:
         else:
             raise ValueError(f"Empty kid for Token {type(self).__name__}")
 
-    def get_all_sub_nodes(self, typ: type[T], brute_force: bool = True) -> Sequence[T]:
+    def get_all_sub_nodes(
+        self, typ: type[T], brute_force: bool = True
+    ) -> list[AstNode]:
         """Get all sub nodes of type."""
         from jaclang.jac.passes import Pass
 
@@ -1946,7 +1949,7 @@ class JacSource(EmptyToken):
         super().__init__()
         self.value = source
         self.file_path = mod_path
-        self.comments = []
+        self.comments: list[jl.Token] = []
 
     @property
     def code(self) -> str:

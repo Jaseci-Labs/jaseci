@@ -30,11 +30,11 @@ class JacParser(Pass):
         if JacParser.dev_mode:
             JacParser.make_dev()
 
-    def transform(self, ir: ast.JacSource) -> Optional[ast.Module]:
+    def transform(self, ir: ast.AstNode) -> Optional[ast.Module]:
         """Transform input IR."""
         try:
             tree, self.source.comments = JacParser.parse(
-                ir.value, on_error=self.error_callback
+                self.source.value, on_error=self.error_callback
             )
             if tree:
                 tree = JacParser.TreeToAST(parser=self).transform(tree)
@@ -2077,7 +2077,7 @@ class JacParser(Pass):
                     ast.AtomTrailer(
                         target=kid[0],
                         right=kid[1],
-                        is_attr=isinstance(kid[1], ast.FilterCompr),
+                        is_attr=False,
                         kid=kid,
                     )
                 )

@@ -270,7 +270,7 @@ cmp_op: KW_ISN
       | EE
 
 atomic_chain: atomic_chain (filter_compr | edge_op_ref | index_slice | list_val)
-            | atomic_chain (DOT_BKWD | DOT_FWD | DOT) atom NULL_OK?
+            | atomic_chain (DOT_BKWD | DOT_FWD | DOT) any_ref NULL_OK?
             | atomic_call
             | atom NULL_OK?
 
