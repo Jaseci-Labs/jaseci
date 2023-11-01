@@ -874,7 +874,9 @@ class JacFormatPass(Pass):
 
         expr: ExprType,
         """
-        self.emit_ln(node, node.expr.gen.jac)
+        self.emit(node, node.expr.gen.jac)
+        if isinstance(node.kid[-1], ast.Token) and node.kid[-1].name == "SEMI":
+            self.emit_ln(node, node.kid[-1].value)
 
     def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.

@@ -1,5 +1,8 @@
 """Test ast build pass module."""
+
+from jaclang.jac.passes.blue import BluePygenPass
 from jaclang.jac.passes.blue import JacFormatPass
+from jaclang.jac.passes.blue.schedules import py_code_gen as without_format
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
@@ -26,14 +29,30 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.fixture_abs_path("base.jac"), target=JacFormatPass
         )
         self.assertFalse(code_gen.errors_had)
-        # self.assertIn("pass", code_gen.ir.gen.jac)
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         code_gen = jac_file_to_pass(
-            self.fixture_abs_path(filename), target=JacFormatPass
+            self.fixture_abs_path(filename),
+            target=BluePygenPass,
+            schedule=without_format,
         )
-        self.assertGreater(len(code_gen.ir.gen.jac), 10)
+        with_format = [JacFormatPass]
+        with_format.extend(without_format)
+        code_gen2 = jac_file_to_pass(
+            self.fixture_abs_path(filename), target=BluePygenPass, schedule=with_format
+        )
+        with open("text1.txt", "w") as f:
+            f.write(code_gen.ir.gen.py)
+        with open("text2.txt", "w") as f:
+            f.write(code_gen2.ir.gen.py)
+
+        for i in range(len(code_gen.ir.gen.py.split("\n"))):
+            if "test_" in code_gen.ir.gen.py.split("\n")[i]:
+                continue
+            self.assertEqual(
+                code_gen.ir.gen.py.split("\n")[i], code_gen2.ir.gen.py.split("\n")[i]
+            )
 
 
 JacFormatPassTests.self_attach_micro_tests()
