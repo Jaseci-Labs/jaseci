@@ -1649,10 +1649,12 @@ class JacParser(Pass):
                 chomp = chomp[1:]
             else:
                 raise self.ice()
-            assignees = ast.SubNodeList[ast.AtomType](
+            new_targ = ast.SubNodeList[ast.AtomType](
                 items=assignees[::2],
                 kid=assignees,
             )
+            kid = [x for x in kid if x not in assignees]
+            kid.insert(0, new_targ)
             type_tag = (
                 chomp[0]
                 if len(chomp) > 0 and isinstance(chomp[0], ast.SubTag)
@@ -1674,7 +1676,7 @@ class JacParser(Pass):
             if is_aug:
                 return self.nu(
                     ast.Assignment(
-                        target=assignees,
+                        target=new_targ,
                         type_tag=type_tag,
                         value=value,
                         mutable=is_frozen,
@@ -1684,7 +1686,7 @@ class JacParser(Pass):
                 )
             return self.nu(
                 ast.Assignment(
-                    target=assignees,
+                    target=new_targ,
                     type_tag=type_tag,
                     value=value,
                     mutable=is_frozen,

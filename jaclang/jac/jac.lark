@@ -416,7 +416,7 @@ class_pattern: NAME LPAREN kw_pattern_list? RPAREN
 pattern_list: (pattern_list COMMA)? pattern_seq
 kw_pattern_list: (kw_pattern_list COMMA)? named_ref EQ pattern_seq
 
-FLOAT: /(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?/
+FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
 STRING: /"[^"\r\n]*"|'[^'\r\n]*'/

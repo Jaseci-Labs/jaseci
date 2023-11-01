@@ -20,7 +20,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         )
         self.assertFalse(code_gen.errors_had)
 
-    def test_simple(self) -> None:
+    def test_hodge_podge(self) -> None:
         """Basic test for pass."""
         code_gen = jac_file_to_pass(
             self.fixture_abs_path("../../../../../../examples/micro/hodge_podge.jac"),
