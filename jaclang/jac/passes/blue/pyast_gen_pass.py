@@ -1151,11 +1151,12 @@ class PyastGenPass(Pass):
     def exit_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.
 
+        out_expr: ExprType,
         compr: InnerCompr,
         """
         node.gen.py_ast = self.sync(
             ast3.ListComp(
-                elt=node.compr.out_expr.gen.py_ast,
+                elt=node.out_expr.gen.py_ast,
                 generators=[node.compr.gen.py_ast],
             )
         )
@@ -1163,11 +1164,12 @@ class PyastGenPass(Pass):
     def exit_gen_compr(self, node: ast.GenCompr) -> None:
         """Sub objects.
 
+        out_expr: ExprType,
         compr: InnerCompr,
         """
         node.gen.py_ast = self.sync(
             ast3.GeneratorExp(
-                elt=node.compr.out_expr.gen.py_ast,
+                elt=node.out_expr.gen.py_ast,
                 generators=[node.compr.gen.py_ast],
             )
         )
@@ -1175,11 +1177,12 @@ class PyastGenPass(Pass):
     def exit_set_compr(self, node: ast.SetCompr) -> None:
         """Sub objects.
 
+        out_expr: ExprType,
         compr: InnerCompr,
         """
         node.gen.py_ast = self.sync(
             ast3.SetComp(
-                elt=node.compr.out_expr.gen.py_ast,
+                elt=node.out_expr.gen.py_ast,
                 generators=[node.compr.gen.py_ast],
             )
         )
@@ -1192,7 +1195,13 @@ class PyastGenPass(Pass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        # TODO: Come back
+        node.gen.py_ast = self.sync(
+            ast3.DictComp(
+                key=node.kv_pair.key.gen.py_ast,
+                value=node.kv_pair.value.gen.py_ast,
+                generators=[node.compr.gen.py_ast],
+            )
+        )
 
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.

@@ -1179,17 +1179,14 @@ class JacFormatPass(Pass):
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
-        out_expr: ExprType,
-        name_list: NameList,
+        is_async: bool,
+        target: ExprType,
         collection: ExprType,
         conditional: Optional[ExprType],
-        is_list: bool,
-        is_gen: bool,
-        is_set: bool,
         """
-        names = node.target.gen.jac
         partial = (
-            f"{node.out_expr.gen.jac} for {names} " f"in {node.collection.gen.jac}"
+            f"{'async' if node.is_async else ''} for {node.target.gen.jac} in "
+            f"{node.collection.gen.jac}"
         )
         if node.conditional:
             partial += f" if {node.conditional.gen.jac}"
@@ -1198,39 +1195,34 @@ class JacFormatPass(Pass):
     def exit_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.
 
+        out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"[{node.compr.gen.jac}]")
+        self.emit(node, f"[{node.out_expr.gen.jac} {node.compr.gen.jac}]")
 
     def exit_gen_compr(self, node: ast.GenCompr) -> None:
         """Sub objects.
 
+        out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"({node.compr.gen.jac},)")
+        self.emit(node, f"({node.out_expr.gen.jac} {node.compr.gen.jac},)")
 
     def exit_set_compr(self, node: ast.SetCompr) -> None:
         """Sub objects.
 
+        out_expr: ExprType,
         compr: InnerCompr,
         """
-        self.emit(node, f"{{{node.compr.gen.jac}}}")
+        self.emit(node, f"{{{node.out_expr.gen.jac} {node.compr.gen.jac}}}")
 
     def exit_dict_compr(self, node: ast.DictCompr) -> None:
         """Sub objects.
 
-        outk_expr: ExprType,
-        outv_expr: ExprType,
-        name_list: NameList,
-        collection: ExprType,
-        conditional: Optional[ExprType],
+        kv_pair: KVPair,
+        compr: InnerCompr,
         """
-        names = node.names.gen.jac
-        partial = f"{node.kv_pair.gen.jac} for " f"{names}"
-        partial += f" in {node.collection.gen.jac}"
-        if node.conditional:
-            partial += f" if {node.conditional.gen.jac}"
-        self.emit(node, f"{{{partial}}}")
+        self.emit(node, f"{{{node.kv_pair.gen.jac} {node.compr.gen.jac}}}")
 
     def exit_k_v_pair(self, node: ast.KVPair) -> None:
         """Sub objects.

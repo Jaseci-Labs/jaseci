@@ -103,22 +103,6 @@ class DefUsePass(SymTabPass):
             else:
                 self.error("Named target not valid")
 
-    def enter_dict_compr(self, node: ast.DictCompr) -> None:
-        """Sub objects.
-
-        kv_pair: KVPair,
-        names: SubNodeList[Name],
-        collection: ExprType,
-        conditional: Optional[ExprType],
-        """
-        for i in node.names.items:
-            if isinstance(i, ast.AtomTrailer):
-                self.chain_def_insert(self.unwind_atom_trailer(i))
-            elif isinstance(i, ast.AtomSymbolType):
-                self.def_insert(i)
-            else:
-                self.error("Named target not valid")
-
     def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
 

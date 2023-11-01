@@ -321,11 +321,11 @@ tuple_list: expression COMMA expr_list COMMA assignment_list
 
 dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
 kv_pair: expression COLON expression
-list_compr: LSQUARE inner_compr RSQUARE
-gen_compr: LPAREN inner_compr RPAREN
-set_compr: LBRACE inner_compr RBRACE
-inner_compr: expression KW_FOR atomic_list KW_IN walrus_assign (KW_IF expression)?
-dict_compr: LBRACE kv_pair KW_FOR atomic_list KW_IN walrus_assign (KW_IF expression)? RBRACE
+list_compr: LSQUARE expression inner_compr RSQUARE
+gen_compr: LPAREN expression inner_compr RPAREN
+set_compr: LBRACE expression inner_compr RBRACE
+dict_compr: LBRACE kv_pair inner_compr RBRACE
+inner_compr: KW_ASYNC? KW_FOR atomic_list KW_IN walrus_assign (KW_IF expression)?
 
 param_list: expr_list COMMA assignment_list
           | assignment_list

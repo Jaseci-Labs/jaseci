@@ -1312,24 +1312,23 @@ class KVPair(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class InnerCompr(AstNode):
+class InnerCompr(AstAsyncNode):
     """ListCompr node type for Jac Ast."""
 
     def __init__(
         self,
-        out_expr: ExprType,
+        is_async: bool,
         target: ExprType,
         collection: ExprType,
         conditional: Optional[ExprType],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
-        self.out_expr = out_expr
         self.target = target
         self.collection = collection
         self.conditional = conditional
-
         AstNode.__init__(self, kid=kid)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
 
 class ListCompr(AstSymbolNode):
@@ -1337,10 +1336,12 @@ class ListCompr(AstSymbolNode):
 
     def __init__(
         self,
+        out_expr: ExprType,
         compr: InnerCompr,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
+        self.out_expr = out_expr
         self.compr = compr
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -1365,16 +1366,12 @@ class DictCompr(AstSymbolNode):
     def __init__(
         self,
         kv_pair: KVPair,
-        names: SubNodeList[AtomType],
-        collection: ExprType,
-        conditional: Optional[ExprType],
+        compr: InnerCompr,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize comprehension expression node."""
         self.kv_pair = kv_pair
-        self.names = names
-        self.collection = collection
-        self.conditional = conditional
+        self.compr = compr
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -2033,12 +2030,12 @@ EnumBlockStmt = Union[
 ]
 
 CodeBlockStmt = Union[
-    Import,
+    ExprType,
     ArchType,
+    Import,
     Ability,
     AbilityDef,
     Assignment,
-    ExprType,
     IfStmt,
     IfElseExpr,
     TryStmt,
