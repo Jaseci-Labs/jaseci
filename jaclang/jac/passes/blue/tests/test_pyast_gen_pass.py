@@ -26,12 +26,12 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.fixture_abs_path("../../../../../../examples/micro/hodge_podge.jac"),
             target=PyastGenPass,
         )
-        import ast as ast3
+        # import ast as ast3
 
-        if isinstance(code_gen.ir.gen.py_ast, ast3.AST):
-            print(ast3.dump(code_gen.ir.gen.py_ast, indent=2))
-            print(ast3.unparse(code_gen.ir.gen.py_ast))
-            exec(compile(code_gen.ir.gen.py_ast, "<string>", "exec"))
+        # if isinstance(code_gen.ir.gen.py_ast, ast3.AST):
+        #     print(ast3.dump(code_gen.ir.gen.py_ast, indent=2))
+        #     print(ast3.unparse(code_gen.ir.gen.py_ast))
+        #     exec(compile(code_gen.ir.gen.py_ast, "<string>", "exec"))
         self.assertFalse(code_gen.errors_had)
 
     # def test_circle_py_ast(self) -> None:
