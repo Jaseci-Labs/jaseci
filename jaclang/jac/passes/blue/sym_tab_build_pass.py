@@ -626,6 +626,13 @@ class SymTabBuildPass(SymTabPass):
         """
         self.pop_scope()
 
+    def enter_expr_stmt(self, node: ast.ExprStmt) -> None:
+        """Sub objects.
+
+        expr: ExprType,
+        """
+        self.sync_node_to_scope(node)
+
     def enter_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
 

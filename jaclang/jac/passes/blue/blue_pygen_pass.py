@@ -626,6 +626,13 @@ class BluePygenPass(Pass):
         self.indent_level -= 1
         self.emit(node, "\n")
 
+    def exit_expr_stmt(self, node: ast.ExprStmt) -> None:
+        """Sub objects.
+
+        expr: ExprType,
+        """
+        self.emit_ln(node, node.expr.gen.py)
+
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
 

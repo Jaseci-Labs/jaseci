@@ -1063,6 +1063,11 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.CodeBlockStmt) and len(kid) < 2:
                 return self.nu(kid[0])
+            elif isinstance(kid[0], ast.ExprType):
+                return ast.ExprStmt(
+                    expr=kid[0],
+                    kid=kid,
+                )
             elif isinstance(kid[0], ast.CodeBlockStmt):
                 kid[0].add_kids_right([kid[1]], pos_update=False)
                 return self.nu(kid[0])

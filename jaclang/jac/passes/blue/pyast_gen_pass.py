@@ -680,6 +680,13 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = self.sync(ast3.If(test=ast3.Constant(value=True)))
 
+    def exit_expr_stmt(self, node: ast.ExprStmt) -> None:
+        """Sub objects.
+
+        expr: ExprType,
+        """
+        node.gen.py_ast = self.sync(ast3.Expr(value=node.expr.gen.py_ast))
+
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
 

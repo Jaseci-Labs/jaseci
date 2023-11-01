@@ -757,6 +757,19 @@ class ElseStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
+class ExprStmt(AstNode):
+    """ExprStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        expr: ExprType,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize expr statement node."""
+        self.expr = expr
+        AstNode.__init__(self, kid=kid)
+
+
 class TryStmt(AstElseBodyNode):
     """TryStmt node type for Jac Ast."""
 
@@ -2031,8 +2044,8 @@ EnumBlockStmt = Union[
 ]
 
 CodeBlockStmt = Union[
-    ExprType,
     ArchType,
+    ExprStmt,
     Import,
     Ability,
     AbilityDef,

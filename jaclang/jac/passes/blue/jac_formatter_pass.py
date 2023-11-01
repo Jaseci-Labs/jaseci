@@ -838,6 +838,13 @@ class JacFormatPass(Pass):
 
         self.emit(node, node.body.gen.jac)
 
+    def exit_expr_stmt(self, node: ast.ExprStmt) -> None:
+        """Sub objects.
+
+        expr: ExprType,
+        """
+        self.emit_ln(node, node.expr.gen.jac)
+
     def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.
 
