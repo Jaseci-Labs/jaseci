@@ -598,22 +598,25 @@ class JacFormatPass(Pass):
             )
         else:
             self.emit(node, f"enum {node.name.value} ")
-        for stmt in node.body.kid:
-            if isinstance(stmt, ast.Token):
-                if stmt.name == "LBRACE":
-                    self.emit_ln(node, f"{stmt.value}")
-                    self.indent_level += 1
-                elif stmt.name == "RBRACE":
-                    self.emit_ln(node, "")
-                    self.indent_level -= 1
-                    self.emit_ln(node, f"{stmt.value}")
-                    # self.emit_ln(node, "")
+        if node.body:
+            for stmt in node.body.kid:
+                if isinstance(stmt, ast.Token):
+                    if stmt.name == "LBRACE":
+                        self.emit_ln(node, f"{stmt.value}")
+                        self.indent_level += 1
+                    elif stmt.name == "RBRACE":
+                        self.emit_ln(node, "")
+                        self.indent_level -= 1
+                        self.emit_ln(node, f"{stmt.value}")
+                        # self.emit_ln(node, "")
+                    else:
+                        self.indent_level -= 1
+                        self.emit_ln(node, f"{stmt.value}")
+                        self.indent_level += 1
                 else:
-                    self.indent_level -= 1
-                    self.emit_ln(node, f"{stmt.value}")
-                    self.indent_level += 1
-            else:
-                self.emit(node, f"{stmt.gen.jac}")
+                    self.emit(node, f"{stmt.gen.jac}")
+        else:
+            self.emit_ln(node, "")
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -853,7 +856,9 @@ class JacFormatPass(Pass):
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
-        self.emit(node, "disengage")
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
+        self.emit_ln(node, "")
 
     def exit_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
@@ -1317,11 +1322,14 @@ class JacFormatPass(Pass):
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
-        vis_type: Optional[Token],
-        target: Optional["ExprType"],
-        else_body: Optional["ElseStmt"],
+        vis_type: Optional[SubTag[SubNodeList[Name]]],
+        target: ExprType,
+        else_body: Optional[ElseStmt],
+        from_walker: bool = False,
         """
-        self.emit(node, f"visit {node.target.gen.jac}")
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
+        self.emit_ln(node, "")
 
     def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
         """Sub objects.
@@ -1484,10 +1492,14 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         test_name = node.name.value
+        if test_name.startswith("test", 0, 4):
+            test_name = ""
         if node.doc:
             self.emit_ln(node, node.doc.gen.jac)
         if test_name:
             self.emit(node, f"test {test_name}")
+        else:
+            self.emit(node, "test")
         self.emit(node, f"{node.body.gen.jac}")
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
@@ -1634,10 +1646,7 @@ class JacFormatPass(Pass):
         col_start: int,
         col_end: int,
         """
-        if node.name != "SEMI":
-            self.emit(node, node.value)
-        else:
-            self.emit(node, "")
+        self.emit(node, node.value)
 
     def exit_name(self, node: ast.Name) -> None:
         """Sub objects.
@@ -1730,3 +1739,4 @@ class JacFormatPass(Pass):
 
     def exit_semi(self, node: ast.Semi) -> None:
         """Sub objects."""
+        self.emit(node, node.value)
