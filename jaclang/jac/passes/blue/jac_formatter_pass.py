@@ -51,7 +51,10 @@ class JacFormatPass(Pass):
         i = 0
         while i < len(self.comments):
             comment = self.comments[i]
-
+            # Skip comments that start on the 1st column
+            if comment.column == 1:
+                i += 1
+                continue
             # Check if this is a multiline comment
             if comment.value.startswith("#*"):
                 end_line = comment.line
@@ -198,6 +201,17 @@ class JacFormatPass(Pass):
                     else:
                         self.emit_ln(node, f"{stmt.value}")
                     self.indent_level += 1
+                    for (
+                        next_line_no,
+                        next_line_comment,
+                    ) in next_line_standalone_comments:
+                        if (
+                            next_line_no == node.loc.first_line + 1
+                            or next_line_no == node.loc.first_line + 2
+                        ) and next_line_comment not in self.processed_comments:
+                            # Emit the comment on the next line
+                            self.emit_ln(node, next_line_comment)
+                            self.processed_comments.add(next_line_comment)
                 elif stmt.name == "RBRACE":
                     # self.emit_ln(node, "")
                     self.indent_level -= 1
@@ -223,7 +237,7 @@ class JacFormatPass(Pass):
                 if (
                     next_line_no == node.loc.first_line + 1
                     or next_line_no == node.loc.first_line + 2
-                ):
+                ) and next_line_comment not in self.processed_comments:
                     # Emit the comment on the next line
                     self.emit_ln(node, next_line_comment)
                     self.processed_comments.add(next_line_comment)
@@ -584,10 +598,22 @@ class JacFormatPass(Pass):
             )
         else:
             self.emit(node, f"enum {node.name.value} ")
-        if node.body:
-            self.emit(node, node.body.gen.jac)
-        else:
-            self.decl_def_missing(node.name.gen.jac)
+        for stmt in node.body.kid:
+            if isinstance(stmt, ast.Token):
+                if stmt.name == "LBRACE":
+                    self.emit_ln(node, f"{stmt.value}")
+                    self.indent_level += 1
+                elif stmt.name == "RBRACE":
+                    self.emit_ln(node, "")
+                    self.indent_level -= 1
+                    self.emit_ln(node, f"{stmt.value}")
+                    # self.emit_ln(node, "")
+                else:
+                    self.indent_level -= 1
+                    self.emit_ln(node, f"{stmt.value}")
+                    self.indent_level += 1
+            else:
+                self.emit(node, f"{stmt.gen.jac}")
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
