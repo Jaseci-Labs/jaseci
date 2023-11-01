@@ -26,10 +26,13 @@ class PyastGenPass(Pass):
             "dataclass": False,
         }
         self.preamble: list[ast3.AST] = [
-            ast3.ImportFrom(
-                module="__future__",
-                names=[ast3.alias(name="annotations", asname=None)],
-                level=0,
+            self.sync(
+                ast3.ImportFrom(
+                    module="__future__",
+                    names=[self.sync(ast3.alias(name="annotations", asname=None))],
+                    level=0,
+                ),
+                jac_node=self.ir,
             )
         ]
 
@@ -38,10 +41,17 @@ class PyastGenPass(Pass):
         if self.already_added["jimport"]:
             return
         self.preamble.append(
-            ast3.ImportFrom(
-                module="jaclang",
-                names=[ast3.alias(name="jac_blue_import", asname="__jac_import__")],
-                level=0,
+            self.sync(
+                ast3.ImportFrom(
+                    module="jaclang",
+                    names=[
+                        self.sync(
+                            ast3.alias(name="jac_blue_import", asname="__jac_import__")
+                        )
+                    ],
+                    level=0,
+                ),
+                jac_node=self.ir,
             )
         )
         self.already_added["jimport"] = True
@@ -51,13 +61,16 @@ class PyastGenPass(Pass):
         if self.already_added["enum"]:
             return
         self.preamble.append(
-            ast3.ImportFrom(
-                module="enum",
-                names=[
-                    ast3.alias(name="Enum", asname="__jac_Enum__"),
-                    ast3.alias(name="auto", asname="__jac_auto__"),
-                ],
-                level=0,
+            self.sync(
+                ast3.ImportFrom(
+                    module="enum",
+                    names=[
+                        self.sync(ast3.alias(name="Enum", asname="__jac_Enum__")),
+                        self.sync(ast3.alias(name="auto", asname="__jac_auto__")),
+                    ],
+                    level=0,
+                ),
+                jac_node=self.ir,
             )
         )
         self.already_added["enum"] = True
@@ -67,10 +80,17 @@ class PyastGenPass(Pass):
         if self.already_added["dataclass"]:
             return
         self.preamble.append(
-            ast3.ImportFrom(
-                module="dataclasses",
-                names=[ast3.alias(name="dataclass", asname="__jac_dataclass__")],
-                level=0,
+            self.sync(
+                ast3.ImportFrom(
+                    module="dataclasses",
+                    names=[
+                        self.sync(
+                            ast3.alias(name="dataclass", asname="__jac_dataclass__")
+                        )
+                    ],
+                    level=0,
+                ),
+                jac_node=self.ir,
             )
         )
         self.already_added["dataclass"] = True
@@ -146,7 +166,7 @@ class PyastGenPass(Pass):
         """
         body = (
             [
-                node.doc.gen.py_ast,
+                ast3.Expr(value=node.doc.gen.py_ast),
                 *self.preamble,
                 *[x.gen.py_ast for x in node.body],
             ]
@@ -175,7 +195,7 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         """
         if node.doc:
-            doc = node.doc.gen.py_ast
+            doc = ast3.Expr(value=node.doc.gen.py_ast)
             if isinstance(doc, ast3.AST) and isinstance(
                 node.assignments.gen.py_ast, list
             ):
@@ -368,7 +388,7 @@ class PyastGenPass(Pass):
         if not isinstance(body, list):
             raise self.ice()
         if node.doc:
-            body = [node.doc.gen.py_ast, *body]
+            body = [ast3.Expr(value=node.doc.gen.py_ast), *body]
         decorators = (
             node.decorators.gen.py_ast
             if isinstance(node.decorators, ast.SubNodeList)
@@ -423,7 +443,7 @@ class PyastGenPass(Pass):
         if not isinstance(body, list):
             raise self.ice()
         if node.doc:
-            body = [node.doc.gen.py_ast, *body]
+            body = [ast3.Expr(value=node.doc.gen.py_ast), *body]
         decorators = (
             node.decorators.gen.py_ast
             if isinstance(node.decorators, ast.SubNodeList)
@@ -612,7 +632,7 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         """
         if node.doc:
-            doc = node.doc.gen.py_ast
+            doc = ast3.Expr(value=node.doc.gen.py_ast)
             if isinstance(doc, ast3.AST) and isinstance(node.vars.gen.py_ast, list):
                 node.gen.py_ast = [doc] + node.vars.gen.py_ast
             else:
@@ -961,6 +981,10 @@ class PyastGenPass(Pass):
         type_tag: Optional[SubTag[ExprType]],
         mutable: bool =True,
         """
+        for (
+            i
+        ) in node.target.gen.py_ast:  # TODO: This should be handled in symtab builder
+            i.ctx = ast3.Store()
         if node.type_tag:
             node.gen.py_ast = self.sync(
                 ast3.AnnAssign(
@@ -1024,7 +1048,7 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = self.sync(
             ast3.UnaryOp(
-                op=node.op.gen.py_ast,
+                op=self.sync(ast3.UAdd() if node.op.name == Tok.PLUS else ast3.USub()),
                 operand=node.operand.gen.py_ast,
             )
         )
@@ -1418,6 +1442,60 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+        if node.name == Tok.KW_AND:
+            node.gen.py_ast = self.sync(ast3.BitAnd())
+        elif node.name == Tok.KW_OR:
+            node.gen.py_ast = self.sync(ast3.BitOr())
+        elif node.name == Tok.PLUS:
+            node.gen.py_ast = self.sync(ast3.Add())
+        elif node.name == Tok.BW_AND:
+            node.gen.py_ast = self.sync(ast3.BitAnd())
+        elif node.name == Tok.BW_OR:
+            node.gen.py_ast = self.sync(ast3.BitOr())
+        elif node.name == Tok.BW_XOR:
+            node.gen.py_ast = self.sync(ast3.BitXor())
+        elif node.name == Tok.DIV:
+            node.gen.py_ast = self.sync(ast3.Div())
+        elif node.name == Tok.FLOOR_DIV:
+            node.gen.py_ast = self.sync(ast3.FloorDiv())
+        elif node.name == Tok.LSHIFT:
+            node.gen.py_ast = self.sync(ast3.LShift())
+        elif node.name == Tok.MOD:
+            node.gen.py_ast = self.sync(ast3.Mod())
+        elif node.name == Tok.STAR_MUL:
+            node.gen.py_ast = self.sync(ast3.Mult())
+        elif node.name == Tok.DECOR_OP:
+            node.gen.py_ast = self.sync(ast3.MatMult())
+        elif node.name == Tok.STAR_POW:
+            node.gen.py_ast = self.sync(ast3.Pow())
+        elif node.name == Tok.RSHIFT:
+            node.gen.py_ast = self.sync(ast3.RShift())
+        elif node.name == Tok.MINUS:
+            node.gen.py_ast = self.sync(ast3.Sub())
+        elif node.name == Tok.BW_NOT:
+            node.gen.py_ast = self.sync(ast3.Invert())
+        elif node.name == Tok.NOT:
+            node.gen.py_ast = self.sync(ast3.Not())
+        elif node.name == Tok.EQ:
+            node.gen.py_ast = self.sync(ast3.Eq())
+        elif node.name == Tok.GT:
+            node.gen.py_ast = self.sync(ast3.Gt())
+        elif node.name == Tok.GTE:
+            node.gen.py_ast = self.sync(ast3.GtE())
+        elif node.name == Tok.KW_IN:
+            node.gen.py_ast = self.sync(ast3.In())
+        elif node.name == Tok.KW_IS:
+            node.gen.py_ast = self.sync(ast3.Is())
+        elif node.name == Tok.KW_ISN:
+            node.gen.py_ast = self.sync(ast3.IsNot())
+        elif node.name == Tok.LT:
+            node.gen.py_ast = self.sync(ast3.Lt())
+        elif node.name == Tok.LTE:
+            node.gen.py_ast = self.sync(ast3.LtE())
+        elif node.name == Tok.NE:
+            node.gen.py_ast = self.sync(ast3.NotEq())
+        elif node.name == Tok.KW_NIN:
+            node.gen.py_ast = self.sync(ast3.NotIn())
 
     def exit_name(self, node: ast.Name) -> None:
         """Sub objects.

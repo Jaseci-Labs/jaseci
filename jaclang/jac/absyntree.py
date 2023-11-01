@@ -24,7 +24,6 @@ class AstNode:
         self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
-        self.py_ast: ast3.AST | list[ast3.AST]
 
     def add_kids_left(
         self, nodes: Sequence[AstNode], pos_update: bool = True
