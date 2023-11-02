@@ -32,11 +32,64 @@ class JacFormatPass(Pass):
 
     def get_comments_from_first_column(self) -> List[Tuple[int, str]]:
         """Get all comments that belong to column 1."""
-        return [
-            (comment.line, comment.value)
-            for comment in self.comments
-            if comment.column == 1
-        ]
+        next_line_standalone_comments = []
+        for comment in self.comments:
+            formatted_comment_lines = self.format_comment_to_limit(comment.value)
+            # for formatted_line in formatted_comment_lines:
+            next_line_standalone_comments.append(
+                (comment.line, formatted_comment_lines)
+            )
+        return next_line_standalone_comments
+
+    def format_comment_to_limit(self, comment: str, char_limit: int = 80) -> List[str]:
+        """Insert Line break for comments."""
+        if comment.startswith("#"):
+            comment = comment[1:].strip()
+
+        words = comment.split()
+        formatted_lines = []
+        current_line = "#"
+
+        for word in words:
+            if len(current_line + " " + word) <= char_limit:
+                current_line += " " + word
+            else:
+                formatted_lines.append(current_line.strip())
+                current_line = "#" + " " + word
+
+        if current_line != "#":
+            formatted_lines.append(current_line.strip())
+
+        return "\n".join(formatted_lines)
+
+    def insert_line_breaks(self, line: str, max_len: int = 50) -> str:
+        """Insert Line break for code."""
+        if len(line) <= max_len:
+            return line
+
+        # Find the last occurrence of ',' or ')' before the max length
+        break_point = max_len
+        while break_point > 0:
+            if line[break_point] in [",", ")"]:
+                break_point += 1
+                break
+            break_point -= 1
+
+        # If no comma or parenthesis is found, just split at max_len
+        if break_point == 0:
+            break_point = max_len
+
+        # Split the line into two parts at the break_point
+        part1 = line[:break_point]
+        part2 = line[break_point:]
+        # Add indentation to part2 if it starts with "|>"
+        if part2.strip().startswith("|>"):
+            part2 = (" " * 4) + part2.lstrip()
+        # If the second part exceeds max_len, call the function recursively
+        if len(part2) > max_len:
+            part2 = self.insert_line_breaks(part2, max_len)
+
+        return part1 + "\n" + part2
 
     def emit_comments_for_line(
         self, line: int
@@ -64,8 +117,13 @@ class JacFormatPass(Pass):
                     i += 1
                 if i < len(self.comments):
                     end_line = self.comments[i].line  # noqa
-                # Store the entire multiline comment with the starting line
-                next_line_standalone_comments.append((comment.line, comment.value))
+                # Format the multiline comment and store it with the starting line
+                formatted_comment_lines = self.format_comment_to_limit(comment.value)
+                # for formatted_line in formatted_comment_lines:
+                next_line_standalone_comments.append(
+                    (comment.line, formatted_comment_lines)
+                )
+
                 i += 1  # Move past the multiline comment
             else:
                 # Process regular inline or standalone comment
@@ -227,12 +285,16 @@ class JacFormatPass(Pass):
             elif isinstance(stmt, ast.Assignment):
                 self.emit(node, f"{stmt.gen.jac}")
             else:
-                if comment_str not in self.processed_comments and comment_str != "":
-                    self.emit_ln(node, f"{stmt.gen.jac} {comment_str}")
-                    self.processed_comments.add(comment_str)
+                if isinstance(stmt, ast.ExprStmt):
+                    formatted_line = self.insert_line_breaks(stmt.gen.jac)
+                    self.emit(node, f"{formatted_line}")
                 else:
-                    self.emit(node, f"{stmt.gen.jac}")
-                    continue
+                    if comment_str not in self.processed_comments and comment_str != "":
+                        self.emit_ln(node, f"{stmt.gen.jac} {comment_str}")
+                        self.processed_comments.add(comment_str)
+                    else:
+                        self.emit(node, f"{stmt.gen.jac}")
+                        continue
             for next_line_no, next_line_comment in next_line_standalone_comments:
                 if (
                     next_line_no == node.loc.first_line + 1
@@ -1132,7 +1194,7 @@ class JacFormatPass(Pass):
         operand: ExprType,
         op: Token,
         """
-        if node.op.value in ["-", "~", "+"]:
+        if node.op.value in ["-", "~", "+", "*", "**"]:
             self.emit(node, f"{node.op.value}{node.operand.gen.jac}")
         elif node.op.value == "(":
             self.emit(node, f"({node.operand.gen.jac})")
