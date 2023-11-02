@@ -1175,15 +1175,7 @@ class BluePygenPass(Pass):
         right: AtomType,
         null_ok: bool,
         """
-        if (
-            isinstance(
-                node.target, ast.AtomUnit
-            )  # a bit complicated but works, checks if left is null_ok
-            and node.target.is_null_ok
-            or isinstance(node.target, ast.AtomTrailer)
-            and isinstance(node.target.right, ast.AtomUnit)
-            and node.target.right.is_null_ok
-        ):
+        if node.is_null_ok:
             if isinstance(node.right, (ast.IndexSlice, ast.ListVal)):
                 self.emit(
                     node,
@@ -1215,10 +1207,7 @@ class BluePygenPass(Pass):
         is_paren: bool,
         is_null_ok: bool,
         """
-        if node.is_null_ok:
-            self.emit(node, node.value.gen.py)
-        elif node.is_paren:
-            self.emit(node, f"({node.value.gen.py})")
+        self.emit(node, f"({node.value.gen.py})")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_func_call(self, node: ast.FuncCall) -> None:

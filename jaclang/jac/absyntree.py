@@ -1105,7 +1105,7 @@ class Assignment(AstTypedVarNode):
 
     def __init__(
         self,
-        target: SubNodeList[AtomType],
+        target: SubNodeList[ExprType],
         value: Optional[ExprType | YieldStmt],
         type_tag: Optional[SubTag[ExprType]],
         kid: Sequence[AstNode],
@@ -1404,15 +1404,17 @@ class AtomTrailer(AstNode):
 
     def __init__(
         self,
-        target: AtomType,
+        target: ExprType,
         right: AtomType,
         is_attr: bool,
+        is_null_ok: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
         self.is_attr = is_attr
+        self.is_null_ok = is_null_ok
         AstNode.__init__(self, kid=kid)
 
 
@@ -1423,13 +1425,11 @@ class AtomUnit(AstNode):
         self,
         value: AtomType | ExprType,
         is_paren: bool,
-        is_null_ok: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize atom unit expression node."""
         self.value = value
         self.is_paren = is_paren
-        self.is_null_ok = is_null_ok
         AstNode.__init__(self, kid=kid)
 
 
@@ -2012,7 +2012,6 @@ AtomSymbolType = Union[
 
 AtomType = Union[
     AtomSymbolType,
-    AtomTrailer,
     AtomUnit,
 ]
 
@@ -2021,6 +2020,7 @@ ExprType = Union[
     BinaryExpr,
     IfElseExpr,
     FuncCall,
+    AtomTrailer,
     AtomType,
 ]
 

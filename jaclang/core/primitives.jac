@@ -17,7 +17,7 @@ object Memory {
 
     #* Main Accessors *#
     can get_obj(caller_id: UUID, item_id: UUID,
-                override: bool = False) -> Element?;
+                override: bool = False) -> Element;
     can has_obj(item_id: UUID) -> bool;
     can save_obj(caller_id: UUID, item: Element);
     can del_obj(caller_id: UUID, item: Element);
@@ -80,9 +80,9 @@ object NodeInterface:ObjectInterface: {
 }
 
 object EdgeInterface:ObjectInterface: {
-    has source: Node?,
-        target: Node?,
-        dir: EdgeDir?;
+    has source: Node,
+        target: Node,
+        dir: EdgeDir;
 
     can apply_dir(dir: EdgeDir) -> Edge;
     can attach(src: Node, trg: Node) -> Edge;

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, TypeAlias, Union
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
@@ -40,6 +40,7 @@ class JacParser(Pass):
                 tree = JacParser.TreeToAST(parser=self).transform(tree)
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
+            catch_error.file_path = self.mod_path
             catch_error.line_no = e.line
             catch_error.c_start = e.column
             catch_error.c_end = e.column
@@ -77,13 +78,13 @@ class JacParser(Pass):
             debug=True,
             lexer_callbacks={"COMMENT": JacParser._comment_callback},
         )
-        JacParser.JacTransformer = Transformer
+        JacParser.JacTransformer = Transformer[jl.Tree[str], ast.AstNode]
         logger.setLevel(logging.DEBUG)
 
     comment_cache: list[jl.Token] = []
 
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})
-    JacTransformer = jl.Transformer
+    JacTransformer: TypeAlias = jl.Transformer[jl.Tree[str], ast.AstNode]
 
     class TreeToAST(JacTransformer):
         """Transform parse tree to AST."""
@@ -449,15 +450,15 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def decorators(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.AtomType]:
+        def decorators(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.ExprType]:
             """Grammar rule.
 
             decorators: (DECOR_OP atomic_chain)+
             """
-            valid_decors = [i for i in kid if isinstance(i, ast.AtomType)]
+            valid_decors = [i for i in kid if isinstance(i, ast.ExprType)]
             if len(valid_decors) == len(kid) / 2:
                 return self.nu(
-                    ast.SubNodeList[ast.AtomType](
+                    ast.SubNodeList[ast.ExprType](
                         items=valid_decors,
                         kid=kid,
                     )
@@ -1638,19 +1639,19 @@ class JacParser(Pass):
             ):
                 assignees = []
                 while (
-                    isinstance(chomp[0], ast.AtomType)
+                    isinstance(chomp[0], ast.ExprType)
                     and len(chomp) > 1
                     and isinstance(chomp[1], ast.Token)
                     and chomp[1].name == Tok.EQ
                 ):
                     assignees += [chomp[0], chomp[1]]
                     chomp = chomp[2:]
-            elif isinstance(chomp[0], ast.AtomType):
+            elif isinstance(chomp[0], ast.ExprType):
                 assignees = [chomp[0]]
                 chomp = chomp[1:]
             else:
                 raise self.ice()
-            new_targ = ast.SubNodeList[ast.AtomType](
+            new_targ = ast.SubNodeList[ast.ExprType](
                 items=assignees[::2],
                 kid=assignees,
             )
@@ -2045,63 +2046,42 @@ class JacParser(Pass):
         def atomic_chain(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
-            atomic_chain: atomic_chain (filter_compr | edge_op_ref | index_slice | list_val )
-                        | atomic_chain (DOT_BKWD | DOT_FWD | DOT) atom NULL_OK?
+            atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice | list_val)
+                        | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
                         | atomic_call
-                        | atom NULL_OK?
             """
             if len(kid) < 2 and isinstance(kid[0], ast.ExprType):
                 return self.nu(kid[0])
-            elif (
-                len(kid) == 2
-                and isinstance(kid[0], ast.ExprType)
-                and isinstance(kid[-1], ast.Token)
-                and kid[-1].name == Tok.NULL_OK
-            ):
-                return self.nu(
-                    ast.AtomUnit(
-                        value=kid[0],
-                        is_paren=False,
-                        is_null_ok=True,
-                        kid=kid,
-                    )
-                )
-            elif (
-                len(kid) == 2
-                and isinstance(kid[0], ast.ExprType)
-                and isinstance(
-                    kid[1],
-                    (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
-                )
+            chomp = [*kid]
+            target = chomp[0]
+            chomp = chomp[1:]
+            is_null_ok = False
+            if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.NULL_OK:
+                is_null_ok = True
+                chomp = chomp[1:]
+            if len(chomp) == 1 and isinstance(
+                chomp[0],
+                (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
             ):
                 return self.nu(
                     ast.AtomTrailer(
-                        target=kid[0],
-                        right=kid[1],
+                        target=target,
+                        right=chomp[0],
+                        is_null_ok=is_null_ok,
                         is_attr=False,
                         kid=kid,
                     )
                 )
             elif (
-                len(kid) > 2
-                and isinstance(kid[0], ast.ExprType)
-                and isinstance(kid[1], ast.Token)
-                and isinstance(kid[2], ast.AtomType)
+                len(chomp) > 1
+                and isinstance(chomp[0], ast.Token)
+                and isinstance(chomp[1], ast.AtomType)
             ):
-                kid[2] = (
-                    ast.AtomUnit(
-                        value=kid[2],
-                        is_paren=False,
-                        is_null_ok=True,
-                        kid=[kid[2], kid[-1]],
-                    )
-                    if isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.NULL_OK
-                    else kid[2]
-                )
                 return self.nu(
                     ast.AtomTrailer(
-                        target=kid[0] if kid[1].name != Tok.DOT_BKWD else kid[2],
-                        right=kid[2] if kid[1].name != Tok.DOT_BKWD else kid[0],
+                        target=target if chomp[0].name != Tok.DOT_BKWD else chomp[1],
+                        right=chomp[1] if chomp[0].name != Tok.DOT_BKWD else target,
+                        is_null_ok=is_null_ok,
                         is_attr=True,
                         kid=kid,
                     )
@@ -2206,9 +2186,7 @@ class JacParser(Pass):
                     and isinstance(kid[1], ast.ExprType)
                     and isinstance(kid[2], ast.Token)
                 ):
-                    ret = ast.AtomUnit(
-                        value=kid[1], is_paren=True, is_null_ok=False, kid=kid
-                    )
+                    ret = ast.AtomUnit(value=kid[1], is_paren=True, kid=kid)
                     # ret.add_kids_left([kid[0]])
                     # ret.add_kids_right([kid[2]])
                     return self.nu(ret)
