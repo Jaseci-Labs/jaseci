@@ -1993,7 +1993,7 @@ LiteralType = Union[
     Bool,
 ]
 
-AtomSymbolType = Union[
+AtomType = Union[
     NameType,
     LiteralType,
     MultiString,
@@ -2010,11 +2010,6 @@ AtomSymbolType = Union[
     IndexSlice,
 ]
 
-AtomType = Union[
-    AtomSymbolType,
-    AtomUnit,
-]
-
 ExprType = Union[
     UnaryExpr,
     BinaryExpr,
@@ -2022,6 +2017,7 @@ ExprType = Union[
     FuncCall,
     AtomTrailer,
     AtomType,
+    AtomUnit,
 ]
 
 ElementStmt = Union[
