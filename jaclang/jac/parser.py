@@ -466,15 +466,15 @@ class JacParser(Pass):
 
         def inherited_archs(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.AtomType]:
+        ) -> ast.SubNodeList[ast.ExprType]:
             """Grammar rule.
 
             inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
                            | COLON (atomic_chain COMMA)* atomic_chain COLON
             """
-            valid_inh = [i for i in kid if isinstance(i, ast.AtomType)]
+            valid_inh = [i for i in kid if isinstance(i, ast.ExprType)]
             return self.nu(
-                ast.SubNodeList[ast.AtomType](
+                ast.SubNodeList[ast.ExprType](
                     items=valid_inh,
                     kid=kid,
                 )

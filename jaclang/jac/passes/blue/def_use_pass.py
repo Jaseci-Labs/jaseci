@@ -76,7 +76,7 @@ class DefUsePass(SymTabPass):
         for i in node.target.items:
             if isinstance(i, ast.AtomTrailer):
                 self.chain_def_insert(self.unwind_atom_trailer(i))
-            elif isinstance(i, ast.AtomType):
+            elif isinstance(i, ast.AstSymbolNode):
                 self.def_insert(i)
             else:
                 self.error("Assignment target not valid")
@@ -97,7 +97,7 @@ class DefUsePass(SymTabPass):
         for i in tuple_items:
             if isinstance(i, ast.AtomTrailer):
                 self.chain_def_insert(self.unwind_atom_trailer(i))
-            elif isinstance(i, ast.AtomType):
+            elif isinstance(i, ast.AstSymbolNode):
                 self.def_insert(i)
             else:
                 self.error("Named target not valid")
@@ -120,11 +120,15 @@ class DefUsePass(SymTabPass):
         """
         left = node.right if isinstance(node.right, ast.AtomTrailer) else node.target
         right = node.target if isinstance(node.right, ast.AtomTrailer) else node.right
-        trag_list: list[ast.AstSymbolNode] = [right]
+        trag_list: list[ast.AstSymbolNode] = (
+            [right] if isinstance(right, ast.AstSymbolNode) else []
+        )
+        if not trag_list:
+            self.ice("Something went very wrong with atom trailer not valid")
         while isinstance(left, ast.AtomTrailer) and left.is_attr:
             trag_list.insert(0, left.right)
             left = left.target
-        if isinstance(left, ast.AtomType):
+        if isinstance(left, ast.AstSymbolNode):
             trag_list.insert(0, left)
         return trag_list
 

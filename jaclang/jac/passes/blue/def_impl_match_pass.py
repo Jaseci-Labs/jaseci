@@ -16,9 +16,8 @@ class DeclDefMatchPass(Pass):
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.need_match = []
         if not self.ir.sym_tab:
-            return self.ice("Expected symbol table on node.")
+            raise self.ice("Expected symbol table on node.")
         self.connect_def_impl(self.ir.sym_tab)
         self.terminate()
 
