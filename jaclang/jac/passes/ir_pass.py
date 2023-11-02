@@ -56,7 +56,10 @@ class Pass(Transform):
         if not node:
             return result
         elif len(node._sub_node_tab):
-            result.extend(node._sub_node_tab[typ] if typ in node._sub_node_tab else [])
+            if typ in node._sub_node_tab:
+                for i in node._sub_node_tab[typ]:
+                    if isinstance(i, typ):
+                        result.append(i)
         elif len(node.kid):
             if not brute_force:
                 raise ValueError(f"Node has no sub_node_tab. {node}")
