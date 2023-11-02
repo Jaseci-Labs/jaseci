@@ -824,7 +824,7 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_yield_stmt(self, node: ast.YieldStmt) -> None:
+    def enter_yield_expr(self, node: ast.YieldExpr) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],

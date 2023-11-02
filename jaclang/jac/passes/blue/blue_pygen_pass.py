@@ -791,8 +791,9 @@ class BluePygenPass(Pass):
     def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
 
-        target: ExprType,
+        target: SubNodeList[ExprType],
         """
+        self.comma_sep_node_list(node.target)
         self.emit_ln(node, f"del {node.target.gen.py}")
 
     # NOTE: Incomplete for Jac Purple and Red
@@ -812,16 +813,6 @@ class BluePygenPass(Pass):
             self.emit_ln(node, f"return {node.expr.gen.py}")
         else:
             self.emit_ln(node, "return")
-
-    def exit_yield_stmt(self, node: ast.YieldStmt) -> None:
-        """Sub objects.
-
-        expr: Optional[ExprType],
-        """
-        if node.expr:
-            self.emit_ln(node, f"yield {node.expr.gen.py}")
-        else:
-            self.emit_ln(node, "yield")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
@@ -1126,7 +1117,7 @@ class BluePygenPass(Pass):
         )
         if node.conditional:
             partial += f" if {node.conditional.gen.py}"
-        self.emit(node, f"({partial})")
+        self.emit(node, f"{partial}")
 
     def exit_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.
@@ -1200,6 +1191,18 @@ class BluePygenPass(Pass):
         is_null_ok: bool,
         """
         self.emit(node, f"({node.value.gen.py})")
+
+    def exit_yield_expr(self, node: ast.YieldExpr) -> None:
+        """Sub objects.
+
+        expr: Optional[ExprType],
+        """
+        if isinstance(node.expr, ast.SubNodeList):
+            self.emit(node, f"yield {node.expr.gen.py}")
+        elif isinstance(node.expr, ast.ExprType):
+            self.emit(node, f"yield from {node.expr.gen.py}")
+        else:
+            self.emit(node, "yield")
 
     # NOTE: Incomplete for Jac Purple and Red
     def exit_func_call(self, node: ast.FuncCall) -> None:

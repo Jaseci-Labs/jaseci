@@ -987,7 +987,7 @@ class DeleteStmt(AstNode):
 
     def __init__(
         self,
-        target: SubNodeList[AtomType],
+        target: SubNodeList[ExprType],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize delete statement node."""
@@ -1021,19 +1021,6 @@ class ReturnStmt(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class YieldStmt(AstNode):
-    """YieldStmt node type for Jac Ast."""
-
-    def __init__(
-        self,
-        expr: Optional[ExprType],
-        kid: Sequence[AstNode],
-    ) -> None:
-        """Initialize yeild statement node."""
-        self.expr = expr
-        AstNode.__init__(self, kid=kid)
-
-
 class IgnoreStmt(WalkerStmtOnlyNode):
     """IgnoreStmt node type for Jac Ast."""
 
@@ -1053,7 +1040,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode):
 
     def __init__(
         self,
-        vis_type: Optional[SubNodeList[AtomType]],
+        vis_type: Optional[SubNodeList[ExprType]],
         target: ExprType,
         else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
@@ -1130,7 +1117,7 @@ class Assignment(AstTypedVarNode):
     def __init__(
         self,
         target: SubNodeList[ExprType],
-        value: Optional[ExprType | YieldStmt],
+        value: Optional[ExprType | YieldExpr],
         type_tag: Optional[SubTag[ExprType]],
         kid: Sequence[AstNode],
         mutable: bool = True,
@@ -1447,13 +1434,26 @@ class AtomUnit(AstNode):
 
     def __init__(
         self,
-        value: AtomType | ExprType,
+        value: ExprType | YieldExpr,
         is_paren: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize atom unit expression node."""
         self.value = value
         self.is_paren = is_paren
+        AstNode.__init__(self, kid=kid)
+
+
+class YieldExpr(AstNode):
+    """YieldStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        expr: Optional[ExprType | SubNodeList[ExprType]],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize yeild statement node."""
+        self.expr = expr
         AstNode.__init__(self, kid=kid)
 
 
@@ -2039,6 +2039,7 @@ ExprType = Union[
     BinaryExpr,
     IfElseExpr,
     FuncCall,
+    YieldExpr,
     AtomTrailer,
     AtomType,
     AtomUnit,
@@ -2088,7 +2089,6 @@ CodeBlockStmt = Union[
     DeleteStmt,
     ReportStmt,
     ReturnStmt,
-    YieldStmt,
     AwaitStmt,
     DisengageStmt,
     RevisitStmt,

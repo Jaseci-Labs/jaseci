@@ -325,7 +325,7 @@ class PyastBuildPass(Pass):
         else:
             raise self.ice()
         value = self.convert(node.value) if node.value else None
-        valid_types = Union[ast.ExprType, ast.YieldStmt]
+        valid_types = Union[ast.ExprType, ast.YieldExpr]
         if (
             isinstance(target, ast.SubNodeList)
             and (isinstance(value, valid_types) or not value)

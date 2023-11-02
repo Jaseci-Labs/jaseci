@@ -1037,7 +1037,6 @@ class JacParser(Pass):
             statement: py_code_block
                     | walker_stmt
                     | await_stmt SEMI
-                    | yield_stmt SEMI
                     | return_stmt SEMI
                     | report_stmt SEMI
                     | delete_stmt SEMI
@@ -1050,6 +1049,7 @@ class JacParser(Pass):
                     | try_stmt
                     | if_stmt
                     | expression SEMI
+                    | yield_expr SEMI
                     | static_assignment
                     | assignment SEMI
                     | global_ref SEMI
@@ -1480,29 +1480,6 @@ class JacParser(Pass):
                     )
                 )
 
-        def yield_stmt(self, kid: list[ast.AstNode]) -> ast.YieldStmt:
-            """Grammar rule.
-
-            yield_stmt: KW_YIELD expression?
-            """
-            if len(kid) > 1:
-                if isinstance(kid[1], ast.ExprType) or not kid[1]:
-                    return self.nu(
-                        ast.YieldStmt(
-                            expr=kid[1],
-                            kid=kid,
-                        )
-                    )
-                else:
-                    raise self.ice()
-            else:
-                return self.nu(
-                    ast.YieldStmt(
-                        expr=None,
-                        kid=kid,
-                    )
-                )
-
         def walker_stmt(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
             """Grammar rule.
 
@@ -1667,7 +1644,7 @@ class JacParser(Pass):
                 and chomp[0].name == Tok.EQ
             ):
                 chomp = chomp[1:]
-            valid_types = Union[ast.YieldStmt, ast.ExprType]
+            valid_types = Union[ast.YieldExpr, ast.ExprType]
             value = (
                 chomp[0]
                 if len(chomp) > 0 and isinstance(chomp[0], valid_types)
@@ -2169,7 +2146,7 @@ class JacParser(Pass):
 
             atom: edge_op_ref
                  | any_ref
-                 | LPAREN expression RPAREN
+                 | LPAREN (expression | yield_expr) RPAREN
                  | atom_collection
                  | atom_literal
             """
@@ -2181,7 +2158,7 @@ class JacParser(Pass):
             elif len(kid) == 3:
                 if (
                     isinstance(kid[0], ast.Token)
-                    and isinstance(kid[1], ast.ExprType)
+                    and isinstance(kid[1], (ast.ExprType, ast.YieldExpr))
                     and isinstance(kid[2], ast.Token)
                 ):
                     ret = ast.AtomUnit(value=kid[1], is_paren=True, kid=kid)
@@ -2190,6 +2167,37 @@ class JacParser(Pass):
                     return self.nu(ret)
                 else:
                     raise self.ice()
+            else:
+                raise self.ice()
+
+        def yield_expr(self, kid: list[ast.AstNode]) -> ast.YieldExpr:
+            """Grammar rule.
+
+            yield_expr:
+                | KW_YIELD KW_FROM expression
+                | KW_YIELD expr_list?
+            """
+            if len(kid) == 3 and isinstance(kid[2], ast.ExprType):
+                return self.nu(
+                    ast.YieldExpr(
+                        expr=kid[2],
+                        kid=kid,
+                    )
+                )
+            elif len(kid) == 2 and isinstance(kid[1], ast.SubNodeList):
+                return self.nu(
+                    ast.YieldExpr(
+                        expr=kid[1],
+                        kid=kid,
+                    )
+                )
+            elif len(kid) == 1:
+                return self.nu(
+                    ast.YieldExpr(
+                        expr=None,
+                        kid=kid,
+                    )
+                )
             else:
                 raise self.ice()
 
@@ -2376,7 +2384,7 @@ class JacParser(Pass):
                 )
             )
 
-        def atomic_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.AtomType]:
+        def atomic_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.ExprType]:
             """Grammar rule.
 
             atomic_list: (atomic_list COMMA)? atomic_chain
@@ -2391,9 +2399,9 @@ class JacParser(Pass):
             else:
                 expr = kid[0]
             new_kid = [*consume.kid, comma, expr] if consume else [expr]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.AtomType)]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.ExprType)]
             return self.nu(
-                ast.SubNodeList[ast.AtomType](
+                ast.SubNodeList[ast.ExprType](
                     items=valid_kid,
                     kid=new_kid,
                 )
@@ -3094,7 +3102,6 @@ class JacParser(Pass):
                     )
                 )
             else:
-                print(pattern, guard, stmts)
                 raise self.ice()
 
         def pattern_seq(self, kid: list[ast.AstNode]) -> ast.MatchPattern:

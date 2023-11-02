@@ -679,6 +679,30 @@ class JacFormatPass(Pass):
         """
         self.emit(node, f"({node.value.gen.jac})")
 
+    def exit_yield_expr(self, node: ast.YieldExpr) -> None:
+        """Sub objects.
+
+        expr: Optional[ExprType],
+        """
+        comment_str = ""
+        (
+            inline_comments,
+            _,
+        ) = self.emit_comments_for_line(node.loc.first_line)
+        if inline_comments:
+            comment_str = " ; ".join(
+                comment_value for _, comment_value in inline_comments
+            )
+        if isinstance(node.expr, ast.SubNodeList):
+            self.emit(node, f"yield {node.expr.gen.jac}")
+        elif isinstance(node.expr, ast.ExprType):
+            self.emit(node, f"yield from {node.expr.gen.jac}")
+        else:
+            self.emit(node, "yield")
+        if isinstance(node.kid[-1], ast.Token) and node.kid[-1].name == "SEMI":
+            self.emit_ln(node, node.kid[-1].value + " " + comment_str)
+            self.processed_comments.add(comment_str)
+
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
 
@@ -1336,28 +1360,6 @@ class JacFormatPass(Pass):
         target: ExprType,
         """
         self.ds_feature_warn()
-
-    def exit_yield_stmt(self, node: ast.YieldStmt) -> None:
-        """Sub objects.
-
-        expr: Optional[ExprType],
-        """
-        comment_str = ""
-        (
-            inline_comments,
-            _,
-        ) = self.emit_comments_for_line(node.loc.first_line)
-        if inline_comments:
-            comment_str = " ; ".join(
-                comment_value for _, comment_value in inline_comments
-            )
-        if node.expr:
-            self.emit(node, f"yield {node.expr.gen.jac}")
-        else:
-            self.emit(node, "yield")
-        if isinstance(node.kid[-1], ast.Token) and node.kid[-1].name == "SEMI":
-            self.emit_ln(node, node.kid[-1].value + " " + comment_str)
-            self.processed_comments.add(comment_str)
 
     def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
         """Sub objects.

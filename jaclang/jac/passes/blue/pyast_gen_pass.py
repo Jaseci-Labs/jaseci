@@ -683,7 +683,7 @@ class PyastGenPass(Pass):
             ast3.If(
                 test=node.condition.gen.py_ast,
                 body=node.body.gen.py_ast,
-                orelse=node.else_body.gen.py_ast if node.else_body else None,
+                orelse=node.else_body.gen.py_ast if node.else_body else [],
             )
         )
 
@@ -694,20 +694,22 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt | ElseIf],
         """
-        node.gen.py_ast = self.sync(
-            ast3.If(
-                test=node.condition.gen.py_ast,
-                body=node.body.gen.py_ast,
-                orelse=node.else_body.gen.py_ast if node.else_body else None,
+        node.gen.py_ast = [
+            self.sync(
+                ast3.If(
+                    test=node.condition.gen.py_ast,
+                    body=node.body.gen.py_ast,
+                    orelse=node.else_body.gen.py_ast if node.else_body else [],
+                )
             )
-        )
+        ]
 
     def exit_else_stmt(self, node: ast.ElseStmt) -> None:
         """Sub objects.
 
         body: SubNodeList[CodeBlockStmt],
         """
-        node.gen.py_ast = self.sync(ast3.If(test=ast3.Constant(value=True)))
+        node.gen.py_ast = node.body.gen.py_ast
 
     def exit_expr_stmt(self, node: ast.ExprStmt) -> None:
         """Sub objects.
@@ -739,8 +741,8 @@ class PyastGenPass(Pass):
             ast3.Try(
                 body=node.body.gen.py_ast,
                 handlers=node.excepts.gen.py_ast if node.excepts else None,
-                orelse=node.else_body.gen.py_ast if node.else_body else None,
-                finalbody=node.finally_body.gen.py_ast if node.finally_body else None,
+                orelse=node.else_body.gen.py_ast if node.else_body else [],
+                finalbody=node.finally_body.gen.py_ast if node.finally_body else [],
             )
         )
 
@@ -792,7 +794,7 @@ class PyastGenPass(Pass):
                 ast3.While(
                     test=node.condition.gen.py_ast,
                     body=body,
-                    orelse=node.else_body.gen.py_ast if node.else_body else None,
+                    orelse=node.else_body.gen.py_ast if node.else_body else [],
                 )
             )
         )
@@ -813,7 +815,7 @@ class PyastGenPass(Pass):
                 target=node.target.gen.py_ast,
                 iter=node.collection.gen.py_ast,
                 body=node.body.gen.py_ast,
-                orelse=node.else_body.gen.py_ast if node.else_body else None,
+                orelse=node.else_body.gen.py_ast if node.else_body else [],
             )
         )
 
@@ -827,7 +829,7 @@ class PyastGenPass(Pass):
             ast3.While(
                 test=node.condition.gen.py_ast,
                 body=node.body.gen.py_ast,
-                orelse=None,
+                orelse=[],
             )
         )
 
@@ -920,14 +922,19 @@ class PyastGenPass(Pass):
             ast3.Return(value=node.expr.gen.py_ast if node.expr else None)
         )
 
-    def exit_yield_stmt(self, node: ast.YieldStmt) -> None:
+    def exit_yield_expr(self, node: ast.YieldExpr) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
-        node.gen.py_ast = self.sync(
-            ast3.Yield(value=node.expr.gen.py_ast if node.expr else None)
-        )
+        if not node.expr or isinstance(node.expr, ast.SubNodeList):
+            node.gen.py_ast = self.sync(
+                ast3.Yield(value=node.expr.gen.py_ast if node.expr else None)
+            )
+        elif isinstance(node.expr, ast.ExprType):
+            node.gen.py_ast = self.sync(
+                ast3.YieldFrom(value=node.expr.gen.py_ast if node.expr else None)
+            )
 
     def exit_ignore_stmt(self, node: ast.IgnoreStmt) -> None:
         """Sub objects.
