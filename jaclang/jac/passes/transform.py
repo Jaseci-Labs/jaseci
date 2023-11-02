@@ -26,6 +26,10 @@ class Alert:
             f" col {self.loc.col_start}: {self.msg}"
         )
 
+    def __repr__(self) -> str:
+        """Return string representation of alert."""
+        return self.__str__()
+
 
 class TransformError(Exception):
     """Error during transformation."""

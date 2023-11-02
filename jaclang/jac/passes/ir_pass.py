@@ -48,10 +48,10 @@ class Pass(Transform):
 
     @staticmethod
     def get_all_sub_nodes(
-        node: ast.AstNode, typ: type, brute_force: bool = False
-    ) -> list[ast.AstNode]:
+        node: ast.AstNode, typ: type[ast.T], brute_force: bool = False
+    ) -> list[ast.T]:
         """Get all sub nodes of type."""
-        result: list[ast.AstNode] = []
+        result: list[ast.T] = []
         # Assumes pass built the sub node table
         if not node:
             return result

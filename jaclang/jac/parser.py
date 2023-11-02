@@ -2042,7 +2042,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def atomic_chain(self, kid: list[ast.AstNode]) -> ast.AtomType:
+        def atomic_chain(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
             atomic_chain: atomic_chain (filter_compr | edge_op_ref | index_slice | list_val )
@@ -2050,11 +2050,11 @@ class JacParser(Pass):
                         | atomic_call
                         | atom NULL_OK?
             """
-            if len(kid) < 2 and isinstance(kid[0], ast.AtomType):
+            if len(kid) < 2 and isinstance(kid[0], ast.ExprType):
                 return self.nu(kid[0])
             elif (
                 len(kid) == 2
-                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[0], ast.ExprType)
                 and isinstance(kid[-1], ast.Token)
                 and kid[-1].name == Tok.NULL_OK
             ):
@@ -2068,7 +2068,7 @@ class JacParser(Pass):
                 )
             elif (
                 len(kid) == 2
-                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[0], ast.ExprType)
                 and isinstance(
                     kid[1],
                     (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
@@ -2084,7 +2084,7 @@ class JacParser(Pass):
                 )
             elif (
                 len(kid) > 2
-                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[0], ast.ExprType)
                 and isinstance(kid[1], ast.Token)
                 and isinstance(kid[2], ast.AtomType)
             ):
@@ -2116,11 +2116,11 @@ class JacParser(Pass):
             """
             if (
                 len(kid) == 4
-                and isinstance(kid[0], ast.AtomType)
+                and isinstance(kid[0], ast.ExprType)
                 and isinstance(kid[2], ast.SubNodeList)
             ):
                 return self.nu(ast.FuncCall(target=kid[0], params=kid[2], kid=kid))
-            elif len(kid) == 3 and isinstance(kid[0], ast.AtomType):
+            elif len(kid) == 3 and isinstance(kid[0], ast.ExprType):
                 return self.nu(ast.FuncCall(target=kid[0], params=None, kid=kid))
             else:
                 raise self.ice()
