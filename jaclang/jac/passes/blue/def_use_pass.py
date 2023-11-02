@@ -115,18 +115,12 @@ class DefUsePass(SymTabPass):
     def unwind_atom_trailer(self, node: ast.AtomTrailer) -> list[ast.AstSymbolNode]:
         """Sub objects.
 
-        target: AtomType,
+        target: ExprType,
         right: AtomType,
         is_scope_contained: bool,
         """
         left = node.right if isinstance(node.right, ast.AtomTrailer) else node.target
         right = node.target if isinstance(node.right, ast.AtomTrailer) else node.right
-        left, right = (
-            left.value if isinstance(left, ast.AtomUnit) and left.is_null_ok else left,
-            right.value
-            if isinstance(right, ast.AtomUnit) and right.is_null_ok
-            else right,
-        )
         trag_list: list[ast.AstSymbolNode] = []
         while isinstance(left, ast.AtomTrailer) and left.is_attr:
             if not isinstance(right, ast.AtomType):
@@ -142,14 +136,6 @@ class DefUsePass(SymTabPass):
                 old_left.target
                 if isinstance(old_left.right, ast.AtomTrailer)
                 else old_left.right
-            )
-            left, right = (
-                left.value
-                if isinstance(left, ast.AtomUnit) and left.is_null_ok
-                else left,
-                right.value
-                if isinstance(right, ast.AtomUnit) and right.is_null_ok
-                else right,
             )
             if isinstance(left, ast.AtomType):
                 trag_list.insert(0, left)

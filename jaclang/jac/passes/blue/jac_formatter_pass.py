@@ -677,10 +677,7 @@ class JacFormatPass(Pass):
         is_paren: bool,
         is_null_ok: bool,
         """
-        if node.is_paren:
-            self.emit(node, f"({node.value.gen.jac})")
-        elif node.is_null_ok:
-            self.emit(node, f"{node.value.gen.jac}?")
+        self.emit(node, f"({node.value.gen.jac})")
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.
