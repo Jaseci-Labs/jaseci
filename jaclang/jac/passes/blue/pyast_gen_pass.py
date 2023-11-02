@@ -4,7 +4,7 @@ At the end of this pass a meta['py_code'] is present with pure python code
 in each node. Module nodes contain the entire module code.
 """
 import ast as ast3
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, get_args
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con, Tokens as Tok
@@ -1280,7 +1280,7 @@ class PyastGenPass(Pass):
                 args=[
                     x.gen.py_ast
                     for x in node.params.items
-                    if isinstance(x, ast.ExprType)
+                    if isinstance(x, get_args(ast.ExprType))
                 ]
                 if node.params
                 else [],

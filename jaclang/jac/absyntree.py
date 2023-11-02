@@ -213,7 +213,7 @@ class Module(AstDocNode):
         doc: Optional[String],
         body: Sequence[ElementStmt],
         is_imported: bool,
-        kid: Sequence[AstNode],
+        kid: Sequence[ElementStmt],
     ) -> None:
         """Initialize whole program node."""
         self.name = name
@@ -1302,7 +1302,7 @@ class DictVal(AstSymbolNode):
     def __init__(
         self,
         kv_pairs: Sequence[KVPair],
-        kid: Sequence[AstNode],
+        kid: Sequence[KVPair],
     ) -> None:
         """Initialize dict expression node."""
         self.kv_pairs = kv_pairs

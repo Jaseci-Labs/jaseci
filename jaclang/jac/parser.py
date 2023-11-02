@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, Optional, TypeAlias, Union
+from typing import Callable, Optional, TypeAlias, Union, get_args
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
@@ -30,14 +30,14 @@ class JacParser(Pass):
         if JacParser.dev_mode:
             JacParser.make_dev()
 
-    def transform(self, ir: ast.AstNode) -> Optional[ast.Module]:
+    def transform(self, ir: ast.AstNode) -> Optional[ast.Module]:  # type: ignore
         """Transform input IR."""
         try:
             tree, self.source.comments = JacParser.parse(
                 self.source.value, on_error=self.error_callback
             )
             if tree:
-                tree = JacParser.TreeToAST(parser=self).transform(tree)
+                tree = JacParser.TreeToAST(parser=self).transform(tree)  # type: ignore
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
@@ -49,7 +49,7 @@ class JacParser(Pass):
         except Exception as e:
             tree = None
             self.error(f"Internal Error: {e}")
-        return tree
+        return tree  # type: ignore
 
     def error_callback(self, e: jl.UnexpectedInput) -> bool:
         """Handle error."""
@@ -60,7 +60,7 @@ class JacParser(Pass):
         JacParser.comment_cache.append(comment)
 
     @staticmethod
-    def parse(ir: str, on_error: Callable) -> tuple[jl.Tree, list[jl.Token]]:
+    def parse(ir: str, on_error: Callable) -> tuple[jl.Tree, list[jl.Token]]:  # type: ignore
         """Parse input IR."""
         JacParser.comment_cache = []
         return (
@@ -78,12 +78,12 @@ class JacParser(Pass):
             debug=True,
             lexer_callbacks={"COMMENT": JacParser._comment_callback},
         )
-        JacParser.JacTransformer = Transformer[jl.Tree[str], ast.AstNode]
+        JacParser.JacTransformer = Transformer[jl.Tree[str], ast.AstNode]  # type: ignore
         logger.setLevel(logging.DEBUG)
 
     comment_cache: list[jl.Token] = []
 
-    parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})
+    parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
     JacTransformer: TypeAlias = jl.Transformer[jl.Tree[str], ast.AstNode]
 
     class TreeToAST(JacTransformer):
@@ -113,7 +113,7 @@ class JacParser(Pass):
             """
             return self.nu(kid[0])
 
-        def module(self, kid: list[ast.AstNode]) -> ast.AstNode:
+        def module(self, kid: list[ast.ElementStmt | ast.String]) -> ast.Module:
             """Grammar rule.
 
             module: (doc_tag? element (element_with_doc | element)*)?
@@ -121,28 +121,26 @@ class JacParser(Pass):
             """
             doc = kid[0] if len(kid) and isinstance(kid[0], ast.String) else None
             body = kid[1:] if doc else kid
-            valid_body: list[ast.ElementStmt] = [
-                i for i in body if isinstance(i, ast.ElementStmt)
-            ]
-            if len(valid_body) == len(body):
-                mod = ast.Module(
-                    name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
-                    source=self.parse_ref.source,
-                    doc=doc,
-                    body=valid_body,
-                    is_imported=False,
-                    kid=kid,
-                )
-                return self.nu(mod)
-            else:
-                raise self.ice()
+            mod = ast.Module(
+                name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
+                source=self.parse_ref.source,
+                doc=doc,
+                body=body,
+                is_imported=False,
+                kid=kid,
+            )
+            return self.nu(mod)
 
-        def element_with_doc(self, kid: list[ast.AstNode]) -> ast.ElementStmt:
+        def element_with_doc(
+            self, kid: list[ast.ElementStmt | ast.String]
+        ) -> ast.ElementStmt:
             """Grammar rule.
 
             element_with_doc: doc_tag element
             """
-            if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.String):
+            if isinstance(kid[1], get_args(ast.ElementStmt)) and isinstance(
+                kid[0], ast.String
+            ):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
                 return self.nu(kid[1])
@@ -161,7 +159,7 @@ class JacParser(Pass):
                 | test
                 | global_var
             """
-            if isinstance(kid[0], ast.ElementStmt):
+            if isinstance(kid[0], get_args(ast.ElementStmt)):
                 return self.nu(kid[0])
             else:
                 raise self.ice()
