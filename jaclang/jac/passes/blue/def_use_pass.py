@@ -27,7 +27,7 @@ class DefUsePass(SymTabPass):
         name_ref: NameType,
         arch: Token,
         """
-        self.use_lookup(node, also_link=[node.name_ref])
+        self.use_lookup(node)
 
     def enter_arch_ref_chain(self, node: ast.ArchRefChain) -> None:
         """Sub objects.
@@ -44,7 +44,7 @@ class DefUsePass(SymTabPass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
-        self.def_insert(node, single_use="func param", also_link=[node.name])
+        self.def_insert(node, single_use="func param")
 
     def enter_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
@@ -60,7 +60,6 @@ class DefUsePass(SymTabPass):
                 node,
                 single_use="has var",
                 access_spec=node.parent.parent,
-                also_link=[node.name],
             )
         else:
             self.ice("Inconsistency in AST, has var should be under arch has")
@@ -121,24 +120,12 @@ class DefUsePass(SymTabPass):
         """
         left = node.right if isinstance(node.right, ast.AtomTrailer) else node.target
         right = node.target if isinstance(node.right, ast.AtomTrailer) else node.right
-        trag_list: list[ast.AstSymbolNode] = []
+        trag_list: list[ast.AstSymbolNode] = [right]
         while isinstance(left, ast.AtomTrailer) and left.is_attr:
-            if not isinstance(right, ast.AtomType):
-                break
-            trag_list.insert(0, right)
-            old_left = left
-            left = (
-                old_left.right
-                if isinstance(old_left.right, ast.AtomTrailer)
-                else old_left.target
-            )
-            right = (
-                old_left.target
-                if isinstance(old_left.right, ast.AtomTrailer)
-                else old_left.right
-            )
-            if isinstance(left, ast.AtomType):
-                trag_list.insert(0, left)
+            trag_list.insert(0, left.right)
+            left = left.target
+        if isinstance(left, ast.AtomType):
+            trag_list.insert(0, left)
         return trag_list
 
     def enter_func_call(self, node: ast.FuncCall) -> None:

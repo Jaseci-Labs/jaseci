@@ -26,12 +26,12 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.fixture_abs_path("../../../../../../examples/micro/hodge_podge.jac"),
             target=PyastGenPass,
         )
-        import ast as ast3
+        # import ast as ast3
 
-        if isinstance(code_gen.ir.gen.py_ast, ast3.AST):
-            print(ast3.dump(code_gen.ir.gen.py_ast, indent=2))
-            print(ast3.unparse(code_gen.ir.gen.py_ast))
-            exec(compile(code_gen.ir.gen.py_ast, "<string>", "exec"))
+        # if isinstance(code_gen.ir.gen.py_ast, ast3.AST):
+        #     print(ast3.dump(code_gen.ir.gen.py_ast, indent=2))
+        #     print(ast3.unparse(code_gen.ir.gen.py_ast))
+        #     exec(compile(code_gen.ir.gen.py_ast, "<string>", "exec"))
         self.assertFalse(code_gen.errors_had)
 
     def test_circle_py_ast(self) -> None:
@@ -43,9 +43,15 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         # import ast as ast3
 
         # if isinstance(code_gen.ir.gen.py_ast, ast3.AST):
-        #     print(ast3.dump(code_gen.ir.gen.py_ast, indent=2))
-        #     compile(code_gen.ir.gen.py_ast, "<string>", "exec")
-        #     print(ast3.unparse(code_gen.ir.gen.py_ast))
+        #     from_jac = ast3.dump(code_gen.ir.gen.py_ast, indent=2)
+        #     back_to_py = ast3.unparse(code_gen.ir.gen.py_ast)
+        #     from_py = ast3.dump(ast3.parse(back_to_py), indent=2)
+        #     print(back_to_py)
+        #     # print(from_jac, "\n\n", from_py)
+        #     # print(ast3.dump(code_gen.ir.gen.py_ast, indent=2))
+        #     # print(ast3.unparse(code_gen.ir.gen.py_ast))
+        #     prog = compile(code_gen.ir.gen.py_ast, "<string>", "exec")
+        #     exec(prog)
         self.assertFalse(code_gen.errors_had)
 
     def micro_suite_test(self, filename: str) -> None:

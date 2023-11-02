@@ -31,7 +31,6 @@ class SymTabPass(Pass):
         node: ast.AstSymbolNode,
         access_spec: Optional[ast.AstAccessNode] = None,
         single_use: Optional[str] = None,
-        also_link: Optional[list[ast.AstSymbolNode]] = None,
         table_override: Optional[SymbolTable] = None,
     ) -> Optional[Symbol]:
         """Insert into symbol table."""
@@ -54,14 +53,15 @@ class SymTabPass(Pass):
                 original=collide,
             )
         node.is_store = True
-        self.handle_hit_outcome(node, also_link)
+        if isinstance(node.sym_name_node, ast.AstSymbolNode):
+            node.sym_name_node.is_store = True
+        self.handle_hit_outcome(node)
         return node.sym_link
 
     def use_lookup(
         self,
         node: ast.AstSymbolNode,
         sym_table: Optional[SymbolTable] = None,
-        also_link: Optional[list[ast.AstSymbolNode]] = None,
     ) -> Optional[Symbol]:
         """Link to symbol."""
         if self.seen(node):
@@ -77,7 +77,7 @@ class SymTabPass(Pass):
             # If successful lookup mark linked, add to table uses, and link others
             if node.sym_link:
                 sym_table.uses.append(node)
-        self.handle_hit_outcome(node, also_link)
+        self.handle_hit_outcome(node)
         return node.sym_link
 
     def chain_def_insert(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
@@ -86,6 +86,9 @@ class SymTabPass(Pass):
             return
         cur_sym_tab = node_list[0].sym_tab
         node_list[-1].is_store = True
+        if isinstance(node_list[-1].sym_name_node, ast.AstSymbolNode):
+            node_list[-1].sym_name_node.is_store = True
+
         node_list = node_list[:-1]  # Just performs lookup mappings of pre assign chain
         for i in node_list:
             if cur_sym_tab is None:
@@ -96,9 +99,6 @@ class SymTabPass(Pass):
                     lookup := self.use_lookup(
                         i,
                         sym_table=cur_sym_tab,
-                        also_link=[i.sym_name_node]
-                        if isinstance(i.sym_name_node, ast.AstSymbolNode)
-                        else [],
                     )
                 )
                 else None
@@ -118,9 +118,6 @@ class SymTabPass(Pass):
                     lookup := self.use_lookup(
                         i,
                         sym_table=cur_sym_tab,
-                        also_link=[i.sym_name_node]
-                        if isinstance(i.sym_name_node, ast.AstSymbolNode)
-                        else [],
                     )
                 )
                 else None
@@ -129,20 +126,21 @@ class SymTabPass(Pass):
     def handle_hit_outcome(
         self,
         node: ast.AstSymbolNode,
-        also_link: Optional[list[ast.AstSymbolNode]] = None,
     ) -> None:
         """Handle outcome of lookup or insert."""
         # If successful lookup mark linked, add to table uses, and link others
         if node.sym_link:
             self.linked.add(node)
-            for i in also_link if also_link else []:
-                i.sym_link = node.sym_link
+            if isinstance(node.sym_name_node, ast.AstSymbolNode):
+                node.sym_name_node.sym_link = node.sym_link
         if not node.sym_link:
             # Mark nodes that were not successfully linked
             self.unlinked.add(node)
-            for i in also_link if also_link else []:
-                if not i.sym_link:
-                    self.unlinked.add(i)
+            if (
+                isinstance(node.sym_name_node, ast.AstSymbolNode)
+                and not node.sym_name_node.sym_link
+            ):
+                self.unlinked.add(node.sym_name_node)
 
     def already_declared_err(
         self,
@@ -251,7 +249,7 @@ class SymTabBuildPass(SymTabPass):
         body: CodeBlock,
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_use="test", also_link=[node.name])
+        self.def_insert(node, single_use="test")
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
 
@@ -303,12 +301,11 @@ class SymTabBuildPass(SymTabPass):
         self.sync_node_to_scope(node)
         if node.items:
             for i in node.items.items:
-                self.def_insert(i, single_use="import item", also_link=[i.name])
+                self.def_insert(i, single_use="import item")
         else:
             self.def_insert(
                 node.path,
                 single_use="import",
-                also_link=[node.path.alias] if node.path.alias else [],
             )
 
     def exit_import(self, node: ast.Import) -> None:
@@ -360,7 +357,7 @@ class SymTabBuildPass(SymTabPass):
         body: Optional[ArchBlock],
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_use="architype", also_link=[node.name])
+        self.def_insert(node, single_use="architype")
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
 
@@ -414,7 +411,7 @@ class SymTabBuildPass(SymTabPass):
         body: Optional[CodeBlock],
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_use="ability", also_link=[node.name_ref])
+        self.def_insert(node, single_use="ability")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 
@@ -502,7 +499,7 @@ class SymTabBuildPass(SymTabPass):
         body: Optional['EnumBlock'],
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_use="enum", also_link=[node.name])
+        self.def_insert(node, single_use="enum")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 

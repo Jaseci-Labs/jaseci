@@ -575,12 +575,14 @@ class AbilityDef(AstSymbolNode, AstDocNode):
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
+        decl_link: Optional[Ability] = None,
     ) -> None:
         """Initialize ability def node."""
         self.target = target
         self.signature = signature
         self.body = body
         self.decorators = decorators
+        self.decl_link = decl_link
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -605,6 +607,17 @@ class FuncSignature(AstNode):
         self.return_type = return_type
         AstNode.__init__(self, kid=kid)
 
+    @property
+    def is_method(self) -> bool:
+        """Check if is method."""
+        if (isinstance(self.parent, Ability) and self.parent.is_method) or (
+            isinstance(self.parent, AbilityDef)
+            and isinstance(self.parent.decl_link, Ability)
+            and self.parent.decl_link.is_method
+        ):
+            return True
+        return False
+
 
 class EventSignature(AstNode):
     """EventSignature node type for Jac Ast."""
@@ -621,6 +634,17 @@ class EventSignature(AstNode):
         self.arch_tag_info = arch_tag_info
         self.return_type = return_type
         AstNode.__init__(self, kid=kid)
+
+    @property
+    def is_method(self) -> bool:
+        """Check if is method."""
+        if (isinstance(self.parent, Ability) and self.parent.is_method) or (
+            isinstance(self.parent, AbilityDef)
+            and isinstance(self.parent.decl_link, Ability)
+            and self.parent.decl_link.is_method
+        ):
+            return True
+        return False
 
 
 class ArchRefChain(AstNode):
@@ -1885,6 +1909,12 @@ class Name(TokenSymbol):
         )
 
 
+class BuiltinType(Name):
+    """Type node type for Jac Ast."""
+
+    SYMBOL_TYPE = SymbolType.VAR
+
+
 class Float(TokenSymbol):
     """Float node type for Jac Ast."""
 
@@ -1907,12 +1937,6 @@ class Bool(TokenSymbol):
     """Bool node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.BOOL
-
-
-class BuiltinType(TokenSymbol):
-    """Type node type for Jac Ast."""
-
-    SYMBOL_TYPE = SymbolType.VAR
 
 
 class Null(TokenSymbol):

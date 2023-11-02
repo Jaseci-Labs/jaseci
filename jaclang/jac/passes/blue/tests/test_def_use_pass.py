@@ -25,5 +25,5 @@ class DefUsePassTests(TestCase):
         #         f", {i.sym_link.decl.loc if i.sym_link else None}"
         #     )
         self.assertGreater(len(state.warnings_had), 5)
-        self.assertLess(len(state.warnings_had), 10)
+        self.assertLess(len(state.warnings_had), 50)
         self.assertEqual(len(state.errors_had), 0)

@@ -57,6 +57,7 @@ class DeclDefMatchPass(Pass):
                     )
                     continue
                 decl_node.body = sym.decl  # type: ignore
+                sym.decl.decl_link = decl_node  # type: ignore
                 decl_node.add_kids_right([sym.decl], pos_update=False)  # type: ignore
                 decl_node.sym_tab.tab = sym.decl.sym_tab.tab  # type: ignore
         for i in sym_tab.kid:
