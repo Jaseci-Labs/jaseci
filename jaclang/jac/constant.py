@@ -114,6 +114,7 @@ class Tokens(str, Enum):
     ADD_EQ = "ADD_EQ"
     SUB_EQ = "SUB_EQ"
     MUL_EQ = "MUL_EQ"
+    STAR_POW_EQ = "STAR_POW_EQ"
     FLOOR_DIV_EQ = "FLOOR_DIV_EQ"
     DIV_EQ = "DIV_EQ"
     MOD_EQ = "MOD_EQ"

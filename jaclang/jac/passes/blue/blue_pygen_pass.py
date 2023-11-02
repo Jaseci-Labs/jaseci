@@ -919,14 +919,6 @@ class BluePygenPass(Pass):
                     node,
                     f"{node.left.gen.py} {node.op.gen.py} {node.right.gen.py}",
                 )
-            # elif node.op.value in [
-            #     *["+=", "-=", "*=", "/=", "%=", "**="],
-            #     *[">>=", "<<=", "//=", "&=", "|=", "^=", "~="],
-            # ]:
-            #     self.emit(
-            #         node,
-            #         f"{node.left.gen.py}{node.op.gen.py}{node.right.gen.py}",
-            #     )
             elif node.op.name in [
                 Tok.PIPE_FWD,
                 Tok.KW_SPAWN,

@@ -257,6 +257,7 @@ aug_op: RSHIFT_EQ
        | SUB_EQ
        | ADD_EQ
        | MATMUL_EQ
+       | STAR_POW_EQ
 
 cmp_op: KW_ISN
       | KW_IS
@@ -537,6 +538,7 @@ KW_AND.1: /&&|and/
 KW_OR.1:  /\|\||or/
 ADD_EQ: /\+=/
 SUB_EQ: /-=/
+STAR_POW_EQ: /\*\*\=/
 MUL_EQ: /\*=/
 FLOOR_DIV_EQ: /\/\/=/
 DIV_EQ: /\/=/

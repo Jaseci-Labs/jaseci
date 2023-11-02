@@ -2491,8 +2491,8 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.InnerCompr):
                 return self.nu(
                     ast.ListCompr(
-                        out_expr=kid[0],
-                        compr=kid[1],
+                        out_expr=kid[1],
+                        compr=kid[2],
                         kid=kid,
                     )
                 )
@@ -2507,8 +2507,8 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.InnerCompr):
                 return self.nu(
                     ast.GenCompr(
-                        out_expr=kid[0],
-                        compr=kid[1],
+                        out_expr=kid[1],
+                        compr=kid[2],
                         kid=kid,
                     )
                 )
@@ -2523,8 +2523,8 @@ class JacParser(Pass):
             if isinstance(kid[1], ast.ExprType) and isinstance(kid[2], ast.InnerCompr):
                 return self.nu(
                     ast.SetCompr(
-                        out_expr=kid[0],
-                        compr=kid[1],
+                        out_expr=kid[1],
+                        compr=kid[2],
                         kid=kid,
                     )
                 )
@@ -3386,7 +3386,6 @@ class JacParser(Pass):
             elif token.type in [Tok.INT, Tok.INT, Tok.HEX, Tok.BIN, Tok.OCT]:
                 ret_type = ast.Int
             elif token.type in [
-                Tok.STRING,
                 Tok.STRING,
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,

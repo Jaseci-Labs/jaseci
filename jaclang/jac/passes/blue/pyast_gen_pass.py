@@ -416,7 +416,6 @@ class PyastGenPass(Pass):
                 keywords=[],
                 body=body,
                 decorator_list=decorators,
-                type_params=[],
             )
         )
 
@@ -474,7 +473,6 @@ class PyastGenPass(Pass):
                 keywords=[],
                 body=body,
                 decorator_list=decorators,
-                type_params=[],
             )
         )
 
@@ -523,7 +521,6 @@ class PyastGenPass(Pass):
                 args=node.signature.gen.py_ast if node.signature else [],
                 body=body,
                 decorator_list=node.decorators.gen.py_ast if node.decorators else [],
-                type_params=[],
             )
         )
 
@@ -556,7 +553,9 @@ class PyastGenPass(Pass):
                 elif i.unpack and i.unpack.value == "**":
                     kwargs = i.gen.py_ast
                 else:
-                    params.append(i.gen.py_ast)
+                    params.append(i.gen.py_ast) if isinstance(
+                        i.gen.py_ast, ast3.arg
+                    ) else self.ice("This list should only be Args")
         defaults = (
             [x.value.gen.py_ast for x in node.params.items if x.value]
             if node.params
@@ -1035,6 +1034,28 @@ class PyastGenPass(Pass):
         """
         if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
             self.error("DS Not implemented yet.")
+        elif (
+            node.op.name
+            in [  # TODO: the whole comparitors thing requries grammar change maybe
+                Tok.EE,
+                Tok.GT,
+                Tok.GTE,
+                Tok.KW_IN,
+                Tok.KW_IS,
+                Tok.KW_ISN,
+                Tok.LT,
+                Tok.LTE,
+                Tok.NE,
+                Tok.KW_NIN,
+            ]
+        ):
+            node.gen.py_ast = self.sync(
+                ast3.Compare(
+                    left=node.left.gen.py_ast,
+                    comparators=[node.right.gen.py_ast],
+                    ops=[node.op.gen.py_ast],
+                )
+            )
         else:
             node.gen.py_ast = self.sync(
                 ast3.BinOp(
@@ -1325,9 +1346,21 @@ class PyastGenPass(Pass):
 
         var: Token,
         """
-        node.gen.py_ast = self.sync(
-            ast3.Name(
-                id=node.sym_name, ctx=ast3.Store() if node.is_store else ast3.Load()
+        node.gen.py_ast = (
+            self.sync(
+                ast3.Name(
+                    id=node.sym_name, ctx=ast3.Store() if node.is_store else ast3.Load()
+                )
+            )
+            if node.var.name != Tok.SUPER_OP
+            else self.sync(
+                ast3.Call(
+                    func=self.sync(
+                        ast3.Name(id="super", ctx=ast3.Load()),
+                    ),
+                    args=[],
+                    keywords=[],
+                )
             )
         )
 
@@ -1461,37 +1494,37 @@ class PyastGenPass(Pass):
             node.gen.py_ast = self.sync(ast3.BitAnd())
         elif node.name == Tok.KW_OR:
             node.gen.py_ast = self.sync(ast3.BitOr())
-        elif node.name == Tok.PLUS:
+        elif node.name in [Tok.PLUS, Tok.ADD_EQ]:
             node.gen.py_ast = self.sync(ast3.Add())
-        elif node.name == Tok.BW_AND:
+        elif node.name in [Tok.BW_AND, Tok.BW_AND_EQ]:
             node.gen.py_ast = self.sync(ast3.BitAnd())
-        elif node.name == Tok.BW_OR:
+        elif node.name in [Tok.BW_OR, Tok.BW_OR_EQ]:
             node.gen.py_ast = self.sync(ast3.BitOr())
-        elif node.name == Tok.BW_XOR:
+        elif node.name in [Tok.BW_XOR, Tok.BW_XOR_EQ]:
             node.gen.py_ast = self.sync(ast3.BitXor())
-        elif node.name == Tok.DIV:
+        elif node.name in [Tok.DIV, Tok.DIV_EQ]:
             node.gen.py_ast = self.sync(ast3.Div())
-        elif node.name == Tok.FLOOR_DIV:
+        elif node.name in [Tok.FLOOR_DIV, Tok.FLOOR_DIV_EQ]:
             node.gen.py_ast = self.sync(ast3.FloorDiv())
-        elif node.name == Tok.LSHIFT:
+        elif node.name in [Tok.LSHIFT, Tok.LSHIFT_EQ]:
             node.gen.py_ast = self.sync(ast3.LShift())
-        elif node.name == Tok.MOD:
+        elif node.name in [Tok.MOD, Tok.MOD_EQ]:
             node.gen.py_ast = self.sync(ast3.Mod())
-        elif node.name == Tok.STAR_MUL:
+        elif node.name in [Tok.STAR_MUL, Tok.MUL_EQ]:
             node.gen.py_ast = self.sync(ast3.Mult())
-        elif node.name == Tok.DECOR_OP:
+        elif node.name in [Tok.DECOR_OP, Tok.MATMUL_EQ]:
             node.gen.py_ast = self.sync(ast3.MatMult())
-        elif node.name == Tok.STAR_POW:
+        elif node.name in [Tok.STAR_POW, Tok.STAR_POW_EQ]:
             node.gen.py_ast = self.sync(ast3.Pow())
-        elif node.name == Tok.RSHIFT:
+        elif node.name in [Tok.RSHIFT, Tok.RSHIFT_EQ]:
             node.gen.py_ast = self.sync(ast3.RShift())
-        elif node.name == Tok.MINUS:
+        elif node.name in [Tok.MINUS, Tok.SUB_EQ]:
             node.gen.py_ast = self.sync(ast3.Sub())
-        elif node.name == Tok.BW_NOT:
+        elif node.name in [Tok.BW_NOT, Tok.BW_NOT_EQ]:
             node.gen.py_ast = self.sync(ast3.Invert())
-        elif node.name == Tok.NOT:
+        elif node.name in [Tok.NOT, Tok.NE]:
             node.gen.py_ast = self.sync(ast3.Not())
-        elif node.name == Tok.EQ:
+        elif node.name == Tok.EE:
             node.gen.py_ast = self.sync(ast3.Eq())
         elif node.name == Tok.GT:
             node.gen.py_ast = self.sync(ast3.Gt())
@@ -1566,7 +1599,17 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(ast3.Constant(value=node.value))
+        if (node.value.startswith("'''") and node.value.endswith("'''")) or (
+            node.value.startswith('"""') and node.value.endswith('"""')
+        ):
+            ast_str = node.value[3:-3]
+        elif (node.value.startswith("'") and node.value.endswith("'")) or (
+            node.value.startswith('"') and node.value.endswith('"')
+        ):
+            ast_str = node.value[1:-1]
+        else:
+            ast_str = node.value
+        node.gen.py_ast = self.sync(ast3.Constant(value=ast_str))
 
     def exit_bool(self, node: ast.Bool) -> None:
         """Sub objects.
