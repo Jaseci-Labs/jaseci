@@ -1148,7 +1148,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.List(
                 elts=node.values.gen.py_ast if node.values else [],
-                ctx=ast3.Store() if node.is_store else ast3.Load(),
+                ctx=node.py_ctx_func(),
             )
         )
 
@@ -1160,7 +1160,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.Set(
                 elts=node.values.gen.py_ast if node.values else [],
-                ctx=ast3.Store() if node.is_store else ast3.Load(),
+                ctx=node.py_ctx_func(),
             )
         )
 
@@ -1172,7 +1172,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.Tuple(
                 elts=node.values.gen.py_ast if node.values else [],
-                ctx=ast3.Store() if node.is_store else ast3.Load(),
+                ctx=node.py_ctx_func(),
             )
         )
 
@@ -1285,7 +1285,7 @@ class PyastGenPass(Pass):
                 ast3.Attribute(
                     value=node.target.gen.py_ast,
                     attr=node.right.sym_name,
-                    ctx=ast3.Store() if node.right.is_store else ast3.Load(),
+                    ctx=node.right.py_ctx_func(),
                 )
             )
         else:
@@ -1293,7 +1293,7 @@ class PyastGenPass(Pass):
                 ast3.Subscript(
                     value=node.target.gen.py_ast,
                     slice=node.right.gen.py_ast,
-                    ctx=ast3.Store() if node.right.is_store else ast3.Load(),
+                    ctx=node.right.py_ctx_func(),
                 )
             )
 
@@ -1354,11 +1354,7 @@ class PyastGenPass(Pass):
         var: Token,
         """
         node.gen.py_ast = (
-            self.sync(
-                ast3.Name(
-                    id=node.sym_name, ctx=ast3.Store() if node.is_store else ast3.Load()
-                )
-            )
+            self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
             if node.var.name != Tok.SUPER_OP
             else self.sync(
                 ast3.Call(
@@ -1563,11 +1559,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(
-            ast3.Name(
-                id=node.sym_name, ctx=ast3.Store() if node.is_store else ast3.Load()
-            )
-        )
+        node.gen.py_ast = self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
 
     def exit_float(self, node: ast.Float) -> None:
         """Sub objects.
@@ -1642,11 +1634,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(
-            ast3.Name(
-                id=node.sym_name, ctx=ast3.Store() if node.is_store else ast3.Load()
-            )
-        )
+        node.gen.py_ast = self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
 
     def exit_null(self, node: ast.Null) -> None:
         """Sub objects.

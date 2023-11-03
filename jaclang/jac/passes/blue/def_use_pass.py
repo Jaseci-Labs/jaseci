@@ -270,3 +270,19 @@ class DefUsePass(SymTabPass):
         pos_end: int,
         """
         self.use_lookup(node)
+
+    def enter_in_for_stmt(self, node: ast.InForStmt) -> None:
+        """Sub objects.
+
+        target: ExprType,
+        is_async: bool,
+        collection: ExprType,
+        body: SubNodeList[CodeBlockStmt],
+        else_body: Optional[ElseStmt],
+        """
+        if isinstance(node.target, ast.AtomTrailer):
+            self.chain_def_insert(self.unwind_atom_trailer(node.target))
+        elif isinstance(node.target, ast.AstSymbolNode):
+            self.def_insert(node.target)
+        else:
+            self.error("Assignment target not valid")

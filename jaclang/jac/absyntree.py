@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ast as ast3
 import pprint
-from typing import Generic, Optional, Sequence, TypeVar, Union
+from typing import Generic, Optional, Sequence, Type, TypeVar, Union
 
 from jaclang.jac import jac_lark as jl
 from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
@@ -110,7 +110,7 @@ class AstSymbolNode(AstNode):
         self.sym_name: str = sym_name
         self.sym_name_node = sym_name_node
         self.sym_type: SymbolType = sym_type
-        self.is_store: bool = False
+        self.py_ctx_func: Type[ast3.AST] = ast3.Load
 
 
 class AstAccessNode(AstNode):

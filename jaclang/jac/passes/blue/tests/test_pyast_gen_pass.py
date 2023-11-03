@@ -95,16 +95,27 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         code_gen = jac_file_to_pass(
             self.fixture_abs_path(filename), target=PyastGenPass
         )
-        # from_jac = code_gen.ir.gen.py_ast
-        # try:
-        #     back_to_py = ast3.unparse(from_jac)
-        # except Exception as e:
-        #     from_jac_str = ast3.dump(code_gen.ir.gen.py_ast, indent=2)
-        #     print(from_jac_str)
-        #     raise e
-        # print(back_to_py)
-        # from_py = ast3.parse(back_to_py)
-        # self.assertEqual(len(ast_to_list(from_jac)), len(ast_to_list(from_py)))
+        from_jac_str = ast3.dump(code_gen.ir.gen.py_ast, indent=2)
+        from_jac = code_gen.ir.gen.py_ast
+        try:
+            back_to_py = ast3.unparse(from_jac)
+        except Exception as e:
+            print(from_jac_str)
+            raise e
+        print(back_to_py)
+        from_py = ast3.parse(back_to_py)
+        from_py_str = ast3.dump(from_py, indent=2)
+        import difflib
+
+        print(
+            "\n".join(
+                difflib.unified_diff(
+                    from_jac_str.splitlines(), from_py_str.splitlines(), n=3
+                )
+            )
+        )
+        self.assertEqual(len(ast_to_list(from_jac)), len(ast_to_list(from_py)))
+
         self.assertGreater(len(code_gen.ir.gen.py), 10)
 
 
