@@ -5,6 +5,8 @@ symbol table. This includes assignments, parameters, arch ref chains,
 and more. This pass also links the symbols in the AST to their corresponding
 sybmols in the symbol table (including uses).
 """
+import ast as ast3
+
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.blue.sym_tab_build_pass import SymTabPass
 
@@ -285,4 +287,17 @@ class DefUsePass(SymTabPass):
         elif isinstance(node.target, ast.AstSymbolNode):
             self.def_insert(node.target)
         else:
-            self.error("Assignment target not valid")
+            self.error("For loop assignment target not valid")
+
+    def enter_delete_stmt(self, node: ast.DeleteStmt) -> None:
+        """Sub objects.
+
+        target: SubNodeList[ExprType],
+        """
+        for i in node.target.items:
+            if isinstance(i, ast.AtomTrailer):
+                self.unwind_atom_trailer(i)[-1].py_ctx_func = ast3.Del
+            elif isinstance(i, ast.AstSymbolNode):
+                i.py_ctx_func = ast3.Del
+            else:
+                self.error("Delete target not valid")

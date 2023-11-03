@@ -102,10 +102,12 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         except Exception as e:
             print(from_jac_str)
             raise e
-        print(back_to_py)
+        # print(back_to_py)
         from_py = ast3.parse(back_to_py)
         from_py_str = ast3.dump(from_py, indent=2)
         import difflib
+
+        print(from_jac_str)
 
         print(
             "\n".join(
@@ -115,7 +117,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             )
         )
         self.assertEqual(len(ast_to_list(from_jac)), len(ast_to_list(from_py)))
-
         self.assertGreater(len(code_gen.ir.gen.py), 10)
 
 

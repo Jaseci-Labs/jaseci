@@ -4,7 +4,7 @@ At the end of this pass a meta['py_code'] is present with pure python code
 in each node. Module nodes contain the entire module code.
 """
 import ast as ast3
-from typing import Optional, TypeVar, get_args
+from typing import Optional, Sequence, TypeVar, get_args
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con, Tokens as Tok
@@ -1022,7 +1022,7 @@ class PyastGenPass(Pass):
         elif node.aug_op:
             node.gen.py_ast = self.sync(
                 ast3.AugAssign(
-                    target=node.target.gen.py_ast,
+                    target=node.target.items[0].gen.py_ast,
                     op=node.aug_op.gen.py_ast,
                     value=node.value.gen.py_ast,
                 )
@@ -1118,11 +1118,56 @@ class PyastGenPass(Pass):
 
         strings: Sequence[String | FString],
         """
-        node.gen.py_ast = self.sync(
-            ast3.JoinedStr(
-                values=self.flatten([x.gen.py_ast for x in node.strings]),
+
+        def get_pieces(str_seq: Sequence) -> list[str | ast.ExprType]:
+            """Pieces."""
+            pieces: list[str | ast.ExprType] = []
+            for i in str_seq:
+                if isinstance(i, ast.String):
+                    pieces.append(i.ast_str)
+                elif isinstance(i, ast.FString):
+                    pieces.extend(get_pieces(i.parts.items)) if i.parts else None
+                elif isinstance(i, ast.ExprType):
+                    pieces.append(i.gen.py_ast)
+                else:
+                    print("Wut", i)
+                    i.print()
+            return pieces
+
+        combined_multi: list[str | ast.ExprType] = []
+        for item in get_pieces(node.strings):
+            if (
+                combined_multi
+                and isinstance(item, str)
+                and isinstance(combined_multi[-1], str)
+            ):
+                combined_multi[-1] += item
+            else:
+                combined_multi.append(item)
+        print(get_pieces(node.strings), combined_multi)
+        valid_combined_multi: list[ast3.AST] = []
+        for i in range(len(combined_multi)):
+            if isinstance(combined_multi[i], str):
+                valid_combined_multi.append(
+                    self.sync(ast3.Constant(value=combined_multi[i]))
+                )
+            else:
+                valid_combined_multi.append(combined_multi[i].gen.py_ast)
+        if not (valid_combined_multi):
+            print(node.strings[0].parts.items)
+
+        if len(valid_combined_multi) > 1:
+            node.gen.py_ast = self.sync(
+                ast3.JoinedStr(
+                    values=valid_combined_multi,
+                )
             )
-        )
+        else:
+            node.gen.py_ast = self.sync(
+                ast3.Constant(
+                    value=valid_combined_multi[0],
+                )
+            )
 
     def exit_f_string(self, node: ast.FString) -> None:
         """Sub objects.
@@ -1296,6 +1341,7 @@ class PyastGenPass(Pass):
                     ctx=node.right.py_ctx_func(),
                 )
             )
+            node.right.gen.py_ast.ctx = ast3.Load()  # type: ignore
 
     def exit_atom_unit(self, node: ast.AtomUnit) -> None:
         """Sub objects.
@@ -1598,17 +1644,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        if (node.value.startswith("'''") and node.value.endswith("'''")) or (
-            node.value.startswith('"""') and node.value.endswith('"""')
-        ):
-            ast_str = node.value[3:-3]
-        elif (node.value.startswith("'") and node.value.endswith("'")) or (
-            node.value.startswith('"') and node.value.endswith('"')
-        ):
-            ast_str = node.value[1:-1]
-        else:
-            ast_str = node.value
-        node.gen.py_ast = self.sync(ast3.Constant(value=ast_str))
+        node.gen.py_ast = self.sync(ast3.Constant(value=node.ast_str))
 
     def exit_bool(self, node: ast.Bool) -> None:
         """Sub objects.
