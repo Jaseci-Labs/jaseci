@@ -2181,13 +2181,23 @@ class JacParser(Pass):
                 return self.nu(
                     ast.YieldExpr(
                         expr=kid[2],
+                        with_from=True,
                         kid=kid,
                     )
                 )
             elif len(kid) == 2 and isinstance(kid[1], ast.SubNodeList):
+                target = kid[1]
+                if len(target.items) == 1:
+                    target = target.items[0]
+                else:
+                    new_targ = ast.TupleVal(values=target, kid=[target])
+                    new_targ.parent = target.parent
+                    kid = [i if i != target else new_targ for i in kid]
+                    target = new_targ
                 return self.nu(
                     ast.YieldExpr(
-                        expr=kid[1],
+                        expr=target,
+                        with_from=False,
                         kid=kid,
                     )
                 )
@@ -2195,6 +2205,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.YieldExpr(
                         expr=None,
+                        with_from=False,
                         kid=kid,
                     )
                 )

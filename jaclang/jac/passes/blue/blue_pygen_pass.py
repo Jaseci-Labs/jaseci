@@ -1197,9 +1197,9 @@ class BluePygenPass(Pass):
 
         expr: Optional[ExprType],
         """
-        if isinstance(node.expr, ast.SubNodeList):
+        if not node.with_from and node.expr:
             self.emit(node, f"yield {node.expr.gen.py}")
-        elif isinstance(node.expr, ast.ExprType):
+        elif node.expr:
             self.emit(node, f"yield from {node.expr.gen.py}")
         else:
             self.emit(node, "yield")

@@ -693,9 +693,9 @@ class JacFormatPass(Pass):
             comment_str = " ; ".join(
                 comment_value for _, comment_value in inline_comments
             )
-        if isinstance(node.expr, ast.SubNodeList):
+        if not node.with_from and node.expr:
             self.emit(node, f"yield {node.expr.gen.jac}")
-        elif isinstance(node.expr, ast.ExprType):
+        elif node.expr:
             self.emit(node, f"yield from {node.expr.gen.jac}")
         else:
             self.emit(node, "yield")

@@ -927,11 +927,11 @@ class PyastGenPass(Pass):
 
         expr: Optional[ExprType],
         """
-        if not node.expr or isinstance(node.expr, ast.SubNodeList):
+        if not node.with_from:
             node.gen.py_ast = self.sync(
                 ast3.Yield(value=node.expr.gen.py_ast if node.expr else None)
             )
-        elif isinstance(node.expr, ast.ExprType):
+        else:
             node.gen.py_ast = self.sync(
                 ast3.YieldFrom(value=node.expr.gen.py_ast if node.expr else None)
             )

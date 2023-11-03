@@ -102,6 +102,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         #     from_jac_str = ast3.dump(code_gen.ir.gen.py_ast, indent=2)
         #     print(from_jac_str)
         #     raise e
+        # print(back_to_py)
         # from_py = ast3.parse(back_to_py)
         # self.assertEqual(len(ast_to_list(from_jac)), len(ast_to_list(from_py)))
         self.assertGreater(len(code_gen.ir.gen.py), 10)

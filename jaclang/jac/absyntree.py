@@ -1449,11 +1449,13 @@ class YieldExpr(AstNode):
 
     def __init__(
         self,
-        expr: Optional[ExprType | SubNodeList[ExprType]],
+        expr: Optional[ExprType],
+        with_from: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize yeild statement node."""
         self.expr = expr
+        self.with_from = with_from
         AstNode.__init__(self, kid=kid)
 
 
