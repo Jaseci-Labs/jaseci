@@ -422,7 +422,7 @@ FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?/
 DOC_STRING: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
 PYNLINE: /::py::(.|\n|\r)*?::py::/
 STRING: /"[^"\r\n]*"|'[^'\r\n]*'/
-BOOL: /True|False/
+BOOL.1: /True|False/
 KW_NIN.1: /\bnot\s+in\b/
 KW_ISN.1: /\bis\s+not\b/
 HEX: /0[xX][0-9a-fA-F_]+/
