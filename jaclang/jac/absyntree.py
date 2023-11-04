@@ -1467,7 +1467,7 @@ class FuncCall(AstNode):
 
     def __init__(
         self,
-        target: AtomType,
+        target: ExprType,
         params: Optional[SubNodeList[ExprType | Assignment]],
         kid: Sequence[AstNode],
     ) -> None:
@@ -2035,6 +2035,7 @@ LiteralType = Union[
     Int,
     String,
     Bool,
+    Null,
 ]
 
 AtomType = Union[

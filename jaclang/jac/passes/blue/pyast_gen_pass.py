@@ -23,6 +23,7 @@ class PyastGenPass(Pass):
             "jimport": False,
             "enum": False,
             "test": False,
+            "elvis": False,
             "dataclass": False,
         }
         self.preamble: list[ast3.AST] = [
@@ -35,6 +36,10 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         ]
+
+    def ds_feature_warn(self) -> None:
+        """Warn about feature."""
+        self.warning("Data spatial features not supported in bootstrap Jac.")
 
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
@@ -94,6 +99,22 @@ class PyastGenPass(Pass):
             )
         )
         self.already_added["dataclass"] = True
+
+    def needs_elvis(self) -> None:
+        """Check if enum is needed."""
+        if self.already_added["elvis"]:
+            return
+        self.preamble.append(
+            self.sync(
+                ast3.ImportFrom(
+                    module="jac_lang.jac.features",
+                    names=[self.sync(ast3.alias(name="elvis", asname="__jac_elvis__"))],
+                    level=0,
+                ),
+                jac_node=self.ir,
+            )
+        )
+        self.already_added["elvis"] = True
 
     def needs_test(self) -> None:
         """Check if test is needed."""
@@ -580,7 +601,18 @@ class PyastGenPass(Pass):
         arch_tag_info: Optional[ExprType],
         return_type: Optional[SubTag[ExprType]],
         """
-        # TODO: Come back
+        self.ds_feature_warn()
+        node.gen.py_ast = self.sync(
+            ast3.arguments(
+                posonlyargs=[],
+                args=[],
+                kwonlyargs=[],
+                vararg=None,
+                kwargs=None,
+                kw_defaults=[],
+                defaults=[],
+            )
+        )
 
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
@@ -1063,7 +1095,7 @@ class PyastGenPass(Pass):
                     ops=[node.op.gen.py_ast],
                 )
             )
-        else:
+        elif isinstance(node.op.gen.py_ast, ast3.AST):
             node.gen.py_ast = self.sync(
                 ast3.BinOp(
                     left=node.left.gen.py_ast,
@@ -1071,6 +1103,55 @@ class PyastGenPass(Pass):
                     op=node.op.gen.py_ast,
                 )
             )
+        else:
+            node.gen.py_ast = self.translate_jac_bin_op(node)
+
+    def translate_jac_bin_op(
+        self, node: ast.BinaryExpr
+    ) -> Optional[ast3.AST] | list[ast3.AST]:
+        """Translate jac binary op."""
+        if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
+            raise self.ice()
+        elif node.op.name in [
+            Tok.PIPE_FWD,
+            Tok.KW_SPAWN,
+            Tok.A_PIPE_FWD,
+        ]:
+            func_node = ast.FuncCall(
+                target=node.right,
+                params=node.left.values
+                if isinstance(node.left, ast.TupleVal)
+                else ast.SubNodeList(items=[node.left], kid=[node.left]),
+                kid=node.kid,
+            )
+            self.exit_func_call(func_node)
+            return func_node.gen.py_ast
+        elif node.op.name in [Tok.PIPE_BKWD, Tok.A_PIPE_BKWD]:
+            func_node = ast.FuncCall(
+                target=node.left,
+                params=node.right.values
+                if isinstance(node.right, ast.TupleVal)
+                else ast.SubNodeList(items=[node.right], kid=[node.right]),
+                kid=node.kid,
+            )
+            self.exit_func_call(func_node)
+            return func_node.gen.py_ast
+        elif node.op.name == Tok.PIPE_FWD and isinstance(node.right, ast.TupleVal):
+            self.error("Invalid pipe target.")
+        elif node.op.name == Tok.ELVIS_OP:
+            self.needs_elvis()
+            return self.sync(
+                ast3.Call(
+                    func=self.sync(ast3.Name(id="__jac_elvis__", ctx=ast3.Load())),
+                    args=[node.left.gen.py_ast, node.right.gen.py_ast],
+                    keywords=[],
+                )
+            )
+        else:
+            self.error(
+                f"Binary operator {node.op.value} not supported in bootstrap Jac"
+            )
+        return None
 
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
         """Sub objects.
