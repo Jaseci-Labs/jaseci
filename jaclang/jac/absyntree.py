@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ast as ast3
 import pprint
-from typing import Generic, Optional, Sequence, TypeVar, Union
+from typing import Generic, Optional, Sequence, Type, TypeVar, Union
 
 from jaclang.jac import jac_lark as jl
 from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
@@ -94,9 +94,12 @@ class AstNode:
             ret["value"] = self.value
         return ret
 
-    def print(self, depth: Optional[int] = None) -> None:
+    def print(self, use_pp: bool = False, depth: Optional[int] = None) -> None:
         """Print ast."""
-        pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
+        if use_pp:
+            pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
+        else:
+            print_tree(self)
 
 
 class AstSymbolNode(AstNode):
@@ -110,7 +113,7 @@ class AstSymbolNode(AstNode):
         self.sym_name: str = sym_name
         self.sym_name_node = sym_name_node
         self.sym_type: SymbolType = sym_type
-        self.is_store: bool = False
+        self.py_ctx_func: Type[ast3.AST] = ast3.Load
 
 
 class AstAccessNode(AstNode):
@@ -1934,6 +1937,21 @@ class String(TokenSymbol):
 
     SYMBOL_TYPE = SymbolType.STRING
 
+    @property
+    def ast_str(self) -> str:
+        """Return ast string."""
+        if (self.value.startswith("'''") and self.value.endswith("'''")) or (
+            self.value.startswith('"""') and self.value.endswith('"""')
+        ):
+            ast_str = self.value[3:-3]
+        elif (self.value.startswith("'") and self.value.endswith("'")) or (
+            self.value.startswith('"') and self.value.endswith('"')
+        ):
+            ast_str = self.value[1:-1]
+        else:
+            ast_str = self.value
+        return ast_str
+
 
 class Bool(TokenSymbol):
     """Bool node type for Jac Ast."""
@@ -2116,3 +2134,47 @@ MatchPattern = Union[
     MatchAs,
     MatchOr,
 ]
+
+
+def print_tree(
+    root: AstNode,
+    marker: str = "+-- ",
+    level_markers: Optional[list[bool]] = None,
+    output_file: Optional[str] = None,
+) -> None:
+    """Recursive function that prints the hierarchical structure of a tree."""
+
+    def __node_repr_in_tree(node: AstNode) -> str:
+        if isinstance(node, Token):
+            return f"{node.__class__.__name__} - {node.value}"
+            # return f"{node.__class__.__name__}({node.name}, {node.value})"
+        else:
+            return node.__class__.__name__
+
+    if root is None:
+        return
+
+    empty_str = " " * len(marker)
+    connection_str = "|" + empty_str[:-1]
+    if not level_markers:
+        level_markers = []
+    level = len(level_markers)  # recursion level
+
+    def mapper(draw: bool) -> str:
+        return connection_str if draw else empty_str
+
+    markers = "".join(map(mapper, level_markers[:-1]))
+    markers += marker if level > 0 else ""
+    if output_file:
+        with open(output_file, "a+") as f:
+            print(f"{markers}{__node_repr_in_tree(root)}", file=f)
+    else:
+        print(f"{markers}{__node_repr_in_tree(root)}")
+    # After root has been printed, recurse down (depth-first) the child nodes.
+    for i, child in enumerate(root.kid):
+        # The last child will not need connection markers on the current level
+        # (see example above)
+        is_last = i == len(root.kid) - 1
+        print_tree(
+            child, marker, [*level_markers, not is_last], output_file=output_file
+        )

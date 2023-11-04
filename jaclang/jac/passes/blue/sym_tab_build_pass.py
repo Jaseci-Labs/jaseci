@@ -3,6 +3,7 @@
 This pass builds the symbol table tree for the Jaseci Ast. It also adds symbols
 for globals, imports, architypes, and abilities declarations and definitions.
 """
+import ast as ast3
 from typing import Optional, Sequence
 
 import jaclang.jac.absyntree as ast
@@ -52,9 +53,9 @@ class SymTabPass(Pass):
                 typ=single_use if single_use else "ICE",
                 original=collide,
             )
-        node.is_store = True
+        node.py_ctx_func = ast3.Store
         if isinstance(node.sym_name_node, ast.AstSymbolNode):
-            node.sym_name_node.is_store = True
+            node.sym_name_node.py_ctx_func = ast3.Store
         self.handle_hit_outcome(node)
         return node.sym_link
 
@@ -85,9 +86,9 @@ class SymTabPass(Pass):
         if not node_list:
             return
         cur_sym_tab = node_list[0].sym_tab
-        node_list[-1].is_store = True
+        node_list[-1].py_ctx_func = ast3.Store
         if isinstance(node_list[-1].sym_name_node, ast.AstSymbolNode):
-            node_list[-1].sym_name_node.is_store = True
+            node_list[-1].sym_name_node.py_ctx_func = ast3.Store
 
         node_list = node_list[:-1]  # Just performs lookup mappings of pre assign chain
         for i in node_list:
@@ -709,9 +710,11 @@ class SymTabBuildPass(SymTabPass):
     def enter_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        name_list: NameList,
+        target: ExprType,
+        is_async: bool,
         collection: ExprType,
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
+        else_body: Optional[ElseStmt],
         """
         self.push_scope(f"{node.__class__.__name__}", node)
         self.sync_node_to_scope(node)
@@ -719,9 +722,11 @@ class SymTabBuildPass(SymTabPass):
     def exit_in_for_stmt(self, node: ast.InForStmt) -> None:
         """Sub objects.
 
-        name_list: NameList,
+        target: ExprType,
+        is_async: bool,
         collection: ExprType,
-        body: CodeBlock,
+        body: SubNodeList[CodeBlockStmt],
+        else_body: Optional[ElseStmt],
         """
         self.pop_scope()
 
