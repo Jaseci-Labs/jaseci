@@ -157,6 +157,24 @@ class PyastGenPass(Pass):
             self.sync(py_node, jac_node)
         return py_nodes
 
+    def list_to_attrib(
+        self, attribute_list: list[str], sync_node_list: list[ast.AstNode]
+    ) -> ast3.AST:
+        """Convert list to attribute."""
+        attr_node = self.sync(
+            ast3.Name(id=attribute_list[0], ctx=ast3.Load()), sync_node_list[0]
+        )
+        for i in range(len(attribute_list)):
+            if i == 0:
+                continue
+            attr_node = self.sync(
+                ast3.Attribute(
+                    value=attr_node, attr=attribute_list[i], ctx=ast3.Load()
+                ),
+                sync_node_list[i],
+            )
+        return attr_node
+
     def exit_sub_tag(self, node: ast.SubTag[ast.T]) -> None:
         """Sub objects.
 
@@ -300,6 +318,7 @@ class PyastGenPass(Pass):
             py_compat_path_str = node.path.path_str[1:]
         if node.lang.tag.value == Con.JAC_LANG_IMP:  # injects module into sys.modules
             self.needs_jac_import()
+            path_items = [x for x in node.path.path if x.name != Tok.DOT]
             py_nodes.append(
                 self.sync(
                     ast3.Expr(
@@ -313,9 +332,9 @@ class PyastGenPass(Pass):
                                     self.sync(
                                         ast3.keyword(
                                             arg="target",
-                                            value=ast3.Name(
-                                                id=f"{node.path.path_str}",
-                                                ctx=ast3.Load(),
+                                            value=self.list_to_attrib(
+                                                [x.value for x in path_items],
+                                                path_items,
                                             ),
                                         )
                                     ),
