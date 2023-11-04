@@ -158,7 +158,7 @@ class PyastGenPass(Pass):
         return py_nodes
 
     def list_to_attrib(
-        self, attribute_list: list[str], sync_node_list: list[ast.AstNode]
+        self, attribute_list: list[str], sync_node_list: Sequence[ast.AstNode]
     ) -> ast3.AST:
         """Convert list to attribute."""
         attr_node = self.sync(
