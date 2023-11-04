@@ -1143,13 +1143,9 @@ class PyastGenPass(Pass):
                 combined_multi[-1] += item
             else:
                 combined_multi.append(item)
-
         for i in range(len(combined_multi)):
             if isinstance(combined_multi[i], str):
                 combined_multi[i] = self.sync(ast3.Constant(value=combined_multi[i]))
-        print(
-            get_pieces(node.strings), combined_multi, [type(x) for x in combined_multi]
-        )
         if len(combined_multi) > 1 or not isinstance(combined_multi[0], ast3.Constant):
             node.gen.py_ast = self.sync(
                 ast3.JoinedStr(
@@ -1157,7 +1153,7 @@ class PyastGenPass(Pass):
                 )
             )
         else:
-            node.gen.py_ast = self.sync(ast3.Constant(value=combined_multi[0]))
+            node.gen.py_ast = combined_multi[0]
 
     def exit_f_string(self, node: ast.FString) -> None:
         """Sub objects.
