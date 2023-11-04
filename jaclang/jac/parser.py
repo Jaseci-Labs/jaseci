@@ -2596,7 +2596,7 @@ class JacParser(Pass):
                         conditional=chomp[4]
                         if len(chomp) > 4 and isinstance(chomp[4], ast.ExprType)
                         else None,
-                        kid=kid,
+                        kid=chomp,
                     )
                 )
             else:
