@@ -1119,22 +1119,21 @@ class PyastGenPass(Pass):
         strings: Sequence[String | FString],
         """
 
-        def get_pieces(str_seq: Sequence) -> list[str | ast.ExprType]:
+        def get_pieces(str_seq: Sequence) -> list[str | ast3.AST]:
             """Pieces."""
-            pieces: list[str | ast.ExprType] = []
+            pieces: list[str | ast3.AST] = []
             for i in str_seq:
                 if isinstance(i, ast.String):
                     pieces.append(i.ast_str)
                 elif isinstance(i, ast.FString):
                     pieces.extend(get_pieces(i.parts.items)) if i.parts else None
-                elif isinstance(i, ast.ExprType):
+                elif isinstance(i, ast.ExprStmt):
                     pieces.append(i.gen.py_ast)
                 else:
-                    print("Wut", i)
-                    i.print()
+                    raise self.ice("Multi string made of something weird.")
             return pieces
 
-        combined_multi: list[str | ast.ExprType] = []
+        combined_multi: list[str | ast3.AST] = []
         for item in get_pieces(node.strings):
             if (
                 combined_multi
@@ -1144,30 +1143,21 @@ class PyastGenPass(Pass):
                 combined_multi[-1] += item
             else:
                 combined_multi.append(item)
-        print(get_pieces(node.strings), combined_multi)
-        valid_combined_multi: list[ast3.AST] = []
+
         for i in range(len(combined_multi)):
             if isinstance(combined_multi[i], str):
-                valid_combined_multi.append(
-                    self.sync(ast3.Constant(value=combined_multi[i]))
-                )
-            else:
-                valid_combined_multi.append(combined_multi[i].gen.py_ast)
-        if not (valid_combined_multi):
-            print(node.strings[0].parts.items)
-
-        if len(valid_combined_multi) > 1:
+                combined_multi[i] = self.sync(ast3.Constant(value=combined_multi[i]))
+        print(
+            get_pieces(node.strings), combined_multi, [type(x) for x in combined_multi]
+        )
+        if len(combined_multi) > 1 or not isinstance(combined_multi[0], ast3.Constant):
             node.gen.py_ast = self.sync(
                 ast3.JoinedStr(
-                    values=valid_combined_multi,
+                    values=combined_multi,
                 )
             )
         else:
-            node.gen.py_ast = self.sync(
-                ast3.Constant(
-                    value=valid_combined_multi[0],
-                )
-            )
+            node.gen.py_ast = self.sync(ast3.Constant(value=combined_multi[0]))
 
     def exit_f_string(self, node: ast.FString) -> None:
         """Sub objects.

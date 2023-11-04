@@ -2175,4 +2175,6 @@ def print_tree(
         # The last child will not need connection markers on the current level
         # (see example above)
         is_last = i == len(root.kid) - 1
-        print_tree(child, marker, [*level_markers, not is_last])
+        print_tree(
+            child, marker, [*level_markers, not is_last], output_file=output_file
+        )
