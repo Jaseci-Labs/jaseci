@@ -86,14 +86,15 @@ class DefUsePass(SymTabPass):
     def enter_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
 
-        out_expr: ExprType,
-        names: SubNodeList[Name],
+        is_async: bool,
+        target: ExprType,
         collection: ExprType,
         conditional: Optional[ExprType],
         """
         tuple_items = []
         if isinstance(node.target, ast.TupleVal):
             tuple_items = node.target.values.items if node.target.values else []
+            node.target.py_ctx_func = ast3.Store
         else:
             tuple_items = [node.target]
         for i in tuple_items:
