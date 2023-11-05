@@ -137,7 +137,7 @@ except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
 finally_stmt: KW_FINALLY code_block
 
 for_stmt: KW_ASYNC? KW_FOR assignment KW_TO expression KW_BY assignment code_block else_stmt?
-        | KW_ASYNC? KW_FOR atomic_list KW_IN expression code_block else_stmt?
+        | KW_ASYNC? KW_FOR atomic_chain KW_IN expression code_block else_stmt?
 
 while_stmt: KW_WHILE expression code_block
 with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
@@ -146,7 +146,7 @@ expr_as: expression (KW_AS expression)?
 raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?
 assert_stmt: KW_ASSERT expression (COMMA expression)?
 ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
-delete_stmt: KW_DELETE atomic_list
+delete_stmt: KW_DELETE expression
 report_stmt: KW_REPORT expression
 return_stmt: KW_RETURN expression?
 walker_stmt: disengage_stmt | revisit_stmt | visit_stmt | ignore_stmt
@@ -284,7 +284,7 @@ atom: edge_op_ref
     | atom_literal
 
 yield_expr: KW_YIELD KW_FROM expression
-          | KW_YIELD expr_list?
+          | KW_YIELD expression
 
 atom_literal: builtin_type
             | NULL
@@ -312,26 +312,26 @@ list_val: LSQUARE expr_list? RSQUARE
 tuple_val: LPAREN tuple_list? RPAREN
 set_val: LBRACE expr_list RBRACE
 expr_list: (expr_list COMMA)? expression
-atomic_list: (atomic_list COMMA)? atomic_chain
+kw_expr_list: (kw_expr_list COMMA)? kw_expr
+kw_expr: any_ref EQ expression
 name_list: (named_ref COMMA)* named_ref
 
-tuple_list: expression COMMA expr_list COMMA assignment_list
-          | expression COMMA assignment_list
+tuple_list: expression COMMA expr_list COMMA kw_expr_list
+          | expression COMMA kw_expr_list
           | expression COMMA expr_list
           | expression COMMA
-          | assignment_list
+          | kw_expr_list
 
 dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
 kv_pair: expression COLON expression
-// kv_expr: expression EQ expression
 list_compr: LSQUARE expression inner_compr RSQUARE
 gen_compr: LPAREN expression inner_compr RPAREN
 set_compr: LBRACE expression inner_compr RBRACE
 dict_compr: LBRACE kv_pair inner_compr RBRACE
-inner_compr: KW_ASYNC? KW_FOR atomic_list KW_IN walrus_assign (KW_IF expression)?
+inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN walrus_assign (KW_IF expression)?
 
-param_list: expr_list COMMA assignment_list
-          | assignment_list
+param_list: expr_list COMMA kw_expr_list
+          | kw_expr_list
           | expr_list
 
 assignment_list: (assignment_list COMMA)? assignment
@@ -340,7 +340,9 @@ arch_ref: object_ref
         | walker_ref
         | edge_ref
         | node_ref
+        | type_ref
 
+type_ref: TYPE_OP NAME
 node_ref: NODE_OP NAME
 edge_ref: EDGE_OP NAME
 walker_ref: WALKER_OP NAME
@@ -371,10 +373,10 @@ connect_op: connect_from
 
 disconnect_op: NOT edge_op_ref
 
-connect_to: CARROW_R_P1 expression (COLON assignment_list)? CARROW_R_P2
+connect_to: CARROW_R_P1 expression (COLON kw_expr_list)? CARROW_R_P2
           | CARROW_R
 
-connect_from: CARROW_L_P1 expression (COLON assignment_list)? CARROW_L_P2
+connect_from: CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
             | CARROW_L
 
 filter_compr: LPAREN EQ filter_compare_list RPAREN
@@ -523,6 +525,7 @@ WALKER_OP: /:w:|:walker:/
 NODE_OP: /:n:|:node:/
 EDGE_OP: /:e:|:edge:/
 OBJECT_OP: /:o:|:object:/
+TYPE_OP: /:t:|:type:/
 ENUM_OP: /:enum:/
 ABILITY_OP: /:a:|:ability:/
 A_PIPE_FWD: /:>/
