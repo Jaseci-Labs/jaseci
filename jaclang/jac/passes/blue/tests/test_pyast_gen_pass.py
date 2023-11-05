@@ -101,7 +101,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         # try:
         #     back_to_py = ast3.unparse(from_jac)
         # except Exception as e:
-        #     # print(from_jac_str)
+        #     print(from_jac_str)
         #     raise e
         # print(back_to_py)
         # from_py = ast3.parse(back_to_py)
