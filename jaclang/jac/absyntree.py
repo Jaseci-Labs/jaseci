@@ -1336,11 +1336,13 @@ class KVPair(AstNode):
         self,
         key: ExprType,
         value: ExprType,
+        is_arg: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize key value pair expression node."""
         self.key = key
         self.value = value
+        self.is_arg = is_arg
         AstNode.__init__(self, kid=kid)
 
 

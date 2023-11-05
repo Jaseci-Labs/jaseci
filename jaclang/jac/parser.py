@@ -2392,6 +2392,7 @@ class JacParser(Pass):
                     ast.KVPair(
                         key=kid[0],
                         value=kid[2],
+                        is_arg=True,
                         kid=kid,
                     )
                 )
@@ -2476,6 +2477,7 @@ class JacParser(Pass):
                     ast.KVPair(
                         key=kid[0],
                         value=kid[2],
+                        is_arg=False,
                         kid=kid,
                     )
                 )
