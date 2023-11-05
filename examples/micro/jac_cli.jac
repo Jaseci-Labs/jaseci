@@ -70,7 +70,7 @@ with entry {
 
     for func in <s>.functions {
         sig = inspect.signature(func);
-        for name, param in sig.parameters.items() {
+        for (name, param) in sig.parameters.items() {
             kwargs = {};
             if param.default == inspect.Parameter.empty {
                 kwargs = {'required': True};
@@ -92,7 +92,7 @@ with entry {
             func = f; break;
         }
     }
-    func_args = {k.split('.')[1]: v for k, v in vars(args).items() if k.startswith(func.__name__)};
+    func_args = {k.split('.')[1]: v for (k, v) in vars(args).items() if k.startswith(func.__name__)};
     func(**func_args);
 }
 
@@ -117,7 +117,7 @@ with entry {
                 func = f; break;
             }
         }
-        func_args = {k.split('.')[1]: v for k, v in vars(parsed_args).items()
+        func_args = {k.split('.')[1]: v for (k, v) in vars(parsed_args).items()
                     if k.startswith(func.__name__)};
         func(**func_args);
     } except ArgumentError as e {

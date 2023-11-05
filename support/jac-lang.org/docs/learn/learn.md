@@ -181,12 +181,14 @@ This is an example of a Shape class in Jac. A couple things to note here.
 
 ### Whitespace doesnt matter
 ### Types are required
+### Typing implicitly Available
 ### Can Separate Definitions from Declarations
 ### Tuples are explicit
 ### Docstrings in the right place
 ### Elvis Operator
 ### Null Safe Operator
 ### Data class style basis for OOP
-### Multiline Comments
+### Proper multiline Comments
 ### No need for gratuitous self usage
+### Optional Left to right Pipe style expressivity
 ### Support for data spatial semantics

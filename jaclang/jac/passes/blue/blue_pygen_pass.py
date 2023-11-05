@@ -793,7 +793,6 @@ class BluePygenPass(Pass):
 
         target: SubNodeList[ExprType],
         """
-        self.comma_sep_node_list(node.target)
         self.emit_ln(node, f"del {node.target.gen.py}")
 
     # NOTE: Incomplete for Jac Purple and Red
@@ -1100,8 +1099,11 @@ class BluePygenPass(Pass):
 
         key: ExprType,
         value: ExprType,
+        is_arg: bool,
         """
-        self.emit(node, f"{node.key.gen.py}: {node.value.gen.py}")
+        self.emit(
+            node, f"{node.key.gen.py}={node.value.gen.py}"
+        ) if node.is_arg else self.emit(node, f"{node.key.gen.py}: {node.value.gen.py}")
 
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.

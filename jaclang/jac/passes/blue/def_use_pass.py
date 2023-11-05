@@ -296,9 +296,14 @@ class DefUsePass(SymTabPass):
     def enter_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
 
-        target: SubNodeList[ExprType],
+        target: expression,
         """
-        for i in node.target.items:
+        items = (
+            node.target.values
+            if isinstance(node.target, ast.TupleVal)
+            else [node.target]
+        )
+        for i in items:
             if isinstance(i, ast.AtomTrailer):
                 self.unwind_atom_trailer(i)[-1].py_ctx_func = ast3.Del
             elif isinstance(i, ast.AstSymbolNode):

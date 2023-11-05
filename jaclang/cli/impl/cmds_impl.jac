@@ -70,7 +70,7 @@ import:py from jaclang.jac.constant, Constants as C;
 :a:clean {
     current_dir = os.getcwd();
     py_cache = "__pycache__";
-    for root, dirs, files in os.walk(current_dir, topdown=True) {
+    for (root, dirs, files) in os.walk(current_dir, topdown=True) {
         for folder_name in dirs[:] {
             if folder_name == C.JAC_GEN_DIR or folder_name == py_cache {
                 folder_to_remove = os.path.join(root, folder_name);

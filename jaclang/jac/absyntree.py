@@ -990,7 +990,7 @@ class DeleteStmt(AstNode):
 
     def __init__(
         self,
-        target: SubNodeList[ExprType],
+        target: ExprType,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize delete statement node."""
@@ -1296,7 +1296,7 @@ class TupleVal(AstSymbolNode):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[ExprType | Assignment]],
+        values: Optional[SubNodeList[ExprType | KVPair]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize tuple value node."""
@@ -1336,11 +1336,13 @@ class KVPair(AstNode):
         self,
         key: ExprType,
         value: ExprType,
+        is_arg: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize key value pair expression node."""
         self.key = key
         self.value = value
+        self.is_arg = is_arg
         AstNode.__init__(self, kid=kid)
 
 
@@ -1468,7 +1470,7 @@ class FuncCall(AstNode):
     def __init__(
         self,
         target: ExprType,
-        params: Optional[SubNodeList[ExprType | Assignment]],
+        params: Optional[SubNodeList[ExprType | KVPair]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize function call expression node."""
