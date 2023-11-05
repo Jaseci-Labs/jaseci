@@ -289,6 +289,9 @@ class DefUsePass(SymTabPass):
             self.def_insert(node.target)
         else:
             self.error("For loop assignment target not valid")
+        if isinstance(node.target, ast.TupleVal):
+            for i in node.target.values.items if node.target.values else []:
+                i.py_ctx_func = ast3.Store if isinstance(i, ast.AstSymbolNode) else None
 
     def enter_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.

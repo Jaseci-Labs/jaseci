@@ -112,7 +112,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         # print(
         #     "\n".join(
         #         difflib.unified_diff(
-        #             from_jac_str.splitlines(), from_py_str.splitlines(), n=6
+        #             from_jac_str.splitlines(), from_py_str.splitlines(), n=24
         #         )
         #     )
         # )
