@@ -176,3 +176,17 @@ This is an example of a Shape class in Jac. A couple things to note here.
     ```python linenums="1"
     --8<-- "examples/manual_code/circle.py"
     ```
+
+## Complete list of differences and features vs python
+
+### Whitespace doesnt matter
+### Types are required
+### Can Separate Definitions from Declarations
+### Tuples are explicit
+### Docstrings in the right place
+### Elvis Operator
+### Null Safe Operator
+### Data class style basis for OOP
+### Multiline Comments
+### No need for gratuitous self usage
+### Support for data spatial semantics

@@ -284,7 +284,7 @@ atom: edge_op_ref
     | atom_literal
 
 yield_expr: KW_YIELD KW_FROM expression
-          | KW_YIELD (expr_list)?
+          | KW_YIELD expr_list?
 
 atom_literal: builtin_type
             | NULL
@@ -323,6 +323,7 @@ tuple_list: expression COMMA expr_list COMMA assignment_list
 
 dict_val: LBRACE ((kv_pair COMMA)* kv_pair)? RBRACE
 kv_pair: expression COLON expression
+// kv_expr: expression EQ expression
 list_compr: LSQUARE expression inner_compr RSQUARE
 gen_compr: LPAREN expression inner_compr RPAREN
 set_compr: LBRACE expression inner_compr RBRACE
