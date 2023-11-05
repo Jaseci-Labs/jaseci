@@ -955,7 +955,13 @@ class PyastGenPass(Pass):
 
         target: SubNodeList[AtomType],
         """
-        node.gen.py_ast = self.sync(ast3.Delete(targets=node.target.gen.py_ast))
+        node.gen.py_ast = self.sync(
+            ast3.Delete(
+                targets=node.target.values.gen.py_ast
+                if isinstance(node.target, ast.TupleVal)
+                else [node.target.gen.py_ast]
+            )
+        )
 
     def exit_report_stmt(self, node: ast.ReportStmt) -> None:
         """Sub objects.
