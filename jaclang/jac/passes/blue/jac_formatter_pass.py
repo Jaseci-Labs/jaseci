@@ -62,7 +62,7 @@ class JacFormatPass(Pass):
 
         return "\n".join(formatted_lines)
 
-    def insert_line_breaks(self, line: str, max_len: int = 50) -> str:
+    def insert_line_breaks(self, line: str, max_len: int = 60) -> str:
         """Insert Line break for code."""
         if len(line) <= max_len:
             return line
@@ -276,6 +276,8 @@ class JacFormatPass(Pass):
                     if comment_str not in self.processed_comments and comment_str != "":
                         self.emit_ln(node, f"{stmt.value} {comment_str}")
                         self.processed_comments.add(comment_str)
+                    elif isinstance(stmt.parent.parent, (ast.ElseIf, ast.IfStmt)):
+                        self.emit(node, f"{stmt.value}")
                     else:
                         self.emit_ln(node, f"{stmt.value}")
                     # self.emit_ln(node, "")
@@ -413,10 +415,10 @@ class JacFormatPass(Pass):
             fun_def = ""
             for arch in node.target.archs:
                 fun_def += arch.gen.jac
-            if node.signature.meta:
-                self.emit(node, f"{fun_def} {node.signature.gen.jac}")
+            if node.signature.gen.jac.strip():
+                self.emit(node, f"{fun_def} {node.signature.gen.jac} ")
             else:
-                self.emit(node, f"{fun_def}")
+                self.emit(node, f"{fun_def} ")
 
         if node.body:
             self.emit(node, node.body.gen.jac)
@@ -574,9 +576,9 @@ class JacFormatPass(Pass):
         elif empty_token:
             self.emit(node, " ")
         elif return_sub_tag:
-            self.emit(node, f" -> {return_sub_tag} ")
+            self.emit(node, f" -> {return_sub_tag}")
         else:
-            self.emit(node, " -> None ")
+            self.emit(node, " -> None")
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -605,11 +607,14 @@ class JacFormatPass(Pass):
         else:
             self.emit(
                 node,
-                f"has {node.vars.gen.jac} {comment_str}",
+                f"has {node.vars.gen.jac}",
             )
         if isinstance(node.kid[-1], ast.Token) and node.kid[-1].name == "SEMI":
-            self.emit_ln(node, node.kid[-1].value + " " + comment_str)
-            self.processed_comments.add(comment_str)
+            if comment_str != "":
+                self.emit_ln(node, node.kid[-1].value + " " + comment_str)
+                self.processed_comments.add(comment_str)
+            else:
+                self.emit_ln(node, node.kid[-1].value.strip(" "))
 
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
@@ -898,7 +903,7 @@ class JacFormatPass(Pass):
         elseifs: Optional[ElseIfs],
         else_body: Optional[ElseStmt],
         """
-        self.emit(node, f"if {node.condition.gen.jac}")
+        self.emit(node, f"if {node.condition.gen.jac} ")
         self.emit(node, node.body.gen.jac)
 
         if node.else_body:
@@ -909,8 +914,7 @@ class JacFormatPass(Pass):
 
         elseifs: list[IfStmt],
         """
-        self.emit(node, f" elif {node.condition.gen.jac}")
-
+        self.emit(node, f" elif {node.condition.gen.jac} ")
         self.emit(node, node.body.gen.jac)
 
         if node.else_body:
@@ -927,8 +931,7 @@ class JacFormatPass(Pass):
 
         body: CodeBlock,
         """
-        self.emit(node, " else")
-
+        self.emit(node, " else ")
         self.emit(node, node.body.gen.jac)
 
     def exit_expr_stmt(self, node: ast.ExprStmt) -> None:
@@ -950,7 +953,7 @@ class JacFormatPass(Pass):
         """
         self.emit(
             node,
-            f"for {node.iter.gen.jac} to {node.condition.gen.jac} by {node.count_by.gen.jac}",  # noqa
+            f"for {node.iter.gen.jac} to {node.condition.gen.jac} by {node.count_by.gen.jac} ",  # noqa
         )
 
         self.emit(node, node.body.gen.jac)
@@ -1108,11 +1111,11 @@ class JacFormatPass(Pass):
 
         name: Name,
         arch_type: Token,
-        doc: Optional[Token],
-        decorators: Optional["Decorators"],
-        access: Optional[Token],
-        base_classes: "BaseClasses",
-        body: Optional["ArchBlock"],
+        access: Optional[SubTag[Token]],
+        base_classes: Optional[SubNodeList[AtomType]],
+        body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
+        doc: Optional[Constant] = None,
+        decorators: Optional[SubNodeList[ExprType]] = None,
         """
         self.emit_ln(node, "")
         if node.doc:
@@ -1545,7 +1548,7 @@ class JacFormatPass(Pass):
             )
             self.processed_comments.add(comment_str)
         else:
-            self.emit(node, f"for {names} in {node.collection.gen.jac}")
+            self.emit(node, f"for {names} in {node.collection.gen.jac} ")
         self.emit(node, node.body.gen.jac)
 
     def exit_test(self, node: ast.Test) -> None:
