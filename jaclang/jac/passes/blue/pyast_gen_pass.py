@@ -1557,12 +1557,24 @@ class PyastGenPass(Pass):
         guard: Optional[ExprType],
         body: SubNodeList[CodeBlockStmt],
         """
+        node.gen.py_ast = self.sync(
+            ast3.match_case(
+                pattern=node.pattern.gen.py_ast,
+                guard=node.guard.gen.py_ast if node.guard else None,
+                body=node.body.gen.py_ast,
+            )
+        )
 
     def exit_match_or(self, node: ast.MatchOr) -> None:
         """Sub objects.
 
         patterns: list[MatchPattern],
         """
+        node.gen.py_ast = self.sync(
+            ast3.MatchOr(
+                patterns=[x.gen.py_ast for x in node.patterns],
+            )
+        )
 
     def exit_match_as(self, node: ast.MatchAs) -> None:
         """Sub objects.
@@ -1570,33 +1582,55 @@ class PyastGenPass(Pass):
         name: NameType,
         pattern: MatchPattern,
         """
+        node.gen.py_ast = self.sync(
+            ast3.MatchAs(
+                name=node.name.sym_name,
+                pattern=node.pattern.gen.py_ast,
+            )
+        )
 
     def exit_match_wild(self, node: ast.MatchWild) -> None:
         """Sub objects."""
+        node.gen.py_ast = self.sync(ast3.MatchAs())
 
     def exit_match_value(self, node: ast.MatchValue) -> None:
         """Sub objects.
 
         value: ExprType,
         """
+        node.gen.py_ast = self.sync(ast3.MatchValue(value=node.value.gen.py_ast))
 
     def exit_match_singleton(self, node: ast.MatchSingleton) -> None:
         """Sub objects.
 
         value: Bool | Null,
         """
+        node.gen.py_ast = self.sync(ast3.MatchSingleton(value=node.value.gen.py_ast))
 
     def exit_match_sequence(self, node: ast.MatchSequence) -> None:
         """Sub objects.
 
         values: list[MatchPattern],
         """
+        node.gen.py_ast = self.sync(
+            ast3.MatchSequence(
+                patterns=[x.gen.py_ast for x in node.values],
+            )
+        )
 
     def exit_match_mapping(self, node: ast.MatchMapping) -> None:
         """Sub objects.
 
         values: list[MatchKVPair | MatchStar],
         """
+        mapping = self.sync(ast3.MatchMapping(keys=[], patterns=[], rest=None))
+        for i in node.values:
+            if isinstance(i, ast.MatchKVPair):
+                mapping.keys.append(i.key.gen.py_ast)
+                mapping.patterns.append(i.value.gen.py_ast)
+            elif isinstance(i, ast.MatchStar):
+                mapping.rest = i.name.sym_name
+        node.gen.py_ast = mapping
 
     def exit_match_k_v_pair(self, node: ast.MatchKVPair) -> None:
         """Sub objects.
@@ -1604,6 +1638,11 @@ class PyastGenPass(Pass):
         key: MatchPattern | NameType,
         value: MatchPattern,
         """
+        node.gen.py_ast = self.sync(
+            ast3.MatchMapping(
+                patterns=[node.key.gen.py_ast, node.value.gen.py_ast],
+            )
+        )
 
     def exit_match_star(self, node: ast.MatchStar) -> None:
         """Sub objects.
@@ -1611,6 +1650,7 @@ class PyastGenPass(Pass):
         name: NameType,
         is_list: bool,
         """
+        node.gen.py_ast = self.sync(ast3.MatchStar(name=node.name.sym_name))
 
     def exit_match_arch(self, node: ast.MatchArch) -> None:
         """Sub objects.
@@ -1619,6 +1659,20 @@ class PyastGenPass(Pass):
         arg_patterns: Optional[SubNodeList[MatchPattern]],
         kw_patterns: Optional[SubNodeList[MatchKVPair]],
         """
+        node.gen.py_ast = self.sync(
+            ast3.MatchClass(
+                cls=node.name.gen.py_ast,
+                patterns=[x.gen.py_ast for x in node.arg_patterns.items]
+                if node.arg_patterns
+                else [],
+                kwd_attrs=[x.key.sym_name for x in node.kw_patterns.items]
+                if node.kw_patterns
+                else [],
+                kwd_patterns=[x.value.gen.py_ast for x in node.kw_patterns.items]
+                if node.kw_patterns
+                else [],
+            )
+        )
 
     def exit_token(self, node: ast.Token) -> None:
         """Sub objects.
