@@ -11,7 +11,7 @@ with entry {
 }
 
 with entry {
-    {"name": "value"} <| len <| print  <| print  <| print;
+    len <| print  <| print  <| print <| {"name": "value"};
 }
 
 with entry {

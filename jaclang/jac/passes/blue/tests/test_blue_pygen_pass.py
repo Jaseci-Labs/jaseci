@@ -27,7 +27,7 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         )
         self.assertFalse(code_gen.errors_had)
         self.assertIn('say((dump(print(len)))({"name": "value"}))', code_gen.ir.gen.py)
-        self.assertIn('{"name": "value"}(len(print(print(print))))', code_gen.ir.gen.py)
+        self.assertIn('len(print(print(print({"name": "value"}))))', code_gen.ir.gen.py)
         self.assertIn("a = (5 + 10) * 2", code_gen.ir.gen.py)
 
     def test_atomic_pipe_operator(self) -> None:
