@@ -1924,7 +1924,7 @@ class Literal(TokenSymbol):
     """Literal node type for Jac Ast."""
 
     @property
-    def lit_value(self) -> T:
+    def lit_value(self) -> int | str | float | bool | None | callable:
         """Return literal value in its python type."""
         raise NotImplementedError
 
