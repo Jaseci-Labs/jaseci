@@ -21,7 +21,7 @@ with entry {
 }
 
 with entry {
-    with open("file.txt") as f, open("file2.txt") as f {}
+    with open("file.txt") as f, open("file2.txt") as f2 {}
 }
 
 enum Color {

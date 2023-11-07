@@ -100,14 +100,13 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         from_jac = code_gen.ir.gen.py_ast
         try:
             back_to_py = ast3.unparse(from_jac)
-            # compile(from_jac, filename="<ast>", mode="exec")
+            compile(from_jac, filename="<ast>", mode="exec")
         except Exception as e:
             print(from_jac_str)
             raise e
         from_py = ast3.parse(back_to_py)
         # from_py_str = ast3.dump(from_py, indent=2)
         # import difflib
-
         # print(from_jac_str)
         # print(
         #     "\n".join(

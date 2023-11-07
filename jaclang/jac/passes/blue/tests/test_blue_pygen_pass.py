@@ -55,7 +55,7 @@ class BluePygenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         )
         self.assertFalse(code_gen.errors_had)
         self.assertIn(
-            'with open("file.txt") as f, open("file2.txt") as f:',
+            'with open("file.txt") as f, open("file2.txt") as f2:',
             code_gen.ir.gen.py,
         )
 

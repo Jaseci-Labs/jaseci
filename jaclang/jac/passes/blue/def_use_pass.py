@@ -91,19 +91,12 @@ class DefUsePass(SymTabPass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        tuple_items = []
-        if isinstance(node.target, ast.TupleVal):
-            tuple_items = node.target.values.items if node.target.values else []
-            node.target.py_ctx_func = ast3.Store
+        if isinstance(node.target, ast.AtomTrailer):
+            self.chain_def_insert(self.unwind_atom_trailer(node.target))
+        elif isinstance(node.target, ast.AstSymbolNode):
+            self.def_insert(node.target)
         else:
-            tuple_items = [node.target]
-        for i in tuple_items:
-            if isinstance(i, ast.AtomTrailer):
-                self.chain_def_insert(self.unwind_atom_trailer(i))
-            elif isinstance(i, ast.AstSymbolNode):
-                self.def_insert(i)
-            else:
-                self.error("Named target not valid")
+            self.error("Named target not valid")
 
     def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
@@ -289,9 +282,6 @@ class DefUsePass(SymTabPass):
             self.def_insert(node.target)
         else:
             self.error("For loop assignment target not valid")
-        if isinstance(node.target, ast.TupleVal):
-            for i in node.target.values.items if node.target.values else []:
-                i.py_ctx_func = ast3.Store if isinstance(i, ast.AstSymbolNode) else None
 
     def enter_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
@@ -310,3 +300,17 @@ class DefUsePass(SymTabPass):
                 i.py_ctx_func = ast3.Del
             else:
                 self.error("Delete target not valid")
+
+    def enter_expr_as_item(self, node: ast.ExprAsItem) -> None:
+        """Sub objects.
+
+        expr: ExprType,
+        alias: Optional[ExprType],
+        """
+        if node.alias:
+            if isinstance(node.alias, ast.AtomTrailer):
+                self.chain_def_insert(self.unwind_atom_trailer(node.alias))
+            elif isinstance(node.alias, ast.AstSymbolNode):
+                self.def_insert(node.alias)
+            else:
+                self.error("For expr as target not valid")
