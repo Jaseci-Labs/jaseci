@@ -952,7 +952,10 @@ class PyastGenPass(Pass):
         elif node.ctrl.name == Tok.KW_CONTINUE:
             node.gen.py_ast = self.sync(ast3.Continue())
         elif node.ctrl.name == Tok.KW_SKIP:
-            self.error("DS Not implemented yet.")
+            self.ds_feature_warn()
+            node.gen.py_ast = self.sync(
+                ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+            )
 
     def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
@@ -972,7 +975,10 @@ class PyastGenPass(Pass):
 
         expr: ExprType,
         """
-        self.error("DS Not implemented yet.")
+        self.ds_feature_warn()
+        node.gen.py_ast = self.sync(
+            ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+        )
 
     def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
         """Sub objects.
@@ -1002,7 +1008,10 @@ class PyastGenPass(Pass):
 
         target: ExprType,
         """
-        self.error("DS Not implemented yet.")
+        self.ds_feature_warn()
+        node.gen.py_ast = self.sync(
+            ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+        )
 
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
@@ -1011,7 +1020,10 @@ class PyastGenPass(Pass):
         target: ExprType,
         else_body: Optional[ElseStmt],
         """
-        self.error("DS Not implemented yet.")
+        self.ds_feature_warn()
+        node.gen.py_ast = self.sync(
+            ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+        )
 
     def exit_revisit_stmt(self, node: ast.RevisitStmt) -> None:
         """Sub objects.
@@ -1019,17 +1031,23 @@ class PyastGenPass(Pass):
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
-        self.error("DS Not implemented yet.")
+        self.ds_feature_warn()
+        node.gen.py_ast = self.sync(
+            ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+        )
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
+        node.gen.py_ast = self.sync(
+            ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+        )
 
     def exit_await_stmt(self, node: ast.AwaitStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
-        self.error("DS Not implemented yet.")
+        node.gen.py_ast = self.sync(ast3.Await(value=node.target.gen.py_ast))
 
     def exit_global_stmt(self, node: ast.GlobalStmt) -> None:
         """Sub objects.
@@ -1101,7 +1119,9 @@ class PyastGenPass(Pass):
         op: Token | DisconnectOp | ConnectOp,
         """
         if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
-            self.error("DS Not implemented yet.")
+            self.ds_feature_warn()
+            node.gen.py_ast = self.sync(ast3.Constant(value=None))
+
         elif (
             node.op.name
             in [  # TODO: the whole comparitors thing requries grammar change maybe
@@ -1446,7 +1466,7 @@ class PyastGenPass(Pass):
         is_paren: bool,
         is_null_ok: bool,
         """
-        # TODO: Come back
+        node.gen.py_ast = node.value.gen.py_ast
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
@@ -1516,14 +1536,14 @@ class PyastGenPass(Pass):
         filter_cond: Optional[SubNodeList[BinaryExpr]],
         edge_dir: EdgeDir,
         """
-        self.error("DS Not implemented yet.")
+        self.ds_feature_warn()
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
 
         edge_spec: EdgeOpRef,
         """
-        self.error("DS Not implemented yet.")
+        self.ds_feature_warn()
 
     def exit_connect_op(self, node: ast.ConnectOp) -> None:
         """Sub objects.
@@ -1532,14 +1552,14 @@ class PyastGenPass(Pass):
         conn_assign: Optional[SubNodeList[Assignment]],
         edge_dir: EdgeDir,
         """
-        self.error("DS Not implemented yet.")
+        self.ds_feature_warn()
 
     def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
         compares: SubNodeList[BinaryExpr],
         """
-        self.error("DS Not implemented yet.")
+        self.ds_feature_warn()
 
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.
