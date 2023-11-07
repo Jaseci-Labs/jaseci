@@ -3157,7 +3157,7 @@ class JacParser(Pass):
             """Grammar rule.
 
             pattern: literal_pattern
-                | value_pattern
+                | capture_pattern
                 | sequence_pattern
                 | mapping_pattern
                 | class_pattern
@@ -3197,10 +3197,10 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def value_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def capture_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
 
-            value_pattern: NAME (DOT NAME)*
+            capture_pattern: NAME
             """
             if (
                 len(kid) == 1
@@ -3212,10 +3212,11 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            if isinstance(kid[0], ast.AtomType):
+            if isinstance(kid[0], ast.NameType):
                 return self.nu(
-                    ast.MatchValue(
-                        value=kid[0],
+                    ast.MatchAs(
+                        name=kid[0],
+                        pattern=None,
                         kid=kid,
                     )
                 )

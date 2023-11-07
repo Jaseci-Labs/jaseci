@@ -1349,7 +1349,10 @@ class BluePygenPass(Pass):
         name: NameType,
         pattern: MatchPattern,
         """
-        self.emit(node, f"{node.name.gen.py} as {node.pattern.gen.py}")
+        if node.pattern:
+            self.emit(node, f"{node.name.gen.py} as {node.pattern.gen.py}")
+        else:
+            self.emit(node, f"{node.name.gen.py}")
 
     def exit_match_wild(self, node: ast.MatchWild) -> None:
         """Sub objects."""

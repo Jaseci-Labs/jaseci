@@ -1705,7 +1705,7 @@ class MatchAs(AstNode):
     def __init__(
         self,
         name: NameType,
-        pattern: MatchPattern,
+        pattern: Optional[MatchPattern],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize match as node."""

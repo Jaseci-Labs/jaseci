@@ -1632,7 +1632,10 @@ class JacFormatPass(Pass):
         name: NameType,
         pattern: MatchPattern,
         """
-        self.emit(node, f"{node.name.gen.jac} as {node.pattern.gen.jac}")
+        if node.pattern:
+            self.emit(node, f"{node.name.gen.jac} as {node.pattern.gen.jac}")
+        else:
+            self.emit(node, f"{node.name.gen.jac}")
 
     def exit_match_wild(self, node: ast.MatchWild) -> None:
         """Sub objects."""

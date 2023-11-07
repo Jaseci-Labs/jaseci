@@ -1589,7 +1589,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.MatchAs(
                 name=node.name.sym_name,
-                pattern=node.pattern.gen.py_ast,
+                pattern=node.pattern.gen.py_ast if node.pattern else None,
             )
         )
 
@@ -1630,7 +1630,7 @@ class PyastGenPass(Pass):
         mapping = self.sync(ast3.MatchMapping(keys=[], patterns=[], rest=None))
         for i in node.values:
             if isinstance(i, ast.MatchKVPair):
-                mapping.keys.append(i.key.gen.py_ast)
+                mapping.keys.append(i.key.value.gen.py_ast)
                 mapping.patterns.append(i.value.gen.py_ast)
             elif isinstance(i, ast.MatchStar):
                 mapping.rest = i.name.sym_name
