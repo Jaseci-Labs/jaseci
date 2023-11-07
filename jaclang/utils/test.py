@@ -5,6 +5,7 @@ import os
 from abc import ABC, abstractmethod
 from unittest import TestCase as _TestCase
 
+import jaclang
 from jaclang.utils.helpers import get_ast_nodes_as_snake_case as ast_snakes
 
 
@@ -58,45 +59,27 @@ class TestCaseMicroSuite(ABC, TestCase):
     @classmethod
     def self_attach_micro_tests(cls) -> None:
         """Attach micro tests."""
-        directory = os.path.dirname(__file__) + "/../../examples/micro"
-        for filename in os.listdir(directory):
-            if os.path.isfile(os.path.join(directory, filename)) and filename.endswith(
-                ".jac"
-            ):
-                method_name = f"test_micro_{filename.replace('.jac', '')}"
-                file_path = os.path.join(directory, filename)
-                setattr(
-                    cls, method_name, lambda self, f=file_path: self.micro_suite_test(f)
-                )
-
-        directory = os.path.dirname(__file__) + "/../../examples/manual_code"
-        for filename in os.listdir(directory):
-            if os.path.isfile(os.path.join(directory, filename)) and filename.endswith(
-                ".jac"
-            ):
-                method_name = f"test_micro_{filename.replace('.jac', '')}"
-                file_path = os.path.join(directory, filename)
-                setattr(
-                    cls, method_name, lambda self, f=file_path: self.micro_suite_test(f)
-                )
-
-        directory = os.path.dirname(__file__) + "/../../examples/guess_game"
-        for filename in os.listdir(directory):
-            if os.path.isfile(os.path.join(directory, filename)) and filename.endswith(
-                ".jac"
-            ):
-                method_name = f"test_gg_{filename.replace('.jac', '')}"
-                file_path = os.path.join(directory, filename)
-                setattr(
-                    cls, method_name, lambda self, f=file_path: self.micro_suite_test(f)
-                )
+        for filename in [
+            os.path.normpath(os.path.join(root, name))
+            for root, _, files in os.walk(os.path.dirname(jaclang.__file__))
+            for name in files
+            if name.endswith(".jac") and not name.startswith("err")
+        ]:
+            method_name = (
+                f"test_micro_{filename.replace('.jac', '').replace(os.sep, '_')}"
+            )
+            setattr(cls, method_name, lambda self, f=filename: self.micro_suite_test(f))
 
         def test_micro_jac_files_fully_tested(self: TestCase) -> None:  # noqa: ANN001
             """Test that all micro jac files are fully tested."""
-            directory = os.path.dirname(__file__) + "/../../examples/micro"
-            for filename in os.listdir(directory):
-                if os.path.isfile(os.path.join(directory, filename)):
-                    method_name = f"test_micro_{filename.replace('.jac', '')}"
+            for filename in [
+                os.path.normpath(os.path.join(root, name))
+                for root, _, files in os.walk(os.path.dirname(jaclang.__file__))
+                for name in files
+                if name.endswith(".jac") and not name.startswith("err")
+            ]:
+                if os.path.isfile(filename):
+                    method_name = f"test_micro_{filename.replace('.jac', '').replace(os.sep, '_')}"
                     self.assertIn(method_name, dir(self))
 
         cls.test_micro_jac_files_fully_tested = test_micro_jac_files_fully_tested

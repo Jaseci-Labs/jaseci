@@ -560,11 +560,7 @@ class Ability(AstSymbolNode, AstAccessNode, AstDocNode, AstAsyncNode):
     def py_resolve_name(self) -> str:
         """Resolve name."""
         if isinstance(self.name_ref, Name):
-            return (
-                self.name_ref.value
-                if self.name_ref.name != Tok.KWESC_NAME
-                else self.name_ref.value[2:]
-            )
+            return self.name_ref.value
         elif isinstance(self.name_ref, (SpecialVarRef, ArchRef)):
             return self.name_ref.py_resolve_name()
         else:
@@ -1531,11 +1527,7 @@ class ArchRef(AstSymbolNode):
     def py_resolve_name(self) -> str:
         """Resolve name."""
         if isinstance(self.name_ref, Name):
-            return (
-                self.name_ref.value
-                if self.name_ref.name != Tok.KWESC_NAME
-                else self.name_ref.value[2:]
-            )
+            return self.name_ref.value
         elif isinstance(self.name_ref, SpecialVarRef):
             return self.name_ref.py_resolve_name()
         else:
@@ -1898,8 +1890,10 @@ class Name(TokenSymbol):
         pos_start: int,
         pos_end: int,
         kid: Sequence[AstNode],
+        is_enum_singleton: bool = False,
     ) -> None:
         """Initialize token."""
+        self.is_enum_singleton = is_enum_singleton
         Token.__init__(
             self,
             file_path=file_path,

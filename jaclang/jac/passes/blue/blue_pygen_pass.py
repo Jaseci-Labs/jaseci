@@ -1433,7 +1433,7 @@ class BluePygenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        self.emit(node, node.value if node.name != Tok.KWESC_NAME else node.value[2:])
+        self.emit(node, node.value)
 
     def exit_float(self, node: ast.Float) -> None:
         """Sub objects.

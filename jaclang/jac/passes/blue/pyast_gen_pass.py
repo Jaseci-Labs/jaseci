@@ -151,6 +151,22 @@ class PyastGenPass(Pass):
         py_node.end_col_offset = jac_node.loc.col_end
         return py_node
 
+    def resolve_stmt_block(
+        self,
+        node: ast.SubNodeList[ast.CodeBlockStmt]
+        | ast.SubNodeList[ast.ArchBlockStmt]
+        | ast.SubNodeList[ast.EnumBlockStmt]
+        | None,
+    ) -> list[ast3.AST]:
+        """Unwind codeblock."""
+        return (
+            [self.sync(ast3.Pass(), node)]
+            if isinstance(node, ast.SubNodeList) and not node.items
+            else node.gen.py_ast
+            if node
+            else []
+        )
+
     def sync_many(self, py_nodes: list[T], jac_node: ast.AstNode) -> list[T]:
         """Sync ast locations."""
         for py_node in py_nodes:
@@ -266,7 +282,7 @@ class PyastGenPass(Pass):
                         defaults=[],
                     )
                 ),
-                body=node.body.gen.py_ast,
+                body=self.resolve_stmt_block(node.body),
                 decorator_list=[],
                 returns=None,
                 type_comment=None,
@@ -427,12 +443,8 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         self.needs_data_class()
-        body = (
-            [self.sync(ast3.Pass(), node.body)]
-            if isinstance(node.body, ast.SubNodeList) and not node.body.items
-            else node.body.gen.py_ast
-            if node.body
-            else []
+        body = self.resolve_stmt_block(
+            node.body.body if isinstance(node.body, ast.ArchDef) else node.body
         )
         if not isinstance(body, list):
             raise self.ice()
@@ -484,12 +496,8 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         self.needs_enum()
-        body = (
-            [self.sync(ast3.Pass(), node.body)]
-            if isinstance(node.body, ast.SubNodeList) and not node.body.items
-            else node.body.gen.py_ast
-            if node.body
-            else []
+        body = self.resolve_stmt_block(
+            node.body.body if isinstance(node.body, ast.EnumDef) else node.body
         )
         if not isinstance(body, list):
             raise self.ice()
@@ -547,12 +555,10 @@ class PyastGenPass(Pass):
         func_type = ast3.AsyncFunctionDef if node.is_async else ast3.FunctionDef
         body = (
             [self.sync(ast3.Pass(), node.body)]
-            if isinstance(node.body, ast.SubNodeList)
-            and not node.body.items
-            or node.is_abstract
-            else node.body.gen.py_ast
-            if node.body
-            else []
+            if node.is_abstract
+            else self.resolve_stmt_block(
+                node.body.body if isinstance(node.body, ast.AbilityDef) else node.body
+            )
         )
         if node.is_abstract and node.body:
             self.error(
@@ -737,7 +743,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.If(
                 test=node.condition.gen.py_ast,
-                body=node.body.gen.py_ast,
+                body=self.resolve_stmt_block(node.body),
                 orelse=node.else_body.gen.py_ast if node.else_body else [],
             )
         )
@@ -753,7 +759,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.If(
                     test=node.condition.gen.py_ast,
-                    body=node.body.gen.py_ast,
+                    body=self.resolve_stmt_block(node.body),
                     orelse=node.else_body.gen.py_ast if node.else_body else [],
                 )
             )
@@ -764,7 +770,7 @@ class PyastGenPass(Pass):
 
         body: SubNodeList[CodeBlockStmt],
         """
-        node.gen.py_ast = node.body.gen.py_ast
+        node.gen.py_ast = self.resolve_stmt_block(node.body)
 
     def exit_expr_stmt(self, node: ast.ExprStmt) -> None:
         """Sub objects.
@@ -794,7 +800,7 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = self.sync(
             ast3.Try(
-                body=node.body.gen.py_ast,
+                body=self.resolve_stmt_block(node.body),
                 handlers=node.excepts.gen.py_ast if node.excepts else None,
                 orelse=node.else_body.gen.py_ast if node.else_body else [],
                 finalbody=node.finally_body.gen.py_ast if node.finally_body else [],
@@ -812,7 +818,7 @@ class PyastGenPass(Pass):
             ast3.ExceptHandler(
                 type=node.ex_type.gen.py_ast,
                 name=node.name.sym_name if node.name else None,
-                body=node.body.gen.py_ast,
+                body=self.resolve_stmt_block(node.body),
             )
         )
 
@@ -821,7 +827,7 @@ class PyastGenPass(Pass):
 
         body: SubNodeList[CodeBlockStmt],
         """
-        node.gen.py_ast = node.body.gen.py_ast
+        node.gen.py_ast = self.resolve_stmt_block(node.body)
 
     def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.
@@ -869,7 +875,7 @@ class PyastGenPass(Pass):
             for_node(
                 target=node.target.gen.py_ast,
                 iter=node.collection.gen.py_ast,
-                body=node.body.gen.py_ast,
+                body=self.resolve_stmt_block(node.body),
                 orelse=node.else_body.gen.py_ast if node.else_body else [],
             )
         )
@@ -883,7 +889,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = self.sync(
             ast3.While(
                 test=node.condition.gen.py_ast,
-                body=node.body.gen.py_ast,
+                body=self.resolve_stmt_block(node.body),
                 orelse=[],
             )
         )
@@ -898,8 +904,7 @@ class PyastGenPass(Pass):
         with_node = ast3.AsyncWith if node.is_async else ast3.With
         node.gen.py_ast = self.sync(
             with_node(
-                items=node.exprs.gen.py_ast,
-                body=node.body.gen.py_ast,
+                items=node.exprs.gen.py_ast, body=self.resolve_stmt_block(node.body)
             )
         )
 
@@ -1537,6 +1542,7 @@ class PyastGenPass(Pass):
         edge_dir: EdgeDir,
         """
         self.ds_feature_warn()
+        node.gen.py_ast = self.sync(ast3.Constant(value=None))
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
@@ -1544,6 +1550,7 @@ class PyastGenPass(Pass):
         edge_spec: EdgeOpRef,
         """
         self.ds_feature_warn()
+        node.gen.py_ast = self.sync(ast3.Constant(value=None))
 
     def exit_connect_op(self, node: ast.ConnectOp) -> None:
         """Sub objects.
@@ -1553,6 +1560,7 @@ class PyastGenPass(Pass):
         edge_dir: EdgeDir,
         """
         self.ds_feature_warn()
+        node.gen.py_ast = self.sync(ast3.Constant(value=None))
 
     def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
@@ -1560,6 +1568,7 @@ class PyastGenPass(Pass):
         compares: SubNodeList[BinaryExpr],
         """
         self.ds_feature_warn()
+        node.gen.py_ast = self.sync(ast3.Constant(value=None))
 
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.
@@ -1585,7 +1594,7 @@ class PyastGenPass(Pass):
             ast3.match_case(
                 pattern=node.pattern.gen.py_ast,
                 guard=node.guard.gen.py_ast if node.guard else None,
-                body=node.body.gen.py_ast,
+                body=self.resolve_stmt_block(node.body),
             )
         )
 
@@ -1776,6 +1785,22 @@ class PyastGenPass(Pass):
         pos_end: int,
         """
         node.gen.py_ast = self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
+        if node.is_enum_singleton:
+            node.gen.py_ast.ctx = ast3.Store()
+            node.gen.py_ast = self.sync(
+                ast3.Assign(
+                    targets=[node.gen.py_ast],
+                    value=self.sync(
+                        ast3.Call(
+                            func=self.sync(
+                                ast3.Name(id="__jac_auto__", ctx=ast3.Load())
+                            ),
+                            args=[],
+                            keywords=[],
+                        )
+                    ),
+                )
+            )
 
     def exit_float(self, node: ast.Float) -> None:
         """Sub objects.

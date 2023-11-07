@@ -608,6 +608,7 @@ class JacParser(Pass):
                 return self.nu(kid[0])
             if isinstance(kid[0], (ast.Name)):
                 if len(kid) == 1:
+                    kid[0].is_enum_singleton = True
                     return self.nu(kid[0])
                 elif isinstance(kid[2], ast.ExprType):
                     kid[0] = ast.SubNodeList[ast.AtomType](items=[kid[0]], kid=[kid[0]])
@@ -3401,6 +3402,9 @@ class JacParser(Pass):
             ret_type = ast.Token
             if token.type in [Tok.NAME, Tok.KWESC_NAME]:
                 ret_type = ast.Name
+                token.value = (
+                    token.value[2:] if token.type == Tok.KWESC_NAME else token.value
+                )
             elif token.type == Tok.SEMI:
                 ret_type = ast.Semi
             elif token.type == Tok.NULL:
