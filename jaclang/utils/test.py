@@ -126,11 +126,13 @@ class AstSyncTestMixin:
                 "ast_symbol_node",
                 "ast_access_node",
                 "token_symbol",
+                "literal",
                 "ast_doc_node",
                 "python_module_ast",
                 "ast_async_node",
                 "ast_else_body_node",
                 "ast_typed_var_node",
+                "ast_impl_only_node",
             ]
         ]
         pygen_func_names = []

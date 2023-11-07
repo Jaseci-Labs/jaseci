@@ -3071,7 +3071,7 @@ class JacParser(Pass):
             match_stmt: KW_MATCH expr_list LBRACE match_case_block+ RBRACE
             """
             cases = [i for i in kid if isinstance(i, ast.MatchCase)]
-            if isinstance(kid[1], ast.SubNodeList):
+            if isinstance(kid[1], ast.ExprType):
                 return self.nu(
                     ast.MatchStmt(
                         target=kid[1],
@@ -3157,7 +3157,6 @@ class JacParser(Pass):
             """Grammar rule.
 
             pattern: literal_pattern
-                | PYWILD
                 | value_pattern
                 | sequence_pattern
                 | mapping_pattern
@@ -3165,27 +3164,32 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.MatchPattern):
                 return self.nu(kid[0])
-            elif isinstance(kid[0], ast.Token) and kid[0].name == Tok.PYWILD:
-                return self.nu(
-                    ast.MatchWild(
-                        kid=kid,
-                    )
-                )
             else:
                 raise self.ice()
 
         def literal_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
 
-            literal_pattern: INT
-                | FLOAT
-                | multistring
-                | NULL
-                | BOOL
+            literal_pattern: (INT | FLOAT | multistring)
             """
             if isinstance(kid[0], ast.ExprType):
                 return self.nu(
                     ast.MatchValue(
+                        value=kid[0],
+                        kid=kid,
+                    )
+                )
+            else:
+                raise self.ice()
+
+        def singleton_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+            """Grammar rule.
+
+            singleton_pattern: (NULL | BOOL)
+            """
+            if isinstance(kid[0], ast.ExprType):
+                return self.nu(
+                    ast.MatchSingleton(
                         value=kid[0],
                         kid=kid,
                     )
@@ -3198,6 +3202,16 @@ class JacParser(Pass):
 
             value_pattern: NAME (DOT NAME)*
             """
+            if (
+                len(kid) == 1
+                and isinstance(kid[0], ast.Name)
+                and kid[0].sym_name == "_"
+            ):
+                return self.nu(
+                    ast.MatchWild(
+                        kid=kid,
+                    )
+                )
             if isinstance(kid[0], ast.AtomType):
                 return self.nu(
                     ast.MatchValue(

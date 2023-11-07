@@ -1308,10 +1308,9 @@ class BluePygenPass(Pass):
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.
 
-        target: SubNodeList[ExprType],
+        target: ExprType,
         cases: list[MatchCase],
         """
-        self.comma_sep_node_list(node.target)
         self.emit_ln(node, f"match {node.target.gen.py}:")
         self.indent_level += 1
         for case in node.cases:

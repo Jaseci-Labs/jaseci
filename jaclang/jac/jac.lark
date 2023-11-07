@@ -385,7 +385,7 @@ filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
 
 filter_compare_item: named_ref cmp_op expression
 
-match_stmt: KW_MATCH expr_list LBRACE match_case_block+ RBRACE
+match_stmt: KW_MATCH expression LBRACE match_case_block+ RBRACE
 match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
 
 pattern_seq: (or_pattern | as_pattern)
@@ -394,18 +394,14 @@ as_pattern: or_pattern KW_AS NAME
 
 
 pattern: literal_pattern
-    | PYWILD
+    | singleton_pattern
     | value_pattern
     | sequence_pattern
     | mapping_pattern
     | class_pattern
 
-literal_pattern: INT
-    | FLOAT
-    | multistring
-    | NULL
-    | BOOL
-
+literal_pattern: (INT | FLOAT | multistring)
+singleton_pattern: (NULL | BOOL)
 value_pattern: NAME (DOT NAME)*
 
 sequence_pattern: LSQUARE list_inner_pattern (COMMA list_inner_pattern)* RSQUARE
@@ -597,6 +593,5 @@ FSTR_BESC.1: /{{|}}/
 
 COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
 WS.-2: /[ \t\f\r\n]/+
-PYWILD.-2: /_/
 %ignore COMMENT
 %ignore WS

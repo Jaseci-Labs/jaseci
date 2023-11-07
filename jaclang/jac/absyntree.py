@@ -167,6 +167,10 @@ class AstTypedVarNode(AstNode):
         self.type_tag: Optional[SubTag[ExprType]] = type_tag
 
 
+class AstImplOnlyNode(AstNode):
+    """ImplOnly node type for Jac Ast."""
+
+
 class WalkerStmtOnlyNode(AstNode):
     """WalkerStmtOnlyNode node type for Jac Ast."""
 
@@ -427,7 +431,7 @@ class Architype(AstSymbolNode, AstAccessNode, AstDocNode):
         AstDocNode.__init__(self, doc=doc)
 
 
-class ArchDef(AstSymbolNode, AstAccessNode, AstDocNode):
+class ArchDef(AstSymbolNode, AstAccessNode, AstDocNode, AstImplOnlyNode):
     """ArchDef node type for Jac Ast."""
 
     def __init__(
@@ -482,7 +486,7 @@ class Enum(AstSymbolNode, AstAccessNode, AstDocNode):
         AstDocNode.__init__(self, doc=doc)
 
 
-class EnumDef(AstSymbolNode, AstDocNode):
+class EnumDef(AstSymbolNode, AstDocNode, AstImplOnlyNode):
     """EnumDef node type for Jac Ast."""
 
     def __init__(
@@ -567,7 +571,7 @@ class Ability(AstSymbolNode, AstAccessNode, AstDocNode, AstAsyncNode):
             raise NotImplementedError
 
 
-class AbilityDef(AstSymbolNode, AstDocNode):
+class AbilityDef(AstSymbolNode, AstDocNode, AstImplOnlyNode):
     """AbilityDef node type for Jac Ast."""
 
     def __init__(
@@ -1563,9 +1567,9 @@ class SpecialVarRef(AstSymbolNode):
         elif self.var.name == Tok.SUPER_OP:
             return "super()"
         elif self.var.name == Tok.ROOT_OP:
-            return Con.ROOT
+            return Con.ROOT.value
         elif self.var.name == Tok.HERE_OP:
-            return Con.HERE
+            return Con.HERE.value
         elif self.var.name == Tok.INIT_OP:
             return "__init__"
         else:
@@ -1655,7 +1659,7 @@ class MatchStmt(AstNode):
 
     def __init__(
         self,
-        target: SubNodeList[ExprType],
+        target: ExprType,
         cases: list[MatchCase],
         kid: Sequence[AstNode],
     ) -> None:
@@ -1916,28 +1920,60 @@ class Name(TokenSymbol):
         )
 
 
-class BuiltinType(Name):
+class Literal(TokenSymbol):
+    """Literal node type for Jac Ast."""
+
+    @property
+    def lit_value(self) -> T:
+        """Return literal value in its python type."""
+        raise NotImplementedError
+
+
+class BuiltinType(Name, Literal):
     """Type node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.VAR
 
+    @property
+    def lit_value(self) -> callable:
+        """Return literal value in its python type."""
+        ret = eval(self.value)
+        if not isinstance(ret, callable):
+            raise TypeError(f"ICE: {self.value} is not a callable builtin")
+        return ret
 
-class Float(TokenSymbol):
+
+class Float(Literal):
     """Float node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.NUMBER
 
+    @property
+    def lit_value(self) -> float:
+        """Return literal value in its python type."""
+        return float(self.value)
 
-class Int(TokenSymbol):
+
+class Int(Literal):
     """Int node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.NUMBER
 
+    @property
+    def lit_value(self) -> int:
+        """Return literal value in its python type."""
+        return int(self.value)
 
-class String(TokenSymbol):
+
+class String(Literal):
     """String node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.STRING
+
+    @property
+    def lit_value(self) -> str:
+        """Return literal value in its python type."""
+        return self.ast_str
 
     @property
     def ast_str(self) -> str:
@@ -1955,16 +1991,26 @@ class String(TokenSymbol):
         return ast_str
 
 
-class Bool(TokenSymbol):
+class Bool(Literal):
     """Bool node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.BOOL
 
+    @property
+    def lit_value(self) -> bool:
+        """Return literal value in its python type."""
+        return self.value == "True"
 
-class Null(TokenSymbol):
+
+class Null(Literal):
     """Semicolon node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.NULL
+
+    @property
+    def lit_value(self) -> None:
+        """Return literal value in its python type."""
+        return None
 
 
 class EmptyToken(Token):
@@ -2031,18 +2077,9 @@ NameType = Union[
     ArchRef,
 ]
 
-LiteralType = Union[
-    BuiltinType,
-    Float,
-    Int,
-    String,
-    Bool,
-    Null,
-]
-
 AtomType = Union[
     NameType,
-    LiteralType,
+    Literal,
     MultiString,
     ListVal,
     TupleVal,

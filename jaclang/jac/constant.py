@@ -224,7 +224,6 @@ class Tokens(str, Enum):
     FSTR_PIECE = "FSTR_PIECE"
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
-    PYWILD = "PYWILD"
     WS = "WS"
 
     def __str__(self) -> str:

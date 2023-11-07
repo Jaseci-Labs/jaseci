@@ -202,7 +202,11 @@ class PyastGenPass(Pass):
             [
                 self.sync(ast3.Expr(value=node.doc.gen.py_ast), jac_node=node.doc),
                 *self.preamble,
-                *[x.gen.py_ast for x in node.body],
+                *[
+                    x.gen.py_ast
+                    for x in node.body
+                    if not isinstance(x, ast.AstImplOnlyNode)
+                ],
             ]
             if node.doc
             else [*self.preamble, *[x.gen.py_ast for x in node.body]]
@@ -1605,7 +1609,7 @@ class PyastGenPass(Pass):
 
         value: Bool | Null,
         """
-        node.gen.py_ast = self.sync(ast3.MatchSingleton(value=node.value.gen.py_ast))
+        node.gen.py_ast = self.sync(ast3.MatchSingleton(value=node.value.lit_value))
 
     def exit_match_sequence(self, node: ast.MatchSequence) -> None:
         """Sub objects.
