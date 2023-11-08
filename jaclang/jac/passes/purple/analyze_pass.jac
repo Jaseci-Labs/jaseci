@@ -12,7 +12,7 @@ import:py from jaclang.jac.constant, Tokens as Tok;
 
 
 object AnalyzePass:Pass: {
-    can <init>(input_ir: ast.AstNode, prior: Optional[Transform]);
+    can <init>(input_ir: ast.AstNode, prior: Transform);
     can enter_architype(nd: ast.Architype);
 }
 

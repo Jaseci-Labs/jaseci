@@ -1127,7 +1127,6 @@ class PyastGenPass(Pass):
         if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
             self.ds_feature_warn()
             node.gen.py_ast = self.sync(ast3.Constant(value=None))
-
         elif (
             node.op.name
             in [  # TODO: the whole comparitors thing requries grammar change maybe
@@ -1148,6 +1147,13 @@ class PyastGenPass(Pass):
                     left=node.left.gen.py_ast,
                     comparators=[node.right.gen.py_ast],
                     ops=[node.op.gen.py_ast],
+                )
+            )
+        elif node.op.name in [Tok.KW_AND, Tok.KW_OR]:
+            node.gen.py_ast = self.sync(
+                ast3.BoolOp(
+                    op=node.op.gen.py_ast,
+                    values=[node.left.gen.py_ast, node.right.gen.py_ast],
                 )
             )
         elif isinstance(node.op.gen.py_ast, ast3.AST):
@@ -1769,9 +1775,9 @@ class PyastGenPass(Pass):
         pos_end: int,
         """
         if node.name == Tok.KW_AND:
-            node.gen.py_ast = self.sync(ast3.BitAnd())
+            node.gen.py_ast = self.sync(ast3.And())
         elif node.name == Tok.KW_OR:
-            node.gen.py_ast = self.sync(ast3.BitOr())
+            node.gen.py_ast = self.sync(ast3.Or())
         elif node.name in [Tok.PLUS, Tok.ADD_EQ]:
             node.gen.py_ast = self.sync(ast3.Add())
         elif node.name in [Tok.BW_AND, Tok.BW_AND_EQ]:
