@@ -3,9 +3,12 @@
 import inspect
 import os
 from abc import ABC, abstractmethod
+from typing import Callable, Optional
 from unittest import TestCase as _TestCase
 
+
 import jaclang
+from jaclang.jac.passes import Pass
 from jaclang.utils.helpers import get_ast_nodes_as_snake_case as ast_snakes
 
 
@@ -54,7 +57,8 @@ class TestCase(_TestCase):
 class TestCaseMicroSuite(ABC, TestCase):
     """Base test case for Jaseci."""
 
-    test_micro_jac_files_fully_tested = None
+    test_micro_jac_files_fully_tested: Optional[Callable[[TestCase], None]] = None
+    methods: list[str] = []
 
     @classmethod
     def self_attach_micro_tests(cls) -> None:
@@ -68,16 +72,12 @@ class TestCaseMicroSuite(ABC, TestCase):
             method_name = (
                 f"test_micro_{filename.replace('.jac', '').replace(os.sep, '_')}"
             )
+            cls.methods.append(method_name)
             setattr(cls, method_name, lambda self, f=filename: self.micro_suite_test(f))
 
         def test_micro_jac_files_fully_tested(self: TestCase) -> None:  # noqa: ANN001
             """Test that all micro jac files are fully tested."""
-            for filename in [
-                os.path.normpath(os.path.join(root, name))
-                for root, _, files in os.walk(os.path.dirname(jaclang.__file__))
-                for name in files
-                if name.endswith(".jac") and not name.startswith("err")
-            ]:
+            for filename in cls.methods:
                 if os.path.isfile(filename):
                     method_name = f"test_micro_{filename.replace('.jac', '').replace(os.sep, '_')}"
                     self.assertIn(method_name, dir(self))
@@ -93,7 +93,7 @@ class TestCaseMicroSuite(ABC, TestCase):
 class AstSyncTestMixin:
     """Mixin for testing AST sync."""
 
-    TargetPass = None
+    TargetPass: Optional[Pass] = None
 
     def test_pass_ast_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""
