@@ -37,6 +37,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -96,7 +97,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "jaseci_serv.wsgi.application"
+ASGI_APPLICATION = "jaseci_serv.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases

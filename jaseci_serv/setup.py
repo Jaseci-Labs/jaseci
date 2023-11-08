@@ -48,6 +48,8 @@ setup(
         "dj-rest-auth[with_social]",
         "django-allauth>=0.52.0",
         "tzdata>=2022.7",
+        "channels[daphne]==4.0.0",
+        "channels-redis",
     ],
     package_data={
         "": [
