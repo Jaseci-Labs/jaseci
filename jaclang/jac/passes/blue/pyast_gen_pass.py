@@ -227,6 +227,9 @@ class PyastGenPass(Pass):
             if node.doc
             else [*self.preamble, *[x.gen.py_ast for x in node.body]]
         )
+        for x in node.body:
+            if isinstance(x, ast.Import) and x.is_absorb:
+                print(x, x.gen.py_ast, x.loc.mod_path)
         new_body = []
         for i in body:
             if isinstance(i, list):
@@ -336,9 +339,8 @@ class PyastGenPass(Pass):
         elif node.path.path_str.startswith("."):
             level = 1
             py_compat_path_str = node.path.path_str[1:]
-        if node.lang.tag.value == Con.JAC_LANG_IMP:  # injects module into sys.modules
+        if node.lang.tag.value == Con.JAC_LANG_IMP:
             self.needs_jac_import()
-            path_items = [x for x in node.path.path if x.name != Tok.DOT]
             py_nodes.append(
                 self.sync(
                     ast3.Expr(
@@ -352,9 +354,9 @@ class PyastGenPass(Pass):
                                     self.sync(
                                         ast3.keyword(
                                             arg="target",
-                                            value=self.list_to_attrib(
-                                                [x.value for x in path_items],
-                                                path_items,
+                                            value=self.sync(
+                                                ast3.Constant(value=node.path.path_str),
+                                                node.path,
                                             ),
                                         )
                                     ),
@@ -389,7 +391,6 @@ class PyastGenPass(Pass):
                 self.warning(
                     "Includes import * in target module into current namespace."
                 )
-            return
         if not node.items:
             py_nodes.append(self.sync(ast3.Import(names=[node.path.gen.py_ast])))
         else:
