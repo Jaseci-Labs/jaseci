@@ -10,7 +10,7 @@ import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
 from jaclang.jac.constant import EdgeDir, Tokens as Tok
 from jaclang.jac.passes.ir_pass import Pass
-from jaclang.vendor.lark import Lark, Transformer, logger
+from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
 
 class JacParser(Pass):
@@ -26,14 +26,13 @@ class JacParser(Pass):
             JacParser.make_dev()
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
-    def transform(self, ir: ast.AstNode) -> Optional[ast.Module]:  # type: ignore
+    def transform(self, ir: ast.AstNode) -> Optional[ast.AstNode]:
         """Transform input IR."""
         try:
             tree, self.source.comments = JacParser.parse(
                 self.source.value, on_error=self.error_callback
             )
-            if tree:
-                tree = JacParser.TreeToAST(parser=self).transform(tree)  # type: ignore
+            mod = JacParser.TreeToAST(parser=self).transform(tree)
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
@@ -41,11 +40,11 @@ class JacParser(Pass):
             catch_error.c_start = e.column
             catch_error.c_end = e.column
             self.error(f"Syntax Error: {e}", node_override=catch_error)
-            tree = None
+            mod = None
         except Exception as e:
-            tree = None
+            mod = None
             self.error(f"Internal Error: {e}")
-        return tree  # type: ignore
+        return mod
 
     def error_callback(self, e: jl.UnexpectedInput) -> bool:
         """Handle error."""
@@ -56,7 +55,9 @@ class JacParser(Pass):
         JacParser.comment_cache.append(comment)
 
     @staticmethod
-    def parse(ir: str, on_error: Callable) -> tuple[jl.Tree, list[jl.Token]]:  # type: ignore
+    def parse(
+        ir: str, on_error: Callable[[jl.UnexpectedInput], bool]
+    ) -> tuple[jl.Tree, list[jl.Token]]:
         """Parse input IR."""
         JacParser.comment_cache = []
         return (
@@ -74,7 +75,7 @@ class JacParser(Pass):
             debug=True,
             lexer_callbacks={"COMMENT": JacParser._comment_callback},
         )
-        JacParser.JacTransformer = Transformer[jl.Tree[str], ast.AstNode]  # type: ignore
+        JacParser.JacTransformer = Transformer[Tree[str], ast.AstNode]
         logger.setLevel(logging.DEBUG)
 
     comment_cache: list[jl.Token] = []

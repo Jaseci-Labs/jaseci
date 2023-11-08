@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast as ast3
 import pprint
+from abc import ABC
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar, Union
 
 from jaclang.jac import jac_lark as jl
@@ -102,7 +103,7 @@ class AstNode:
             print_tree(self)
 
 
-class AstSymbolNode(AstNode):
+class AstSymbolNode(AstNode, ABC):
     """Nodes that have link to a symbol in symbol table."""
 
     def __init__(
@@ -116,7 +117,7 @@ class AstSymbolNode(AstNode):
         self.py_ctx_func: Type[ast3.AST] = ast3.Load
 
 
-class AstAccessNode(AstNode):
+class AstAccessNode(AstNode, ABC):
     """Nodes that have access."""
 
     def __init__(self, access: Optional[SubTag[Token]]) -> None:
@@ -135,7 +136,7 @@ class AstAccessNode(AstNode):
         )
 
 
-class AstDocNode(AstNode):
+class AstDocNode(AstNode, ABC):
     """Nodes that have access."""
 
     def __init__(self, doc: Optional[String]) -> None:
@@ -143,7 +144,7 @@ class AstDocNode(AstNode):
         self.doc: Optional[String] = doc
 
 
-class AstAsyncNode(AstNode):
+class AstAsyncNode(AstNode, ABC):
     """Nodes that have access."""
 
     def __init__(self, is_async: bool) -> None:
@@ -151,7 +152,7 @@ class AstAsyncNode(AstNode):
         self.is_async: bool = is_async
 
 
-class AstElseBodyNode(AstNode):
+class AstElseBodyNode(AstNode, ABC):
     """Nodes that have access."""
 
     def __init__(self, else_body: Optional[ElseStmt | ElseIf]) -> None:
@@ -159,7 +160,7 @@ class AstElseBodyNode(AstNode):
         self.else_body: Optional[ElseStmt | ElseIf] = else_body
 
 
-class AstTypedVarNode(AstNode):
+class AstTypedVarNode(AstNode, ABC):
     """Nodes that have access."""
 
     def __init__(self, type_tag: Optional[SubTag[ExprType]]) -> None:
@@ -167,16 +168,16 @@ class AstTypedVarNode(AstNode):
         self.type_tag: Optional[SubTag[ExprType]] = type_tag
 
 
-class AstImplOnlyNode(AstNode):
-    """ImplOnly node type for Jac Ast."""
-
-
-class WalkerStmtOnlyNode(AstNode):
+class WalkerStmtOnlyNode(AstNode, ABC):
     """WalkerStmtOnlyNode node type for Jac Ast."""
 
     def __init__(self) -> None:
         """Initialize walker statement only node."""
         self.from_walker: bool = False
+
+
+class AstImplOnlyNode(AstNode, ABC):
+    """ImplOnly node type for Jac Ast."""
 
 
 T = TypeVar("T", bound=AstNode)

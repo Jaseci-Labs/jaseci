@@ -82,7 +82,7 @@ class Pass(Transform):
 
     # Transform Implementations
     # -------------------------
-    def transform(self, ir: ast.AstNode) -> ast.AstNode:
+    def transform(self, ir: ast.AstNode) -> Optional[ast.AstNode]:
         """Run pass."""
         # Only performs passes on proper ASTs
         if not isinstance(ir, ast.AstNode):

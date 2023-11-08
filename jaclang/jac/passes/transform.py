@@ -78,7 +78,7 @@ class Transform(ABC):
         self.ir = self.transform(ir=input_ir)
 
     @abstractmethod
-    def transform(self, ir: AstNode) -> AstNode:
+    def transform(self, ir: AstNode) -> Optional[AstNode]:
         """Transform interface."""
         pass
 
