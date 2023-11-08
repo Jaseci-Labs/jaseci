@@ -289,8 +289,8 @@ class DefUsePass(SymTabPass):
         target: expression,
         """
         items = (
-            node.target.values
-            if isinstance(node.target, ast.TupleVal)
+            node.target.values.items
+            if isinstance(node.target, ast.TupleVal) and node.target.values
             else [node.target]
         )
         for i in items:
