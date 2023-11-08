@@ -12,12 +12,14 @@ import:py from jaclang.jac.constant, Tokens as Tok;
 
 
 object AnalyzePass:Pass: {
-    can <init>(*args: list, **kwargs: dict) {
-        <super>.<init>(*args, **kwargs);
-    }
+    can <init>(input_ir: ast.AstNode, prior: Optional[Transform]);
     can enter_architype(nd: ast.Architype);
 }
 
+:object:AnalyzePass:ability:<init>
+(input_ir: ast.AstNode, prior: Optional[Transform]) {
+        <super>.<init>(input_ir, prior);
+    }
 
 :object:AnalyzePass:ability:enter_architype(nd:ast.Architype) {
     if (

@@ -51,8 +51,12 @@ class PyOutPass(Pass):
 
     def gen_python(self, node: ast.Module, out_path: str) -> None:
         """Generate Python."""
-        with open(out_path, "w") as f:
-            f.write(ast3.unparse(node.gen.py_ast))
+        try:
+            with open(out_path, "w") as f:
+                f.write(ast3.unparse(node.gen.py_ast))
+        except Exception as e:
+            print(ast3.dump(node.gen.py_ast, indent=2))
+            raise e
 
     def compile_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
         """Generate Python."""

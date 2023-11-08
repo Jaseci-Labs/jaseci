@@ -11,6 +11,7 @@ This pass leverages data spacial lib to provide code
 gen for full Jac language. It is bootstrapped in Jac blue.
 """
 object PurplePygenPass:BluePygenPass: {
+    can <init>(input_ir: ast.AstNode, prior: Optional[Transform]);
 
     #*
     These add functions generate necessary imports
@@ -35,4 +36,9 @@ object PurplePygenPass:BluePygenPass: {
     can exit_edge_op_ref(nd: ast.EdgeOpRef);
     can exit_connect_op(nd: ast.ConnectOp);
     can exit_disconnect_op(nd: ast.DisconnectOp);
+}
+
+:object:PurplePygenPass:ability:<init>
+(input_ir: ast.AstNode, prior: Optional[Transform]) {
+    <super>.<init>(input_ir, prior);
 }

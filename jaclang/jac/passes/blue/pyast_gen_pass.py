@@ -4,7 +4,7 @@ At the end of this pass a meta['py_code'] is present with pure python code
 in each node. Module nodes contain the entire module code.
 """
 import ast as ast3
-from typing import Optional, Sequence, TypeVar, get_args
+from typing import Optional, Sequence, TypeVar
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con, Tokens as Tok
@@ -1226,12 +1226,6 @@ class PyastGenPass(Pass):
         operand: ExprType,
         op: Token,
         """
-        # node.gen.py_ast = self.sync(
-        #     ast3.UnaryOp(
-        #         op=self.sync(ast3.UAdd() if node.op.name == Tok.PLUS else ast3.USub()),
-        #         operand=node.operand.gen.py_ast,
-        #     )
-        # )
         if node.op.name == Tok.NOT:
             node.gen.py_ast = self.sync(
                 ast3.UnaryOp(
@@ -1268,13 +1262,10 @@ class PyastGenPass(Pass):
                     keywords=[],
                 )
             )
+        elif node.op.name in [Tok.STAR_MUL, Tok.STAR_POW]:
+            node.gen.py_ast = node.operand.gen.py_ast
         else:
-            node.gen.py_ast = self.sync(
-                ast3.UnaryOp(
-                    op=self.sync(ast3.USub()),
-                    operand=node.operand.gen.py_ast,
-                )
-            )
+            self.ice(f"Unknown Unary operator {node.op.value}")
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
@@ -1403,12 +1394,13 @@ class PyastGenPass(Pass):
         key: ExprType,
         value: ExprType,
         """
-        node.gen.py_ast = self.sync(
-            ast3.keyword(
-                arg=node.key.gen.py_ast,
-                value=node.value.gen.py_ast,
+        if node.is_arg:
+            node.gen.py_ast = self.sync(
+                ast3.keyword(
+                    arg=node.key.sym_name,
+                    value=node.value.gen.py_ast,
+                )
             )
-        )
 
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
@@ -1520,27 +1512,38 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         target: AtomType,
-        params: Optional[SubNodeList[ExprType | Assignment]],
+        params: Optional[SubNodeList[ExprType | KVPair]],
         """
-        node.gen.py_ast = self.sync(
-            ast3.Call(
-                func=node.target.gen.py_ast,
-                args=[
-                    x.gen.py_ast
-                    for x in node.params.items
-                    if isinstance(x, get_args(ast.ExprType))
-                ]
-                if node.params
-                else [],
-                keywords=[
-                    x.gen.py_ast
-                    for x in node.params.items
-                    if isinstance(x, ast.Assignment)  # TODO: FIRST: make keywords
-                ]
-                if node.params
-                else [],
-            )
-        )
+        node.gen.py_ast = self.sync(self.gen_func_call(node.target, node.params))
+
+    def gen_func_call(
+        self,
+        target: ast.AtomType,
+        params: Optional[ast.SubNodeList[ast.ExprType | ast.Assignment]],
+    ) -> ast3.Call:
+        """Generate a function call."""
+        func = target.gen.py_ast
+        args = []
+        keywords = []
+        if params and len(params.items) > 0:
+            for x in params.items:
+                if isinstance(x, ast.UnaryExpr) and x.op.name == Tok.STAR_MUL:
+                    args.append(
+                        self.sync(
+                            ast3.Starred(value=x.operand.gen.py_ast, ctx=ast3.Load()), x
+                        )
+                    )
+                elif isinstance(x, ast.UnaryExpr) and x.op.name == Tok.STAR_POW:
+                    keywords.append(
+                        self.sync(ast3.keyword(value=x.operand.gen.py_ast), x)
+                    )
+                elif isinstance(x, ast.ExprType):
+                    args.append(x.gen.py_ast)
+                elif isinstance(x, ast.KVPair):
+                    keywords.append(x.gen.py_ast)
+                else:
+                    self.ice("Invalid Parameter")
+        return ast3.Call(func=func, args=args, keywords=keywords)
 
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.

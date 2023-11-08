@@ -9,11 +9,7 @@ from jaclang.utils.helpers import pascal_to_snake
 class Pass(Transform):
     """Abstract class for IR passes."""
 
-    def __init__(
-        self,
-        input_ir: ast.AstNode,
-        prior: Optional[Transform],
-    ) -> None:
+    def __init__(self, input_ir: ast.AstNode, prior: Optional[Transform]) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False

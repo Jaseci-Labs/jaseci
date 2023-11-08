@@ -41,7 +41,6 @@ global exec_ctx = ExecutionContext();
 
 object ElementInterface {
     has jid: UUID = :>uuid4,
-        py_obj: any = None,
         timestamp: datetime = :>datetime.now,
         persist: bool = False,
         access_mode: AccessMode = AccessMode.PRIVATE,
@@ -101,26 +100,26 @@ object WalkerInterface:ObjectInterface: {
 }
 
 object Element {
-    has _jac_: ElementInterface = ElementInterface(py_obj=<self>);
+    has _jac_: ElementInterface = ElementInterface();
 }
 
 object Object:Element: {
-    has _jac_: ObjectInterface = ObjectInterface(py_obj=<self>);
+    has _jac_: ObjectInterface = ObjectInterface();
     static has _jac_ds_: DataSpatialInterface = DataSpatialInterface();
 }
 
 object Node:Object: {
-    has _jac_: NodeInterface = NodeInterface(py_obj=<self>);
+    has _jac_: NodeInterface = NodeInterface();
     can __call__(walk: Walker);
 }
 
 object Edge:Object: {
-    has _jac_: EdgeInterface = EdgeInterface(py_obj=<self>);
+    has _jac_: EdgeInterface = EdgeInterface();
     can __call__(walk: Walker);
 }
 
 object Walker:Object: {
-    has _jac_: WalkerInterface = WalkerInterface(py_obj=<self>);
+    has _jac_: WalkerInterface = WalkerInterface();
     can __call__(nd: Node);
 }
 
