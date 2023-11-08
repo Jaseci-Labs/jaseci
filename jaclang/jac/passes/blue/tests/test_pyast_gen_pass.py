@@ -117,7 +117,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         # )
         if len(ast_to_list(from_jac)) != len(ast_to_list(from_py)):
             print(
-                f"\n{filename} AST node length diff: {len(ast_to_list(from_jac))} vs {len(ast_to_list(from_py))}"
+                f"\n{filename} - AST node length diff: {len(ast_to_list(from_jac))} vs {len(ast_to_list(from_py))}"
             )
         self.assertGreater(len(code_gen.ir.gen.py), 10)
 
