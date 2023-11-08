@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, Optional, TypeAlias, Union, get_args
+from typing import Callable, Optional, Union, get_args
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
@@ -57,7 +57,7 @@ class JacParser(Pass):
     @staticmethod
     def parse(
         ir: str, on_error: Callable[[jl.UnexpectedInput], bool]
-    ) -> tuple[jl.Tree, list[jl.Token]]:
+    ) -> tuple[jl.Tree[jl.Tree[str]], list[jl.Token]]:
         """Parse input IR."""
         JacParser.comment_cache = []
         return (
@@ -75,13 +75,13 @@ class JacParser(Pass):
             debug=True,
             lexer_callbacks={"COMMENT": JacParser._comment_callback},
         )
-        JacParser.JacTransformer = Transformer[Tree[str], ast.AstNode]
+        JacParser.JacTransformer = Transformer[Tree[str], ast.AstNode]  # type: ignore
         logger.setLevel(logging.DEBUG)
 
     comment_cache: list[jl.Token] = []
 
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
-    JacTransformer: TypeAlias = jl.Transformer[jl.Tree[str], ast.AstNode]
+    JacTransformer = jl.Transformer[jl.Tree[str], ast.AstNode]
 
     class TreeToAST(JacTransformer):
         """Transform parse tree to AST."""
