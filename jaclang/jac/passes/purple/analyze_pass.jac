@@ -12,6 +12,9 @@ import:py from jaclang.jac.constant, Tokens as Tok;
 
 
 object AnalyzePass:Pass: {
+    can <init>(*args: list, **kwargs: dict) {
+        <super>.<init>(*args, **kwargs);
+    }
     can enter_architype(nd: ast.Architype);
 }
 

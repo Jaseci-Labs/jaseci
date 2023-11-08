@@ -595,13 +595,13 @@ class PyastGenPass(Pass):
             [self.sync(ast3.arg(arg="self", annotation=None))] if node.is_method else []
         )
         vararg = None
-        kwargs = None
+        kwarg = None
         if isinstance(node.params, ast.SubNodeList):
             for i in node.params.items:
                 if i.unpack and i.unpack.value == "*":
                     vararg = i.gen.py_ast
                 elif i.unpack and i.unpack.value == "**":
-                    kwargs = i.gen.py_ast
+                    kwarg = i.gen.py_ast
                 else:
                     params.append(i.gen.py_ast) if isinstance(
                         i.gen.py_ast, ast3.arg
@@ -617,7 +617,7 @@ class PyastGenPass(Pass):
                 args=params,
                 kwonlyargs=[],
                 vararg=vararg,
-                kwargs=kwargs,
+                kwarg=kwarg,
                 kw_defaults=[],
                 defaults=defaults,
             )
