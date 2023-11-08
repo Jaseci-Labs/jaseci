@@ -227,9 +227,6 @@ class PyastGenPass(Pass):
             if node.doc
             else [*self.preamble, *[x.gen.py_ast for x in node.body]]
         )
-        for x in node.body:
-            if isinstance(x, ast.Import) and x.is_absorb:
-                print(x, x.gen.py_ast, x.loc.mod_path)
         new_body = []
         for i in body:
             if isinstance(i, list):
