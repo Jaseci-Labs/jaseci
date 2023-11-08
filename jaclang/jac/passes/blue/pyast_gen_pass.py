@@ -107,7 +107,7 @@ class PyastGenPass(Pass):
         self.preamble.append(
             self.sync(
                 ast3.ImportFrom(
-                    module="jac_lang.jac.features",
+                    module="jaclang.jac.features",
                     names=[self.sync(ast3.alias(name="elvis", asname="__jac_elvis__"))],
                     level=0,
                 ),
@@ -1226,12 +1226,55 @@ class PyastGenPass(Pass):
         operand: ExprType,
         op: Token,
         """
-        node.gen.py_ast = self.sync(
-            ast3.UnaryOp(
-                op=self.sync(ast3.UAdd() if node.op.name == Tok.PLUS else ast3.USub()),
-                operand=node.operand.gen.py_ast,
+        # node.gen.py_ast = self.sync(
+        #     ast3.UnaryOp(
+        #         op=self.sync(ast3.UAdd() if node.op.name == Tok.PLUS else ast3.USub()),
+        #         operand=node.operand.gen.py_ast,
+        #     )
+        # )
+        if node.op.name == Tok.NOT:
+            node.gen.py_ast = self.sync(
+                ast3.UnaryOp(
+                    op=self.sync(ast3.Not()),
+                    operand=node.operand.gen.py_ast,
+                )
             )
-        )
+        elif node.op.name == Tok.BW_NOT:
+            node.gen.py_ast = self.sync(
+                ast3.UnaryOp(
+                    op=self.sync(ast3.Invert()),
+                    operand=node.operand.gen.py_ast,
+                )
+            )
+        elif node.op.name == Tok.PLUS:
+            node.gen.py_ast = self.sync(
+                ast3.UnaryOp(
+                    op=self.sync(ast3.UAdd()),
+                    operand=node.operand.gen.py_ast,
+                )
+            )
+        elif node.op.name == Tok.MINUS:
+            node.gen.py_ast = self.sync(
+                ast3.UnaryOp(
+                    op=self.sync(ast3.USub()),
+                    operand=node.operand.gen.py_ast,
+                )
+            )
+        elif node.op.name in [Tok.PIPE_FWD, Tok.KW_SPAWN, Tok.A_PIPE_FWD]:
+            node.gen.py_ast = self.sync(
+                ast3.Call(
+                    func=node.operand.gen.py_ast,
+                    args=[],
+                    keywords=[],
+                )
+            )
+        else:
+            node.gen.py_ast = self.sync(
+                ast3.UnaryOp(
+                    op=self.sync(ast3.USub()),
+                    operand=node.operand.gen.py_ast,
+                )
+            )
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
@@ -1507,13 +1550,16 @@ class PyastGenPass(Pass):
         step: Optional[ExprType],
         is_range: bool,
         """
-        node.gen.py_ast = self.sync(
-            ast3.Slice(
-                lower=node.start.gen.py_ast if node.start else None,
-                upper=node.stop.gen.py_ast if node.stop else None,
-                step=node.step.gen.py_ast if node.step else None,
+        if node.is_range:
+            node.gen.py_ast = self.sync(
+                ast3.Slice(
+                    lower=node.start.gen.py_ast if node.start else None,
+                    upper=node.stop.gen.py_ast if node.stop else None,
+                    step=node.step.gen.py_ast if node.step else None,
+                )
             )
-        )
+        else:
+            node.gen.py_ast = node.start.gen.py_ast if node.start else None
 
     def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Sub objects.

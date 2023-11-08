@@ -2,7 +2,6 @@
 import inspect
 import marshal
 import sys
-import traceback
 import types
 from os import path
 from typing import Callable, Optional
@@ -10,7 +9,6 @@ from typing import Callable, Optional
 from jaclang.jac.constant import Constants as Con
 from jaclang.jac.passes.transform import Alert
 from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
-from jaclang.utils.helpers import handle_jac_error
 from jaclang.utils.log import logging
 
 
@@ -67,13 +65,6 @@ def import_jac_module(
     module.__name__ = override_name if override_name else module_name
     module.__dict__["_jac_pycodestring_"] = code_string
 
-    try:
-        exec(codeobj, module.__dict__)
-    except Exception as e:
-        tb = traceback.extract_tb(e.__traceback__)
-        err = handle_jac_error(code_string, e, tb)
-        raise type(e)(str(e) + "\n" + err)
-
     if package_path:
         parts = package_path.split(".")
         for i in range(len(parts)):
@@ -85,6 +76,9 @@ def import_jac_module(
         sys.modules[f"{package_path}.{module_name}"] = module
     else:
         sys.modules[module_name] = module
+
+    exec(codeobj, module.__dict__)
+
     return module
 
 

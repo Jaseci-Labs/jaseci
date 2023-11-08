@@ -4,6 +4,7 @@ This pass creates and manages compilation of Python code from the AST. This pass
 also creates bytecode files from the Python code, and manages the caching of
 relevant files.
 """
+import ast as ast3
 import marshal
 import os
 import traceback
@@ -51,12 +52,12 @@ class PyOutPass(Pass):
     def gen_python(self, node: ast.Module, out_path: str) -> None:
         """Generate Python."""
         with open(out_path, "w") as f:
-            f.write(node.gen.py)
+            f.write(ast3.unparse(node.gen.py_ast))
 
     def compile_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
         """Generate Python."""
         try:
-            codeobj = compile(node.gen.py, f"_jac_py_gen ({mod_path})", "exec")
+            codeobj = compile(source=node.gen.py_ast, filename=mod_path, mode="exec")
         except Exception as e:
             tb = traceback.extract_tb(e.__traceback__)
             err = handle_jac_error(node.gen.py, e, tb)

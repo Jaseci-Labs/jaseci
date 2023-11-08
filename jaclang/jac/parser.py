@@ -2011,7 +2011,7 @@ class JacParser(Pass):
         def atomic_chain(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
-            atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice | list_val)
+            atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice )
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
                         | atomic_call
             """
@@ -2026,7 +2026,7 @@ class JacParser(Pass):
                 chomp = chomp[1:]
             if len(chomp) == 1 and isinstance(
                 chomp[0],
-                (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
+                (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice),
             ):
                 return self.nu(
                     ast.AtomTrailer(
@@ -2074,16 +2074,23 @@ class JacParser(Pass):
             """Grammar rule.
 
             index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
+                       | list_val
             """
+            if len(kid) == 1 and isinstance(kid[0], ast.ListVal):
+                expr = None
+                if not kid[0].values or len(kid[0].values.items) < 1:
+                    self.parse_ref.error("Empty list slice not allowed", kid[0].values)
+                elif len(kid[0].values.items) == 1:
+                    expr = kid[0].values.items[0]  # TODO: Loses braces
+                else:
+                    expr = ast.TupleVal(values=kid[0].values, kid=kid[0].kid)
+                return self.nu(
+                    ast.IndexSlice(
+                        start=expr, stop=None, step=None, is_range=False, kid=[expr]
+                    )
+                )
             chomp = [*kid]
             chomp = chomp[1:]
-            is_range = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON
-            ) or (
-                len(chomp) > 1
-                and isinstance(chomp[1], ast.Token)
-                and chomp[1].name == Tok.COLON
-            )
             expr1 = chomp[0] if isinstance(chomp[0], ast.ExprType) else None
             expr2 = (
                 chomp[1]
@@ -2126,7 +2133,7 @@ class JacParser(Pass):
                     start=expr1,
                     stop=expr2,
                     step=expr3,
-                    is_range=is_range,
+                    is_range=True,
                     kid=kid,
                 )
             )

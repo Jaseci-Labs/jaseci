@@ -13,7 +13,8 @@ include:jac impl.arch_impl;
 enum AccessMode;
 
 object Memory {
-    has index: dict[UUID, Element], save_queue: list[Element];
+    has index: dict[UUID, Element] = {},
+        save_queue: list[Element] = [];
 
     #* Main Accessors *#
     can get_obj(caller_id: UUID, item_id: UUID,
@@ -80,9 +81,9 @@ object NodeInterface:ObjectInterface: {
 }
 
 object EdgeInterface:ObjectInterface: {
-    has source: Node,
-        target: Node,
-        dir: EdgeDir;
+    has source: Node = None,
+        target: Node = None,
+        dir: EdgeDir = None;
 
     can apply_dir(dir: EdgeDir) -> Edge;
     can attach(src: Node, trg: Node) -> Edge;

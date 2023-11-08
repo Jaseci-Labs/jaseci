@@ -269,13 +269,13 @@ cmp_op: KW_ISN
       | LT
       | EE
 
-atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice | list_val)
+atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice)
             | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
             | (atomic_call | atom)
 
 atomic_call: atomic_chain LPAREN param_list? RPAREN
 index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
-
+           | list_val
 
 atom: edge_op_ref
     | any_ref
