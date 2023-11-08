@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ast as ast3
 import pprint
-from typing import Generic, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar, Union
 
 from jaclang.jac import jac_lark as jl
 from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
@@ -1917,8 +1917,21 @@ class Name(TokenSymbol):
 class Literal(TokenSymbol):
     """Literal node type for Jac Ast."""
 
+    type_map = {
+        "int": int,
+        "float": float,
+        "str": str,
+        "bool": bool,
+        "bytes": bytes,
+        "list": list,
+        "tuple": tuple,
+        "set": set,
+        "dict": dict,
+        "type": type,
+    }
+
     @property
-    def lit_value(self) -> int | str | float | bool | None | callable:
+    def lit_value(self) -> int | str | float | bool | None | Callable[[], Any]:
         """Return literal value in its python type."""
         raise NotImplementedError
 
@@ -1929,12 +1942,11 @@ class BuiltinType(Name, Literal):
     SYMBOL_TYPE = SymbolType.VAR
 
     @property
-    def lit_value(self) -> callable:
+    def lit_value(self) -> Callable[[], Any]:
         """Return literal value in its python type."""
-        ret = eval(self.value)
-        if not isinstance(ret, callable):
+        if self.value not in Literal.type_map:
             raise TypeError(f"ICE: {self.value} is not a callable builtin")
-        return ret
+        return Literal.type_map[self.value]
 
 
 class Float(Literal):
