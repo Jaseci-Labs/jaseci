@@ -21,6 +21,7 @@ def import_jac_module(
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     dir_path, file_name = path.split(path.join(*(target.split("."))) + ".jac")
+
     module_name = path.splitext(file_name)[0]
     package_path = dir_path.replace(path.sep, ".")
 
@@ -34,6 +35,7 @@ def import_jac_module(
     else:
         frame = inspect.stack()[2]
         caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
+    caller_dir = path.dirname(caller_dir) if target.startswith("..") else caller_dir
     caller_dir = path.join(caller_dir, dir_path)
 
     gen_dir = path.join(caller_dir, Con.JAC_GEN_DIR)

@@ -19,13 +19,7 @@ class PyastGenPass(Pass):
     def before_pass(self) -> None:
         """Initialize pass."""
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
-        self.already_added = {
-            "jimport": False,
-            "enum": False,
-            "test": False,
-            "elvis": False,
-            "dataclass": False,
-        }
+        self.already_added: list[str] = []
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -43,7 +37,7 @@ class PyastGenPass(Pass):
 
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
-        if self.already_added["jimport"]:
+        if "jimport" in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -59,11 +53,11 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added["jimport"] = True
+        self.already_added.append("jimport")
 
     def needs_enum(self) -> None:
         """Check if enum is needed."""
-        if self.already_added["enum"]:
+        if "enum" in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -78,11 +72,11 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added["enum"] = True
+        self.already_added.append("enum")
 
     def needs_data_class(self) -> None:
         """Check if enum is needed."""
-        if self.already_added["dataclass"]:
+        if "dataclass" in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -98,11 +92,11 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added["dataclass"] = True
+        self.already_added.append("dataclass")
 
     def needs_elvis(self) -> None:
         """Check if enum is needed."""
-        if self.already_added["elvis"]:
+        if "elvis" in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -114,11 +108,11 @@ class PyastGenPass(Pass):
                 jac_node=self.ir,
             )
         )
-        self.already_added["elvis"] = True
+        self.already_added.append("elvis")
 
     def needs_test(self) -> None:
         """Check if test is needed."""
-        if self.already_added["test"]:
+        if "test" in self.already_added:
             return
         test_code = (
             "import unittest as __jac_unittest__\n"
@@ -129,7 +123,7 @@ class PyastGenPass(Pass):
             "        return getattr(__jac_tc__, 'assert'+name)"
         )
         self.preamble += ast3.parse(test_code).body
-        self.already_added["test"] = True
+        self.already_added.append("test")
 
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
@@ -149,6 +143,7 @@ class PyastGenPass(Pass):
         py_node.col_offset = jac_node.loc.col_start
         py_node.end_lineno = jac_node.loc.last_line
         py_node.end_col_offset = jac_node.loc.col_end
+        py_node.jac_link: ast.AstNode = jac_node
         return py_node
 
     def resolve_stmt_block(
@@ -569,6 +564,9 @@ class PyastGenPass(Pass):
                 args=node.signature.gen.py_ast if node.signature else [],
                 body=body,
                 decorator_list=node.decorators.gen.py_ast if node.decorators else [],
+                returns=node.signature.return_type.gen.py_ast
+                if node.signature and node.signature.return_type
+                else None,
             )
         )
 
@@ -955,10 +953,7 @@ class PyastGenPass(Pass):
         elif node.ctrl.name == Tok.KW_CONTINUE:
             node.gen.py_ast = self.sync(ast3.Continue())
         elif node.ctrl.name == Tok.KW_SKIP:
-            self.ds_feature_warn()
-            node.gen.py_ast = self.sync(
-                ast3.Expr(value=self.sync(ast3.Constant(value=None)))
-            )
+            node.gen.py_ast = self.sync(ast3.Return(value=None))
 
     def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
