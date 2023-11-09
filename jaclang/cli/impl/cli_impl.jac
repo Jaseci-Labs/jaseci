@@ -1,6 +1,6 @@
 """Implemenation for Jac's command line interface."""
 
-:o:Command:a:<init> {
+:o:Command:a:<init>(func: callable) {
     <s>.func = func;
     <s>.sig = func |> inspect.signature;
 }
@@ -66,7 +66,7 @@
 }
 
 
-:o:CommandShell:a:<init> {
+:o:CommandShell:a:<init>(cmd_reg: CommandRegistry) {
     <s>.cmd_reg = cmd_reg;
     <s> |> cmd.Cmd.<init>;
 }

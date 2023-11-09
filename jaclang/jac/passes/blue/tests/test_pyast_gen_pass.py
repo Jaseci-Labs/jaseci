@@ -119,7 +119,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             print(
                 f"\n{filename} - AST node length diff: {len(ast_to_list(from_jac))} vs {len(ast_to_list(from_py))}"
             )
-        self.assertGreater(len(code_gen.ir.gen.py), 10)
+        self.assertGreater(len(from_jac_str), 10)
 
 
 PyastGenPassTests.self_attach_micro_tests()

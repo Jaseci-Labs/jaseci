@@ -2,7 +2,7 @@
 
 with entry {
     a=(5+10)*2;
-    {"name": "value"} |> (len |> print |> dump)  |> say;
+    {"name": "value"} |> (len |> print |> dump) |> say;
 }
 
 with entry {
