@@ -9,7 +9,7 @@ import ast as ast3
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Tokens as Tok
-from jaclang.jac.passes.blue.sym_tab_build_pass import SymTabPass
+from jaclang.jac.passes.main.sym_tab_build_pass import SymTabPass
 
 
 class DefUsePass(SymTabPass):

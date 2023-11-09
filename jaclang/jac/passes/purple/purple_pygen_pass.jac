@@ -1,6 +1,6 @@
 """First Jac pass bootstrapped in Jac"""
 import:py jaclang.jac.absyntree as ast;
-import:py from jaclang.jac.passes.blue, BluePygenPass;
+import:py from jaclang.jac.passes.main, BluePygenPass;
 import:py from jaclang.core, Object, Node, Edge, Walker;
 
 

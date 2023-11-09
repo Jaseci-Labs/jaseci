@@ -4,13 +4,13 @@ from typing import Type, TypeVar
 import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes import Pass
-from jaclang.jac.passes.blue import (
+from jaclang.jac.passes.main import (
     BluePygenPass,
     JacFormatPass,
     PyOutPass,
     pass_schedule,
 )
-from jaclang.jac.passes.blue.schedules import format_pass
+from jaclang.jac.passes.main.schedules import format_pass
 from jaclang.jac.passes.transform import Alert
 
 

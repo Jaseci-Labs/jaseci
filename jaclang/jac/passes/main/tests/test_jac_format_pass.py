@@ -1,8 +1,8 @@
 """Test ast build pass module."""
 
-from jaclang.jac.passes.blue import BluePygenPass
-from jaclang.jac.passes.blue import JacFormatPass
-from jaclang.jac.passes.blue.schedules import py_code_gen as without_format
+from jaclang.jac.passes.main import BluePygenPass
+from jaclang.jac.passes.main import JacFormatPass
+from jaclang.jac.passes.main.schedules import py_code_gen as without_format
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 

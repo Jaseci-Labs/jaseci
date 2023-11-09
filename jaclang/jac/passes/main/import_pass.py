@@ -13,7 +13,7 @@ from typing import Optional
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
-from jaclang.jac.passes.blue import SubNodeTabPass
+from jaclang.jac.passes.main import SubNodeTabPass
 
 
 class ImportPass(Pass):
@@ -70,7 +70,7 @@ class ImportPass(Pass):
     def import_module(self, node: ast.Import, mod_path: str) -> ast.Module | None:
         """Import a module."""
         from jaclang.jac.transpiler import jac_file_to_pass
-        from jaclang.jac.passes.blue import SubNodeTabPass
+        from jaclang.jac.passes.main import SubNodeTabPass
 
         self.cur_node = node  # impacts error reporting
         base_dir = path.dirname(mod_path)
@@ -103,7 +103,7 @@ class ImportPass(Pass):
 
     def import_py_module(self, node: ast.Import, mod_path: str) -> Optional[ast.Module]:
         """Import a module."""
-        from jaclang.jac.passes.blue import PyastBuildPass
+        from jaclang.jac.passes.main import PyastBuildPass
 
         base_dir = path.dirname(mod_path)
 

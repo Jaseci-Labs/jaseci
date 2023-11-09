@@ -5,7 +5,7 @@ import os
 from typing import Sequence
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.passes.blue import DefUsePass
+from jaclang.jac.passes.main import DefUsePass
 from jaclang.jac.passes.transform import Alert
 from jaclang.jac.symtable import Symbol, SymbolTable
 from jaclang.jac.transpiler import jac_str_to_pass

@@ -1,5 +1,5 @@
 """Test pass module."""
-from jaclang.jac.passes.blue import SymTabBuildPass
+from jaclang.jac.passes.main import SymTabBuildPass
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCase
 

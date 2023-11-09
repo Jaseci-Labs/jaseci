@@ -3,7 +3,7 @@ import ast as ast3
 import io
 import sys
 
-from jaclang.jac.passes.blue import PyastGenPass
+from jaclang.jac.passes.main import PyastGenPass
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 

@@ -142,7 +142,7 @@ class AstTool:
 
     def py_ast_nodes(self) -> str:
         """List python ast nodes."""
-        from jaclang.jac.passes.blue import PyastBuildPass
+        from jaclang.jac.passes.main import PyastBuildPass
 
         visit_methods = [
             method for method in dir(py_ast._Unparser) if method.startswith("visit_")  # type: ignore

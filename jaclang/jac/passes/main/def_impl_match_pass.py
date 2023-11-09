@@ -7,7 +7,7 @@ body field.
 """
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes import Pass
-from jaclang.jac.passes.blue import SubNodeTabPass
+from jaclang.jac.passes.main import SubNodeTabPass
 from jaclang.jac.symtable import SymbolTable, SymbolType
 
 

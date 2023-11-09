@@ -1,5 +1,5 @@
 """Test pass module."""
-from jaclang.jac.passes.blue import ImportPass
+from jaclang.jac.passes.main import ImportPass
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import TestCase
 

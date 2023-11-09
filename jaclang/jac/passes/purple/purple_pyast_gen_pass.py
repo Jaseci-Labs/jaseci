@@ -8,7 +8,7 @@ from typing import TypeVar
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con, Tokens as Tok
-from jaclang.jac.passes.blue import PyastGenPass
+from jaclang.jac.passes.main import PyastGenPass
 
 T = TypeVar("T", bound=ast3.AST)
 

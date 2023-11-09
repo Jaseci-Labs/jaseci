@@ -20,7 +20,7 @@ py_code_gen = [
     PyastGenPass,
 ]
 
-py_transpiler = [
+py_compiler = [
     *py_code_gen,
     PyOutPass,
 ]

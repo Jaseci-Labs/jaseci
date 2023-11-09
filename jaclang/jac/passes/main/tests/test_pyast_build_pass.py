@@ -2,7 +2,7 @@
 import ast as py_ast
 import inspect
 
-from jaclang.jac.passes.blue import PyastBuildPass
+from jaclang.jac.passes.main import PyastBuildPass
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.utils.test import TestCase
 
