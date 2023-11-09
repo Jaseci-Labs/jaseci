@@ -91,8 +91,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        if "guess_game" in filename:
-            return
         code_gen = jac_file_to_pass(
             self.fixture_abs_path(filename), target=PyastGenPass
         )

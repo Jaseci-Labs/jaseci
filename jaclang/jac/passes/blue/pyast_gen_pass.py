@@ -1153,6 +1153,13 @@ class PyastGenPass(Pass):
                     values=[node.left.gen.py_ast, node.right.gen.py_ast],
                 )
             )
+        elif node.op.name in [Tok.WALKER_OP]:
+            node.gen.py_ast = self.sync(
+                ast3.NamedExpr(
+                    target=node.left.gen.py_ast,
+                    value=node.right.gen.py_ast,
+                )
+            )
         elif isinstance(node.op.gen.py_ast, ast3.AST):
             node.gen.py_ast = self.sync(
                 ast3.BinOp(
@@ -1483,6 +1490,7 @@ class PyastGenPass(Pass):
 
         target: AtomType,
         right: AtomType,
+        is_null_ok: bool,
         is_attr: bool,
         """
         if node.is_attr:
@@ -1502,13 +1510,30 @@ class PyastGenPass(Pass):
                 )
             )
             node.right.gen.py_ast.ctx = ast3.Load()  # type: ignore
+        if node.is_null_ok:
+            node.gen.py_ast.value = self.sync(
+                ast3.Name(id="__jac_tmp", ctx=ast3.Load())
+            )
+            node.gen.py_ast = self.sync(
+                ast3.IfExp(
+                    test=self.sync(
+                        ast3.NamedExpr(
+                            target=self.sync(
+                                ast3.Name(id="__jac_tmp", ctx=ast3.Store())
+                            ),
+                            value=node.target.gen.py_ast,
+                        )
+                    ),
+                    body=node.gen.py_ast,
+                    orelse=self.sync(ast3.Constant(value=None)),
+                )
+            )
 
     def exit_atom_unit(self, node: ast.AtomUnit) -> None:
         """Sub objects.
 
         value: AtomType | ExprType,
         is_paren: bool,
-        is_null_ok: bool,
         """
         node.gen.py_ast = node.value.gen.py_ast
 
