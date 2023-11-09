@@ -163,7 +163,7 @@ class PyastGenPass(Pass):
             [self.sync(ast3.Pass(), node)]
             if isinstance(node, ast.SubNodeList) and not node.items
             else node.gen.py_ast
-            if node
+            if node and isinstance(node.gen.py_ast, list)
             else []
         )
 
@@ -846,7 +846,7 @@ class PyastGenPass(Pass):
         ):
             body += [node.count_by.gen.py_ast]
         else:
-            return  # TODO: raise self.ice()
+            raise self.ice()
         py_nodes.append(node.iter.gen.py_ast)
         py_nodes.append(
             self.sync(
