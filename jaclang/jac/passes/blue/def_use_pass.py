@@ -8,6 +8,7 @@ sybmols in the symbol table (including uses).
 import ast as ast3
 
 import jaclang.jac.absyntree as ast
+from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes.blue.sym_tab_build_pass import SymTabPass
 
 
@@ -22,6 +23,23 @@ class DefUsePass(SymTabPass):
                     f"{i.sym_name} used before being defined.",
                     node_override=i,
                 )
+
+    def enter_architype(self, node: ast.Architype) -> None:
+        """Sub objects.
+
+        name: Name,
+        doc: Optional[Token],
+        body: Optional[SubNodeList[ArchStmt]],
+        sym_tab: Optional[SymbolTable],
+        """
+        if node.arch_type.value == Tok.KW_WALKER:
+            for i in (
+                self.get_all_sub_nodes(node, ast.VisitStmt)
+                + self.get_all_sub_nodes(node, ast.IgnoreStmt)
+                + self.get_all_sub_nodes(node, ast.DisengageStmt)
+                + self.get_all_sub_nodes(node, ast.EdgeOpRef)
+            ):
+                i.from_walker = True
 
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
