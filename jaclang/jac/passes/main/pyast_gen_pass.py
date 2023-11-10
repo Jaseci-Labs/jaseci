@@ -74,41 +74,23 @@ class PyastGenPass(Pass):
         )
         self.already_added.append("enum")
 
-    def needs_data_class(self) -> None:
+    def needs_jac_feature(self) -> None:
         """Check if enum is needed."""
-        if "dataclass" in self.already_added:
+        if "jac_feature" in self.already_added:
             return
         self.preamble.append(
             self.sync(
                 ast3.ImportFrom(
-                    module="dataclasses",
+                    module="jaclang.jac.features",
                     names=[
-                        self.sync(
-                            ast3.alias(name="dataclass", asname="__jac_dataclass__")
-                        )
+                        self.sync(ast3.alias(name="JacFeature", asname="__JacFeature")),
                     ],
                     level=0,
                 ),
                 jac_node=self.ir,
             )
         )
-        self.already_added.append("dataclass")
-
-    def needs_elvis(self) -> None:
-        """Check if enum is needed."""
-        if "elvis" in self.already_added:
-            return
-        self.preamble.append(
-            self.sync(
-                ast3.ImportFrom(
-                    module="jaclang.jac.features",
-                    names=[self.sync(ast3.alias(name="elvis", asname="__jac_elvis__"))],
-                    level=0,
-                ),
-                jac_node=self.ir,
-            )
-        )
-        self.already_added.append("elvis")
+        self.already_added.append("jac_feature")
 
     def needs_test(self) -> None:
         """Check if test is needed."""
@@ -441,7 +423,7 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        self.needs_data_class()
+        self.needs_jac_feature()
         body = self.resolve_stmt_block(
             node.body.body if isinstance(node.body, ast.ArchDef) else node.body
         )
@@ -459,7 +441,21 @@ class PyastGenPass(Pass):
         )
         if isinstance(decorators, list):
             decorators.append(
-                self.sync(ast3.Name(id="__jac_dataclass__", ctx=ast3.Load()))
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                ),
+                                attr="make_architype",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[self.sync(ast3.Constant(value=node.arch_type.value))],
+                        keywords=[],
+                    )
+                )
             )
         else:
             raise self.ice()
@@ -564,12 +560,40 @@ class PyastGenPass(Pass):
                 f"Abstract ability {node.sym_name} should not have a body.",
                 node,
             )
+        decorator_list = node.decorators.gen.py_ast if node.decorators else []
+        if isinstance(node.signature, ast.EventSignature):
+            self.needs_jac_feature()
+            decorator_list.append(
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                ),
+                                attr="make_ds_ability",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[
+                            self.sync(ast3.Constant(value=node.signature.event.value)),
+                            self.sync(
+                                node.signature.arch_tag_info.gen.py_ast
+                                if node.signature.arch_tag_info
+                                else ast3.Constant(value=None),
+                                node.signature,
+                            ),
+                        ],
+                        keywords=[],
+                    )
+                )
+            )
         node.gen.py_ast = self.sync(
             func_type(
                 name=node.name_ref.sym_name,
                 args=node.signature.gen.py_ast if node.signature else [],
                 body=body,
-                decorator_list=node.decorators.gen.py_ast if node.decorators else [],
+                decorator_list=decorator_list,
                 returns=node.signature.return_type.gen.py_ast
                 if node.signature and node.signature.return_type
                 else None,
@@ -632,11 +656,19 @@ class PyastGenPass(Pass):
         arch_tag_info: Optional[ExprType],
         return_type: Optional[SubTag[ExprType]],
         """
-        self.ds_feature_warn()
+        here = self.sync(
+            ast3.arg(
+                arg=f"{Con.HERE.value}",
+                annotation=node.arch_tag_info.gen.py_ast
+                if node.arch_tag_info
+                else None,
+            ),
+            jac_node=node.arch_tag_info if node.arch_tag_info else node,
+        )
         node.gen.py_ast = self.sync(
             ast3.arguments(
                 posonlyargs=[],
-                args=[],
+                args=[here],
                 kwonlyargs=[],
                 vararg=None,
                 kwargs=None,
@@ -1205,10 +1237,18 @@ class PyastGenPass(Pass):
         elif node.op.name == Tok.PIPE_FWD and isinstance(node.right, ast.TupleVal):
             self.error("Invalid pipe target.")
         elif node.op.name == Tok.ELVIS_OP:
-            self.needs_elvis()
+            self.needs_jac_feature()
             return self.sync(
                 ast3.Call(
-                    func=self.sync(ast3.Name(id="__jac_elvis__", ctx=ast3.Load())),
+                    func=self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                            ),
+                            attr="elvis",
+                            ctx=ast3.Load(),
+                        )
+                    ),
                     args=[node.left.gen.py_ast, node.right.gen.py_ast],
                     keywords=[],
                 )
