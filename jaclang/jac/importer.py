@@ -9,6 +9,7 @@ from typing import Callable, Optional
 from jaclang.jac.constant import Constants as Con
 from jaclang.jac.passes.transform import Alert
 from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
+from jaclang.utils.log import logging
 
 
 def import_jac_module(
@@ -52,7 +53,10 @@ def import_jac_module(
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
     else:
-        if transpiler_func(full_target):
+        if error := transpiler_func(full_target):
+            if error:
+                for i in error:
+                    logging.error(i)
             return None
         with open(py_file_path, "r") as f:
             code_string = f.read()
