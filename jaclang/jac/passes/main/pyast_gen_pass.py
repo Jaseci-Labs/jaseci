@@ -157,7 +157,13 @@ class PyastGenPass(Pass):
         return (
             [self.sync(ast3.Pass(), node)]
             if isinstance(node, ast.SubNodeList) and not node.items
-            else node.gen.py_ast
+            else self.flatten(
+                [
+                    x.gen.py_ast
+                    for x in node.items
+                    if not isinstance(x, ast.AstImplOnlyNode)
+                ]
+            )
             if node and isinstance(node.gen.py_ast, list)
             else []
         )
