@@ -11,7 +11,8 @@
     return math.pi * radius * radius;
 }
 
-:object:Circle:ability:<init> {
+:object:Circle:ability:<init> (radius: float) {
+    self.radius = radius;
     <super>.<init>(ShapeType.CIRCLE);
 }
 

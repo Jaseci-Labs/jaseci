@@ -18,12 +18,12 @@ object Shape {
 """Circle class inherits from Shape."""
 object Circle:Shape: {
     has radius: float;
-    can <init>;
+    can <init>(radius: float);
     can area -> float;
 }
 
 # Radius of the demo circle
-global RAD = 5, c = Circle(RAD);
+global RAD = 5, c = Circle(radius=RAD);
 
 """Here we run the main program."""
 with entry:__main__ { main_run(); }

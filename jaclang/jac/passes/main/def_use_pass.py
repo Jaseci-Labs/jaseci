@@ -17,12 +17,12 @@ class DefUsePass(SymTabPass):
 
     def after_pass(self) -> None:
         """After pass."""
-        for i in self.unlinked:
-            if not i.sym_name.startswith("["):
-                self.warning(
-                    f"{i.sym_name} used before being defined.",
-                    node_override=i,
-                )
+        # for i in self.unlinked:
+        #     if not i.sym_name.startswith("["):
+        #         self.warning(
+        #             f"{i.sym_name} used before being defined.",
+        #             node_override=i,
+        #         )
 
     def enter_architype(self, node: ast.Architype) -> None:
         """Sub objects.
@@ -64,7 +64,12 @@ class DefUsePass(SymTabPass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
-        self.def_insert(node, single_use="func param")
+        if (
+            node.parent
+            and node.parent.parent
+            and isinstance(node.parent.parent, ast.Ability)
+        ):
+            self.def_insert(node, single_use="func param")
 
     def enter_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
