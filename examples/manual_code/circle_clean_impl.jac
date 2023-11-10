@@ -1,4 +1,5 @@
 """Enum for shape types"""
+import:py math;
 
 :enum:ShapeType {
     CIRCLE = "Circle",
@@ -18,11 +19,10 @@
 
 """Overridden method to calculate the area of the circle."""
 :object:Circle:ability:area -> float {
-    return math.pi * self.radius * self.radius;
+    return math.pi * <self>.radius * <self>.radius;
 }
 
 :ability:main_run {
     print(f"Area of a circle with radius {RAD} using function: {calculate_area(RAD)}");
     print(f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}");
 }
-

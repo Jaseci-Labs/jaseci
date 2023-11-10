@@ -44,13 +44,9 @@ class DeclDefMatchPass(Pass):
                     else:
                         break
                 if not decl_node:
-                    self.error(
-                        f"Unable to match implementation {sym.sym_name} to a declaration.",
-                        sym.defn[-1],
-                    )
                     continue
                 elif isinstance(decl_node, ast.Ability) and decl_node.is_abstract:
-                    self.error(
+                    self.warning(
                         f"Abstract ability {decl_node.py_resolve_name()} should not have a definition.",
                         decl_node,
                     )

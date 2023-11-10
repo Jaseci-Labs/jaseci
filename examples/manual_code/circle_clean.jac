@@ -2,7 +2,6 @@
 This module demonstrates a simple circle class and a function to calculate
 the area of a circle in all of Jac's glory.
 """
-import:py math;
 include:jac circle_clean_impl;
 
 enum ShapeType;
