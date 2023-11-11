@@ -187,6 +187,7 @@ This is an example of a Shape class in Jac. A couple things to note here.
 ### Docstrings in the right place
 ### Elvis Operator
 ### Null Safe Operator
+### Filter Compares
 ### Data class style basis for OOP
 ### Proper multiline Comments
 ### No need for gratuitous self usage

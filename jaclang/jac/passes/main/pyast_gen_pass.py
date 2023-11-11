@@ -1162,7 +1162,7 @@ class PyastGenPass(Pass):
             )
         )
 
-    def exit_await_stmt(self, node: ast.AwaitStmt) -> None:
+    def exit_await_expr(self, node: ast.AwaitExpr) -> None:
         """Sub objects.
 
         target: ExprType,
@@ -1663,6 +1663,18 @@ class PyastGenPass(Pass):
                     ctx=node.right.py_ctx_func(),
                 )
             )
+        elif isinstance(node.right, ast.FilterCompr):
+            node.gen.py_ast = self.sync(
+                ast3.Call(
+                    func=node.right.gen.py_ast,
+                    args=[node.target.gen.py_ast],
+                    keywords=[],
+                )
+            )
+        elif isinstance(node.right, ast.EdgeOpRef):
+            node.gen.py_ast = self.translate_edge_op_ref(
+                node.target.gen.py_ast, node.right
+            )
         else:
             node.gen.py_ast = self.sync(
                 ast3.Subscript(
@@ -1778,11 +1790,46 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         filter_type: Optional[ExprType],
-        filter_cond: Optional[SubNodeList[BinaryExpr]],
+        filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
         """
-        self.ds_feature_warn()
-        node.gen.py_ast = self.sync(ast3.Constant(value=None))
+        loc = self.sync(
+            ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
+            if node.from_walker
+            else ast3.Name(id="self", ctx=ast3.Load())
+        )
+        node.gen.py_ast = self.translate_edge_op_ref(loc, node)
+
+    def translate_edge_op_ref(self, loc: ast3.AST, node: ast.EdgeOpRef) -> ast3.AST:
+        """Generate ast for edge op ref call."""
+        ret = self.sync(
+            ast3.Call(
+                func=self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id="__JacFeature", ctx=ast3.Load())),
+                        attr="edge_ref",
+                        ctx=ast3.Load(),
+                    )
+                ),
+                args=[
+                    loc,
+                    self.sync(ast3.Constant(value=node.edge_dir.value)),
+                    node.filter_type.gen.py_ast
+                    if node.filter_type
+                    else self.sync(ast3.Constant(value=None)),
+                ],
+                keywords=[],
+            )
+        )
+        if node.filter_cond:
+            ret = self.sync(
+                ast3.Call(
+                    func=node.filter_cond.gen.py_ast,
+                    args=[ret],
+                    keywords=[],
+                )
+            )
+        return ret
 
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
@@ -1807,8 +1854,36 @@ class PyastGenPass(Pass):
 
         compares: SubNodeList[BinaryExpr],
         """
-        self.ds_feature_warn()
-        node.gen.py_ast = self.sync(ast3.Constant(value=None))
+        node.gen.py_ast = self.sync(
+            ast3.Lambda(
+                args=self.sync(
+                    ast3.arguments(
+                        posonlyargs=[],
+                        args=[self.sync(ast3.arg(arg="x"))],
+                        kwonlyargs=[],
+                        kw_defaults=[],
+                        defaults=[],
+                    )
+                ),
+                body=self.sync(
+                    ast3.ListComp(
+                        elt=self.sync(ast3.Name(id="i", ctx=ast3.Load())),
+                        generators=[
+                            self.sync(
+                                ast3.comprehension(
+                                    target=self.sync(
+                                        ast3.Name(id="i", ctx=ast3.Store())
+                                    ),
+                                    iter=self.sync(ast3.Name(id="x", ctx=ast3.Load())),
+                                    ifs=[x.gen.py_ast for x in node.compares.items],
+                                    is_async=0,
+                                )
+                            )
+                        ],
+                    )
+                ),
+            )
+        )
 
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.

@@ -1,5 +1,5 @@
 """Constants across the project."""
-from enum import Enum, auto
+from enum import Enum
 
 
 class Constants(str, Enum):
@@ -41,9 +41,9 @@ class Constants(str, Enum):
 class EdgeDir(Enum):
     """Edge direction indicator."""
 
-    IN = auto()
-    OUT = auto()
-    ANY = auto()
+    IN = 1
+    OUT = 2
+    ANY = 3
 
 
 class Values(int, Enum):

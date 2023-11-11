@@ -1034,7 +1034,6 @@ class JacParser(Pass):
 
             statement: py_code_block
                     | walker_stmt
-                    | await_stmt SEMI
                     | return_stmt SEMI
                     | report_stmt SEMI
                     | delete_stmt SEMI
@@ -1947,7 +1946,7 @@ class JacParser(Pass):
                     and isinstance(kid[1], ast.ExprType)
                 ):
                     return self.nu(
-                        ast.AwaitStmt(
+                        ast.AwaitExpr(
                             target=kid[1],
                             kid=kid,
                         )
@@ -2895,6 +2894,11 @@ class JacParser(Pass):
             if (isinstance(ftype, ast.ExprType) or ftype is None) and (
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
+                if fcond:
+                    fcond = (
+                        ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
+                    )
+                    kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
                         filter_type=ftype,
@@ -2917,6 +2921,11 @@ class JacParser(Pass):
             if (isinstance(ftype, ast.ExprType) or ftype is None) and (
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
+                if fcond:
+                    fcond = (
+                        ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
+                    )
+                    kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
                         filter_type=ftype,
@@ -2939,6 +2948,11 @@ class JacParser(Pass):
             if (isinstance(ftype, ast.ExprType) or ftype is None) and (
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
+                if fcond:
+                    fcond = (
+                        ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
+                    )
+                    kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
                         filter_type=ftype,

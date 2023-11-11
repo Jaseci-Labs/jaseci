@@ -1392,7 +1392,7 @@ class JacFormatPass(Pass):
         """
         self.ds_feature_warn()
 
-    def exit_await_stmt(self, node: ast.AwaitStmt) -> None:
+    def exit_await_expr(self, node: ast.AwaitExpr) -> None:
         """Sub objects.
 
         target: ExprType,

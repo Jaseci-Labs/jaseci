@@ -4,6 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, TypeVar
 
+from jaclang.jac.constant import EdgeDir
+
 
 T = TypeVar("T")
 
@@ -53,6 +55,14 @@ class JacFeature:
     @staticmethod
     def disengage(walker_obj: Any) -> None:  # noqa: ANN401
         """Jac's disengage stmt feature."""
+
+    @staticmethod
+    def edge_ref(
+        node_obj: Any,  # noqa: ANN401
+        dir: EdgeDir,
+        filter_type: Optional[type],
+    ) -> Any:  # noqa: ANN401
+        """Jac's apply_dir stmt feature."""
 
     @staticmethod
     def connect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401

@@ -873,7 +873,7 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
-    def enter_await_stmt(self, node: ast.AwaitStmt) -> None:
+    def enter_await_expr(self, node: ast.AwaitExpr) -> None:
         """Sub objects.
 
         target: ExprType,

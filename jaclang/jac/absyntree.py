@@ -1085,7 +1085,7 @@ class DisengageStmt(WalkerStmtOnlyNode):
         WalkerStmtOnlyNode.__init__(self)
 
 
-class AwaitStmt(AstNode):
+class AwaitExpr(AstNode):
     """AwaitStmt node type for Jac Ast."""
 
     def __init__(
@@ -1575,7 +1575,7 @@ class EdgeOpRef(WalkerStmtOnlyNode, AstSymbolNode):
     def __init__(
         self,
         filter_type: Optional[ExprType],
-        filter_cond: Optional[SubNodeList[BinaryExpr]],
+        filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
     ) -> None:
@@ -2102,7 +2102,7 @@ AtomType = Union[
 ]
 
 ExprType = Union[
-    AwaitStmt,
+    AwaitExpr,
     UnaryExpr,
     BinaryExpr,
     IfElseExpr,
