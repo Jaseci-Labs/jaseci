@@ -1,8 +1,8 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Callable, Optional, TypeVar
+from dataclasses import dataclass
+from typing import Any, Callable, Optional, TypeVar
 
 
 T = TypeVar("T")
@@ -17,7 +17,7 @@ class JacFeature:
 
         def decorator(cls: type) -> type:
             """Decorate class."""
-            setattr(cls, "_jac_", field(default={"type": arch_type}))  # noqa: B010
+            cls._jac_ = {"type": arch_type}
             return dataclass(cls)
 
         return decorator
@@ -33,6 +33,33 @@ class JacFeature:
         return decorator
 
     @staticmethod
-    def elvis(op1: Optional[T], op2: T) -> T:
+    def elvis(op1: Optional[T], op2: T) -> T:  # noqa: ANN401
         """Jac's elvis operator feature."""
+        return ret if (ret := op1) is not None else op2
+
+    @staticmethod
+    def report(expr: Any) -> None:  # noqa: ANN401
+        """Jac's report stmt feature."""
+
+    @staticmethod
+    def ignore(walker_obj: Any, expr: Any) -> None:  # noqa: ANN401
+        """Jac's ignore stmt feature."""
+
+    @staticmethod
+    def visit(walker_obj: Any, expr: Any) -> bool:  # noqa: ANN401
+        """Jac's visit stmt feature."""
+        return True
+
+    @staticmethod
+    def disengage(walker_obj: Any) -> None:  # noqa: ANN401
+        """Jac's disengage stmt feature."""
+
+    @staticmethod
+    def connect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
+        """Jac's connect operator feature."""
+        return ret if (ret := op1) is not None else op2
+
+    @staticmethod
+    def disconnect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
+        """Jac's connect operator feature."""
         return ret if (ret := op1) is not None else op2

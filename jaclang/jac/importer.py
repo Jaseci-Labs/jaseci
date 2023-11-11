@@ -55,8 +55,8 @@ def import_jac_module(
     else:
         if error := transpiler_func(full_target):
             if error:
-                for i in error:
-                    logging.error(i)
+                for e in error:
+                    logging.error(e)
             return None
         with open(py_file_path, "r") as f:
             code_string = f.read()

@@ -1011,9 +1011,26 @@ class PyastGenPass(Pass):
 
         expr: ExprType,
         """
-        self.ds_feature_warn()
         node.gen.py_ast = self.sync(
-            ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+            ast3.Expr(
+                value=self.sync(
+                    self.sync(
+                        ast3.Call(
+                            func=self.sync(
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                    ),
+                                    attr="report",
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            args=[node.expr.gen.py_ast],
+                            keywords=[],
+                        )
+                    )
+                )
+            )
         )
 
     def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
@@ -1044,9 +1061,29 @@ class PyastGenPass(Pass):
 
         target: ExprType,
         """
-        self.ds_feature_warn()
+        loc = self.sync(
+            ast3.Name(id="self", ctx=ast3.Load())
+            if node.from_walker
+            else ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
+        )
         node.gen.py_ast = self.sync(
-            ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+            ast3.Expr(
+                value=self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                ),
+                                attr="ignore",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[loc, node.target.gen.py_ast],
+                        keywords=[],
+                    )
+                )
+            )
         )
 
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
@@ -1056,10 +1093,34 @@ class PyastGenPass(Pass):
         target: ExprType,
         else_body: Optional[ElseStmt],
         """
-        self.ds_feature_warn()
-        node.gen.py_ast = self.sync(
-            ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+        loc = self.sync(
+            ast3.Name(id="self", ctx=ast3.Load())
+            if node.from_walker
+            else ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
         )
+        node.gen.py_ast = [
+            self.sync(
+                ast3.If(
+                    test=self.sync(
+                        ast3.Call(
+                            func=self.sync(
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                    ),
+                                    attr="visit",
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            args=[loc, node.target.gen.py_ast],
+                            keywords=[],
+                        )
+                    ),
+                    body=[self.sync(ast3.Pass())],
+                    orelse=node.else_body.gen.py_ast if node.else_body else [],
+                )
+            )
+        ]
 
     def exit_revisit_stmt(self, node: ast.RevisitStmt) -> None:
         """Sub objects.
@@ -1074,8 +1135,31 @@ class PyastGenPass(Pass):
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
+        loc = self.sync(
+            ast3.Name(id="self", ctx=ast3.Load())
+            if node.from_walker
+            else ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
+        )
         node.gen.py_ast = self.sync(
-            ast3.Expr(value=self.sync(ast3.Constant(value=None)))
+            ast3.Expr(
+                value=self.sync(
+                    self.sync(
+                        ast3.Call(
+                            func=self.sync(
+                                ast3.Attribute(
+                                    value=self.sync(
+                                        ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                    ),
+                                    attr="disengage",
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            args=[loc],
+                            keywords=[],
+                        )
+                    )
+                )
+            )
         )
 
     def exit_await_stmt(self, node: ast.AwaitStmt) -> None:
@@ -1154,9 +1238,46 @@ class PyastGenPass(Pass):
         right: ExprType,
         op: Token | DisconnectOp | ConnectOp,
         """
-        if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
-            self.ds_feature_warn()
-            node.gen.py_ast = self.sync(ast3.Constant(value=None))
+        if isinstance(node.op, ast.ConnectOp):
+            node.gen.py_ast = self.sync(
+                ast3.Call(
+                    func=self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                            ),
+                            attr="connect",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    args=[
+                        node.left.gen.py_ast,
+                        node.right.gen.py_ast,
+                        node.op.gen.py_ast,
+                    ],
+                    keywords=[],
+                )
+            )
+        elif isinstance(node.op, ast.DisconnectOp):
+            node.gen.py_ast = self.sync(
+                ast3.Call(
+                    func=self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                            ),
+                            attr="disconnect",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    args=[
+                        node.left.gen.py_ast,
+                        node.right.gen.py_ast,
+                        node.op.gen.py_ast,
+                    ],
+                    keywords=[],
+                )
+            )
         elif (
             node.op.name
             in [  # TODO: the whole comparitors thing requries grammar change maybe
@@ -1186,7 +1307,7 @@ class PyastGenPass(Pass):
                     values=[node.left.gen.py_ast, node.right.gen.py_ast],
                 )
             )
-        elif node.op.name in [Tok.WALKER_OP]:
+        elif node.op.name in [Tok.WALRUS_EQ]:
             node.gen.py_ast = self.sync(
                 ast3.NamedExpr(
                     target=node.left.gen.py_ast,
