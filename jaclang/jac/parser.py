@@ -2364,7 +2364,7 @@ class JacParser(Pass):
                 )
             )
 
-        def kw_expr_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.KVPair]:
+        def kw_expr_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.KWPair]:
             """Grammar rule.
 
             kw_expr_list: (kw_expr_list COMMA)? kw_expr
@@ -2379,25 +2379,24 @@ class JacParser(Pass):
             else:
                 expr = kid[0]
             new_kid = [*consume.kid, comma, expr] if consume else [expr]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.KVPair)]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.KWPair)]
             return self.nu(
-                ast.SubNodeList[ast.KVPair](
+                ast.SubNodeList[ast.KWPair](
                     items=valid_kid,
                     kid=new_kid,
                 )
             )
 
-        def kw_expr(self, kid: list[ast.AstNode]) -> ast.KVPair:
+        def kw_expr(self, kid: list[ast.AstNode]) -> ast.KWPair:
             """Grammar rule.
 
             kw_expr: any_ref EQ expression
             """
             if isinstance(kid[0], ast.NameType) and isinstance(kid[2], ast.ExprType):
                 return self.nu(
-                    ast.KVPair(
+                    ast.KWPair(
                         key=kid[0],
                         value=kid[2],
-                        is_arg=True,
                         kid=kid,
                     )
                 )
@@ -2429,7 +2428,7 @@ class JacParser(Pass):
 
         def tuple_list(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.ExprType | ast.KVPair]:
+        ) -> ast.SubNodeList[ast.ExprType | ast.KWPair]:
             """Grammar rule.
 
             tuple_list: expression COMMA expr_list COMMA kw_expr_list
@@ -2451,10 +2450,10 @@ class JacParser(Pass):
                 chomp = chomp[1:]
                 expr_list = [*expr_list, *chomp[0].kid]
             expr_list = [first_expr, *expr_list]
-            valid_type = Union[ast.ExprType, ast.KVPair]
+            valid_type = Union[ast.ExprType, ast.KWPair]
             valid_kid = [i for i in expr_list if isinstance(i, valid_type)]
             return self.nu(
-                ast.SubNodeList[ast.ExprType | ast.KVPair](
+                ast.SubNodeList[ast.ExprType | ast.KWPair](
                     items=valid_kid,
                     kid=kid,
                 )
@@ -2482,7 +2481,6 @@ class JacParser(Pass):
                     ast.KVPair(
                         key=kid[0],
                         value=kid[2],
-                        is_arg=False,
                         kid=kid,
                     )
                 )
@@ -2583,7 +2581,7 @@ class JacParser(Pass):
 
         def param_list(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.ExprType | ast.KVPair]:
+        ) -> ast.SubNodeList[ast.ExprType | ast.KWPair]:
             """Grammar rule.
 
             param_list: expr_list COMMA kw_expr_list
@@ -2598,7 +2596,7 @@ class JacParser(Pass):
             elif isinstance(kid[0], ast.SubNodeList) and isinstance(
                 kid[2], ast.SubNodeList
             ):
-                valid_type = Union[ast.ExprType, ast.KVPair]
+                valid_type = Union[ast.ExprType, ast.KWPair]
                 valid_kid = [
                     i
                     for i in [*kid[0].items, *kid[2].items]
@@ -2606,7 +2604,7 @@ class JacParser(Pass):
                 ]
                 if len(valid_kid) == len(kid[0].items) + len(kid[2].items):
                     return self.nu(
-                        ast.SubNodeList[ast.ExprType | ast.KVPair](
+                        ast.SubNodeList[ast.ExprType | ast.KWPair](
                             items=valid_kid,
                             kid=kid,
                         )
@@ -2895,9 +2893,7 @@ class JacParser(Pass):
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
                 if fcond:
-                    fcond = (
-                        ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
-                    )
+                    fcond = ast.FilterCompr(compares=fcond, kid=[fcond])
                     kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
@@ -2922,9 +2918,7 @@ class JacParser(Pass):
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
                 if fcond:
-                    fcond = (
-                        ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
-                    )
+                    fcond = ast.FilterCompr(compares=fcond, kid=[fcond])
                     kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
@@ -2949,9 +2943,7 @@ class JacParser(Pass):
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
                 if fcond:
-                    fcond = (
-                        ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
-                    )
+                    fcond = ast.FilterCompr(compares=fcond, kid=[fcond])
                     kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
@@ -3001,6 +2993,11 @@ class JacParser(Pass):
             if (isinstance(conn_type, ast.ExprType) or conn_type is None) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
+                if conn_assign:
+                    conn_assign = ast.AssignCompr(
+                        assigns=conn_assign, kid=[conn_assign]
+                    )
+                    kid[3] = conn_assign
                 return self.nu(
                     ast.ConnectOp(
                         conn_type=conn_type,
@@ -3023,6 +3020,11 @@ class JacParser(Pass):
             if (isinstance(conn_type, ast.ExprType) or conn_type is None) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
+                if conn_assign:
+                    conn_assign = ast.AssignCompr(
+                        assigns=conn_assign, kid=[conn_assign]
+                    )
+                    kid[3] = conn_assign
                 return self.nu(
                     ast.ConnectOp(
                         conn_type=conn_type,

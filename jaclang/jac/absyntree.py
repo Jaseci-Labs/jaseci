@@ -1297,7 +1297,7 @@ class TupleVal(AstSymbolNode):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[ExprType | KVPair]],
+        values: Optional[SubNodeList[ExprType | KWPair]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize tuple value node."""
@@ -1337,13 +1337,26 @@ class KVPair(AstNode):
         self,
         key: ExprType,
         value: ExprType,
-        is_arg: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize key value pair expression node."""
         self.key = key
         self.value = value
-        self.is_arg = is_arg
+        AstNode.__init__(self, kid=kid)
+
+
+class KWPair(AstNode):
+    """ExprKWPair node type for Jac Ast."""
+
+    def __init__(
+        self,
+        key: NameType,
+        value: ExprType,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize keyword pair expression node."""
+        self.key = key
+        self.value = value
         AstNode.__init__(self, kid=kid)
 
 
@@ -1471,7 +1484,7 @@ class FuncCall(AstNode):
     def __init__(
         self,
         target: ExprType,
-        params: Optional[SubNodeList[ExprType | KVPair]],
+        params: Optional[SubNodeList[ExprType | KWPair]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize function call expression node."""
@@ -1613,7 +1626,7 @@ class ConnectOp(AstNode):
     def __init__(
         self,
         conn_type: Optional[ExprType],
-        conn_assign: Optional[SubNodeList[KVPair]],
+        conn_assign: Optional[AssignCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1642,7 +1655,7 @@ class AssignCompr(AstNode):
 
     def __init__(
         self,
-        assigns: SubNodeList[KVPair],
+        assigns: SubNodeList[KWPair],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize assign compr expression node."""

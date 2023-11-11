@@ -1367,6 +1367,14 @@ class JacFormatPass(Pass):
         """
         self.emit(node, f"{node.key.gen.jac}: {node.value.gen.jac}")
 
+    def exit_k_w_pair(self, node: ast.KWPair) -> None:
+        """Sub objects.
+
+        key: ExprType,
+        value: ExprType,
+        """
+        self.emit(node, f"{node.key.gen.jac}={node.value.gen.jac}")
+
     def exit_disconnect_op(self, node: ast.DisconnectOp) -> None:
         """Sub objects.
 

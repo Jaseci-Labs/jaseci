@@ -1001,6 +1001,14 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_k_w_pair(self, node: ast.KWPair) -> None:
+        """Sub objects.
+
+        key: ExprType,
+        value: ExprType,
+        """
+        self.sync_node_to_scope(node)
+
     def enter_list_compr(self, node: ast.ListCompr) -> None:
         """Sub objects.
 

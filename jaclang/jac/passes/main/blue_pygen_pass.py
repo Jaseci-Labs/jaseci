@@ -1101,9 +1101,16 @@ class BluePygenPass(Pass):
         value: ExprType,
         is_arg: bool,
         """
-        self.emit(
-            node, f"{node.key.gen.py}={node.value.gen.py}"
-        ) if node.is_arg else self.emit(node, f"{node.key.gen.py}: {node.value.gen.py}")
+        self.emit(node, f"{node.key.gen.py}: {node.value.gen.py}")
+
+    def exit_k_w_pair(self, node: ast.KWPair) -> None:
+        """Sub objects.
+
+        key: ExprType,
+        value: ExprType,
+        is_arg: bool,
+        """
+        self.emit(node, f"{node.key.gen.py}={node.value.gen.py}")
 
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.

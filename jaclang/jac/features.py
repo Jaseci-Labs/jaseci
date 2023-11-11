@@ -61,8 +61,9 @@ class JacFeature:
         node_obj: Any,  # noqa: ANN401
         dir: EdgeDir,
         filter_type: Optional[type],
-    ) -> Any:  # noqa: ANN401
+    ) -> list[Any]:  # noqa: ANN401
         """Jac's apply_dir stmt feature."""
+        return []
 
     @staticmethod
     def connect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401

@@ -1567,13 +1567,20 @@ class PyastGenPass(Pass):
         key: ExprType,
         value: ExprType,
         """
-        if node.is_arg:
-            node.gen.py_ast = self.sync(
-                ast3.keyword(
-                    arg=node.key.sym_name,
-                    value=node.value.gen.py_ast,
-                )
+        # Processed elsewhere
+
+    def exit_k_w_pair(self, node: ast.KWPair) -> None:
+        """Sub objects.
+
+        key: NameType,
+        value: ExprType,
+        """
+        node.gen.py_ast = self.sync(
+            ast3.keyword(
+                arg=node.key.sym_name,
+                value=node.value.gen.py_ast,
             )
+        )
 
     def exit_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
@@ -1742,7 +1749,7 @@ class PyastGenPass(Pass):
                     )
                 elif isinstance(x, ast.ExprType):
                     args.append(x.gen.py_ast)
-                elif isinstance(x, ast.KVPair):
+                elif isinstance(x, ast.KWPair):
                     keywords.append(x.gen.py_ast)
                 else:
                     self.ice("Invalid Parameter")
@@ -1842,11 +1849,23 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         conn_type: Optional[ExprType],
-        conn_assign: Optional[SubNodeList[KVPair]],
+        conn_assign: Optional[AssignCompr],
         edge_dir: EdgeDir,
         """
-        self.ds_feature_warn()
-        node.gen.py_ast = self.sync(ast3.Constant(value=None))
+        node.gen.py_ast = self.sync(
+            ast3.Tuple(
+                elts=[
+                    self.sync(ast3.Constant(value=node.edge_dir.value)),
+                    node.conn_type.gen.py_ast
+                    if node.conn_type
+                    else self.sync(ast3.Constant(value=None)),
+                    node.conn_assign.gen.py_ast
+                    if node.conn_assign
+                    else self.sync(ast3.Constant(value=None)),
+                ],
+                ctx=ast3.Load(),
+            )
+        )
 
     def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
