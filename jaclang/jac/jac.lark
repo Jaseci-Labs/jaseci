@@ -103,7 +103,6 @@ statement_list: statement+
 
 statement: py_code_block
           | walker_stmt
-          | await_stmt SEMI
           | return_stmt SEMI
           | report_stmt SEMI
           | delete_stmt SEMI
@@ -242,6 +241,7 @@ ds_call: atomic_chain
        | PIPE_FWD atomic_chain
        | A_PIPE_FWD atomic_chain
        | KW_SPAWN atomic_chain
+       | KW_AWAIT atomic_chain
 
 aug_op: RSHIFT_EQ
        | LSHIFT_EQ

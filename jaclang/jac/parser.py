@@ -1541,21 +1541,6 @@ class JacParser(Pass):
                 )
             )
 
-        def await_stmt(self, kid: list[ast.AstNode]) -> ast.AwaitStmt:
-            """Grammar rule.
-
-            await_stmt: KW_AWAIT expression
-            """
-            if isinstance(kid[1], ast.ExprType):
-                return self.nu(
-                    ast.AwaitStmt(
-                        target=kid[1],
-                        kid=kid,
-                    )
-                )
-            else:
-                raise self.ice()
-
         def global_ref(self, kid: list[ast.AstNode]) -> ast.GlobalStmt:
             """Grammar rule.
 
@@ -1953,9 +1938,21 @@ class JacParser(Pass):
                 | PIPE_FWD atomic_chain
                 | A_PIPE_FWD atomic_chain
                 | KW_SPAWN atomic_chain
+                | KW_AWAIT atomic_chain
             """
             if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
+                if (
+                    isinstance(kid[0], ast.Token)
+                    and kid[0].name == Tok.KW_AWAIT
+                    and isinstance(kid[1], ast.ExprType)
+                ):
+                    return self.nu(
+                        ast.AwaitStmt(
+                            target=kid[1],
+                            kid=kid,
+                        )
+                    )
+                elif isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
                     return self.nu(
                         ast.UnaryExpr(
                             op=kid[0],

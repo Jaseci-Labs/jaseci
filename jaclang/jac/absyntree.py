@@ -2102,6 +2102,7 @@ AtomType = Union[
 ]
 
 ExprType = Union[
+    AwaitStmt,
     UnaryExpr,
     BinaryExpr,
     IfElseExpr,
@@ -2156,7 +2157,6 @@ CodeBlockStmt = Union[
     DeleteStmt,
     ReportStmt,
     ReturnStmt,
-    AwaitStmt,
     DisengageStmt,
     RevisitStmt,
     VisitStmt,
