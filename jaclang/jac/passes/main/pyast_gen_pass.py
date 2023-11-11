@@ -1678,6 +1678,22 @@ class PyastGenPass(Pass):
                     keywords=[],
                 )
             )
+        elif isinstance(node.right, ast.AssignCompr):
+            node.gen.py_ast = self.sync(
+                ast3.Call(
+                    func=self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                            ),
+                            attr="assign_compr",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    args=[node.target.gen.py_ast, node.right.gen.py_ast],
+                    keywords=[],
+                )
+            )
         elif isinstance(node.right, ast.EdgeOpRef):
             node.gen.py_ast = self.translate_edge_op_ref(
                 node.target.gen.py_ast, node.right
@@ -1906,30 +1922,16 @@ class PyastGenPass(Pass):
     def exit_assign_compr(self, node: ast.AssignCompr) -> None:
         """Sub objects.
 
-        assigns: SubNodeList[KVPair],
+        assigns: SubNodeList[KWPair],
         """
         keys = []
         values = []
         for i in node.assigns.items:
-            i.key.gen.py_ast.ctx = ast3.Store()
-            keys.append(i.key.gen.py_ast)
+            keys.append(self.sync(ast3.Constant(i.key.sym_name)))
             values.append(i.value.gen.py_ast)
-        keys = self.sync(ast3.Tuple(elts=keys, ctx=ast3.Store()))
+        keys = self.sync(ast3.Tuple(elts=keys, ctx=ast3.Load()))
         values = self.sync(ast3.Tuple(elts=values, ctx=ast3.Load()))
-        node.gen.py_ast = self.sync(
-            ast3.Lambda(
-                args=self.sync(
-                    ast3.arguments(
-                        posonlyargs=[],
-                        args=[self.sync(ast3.arg(arg="x"))],
-                        kwonlyargs=[],
-                        kw_defaults=[],
-                        defaults=[],
-                    )
-                ),
-                body=self.sync(ast3.Assign(targets=[keys], value=values)),
-            ),
-        )
+        node.gen.py_ast = self.sync(ast3.Tuple(elts=[keys, values], ctx=ast3.Load()))
 
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.

@@ -67,10 +67,20 @@ class JacFeature:
 
     @staticmethod
     def connect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
-        """Jac's connect operator feature."""
+        """Jac's connect operator feature.
+
+        Note: connect needs to call assign compr with tuple in op
+        """
         return ret if (ret := op1) is not None else op2
 
     @staticmethod
     def disconnect(op1: Optional[T], op2: T, op: Any) -> T:  # noqa: ANN401
         """Jac's connect operator feature."""
         return ret if (ret := op1) is not None else op2
+
+    @staticmethod
+    def assign_compr(
+        target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
+    ) -> list[T]:
+        """Jac's assign comprehension feature."""
+        return target
