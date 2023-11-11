@@ -2,12 +2,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, Optional, Protocol, Type, TypeVar
 
 from jaclang.jac.constant import EdgeDir
 
 
+class ArchitypeProtocol(Protocol):
+    """Architype Protocol."""
+
+    _jac_: None
+
+
 T = TypeVar("T")
+
+AT = TypeVar("AT", bound=ArchitypeProtocol)
 
 
 class JacFeature:
@@ -17,9 +25,9 @@ class JacFeature:
     def make_architype(arch_type: str) -> Callable[[type], type]:
         """Create a new architype."""
 
-        def decorator(cls: type) -> type:
+        def decorator(cls: Type[AT]) -> Type[AT]:
             """Decorate class."""
-            cls._jac_ = {"type": arch_type}
+            cls._jac_ = None
             return dataclass(cls)
 
         return decorator
