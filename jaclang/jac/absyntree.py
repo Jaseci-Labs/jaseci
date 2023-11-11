@@ -74,9 +74,7 @@ class AstNode:
         else:
             raise ValueError(f"Empty kid for Token {type(self).__name__}")
 
-    def get_all_sub_nodes(
-        self, typ: type[T], brute_force: bool = True
-    ) -> list[AstNode]:
+    def get_all_sub_nodes(self, typ: Type[T], brute_force: bool = True) -> list[T]:
         """Get all sub nodes of type."""
         from jaclang.jac.passes import Pass
 
@@ -221,7 +219,7 @@ class Module(AstDocNode):
         doc: Optional[String],
         body: Sequence[ElementStmt],
         is_imported: bool,
-        kid: Sequence[ElementStmt],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize whole program node."""
         self.name = name

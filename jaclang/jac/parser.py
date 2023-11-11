@@ -26,13 +26,13 @@ class JacParser(Pass):
             JacParser.make_dev()
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
-    def transform(self, ir: ast.AstNode) -> Optional[ast.AstNode]:
+    def transform(self, ir: ast.AstNode) -> ast.AstNode:
         """Transform input IR."""
         try:
             tree, self.source.comments = JacParser.parse(
                 self.source.value, on_error=self.error_callback
             )
-            mod = JacParser.TreeToAST(parser=self).transform(tree)
+            mod: ast.AstNode = JacParser.TreeToAST(parser=self).transform(tree)
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
@@ -40,9 +40,9 @@ class JacParser(Pass):
             catch_error.c_start = e.column
             catch_error.c_end = e.column
             self.error(f"Syntax Error: {e}", node_override=catch_error)
-            mod = None
+            mod = self.source
         except Exception as e:
-            mod = None
+            mod = self.source
             self.error(f"Internal Error: {e}")
         return mod
 
@@ -83,7 +83,7 @@ class JacParser(Pass):
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
     JacTransformer: TypeAlias = jl.Transformer[jl.Tree[str], ast.AstNode]
 
-    class TreeToAST(JacTransformer):
+    class TreeToAST(JacTransformer):  # type: ignore
         """Transform parse tree to AST."""
 
         def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:

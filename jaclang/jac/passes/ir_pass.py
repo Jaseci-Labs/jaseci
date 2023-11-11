@@ -1,5 +1,5 @@
 """Abstract class for IR Passes for Jac."""
-from typing import Optional
+from typing import Optional, Type
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.transform import Transform
@@ -44,7 +44,7 @@ class Pass(Transform):
 
     @staticmethod
     def get_all_sub_nodes(
-        node: ast.AstNode, typ: type[ast.T], brute_force: bool = False
+        node: ast.AstNode, typ: Type[ast.T], brute_force: bool = False
     ) -> list[ast.T]:
         """Get all sub nodes of type."""
         result: list[ast.T] = []

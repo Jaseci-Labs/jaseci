@@ -42,7 +42,7 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
+        # print(stdout_value)
         # Assertions or verifications
         self.assertIn("Errors occured", stdout_value)
 

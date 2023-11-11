@@ -76,7 +76,7 @@ class Workspace:
                         body=[],
                         source=ast.JacSource(source, mod_path=file),
                         is_imported=False,
-                        kid=[ast.EmptyToken()],
+                        kid=[],
                     ),
                     errors=build.errors_had,
                     warnings=build.warnings_had,
@@ -105,14 +105,15 @@ class Workspace:
             target=DefUsePass,
         )
         if not isinstance(build.ir, ast.Module):
+            src = ast.JacSource(source, mod_path=file_path)
             self.modules[file_path] = ModuleInfo(
                 ir=ast.Module(
                     name="",
                     doc=None,
                     body=[],
-                    source=ast.JacSource(source, mod_path=file_path),
+                    source=src,
                     is_imported=False,
-                    kid=[ast.EmptyToken()],
+                    kid=[src],
                 ),
                 errors=build.errors_had,
                 warnings=build.warnings_had,
