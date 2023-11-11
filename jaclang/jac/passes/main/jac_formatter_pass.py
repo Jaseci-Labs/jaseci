@@ -1392,6 +1392,13 @@ class JacFormatPass(Pass):
         """
         self.ds_feature_warn()
 
+    def exit_assign_compr(self, node: ast.AssignCompr) -> None:
+        """Sub objects.
+
+        compares: list[BinaryExpr],
+        """
+        self.ds_feature_warn()
+
     def exit_await_expr(self, node: ast.AwaitExpr) -> None:
         """Sub objects.
 

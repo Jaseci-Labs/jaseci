@@ -1836,14 +1836,13 @@ class PyastGenPass(Pass):
 
         edge_spec: EdgeOpRef,
         """
-        self.ds_feature_warn()
-        node.gen.py_ast = self.sync(ast3.Constant(value=None))
+        node.gen.py_ast = node.edge_spec.gen.py_ast
 
     def exit_connect_op(self, node: ast.ConnectOp) -> None:
         """Sub objects.
 
         conn_type: Optional[ExprType],
-        conn_assign: Optional[SubNodeList[Assignment]],
+        conn_assign: Optional[SubNodeList[KVPair]],
         edge_dir: EdgeDir,
         """
         self.ds_feature_warn()
@@ -1883,6 +1882,34 @@ class PyastGenPass(Pass):
                     )
                 ),
             )
+        )
+
+    def exit_assign_compr(self, node: ast.AssignCompr) -> None:
+        """Sub objects.
+
+        assigns: SubNodeList[KVPair],
+        """
+        keys = []
+        values = []
+        for i in node.assigns.items:
+            i.key.gen.py_ast.ctx = ast3.Store()
+            keys.append(i.key.gen.py_ast)
+            values.append(i.value.gen.py_ast)
+        keys = self.sync(ast3.Tuple(elts=keys, ctx=ast3.Store()))
+        values = self.sync(ast3.Tuple(elts=values, ctx=ast3.Load()))
+        node.gen.py_ast = self.sync(
+            ast3.Lambda(
+                args=self.sync(
+                    ast3.arguments(
+                        posonlyargs=[],
+                        args=[self.sync(ast3.arg(arg="x"))],
+                        kwonlyargs=[],
+                        kw_defaults=[],
+                        defaults=[],
+                    )
+                ),
+                body=self.sync(ast3.Assign(targets=[keys], value=values)),
+            ),
         )
 
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:

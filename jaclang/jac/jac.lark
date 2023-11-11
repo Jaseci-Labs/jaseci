@@ -153,7 +153,6 @@ ignore_stmt: KW_IGNORE expression SEMI
 visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
 revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
 disengage_stmt: KW_DISENGAGE SEMI
-await_stmt: KW_AWAIT expression
 global_ref: GLOBAL_OP name_list
 nonlocal_ref: NONLOCAL_OP name_list
 
@@ -269,7 +268,7 @@ cmp_op: KW_ISN
       | LT
       | EE
 
-atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice)
+atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref | index_slice)
             | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
             | (atomic_call | atom)
 
@@ -380,6 +379,7 @@ connect_from: CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
             | CARROW_L
 
 filter_compr: LPAREN EQ filter_compare_list RPAREN
+assign_compr: LPAREN STAR_MUL kw_expr_list RPAREN
 
 filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
 

@@ -1150,6 +1150,13 @@ class SymTabBuildPass(SymTabPass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_assign_compr(self, node: ast.AssignCompr) -> None:
+        """Sub objects.
+
+        assigns: list[KVPair],
+        """
+        self.sync_node_to_scope(node)
+
     def enter_f_string(self, node: ast.FString) -> None:
         """Sub objects.
 

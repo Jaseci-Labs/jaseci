@@ -1292,6 +1292,14 @@ class BluePygenPass(Pass):
         """
         self.ds_feature_warn()
 
+    # NOTE: Incomplete for Jac Purple and Red (to consider)
+    def exit_assign_compr(self, node: ast.AssignCompr) -> None:
+        """Sub objects.
+
+        compares: SubNodeList[BinaryExpr],
+        """
+        self.ds_feature_warn()
+
     def exit_token(self, node: ast.Token) -> None:
         """Sub objects.
 

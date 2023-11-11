@@ -2022,7 +2022,7 @@ class JacParser(Pass):
                 chomp = chomp[1:]
             if len(chomp) == 1 and isinstance(
                 chomp[0],
-                (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice),
+                (ast.FilterCompr, ast.AssignCompr, ast.EdgeOpRef, ast.IndexSlice),
             ):
                 return self.nu(
                     ast.AtomTrailer(
@@ -3082,6 +3082,21 @@ class JacParser(Pass):
             ret = self.binary_expr_unwind(kid)
             if isinstance(ret, ast.BinaryExpr):
                 return self.nu(ret)
+            else:
+                raise self.ice()
+
+        def assign_compr(self, kid: list[ast.AstNode]) -> ast.AssignCompr:
+            """Grammar rule.
+
+            filter_compr: LPAREN STAR_MUL kw_expr_list RPAREN
+            """
+            if isinstance(kid[2], ast.SubNodeList):
+                return self.nu(
+                    ast.AssignCompr(
+                        assigns=kid[2],
+                        kid=kid,
+                    )
+                )
             else:
                 raise self.ice()
 

@@ -1613,7 +1613,7 @@ class ConnectOp(AstNode):
     def __init__(
         self,
         conn_type: Optional[ExprType],
-        conn_assign: Optional[SubNodeList[Assignment]],
+        conn_assign: Optional[SubNodeList[KVPair]],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1624,7 +1624,7 @@ class ConnectOp(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class FilterCompr(AstSymbolNode):
+class FilterCompr(AstNode):
     """FilterCtx node type for Jac Ast."""
 
     def __init__(
@@ -1635,12 +1635,19 @@ class FilterCompr(AstSymbolNode):
         """Initialize filter_cond context expression node."""
         self.compares = compares
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(
-            self,
-            sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
-            sym_type=SymbolType.SEQUENCE,
-        )
+
+
+class AssignCompr(AstNode):
+    """AssignCtx node type for Jac Ast."""
+
+    def __init__(
+        self,
+        assigns: SubNodeList[KVPair],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize assign compr expression node."""
+        self.assigns = assigns
+        AstNode.__init__(self, kid=kid)
 
 
 # Match Nodes
@@ -2098,6 +2105,7 @@ AtomType = Union[
     DictCompr,
     EdgeOpRef,
     FilterCompr,
+    AssignCompr,
     IndexSlice,
 ]
 
