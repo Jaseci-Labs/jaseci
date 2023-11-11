@@ -669,6 +669,12 @@ class ArchRefChain(AstNode):
             [f"({x.arch.value[1]}){x.py_resolve_name()}" for x in self.archs]
         )
 
+    def flat_name(self) -> str:
+        """Resolve name for python gen."""
+        return (
+            self.py_resolve_name().replace(".", "_").replace("(", "").replace(")", "_")
+        )
+
 
 class ParamVar(AstSymbolNode, AstTypedVarNode):
     """ParamVar node type for Jac Ast."""
