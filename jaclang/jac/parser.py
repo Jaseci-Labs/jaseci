@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, Optional, Union, get_args
+from typing import Callable, TypeAlias, Union, get_args
+
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl
@@ -26,13 +27,13 @@ class JacParser(Pass):
             JacParser.make_dev()
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
-    def transform(self, ir: ast.AstNode) -> Optional[ast.AstNode]:
+    def transform(self, ir: ast.AstNode) -> ast.AstNode:
         """Transform input IR."""
         try:
             tree, self.source.comments = JacParser.parse(
                 self.source.value, on_error=self.error_callback
             )
-            mod = JacParser.TreeToAST(parser=self).transform(tree)
+            mod: ast.AstNode = JacParser.TreeToAST(parser=self).transform(tree)
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
@@ -40,9 +41,9 @@ class JacParser(Pass):
             catch_error.c_start = e.column
             catch_error.c_end = e.column
             self.error(f"Syntax Error: {e}", node_override=catch_error)
-            mod = None
+            mod = self.source
         except Exception as e:
-            mod = None
+            mod = self.source
             self.error(f"Internal Error: {e}")
         return mod
 
@@ -83,7 +84,7 @@ class JacParser(Pass):
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
     JacTransformer = jl.Transformer[jl.Tree[str], ast.AstNode]
 
-    class TreeToAST(JacTransformer):
+    class TreeToAST(JacTransformer):  # type: ignore
         """Transform parse tree to AST."""
 
         def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:
@@ -118,6 +119,7 @@ class JacParser(Pass):
             """
             doc = kid[0] if len(kid) and isinstance(kid[0], ast.String) else None
             body = kid[1:] if doc else kid
+            body = [i for i in body if isinstance(i, ast.ElementStmt)]
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
                 source=self.parse_ref.source,
@@ -1034,7 +1036,6 @@ class JacParser(Pass):
 
             statement: py_code_block
                     | walker_stmt
-                    | await_stmt SEMI
                     | return_stmt SEMI
                     | report_stmt SEMI
                     | delete_stmt SEMI
@@ -1541,21 +1542,6 @@ class JacParser(Pass):
                 )
             )
 
-        def await_stmt(self, kid: list[ast.AstNode]) -> ast.AwaitStmt:
-            """Grammar rule.
-
-            await_stmt: KW_AWAIT expression
-            """
-            if isinstance(kid[1], ast.ExprType):
-                return self.nu(
-                    ast.AwaitStmt(
-                        target=kid[1],
-                        kid=kid,
-                    )
-                )
-            else:
-                raise self.ice()
-
         def global_ref(self, kid: list[ast.AstNode]) -> ast.GlobalStmt:
             """Grammar rule.
 
@@ -1953,9 +1939,21 @@ class JacParser(Pass):
                 | PIPE_FWD atomic_chain
                 | A_PIPE_FWD atomic_chain
                 | KW_SPAWN atomic_chain
+                | KW_AWAIT atomic_chain
             """
             if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
+                if (
+                    isinstance(kid[0], ast.Token)
+                    and kid[0].name == Tok.KW_AWAIT
+                    and isinstance(kid[1], ast.ExprType)
+                ):
+                    return self.nu(
+                        ast.AwaitExpr(
+                            target=kid[1],
+                            kid=kid,
+                        )
+                    )
+                elif isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.ExprType):
                     return self.nu(
                         ast.UnaryExpr(
                             op=kid[0],
@@ -2011,7 +2009,7 @@ class JacParser(Pass):
         def atomic_chain(self, kid: list[ast.AstNode]) -> ast.ExprType:
             """Grammar rule.
 
-            atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice | list_val)
+            atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice )
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
                         | atomic_call
             """
@@ -2026,7 +2024,7 @@ class JacParser(Pass):
                 chomp = chomp[1:]
             if len(chomp) == 1 and isinstance(
                 chomp[0],
-                (ast.FilterCompr, ast.EdgeOpRef, ast.IndexSlice, ast.ListVal),
+                (ast.FilterCompr, ast.AssignCompr, ast.EdgeOpRef, ast.IndexSlice),
             ):
                 return self.nu(
                     ast.AtomTrailer(
@@ -2074,16 +2072,23 @@ class JacParser(Pass):
             """Grammar rule.
 
             index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
+                       | list_val
             """
+            if len(kid) == 1 and isinstance(kid[0], ast.ListVal):
+                expr = None
+                if not kid[0].values or len(kid[0].values.items) < 1:
+                    self.parse_ref.error("Empty list slice not allowed", kid[0].values)
+                elif len(kid[0].values.items) == 1:
+                    expr = kid[0].values.items[0]  # TODO: Loses braces
+                else:
+                    expr = ast.TupleVal(values=kid[0].values, kid=kid[0].kid)
+                return self.nu(
+                    ast.IndexSlice(
+                        start=expr, stop=None, step=None, is_range=False, kid=[expr]
+                    )
+                )
             chomp = [*kid]
             chomp = chomp[1:]
-            is_range = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON
-            ) or (
-                len(chomp) > 1
-                and isinstance(chomp[1], ast.Token)
-                and chomp[1].name == Tok.COLON
-            )
             expr1 = chomp[0] if isinstance(chomp[0], ast.ExprType) else None
             expr2 = (
                 chomp[1]
@@ -2126,7 +2131,7 @@ class JacParser(Pass):
                     start=expr1,
                     stop=expr2,
                     step=expr3,
-                    is_range=is_range,
+                    is_range=True,
                     kid=kid,
                 )
             )
@@ -2361,7 +2366,7 @@ class JacParser(Pass):
                 )
             )
 
-        def kw_expr_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.KVPair]:
+        def kw_expr_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.KWPair]:
             """Grammar rule.
 
             kw_expr_list: (kw_expr_list COMMA)? kw_expr
@@ -2376,25 +2381,24 @@ class JacParser(Pass):
             else:
                 expr = kid[0]
             new_kid = [*consume.kid, comma, expr] if consume else [expr]
-            valid_kid = [i for i in new_kid if isinstance(i, ast.KVPair)]
+            valid_kid = [i for i in new_kid if isinstance(i, ast.KWPair)]
             return self.nu(
-                ast.SubNodeList[ast.KVPair](
+                ast.SubNodeList[ast.KWPair](
                     items=valid_kid,
                     kid=new_kid,
                 )
             )
 
-        def kw_expr(self, kid: list[ast.AstNode]) -> ast.KVPair:
+        def kw_expr(self, kid: list[ast.AstNode]) -> ast.KWPair:
             """Grammar rule.
 
             kw_expr: any_ref EQ expression
             """
             if isinstance(kid[0], ast.NameType) and isinstance(kid[2], ast.ExprType):
                 return self.nu(
-                    ast.KVPair(
+                    ast.KWPair(
                         key=kid[0],
                         value=kid[2],
-                        is_arg=True,
                         kid=kid,
                     )
                 )
@@ -2426,7 +2430,7 @@ class JacParser(Pass):
 
         def tuple_list(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.ExprType | ast.KVPair]:
+        ) -> ast.SubNodeList[ast.ExprType | ast.KWPair]:
             """Grammar rule.
 
             tuple_list: expression COMMA expr_list COMMA kw_expr_list
@@ -2448,10 +2452,10 @@ class JacParser(Pass):
                 chomp = chomp[1:]
                 expr_list = [*expr_list, *chomp[0].kid]
             expr_list = [first_expr, *expr_list]
-            valid_type = Union[ast.ExprType, ast.KVPair]
+            valid_type = Union[ast.ExprType, ast.KWPair]
             valid_kid = [i for i in expr_list if isinstance(i, valid_type)]
             return self.nu(
-                ast.SubNodeList[ast.ExprType | ast.KVPair](
+                ast.SubNodeList[ast.ExprType | ast.KWPair](
                     items=valid_kid,
                     kid=kid,
                 )
@@ -2479,7 +2483,6 @@ class JacParser(Pass):
                     ast.KVPair(
                         key=kid[0],
                         value=kid[2],
-                        is_arg=False,
                         kid=kid,
                     )
                 )
@@ -2580,7 +2583,7 @@ class JacParser(Pass):
 
         def param_list(
             self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.ExprType | ast.KVPair]:
+        ) -> ast.SubNodeList[ast.ExprType | ast.KWPair]:
             """Grammar rule.
 
             param_list: expr_list COMMA kw_expr_list
@@ -2595,7 +2598,7 @@ class JacParser(Pass):
             elif isinstance(kid[0], ast.SubNodeList) and isinstance(
                 kid[2], ast.SubNodeList
             ):
-                valid_type = Union[ast.ExprType, ast.KVPair]
+                valid_type = Union[ast.ExprType, ast.KWPair]
                 valid_kid = [
                     i
                     for i in [*kid[0].items, *kid[2].items]
@@ -2603,7 +2606,7 @@ class JacParser(Pass):
                 ]
                 if len(valid_kid) == len(kid[0].items) + len(kid[2].items):
                     return self.nu(
-                        ast.SubNodeList[ast.ExprType | ast.KVPair](
+                        ast.SubNodeList[ast.ExprType | ast.KWPair](
                             items=valid_kid,
                             kid=kid,
                         )
@@ -2891,6 +2894,9 @@ class JacParser(Pass):
             if (isinstance(ftype, ast.ExprType) or ftype is None) and (
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
+                if fcond:
+                    fcond = ast.FilterCompr(compares=fcond, kid=[fcond])
+                    kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
                         filter_type=ftype,
@@ -2913,6 +2919,9 @@ class JacParser(Pass):
             if (isinstance(ftype, ast.ExprType) or ftype is None) and (
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
+                if fcond:
+                    fcond = ast.FilterCompr(compares=fcond, kid=[fcond])
+                    kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
                         filter_type=ftype,
@@ -2935,6 +2944,9 @@ class JacParser(Pass):
             if (isinstance(ftype, ast.ExprType) or ftype is None) and (
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
+                if fcond:
+                    fcond = ast.FilterCompr(compares=fcond, kid=[fcond])
+                    kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
                         filter_type=ftype,
@@ -2983,6 +2995,11 @@ class JacParser(Pass):
             if (isinstance(conn_type, ast.ExprType) or conn_type is None) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
+                if conn_assign:
+                    conn_assign = ast.AssignCompr(
+                        assigns=conn_assign, kid=[conn_assign]
+                    )
+                    kid[3] = conn_assign
                 return self.nu(
                     ast.ConnectOp(
                         conn_type=conn_type,
@@ -3005,6 +3022,11 @@ class JacParser(Pass):
             if (isinstance(conn_type, ast.ExprType) or conn_type is None) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
+                if conn_assign:
+                    conn_assign = ast.AssignCompr(
+                        assigns=conn_assign, kid=[conn_assign]
+                    )
+                    kid[3] = conn_assign
                 return self.nu(
                     ast.ConnectOp(
                         conn_type=conn_type,
@@ -3064,6 +3086,21 @@ class JacParser(Pass):
             ret = self.binary_expr_unwind(kid)
             if isinstance(ret, ast.BinaryExpr):
                 return self.nu(ret)
+            else:
+                raise self.ice()
+
+        def assign_compr(self, kid: list[ast.AstNode]) -> ast.AssignCompr:
+            """Grammar rule.
+
+            filter_compr: LPAREN STAR_MUL kw_expr_list RPAREN
+            """
+            if isinstance(kid[2], ast.SubNodeList):
+                return self.nu(
+                    ast.AssignCompr(
+                        assigns=kid[2],
+                        kid=kid,
+                    )
+                )
             else:
                 raise self.ice()
 

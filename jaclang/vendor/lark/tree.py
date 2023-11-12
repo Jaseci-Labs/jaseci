@@ -112,7 +112,7 @@ class Tree(Generic[_Leaf_T]):
         Example:
             ::
                 from rich import print
-                from jaclang.vendor.lark import Tree
+                from lark import Tree
 
                 tree = Tree('root', ['node1', 'node2'])
                 print(tree)

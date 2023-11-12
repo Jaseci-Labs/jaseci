@@ -5,7 +5,7 @@ from logging import DEBUG, INFO, WARN, ERROR
 from typing import Optional
 import warnings
 
-from jaclang.vendor.lark import Lark, logger
+from lark import Lark, logger
 
 try:
     from interegular import logger as interegular_logger

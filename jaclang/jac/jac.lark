@@ -103,7 +103,6 @@ statement_list: statement+
 
 statement: py_code_block
           | walker_stmt
-          | await_stmt SEMI
           | return_stmt SEMI
           | report_stmt SEMI
           | delete_stmt SEMI
@@ -154,7 +153,6 @@ ignore_stmt: KW_IGNORE expression SEMI
 visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
 revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
 disengage_stmt: KW_DISENGAGE SEMI
-await_stmt: KW_AWAIT expression
 global_ref: GLOBAL_OP name_list
 nonlocal_ref: NONLOCAL_OP name_list
 
@@ -168,7 +166,7 @@ expression: pipe KW_IF expression KW_ELSE expression
 
 lambda_expr: KW_WITH func_decl_params? return_type_tag? KW_CAN expression
 
-pipe: pipe_back PIPE_FWD pipe
+pipe: pipe PIPE_FWD pipe_back
     | pipe_back
 
 pipe_back: elvis_check PIPE_BKWD pipe_back
@@ -242,6 +240,7 @@ ds_call: atomic_chain
        | PIPE_FWD atomic_chain
        | A_PIPE_FWD atomic_chain
        | KW_SPAWN atomic_chain
+       | KW_AWAIT atomic_chain
 
 aug_op: RSHIFT_EQ
        | LSHIFT_EQ
@@ -269,13 +268,13 @@ cmp_op: KW_ISN
       | LT
       | EE
 
-atomic_chain: atomic_chain NULL_OK? (filter_compr | edge_op_ref | index_slice | list_val)
+atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | edge_op_ref | index_slice)
             | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) any_ref
             | (atomic_call | atom)
 
 atomic_call: atomic_chain LPAREN param_list? RPAREN
 index_slice: LSQUARE expression? COLON expression? (COLON expression?)? RSQUARE
-
+           | list_val
 
 atom: edge_op_ref
     | any_ref
@@ -380,6 +379,7 @@ connect_from: CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
             | CARROW_L
 
 filter_compr: LPAREN EQ filter_compare_list RPAREN
+assign_compr: LPAREN STAR_MUL kw_expr_list RPAREN
 
 filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
 

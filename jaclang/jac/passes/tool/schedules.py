@@ -1,8 +1,8 @@
 """Pass schedules."""
-from jaclang.jac.passes.blue.sub_node_tab_pass import SubNodeTabPass
-from jaclang.jac.passes.blue.import_pass import ImportPass  # noqa: I100
-from jaclang.jac.passes.blue.sym_tab_build_pass import SymTabBuildPass  # noqa: I100
-from jaclang.jac.passes.blue.def_impl_match_pass import DeclDefMatchPass  # noqa: I100
+from jaclang.jac.passes.main.sub_node_tab_pass import SubNodeTabPass
+from jaclang.jac.passes.main.import_pass import ImportPass  # noqa: I100
+from jaclang.jac.passes.main.sym_tab_build_pass import SymTabBuildPass  # noqa: I100
+from jaclang.jac.passes.main.def_impl_match_pass import DeclDefMatchPass  # noqa: I100
 from jaclang.jac.passes.tool.ast_printer_pass import (  # noqa: I100
     AstDotGraphPass,
     AstPrinterPass,

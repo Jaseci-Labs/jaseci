@@ -2,20 +2,16 @@
 import inspect
 import marshal
 import sys
-import traceback
 import types
 from os import path
-from typing import Callable, Optional
+from typing import Optional
 
 from jaclang.jac.constant import Constants as Con
-from jaclang.jac.passes.transform import Alert
-from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
-from jaclang.utils.helpers import handle_jac_error
+from jaclang.jac.transpiler import transpile_jac
 from jaclang.utils.log import logging
 
 
-def import_jac_module(
-    transpiler_func: Callable[[str], list[Alert]],
+def jac_import(
     target: str,
     base_path: Optional[str] = None,
     cachable: bool = True,
@@ -23,6 +19,7 @@ def import_jac_module(
 ) -> Optional[types.ModuleType]:
     """Core Import Process."""
     dir_path, file_name = path.split(path.join(*(target.split("."))) + ".jac")
+
     module_name = path.splitext(file_name)[0]
     package_path = dir_path.replace(path.sep, ".")
 
@@ -34,8 +31,9 @@ def import_jac_module(
     if base_path:
         caller_dir = path.dirname(base_path) if not path.isdir(base_path) else base_path
     else:
-        frame = inspect.stack()[2]
+        frame = inspect.stack()[1]
         caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
+    caller_dir = path.dirname(caller_dir) if target.startswith("..") else caller_dir
     caller_dir = path.join(caller_dir, dir_path)
 
     gen_dir = path.join(caller_dir, Con.JAC_GEN_DIR)
@@ -53,9 +51,10 @@ def import_jac_module(
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
     else:
-        if error := transpiler_func(full_target):
-            print(error)
-            logging.error(error)
+        if error := transpile_jac(full_target):
+            if error:
+                for e in error:
+                    logging.error(e)
             return None
         with open(py_file_path, "r") as f:
             code_string = f.read()
@@ -66,13 +65,6 @@ def import_jac_module(
     module.__file__ = full_target
     module.__name__ = override_name if override_name else module_name
     module.__dict__["_jac_pycodestring_"] = code_string
-
-    try:
-        exec(codeobj, module.__dict__)
-    except Exception as e:
-        tb = traceback.extract_tb(e.__traceback__)
-        err = handle_jac_error(code_string, e, tb)
-        raise type(e)(str(e) + "\n" + err)
 
     if package_path:
         parts = package_path.split(".")
@@ -85,28 +77,7 @@ def import_jac_module(
         sys.modules[f"{package_path}.{module_name}"] = module
     else:
         sys.modules[module_name] = module
+
+    exec(codeobj, module.__dict__)
+
     return module
-
-
-def jac_blue_import(
-    target: str,
-    base_path: Optional[str] = None,
-    cachable: bool = True,
-    override_name: Optional[str] = None,
-) -> Optional[types.ModuleType]:
-    """Jac Blue Imports."""
-    return import_jac_module(
-        transpile_jac_blue, target, base_path, cachable, override_name
-    )
-
-
-def jac_purple_import(
-    target: str,
-    base_path: Optional[str] = None,
-    cachable: bool = True,
-    override_name: Optional[str] = None,
-) -> Optional[types.ModuleType]:
-    """Jac Purple Imports."""
-    return import_jac_module(
-        transpile_jac_purple, target, base_path, cachable, override_name
-    )

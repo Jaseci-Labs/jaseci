@@ -74,9 +74,7 @@ class AstNode:
         else:
             raise ValueError(f"Empty kid for Token {type(self).__name__}")
 
-    def get_all_sub_nodes(
-        self, typ: type[T], brute_force: bool = True
-    ) -> list[AstNode]:
+    def get_all_sub_nodes(self, typ: Type[T], brute_force: bool = True) -> list[T]:
         """Get all sub nodes of type."""
         from jaclang.jac.passes import Pass
 
@@ -221,7 +219,7 @@ class Module(AstDocNode):
         doc: Optional[String],
         body: Sequence[ElementStmt],
         is_imported: bool,
-        kid: Sequence[ElementStmt],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize whole program node."""
         self.name = name
@@ -669,6 +667,12 @@ class ArchRefChain(AstNode):
             [f"({x.arch.value[1]}){x.py_resolve_name()}" for x in self.archs]
         )
 
+    def flat_name(self) -> str:
+        """Resolve name for python gen."""
+        return (
+            self.py_resolve_name().replace(".", "_").replace("(", "").replace(")", "_")
+        )
+
 
 class ParamVar(AstSymbolNode, AstTypedVarNode):
     """ParamVar node type for Jac Ast."""
@@ -1085,7 +1089,7 @@ class DisengageStmt(WalkerStmtOnlyNode):
         WalkerStmtOnlyNode.__init__(self)
 
 
-class AwaitStmt(AstNode):
+class AwaitExpr(AstNode):
     """AwaitStmt node type for Jac Ast."""
 
     def __init__(
@@ -1297,7 +1301,7 @@ class TupleVal(AstSymbolNode):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[ExprType | KVPair]],
+        values: Optional[SubNodeList[ExprType | KWPair]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize tuple value node."""
@@ -1337,13 +1341,26 @@ class KVPair(AstNode):
         self,
         key: ExprType,
         value: ExprType,
-        is_arg: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize key value pair expression node."""
         self.key = key
         self.value = value
-        self.is_arg = is_arg
+        AstNode.__init__(self, kid=kid)
+
+
+class KWPair(AstNode):
+    """ExprKWPair node type for Jac Ast."""
+
+    def __init__(
+        self,
+        key: NameType,
+        value: ExprType,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize keyword pair expression node."""
+        self.key = key
+        self.value = value
         AstNode.__init__(self, kid=kid)
 
 
@@ -1471,7 +1488,7 @@ class FuncCall(AstNode):
     def __init__(
         self,
         target: ExprType,
-        params: Optional[SubNodeList[ExprType | KVPair]],
+        params: Optional[SubNodeList[ExprType | KWPair]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize function call expression node."""
@@ -1575,7 +1592,7 @@ class EdgeOpRef(WalkerStmtOnlyNode, AstSymbolNode):
     def __init__(
         self,
         filter_type: Optional[ExprType],
-        filter_cond: Optional[SubNodeList[BinaryExpr]],
+        filter_cond: Optional[FilterCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1613,7 +1630,7 @@ class ConnectOp(AstNode):
     def __init__(
         self,
         conn_type: Optional[ExprType],
-        conn_assign: Optional[SubNodeList[Assignment]],
+        conn_assign: Optional[AssignCompr],
         edge_dir: EdgeDir,
         kid: Sequence[AstNode],
     ) -> None:
@@ -1624,7 +1641,7 @@ class ConnectOp(AstNode):
         AstNode.__init__(self, kid=kid)
 
 
-class FilterCompr(AstSymbolNode):
+class FilterCompr(AstNode):
     """FilterCtx node type for Jac Ast."""
 
     def __init__(
@@ -1635,12 +1652,19 @@ class FilterCompr(AstSymbolNode):
         """Initialize filter_cond context expression node."""
         self.compares = compares
         AstNode.__init__(self, kid=kid)
-        AstSymbolNode.__init__(
-            self,
-            sym_name=f"[{self.__class__.__name__}]",
-            sym_name_node=self,
-            sym_type=SymbolType.SEQUENCE,
-        )
+
+
+class AssignCompr(AstNode):
+    """AssignCtx node type for Jac Ast."""
+
+    def __init__(
+        self,
+        assigns: SubNodeList[KWPair],
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize assign compr expression node."""
+        self.assigns = assigns
+        AstNode.__init__(self, kid=kid)
 
 
 # Match Nodes
@@ -2098,10 +2122,12 @@ AtomType = Union[
     DictCompr,
     EdgeOpRef,
     FilterCompr,
+    AssignCompr,
     IndexSlice,
 ]
 
 ExprType = Union[
+    AwaitExpr,
     UnaryExpr,
     BinaryExpr,
     IfElseExpr,
@@ -2156,7 +2182,6 @@ CodeBlockStmt = Union[
     DeleteStmt,
     ReportStmt,
     ReturnStmt,
-    AwaitStmt,
     DisengageStmt,
     RevisitStmt,
     VisitStmt,
