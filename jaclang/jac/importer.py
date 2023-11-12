@@ -11,7 +11,7 @@ from jaclang.jac.transpiler import transpile_jac
 from jaclang.utils.log import logging
 
 
-def import_jac_module(
+def jac_import(
     target: str,
     base_path: Optional[str] = None,
     cachable: bool = True,
@@ -31,7 +31,7 @@ def import_jac_module(
     if base_path:
         caller_dir = path.dirname(base_path) if not path.isdir(base_path) else base_path
     else:
-        frame = inspect.stack()[2]
+        frame = inspect.stack()[1]
         caller_dir = path.dirname(path.abspath(frame[0].f_code.co_filename))
     caller_dir = path.dirname(caller_dir) if target.startswith("..") else caller_dir
     caller_dir = path.join(caller_dir, dir_path)
@@ -81,13 +81,3 @@ def import_jac_module(
     exec(codeobj, module.__dict__)
 
     return module
-
-
-def jac_import(
-    target: str,
-    base_path: Optional[str] = None,
-    cachable: bool = True,
-    override_name: Optional[str] = None,
-) -> Optional[types.ModuleType]:
-    """Jac Blue Imports."""
-    return import_jac_module(target, base_path, cachable, override_name)
