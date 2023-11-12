@@ -4,10 +4,10 @@ import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 import:py from jaclang.jac.constant, EdgeDir;
 
-include:jac impl.memory_impl;
-include:jac impl.exec_ctx_impl;
-include:jac impl.element_impl;
-include:jac impl.arch_impl;
+include:jac memory_impl;
+include:jac exec_ctx_impl;
+include:jac element_impl;
+include:jac arch_impl;
 
 
 enum AccessMode;
