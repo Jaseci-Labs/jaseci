@@ -14,27 +14,11 @@ from jaclang.jac.passes.main.schedules import format_pass
 from jaclang.jac.passes.transform import Alert
 
 
-def transpile_jac_blue(file_path: str) -> list[Alert]:
+def transpile_jac(file_path: str) -> list[Alert]:
     """Transpiler Jac file and return python code as string."""
     code = jac_file_to_pass(
         file_path=file_path,
         target=BluePygenPass,
-        schedule=pass_schedule,
-    )
-    if isinstance(code.ir, ast.Module) and not code.errors_had:
-        print_pass = PyOutPass(input_ir=code.ir, prior=code)
-    else:
-        return code.errors_had
-    return print_pass.errors_had
-
-
-def transpile_jac_purple(file_path: str) -> list[Alert]:
-    """Transpiler Jac file and return python code as string."""
-    from jaclang.jac.passes.purple import pass_schedule, PurplePygenPass
-
-    code = jac_file_to_pass(
-        file_path=file_path,
-        target=PurplePygenPass,
         schedule=pass_schedule,
     )
     if isinstance(code.ir, ast.Module) and not code.errors_had:

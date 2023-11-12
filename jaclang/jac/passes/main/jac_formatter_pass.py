@@ -902,7 +902,7 @@ class JacFormatPass(Pass):
     def needs_jac_import(self) -> None:
         """Check if import is needed."""
         self.emit_ln_unique(
-            self.preamble, "from jaclang import jac_blue_import as __jac_import__"
+            self.preamble, "from jaclang import jac_import as __jac_import__"
         )
 
     def needs_enum(self) -> None:

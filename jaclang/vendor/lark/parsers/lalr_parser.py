@@ -9,11 +9,7 @@ from ..common import ParserConf, ParserCallbacks
 
 from .lalr_analysis import LALR_Analyzer, IntParseTable, ParseTableBase
 from .lalr_interactive_parser import InteractiveParser
-from jaclang.vendor.lark.exceptions import (
-    UnexpectedCharacters,
-    UnexpectedInput,
-    UnexpectedToken,
-)
+from lark.exceptions import UnexpectedCharacters, UnexpectedInput, UnexpectedToken
 from .lalr_parser_state import ParserState, ParseConf
 
 ###{standalone

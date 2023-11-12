@@ -4,16 +4,14 @@ import marshal
 import sys
 import types
 from os import path
-from typing import Callable, Optional
+from typing import Optional
 
 from jaclang.jac.constant import Constants as Con
-from jaclang.jac.passes.transform import Alert
-from jaclang.jac.transpiler import transpile_jac_blue, transpile_jac_purple
+from jaclang.jac.transpiler import transpile_jac
 from jaclang.utils.log import logging
 
 
 def import_jac_module(
-    transpiler_func: Callable[[str], list[Alert]],
     target: str,
     base_path: Optional[str] = None,
     cachable: bool = True,
@@ -53,7 +51,7 @@ def import_jac_module(
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
     else:
-        if error := transpiler_func(full_target):
+        if error := transpile_jac(full_target):
             if error:
                 for e in error:
                     logging.error(e)
@@ -85,25 +83,11 @@ def import_jac_module(
     return module
 
 
-def jac_blue_import(
+def jac_import(
     target: str,
     base_path: Optional[str] = None,
     cachable: bool = True,
     override_name: Optional[str] = None,
 ) -> Optional[types.ModuleType]:
     """Jac Blue Imports."""
-    return import_jac_module(
-        transpile_jac_blue, target, base_path, cachable, override_name
-    )
-
-
-def jac_purple_import(
-    target: str,
-    base_path: Optional[str] = None,
-    cachable: bool = True,
-    override_name: Optional[str] = None,
-) -> Optional[types.ModuleType]:
-    """Jac Purple Imports."""
-    return import_jac_module(
-        transpile_jac_purple, target, base_path, cachable, override_name
-    )
+    return import_jac_module(target, base_path, cachable, override_name)

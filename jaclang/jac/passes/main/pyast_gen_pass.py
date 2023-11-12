@@ -45,7 +45,7 @@ class PyastGenPass(Pass):
                     module="jaclang",
                     names=[
                         self.sync(
-                            ast3.alias(name="jac_blue_import", asname="__jac_import__")
+                            ast3.alias(name="jac_import", asname="__jac_import__")
                         )
                     ],
                     level=0,

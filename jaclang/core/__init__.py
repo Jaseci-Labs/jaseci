@@ -1,7 +1,7 @@
 """Core primitives for Jaseci."""
-from jaclang import jac_blue_import
+from jaclang import jac_import
 
-prim = jac_blue_import("primitives")
+prim = jac_import("primitives")
 if not prim:
     raise ImportError("Could not import primitives, internal compile error")
 

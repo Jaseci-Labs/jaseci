@@ -6,7 +6,7 @@ import inspect, re
 import types
 from typing import Optional, Callable
 
-from jaclang.vendor.lark import Transformer, v_args
+from lark import Transformer, v_args
 
 
 class Ast:
