@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, Optional, TypeAlias, Union, get_args
+from typing import Callable, TypeAlias, Union, get_args
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac import jac_lark as jl

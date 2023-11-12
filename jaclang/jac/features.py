@@ -6,6 +6,7 @@ from typing import Any, Callable, Optional, Protocol, Type, TypeVar
 
 from jaclang.jac import hookimpl
 from jaclang.jac.constant import EdgeDir
+
 import pluggy
 
 hookspec = pluggy.HookspecMarker("jac")
