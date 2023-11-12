@@ -57,7 +57,7 @@ class JacParser(Pass):
     @staticmethod
     def parse(
         ir: str, on_error: Callable[[jl.UnexpectedInput], bool]
-    ) -> tuple[jl.Tree, list[jl.Token]]:
+    ) -> tuple[jl.Tree[jl.Tree[str]], list[jl.Token]]:
         """Parse input IR."""
         JacParser.comment_cache = []
         return (
@@ -75,7 +75,7 @@ class JacParser(Pass):
             debug=True,
             lexer_callbacks={"COMMENT": JacParser._comment_callback},
         )
-        JacParser.JacTransformer = Transformer[Tree[str], ast.AstNode]
+        JacParser.JacTransformer = Transformer[Tree[str], ast.AstNode]  # type: ignore
         logger.setLevel(logging.DEBUG)
 
     comment_cache: list[jl.Token] = []
@@ -118,6 +118,7 @@ class JacParser(Pass):
             """
             doc = kid[0] if len(kid) and isinstance(kid[0], ast.String) else None
             body = kid[1:] if doc else kid
+            body = [i for i in body if isinstance(i, ast.ElementStmt)]
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].split(".")[0],
                 source=self.parse_ref.source,

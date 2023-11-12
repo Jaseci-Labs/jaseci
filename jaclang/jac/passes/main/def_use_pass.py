@@ -147,7 +147,10 @@ class DefUsePass(SymTabPass):
         if not trag_list:
             self.ice("Something went very wrong with atom trailer not valid")
         while isinstance(left, ast.AtomTrailer) and left.is_attr:
-            trag_list.insert(0, left.right)
+            if isinstance(left.right, ast.AstSymbolNode):
+                trag_list.insert(0, left.right)
+            else:
+                raise self.ice("Something went very wrong with atom trailer not valid")
             left = left.target
         if isinstance(left, ast.AstSymbolNode):
             trag_list.insert(0, left)
