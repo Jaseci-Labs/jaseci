@@ -4,6 +4,9 @@ import logging
 import os
 import sys
 
+import pluggy
+
+hookimpl = pluggy.HookimplMarker("jac")
 
 cur_dir = os.path.dirname(__file__)
 if not os.path.exists(os.path.join(cur_dir, "__jac_gen__", "jac_parser.py")):
