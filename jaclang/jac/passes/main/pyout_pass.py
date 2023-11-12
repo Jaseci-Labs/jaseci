@@ -33,7 +33,7 @@ class PyOutPass(Pass):
         is_imported: bool,
         sym_tab: Optional[SymbolTable],
         """
-        if not (os.path.exists(node.loc.mod_path) and node.gen.py):
+        if not (os.path.exists(node.loc.mod_path) and node.gen.py_ast):
             self.error(
                 f"Unable to find module {node.loc.mod_path} or no code present.", node
             )

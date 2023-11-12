@@ -5,9 +5,9 @@ import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.main import (
-    BluePygenPass,
     JacFormatPass,
     PyOutPass,
+    PyastGenPass,
     pass_schedule,
 )
 from jaclang.jac.passes.main.schedules import format_pass
@@ -18,7 +18,7 @@ def transpile_jac(file_path: str) -> list[Alert]:
     """Transpiler Jac file and return python code as string."""
     code = jac_file_to_pass(
         file_path=file_path,
-        target=BluePygenPass,
+        target=PyastGenPass,
         schedule=pass_schedule,
     )
     if isinstance(code.ir, ast.Module) and not code.errors_had:
@@ -30,7 +30,7 @@ def transpile_jac(file_path: str) -> list[Alert]:
 
 def jac_file_to_pass(
     file_path: str,
-    target: Type[Pass] = BluePygenPass,
+    target: Type[Pass] = PyastGenPass,
     schedule: list[Type[Pass]] = pass_schedule,
 ) -> Pass:
     """Convert a Jac file to an AST."""
@@ -46,7 +46,7 @@ def jac_file_to_pass(
 def jac_str_to_pass(
     jac_str: str,
     file_path: str,
-    target: Type[Pass] = BluePygenPass,
+    target: Type[Pass] = PyastGenPass,
     schedule: list[Type[Pass]] = pass_schedule,
 ) -> Pass:
     """Convert a Jac file to an AST."""
