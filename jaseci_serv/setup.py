@@ -49,7 +49,8 @@ setup(
         "django-allauth>=0.52.0",
         "tzdata>=2022.7",
         "channels[daphne]==4.0.0",
-        "channels-redis",
+        "channels-redis==4.1.0",
+        "Twisted==22.10.0",
     ],
     package_data={
         "": [
