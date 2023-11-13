@@ -667,9 +667,11 @@ class ArchRefChain(AstNode):
 
     def py_resolve_name(self) -> str:
         """Resolve name."""
-        return ".".join(
-            [f"({x.arch.value[1]}){x.py_resolve_name()}" for x in self.archs]
-        )
+
+        def get_tag(x: ArchRef) -> str:
+            return x.arch.value[1] if x.arch.value != "enum" else "en"
+
+        return ".".join([f"({get_tag(x)}){x.py_resolve_name()}" for x in self.archs])
 
     def flat_name(self) -> str:
         """Resolve name for python gen."""
