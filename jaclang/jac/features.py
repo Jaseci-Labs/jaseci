@@ -1,7 +1,10 @@
 """Jac Language Features."""
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass
+from functools import wraps
+from types import FunctionType, MethodType
 from typing import Any, Callable, Optional, Protocol, Type, TypeVar
 
 from jaclang.jac import hookimpl
@@ -99,6 +102,36 @@ class JacFeatureDefaults:
 
         def decorator(cls: Type[AT]) -> Type[AT]:
             """Decorate class."""
+            for attr_name, attr_value in cls.__dict__.items():
+                func_types = (FunctionType, MethodType, classmethod, staticmethod)
+                if isinstance(attr_value, func_types) and not attr_name.startswith(
+                    "__"
+                ):
+                    new_method_name = f"{arch_type[0]}_{cls.__name__}_a_{attr_name}"
+                    # Check if a function with the new name exists in the global scope
+                    cls_module_globals = inspect.getmodule(cls).__dict__
+                    if new_method_name in cls_module_globals:
+                        # Replace the method in the class with the new method
+                        def wrap(
+                            f: Callable[T],
+                        ) -> Callable[T]:  # This should work but it doesnt
+                            @wraps(f)
+                            def wrapper(
+                                *args: Any, **kwargs: Any  # noqa: ANN401
+                            ) -> Any:  # noqa: ANN401
+                                return f(*args, **kwargs)
+
+                            return wrapper
+
+                        setattr(
+                            cls, attr_name, wrap(cls_module_globals[new_method_name])
+                        )
+                        func_module_globals = cls_module_globals[
+                            new_method_name
+                        ].__globals__
+                        for k, v in cls_module_globals.items():  # Risky!
+                            if k not in func_module_globals and not k.startswith("__"):
+                                func_module_globals[k] = v
             cls._jac_ = None
             return dataclass(cls)
 
