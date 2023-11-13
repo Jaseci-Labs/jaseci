@@ -143,7 +143,7 @@ class PyastGenPass(Pass):
                 [
                     x.gen.py_ast
                     for x in node.items
-                    if not isinstance(x, ast.AstImplOnlyNode)
+                    # if not isinstance(x, ast.AstImplOnlyNode)
                 ]
             )
             if node and isinstance(node.gen.py_ast, list)
@@ -204,7 +204,7 @@ class PyastGenPass(Pass):
                 *[
                     x.gen.py_ast
                     for x in node.body
-                    if not isinstance(x, ast.AstImplOnlyNode)
+                    # if not isinstance(x, ast.AstImplOnlyNode)
                 ],
             ]
             if node.doc
@@ -478,7 +478,50 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        node.gen.py_ast = node.body.gen.py_ast
+        body = self.resolve_stmt_block(node.body)
+        base_classes = (
+            node.decl_link.base_classes.gen.py_ast
+            if node.decl_link and node.decl_link.base_classes
+            else []
+        )
+        decorators = (
+            node.decl_link.decorators.gen.py_ast
+            if node.decl_link and isinstance(node.decl_link.decorators, ast.SubNodeList)
+            else []
+        )
+        if isinstance(decorators, list):
+            decorators.append(
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                ),
+                                attr="make_architype",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[
+                            self.sync(
+                                ast3.Constant(value=node.decl_link.arch_type.value)
+                            )
+                        ]
+                        if node.decl_link
+                        else [],
+                        keywords=[],
+                    )
+                )
+            )
+        node.gen.py_ast = self.sync(
+            ast3.ClassDef(
+                name=node.target.flat_name(),
+                bases=base_classes,
+                keywords=[],
+                body=body,
+                decorator_list=decorators,
+            )
+        )
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.
@@ -531,7 +574,31 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        node.gen.py_ast = node.body.gen.py_ast
+        self.needs_enum()
+        body = self.resolve_stmt_block(node.body)
+        base_classes = (
+            node.decl_link.base_classes.gen.py_ast
+            if node.decl_link and node.decl_link.base_classes
+            else []
+        )
+        if isinstance(base_classes, list):
+            base_classes.append(
+                self.sync(ast3.Name(id="__jac_Enum__", ctx=ast3.Load()))
+            )
+        decorators = (
+            node.decl_link.decorators.gen.py_ast
+            if node.decl_link and isinstance(node.decl_link.decorators, ast.SubNodeList)
+            else []
+        )
+        node.gen.py_ast = self.sync(
+            ast3.ClassDef(
+                name=node.target.flat_name(),
+                bases=base_classes,
+                keywords=[],
+                body=body,
+                decorator_list=decorators,
+            )
+        )
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -609,7 +676,15 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        node.gen.py_ast = node.body.gen.py_ast
+        body = self.resolve_stmt_block(node.body)
+        node.gen.py_ast = self.sync(
+            ast3.FunctionDef(
+                name=node.target.flat_name(),
+                args=node.signature.gen.py_ast if node.signature else [],
+                body=body,
+                decorator_list=node.decorators.gen.py_ast if node.decorators else [],
+            )
+        )
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """Sub objects.

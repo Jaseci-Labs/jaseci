@@ -440,11 +440,13 @@ class ArchDef(AstSymbolNode, AstAccessNode, AstDocNode, AstImplOnlyNode):
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
+        decl_link: Optional[Architype] = None,
     ) -> None:
         """Initialize arch def node."""
         self.decorators = decorators
         self.target = target
         self.body = body
+        self.decl_link = decl_link
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -495,11 +497,13 @@ class EnumDef(AstSymbolNode, AstDocNode, AstImplOnlyNode):
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
+        decl_link: Optional[Enum] = None,
     ) -> None:
         """Initialize arch def node."""
         self.target = target
         self.body = body
         self.decorators = decorators
+        self.decl_link = decl_link
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
