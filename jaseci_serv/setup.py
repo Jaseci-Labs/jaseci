@@ -48,7 +48,8 @@ setup(
         "dj-rest-auth[with_social]==4.0.1",
         "tzdata>=2022.7",
         "channels[daphne]==4.0.0",
-        "channels-redis",
+        "channels-redis==4.1.0",
+        "Twisted==22.10.0",
     ],
     package_data={
         "": [
