@@ -54,6 +54,7 @@ def jac_import(
         if error := transpile_jac(full_target):
             if error:
                 for e in error:
+                    print(e)
                     logging.error(e)
             return None
         # with open(py_file_path, "r") as f:

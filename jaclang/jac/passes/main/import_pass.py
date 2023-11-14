@@ -44,7 +44,7 @@ class ImportPass(Pass):
                     i.sub_module = mod
                     i.add_kids_right([mod], pos_update=False)
                 # elif i.lang.tag.value == "py":
-                #     self.import_py_module(node=i, mod_path=node.mod_path)
+                #     self.import_py_module(node=i, mod_path=node.loc.mod_path)
                 self.enter_import(i)
             SubNodeTabPass(prior=self, input_ir=node)
         node.mod_deps = self.import_table
@@ -126,7 +126,12 @@ class ImportPass(Pass):
                     self.import_table[spec.origin] = mod
                     return mod
                 else:
-                    raise self.ice(f"Failed to import python module: {spec.origin}")
+                    raise self.ice(
+                        f"Failed to import python module {node.path.path_str}: {spec.origin}"
+                    )
         except Exception as e:
-            self.error(f"Failed to import python module: {e}", node_override=node)
+            self.error(
+                f"Failed to import python module {node.path.path_str}: {e}",
+                node_override=node,
+            )
         return None
