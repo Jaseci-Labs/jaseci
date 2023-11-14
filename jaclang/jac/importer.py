@@ -46,8 +46,8 @@ def jac_import(
         and path.exists(py_file_path)
         and path.getmtime(py_file_path) > path.getmtime(full_target)
     ):
-        with open(py_file_path, "r") as f:
-            code_string = f.read()
+        # with open(py_file_path, "r") as f:
+        #     code_string = f.read()
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
     else:
@@ -56,15 +56,14 @@ def jac_import(
                 for e in error:
                     logging.error(e)
             return None
-        with open(py_file_path, "r") as f:
-            code_string = f.read()
+        # with open(py_file_path, "r") as f:
+        #     code_string = f.read()
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
 
     module = types.ModuleType(module_name)
     module.__file__ = full_target
-    module.__name__ = override_name if override_name else module_name
-    module.__dict__["_jac_pycodestring_"] = code_string
+    module.__name__ = module_name
 
     if package_path:
         parts = package_path.split(".")
@@ -78,6 +77,7 @@ def jac_import(
     else:
         sys.modules[module_name] = module
 
+    # module.__name__ = override_name if override_name else module.__name__
     exec(codeobj, module.__dict__)
 
     return module
