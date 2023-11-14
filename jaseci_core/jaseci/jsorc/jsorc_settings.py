@@ -46,7 +46,7 @@ class JsOrcSettings:
     ###############################################################################################################
 
     REDIS_CONFIG = {
-        "enabled": True,
+        "enabled": False,
         "quiet": False,
         "automated": False,
         "host": os.getenv("REDIS_HOST", "localhost"),
@@ -66,7 +66,7 @@ class JsOrcSettings:
     )
 
     TASK_CONFIG = {
-        "enabled": True,
+        "enabled": False,
         "quiet": False,
         "automated": False,
         "broker_url": DEFAULT_REDIS_URL,
