@@ -101,24 +101,24 @@ class PyastBuildPass(Pass):
         valid_body = ast.SubNodeList[ast.CodeBlockStmt](items=valid_body, kid=body)
         doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
-        valid_decorators = [i for i in decorators if isinstance(i, ast.ExprType)]
+        valid_decorators = [i for i in decorators if isinstance(i, ast.Expr)]
         if len(valid_decorators) != len(decorators):
             self.error("Length mismatch in decorators on function")
         valid_decorators = (
-            ast.SubNodeList[ast.ExprType](items=valid_decorators, kid=decorators)
+            ast.SubNodeList[ast.Expr](items=valid_decorators, kid=decorators)
             if len(valid_decorators)
             else None
         )
         res = self.convert(node.args)
-        sig: Optional[ast.FuncSignature] | ast.ExprType = (
+        sig: Optional[ast.FuncSignature] | ast.Expr = (
             res if isinstance(res, ast.FuncSignature) else None
         )
         ret_sig = self.convert(node.returns) if node.returns else None
-        if isinstance(ret_sig, ast.ExprType):
+        if isinstance(ret_sig, ast.Expr):
             if not sig:
                 sig = ret_sig
             else:
-                sig.return_type = ast.SubTag[ast.ExprType](tag=ret_sig, kid=[ret_sig])
+                sig.return_type = ast.SubTag[ast.Expr](tag=ret_sig, kid=[ret_sig])
                 sig.add_kids_right([sig.return_type])
         kid = [name, sig, valid_body] if sig else [name, valid_body]
         return ast.Ability(
@@ -190,11 +190,11 @@ class PyastBuildPass(Pass):
             kid=[],
         )
         base_classes = [self.convert(base) for base in node.bases]
-        valid_bases = [base for base in base_classes if isinstance(base, ast.AtomType)]
+        valid_bases = [base for base in base_classes if isinstance(base, ast.AtomExpr)]
         if len(valid_bases) != len(base_classes):
             self.error("Length mismatch in base classes")
         valid_bases = (
-            ast.SubNodeList[ast.AtomType](items=valid_bases, kid=base_classes)
+            ast.SubNodeList[ast.AtomExpr](items=valid_bases, kid=base_classes)
             if len(valid_bases)
             else None
         )
@@ -205,11 +205,11 @@ class PyastBuildPass(Pass):
         valid_body = ast.SubNodeList[ast.ArchBlockStmt](items=valid_body, kid=body)
         doc = None
         decorators = [self.convert(i) for i in node.decorator_list]
-        valid_decorators = [i for i in decorators if isinstance(i, ast.ExprType)]
+        valid_decorators = [i for i in decorators if isinstance(i, ast.Expr)]
         if len(valid_decorators) != len(decorators):
             self.error("Length mismatch in decorators in class")
         valid_decorators = (
-            ast.SubNodeList[ast.ExprType](items=valid_decorators, kid=decorators)
+            ast.SubNodeList[ast.Expr](items=valid_decorators, kid=decorators)
             if len(valid_decorators)
             else None
         )
@@ -225,7 +225,7 @@ class PyastBuildPass(Pass):
             decorators=valid_decorators,
         )
 
-    def proc_return(self, node: py_ast.Return) -> ast.ExprType | None:
+    def proc_return(self, node: py_ast.Return) -> ast.Expr | None:
         """Process python node.
 
         class Return(stmt):
@@ -233,7 +233,7 @@ class PyastBuildPass(Pass):
             value: expr | None
         """
         value = self.convert(node.value) if node.value else None
-        if value and not isinstance(value, ast.ExprType):
+        if value and not isinstance(value, ast.Expr):
             self.error("Invalid return value")
         else:
             return value
@@ -246,11 +246,11 @@ class PyastBuildPass(Pass):
             targets: list[expr]
         """
         exprs = [self.convert(target) for target in node.targets]
-        valid_exprs = [expr for expr in exprs if isinstance(expr, ast.AtomType)]
+        valid_exprs = [expr for expr in exprs if isinstance(expr, ast.AtomExpr)]
         if not len(valid_exprs) or len(valid_exprs) != len(exprs):
             self.error("Length mismatch in delete targets")
         return ast.DeleteStmt(
-            target=ast.SubNodeList[ast.AtomType](items=valid_exprs, kid=exprs),
+            target=ast.SubNodeList[ast.AtomExpr](items=valid_exprs, kid=exprs),
             kid=exprs,
         )
 
@@ -263,16 +263,16 @@ class PyastBuildPass(Pass):
         """
         targets = [self.convert(target) for target in node.targets]
         valid_targets = [
-            target for target in targets if isinstance(target, ast.AtomType)
+            target for target in targets if isinstance(target, ast.AtomExpr)
         ]
         if len(valid_targets) == len(targets):
-            valid_targets = ast.SubNodeList[ast.AtomType](
+            valid_targets = ast.SubNodeList[ast.AtomExpr](
                 items=valid_targets, kid=targets
             )
         else:
             raise self.ice("Length mismatch in assignment targets")
         value = self.convert(node.value)
-        if isinstance(value, ast.ExprType):
+        if isinstance(value, ast.Expr):
             return ast.Assignment(
                 target=valid_targets,
                 value=value,
@@ -295,8 +295,8 @@ class PyastBuildPass(Pass):
         op = self.convert(node.op)
         value = self.convert(node.value)
         if (
-            isinstance(value, ast.ExprType)
-            and isinstance(target, ast.ExprType)
+            isinstance(value, ast.Expr)
+            and isinstance(target, ast.Expr)
             and isinstance(op, ast.Token)
         ):
             return ast.BinaryExpr(
@@ -320,16 +320,16 @@ class PyastBuildPass(Pass):
         """
         target = self.convert(node.target)
         annotation = self.convert(node.annotation)
-        if isinstance(annotation, ast.ExprType):
-            annotation = ast.SubTag[ast.ExprType](tag=annotation, kid=[annotation])
+        if isinstance(annotation, ast.Expr):
+            annotation = ast.SubTag[ast.Expr](tag=annotation, kid=[annotation])
         else:
             raise self.ice()
         value = self.convert(node.value) if node.value else None
-        valid_types = Union[ast.ExprType, ast.YieldExpr]
+        valid_types = Union[ast.Expr, ast.YieldExpr]
         if (
             isinstance(target, ast.SubNodeList)
             and (isinstance(value, valid_types) or not value)
-            and isinstance(annotation, ast.ExprType)
+            and isinstance(annotation, ast.Expr)
         ):
             return ast.Assignment(
                 target=target,

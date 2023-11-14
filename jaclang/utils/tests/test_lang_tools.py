@@ -13,7 +13,7 @@ class JacFormatPassTests(TestCase):
     def test_pass_template(self) -> None:
         """Basic test for pass."""
         out = AstTool().pass_template()
-        self.assertIn("target: ExprType,", out)
+        self.assertIn("target: Expr,", out)
         self.assertIn("self, node: ast.ReturnStmt", out)
         self.assertIn("exprs: SubNodeList[ExprAsItem],", out)
         self.assertIn("value: str,", out)

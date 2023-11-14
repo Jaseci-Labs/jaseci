@@ -1819,8 +1819,8 @@ class PyastGenPass(Pass):
 
     def gen_func_call(
         self,
-        target: ast.AtomType,
-        params: Optional[ast.SubNodeList[ast.ExprType | ast.Assignment]],
+        target: ast.AtomExpr,
+        params: Optional[ast.SubNodeList[ast.Expr | ast.Assignment]],
     ) -> ast3.Call:
         """Generate a function call."""
         func = target.gen.py_ast
@@ -1838,7 +1838,7 @@ class PyastGenPass(Pass):
                     keywords.append(
                         self.sync(ast3.keyword(value=x.operand.gen.py_ast), x)
                     )
-                elif isinstance(x, ast.ExprType):
+                elif isinstance(x, ast.Expr):
                     args.append(x.gen.py_ast)
                 elif isinstance(x, ast.KWPair):
                     keywords.append(x.gen.py_ast)

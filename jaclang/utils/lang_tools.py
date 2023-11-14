@@ -97,8 +97,18 @@ class AstTool:
                 "AstElseBodyNode",
                 "AstTypedVarNode",
                 "AstImplOnlyNode",
+                "Expr",
+                "AtomExpr",
+                "ElementStmt",
+                "ArchBlockStmt",
+                "EnumBlockStmt",
+                "CodeBlockStmt",
+                "NameSpec",
+                "ArchSpec",
+                "MatchPattern",
             ]
         ]
+
         self.ast_classes = sorted(
             ast_node_classes,
             key=lambda cls: source_code.find(f"class {cls.name}"),

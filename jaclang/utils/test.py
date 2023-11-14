@@ -116,6 +116,15 @@ class AstSyncTestMixin:
                 "ast_else_body_node",
                 "ast_typed_var_node",
                 "ast_impl_only_node",
+                "expr",
+                "atom_expr",
+                "element_stmt",
+                "arch_block_stmt",
+                "enum_block_stmt",
+                "code_block_stmt",
+                "name_spec",
+                "arch_spec",
+                "match_pattern",
             ]
         ]
         pygen_func_names = []
