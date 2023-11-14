@@ -106,7 +106,6 @@ class ImportPass(Pass):
         from jaclang.jac.passes.main import PyastBuildPass
 
         base_dir = path.dirname(mod_path)
-
         sys.path.append(base_dir)
 
         try:

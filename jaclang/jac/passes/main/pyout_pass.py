@@ -7,13 +7,11 @@ relevant files.
 import ast as ast3
 import marshal
 import os
-import traceback
 
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con
 from jaclang.jac.passes import Pass
-from jaclang.utils.helpers import handle_jac_error
 
 
 class PyOutPass(Pass):
@@ -60,12 +58,7 @@ class PyOutPass(Pass):
 
     def compile_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
         """Generate Python."""
-        try:
-            codeobj = compile(source=node.gen.py_ast, filename=mod_path, mode="exec")
-        except Exception as e:
-            tb = traceback.extract_tb(e.__traceback__)
-            err = handle_jac_error(node.gen.py, e, tb)
-            raise type(e)(str(e) + "\n" + err)
+        codeobj = compile(source=node.gen.py_ast, filename=mod_path, mode="exec")
         with open(out_path, "wb") as f:
             marshal.dump(codeobj, f)
 

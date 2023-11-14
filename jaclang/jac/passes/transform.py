@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from jaclang.jac.absyntree import AstNode
+from jaclang.jac.absyntree import AstNode, T
 from jaclang.jac.codeloc import CodeLocInfo
 from jaclang.jac.constant import Constants as Con, Values as Val
 from jaclang.utils.helpers import add_line_numbers, clip_code_section
@@ -75,10 +75,10 @@ class Transform(ABC):
         self.errors_had: list[Alert] = [] if not prior else prior.errors_had
         self.warnings_had: list[Alert] = [] if not prior else prior.warnings_had
         self.cur_node = input_ir  # tracks current node during traversal
-        self.ir = self.transform(ir=input_ir)
+        self.ir: AstNode = self.transform(ir=input_ir)
 
     @abstractmethod
-    def transform(self, ir: AstNode) -> Optional[AstNode]:
+    def transform(self, ir: T) -> T:
         """Transform interface."""
         pass
 
