@@ -32,6 +32,13 @@ walker get_customer {
     stripe.customer_retrieve(customer_id);
 }
 
+walker search_customer {
+    has query = "email:'test12@gmail.com'";
+    can stripe.customer_search;
+
+    stripe.customer_search(query=query);
+}
+
 walker delete_customer {
     has customer_id = "cus_NBsqL1C1GrrHYM";
     can stripe.customer_delete;
