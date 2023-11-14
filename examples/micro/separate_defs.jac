@@ -1,6 +1,6 @@
 """Modified for separate defs/decls."""
 
-object MyObj {
+obj MyObj {
     has:protected a: int;
     can:private init(a: int) -> None;
     can:public set_a(val: int) -> None;

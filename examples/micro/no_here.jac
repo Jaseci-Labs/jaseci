@@ -1,6 +1,6 @@
 """Not focusing on the self is cleaner."""
 
-object MyObj {
+obj MyObj {
     has a: int;
 
     can init(a: int) -> None {

@@ -3,7 +3,7 @@
 import:jac from impl.imps, test_glob as mine;
 include:jac impl.imps;
 
-object Test {
+obj Test {
     can init;
     can say_hi;
 }

@@ -1,4 +1,4 @@
-object Point {
+obj Point {
     has x: flaot, y: float;
 }
 

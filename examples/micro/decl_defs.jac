@@ -12,12 +12,12 @@ can my_print(messag: str) -> str;
 }
 
 # Declaration
-object MyPrinter {
+obj MyPrinter {
     can my_print(messag: str) -> str; # method declaration
 }
 
 # Definition
-:object:MyPrinter:ability:my_print
+:obj:MyPrinter:ability:my_print
 (message: str) -> str {
     output = f"from me: {message}";
     print("from me: {message}");
@@ -33,7 +33,7 @@ can your_print(messag: str) -> str {
 }
 
 # Decl/Def Combined
-object YourPrinter {
+obj YourPrinter {
     can your_print(messag: str) -> str {
         output = f"from me: {message}";
         print("from me: {message}");

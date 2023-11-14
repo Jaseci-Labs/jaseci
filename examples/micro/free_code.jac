@@ -1,6 +1,6 @@
 """Organized free coding at module level."""
 
-object Obj1 {
+obj Obj1 {
     has var: int;
     can init {
         <h>.var = 1;
@@ -11,7 +11,7 @@ object Obj1 {
 #    o1 = spawn Obj1; o1::init;
 # }
 
-object Obj2 {
+obj Obj2 {
     has var: int;
     can init {
         <h>.var = 2;
@@ -22,7 +22,7 @@ object Obj2 {
 #     o2 = spawn Obj2; o2::init;
 # }
 
-object Obj3 {
+obj Obj3 {
     has var: int;
     can init {
         <h>.var = 3;

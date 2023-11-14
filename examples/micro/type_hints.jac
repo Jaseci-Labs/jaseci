@@ -5,7 +5,7 @@ can foo(a: int, b: str) -> int {
     return c;
 }
 
-object Bar {
+obj Bar {
     has a_list: list[int] = [1, 2, 3];
     has b_list: list[str] = ["5", "6", "7"];
 

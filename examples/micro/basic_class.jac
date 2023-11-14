@@ -1,6 +1,6 @@
 """Basic class implementation and spawning example."""
 
-object Person {
+obj Person {
     has:protected age: int;  # no need ot use `_age`
     has:public name: str;
 

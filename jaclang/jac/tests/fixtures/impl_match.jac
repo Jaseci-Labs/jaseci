@@ -1,6 +1,6 @@
 include:jac impl_match_impl;
 
-object Check {
+obj Check {
     can run;
 }
 

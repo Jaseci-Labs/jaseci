@@ -1,6 +1,6 @@
 """A bit more chill approach."""
 
-object Person {
+objrson {
     has age: int, name: str;
 
     can init(name: str, age: int) -> None {

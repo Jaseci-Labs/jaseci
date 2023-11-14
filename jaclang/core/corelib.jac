@@ -12,7 +12,7 @@ include:jac arch_impl;
 
 enum AccessMode;
 
-object Memory {
+obj Memory {
     has index: dict[UUID, Element] = {},
         save_queue: list[Element] = [];
 
@@ -28,7 +28,7 @@ object Memory {
     can get_mem_size -> float;
 }
 
-object ExecutionContext {
+obj ExecutionContext {
     has master: Master = :>uuid4,
         memory: Memory = Memory();
 
@@ -37,9 +37,9 @@ object ExecutionContext {
 }
 
 "Global Execution Context, should be monkey patched by the user."
-global exec_ctx = ExecutionContext();
+glob exec_ctx = ExecutionContext();
 
-object ElementInterface {
+obj ElementInterface {
     has jid: UUID = :>uuid4,
         timestamp: datetime = :>datetime.now,
         persist: bool = False,
@@ -61,7 +61,7 @@ object ElementInterface {
     can revoke_access(caller_id: UUID);
 }
 
-object DataSpatialInterface {
+obj DataSpatialInterface {
     static has ds_entry_funcs: list[dict]=[],
                ds_exit_funcs: list[dict]=[];
 
@@ -69,9 +69,9 @@ object DataSpatialInterface {
     static can on_exit(cls: type, triggers: list[type]);
 }
 
-object ObjectInterface:ElementInterface: {}
+obj ObjectInterface:ElementInterface: {}
 
-object NodeInterface:ObjectInterface: {
+obj NodeInterface:ObjectInterface: {
     has edges: dict[EdgeDir, list[Edge]]
         = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
@@ -79,7 +79,7 @@ object NodeInterface:ObjectInterface: {
     can edges_to_nodes(dir: EdgeDir) -> list[Node];
 }
 
-object EdgeInterface:ObjectInterface: {
+obj EdgeInterface:ObjectInterface: {
     has source: Node = None,
         target: Node = None,
         dir: EdgeDir = None;
@@ -88,7 +88,7 @@ object EdgeInterface:ObjectInterface: {
     can attach(src: Node, trg: Node) -> Edge;
 }
 
-object WalkerInterface:ObjectInterface: {
+obj WalkerInterface:ObjectInterface: {
     has path: list[Node] = [],
         next: list[Node] = [],
         ignores: list[Node] = [],
@@ -99,30 +99,30 @@ object WalkerInterface:ObjectInterface: {
     can disengage_now;
 }
 
-object Element {
+obj Element {
     has _jac_: ElementInterface = ElementInterface();
 }
 
-object Object:Element: {
+obj Object:Element: {
     has _jac_: ObjectInterface = ObjectInterface();
     static has _jac_ds_: DataSpatialInterface = DataSpatialInterface();
 }
 
-object Node:Object: {
+obj Node:Object: {
     has _jac_: NodeInterface = NodeInterface();
     can __call__(walk: Walker);
 }
 
-object Edge:Object: {
+obj Edge:Object: {
     has _jac_: EdgeInterface = EdgeInterface();
     can __call__(walk: Walker);
 }
 
-object Walker:Object: {
+obj Walker:Object: {
     has _jac_: WalkerInterface = WalkerInterface();
     can __call__(nd: Node);
 }
 
-object Master:Element: { has root_node: Node = Node(); }
+obj Master:Element: { has root_node: Node = Node(); }
 
 can make_architype(base_class: type) -> type;

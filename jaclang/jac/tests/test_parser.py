@@ -17,7 +17,7 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_fstring_escape_brace(self) -> None:
         """Test fstring escape brace."""
-        source = JacSource('global a=f"{{}}", not_b=4;', mod_path="")
+        source = JacSource('glob a=f"{{}}", not_b=4;', mod_path="")
         prse = JacParser(input_ir=source)
         self.assertFalse(prse.errors_had)
 

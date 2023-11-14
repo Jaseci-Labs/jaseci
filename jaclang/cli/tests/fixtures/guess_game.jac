@@ -1,7 +1,7 @@
 """A Number Guessing Game"""
 import:py random;
 
-global guesses = [50, 25, 35, 30];
+glob guesses = [50, 25, 35, 30];
 
 walker GuessGame {
     has correct_number: int = 30;

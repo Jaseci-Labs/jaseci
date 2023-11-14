@@ -2,7 +2,7 @@
 
 import:jac from impl.imps, test_glob as mine;
 
-object Test {
+obj Test {
     can init;
     can say_hi;
 }

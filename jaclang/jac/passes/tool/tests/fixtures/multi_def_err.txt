@@ -1,19 +1,19 @@
 Module
 +-- String - """Test for base classes."""
 +-- Architype
-|   +-- Token - object
+|   +-- Token - obj
 |   +-- Name - MyObject
 |   +-- SubNodeList
 |       +-- Token - {
 |       +-- Token - }
 +-- Architype
-|   +-- Token - object
+|   +-- Token - obj
 |   +-- Name - AnotherObject
 |   +-- SubNodeList
 |       +-- Token - {
 |       +-- Token - }
 +-- Architype
-    +-- Token - object
+    +-- Token - obj
     +-- Name - MyObject
     +-- SubNodeList
         +-- Token - {

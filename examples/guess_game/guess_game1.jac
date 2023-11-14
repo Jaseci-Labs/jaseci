@@ -4,7 +4,7 @@ import:py random;
 """
 A generic Game base class.
 """
-object Game {
+obj Game {
     can <init>(attempts: int) {
         <self>.attempts = attempts;
         <self>.won = False;
@@ -18,7 +18,7 @@ object Game {
 """
 A number guessing game. The player must guess a number between 1 and 100.
 """
-object GuessTheNumberGame:Game: {
+obj GuessTheNumberGame:Game: {
     can <init>(attempts: int = 10) {
         <super>.<init>(attempts);
         <self>.correct_number = random.randint(1, 100);

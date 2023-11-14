@@ -12,13 +12,13 @@ import:py math;
     return math.pi * radius * radius;
 }
 
-:object:Circle:ability:<init> (radius: float) {
+:obj:Circle:ability:<init> (radius: float) {
     self.radius = radius;
     <super>.<init>(ShapeType.CIRCLE);
 }
 
 """Overridden method to calculate the area of the circle."""
-:object:Circle:ability:area -> float {
+:obj:Circle:ability:area -> float {
     return math.pi * <self>.radius * <self>.radius;
 }
 

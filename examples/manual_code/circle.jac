@@ -4,8 +4,8 @@ the area of a circle in all of Jac's glory.
 """
 import:py math;
 
-# Module-level global
-global RAD = 5;
+# Module-level glob
+glob RAD = 5;
 
 """Function to calculate the area of a circle."""
 can calculate_area(radius: float) -> float {
@@ -24,15 +24,15 @@ enum ShapeType {
 }
 
 """Base class for a shape."""
-object Shape {
+obj Shape {
     has shape_type: ShapeType;
 
     """Abstract method to calculate the area of a shape."""
-    can area -> float abstract;
+    can area -> float abs;
 }
 
 """Circle class inherits from Shape."""
-object Circle:Shape: {
+obj Circle:Shape: {
     can <init>(radius: float) {
         <super>.<init>(ShapeType.CIRCLE);
         self.radius = radius;
@@ -53,7 +53,7 @@ with entry:__main__ {
 }
 
 # Unit Tests!
-global expected_area = 78.53981633974483;
+glob expected_area = 78.53981633974483;
 test calc_area { check.AlmostEqual(calculate_area(RAD), expected_area); }
 test circle_area { c = Circle(RAD); check.AlmostEqual(c.area(), expected_area); }
 test circle_type { c = Circle(RAD); check.Equal(c.shape_type, ShapeType.CIRCLE); }

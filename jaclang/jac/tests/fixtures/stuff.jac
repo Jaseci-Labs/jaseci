@@ -1,4 +1,4 @@
-global x = 54;
+glob x = 54;
 
 edge path {
     has distance: int = 0;

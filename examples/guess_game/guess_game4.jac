@@ -4,7 +4,7 @@ import:py random;
 """
 A generic Game base class.
 """
-object Game {
+obj Game {
     has attempts: int,
         won: bool = False;
 
@@ -14,7 +14,7 @@ object Game {
 """
 A number guessing game. The player must guess a number between 1 and 100.
 """
-object GuessTheNumberGame:Game: {
+obj GuessTheNumberGame:Game: {
     has attempts: int = 10,
         correct_number: int = (1, 100) |> random.randint;
 
@@ -23,11 +23,11 @@ object GuessTheNumberGame:Game: {
 }
 
 
-:object:Game:ability:play {
+:obj:Game:ability:play {
     raise "Subclasses must implement this method." |> NotImplementedError;
 }
 
-:object:GuessTheNumberGame:ability:play {
+:obj:GuessTheNumberGame:ability:play {
     while self.attempts > 0 {
         guess = "Guess a number between 1 and 100: " |> input;
         if |> guess.isdigit {
@@ -42,7 +42,7 @@ object GuessTheNumberGame:Game: {
     }
 }
 
-:object:GuessTheNumberGame:ability:process_guess(guess: int) {
+:obj:GuessTheNumberGame:ability:process_guess(guess: int) {
     if guess > <self>.correct_number {
         "Too high!" |> print;
     } elif guess < <self>.correct_number {

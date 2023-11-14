@@ -6,31 +6,31 @@
     PRIVATE
 }
 
-:object:ElementInterface:ability:make_public_ro {
+:obj:ElementInterface:ability:make_public_ro {
     <self>.__jinfo.access_mode = AccessMode.READ_ONLY;
 }
 
-:object:ElementInterface:ability:make_public_rw {
+:obj:ElementInterface:ability:make_public_rw {
     <self>.__jinfo.access_mode = AccessMode.READ_WRITE;
 }
 
-:object:ElementInterface:ability:make_private {
+:obj:ElementInterface:ability:make_private {
     <self>.__jinfo.access_mode = AccessMode.PRIVATE;
 }
 
-:object:ElementInterface:ability:is_public_ro -> bool {
+:obj:ElementInterface:ability:is_public_ro -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
-:object:ElementInterface:ability:is_public_rw -> bool {
+:obj:ElementInterface:ability:is_public_rw -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
-:object:ElementInterface:ability:is_private -> bool {
+:obj:ElementInterface:ability:is_private -> bool {
     return <self>.__jinfo.access_mode == AccessMode.PRIVATE;
 }
 
-:object:ElementInterface:ability:is_readable
+:obj:ElementInterface:ability:is_readable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <self>.owner_id
@@ -40,7 +40,7 @@
         );
 }
 
-:object:ElementInterface:ability:is_writable
+:obj:ElementInterface:ability:is_writable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <self>.owner_id
@@ -49,7 +49,7 @@
         );
 }
 
-:object:ElementInterface:ability:give_access
+:obj:ElementInterface:ability:give_access
 (caller_id: UUID, read_write: bool = False) {
     if read_write {
         caller_id |> <self>.rw_access.add;
@@ -59,14 +59,14 @@
     }
 }
 
-:object:ElementInterface:ability:revoke_access
+:obj:ElementInterface:ability:revoke_access
 (caller_id: UUID) {
     caller_id |> <self>.ro_access.discard;
     caller_id |> <self>.rw_access.discard;
 }
 
 
-:object:DataSpatialInterface:ability:on_entry
+:obj:DataSpatialInterface:ability:on_entry
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_entry_funcs.append({'types': triggers, 'func': func});
@@ -78,7 +78,7 @@
     return decorator;
 }
 
-:object:DataSpatialInterface:ability:on_exit
+:obj:DataSpatialInterface:ability:on_exit
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_exit_funcs.append({'types': triggers, 'func': func});

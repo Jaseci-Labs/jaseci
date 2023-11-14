@@ -1,6 +1,6 @@
 """Super simple example of inheritance."""
 
-object Parent {
+obj Parent {
     can init() -> None {
         # Parent initialization
     }
@@ -9,9 +9,9 @@ object Parent {
     }
 }
 
-object Child:Parent: {
+obj Child:Parent: {
     can init() -> None {
         # Child initialization
-        Parent.init();  # Initialize parent, :o: is alias for :object:
+        Parent.init();  # Initialize parent, :o: is alias for :obj
     }
 }

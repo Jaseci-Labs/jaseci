@@ -1,6 +1,6 @@
 """Example of multiple inheritance."""
 
-object Parent {
+obj Parent {
     can init() -> None {
         # Parent initialization
     }
@@ -9,7 +9,7 @@ object Parent {
     }
 }
 
-object Mom:Parent: {
+obj Mom:Parent: {
     can init() -> None {
         # Mom initialization
         Parent.init();
@@ -19,7 +19,7 @@ object Mom:Parent: {
     }
 }
 
-object Dad:Parent: {
+obj Dad:Parent: {
     can init() -> None {
         # Dad initialization
         Parent.init();
@@ -29,7 +29,7 @@ object Dad:Parent: {
     }
 }
 
-object Child:Mom,Dad: { #Child inherits from Mom and Dad
+obj Child:Mom,Dad: { #Child inherits from Mom and Dad
     can init() -> None {
         # Child initialization
         Mom.init();

@@ -3,7 +3,7 @@
 include:jac impl.defs1;
 include:jac impl.defs2;
 
-object MyObject {
+obj MyObject {
 
     can foo();
     can bar();

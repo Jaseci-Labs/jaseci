@@ -1,3 +1,3 @@
-:object:Check:ability:run {
+:obj:Check:ability:run {
     1/0;
 }

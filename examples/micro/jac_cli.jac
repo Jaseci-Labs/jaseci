@@ -10,7 +10,7 @@ import:py cmd;
 import:py from typing, Any, Callable;
 
 
-object Interface {
+obj Interface {
     has functions: list[callable] = [];
 
     can register(func: callable) -> callable;
@@ -19,7 +19,7 @@ object Interface {
     can run_shell;
 }
 
-object ShellCmd:cmd.Cmd: {
+obj ShellCmd:cmd.Cmd: {
     has prompt: str = "> ",
         reg: Interface;
 
@@ -55,13 +55,13 @@ with entry {
 
 #***Implementation***#
 
-:object:Interface:ability:register
+:obj:Interface:ability:register
 (func: callable) -> callable {
     <s>.functions.append(func);
     return func;
 }
 
-:object:Interface:ability:create_parser
+:obj:Interface:ability:create_parser
 () -> ArgumentParser {
     parser = ArgumentParser();
     parser.add_argument("base",
@@ -84,7 +84,7 @@ with entry {
     return parser;
 }
 
-:object:Interface:ability:run_from_cli {
+:obj:Interface:ability:run_from_cli {
     parser = <s>.create_parser();
     args = parser.parse_args();
     for f in <s>.functions {
@@ -96,17 +96,17 @@ with entry {
     func(**func_args);
 }
 
-:object:Interface:ability:run_shell {
+:obj:Interface:ability:run_shell {
     ShellCmd(<self>).cmdloop();
 }
 
-:object:ShellCmd:ability:init
+:obj:ShellCmd:ability:init
 (registry: Interface, *args: list, **kwargs: dict) {
     <s>.cmd.Cmd.__init__(*args, **kwargs);
     <s>.reg = registry;
 }
 
-:object:ShellCmd:ability:default
+:obj:ShellCmd:ability:default
 (line: str) {
     args = line.split();
     parser = <s>.reg.create_parser();
@@ -125,7 +125,7 @@ with entry {
     }
 }
 
-:object:ShellCmd:ability:do_quit
+:obj:ShellCmd:ability:do_quit
 (arg: str) -> bool {
     return True;
 }

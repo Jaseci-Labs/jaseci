@@ -70,7 +70,7 @@
 			"patterns": [
 				{
 					"name": "meta.property.jac",
-					"begin": "(?x)\\b(global)\\b(?=\\s*[[:alpha:]_]\\w*|\\s*\\n)",
+					"begin": "(?x)\\b(glob)\\b(?=\\s*[[:alpha:]_]\\w*|\\s*\\n)",
 					"end": ";",
 					"beginCaptures": {
 						"1": {
@@ -583,11 +583,11 @@
 				},
 				{
 					"name": "storage.modifier.declaration.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    private|protected|public|static|froz|abstract\n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    priv|prot|pub|static|froz|abs\n  )\\b\n"
 				},
 				{
 					"name": "storage.type.class.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    enum | object | node | edge | walker | test\n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    enum | obj | node | edge | walker | test\n  )\\b\n"
 				},
 				{
 					"name": "storage.type.has.jac",
@@ -1269,7 +1269,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(?x)\\s*(enum|object|node|edge|walker|test)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\n))",
+					"begin": "(?x)\\s*(enum|obj|node|edge|walker|test)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\n))",
 					"end": "({|;)",
 					"beginCaptures": {
 						"1": {
@@ -1296,7 +1296,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:enum:|:a:|:ability:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
+					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:enum:|:a:|:ability:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
 					"end": "((?=:| )|;)",
 					"beginCaptures": {
 						"1": {
@@ -1322,7 +1322,7 @@
 		"arch-var-reference": {
 			"patterns": [
 				{
-					"match": "(<h>|<here>|<s>|<self>|<i>|<init>|<super>|<r>|<root>)\\s*",
+					"match": "(<h>|<here>|<s>|<self>|<i>|<init>|<sup>|<super>|<r>|<root>)\\s*",
 					"captures": {
 						"1": {
 							"name": "storage.type.class.jac"
