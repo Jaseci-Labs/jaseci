@@ -7,7 +7,7 @@ represents the first such complete Jac program.
 import:py inspect;
 import:py argparse;
 import:py cmd;
-include:jac impl.cli_impl;
+include:jac cli_impl;
 
 
 object Command {

@@ -5,7 +5,7 @@ represents the first such production Jac program.
 """
 import:jac from cli, cmd_registry as cmd_reg;
 
-include:jac impl.cmds_impl;
+include:jac cmds_impl;
 
 @cmd_reg.register
 can run(filename: str);
