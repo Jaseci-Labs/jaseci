@@ -2630,36 +2630,31 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             # the suffices to the tuple, e.g. a single actual like
             # Tuple[Unpack[Ts], int]
             expanded_tuple = False
+            actual_kinds = [arg_kinds[a] for a in actuals]
             if len(actuals) > 1:
-                first_actual_arg_type = get_proper_type(arg_types[actuals[0]])
+                p_actual_type = get_proper_type(arg_types[actuals[0]])
                 if (
-                    isinstance(first_actual_arg_type, TupleType)
-                    and len(first_actual_arg_type.items) == 1
-                    and isinstance(first_actual_arg_type.items[0], UnpackType)
+                    isinstance(p_actual_type, TupleType)
+                    and len(p_actual_type.items) == 1
+                    and isinstance(p_actual_type.items[0], UnpackType)
+                    and actual_kinds
+                    == [nodes.ARG_STAR] + [nodes.ARG_POS] * (len(actuals) - 1)
                 ):
-                    # TODO: use walrus operator
-                    actual_types = [first_actual_arg_type.items[0]] + [
+                    actual_types = [p_actual_type.items[0]] + [
                         arg_types[a] for a in actuals[1:]
                     ]
-                    actual_kinds = [nodes.ARG_STAR] + [nodes.ARG_POS] * (
-                        len(actuals) - 1
-                    )
-
-                    # If we got here, the callee was previously inferred to have a suffix.
-                    assert isinstance(orig_callee_arg_type, UnpackType)
-                    assert isinstance(
-                        orig_callee_arg_type.type, ProperType
-                    ) and isinstance(orig_callee_arg_type.type, TupleType)
-                    assert orig_callee_arg_type.type.items
-                    callee_arg_types = orig_callee_arg_type.type.items
-                    callee_arg_kinds = [nodes.ARG_STAR] + [nodes.ARG_POS] * (
-                        len(orig_callee_arg_type.type.items) - 1
-                    )
-                    expanded_tuple = True
+                    if isinstance(orig_callee_arg_type, UnpackType):
+                        p_callee_type = get_proper_type(orig_callee_arg_type.type)
+                        if isinstance(p_callee_type, TupleType):
+                            assert p_callee_type.items
+                            callee_arg_types = p_callee_type.items
+                            callee_arg_kinds = [nodes.ARG_STAR] + [nodes.ARG_POS] * (
+                                len(p_callee_type.items) - 1
+                            )
+                            expanded_tuple = True
 
             if not expanded_tuple:
                 actual_types = [arg_types[a] for a in actuals]
-                actual_kinds = [arg_kinds[a] for a in actuals]
                 if isinstance(orig_callee_arg_type, UnpackType):
                     unpacked_type = get_proper_type(orig_callee_arg_type.type)
                     if isinstance(unpacked_type, TupleType):
@@ -5253,7 +5248,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             )
         # For variadic context, the only easy case is when structure matches exactly.
         # TODO: try using tuple type context in more cases.
-        if len([e for e in expr.items if not isinstance(e, StarExpr)]) != 1:
+        if len([e for e in expr.items if isinstance(e, StarExpr)]) != 1:
             return False
         expr_star_index = next(
             i for i, lv in enumerate(expr.items) if isinstance(lv, StarExpr)
@@ -5298,6 +5293,10 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         if type_context_items is not None:
             unpack_in_context = find_unpack_in_list(type_context_items) is not None
         seen_unpack_in_items = False
+        allow_precise_tuples = (
+            unpack_in_context
+            or PRECISE_TUPLE_TYPES in self.chk.options.enable_incomplete_feature
+        )
 
         # Infer item types.  Give up if there's a star expression
         # that's not a Tuple.
@@ -5338,11 +5337,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                         # result in an error later, just do something predictable here.
                         j += len(tt.items)
                 else:
-                    if (
-                        PRECISE_TUPLE_TYPES
-                        in self.chk.options.enable_incomplete_feature
-                        and not seen_unpack_in_items
-                    ):
+                    if allow_precise_tuples and not seen_unpack_in_items:
                         # Handle (x, *y, z), where y is e.g. tuple[Y, ...].
                         if isinstance(tt, Instance) and self.chk.type_is_iterable(tt):
                             item_type = self.chk.iterable_item_type(tt, e)
@@ -5561,7 +5556,8 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         else:
             # Type context available.
             self.chk.return_types.append(inferred_type.ret_type)
-            self.chk.check_func_item(e, type_override=type_override)
+            with self.chk.tscope.function_scope(e):
+                self.chk.check_func_item(e, type_override=type_override)
             if not self.chk.has_type(e.expr()):
                 # TODO: return expression must be accepted before exiting function scope.
                 self.accept(e.expr(), allow_none_return=True)

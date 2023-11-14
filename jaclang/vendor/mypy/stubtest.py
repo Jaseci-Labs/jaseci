@@ -505,6 +505,19 @@ def _verify_metaclass(
 def verify_typeinfo(
     stub: nodes.TypeInfo, runtime: MaybeMissing[type[Any]], object_path: list[str]
 ) -> Iterator[Error]:
+    if stub.is_type_check_only:
+        # This type only exists in stubs, we only check that the runtime part
+        # is missing. Other checks are not required.
+        if not isinstance(runtime, Missing):
+            yield Error(
+                object_path,
+                'is marked as "@type_check_only", but also exists at runtime',
+                stub,
+                runtime,
+                stub_desc=repr(stub),
+            )
+        return
+
     if isinstance(runtime, Missing):
         yield Error(
             object_path,
@@ -1128,6 +1141,7 @@ def verify_var(
 def verify_overloadedfuncdef(
     stub: nodes.OverloadedFuncDef, runtime: MaybeMissing[Any], object_path: list[str]
 ) -> Iterator[Error]:
+    # TODO: support `@type_check_only` decorator
     if isinstance(runtime, Missing):
         yield Error(object_path, "is not present at runtime", stub, runtime)
         return
@@ -1286,6 +1300,12 @@ def _resolve_funcitem_from_decorator(dec: nodes.OverloadPart) -> nodes.FuncItem 
     def apply_decorator_to_funcitem(
         decorator: nodes.Expression, func: nodes.FuncItem
     ) -> nodes.FuncItem | None:
+        if (
+            isinstance(decorator, nodes.CallExpr)
+            and isinstance(decorator.callee, nodes.RefExpr)
+            and decorator.callee.fullname in mypy.types.DEPRECATED_TYPE_NAMES
+        ):
+            return func
         if not isinstance(decorator, nodes.RefExpr):
             return None
         if not decorator.fullname:
@@ -1294,6 +1314,7 @@ def _resolve_funcitem_from_decorator(dec: nodes.OverloadPart) -> nodes.FuncItem 
         if (
             decorator.fullname in ("builtins.staticmethod", "abc.abstractmethod")
             or decorator.fullname in mypy.types.OVERLOAD_NAMES
+            or decorator.fullname in mypy.types.FINAL_DECORATOR_NAMES
         ):
             return func
         if decorator.fullname == "builtins.classmethod":
@@ -1324,6 +1345,19 @@ def _resolve_funcitem_from_decorator(dec: nodes.OverloadPart) -> nodes.FuncItem 
 def verify_decorator(
     stub: nodes.Decorator, runtime: MaybeMissing[Any], object_path: list[str]
 ) -> Iterator[Error]:
+    if stub.func.is_type_check_only:
+        # This function only exists in stubs, we only check that the runtime part
+        # is missing. Other checks are not required.
+        if not isinstance(runtime, Missing):
+            yield Error(
+                object_path,
+                'is marked as "@type_check_only", but also exists at runtime',
+                stub,
+                runtime,
+                stub_desc=repr(stub),
+            )
+        return
+
     if isinstance(runtime, Missing):
         yield Error(object_path, "is not present at runtime", stub, runtime)
         return
@@ -1465,7 +1499,6 @@ IGNORABLE_CLASS_DUNDERS: typing_extensions.Final = frozenset(
         "__annotations__",
         "__text_signature__",
         "__weakref__",
-        "__del__",  # Only ever called when an object is being deleted, who cares?
         "__hash__",
         "__getattr__",  # resulting behaviour might be typed explicitly
         "__setattr__",  # defining this on a class can cause worse type checking

@@ -135,9 +135,7 @@ if sys.version_info >= (3, 10):
         ) -> bool | None: ...
 
 else:
-    class _AsyncGeneratorContextManager(
-        AbstractAsyncContextManager[_T_co], Generic[_T_co]
-    ):
+    class _AsyncGeneratorContextManager(AbstractAsyncContextManager[_T_co]):
         def __init__(
             self,
             func: Callable[..., AsyncIterator[_T_co]],
