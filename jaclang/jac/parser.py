@@ -3426,11 +3426,23 @@ class JacParser(Pass):
         def __default_token__(self, token: jl.Token) -> ast.Token:
             """Token handler."""
             ret_type = ast.Token
-            if token.type in [Tok.NAME, Tok.KWESC_NAME]:
-                ret_type = ast.Name
-                token.value = (
-                    token.value[2:] if token.type == Tok.KWESC_NAME else token.value
+            if token.type == Tok.KWESC_NAME:
+                return self.nu(
+                    ast.Name(
+                        file_path=self.parse_ref.mod_path,
+                        name=token.type,
+                        value=token.value[2:],
+                        line=token.line if token.line is not None else 0,
+                        col_start=token.column if token.column is not None else 0,
+                        col_end=token.end_column if token.end_column is not None else 0,
+                        pos_start=token.start_pos if token.start_pos is not None else 0,
+                        pos_end=token.end_pos if token.end_pos is not None else 0,
+                        is_kwesc=True,
+                        kid=[],
+                    )
                 )
+            elif token.type == Tok.NAME:
+                ret_type = ast.Name
             elif token.type == Tok.SEMI:
                 ret_type = ast.Semi
             elif token.type == Tok.NULL:

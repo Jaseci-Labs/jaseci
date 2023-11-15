@@ -1,5 +1,5 @@
 """Transpilation functions."""
-from typing import Type
+from typing import Optional, Type
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacParser
@@ -30,7 +30,7 @@ def transpile_jac(file_path: str) -> list[Alert]:
 
 def jac_file_to_pass(
     file_path: str,
-    target: Type[Pass] = PyastGenPass,
+    target: Optional[Type[Pass]] = PyastGenPass,
     schedule: list[Type[Pass]] = pass_schedule,
 ) -> Pass:
     """Convert a Jac file to an AST."""
@@ -46,12 +46,31 @@ def jac_file_to_pass(
 def jac_str_to_pass(
     jac_str: str,
     file_path: str,
-    target: Type[Pass] = PyastGenPass,
+    target: Optional[Type[Pass]] = PyastGenPass,
     schedule: list[Type[Pass]] = pass_schedule,
 ) -> Pass:
     """Convert a Jac file to an AST."""
+    if not target:
+        target = schedule[-1]
     source = ast.JacSource(jac_str, mod_path=file_path)
     ast_ret: Pass = JacParser(input_ir=source)
+    for i in schedule:
+        if i == target:
+            break
+        ast_ret = i(input_ir=ast_ret.ir, prior=ast_ret)
+    ast_ret = target(input_ir=ast_ret.ir, prior=ast_ret)
+    return ast_ret
+
+
+def jac_pass_to_pass(
+    in_pass: Pass,
+    target: Optional[Type[Pass]] = PyastGenPass,
+    schedule: list[Type[Pass]] = pass_schedule,
+) -> Pass:
+    """Convert a Jac file to an AST."""
+    if not target:
+        target = schedule[-1]
+    ast_ret = in_pass
     for i in schedule:
         if i == target:
             break

@@ -546,8 +546,6 @@ class JacFormatPass(Pass):
                         fun_signature = f"can {node.name_ref.var.value}{node.signature.gen.jac}"  # noqa
                 else:
                     func_name = node.name_ref.sym_name
-                    if func_name == "test":
-                        func_name = "<>test"
                     if access_modifier:
                         fun_signature = f"can:{access_modifier} {func_name}{node.signature.gen.jac}"  # noqa
                     else:
@@ -1337,10 +1335,7 @@ class JacFormatPass(Pass):
         value: ExprType,
         """
         for i in node.kid:
-            if isinstance(i, ast.Name) and i.gen.jac == "type":
-                self.emit(node, f"<>{i.gen.jac}")
-            else:
-                self.emit(node, i.gen.jac)
+            self.emit(node, i.gen.jac)
 
     def exit_k_w_pair(self, node: ast.KWPair) -> None:
         """Sub objects.
@@ -1717,8 +1712,9 @@ class JacFormatPass(Pass):
         col_start: int,
         col_end: int,
         already_declared: bool,
+        is_kwesc: bool,
         """
-        self.emit(node, node.value)
+        self.emit(node, f"<>{node.value}" if node.is_kwesc else node.value)
 
     def enter_float(self, node: ast.Float) -> None:
         """Sub objects.
