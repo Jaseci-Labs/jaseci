@@ -105,7 +105,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(?x)\\b(enum|object|node|edge|walker|test)\\b(?=\\s+[[:alpha:]_]\\w*|\\s*({|;|\\n))",
+					"begin": "(?x)\\b(enum|obj|node|edge|walker|test)\\b(?=\\s+[[:alpha:]_]\\w*|\\s*({|;|\\n))",
 					"end": "(?={)|;",
 					"beginCaptures": {
 						"1": {
@@ -140,7 +140,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:enum:|:a:|:ability:)",
+					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:enum:|:a:|:ability:)",
 					"end": "(?=:|{|\\W)",
 					"beginCaptures": {
 						"1": {
