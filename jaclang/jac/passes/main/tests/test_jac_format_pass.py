@@ -1,13 +1,10 @@
 """Test ast build pass module."""
 
-# import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.main import JacFormatPass
 from jaclang.jac.passes.main import PyastGenPass
 from jaclang.jac.passes.main.schedules import py_code_gen as without_format
 from jaclang.jac.transpiler import jac_file_to_pass, jac_str_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
-
-# from jaclang.utils.helpers import add_line_numbers
 
 
 class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
@@ -59,12 +56,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                     code_gen_pure.ir.gen.py.split("\n")[i],
                     code_gen_jac.ir.gen.py.split("\n")[i],
                 )
-            except Exception as e:
-                # if isinstance(code_gen_pure.ir, ast.Module):
-                #     print(add_line_numbers(code_gen_pure.ir.source.code))
-                # else:
-                #     print("WTF")
-                # print(add_line_numbers(code_gen_format.ir.gen.jac))
+            except AssertionError as e:
                 self.skipTest(
                     f"{e} Test failed, but skipping instead of failing since data spatial lib not in yet."
                 )
