@@ -222,6 +222,7 @@ class PyastGenPass(Pass):
                 type_ignores=[],
             )
         )
+        node.gen.py = ast3.unparse(node.gen.py_ast)
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
