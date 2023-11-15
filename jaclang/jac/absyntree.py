@@ -1925,9 +1925,11 @@ class Name(Token, NameSpec):
         pos_end: int,
         kid: Sequence[AstNode],
         is_enum_singleton: bool = False,
+        is_kwesc: bool = False,
     ) -> None:
         """Initialize token."""
         self.is_enum_singleton = is_enum_singleton
+        self.is_kwesc = is_kwesc
         Token.__init__(
             self,
             file_path=file_path,
