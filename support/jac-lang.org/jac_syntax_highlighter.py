@@ -329,7 +329,7 @@ class JacLexer(RegexLexer):
                         "await",
                         "priv",
                         "pub",
-                        "prot",
+                        "protect",
                         "has",
                     ),
                     suffix=r"\b",

@@ -488,7 +488,7 @@ KW_IN: "in"
 KW_IS: "is"
 KW_PRIV: "priv"
 KW_PUB: "pub"
-KW_PROT: "prot"
+KW_PROT: "protect"
 KW_HAS: "has"
 KW_GLOBAL: "glob"
 KW_CAN: "can"
@@ -510,13 +510,14 @@ CARROW_R_P2: /]\+>/
 CARROW_L_P2: /]\+/
 CARROW_R_P1: /\+\[/
 
-GLOBAL_OP: /:g:|:global:/
-NONLOCAL_OP: /:nl:|:nonlocal:/
 HERE_OP: /<h>|<here>/
 SELF_OP: /<s>|<self>/
 INIT_OP: /<i>|<init>/
 SUPER_OP: /<sup>|<super>/
 ROOT_OP: /<r>|<root>/
+
+GLOBAL_OP: /:g:|:global:/
+NONLOCAL_OP: /:nl:|:nonlocal:/
 WALKER_OP: /:w:|:walker:/
 NODE_OP: /:n:|:node:/
 EDGE_OP: /:e:|:edge:/

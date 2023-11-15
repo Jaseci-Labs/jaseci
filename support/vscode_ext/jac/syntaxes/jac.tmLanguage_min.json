@@ -91,7 +91,7 @@
 			"patterns": [
 				{
 					"name": "storage.modifier.jac",
-					"match": "\\b(priv|prot|pub|has)\\b"
+					"match": "\\b(priv|protect|pub|has)\\b"
 				},
 				{
 					"match": "\\b(str|int|float|list|tuple|set|dict|bool|bytes|any|type)\\b",
