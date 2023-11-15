@@ -6,7 +6,6 @@ This is a pass for formatting Jac code.
 from typing import Any, List, Tuple
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac import constant
 from jaclang.jac.constant import Constants as Con
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
@@ -1214,18 +1213,8 @@ class JacFormatPass(Pass):
         filter_cond: Optional[ExprType],
         edge_dir: EdgeDir,
         """
-        edge_dir_map = {
-            constant.EdgeDir.IN: "<--",
-            constant.EdgeDir.OUT: "-->",
-            constant.EdgeDir.ANY: "<-->",
-        }
-
-        edge_op_string = edge_dir_map.get(node.edge_dir)
-
-        if edge_op_string:
-            self.emit(node, edge_op_string)
-        else:
-            print(f"Unknown edge direction: {node.edge_dir}")
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
 
     def exit_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
@@ -1368,21 +1357,24 @@ class JacFormatPass(Pass):
 
         compares: list[BinaryExpr],
         """
-        self.ds_feature_warn()
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
 
     def exit_assign_compr(self, node: ast.AssignCompr) -> None:
         """Sub objects.
 
         compares: list[BinaryExpr],
         """
-        self.ds_feature_warn()
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
 
     def exit_await_expr(self, node: ast.AwaitExpr) -> None:
         """Sub objects.
 
         target: ExprType,
         """
-        self.ds_feature_warn()
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
 
     def exit_revisit_stmt(self, node: ast.RevisitStmt) -> None:
         """Sub objects.
@@ -1390,7 +1382,8 @@ class JacFormatPass(Pass):
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
-        self.ds_feature_warn()
+        for i in node.kid:
+            self.emit(node, i.gen.jac)
 
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
@@ -1498,7 +1491,10 @@ class JacFormatPass(Pass):
 
         expr: ExprType,
         """
-        self.ds_feature_warn()
+        if node.expr:
+            self.emit_ln(node, f"report {node.expr.gen.jac};")
+        else:
+            self.emit_ln(node, "report;")
 
     def exit_expr_as_item(self, node: ast.ExprAsItem) -> None:
         """Sub objects.
