@@ -1,4 +1,4 @@
-import openai
+from openai import OpenAI
 from os import environ, unlink
 from datetime import datetime
 from requests import get
@@ -8,7 +8,8 @@ from .utils import extract_text_from_file, get_embeddings, generate_chunks
 from jaseci.jsorc.live_actions import jaseci_action
 from elasticsearch import Elasticsearch, NotFoundError
 
-CLIENT = None
+OAI_CLIENT = None
+ES_CLIENT = None
 CONFIG = {
     "elastic": {
         "url": environ.get("ELASTICSEARCH_URL", "http://localhost:9200"),
@@ -48,15 +49,9 @@ CONFIG = {
             },
         },
     },
-    "openai": {
-        "key": openai.api_key,
-        "type": openai.api_type,
-        "base": openai.api_base,
-        "version": openai.api_version,
-        "embedding": {
-            "deployment_id": environ.get("OPENAI_EMBEDDING_DEPLOYMENT_ID"),
-            "model": environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"),
-        },
+    "openai": {"api_key": environ.get("OPENAI_API_KEY")},
+    "openai_embedding": {
+        "model": environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"),
     },
     "chunk_config": {
         "chunk_size": int(environ.get("CHUNK_SIZE", "200")),
@@ -70,20 +65,15 @@ CONFIG = {
 
 @jaseci_action(act_group=["es_ret"], allow_remote=True)
 def setup(config: dict = CONFIG, rebuild: bool = False, reindex_template: bool = False):
-    global CONFIG, CLIENT
+    global CONFIG, ES_CLIENT, OAI_CLIENT
     CONFIG = config
 
     if rebuild:
-        CLIENT = None
+        ES_CLIENT = None
+        OAI_CLIENT = None
 
     if reindex_template:
         reapply_index_template()
-
-    openai_config = CONFIG["openai"]
-    openai.api_key = openai_config.get("key") or openai.api_key
-    openai.api_type = openai_config.get("type") or openai.api_type
-    openai.api_base = openai_config.get("base") or openai.api_base
-    openai.api_version = openai_config.get("version") or openai.api_version
 
 
 @jaseci_action(act_group=["es_ret"], allow_remote=True)
@@ -133,7 +123,7 @@ def upsert(index: str, data: dict, reset: bool = False, refresh=None, meta: dict
     ops_t = []
     for docs in [doc_a[x : x + bs] for x in range(0, len(doc_a), bs)]:
         for i, emb in enumerate(
-            get_embeddings([doc["text"] for doc in docs], CONFIG["openai"])
+            get_embeddings([doc["text"] for doc in docs], *openai())
         ):
             docs[i]["embedding"] = emb
             docs[i]["created_time"] = int(
@@ -171,7 +161,10 @@ def query(index: str, data: list):
     searches = []
     for queries in [data[x : x + bs] for x in range(0, len(data), bs)]:
         for i, emb in enumerate(
-            get_embeddings([query["query"] for query in queries], CONFIG["openai"])
+            get_embeddings(
+                [query["query"] for query in queries],
+                *openai(),
+            )
         ):
             top = queries[i].get("top") or 3
             query = {
@@ -222,9 +215,19 @@ def reapply_index_template():
     )
 
 
+def openai() -> OpenAI:
+    global CONFIG, OAI_CLIENT
+    if not OAI_CLIENT:
+        try:
+            OAI_CLIENT = OpenAI(**CONFIG["openai"])
+        except Exception as e:
+            raise e
+    return OAI_CLIENT, CONFIG["openai_embedding"]
+
+
 def elastic() -> Elasticsearch:
-    global CONFIG, CLIENT
-    if not CLIENT:
+    global CONFIG, ES_CLIENT
+    if not ES_CLIENT:
         config = CONFIG.get("elastic")
         try:
             client = Elasticsearch(
@@ -233,7 +236,7 @@ def elastic() -> Elasticsearch:
                 request_timeout=config.get("request_timeout"),
             )
             client.info()
-            CLIENT = client
+            ES_CLIENT = client
         except Exception as e:
             raise e
-    return CLIENT
+    return ES_CLIENT
