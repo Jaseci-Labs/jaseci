@@ -1,4 +1,5 @@
 """Test ast build pass module."""
+import ast as ast3
 
 from jaclang.jac.passes.main import JacFormatPass
 from jaclang.jac.passes.main import PyastGenPass
@@ -51,15 +52,10 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         for i in range(len(code_gen_pure.ir.gen.py.split("\n"))):
             if "test_" in code_gen_pure.ir.gen.py.split("\n")[i]:
                 continue
-            try:
-                self.assertEqual(
-                    code_gen_pure.ir.gen.py.split("\n")[i],
-                    code_gen_jac.ir.gen.py.split("\n")[i],
-                )
-            except AssertionError as e:
-                self.skipTest(
-                    f"{e} Test failed, but skipping instead of failing since data spatial lib not in yet."
-                )
+            self.assertEqual(
+                ast3.dump(code_gen_pure.ir.gen.py_ast, indent=2),
+                ast3.dump(code_gen_jac.ir.gen.py_ast, indent=2),
+            )
 
 
 JacFormatPassTests.self_attach_micro_tests()

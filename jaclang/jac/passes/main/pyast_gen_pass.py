@@ -268,7 +268,7 @@ class PyastGenPass(Pass):
                 ),
                 body=self.resolve_stmt_block(node.body),
                 decorator_list=[],
-                returns=None,
+                returns=self.sync(ast3.Constant(value=None)),
                 type_comment=None,
             ),
         )
@@ -664,7 +664,7 @@ class PyastGenPass(Pass):
                 decorator_list=decorator_list,
                 returns=node.signature.return_type.gen.py_ast
                 if node.signature and node.signature.return_type
-                else None,
+                else self.sync(ast3.Constant(value=None)),
             )
         )
 
@@ -684,6 +684,9 @@ class PyastGenPass(Pass):
                 args=node.signature.gen.py_ast if node.signature else [],
                 body=body,
                 decorator_list=node.decorators.gen.py_ast if node.decorators else [],
+                returns=node.signature.return_type.gen.py_ast
+                if node.signature and node.signature.return_type
+                else self.sync(ast3.Constant(value=None)),
             )
         )
 
