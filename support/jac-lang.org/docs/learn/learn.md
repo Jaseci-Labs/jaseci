@@ -21,7 +21,7 @@ rm test.jac;"
 If that command prints `hello world`, Jac is working.
 
 Ok now lets jump into learning Jac!
-## Modules in Jac
+## A Complete Example
 
 We start this journey top down. Lets look at a simple but complete program in python and the Jac version.
 
