@@ -2,9 +2,6 @@
 
 This is a pass for formatting Jac code.
 """
-
-from typing import Any  # , List, Tuple
-
 import jaclang.jac.absyntree as ast
 from jaclang.jac.constant import Constants as Con
 from jaclang.jac.constant import Tokens as Tok
@@ -14,24 +11,12 @@ from jaclang.jac.passes import Pass
 class JacFormatPass(Pass):
     """JacFormat Pass format Jac code."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa  # noqa
-        """Initialize Formatter."""
-        self.comments = []
-        self.processed_comments = set()
-
-        super().__init__(*args, **kwargs)
-
     def before_pass(self) -> None:
         """Initialize pass."""
+        self.comments: list[ast.CommentToken] = []
+        self.processed_comments = set()
         self.indent_size = 4
         self.indent_level = 0
-        self.debuginfo = {"jac_mods": []}
-
-    def enter_node(self, node: ast.AstNode) -> None:
-        """Enter node."""
-        if node:
-            node.gen.jac = ""
-        return Pass.enter_node(self, node)
 
     def indent_str(self) -> str:
         """Return string for indent."""
@@ -48,13 +33,58 @@ class JacFormatPass(Pass):
         self.emit(node, s.strip().strip("\n"))
         self.emit(node, "\n")
 
-    def emit_ln_unique(self, node: ast.AstNode, s: str) -> None:
-        """Emit code to node."""
-        if s not in node.gen.jac:
-            ilev = self.indent_level
-            self.indent_level = 0
-            self.emit_ln(node, s)
-            self.indent_level = ilev
+    def enter_module(self, node: ast.Module) -> None:
+        """Sub objects.
+
+        name: str,
+        source: JacSource,
+        doc: Optional[String],
+        body: Sequence[ElementStmt],
+        is_imported: bool,
+        """
+        self.comments = node.source.comments
+
+    def exit_module(self, node: ast.Module) -> None:
+        """Sub objects.
+
+        name: str,
+        source: JacSource,
+        doc: Optional[String],
+        body: Sequence[ElementStmt],
+        is_imported: bool,
+        """
+        if node.doc:
+            self.emit_ln(node, node.doc.value)
+            self.emit_ln(node, "")
+        if node.body:
+            for i in node.body:
+                self.emit(node, i.gen.jac)
+        self.ir = node
+        self.ir.gen.jac = self.ir.gen.jac.rstrip()
+
+    def exit_global_vars(self, node: ast.GlobalVars) -> None:
+        """Sub objects.
+
+        access: Optional[SubTag[Token]],
+        assignments: SubNodeList[Assignment],
+        is_frozen: bool,
+        doc: Optional[String] = None,
+        """
+        comment_str = ""
+        if node.doc:
+            self.emit_ln(node, node.doc.value)
+        for i in node.kid:
+            if isinstance(i, ast.String):
+                continue
+            elif isinstance(i, ast.Token):
+                if i.name == "SEMI":
+                    self.emit_ln(node, i.value + " " + comment_str)
+                    self.processed_comments.add(comment_str)
+                else:
+                    self.emit(node, i.value + " ")
+            elif isinstance(i, ast.SubNodeList):
+                self.emit(node, node.assignments.gen.jac)
+        self.emit_ln(node, "")
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.
@@ -75,32 +105,6 @@ class JacFormatPass(Pass):
 
         if node.body:
             self.emit(node, node.body.gen.jac)
-
-    def enter_module(self, node: ast.Module) -> None:
-        """Sub objects.
-
-        name: Optional[SubTag[Name]],
-        body: SubNodeList[CodeBlockStmt],
-        doc: Optional[Constant] = None,
-        """
-        if node.source.comments:
-            self.comments = node.source.comments
-
-    def exit_module(self, node: ast.Module) -> None:
-        """Sub objects.
-
-        name: str,
-        doc: Token,
-        body: "Elements",
-        """
-        if node.doc:
-            self.emit_ln(node, node.doc.value)
-            self.emit_ln(node, "")
-        if node.body:
-            for i in node.body:
-                self.emit(node, i.gen.jac)
-        self.ir = node
-        self.ir.gen.jac = self.ir.gen.jac.rstrip()
 
     def exit_sub_node_list(self, node: ast.SubNodeList) -> None:
         """Sub objects.
@@ -624,15 +628,6 @@ class JacFormatPass(Pass):
             else:
                 self.emit(node, f" {i.gen.jac}")
 
-    def get_mod_index(self, node: ast.AstNode) -> int:
-        """Get module index."""
-        path = node.loc.mod_path
-        if not path:
-            return -1
-        if path not in self.debuginfo["jac_mods"]:
-            self.debuginfo["jac_mods"].append(path)
-        return self.debuginfo["jac_mods"].index(path)
-
     def comma_sep_node_list(self, node: ast.SubNodeList) -> str:
         """Render comma separated node list."""
         node.gen.jac = ", ".join([i.gen.jac for i in node.items])
@@ -782,30 +777,6 @@ class JacFormatPass(Pass):
         self.emit(node, f"with {node.exprs.gen.jac}")
         if node.body.gen.jac:
             self.emit(node, node.body.gen.jac)
-
-    def exit_global_vars(self, node: ast.GlobalVars) -> None:
-        """Sub objects.
-
-        access: Optional[SubTag[Token]],
-        assignments: SubNodeList[Assignment],
-        is_frozen: bool,
-        doc: Optional[Constant] = None,
-        """
-        comment_str = ""
-        if node.doc:
-            self.emit_ln(node, node.doc.value)
-        for i in node.kid:
-            if isinstance(i, ast.String):
-                continue
-            elif isinstance(i, ast.Token):
-                if i.name == "SEMI":
-                    self.emit_ln(node, i.value + " " + comment_str)
-                    self.processed_comments.add(comment_str)
-                else:
-                    self.emit(node, i.value + " ")
-            elif isinstance(i, ast.SubNodeList):
-                self.emit(node, node.assignments.gen.jac)
-        self.emit_ln(node, "")
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
