@@ -28,29 +28,36 @@ class FuseCommentsPass(Pass):
 
     def after_pass(self) -> None:
         """Insert comment tokens into all_tokens."""
-        marker = 0
+        chomp: list[ast.CommentToken] = [*self.comments]
         new_tokens: list[ast.Token] = []
+        if not len(chomp):
+            return
         for i in range(len(self.all_tokens)):
-            new_tokens.append(self.all_tokens[i])
-            if i >= len(self.all_tokens) - 1:
+            chomp[0].is_inline = chomp[0].is_inline or (
+                self.all_tokens[i].loc.first_line == chomp[0].loc.first_line
+            )
+            # print(chomp[0].is_inline)
+            if i == len(self.all_tokens) - 1:
+                if len(chomp):
+                    new_tokens.append(self.all_tokens[i])
+                    new_tokens += chomp
                 break
-            if marker >= len(self.comments):
-                new_tokens.extend(self.all_tokens[i + 1 :])
-                break
-            elif (
-                self.all_tokens[i].loc.first_line
-                <= self.comments[marker].loc.first_line
-                or self.all_tokens[i].loc.col_start
-                <= self.comments[marker].loc.col_start
-            ) and (
-                self.all_tokens[i + 1].loc.last_line
-                >= self.comments[marker].loc.last_line
-                or self.all_tokens[i + 1].loc.col_end
-                >= self.comments[marker].loc.col_end
+            while (i < len(self.all_tokens) - 1) and (
+                (
+                    self.all_tokens[i].loc.first_line == chomp[0].loc.first_line
+                    and self.all_tokens[i].loc.col_start > chomp[0].loc.col_start
+                )
+                or (self.all_tokens[i].loc.first_line > chomp[0].loc.first_line)
             ):
-                new_tokens.append(self.comments[marker])
-                marker += 1
-
+                # print(chomp[0].is_inline)
+                new_tokens.append(chomp[0])
+                chomp = chomp[1:]
+                if not len(chomp):
+                    new_tokens.extend(self.all_tokens[i + 1 :])
+                    break
+            new_tokens.append(self.all_tokens[i])
+            if not len(chomp):
+                break
         for i in range(len(new_tokens)):
             if isinstance(new_tokens[i], ast.CommentToken):
                 if i == 0:
@@ -59,7 +66,8 @@ class FuseCommentsPass(Pass):
                 new_val = new_tokens[i - 1]
                 if new_val.parent is not None:
                     new_kids = new_val.parent.kid
-                    new_kids.insert(new_kids.index(new_val), new_tokens[i])
+                    new_kids.insert(new_kids.index(new_val) + 1, new_tokens[i])
                     new_val.parent.set_kids(new_kids)
                 else:
+                    new_val.print()
                     raise self.ice("Token without parent in AST should be impossible")

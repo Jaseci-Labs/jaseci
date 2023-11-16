@@ -2152,6 +2152,31 @@ class Semi(Token, CodeBlockStmt):
 class CommentToken(Token):
     """CommentToken node type for Jac Ast."""
 
+    def __init__(
+        self,
+        file_path: str,
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        kid: Sequence[AstNode],
+        is_inline: bool = False,
+    ) -> None:
+        """Initialize token."""
+        self.file_path = file_path
+        self.name = name
+        self.value = value
+        self.line_no = line
+        self.c_start = col_start
+        self.c_end = col_end
+        self.pos_start = pos_start
+        self.pos_end = pos_end
+        self.is_inline = is_inline
+        AstNode.__init__(self, kid=kid)
+
 
 # ----------------
 class JacSource(EmptyToken):
