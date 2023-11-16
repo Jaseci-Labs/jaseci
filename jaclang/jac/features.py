@@ -106,7 +106,7 @@ class JacFeatureDefaults:
                 if isinstance(attr_value, func_types) and not attr_name.startswith(
                     "__"
                 ):
-                    new_method_name = f"{arch_type[0]}_{cls.__name__}_a_{attr_name}"
+                    new_method_name = f"{arch_type[0]}_{cls.__name__}_c_{attr_name}"  # TODO: Generalize me
                     cls_module_globals = inspect.getmodule(cls).__dict__
                     # Check if a function with the new name exists in the global scope
                     if new_method_name in cls_module_globals:

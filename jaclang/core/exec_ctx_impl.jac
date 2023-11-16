@@ -1,7 +1,7 @@
 """Implementation for Jac's Element Abstractions"""
 import:py from uuid, UUID, uuid4;
 
-:obj:ExecutionContext:a:get_root
+:obj:ExecutionContext:c:get_root
 () {
     if <self>.master :> type == UUID {
         <self>.master = Master();
@@ -9,6 +9,6 @@ import:py from uuid, UUID, uuid4;
     return <self>.master.root_node;
 }
 
-:obj:ExecutionContext:a:reset {
+:obj:ExecutionContext:c:reset {
     <self>.<init>();
 }

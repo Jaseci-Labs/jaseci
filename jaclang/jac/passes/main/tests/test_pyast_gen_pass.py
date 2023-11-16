@@ -3,7 +3,8 @@ import ast as ast3
 import io
 import sys
 
-from jaclang.jac.passes.main import PyastGenPass
+import jaclang.jac.absyntree as ast
+from jaclang.jac.passes.main import PyastGenPass, SubNodeTabPass
 from jaclang.jac.transpiler import jac_file_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
@@ -89,6 +90,17 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
         self.assertFalse(code_gen.errors_had)
 
+    def parent_scrub(self, node: ast.AstNode) -> bool:
+        """Validate every node has parent."""
+        success = True
+        for i in node.kid:
+            if not isinstance(i, ast.Module) and i.parent is None:
+                success = False
+                break
+            else:
+                success = self.parent_scrub(i)
+        return success
+
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         code_gen = jac_file_to_pass(
@@ -117,7 +129,41 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             print(
                 f"\n{filename} - AST node length diff: {len(ast_to_list(from_jac))} vs {len(ast_to_list(from_py))}"
             )
+        self.assertTrue(self.parent_scrub(code_gen.ir))
         self.assertGreater(len(from_jac_str), 10)
 
 
 PyastGenPassTests.self_attach_micro_tests()
+
+
+class ValidateTreeParentTest(TestCaseMicroSuite):
+    """Test pass module."""
+
+    def setUp(self) -> None:
+        """Set up test."""
+        return super().setUp()
+
+    def parent_scrub(self, node: ast.AstNode) -> bool:
+        """Validate every node has parent."""
+        success = True
+        for i in node.kid:
+            if not isinstance(i, ast.Module) and i.parent is None:
+                success = False
+                break
+            else:
+                success = self.parent_scrub(i)
+        return success
+
+    def micro_suite_test(self, filename: str) -> None:
+        """Parse micro jac file."""
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path(filename), target=SubNodeTabPass
+        )
+        self.assertTrue(self.parent_scrub(code_gen.ir))
+        code_gen = jac_file_to_pass(
+            self.fixture_abs_path(filename), target=PyastGenPass
+        )
+        self.assertTrue(self.parent_scrub(code_gen.ir))
+
+
+ValidateTreeParentTest.self_attach_micro_tests()

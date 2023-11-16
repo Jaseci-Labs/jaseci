@@ -7,22 +7,22 @@ import:py math;
 }
 
 """Function to calculate the area of a circle."""
-:ability:calculate_area
+:can:calculate_area
 (radius: float) -> float {
     return math.pi * radius * radius;
 }
 
-:obj:Circle:ability:<init> (radius: float) {
+:obj:Circle:can:<init> (radius: float) {
     self.radius = radius;
     <super>.<init>(ShapeType.CIRCLE);
 }
 
 """Overridden method to calculate the area of the circle."""
-:obj:Circle:ability:area -> float {
+:obj:Circle:can:area -> float {
     return math.pi * <self>.radius * <self>.radius;
 }
 
-:ability:main_run {
+:can:main_run {
     print(f"Area of a circle with radius {RAD} using function: {calculate_area(RAD)}");
     print(f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}");
 }

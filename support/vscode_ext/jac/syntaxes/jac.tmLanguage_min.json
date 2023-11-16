@@ -106,7 +106,7 @@
 					"name": "storage.type.class.jac"
 				},
 				{
-					"match": "(\\b(can|test)\\b)|:a:|:ability:",
+					"match": "(\\b(can|test)\\b)|:c:|:can:",
 					"name": "storage.type.function.jac"
 				},
 				{

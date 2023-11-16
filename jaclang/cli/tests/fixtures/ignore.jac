@@ -13,14 +13,14 @@ node turn {
 }
 
 
-:walker:GuessGame:ability:start_game {
+:walker:GuessGame:can:start_game {
     for i=0 to i<10 by i+=1 {
         <here> ++> :> turn;
     }
     visit -->;
 }
 
-:walker:GuessGame2:ability:start_game {
+:walker:GuessGame2:can:start_game {
     for i=0 to i<10 by i+=1 {
         <here> ++> :> turn;
     }
@@ -30,7 +30,7 @@ node turn {
     visit -->;
 }
 
-:node:turn:ability:check {
+:node:turn:can:check {
     print("here", end=", ");
 }
 

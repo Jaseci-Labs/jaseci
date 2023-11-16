@@ -6,31 +6,31 @@
     PRIVATE
 }
 
-:obj:ElementInterface:ability:make_public_ro {
+:obj:ElementInterface:can:make_public_ro {
     <self>.__jinfo.access_mode = AccessMode.READ_ONLY;
 }
 
-:obj:ElementInterface:ability:make_public_rw {
+:obj:ElementInterface:can:make_public_rw {
     <self>.__jinfo.access_mode = AccessMode.READ_WRITE;
 }
 
-:obj:ElementInterface:ability:make_private {
+:obj:ElementInterface:can:make_private {
     <self>.__jinfo.access_mode = AccessMode.PRIVATE;
 }
 
-:obj:ElementInterface:ability:is_public_ro -> bool {
+:obj:ElementInterface:can:is_public_ro -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
-:obj:ElementInterface:ability:is_public_rw -> bool {
+:obj:ElementInterface:can:is_public_rw -> bool {
     return <self>.__jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
-:obj:ElementInterface:ability:is_private -> bool {
+:obj:ElementInterface:can:is_private -> bool {
     return <self>.__jinfo.access_mode == AccessMode.PRIVATE;
 }
 
-:obj:ElementInterface:ability:is_readable
+:obj:ElementInterface:can:is_readable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <self>.owner_id
@@ -40,7 +40,7 @@
         );
 }
 
-:obj:ElementInterface:ability:is_writable
+:obj:ElementInterface:can:is_writable
 (caller_id: UUID) -> bool {
     return (
             caller_id == <self>.owner_id
@@ -49,7 +49,7 @@
         );
 }
 
-:obj:ElementInterface:ability:give_access
+:obj:ElementInterface:can:give_access
 (caller_id: UUID, read_write: bool = False) {
     if read_write {
         caller_id |> <self>.rw_access.add;
@@ -59,14 +59,14 @@
     }
 }
 
-:obj:ElementInterface:ability:revoke_access
+:obj:ElementInterface:can:revoke_access
 (caller_id: UUID) {
     caller_id |> <self>.ro_access.discard;
     caller_id |> <self>.rw_access.discard;
 }
 
 
-:obj:DataSpatialInterface:ability:on_entry
+:obj:DataSpatialInterface:can:on_entry
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_entry_funcs.append({'types': triggers, 'func': func});
@@ -78,7 +78,7 @@
     return decorator;
 }
 
-:obj:DataSpatialInterface:ability:on_exit
+:obj:DataSpatialInterface:can:on_exit
 (cls: type, triggers: list) {
     can decorator(func: callable) -> callable {
         cls.ds_exit_funcs.append({'types': triggers, 'func': func});
@@ -90,7 +90,7 @@
     return decorator;
 }
 
-:ability:make_architype(base_class: type) -> type {
+:can:make_architype(base_class: type) -> type {
     can class_decorator(cls: type) -> type {
         # Check if cls is a subclass of base_class
         if not issubclass(cls, base_class) {

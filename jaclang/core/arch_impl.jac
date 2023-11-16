@@ -2,13 +2,13 @@
 import:py from jaclang.jac.constant, EdgeDir;
 
 
-:obj:NodeInterface:ability:connect_node
+:obj:NodeInterface:can:connect_node
 (nd: Node, edg: Edge) -> Node {
     (<self>.py_obj, nd) :> edg.attach;
     return <self>;
 }
 
-:obj:NodeInterface:ability:edges_to_nodes
+:obj:NodeInterface:can:edges_to_nodes
 (dir: EdgeDir) -> list[Node] {
     ret_nodes = [];
     if dir in [EdgeDir.OUT, EdgeDir.ANY] {
@@ -23,13 +23,13 @@ import:py from jaclang.jac.constant, EdgeDir;
     return ret_nodes;
 }
 
-:obj:EdgeInterface:ability:apply_dir
+:obj:EdgeInterface:can:apply_dir
 (dir: EdgeDir) -> Edge {
     <self>.dir = dir;
     return <self>;
 }
 
-:obj:EdgeInterface:ability:attach
+:obj:EdgeInterface:can:attach
 (src: Node, trg: Node) -> Edge {
     if <self>.dir == EdgeDir.IN {
         <self>.source = trg;
@@ -46,7 +46,7 @@ import:py from jaclang.jac.constant, EdgeDir;
     return <self>;
 }
 
-:obj:WalkerInterface:ability:visit_node
+:obj:WalkerInterface:can:visit_node
 (nds: list[Node]|list[Edge]|Node|Edge) {
     if isinstance(nds, list) {
         for i in nds {
@@ -56,7 +56,7 @@ import:py from jaclang.jac.constant, EdgeDir;
     return len(nds) if isinstance(nds, list) else 1;
 }
 
-:obj:WalkerInterface:ability:ignore_node
+:obj:WalkerInterface:can:ignore_node
 (nds: list[Node]|list[Edge]|Node|Edge) {
     if isinstance(nds, list) {
         for i in nds {
@@ -65,13 +65,13 @@ import:py from jaclang.jac.constant, EdgeDir;
     } else { nds :> <self>.ignores.append; }
 }
 
-:obj:WalkerInterface:ability:disengage_now {
+:obj:WalkerInterface:can:disengage_now {
     <self>.next = [];
     <self>.disengaged = True;
 }
 
 
-:obj:Node:ability:__call__
+:obj:Node:can:__call__
 (walk: Walker) {
     if not (walk, Walker) :> isinstance {
         raise ("Argument must be a Walker instance") :> TypeError;
@@ -80,7 +80,7 @@ import:py from jaclang.jac.constant, EdgeDir;
 }
 
 
-:obj:Edge:ability:__call__
+:obj:Edge:can:__call__
 (walk: Walker) {
     if not (walk, Walker) :> isinstance {
         raise ("Argument must be a Walker instance") :> TypeError;
@@ -88,7 +88,7 @@ import:py from jaclang.jac.constant, EdgeDir;
     <self>._jac_.target :> walk;
 }
 
-:obj:Walker:ability:__call__
+:obj:Walker:can:__call__
 (nd: Node) {
     <self>._jac_.path = [];
     <self>._jac_.next = [nd];

@@ -6,7 +6,7 @@ can plan {
     print("Hello, world!");
     say_hi("I'm a ninja Myca!");
 
-    :ability:say_hi
+    :can:say_hi
     (m: str) {
         print(m);
     }
