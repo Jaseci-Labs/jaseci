@@ -1,9 +1,11 @@
 """Test ast build pass module."""
 import ast as ast3
 
-from jaclang.jac.passes.main import JacFormatPass
+
 from jaclang.jac.passes.main import PyastGenPass
 from jaclang.jac.passes.main.schedules import py_code_gen as without_format
+from jaclang.jac.passes.tool.schedules import format_pass
+from jaclang.jac.passes.tool import JacFormatPass
 from jaclang.jac.transpiler import jac_file_to_pass, jac_str_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
@@ -38,7 +40,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-        with_format = [JacFormatPass]
+        with_format = format_pass
         code_gen_format = jac_file_to_pass(
             self.fixture_abs_path(filename), schedule=with_format
         )

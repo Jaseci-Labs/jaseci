@@ -1793,3 +1793,7 @@ class JacFormatPass(Pass):
     def exit_semi(self, node: ast.Semi) -> None:
         """Sub objects."""
         self.emit(node, node.value)
+
+    def exit_comment_token(self, node: ast.CommentToken) -> None:
+        """Sub objects."""
+    

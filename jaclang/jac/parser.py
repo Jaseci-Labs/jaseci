@@ -30,10 +30,11 @@ class JacParser(Pass):
     def transform(self, ir: ast.AstNode) -> ast.AstNode:
         """Transform input IR."""
         try:
-            tree, self.source.comments = JacParser.parse(
+            tree, comments = JacParser.parse(
                 self.source.value, on_error=self.error_callback
             )
             mod: ast.AstNode = JacParser.TreeToAST(parser=self).transform(tree)
+            self.source.comments = [self.proc_comment(i, mod) for i in comments]
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
@@ -46,6 +47,21 @@ class JacParser(Pass):
             mod = self.source
             self.error(f"Internal Error: {e}")
         return mod
+
+    @staticmethod
+    def proc_comment(token: jl.Token, mod: ast.AstNode) -> ast.CommentToken:
+        """Process comment."""
+        return ast.CommentToken(
+            file_path=mod.loc.mod_path,
+            name=token.type,
+            value=token.value,
+            line=token.line if token.line is not None else 0,
+            col_start=token.column if token.column is not None else 0,
+            col_end=token.end_column if token.end_column is not None else 0,
+            pos_start=token.start_pos if token.start_pos is not None else 0,
+            pos_end=token.end_pos if token.end_pos is not None else 0,
+            kid=[],
+        )
 
     def error_callback(self, e: jl.UnexpectedInput) -> bool:
         """Handle error."""

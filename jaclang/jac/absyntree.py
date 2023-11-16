@@ -2149,6 +2149,10 @@ class Semi(Token, CodeBlockStmt):
     """Semicolon node type for Jac Ast."""
 
 
+class CommentToken(Token):
+    """CommentToken node type for Jac Ast."""
+
+
 # ----------------
 class JacSource(EmptyToken):
     """SourceString node type for Jac Ast."""
@@ -2158,7 +2162,7 @@ class JacSource(EmptyToken):
         super().__init__()
         self.value = source
         self.file_path = mod_path
-        self.comments: list[jl.Token] = []
+        self.comments: list[CommentToken] = []
 
     @property
     def code(self) -> str:
