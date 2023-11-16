@@ -33,6 +33,28 @@ class JacFormatPass(Pass):
         self.emit(node, s.strip().strip("\n"))
         self.emit(node, "\n")
 
+    def comma_sep_node_list(self, node: ast.SubNodeList) -> str:
+        """Render comma separated node list."""
+        node.gen.jac = ", ".join([i.gen.jac for i in node.items])
+        return node.gen.jac
+
+    def dot_sep_node_list(self, node: ast.SubNodeList) -> str:
+        """Render dot separated node list."""
+        node.gen.jac = ".".join([i.gen.jac for i in node.items])
+        return node.gen.jac
+
+    def nl_sep_node_list(self, node: ast.SubNodeList) -> str:
+        """Render newline separated node list."""
+        node.gen.jac = ""
+        for i in node.items:
+            node.gen.jac += f"{i.gen.jac}\n"
+        return node.gen.jac
+
+    def sep_node_list(self, node: ast.SubNodeList, delim: str = " ") -> str:
+        """Render newline separated node list."""
+        node.gen.jac = f"{delim}".join([i.gen.jac for i in node.items])
+        return node.gen.jac
+
     def enter_module(self, node: ast.Module) -> None:
         """Sub objects.
 
@@ -56,11 +78,9 @@ class JacFormatPass(Pass):
         if node.doc:
             self.emit_ln(node, node.doc.value)
             self.emit_ln(node, "")
-        if node.body:
-            for i in node.body:
-                self.emit(node, i.gen.jac)
-        self.ir = node
-        self.ir.gen.jac = self.ir.gen.jac.rstrip()
+        for i in node.body:
+            self.emit_ln(node, i.gen.jac)
+            self.emit_ln(node, "")
 
     def exit_global_vars(self, node: ast.GlobalVars) -> None:
         """Sub objects.
@@ -628,32 +648,6 @@ class JacFormatPass(Pass):
             else:
                 self.emit(node, f" {i.gen.jac}")
 
-    def comma_sep_node_list(self, node: ast.SubNodeList) -> str:
-        """Render comma separated node list."""
-        node.gen.jac = ", ".join([i.gen.jac for i in node.items])
-        return node.gen.jac
-
-    def dot_sep_node_list(self, node: ast.SubNodeList) -> str:
-        """Render dot separated node list."""
-        node.gen.jac = ".".join([i.gen.jac for i in node.items])
-        return node.gen.jac
-
-    def nl_sep_node_list(self, node: ast.SubNodeList) -> str:
-        """Render newline separated node list."""
-        node.gen.jac = ""
-        for i in node.items:
-            node.gen.jac += f"{i.gen.jac}\n"
-        return node.gen.jac
-
-    def sep_node_list(self, node: ast.SubNodeList, delim: str = " ") -> str:
-        """Render newline separated node list."""
-        node.gen.jac = f"{delim}".join([i.gen.jac for i in node.items])
-        return node.gen.jac
-
-    def ds_feature_warn(self) -> None:
-        """Warn about feature."""
-        self.warning("Data spatial features not supported in bootstrap Jac.")
-
     def exit_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
 
@@ -1179,11 +1173,7 @@ class JacFormatPass(Pass):
         ctrl: Token,
         """
         comment_str = ""
-
-        if node.ctrl.name == Tok.KW_SKIP:
-            self.ds_feature_warn()
-        else:
-            self.emit(node, node.ctrl.value)
+        self.emit(node, node.ctrl.value)
         if isinstance(node.kid[-1], ast.Token) and node.kid[-1].name == "SEMI":
             self.emit_ln(node, node.kid[-1].value + " " + comment_str)
             self.processed_comments.add(comment_str)
@@ -1277,7 +1267,6 @@ class JacFormatPass(Pass):
         type_ctx: TypeList,
         body: CodeBlock,
         """
-        self.ds_feature_warn()
 
     def exit_match_stmt(self, node: ast.MatchStmt) -> None:
         """Sub objects.
