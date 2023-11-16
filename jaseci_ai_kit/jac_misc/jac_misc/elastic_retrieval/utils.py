@@ -1,8 +1,8 @@
-import openai
 import tiktoken
 import docx2txt
 import csv
 import pptx
+from openai import OpenAI
 from pypdf import PdfReader
 from magic import from_buffer
 from tenacity import retry, wait_random_exponential, stop_after_attempt
@@ -11,18 +11,11 @@ tokenizer = tiktoken.get_encoding("cl100k_base")
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
-def get_embeddings(texts: list, config: dict):
-    embedding = config["embedding"]
-    deployment = embedding.get("deployment_id")
-
-    kwargs = {"input": texts}
-
-    if deployment:
-        kwargs["deployment_id"] = deployment
-    else:
-        kwargs["model"] = embedding.get("model")
-
-    return [result["embedding"] for result in openai.Embedding.create(**kwargs)["data"]]
+def get_embeddings(texts: list, oai_client: OpenAI, config: dict = {}):
+    return [
+        result.embedding
+        for result in oai_client.embeddings.create(input=texts, **config).data
+    ]
 
 
 def extract_text_from_file(file) -> str:
