@@ -1080,7 +1080,7 @@ class JacParser(Pass):
                     kid=kid,
                 )
             elif isinstance(kid[0], ast.CodeBlockStmt):
-                kid[0].add_kids_right([kid[1]], pos_update=False)
+                kid[0].add_kids_right([kid[1]])
                 return self.nu(kid[0])
             else:
                 raise self.ice()

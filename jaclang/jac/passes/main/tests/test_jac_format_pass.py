@@ -4,8 +4,8 @@ import ast as ast3
 
 from jaclang.jac.passes.main import PyastGenPass
 from jaclang.jac.passes.main.schedules import py_code_gen as without_format
-from jaclang.jac.passes.tool.schedules import format_pass
 from jaclang.jac.passes.tool import JacFormatPass
+from jaclang.jac.passes.tool.schedules import format_pass
 from jaclang.jac.transpiler import jac_file_to_pass, jac_str_to_pass
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
@@ -54,10 +54,17 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         for i in range(len(code_gen_pure.ir.gen.py.split("\n"))):
             if "test_" in code_gen_pure.ir.gen.py.split("\n")[i]:
                 continue
-            self.assertEqual(
-                ast3.dump(code_gen_pure.ir.gen.py_ast, indent=2),
-                ast3.dump(code_gen_jac.ir.gen.py_ast, indent=2),
-            )
+            try:
+                self.assertEqual(
+                    ast3.dump(code_gen_pure.ir.gen.py_ast, indent=2),
+                    ast3.dump(code_gen_jac.ir.gen.py_ast, indent=2),
+                )
+            except Exception as e:
+                from jaclang.utils.helpers import add_line_numbers
+
+                print(add_line_numbers(code_gen_pure.ir.source.code))
+                print(add_line_numbers(code_gen_format.ir.gen.jac))
+                raise e
 
 
 JacFormatPassTests.self_attach_micro_tests()

@@ -26,8 +26,6 @@ class JacFormatPass(Pass):
         self.indent_size = 4
         self.indent_level = 0
         self.debuginfo = {"jac_mods": []}
-        self.preamble = ast.EmptyToken()
-        self.preamble.gen.jac = ""
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Enter node."""
@@ -98,8 +96,6 @@ class JacFormatPass(Pass):
         if node.doc:
             self.emit_ln(node, node.doc.value)
             self.emit_ln(node, "")
-        if self.preamble:
-            self.emit(node, self.preamble.gen.jac)
         if node.body:
             for i in node.body:
                 self.emit(node, i.gen.jac)
@@ -172,7 +168,6 @@ class JacFormatPass(Pass):
         target: AtomType,
         params: Optional[ParamList],
         """
-        comment_str = ""
         if node.params:
             self.comma_sep_node_list(node.params)
             self.emit(
@@ -430,7 +425,6 @@ class JacFormatPass(Pass):
         vars: "HasVarList",
         is_frozen: bool,
         """
-
         for i in node.kid:
             if isinstance(i, ast.SubTag):
                 for j in i.kid:
@@ -660,19 +654,6 @@ class JacFormatPass(Pass):
         """Render newline separated node list."""
         node.gen.jac = f"{delim}".join([i.gen.jac for i in node.items])
         return node.gen.jac
-
-    def needs_jac_import(self) -> None:
-        """Check if import is needed."""
-        self.emit_ln_unique(
-            self.preamble, "from jaclang import jac_import as __jac_import__"
-        )
-
-    def needs_enum(self) -> None:
-        """Check if enum is needed."""
-        self.emit_ln_unique(
-            self.preamble,
-            "from enum import Enum as __jac_Enum__, auto as __jac_auto__",
-        )
 
     def ds_feature_warn(self) -> None:
         """Warn about feature."""
