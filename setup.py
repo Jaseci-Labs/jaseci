@@ -2,7 +2,7 @@
 
 from setuptools import find_packages, setup  # type: ignore
 
-VERSION = "0.2.2"
+VERSION = "0.2.3"
 
 setup(
     name="jaclang",
