@@ -23,11 +23,11 @@ obj GuessTheNumberGame:Game: {
 }
 
 
-:obj:Game:ability:play {
+:obj:Game:can:play {
     raise "Subclasses must implement this method." |> NotImplementedError;
 }
 
-:obj:GuessTheNumberGame:ability:play {
+:obj:GuessTheNumberGame:can:play {
     while self.attempts > 0 {
         guess = "Guess a number between 1 and 100: " |> input;
         if |> guess.isdigit {
@@ -42,7 +42,7 @@ obj GuessTheNumberGame:Game: {
     }
 }
 
-:obj:GuessTheNumberGame:ability:process_guess(guess: int) {
+:obj:GuessTheNumberGame:can:process_guess(guess: int) {
     if guess > <self>.correct_number {
         "Too high!" |> print;
     } elif guess < <self>.correct_number {

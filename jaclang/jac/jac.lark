@@ -524,7 +524,7 @@ EDGE_OP: /:e:|:edge:/
 OBJECT_OP: /:o:|:obj:/
 TYPE_OP: /:t:|:type:/
 ENUM_OP: /:enum:/
-ABILITY_OP: /:a:|:ability:/
+ABILITY_OP: /:c:|:can:/
 A_PIPE_FWD: /:>/
 A_PIPE_BKWD: /<:/
 PIPE_FWD: /\|>/

@@ -5,7 +5,7 @@ import:py unittest;
 import:py from jaclang.jac.constant, Constants as C;
 
 """Load a .jac file and return the entrypoint function."""
-:a:run
+:c:run
 (filename: str) {
     if filename.endswith(".jac"){
         [base, mod] = os.path.split(filename);
@@ -18,7 +18,7 @@ import:py from jaclang.jac.constant, Constants as C;
 }
 
 """Run the entrypoint of the given .jac file."""
-:a:enter
+:c:enter
 (filename: str, entrypoint: str, args: list) {
     if filename.endswith(".jac") {
         [base, mod] = os.path.split(filename);
@@ -38,7 +38,7 @@ import:py from jaclang.jac.constant, Constants as C;
 }
 
 """Load a .jac file and return the entrypoint function."""
-:a:<>test
+:c:<>test
 (filename: str) {
     if filename.endswith(".jac"){
         [base, mod] = os.path.split(filename);
@@ -51,7 +51,7 @@ import:py from jaclang.jac.constant, Constants as C;
     }
 }
 
-:a:ast_tool
+:c:ast_tool
 (tool: str, args: list) {
     import:py from jaclang.utils.lang_tools, AstTool;
     if(hasattr(AstTool, tool)) {
@@ -67,7 +67,7 @@ import:py from jaclang.jac.constant, Constants as C;
 }
 
 """Remove the __jac_gen__ , __pycache__ folders from the current directory recursevely."""
-:a:clean {
+:c:clean {
     current_dir = os.getcwd();
     py_cache = "__pycache__";
     for (root, dirs, files) in os.walk(current_dir, topdown=True) {

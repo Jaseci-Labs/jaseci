@@ -2,10 +2,10 @@
 
 glob test_glob = 56;
 
-:o:Test:a:init {
+:o:Test:c:init {
     "initializing" |> print;
 }
 
-:o:Test:a:say_hi {
+:o:Test:c:say_hi {
     "HI!" |> print;
 }

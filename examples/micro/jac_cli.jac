@@ -55,13 +55,13 @@ with entry {
 
 #***Implementation***#
 
-:obj:Interface:ability:register
+:obj:Interface:can:register
 (func: callable) -> callable {
     <s>.functions.append(func);
     return func;
 }
 
-:obj:Interface:ability:create_parser
+:obj:Interface:can:create_parser
 () -> ArgumentParser {
     parser = ArgumentParser();
     parser.add_argument("base",
@@ -84,7 +84,7 @@ with entry {
     return parser;
 }
 
-:obj:Interface:ability:run_from_cli {
+:obj:Interface:can:run_from_cli {
     parser = <s>.create_parser();
     args = parser.parse_args();
     for f in <s>.functions {
@@ -96,17 +96,17 @@ with entry {
     func(**func_args);
 }
 
-:obj:Interface:ability:run_shell {
+:obj:Interface:can:run_shell {
     ShellCmd(<self>).cmdloop();
 }
 
-:obj:ShellCmd:ability:init
+:obj:ShellCmd:can:init
 (registry: Interface, *args: list, **kwargs: dict) {
     <s>.cmd.Cmd.__init__(*args, **kwargs);
     <s>.reg = registry;
 }
 
-:obj:ShellCmd:ability:default
+:obj:ShellCmd:can:default
 (line: str) {
     args = line.split();
     parser = <s>.reg.create_parser();
@@ -125,7 +125,7 @@ with entry {
     }
 }
 
-:obj:ShellCmd:ability:do_quit
+:obj:ShellCmd:can:do_quit
 (arg: str) -> bool {
     return True;
 }

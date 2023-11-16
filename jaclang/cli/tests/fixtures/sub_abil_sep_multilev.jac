@@ -9,7 +9,7 @@ can plan {
 
 }
 
-:a:plan:a:say_hi
+:c:plan:c:say_hi
 (m: str) {
     print(m);
 }

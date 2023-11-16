@@ -4,7 +4,7 @@
 can my_print(messag: str) -> str;
 
 # Definitions
-:ability:my_print
+:can:my_print
 (message: str) -> str {
     output = f"from me: {message}";
     print("from me: {message}");
@@ -17,7 +17,7 @@ obj MyPrinter {
 }
 
 # Definition
-:obj:MyPrinter:ability:my_print
+:obj:MyPrinter:can:my_print
 (message: str) -> str {
     output = f"from me: {message}";
     print("from me: {message}");

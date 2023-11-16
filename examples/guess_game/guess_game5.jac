@@ -11,7 +11,7 @@ node turn {
     can check with GuessGame entry;
 }
 
-:node:turn:ability:check {
+:node:turn:can:check {
     guess = "Guess a number between 1 and 100: " |> input;
     if |> guess.isdigit {
         guess |> int |> <here>.process_guess;
@@ -21,7 +21,7 @@ node turn {
     visit -->;
 }
 
-:walker:GuessGame:ability:start_game {
+:walker:GuessGame:can:start_game {
     end = <here>;
     for i=0 to i<10 by i+=1 {
         end ++> end := :> turn;
@@ -29,7 +29,7 @@ node turn {
     visit -->;
 }
 
-:walker:GuessGame:ability:process_guess(guess: int) {
+:walker:GuessGame:can:process_guess(guess: int) {
     if guess > <self>.correct_number {
         "Too high!" |> print;
     } elif guess < <self>.correct_number {

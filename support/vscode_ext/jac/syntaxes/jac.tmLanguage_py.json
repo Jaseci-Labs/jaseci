@@ -1022,7 +1022,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.python",
-					"begin": "(:g:|:global:|:h:|:here:|:v:|:visitor:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:a:|:ability:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
+					"begin": "(:g:|:global:|:h:|:here:|:v:|:visitor:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:object:|:c:|:can:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
 					"end": "((?=:| )|;)",
 					"beginCaptures": {
 						"1": {

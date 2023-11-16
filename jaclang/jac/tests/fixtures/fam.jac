@@ -62,6 +62,6 @@ walker tourist {
 }
 
 
-:walker:tourist:ability:outside_func {
+:walker:tourist:can:outside_func {
 
 }

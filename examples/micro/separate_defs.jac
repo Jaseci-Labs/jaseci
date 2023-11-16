@@ -6,10 +6,10 @@ obj MyObj {
     can:public set_a(val: int) -> None;
 }
 
-:o:MyObj:a:init {
+:o:MyObj:c:init {
         <h>.a = a;
 }
 
-:o:MyObj:a:set_a {
+:o:MyObj:c:set_a {
         <h>.a = val;
 }

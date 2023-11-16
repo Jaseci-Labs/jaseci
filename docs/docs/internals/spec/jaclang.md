@@ -114,7 +114,7 @@ walker travelor {  # define a new walker
     can say_hello;
 }
 
-:walker:travelor:ability:say_hello {
+:walker:travelor:can:say_hello {
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
@@ -155,12 +155,12 @@ walker travelor {
 
 `defs.jac`
 ```jac
-:walker:travelor:ability:say_hello {
+:walker:travelor:can:say_hello {
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
-# :w: and :a: are aliases for :walker: and :ability:
-:w:travelor:a:say_whatever(msg: str) {
+# :w: and :c: are aliases for :walker: and :can:
+:w:travelor:c:say_whatever(msg: str) {
     msg |> print;
 }
 ```
@@ -331,11 +331,11 @@ object MyObj {
     pub: can set_a(val: int) -> None;
 }
 
-:o:MyObj:a:init {
+:o:MyObj:c:init {
         here.a = a;
 }
 
-:o:MyObj:a:set_a {
+:o:MyObj:c:set_a {
         here.a = val;
 }
 ```
@@ -1124,7 +1124,7 @@ can calculate_avg with float {
 ```
 In this example, the ability `calculate_avg` is designed to calculate the average of an array and return a float value. Note that it does not take parameters but uses `here` to reference the object it is currently residing on. This freestyle ability expects the object it's being spawned on to have a field named `array`.
 
-To invoke the freestyle ability, pipe forward is used to indicate shipping the ability to the data. The syntax is `:a:<freestyle ability_name> |> <object/data>`.
+To invoke the freestyle ability, pipe forward is used to indicate shipping the ability to the data. The syntax is `:c:<freestyle ability_name> |> <object/data>`.
 
 Consider the following object:
 
@@ -1139,7 +1139,7 @@ global obj = spawn :o:MyObj;
 Invoking the freestyle ability on this object would look as follows:
 
 ```jac
-avg = :a:calculate_avg |> obj;
+avg = :c:calculate_avg |> obj;
 ```
 
 The `calculate_avg` freestyle ability is sent to the `obj` object. The freestyle ability then accesses the fields of the object using the `here` reference, processes them, and returns the result which is assigned to `avg`.
@@ -1147,7 +1147,7 @@ The `calculate_avg` freestyle ability is sent to the `obj` object. The freestyle
 Note that a spawn context can be used here as well,
 
 ```jac
-avg = :a:calculate_av |> {array = [1, 2, 3, 4, 5]};
+avg = :c:calculate_av |> {array = [1, 2, 3, 4, 5]};
 ```
 
 #### Introducing Duct Typing
@@ -1215,8 +1215,8 @@ can get_age with int {
 }
 
 with entry {
-    :a:get_age |> dict1; # returns 30
-    :a:get_age |> person1; # returns 30
+    :c:get_age |> dict1; # returns 30
+    :c:get_age |> person1; # returns 30
 }
 ```
 
