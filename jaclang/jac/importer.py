@@ -78,7 +78,7 @@ def jac_import(
     else:
         sys.modules[module_name] = module
 
+    module.__name__ = override_name if override_name else module.__name__
     exec(codeobj, module.__dict__)
-    # module.__name__ = override_name if override_name else module.__name__
 
     return module

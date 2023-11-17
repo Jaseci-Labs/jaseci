@@ -84,7 +84,7 @@ class JacParser(Pass):
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
     JacTransformer = jl.Transformer[jl.Tree[str], ast.AstNode]
 
-    class TreeToAST(JacTransformer):  # type: ignore
+    class TreeToAST(JacTransformer):
         """Transform parse tree to AST."""
 
         def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:
