@@ -8,7 +8,7 @@ import:jac from cli, cmd_registry as cmd_reg;
 include:jac cmds_impl;
 
 @cmd_reg.register
-can run(filename: str);
+can run(filename: str, main: bool = False);
 
 @cmd_reg.register
 can enter(filename: str, entrypoint: str, args: list);

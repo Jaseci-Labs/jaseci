@@ -208,6 +208,10 @@ class NameSpec(AtomExpr, EnumBlockStmt):
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode):
     """ArchSpec node type for Jac Ast."""
 
+    def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
+        """Initialize walker statement only node."""
+        self.decorators = decorators
+
 
 class MatchPattern(AstNode):
     """MatchPattern node type for Jac Ast."""
@@ -252,7 +256,7 @@ class Module(AstDocNode):
         name: str,
         source: JacSource,
         doc: Optional[String],
-        body: Sequence[ElementStmt],
+        body: Sequence[ElementStmt | String],
         is_imported: bool,
         kid: Sequence[AstNode],
     ) -> None:
@@ -443,7 +447,6 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
         """Initialize object arch node."""
         self.name = name
         self.arch_type = arch_type
-        self.decorators = decorators
         self.base_classes = base_classes
         self.body = body
         AstNode.__init__(self, kid=kid)
@@ -463,6 +466,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt):
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        ArchSpec.__init__(self, decorators=decorators)
 
 
 class ArchDef(ArchSpec, AstImplOnlyNode):
@@ -478,7 +482,6 @@ class ArchDef(ArchSpec, AstImplOnlyNode):
         decl_link: Optional[Architype] = None,
     ) -> None:
         """Initialize arch def node."""
-        self.decorators = decorators
         self.target = target
         self.body = body
         self.decl_link = decl_link
@@ -490,6 +493,7 @@ class ArchDef(ArchSpec, AstImplOnlyNode):
             sym_type=SymbolType.IMPL,
         )
         AstDocNode.__init__(self, doc=doc)
+        ArchSpec.__init__(self, decorators=decorators)
 
 
 class Enum(ArchSpec, AstAccessNode):
@@ -507,7 +511,6 @@ class Enum(ArchSpec, AstAccessNode):
     ) -> None:
         """Initialize object arch node."""
         self.name = name
-        self.decorators = decorators
         self.base_classes = base_classes
         self.body = body
         AstNode.__init__(self, kid=kid)
@@ -519,6 +522,7 @@ class Enum(ArchSpec, AstAccessNode):
         )
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        ArchSpec.__init__(self, decorators=decorators)
 
 
 class EnumDef(ArchSpec, AstImplOnlyNode):
@@ -536,7 +540,6 @@ class EnumDef(ArchSpec, AstImplOnlyNode):
         """Initialize arch def node."""
         self.target = target
         self.body = body
-        self.decorators = decorators
         self.decl_link = decl_link
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -546,6 +549,7 @@ class EnumDef(ArchSpec, AstImplOnlyNode):
             sym_type=SymbolType.IMPL,
         )
         AstDocNode.__init__(self, doc=doc)
+        ArchSpec.__init__(self, decorators=decorators)
 
 
 class Ability(
@@ -1162,7 +1166,7 @@ class GlobalStmt(CodeBlockStmt):
         AstNode.__init__(self, kid=kid)
 
 
-class NonLocalStmt(CodeBlockStmt):
+class NonLocalStmt(GlobalStmt):
     """NonlocalStmt node type for Jac Ast."""
 
 

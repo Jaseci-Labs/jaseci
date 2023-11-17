@@ -33,7 +33,7 @@ class JacParser(Pass):
             tree, comments = JacParser.parse(
                 self.source.value, on_error=self.error_callback
             )
-            mod: ast.AstNode = JacParser.TreeToAST(parser=self).transform(tree)
+            mod = JacParser.TreeToAST(parser=self).transform(tree)
             self.source.comments = [self.proc_comment(i, mod) for i in comments]
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
@@ -100,7 +100,7 @@ class JacParser(Pass):
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
     JacTransformer = jl.Transformer[jl.Tree[str], ast.AstNode]
 
-    class TreeToAST(JacTransformer):  # type: ignore
+    class TreeToAST(JacTransformer):
         """Transform parse tree to AST."""
 
         def __init__(self, parser: JacParser, *args: bool, **kwargs: bool) -> None:
@@ -626,10 +626,11 @@ class JacParser(Pass):
                     kid[0].is_enum_singleton = True
                     return self.nu(kid[0])
                 elif isinstance(kid[2], ast.Expr):
-                    kid[0] = ast.SubNodeList[ast.AtomExpr](items=[kid[0]], kid=[kid[0]])
+                    targ = ast.SubNodeList[ast.Expr](items=[kid[0]], kid=[kid[0]])
+                    kid[0] = targ
                     return self.nu(
                         ast.Assignment(
-                            target=kid[0],
+                            target=targ,
                             value=kid[2],
                             type_tag=None,
                             kid=kid,
@@ -859,8 +860,10 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.ArchBlockStmt):
                 return self.nu(kid[0])
-            elif isinstance(kid[1], ast.ArchBlockStmt) and isinstance(
-                kid[0], ast.String
+            elif (
+                isinstance(kid[1], ast.ArchBlockStmt)
+                and isinstance(kid[1], ast.AstDocNode)
+                and isinstance(kid[0], ast.String)
             ):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
@@ -913,9 +916,10 @@ class JacParser(Pass):
                 consume = kid[0]
                 comma = kid[1]
                 assign = kid[2]
+                new_kid = [*consume.kid, comma, assign]
             else:
                 assign = kid[0]
-            new_kid = [*consume.kid, comma, assign] if consume else [assign]
+                new_kid = [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
             return self.nu(
                 ast.SubNodeList[ast.HasVar](
@@ -1106,14 +1110,14 @@ class JacParser(Pass):
 
             if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
             """
-            else_type = Union[ast.ElseIf, ast.ElseStmt]
             if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
                 return self.nu(
                     ast.IfStmt(
                         condition=kid[1],
                         body=kid[2],
                         else_body=kid[3]
-                        if len(kid) > 3 and isinstance(kid[3], else_type)
+                        if len(kid) > 3
+                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
                         else None,
                         kid=kid,
                     )
@@ -1126,14 +1130,14 @@ class JacParser(Pass):
 
             elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
             """
-            else_type = Union[ast.ElseIf, ast.ElseStmt]
             if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
                 return self.nu(
                     ast.ElseIf(
                         condition=kid[1],
                         body=kid[2],
                         else_body=kid[3]
-                        if len(kid) > 3 and isinstance(kid[3], else_type)
+                        if len(kid) > 3
+                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
                         else None,
                         kid=kid,
                     )
@@ -1396,13 +1400,13 @@ class JacParser(Pass):
             """
             condition = kid[1]
             error_msg = kid[3] if len(kid) > 3 else None
-            if isinstance(condition, ast.Expr) and (
-                isinstance(error_msg, ast.Expr) or not error_msg
-            ):
+            if isinstance(condition, ast.Expr):
                 return self.nu(
                     ast.AssertStmt(
                         condition=condition,
-                        error_msg=error_msg,
+                        error_msg=error_msg
+                        if isinstance(error_msg, ast.Expr)
+                        else None,
                         kid=kid,
                     )
                 )
@@ -1457,18 +1461,15 @@ class JacParser(Pass):
         def return_stmt(self, kid: list[ast.AstNode]) -> ast.ReturnStmt:
             """Grammar rule.
 
-            return_stmt: KW_RETURN self.nu(expression?
+            return_stmt: KW_RETURN expression?
             """
             if len(kid) > 1:
-                if isinstance(kid[1], ast.Expr) or not kid[1]:
-                    return self.nu(
-                        ast.ReturnStmt(
-                            expr=kid[1],
-                            kid=kid,
-                        )
+                return self.nu(
+                    ast.ReturnStmt(
+                        expr=kid[1] if isinstance(kid[1], ast.Expr) else None,
+                        kid=kid,
                     )
-                else:
-                    raise self.ice()
+                )
             else:
                 return self.nu(
                     ast.ReturnStmt(
@@ -1626,10 +1627,9 @@ class JacParser(Pass):
                 and chomp[0].name == Tok.EQ
             ):
                 chomp = chomp[1:]
-            valid_types = Union[ast.YieldExpr, ast.Expr]
             value = (
                 chomp[0]
-                if len(chomp) > 0 and isinstance(chomp[0], valid_types)
+                if len(chomp) > 0 and isinstance(chomp[0], (ast.YieldExpr, ast.Expr))
                 else None
             )
             if is_aug:
