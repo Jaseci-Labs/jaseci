@@ -1366,3 +1366,7 @@ class SymTabBuildPass(SymTabPass):
     def enter_semi(self, node: ast.Semi) -> None:
         """Sub objects."""
         self.sync_node_to_scope(node)
+
+    def enter_comment_token(self, node: ast.CommentToken) -> None:
+        """Sub objects."""
+        self.sync_node_to_scope(node)
