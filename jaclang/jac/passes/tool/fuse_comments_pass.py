@@ -3,11 +3,7 @@
 This is a pass for formatting Jac code.
 """
 
-from typing import Any, List, Tuple
-
 import jaclang.jac.absyntree as ast
-from jaclang.jac.constant import Constants as Con
-from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 
 
@@ -15,6 +11,7 @@ class FuseCommentsPass(Pass):
     """JacFormat Pass format Jac code."""
 
     def before_pass(self) -> None:
+        """Before pass."""
         self.all_tokens: list[ast.Token] = []
         self.comments: list[ast.Token] = (
             self.ir.source.comments if isinstance(self.ir, ast.Module) else []
@@ -36,7 +33,6 @@ class FuseCommentsPass(Pass):
             chomp[0].is_inline = chomp[0].is_inline or (
                 self.all_tokens[i].loc.first_line == chomp[0].loc.first_line
             )
-            # print(chomp[0].is_inline)
             if i == len(self.all_tokens) - 1:
                 if len(chomp):
                     new_tokens.append(self.all_tokens[i])
@@ -49,7 +45,6 @@ class FuseCommentsPass(Pass):
                 )
                 or (self.all_tokens[i].loc.first_line > chomp[0].loc.first_line)
             ):
-                # print(chomp[0].is_inline)
                 new_tokens.append(chomp[0])
                 chomp = chomp[1:]
                 if not len(chomp):

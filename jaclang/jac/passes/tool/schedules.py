@@ -2,7 +2,8 @@
 from typing import Type
 
 from ..ir_pass import Pass
-from jaclang.jac.passes.main.sub_node_tab_pass import SubNodeTabPass
+
+from jaclang.jac.passes.main.sub_node_tab_pass import SubNodeTabPass  # noqa: I100
 from jaclang.jac.passes.main.import_pass import ImportPass  # noqa: I100
 from jaclang.jac.passes.main.sym_tab_build_pass import SymTabBuildPass  # noqa: I100
 from jaclang.jac.passes.main.def_impl_match_pass import DeclDefMatchPass  # noqa: I100

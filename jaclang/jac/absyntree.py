@@ -5,7 +5,6 @@ import ast as ast3
 import pprint
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
-from jaclang.jac import jac_lark as jl
 from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
