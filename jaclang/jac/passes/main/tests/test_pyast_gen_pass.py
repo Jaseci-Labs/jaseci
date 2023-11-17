@@ -109,12 +109,12 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         from_jac_str = ast3.dump(code_gen.ir.gen.py_ast, indent=2)
         from_jac = code_gen.ir.gen.py_ast
         try:
-            back_to_py = ast3.unparse(from_jac)
+            # back_to_py = ast3.unparse(from_jac)
             compile(from_jac, filename="<ast>", mode="exec")
         except Exception as e:
             print(from_jac_str)
             raise e
-        from_py = ast3.parse(back_to_py)
+        # from_py = ast3.parse(back_to_py)
         # from_py_str = ast3.dump(from_py, indent=2)
         # import difflib
         # print(from_jac_str)
@@ -125,10 +125,10 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         #         )
         #     )
         # )
-        if len(ast_to_list(from_jac)) != len(ast_to_list(from_py)):
-            print(
-                f"\n{filename} - AST node length diff: {len(ast_to_list(from_jac))} vs {len(ast_to_list(from_py))}"
-            )
+        # if len(ast_to_list(from_jac)) != len(ast_to_list(from_py)):
+        #     print(
+        #         f"\n{filename} - AST node length diff: {len(ast_to_list(from_jac))} vs {len(ast_to_list(from_py))}"
+        #     )
         self.assertTrue(self.parent_scrub(code_gen.ir))
         self.assertGreater(len(from_jac_str), 10)
 

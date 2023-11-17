@@ -1094,14 +1094,14 @@ class JacParser(Pass):
 
             if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
             """
-            else_type = Union[ast.ElseIf, ast.ElseStmt]
             if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
                 return self.nu(
                     ast.IfStmt(
                         condition=kid[1],
                         body=kid[2],
                         else_body=kid[3]
-                        if len(kid) > 3 and isinstance(kid[3], else_type)
+                        if len(kid) > 3
+                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
                         else None,
                         kid=kid,
                     )
@@ -1114,14 +1114,14 @@ class JacParser(Pass):
 
             elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
             """
-            else_type = Union[ast.ElseIf, ast.ElseStmt]
             if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
                 return self.nu(
                     ast.ElseIf(
                         condition=kid[1],
                         body=kid[2],
                         else_body=kid[3]
-                        if len(kid) > 3 and isinstance(kid[3], else_type)
+                        if len(kid) > 3
+                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
                         else None,
                         kid=kid,
                     )
@@ -1384,13 +1384,13 @@ class JacParser(Pass):
             """
             condition = kid[1]
             error_msg = kid[3] if len(kid) > 3 else None
-            if isinstance(condition, ast.Expr) and (
-                isinstance(error_msg, ast.Expr) or not error_msg
-            ):
+            if isinstance(condition, ast.Expr):
                 return self.nu(
                     ast.AssertStmt(
                         condition=condition,
-                        error_msg=error_msg,
+                        error_msg=error_msg
+                        if isinstance(error_msg, ast.Expr)
+                        else None,
                         kid=kid,
                     )
                 )
