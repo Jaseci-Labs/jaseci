@@ -2333,3 +2333,15 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
+
+    def exit_comment_token(self, node: ast.CommentToken) -> None:
+        """Sub objects.
+
+        file_path: str,
+        name: str,
+        value: str,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        """

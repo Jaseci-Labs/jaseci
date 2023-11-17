@@ -5,7 +5,6 @@ import ast as ast3
 import pprint
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
-from jaclang.jac import jac_lark as jl
 from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
@@ -2153,6 +2152,35 @@ class Semi(Token, CodeBlockStmt):
     """Semicolon node type for Jac Ast."""
 
 
+class CommentToken(Token):
+    """CommentToken node type for Jac Ast."""
+
+    def __init__(
+        self,
+        file_path: str,
+        name: str,
+        value: str,
+        line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+        kid: Sequence[AstNode],
+        is_inline: bool = False,
+    ) -> None:
+        """Initialize token."""
+        self.file_path = file_path
+        self.name = name
+        self.value = value
+        self.line_no = line
+        self.c_start = col_start
+        self.c_end = col_end
+        self.pos_start = pos_start
+        self.pos_end = pos_end
+        self.is_inline = is_inline
+        AstNode.__init__(self, kid=kid)
+
+
 # ----------------
 class JacSource(EmptyToken):
     """SourceString node type for Jac Ast."""
@@ -2162,7 +2190,7 @@ class JacSource(EmptyToken):
         super().__init__()
         self.value = source
         self.file_path = mod_path
-        self.comments: list[jl.Token] = []
+        self.comments: list[CommentToken] = []
 
     @property
     def code(self) -> str:

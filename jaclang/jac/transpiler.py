@@ -5,12 +5,12 @@ import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.main import (
-    JacFormatPass,
     PyOutPass,
     PyastGenPass,
     pass_schedule,
 )
-from jaclang.jac.passes.main.schedules import format_pass
+from jaclang.jac.passes.tool import JacFormatPass
+from jaclang.jac.passes.tool.schedules import format_pass
 from jaclang.jac.passes.transform import Alert
 
 
