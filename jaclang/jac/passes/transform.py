@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from jaclang.jac.absyntree import AstNode, T
+from jaclang.jac.absyntree import AstNode
 from jaclang.jac.codeloc import CodeLocInfo
 from jaclang.jac.constant import Constants as Con, Values as Val
 from jaclang.utils.helpers import add_line_numbers, clip_code_section
@@ -78,7 +78,7 @@ class Transform(ABC):
         self.ir: AstNode = self.transform(ir=input_ir)
 
     @abstractmethod
-    def transform(self, ir: T) -> T:
+    def transform(self, ir: AstNode) -> AstNode:
         """Transform interface."""
         pass
 

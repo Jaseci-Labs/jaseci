@@ -33,7 +33,7 @@ class JacParser(Pass):
             tree, self.source.comments = JacParser.parse(
                 self.source.value, on_error=self.error_callback
             )
-            mod: ast.AstNode = JacParser.TreeToAST(parser=self).transform(tree)
+            mod = JacParser.TreeToAST(parser=self).transform(tree)
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.file_path = self.mod_path
@@ -610,10 +610,11 @@ class JacParser(Pass):
                     kid[0].is_enum_singleton = True
                     return self.nu(kid[0])
                 elif isinstance(kid[2], ast.Expr):
-                    kid[0] = ast.SubNodeList[ast.AtomExpr](items=[kid[0]], kid=[kid[0]])
+                    targ = ast.SubNodeList[ast.Expr](items=[kid[0]], kid=[kid[0]])
+                    kid[0] = targ
                     return self.nu(
                         ast.Assignment(
-                            target=kid[0],
+                            target=targ,
                             value=kid[2],
                             type_tag=None,
                             kid=kid,
@@ -843,8 +844,10 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.ArchBlockStmt):
                 return self.nu(kid[0])
-            elif isinstance(kid[1], ast.ArchBlockStmt) and isinstance(
-                kid[0], ast.String
+            elif (
+                isinstance(kid[1], ast.ArchBlockStmt)
+                and isinstance(kid[1], ast.AstDocNode)
+                and isinstance(kid[0], ast.String)
             ):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
@@ -897,9 +900,10 @@ class JacParser(Pass):
                 consume = kid[0]
                 comma = kid[1]
                 assign = kid[2]
+                new_kid = [*consume.kid, comma, assign]
             else:
                 assign = kid[0]
-            new_kid = [*consume.kid, comma, assign] if consume else [assign]
+                new_kid = [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
             return self.nu(
                 ast.SubNodeList[ast.HasVar](
