@@ -1609,8 +1609,9 @@ class JacParser(Pass):
                 chomp = chomp[1:]
             else:
                 raise self.ice()
+            valid_assignees = [i for i in assignees if isinstance(i, (ast.Expr))]
             new_targ = ast.SubNodeList[ast.Expr](
-                items=assignees[::2],
+                items=valid_assignees,
                 kid=assignees,
             )
             kid = [x for x in kid if x not in assignees]
@@ -1715,13 +1716,16 @@ class JacParser(Pass):
             return_type = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
             chomp = chomp[1:] if return_type else chomp
             chomp = chomp[1:]
+            kid = [kid[0]]
+            kid.append(params) if params else None
+            kid.append(return_type) if return_type else None
             if isinstance(chomp[0], ast.Expr):
                 return self.nu(
                     ast.LambdaExpr(
                         signature=ast.FuncSignature(
                             params=params,
                             return_type=return_type,
-                            kid=[params, return_type],
+                            kid=kid,
                         ),
                         body=chomp[0],
                         kid=[i for i in kid if i != params and i != return_type],
@@ -2028,9 +2032,10 @@ class JacParser(Pass):
             if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.NULL_OK:
                 is_null_ok = True
                 chomp = chomp[1:]
-            if len(chomp) == 1 and isinstance(
-                chomp[0],
-                (ast.FilterCompr, ast.AssignCompr, ast.EdgeOpRef, ast.IndexSlice),
+            if (
+                len(chomp) == 1
+                and isinstance(chomp[0], ast.AtomExpr)
+                and isinstance(target, ast.Expr)
             ):
                 return self.nu(
                     ast.AtomTrailer(
@@ -2045,6 +2050,7 @@ class JacParser(Pass):
                 len(chomp) > 1
                 and isinstance(chomp[0], ast.Token)
                 and isinstance(chomp[1], ast.AtomExpr)
+                and isinstance(target, ast.Expr)
             ):
                 return self.nu(
                     ast.AtomTrailer(

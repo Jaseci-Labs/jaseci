@@ -1489,7 +1489,7 @@ class AtomTrailer(Expr):
     def __init__(
         self,
         target: Expr,
-        right: AtomExpr,
+        right: AtomExpr | Expr,
         is_attr: bool,
         is_null_ok: bool,
         kid: Sequence[AstNode],
