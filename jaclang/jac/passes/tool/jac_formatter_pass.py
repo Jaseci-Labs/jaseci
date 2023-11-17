@@ -374,7 +374,6 @@ class JacFormatPass(Pass):
             self.emit_ln(node, node.doc.gen.jac)
         start = True
         for i in node.kid:
-            print(i)
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
                     self.emit(node, f" {i.gen.jac}")
