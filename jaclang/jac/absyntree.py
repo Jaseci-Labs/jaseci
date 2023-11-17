@@ -1166,7 +1166,7 @@ class GlobalStmt(CodeBlockStmt):
         AstNode.__init__(self, kid=kid)
 
 
-class NonLocalStmt(CodeBlockStmt):
+class NonLocalStmt(GlobalStmt):
     """NonlocalStmt node type for Jac Ast."""
 
 

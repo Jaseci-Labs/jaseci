@@ -1445,18 +1445,15 @@ class JacParser(Pass):
         def return_stmt(self, kid: list[ast.AstNode]) -> ast.ReturnStmt:
             """Grammar rule.
 
-            return_stmt: KW_RETURN self.nu(expression?
+            return_stmt: KW_RETURN expression?
             """
             if len(kid) > 1:
-                if isinstance(kid[1], ast.Expr) or not kid[1]:
-                    return self.nu(
-                        ast.ReturnStmt(
-                            expr=kid[1],
-                            kid=kid,
-                        )
+                return self.nu(
+                    ast.ReturnStmt(
+                        expr=kid[1] if isinstance(kid[1], ast.Expr) else None,
+                        kid=kid,
                     )
-                else:
-                    raise self.ice()
+                )
             else:
                 return self.nu(
                     ast.ReturnStmt(
@@ -1614,10 +1611,9 @@ class JacParser(Pass):
                 and chomp[0].name == Tok.EQ
             ):
                 chomp = chomp[1:]
-            valid_types = Union[ast.YieldExpr, ast.Expr]
             value = (
                 chomp[0]
-                if len(chomp) > 0 and isinstance(chomp[0], valid_types)
+                if len(chomp) > 0 and isinstance(chomp[0], (ast.YieldExpr, ast.Expr))
                 else None
             )
             if is_aug:
