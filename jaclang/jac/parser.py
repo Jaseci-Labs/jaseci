@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable, Union
+from typing import Callable
 
 
 import jaclang.jac.absyntree as ast
@@ -2908,8 +2908,8 @@ class JacParser(Pass):
             if (isinstance(ftype, ast.Expr) or ftype is None) and (
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
+                fcond = ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
                 if fcond:
-                    fcond = ast.FilterCompr(compares=fcond, kid=[fcond])
                     kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
@@ -2933,8 +2933,8 @@ class JacParser(Pass):
             if (isinstance(ftype, ast.Expr) or ftype is None) and (
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
+                fcond = ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
                 if fcond:
-                    fcond = ast.FilterCompr(compares=fcond, kid=[fcond])
                     kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
@@ -2958,8 +2958,8 @@ class JacParser(Pass):
             if (isinstance(ftype, ast.Expr) or ftype is None) and (
                 isinstance(fcond, ast.SubNodeList) or fcond is None
             ):
+                fcond = ast.FilterCompr(compares=fcond, kid=[fcond]) if fcond else None
                 if fcond:
-                    fcond = ast.FilterCompr(compares=fcond, kid=[fcond])
                     kid[3] = fcond
                 return self.nu(
                     ast.EdgeOpRef(
@@ -3009,10 +3009,12 @@ class JacParser(Pass):
             if (isinstance(conn_type, ast.Expr) or conn_type is None) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
+                conn_assign = (
+                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    if conn_assign
+                    else None
+                )
                 if conn_assign:
-                    conn_assign = ast.AssignCompr(
-                        assigns=conn_assign, kid=[conn_assign]
-                    )
                     kid[3] = conn_assign
                 return self.nu(
                     ast.ConnectOp(
@@ -3036,10 +3038,12 @@ class JacParser(Pass):
             if (isinstance(conn_type, ast.Expr) or conn_type is None) and (
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
+                conn_assign = (
+                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    if conn_assign
+                    else None
+                )
                 if conn_assign:
-                    conn_assign = ast.AssignCompr(
-                        assigns=conn_assign, kid=[conn_assign]
-                    )
                     kid[3] = conn_assign
                 return self.nu(
                     ast.ConnectOp(
@@ -3081,9 +3085,10 @@ class JacParser(Pass):
                 consume = kid[0]
                 comma = kid[1]
                 expr = kid[2]
+                new_kid = [*consume.kid, comma, expr]
             else:
                 expr = kid[0]
-            new_kid = [*consume.kid, comma, expr] if consume else [expr]
+                new_kid = [expr]
             valid_kid = [i for i in new_kid if isinstance(i, ast.BinaryExpr)]
             return self.nu(
                 ast.SubNodeList[ast.BinaryExpr](
@@ -3145,7 +3150,7 @@ class JacParser(Pass):
             stmts = kid[-1]
             if (
                 isinstance(pattern, ast.MatchPattern)
-                and (isinstance(guard, ast.Expr) or not guard)
+                and isinstance(guard, (ast.Expr, type(None)))
                 and isinstance(stmts, ast.SubNodeList)
             ):
                 return self.nu(
@@ -3240,7 +3245,7 @@ class JacParser(Pass):
 
             singleton_pattern: (NULL | BOOL)
             """
-            if isinstance(kid[0], ast.Expr):
+            if isinstance(kid[0], (ast.Bool, ast.Null)):
                 return self.nu(
                     ast.MatchSingleton(
                         value=kid[0],
@@ -3295,8 +3300,9 @@ class JacParser(Pass):
 
             mapping_pattern: LBRACE (dict_inner_pattern (COMMA dict_inner_pattern)*)? RBRACE
             """
-            valid_types = Union[ast.MatchKVPair, ast.MatchStar]
-            patterns = [i for i in kid if isinstance(i, valid_types)]
+            patterns = [
+                i for i in kid if isinstance(i, (ast.MatchKVPair, ast.MatchStar))
+            ]
             return self.nu(
                 ast.MatchMapping(
                     values=patterns,
@@ -3427,20 +3433,27 @@ class JacParser(Pass):
                 name = kid[2]
                 eq = kid[3]
                 value = kid[4]
+                if not isinstance(name, ast.NameSpec) or not isinstance(
+                    value, ast.MatchPattern
+                ):
+                    raise self.ice()
+                new_kid = [
+                    *consume.kid,
+                    comma,
+                    ast.MatchKVPair(key=name, value=value, kid=[name, eq, value]),
+                ]
             else:
                 name = kid[0]
                 eq = kid[1]
                 value = kid[2]
+                if not isinstance(name, ast.NameSpec) or not isinstance(
+                    value, ast.MatchPattern
+                ):
+                    raise self.ice()
+                new_kid = [
+                    ast.MatchKVPair(key=name, value=value, kid=[name, eq, value])
+                ]
             if isinstance(name, ast.NameSpec) and isinstance(value, ast.MatchPattern):
-                new_kid = (
-                    [
-                        *consume.kid,
-                        comma,
-                        ast.MatchKVPair(key=name, value=value, kid=[name, eq, value]),
-                    ]
-                    if consume
-                    else [ast.MatchKVPair(key=name, value=value, kid=[name, eq, value])]
-                )
                 valid_kid = [i for i in new_kid if isinstance(i, ast.MatchKVPair)]
                 return ast.SubNodeList[ast.MatchKVPair](
                     items=valid_kid,
