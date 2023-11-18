@@ -1351,7 +1351,7 @@ class TupleVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr | KWPair]],
+        values: Optional[SubNodeList[Expr | KWPair] | SubNodeList[Expr]],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize tuple value node."""
@@ -1371,7 +1371,7 @@ class DictVal(AtomExpr):
     def __init__(
         self,
         kv_pairs: Sequence[KVPair],
-        kid: Sequence[KVPair],
+        kid: Sequence[AstNode],
     ) -> None:
         """Initialize dict expression node."""
         self.kv_pairs = kv_pairs

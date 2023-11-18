@@ -2094,6 +2094,8 @@ class JacParser(Pass):
                     expr = kid[0].values.items[0]  # TODO: Loses braces
                 else:
                     expr = ast.TupleVal(values=kid[0].values, kid=kid[0].kid)
+                if expr is None:
+                    raise self.ice()
                 return self.nu(
                     ast.IndexSlice(
                         start=expr, stop=None, step=None, is_range=False, kid=[expr]
@@ -2367,9 +2369,10 @@ class JacParser(Pass):
                 consume = kid[0]
                 comma = kid[1]
                 expr = kid[2]
+                new_kid = [*consume.kid, comma, expr]
             else:
                 expr = kid[0]
-            new_kid = [*consume.kid, comma, expr] if consume else [expr]
+                new_kid = [expr]
             valid_kid = [i for i in new_kid if isinstance(i, ast.Expr)]
             return self.nu(
                 ast.SubNodeList[ast.Expr](
@@ -2390,9 +2393,10 @@ class JacParser(Pass):
                 consume = kid[0]
                 comma = kid[1]
                 expr = kid[2]
+                new_kid = [*consume.kid, comma, expr]
             else:
                 expr = kid[0]
-            new_kid = [*consume.kid, comma, expr] if consume else [expr]
+                new_kid = [expr]
             valid_kid = [i for i in new_kid if isinstance(i, ast.KWPair)]
             return self.nu(
                 ast.SubNodeList[ast.KWPair](
@@ -2429,9 +2433,10 @@ class JacParser(Pass):
                 consume = kid[0]
                 comma = kid[1]
                 name = kid[2]
+                new_kid = [*consume.kid, comma, name]
             else:
                 name = kid[0]
-            new_kid = [*consume.kid, comma, name] if consume else [name]
+                new_kid = [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.Name)]
             return self.nu(
                 ast.SubNodeList[ast.Name](
@@ -2464,8 +2469,7 @@ class JacParser(Pass):
                 chomp = chomp[1:]
                 expr_list = [*expr_list, *chomp[0].kid]
             expr_list = [first_expr, *expr_list]
-            valid_type = Union[ast.Expr, ast.KWPair]
-            valid_kid = [i for i in expr_list if isinstance(i, valid_type)]
+            valid_kid = [i for i in expr_list if isinstance(i, (ast.Expr, ast.KWPair))]
             return self.nu(
                 ast.SubNodeList[ast.Expr | ast.KWPair](
                     items=valid_kid,
@@ -2608,11 +2612,10 @@ class JacParser(Pass):
             elif isinstance(kid[0], ast.SubNodeList) and isinstance(
                 kid[2], ast.SubNodeList
             ):
-                valid_type = Union[ast.Expr, ast.KWPair]
                 valid_kid = [
                     i
                     for i in [*kid[0].items, *kid[2].items]
-                    if isinstance(i, valid_type)
+                    if isinstance(i, (ast.Expr, ast.KWPair))
                 ]
                 if len(valid_kid) == len(kid[0].items) + len(kid[2].items):
                     return self.nu(
@@ -2639,9 +2642,10 @@ class JacParser(Pass):
                 consume = kid[0]
                 comma = kid[1]
                 assign = kid[2]
+                new_kid = [*consume.kid, comma, assign]
             else:
                 assign = kid[0]
-            new_kid = [*consume.kid, comma, assign] if consume else [assign]
+                new_kid = [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.Assignment)]
             return self.nu(
                 ast.SubNodeList[ast.Assignment](
