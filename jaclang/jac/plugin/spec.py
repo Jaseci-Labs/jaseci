@@ -1,7 +1,7 @@
 """Jac Language Features."""
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, Optional, Protocol, TypeVar
 
 from jaclang.jac.constant import EdgeDir
 
@@ -10,7 +10,14 @@ import pluggy
 hookspec = pluggy.HookspecMarker("jac")
 
 
+class ArchitypeProtocol(Protocol):
+    """Architype Protocol."""
+
+    _jac_: None
+
+
 T = TypeVar("T")
+AT = TypeVar("AT", bound=ArchitypeProtocol)
 
 
 class JacFeatureSpec:
@@ -18,7 +25,7 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def make_architype(arch_type: str) -> Callable[[type], type]:
+    def bind_architype(arch: AT) -> None:
         """Create a new architype."""
 
     @staticmethod

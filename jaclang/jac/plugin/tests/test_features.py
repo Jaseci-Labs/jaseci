@@ -46,8 +46,9 @@ class TestFeatures(TestCase):
 
         # Check if all methods are the same in all classes
         self.assertGreater(len(jac_feature_methods), 5)
-        self.assertEqual(jac_feature_methods, jac_feature_defaults_methods)
-        self.assertEqual(jac_feature_methods, jac_feature_spec_methods)
+        self.assertEqual(jac_feature_spec_methods, jac_feature_defaults_methods)
+        for i in jac_feature_spec_methods:
+            self.assertIn(i, jac_feature_methods)
 
     def test_impl_match_error_reporting(self) -> None:
         """Basic test for error reporting."""
