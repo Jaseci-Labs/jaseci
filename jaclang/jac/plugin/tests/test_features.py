@@ -6,7 +6,9 @@ import traceback
 from typing import List, Type
 
 from jaclang.cli import cmds
-from jaclang.jac.features import JacFeature, JacFeatureDefaults, JacFeatureSpec
+from jaclang.jac.plugin.default import JacFeatureDefaults
+from jaclang.jac.plugin.feature import JacFeature
+from jaclang.jac.plugin.spec import JacFeatureSpec
 from jaclang.utils.test import TestCase
 
 
@@ -65,7 +67,6 @@ class TestFeatures(TestCase):
 
         # Retrieve the captured output
         stderr_val = captured_output.getvalue()
-
         # Assertions or verifications
         self.assertIn("impl_match.jac", stderr_val)
         self.assertIn("impl_match_impl.jac", stderr_val)

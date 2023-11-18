@@ -146,9 +146,7 @@ class Workspace:
         """Return a list of files in the workspace."""
         return list(self.modules.keys())
 
-    def get_dependencies(
-        self, file_path: str, deep: bool = False
-    ) -> Sequence[ast.Import]:
+    def get_dependencies(self, file_path: str, deep: bool = False) -> list[ast.Import]:
         """Return a list of dependencies for a file."""
         if deep:
             return self.modules[file_path].ir.get_all_sub_nodes(ast.Import)
