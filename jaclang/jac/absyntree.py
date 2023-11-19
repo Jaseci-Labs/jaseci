@@ -2043,7 +2043,7 @@ class TokenSymbol(Token, AstSymbolNode):
         )
 
 
-class BuiltinType(Name, Literal):
+class BuiltinType(Name, Literal, NameSpec):
     """Type node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.VAR

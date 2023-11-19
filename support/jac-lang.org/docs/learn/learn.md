@@ -132,7 +132,7 @@ This is the way to import from enum. Any language level keyword can be escaped b
     ```
 === "circle.py"
     ```python linenums="32"
-    --8<-- "examples/manual_code/circle.py:32:40"
+    --8<-- "examples/manual_code/circle.py:33:42"
     ```
 
 This is an example of a Shape class in Jac. A couple things to note here.
@@ -145,7 +145,7 @@ This is an example of a Shape class in Jac. A couple things to note here.
     ```
 === "circle.py"
     ```python linenums="43"
-    --8<-- "examples/manual_code/circle.py:43:52"
+    --8<-- "examples/manual_code/circle.py:45:54"
     ```
 
 ### Script handling
@@ -156,7 +156,7 @@ This is an example of a Shape class in Jac. A couple things to note here.
     ```
 === "circle.py"
     ```python linenums="55"
-    --8<-- "examples/manual_code/circle.py:55:63"
+    --8<-- "examples/manual_code/circle.py:57:65"
     ```
 
 ### Tests
@@ -167,7 +167,7 @@ This is an example of a Shape class in Jac. A couple things to note here.
     ```
 === "circle.py"
     ```python linenums="66"
-    --8<-- "examples/manual_code/circle.py:66:79"
+    --8<-- "examples/manual_code/circle.py:68:81"
     ```
 
 ### Clean Approach
@@ -185,20 +185,55 @@ This is an example of a Shape class in Jac. A couple things to note here.
     --8<-- "examples/manual_code/circle.py"
     ```
 
-## Complete list of differences and features vs python
 
-### Whitespace doesnt matter
-### Types are required
-### Typing implicitly Available
-### Can Separate Definitions from Declarations
+## Complete list of Differences and Features vs Python
+
+Jac is a superset of Python 3, all of pythons features and full native compatability is present. However, each of these features  and differences described here represents Jac's approach to improve programmer effectiveness in a way that is distinct from Python. These choices were made focusing on type safety, readability, expressiveness, and general code ninja goodness. As the language evolves, these features will be refined and expanded based on user feedback, practical usage, and the evolution of python and coding in general.
+
+### Whitespace doesn't matter
+Unlike Python, where indentation is crucial for defining code blocks, Jac does not consider whitespace for this purpose. This gives programmers more flexibility in formatting their code, although maintaining a consistent style is still recommended for readability. With more flexibility in how code can be laid out, more beautiful formatting styles are possible.
+
+### Types hints are required
+In Jac, type hints are mandatory for certain variable declarations and function signatures. This enforces type safety and makes the code more self-documenting, aiding in debugging and maintaining the codebase.
+
+### Typing library implicitly available
+Jac has a built-in typing system, similar to Python's typing library, but it's implicitly available. This means you don't need to import typing modules explicitly to use features like `List`, `Dict`, `Optional`, etc. You can simply reference them with a backtick as  `` `List ``, `` `Dict ``, and `` `Optional ``.
+
+### Can separate definitions from declarations
+In Jac, you can declare a function or a variable without defining it immediately. This separation allows for more organized code and makes it easier to manage large codebases with multiple dependencies.
+
 ### Tuples are explicit
+Tuples in Jac must be explicitly declared, which differs from Python's implicit tuple creation. This design choice avoids accidental creation of tuples, enhancing code clarity.
+
 ### Docstrings in the right place
+Docstrings in Jac are placed differently compared to Python. This change is aimed at improving readability and making the documentation process more intuitive and consistent.
+
 ### Elvis Operator
+Jac introduces the Elvis operator (`?:`), which is a shorthand for an if-else statement, similar to the ternary operator in other languages. It provides a more concise way to write conditional expressions.
+
 ### Null Safe Operator
-### Filter Compers
-### Assign Compers
-### Data class style basis for OOP
+The Null Safe operator in Jac allows safe access to an object's properties or methods without the risk of encountering a null reference error. This operator helps in writing cleaner, more robust code.
+
+### Filter Comprehension
+Filter comprehension in Jac is a built-in feature that provides a more intuitive and concise way to filter collections, similar to list comprehensions in Python but with a focus on filtering.
+
+### Assign Comprehension
+Assign comprehension is a unique feature in Jac that allows for direct assignment within a comprehension, making certain patterns of data processing more succinct and readable.
+
+### Dataclass style basis for OOP
+Jac's approach to object-oriented programming is based on a dataclass style, where classes are primarily used to store data. This makes data handling more straightforward and efficient.
+
 ### Proper multiline Comments
+Multiline comments in Jac are more versatile and user-friendly compared to Python. This feature enhances the ability to document code extensively without resorting to string literals or consecutive single-line comments.
+
+### Explicit notation for special variables
+Special variables in Jac have explicit notations, making it clear when such variables are being used. This feature aids in code readability and helps avoid accidental misuse of these variables.
+
 ### No need for gratuitous self usage
+In Jac, there is no need to use the `self` keyword in all class method signatures as in Python. This design choice simplifies method definitions and makes the code cleaner and easier to read.
+
 ### Optional Left to right Pipe style expressivity
-### Support for data spatial semantics
+Jac offers an optional left-to-right pipe-style syntax for function calls, similar to the Unix pipeline or functional programming languages. This feature allows for more expressive and readable code, especially when chaining multiple function calls.
+
+### Full Support of Data Spatial Programming Paradigmn
+More on this soon!!!

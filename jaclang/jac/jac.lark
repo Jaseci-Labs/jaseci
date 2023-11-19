@@ -341,7 +341,7 @@ arch_ref: object_ref
         | node_ref
         | type_ref
 
-type_ref: TYPE_OP NAME
+type_ref: TYPE_OP (NAME | builtin_type)
 node_ref: NODE_OP NAME
 edge_ref: EDGE_OP NAME
 walker_ref: WALKER_OP NAME
@@ -522,7 +522,7 @@ WALKER_OP: /:w:|:walker:/
 NODE_OP: /:n:|:node:/
 EDGE_OP: /:e:|:edge:/
 OBJECT_OP: /:o:|:obj:/
-TYPE_OP: /:t:|:type:/
+TYPE_OP: /`|:t:|:type:/
 ENUM_OP: /:enum:/
 ABILITY_OP: /:c:|:can:/
 A_PIPE_FWD: /:>/

@@ -13,17 +13,17 @@ nav:
       - ~/for_contributors:
         - 'learn/contrib.md'
       - ~/w.i.p$:
-        - 'learn/py_to_jac_example.md'
+        # - 'learn/py_to_jac_example.md'
         - 'learn/ast_doc.md'
-        - ~/book$:
-          - book/main.md
-          - book/general.md
-          - book/blue.md
-          - book/purple.md
-          - book/red.md
+        # - ~/book$:
+        #   - book/main.md
+        #   - book/general.md
+        #   - book/blue.md
+        #   - book/purple.md
+        #   - book/red.md
 
     - ~/why$: 'why.md'
-    - ~/roadmap$: 'roadmap.md'
+    # - ~/roadmap$: 'roadmap.md'
     - ~/github$: https://github.com/Jaseci-Labs/jaclang
 
 theme:
