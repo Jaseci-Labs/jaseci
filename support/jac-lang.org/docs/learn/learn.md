@@ -1,4 +1,4 @@
-# Coding Manual
+# Jac Coding Manual
 
 Jac is all of pythons goodness wrapped in a language that gives the coder wings. Lets jump right in!
 
@@ -23,15 +23,23 @@ If that command prints `hello world`, Jac is working.
 Ok now lets jump into learning Jac!
 ## A Complete Example
 
-We start this journey top down. Lets look at a simple but complete program in python and the Jac version.
+We start this journey top down. Lets look at a simple but complete program in Python and two Jac versions. The first implements the module with very close resemblence to Python, and the second is the clean Jactastic way of implemmenting the same functionality. Lets look at the complete examples, then break it down.
 
+=== "Python (circle.py)"
+    ```python linenums="1"
+    --8<-- "examples/manual_code/circle.py"
+    ```
 === "Jac (circle.jac)"
     ```jac linenums="1"
     --8<-- "examples/manual_code/circle.jac"
     ```
-=== "Python (circle.py)"
-    ```python linenums="1"
-    --8<-- "examples/manual_code/circle.py"
+=== "circle_clean.jac"
+    ```jac linenums="1"
+    --8<-- "examples/manual_code/circle_clean.jac"
+    ```
+=== "circle_clean_impl.jac"
+    ```jac linenums="1"
+    --8<-- "examples/manual_code/circle_clean_impl.jac"
     ```
 
 Now lets break it down!
@@ -44,7 +52,7 @@ Now lets break it down!
     ```
 === "circle.py"
     ```python linenums="1"
-    --8<-- "examples/manual_code/circle.py::10"
+    --8<-- "examples/manual_code/circle.py::11"
     ```
 
 In this segment we observe a docstring, imports, and a global variable. In Jac docstrings look exactly like python docstrings, however docstrings can only be used as docstrings (not as comments). That means there are a limited number of places you can place them, these places are at the top of a module, and *before* the declaration of functions, methods, classes (architypes), global variable statements, module level code blocks (i.e., `with entry {}` style blocks, more on this later), and enumerations.
@@ -64,7 +72,7 @@ Quick note on from import, they work like this.
 
 The rationale for this change is purely aesthetic as when reading a file with many imports it looks good to have all the import keywords at the beginning.
 
-### Functions / Abilities
+### Abilities (Functions)
 
 === "circle.jac"
     ```jac linenums="10"
@@ -72,10 +80,10 @@ The rationale for this change is purely aesthetic as when reading a file with ma
     ```
 === "circle.py"
     ```python linenums="13"
-    --8<-- "examples/manual_code/circle.py:13:15"
+    --8<-- "examples/manual_code/circle.py:14:16"
     ```
 
-A nomenclature in Jac is to refer to functions and data spatial code blocks as types of abilities. More on data spatial programming later, but for this example the functions in python and jac are very similar except the `def` keyword is replaced with `can.` Also type-hints are manditory in Jac for function signatures (parameters and returns). Any function that doesn't include it's return signature (i.e., `-> TYPE`) is implicitly assumed to be `-> None`.
+A nomenclature introduced with  Jac is to refer to functions (and the soon described data spatial code blocks) as abilities. More on data spatial programming later, but for this example the functions in python and jac are very similar except the `def` keyword is replaced with `can.` Also type-hints are manditory in Jac for function signatures (parameters and returns). Any function that doesn't include it's return signature (i.e., `-> TYPE`) is implicitly assumed to be `-> None`.
 
 Also note that the docstring appears *before* the function call. This choice was made for readability (function signatures closer to the code is better for code readability when a large docstring is used).
 
@@ -87,7 +95,7 @@ Also note that the docstring appears *before* the function call. This choice was
     ```
 === "circle.py"
     ```python linenums="18"
-    --8<-- "examples/manual_code/circle.py:18:22"
+    --8<-- "examples/manual_code/circle.py:19:23"
     ```
 
 As Jac does not allow docstrings to be used as comments, Jac provides an elegant way to specify multiline comments. Any text between `#*` and `*#` is treated as a multi line comment (and is delightfully pythontic).
@@ -100,7 +108,7 @@ As Jac does not allow docstrings to be used as comments, Jac provides an elegant
     ```
 === "circle.py"
     ```python linenums="25"
-    --8<-- "examples/manual_code/circle.py:25:29"
+    --8<-- "examples/manual_code/circle.py:26:30"
     ```
 
 Jac includes enums as a language feature, the semantics of this enum is simple currently however will evolve over time. Of course you can import Enum to leverage pythons path if needed. However its important to note you'll have to use Jac's keyword escape feature to avoid a syntax error when referring to the enum package.

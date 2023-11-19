@@ -7,7 +7,7 @@ from enum import Enum
 import math
 import unittest
 
-# Module-level global
+# Module-level global var
 RAD = 5
 
 

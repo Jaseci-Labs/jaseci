@@ -4,7 +4,7 @@ the area of a circle in all of Jac's glory.
 """
 import:py math;
 
-# Module-level glob
+# Module-level global var
 glob RAD = 5;
 
 """Function to calculate the area of a circle."""

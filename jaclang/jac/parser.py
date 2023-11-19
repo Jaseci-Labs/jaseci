@@ -2735,7 +2735,7 @@ class JacParser(Pass):
         def type_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
-            object_ref: OBJECT_OP name_ref
+            type_ref: TYPE_OP name_ref
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameSpec):
                 return self.nu(

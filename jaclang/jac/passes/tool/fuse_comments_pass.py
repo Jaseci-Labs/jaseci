@@ -64,5 +64,5 @@ class FuseCommentsPass(Pass):
                     new_kids.insert(new_kids.index(new_val) + 1, new_tokens[i])
                     new_val.parent.set_kids(new_kids)
                 else:
-                    new_val.print()
+                    new_val.pp()
                     raise self.ice("Token without parent in AST should be impossible")

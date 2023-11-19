@@ -3,7 +3,13 @@ import inspect
 from typing import Optional
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac.absyntree import Ability, AbilityDef, ArchDef, Architype, print_tree
+from jaclang.jac.absyntree import (
+    Ability,
+    AbilityDef,
+    ArchDef,
+    Architype,
+    print_ast_tree,
+)
 from jaclang.jac.passes import Pass
 
 
@@ -113,6 +119,6 @@ class AstPrinterPass(Pass):
 
     def before_pass(self) -> None:
         """Initialize pass."""
-        print_tree(self.ir, output_file=AstPrinterPass.SAVE_OUTPUT)
+        print_ast_tree(self.ir, output_file=AstPrinterPass.SAVE_OUTPUT)
         self.terminate()
         return super().before_pass()

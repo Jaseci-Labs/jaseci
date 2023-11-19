@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import ast as ast3
-import pprint
 from typing import Any, Callable, Generic, Optional, Sequence, Type, TypeVar
 
 from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
@@ -91,12 +90,9 @@ class AstNode:
             ret["value"] = self.value
         return ret
 
-    def print(self, use_pp: bool = False, depth: Optional[int] = None) -> None:
+    def pp(self, depth: Optional[int] = None) -> str:
         """Print ast."""
-        if use_pp:
-            pprint.PrettyPrinter(depth=depth).pprint(self.to_dict())
-        else:
-            print_tree(self)
+        return print_ast_tree(self, max_depth=depth)
 
 
 class AstSymbolNode(AstNode):
@@ -2208,26 +2204,25 @@ class PythonModuleAst(EmptyToken):
         self.file_path = mod_path
 
 
-# ----------------
-
-
-def print_tree(
+def print_ast_tree(
     root: AstNode,
     marker: str = "+-- ",
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
-) -> None:
-    """Recursive function that prints the hierarchical structure of a tree."""
+    max_depth: Optional[int] = None,
+) -> str:
+    """Recursively print ast tree."""
 
     def __node_repr_in_tree(node: AstNode) -> str:
         if isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}"
-            # return f"{node.__class__.__name__}({node.name}, {node.value})"
         else:
             return node.__class__.__name__
 
-    if root is None:
-        return
+    if root is None or (
+        max_depth is not None and len(level_markers or []) >= max_depth
+    ):
+        return ""
 
     empty_str = " " * len(marker)
     connection_str = "|" + empty_str[:-1]
@@ -2240,16 +2235,18 @@ def print_tree(
 
     markers = "".join(map(mapper, level_markers[:-1]))
     markers += marker if level > 0 else ""
-    if output_file:
-        with open(output_file, "a+") as f:
-            print(f"{markers}{__node_repr_in_tree(root)}", file=f)
-    else:
-        print(f"{markers}{__node_repr_in_tree(root)}")
-    # After root has been printed, recurse down (depth-first) the child nodes.
+
+    tree_str = f"{markers}{__node_repr_in_tree(root)}\n"
+
     for i, child in enumerate(root.kid):
-        # The last child will not need connection markers on the current level
-        # (see example above)
         is_last = i == len(root.kid) - 1
-        print_tree(
-            child, marker, [*level_markers, not is_last], output_file=output_file
+        tree_str += print_ast_tree(
+            child, marker, [*level_markers, not is_last], output_file, max_depth
         )
+
+    # Write to file only at the top level call
+    if output_file and level == 0:
+        with open(output_file, "w") as f:
+            f.write(tree_str)
+
+    return tree_str

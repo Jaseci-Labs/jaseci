@@ -6,12 +6,10 @@ nav:
     # - ~/example$: 'example.md'
     - ~/start$: 'start.md'
     - ~/learn$:
-      - 'learn/learn.md'
       - ~/for_coders:
-        - 'learn/coders/no_indent.md'
-        - 'learn/coders/defs_decls.md'
-      - ~/for_noobs:
-        - 'learn/contrib.md'
+        - 'learn/learn.md'
+        # - 'learn/coders/no_indent.md'
+        # - 'learn/coders/defs_decls.md'
       - ~/for_contributors:
         - 'learn/contrib.md'
       - ~/w.i.p$:
