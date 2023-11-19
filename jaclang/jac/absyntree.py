@@ -2217,7 +2217,7 @@ def print_ast_tree(
         if isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}"
         else:
-            return node.__class__.__name__
+            return f"{node.__class__.__name__}"
 
     if root is None or (
         max_depth is not None and len(level_markers or []) >= max_depth
@@ -2236,7 +2236,7 @@ def print_ast_tree(
     markers = "".join(map(mapper, level_markers[:-1]))
     markers += marker if level > 0 else ""
 
-    tree_str = f"{markers}{__node_repr_in_tree(root)}\n"
+    tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
 
     for i, child in enumerate(root.kid):
         is_last = i == len(root.kid) - 1

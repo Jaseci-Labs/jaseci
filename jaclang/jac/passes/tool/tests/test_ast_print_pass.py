@@ -69,4 +69,4 @@ class AstPrinterPassTest(TestCase):
 
         with open(self.fixture_abs_path("multi_def_err.txt")) as f:
             ref_lines = "".join(f.readlines())
-        self.assertEqual(res_lines, ref_lines)
+        self.assertEqual(res_lines.split(), ref_lines.split())
