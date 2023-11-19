@@ -62,6 +62,7 @@ def jac_import(
         with open(pyc_file_path, "rb") as f:
             codeobj = marshal.load(f)
 
+    module_name = override_name if override_name else module_name
     module = types.ModuleType(module_name)
     module.__file__ = full_target
     module.__name__ = module_name
@@ -78,7 +79,6 @@ def jac_import(
     else:
         sys.modules[module_name] = module
 
-    module.__name__ = override_name if override_name else module.__name__
     exec(codeobj, module.__dict__)
 
     return module

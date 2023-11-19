@@ -6,15 +6,14 @@ import:py from jaclang.jac.constant, Constants as C;
 
 """Load a .jac file and return the entrypoint function."""
 :c:run
-(filename: str, main: bool = False) {
+(filename: str, main: bool = True) {
     if filename.endswith(".jac"){
         [base, mod] = os.path.split(filename);
         base = './' if not base else base;
         mod=mod[:-4];
-        main = False; # TODO: This is a hack due to default bug, fix it.
         __jac_import__(
             target=mod, base_path=base,
-            override_name=None # ("__main__" if main else None)
+            override_name=("__main__" if main else None)
         );
     } else {
         "Not a .jac file." :> print;

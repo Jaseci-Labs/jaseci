@@ -291,6 +291,22 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         """
         node.gen.py_ast = node.body.gen.py_ast
+        if node.name:
+            node.gen.py_ast = self.sync(
+                ast3.If(
+                    test=self.sync(
+                        ast3.Compare(
+                            left=self.sync(ast3.Name(id="__name__", ctx=ast3.Load())),
+                            ops=[self.sync(ast3.Eq())],
+                            comparators=[
+                                self.sync(ast3.Constant(value=node.name.tag.sym_name))
+                            ],
+                        )
+                    ),
+                    body=node.body.gen.py_ast,
+                    orelse=[],
+                )
+            )
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
         """Sub objects.
@@ -2294,7 +2310,7 @@ class PyastGenPass(Pass):
         pos_start: int,
         pos_end: int,
         """
-        node.gen.py_ast = self.sync(ast3.Constant(value=bool(node.value)))
+        node.gen.py_ast = self.sync(ast3.Constant(value=node.value == "True"))
 
     def exit_builtin_type(self, node: ast.BuiltinType) -> None:
         """Sub objects.

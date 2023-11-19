@@ -2,6 +2,7 @@
 import ast as ast3
 import io
 import sys
+import types
 
 import jaclang.jac.absyntree as ast
 from jaclang.jac.passes.main import PyastGenPass, SubNodeTabPass
@@ -76,7 +77,8 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             prog = compile(code_gen.ir.gen.py_ast, filename="<ast>", mode="exec")
             captured_output = io.StringIO()
             sys.stdout = captured_output
-            exec(prog, {})
+            module = types.ModuleType("__main__")
+            exec(prog, module.__dict__)
             sys.stdout = sys.__stdout__
             stdout_value = captured_output.getvalue()
             self.assertIn(
