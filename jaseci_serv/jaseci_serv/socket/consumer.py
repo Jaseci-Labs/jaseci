@@ -13,27 +13,29 @@ from jaseci_serv.base.models import lookup_global_config
 class SocketConsumer(WebsocketConsumer):
     def connect(self):
         self.accept()
-        session_id = None
         authenticated = False
         target = self.scope["url_route"]["kwargs"]["target"]
 
         if target == "anonymous":
-            self.target = session_id = str(uuid4())
+            self.group = str(uuid4())
+        elif target == "public":
+            self.group = target
         else:
             user = authenticated_user(target)
             if user:
-                self.target = user.master.urn[9:]
+                self.group = user.master.urn[9:]
                 authenticated = True
             else:
-                self.target = session_id = str(uuid4())
+                self.group = str(uuid4())
 
-        async_to_sync(self.channel_layer.group_add)(self.target, self.channel_name)
+        async_to_sync(self.channel_layer.group_add)(self.group, self.channel_name)
         self.send(
             text_data=dumps(
                 {
                     "type": "connect",
                     "authenticated": authenticated,
-                    "session_id": session_id,
+                    "group": self.group,
+                    "channel": self.channel_name,
                 }
             )
         )
@@ -42,7 +44,7 @@ class SocketConsumer(WebsocketConsumer):
         data = loads(text_data)
 
         async_to_sync(self.channel_layer.group_send)(
-            self.target, {"type": "notify", "data": data}
+            self.group, {"type": "notify", "data": data}
         )
 
     def notify(self, data):

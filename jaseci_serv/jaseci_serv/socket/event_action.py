@@ -32,8 +32,13 @@ def authenticated_user(token: str):
     return None
 
 
-@jaseci_action(act_group=["wb"])
-def notify(target: str, data: dict):
+@jaseci_action(act_group=["ws"])
+def notify_channel(target: str, data: dict):
+    async_to_sync(get_channel_layer().send)(target, {"type": "notify", "data": data})
+
+
+@jaseci_action(act_group=["ws"])
+def notify_group(target: str, data: dict):
     async_to_sync(get_channel_layer().group_send)(
         target, {"type": "notify", "data": data}
     )
