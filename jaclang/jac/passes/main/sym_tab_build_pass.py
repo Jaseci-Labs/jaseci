@@ -73,10 +73,10 @@ class SymTabPass(Pass):
         """Link to symbol."""
         if self.seen(node):
             return node.sym_link
-        deep = True
+        deep = False
         if not sym_table:
             sym_table = node.sym_tab
-            deep = False
+            deep = True
         if sym_table:
             node.sym_link = (
                 sym_table.lookup(name=node.sym_name, deep=deep) if sym_table else None
