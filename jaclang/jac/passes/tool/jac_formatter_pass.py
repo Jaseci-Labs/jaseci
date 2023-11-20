@@ -130,7 +130,7 @@ class JacFormatPass(Pass):
         """
         count = 0
         for stmt in node.kid:
-            if isinstance(node.parent, ast.EnumDef) and stmt.gen.jac == ",":
+            if isinstance(node.parent, (ast.EnumDef, ast.Enum)) and stmt.gen.jac == ",":
                 self.indent_level -= 1
                 self.emit_ln(node, f"{stmt.gen.jac}")
                 self.indent_level += 1
@@ -376,6 +376,8 @@ class JacFormatPass(Pass):
             self.emit_ln(node, node.doc.gen.jac)
         start = True
         for i in node.kid:
+            if isinstance(i, ast.String):
+                continue
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
                     self.emit(node, f" {i.gen.jac}")
@@ -463,7 +465,9 @@ class JacFormatPass(Pass):
             self.emit_ln(node, node.doc.value)
         start = True
         for i in node.kid:
-            if isinstance(i, ast.CommentToken):
+            if isinstance(i, ast.String):
+                continue
+            elif isinstance(i, ast.CommentToken):
                 if i.is_inline:
                     self.emit(node, f" {i.gen.jac}")
                 else:
