@@ -16,7 +16,6 @@ class JacFormatPass(Pass):
         self.comments: list[ast.CommentToken] = []
         self.indent_size = 4
         self.indent_level = 0
-        self.prev_brac = False
 
     def indent_str(self) -> str:
         """Return string for indent."""
@@ -131,6 +130,11 @@ class JacFormatPass(Pass):
         """
         count = 0
         for stmt in node.kid:
+            if isinstance(node.parent, ast.EnumDef) and stmt.gen.jac == ",":
+                self.indent_level -= 1
+                self.emit_ln(node, f"{stmt.gen.jac}")
+                self.indent_level += 1
+                continue
             if isinstance(stmt, ast.Token):
                 if stmt.name == "LBRACE":
                     if (
@@ -145,12 +149,8 @@ class JacFormatPass(Pass):
                     count += 1
                 elif stmt.name == "RBRACE":
                     self.indent_level -= 1
-                    if (
-                        isinstance(stmt.parent.parent, (ast.ElseIf, ast.IfStmt))
-                        and not self.prev_brac
-                    ):
+                    if isinstance(stmt.parent.parent, (ast.ElseIf, ast.IfStmt)):
                         self.emit(node, f"{stmt.value}")
-                        self.prev_brac = True
 
                     else:
                         if (
@@ -159,10 +159,12 @@ class JacFormatPass(Pass):
                             and node.kid[count + 1].is_inline
                         ):
                             self.emit(node, f"{stmt.value.lstrip()}")
-                            self.prev_brac = True
                         else:
-                            self.emit_ln(node, f"{stmt.value}")
-                            self.prev_brac = False
+                            if not (node.gen.jac).endswith("\n"):
+                                self.emit_ln(node, "")
+                                self.emit_ln(node, f"{stmt.value}")
+                            else:
+                                self.emit_ln(node, f"{stmt.value}")
                     count += 1
                 elif isinstance(stmt, ast.CommentToken):
                     self.emit_ln(node, f" {stmt.value}")
@@ -459,34 +461,24 @@ class JacFormatPass(Pass):
         """
         if node.doc:
             self.emit_ln(node, node.doc.value)
-        if node.decorators:
-            self.emit_ln(node, node.decorators.gen.jac)
-        if node.base_classes:
-            self.emit(
-                node,
-                f"enum {node.name.gen.jac}({node.base_classes.gen.jac})",  # noqa
-            )
-        else:
-            self.emit(node, f"enum {node.name.value}")
-        if node.body:
-            for stmt in node.body.kid:
-                if isinstance(stmt, ast.Token):
-                    if stmt.name == "LBRACE":
-                        self.emit_ln(node, f" {stmt.value}")
-                        self.indent_level += 1
-                    elif stmt.name == "RBRACE":
-                        self.emit_ln(node, "")
-                        self.indent_level -= 1
-                        self.emit_ln(node, f"{stmt.value}")
-                        # self.emit_ln(node, "")
-                    else:
-                        self.indent_level -= 1
-                        self.emit_ln(node, f"{stmt.value}")
-                        self.indent_level += 1
+        start = True
+        for i in node.kid:
+            if isinstance(i, ast.CommentToken):
+                if i.is_inline:
+                    self.emit(node, f" {i.gen.jac}")
                 else:
-                    self.emit(node, f"{stmt.gen.jac}")
-        else:
-            self.emit(node, ";")
+                    self.emit_ln(node, i.gen.jac)
+            elif isinstance(i, ast.Semi):
+                self.emit(node, f"{i.gen.jac}")
+            elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
+                self.emit_ln(node, i.gen.jac)
+            else:
+                if start:
+                    self.emit(node, f"{i.gen.jac}")
+                    start = False
+                else:
+                    self.emit(node, f" {i.gen.jac}")
+        if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
