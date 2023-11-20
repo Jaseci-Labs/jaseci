@@ -4,9 +4,11 @@ This pass builds the symbol table tree for the Jaseci Ast. It also adds symbols
 for globals, imports, architypes, and abilities declarations and definitions.
 """
 import ast as ast3
+import builtins
 from typing import Optional, Sequence
 
 import jaclang.jac.absyntree as ast
+from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.passes import Pass
 from jaclang.jac.symtable import Symbol, SymbolTable
 
@@ -203,6 +205,20 @@ class SymTabBuildPass(SymTabPass):
         """
         self.push_scope(node.name, node, fresh=True)
         self.sync_node_to_scope(node)
+        for obj in dir(builtins):
+            builtin = ast.Name(
+                file_path=node.loc.mod_path,
+                name=Tok.NAME,
+                value=str(obj),
+                line=0,
+                col_start=0,
+                col_end=0,
+                pos_start=0,
+                pos_end=0,
+                kid=[],
+            )
+            self.sync_node_to_scope(builtin)
+            self.def_insert(builtin)
 
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.

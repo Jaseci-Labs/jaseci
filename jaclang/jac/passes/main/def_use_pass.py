@@ -66,12 +66,7 @@ class DefUsePass(SymTabPass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
-        if (
-            node.parent
-            and node.parent.parent
-            and isinstance(node.parent.parent, ast.Ability)
-        ):
-            self.def_insert(node, single_use="func param")
+        self.def_insert(node, single_use="func param")
 
     def enter_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
@@ -176,6 +171,7 @@ class DefUsePass(SymTabPass):
 
         var: Token,
         """
+        self.use_lookup(node)
 
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.

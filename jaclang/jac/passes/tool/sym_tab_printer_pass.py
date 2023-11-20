@@ -61,6 +61,42 @@ def _build_symbol_tree_common(
     return root
 
 
+def print_symtab_tree(
+    root: _SymbolTree,
+    marker: str = "+-- ",
+    level_markers: Optional[List[bool]] = None,
+    output_file: Optional[str] = None,
+) -> None:
+    """Recursive function that prints the hierarchical structure of a tree."""
+    if root is None:
+        return
+
+    empty_str = " " * len(marker)
+    connection_str = "|" + empty_str[:-1]
+    if not level_markers:
+        level_markers = []
+    level = len(level_markers)  # recursion level
+
+    def mapper(draw: bool) -> str:
+        return connection_str if draw else empty_str
+
+    markers = "".join(map(mapper, level_markers[:-1]))
+    markers += marker if level > 0 else ""
+    if output_file:
+        with open(output_file, "a+") as f:
+            print(f"{markers}{root.name}", file=f)
+    else:
+        print(f"{markers}{root.name}")
+    # After root has been printed, recurse down (depth-first) the child nodes.
+    for i, child in enumerate(root.kid):
+        # The last child will not need connection markers on the current level
+        # (see example above)
+        is_last = i == len(root.kid) - 1
+        print_symtab_tree(
+            child, marker, [*level_markers, not is_last], output_file=output_file
+        )
+
+
 class SymbolTablePrinterPass(Pass):
     """Jac symbol table conversion to ASCII tree."""
 
@@ -70,42 +106,9 @@ class SymbolTablePrinterPass(Pass):
         """Initialize pass."""
         if isinstance(self.ir.sym_tab, SymbolTable):
             root = _build_symbol_tree_common(self.ir.sym_tab)
-            self._print_tree(root)
+            print_symtab_tree(root, output_file=self.SAVE_OUTPUT)
         self.terminate()
         return super().before_pass()
-
-    def _print_tree(
-        self,
-        root: _SymbolTree,
-        marker: str = "+-- ",
-        level_markers: Optional[List[bool]] = None,
-    ) -> None:
-        """Recursive function that prints the hierarchical structure of a tree."""
-        if root is None:
-            return
-
-        empty_str = " " * len(marker)
-        connection_str = "|" + empty_str[:-1]
-        if not level_markers:
-            level_markers = []
-        level = len(level_markers)  # recursion level
-
-        def mapper(draw: bool) -> str:
-            return connection_str if draw else empty_str
-
-        markers = "".join(map(mapper, level_markers[:-1]))
-        markers += marker if level > 0 else ""
-        if self.SAVE_OUTPUT:
-            with open(self.SAVE_OUTPUT, "a+") as f:
-                print(f"{markers}{root.name}", file=f)
-        else:
-            print(f"{markers}{root.name}")
-        # After root has been printed, recurse down (depth-first) the child nodes.
-        for i, child in enumerate(root.kid):
-            # The last child will not need connection markers on the current level
-            # (see example above)
-            is_last = i == len(root.kid) - 1
-            self._print_tree(child, marker, [*level_markers, not is_last])
 
 
 class SymbolTableDotGraphPass(Pass):
