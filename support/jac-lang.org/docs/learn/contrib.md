@@ -106,23 +106,23 @@ Each commit message should be structured as follows:
 ### Examples of Commits
 
 1. **feat**: Introduction of new features or syntax to the language
-   - Example: `feat(syntax): add pattern matching capabilities similar to Python 3.10`
+    - Example: `feat(syntax): add pattern matching capabilities similar based on match from Python 3.10`
 2. **fix**: Correction of bugs or inconsistencies in the language's implementation or its standard library
-   - Example: `fix(runtime): resolve memory leak issue in list comprehensions`
+    - Example: `fix(runtime): resolve memory leak issue in list comprehensions`
 3. **docs**: Updates or improvements to documentation, including both in-code and external docs
-   - Example: `docs(guide): add examples for async functionality in tutorial section`
+    - Example: `docs(guide): add examples for async functionality in tutorial section`
 4. **style**: Code changes that improve readability or conform to style guidelines without altering behavior
-   - Example: `style(compiler): refactor parser for better readability`
+    - Example: `style(compiler): refactor parser for better readability`
 5. **refactor**: Code changes that neither fix a bug nor add a feature but improve structure or design
-   - Example: `refactor(core): modularize interpreter to simplify future extensions`
+    - Example: `refactor(core): modularize interpreter to simplify future extensions`
 6. **perf**: Enhancements that significantly improve performance of the language or its runtime
-   - Example: `perf(jit): optimize just-in-time compilation for recursive functions`
+    - Example: `perf(jit): optimize just-in-time compilation for recursive functions`
 7. **test**: Addition or correction of tests for the language's features or standard library
-   - Example: `test(standard-lib): increase test coverage for the datetime module`
+    - Example: `test(standard-lib): increase test coverage for the datetime module`
 8. **chore**: Routine tasks such as updating build scripts, dependencies, etc.
-   - Example: `chore(build): update dependencies to latest versions`
+    - Example: `chore(build): update dependencies to latest versions`
 9. **build**: Changes that affect the build system, compiler, or other infrastructural components
-   - Example: `build(compiler): upgrade LLVM backend to support new optimizations`
+    - Example: `build(compiler): upgrade LLVM backend to support new optimizations`
 10. **ci**: Modifications to the Continuous Integration setup, affecting how builds and tests are run
     - Example: `ci(pipeline): add linting stage to the CI pipeline`
 
@@ -134,15 +134,15 @@ The scope should be a specific module or aspect of the language or its ecosystem
 
 The description concisely summarizes the change, focusing on why it is necessary rather than how it is implemented.
 
-### Body and Footer
+### Optional Body and Footer
 
 The body provides more context, explaining the rationale behind the change and contrasting it with previous behavior.
 
 The footer is used for indicating any breaking changes and linking to relevant GitHub issues or discussions.
 
-### Examples
+### Full Examples
 
-Here are some detailed examples relevant to Jac:
+Here are some detailed examples relevant that uses body and footers:
 
 - **Feature Commit**:
   ```
