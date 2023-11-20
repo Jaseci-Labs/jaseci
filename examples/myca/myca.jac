@@ -9,11 +9,11 @@ node epoc {
     can quantize {}
 }
 
-node life:epoc { can quantize; }
-node year:epoc { can quantize; }
-node month:epoc { can quantize; }
-node week:epoc { can quantize; }
-node day:epoc { can quantize; }
+node life:epoc: { can quantize {} }
+node year:epoc: { can quantize {} }
+node month:epoc: { can quantize {} }
+node week:epoc: { can quantize {} }
+node day:epoc: { can quantize {} }
 
 
 

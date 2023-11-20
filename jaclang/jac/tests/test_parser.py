@@ -26,9 +26,6 @@ class TestLarkParser(TestCaseMicroSuite):
         prse = JacParser(
             input_ir=JacSource(self.file_to_str(filename), mod_path=filename),
         )
-        print(filename)
-        if filename.endswith("access_info.jac"):
-            print("here")
         self.assertFalse(prse.errors_had)
 
     def test_parser_fam(self) -> None:

@@ -65,7 +65,9 @@ class TestCaseMicroSuite(ABC, TestCase):
         """Attach micro tests."""
         for filename in [
             os.path.normpath(os.path.join(root, name))
-            for root, _, files in os.walk(os.path.dirname(jaclang.__file__))
+            for root, _, files in os.walk(
+                os.path.dirname(os.path.dirname(jaclang.__file__))
+            )
             for name in files
             if name.endswith(".jac") and not name.startswith("err")
         ]:

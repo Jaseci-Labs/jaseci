@@ -314,6 +314,7 @@ class Test(AstSymbolNode, ElementStmt):
                 kid=name.kid,
             )
         )
+        self.name.parent = self
         # kid[0] = self.name  # Index is 0 since Doc string is inserted after init
         self.body = body
         AstNode.__init__(self, kid=kid)
