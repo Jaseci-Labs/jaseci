@@ -22,60 +22,22 @@ Upon successful installation, you'll have a script named `jac` at your disposal.
 
 Here's how you can use `jac`:
 
-- To simply load a sample Jac module and exit, run:
+- To simply run a Jac program file, run:
     ```bash
     jac run sample.jac
     ```
 
-- To load a sample Jac module and execute a particular function (considered the entrypoint for execution in Jac), run:
+- To load a Jac module and execute a particular function (considered the entrypoint for execution in Jac), run:
     ```bash
     jac enter sample.jac -e my_func
     ```
 
-Now Try it with this example jac program with both load and calling `test_run`
+Now Try it with this example jac program:
 
-```jac
-"""Example of simple walker walking nodes."""
-
-node item {
-    has value: int;
-}
-
-walker Creator {
-    has count: int = 0;
-    can create with <root>|:n:item entry {
-        <here> ++> spawn :n:item;
-        <self>.count += 1;
-        if <self>.count < 10 {
-            visit -->;
-        }
-    }
-}
-
-walker Walk {
-    has count: int = 0;
-    can skip_root with <root> entry { visit -->; }
-    can step with :n:item entry {
-        <here>.value = <self>.count;
-        <self>.count += 1;
-        visit --> else {
-            f"Final Value: {<here>.value-1}" |> print;
-            "Done walking." |> print;
-            disengage;
-        }
-        f"Value: {<here>.value-1}" |> print;
-    }
-}
-
-can test_run {
-    spawn :w:Creator |> <root>;
-    spawn :w:Walk |> <root>;
-}
-
-with entry {
-    |> test_run;
-}
-```
+=== "guess_game.jac"
+    ```jac linenums="1"
+    --8<-- "examples/guess_game/guess_game4.jac"
+    ```
 
 ## Integrating Jac into Python Modules
 
@@ -83,7 +45,7 @@ JacLang also provides a seamless way to import Jac into existing Python modules 
 
 ```python
 """CLI for jaclang."""
-from jaclang import jac_purple_import as jac_import
+from jaclang import jac_import
 
 cli = jac_import("cli")
 cmds = jac_import("cmds")
@@ -95,52 +57,14 @@ In the above code snippet, `cli` and `cmds` are modules that are imported simila
 
 Below is a sample `cli.jac` file to provide some insight into how Jac code looks:
 
-```jac
-"""
-This is the implementation of the command line interface tool for the
-Jac language. It's built with the Jac language via bootstraping and
-represents the first such complete Jac program.
-"""
-
-import:py inspect;
-import:py argparse;
-import:py cmd;
-include:jac impl.cli_impl;
-
-object Command {
-    has func: callable,
-        sig: inspect.Signature;
-
-    can:private init(func: callable);
-    can call(*args: list, **kwargs: dict);
-}
-
-
-object CommandRegistry {
-    has:private registry: dict[str, Command],
-             sub_parsers: argparse._SubParsersActionp;
-    has:public parser: argparse.ArgumentParser;
-
-    can init;
-    can register(func: callable);
-    can get(name: str) -> Command;
-    can items -> dict[str, Command];
-}
-
-
-object CommandShell:cmd.Cmd {
-    static has intro: str = "Welcome to the Jac CLI!",
-               prompt: str = "jac> ";
-    has cmd_reg: CommandRegistry;
-
-    can init (cmd_reg: CommandRegistry);
-    can do_exit(arg: list) -> bool;
-    can default(line: str);
-}
-
-global cmd_registry = |> CommandRegistry;
-can start_cli;
-```
+=== "cli.jac"
+    ```jac linenums="1"
+    --8<-- "jaclang/cli/cli.jac"
+    ```
+=== "cli_impl.jac"
+    ```jac linenums="1"
+    --8<-- "jaclang/cli/cli_impl.jac"
+    ```
 
 That's all you need to get started with JacLang. As you delve into this new language, you'll discover how it beautifully combines the power of Python with a modern and intuitive syntax. Happy coding!
 

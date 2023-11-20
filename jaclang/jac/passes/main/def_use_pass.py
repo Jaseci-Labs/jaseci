@@ -66,7 +66,7 @@ class DefUsePass(SymTabPass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
-        self.def_insert(node, single_use="func param")
+        self.def_insert(node)
 
     def enter_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.

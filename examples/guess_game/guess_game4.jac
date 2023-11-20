@@ -15,9 +15,9 @@ obj Game {
 A number guessing game. The player must guess a number between 1 and 100.
 """
 obj GuessTheNumberGame:Game: {
-    has attempts: int = 10,
-        correct_number: int = (1, 100) |> random.randint;
+    has correct_number: int = (1, 100) |> random.randint;
 
+    can <init>;
     can play;
     can process_guess(guess: int);
 }
@@ -25,6 +25,10 @@ obj GuessTheNumberGame:Game: {
 
 :obj:Game:can:play {
     raise "Subclasses must implement this method." |> NotImplementedError;
+}
+
+:obj:GuessTheNumberGame:can:<init> {
+    <self>.attempts = 10;
 }
 
 :obj:GuessTheNumberGame:can:play {

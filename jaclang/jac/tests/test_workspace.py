@@ -47,6 +47,7 @@ class TestWorkspace(TestCase):
         #     print(i.decl.pp(depth=2))
         out = ""
         for i in ws.get_uses(key):
+            # print(i.pp(depth=2).strip())
             out += i.pp(depth=2)
         for i in [
             "math",

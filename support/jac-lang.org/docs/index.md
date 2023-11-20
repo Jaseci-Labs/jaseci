@@ -10,8 +10,6 @@ That being said, Jac was meticulously designed to provide a seamless gradient of
 
 Jac's design encapsulates a love for the world of programming, computers, and code. It captures the spirit of what makes coding joyful while expanding upon the foundation laid by the beloved language - Python. At its core, Jac is a love letter to Python and modern coding. It inherits the clean syntax, flexibility, and broad applicability that makes Python one of the most popular programming languages in the world while being designed to give us coders new (and old) superpowers.
 
-Update: Jac is contemplating targeting Mojo's language abstractions as well iff it is properly open sourced.
-
 ## A New Home Language
 
 The goal of Jac is to serve as a home language for a coders lifestyle. Jac is built for us, folks who love python, see coding as beauty, and are serious hackers aiming to launch everything they do to the world. It is the language that I've always wanted and one that I believe you will enjoy too. We are looking forward to seeing what you will create with Jac, and how you will add to its evolving story.

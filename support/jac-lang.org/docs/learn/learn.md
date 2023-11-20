@@ -180,9 +180,9 @@ This is an example of a Shape class in Jac. A couple things to note here.
     ```jac linenums="1"
     --8<-- "examples/manual_code/circle_clean_impl.jac"
     ```
-=== "circle.py"
+=== "circle_clean_tests.jac"
     ```python linenums="1"
-    --8<-- "examples/manual_code/circle.py"
+    --8<-- "examples/manual_code/circle_clean_tests.jac"
     ```
 
 
