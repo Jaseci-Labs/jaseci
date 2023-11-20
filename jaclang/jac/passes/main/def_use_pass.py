@@ -125,7 +125,8 @@ class DefUsePass(SymTabPass):
         right: AtomType,
         is_scope_contained: bool,
         """
-        self.chain_use_lookup(self.unwind_atom_trailer(node))
+        chain = self.unwind_atom_trailer(node)
+        self.chain_use_lookup(chain)
 
     def unwind_atom_trailer(self, node: ast.AtomTrailer) -> list[ast.AstSymbolNode]:
         """Sub objects.

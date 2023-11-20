@@ -73,13 +73,11 @@ class SymTabPass(Pass):
         """Link to symbol."""
         if self.seen(node):
             return node.sym_link
-        deep = False
         if not sym_table:
             sym_table = node.sym_tab
-            deep = True
         if sym_table:
             node.sym_link = (
-                sym_table.lookup(name=node.sym_name, deep=deep) if sym_table else None
+                sym_table.lookup(name=node.sym_name, deep=True) if sym_table else None
             )
             # If successful lookup mark linked, add to table uses, and link others
             if node.sym_link:
@@ -300,7 +298,7 @@ class SymTabBuildPass(SymTabPass):
         name: Optional[Name],
         body: CodeBlock,
         """
-        self.push_scope("module_code", node)
+        # self.push_scope("module_code", node)
         self.sync_node_to_scope(node)
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
@@ -309,7 +307,7 @@ class SymTabBuildPass(SymTabPass):
         doc: Optional[Token],
         body: 'CodeBlock',
         """
-        self.pop_scope()
+        # self.pop_scope()
 
     def enter_py_inline_code(self, node: ast.PyInlineCode) -> None:
         """Sub objects.
