@@ -46,7 +46,22 @@ class TestWorkspace(TestCase):
         # print(ws.modules[key].ir.sym_tab.pp())
         # for i in ws.get_symbols(key):
         #     print(i.decl.pp(depth=2))
-        # for i in ws.get_uses(key):
-        #     print(i.pp(depth=2))
-        # print(ws.get_uses(key))
-        self.assertGreater(len(ws.get_uses(key)), 5)
+        out = ""
+        for i in ws.get_uses(key):
+            out += i.pp(depth=2)
+        for i in [
+            "math",
+            "calculate_area",
+            "RAD",
+            "expected_area",
+            "Circle",
+            "c",
+            "ShapeType",
+            "float",
+            "radius",
+            "CIRCLE",
+            "Shape",
+            "__init__",
+            "print",
+        ]:
+            self.assertIn(i, out)
