@@ -1,4 +1,9 @@
-"""Example for separation between declaration and definition."""
+"""Example for separation between declaration and definition.
+
+A data-spatial object is shown in this example, however it applies
+to all types of object classes.
+"""
+include:jac decl_defs_impl;
 
 walker travelor {
     can say_hello with entry abs;  # data spatial ability declared

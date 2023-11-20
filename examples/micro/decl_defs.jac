@@ -1,9 +1,9 @@
 """Separating Defs and Decls in a single File"""
 
-# Declarations
+# Declaration
 can my_print(messag: str) -> str;
 
-# Definitions
+# Definition
 :can:my_print
 (message: str) -> str {
     output = f"from me: {message}";
@@ -23,7 +23,6 @@ obj MyPrinter {
     print("from me: {message}");
     return output;
 }
-
 
 # Decl/Def Combined
 can your_print(messag: str) -> str {

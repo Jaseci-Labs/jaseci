@@ -55,7 +55,7 @@ cli.cmd_registry = cmds.cmd_reg  # type: ignore
 
 In the above code snippet, `cli` and `cmds` are modules that are imported similar to how you'd typically import modules in Python, i.e., `import cli` or `import cmds`.
 
-Below is a sample `cli.jac` file to provide some insight into how Jac code looks:
+Below is the actual implementation for Jac's CLI (`cli.jac`) to provide some insight into how Jac code looks:
 
 === "cli.jac"
     ```jac linenums="1"
