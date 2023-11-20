@@ -220,6 +220,10 @@ Jac has a built-in typing system, similar to Python's typing library, but it's i
     ```jac linenums="1"
     --8<-- "examples/micro/decl_defs.jac:14:25"
     ```
+=== "Another"
+    ```jac linenums="1"
+    --8<-- "examples/micro/separate_defs.jac"
+    ```
 === "Traditional"
     ```jac linenums="1"
     --8<-- "examples/micro/decl_defs.jac:27:41"
@@ -243,10 +247,17 @@ Jac supports separating definitions from implementations across multiple files. 
 
 ### Proper access control
 
+```jac linenums="1"
+--8<-- "examples/micro/access_info.jac"
+```
+
 In Jac, access control is more granular and explicit compared to Python. Jac introduces access modifiers similar to those found in languages like Java or C#, allowing for `public`, `private`, and `protected` access levels. This feature enhances encapsulation and allows developers to define the scope of class members more clearly. By controlling access to the internals of a class, programmers can prevent unintended interactions with the class's methods and attributes, leading to more robust and maintainable code.
 
 ### Proper abstract classes/methods
 
+```jac linenums="1"
+--8<-- "examples/micro/class_multi_inherit.jac"
+```
 Jac provides built-in support for abstract classes and methods, a feature that is handled through the `abc` module in Python. In Jac, an abstract class can be defined more intuitively, and any methods that are meant to be abstract can be declared as such directly. This enforces a contract for the derived classes to implement the abstract methods, ensuring consistency and predictability in class hierarchies. The introduction of proper abstract classes and methods in Jac makes it easier to design and work with complex object-oriented systems, as it provides a clear framework for how classes should be structured and interacted with.
 
 

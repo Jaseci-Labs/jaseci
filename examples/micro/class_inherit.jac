@@ -1,7 +1,7 @@
 """Super simple example of inheritance."""
 
 obj Parent {
-    can init() -> None {
+    can <init> {
         # Parent initialization
     }
     can speak() -> None {
@@ -10,7 +10,7 @@ obj Parent {
 }
 
 obj Child:Parent: {
-    can init() -> None {
+    can <init> {
         # Child initialization
         Parent.init();  # Initialize parent, :o: is alias for :obj
     }

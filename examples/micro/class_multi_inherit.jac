@@ -1,38 +1,36 @@
 """Example of multiple inheritance."""
 
 obj Parent {
-    can init() -> None {
+    can <init> {
         # Parent initialization
     }
-    can speak() -> None {
-        # Parent speaking
-    }
+    can speak() -> None abs; # Abstract method
 }
 
 obj Mom:Parent: {
-    can init() -> None {
+    can <init> {
         # Mom initialization
-        Parent.init();
+        Parent.<init>();
     }
     can speak() -> None {
-        # Mom speaking
+        print("I'm good at swimming!");
     }
 }
 
 obj Dad:Parent: {
-    can init() -> None {
+    can <init> {
         # Dad initialization
-        Parent.init();
+        Parent.<init>();
     }
     can speak() -> None {
-        # Dad speaking
+        print("I'm good at running!");
     }
 }
 
 obj Child:Mom,Dad: { #Child inherits from Mom and Dad
-    can init() -> None {
+    can speak() -> None {
         # Child initialization
-        Mom.init();
-        Dad.init();
+        Mom.speak();
+        Dad.speak();
     }
 }
