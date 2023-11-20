@@ -224,6 +224,15 @@ class SymTabBuildPass(SymTabPass):
         doc: Optional[Constant] = None,
         """
         self.sync_node_to_scope(node)
+
+    def exit_global_vars(self, node: ast.GlobalVars) -> None:
+        """Sub objects.
+
+        access: Optional[SubTag[Token]],
+        assignments: SubNodeList[Assignment],
+        is_frozen: bool,
+        doc: Optional[Constant] = None,
+        """
         for i in self.get_all_sub_nodes(node, ast.Assignment):
             for j in i.target.items:
                 if isinstance(j, ast.NameSpec):
@@ -254,9 +263,6 @@ class SymTabBuildPass(SymTabPass):
         body: CodeBlock,
         """
         self.sync_node_to_scope(node)
-        self.def_insert(node, single_use="test")
-        self.push_scope(node.name.value, node)
-        self.sync_node_to_scope(node)
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -266,6 +272,9 @@ class SymTabBuildPass(SymTabPass):
         description: Token,
         body: CodeBlock,
         """
+        self.def_insert(node, single_use="test")
+        self.push_scope(node.name.value, node)
+        self.sync_node_to_scope(node)
         self.pop_scope()
 
     def enter_module_code(self, node: ast.ModuleCode) -> None:
@@ -304,14 +313,6 @@ class SymTabBuildPass(SymTabPass):
         sub_module: Optional[Module],
         """
         self.sync_node_to_scope(node)
-        if node.items:
-            for i in node.items.items:
-                self.def_insert(i, single_use="import item")
-        else:
-            self.def_insert(
-                node.path,
-                single_use="import",
-            )
 
     def exit_import(self, node: ast.Import) -> None:
         """Sub objects.
@@ -323,8 +324,10 @@ class SymTabBuildPass(SymTabPass):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
-        self.sync_node_to_scope(node)
-        if node.is_absorb:
+        if node.items:
+            for i in node.items.items:
+                self.def_insert(i, single_use="import item")
+        elif node.is_absorb:
             if not node.sub_module or not node.sub_module.sym_tab:
                 self.error(
                     f"Module {node.path.path_str} not found to include *, or ICE occurred!"
@@ -332,7 +335,11 @@ class SymTabBuildPass(SymTabPass):
             else:
                 for v in node.sub_module.sym_tab.tab.values():
                     self.def_insert(v.decl, table_override=self.cur_scope())
-        self.sync_node_to_scope(node)
+        else:
+            self.def_insert(
+                node.path,
+                single_use="import",
+            )
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.

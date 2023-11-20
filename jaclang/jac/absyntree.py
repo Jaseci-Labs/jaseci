@@ -2216,6 +2216,8 @@ def print_ast_tree(
     def __node_repr_in_tree(node: AstNode) -> str:
         if isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}"
+        elif isinstance(node, AstSymbolNode):
+            return f"{node.__class__.__name__} - {node.sym_name}"
         else:
             return f"{node.__class__.__name__}"
 
