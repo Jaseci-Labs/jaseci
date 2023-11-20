@@ -1,100 +1,15 @@
 """Jac Blue pass for drawing AST."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Optional
 
 from jaclang.jac.passes import Pass
 from jaclang.jac.symtable import SymbolTable
-
-
-class _SymbolTree:
-    def __init__(
-        self,
-        node_name: str,
-        parent: Optional["_SymbolTree"] = None,
-        children: Optional[List["_SymbolTree"]] = None,
-    ) -> None:
-        self.parent = parent
-        self.kid = children if children is not None else []
-        self.name = node_name
-
-    @property
-    def parent(self) -> Optional["_SymbolTree"]:
-        return self.__parent
-
-    @parent.setter
-    def parent(self, parent_node: Optional["_SymbolTree"]) -> None:
-        if parent_node:
-            self.__parent = parent_node
-            parent_node.kid.append(self)
-
-
-def _build_symbol_tree_common(
-    node: SymbolTable, parent_node: Optional[_SymbolTree] = None
-) -> _SymbolTree:
-    root = _SymbolTree(
-        node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
-        parent=parent_node,
-    )
-    symbols = _SymbolTree(node_name="Symbols", parent=root)
-    children = _SymbolTree(node_name="Sub Tables", parent=root)
-
-    for sym in node.tab.values():
-        symbol_node = _SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
-        _SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
-
-        if sym.decl:
-            _SymbolTree(
-                node_name=f"decl: line {sym.decl.loc.first_line}, col {sym.decl.loc.col_start}",
-                parent=symbol_node,
-            )
-        defn = _SymbolTree(node_name="defn", parent=symbol_node)
-        [
-            _SymbolTree(
-                node_name=f"line {n.loc.first_line}, col {n.loc.col_start}", parent=defn
-            )
-            for n in sym.defn
-        ]
-
-    for k in node.kid:
-        _build_symbol_tree_common(k, children)
-    return root
-
-
-def print_symtab_tree(
-    root: _SymbolTree,
-    marker: str = "+-- ",
-    level_markers: Optional[List[bool]] = None,
-    output_file: Optional[str] = None,
-) -> None:
-    """Recursive function that prints the hierarchical structure of a tree."""
-    if root is None:
-        return
-
-    empty_str = " " * len(marker)
-    connection_str = "|" + empty_str[:-1]
-    if not level_markers:
-        level_markers = []
-    level = len(level_markers)  # recursion level
-
-    def mapper(draw: bool) -> str:
-        return connection_str if draw else empty_str
-
-    markers = "".join(map(mapper, level_markers[:-1]))
-    markers += marker if level > 0 else ""
-    if output_file:
-        with open(output_file, "a+") as f:
-            print(f"{markers}{root.name}", file=f)
-    else:
-        print(f"{markers}{root.name}")
-    # After root has been printed, recurse down (depth-first) the child nodes.
-    for i, child in enumerate(root.kid):
-        # The last child will not need connection markers on the current level
-        # (see example above)
-        is_last = i == len(root.kid) - 1
-        print_symtab_tree(
-            child, marker, [*level_markers, not is_last], output_file=output_file
-        )
+from jaclang.utils.treeprinter import (
+    SymbolTree,
+    _build_symbol_tree_common,
+    print_symtab_tree,
+)
 
 
 class SymbolTablePrinterPass(Pass):
@@ -126,13 +41,13 @@ class SymbolTableDotGraphPass(Pass):
         self.terminate()
         return super().before_pass()
 
-    def __gen_node_id(self, node: _SymbolTree) -> int:
+    def __gen_node_id(self, node: SymbolTree) -> int:
         if id(node) not in self.__id_map:
             self.__id_map[id(node)] = self.__lase_id_used
             self.__lase_id_used += 1
         return self.__id_map[id(node)]
 
-    def __gen_node_parameters(self, node: _SymbolTree) -> str:
+    def __gen_node_parameters(self, node: SymbolTree) -> str:
         shape = ""
         fillcolor = ""
         style = ""
@@ -140,7 +55,7 @@ class SymbolTableDotGraphPass(Pass):
         label = f"{label} {shape} {style} {fillcolor}".strip()
         return f"[label={label}]"
 
-    def __gen_dot_graph(self, node: _SymbolTree) -> None:
+    def __gen_dot_graph(self, node: SymbolTree) -> None:
         self.__dot_lines.append(
             f"{self.__gen_node_id(node)} {self.__gen_node_parameters(node)};"
         )

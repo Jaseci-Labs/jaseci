@@ -8,6 +8,7 @@ from jaclang.jac.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.jac.constant import Constants as Con, EdgeDir
 from jaclang.jac.constant import Tokens as Tok
 from jaclang.jac.symtable import Symbol, SymbolAccess, SymbolTable, SymbolType
+from jaclang.utils.treeprinter import print_ast_tree
 
 
 class AstNode:
@@ -2202,53 +2203,3 @@ class PythonModuleAst(EmptyToken):
         super().__init__()
         self.ast = ast
         self.file_path = mod_path
-
-
-def print_ast_tree(
-    root: AstNode,
-    marker: str = "+-- ",
-    level_markers: Optional[list[bool]] = None,
-    output_file: Optional[str] = None,
-    max_depth: Optional[int] = None,
-) -> str:
-    """Recursively print ast tree."""
-
-    def __node_repr_in_tree(node: AstNode) -> str:
-        if isinstance(node, Token):
-            return f"{node.__class__.__name__} - {node.value}"
-        elif isinstance(node, AstSymbolNode):
-            return f"{node.__class__.__name__} - {node.sym_name}"
-        else:
-            return f"{node.__class__.__name__}"
-
-    if root is None or (
-        max_depth is not None and len(level_markers or []) >= max_depth
-    ):
-        return ""
-
-    empty_str = " " * len(marker)
-    connection_str = "|" + empty_str[:-1]
-    if not level_markers:
-        level_markers = []
-    level = len(level_markers)  # recursion level
-
-    def mapper(draw: bool) -> str:
-        return connection_str if draw else empty_str
-
-    markers = "".join(map(mapper, level_markers[:-1]))
-    markers += marker if level > 0 else ""
-
-    tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
-
-    for i, child in enumerate(root.kid):
-        is_last = i == len(root.kid) - 1
-        tree_str += print_ast_tree(
-            child, marker, [*level_markers, not is_last], output_file, max_depth
-        )
-
-    # Write to file only at the top level call
-    if output_file and level == 0:
-        with open(output_file, "w") as f:
-            f.write(tree_str)
-
-    return tree_str
