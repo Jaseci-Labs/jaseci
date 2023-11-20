@@ -20,8 +20,7 @@ class SymbolTablePrinterPass(Pass):
     def before_pass(self) -> None:
         """Initialize pass."""
         if isinstance(self.ir.sym_tab, SymbolTable):
-            root = _build_symbol_tree_common(self.ir.sym_tab)
-            print_symtab_tree(root, output_file=self.SAVE_OUTPUT)
+            print_symtab_tree(self.ir.sym_tab, output_file=self.SAVE_OUTPUT)
         self.terminate()
         return super().before_pass()
 

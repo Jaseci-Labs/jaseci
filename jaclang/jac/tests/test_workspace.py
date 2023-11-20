@@ -43,6 +43,7 @@ class TestWorkspace(TestCase):
         # print(loc)
         ws = Workspace(path=loc + "/../../../examples/manual_code")
         key = [i for i in ws.modules.keys() if "circle.jac" in i][0]
+        # print(ws.modules[key].ir.sym_tab.pp())
         # for i in ws.get_symbols(key):
         #     print(i.decl.pp(depth=2))
         # for i in ws.get_uses(key):

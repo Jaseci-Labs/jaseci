@@ -99,18 +99,19 @@ def _build_symbol_tree_common(
         symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
         SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
 
-        if sym.decl:
+        if sym.decl and sym.decl.loc.first_line > 0:
             SymbolTree(
                 node_name=f"decl: line {sym.decl.loc.first_line}, col {sym.decl.loc.col_start}",
                 parent=symbol_node,
             )
-        defn = SymbolTree(node_name="defn", parent=symbol_node)
-        [
-            SymbolTree(
-                node_name=f"line {n.loc.first_line}, col {n.loc.col_start}", parent=defn
-            )
-            for n in sym.defn
-        ]
+            defn = SymbolTree(node_name="defn", parent=symbol_node)
+            [
+                SymbolTree(
+                    node_name=f"line {n.loc.first_line}, col {n.loc.col_start}",
+                    parent=defn,
+                )
+                for n in sym.defn
+            ]
 
     for k in node.kid:
         _build_symbol_tree_common(k, children)
@@ -118,36 +119,53 @@ def _build_symbol_tree_common(
 
 
 def print_symtab_tree(
+    root: SymbolTable,
+    marker: str = "+-- ",
+    level_markers: Optional[list[bool]] = None,
+    output_file: Optional[str] = None,
+    depth: Optional[int] = None,
+) -> str:
+    """Recursively print symbol table tree."""
+    return get_symtab_tree_str(
+        _build_symbol_tree_common(root),
+        marker,
+        level_markers,
+        output_file,
+        depth,
+    )
+
+
+def get_symtab_tree_str(
     root: SymbolTree,
     marker: str = "+-- ",
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
-) -> None:
-    """Recursive function that prints the hierarchical structure of a tree."""
-    if root is None:
-        return
+    depth: Optional[int] = None,
+) -> str:
+    """Recursively print symbol table tree."""
+    if root is None or depth == 0:
+        return ""
 
-    empty_str = " " * len(marker)
-    connection_str = "|" + empty_str[:-1]
-    if not level_markers:
-        level_markers = []
-    level = len(level_markers)  # recursion level
+    level_markers = level_markers or []
+    markers = "".join(
+        [
+            "|" + " " * (len(marker) - 1) if draw else " " * len(marker)
+            for draw in level_markers[:-1]
+        ]
+    ) + (marker if level_markers else "")
+    line = f"{markers}{root.name}\n"
 
-    def mapper(draw: bool) -> str:
-        return connection_str if draw else empty_str
-
-    markers = "".join(map(mapper, level_markers[:-1]))
-    markers += marker if level > 0 else ""
     if output_file:
         with open(output_file, "a+") as f:
-            print(f"{markers}{root.name}", file=f)
-    else:
-        print(f"{markers}{root.name}")
-    # After root has been printed, recurse down (depth-first) the child nodes.
-    for i, child in enumerate(root.kid):
-        # The last child will not need connection markers on the current level
-        # (see example above)
-        is_last = i == len(root.kid) - 1
-        print_symtab_tree(
-            child, marker, [*level_markers, not is_last], output_file=output_file
+            f.write(line)
+
+    return line + "".join(
+        get_symtab_tree_str(
+            child,
+            marker,
+            level_markers + [i < len(root.kid) - 1],
+            output_file,
+            None if depth is None else depth - 1,
         )
+        for i, child in enumerate(root.kid)
+    )

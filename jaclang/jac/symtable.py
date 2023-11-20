@@ -4,6 +4,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, TYPE_CHECKING
 
+from jaclang.utils.treeprinter import print_symtab_tree
+
 
 if TYPE_CHECKING:
     import jaclang.jac.absyntree as ast
@@ -157,6 +159,10 @@ class SymbolTable:
         """Push a new scope onto the symbol table."""
         self.kid.append(SymbolTable(name, key_node, self))
         return self.kid[-1]
+
+    def pp(self, depth: Optional[int] = None) -> str:
+        """Pretty print."""
+        return print_symtab_tree(root=self, depth=depth)
 
     def __repr__(self) -> str:
         """Repr."""
