@@ -18,7 +18,6 @@ class JacFeature:
 
     pm = pluggy.PluginManager("jac")
     pm.add_hookspecs(JacFeatureSpec)
-    pm.load_setuptools_entrypoints("jac")
     pm.register(JacFeatureDefaults)
 
     @staticmethod

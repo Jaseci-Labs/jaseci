@@ -104,16 +104,16 @@ obj Element {
     has _jac_: ElementInterface = ElementInterface();
 }
 
-obj Master:Element: { has root_node: Node = Node(); }
+obj Node {
+    has _jac_: NodeInterface = NodeInterface();
+}
+obj Master:Element: {
+    has root_node: Node = Node();
+}
 
 
 obj Object:Element: {
     has _jac_: ObjectInterface = ObjectInterface();
-    static has _jac_ds_: DataSpatialInterface = DataSpatialInterface();
-}
-
-obj Node:Object: {
-    has _jac_: NodeInterface = NodeInterface();
 }
 
 obj Edge:Object: {

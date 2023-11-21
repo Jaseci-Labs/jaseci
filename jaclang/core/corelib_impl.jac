@@ -293,8 +293,10 @@ import:py from jaclang.jac.constant, EdgeDir;
 
 :obj:JacPlugin:can:bind_architype
 (arch: AT, arch_type: str) -> None {
+    print("OK THIS HAPPEND");
     match arch_type {
         case 'obj':
+            print("OK THIS HAPPEND");
             arch._jac_ = ObjectInterface();
         case 'node':
             arch._jac_ = NodeInterface();
