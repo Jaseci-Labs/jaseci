@@ -47,6 +47,9 @@ class SocketConsumer(WebsocketConsumer):
             self.group, {"type": "notify", "data": data}
         )
 
+    def disconnect(self, close_code):
+        async_to_sync(self.channel_layer.group_discard)(self.group, self.channel_name)
+
     def notify(self, data):
         self.send(text_data=dumps(data))
 
