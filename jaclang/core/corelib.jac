@@ -3,6 +3,7 @@
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 import:py from jaclang.jac.constant, EdgeDir;
+import:py from jaclang.jac.plugin, hookimpl;
 
 include:jac corelib_impl;
 
@@ -58,7 +59,9 @@ obj ElementInterface {
     can revoke_access(caller_id: UUID);
 }
 
-obj DataSpatialInterface {
+obj ObjectInterface:ElementInterface: {}
+
+obj DataSpatialInterface:ObjectInterface: {
     static has ds_entry_funcs: list[dict]=[],
                ds_exit_funcs: list[dict]=[];
 
@@ -66,9 +69,7 @@ obj DataSpatialInterface {
     static can on_exit(cls: type, triggers: list[type]);
 }
 
-obj ObjectInterface:ElementInterface: {}
-
-obj NodeInterface:ObjectInterface: {
+obj NodeInterface:DataSpatialInterface: {
     has edges: dict[EdgeDir, list[Edge]]
         = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
@@ -77,7 +78,7 @@ obj NodeInterface:ObjectInterface: {
     can __call__(walk: Walker);
 }
 
-obj EdgeInterface:ObjectInterface: {
+obj EdgeInterface:DataSpatialInterface: {
     has source: Node = None,
         target: Node = None,
         dir: EdgeDir = None;
@@ -87,7 +88,7 @@ obj EdgeInterface:ObjectInterface: {
     can __call__(walk: Walker);
 }
 
-obj WalkerInterface:ObjectInterface: {
+obj WalkerInterface:DataSpatialInterface: {
     has path: list[Node] = [],
         next: list[Node] = [],
         ignores: list[Node] = [],
@@ -102,6 +103,9 @@ obj WalkerInterface:ObjectInterface: {
 obj Element {
     has _jac_: ElementInterface = ElementInterface();
 }
+
+obj Master:Element: { has root_node: Node = Node(); }
+
 
 obj Object:Element: {
     has _jac_: ObjectInterface = ObjectInterface();
@@ -120,6 +124,7 @@ obj Walker:Object: {
     has _jac_: WalkerInterface = WalkerInterface();
 }
 
-obj Master:Element: { has root_node: Node = Node(); }
-
-can make_architype(base_class: type) -> type;
+obj JacPlugin {
+    @hookimpl
+    static can bind_architype(arch: AT, arch_type: str) -> None;
+}

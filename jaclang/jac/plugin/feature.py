@@ -43,15 +43,15 @@ class JacFeature:
                         for k, v in cls_module_globals.items():  # Risky!
                             if k not in func_module_globals and not k.startswith("__"):
                                 func_module_globals[k] = v
-            JacFeature.bind_architype(cls)
+            JacFeature.bind_architype(cls, arch_type)
             return dataclass(cls)
 
         return decorator
 
     @staticmethod
-    def bind_architype(arch: AT) -> None:
+    def bind_architype(arch: AT, arch_type: str) -> None:
         """Create a new architype."""
-        return JacFeature.pm.hook.bind_architype(arch=arch)
+        return JacFeature.pm.hook.bind_architype(arch=arch, arch_type=arch_type)
 
     @staticmethod
     def make_ds_ability(event: str, trigger: Optional[type]) -> Callable[[type], type]:

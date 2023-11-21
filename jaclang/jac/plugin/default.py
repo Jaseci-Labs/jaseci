@@ -14,7 +14,7 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def bind_architype(arch: AT) -> None:
+    def bind_architype(arch: AT, arch_type: str) -> None:
         """Create a new architype."""
         arch._jac_ = None
 

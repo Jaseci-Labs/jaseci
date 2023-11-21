@@ -1,6 +1,5 @@
 """Jac's Key Elemental Abstractions"""
 
-
 import:py sys;
 import:py from uuid, UUID, uuid4;
 import:py from jaclang.jac.constant, EdgeDir;
@@ -164,25 +163,6 @@ import:py from jaclang.jac.constant, EdgeDir;
     return decorator;
 }
 
-:can:make_architype(base_class: type) -> type {
-    can class_decorator(cls: type) -> type {
-        # Check if cls is a subclass of base_class
-        if not issubclass(cls, base_class) {
-            # If it's not, create a new class with the same name that inherits from both cls and base_class
-            cls = type(cls.__name__, (cls, base_class), {});
-            # original_init = cls.__init__;
-            # can new_init(self: cls, *args: list, **kwargs: dict) -> None {
-            #     base_class.__init__(<self>, *args, **kwargs);
-            #     original_init(<self>, *args, **kwargs);
-            # }
-            # cls.__init__ = new_init;
-        }
-        return cls;
-    }
-    return class_decorator;
-}
-
-
 :obj:NodeInterface:can:connect_node
 (nd: Node, edg: Edge) -> Node {
     (<self>.py_obj, nd) :> edg.attach;
@@ -252,7 +232,7 @@ import:py from jaclang.jac.constant, EdgeDir;
 }
 
 
-:obj:Node:can:__call__
+:obj:NodeInterface:can:__call__
 (walk: Walker) {
     if not (walk, Walker) :> isinstance {
         raise ("Argument must be a Walker instance") :> TypeError;
@@ -261,7 +241,7 @@ import:py from jaclang.jac.constant, EdgeDir;
 }
 
 
-:obj:Edge:can:__call__
+:obj:EdgeInterface:can:__call__
 (walk: Walker) {
     if not (walk, Walker) :> isinstance {
         raise ("Argument must be a Walker instance") :> TypeError;
@@ -269,7 +249,7 @@ import:py from jaclang.jac.constant, EdgeDir;
     <self>._jac_.target :> walk;
 }
 
-:obj:Walker:can:__call__
+:obj:WalkerInterface:can:__call__
 (nd: Node) {
     <self>._jac_.path = [];
     <self>._jac_.next = [nd];
@@ -309,4 +289,20 @@ import:py from jaclang.jac.constant, EdgeDir;
         nd :> <self>._jac_.path.append;
     }
     <self>._jac_.ignores=[];
+}
+
+:obj:JacPlugin:can:bind_architype
+(arch: AT, arch_type: str) -> None {
+    match arch_type {
+        case 'obj':
+            arch._jac_ = ObjectInterface();
+        case 'node':
+            arch._jac_ = NodeInterface();
+        case 'edge':
+            arch._jac_ = EdgeInterface();
+        case 'walker':
+            arch._jac_ = WalkerInterface();
+        case _:
+            raise ("Invalid archetype type") :> TypeError;
+    }
 }
