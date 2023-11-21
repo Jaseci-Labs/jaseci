@@ -662,13 +662,20 @@ class FuncSignature(AstNode):
     @property
     def is_method(self) -> bool:
         """Check if is method."""
-        if (isinstance(self.parent, Ability) and self.parent.is_method) or (
+        return (isinstance(self.parent, Ability) and self.parent.is_method) or (
             isinstance(self.parent, AbilityDef)
             and isinstance(self.parent.decl_link, Ability)
             and self.parent.decl_link.is_method
-        ):
-            return True
-        return False
+        )
+
+    @property
+    def is_static(self) -> bool:
+        """Check if is static."""
+        return (isinstance(self.parent, Ability) and self.parent.is_static) or (
+            isinstance(self.parent, AbilityDef)
+            and isinstance(self.parent.decl_link, Ability)
+            and self.parent.decl_link.is_static
+        )
 
 
 class EventSignature(AstNode):

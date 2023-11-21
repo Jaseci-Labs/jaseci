@@ -717,7 +717,9 @@ class PyastGenPass(Pass):
         return_type: Optional[SubTag[ExprType]],
         """
         params = (
-            [self.sync(ast3.arg(arg="self", annotation=None))] if node.is_method else []
+            [self.sync(ast3.arg(arg="self", annotation=None))]
+            if node.is_method and not node.is_static
+            else []
         )
         vararg = None
         kwarg = None
