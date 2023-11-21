@@ -172,6 +172,10 @@ class WalkerStmtOnlyNode(AstNode):
 class AstImplOnlyNode(AstNode):
     """ImplOnly node type for Jac Ast."""
 
+    def __init__(self, decl_link: Optional[AstNode]) -> None:
+        """Initialize impl only node."""
+        self.decl_link = decl_link
+
 
 class Expr(AstNode):
     """Expr node type for Jac Ast."""
@@ -481,7 +485,6 @@ class ArchDef(ArchSpec, AstImplOnlyNode):
         """Initialize arch def node."""
         self.target = target
         self.body = body
-        self.decl_link = decl_link
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -491,6 +494,7 @@ class ArchDef(ArchSpec, AstImplOnlyNode):
         )
         AstDocNode.__init__(self, doc=doc)
         ArchSpec.__init__(self, decorators=decorators)
+        AstImplOnlyNode.__init__(self, decl_link=decl_link)
 
 
 class Enum(ArchSpec, AstAccessNode):
@@ -537,7 +541,6 @@ class EnumDef(ArchSpec, AstImplOnlyNode):
         """Initialize arch def node."""
         self.target = target
         self.body = body
-        self.decl_link = decl_link
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -547,6 +550,7 @@ class EnumDef(ArchSpec, AstImplOnlyNode):
         )
         AstDocNode.__init__(self, doc=doc)
         ArchSpec.__init__(self, decorators=decorators)
+        AstImplOnlyNode.__init__(self, decl_link=decl_link)
 
 
 class Ability(
@@ -630,7 +634,6 @@ class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
         self.signature = signature
         self.body = body
         self.decorators = decorators
-        self.decl_link = decl_link
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -639,6 +642,7 @@ class AbilityDef(AstSymbolNode, ElementStmt, AstImplOnlyNode, CodeBlockStmt):
             sym_type=SymbolType.IMPL,
         )
         AstDocNode.__init__(self, doc=doc)
+        AstImplOnlyNode.__init__(self, decl_link=decl_link)
 
 
 class FuncSignature(AstNode):

@@ -74,6 +74,7 @@ obj NodeInterface:ObjectInterface: {
 
     can connect_node(nd: Node, edg: Edge) -> Node;
     can edges_to_nodes(dir: EdgeDir) -> list[Node];
+    can __call__(walk: Walker);
 }
 
 obj EdgeInterface:ObjectInterface: {
@@ -83,6 +84,7 @@ obj EdgeInterface:ObjectInterface: {
 
     can apply_dir(dir: EdgeDir) -> Edge;
     can attach(src: Node, trg: Node) -> Edge;
+    can __call__(walk: Walker);
 }
 
 obj WalkerInterface:ObjectInterface: {
@@ -94,6 +96,7 @@ obj WalkerInterface:ObjectInterface: {
     can visit_node(nds: list[Node]|list[Edge]|Node|Edge);
     can ignore_node(nds: list[Node]|list[Edge]|Node|Edge);
     can disengage_now;
+    can __call__(nd: Node);
 }
 
 obj Element {
@@ -107,17 +110,14 @@ obj Object:Element: {
 
 obj Node:Object: {
     has _jac_: NodeInterface = NodeInterface();
-    can __call__(walk: Walker);
 }
 
 obj Edge:Object: {
     has _jac_: EdgeInterface = EdgeInterface();
-    can __call__(walk: Walker);
 }
 
 obj Walker:Object: {
     has _jac_: WalkerInterface = WalkerInterface();
-    can __call__(nd: Node);
 }
 
 obj Master:Element: { has root_node: Node = Node(); }
