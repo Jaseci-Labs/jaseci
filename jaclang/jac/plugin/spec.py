@@ -1,3 +1,4 @@
+# type: ignore
 """Jac Language Features."""
 from __future__ import annotations
 
