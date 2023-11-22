@@ -25,44 +25,61 @@ class FuseCommentsPass(Pass):
 
     def after_pass(self) -> None:
         """Insert comment tokens into all_tokens."""
-        chomp: list[ast.CommentToken] = [*self.comments]
-        new_tokens: list[ast.Token] = []
-        if not len(chomp):
-            return
-        for i in range(len(self.all_tokens)):
-            chomp[0].is_inline = chomp[0].is_inline or (
-                self.all_tokens[i].loc.first_line == chomp[0].loc.first_line
-            )
-            if i == len(self.all_tokens) - 1:
-                if len(chomp):
-                    new_tokens.append(self.all_tokens[i])
-                    new_tokens += chomp
-                break
-            while (i < len(self.all_tokens) - 1) and (
-                (
-                    self.all_tokens[i].loc.first_line == chomp[0].loc.first_line
-                    and self.all_tokens[i].loc.col_start > chomp[0].loc.col_start
-                )
-                or (self.all_tokens[i].loc.first_line > chomp[0].loc.first_line)
+        comment_stream = iter(self.comments)  # Iterator for comments
+        code_stream = iter(self.all_tokens)  # Iterator for code tokens
+        new_stream = []  # New stream to hold ordered tokens
+
+        try:
+            next_comment = next(comment_stream)  # Get the first comment
+        except StopIteration:
+            next_comment = None
+
+        try:
+            next_code = next(code_stream)  # Get the first code token
+        except StopIteration:
+            next_code = None
+
+        while next_comment or next_code:
+            if next_comment and (
+                not next_code or is_first_loc_smaller(next_comment.loc, next_code.loc)
             ):
-                new_tokens.append(chomp[0])
-                chomp = chomp[1:]
-                if not len(chomp):
-                    new_tokens.extend(self.all_tokens[i + 1 :])
-                    break
-            new_tokens.append(self.all_tokens[i])
-            if not len(chomp):
-                break
-        for i in range(len(new_tokens)):
-            if isinstance(new_tokens[i], ast.CommentToken):
+                # Add the comment to the new stream
+                new_stream.append(next_comment)
+                try:
+                    next_comment = next(comment_stream)
+                except StopIteration:
+                    next_comment = None
+            elif next_code:
+                # Add the code token to the new stream
+                new_stream.append(next_code)
+                try:
+                    next_code = next(code_stream)
+                except StopIteration:
+                    next_code = None
+
+        # Insert the tokens back into the AST
+        for i, token in enumerate(new_stream):
+            if isinstance(token, ast.CommentToken):
                 if i == 0:
-                    self.ir.add_kids_left([new_tokens[i]])
-                    continue
-                new_val = new_tokens[i - 1]
-                if new_val.parent is not None:
-                    new_kids = new_val.parent.kid
-                    new_kids.insert(new_kids.index(new_val) + 1, new_tokens[i])
-                    new_val.parent.set_kids(new_kids)
+                    self.ir.add_kids_left([token])
                 else:
-                    new_val.pp()
-                    raise self.ice("Token without parent in AST should be impossible")
+                    prev_token = new_stream[i - 1]
+                    if prev_token.parent is not None:
+                        parent_kids = prev_token.parent.kid
+                        insert_index = parent_kids.index(prev_token) + 1
+                        parent_kids.insert(insert_index, token)
+                        prev_token.parent.set_kids(parent_kids)
+                    else:
+                        prev_token.pp()
+                        raise self.ice(
+                            "Token without parent in AST should be impossible"
+                        )
+
+
+def is_first_loc_smaller(loc1: ast.CodeLocInfo, loc2: ast.CodeLocInfo) -> bool:
+    """Compare two CodeLocInfo objects."""
+    if loc1.first_line < loc2.first_line:
+        return True
+    elif loc1.first_line == loc2.first_line:
+        return loc1.col_start < loc2.col_start
+    return False
