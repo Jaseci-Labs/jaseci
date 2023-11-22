@@ -23,6 +23,7 @@ from json import dumps, loads
 from copy import copy, deepcopy
 from base64 import b64decode
 from itertools import pairwise
+from types import GeneratorType
 
 from jaseci.jac.jsci_vm.op_codes import JsCmp
 
@@ -230,7 +231,7 @@ class Interp(VirtualMachine):
             self.run_expression(kid[3])
             lst = self.pop().value
 
-            if isinstance(lst, (list, dict)):
+            if isinstance(lst, (list, dict, GeneratorType)):
                 for i in lst:
                     self._loop_ctrl = None
                     var.value = i
