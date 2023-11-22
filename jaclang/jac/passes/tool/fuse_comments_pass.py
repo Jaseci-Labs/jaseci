@@ -25,37 +25,45 @@ class FuseCommentsPass(Pass):
 
     def after_pass(self) -> None:
         """Insert comment tokens into all_tokens."""
-        chomp = [*self.comments]  # Copy of self.comments
-        new_tokens = []
+        comment_stream = iter(self.comments)  # Iterator for comments
+        code_stream = iter(self.all_tokens)  # Iterator for code tokens
+        new_stream = []  # New stream to hold ordered tokens
 
-        # Handle the case where the first comment is before any code token
-        if chomp and (
-            not self.all_tokens
-            or chomp[0].loc.first_line < self.all_tokens[0].loc.first_line
-        ):
-            new_tokens.append(chomp.pop(0))
+        try:
+            next_comment = next(comment_stream)  # Get the first comment
+        except StopIteration:
+            next_comment = None
 
-        for token in self.all_tokens:
-            while chomp and (
-                chomp[0].loc.first_line < token.loc.first_line
-                or (
-                    chomp[0].loc.first_line == token.loc.first_line
-                    and chomp[0].loc.col_start < token.loc.col_start
-                )
+        try:
+            next_code = next(code_stream)  # Get the first code token
+        except StopIteration:
+            next_code = None
+
+        while next_comment or next_code:
+            if next_comment and (
+                not next_code or is_first_loc_smaller(next_comment.loc, next_code.loc)
             ):
-                new_tokens.append(chomp.pop(0))
-            new_tokens.append(token)
-
-        # Append any remaining comments after the last code token
-        new_tokens.extend(chomp)
+                # Add the comment to the new stream
+                new_stream.append(next_comment)
+                try:
+                    next_comment = next(comment_stream)
+                except StopIteration:
+                    next_comment = None
+            elif next_code:
+                # Add the code token to the new stream
+                new_stream.append(next_code)
+                try:
+                    next_code = next(code_stream)
+                except StopIteration:
+                    next_code = None
 
         # Insert the tokens back into the AST
-        for i, token in enumerate(new_tokens):
+        for i, token in enumerate(new_stream):
             if isinstance(token, ast.CommentToken):
                 if i == 0:
                     self.ir.add_kids_left([token])
                 else:
-                    prev_token = new_tokens[i - 1]
+                    prev_token = new_stream[i - 1]
                     if prev_token.parent is not None:
                         parent_kids = prev_token.parent.kid
                         insert_index = parent_kids.index(prev_token) + 1
@@ -66,3 +74,12 @@ class FuseCommentsPass(Pass):
                         raise self.ice(
                             "Token without parent in AST should be impossible"
                         )
+
+
+def is_first_loc_smaller(loc1: ast.CodeLocInfo, loc2: ast.CodeLocInfo) -> bool:
+    """Compare two CodeLocInfo objects."""
+    if loc1.first_line < loc2.first_line:
+        return True
+    elif loc1.first_line == loc2.first_line:
+        return loc1.col_start < loc2.col_start
+    return False
