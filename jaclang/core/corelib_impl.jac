@@ -3,6 +3,7 @@
 import:py sys;
 import:py from uuid, UUID, uuid4;
 import:py from jaclang.jac.constant, EdgeDir;
+import:py from jaclang.jac.plugin, hookimpl;
 
 :obj:Memory:can:get_obj
 (caller_id: UUID, item_id: UUID, override: bool = False) -> Element {
@@ -291,12 +292,11 @@ import:py from jaclang.jac.constant, EdgeDir;
     <self>._jac_.ignores=[];
 }
 
+@hookimpl
 :obj:JacPlugin:can:bind_architype
 (arch: AT, arch_type: str) -> None {
-    print("OK THIS HAPPEND");
     match arch_type {
         case 'obj':
-            print("OK THIS HAPPEND");
             arch._jac_ = ObjectInterface();
         case 'node':
             arch._jac_ = NodeInterface();

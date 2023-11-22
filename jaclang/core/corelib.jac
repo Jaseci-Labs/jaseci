@@ -125,6 +125,5 @@ obj Walker:Object: {
 }
 
 obj JacPlugin {
-    @hookimpl
     static can bind_architype(arch: AT, arch_type: str) -> None;
 }
