@@ -35,8 +35,6 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        if "circle_clean_tests.jac" in filename:
-            return
         code_gen_pure = jac_file_to_pass(
             self.fixture_abs_path(filename),
             target=PyastGenPass,
@@ -52,7 +50,15 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-
+        if "circle_clean_tests.jac" in filename:
+            tokens = code_gen_format.ir.gen.jac.split()
+            num_test = 0
+            for i in range(len(tokens)):
+                if tokens[i] == "test":
+                    num_test += 1
+                    self.assertEqual(tokens[i + 1], "{")
+            self.assertEqual(num_test, 3)
+            return
         for i in range(len(code_gen_pure.ir.gen.py.split("\n"))):
             if "test_" in code_gen_pure.ir.gen.py.split("\n")[i]:
                 continue
