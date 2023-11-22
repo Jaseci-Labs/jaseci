@@ -3,6 +3,7 @@
 import:py from datetime, datetime;
 import:py from uuid, UUID, uuid4;
 import:py from jaclang.jac.constant, EdgeDir;
+import:py from jaclang.jac.plugin, hookimpl;
 
 include:jac corelib_impl;
 
@@ -58,7 +59,9 @@ obj ElementInterface {
     can revoke_access(caller_id: UUID);
 }
 
-obj DataSpatialInterface {
+obj ObjectInterface:ElementInterface: {}
+
+obj DataSpatialInterface:ObjectInterface: {
     static has ds_entry_funcs: list[dict]=[],
                ds_exit_funcs: list[dict]=[];
 
@@ -66,26 +69,26 @@ obj DataSpatialInterface {
     static can on_exit(cls: type, triggers: list[type]);
 }
 
-obj ObjectInterface:ElementInterface: {}
-
-obj NodeInterface:ObjectInterface: {
+obj NodeInterface:DataSpatialInterface: {
     has edges: dict[EdgeDir, list[Edge]]
         = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
     can connect_node(nd: Node, edg: Edge) -> Node;
     can edges_to_nodes(dir: EdgeDir) -> list[Node];
+    can __call__(walk: Walker);
 }
 
-obj EdgeInterface:ObjectInterface: {
+obj EdgeInterface:DataSpatialInterface: {
     has source: Node = None,
         target: Node = None,
         dir: EdgeDir = None;
 
     can apply_dir(dir: EdgeDir) -> Edge;
     can attach(src: Node, trg: Node) -> Edge;
+    can __call__(walk: Walker);
 }
 
-obj WalkerInterface:ObjectInterface: {
+obj WalkerInterface:DataSpatialInterface: {
     has path: list[Node] = [],
         next: list[Node] = [],
         ignores: list[Node] = [],
@@ -94,32 +97,33 @@ obj WalkerInterface:ObjectInterface: {
     can visit_node(nds: list[Node]|list[Edge]|Node|Edge);
     can ignore_node(nds: list[Node]|list[Edge]|Node|Edge);
     can disengage_now;
+    can __call__(nd: Node);
 }
 
 obj Element {
     has _jac_: ElementInterface = ElementInterface();
 }
 
-obj Object:Element: {
-    has _jac_: ObjectInterface = ObjectInterface();
-    static has _jac_ds_: DataSpatialInterface = DataSpatialInterface();
+obj Node {
+    has _jac_: NodeInterface = NodeInterface();
+}
+obj Master:Element: {
+    has root_node: Node = Node();
 }
 
-obj Node:Object: {
-    has _jac_: NodeInterface = NodeInterface();
-    can __call__(walk: Walker);
+
+obj Object:Element: {
+    has _jac_: ObjectInterface = ObjectInterface();
 }
 
 obj Edge:Object: {
     has _jac_: EdgeInterface = EdgeInterface();
-    can __call__(walk: Walker);
 }
 
 obj Walker:Object: {
     has _jac_: WalkerInterface = WalkerInterface();
-    can __call__(nd: Node);
 }
 
-obj Master:Element: { has root_node: Node = Node(); }
-
-can make_architype(base_class: type) -> type;
+obj JacPlugin {
+    static can bind_architype(arch: AT, arch_type: str) -> None;
+}

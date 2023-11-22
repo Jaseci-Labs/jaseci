@@ -722,8 +722,11 @@ class JacParser(Pass):
             abstract_ability: KW_STATIC? KW_CAN access_tag? any_ref (func_decl | event_clause) KW_ABSTRACT SEMI
             """
             chomp = [*kid]
-            is_static = isinstance(chomp[0], ast.Token)
+            is_static = (
+                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            )
             chomp = chomp[1:] if is_static else chomp
+            chomp = chomp[1:]
             access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
             chomp = chomp[1:] if access else chomp
             name = chomp[0]

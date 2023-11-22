@@ -645,6 +645,10 @@ class PyastGenPass(Pass):
                 node,
             )
         decorator_list = node.decorators.gen.py_ast if node.decorators else []
+        if node.is_static:
+            decorator_list.insert(
+                0, self.sync(ast3.Name(id="staticmethod", ctx=ast3.Load()))
+            )
         if isinstance(node.signature, ast.EventSignature):
             self.needs_jac_feature()
             decorator_list.append(
@@ -713,7 +717,9 @@ class PyastGenPass(Pass):
         return_type: Optional[SubTag[ExprType]],
         """
         params = (
-            [self.sync(ast3.arg(arg="self", annotation=None))] if node.is_method else []
+            [self.sync(ast3.arg(arg="self", annotation=None))]
+            if node.is_method and not node.is_static
+            else []
         )
         vararg = None
         kwarg = None
