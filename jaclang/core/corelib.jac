@@ -100,28 +100,13 @@ obj WalkerInterface:DataSpatialInterface: {
     can __call__(nd: Node);
 }
 
-obj Element {
-    has _jac_: ElementInterface = ElementInterface();
-}
-
-obj Node {
+obj Root {
     has _jac_: NodeInterface = NodeInterface();
 }
-obj Master:Element: {
-    has root_node: Node = Node();
-}
 
-
-obj Object:Element: {
-    has _jac_: ObjectInterface = ObjectInterface();
-}
-
-obj Edge:Object: {
-    has _jac_: EdgeInterface = EdgeInterface();
-}
-
-obj Walker:Object: {
-    has _jac_: WalkerInterface = WalkerInterface();
+obj Master {
+    has _jac_: ElementInterface = ElementInterface();
+    has root_node: Root = Root();
 }
 
 obj JacPlugin {
