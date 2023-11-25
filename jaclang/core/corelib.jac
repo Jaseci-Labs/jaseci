@@ -110,4 +110,5 @@ obj Master {
 
 obj JacPlugin {
     static can bind_architype(arch: AT, arch_type: str) -> None;
+    static can get_root() -> AT;
 }
