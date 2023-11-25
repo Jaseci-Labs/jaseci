@@ -308,3 +308,9 @@ import:py from jaclang.jac.plugin, hookimpl;
             raise ("Invalid archetype type") :> TypeError;
     }
 }
+
+@hookimpl
+:obj:JacPlugin:can:get_root
+() -> None {
+    return exec_ctx.get_root();
+}

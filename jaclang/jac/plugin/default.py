@@ -88,3 +88,9 @@ class JacFeatureDefaults:
     ) -> list[T]:
         """Jac's assign comprehension feature."""
         return target
+
+    @staticmethod
+    @hookimpl
+    def get_root() -> AT:
+        """Jac's assign comprehension feature."""
+        return None
