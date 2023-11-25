@@ -100,11 +100,10 @@ obj WalkerInterface:DataSpatialInterface: {
     can __call__(nd: Node);
 }
 
-obj Root {
-    has _jac_: NodeInterface = NodeInterface();
-}
-
 obj Master {
+    obj Root {
+        has _jac_: NodeInterface = NodeInterface();
+    }
     has _jac_: ElementInterface = ElementInterface();
     has root_node: Root = Root();
 }
