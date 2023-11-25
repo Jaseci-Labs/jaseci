@@ -13,7 +13,7 @@ class FuseCommentsPass(Pass):
     def before_pass(self) -> None:
         """Before pass."""
         self.all_tokens: list[ast.Token] = []
-        self.comments: list[ast.Token] = (
+        self.comments: list[ast.CommentToken] = (
             self.ir.source.comments if isinstance(self.ir, ast.Module) else []
         )
         return super().before_pass()
@@ -41,7 +41,7 @@ class FuseCommentsPass(Pass):
 
         while next_comment or next_code:
             if next_comment and (
-                not next_code or is_first_loc_smaller(next_comment.loc, next_code.loc)
+                not next_code or is_comment_next(next_comment, next_code)
             ):
                 # Add the comment to the new stream
                 new_stream.append(next_comment)
@@ -76,10 +76,11 @@ class FuseCommentsPass(Pass):
                         )
 
 
-def is_first_loc_smaller(loc1: ast.CodeLocInfo, loc2: ast.CodeLocInfo) -> bool:
+def is_comment_next(cmt: ast.CommentToken, code: ast.Token) -> bool:
     """Compare two CodeLocInfo objects."""
-    if loc1.first_line < loc2.first_line:
+    if cmt.loc.first_line < code.loc.first_line:
         return True
-    elif loc1.first_line == loc2.first_line:
-        return loc1.col_start < loc2.col_start
+    elif cmt.loc.first_line == code.loc.first_line:
+        cmt.is_inline = True
+        return cmt.loc.col_start < code.loc.col_start
     return False

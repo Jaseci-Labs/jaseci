@@ -100,30 +100,15 @@ obj WalkerInterface:DataSpatialInterface: {
     can __call__(nd: Node);
 }
 
-obj Element {
+obj Master {
+    obj Root {
+        has _jac_: NodeInterface = NodeInterface();
+    }
     has _jac_: ElementInterface = ElementInterface();
-}
-
-obj Node {
-    has _jac_: NodeInterface = NodeInterface();
-}
-obj Master:Element: {
-    has root_node: Node = Node();
-}
-
-
-obj Object:Element: {
-    has _jac_: ObjectInterface = ObjectInterface();
-}
-
-obj Edge:Object: {
-    has _jac_: EdgeInterface = EdgeInterface();
-}
-
-obj Walker:Object: {
-    has _jac_: WalkerInterface = WalkerInterface();
+    has root_node: Root = Root();
 }
 
 obj JacPlugin {
     static can bind_architype(arch: AT, arch_type: str) -> None;
+    static can get_root() -> AT;
 }

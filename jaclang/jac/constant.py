@@ -6,14 +6,9 @@ class Constants(str, Enum):
     """Token constants for Jac."""
 
     JAC_LANG_IMP = "jac"
-    JAC_DEBUG_SPLITTER = "JAC DEBUG INFO"
-    JAC_ERROR_PREAMBLE = "Jac error originates from..."
-    PATCH = "PATCH"
-
-    JAC_TMP = "_jac_tmp"
-    EXEC_CONTEXT = "_jac_exec_ctx_"
     HERE = "_jac_here_"
-    ROOT = f"{EXEC_CONTEXT}.get_root()"
+    JAC_FEATURE = "_JacFeature"
+    ROOT = f"{JAC_FEATURE}.get_root()"
     EDGES_TO_NODE = "_jac_.edges_to_nodes"
     EDGE_REF = "_jac_.edge_ref"
     CONNECT_NODE = "_jac_.connect_node"

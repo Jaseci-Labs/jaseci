@@ -112,3 +112,8 @@ class JacFeature:
     ) -> list[T]:
         """Jac's assign comprehension feature."""
         return JacFeature.pm.hook.assign_compr(target=target, attr_val=attr_val)
+
+    @staticmethod
+    def get_root() -> AT:
+        """Jac's assign comprehension feature."""
+        return JacFeature.pm.hook.get_root()

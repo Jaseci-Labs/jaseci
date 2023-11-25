@@ -83,7 +83,9 @@ class PyastGenPass(Pass):
                 ast3.ImportFrom(
                     module="jaclang.jac.plugin.feature",
                     names=[
-                        self.sync(ast3.alias(name="JacFeature", asname="__JacFeature")),
+                        self.sync(
+                            ast3.alias(name="JacFeature", asname=Con.JAC_FEATURE.value)
+                        ),
                     ],
                     level=0,
                 ),
@@ -463,7 +465,7 @@ class PyastGenPass(Pass):
                         func=self.sync(
                             ast3.Attribute(
                                 value=self.sync(
-                                    ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
                                 attr="make_architype",
                                 ctx=ast3.Load(),
@@ -513,7 +515,7 @@ class PyastGenPass(Pass):
                         func=self.sync(
                             ast3.Attribute(
                                 value=self.sync(
-                                    ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
                                 attr="make_architype",
                                 ctx=ast3.Load(),
@@ -657,7 +659,7 @@ class PyastGenPass(Pass):
                         func=self.sync(
                             ast3.Attribute(
                                 value=self.sync(
-                                    ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
                                 attr="make_ds_ability",
                                 ctx=ast3.Load(),
@@ -1120,7 +1122,9 @@ class PyastGenPass(Pass):
                             func=self.sync(
                                 ast3.Attribute(
                                     value=self.sync(
-                                        ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                        ast3.Name(
+                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
+                                        )
                                     ),
                                     attr="report",
                                     ctx=ast3.Load(),
@@ -1174,7 +1178,7 @@ class PyastGenPass(Pass):
                         func=self.sync(
                             ast3.Attribute(
                                 value=self.sync(
-                                    ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                                 ),
                                 attr="ignore",
                                 ctx=ast3.Load(),
@@ -1207,7 +1211,9 @@ class PyastGenPass(Pass):
                             func=self.sync(
                                 ast3.Attribute(
                                     value=self.sync(
-                                        ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                        ast3.Name(
+                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
+                                        )
                                     ),
                                     attr="visit",
                                     ctx=ast3.Load(),
@@ -1249,7 +1255,9 @@ class PyastGenPass(Pass):
                             func=self.sync(
                                 ast3.Attribute(
                                     value=self.sync(
-                                        ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                        ast3.Name(
+                                            id=Con.JAC_FEATURE.value, ctx=ast3.Load()
+                                        )
                                     ),
                                     attr="disengage",
                                     ctx=ast3.Load(),
@@ -1345,7 +1353,7 @@ class PyastGenPass(Pass):
                     func=self.sync(
                         ast3.Attribute(
                             value=self.sync(
-                                ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                             ),
                             attr="connect",
                             ctx=ast3.Load(),
@@ -1365,7 +1373,7 @@ class PyastGenPass(Pass):
                     func=self.sync(
                         ast3.Attribute(
                             value=self.sync(
-                                ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                             ),
                             attr="disconnect",
                             ctx=ast3.Load(),
@@ -1465,7 +1473,7 @@ class PyastGenPass(Pass):
                     func=self.sync(
                         ast3.Attribute(
                             value=self.sync(
-                                ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                             ),
                             attr="elvis",
                             ctx=ast3.Load(),
@@ -1785,7 +1793,7 @@ class PyastGenPass(Pass):
                     func=self.sync(
                         ast3.Attribute(
                             value=self.sync(
-                                ast3.Name(id="__JacFeature", ctx=ast3.Load())
+                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
                             ),
                             attr="assign_compr",
                             ctx=ast3.Load(),
@@ -1930,7 +1938,9 @@ class PyastGenPass(Pass):
             ast3.Call(
                 func=self.sync(
                     ast3.Attribute(
-                        value=self.sync(ast3.Name(id="__JacFeature", ctx=ast3.Load())),
+                        value=self.sync(
+                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                        ),
                         attr="edge_ref",
                         ctx=ast3.Load(),
                     )

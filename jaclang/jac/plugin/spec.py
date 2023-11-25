@@ -86,3 +86,8 @@ class JacFeatureSpec:
         target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
     ) -> list[T]:
         """Jac's assign comprehension feature."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def get_root() -> AT:
+        """Jac's assign comprehension feature."""
