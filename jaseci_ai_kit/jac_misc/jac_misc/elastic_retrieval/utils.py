@@ -18,50 +18,54 @@ def get_embeddings(texts: list, oai_client: OpenAI, config: dict = {}):
     ]
 
 
+def extraction(buff) -> str:
+    mimetype = from_buffer(buff.read(), mime=True)
+    buff.seek(0)
+
+    if mimetype == "application/pdf":
+        # Extract text from pdf using PyPDF2
+        reader = PdfReader(buff)
+        return " ".join([page.extract_text() for page in reader.pages])
+    elif mimetype == "text/plain" or mimetype == "text/markdown":
+        # Read text from plain text buff
+        return buff.read().decode("utf-8")
+    elif (
+        mimetype
+        == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ):
+        # Extract text from docx using docx2txt
+        return docx2txt.process(buff)
+    elif mimetype == "text/csv":
+        # Extract text from csv using csv module
+        extracted_text = ""
+        decoded_buffer = (line.decode("utf-8") for line in buff)
+        reader = csv.reader(decoded_buffer)
+        for row in reader:
+            extracted_text += " ".join(row) + "\n"
+        return extracted_text
+    elif (
+        mimetype
+        == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    ):
+        # Extract text from pptx using python-pptx
+        extracted_text = ""
+        presentation = pptx.Presentation(buff)
+        for slide in presentation.slides:
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    for paragraph in shape.text_frame.paragraphs:
+                        for run in paragraph.runs:
+                            extracted_text += run.text + " "
+                    extracted_text += "\n"
+        return extracted_text
+    else:
+        # Unsupported file type
+        raise ValueError("Unsupported file type: {}".format(mimetype))
+
+
 def extract_text_from_file(file) -> str:
     with open(file, "rb") as buff:
-        mimetype = from_buffer(buff.read(), mime=True)
-        buff.seek(0)
-
-        if mimetype == "application/pdf":
-            # Extract text from pdf using PyPDF2
-            reader = PdfReader(buff)
-            extracted_text = " ".join([page.extract_text() for page in reader.pages])
-        elif mimetype == "text/plain" or mimetype == "text/markdown":
-            # Read text from plain text buff
-            extracted_text = buff.read().decode("utf-8")
-        elif (
-            mimetype
-            == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ):
-            # Extract text from docx using docx2txt
-            extracted_text = docx2txt.process(buff)
-        elif mimetype == "text/csv":
-            # Extract text from csv using csv module
-            extracted_text = ""
-            decoded_buffer = (line.decode("utf-8") for line in buff)
-            reader = csv.reader(decoded_buffer)
-            for row in reader:
-                extracted_text += " ".join(row) + "\n"
-        elif (
-            mimetype
-            == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-        ):
-            # Extract text from pptx using python-pptx
-            extracted_text = ""
-            presentation = pptx.Presentation(buff)
-            for slide in presentation.slides:
-                for shape in slide.shapes:
-                    if shape.has_text_frame:
-                        for paragraph in shape.text_frame.paragraphs:
-                            for run in paragraph.runs:
-                                extracted_text += run.text + " "
-                        extracted_text += "\n"
-        else:
-            # Unsupported file type
-            raise ValueError("Unsupported file type: {}".format(mimetype))
-
-        return extracted_text
+        return " ".join(extraction(buff).split())
 
 
 def generate_chunks(doc: dict, config: dict) -> list:
