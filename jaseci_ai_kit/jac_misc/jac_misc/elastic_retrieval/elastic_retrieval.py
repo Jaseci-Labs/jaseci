@@ -4,9 +4,9 @@ from datetime import datetime
 from requests import get
 from uuid import uuid4
 
-from .utils import extract_text_from_file, get_embeddings, generate_chunks
+from .utils import extract_text_from_file, get_embeddings, generate_chunks, extraction
 from jaseci.jsorc.live_actions import jaseci_action
-from elasticsearch import Elasticsearch, NotFoundError
+from elasticsearch import Elasticsearch
 
 OAI_CLIENT = None
 ES_CLIENT = None
@@ -213,6 +213,22 @@ def reapply_index_template():
     return (
         elastic().indices.put_index_template(**CONFIG["elastic"]["index_template"]).body
     )
+
+
+@jaseci_action(act_group=["es_ret"], allow_remote=True)
+def file_is_readable(id: str, meta: dict = {}):
+    """temp"""
+    from jaseci.utils.file_handler import FileHandler
+
+    file_handler: FileHandler = meta["h"].get_file_handler(id)
+    try:
+        with file_handler.open(mode="rb", detached=True) as buff:
+            if extraction(buff):
+                return True
+    except Exception:
+        pass
+
+    return False
 
 
 def openai() -> OpenAI:
