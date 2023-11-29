@@ -5,6 +5,7 @@ import jaclang.jac.absyntree as ast
 from jaclang.jac.parser import JacParser
 from jaclang.jac.passes import Pass
 from jaclang.jac.passes.main import (
+    MyPyTypeCheckPass,
     PyOutPass,
     PyastGenPass,
     pass_schedule,
@@ -18,7 +19,7 @@ def transpile_jac(file_path: str) -> list[Alert]:
     """Transpiler Jac file and return python code as string."""
     code = jac_file_to_pass(
         file_path=file_path,
-        target=PyastGenPass,
+        target=MyPyTypeCheckPass,
         schedule=pass_schedule,
     )
     if isinstance(code.ir, ast.Module) and not code.errors_had:

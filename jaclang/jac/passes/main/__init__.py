@@ -8,6 +8,7 @@ from .pyout_pass import PyOutPass  # noqa: I100
 from .pyast_load_pass import PyastBuildPass  # noqa: I100
 from .pyast_gen_pass import PyastGenPass  # noqa: I100
 from .schedules import py_code_gen  # noqa: I100
+from .mypy_type_check_pass import MyPyTypeCheckPass  # noqa: I100
 
 
 pass_schedule = py_code_gen
@@ -21,4 +22,5 @@ __all__ = [
     "PyOutPass",
     "PyastBuildPass",
     "PyastGenPass",
+    "MyPyTypeCheckPass",
 ]
