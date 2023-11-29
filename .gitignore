@@ -45,3 +45,6 @@ codegen_output*
 node_modules
 out.dot
 out.txt
+
+# Mypy files #
+.mypy_cache*

@@ -12,6 +12,7 @@ from .def_impl_match_pass import DeclDefMatchPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
 from .pyout_pass import PyOutPass  # noqa: I100
 from .pyast_gen_pass import PyastGenPass  # noqa: I100
+from .mypy_type_check_pass import MyPyTypeCheckPass  # noqa: I100
 
 py_code_gen = [
     SubNodeTabPass,
@@ -20,6 +21,7 @@ py_code_gen = [
     DeclDefMatchPass,
     DefUsePass,
     PyastGenPass,
+    MyPyTypeCheckPass,
 ]
 
 py_compiler = [
