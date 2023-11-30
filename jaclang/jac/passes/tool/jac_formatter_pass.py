@@ -65,6 +65,17 @@ class JacFormatPass(Pass):
         """
         self.comments = node.source.comments
 
+    # def process_import_nodes(self, node: ast.Module) -> None:
+    #     """Process and rearrange import nodes."""
+    #     import_nodes = node.get_all_sub_nodes(typ=ast.Import)
+
+    #     # Separate include:jac and other imports
+    #     includes = [n for n in import_nodes if ":jac" in n.gen.jac]
+    #     other_imports = [n for n in import_nodes if ":jac" not in n.gen.jac]
+
+    #     # Rearrange imports with includes at the end
+    #     return other_imports + includes
+
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
 
@@ -74,20 +85,36 @@ class JacFormatPass(Pass):
         body: Sequence[ElementStmt],
         is_imported: bool,
         """
+        # segment = False
         for i in node.kid:
             if isinstance(i, ast.String):
                 self.emit_ln(node, f" {i.gen.jac}")
+                self.emit_ln(node, "")
             elif isinstance(i, ast.CommentToken):
                 if i.is_inline:
                     self.emit(node, f" {i.gen.jac}")
                 else:
                     self.emit_ln(node, i.gen.jac)
+                    self.emit_ln(node, "")
             elif isinstance(i, ast.Token):
                 self.emit(node, i.value.strip("") + " ")
             elif isinstance(i, ast.SubTag):
                 for j in i.kid:
                     self.emit(node, j.gen.jac)
+        # # Process sorted imports
+        # sorted_imports = self.process_import_nodes(node)
+        # if sorted_imports:
+        #     for imp in sorted_imports:
+        #         # Add a newline between other imports and includes
+        #         if ":jac" in imp.gen.jac and not segment:
+        #             self.emit_ln(node, "")
+        #             segment = True
+        #         self.emit_ln(node, imp.gen.jac)
+        #     self.emit_ln(node, "")
+        #     self.emit_ln(node, "")
         for i in node.body:
+            # if isinstance(i, ast.Import):
+            #     continue
             self.emit_ln(node, i.gen.jac)
             self.emit_ln(node, "")
 
@@ -352,14 +379,12 @@ class JacFormatPass(Pass):
             elif i.gen.jac.startswith(":"):
                 self.emit(node, f"{i.gen.jac}")
             else:
-                if start:
+                if start or i.gen.jac == ",":
                     self.emit(node, f"{i.gen.jac}")
                     start = False
-                elif i.gen.jac == ",":
-                    self.emit(node, f"{i.gen.jac} ")
                 else:
                     self.emit(node, f" {i.gen.jac}")
-        if isinstance(node.kid[-1], (ast.Semi)) and not node.gen.jac.endswith("\n"):
+        if isinstance(node.kid[-1], ast.Semi) and not node.gen.jac.endswith("\n"):
             self.emit_ln(node, "")
 
     def exit_arch_def(self, node: ast.ArchDef) -> None:
