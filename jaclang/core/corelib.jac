@@ -103,9 +103,10 @@ obj WalkerInterface:DataSpatialInterface: {
 obj Master {
     obj Root {
         has _jac_: NodeInterface = NodeInterface();
+        has RootType: type;
     }
     has _jac_: ElementInterface = ElementInterface();
-    has root_node: Root = Root();
+    has root_node: Root = Root(Root);
 }
 
 obj JacPlugin {

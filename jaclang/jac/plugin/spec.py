@@ -13,7 +13,7 @@ hookspec = pluggy.HookspecMarker("jac")
 class ArchitypeProtocol(Protocol):
     """Architype Protocol."""
 
-    _jac_: None
+    _jac_: Any
 
 
 T = TypeVar("T")
