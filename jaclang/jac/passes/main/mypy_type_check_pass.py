@@ -6,6 +6,7 @@ mypy apis into Jac and use jac py ast in it.
 import os
 import pathlib
 import sys
+from typing import Callable, List
 
 
 import jaclang.jac.absyntree as ast
@@ -30,6 +31,8 @@ from jaclang.vendor.mypy.semanal_main import (
 class MyPyTypeCheckPass(Pass):
     """Python and bytecode file printing pass."""
 
+    mypy_message_cb: Callable[[str | None, List[str], bool], None]
+
     def before_pass(self) -> None:
         """Before pass."""
         self.__mypy_path = (
@@ -46,7 +49,7 @@ class MyPyTypeCheckPass(Pass):
             self.mypy_api(node, node.loc.mod_path)
         self.terminate()
 
-    def mypy_message_cb(
+    def default_mypy_message_cb(
         self, filename: str | None, new_messages: list[str], is_serious: bool
     ) -> None:
         """Mypy errors reporter."""
@@ -64,6 +67,11 @@ class MyPyTypeCheckPass(Pass):
         )
         plugin, snapshot = mypy_load_plugins(mypy_options, mypy_errors, sys.stdout, [])
 
+        if self.mypy_message_cb is not None:
+            mypy_message_cb = self.mypy_message_cb
+        else:
+            mypy_message_cb = self.default_mypy_message_cb
+
         manager = MyPyBuildManager(
             data_dir=".",
             search_paths=search_paths,
@@ -75,7 +83,7 @@ class MyPyTypeCheckPass(Pass):
             plugin=plugin,
             plugins_snapshot=snapshot,
             errors=mypy_errors,
-            flush_errors=self.mypy_message_cb,
+            flush_errors=mypy_message_cb,
             fscache=fs_cache,
             stdout=sys.stdout,
             stderr=sys.stderr,

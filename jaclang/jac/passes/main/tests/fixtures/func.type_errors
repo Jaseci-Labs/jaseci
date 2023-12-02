@@ -1,0 +1,2 @@
+File::4: error: Incompatible return value type (got "int", expected "str")  [return-value]
+File::12: error: Incompatible return value type (got "str", expected "int")  [return-value]
