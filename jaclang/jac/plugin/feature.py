@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional, Type
 
 from jaclang.jac.constant import EdgeDir
 from jaclang.jac.plugin.default import JacFeatureDefaults
-from jaclang.jac.plugin.spec import AT, Architype, JacFeatureSpec, T
+from jaclang.jac.plugin.spec import AT, AbsRootNode, Architype, JacFeatureSpec, T
 
 import pluggy
 
@@ -19,6 +19,8 @@ class JacFeature:
     pm = pluggy.PluginManager("jac")
     pm.add_hookspecs(JacFeatureSpec)
     pm.register(JacFeatureDefaults)
+
+    RootType: Type[AbsRootNode] = AbsRootNode
 
     @staticmethod
     def make_architype(arch_type: str) -> Callable[[type], type]:

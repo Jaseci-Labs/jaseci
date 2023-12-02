@@ -24,6 +24,10 @@ class Architype:
             return self._jac_(target)
 
 
+class AbsRootNode:
+    """Abstract Root Node."""
+
+
 T = TypeVar("T")
 AT = TypeVar("AT", bound=Architype)
 
@@ -107,5 +111,5 @@ class JacFeatureSpec:
     @staticmethod
     @hookspec(firstresult=True)
     def get_root() -> Architype:
-        """Jac's assign comprehension feature."""
+        """Jac's root getter."""
         raise NotImplementedError

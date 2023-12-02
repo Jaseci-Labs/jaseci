@@ -817,8 +817,10 @@ class PyastGenPass(Pass):
             ):
                 node.gen.py_ast = self.sync(
                     ast3.Attribute(
-                        value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
-                        attr="Any",
+                        value=self.sync(
+                            ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
+                        ),
+                        attr="RootType",
                         ctx=ast3.Load(),
                     )
                 )
