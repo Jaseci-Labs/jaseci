@@ -10,14 +10,22 @@ import pluggy
 hookspec = pluggy.HookspecMarker("jac")
 
 
-class ArchitypeProtocol(Protocol):
+class Architype:
     """Architype Protocol."""
 
-    _jac_: Any
+    class ArchitypeProtocol(Protocol):
+        """Architype Protocol."""
+
+    _jac_: ArchitypeProtocol
+
+    def __call__(self, target: Architype) -> None:
+        """Call the architype's data spatial behavior."""
+        if callable(self._jac_):
+            return self._jac_(target)
 
 
 T = TypeVar("T")
-AT = TypeVar("AT", bound=ArchitypeProtocol)
+AT = TypeVar("AT", bound=Architype)
 
 
 class JacFeatureSpec:
@@ -98,6 +106,6 @@ class JacFeatureSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def get_root() -> ArchitypeProtocol:
+    def get_root() -> Architype:
         """Jac's assign comprehension feature."""
         raise NotImplementedError

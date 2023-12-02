@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional, Type
 
 from jaclang.jac.constant import EdgeDir
 from jaclang.jac.plugin import hookimpl
-from jaclang.jac.plugin.spec import AT, ArchitypeProtocol, T
+from jaclang.jac.plugin.spec import AT, Architype, T
 
 
 class JacFeatureDefaults:
@@ -93,10 +93,10 @@ class JacFeatureDefaults:
 
     @staticmethod
     @hookimpl
-    def get_root() -> ArchitypeProtocol:
+    def get_root() -> Architype:
         """Jac's assign comprehension feature."""
 
-        class Blank(ArchitypeProtocol):
+        class Blank(Architype):
             _jac_: Any = None
 
         return Blank()

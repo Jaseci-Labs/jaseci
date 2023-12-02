@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional, Type
 
 from jaclang.jac.constant import EdgeDir
 from jaclang.jac.plugin.default import JacFeatureDefaults
-from jaclang.jac.plugin.spec import AT, ArchitypeProtocol, JacFeatureSpec, T
+from jaclang.jac.plugin.spec import AT, Architype, JacFeatureSpec, T
 
 import pluggy
 
@@ -42,8 +42,11 @@ class JacFeature:
                         for k, v in cls_module_globals.items():  # Risky!
                             if k not in func_module_globals and not k.startswith("__"):
                                 func_module_globals[k] = v
+            cls = dataclass(cls)
+            if not issubclass(cls, Architype):
+                cls = type(cls.__name__, (cls, Architype), {})
             JacFeature.bind_architype(cls, arch_type)
-            return dataclass(cls)
+            return cls
 
         return decorator
 
@@ -114,6 +117,6 @@ class JacFeature:
         return JacFeature.pm.hook.assign_compr(target=target, attr_val=attr_val)
 
     @staticmethod
-    def get_root() -> ArchitypeProtocol:
+    def get_root() -> Architype:
         """Jac's assign comprehension feature."""
         return JacFeature.pm.hook.get_root()
