@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Callable
+from typing import Callable, TypeAlias
 
 
 import jaclang.jac.absyntree as ast
-from jaclang.jac import jac_lark as jl
+from jaclang.jac import jac_lark as jl  # type: ignore
 from jaclang.jac.constant import EdgeDir, Tokens as Tok
 from jaclang.jac.passes.ir_pass import Pass
 from jaclang.vendor.lark import Lark, Transformer, Tree, logger
@@ -98,7 +98,7 @@ class JacParser(Pass):
     comment_cache: list[jl.Token] = []
 
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
-    JacTransformer = jl.Transformer[jl.Tree[str], ast.AstNode]
+    JacTransformer: TypeAlias = jl.Transformer[jl.Tree[str], ast.AstNode]
 
     class TreeToAST(JacTransformer):
         """Transform parse tree to AST."""
